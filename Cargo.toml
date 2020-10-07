@@ -1,0 +1,21 @@
+[workspace]
+members = ["typescript"]
+
+[package]
+authors = ["강동윤 <kdy1997.dev@gmail.com>"]
+description = "Speedy web compiler"
+edition = "2018"
+name = "stc"
+publish = false
+version = "0.0.0"
+
+[dependencies]
+
+[profile.release]
+codegen-units = 1
+lto = true
+# debug = true
+# opt-level = 'z'
+
+[profile.bench]
+codegen-units = 1

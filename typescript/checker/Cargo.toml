@@ -1,0 +1,48 @@
+[package]
+authors = ["강동윤 <kdy1@dudy.kr>"]
+edition = "2018"
+name = "swc_ts_checker"
+publish = false
+version = "0.1.0"
+
+[dependencies]
+macros = {package = "swc_ts_checker_macros", path = "./macros"}
+ordered-float = "1.0.2"
+swc_atoms = {path = "../../atoms"}
+swc_common = {path = "../../common", features = ["concurrent"]}
+swc_ecma_ast = {path = "../../ecmascript/ast"}
+swc_ecma_codegen = {path = "../../ecmascript/codegen"}
+swc_ecma_parser = {path = "../../ecmascript/parser"}
+swc_ecma_utils = {path = "../../ecmascript/utils"}
+swc_ecma_visit = {path = "../../ecmascript/visit"}
+swc_ts_builtin_types = {path = "./builtin"}
+swc_ts_types = {path = "../types"}
+swc_visit = {path = "../../visit"}
+
+anyhow = "1"
+backtrace = {version = "0.3", features = ["serde"]}
+bitflags = "1"
+crossbeam = "0.7.1"
+dashmap = "3.5.1"
+derive_more = {version = "0.99.2", default-features = false, features = ["display"]}
+either = "1"
+fxhash = "0.2"
+itertools = "0.8"
+log = "0.4"
+node-resolve = "2.2"
+once_cell = "1.3.1"
+petgraph = "0.5"
+rayon = "1"
+retain_mut = "0.1"
+serde_json = "1"
+smallvec = "0.6"
+
+[dev-dependencies]
+env_logger = "0.7.1"
+pretty_assertions = "0.5"
+serde = {version = "1", features = ["derive"]}
+sourcemap = "2.2"
+swc_ecma_codegen = {path = "../../ecmascript/codegen"}
+tempfile = "3"
+testing = {path = "../../testing"}
+walkdir = "2"
