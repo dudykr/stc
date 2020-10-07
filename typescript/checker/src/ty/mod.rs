@@ -1,16 +1,15 @@
 use self::{generalize::TupleToArray, type_facts::TypeFactsHandler};
-use crate::{
-    type_facts::TypeFacts,
-    util::{is_str_lit_or_union, TypeEq},
-};
+use crate::util::type_ext::TypeVecExt;
+use crate::{type_facts::TypeFacts, util::is_str_lit_or_union};
 use retain_mut::RetainMut;
+use stc_types::eq::TypeEq;
+pub(crate) use stc_types::*;
 use swc_ecma_ast::{Bool, Number, Str, TsKeywordType, TsKeywordTypeKind, TsLit, TsLitType};
-pub(crate) use swc_ts_types::*;
 
 mod generalize;
 mod type_facts;
 
-struct LitGeneralizer;
+pub(crate) struct LitGeneralizer;
 
 impl Fold for LitGeneralizer {
     fn fold_ref(&mut self, mut r: Ref) -> Ref {
@@ -22,18 +21,30 @@ impl Fold for LitGeneralizer {
     fn fold_union(&mut self, mut union: Union) -> Union {
         union = union.fold_children_with(self);
 
-        let has_rest = union.types.iter().any(|ty| match &**ty {
-            Type::Rest(..) => true,
-            _ => false,
-        });
+        union.types.dedup_type();
+
+        union
+    }
+
+    fn fold_tuple(&mut self, mut tuple: Tuple) -> Tuple {
+        tuple = tuple.fold_children_with(self);
+
+        let has_rest = tuple
+            .elems
+            .iter()
+            .map(|element| &element.ty)
+            .any(|ty| match &**ty {
+                Type::Rest(..) => true,
+                _ => false,
+            });
 
         if has_rest {
             // Handle rest
             let mut rest_ty = None;
 
             // Remove types after `...boolean[]`
-            union.types.retain_mut(|ty| {
-                match &**ty {
+            tuple.elems.retain_mut(|element| {
+                match &*element.ty {
                     Type::Rest(RestType {
                         ty: box Type::Array(Array { elem_type, .. }),
                         ..
@@ -49,11 +60,9 @@ impl Fold for LitGeneralizer {
 
                 true
             });
-        } else {
-            union.types.dedup_by(|a, b| a.type_eq(&*b));
         }
 
-        union
+        tuple
     }
 
     fn fold_type(&mut self, mut ty: Type) -> Type {
@@ -100,7 +109,6 @@ pub trait TypeExt: Into<Type> {
     }
 
     fn apply_type_facts(self, facts: TypeFacts) -> Box<Type> {
-        log::info!("Applying type facts");
         (box self.into()).fold_with(&mut TypeFactsHandler { facts })
     }
 }

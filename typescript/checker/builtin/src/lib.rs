@@ -2,13 +2,17 @@
 
 use fxhash::FxHashMap;
 use once_cell::sync::Lazy;
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
+use stc_builtin_macro::builtin;
 use std::sync::{Arc, RwLock};
 use swc_atoms::js_word;
-use swc_common::{FileName, FilePathMapping, SourceMap, DUMMY_SP};
+use swc_common::{FileName, FilePathMapping, SourceMap};
 use swc_ecma_ast::*;
-use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
+use swc_ecma_parser::{
+    lexer::{input::StringInput, Lexer},
+    Parser, Syntax, TsConfig,
+};
 use swc_ecma_visit::{span_remover, FoldWith};
-use swc_ts_builtin_macro::builtin;
 
 builtin!();
 
@@ -41,7 +45,7 @@ impl Lib {
 
 /// Merge definitions
 pub fn load(libs: &[Lib]) -> Vec<&'static TsNamespaceDecl> {
-    libs.iter().map(|lib| lib.body()).collect()
+    libs.into_par_iter().map(|lib| lib.body()).collect()
 }
 
 fn parse(content: &str) -> TsNamespaceDecl {
@@ -64,12 +68,12 @@ fn parse(content: &str) -> TsNamespaceDecl {
     let script = parser.parse_script().expect("failed to parse module");
 
     TsNamespaceDecl {
-        span: DUMMY_SP,
+        span: Default::default(),
         declare: true,
         global: true,
-        id: Ident::new(js_word!(""), DUMMY_SP),
+        id: Ident::new(js_word!(""), Default::default()),
         body: Box::new(TsNamespaceBody::TsModuleBlock(TsModuleBlock {
-            span: DUMMY_SP,
+            span: Default::default(),
             body: script
                 .body
                 .fold_with(&mut span_remover())

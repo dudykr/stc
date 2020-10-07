@@ -1,7 +1,1 @@
-[
-    {
-        "line": 1,
-        "column": 16,
-        "msg": "The left-hand side of an 'instanceof' expression must be of type 'any', an object type or a type parameter."
-    }
-]
+[]

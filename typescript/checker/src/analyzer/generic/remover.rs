@@ -1,7 +1,11 @@
-use crate::ty::{self, Function, TypeParam, TypeParamDecl};
 use fxhash::FxHashSet;
+use stc_types::Fold;
+use stc_types::FoldWith;
+use stc_types::Function;
+use stc_types::Id;
+use stc_types::TypeParam;
+use stc_types::TypeParamDecl;
 use swc_common::util::move_map::MoveMap;
-use swc_ts_types::{FoldWith as _, Id};
 
 /// Removes conflicting type parameters from children.
 ///
@@ -29,7 +33,7 @@ impl TypeParamRemover<'static> {
     }
 }
 
-impl ty::Fold for TypeParamRemover<'_> {
+impl Fold for TypeParamRemover<'_> {
     fn fold_opt_type_param_decl(&mut self, node: Option<TypeParamDecl>) -> Option<TypeParamDecl> {
         let mut node = node?;
 
@@ -52,13 +56,13 @@ impl ty::Fold for TypeParamRemover<'_> {
         Some(node)
     }
 
-    fn fold_type_param(&mut self, node: ty::TypeParam) -> TypeParam {
+    fn fold_type_param(&mut self, node: TypeParam) -> TypeParam {
         self.scope.params.insert(node.name.clone());
 
         node
     }
 
-    fn fold_function(&mut self, node: ty::Function) -> Function {
+    fn fold_function(&mut self, node: Function) -> Function {
         let mut v = TypeParamRemover {
             scope: Scope {
                 parent: Some(&self.scope),

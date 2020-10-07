@@ -1,7 +1,1 @@
-[
-    {
-        "line": 2,
-        "column": 5,
-        "msg": "Property 'bogus' is missing in type '(string | number)[]' but required in type '{ bogus"
-    }
-]
+[]

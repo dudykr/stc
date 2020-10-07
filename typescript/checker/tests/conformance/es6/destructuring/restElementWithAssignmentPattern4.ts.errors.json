@@ -1,7 +1,1 @@
-[
-    {
-        "line": 3,
-        "column": 18,
-        "msg": "Property 'b' does not exist on type '[string, number]'."
-    }
-]
+[]

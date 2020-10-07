@@ -1,21 +1,48 @@
 [workspace]
-members = ["typescript"]
+members = ["rnode", "bindings/libstc", "bindings/node-stc", "tools/dev-stc"]
 
 [package]
-authors = ["강동윤 <kdy1997.dev@gmail.com>"]
+authors = ["강동윤 <kdy1@dudy.kr>"]
 description = "Speedy web compiler"
 edition = "2018"
 name = "stc"
 publish = false
-version = "0.0.0"
+version = "0.1.0"
 
 [dependencies]
+anyhow = "1"
+languageserver-types = "0.54.0"
+slog = {version = "2", features = ["release_max_level_off"]}
+stc_checker = {path = "./typescript/checker"}
+stc_dts = {path = "./typescript/dts"}
+structopt = "0.3.20"
+swc_common = {version = "0.10.6", features = ["tty-emitter"]}
+swc_ecma_parser = "0.43.1"
 
 [profile.release]
 codegen-units = 1
 lto = true
 # debug = true
-# opt-level = 'z'
 
 [profile.bench]
 codegen-units = 1
+debug = true
+
+[profile.dev.package]
+stc_builtin_types = {opt-level = 3}
+swc_ecma_parser = {opt-level = 3}
+
+[patch.crates-io]
+swc_atoms = {git = "https://github.com/kdy1/swc.git", branch = "tsc"}
+swc_common = {git = "https://github.com/kdy1/swc.git", branch = "tsc"}
+swc_ecma_ast = {git = "https://github.com/kdy1/swc.git", branch = "tsc"}
+swc_ecma_codegen = {git = "https://github.com/kdy1/swc.git", branch = "tsc"}
+swc_ecma_parser = {git = "https://github.com/kdy1/swc.git", branch = "tsc"}
+swc_ecma_parser_macros = {git = "https://github.com/kdy1/swc.git", branch = "tsc"}
+swc_ecma_transforms = {git = "https://github.com/kdy1/swc.git", branch = "tsc"}
+swc_ecma_utils = {git = "https://github.com/kdy1/swc.git", branch = "tsc"}
+swc_ecma_visit = {git = "https://github.com/kdy1/swc.git", branch = "tsc"}
+swc_macros_common = {git = "https://github.com/kdy1/swc.git", branch = "tsc"}
+swc_visit = {git = "https://github.com/kdy1/swc.git", branch = "tsc"}
+swc_visit_macros = {git = "https://github.com/kdy1/swc.git", branch = "tsc"}
+testing = {git = "https://github.com/kdy1/swc.git", branch = "tsc"}

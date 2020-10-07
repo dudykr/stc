@@ -1,7 +1,1 @@
-[
-    {
-        "line": 2,
-        "column": 3,
-        "msg": "Classes may not have a field named 'constructor'."
-    }
-]
+[]

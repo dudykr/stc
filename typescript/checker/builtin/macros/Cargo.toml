@@ -1,7 +1,7 @@
 [package]
 authors = ["강동윤 <kdy1@dudy.kr>"]
 edition = "2018"
-name = "swc_ts_builtin_macro"
+name = "stc_builtin_macro"
 publish = false
 version = "0.1.0"
 
@@ -12,9 +12,9 @@ proc-macro = true
 Inflector = "0.11"
 pmutil = "0.5.1"
 proc-macro2 = "1"
-swc_common = {path = "../../../../common"}
-swc_ecma_parser = {path = "../../../../ecmascript/parser"}
-swc_macros_common = {path = "../../../../macros/common"}
+swc_common = "0.10.6"
+swc_ecma_parser = "0.43.1"
+swc_macros_common = "0.3"
 
 [dependencies.syn]
 features = ["fold", "parsing"]

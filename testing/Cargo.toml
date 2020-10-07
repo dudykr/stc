@@ -1,0 +1,14 @@
+[package]
+authors = ["강동윤 <kdy1@dudy.kr"]
+edition = "2018"
+name = "stc_testing"
+publish = false
+version = "0.0.0"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+ansi_term = "0.12"
+slog = "2"
+slog-envlogger = "2"
+slog-term = "2.6.0"

@@ -46,3 +46,6 @@ pkg/
 yarn.lock
 .idea/
 
+
+*.trace
+*.txt

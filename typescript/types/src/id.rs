@@ -7,7 +7,7 @@ use swc_common::{SyntaxContext, DUMMY_SP};
 use swc_ecma_ast::{Ident, TsEntityName};
 use swc_ecma_utils::ident::IdentLike;
 
-#[derive(Clone, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Id {
     sym: JsWord,
     ctxt: SyntaxContext,
@@ -15,6 +15,10 @@ pub struct Id {
 
 impl Id {
     pub fn as_str(&self) -> &str {
+        &self.sym
+    }
+
+    pub fn sym(&self) -> &JsWord {
         &self.sym
     }
 

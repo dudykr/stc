@@ -1,7 +1,1 @@
-[
-    {
-        "line": 3,
-        "column": 8,
-        "msg": "An accessor cannot have type parameters."
-    }
-]
+[]

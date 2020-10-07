@@ -2,13 +2,75 @@ use crate::{
     ty,
     ty::{Class, FnParam, Intersection, Type, TypeElement, TypeParamInstantiation, Union},
 };
-use swc_common::{Mark, Span, Spanned, DUMMY_SP};
+use stc_types::VisitMutWith;
+use stc_types::{Id, InferType, TypeNode, TypeParam, Visit, VisitMut, VisitWith};
+use swc_common::{Mark, Span, Spanned, SyntaxContext, DUMMY_SP};
 use swc_ecma_ast::*;
 use swc_ecma_utils::{drop_span, ModuleItemLike, StmtLike};
-use swc_ts_types::{Id, InferType, TypeNode, TypeParam, Visit, VisitMut, VisitWith};
 
+pub(crate) mod dashmap;
+pub(crate) mod graph;
+pub(crate) mod map_with_mut;
 pub(crate) mod named;
 pub(crate) mod property_map;
+pub(crate) mod type_ext;
+pub(crate) trait ModuleItemOrStmt {
+    fn try_into(self) -> Result<ModuleDecl, Stmt>;
+}
+
+impl ModuleItemOrStmt for ModuleItem {
+    #[inline]
+    fn try_into(self) -> Result<ModuleDecl, Stmt> {
+        match self {
+            ModuleItem::ModuleDecl(decl) => Ok(decl),
+            ModuleItem::Stmt(stmt) => Err(stmt),
+        }
+    }
+}
+
+impl ModuleItemOrStmt for Stmt {
+    #[inline]
+    fn try_into(self) -> Result<ModuleDecl, Stmt> {
+        Err(self)
+    }
+}
+
+pub(crate) struct MarkFinder {
+    found: bool,
+    mark: Mark,
+}
+
+impl Visit for MarkFinder {
+    fn visit_type(&mut self, ty: &Type, _: &dyn TypeNode) {
+        if self.found {
+            return;
+        }
+        ty.visit_children_with(self);
+
+        let mut ctxt: SyntaxContext = ty.span().ctxt;
+
+        loop {
+            let mark = ctxt.remove_mark();
+            if mark == Mark::root() {
+                return;
+            }
+
+            if mark == self.mark {
+                self.found = true;
+                return;
+            }
+        }
+    }
+}
+
+pub(crate) fn contains_mark<T>(n: &T, mark: Mark) -> bool
+where
+    T: VisitWith<MarkFinder>,
+{
+    let mut v = MarkFinder { found: false, mark };
+    n.visit_with(n, &mut v);
+    v.found
+}
 
 struct InferTypeFinder {
     found: bool,
@@ -34,6 +96,11 @@ pub(crate) struct Marker {
 impl VisitMut for Marker {
     fn visit_mut_span(&mut self, span: &mut Span) {
         span.ctxt = span.ctxt.apply_mark(self.mark);
+    }
+
+    fn visit_mut_type(&mut self, ty: &mut Type) {
+        ty.normalize_mut();
+        ty.visit_mut_children_with(self);
     }
 }
 
@@ -65,194 +132,26 @@ pub(crate) fn is_str_or_union(t: &Type) -> bool {
 }
 
 pub(crate) trait AsModuleDecl: StmtLike + ModuleItemLike {
+    const IS_MODULE_ITEM: bool;
     fn as_module_decl(&self) -> Result<&ModuleDecl, &Stmt>;
 }
 
 impl AsModuleDecl for Stmt {
+    const IS_MODULE_ITEM: bool = false;
+
     fn as_module_decl(&self) -> Result<&ModuleDecl, &Stmt> {
         Err(self)
     }
 }
 
 impl AsModuleDecl for ModuleItem {
+    const IS_MODULE_ITEM: bool = true;
+
     fn as_module_decl(&self) -> Result<&ModuleDecl, &Stmt> {
         match self {
             ModuleItem::ModuleDecl(decl) => Ok(decl),
             ModuleItem::Stmt(stmt) => Err(stmt),
         }
-    }
-}
-
-pub trait EqIgnoreSpan {
-    fn eq_ignore_span(&self, to: &Self) -> bool;
-}
-
-pub trait TypeEq<T = Self> {
-    fn type_eq(&self, to: &T) -> bool;
-}
-
-macro_rules! impl_by_clone {
-    ($T:ty) => {
-        impl EqIgnoreSpan for $T {
-            fn eq_ignore_span(&self, to: &Self) -> bool {
-                drop_span(self.clone()) == drop_span(to.clone())
-            }
-        }
-
-        impl TypeEq<$T> for $T {
-            fn type_eq(&self, to: &$T) -> bool {
-                use swc_ecma_visit::FoldWith;
-
-                let l = self.clone().fold_with(&mut TypeEqHelper);
-                let r = to.clone().fold_with(&mut TypeEqHelper);
-
-                l == r
-            }
-        }
-    };
-}
-
-macro_rules! impl_ty_by_clone {
-    ($T:ty) => {
-        impl EqIgnoreSpan for $T {
-            fn eq_ignore_span(&self, to: &Self) -> bool {
-                use swc_ts_types::FoldWith;
-                self.clone().fold_with(&mut SpanRemover) == to.clone().fold_with(&mut SpanRemover)
-            }
-        }
-
-        impl TypeEq<$T> for $T {
-            fn type_eq(&self, to: &$T) -> bool {
-                use swc_ts_types::FoldWith;
-
-                let l = self.clone().fold_with(&mut TypeEqHelper);
-                let r = to.clone().fold_with(&mut TypeEqHelper);
-
-                l == r
-            }
-        }
-    };
-}
-
-impl_ty_by_clone!(Type);
-impl_by_clone!(Expr);
-impl_ty_by_clone!(TypeElement);
-impl_by_clone!(TsLit);
-impl_by_clone!(TsLitType);
-impl_by_clone!(PropName);
-impl_ty_by_clone!(Class);
-impl_ty_by_clone!(FnParam);
-impl_by_clone!(ComputedPropName);
-impl_by_clone!(TsEntityName);
-impl_ty_by_clone!(TypeParamInstantiation);
-impl_by_clone!(TsTupleElement);
-
-struct SpanRemover;
-impl ty::Fold for SpanRemover {
-    fn fold_span(&mut self, _: Span) -> Span {
-        DUMMY_SP
-    }
-}
-
-struct TypeEqHelper;
-impl ty::Fold for TypeEqHelper {
-    fn fold_span(&mut self, _: Span) -> Span {
-        DUMMY_SP
-    }
-
-    fn fold_fn_param(&mut self, mut p: FnParam) -> FnParam {
-        p.pat = Pat::Invalid(Invalid { span: DUMMY_SP });
-        p
-    }
-
-    fn fold_expr(&mut self, node: Expr) -> Expr {
-        use swc_ecma_visit::FoldWith;
-
-        node.fold_with(self)
-    }
-
-    fn fold_ident(&mut self, node: Ident) -> Ident {
-        use swc_ecma_visit::FoldWith;
-
-        node.fold_with(self)
-    }
-}
-
-impl swc_ecma_visit::Fold for TypeEqHelper {
-    fn fold_span(&mut self, _: Span) -> Span {
-        DUMMY_SP
-    }
-}
-
-impl<T> EqIgnoreSpan for Box<T>
-where
-    T: EqIgnoreSpan,
-{
-    fn eq_ignore_span(&self, to: &Self) -> bool {
-        (**self).eq_ignore_span(&**to)
-    }
-}
-
-impl<T> EqIgnoreSpan for Option<T>
-where
-    T: EqIgnoreSpan,
-{
-    fn eq_ignore_span(&self, to: &Self) -> bool {
-        match (self.as_ref(), to.as_ref()) {
-            (Some(l), Some(r)) => l.eq_ignore_span(r),
-            (None, None) => true,
-            _ => false,
-        }
-    }
-}
-
-impl<T> EqIgnoreSpan for Vec<T>
-where
-    T: EqIgnoreSpan,
-{
-    fn eq_ignore_span(&self, to: &Self) -> bool {
-        if self.len() != to.len() {
-            return false;
-        }
-
-        self.iter()
-            .zip(to.iter())
-            .all(|(l, r)| l.eq_ignore_span(&r))
-    }
-}
-
-impl<T> TypeEq for Box<T>
-where
-    T: TypeEq,
-{
-    fn type_eq(&self, to: &Self) -> bool {
-        (**self).type_eq(&**to)
-    }
-}
-
-impl<T> TypeEq for Option<T>
-where
-    T: TypeEq,
-{
-    fn type_eq(&self, to: &Self) -> bool {
-        match (self.as_ref(), to.as_ref()) {
-            (Some(l), Some(r)) => l.type_eq(r),
-            (None, None) => true,
-            _ => false,
-        }
-    }
-}
-
-impl<T> TypeEq for Vec<T>
-where
-    T: TypeEq,
-{
-    fn type_eq(&self, to: &Self) -> bool {
-        if self.len() != to.len() {
-            return false;
-        }
-
-        self.iter().zip(to.iter()).all(|(l, r)| l.type_eq(&r))
     }
 }
 
@@ -313,8 +212,13 @@ impl RemoveTypes for Intersection {
             .into_iter()
             .map(|ty| box ty.remove_falsy())
             .collect::<Vec<_>>();
+
         if types.iter().any(|ty| ty.is_never()) {
             return *Type::never(self.span);
+        }
+
+        if types.len() == 1 {
+            return *types.into_iter().next().unwrap();
         }
 
         Intersection {
@@ -334,6 +238,10 @@ impl RemoveTypes for Intersection {
             return *Type::never(self.span);
         }
 
+        if types.len() == 1 {
+            return *types.into_iter().next().unwrap();
+        }
+
         Intersection {
             span: self.span,
             types,
@@ -344,12 +252,21 @@ impl RemoveTypes for Intersection {
 
 impl RemoveTypes for Union {
     fn remove_falsy(self) -> Type {
-        let types = self
+        let types: Vec<_> = self
             .types
             .into_iter()
             .map(|ty| box ty.remove_falsy())
             .filter(|ty| !ty.is_never())
             .collect();
+
+        if types.is_empty() {
+            return *Type::never(self.span);
+        }
+
+        if types.len() == 1 {
+            return *types.into_iter().next().unwrap();
+        }
+
         Union {
             span: self.span,
             types,
@@ -358,12 +275,21 @@ impl RemoveTypes for Union {
     }
 
     fn remove_truthy(self) -> Type {
-        let types = self
+        let types: Vec<_> = self
             .types
             .into_iter()
             .map(|ty| box ty.remove_truthy())
             .filter(|ty| !ty.is_never())
             .collect();
+
+        if types.is_empty() {
+            return *Type::never(self.span);
+        }
+
+        if types.len() == 1 {
+            return *types.into_iter().next().unwrap();
+        }
+
         Union {
             span: self.span,
             types,
@@ -507,7 +433,7 @@ pub(crate) struct TypeParamFinder<'a> {
 
 pub(crate) fn contains_type_param<T>(node: &T, name: &Id) -> bool
 where
-    T: for<'a> swc_ts_types::VisitWith<TypeParamFinder<'a>>,
+    T: for<'a> stc_types::VisitWith<TypeParamFinder<'a>>,
 {
     let mut v = TypeParamFinder { name, found: false };
 
@@ -516,7 +442,7 @@ where
     v.found
 }
 
-impl swc_ts_types::Visit for TypeParamFinder<'_> {
+impl stc_types::Visit for TypeParamFinder<'_> {
     fn visit_type_param(&mut self, p: &TypeParam, _: &dyn TypeNode) {
         if p.name == *self.name {
             self.found = true

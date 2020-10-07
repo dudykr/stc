@@ -1,7 +1,1 @@
-[
-    {
-        "line": 18,
-        "column": 32,
-        "msg": "Property 'y' is missing in type 'Derived2' but required in type 'Derived'."
-    }
-]
+[]

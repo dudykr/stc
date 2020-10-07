@@ -8,14 +8,17 @@ extern crate proc_macro;
 
 use pmutil::{Quote, ToTokensExt};
 use swc_macros_common::prelude::*;
-use syn::{ExprTryBlock, ImplItemMethod, ReturnType};
+use syn::{
+    fold::Fold, ExprTryBlock, FnArg, Ident, ImplItem, ImplItemMethod, ItemImpl, Lifetime,
+    ReturnType, Token, Type, TypeReference,
+};
 
 /// This macro converts
 ///
 /// ```ignore
 /// 
 /// impl Foo {
-///     #[validator_method]
+///     #[extra_validator]
 ///     fn validate_foo(&mut self, arg: Arg1) -> Result<Ret, ()> {
 ///         // body
 ///         Err(err)?;
@@ -46,11 +49,11 @@ use syn::{ExprTryBlock, ImplItemMethod, ReturnType};
 /// }
 /// ```
 #[proc_macro_attribute]
-pub fn validator_method(
+pub fn extra_validator(
     _: proc_macro::TokenStream,
     item: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
-    fn expand_validator_method(i: ImplItemMethod) -> ImplItemMethod {
+    fn expand_extra_validator(i: ImplItemMethod) -> ImplItemMethod {
         let should_return = match i.sig.output {
             ReturnType::Default => false,
             _ => true,
@@ -75,7 +78,7 @@ pub fn validator_method(
                             match res {
                                 Ok(v) => Ok(v),
                                 Err(err) => {
-                                    self.info.errors.push(err);
+                                    self.storage.report(err);
                                     Err(())
                                 }
                             }
@@ -95,7 +98,7 @@ pub fn validator_method(
 
                             match res {
                                 Err(err) => {
-                                    self.info.errors.push(err);
+                                    self.storage.report(err);
                                 }
                                 _ => {}
                             }
@@ -109,6 +112,124 @@ pub fn validator_method(
     }
 
     let item = syn::parse(item).expect("failed to parse input as an item");
-    let item = expand_validator_method(item);
-    print("validator_method", item.dump())
+    let item = expand_extra_validator(item);
+    print("extra_validator", item.dump())
+}
+
+/// This trait implements Validate with proper types.
+#[proc_macro_attribute]
+pub fn validator(
+    _: proc_macro::TokenStream,
+    item: proc_macro::TokenStream,
+) -> proc_macro::TokenStream {
+    let impl_item: ItemImpl = syn::parse(item).expect("failed to parse input as an ItemImpl");
+    let visitor_type = &*impl_item.self_ty;
+
+    let mut tokens = q!({});
+    for mtd in &impl_item.items {
+        let mtd = match mtd {
+            ImplItem::Method(m) => m,
+            _ => unimplemented!("items other than method is not supported yet"),
+        };
+        let sig = &mtd.sig;
+        assert_eq!(
+            sig.ident, "validate",
+            "#[validator] wants the name of method `validate`"
+        );
+
+        // We want to implement Validate<'context, T> for Analyzer, so we need to find
+        // `T`.
+        let mut node_pat = None;
+        let mut node_type = None;
+        let mut context_types = Punctuated::<_, Token![,]>::default();
+        let mut context_pats = Punctuated::<_, Token![,]>::default();
+        for input in sig.inputs.pairs().skip(1) {
+            match input.value() {
+                FnArg::Receiver(_) => panic!("Expected type, not receiver"),
+                FnArg::Typed(pat_ty) => {
+                    let ty = &*pat_ty.ty;
+
+                    // Find `T`
+                    if node_type == None {
+                        match ty {
+                            Type::Reference(ty) if ty.mutability.is_some() => {
+                                node_type = Some(ty.elem.clone());
+                            }
+                            _ => unimplemented!(
+                                "first argument should be self and second argument must be `&mut \
+                                 T`"
+                            ),
+                        }
+                        node_pat = Some(pat_ty.pat.clone());
+                        continue;
+                    }
+
+                    // Now we look for extra context args
+                    // TODO: Fix span
+                    {
+                        let mut ty = ty.clone();
+                        ty = LifetimeReplacer.fold_type(ty);
+
+                        context_types.push(ty);
+                        context_pats.push(pat_ty.pat.clone());
+                    }
+                }
+            }
+        }
+
+        let ret_ty = &mtd.sig.output;
+        let default_ty;
+        let ret_ty = match ret_ty {
+            ReturnType::Type(_, ty) => &**ty,
+            ReturnType::Default => {
+                default_ty = q!((crate::ValidationResult<()>)).parse();
+                &default_ty
+            }
+        };
+
+        let mut item = q!(
+            Vars {
+                VisitorType: visitor_type,
+                NodeType: &node_type,
+                ReturnType: &ret_ty,
+                ContextType: &context_types,
+                body: &mtd.block,
+                node_pat: &node_pat.unwrap(),
+                conext_pats: &context_pats,
+            },
+            {
+                impl<'context> crate::validator::Validate<'context, NodeType> for VisitorType {
+                    type Output = ReturnType;
+                    type Context = (ContextType);
+
+                    fn validate(
+                        &mut self,
+                        node_pat: &mut NodeType,
+                        ctxt: Self::Context,
+                    ) -> ReturnType {
+                        let (conext_pats) = ctxt;
+                        body
+                    }
+                }
+            }
+        )
+        .parse::<ItemImpl>();
+        item.attrs.extend(impl_item.attrs.clone());
+
+        tokens.push_tokens(&item)
+    }
+
+    print("validator", tokens.dump())
+}
+
+struct LifetimeReplacer;
+
+impl Fold for LifetimeReplacer {
+    fn fold_type_reference(&mut self, mut i: TypeReference) -> TypeReference {
+        i.lifetime = Some(Lifetime {
+            apostrophe: call_site(),
+            ident: Ident::new("context", call_site()),
+        });
+        i
+    }
 }

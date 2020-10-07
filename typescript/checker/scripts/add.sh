@@ -27,7 +27,7 @@ export TEST="$1"
 if [[ -z $1 ]]; then
   cargo test --test tests -- conformance
 else
-  ( set -o pipefail; cargo test --test tests -- conformance | grep --color -E 'swc_ecma_ast|swc_ts_checker|$' )
+  ( set -o pipefail; cargo test --test tests -- conformance | grep --color -E 'swc_ecma_ast|stc_checker|$' )
 fi
 
 echo "$1" >> ./tests/done.txt

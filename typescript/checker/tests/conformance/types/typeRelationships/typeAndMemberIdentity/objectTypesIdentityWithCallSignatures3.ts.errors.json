@@ -1,12 +1,1 @@
-[
-    {
-        "line": 21,
-        "column": 25,
-        "msg": "Cannot find name 'b'."
-    },
-    {
-        "line": 22,
-        "column": 25,
-        "msg": "Cannot find name 'b'."
-    }
-]
+[]

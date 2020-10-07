@@ -1,0 +1,1 @@
+export const arrow = (a: string) => a

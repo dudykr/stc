@@ -1,20 +1,46 @@
+use crate::util::type_ext::TypeVecExt;
 use crate::{
     analyzer::{util::ResultExt, Analyzer, Ctx},
     debug::print_type,
     errors::Error,
     ty::{Array, Type, TypeExt},
-    util::TypeEq,
+    validator,
     validator::{Validate, ValidateWith},
     ValidationResult,
 };
+use stc_types::ModuleId;
+use stc_types::{
+    eq::TypeEq, Fold, FoldWith, IndexedAccessType, MethodSignature, Operator, PropertySignature,
+    Ref, TypeElement, TypeParamInstantiation,
+};
+use std::{mem::take, ops::AddAssign};
 use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
 use swc_ecma_utils::{ExprExt, Value::Known};
 use swc_ecma_visit::{Node, Visit, VisitMut, VisitMutWith, VisitWith};
-use swc_ts_types::{
-    Fold, FoldWith, IndexedAccessType, MethodSignature, Operator, PropertySignature, Ref,
-    TypeElement, TypeParamInstantiation,
-};
+
+#[derive(Debug, Default)]
+pub(in crate::analyzer) struct ReturnValues {
+    /// If all cases are handled, `return literal` like `return 5` and never
+    /// type is used, we should not generalize the return value.
+    should_generalize: bool,
+    pub return_types: Vec<Box<Type>>,
+    yield_types: Vec<Box<Type>>,
+    /// Are we in if or switch statement?
+    pub(super) in_conditional: bool,
+    pub(super) forced_never: bool,
+}
+
+impl AddAssign for ReturnValues {
+    fn add_assign(&mut self, rhs: Self) {
+        self.should_generalize |= rhs.should_generalize;
+
+        self.return_types.extend(rhs.return_types);
+        self.yield_types.extend(rhs.yield_types);
+
+        self.forced_never |= rhs.forced_never;
+    }
+}
 
 impl Analyzer<'_, '_> {
     /// This method returns `Generator` if `yield` is found.
@@ -26,106 +52,81 @@ impl Analyzer<'_, '_> {
         span: Span,
         is_async: bool,
         is_generator: bool,
-        stmts: &mut [Stmt],
+        stmts: &mut Vec<Stmt>,
     ) -> Result<Option<Box<Type>>, Error> {
-        log::debug!("visit_stmts_for_return()");
+        slog::debug!(self.logger, "visit_stmts_for_return()");
 
         // let mut old_ret_tys = self.scope.return_types.take();
 
-        let (mut return_types, mut yield_types) = {
-            let order = self.reorder_stmts(&*stmts);
-            assert_eq!(order.len(), stmts.len());
-
+        let mut values: ReturnValues = {
             let ctx = Ctx {
                 preserve_ref: true,
                 ..self.ctx
             };
-            self.with_ctx(ctx).with(|analyzer| {
-                let mut v = ReturnTypeCollector {
-                    analyzer,
-                    return_types: Default::default(),
-                    yield_types: Default::default(),
-                    in_conditional: false,
-                    forced_never: false,
-                };
+            self.with_ctx(ctx).with(|analyzer: &mut Analyzer| {
+                analyzer.validate_stmts_and_collect(stmts);
 
-                for idx in order {
-                    stmts[idx].visit_mut_with(&mut v);
-                }
-
-                //  Expand return types if no element references a type parameter
-
-                (v.return_types, v.yield_types)
+                take(&mut analyzer.scope.return_values)
             })
         };
 
         {
-            let can_expand = return_types.iter().all(|ty| match ty {
-                Ok(ty) => {
-                    if should_preserve_ref(ty) {
-                        return false;
-                    }
-
-                    true
+            //  Expand return types if no element references a type parameter
+            let can_expand = values.return_types.iter().all(|ty| {
+                if should_preserve_ref(ty) {
+                    return false;
                 }
-                _ => false,
+
+                true
             });
 
             if can_expand {
-                return_types = return_types
+                values.return_types = values
+                    .return_types
                     .into_iter()
-                    .map(|res| match res {
-                        Ok(ty) => {
-                            let ctx = Ctx {
-                                preserve_ref: true,
-                                ignore_expand_prevention_for_top: false,
-                                ignore_expand_prevention_for_all: false,
-                                ..self.ctx
-                            };
-                            let ty = self.with_ctx(ctx).expand_fully(ty.span(), ty, true)?;
-                            Ok(ty)
-                        }
-                        Err(e) => Err(e),
+                    .map(|ty| {
+                        let ctx = Ctx {
+                            preserve_ref: true,
+                            ignore_expand_prevention_for_top: false,
+                            ignore_expand_prevention_for_all: false,
+                            ..self.ctx
+                        };
+                        self.with_ctx(ctx).expand_fully(ty.span(), ty, true)
                     })
-                    .collect();
+                    .collect::<Result<_, _>>()?;
 
-                yield_types = yield_types
+                values.yield_types = values
+                    .yield_types
                     .into_iter()
-                    .map(|res| match res {
-                        Ok(ty) => self.expand_fully(ty.span(), ty, true),
-                        Err(e) => Err(e),
-                    })
-                    .collect();
+                    .map(|ty| self.expand_fully(ty.span(), ty, true))
+                    .collect::<Result<_, _>>()?;
             }
         }
 
-        log::debug!(
+        slog::debug!(
+            self.logger,
             "visit_stmts_for_return: types.len() = {}",
-            return_types.len()
+            values.return_types.len()
         );
 
-        let mut actual = Vec::with_capacity(return_types.len());
-        for ty in return_types {
-            let ty = ty
-                .map(|ty| ty.fold_with(&mut KeyInliner { analyzer: self }))
-                .map(|ty| {
-                    if is_async || is_generator {
-                        ty.generalize_lit()
-                    } else {
-                        print_type("Inferred", &self.cm, &ty);
-                        self.generalize_ret_ty(ty)
-                    }
-                })
-                .map(|ty| self.simplify(ty));
+        let mut actual = Vec::with_capacity(values.return_types.len());
+        for mut ty in values.return_types {
+            ty = ty.fold_with(&mut KeyInliner { analyzer: self });
+            // Always generalize for nowx
+            // TODO: Fix this
+            if values.should_generalize || is_async || is_generator || true {
+                ty = ty.generalize_lit();
+            }
 
-            actual.extend(ty.store(&mut self.info.errors));
+            actual.push(ty);
         }
 
         if is_generator {
-            let mut types = Vec::with_capacity(yield_types.len());
-            for ty in yield_types {
-                let ty = ty.map(|ty| ty.generalize_lit()).map(|ty| self.simplify(ty));
-                types.extend(ty.store(&mut self.info.errors));
+            let mut types = Vec::with_capacity(values.yield_types.len());
+            for ty in values.yield_types {
+                let ty = ty.generalize_lit();
+                let ty = self.simplify(ty);
+                types.push(ty);
             }
 
             let yield_ty = if types.is_empty() {
@@ -137,11 +138,12 @@ impl Analyzer<'_, '_> {
             let ret_ty = if actual.is_empty() {
                 Type::void(span)
             } else {
-                Type::union(actual)
+                self.simplify(Type::union(actual))
             };
 
             return Ok(Some(box Type::Ref(Ref {
                 span,
+                ctxt: ModuleId::builtin(),
                 type_name: if is_async {
                     TsEntityName::Ident(Ident::new("AsyncGenerator".into(), DUMMY_SP))
                 } else {
@@ -165,11 +167,12 @@ impl Analyzer<'_, '_> {
             let ret_ty = if actual.is_empty() {
                 Type::void(span)
             } else {
-                Type::union(actual)
+                self.simplify(Type::union(actual))
             };
 
             return Ok(Some(box Type::Ref(Ref {
                 span,
+                ctxt: ModuleId::builtin(),
                 type_name: TsEntityName::Ident(Ident::new("Promise".into(), DUMMY_SP)),
                 type_args: Some(TypeParamInstantiation {
                     span,
@@ -181,7 +184,10 @@ impl Analyzer<'_, '_> {
         if actual.is_empty() {
             return Ok(None);
         }
+
+        actual.dedup_type();
         let ty = Type::union(actual);
+        let ty = self.simplify(ty);
 
         // print_type("Return", &self.cm, &ty);
 
@@ -189,184 +195,45 @@ impl Analyzer<'_, '_> {
     }
 }
 
-trait MyVisitor: Validate<Expr, Output = ValidationResult> + VisitMut {}
-impl MyVisitor for Analyzer<'_, '_> {}
-
-struct ReturnTypeCollector<'a, A>
-where
-    A: MyVisitor,
-{
-    pub analyzer: &'a mut A,
-    pub return_types: Vec<Result<Box<Type>, Error>>,
-    pub yield_types: Vec<Result<Box<Type>, Error>>,
-    /// Are we in if or switch statement?
-    pub in_conditional: bool,
-    pub forced_never: bool,
-}
-
-impl<A> ReturnTypeCollector<'_, A>
-where
-    A: MyVisitor,
-{
-    fn is_always_true(&mut self, e: &mut Expr) -> bool {
-        if let (_, Known(v)) = e.as_bool() {
-            return v;
-        }
-
-        match self.analyzer.validate(e) {
-            Ok(ty) => {
-                if let Known(v) = ty.as_bool() {
-                    return v;
-                }
-            }
-            Err(err) => {
-                self.return_types.push(Err(err));
-                return false;
-            }
-        }
-
-        false
-    }
-}
-
-macro_rules! simple {
-    ($name:ident, $T:ty) => {
-        fn $name(&mut self, node: &mut $T) {
-            // TODO: Prevent recursion of analyzer
-            node.visit_mut_with(self.analyzer);
-            node.visit_mut_children_with(self);
-        }
-    };
-}
-
-impl<A> VisitMut for ReturnTypeCollector<'_, A>
-where
-    A: MyVisitor,
-{
-    simple!(visit_mut_block_stmt, BlockStmt);
-    simple!(visit_mut_labeled_stmt, LabeledStmt);
-    simple!(visit_mut_break_stmt, BreakStmt);
-    simple!(visit_mut_continue_stmt, ContinueStmt);
-    simple!(visit_mut_if_stmt, IfStmt);
-    simple!(visit_mut_switch_stmt, SwitchStmt);
-    simple!(visit_mut_throw_stmt, ThrowStmt);
-    simple!(visit_mut_try_stmt, TryStmt);
-    simple!(visit_mut_while_stmt, WhileStmt);
-    simple!(visit_mut_do_while_stmt, DoWhileStmt);
-    simple!(visit_mut_for_stmt, ForStmt);
-    simple!(visit_mut_for_in_stmt, ForInStmt);
-    simple!(visit_mut_for_of_stmt, ForOfStmt);
-    simple!(visit_mut_decl, Decl);
-    simple!(visit_mut_expr_stmt, ExprStmt);
-
-    fn visit_mut_expr(&mut self, e: &mut Expr) {
-        match e {
-            Expr::Yield(..) => {
-                e.visit_mut_children_with(self);
-                return;
-            }
-            _ => {}
-        }
-
-        let ty: Result<_, Error> = try {
-            let ty = e.validate_with(self.analyzer)?;
-            match ty.normalize() {
-                Type::Keyword(TsKeywordType {
-                    kind: TsKeywordTypeKind::TsNeverKeyword,
-                    ..
-                }) => {
-                    log::info!("found never type");
-                    self.return_types.push(Ok(ty))
-                }
-                _ => {}
-            }
-
-            ()
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, node: &mut ReturnStmt) {
+        let ty = if let Some(res) = node.arg.validate_with_default(self) {
+            res?
+        } else {
+            box Type::Keyword(TsKeywordType {
+                span: node.span,
+                kind: TsKeywordTypeKind::TsVoidKeyword,
+            })
         };
 
-        match ty {
-            Ok(()) => {}
-            Err(err) => self.return_types.push(Err(err)),
-        }
+        self.scope.return_values.return_types.push(ty);
+
+        Ok(())
     }
-
-    fn visit_mut_yield_expr(&mut self, e: &mut YieldExpr) {
-        if let Some(res) = e.arg.validate_with(self.analyzer) {
-            self.yield_types.push(res);
-        } else {
-            self.return_types.push(Ok(box Type::Keyword(TsKeywordType {
-                span: e.span,
-                kind: TsKeywordTypeKind::TsVoidKeyword,
-            })));
-        }
-    }
-
-    fn visit_mut_return_stmt(&mut self, s: &mut ReturnStmt) {
-        if let Some(res) = s.arg.validate_with(self.analyzer) {
-            self.return_types.push(res)
-        } else {
-            self.return_types.push(Ok(box Type::Keyword(TsKeywordType {
-                span: s.span,
-                kind: TsKeywordTypeKind::TsVoidKeyword,
-            })));
-        }
-    }
-
-    fn visit_mut_stmt(&mut self, s: &mut Stmt) {
-        let old_in_conditional = self.in_conditional;
-        self.in_conditional |= match s {
-            Stmt::If(_) => true,
-            Stmt::Switch(_) => true,
-            _ => false,
-        };
-
-        s.visit_mut_children_with(self);
-
-        // Of `s` is always executed and we enter infinite loop, return type should be
-        // never
-        if !self.in_conditional {
-            log::trace!("Checking for infinite loop");
-            let mut v = LoopBreakerFinder { found: false };
-            s.visit_with(&Invalid { span: DUMMY_SP }, &mut v);
-            let has_break = v.found;
-            if !has_break {
-                match s {
-                    Stmt::While(s) => {
-                        if self.is_always_true(&mut s.test) {
-                            self.forced_never = true;
-                        }
-                    }
-                    Stmt::DoWhile(s) => {
-                        if self.is_always_true(&mut s.test) {
-                            self.forced_never = true;
-                        }
-                    }
-                    Stmt::For(s) => {
-                        if let Some(test) = &mut s.test {
-                            if self.is_always_true(test) {
-                                self.forced_never = true;
-                            }
-                        } else {
-                            self.forced_never = true;
-                        }
-                    }
-                    _ => {}
-                }
-            }
-        }
-
-        self.in_conditional = old_in_conditional;
-    }
-
-    /// no-op
-    fn visit_mut_arrow_expr(&mut self, _: &mut ArrowExpr) {}
-
-    /// no-op
-    fn visit_mut_function(&mut self, _: &mut Function) {}
 }
 
-struct LoopBreakerFinder {
-    found: bool,
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, e: &mut YieldExpr) -> ValidationResult {
+        if let Some(res) = e.arg.validate_with_default(self) {
+            self.scope.return_values.yield_types.push(res?);
+        } else {
+            self.scope
+                .return_values
+                .yield_types
+                .push(box Type::Keyword(TsKeywordType {
+                    span: e.span,
+                    kind: TsKeywordTypeKind::TsVoidKeyword,
+                }));
+        }
+
+        Ok(Type::any(e.span))
+    }
+}
+
+pub(super) struct LoopBreakerFinder {
+    pub found: bool,
 }
 
 impl Visit for LoopBreakerFinder {

@@ -1,30 +1,59 @@
+use super::props::ComputedPropMode;
+use super::util::ResultExt;
 use super::Analyzer;
-use crate::{
-    analyzer::{props::ComputedPropMode, util::ResultExt, Ctx, ScopeKind},
-    ty,
-    ty::{
-        Alias, Array, CallSignature, Conditional, ConstructorSignature, ImportType, IndexSignature,
-        IndexedAccessType, InferType, Interface, Intersection, Mapped, MethodSignature, Operator,
-        Predicate, PropertySignature, QueryExpr, QueryType, Ref, TsExpr, Tuple, Type, TypeElement,
-        TypeLit, TypeParam, TypeParamDecl, TypeParamInstantiation, Union,
-    },
-    util::{contains_infer_type, PatExt},
-    validator::{Validate, ValidateWith},
-    ValidationResult,
-};
+use super::Ctx;
+use super::ScopeKind;
+use crate::util::contains_infer_type;
+use crate::util::type_ext::TypeExt;
+use crate::util::PatExt;
+use crate::validator;
+use crate::validator::ValidateWith;
+use crate::ValidationResult;
+use stc_types::Alias;
+use stc_types::Array;
+use stc_types::CallSignature;
+use stc_types::Conditional;
+use stc_types::ConstructorSignature;
+use stc_types::Id;
+use stc_types::ImportType;
+use stc_types::IndexSignature;
+use stc_types::IndexedAccessType;
+use stc_types::InferType;
+use stc_types::Interface;
+use stc_types::Intersection;
+use stc_types::Mapped;
+use stc_types::MethodSignature;
+use stc_types::Operator;
+use stc_types::OptionalType;
+use stc_types::Predicate;
+use stc_types::PropertySignature;
+use stc_types::QueryExpr;
+use stc_types::QueryType;
+use stc_types::Ref;
+use stc_types::RestType;
+use stc_types::TsExpr;
+use stc_types::Tuple;
+use stc_types::TupleElement;
+use stc_types::Type;
+use stc_types::TypeElement;
+use stc_types::TypeLit;
+use stc_types::TypeParam;
+use stc_types::TypeParamDecl;
+use stc_types::TypeParamInstantiation;
+use stc_types::Union;
 use swc_atoms::js_word;
-use swc_common::{Mark, Spanned, DUMMY_SP};
+use swc_common::Mark;
+use swc_common::Spanned;
+use swc_common::DUMMY_SP;
 use swc_ecma_ast::*;
 use swc_ecma_utils::prop_name_to_expr;
 use swc_ecma_visit::VisitMutWith;
-use swc_ts_types::{Id, OptionalType, RestType, TupleElement};
 
 /// We analyze dependencies between type parameters, and fold parameter in
 /// topological order.
-impl Validate<TsTypeParamDecl> for Analyzer<'_, '_> {
-    type Output = ValidationResult<TypeParamDecl>;
-
-    fn validate(&mut self, decl: &mut TsTypeParamDecl) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, decl: &mut TsTypeParamDecl) -> ValidationResult<TypeParamDecl> {
         self.record(decl);
 
         if self.is_builtin {
@@ -56,17 +85,16 @@ impl Validate<TsTypeParamDecl> for Analyzer<'_, '_> {
     }
 }
 
-impl Validate<TsTypeParam> for Analyzer<'_, '_> {
-    type Output = ValidationResult<TypeParam>;
-
-    fn validate(&mut self, p: &mut TsTypeParam) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, p: &mut TsTypeParam) -> ValidationResult<TypeParam> {
         self.record(p);
 
         let param = TypeParam {
             span: p.span,
             name: p.name.clone().into(),
-            constraint: try_opt!(self.validate(&mut p.constraint)),
-            default: try_opt!(self.validate(&mut p.default)),
+            constraint: try_opt!(p.constraint.validate_with(self)),
+            default: try_opt!(p.default.validate_with(self)),
         };
         self.register_type(param.name.clone().into(), box param.clone().into())?;
 
@@ -74,22 +102,21 @@ impl Validate<TsTypeParam> for Analyzer<'_, '_> {
     }
 }
 
-impl Validate<TsTypeAnn> for Analyzer<'_, '_> {
-    type Output = ValidationResult;
-
+#[validator]
+impl Analyzer<'_, '_> {
     #[inline]
-    fn validate(&mut self, ann: &mut TsTypeAnn) -> Self::Output {
+    fn validate(&mut self, ann: &mut TsTypeAnn) -> ValidationResult {
         self.record(ann);
 
-        self.validate(&mut ann.type_ann)
+        ann.type_ann.validate_with(self)
     }
 }
 
-impl Validate<TsTypeAliasDecl> for Analyzer<'_, '_> {
-    type Output = ValidationResult<Alias>;
-
-    fn validate(&mut self, d: &mut TsTypeAliasDecl) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, d: &mut TsTypeAliasDecl) -> ValidationResult<Alias> {
         self.record(d);
+        let mut span = d.span;
 
         let alias = {
             self.with_child(
@@ -100,11 +127,14 @@ impl Validate<TsTypeAliasDecl> for Analyzer<'_, '_> {
 
                     let mut ty = d.type_ann.validate_with(child)?;
                     // If infer type exists, it should be expanded to remove infer type.
-                    if !contains_infer_type(&ty) {
+                    if contains_infer_type(&ty) || child.contains_infer_type(&ty) {
+                        span = child.mark_as_infer_type_container(span);
+                        child.mark_type_as_infer_type_container(&mut ty);
+                    } else {
                         child.prevent_expansion(&mut ty);
                     }
                     let alias = Alias {
-                        span: d.span(),
+                        span,
                         ty,
                         type_params,
                     };
@@ -118,10 +148,9 @@ impl Validate<TsTypeAliasDecl> for Analyzer<'_, '_> {
     }
 }
 
-impl Validate<TsInterfaceDecl> for Analyzer<'_, '_> {
-    type Output = ValidationResult<Interface>;
-
-    fn validate(&mut self, d: &mut TsInterfaceDecl) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, d: &mut TsInterfaceDecl) -> ValidationResult<Interface> {
         let ty: Interface = self.with_child(
             ScopeKind::Flow,
             Default::default(),
@@ -129,15 +158,15 @@ impl Validate<TsInterfaceDecl> for Analyzer<'_, '_> {
                 let mut ty = Interface {
                     span: d.span,
                     name: d.id.clone().into(),
-                    type_params: try_opt!(child.validate(&mut d.type_params)),
-                    extends: child.validate(&mut d.extends)?,
-                    body: child.validate(&mut d.body)?,
+                    type_params: try_opt!(d.type_params.validate_with(&mut *child)),
+                    extends: d.extends.validate_with(child)?,
+                    body: d.body.validate_with(child)?,
                 };
                 child.prevent_expansion(&mut ty.body);
 
                 child
                     .register_type(d.id.clone().into(), box ty.clone().into())
-                    .store(&mut child.info.errors);
+                    .report(&mut child.storage);
 
                 child.resolve_parent_interfaces(&mut d.extends);
 
@@ -146,16 +175,15 @@ impl Validate<TsInterfaceDecl> for Analyzer<'_, '_> {
         )?;
 
         // TODO: Recover
-        self.register_type(d.id.clone().into(), box ty.clone().into())?;
+        self.register_type(d.id.clone().into(), Type::Interface(ty.clone()).cheap())?;
 
         Ok(ty)
     }
 }
 
-impl Validate<TsInterfaceBody> for Analyzer<'_, '_> {
-    type Output = ValidationResult<Vec<TypeElement>>;
-
-    fn validate(&mut self, node: &mut TsInterfaceBody) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, node: &mut TsInterfaceBody) -> ValidationResult<Vec<TypeElement>> {
         let ctx = Ctx {
             computed_prop_mode: ComputedPropMode::Interface,
             ..self.ctx
@@ -165,64 +193,62 @@ impl Validate<TsInterfaceBody> for Analyzer<'_, '_> {
     }
 }
 
-impl Validate<TsTypeLit> for Analyzer<'_, '_> {
-    type Output = ValidationResult<TypeLit>;
-
-    fn validate(&mut self, lit: &mut TsTypeLit) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, lit: &mut TsTypeLit) -> ValidationResult<TypeLit> {
         Ok(TypeLit {
             span: lit.span,
-            members: self.validate(&mut lit.members)?,
+            members: lit.members.validate_with(self)?,
         })
     }
 }
 
-impl Validate<TsTypeElement> for Analyzer<'_, '_> {
-    type Output = ValidationResult<TypeElement>;
-
-    fn validate(&mut self, e: &mut TsTypeElement) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, e: &mut TsTypeElement) -> ValidationResult<TypeElement> {
         Ok(match e {
-            TsTypeElement::TsCallSignatureDecl(d) => TypeElement::Call(self.validate(d)?),
+            TsTypeElement::TsCallSignatureDecl(d) => TypeElement::Call(d.validate_with(self)?),
             TsTypeElement::TsConstructSignatureDecl(d) => {
-                TypeElement::Constructor(self.validate(d)?)
+                TypeElement::Constructor(d.validate_with(self)?)
             }
-            TsTypeElement::TsIndexSignature(d) => TypeElement::Index(self.validate(d)?),
-            TsTypeElement::TsMethodSignature(d) => TypeElement::Method(self.validate(d)?),
-            TsTypeElement::TsPropertySignature(d) => TypeElement::Property(self.validate(d)?),
+            TsTypeElement::TsIndexSignature(d) => TypeElement::Index(d.validate_with(self)?),
+            TsTypeElement::TsMethodSignature(d) => TypeElement::Method(d.validate_with(self)?),
+            TsTypeElement::TsPropertySignature(d) => TypeElement::Property(d.validate_with(self)?),
         })
     }
 }
 
-impl Validate<TsConstructSignatureDecl> for Analyzer<'_, '_> {
-    type Output = ValidationResult<ConstructorSignature>;
-
-    fn validate(&mut self, d: &mut TsConstructSignatureDecl) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(
+        &mut self,
+        d: &mut TsConstructSignatureDecl,
+    ) -> ValidationResult<ConstructorSignature> {
         Ok(ConstructorSignature {
             span: d.span,
-            params: self.validate(&mut d.params)?,
-            type_params: try_opt!(self.validate(&mut d.type_params)),
-            ret_ty: try_opt!(self.validate(&mut d.type_ann)),
+            params: d.params.validate_with(self)?,
+            type_params: try_opt!(d.type_params.validate_with(self)),
+            ret_ty: try_opt!(d.type_ann.validate_with(self)),
         })
     }
 }
 
-impl Validate<TsCallSignatureDecl> for Analyzer<'_, '_> {
-    type Output = ValidationResult<CallSignature>;
-
-    fn validate(&mut self, d: &mut TsCallSignatureDecl) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, d: &mut TsCallSignatureDecl) -> ValidationResult<CallSignature> {
         Ok(CallSignature {
             span: d.span,
-            params: self.validate(&mut d.params)?,
-            type_params: try_opt!(self.validate(&mut d.type_params)),
-            ret_ty: try_opt!(self.validate(&mut d.type_ann)),
+            params: d.params.validate_with(self)?,
+            type_params: try_opt!(d.type_params.validate_with(self)),
+            ret_ty: try_opt!(d.type_ann.validate_with(self)),
         })
     }
 }
 
-impl Validate<TsMethodSignature> for Analyzer<'_, '_> {
-    type Output = ValidationResult<MethodSignature>;
-
-    fn validate(&mut self, d: &mut TsMethodSignature) -> Self::Output {
-        self.with_child(ScopeKind::Fn, Default::default(), |child| {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, d: &mut TsMethodSignature) -> ValidationResult<MethodSignature> {
+        self.with_child(ScopeKind::Fn, Default::default(), |child: &mut Analyzer| {
             if d.computed {
                 child.validate_computed_prop_key(d.span(), &mut d.key);
             }
@@ -233,31 +259,29 @@ impl Validate<TsMethodSignature> for Analyzer<'_, '_> {
                 key: d.key.clone(),
                 computed: d.computed,
                 optional: d.optional,
-                type_params: try_opt!(child.validate(&mut d.type_params)),
-                params: child.validate(&mut d.params)?,
-                ret_ty: try_opt!(child.validate(&mut d.type_ann)),
+                type_params: try_opt!(d.type_params.validate_with(child)),
+                params: d.params.validate_with(child)?,
+                ret_ty: try_opt!(d.type_ann.validate_with(child)),
             })
         })
     }
 }
 
-impl Validate<TsIndexSignature> for Analyzer<'_, '_> {
-    type Output = ValidationResult<IndexSignature>;
-
-    fn validate(&mut self, d: &mut TsIndexSignature) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, d: &mut TsIndexSignature) -> ValidationResult<IndexSignature> {
         Ok(IndexSignature {
             span: d.span,
-            params: self.validate(&mut d.params)?,
+            params: d.params.validate_with(self)?,
             readonly: d.readonly,
-            type_ann: try_opt!(self.validate(&mut d.type_ann)),
+            type_ann: try_opt!(d.type_ann.validate_with(self)),
         })
     }
 }
 
-impl Validate<TsPropertySignature> for Analyzer<'_, '_> {
-    type Output = ValidationResult<PropertySignature>;
-
-    fn validate(&mut self, d: &mut TsPropertySignature) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, d: &mut TsPropertySignature) -> ValidationResult<PropertySignature> {
         if !self.is_builtin && d.computed {
             ComputedPropName {
                 span: d.key.span(),
@@ -271,7 +295,7 @@ impl Validate<TsPropertySignature> for Analyzer<'_, '_> {
             computed: d.computed,
             key: d.key.clone(),
             optional: d.optional,
-            params: self.validate(&mut d.params)?,
+            params: d.params.validate_with(self)?,
             readonly: d.readonly,
             type_ann: {
                 // TODO: implicit any
@@ -281,7 +305,7 @@ impl Validate<TsPropertySignature> for Analyzer<'_, '_> {
                         Err(e) => {
                             d.type_ann = Some(Type::any(d.span).into());
 
-                            self.info.errors.push(e);
+                            self.storage.report(e);
                             Some(Type::any(d.span))
                         }
                     },
@@ -292,15 +316,14 @@ impl Validate<TsPropertySignature> for Analyzer<'_, '_> {
                     }
                 }
             },
-            type_params: try_opt!(self.validate(&mut d.type_params)),
+            type_params: try_opt!(d.type_params.validate_with(self)),
         })
     }
 }
 
-impl Validate<TsExprWithTypeArgs> for Analyzer<'_, '_> {
-    type Output = ValidationResult<TsExpr>;
-
-    fn validate(&mut self, e: &mut TsExprWithTypeArgs) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, e: &mut TsExprWithTypeArgs) -> ValidationResult<TsExpr> {
         Ok(TsExpr {
             span: e.span,
             expr: e.expr.clone(),
@@ -309,10 +332,12 @@ impl Validate<TsExprWithTypeArgs> for Analyzer<'_, '_> {
     }
 }
 
-impl Validate<TsTypeParamInstantiation> for Analyzer<'_, '_> {
-    type Output = ValidationResult<TypeParamInstantiation>;
-
-    fn validate(&mut self, i: &mut TsTypeParamInstantiation) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(
+        &mut self,
+        i: &mut TsTypeParamInstantiation,
+    ) -> ValidationResult<TypeParamInstantiation> {
         let params = i.params.validate_with(self)?;
 
         Ok(TypeParamInstantiation {
@@ -322,10 +347,9 @@ impl Validate<TsTypeParamInstantiation> for Analyzer<'_, '_> {
     }
 }
 
-impl Validate<TsTupleType> for Analyzer<'_, '_> {
-    type Output = ValidationResult<Tuple>;
-
-    fn validate(&mut self, t: &mut TsTupleType) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, t: &mut TsTupleType) -> ValidationResult<Tuple> {
         Ok(Tuple {
             span: t.span,
             elems: t.elem_types.validate_with(self)?,
@@ -333,10 +357,9 @@ impl Validate<TsTupleType> for Analyzer<'_, '_> {
     }
 }
 
-impl Validate<TsTupleElement> for Analyzer<'_, '_> {
-    type Output = ValidationResult<TupleElement>;
-
-    fn validate(&mut self, node: &mut TsTupleElement) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, node: &mut TsTupleElement) -> ValidationResult<TupleElement> {
         Ok(TupleElement {
             span: node.span,
             label: node.label.clone(),
@@ -345,10 +368,9 @@ impl Validate<TsTupleElement> for Analyzer<'_, '_> {
     }
 }
 
-impl Validate<TsConditionalType> for Analyzer<'_, '_> {
-    type Output = ValidationResult<Conditional>;
-
-    fn validate(&mut self, t: &mut TsConditionalType) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, t: &mut TsConditionalType) -> ValidationResult<Conditional> {
         Ok(Conditional {
             span: t.span,
             check_type: t.check_type.validate_with(self)?,
@@ -359,24 +381,23 @@ impl Validate<TsConditionalType> for Analyzer<'_, '_> {
     }
 }
 
-impl Validate<TsMappedType> for Analyzer<'_, '_> {
-    type Output = ValidationResult<Mapped>;
-
-    fn validate(&mut self, ty: &mut TsMappedType) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, ty: &mut TsMappedType) -> ValidationResult<Mapped> {
         Ok(Mapped {
             span: ty.span,
             readonly: ty.readonly,
             optional: ty.optional,
+            name_type: try_opt!(ty.name_type.validate_with(self)),
             type_param: ty.type_param.validate_with(self)?,
             ty: try_opt!(ty.type_ann.validate_with(self)),
         })
     }
 }
 
-impl Validate<TsTypeOperator> for Analyzer<'_, '_> {
-    type Output = ValidationResult<Operator>;
-
-    fn validate(&mut self, ty: &mut TsTypeOperator) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, ty: &mut TsTypeOperator) -> ValidationResult<Operator> {
         Ok(Operator {
             span: ty.span,
             op: ty.op,
@@ -385,10 +406,9 @@ impl Validate<TsTypeOperator> for Analyzer<'_, '_> {
     }
 }
 
-impl Validate<TsArrayType> for Analyzer<'_, '_> {
-    type Output = ValidationResult<Array>;
-
-    fn validate(&mut self, node: &mut TsArrayType) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, node: &mut TsArrayType) -> ValidationResult<Array> {
         Ok(Array {
             span: node.span,
             elem_type: node.elem_type.validate_with(self)?,
@@ -396,43 +416,40 @@ impl Validate<TsArrayType> for Analyzer<'_, '_> {
     }
 }
 
-impl Validate<TsUnionType> for Analyzer<'_, '_> {
-    type Output = ValidationResult<Union>;
-
-    fn validate(&mut self, u: &mut TsUnionType) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, u: &mut TsUnionType) -> ValidationResult<Union> {
         Ok(Union {
             span: u.span,
-            types: self.validate(&mut u.types)?,
+            types: u.types.validate_with(self)?,
         })
     }
 }
 
-impl Validate<TsIntersectionType> for Analyzer<'_, '_> {
-    type Output = ValidationResult<Intersection>;
-
-    fn validate(&mut self, u: &mut TsIntersectionType) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, u: &mut TsIntersectionType) -> ValidationResult<Intersection> {
         Ok(Intersection {
             span: u.span,
-            types: self.validate(&mut u.types)?,
+            types: u.types.validate_with(self)?,
         })
     }
 }
 
-impl Validate<TsFnType> for Analyzer<'_, '_> {
-    type Output = ValidationResult<ty::Function>;
-
-    fn validate(&mut self, t: &mut TsFnType) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, t: &mut TsFnType) -> ValidationResult<stc_types::Function> {
         let type_params = try_opt!(t.type_params.validate_with(self));
 
         for param in &mut t.params {
-            default_any_param(self.implicit_type_mark, param);
+            default_any_param(self.marks().implicit_type_mark, param);
         }
 
         let mut params: Vec<_> = t.params.validate_with(self)?;
 
         let ret_ty = t.type_ann.validate_with(self)?;
 
-        Ok(ty::Function {
+        Ok(stc_types::Function {
             span: t.span,
             type_params,
             params,
@@ -441,17 +458,16 @@ impl Validate<TsFnType> for Analyzer<'_, '_> {
     }
 }
 
-impl Validate<TsConstructorType> for Analyzer<'_, '_> {
-    type Output = ValidationResult<ty::Constructor>;
-
-    fn validate(&mut self, t: &mut TsConstructorType) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, t: &mut TsConstructorType) -> ValidationResult<stc_types::Constructor> {
         let type_params = try_opt!(t.type_params.validate_with(self));
 
         for param in &mut t.params {
-            default_any_param(self.implicit_type_mark, param);
+            default_any_param(self.marks().implicit_type_mark, param);
         }
 
-        Ok(ty::Constructor {
+        Ok(stc_types::Constructor {
             span: t.span,
             type_params,
             params: t.params.validate_with(self)?,
@@ -460,21 +476,20 @@ impl Validate<TsConstructorType> for Analyzer<'_, '_> {
     }
 }
 
-impl Validate<TsParenthesizedType> for Analyzer<'_, '_> {
-    type Output = ValidationResult;
-
-    fn validate(&mut self, t: &mut TsParenthesizedType) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, t: &mut TsParenthesizedType) -> ValidationResult {
         t.type_ann.validate_with(self)
     }
 }
 
-impl Validate<TsTypeRef> for Analyzer<'_, '_> {
-    type Output = ValidationResult;
-
-    fn validate(&mut self, t: &mut TsTypeRef) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, t: &mut TsTypeRef) -> ValidationResult {
         self.record(t);
 
         let type_args = try_opt!(t.type_params.validate_with(self));
+        let mut contains_infer = false;
 
         match t.type_name {
             TsEntityName::Ident(ref i) if i.sym == js_word!("Array") && type_args.is_some() => {
@@ -487,10 +502,13 @@ impl Validate<TsTypeRef> for Analyzer<'_, '_> {
             }
 
             TsEntityName::Ident(ref i) => {
-                if let Some(types) = self.find_type(&i.into()) {
+                if let Some(types) = self.find_type(self.ctx.module_id, &i.into())? {
                     for ty in types {
+                        if contains_infer_type(&ty) || self.contains_infer_type(&*ty) {
+                            contains_infer = true;
+                        }
                         match ty.normalize() {
-                            Type::Param(..) => return Ok(box ty.clone()),
+                            Type::Param(..) => return Ok(box ty.into_owned()),
                             _ => {}
                         }
                     }
@@ -501,22 +519,30 @@ impl Validate<TsTypeRef> for Analyzer<'_, '_> {
         }
 
         if !self.is_builtin {
-            log::warn!("Crating a ref from TsTypeRef: {:?}", t.type_name);
+            slog::warn!(
+                self.logger,
+                "Crating a ref from TsTypeRef: {:?}",
+                t.type_name
+            );
+        }
+        let mut span = t.span;
+        if contains_infer {
+            span = self.mark_as_infer_type_container(span);
         }
 
-        Ok(box Ref {
-            span: t.span,
+        Ok(Type::Ref(Ref {
+            span,
+            ctxt: self.ctx.module_id,
             type_name: t.type_name.clone(),
             type_args,
-        }
-        .into())
+        })
+        .cheap())
     }
 }
 
-impl Validate<TsInferType> for Analyzer<'_, '_> {
-    type Output = ValidationResult<InferType>;
-
-    fn validate(&mut self, t: &mut TsInferType) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, t: &mut TsInferType) -> ValidationResult<InferType> {
         self.record(t);
 
         Ok(InferType {
@@ -526,10 +552,9 @@ impl Validate<TsInferType> for Analyzer<'_, '_> {
     }
 }
 
-impl Validate<TsImportType> for Analyzer<'_, '_> {
-    type Output = ValidationResult<ImportType>;
-
-    fn validate(&mut self, t: &mut TsImportType) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, t: &mut TsImportType) -> ValidationResult<ImportType> {
         self.record(t);
 
         Ok(ImportType {
@@ -541,10 +566,9 @@ impl Validate<TsImportType> for Analyzer<'_, '_> {
     }
 }
 
-impl Validate<TsTypeQueryExpr> for Analyzer<'_, '_> {
-    type Output = ValidationResult<QueryExpr>;
-
-    fn validate(&mut self, t: &mut TsTypeQueryExpr) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, t: &mut TsTypeQueryExpr) -> ValidationResult<QueryExpr> {
         self.record(t);
 
         let span = t.span();
@@ -556,10 +580,9 @@ impl Validate<TsTypeQueryExpr> for Analyzer<'_, '_> {
     }
 }
 
-impl Validate<TsRestType> for Analyzer<'_, '_> {
-    type Output = ValidationResult<RestType>;
-
-    fn validate(&mut self, t: &mut TsRestType) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, t: &mut TsRestType) -> ValidationResult<RestType> {
         self.record(t);
 
         Ok(RestType {
@@ -569,10 +592,9 @@ impl Validate<TsRestType> for Analyzer<'_, '_> {
     }
 }
 
-impl Validate<TsOptionalType> for Analyzer<'_, '_> {
-    type Output = ValidationResult<OptionalType>;
-
-    fn validate(&mut self, t: &mut TsOptionalType) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, t: &mut TsOptionalType) -> ValidationResult<OptionalType> {
         self.record(t);
 
         Ok(OptionalType {
@@ -582,10 +604,9 @@ impl Validate<TsOptionalType> for Analyzer<'_, '_> {
     }
 }
 
-impl Validate<TsTypeQuery> for Analyzer<'_, '_> {
-    type Output = ValidationResult<QueryType>;
-
-    fn validate(&mut self, t: &mut TsTypeQuery) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, t: &mut TsTypeQuery) -> ValidationResult<QueryType> {
         self.record(t);
 
         Ok(QueryType {
@@ -595,25 +616,30 @@ impl Validate<TsTypeQuery> for Analyzer<'_, '_> {
     }
 }
 
-impl Validate<TsTypePredicate> for Analyzer<'_, '_> {
-    type Output = ValidationResult<Predicate>;
-
-    fn validate(&mut self, t: &mut TsTypePredicate) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, t: &mut TsTypePredicate) -> ValidationResult<Predicate> {
         self.record(t);
+        let mut ty = try_opt!(t.type_ann.validate_with(self));
+        match &mut ty {
+            Some(ty) => {
+                self.prevent_expansion(&mut **ty);
+            }
+            None => {}
+        }
 
         Ok(Predicate {
             span: t.span,
             param_name: t.param_name.clone(),
             asserts: t.asserts,
-            ty: try_opt!(t.type_ann.validate_with(self)),
+            ty,
         })
     }
 }
 
-impl Validate<TsIndexedAccessType> for Analyzer<'_, '_> {
-    type Output = ValidationResult<IndexedAccessType>;
-
-    fn validate(&mut self, t: &mut TsIndexedAccessType) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, t: &mut TsIndexedAccessType) -> ValidationResult<IndexedAccessType> {
         self.record(t);
 
         Ok(IndexedAccessType {
@@ -625,13 +651,12 @@ impl Validate<TsIndexedAccessType> for Analyzer<'_, '_> {
     }
 }
 
-impl Validate<TsType> for Analyzer<'_, '_> {
-    type Output = ValidationResult;
-
-    fn validate(&mut self, ty: &mut TsType) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, ty: &mut TsType) -> ValidationResult {
         self.record(ty);
 
-        Ok(box match ty {
+        let ty = match ty {
             TsType::TsThisType(this) => Type::This(this.clone()),
             TsType::TsLitType(ty) => {
                 let mut ty = Type::Lit(ty.clone());
@@ -639,26 +664,26 @@ impl Validate<TsType> for Analyzer<'_, '_> {
                 ty
             }
             TsType::TsKeywordType(ty) => Type::Keyword(ty.clone()),
-            TsType::TsTupleType(ty) => Type::Tuple(self.validate(ty)?),
+            TsType::TsTupleType(ty) => Type::Tuple(ty.validate_with(self)?),
             TsType::TsUnionOrIntersectionType(TsUnionOrIntersectionType::TsUnionType(u)) => {
-                Type::Union(self.validate(u)?)
+                Type::Union(u.validate_with(self)?)
             }
             TsType::TsUnionOrIntersectionType(TsUnionOrIntersectionType::TsIntersectionType(i)) => {
-                Type::Intersection(self.validate(i)?)
+                Type::Intersection(i.validate_with(self)?)
             }
-            TsType::TsArrayType(arr) => Type::Array(self.validate(arr)?),
+            TsType::TsArrayType(arr) => Type::Array(arr.validate_with(self)?),
             TsType::TsFnOrConstructorType(TsFnOrConstructorType::TsFnType(f)) => {
-                Type::Function(self.validate(f)?)
+                Type::Function(f.validate_with(self)?)
             }
             TsType::TsFnOrConstructorType(TsFnOrConstructorType::TsConstructorType(c)) => {
-                Type::Constructor(self.validate(c)?)
+                Type::Constructor(c.validate_with(self)?)
             }
-            TsType::TsTypeLit(lit) => Type::TypeLit(self.validate(lit)?),
-            TsType::TsConditionalType(cond) => Type::Conditional(self.validate(cond)?),
-            TsType::TsMappedType(ty) => Type::Mapped(self.validate(ty)?),
-            TsType::TsTypeOperator(ty) => Type::Operator(self.validate(ty)?),
-            TsType::TsParenthesizedType(ty) => return self.validate(ty),
-            TsType::TsTypeRef(ty) => return self.validate(ty),
+            TsType::TsTypeLit(lit) => Type::TypeLit(lit.validate_with(self)?),
+            TsType::TsConditionalType(cond) => Type::Conditional(cond.validate_with(self)?),
+            TsType::TsMappedType(ty) => Type::Mapped(ty.validate_with(self)?),
+            TsType::TsTypeOperator(ty) => Type::Operator(ty.validate_with(self)?),
+            TsType::TsParenthesizedType(ty) => return ty.validate_with(self),
+            TsType::TsTypeRef(ty) => *ty.validate_with(self)?,
             TsType::TsTypeQuery(ty) => Type::Query(ty.validate_with(self)?),
             TsType::TsOptionalType(ty) => Type::Optional(ty.validate_with(self)?),
             TsType::TsRestType(ty) => Type::Rest(ty.validate_with(self)?),
@@ -666,7 +691,8 @@ impl Validate<TsType> for Analyzer<'_, '_> {
             TsType::TsIndexedAccessType(ty) => Type::IndexedAccessType(ty.validate_with(self)?),
             TsType::TsTypePredicate(ty) => Type::Predicate(ty.validate_with(self)?),
             TsType::TsImportType(ty) => Type::Import(ty.validate_with(self)?),
-        })
+        };
+        Ok(ty.cheap())
     }
 }
 

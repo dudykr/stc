@@ -1,30 +1,47 @@
-use super::super::Analyzer;
+use super::{super::Analyzer, TypeOfMode};
 use crate::{
     analyzer::util::instantiate_class,
     errors::Error,
     ty::Type,
-    util::TypeEq,
+    validator,
     validator::{Validate, ValidateWith},
     ValidationResult,
 };
+use stc_types::{eq::TypeEq, TypeParamInstantiation};
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::*;
 
-impl Validate<TsTypeAssertion> for Analyzer<'_, '_> {
-    type Output = ValidationResult;
-
-    fn validate(&mut self, e: &mut TsTypeAssertion) -> ValidationResult {
-        let orig_ty = self.validate(&mut e.expr)?;
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(
+        &mut self,
+        e: &mut TsTypeAssertion,
+        mode: TypeOfMode,
+        type_args: Option<&TypeParamInstantiation>,
+        type_ann: Option<&Type>,
+    ) -> ValidationResult {
+        // We don't apply type annotation because it can corrupt type checking.
+        let orig_ty = e
+            .expr
+            .validate_with_args(self, (mode, type_args, type_ann))?;
 
         self.validate_type_cast(e.span, orig_ty, &mut e.type_ann)
     }
 }
 
-impl Validate<TsAsExpr> for Analyzer<'_, '_> {
-    type Output = ValidationResult;
-
-    fn validate(&mut self, e: &mut TsAsExpr) -> ValidationResult {
-        let orig_ty = self.validate(&mut e.expr)?;
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(
+        &mut self,
+        e: &mut TsAsExpr,
+        mode: TypeOfMode,
+        type_args: Option<&TypeParamInstantiation>,
+        type_ann: Option<&Type>,
+    ) -> ValidationResult {
+        // We don't apply type annotation because it can corrupt type checking.
+        let orig_ty = e
+            .expr
+            .validate_with_args(self, (mode, type_args, type_ann))?;
 
         self.validate_type_cast(e.span, orig_ty, &mut e.type_ann)
     }
@@ -53,9 +70,11 @@ impl Analyzer<'_, '_> {
         let orig_ty = self.expand_fully(span, orig_ty, true)?;
 
         let casted_ty = to.validate_with(self)?;
-        let casted_ty = instantiate_class(casted_ty);
-        let mut casted_ty = self.expand_fully(span, casted_ty, true)?;
+        let mut casted_ty = instantiate_class(self.ctx.module_id, casted_ty);
         self.prevent_inference_while_simplifying(&mut casted_ty);
+        casted_ty = self.simplify(casted_ty);
+
+        self.prevent_expansion(&mut casted_ty);
 
         self.validate_type_cast_inner(span, &orig_ty, &casted_ty)?;
 

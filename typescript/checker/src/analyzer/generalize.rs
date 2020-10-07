@@ -1,41 +1,27 @@
+use crate::util::type_ext::TypeVecExt;
 use crate::{
     analyzer::Analyzer,
-    debug::print_backtrace,
+    env::Env,
     ty::Type,
-    util::{is_str_lit_or_union, EqIgnoreSpan, Marker, TypeEq},
+    util::{is_str_lit_or_union, Marker},
+    Lib, Marks,
+};
+use slog::Logger;
+use stc_types::{
+    eq::{EqIgnoreSpan, TypeEq},
+    Array, Class, ClassMember, Fold, FoldWith, Id, IndexedAccessType, Mapped, Operator,
+    PropertySignature, Static, TypeElement, TypeLit, TypeParam, Union, VisitMutWith,
 };
 use swc_atoms::js_word;
 use swc_common::{Mark, Span, Spanned};
 use swc_ecma_ast::{
-    Expr, Number, Str, TsKeywordType, TsKeywordTypeKind, TsLit, TsLitType, TsTypeOperatorOp,
+    Expr, Ident, Number, Str, TsKeywordType, TsKeywordTypeKind, TsLit, TsLitType, TsTypeOperatorOp,
 };
-use swc_ts_types::{
-    Array, Class, ClassMember, Fold, FoldWith, IndexedAccessType, Mapped, Operator, TypeElement,
-    TypeLit, TypeParam, Union, VisitMutWith,
-};
-
-#[derive(Debug, Clone, Copy)]
-pub(super) struct Config {
-    /// If the mark is applied, it means that the type should not be
-    /// generalized.
-    prevent_mark: Mark,
-
-    prevent_complex_simplification_mark: Mark,
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            prevent_mark: Mark::fresh(Mark::root()),
-            prevent_complex_simplification_mark: Mark::fresh(Mark::root()),
-        }
-    }
-}
 
 impl Analyzer<'_, '_> {
     pub(super) fn may_generalize(&self, ty: &Type) -> bool {
-        log::trace!("may_generalize({:?})", ty);
-        match ty {
+        slog::trace!(self.logger, "may_generalize({:?})", ty);
+        match ty.normalize() {
             Type::Function(f) => {
                 if !self.may_generalize(&f.ret_ty) {
                     return false;
@@ -61,7 +47,7 @@ impl Analyzer<'_, '_> {
                 break;
             }
 
-            if m == self.generalizer.prevent_mark {
+            if m == self.marks().prevent_generalization_mark {
                 return false;
             }
         }
@@ -71,36 +57,41 @@ impl Analyzer<'_, '_> {
 
     pub(super) fn prevent_generalize(&self, ty: &mut Type) {
         let span = ty.span();
-        let span = span.apply_mark(self.generalizer.prevent_mark);
+        let span = span.apply_mark(self.marks().prevent_generalization_mark);
 
         ty.respan(span)
     }
 
     pub(super) fn prevent_inference_while_simplifying(&self, ty: &mut Type) {
         ty.visit_mut_with(&mut Marker {
-            mark: self.generalizer.prevent_complex_simplification_mark,
+            mark: self.marks().prevent_complex_simplification_mark,
         });
     }
 
     pub(super) fn prevent_generalize_span(&self, span: Span) -> Span {
-        span.apply_mark(self.generalizer.prevent_mark)
+        span.apply_mark(self.marks().prevent_generalization_mark)
     }
 
     pub(super) fn simplify(&self, ty: Box<Type>) -> Box<Type> {
+        slog::info!(self.logger, "Simplifying");
         ty.fold_with(&mut Simplifier {
-            prevent_generalize_mark: self.generalizer.prevent_mark,
-            prevent_simplification_mark: self.generalizer.prevent_complex_simplification_mark,
+            env: &self.env,
+            logger: self.logger.clone(),
+            prevent_generalize_mark: self.marks().prevent_generalization_mark,
+            prevent_inference_mark: self.marks().prevent_complex_simplification_mark,
         })
     }
 }
 
 /// Simplifies the type.
-struct Simplifier {
+struct Simplifier<'a> {
+    env: &'a Env,
+    logger: Logger,
     prevent_generalize_mark: Mark,
-    prevent_simplification_mark: Mark,
+    prevent_inference_mark: Mark,
 }
 
-impl Simplifier {
+impl Simplifier<'_> {
     fn should_skip_inference(&mut self, span: Span) -> bool {
         let mut ctxt = span.ctxt;
         loop {
@@ -109,7 +100,7 @@ impl Simplifier {
                 break;
             }
 
-            if m == self.prevent_simplification_mark {
+            if m == self.prevent_inference_mark {
                 return true;
             }
         }
@@ -118,22 +109,48 @@ impl Simplifier {
     }
 }
 
-impl Fold for Simplifier {
+impl Fold for Simplifier<'_> {
     fn fold_union(&mut self, mut union: Union) -> Union {
-        union.types.retain(|ty| {
-            if ty.is_kwd(TsKeywordTypeKind::TsNullKeyword)
-                | ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
-            {
-                return false;
-            }
-
-            true
+        let should_remove_null_and_undefined = union.types.iter().any(|ty| match ty.normalize() {
+            Type::TypeLit(..) => true,
+            Type::Ref(..) => true,
+            Type::Function(..) => true,
+            _ => false,
         });
+
+        if should_remove_null_and_undefined {
+            union.types.retain(|ty| {
+                if ty.is_kwd(TsKeywordTypeKind::TsNullKeyword)
+                    | ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
+                {
+                    return false;
+                }
+
+                true
+            });
+        }
+
+        let has_array = union.types.iter().any(|ty| match ty.normalize() {
+            Type::Array(..) => true,
+            _ => false,
+        });
+
+        // Remove empty tuple
+        if has_array {
+            union.types.retain(|ty| match ty.normalize() {
+                Type::Tuple(tuple) => !tuple.elems.is_empty(),
+                _ => true,
+            });
+        }
+
+        union.types.dedup_type();
 
         union
     }
 
     fn fold_type(&mut self, mut ty: Type) -> Type {
+        ty = ty.foldable();
+
         match ty {
             Type::Array(Array {
                 elem_type:
@@ -176,8 +193,129 @@ impl Fold for Simplifier {
         ty = ty.fold_children_with(self);
 
         match ty {
+            Type::IndexedAccessType(IndexedAccessType {
+                span,
+                readonly,
+                obj_type: box Type::Keyword(k),
+                index_type,
+            }) => {
+                let obj_type = self
+                    .env
+                    .get_global_type(
+                        span,
+                        &match k.kind {
+                            TsKeywordTypeKind::TsAnyKeyword => return *Type::any(span),
+                            TsKeywordTypeKind::TsUnknownKeyword => return *Type::unknown(span),
+                            TsKeywordTypeKind::TsNeverKeyword => return *Type::never(span),
+                            TsKeywordTypeKind::TsIntrinsicKeyword => {
+                                return Type::Keyword(TsKeywordType {
+                                    span,
+                                    kind: TsKeywordTypeKind::TsIntrinsicKeyword,
+                                })
+                            }
+                            TsKeywordTypeKind::TsNumberKeyword => js_word!("Number"),
+                            TsKeywordTypeKind::TsObjectKeyword => js_word!("Object"),
+                            TsKeywordTypeKind::TsBooleanKeyword => js_word!("Boolean"),
+                            TsKeywordTypeKind::TsStringKeyword => js_word!("String"),
+                            TsKeywordTypeKind::TsSymbolKeyword => js_word!("Symbol"),
+                            TsKeywordTypeKind::TsVoidKeyword
+                            | TsKeywordTypeKind::TsUndefinedKeyword
+                            | TsKeywordTypeKind::TsNullKeyword
+                            | TsKeywordTypeKind::TsBigIntKeyword => {
+                                return Type::IndexedAccessType(IndexedAccessType {
+                                    span,
+                                    readonly,
+                                    obj_type: box Type::Keyword(k),
+                                    index_type,
+                                })
+                            }
+                        },
+                    )
+                    .unwrap();
+
+                let s = match &*index_type {
+                    Type::Lit(TsLitType {
+                        lit: TsLit::Str(s), ..
+                    }) => s.clone(),
+                    _ => {
+                        return Type::IndexedAccessType(IndexedAccessType {
+                            span,
+                            readonly,
+                            obj_type: box Type::Keyword(k),
+                            index_type,
+                        })
+                    }
+                };
+
+                match obj_type.normalize() {
+                    Type::Interface(i) => {
+                        for element in &i.body {
+                            match element {
+                                TypeElement::Property(PropertySignature {
+                                    key,
+                                    computed: false,
+                                    type_ann: Some(type_ann),
+                                    ..
+                                }) => match &**key {
+                                    Expr::Ident(i) if i.sym == s.value => return *type_ann.clone(),
+                                    _ => {}
+                                },
+                                TypeElement::Method(_) => {}
+
+                                _ => {}
+                            }
+                        }
+                    }
+                    _ => unreachable!("Keyword types should have corresponding interfaced defined"),
+                }
+
+                return Type::IndexedAccessType(IndexedAccessType {
+                    span,
+                    readonly,
+                    obj_type,
+                    index_type,
+                });
+            }
+
             Type::Union(u) if u.types.is_empty() => {
                 return *Type::never(u.span);
+            }
+
+            Type::Mapped(Mapped {
+                span,
+                type_param:
+                    TypeParam {
+                        name,
+                        constraint: Some(constraint),
+                        ..
+                    },
+                ty,
+                ..
+            }) if is_str_lit_or_union(&constraint) => {
+                let members = constraint
+                    .iter_union()
+                    .filter_map(|ty| match ty {
+                        Type::Lit(TsLitType {
+                            lit: TsLit::Str(s), ..
+                        }) => Some(s),
+                        _ => None,
+                    })
+                    .map(|key| {
+                        TypeElement::Property(PropertySignature {
+                            span,
+                            // TODO:
+                            readonly: false,
+                            key: box Expr::Ident(Ident::new(key.value.clone(), key.span)),
+                            computed: false,
+                            optional: false,
+                            params: Default::default(),
+                            type_ann: ty.clone(),
+                            type_params: Default::default(),
+                        })
+                    })
+                    .collect();
+
+                return Type::TypeLit(TypeLit { span, members });
             }
 
             // TODO: Handle optional and reaonly
@@ -295,7 +433,7 @@ impl Fold for Simplifier {
                     })
                     .collect::<Vec<_>>();
 
-                types.dedup_by(|a, b| a.type_eq(&*b));
+                types.dedup_type();
 
                 return *Type::union(types);
             }
@@ -580,7 +718,7 @@ impl Fold for Simplifier {
                     })
                     .collect::<Vec<_>>();
 
-                new_types.dedup_by(|a, b| a.type_eq(&b));
+                new_types.dedup_type();
 
                 return *Type::union(new_types);
             }

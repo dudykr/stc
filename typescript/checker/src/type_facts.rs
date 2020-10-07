@@ -6,6 +6,55 @@ use swc_common::add_bitflags;
 bitflags! {
     pub struct TypeFacts: u32 {
         const None = 0;
+        /// typeof x === "string"
+        const TypeofEQString = 1 << 0;
+        /// typeof x === "number"
+        const TypeofEQNumber = 1 << 1;
+        /// typeof x === "bigint"
+        const TypeofEQBigInt = 1 << 2;
+        /// typeof x === "boolean"
+        const TypeofEQBoolean = 1 << 3;
+        /// typeof x === "symbol"
+        const TypeofEQSymbol = 1 << 4;
+        /// typeof x === "object"
+        const TypeofEQObject = 1 << 5;
+        /// typeof x === "function"
+        const TypeofEQFunction = 1 << 6;
+        /// typeof x === "xxx"
+        const TypeofEQHostObject = 1 << 7;
+        /// typeof x !== "string"
+        const TypeofNEString = 1 << 8;
+        /// typeof x !== "number"
+        const TypeofNENumber = 1 << 9;
+        /// typeof x !== "bigint"
+        const TypeofNEBigInt = 1 << 10;
+        /// typeof x !== "boolean"
+        const TypeofNEBoolean = 1 << 11;
+        /// typeof x !== "symbol"
+        const TypeofNESymbol = 1 << 12;
+        /// typeof x !== "object"
+        const TypeofNEObject = 1 << 13;
+        /// typeof x !== "function"
+        const TypeofNEFunction = 1 << 14;
+        /// typeof x !== "xxx"
+        const TypeofNEHostObject = 1 << 15;
+        /// x === undefined
+        const EQUndefined = 1 << 16;
+        /// x === null
+        const EQNull = 1 << 17;
+        /// x === undefined / x === null
+        const EQUndefinedOrNull = 1 << 18;
+        /// x !== undefined
+        const NEUndefined = 1 << 19;
+        /// x !== null
+        const NENull = 1 << 20;
+        /// x != undefined / x != null
+        const NEUndefinedOrNull = 1 << 21;
+        /// x
+        const Truthy = 1 << 22;
+        /// !x
+        const Falsy = 1 << 23;
+        const All = (1 << 24) - 1;
     }
 }
 
@@ -14,57 +63,7 @@ add_bitflags!(
     // Handled by bitflags! macro.
     // Values { None: 0 },
     /// Line separators
-    Values {
-        /// typeof x === "string"
-        TypeofEQString: 1 << 0,
-        /// typeof x === "number"
-        TypeofEQNumber: 1 << 1,
-        /// typeof x === "bigint"
-        TypeofEQBigInt: 1 << 2,
-        /// typeof x === "boolean"
-        TypeofEQBoolean: 1 << 3,
-        /// typeof x === "symbol"
-        TypeofEQSymbol: 1 << 4,
-        /// typeof x === "object"
-        TypeofEQObject: 1 << 5,
-        /// typeof x === "function"
-        TypeofEQFunction: 1 << 6,
-        /// typeof x === "xxx"
-        TypeofEQHostObject: 1 << 7,
-        /// typeof x !== "string"
-        TypeofNEString: 1 << 8,
-        /// typeof x !== "number"
-        TypeofNENumber: 1 << 9,
-        /// typeof x !== "bigint"
-        TypeofNEBigInt: 1 << 10,
-        /// typeof x !== "boolean"
-        TypeofNEBoolean: 1 << 11,
-        /// typeof x !== "symbol"
-        TypeofNESymbol: 1 << 12,
-        /// typeof x !== "object"
-        TypeofNEObject: 1 << 13,
-        /// typeof x !== "function"
-        TypeofNEFunction: 1 << 14,
-        /// typeof x !== "xxx"
-        TypeofNEHostObject: 1 << 15,
-        /// x === undefined
-        EQUndefined: 1 << 16,
-        /// x === null
-        EQNull: 1 << 17,
-        /// x === undefined / x === null
-        EQUndefinedOrNull: 1 << 18,
-        /// x !== undefined
-        NEUndefined: 1 << 19,
-        /// x !== null
-        NENull: 1 << 20,
-        /// x != undefined / x != null
-        NEUndefinedOrNull: 1 << 21,
-        /// x
-        Truthy: 1 << 22,
-        /// !x
-        Falsy: 1 << 23,
-        All: (1 << 24) - 1,
-    },
+    Values {},
     /// Delimiters
     Values {
         BaseStringStrictFacts: TypeofEQString

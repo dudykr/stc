@@ -1,7 +1,1 @@
-[
-    {
-        "line": 3,
-        "column": 5,
-        "msg": "'static' modifier cannot appear on an index signature."
-    }
-]
+[]

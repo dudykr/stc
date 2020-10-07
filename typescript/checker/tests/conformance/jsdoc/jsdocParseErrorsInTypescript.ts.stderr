@@ -1,6 +1,0 @@
-error: Unexpected token Some(RParen)
- --> $DIR/tests/conformance/jsdoc/jsdocParseErrorsInTypescript.ts:2:27
-  |
-2 | function parse1(n: number=) { }
-  |                           ^
-

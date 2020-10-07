@@ -1,6 +1,0 @@
-error: Unexpected eof
- --> $DIR/tests/conformance/parser/ecmascript5/TupleTypes/TupleType4.ts:1:9
-  |
-1 | var v: [
-  |         ^
-

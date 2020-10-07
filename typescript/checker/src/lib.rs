@@ -1,4 +1,7 @@
 #![allow(unused_variables)] // temporary
+#![allow(unused_imports)] // temporary
+#![allow(unused_mut)] // temporary
+#![allow(dead_code)] // temporary
 #![deny(unused_must_use)]
 #![deny(unreachable_patterns)]
 #![deny(mutable_borrow_reservation_conflict)]
@@ -10,32 +13,58 @@
 #![feature(option_expect_none)]
 #![recursion_limit = "1024"]
 
-pub use self::builtin_types::Lib;
+use self::dts::cleanup_module_for_dts;
+use self::mode::ErrorStore;
+use self::mode::File;
+use self::mode::Group;
+use self::mode::Single;
+pub use self::{analyzer::Marks, env::Lib};
+use self::{
+    env::{Env, StableEnv},
+    util::dashmap::DashMapExt,
+};
 use crate::{
     analyzer::{Analyzer, Info},
     errors::Error,
-    resolver::Resolver,
     ty::Type,
     validator::ValidateWith,
 };
-use dashmap::DashMap;
-use std::{path::PathBuf, sync::Arc};
+use dashmap::{DashMap, DashSet, SharedValue};
+use errors::Errors;
+use fxhash::FxHashMap;
+use once_cell::sync::OnceCell;
+use parking_lot::{Mutex, RwLock};
+use slog::Logger;
+use stc_checker_macros::validator;
+use stc_module_graph::resolver::node::NodeResolver;
+pub use stc_module_graph::{resolver::Resolve, ModuleGraph};
+use stc_types::ModuleId;
+pub use stc_types::{Id, ModuleTypeData};
+use stc_utils::early_error;
+use std::{mem::take, path::PathBuf, sync::Arc, time::Instant};
 use swc_atoms::JsWord;
-use swc_common::{errors::Handler, Globals, Mark, SourceMap, Span};
+use swc_common::{
+    comments::{Comment, Comments},
+    errors::Handler,
+    BytePos, Globals, SourceMap, Span, Spanned,
+};
 use swc_ecma_ast::Module;
 use swc_ecma_parser::{lexer::Lexer, JscTarget, Parser, StringInput, Syntax, TsConfig};
-use swc_ecma_visit::FoldWith as _;
-pub use swc_ts_types::{Id, ModuleTypeInfo};
+use swc_ecma_transforms::resolver::ts_resolver;
+use swc_ecma_visit::{FoldWith as _, VisitMutWith};
 
 #[macro_use]
 mod debug;
 pub mod analyzer;
-mod builtin_types;
+mod dts;
+pub mod env;
 pub mod errors;
 pub mod hygiene;
 pub mod loader;
+mod mode;
 pub mod name;
-pub mod resolver;
+#[cfg(test)]
+mod tests;
 pub mod ty;
 mod type_facts;
 pub mod util;
@@ -44,10 +73,8 @@ pub mod validator;
 pub type ValidationResult<T = Box<Type>> = Result<T, Error>;
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct ImportInfo {
+pub struct DepInfo {
     pub span: Span,
-    pub items: Vec<Specifier>,
-    pub all: bool,
     pub src: JsWord,
 }
 
@@ -64,8 +91,7 @@ pub struct Config {
     /// Directory to store .d.ts files.
     declaration_dir: PathBuf,
 
-    pub rule: Rule,
-    pub libs: Vec<Lib>,
+    pub env: StableEnv,
 }
 
 #[derive(Debug, Clone, Copy, Default)]
@@ -89,40 +115,49 @@ pub struct Rule {
 
 /// Onc instance per swc::Compiler
 pub struct Checker {
-    globals: Arc<swc_common::Globals>,
+    logger: Logger,
     cm: Arc<SourceMap>,
     handler: Arc<Handler>,
-    ts_config: TsConfig,
-    target: JscTarget,
     /// Cache
-    modules: Arc<DashMap<Arc<PathBuf>, (Module, Info)>>,
-    resolver: Resolver,
-    current: Arc<DashMap<Arc<PathBuf>, ()>>,
-    libs: Vec<Lib>,
-    rule: Rule,
+    module_types: RwLock<FxHashMap<ModuleId, Arc<OnceCell<Arc<ModuleTypeData>>>>>,
+
+    /// Informatnion required to generate `.d.ts` files.
+    dts_modules: Arc<DashMap<ModuleId, Module>>,
+
+    module_graph: Arc<ModuleGraph<StcComments, NodeResolver>>,
+
+    /// Modules which are being processed or analyzed.
+    started: Arc<DashSet<ModuleId>>,
+
+    errors: Mutex<Vec<Error>>,
+
+    env: Env,
 }
 
 impl Checker {
     pub fn new(
-        globals: Arc<Globals>,
+        logger: Logger,
         cm: Arc<SourceMap>,
         handler: Arc<Handler>,
-        libs: Vec<Lib>,
-        rule: Rule,
+        env: Env,
         parser_config: TsConfig,
-        target: JscTarget,
     ) -> Self {
         Checker {
-            globals,
-            cm,
+            logger,
+            env: env.clone(),
+            cm: cm.clone(),
             handler,
-            modules: Default::default(),
-            ts_config: parser_config,
-            target,
-            resolver: Resolver::new(),
-            current: Default::default(),
-            libs,
-            rule,
+            module_types: Default::default(),
+            dts_modules: Default::default(),
+            module_graph: Arc::new(ModuleGraph::new(
+                cm,
+                Some(Default::default()),
+                NodeResolver,
+                parser_config,
+                env.target(),
+            )),
+            started: Default::default(),
+            errors: Default::default(),
         }
     }
 
@@ -130,72 +165,315 @@ impl Checker {
     where
         F: FnOnce() -> R,
     {
-        ::swc_common::GLOBALS.set(&self.globals, || op())
+        ::swc_common::GLOBALS.set(&self.globals(), || op())
     }
 
     pub fn globals(&self) -> &swc_common::Globals {
-        &self.globals
+        &self.env.shared().swc_globals()
     }
 }
 
 impl Checker {
-    pub fn check(&self, entry: Arc<PathBuf>) -> (Module, Info) {
-        self.run(|| {
-            let module = self.load_module(entry.clone());
+    /// Get type informations of a module.
+    pub fn get_types(&self, id: ModuleId) -> Option<Arc<ModuleTypeData>> {
+        let lock = self.module_types.read();
+        lock.get(&id).map(|v| v.get().cloned()).flatten()
+    }
 
-            module
+    /// Removes dts module from `self` and return it.
+    pub fn take_dts(&self, id: ModuleId) -> Option<Module> {
+        self.dts_modules.remove(&id).map(|v| v.1)
+    }
+
+    pub fn id(&self, path: &Arc<PathBuf>) -> ModuleId {
+        self.module_graph.id(path)
+    }
+
+    /// After calling this method, you can get errors using `.take_errors()`
+    pub fn check(&self, entry: Arc<PathBuf>) -> ModuleId {
+        self.run(|| {
+            let id = self.module_graph.load_all(&entry).unwrap();
+
+            self.analyze_module(None, entry.clone());
+
+            id
         })
     }
 
-    fn load_module(&self, path: Arc<PathBuf>) -> (Module, Info) {
-        let cached = self.modules.get(&path);
+    pub fn take_errors(&mut self) -> Vec<Error> {
+        take(self.errors.get_mut())
+    }
 
-        if let Some(cached) = cached {
-            println!("Cached");
-            return cached.clone();
-        }
+    /// Analyzes one module.
+    fn analyze_module(
+        &self,
+        starter: Option<Arc<PathBuf>>,
+        path: Arc<PathBuf>,
+    ) -> Arc<ModuleTypeData> {
+        self.run(|| {
+            let id = self.module_graph.id(&path);
 
-        self.current.insert(path.clone(), ());
+            {
+                let lock = self.module_types.read();
+                // If a circular chunks are fully analyzed, used them.
+                if let Some(full) = lock.get(&id).map(|cell| cell.get().cloned()).flatten() {
+                    return full;
+                }
+            }
 
-        let mut module = self.run(|| {
-            let fm = self.cm.load_file(&path).expect("failed to read file");
+            let is_first_run = self.started.insert(id);
 
-            let lexer = Lexer::new(
-                Syntax::Typescript(self.ts_config),
-                self.target,
-                StringInput::from(&*fm),
-                None,
-            );
-            let mut parser = Parser::new_from(lexer);
+            let circular_set = self.module_graph.get_circular(id);
 
-            let module = parser
-                .parse_typescript_module()
-                .map_err(|mut e| {
-                    e.into_diagnostic(&self.handler).emit();
-                    ()
-                })
-                .ok()
-                .unwrap_or_else(|| {
-                    println!("Parser.parse_module returned Err()");
-                    Module {
-                        span: Default::default(),
-                        body: Default::default(),
-                        shebang: None,
+            if is_first_run {
+                if let Some(set) = &circular_set {
+                    {
+                        // Mark all modules in the circular group as in-progress.
+                        let shards = self.started.shards();
+
+                        for &dep_id in set {
+                            let idx = self.started.determine_map(&dep_id);
+
+                            let mut lock = shards[idx].write();
+                            lock.insert(dep_id, SharedValue::new(()));
+                        }
                     }
-                });
 
-            module
-        });
+                    {
+                        let mut storage = Group {
+                            parent: None,
+                            files: Arc::new(
+                                set.iter()
+                                    .copied()
+                                    .map(|id| {
+                                        let path = self.module_graph.path(id);
+                                        let stmt_count = self.module_graph.stmt_count_of(id);
+                                        File {
+                                            id,
+                                            path,
+                                            stmt_count,
+                                        }
+                                    })
+                                    .collect(),
+                            ),
+                            errors: Default::default(),
+                            info: Default::default(),
+                        };
+                        let mut ids = set.iter().copied().collect::<Vec<_>>();
+                        let mut modules = ids
+                            .iter()
+                            .map(|&id| self.module_graph.clone_module(id))
+                            .map(|module| {
+                                module.fold_with(&mut ts_resolver(
+                                    self.env.shared().marks().top_level_mark,
+                                ))
+                            })
+                            .collect::<Vec<_>>();
+                        {
+                            let mut a = Analyzer::root(
+                                self.logger
+                                    .new(slog::o!("file" => path.to_string_lossy().to_string())),
+                                self.env.clone(),
+                                self.cm.clone(),
+                                box &mut storage,
+                                self,
+                            );
+                            let _ = modules.validate_with(&mut a);
+                        }
 
-        let mut a = Analyzer::root(self.cm.clone(), path.clone(), &self.libs, self.rule, self);
-        let mut module = module.fold_with(&mut hygiene::colorizer());
-        module.validate_with(&mut a);
-        let info = a.info;
+                        for (id, mut dts_module) in ids.iter().zip(modules) {
+                            let type_data = storage.info.entry(*id).or_default();
 
-        let res = (module, info);
-        self.modules.insert(path.clone(), res.clone());
-        self.current.remove(&path);
+                            {
+                                cleanup_module_for_dts(&mut dts_module.body, &type_data);
+                            }
 
-        res
+                            // TODO: Prevent duplicate work.
+                            match self.dts_modules.insert(*id, dts_module) {
+                                Some(..) => {
+                                    slog::warn!(
+                                        self.logger,
+                                        "Duplicated work: `{}`: (.d.ts already computed)",
+                                        path.display()
+                                    );
+                                }
+                                None => {}
+                            }
+                        }
+
+                        {
+                            let mut lock = self.errors.lock();
+                            lock.extend(storage.take_errors());
+                        }
+                        {
+                            let mut lock = self.module_types.write();
+                            for (module_id, data) in storage.info {
+                                let res = lock.entry(module_id).or_default().set(Arc::new(data));
+                                match res {
+                                    Ok(()) => {}
+                                    Err(..) => {
+                                        slog::warn!(
+                                            self.logger,
+                                            "Duplicated work: `{}`: (type info is already cached)",
+                                            path.display()
+                                        );
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    let lock = self.module_types.read();
+                    return lock
+                        .get(&id)
+                        .map(|cell| cell.get().cloned())
+                        .flatten()
+                        .unwrap();
+                }
+            }
+            slog::info!(
+                &self.logger,
+                "Request: {}\nRequested by {:?}\nCircular set: {:?}",
+                path.display(),
+                starter,
+                circular_set
+            );
+
+            {
+                // With write lock, we ensure that OnceCell is inserted.
+                let mut lock = self.module_types.write();
+                lock.entry(id).or_default();
+            }
+
+            {
+                let start = Instant::now();
+                let mut did_work = false;
+                let v = self.module_types.read().get(&id).cloned().clone().unwrap();
+                // We now wait for dependency without holding lock
+                let res = v
+                    .get_or_init(|| {
+                        did_work = true;
+                        let result = self.analyze_non_circular_module(id, path.clone());
+                        result
+                    })
+                    .clone();
+
+                let dur = Instant::now() - start;
+                if did_work {
+                    eprintln!("[Timing] Full analysis of {}: {:?}", path.display(), dur);
+                } else {
+                    eprintln!("[Timing] Waited for {}: {:?}", path.display(), dur);
+                }
+
+                res
+            }
+        })
+    }
+
+    fn analyze_non_circular_module(&self, id: ModuleId, path: Arc<PathBuf>) -> Arc<ModuleTypeData> {
+        self.run(|| {
+            let mut module = self.module_graph.clone_module(id);
+            module = module.fold_with(&mut ts_resolver(self.env.shared().marks().top_level_mark));
+
+            let mut storage = Single {
+                parent: None,
+                id,
+                path: path.clone(),
+                info: Default::default(),
+            };
+            {
+                let mut a = Analyzer::root(
+                    self.logger
+                        .new(slog::o!("file" => path.to_string_lossy().to_string())),
+                    self.env.clone(),
+                    self.cm.clone(),
+                    box &mut storage,
+                    self,
+                );
+
+                module.visit_mut_with(&mut a);
+            }
+
+            {
+                // Get .d.ts file
+                cleanup_module_for_dts(&mut module.body, &storage.info.exports);
+            }
+
+            if early_error() {
+                for err in storage.info.errors {
+                    self.handler
+                        .struct_span_err(err.span(), &format!("{:?}", err))
+                        .emit();
+                }
+            } else {
+                let mut errors = self.errors.lock();
+                errors.extend(storage.info.errors);
+            }
+
+            let type_info = Arc::new(storage.info.exports);
+
+            self.dts_modules.insert(id, module);
+
+            type_info
+        })
+    }
+}
+
+type CommentMap = Arc<DashMap<BytePos, Vec<Comment>>>;
+
+/// Multi-threaded implementation of [Comments]
+#[derive(Clone, Default)]
+pub struct StcComments {
+    leading: CommentMap,
+    trailing: CommentMap,
+}
+
+impl Comments for StcComments {
+    fn add_leading(&self, pos: BytePos, cmt: Comment) {
+        self.leading.entry(pos).or_default().push(cmt);
+    }
+
+    fn add_leading_comments(&self, pos: BytePos, comments: Vec<Comment>) {
+        self.leading.entry(pos).or_default().extend(comments);
+    }
+
+    fn has_leading(&self, pos: BytePos) -> bool {
+        self.leading.contains_key(&pos)
+    }
+
+    fn move_leading(&self, from: BytePos, to: BytePos) {
+        let cmt = self.leading.remove(&from);
+
+        if let Some(cmt) = cmt {
+            self.leading.entry(to).or_default().extend(cmt.1);
+        }
+    }
+
+    fn take_leading(&self, pos: BytePos) -> Option<Vec<Comment>> {
+        self.leading.remove(&pos).map(|v| v.1)
+    }
+
+    fn add_trailing(&self, pos: BytePos, cmt: Comment) {
+        self.trailing.entry(pos).or_default().push(cmt)
+    }
+
+    fn add_trailing_comments(&self, pos: BytePos, comments: Vec<Comment>) {
+        self.trailing.entry(pos).or_default().extend(comments)
+    }
+
+    fn has_trailing(&self, pos: BytePos) -> bool {
+        self.trailing.contains_key(&pos)
+    }
+
+    fn move_trailing(&self, from: BytePos, to: BytePos) {
+        let cmt = self.trailing.remove(&from);
+
+        if let Some(cmt) = cmt {
+            self.trailing.entry(to).or_default().extend(cmt.1);
+        }
+    }
+
+    fn take_trailing(&self, pos: BytePos) -> Option<Vec<Comment>> {
+        self.trailing.remove(&pos).map(|v| v.1)
     }
 }

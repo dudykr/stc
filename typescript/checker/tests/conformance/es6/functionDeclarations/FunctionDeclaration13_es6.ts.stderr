@@ -1,6 +1,0 @@
-error: Unexpected token Some(Word(yield))
- --> $DIR/tests/conformance/es6/functionDeclarations/FunctionDeclaration13_es6.ts:4:11
-  |
-4 |    var v: yield;
-  |           ^^^^^
-

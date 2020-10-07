@@ -1,6 +1,6 @@
 use super::{TupleElement, Type};
-use crate::{OptionalType, RestType, Symbol};
-use swc_common::{Spanned, DUMMY_SP};
+use crate::{OptionalType, RestType, StaticThis, Symbol};
+use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
 use swc_ecma_utils::prop_name_to_expr;
 
@@ -30,7 +30,6 @@ impl From<Type> for TsType {
             Type::Intersection(t) => t.into(),
             Type::Function(t) => t.into(),
             Type::Constructor(t) => t.into(),
-            Type::Method(t) => t.into(),
             Type::Operator(t) => t.into(),
             Type::Param(t) => t.into(),
             Type::EnumVariant(t) => t.into(),
@@ -45,10 +44,11 @@ impl From<Type> for TsType {
             Type::Class(t) => t.into(),
             Type::ClassInstance(t) => t.into(),
             Type::Static(t) => (*t.ty).clone().into(),
-            Type::Arc(t) => (*t).clone().into(),
+            Type::Arc(t) => (*t.ty).clone().into(),
             Type::Optional(t) => t.into(),
             Type::Rest(t) => t.into(),
             Type::Symbol(t) => t.into(),
+            Type::StaticThis(t) => t.into(),
         }
     }
 }
@@ -154,7 +154,7 @@ impl From<super::Predicate> for TsType {
 
 impl From<super::IndexedAccessType> for TsType {
     fn from(t: super::IndexedAccessType) -> Self {
-        let obj_type = match *t.obj_type {
+        let obj_type = match t.obj_type.normalize() {
             Type::Intersection(..) | Type::Union(..) => {
                 box TsType::TsParenthesizedType(TsParenthesizedType {
                     span: t.obj_type.span(),
@@ -225,7 +225,7 @@ impl From<TupleElement> for TsTupleElement {
 
 impl From<super::Array> for TsType {
     fn from(t: super::Array) -> Self {
-        match *t.elem_type {
+        match t.elem_type.normalize() {
             Type::Union(..) | Type::Intersection(..) => {
                 return TsType::TsArrayType(TsArrayType {
                     span: t.span,
@@ -246,61 +246,21 @@ impl From<super::Array> for TsType {
 
 impl From<super::Union> for TsType {
     fn from(t: super::Union) -> Self {
-        let has_rest = t.types.iter().any(|ty| match &**ty {
-            Type::Rest(..) => true,
-            _ => false,
-        });
-
-        if has_rest {
-            TsType::TsTupleType(TsTupleType {
-                span: t.span,
-                elem_types: t
-                    .types
-                    .into_iter()
-                    .map(|ty| TsTupleElement {
-                        span: ty.span(),
-                        ty: ty.into(),
-                        label: None,
-                    })
-                    .collect(),
-            })
-        } else {
-            TsType::TsUnionOrIntersectionType(TsUnionOrIntersectionType::TsUnionType(TsUnionType {
-                span: t.span,
-                types: t.types.into_iter().map(From::from).collect(),
-            }))
-        }
+        TsType::TsUnionOrIntersectionType(TsUnionOrIntersectionType::TsUnionType(TsUnionType {
+            span: t.span,
+            types: t.types.into_iter().map(From::from).collect(),
+        }))
     }
 }
 
 impl From<super::Intersection> for TsType {
     fn from(t: super::Intersection) -> Self {
-        let has_rest = t.types.iter().any(|ty| match &**ty {
-            Type::Rest(..) => true,
-            _ => false,
-        });
-
-        if has_rest {
-            TsType::TsTupleType(TsTupleType {
+        TsType::TsUnionOrIntersectionType(TsUnionOrIntersectionType::TsIntersectionType(
+            TsIntersectionType {
                 span: t.span,
-                elem_types: t
-                    .types
-                    .into_iter()
-                    .map(|ty| TsTupleElement {
-                        span: ty.span(),
-                        ty: ty.into(),
-                        label: None,
-                    })
-                    .collect(),
-            })
-        } else {
-            TsType::TsUnionOrIntersectionType(TsUnionOrIntersectionType::TsIntersectionType(
-                TsIntersectionType {
-                    span: t.span,
-                    types: t.types.into_iter().map(From::from).collect(),
-                },
-            ))
-        }
+                types: t.types.into_iter().map(From::from).collect(),
+            },
+        ))
     }
 }
 
@@ -443,6 +403,8 @@ impl From<super::Mapped> for TsType {
     fn from(t: super::Mapped) -> Self {
         TsMappedType {
             span: t.span,
+
+            name_type: t.name_type.map(From::from),
 
             readonly: t.readonly,
             type_param: t.type_param.into(),
@@ -619,38 +581,55 @@ impl From<super::FnParam> for TsFnParam {
             type_ann: ty.into(),
         });
 
-        match t.pat {
-            Pat::Ident(i) => TsFnParam::Ident(Ident {
-                span: t.span,
-                sym: i.sym,
-                type_ann,
-                optional: !t.required,
-            }),
-            Pat::Array(a) => TsFnParam::Array(ArrayPat {
-                span: t.span,
-                type_ann,
-                elems: a.elems,
-                optional: !t.required,
-            }),
-            Pat::Rest(r) => TsFnParam::Rest(RestPat {
-                span: t.span,
-                dot3_token: r.dot3_token,
-                arg: r.arg,
-                type_ann,
-            }),
-            Pat::Object(o) => TsFnParam::Object(ObjectPat {
-                span: t.span,
-                type_ann,
-                props: o.props,
-                optional: o.optional,
-            }),
-            _ => unimplemented!("From<super::FnParam> for TsFnParam"),
+        fn convert(span: Span, type_ann: Option<TsTypeAnn>, pat: Pat, optional: bool) -> TsFnParam {
+            match pat {
+                Pat::Ident(i) => TsFnParam::Ident(Ident {
+                    span,
+                    sym: i.sym,
+                    type_ann,
+                    optional,
+                }),
+                Pat::Array(a) => TsFnParam::Array(ArrayPat {
+                    span,
+                    type_ann,
+                    elems: a.elems,
+                    optional,
+                }),
+                Pat::Rest(r) => TsFnParam::Rest(RestPat {
+                    span,
+                    dot3_token: r.dot3_token,
+                    arg: r.arg,
+                    type_ann,
+                }),
+                Pat::Object(o) => TsFnParam::Object(ObjectPat {
+                    span,
+                    type_ann,
+                    props: o.props,
+                    optional: o.optional,
+                }),
+                Pat::Assign(pat) => convert(span, type_ann, *pat.left, optional),
+                _ => unimplemented!("From<super::FnParam> for TsFnParam with pat: {:?}", pat),
+            }
         }
+
+        convert(t.span, type_ann, t.pat, !t.required)
     }
 }
 
 impl From<super::Type> for Box<TsType> {
     fn from(t: Type) -> Self {
         box t.into()
+    }
+}
+
+impl From<StaticThis> for TsThisType {
+    fn from(t: StaticThis) -> Self {
+        TsThisType { span: t.span }
+    }
+}
+
+impl From<StaticThis> for TsType {
+    fn from(t: StaticThis) -> Self {
+        TsType::TsThisType(t.into())
     }
 }

@@ -1,7 +1,10 @@
 //! This module implements VisitMut for Analyzer
 
 use super::Analyzer;
-use crate::validator::{Validate, ValidateWith};
+use crate::{
+    validator,
+    validator::{Validate, ValidateWith},
+};
 use swc_ecma_ast::*;
 use swc_ecma_visit::{VisitMut, VisitMutWith};
 
@@ -9,12 +12,12 @@ macro_rules! forward {
     ($name:ident,$T:ty) => {
         /// Delegates to `Validate<T>`
         fn $name(&mut self, n: &mut $T) {
-            let res = n.validate_with(self);
+            let res = n.validate_with_default(self);
             match res {
                 // ignored
                 Ok(..) => {}
                 Err(err) => {
-                    self.info.errors.push(err);
+                    self.storage.report(err);
                 }
             }
         }
@@ -23,17 +26,16 @@ macro_rules! forward {
 
 macro_rules! use_visit_mut {
     ($T:ty) => {
-        impl Validate<$T> for Analyzer<'_, '_> {
-            type Output = ();
-
-            fn validate(&mut self, node: &mut $T) -> Self::Output {
-                node.visit_mut_children_with(self)
+        #[validator]
+        impl Analyzer<'_, '_> {
+            fn validate(&mut self, node: &mut $T) {
+                node.visit_mut_children_with(self);
+                Ok(())
             }
         }
     };
 }
 
-use_visit_mut!(Stmt);
 use_visit_mut!(Module);
 
 /// All methods forward to `Validate<T>`
@@ -67,4 +69,20 @@ impl VisitMut for Analyzer<'_, '_> {
     forward!(visit_mut_arrow_expr, ArrowExpr);
     forward!(visit_mut_ts_interface_body, TsInterfaceBody);
     forward!(visit_mut_object_lit, ObjectLit);
+    forward!(visit_mut_stmt, Stmt);
+    forward!(visit_mut_switch_stmt, SwitchStmt);
+    forward!(visit_mut_with_stmt, WithStmt);
+    forward!(visit_mut_return_stmt, ReturnStmt);
+    forward!(visit_mut_yield_expr, YieldExpr);
+    forward!(visit_mut_export_default_expr, ExportDefaultExpr);
+    forward!(visit_mut_ts_export_assignment, TsExportAssignment);
+    forward!(visit_mut_export_default_decl, ExportDefaultDecl);
+    forward!(visit_mut_export_decl, ExportDecl);
+    forward!(visit_mut_private_method, PrivateMethod);
+    forward!(visit_mut_private_prop, PrivateProp);
+    forward!(visit_mut_import_decl, ImportDecl);
+    forward!(visit_mut_export_all, ExportAll);
+    forward!(visit_mut_named_export, NamedExport);
+    forward!(visit_mut_catch_clause, CatchClause);
+    forward!(visit_mut_ts_namespace_decl, TsNamespaceDecl);
 }

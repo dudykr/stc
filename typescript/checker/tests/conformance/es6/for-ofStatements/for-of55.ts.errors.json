@@ -1,7 +1,1 @@
-[
-    {
-        "line": 3,
-        "column": 15,
-        "msg": "Block-scoped variable 'v' used before its declaration."
-    }
-]
+[]

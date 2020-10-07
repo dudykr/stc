@@ -1,7 +1,1 @@
-[
-    {
-        "line": 2,
-        "column": 15,
-        "msg": "A 'get' accessor must return a value."
-    }
-]
+[]

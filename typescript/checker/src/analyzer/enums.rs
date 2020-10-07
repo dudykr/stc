@@ -3,20 +3,23 @@ use crate::{
     analyzer::util::ResultExt,
     errors::Error,
     ty::{Enum, EnumMember, Type},
+    validator,
     validator::Validate,
     ValidationResult,
 };
 use fxhash::FxHashMap;
+use stc_types::Id;
+use swc_atoms::JsWord;
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::*;
 use swc_ecma_visit::{Node, Visit, VisitWith};
-use swc_ts_types::Id;
 
 /// Value does not contain TsLit::Bool
-type EnumValues = FxHashMap<Id, TsLit>;
+type EnumValues = FxHashMap<JsWord, TsLit>;
 
 /// We don't visit enum variants to allow
 ///
+/// ```ts
 ///        const enum E {
 ///            a = 10,
 ///            b = a,
@@ -27,10 +30,11 @@ type EnumValues = FxHashMap<Id, TsLit>;
 ///            g = a << 2 >>> 1,
 ///            h = a | b
 ///        }
-impl Validate<TsEnumDecl> for Analyzer<'_, '_> {
-    type Output = ValidationResult<Enum>;
+/// ```
+#[validator]
+impl Analyzer<'_, '_> {
     #[inline(never)]
-    fn validate(&mut self, e: &mut TsEnumDecl) -> Self::Output {
+    fn validate(&mut self, e: &mut TsEnumDecl) -> ValidationResult<Enum> {
         let mut default = 0;
         let mut values = Default::default();
         let ty: Result<_, _> = try {
@@ -55,10 +59,8 @@ impl Validate<TsEnumDecl> for Analyzer<'_, '_> {
                         }
                         values.insert(
                             match &m.id {
-                                TsEnumMemberId::Ident(i) => i.into(),
-                                TsEnumMemberId::Str(s) => {
-                                    Ident::new(s.value.clone(), s.span).into()
-                                }
+                                TsEnumMemberId::Ident(i) => i.sym.clone(),
+                                TsEnumMemberId::Str(s) => s.value.clone(),
                             },
                             val.clone(),
                         );
@@ -104,15 +106,27 @@ impl Validate<TsEnumDecl> for Analyzer<'_, '_> {
         };
 
         let span = e.span;
+        let name = Id::from(&e.id);
 
-        self.register_type(
-            e.id.clone().into(),
-            match ty {
-                Ok(ref ty) => box ty.clone().into(),
-                Err(..) => Type::any(span),
-            },
+        let stored_ty = ty
+            .clone()
+            .map(Type::Enum)
+            .map(Type::cheap)
+            .report(&mut self.storage)
+            .unwrap_or_else(|| Type::any(span));
+
+        self.register_type(name.clone(), stored_ty.clone())
+            .report(&mut self.storage);
+
+        self.declare_var(
+            e.span,
+            VarDeclKind::Let,
+            name.clone(),
+            Some(stored_ty),
+            true,
+            true,
         )
-        .store(&mut self.info.errors);
+        .report(&mut self.storage);
 
         // Validate const enums
         if e.is_const {
@@ -124,9 +138,8 @@ impl Validate<TsEnumDecl> for Analyzer<'_, '_> {
                     };
                     init.visit_with(init, &mut v);
                     if v.error {
-                        self.info
-                            .errors
-                            .push(Error::InvalidInitInConstEnum { span: init.span() })
+                        self.storage
+                            .report(Error::InvalidInitInConstEnum { span: init.span() })
                     }
                 }
             }
@@ -213,7 +226,7 @@ fn compute(
             Expr::Paren(ref paren) => return compute(e, span, values, default, Some(&paren.expr)),
 
             Expr::Ident(ref id) => {
-                if let Some(v) = values.get(&id.into()) {
+                if let Some(v) = values.get(&id.sym) {
                     return Ok(v.clone());
                 }
                 //
@@ -288,9 +301,8 @@ impl Analyzer<'_, '_> {
     pub(super) fn check_rvalue(&mut self, rhs_ty: &Type) {
         match *rhs_ty.normalize() {
             Type::Enum(ref e) if e.is_const => {
-                self.info
-                    .errors
-                    .push(Error::ConstEnumUsedAsVar { span: e.span() });
+                self.storage
+                    .report(Error::ConstEnumUsedAsVar { span: e.span() });
             }
             _ => {}
         }
@@ -299,9 +311,9 @@ impl Analyzer<'_, '_> {
     pub(super) fn expand_enum_variant(&self, ty: Type) -> Result<Type, Error> {
         match ty.normalize() {
             Type::EnumVariant(ref v) => {
-                if let Some(types) = self.find_type(&v.enum_name) {
+                if let Some(types) = self.find_type(v.ctxt, &v.enum_name)? {
                     for ty in types {
-                        if let Type::Enum(Enum { members, .. }) = ty {
+                        if let Type::Enum(Enum { members, .. }) = ty.normalize() {
                             if let Some(v) = members.iter().find(|m| match m.id {
                                 TsEnumMemberId::Ident(Ident { ref sym, .. })
                                 | TsEnumMemberId::Str(Str { value: ref sym, .. }) => *sym == v.name,

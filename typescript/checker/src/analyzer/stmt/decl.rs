@@ -1,24 +1,29 @@
 use super::super::{pat::PatMode, Analyzer, Ctx};
+use crate::errors::Errors;
 use crate::{
-    analyzer::util::{Generalizer, ResultExt},
+    analyzer::{
+        expr::TypeOfMode,
+        util::{Generalizer, ResultExt},
+    },
+    debug::print_type,
     errors::Error,
     ty::{self, Tuple, Type, TypeParam},
-    util::PatExt,
+    util::{PatExt, RemoveTypes},
+    validator,
     validator::{Validate, ValidateWith},
     ValidationResult,
 };
+use stc_types::{Array, FoldWith, Id, Operator, Symbol};
 use std::mem::take;
 use swc_atoms::js_word;
 use swc_common::{Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
 use swc_ecma_visit::VisitMutWith;
-use swc_ts_types::{Array, FoldWith, Id, Operator, Symbol};
 use ty::TypeExt;
 
-impl Validate<VarDecl> for Analyzer<'_, '_> {
-    type Output = ValidationResult<()>;
-
-    fn validate(&mut self, var: &mut VarDecl) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, var: &mut VarDecl) {
         self.record(&*var);
 
         let ctx = Ctx {
@@ -34,7 +39,6 @@ impl Validate<VarDecl> for Analyzer<'_, '_> {
 
         // Flatten var declarations
         for mut decl in take(&mut var.decls) {
-            //
             match decl.name {
                 Pat::Array(ArrayPat {
                     span,
@@ -77,10 +81,9 @@ impl Validate<VarDecl> for Analyzer<'_, '_> {
     }
 }
 
-impl Validate<VarDeclarator> for Analyzer<'_, '_> {
-    type Output = ValidationResult<()>;
-
-    fn validate(&mut self, v: &mut VarDeclarator) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, v: &mut VarDeclarator) {
         self.record(v);
 
         let kind = self.ctx.var_kind;
@@ -103,7 +106,7 @@ impl Validate<VarDeclarator> for Analyzer<'_, '_> {
                     match self.declare_complex_vars(kind, &v.name, Type::any(v_span)) {
                         Ok(()) => {}
                         Err(err) => {
-                            self.info.errors.push(err);
+                            self.storage.report(err);
                         }
                     }
                 };
@@ -148,42 +151,81 @@ impl Validate<VarDeclarator> for Analyzer<'_, '_> {
                     _ => false,
                 };
 
+                // Set `this` in
+                //
+                // export let p1: Point = {
+                //     x: 10,
+                //     y: 20,
+                //     moveBy(dx, dy, dz) {
+                //         this.x += dx;
+                //         this.y += dy;
+                //         if (this.z && dz) {
+                //             this.z += dz;
+                //         }
+                //     }
+                // };
+                let creates_new_this = match &**init {
+                    Expr::Object(..) => true,
+                    _ => false,
+                };
+
+                let old_this = if creates_new_this {
+                    self.scope.this.take()
+                } else {
+                    None
+                };
+
                 let declared_ty = v.name.get_mut_ty();
                 if declared_ty.is_some() {
                     //TODO:
                     // self.span_allowed_implicit_any = span;
                 }
 
+                macro_rules! get_value_ty {
+                    ($ty:expr) => {{
+                        match init.validate_with_args(self, (TypeOfMode::RValue, None, $ty)) {
+                            Ok(ty) => {
+                                if creates_new_this {
+                                    self.scope.this = old_this;
+                                }
+                                ty
+                            }
+                            Err(err) => {
+                                if creates_new_this {
+                                    self.scope.this = old_this;
+                                }
+                                if self.is_builtin {
+                                    unreachable!("failed to assign builtin: \nError: {:?}", err)
+                                } else {
+                                    self.storage.report(err);
+                                }
+                                inject_any!();
+                                remove_declaring!();
+                                return Ok(());
+                            }
+                        }
+                    }};
+                }
+
                 debug_assert_eq!(self.ctx.allow_ref_declaring, true);
 
                 //  Check if v_ty is assignable to ty
-                let mut value_ty = match init.validate_with(self) {
-                    Ok(ty) => ty,
-                    Err(err) => {
-                        if self.is_builtin {
-                            unreachable!("failed to assign builtin: \nError: {:?}", err)
-                        } else {
-                            self.info.errors.push(err);
-                        }
-                        inject_any!();
-                        remove_declaring!();
-                        return Ok(());
-                    }
-                };
-
                 match declared_ty {
                     Some(ty) => {
-                        log::debug!("var: user declared type");
+                        slog::debug!(self.logger, "var: user declared type");
                         let ty = match ty.validate_with(self) {
                             Ok(ty) => ty,
                             Err(err) => {
-                                self.info.errors.push(err);
+                                self.storage.report(err);
                                 remove_declaring!();
                                 return Ok(());
                             }
                         };
                         let ty = self.expand(span, ty)?;
                         self.check_rvalue(&ty);
+
+                        self.scope.this = Some(box ty.clone().remove_falsy());
+                        let mut value_ty = get_value_ty!(Some(&ty));
                         value_ty = self.expand(span, value_ty)?;
                         value_ty = self.rename_type_params(span, value_ty, Some(&ty))?;
 
@@ -192,56 +234,92 @@ impl Validate<VarDeclarator> for Analyzer<'_, '_> {
                             self.expand_fully(span, value_ty.clone(), true)?;
                         match self.assign(&ty_for_assignment, &value_ty_for_assignment, v_span) {
                             Ok(()) => {
-                                let ty = ty.fold_with(&mut Generalizer::default());
+                                let mut ty = ty;
+                                self.prevent_generalize(&mut ty);
+
+                                // let ty = ty.fold_with(&mut Generalizer::default());
                                 match self.declare_complex_vars(kind, &v.name, ty) {
                                     Ok(()) => {}
                                     Err(err) => {
-                                        self.info.errors.push(err);
+                                        self.storage.report(err);
                                     }
                                 }
                                 remove_declaring!();
                                 return Ok(());
                             }
                             Err(err) => {
-                                self.info.errors.push(err);
+                                self.storage.report(err);
+
+                                match self.declare_complex_vars(kind, &v.name, ty) {
+                                    Ok(()) => {}
+                                    Err(err) => {
+                                        self.storage.report(err);
+                                    }
+                                }
+
                                 Some(init)
                             }
                         }
                     }
                     None => {
+                        let value_ty = get_value_ty!(None);
+
                         // infer type from value.
-                        let mut ty = (|| {
-                            match *value_ty {
+                        let mut ty = (|| -> ValidationResult<_> {
+                            match value_ty.normalize() {
                                 Type::EnumVariant(ref v) => {
-                                    if let Some(items) = self.find_type(&v.enum_name) {
+                                    if let Some(items) =
+                                        self.find_type(self.ctx.module_id, &v.enum_name)?
+                                    {
                                         for ty in items {
-                                            if let Type::Enum(ref e) = ty {
-                                                return box Type::Enum(e.clone());
+                                            if let Type::Enum(ref e) = ty.normalize() {
+                                                return Ok(box Type::Enum(e.clone()));
                                             }
                                         }
                                     }
                                 }
+                                Type::TypeLit(..) | Type::Function(..) | Type::Query(..) => {
+                                    v.init = None;
+                                }
                                 _ => {}
                             }
 
-                            value_ty
-                        })();
+                            Ok(value_ty)
+                        })()?;
 
                         let should_generalize_fully =
                             self.may_generalize(&ty) && !contains_type_param(&ty);
 
-                        log::debug!("var: user did not declare type");
+                        slog::debug!(self.logger, "var: user did not declare type");
                         let mut ty = self.rename_type_params(span, ty, None)?;
-                        ty = ty.fold_with(&mut Generalizer::default());
+                        if self.may_generalize(&ty) {
+                            ty = ty.fold_with(&mut Generalizer::default());
+                        }
 
                         if should_generalize_fully {
-                            ty = match *ty {
-                                Type::Function(mut f) => {
-                                    f.ret_ty = f.ret_ty.generalize_lit();
-                                    box Type::Function(f)
+                            ty = match ty.normalize() {
+                                Type::Function(f) => {
+                                    let ret_ty = f.ret_ty.clone().generalize_lit();
+                                    box Type::Function(stc_types::Function {
+                                        ret_ty,
+                                        ..f.clone()
+                                    })
                                 }
                                 _ => ty,
                             };
+                        }
+
+                        match ty.normalize() {
+                            Type::Ref(..) => {
+                                let ctx = Ctx {
+                                    preserve_ref: true,
+                                    ignore_expand_prevention_for_all: false,
+                                    ignore_expand_prevention_for_top: false,
+                                    ..self.ctx
+                                };
+                                ty = self.with_ctx(ctx).expand(span, ty)?;
+                            }
+                            _ => {}
                         }
 
                         if self.scope.is_root() {
@@ -263,16 +341,24 @@ impl Validate<VarDeclarator> for Analyzer<'_, '_> {
                                     let ty = ty.clone();
 
                                     // Normalize unresolved parameters
-                                    let ty = match *ty {
+                                    let ty = match ty.normalize() {
                                         Type::Param(TypeParam {
                                             constraint: Some(ty),
                                             ..
-                                        }) => ty,
+                                        }) => ty.clone(),
                                         _ => ty,
                                     };
 
-                                    let ty = match *ty {
-                                        Type::ClassInstance(c) => box c.ty.into(),
+                                    let ty = match ty.normalize() {
+                                        Type::ClassInstance(c) => box c.ty.clone().into(),
+
+                                        // `err is Error` => boolean
+                                        Type::Predicate(..) => {
+                                            box TsType::TsKeywordType(TsKeywordType {
+                                                span,
+                                                kind: TsKeywordTypeKind::TsBooleanKeyword,
+                                            })
+                                        }
 
                                         Type::Keyword(TsKeywordType {
                                             span,
@@ -292,11 +378,11 @@ impl Validate<VarDeclarator> for Analyzer<'_, '_> {
                                             // It's `uniqute symbol` only if it's `Symbol()`
                                             VarDeclKind::Const if is_symbol_call => {
                                                 box TsType::TsTypeOperator(TsTypeOperator {
-                                                    span,
+                                                    span:*span,
                                                     op: TsTypeOperatorOp::Unique,
                                                     type_ann: box TsType::TsKeywordType(
                                                         TsKeywordType {
-                                                            span,
+                                                            span:*span,
                                                             kind:
                                                                 TsKeywordTypeKind::TsSymbolKeyword,
                                                         },
@@ -305,7 +391,7 @@ impl Validate<VarDeclarator> for Analyzer<'_, '_> {
                                             }
 
                                             _ => box TsType::TsKeywordType(TsKeywordType {
-                                                span,
+                                                span:*span,
                                                 kind: TsKeywordTypeKind::TsSymbolKeyword,
                                             }),
                                         }
@@ -322,18 +408,18 @@ impl Validate<VarDeclarator> for Analyzer<'_, '_> {
                                             ..
                                         }) => {
                                             box TsType::TsArrayType(TsArrayType {
-                                                span,
+                                                span: *span,
                                                 elem_type: match constraint {
                                                     Some(_constraint) => {
                                                         // TODO: We need something smarter
                                                         box TsType::TsKeywordType(TsKeywordType {
-                                                            span: elem_span,
+                                                            span: *elem_span,
                                                             kind: TsKeywordTypeKind::TsAnyKeyword,
                                                         })
                                                     }
                                                     None => {
                                                         box TsType::TsKeywordType(TsKeywordType {
-                                                            span: elem_span,
+                                                            span: *elem_span,
                                                             kind: TsKeywordTypeKind::TsAnyKeyword,
                                                         })
                                                     }
@@ -344,7 +430,7 @@ impl Validate<VarDeclarator> for Analyzer<'_, '_> {
                                         // We failed to infer type of the type parameter.
                                         Type::Param(TypeParam { span, .. }) => {
                                             box TsType::TsKeywordType(TsKeywordType {
-                                                span,
+                                                span: *span,
                                                 kind: TsKeywordTypeKind::TsUnknownKeyword,
                                             })
                                         }
@@ -355,14 +441,19 @@ impl Validate<VarDeclarator> for Analyzer<'_, '_> {
                                 })));
                             }
                         }
-                        ty = self.expand(span, ty)?;
+                        match ty.normalize() {
+                            Type::Ref(..) => {}
+                            _ => {
+                                ty = self.expand(span, ty)?;
+                            }
+                        }
                         self.check_rvalue(&ty);
 
-                        let mut type_errors = vec![];
+                        let mut type_errors = Errors::default();
 
                         // Handle implicit any
 
-                        match *ty {
+                        match ty.normalize_mut() {
                             Type::Tuple(Tuple { ref mut elems, .. }) => {
                                 for (i, element) in elems.iter_mut().enumerate() {
                                     let span = element.span();
@@ -383,7 +474,7 @@ impl Validate<VarDeclarator> for Analyzer<'_, '_> {
                                     // Widen tuple types
                                     element.ty = Type::any(span);
 
-                                    if self.rule.no_implicit_any {
+                                    if self.rule().no_implicit_any {
                                         match v.name {
                                             Pat::Ident(ref i) => {
                                                 let span = i.span;
@@ -403,13 +494,13 @@ impl Validate<VarDeclarator> for Analyzer<'_, '_> {
                         }
 
                         if !type_errors.is_empty() {
-                            self.info.errors.extend(type_errors);
+                            self.storage.report_all(type_errors);
                             remove_declaring!();
                             return Ok(());
                         }
 
                         self.declare_complex_vars(kind, &v.name, ty)
-                            .store(&mut self.info.errors);
+                            .report(&mut self.storage);
                         remove_declaring!();
                         return Ok(());
                     }
@@ -439,7 +530,7 @@ impl Validate<VarDeclarator> for Analyzer<'_, '_> {
                         ) {
                             Ok(()) => {}
                             Err(err) => {
-                                self.info.errors.push(err);
+                                self.storage.report(err);
                             }
                         };
                     }
@@ -454,7 +545,7 @@ impl Validate<VarDeclarator> for Analyzer<'_, '_> {
                             match self.declare_vars(kind, &mut v.name) {
                                 Ok(()) => {}
                                 Err(err) => {
-                                    self.info.errors.push(err);
+                                    self.storage.report(err);
                                 }
                             };
                         } else {
@@ -467,13 +558,15 @@ impl Validate<VarDeclarator> for Analyzer<'_, '_> {
             };
 
             debug_assert_eq!(self.ctx.allow_ref_declaring, true);
-            self.declare_vars(kind, &mut v.name)
-                .store(&mut self.info.errors);
+            if v.name.get_ty().is_none() {
+                self.declare_vars(kind, &mut v.name)
+                    .report(&mut self.storage);
+            }
 
             remove_declaring!();
         };
 
-        res.store(&mut self.info.errors);
+        res.report(&mut self.storage);
 
         Ok(())
     }

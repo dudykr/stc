@@ -1,18 +1,21 @@
-use super::Analyzer;
+use super::{Analyzer, Ctx};
 use crate::{
     analyzer::util::ResultExt,
     errors::Error,
     ty::Type,
+    validator,
     validator::{Validate, ValidateWith},
     ValidationResult,
 };
-use macros::validator_method;
+use stc_checker_macros::extra_validator;
+use stc_types::Id;
+use stc_types::ModuleId;
 use std::mem::replace;
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
+use swc_ecma_utils::find_ids;
 use swc_ecma_visit::VisitMutWith;
-use swc_ts_types::Id;
 
 // ModuleDecl::ExportNamed(export) => {}
 //
@@ -26,77 +29,79 @@ impl Analyzer<'_, '_> {
     /// This methods exports unresolved expressions, which depends on
     /// expressions that comes after the expression.
     pub(super) fn handle_pending_exports(&mut self) {
-        let pending_exports: Vec<_> = replace(&mut self.pending_exports, Default::default());
+        // let pending_exports: Vec<_> = replace(&mut self.pending_exports,
+        // Default::default());
 
-        for ((sym, _), mut expr) in pending_exports {
-            // TODO: Allow multiple exports with same name.
+        // for ((sym, span), mut expr) in pending_exports {
+        //     // TODO: Allow multiple exports with same name.
 
-            debug_assert_eq!(self.info.exports.vars.get(&sym), None);
+        //     let tmp;
+        //     let exported_sym = if sym.as_str() != "default" {
+        //         Some(&sym)
+        //     } else {
+        //         match expr {
+        //             Expr::Ident(ref i) => {
+        //                 tmp = i.clone().into();
+        //                 Some(&tmp)
+        //             }
+        //             _ => None,
+        //         }
+        //     };
+        //     let ty = match exported_sym
+        //         .and_then(|exported_sym|
+        // self.scope.types.remove(&exported_sym))     {
+        //         Some(export) => {
+        //             for ty in export {
+        //                 self.storage.store_private_type(self.ctx.module_id,
+        // sym, ty);             }
 
-            let tmp;
-            let exported_sym = if sym.as_str() != "default" {
-                Some(&sym)
-            } else {
-                match expr {
-                    Expr::Ident(ref i) => {
-                        tmp = i.clone().into();
-                        Some(&tmp)
-                    }
-                    _ => None,
-                }
-            };
-            let ty = match exported_sym
-                .and_then(|exported_sym| self.scope.types.remove(&exported_sym))
-            {
-                Some(export) => {
-                    self.info
-                        .exports
-                        .types
-                        .entry(sym)
-                        .or_default()
-                        .extend(export);
-                }
-                None => match expr.validate_with(self) {
-                    Ok(ty) => {
-                        self.info.exports.types.entry(sym).or_default().push(ty);
-                    }
-                    Err(err) => {
-                        self.info.errors.push(err);
-                    }
-                },
-            };
-        }
+        //             self.storage.export_type(span, self.ctx.module_id, sym);
+        //         }
+        //         None => match expr.validate_with_default(self) {
+        //             Ok(ty) => {
+        //                 self.storage.store_private_type(self.ctx.module_id,
+        // sym, ty);
 
-        assert_eq!(self.pending_exports, vec![]);
+        //                 self.storage.export_type(span, self.ctx.module_id,
+        // sym);             }
+        //             Err(err) => {
+        //                 self.storage.report(err);
+        //             }
+        //         },
+        //     };
+        // }
 
-        if self.info.exports.types.is_empty() && self.info.exports.vars.is_empty() {
-            self.info
-                .exports
-                .vars
-                .extend(self.scope.vars.drain().map(|(k, v)| {
-                    (
-                        k,
-                        v.ty.map(|ty| ty.freeze())
-                            .unwrap_or_else(|| Type::any(DUMMY_SP)),
-                    )
-                }));
-            self.info.exports.types.extend(
-                self.scope
-                    .types
-                    .drain()
-                    .map(|(k, v)| (k, v.into_iter().map(|v| v.freeze()).collect())),
-            );
-        }
+        // assert_eq!(self.pending_exports, vec![]);
+
+        // if self.info.exports.types.is_empty() &&
+        // self.info.exports.vars.is_empty() {     self.info
+        //         .exports
+        //         .vars
+        //         .extend(self.scope.vars.drain().map(|(k, v)| {
+        //             (
+        //                 k,
+        //                 v.ty.map(|ty| ty.cheap())
+        //                     .unwrap_or_else(|| Type::any(DUMMY_SP)),
+        //             )
+        //         }));
+        //     self.info.exports.types.extend(
+        //         self.scope
+        //             .types
+        //             .drain()
+        //             .map(|(k, v)| (k, v.into_iter().map(|v|
+        // v.cheap()).collect())),     );
+        // }
     }
 
     pub(super) fn export_default_expr(&mut self, expr: &mut Expr) {
-        assert_eq!(
-            self.info.exports.vars.get(&Id::word(js_word!("default"))),
-            None,
-            "A module can export only one item as default"
-        );
+        let span = expr.span();
+        // assert_eq!(
+        //     self.info.exports.vars.get(&Id::word(js_word!("default"))),
+        //     None,
+        //     "A module can export only one item as default"
+        // );
 
-        let ty = match self.validate(expr) {
+        let ty = match expr.validate_with_default(self) {
             Ok(ty) => ty,
             Err(err) => {
                 match err {
@@ -111,27 +116,28 @@ impl Analyzer<'_, '_> {
                     }
                     _ => {}
                 }
-                self.info.errors.push(err);
+                self.storage.report(err);
                 return;
             }
         };
-        self.info
-            .exports
-            .vars
-            .insert(Id::word(js_word!("default")), ty);
+        self.storage
+            .store_private_var(self.ctx.module_id, Id::word(js_word!("default")), ty);
+        self.storage
+            .export_var(span, self.ctx.module_id, Id::word(js_word!("default")));
     }
 }
 
-impl Validate<ExportDecl> for Analyzer<'_, '_> {
-    type Output = ValidationResult<()>;
-
-    fn validate(&mut self, export: &mut ExportDecl) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, export: &mut ExportDecl) {
         let span = export.span;
 
         match export.decl {
             Decl::Fn(ref mut f) => {
+                f.declare = true;
                 f.visit_mut_with(self);
-                self.export(f.span(), f.ident.clone().into(), None)
+                // self.export(f.span(), f.ident.clone().into(), None);
+                self.export_var(f.span(), f.ident.clone().into());
             }
             Decl::TsInterface(ref mut i) => {
                 i.visit_mut_with(self);
@@ -140,17 +146,19 @@ impl Validate<ExportDecl> for Analyzer<'_, '_> {
             }
 
             Decl::Class(ref mut c) => {
+                c.declare = true;
                 c.visit_mut_with(self);
-                self.export(c.span(), c.ident.clone().into(), None)
+                self.export(c.span(), c.ident.clone().into(), None);
+                self.export_var(c.span(), c.ident.clone().into());
             }
             Decl::Var(ref mut var) => {
-                // unimplemented!("export var Foo = a;")
-                for decl in &mut var.decls {
-                    let res = self.declare_vars_inner(var.kind, &mut decl.name, true);
-                    match res {
-                        Ok(..) => {}
-                        Err(err) => self.info.errors.push(err),
-                    }
+                let span = var.span;
+                var.visit_mut_with(self);
+
+                let ids: Vec<Id> = find_ids(&var.decls);
+
+                for id in ids {
+                    self.export_var(span, id)
                 }
             }
             Decl::TsEnum(ref mut e) => {
@@ -158,16 +166,15 @@ impl Validate<ExportDecl> for Analyzer<'_, '_> {
 
                 let ty = e
                     .validate_with(self)
-                    .store(&mut self.info.errors)
+                    .report(&mut self.storage)
                     .map(Type::from)
-                    .map(Box::new);
+                    .map(|ty| ty.cheap());
+                let ty = ty.unwrap_or_else(|| Type::any(span));
 
-                self.info
-                    .exports
-                    .types
-                    .entry(e.id.clone().into())
-                    .or_default()
-                    .push(ty.unwrap_or_else(|| Type::any(span)));
+                self.storage
+                    .store_private_type(self.ctx.module_id, e.id.clone().into(), ty);
+                self.storage
+                    .export_type(span, self.ctx.module_id, e.id.clone().into());
             }
             Decl::TsModule(..) => unimplemented!("export module "),
             Decl::TsTypeAlias(ref mut decl) => {
@@ -185,10 +192,9 @@ impl Validate<ExportDecl> for Analyzer<'_, '_> {
     }
 }
 
-impl Validate<ExportDefaultDecl> for Analyzer<'_, '_> {
-    type Output = ValidationResult<()>;
-
-    fn validate(&mut self, export: &mut ExportDefaultDecl) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, export: &mut ExportDefaultDecl) {
         let span = export.span();
 
         match export.decl {
@@ -201,30 +207,33 @@ impl Validate<ExportDefaultDecl> for Analyzer<'_, '_> {
                 let fn_ty = match f.function.validate_with(self) {
                     Ok(ty) => ty,
                     Err(err) => {
-                        self.info.errors.push(err);
+                        self.storage.report(err);
                         return Ok(());
                     }
                 };
+                if f.function.return_type.is_none() {
+                    f.function.return_type = Some(fn_ty.ret_ty.clone().into());
+                }
                 self.register_type(i.clone(), box fn_ty.clone().into())
-                    .store(&mut self.info.errors);
+                    .report(&mut self.storage);
                 if let Some(ref i) = f.ident {
                     self.override_var(VarDeclKind::Var, i.into(), box fn_ty.into())
-                        .store(&mut self.info.errors);
+                        .report(&mut self.storage);
                 }
 
                 self.export(f.span(), Id::word(js_word!("default")), Some(i))
             }
-            DefaultDecl::Class(ref c) => {
-                let c = c
+            DefaultDecl::Class(ref mut c) => {
+                let id = c
                     .ident
                     .as_ref()
                     .map(|v| v.into())
                     .unwrap_or_else(|| Id::word(js_word!("default")));
-                export.visit_mut_children_with(self);
 
-                // TODO: Register type
+                let class_ty = c.class.validate_with(self)?;
+                self.register_type(id.clone(), box Type::Class(class_ty))?;
 
-                self.export(span, Id::word(js_word!("default")), Some(c));
+                self.export(span, Id::word(js_word!("default")), Some(id));
             }
             DefaultDecl::TsInterfaceDecl(ref i) => {
                 let i = i.id.clone().into();
@@ -241,6 +250,11 @@ impl Validate<ExportDefaultDecl> for Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
+    #[extra_validator]
+    fn export_var(&mut self, span: Span, name: Id) {
+        self.storage.export_var(span, self.ctx.module_id, name);
+    }
+
     /// Exports a type.
     ///
     /// `scope.regsiter_type` should be called before calling this method.
@@ -248,53 +262,220 @@ impl Analyzer<'_, '_> {
     ///
     /// Note: We don't freeze types at here because doing so may prevent proper
     /// finalization.
-    #[validator_method]
+    #[extra_validator]
     fn export(&mut self, span: Span, name: Id, orig_name: Option<Id>) {
         let orig_name = orig_name.unwrap_or_else(|| name.clone());
 
-        let ty = match self.find_type(&orig_name) {
-            Some(ty) => ty,
-            None => unreachable!(".register_type() should be called before calling .export()"),
+        let types = match self.find_type(self.ctx.module_id, &orig_name) {
+            Ok(v) => v,
+            Err(err) => {
+                self.storage.report(err);
+                return;
+            }
         };
 
-        let iter = ty
+        let types = match types {
+            Some(ty) => ty,
+            None => unreachable!(
+                ".register_type() should be called before calling .export({})",
+                orig_name
+            ),
+        };
+
+        let iter = types
             .into_iter()
-            .cloned()
-            .map(|v| v.freeze())
+            .map(|v| v.into_owned())
+            .map(|v| v.cheap())
             .collect::<Vec<_>>();
 
-        self.info
-            .exports
-            .types
-            .entry(name)
-            .or_default()
-            .extend(iter);
+        for ty in iter {
+            self.storage
+                .store_private_type(self.ctx.module_id, name.clone(), ty);
+        }
+
+        self.storage.export_type(span, self.ctx.module_id, name);
     }
 
     /// Exports a variable.
-    fn export_expr(&mut self, _: Id, e: &Expr) {
-        unimplemented!("export_expr")
-    }
-}
+    fn export_expr(&mut self, name: Id, e: &mut Expr) -> ValidationResult<()> {
+        let ty = e.validate_with_default(self)?;
 
-/// Done
-impl Validate<TsExportAssignment> for Analyzer<'_, '_> {
-    type Output = ValidationResult<()>;
-
-    fn validate(&mut self, s: &mut TsExportAssignment) -> Self::Output {
-        self.export_expr(Id::word(js_word!("default")), &s.expr);
+        if *name.sym() == js_word!("default") {
+            match e {
+                Expr::Ident(..) => return Ok(()),
+                _ => {}
+            }
+            let var = VarDeclarator {
+                span: DUMMY_SP,
+                name: Pat::Ident(Ident {
+                    span: DUMMY_SP,
+                    sym: "_default".into(),
+                    type_ann: Some(TsTypeAnn {
+                        span: DUMMY_SP,
+                        type_ann: ty.clone().into(),
+                    }),
+                    optional: false,
+                }),
+                init: None,
+                definite: false,
+            };
+            self.prepend_stmts.push(Stmt::Decl(Decl::Var(VarDecl {
+                span: DUMMY_SP,
+                kind: VarDeclKind::Const,
+                declare: true,
+                decls: vec![var],
+            })));
+            *e = Expr::Ident(Ident::new("_default".into(), DUMMY_SP));
+            return Ok(());
+        }
 
         Ok(())
     }
 }
 
 /// Done
-impl Validate<ExportDefaultExpr> for Analyzer<'_, '_> {
-    type Output = ValidationResult<()>;
-
-    fn validate(&mut self, s: &mut ExportDefaultExpr) -> Self::Output {
-        self.export_expr(Id::word(js_word!("default")), &s.expr);
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, node: &mut TsExportAssignment) {
+        self.export_expr(Id::word(js_word!("default")), &mut node.expr)?;
 
         Ok(())
+    }
+}
+
+/// Done
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, node: &mut ExportDefaultExpr) {
+        let ctx = Ctx {
+            in_export_default_expr: true,
+            ..self.ctx
+        };
+        self.with_ctx(ctx)
+            .export_expr(Id::word(js_word!("default")), &mut node.expr)?;
+
+        Ok(())
+    }
+}
+
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, node: &mut ExportAll) {
+        let span = node.span;
+
+        let path = self.storage.path(self.ctx.module_id);
+        let module_id = self.loader.module_id(&path, &node.src.value);
+        let ctxt = self.ctx.module_id;
+
+        match self.imports.get(&(ctxt, module_id)) {
+            Some(data) => {
+                for (id, ty) in data.vars.iter() {
+                    self.storage
+                        .reexport_var(span, ctxt, id.clone(), ty.clone());
+                }
+                for (id, types) in data.types.iter() {
+                    for ty in types {
+                        self.storage
+                            .reexport_type(span, ctxt, id.clone(), ty.clone());
+                    }
+                }
+            }
+            None => self.storage.report(Error::ExportAllFailed { span }),
+        }
+
+        Ok(())
+    }
+}
+
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, node: &mut NamedExport) {
+        let span = node.span;
+        let ctxt = self.ctx.module_id;
+        let base = self.storage.path(ctxt);
+
+        for specifier in &node.specifiers {
+            match specifier {
+                ExportSpecifier::Namespace(_) => {
+                    // We need
+                    match &node.src {
+                        Some(src) => {
+                            let module_id = self.loader.module_id(&base, &src.value);
+                        }
+                        None => {}
+                    }
+                }
+                ExportSpecifier::Default(_) => {}
+                ExportSpecifier::Named(named) => {
+                    //
+
+                    match &node.src {
+                        Some(src) => {
+                            let module_id = self.loader.module_id(&base, &src.value);
+
+                            self.reexport(
+                                span,
+                                ctxt,
+                                module_id,
+                                named
+                                    .exported
+                                    .as_ref()
+                                    .map(Id::from)
+                                    .unwrap_or_else(|| Id::from(&named.orig)),
+                                Id::from(&named.orig),
+                            );
+                        }
+                        None => {
+                            self.export_named(
+                                span,
+                                ctxt,
+                                Id::from(&named.orig),
+                                named
+                                    .exported
+                                    .as_ref()
+                                    .map(Id::from)
+                                    .unwrap_or_else(|| Id::from(&named.orig)),
+                            );
+                        }
+                    }
+                }
+            }
+        }
+
+        Ok(())
+    }
+}
+
+impl Analyzer<'_, '_> {
+    fn export_named(&mut self, span: Span, ctxt: ModuleId, orig: Id, id: Id) {
+        if self.storage.get_local_var(ctxt, orig.clone()).is_some() {
+            self.storage.export_var(span, ctxt, id.clone());
+        }
+
+        if self.storage.get_local_type(ctxt, orig).is_some() {
+            self.storage.export_type(span, ctxt, id);
+        }
+    }
+
+    fn reexport(&mut self, span: Span, ctxt: ModuleId, from: ModuleId, orig: Id, id: Id) {
+        let mut did_work = false;
+
+        if let Some(data) = self.imports.get(&(ctxt, from)) {
+            if let Some(ty) = data.vars.get(&orig) {
+                did_work = true;
+                self.storage
+                    .reexport_var(span, ctxt, id.clone(), ty.clone());
+            }
+
+            if let Some(ty) = data.types.get(&orig) {
+                did_work = true;
+                let ty = Type::union(ty.clone());
+                self.storage.reexport_type(span, ctxt, id.clone(), ty);
+            }
+        }
+
+        if !did_work {
+            self.storage.report(Error::ExportFailed { span, orig, id })
+        }
     }
 }

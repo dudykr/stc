@@ -3,11 +3,11 @@ use crate::{
     name::Name,
     ty::{Type, TypeElement, TypeParamInstantiation},
 };
+use stc_types::{Class, Id, ModuleId};
 use std::{ops::RangeInclusive, path::PathBuf};
 use swc_atoms::JsWord;
 use swc_common::{errors::Handler, Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::{Expr, UnaryOp, UpdateOp};
-use swc_ts_types::{Class, Id};
 
 impl Errors {
     /// This is used for debugging (by calling [pacic]).
@@ -31,7 +31,6 @@ impl Errors {
         }
 
         if err.span().is_dummy() {
-            print_backtrace();
             panic!("Error with a dummy span found: {:?}", err)
         }
     }
@@ -39,6 +38,20 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    ImportFailed {
+        span: Span,
+        orig: Id,
+        id: Id,
+    },
+
+    ExportFailed {
+        span: Span,
+        orig: Id,
+        id: Id,
+    },
+    ExportAllFailed {
+        span: Span,
+    },
     NoSuchPropertyInClass {
         span: Span,
         class_name: Option<Id>,
@@ -185,6 +198,7 @@ pub enum Error {
     /// TS2304
     NameNotFound {
         name: Name,
+        ctxt: ModuleId,
         type_args: Option<TypeParamInstantiation>,
         span: Span,
     },
@@ -268,7 +282,7 @@ pub enum Error {
     ModuleLoadFailed {
         /// Span of the import statement.
         span: Span,
-        errors: Vec<Error>,
+        errors: Errors,
     },
 
     NoSuchExport {

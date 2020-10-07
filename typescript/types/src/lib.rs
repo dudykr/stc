@@ -4,8 +4,10 @@
 #![deny(unused)]
 #![feature(box_syntax)]
 
+pub mod eq;
 pub use self::{
     id::Id,
+    module_id::ModuleId,
     visit::{Fold, FoldWith, Node as TypeNode, Visit, VisitMut, VisitMutWith, VisitWith},
 };
 use fxhash::FxHashMap;
@@ -15,7 +17,8 @@ use num_traits::Zero;
 use std::{
     fmt::Debug,
     iter::FusedIterator,
-    mem::transmute,
+    mem::{replace, transmute},
+    ops::AddAssign,
     sync::{
         atomic::{AtomicUsize, Ordering::SeqCst},
         Arc,
@@ -35,24 +38,33 @@ use swc_ecma_utils::{
 
 mod convert;
 mod id;
+pub mod macros;
+pub mod module_id;
 mod visit;
 
 #[derive(Debug, Clone, Default, PartialEq)]
-pub struct ModuleTypeInfo {
+pub struct ModuleTypeData {
+    pub private_vars: FxHashMap<Id, Box<Type>>,
     pub vars: FxHashMap<Id, Box<Type>>,
+
+    pub private_types: FxHashMap<Id, Vec<Box<Type>>>,
     pub types: FxHashMap<Id, Vec<Box<Type>>>,
 }
 
-impl ModuleTypeInfo {
-    pub fn extend(&mut self, other: Self) {
+impl AddAssign for ModuleTypeData {
+    fn add_assign(&mut self, other: Self) {
         self.types.extend(other.types);
+        self.private_types.extend(other.private_types);
+
         self.vars.extend(other.vars);
+        self.private_vars.extend(other.private_vars);
     }
 }
 
 /// This type is expected to stored in a [Box], like `Vec<Box<Type>>`.
 #[derive(Debug, Clone, PartialEq, Spanned, FromVariant, Is)]
 pub enum Type {
+    StaticThis(StaticThis),
     This(TsThisType),
     Lit(TsLitType),
     Query(QueryType),
@@ -70,10 +82,10 @@ pub enum Type {
     Array(Array),
     #[is(name = "union_type")]
     Union(Union),
+    #[is(name = "intersection_type")]
     Intersection(Intersection),
     Function(Function),
     Constructor(Constructor),
-    Method(Method),
 
     Operator(Operator),
 
@@ -117,7 +129,7 @@ pub enum Type {
     #[is(name = "static_type")]
     Static(Static),
 
-    Arc(Arc<Type>),
+    Arc(CloneType),
 
     Rest(RestType),
 
@@ -174,6 +186,8 @@ pub struct IndexedAccessType {
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub struct Ref {
     pub span: Span,
+    /// Id of the module where the ref is used in.
+    pub ctxt: ModuleId,
     pub type_name: TsEntityName,
     pub type_args: Option<TypeParamInstantiation>,
 }
@@ -207,7 +221,7 @@ pub struct ImportType {
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub struct Module {
     pub span: Span,
-    pub exports: ModuleTypeInfo,
+    pub exports: ModuleTypeData,
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
@@ -287,6 +301,7 @@ pub struct Mapped {
     pub span: Span,
     pub readonly: Option<TruePlusMinus>,
     pub optional: Option<TruePlusMinus>,
+    pub name_type: Option<Box<Type>>,
     pub type_param: TypeParam,
     pub ty: Option<Box<Type>>,
 }
@@ -481,6 +496,7 @@ pub struct TypeParam {
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub struct EnumVariant {
     pub span: Span,
+    pub ctxt: ModuleId,
     pub enum_name: Id,
     pub name: JsWord,
 }
@@ -516,7 +532,36 @@ pub struct TypeOrSpread {
     pub ty: Box<Type>,
 }
 
+pub trait TypeIterExt {}
+
 impl Type {
+    pub fn intersection<I>(span: Span, iter: I) -> Box<Self>
+    where
+        I: IntoIterator<Item = Box<Type>>,
+    {
+        let mut tys = vec![];
+
+        for ty in iter {
+            match *ty {
+                Type::Intersection(Intersection { types, .. }) => {
+                    tys.extend(types);
+                }
+
+                _ => tys.push(ty),
+            }
+        }
+
+        if tys.iter().any(|ty| ty.is_never()) {
+            return Type::never(span);
+        }
+
+        match tys.len() {
+            0 => Type::never(span),
+            1 => tys.into_iter().next().unwrap(),
+            _ => Box::new(Type::Intersection(Intersection { span, types: tys })),
+        }
+    }
+
     /// Creates a new type from `iter`.
     ///
     /// Note:
@@ -545,10 +590,6 @@ impl Type {
 
                 _ => tys.push(ty),
             }
-        }
-
-        if tys.is_empty() {
-            unreachable!("Type::union() should not be called with an empty iterator")
         }
 
         tys.retain(|ty| !ty.is_never());
@@ -614,6 +655,39 @@ impl Type {
 }
 
 impl Type {
+    /// TODO
+    pub fn is_clone_cheap(&self) -> bool {
+        if !cfg!(debug_assertions) {
+            return true;
+        }
+
+        match self {
+            Type::Arc(..)
+            | Type::Static(..)
+            | Type::Keyword(..)
+            | Type::This(..)
+            | Type::StaticThis(..)
+            | Type::Symbol(..) => true,
+
+            Type::Param(TypeParam {
+                constraint,
+                default,
+                ..
+            }) => {
+                constraint
+                    .as_ref()
+                    .map(|ty| ty.is_clone_cheap())
+                    .unwrap_or(true)
+                    && default
+                        .as_ref()
+                        .map(|ty| ty.is_clone_cheap())
+                        .unwrap_or(true)
+            }
+
+            _ => false,
+        }
+    }
+
     pub fn is_kwd(&self, k: TsKeywordTypeKind) -> bool {
         match *self.normalize() {
             Type::Keyword(TsKeywordType { kind, .. }) if kind == k => true,
@@ -703,8 +777,6 @@ impl Type {
 
             Type::Constructor(c) => c.span = span,
 
-            Type::Method(m) => m.span = span,
-
             Type::Enum(e) => e.span = span,
 
             Type::EnumVariant(e) => e.span = span,
@@ -727,7 +799,7 @@ impl Type {
 
             Type::Tuple(ty) => ty.span = span,
 
-            Type::Arc(arc) => *self = Type::Arc(arc.clone()),
+            Type::Arc(ty) => ty.span = span,
 
             Type::Ref(ty) => ty.span = span,
 
@@ -746,6 +818,8 @@ impl Type {
             Type::Rest(ty) => ty.span = span,
 
             Type::Symbol(ty) => ty.span = span,
+
+            Type::StaticThis(ty) => ty.span = span,
         }
     }
 }
@@ -824,13 +898,12 @@ impl Type {
 //}
 
 impl Type {
-    /// Normalize types.
-    pub fn into_owned(self) -> Type {
-        match self {
-            Type::Arc(ty) => (*ty).clone(),
-            Type::Static(s) => s.ty.clone(),
-            _ => self,
-        }
+    /// Converts this type to foldable type.
+    ///
+    /// TODO: Remove if possible
+    pub fn foldable(mut self) -> Type {
+        self.normalize_mut();
+        self
     }
 
     /// `Type::Static` is normalized.
@@ -845,7 +918,7 @@ impl Type {
             },
             Type::Arc(ref s) => {
                 //
-                unsafe { transmute::<&'s Type, &'c Type>(s) }
+                unsafe { transmute::<&'s Type, &'c Type>(&s.ty) }
             }
             _ => unsafe {
                 // Shorten lifetimes
@@ -854,7 +927,28 @@ impl Type {
         }
     }
 
+    /// `Type::Static` is normalized.
     ///
+    /// TODO: Remove if possible
+    pub fn normalize_mut(&mut self) -> &mut Type {
+        match self {
+            Type::Static(Static { ty, span }) => {
+                let mut ty = ty.clone();
+                ty.respan(*span);
+                *self = ty;
+            }
+            Type::Arc(CloneType { ty, span }) => {
+                let mut ty = (**ty).clone();
+                ty.respan(*span);
+                *self = ty;
+            }
+            _ => {}
+        }
+
+        self
+    }
+
+    /// TODO: Make this more efficient, and explode subunions.
     pub fn iter_union(&self) -> impl Debug + Iterator<Item = &Type> {
         Iter { ty: self, idx: 0 }
     }
@@ -1186,19 +1280,49 @@ impl Type {
 //    }
 //}
 
-impl Type {
-    /// Freeze the type.
-    pub fn freeze(self) -> Box<Type> {
-        box match self {
-            Self::Static(..) | Self::Arc(..) => self,
-            _ => Type::Arc(Arc::new(self)),
+struct CheapClone;
+
+impl VisitMut for CheapClone {
+    fn visit_mut_type(&mut self, ty: &mut Type) {
+        ty.visit_mut_children_with(self);
+
+        if ty.is_clone_cheap() {
+            return;
         }
+
+        let new_ty = replace(
+            ty,
+            Type::Keyword(TsKeywordType {
+                span: DUMMY_SP,
+                kind: TsKeywordTypeKind::TsAnyKeyword,
+            }),
+        );
+
+        *ty = Type::Arc(CloneType {
+            span: new_ty.span(),
+            ty: Arc::new(new_ty),
+        })
+    }
+}
+
+impl Type {
+    /// Make cloning cheap.
+    #[inline]
+    pub fn cheap(mut self) -> Box<Type> {
+        self.make_cheap();
+        box self
+    }
+
+    /// Make cloning cheap.
+    #[inline]
+    pub fn make_cheap(&mut self) {
+        self.visit_mut_with(&mut CheapClone);
     }
 
     pub fn as_bool(&self) -> Value<bool> {
         match self {
             Type::Static(ty) => ty.ty.as_bool(),
-            Type::Arc(ref ty) => ty.as_bool(),
+            Type::Arc(ref ty) => ty.ty.as_bool(),
 
             Type::Class(_) | Type::TypeLit(_) => Known(true),
 
@@ -1215,7 +1339,8 @@ impl Type {
                 | TsKeywordTypeKind::TsNumberKeyword
                 | TsKeywordTypeKind::TsUnknownKeyword
                 | TsKeywordTypeKind::TsBooleanKeyword
-                | TsKeywordTypeKind::TsAnyKeyword => return Unknown,
+                | TsKeywordTypeKind::TsAnyKeyword
+                | TsKeywordTypeKind::TsIntrinsicKeyword => return Unknown,
                 TsKeywordTypeKind::TsSymbolKeyword
                 | TsKeywordTypeKind::TsBigIntKeyword
                 | TsKeywordTypeKind::TsObjectKeyword => true,
@@ -1230,13 +1355,13 @@ impl Type {
     }
 }
 
-/// Creates a reference
-impl From<Ident> for Type {
-    fn from(i: Ident) -> Self {
-        Type::Ref(Ref {
-            span: i.span,
-            type_name: TsEntityName::Ident(i),
-            type_args: None,
-        })
-    }
+#[derive(Debug, Clone, PartialEq, Eq, Spanned)]
+pub struct StaticThis {
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, PartialEq, Spanned)]
+pub struct CloneType {
+    pub span: Span,
+    pub ty: Arc<Type>,
 }

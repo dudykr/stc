@@ -10,6 +10,18 @@ pub(super) struct TypeFactsHandler {
 
 impl ty::Fold for TypeFactsHandler {
     fn fold_ts_keyword_type(&mut self, ty: TsKeywordType) -> TsKeywordType {
+        if self.facts.contains(TypeFacts::Truthy) {
+            match ty.kind {
+                TsKeywordTypeKind::TsUndefinedKeyword | TsKeywordTypeKind::TsNullKeyword => {
+                    return TsKeywordType {
+                        span: ty.span,
+                        kind: TsKeywordTypeKind::TsNeverKeyword,
+                    }
+                }
+                _ => {}
+            }
+        }
+
         let keyword_types = &[
             (
                 TypeFacts::TypeofNEString,
@@ -41,22 +53,6 @@ impl ty::Fold for TypeFactsHandler {
                 };
             }
         }
-
-        ty
-    }
-
-    fn fold_union(&mut self, mut u: ty::Union) -> ty::Union {
-        u = u.fold_children_with(self);
-
-        u.types.retain(|v| !v.is_never());
-
-        u
-    }
-
-    fn fold_type(&mut self, ty: ty::Type) -> ty::Type {
-        let ty = ty.fold_children_with(self);
-        let span = ty.span();
-
         {
             let keyword_types = &[
                 (
@@ -81,22 +77,48 @@ impl ty::Fold for TypeFactsHandler {
                 ),
             ];
 
-            let keywords = keyword_types.iter().filter_map(|(eq, kwd)| {
-                if self.facts.contains(*eq) {
-                    Some(kwd)
-                } else {
-                    None
+            let has_any = keyword_types
+                .iter()
+                .any(|&(fact, _)| self.facts.contains(fact));
+
+            if has_any {
+                let allowed_keywords = keyword_types
+                    .iter()
+                    .filter(|&&(fact, _)| self.facts.contains(fact))
+                    .map(|v| v.1)
+                    .collect::<Vec<_>>();
+
+                if !allowed_keywords.contains(&ty.kind) {
+                    return TsKeywordType {
+                        span: ty.span,
+                        kind: TsKeywordTypeKind::TsNeverKeyword,
+                    };
                 }
-            });
-            let keywords = keywords
-                .map(|&kind| TsKeywordType { span, kind })
-                .map(Type::Keyword)
-                .map(Box::new)
-                .collect::<Vec<_>>();
-            if !keywords.is_empty() {
-                return *Type::union(keywords);
             }
         }
+
+        ty
+    }
+
+    fn fold_union(&mut self, mut u: ty::Union) -> ty::Union {
+        u = u.fold_children_with(self);
+
+        u.types.retain(|v| !v.is_never());
+
+        if self.facts.contains(TypeFacts::TypeofNEFunction) {
+            u.types.retain(|ty| match ty.normalize() {
+                Type::Function(..) => false,
+                _ => true,
+            });
+        }
+
+        u
+    }
+
+    fn fold_type(&mut self, mut ty: ty::Type) -> ty::Type {
+        ty = ty.foldable();
+        ty = ty.fold_children_with(self);
+        let span = ty.span();
 
         match ty {
             Type::Union(ref u) if u.types.is_empty() => return *Type::never(u.span),

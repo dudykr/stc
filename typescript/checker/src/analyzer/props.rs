@@ -1,8 +1,9 @@
-use super::{scope::ScopeKind, Analyzer};
+use super::{marks::MarkExt, scope::ScopeKind, Analyzer};
 use crate::{
     analyzer::{expr::TypeOfMode, util::ResultExt, Ctx},
     errors::{Error, Errors},
     ty::{MethodSignature, Operator, PropertySignature, Type, TypeElement, TypeExt},
+    validator,
     validator::{Validate, ValidateWith},
     ValidationResult,
 };
@@ -22,12 +23,9 @@ pub(super) enum ComputedPropMode {
     Interface,
 }
 
-impl Validate<PropName> for Analyzer<'_, '_> {
-    type Output = ValidationResult<()>;
-
-    fn validate(&mut self, node: &mut PropName) -> Self::Output {
-        use swc_ecma_visit::VisitMutWith;
-
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, node: &mut PropName) {
         self.record(node);
 
         node.visit_mut_children_with(self);
@@ -36,10 +34,9 @@ impl Validate<PropName> for Analyzer<'_, '_> {
     }
 }
 
-impl Validate<ComputedPropName> for Analyzer<'_, '_> {
-    type Output = ValidationResult<()>;
-
-    fn validate(&mut self, node: &mut ComputedPropName) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, node: &mut ComputedPropName) {
         self.record(node);
 
         let mode = self.ctx.computed_prop_mode;
@@ -59,7 +56,7 @@ impl Validate<ComputedPropName> for Analyzer<'_, '_> {
         };
 
         let mut errors = Errors::default();
-        let ty = match self.validate(&mut node.expr) {
+        let ty = match node.expr.validate_with_default(self) {
             Ok(ty) => ty,
             Err(err) => {
                 match err {
@@ -77,9 +74,7 @@ impl Validate<ComputedPropName> for Analyzer<'_, '_> {
             ComputedPropMode::Class { .. } | ComputedPropMode::Interface => {
                 let is_valid_key = is_valid_computed_key(&node.expr);
 
-                let ty = self
-                    .expand(node.span, ty.clone())
-                    .store(&mut self.info.errors);
+                let ty = self.expand(node.span, ty.clone()).report(&mut self.storage);
 
                 if let Some(ref ty) = ty {
                     // TODO: Add support for expressions like '' + ''.
@@ -158,10 +153,9 @@ impl Validate<ComputedPropName> for Analyzer<'_, '_> {
     }
 }
 
-impl Validate<Prop> for Analyzer<'_, '_> {
-    type Output = ValidationResult<TypeElement>;
-
-    fn validate(&mut self, prop: &mut Prop) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, prop: &mut Prop) -> ValidationResult<TypeElement> {
         self.record(prop);
 
         let ctx = Ctx {
@@ -186,7 +180,6 @@ impl Analyzer<'_, '_> {
             },
             _ => false,
         };
-        self.scope.this = Some(Ident::new(js_word!(""), DUMMY_SP).into());
 
         let span = prop.span();
         // TODO: Validate prop key
@@ -196,7 +189,7 @@ impl Analyzer<'_, '_> {
             Prop::Shorthand(ref i) => {
                 // TODO: Check if RValue is correct
                 self.type_of_var(&i, TypeOfMode::RValue, None)
-                    .store(&mut self.info.errors)
+                    .report(&mut self.storage)
             }
             _ => None,
         };
@@ -221,7 +214,7 @@ impl Analyzer<'_, '_> {
                     PropName::Computed(_) => true,
                     _ => false,
                 };
-                let ty = kv.value.validate_with(self)?;
+                let ty = kv.value.validate_with_default(self)?;
 
                 PropertySignature {
                     span,
@@ -269,48 +262,75 @@ impl Analyzer<'_, '_> {
                     _ => false,
                 };
 
-                if let Some(body) = &mut p.function.body {
-                    let inferred_ret_ty = self
-                        .visit_stmts_for_return(
-                            p.function.span,
-                            p.function.is_async,
-                            p.function.is_generator,
-                            &mut body.stmts,
-                        )?
-                        .unwrap_or_else(|| {
-                            box Type::Keyword(TsKeywordType {
-                                span: body.span,
-                                kind: TsKeywordTypeKind::TsVoidKeyword,
-                            })
-                        });
+                self.with_child(ScopeKind::Method, Default::default(), {
+                    |child: &mut Analyzer| -> ValidationResult<_> {
+                        // We mark as wip
+                        if !computed {
+                            match &p.key {
+                                PropName::Ident(i) => {
+                                    child.scope.declaring_prop = Some(i.into());
+                                }
+                                _ => {}
+                            };
+                        }
 
-                    if p.function.return_type.is_none() {
-                        p.function.return_type = Some(inferred_ret_ty.clone().into())
+                        let type_params = try_opt!(p.function.type_params.validate_with(child));
+                        let params = p.function.params.validate_with(child)?;
+
+                        if let Some(body) = &mut p.function.body {
+                            let inferred_ret_ty = child
+                                .visit_stmts_for_return(
+                                    p.function.span,
+                                    p.function.is_async,
+                                    p.function.is_generator,
+                                    &mut body.stmts,
+                                )?
+                                .unwrap_or_else(|| {
+                                    box Type::Keyword(TsKeywordType {
+                                        span: body.span,
+                                        kind: TsKeywordTypeKind::TsVoidKeyword,
+                                    })
+                                });
+
+                            // TODO: Preserve return type if `this` is not involved in return type.
+                            if p.function.return_type.is_none() {
+                                if child
+                                    .marks()
+                                    .infected_by_this_in_object_literal
+                                    .is_marked(&inferred_ret_ty)
+                                {
+                                    p.function.return_type = Some(Type::any(span).into())
+                                } else {
+                                    p.function.return_type = Some(inferred_ret_ty.clone().into())
+                                }
+                            }
+
+                            // TODO: Assign
+                        }
+
+                        let ret_ty = try_opt!(p.function.return_type.validate_with(child));
+
+                        Ok(MethodSignature {
+                            span,
+                            readonly: false,
+                            key,
+                            computed,
+                            optional: false,
+                            params,
+                            ret_ty,
+                            type_params,
+                        }
+                        .into())
                     }
-
-                    // TODO: Assign
-                }
-
-                MethodSignature {
-                    span,
-                    readonly: false,
-                    key,
-                    computed,
-                    optional: false,
-                    params: p.function.params.validate_with(self)?,
-                    ret_ty: try_opt!(p.function.return_type.validate_with(self)),
-                    type_params: try_opt!(p.function.type_params.validate_with(self)),
-                }
-                .into()
+                })?
             }
         })
     }
 }
 
-impl Validate<GetterProp> for Analyzer<'_, '_> {
-    type Output = ValidationResult<TypeElement>;
-
-    fn validate(&mut self, n: &mut GetterProp) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, n: &mut GetterProp) -> ValidationResult<TypeElement> {
         self.record(n);
 
         let computed = match n.key {
@@ -327,7 +347,7 @@ impl Validate<GetterProp> for Analyzer<'_, '_> {
                         child.visit_stmts_for_return(n.span, false, false, &mut body.stmts)?;
                     if let None = ret_ty {
                         // getter property must have return statements.
-                        child.info.errors.push(Error::TS2378 { span: n.key.span() });
+                        child.storage.report(Error::TS2378 { span: n.key.span() });
                     }
 
                     return Ok(ret_ty);
@@ -335,7 +355,7 @@ impl Validate<GetterProp> for Analyzer<'_, '_> {
 
                 Ok(None)
             })
-            .store(&mut self.info.errors)
+            .report(&mut self.storage)
             .flatten();
 
         Ok(PropertySignature {
@@ -345,7 +365,11 @@ impl Validate<GetterProp> for Analyzer<'_, '_> {
             optional: false,
             readonly: true,
             computed,
-            type_ann,
+            type_ann: if computed {
+                type_ann
+            } else {
+                Some(Type::any(n.span))
+            },
             type_params: Default::default(),
         }
         .into())
@@ -364,11 +388,12 @@ fn prop_key_to_expr(p: &Prop) -> Box<Expr> {
 }
 
 pub(super) fn prop_name_to_expr(key: &PropName) -> Box<Expr> {
-    match *key {
+    match key {
         PropName::Computed(ref p) => p.expr.clone(),
         PropName::Ident(ref ident) => box Expr::Ident(ident.clone()),
         PropName::Str(ref s) => box Expr::Lit(Lit::Str(Str { ..s.clone() })),
         PropName::Num(ref s) => box Expr::Lit(Lit::Num(Number { ..s.clone() })),
+        PropName::BigInt(n) => box Expr::Lit(Lit::BigInt(n.clone())),
     }
 }
 

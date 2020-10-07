@@ -1,7 +1,1 @@
-[
-    {
-        "line": 2,
-        "column": 20,
-        "msg": "Statements are not allowed in ambient contexts."
-    }
-]
+[]

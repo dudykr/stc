@@ -34,8 +34,10 @@ impl DuplicateTracker {
     }
 
     pub fn record_all(&mut self, other: DuplicateTracker) {
-        for (k, v) in other.visited {
-            self.insert(k, v);
+        if cfg!(debug_assertions) {
+            for (k, v) in other.visited {
+                self.insert(k, v);
+            }
         }
     }
 }

@@ -1,19 +1,21 @@
 use super::super::Analyzer;
+use crate::errors::Errors;
 use crate::{
     analyzer::{expr::TypeOfMode, util::ResultExt},
     errors::Error,
     ty::Type,
+    validator,
     validator::{Validate, ValidateWith},
     ValidationResult,
 };
+use stc_types::Union;
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::*;
 
-impl Validate<UnaryExpr> for Analyzer<'_, '_> {
-    type Output = ValidationResult;
-
-    fn validate(&mut self, e: &mut UnaryExpr) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, e: &mut UnaryExpr) -> ValidationResult {
         let UnaryExpr {
             span,
             op,
@@ -26,7 +28,7 @@ impl Validate<UnaryExpr> for Analyzer<'_, '_> {
             match **arg {
                 Expr::Member(ref mut e) => {
                     self.type_of_member_expr(e, TypeOfMode::LValue)
-                        .store(&mut self.info.errors);
+                        .report(&mut self.storage);
 
                     return Ok(box Type::Keyword(TsKeywordType {
                         span,
@@ -38,13 +40,13 @@ impl Validate<UnaryExpr> for Analyzer<'_, '_> {
             }
         }
 
-        let arg: Option<Box<Type>> =
-            arg.validate_with(self)
-                .store(&mut self.info.errors)
-                .map(|mut ty| {
-                    ty.respan(arg.span());
-                    ty
-                });
+        let arg: Option<Box<Type>> = arg
+            .validate_with_args(self, (TypeOfMode::LValue, None, None))
+            .report(&mut self.storage)
+            .map(|mut ty| {
+                ty.respan(arg.span());
+                ty
+            });
 
         if let Some(ref arg) = arg {
             self.validate_unary_expr_inner(span, op, arg);
@@ -54,7 +56,7 @@ impl Validate<UnaryExpr> for Analyzer<'_, '_> {
             op!(unary, "+") | op!(unary, "-") | op!("~") => {
                 if let Some(arg) = &arg {
                     if arg.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) {
-                        self.info.errors.push(Error::NumericUnaryOpToSymbol {
+                        self.storage.report(Error::NumericUnaryOpToSymbol {
                             span: arg.span(),
                             op,
                         })
@@ -67,6 +69,34 @@ impl Validate<UnaryExpr> for Analyzer<'_, '_> {
 
         match op {
             op!("typeof") => {
+                if self.ctx.in_export_default_expr {
+                    return Ok(box Type::Union(Union {
+                        span,
+                        types: [
+                            js_word!("string"),
+                            js_word!("number"),
+                            js_word!("bigint"),
+                            js_word!("boolean"),
+                            js_word!("symbol"),
+                            js_word!("undefined"),
+                            js_word!("object"),
+                            js_word!("function"),
+                        ]
+                        .iter()
+                        .cloned()
+                        .map(|value| TsLitType {
+                            span,
+                            lit: TsLit::Str(Str {
+                                span,
+                                value,
+                                has_escape: false,
+                            }),
+                        })
+                        .map(Type::Lit)
+                        .map(Box::new)
+                        .collect(),
+                    }));
+                }
                 return Ok(box Type::Keyword(TsKeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsStringKeyword,
@@ -151,7 +181,7 @@ impl Validate<UnaryExpr> for Analyzer<'_, '_> {
 
 impl Analyzer<'_, '_> {
     fn validate_unary_expr_inner(&mut self, span: Span, op: UnaryOp, arg: &Type) {
-        let mut errors = vec![];
+        let mut errors = Errors::default();
 
         match op {
             op!("typeof") | op!("delete") | op!("void") => match arg.normalize() {
@@ -186,7 +216,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        self.info.errors.extend(errors);
+        self.storage.report_all(errors);
     }
 }
 

@@ -1,6 +1,0 @@
-error: Unexpected token Some(At)
- --> $DIR/tests/conformance/decorators/class/accessor/decoratorOnClassAccessor3.ts:6:12
-  |
-6 |     public @dec get accessor() { return 1; }
-  |            ^
-
