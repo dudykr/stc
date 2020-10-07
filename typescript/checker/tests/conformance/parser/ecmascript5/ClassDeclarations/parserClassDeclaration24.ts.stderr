@@ -1,6 +1,0 @@
-error: TS2414
- --> $DIR/tests/conformance/parser/ecmascript5/ClassDeclarations/parserClassDeclaration24.ts:1:7
-  |
-1 | class any {
-  |       ^^^
-

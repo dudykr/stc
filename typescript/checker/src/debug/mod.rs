@@ -1,16 +1,17 @@
 //! A module to validate while type checking
 use crate::ty::{self, Ref, Type};
 use backtrace::Backtrace;
+use slog::Logger;
+use stc_types::{Fold, FoldWith, Id, TypeNode, VisitWith};
 use std::io::{stderr, stdout};
 use swc_atoms::js_word;
 use swc_common::{sync::Lrc, FilePathMapping, SourceMap, DUMMY_SP};
 use swc_ecma_ast::*;
 use swc_ecma_codegen::{text_writer::JsWriter, Emitter};
-use swc_ts_types::{Fold, FoldWith, Id, TypeNode, VisitWith};
 
 pub mod duplicate;
 
-pub fn print_type(name: &str, cm: &Lrc<SourceMap>, t: &Type) {
+pub fn print_type(logger: &Logger, name: &str, cm: &Lrc<SourceMap>, t: &Type) {
     let mut buf = vec![];
     {
         let mut emitter = Emitter {
@@ -36,7 +37,12 @@ pub fn print_type(name: &str, cm: &Lrc<SourceMap>, t: &Type) {
             .unwrap();
     }
     let s = String::from_utf8_lossy(&buf);
-    eprintln!("===== ===== ===== Type ({}) ===== ===== =====\n{}", name, s);
+    slog::info!(
+        logger,
+        "===== ===== ===== Type ({}) ===== ===== =====\n{}",
+        name,
+        s
+    );
 }
 
 /// Ensures that `ty` does not **contain** [Type::Ref].
@@ -59,10 +65,14 @@ pub fn assert_no_ref(ty: &Type) {
 }
 
 pub fn print_backtrace() {
-    let bt = Backtrace::new();
-    let bt = filter(bt);
+    if cfg!(debug_assertions) {
+        let bt = Backtrace::new();
+        let bt = filter(bt);
 
-    println!("{:?}", bt);
+        let s = format!("{:?}", bt);
+
+        println!("{}", s);
+    }
 }
 
 fn filter(mut bt: Backtrace) -> Backtrace {
@@ -92,7 +102,11 @@ fn filter(mut bt: Backtrace) -> Backtrace {
                     || s.contains("libstd")
                     || s.contains("/libtest/")
                     || s.contains("/rustc/")
+                    || s.contains("rust/library")
                     || s.contains("libpanic_unwind/")
+                    || s.contains("/ecmascript/visit/")
+                    || s.contains("swc_visit")
+                    || s.contains("types/src/visit.rs")
                 {
                     return false;
                 }
@@ -133,5 +147,14 @@ struct Visualizer;
 impl Fold for Visualizer {
     fn fold_id(&mut self, id: Id) -> Id {
         Id::word(format!("{}", id).into())
+    }
+
+    fn fold_type(&mut self, mut ty: Type) -> Type {
+        ty = ty.fold_children_with(self);
+
+        match ty {
+            Type::Module(m) => *Type::any(m.span),
+            _ => ty,
+        }
     }
 }

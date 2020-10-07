@@ -1,7 +1,7 @@
 use super::Analyzer;
 use crate::{analyzer::util::ResultExt, ty, ty::Type};
+use stc_types::FoldWith as _;
 use swc_common::Spanned;
-use swc_ts_types::FoldWith as _;
 
 impl Analyzer<'_, '_> {
     pub(super) fn finalize(&mut self, module: ty::Module) -> ty::Module {
@@ -22,9 +22,9 @@ impl ty::Fold for ExpandAll<'_, '_, '_> {
             Type::Ref(..) => *self
                 .analyzer
                 .expand(ty.span(), box ty.clone())
-                .store(&mut self.analyzer.info.errors)
+                .report(&mut self.analyzer.storage)
                 .unwrap_or_else(|| box ty),
-            _ => *ty.freeze(),
+            _ => *ty.cheap(),
         }
     }
 }

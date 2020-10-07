@@ -1,5 +1,4 @@
 format_strings = true
-merge_imports = true
-required_version = "1.4.20"
+required_version = "1.4.22"
 use_field_init_shorthand = true
 wrap_comments = true

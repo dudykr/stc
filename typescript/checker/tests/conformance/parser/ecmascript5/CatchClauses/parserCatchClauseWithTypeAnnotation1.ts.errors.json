@@ -1,7 +1,1 @@
-[
-    {
-        "line": 2,
-        "column": 13,
-        "msg": "Catch clause variable cannot have a type annotation."
-    }
-]
+[]

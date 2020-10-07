@@ -1,6 +1,0 @@
-error: Unexpected token Some(Hash)
- --> $DIR/tests/conformance/parser/ecmascript5/ErrorRecovery/Blocks/parserErrorRecovery_Block2.ts:2:5
-  |
-2 |     #
-  |     ^
-

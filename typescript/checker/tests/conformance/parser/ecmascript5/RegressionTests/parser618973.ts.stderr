@@ -1,6 +1,0 @@
-error: Expected LBrace, got Some(Word(export))
- --> $DIR/tests/conformance/parser/ecmascript5/RegressionTests/parser618973.ts:1:8
-  |
-1 | export export class Foo {
-  |        ^^^^^^
-

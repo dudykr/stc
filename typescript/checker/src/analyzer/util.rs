@@ -1,15 +1,127 @@
 use super::Analyzer;
+use super::Ctx;
+use crate::errors::Error;
+use crate::mode::Storage;
+use crate::ValidationResult;
 use crate::{analyzer::generic::is_literals, ty, ty::Type, util::is_str_lit_or_union};
+use stc_types::TypeElement;
+use stc_types::{
+    ClassInstance, FoldWith, Id, IndexedAccessType, Intersection, ModuleId, QueryExpr, QueryType,
+    Ref, Tuple,
+};
 use std::iter::once;
+use swc_common::Span;
 use swc_common::Spanned;
 use swc_ecma_ast::*;
 use swc_ecma_visit::Node;
-use swc_ts_types::{
-    ClassInstance, FoldWith, Id, IndexedAccessType, Intersection, QueryExpr, QueryType, Ref, Tuple,
-};
 use ty::TypeExt;
 
-pub(crate) fn instantiate_class(ty: Box<Type>) -> Box<Type> {
+impl Analyzer<'_, '_> {
+    /// `span` and `calle` is used only for error reporting.
+    fn make_instance_from_type_elements(
+        &mut self,
+        span: Span,
+        callee: &Type,
+        elements: &[TypeElement],
+    ) -> ValidationResult<Box<Type>> {
+        for member in elements {
+            match member {
+                TypeElement::Constructor(c) => {
+                    if let Some(ty) = &c.ret_ty {
+                        return Ok(ty.clone());
+                    }
+                }
+                _ => continue,
+            }
+        }
+
+        Err(Error::NoNewSignature {
+            span,
+            callee: box callee.clone(),
+        })
+    }
+
+    /// Make instance of `ty`. In case of error, error will be reported to user
+    /// and `ty` will be returned.
+    ///
+    ///
+    /// TODO: Use Cow
+    pub(super) fn make_instance_or_report(&mut self, ty: &Type) -> Box<Type> {
+        let res = self.make_instance(ty);
+        match res {
+            Ok(ty) => ty,
+            Err(err) => {
+                self.storage.report(err);
+                box ty.clone()
+            }
+        }
+    }
+
+    /// TODO: Use Cow
+    pub(super) fn make_instance(&mut self, ty: &Type) -> ValidationResult {
+        let span = ty.span();
+        let ty = ty.normalize();
+
+        match ty {
+            Type::Ref(..) => {
+                let ctx = Ctx {
+                    preserve_ref: false,
+                    ignore_expand_prevention_for_top: true,
+                    ..self.ctx
+                };
+                let ty =
+                    self.with_ctx(ctx)
+                        .expand_fully(span, box ty.normalize().clone(), false)?;
+
+                match ty.normalize() {
+                    Type::Ref(..) => return Ok(ty.clone()),
+                    _ => return self.make_instance(&ty),
+                }
+            }
+
+            Type::TypeLit(type_lit) => {
+                return self.make_instance_from_type_elements(span, ty, &type_lit.members);
+            }
+
+            Type::Interface(interface) => {
+                let span = interface.span;
+
+                let res = self.make_instance_from_type_elements(span, ty, &interface.body);
+                let err = match res {
+                    Ok(v) => return Ok(v),
+                    Err(err) => err,
+                };
+
+                for parent in &interface.extends {
+                    let ctxt = self.ctx.module_id;
+                    let parent_ty = self.type_of_ts_entity_name(span, ctxt, &parent.expr, None)?;
+                    if let Ok(ty) = self.make_instance(&parent_ty) {
+                        return Ok(ty);
+                    }
+                }
+
+                return Err(err);
+            }
+
+            Type::Class(..) => {
+                return Ok(box Type::ClassInstance(ClassInstance {
+                    span,
+                    ty: box ty.clone(),
+                    type_args: None,
+                }))
+            }
+
+            _ => {}
+        }
+
+        Err(Error::NoNewSignature {
+            span,
+            callee: box ty.clone(),
+        })
+    }
+}
+
+pub(crate) fn instantiate_class(module_id: ModuleId, ty: Box<Type>) -> Box<Type> {
     let span = ty.span();
 
     match *ty.normalize() {
@@ -20,7 +132,7 @@ pub(crate) fn instantiate_class(ty: Box<Type>) -> Box<Type> {
                 .cloned()
                 .map(|mut element| {
                     // TODO: Remove clone
-                    element.ty = instantiate_class(element.ty);
+                    element.ty = instantiate_class(module_id, element.ty);
                     element
                 })
                 .collect(),
@@ -40,7 +152,7 @@ pub(crate) fn instantiate_class(ty: Box<Type>) -> Box<Type> {
             let types = i
                 .types
                 .iter()
-                .map(|ty| instantiate_class(ty.clone()))
+                .map(|ty| instantiate_class(module_id, ty.clone()))
                 .collect();
 
             box Type::Intersection(Intersection {
@@ -54,6 +166,7 @@ pub(crate) fn instantiate_class(ty: Box<Type>) -> Box<Type> {
             expr: QueryExpr::TsEntityName(ref type_name),
         }) => box Type::Ref(Ref {
             span,
+            ctxt: module_id,
             type_name: type_name.clone(),
             type_args: Default::default(),
         }),
@@ -98,7 +211,7 @@ impl ty::Fold for Generalizer {
         ty = ty.fold_children_with(self);
         self.force = old;
 
-        ty.generalize_lit().into_owned()
+        *ty.generalize_lit()
     }
 }
 
@@ -108,21 +221,21 @@ impl Analyzer<'_, '_> {
     //    where
     //        Self: Validate<T, Output = Result<O, Error>>,
     //    {
-    //        let res: Result<O, _> = self.validate(node);
+    //        let res: Result<O, _> = self.validate_with(node);
     //        match res {
     //            Ok(v) => Some(v),
     //            Err(err) => {
-    //                self.info.errors.push(err);
+    //                self.storage.report(err);
     //                None
     //            }
     //        }
     //    }
 }
 
-pub trait ResultExt<T, E>: Into<Result<T, E>> {
+pub trait ResultExt<T>: Into<Result<T, Error>> {
     fn store<V>(self, to: &mut V) -> Option<T>
     where
-        V: Extend<E>,
+        V: Extend<Error>,
     {
         match self.into() {
             Ok(val) => Some(val),
@@ -132,9 +245,19 @@ pub trait ResultExt<T, E>: Into<Result<T, E>> {
             }
         }
     }
+
+    fn report(self, storage: &mut Storage) -> Option<T> {
+        match self.into() {
+            Ok(v) => Some(v),
+            Err(err) => {
+                storage.report(err);
+                None
+            }
+        }
+    }
 }
 
-impl<T, E> ResultExt<T, E> for Result<T, E> {}
+impl<T> ResultExt<T> for Result<T, Error> {}
 
 /// Simple utility to check (l, r) and (r, l) with same code.
 #[derive(Debug, Clone, Copy)]

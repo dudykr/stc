@@ -1,0 +1,1 @@
+type T21 = readonly [number, number];

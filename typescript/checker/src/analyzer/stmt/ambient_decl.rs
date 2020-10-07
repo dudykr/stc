@@ -1,4 +1,6 @@
-use crate::errors::{Error, Errors};
+use crate::errors::Error;
+use crate::errors::Errors;
+use crate::mode::Storage;
 use swc_ecma_ast::*;
 use swc_ecma_visit::{Node, VisitWith};
 
@@ -10,12 +12,12 @@ use swc_ecma_visit::{Node, VisitWith};
 /// bar();
 /// bar() {}
 /// ```
-pub struct AmbientFunctionHandler<'a> {
+pub struct AmbientFunctionHandler<'a, 'b> {
     pub last_ambient_name: Option<Ident>,
-    pub errors: &'a mut Errors,
+    pub errors: &'a mut Storage<'b>,
 }
 
-impl swc_ecma_visit::Visit for AmbientFunctionHandler<'_> {
+impl swc_ecma_visit::Visit for AmbientFunctionHandler<'_, '_> {
     fn visit_stmt(&mut self, node: &Stmt, _: &dyn Node) {
         node.visit_children_with(self);
 
@@ -24,7 +26,7 @@ impl swc_ecma_visit::Visit for AmbientFunctionHandler<'_> {
             _ => {
                 // .take() is same as self.last_ambient_name = None
                 if let Some(ref i) = self.last_ambient_name.take() {
-                    self.errors.push(Error::TS2391 { span: i.span });
+                    self.errors.report(Error::TS2391 { span: i.span });
                 }
             }
         }
@@ -38,7 +40,7 @@ impl swc_ecma_visit::Visit for AmbientFunctionHandler<'_> {
         if node.function.body.is_none() {
             if let Some(ref name) = self.last_ambient_name {
                 if node.ident.sym != name.sym {
-                    self.errors.push(Error::TS2389 { span: name.span });
+                    self.errors.report(Error::TS2389 { span: name.span });
                 }
             }
             self.last_ambient_name = Some(node.ident.clone());
@@ -47,7 +49,7 @@ impl swc_ecma_visit::Visit for AmbientFunctionHandler<'_> {
                 if node.ident.sym == name.sym {
                     self.last_ambient_name = None;
                 } else {
-                    self.errors.push(Error::TS2389 {
+                    self.errors.report(Error::TS2389 {
                         span: node.ident.span,
                     });
                     self.last_ambient_name = None;

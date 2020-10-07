@@ -1,24 +1,30 @@
 [package]
 authors = ["강동윤 <kdy1@dudy.kr>"]
+build = "build.rs"
 edition = "2018"
-name = "swc_ts_dts"
+name = "stc_dts"
 publish = false
 version = "0.1.0"
 
 [dependencies]
-fxhash = "0.2.1"
-swc_atoms = {path = "../../atoms"}
-swc_common = {path = "../../common"}
-swc_ecma_ast = {path = "../../ecmascript/ast"}
-swc_ecma_utils = {path = "../../ecmascript/utils"}
-swc_ecma_visit = {path = "../../ecmascript/visit"}
-swc_ts_checker = {path = "../checker"}
-swc_ts_types = {path = "../types"}
+stc_checker = {path = "../checker"}
+stc_types = {path = "../types"}
+stc_utils = {path = "../utils"}
 
 [dev-dependencies]
 anyhow = "1.0.26"
+async-std = {version = "1"}
 ignore = "0.4.11"
 pretty_assertions = "0.6.1"
-swc_ecma_codegen = {path = "../../ecmascript/codegen"}
-swc_ecma_parser = {path = "../../ecmascript/parser"}
-testing = {path = "../../testing"}
+rayon = "1"
+slog = "2"
+stc_testing = {path = "../../testing"}
+swc_atoms = "0.2.5"
+swc_common = "0.10.6"
+swc_ecma_ast = "0.35.0"
+swc_ecma_codegen = "0.41.4"
+swc_ecma_parser = "0.43.1"
+swc_ecma_utils = "0.25.0"
+swc_ecma_visit = "0.21.0"
+testing = "0.10"
+testing_macros = "0.1.1"

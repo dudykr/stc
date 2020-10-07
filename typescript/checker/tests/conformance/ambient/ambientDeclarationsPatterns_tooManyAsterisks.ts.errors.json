@@ -1,7 +1,1 @@
-[
-    {
-        "line": 1,
-        "column": 16,
-        "msg": "Pattern 'too*many*asterisks' can have at most one '*' character."
-    }
-]
+[]

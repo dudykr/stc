@@ -1,7 +1,1 @@
-[
-    {
-        "line": 2,
-        "column": 18,
-        "msg": "'yield' expressions cannot be used in a parameter initializer."
-    }
-]
+[]

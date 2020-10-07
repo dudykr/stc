@@ -4,16 +4,16 @@ use crate::{
     debug::print_backtrace,
     errors::{Error, Errors},
     ty::{self, TypeExt},
-    util::{EqIgnoreSpan, TypeEq},
     ValidationResult,
+};
+use stc_types::{
+    eq::{EqIgnoreSpan, TypeEq},
+    Array, ClassInstance, EnumVariant, FnParam, Interface, Intersection, Tuple, Type, TypeElement,
+    TypeLit, TypeParam, Union,
 };
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::*;
-use swc_ts_types::{
-    Array, ClassInstance, EnumVariant, FnParam, Interface, Intersection, Tuple, Type, TypeElement,
-    TypeLit, TypeParam, Union,
-};
 
 impl Analyzer<'_, '_> {
     pub fn assign(&self, left: &Type, right: &Type, span: Span) -> Result<(), Error> {
@@ -21,7 +21,10 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        debug_assert!(!span.is_dummy());
+        // if cfg!(debug_assertions) && span.is_dummy() {
+        //     print_backtrace();
+        //     debug_assert!(!span.is_dummy());
+        // }
 
         // self.verify_before_assign("lhs", left);
         // self.verify_before_assign("rhs", right);
@@ -54,8 +57,8 @@ impl Analyzer<'_, '_> {
 
     /// Verifies that `ty` is
     ///
-    ///     - Not a reference
-    ///     - Not a type parameter declared on child scope.
+    /// - Not a reference
+    /// - Not a type parameter declared on child scope.
     fn verify_before_assign(&self, ctx: &'static str, ty: &Type) {
         match ty.normalize() {
             Type::Ref(ref r) => {
@@ -155,7 +158,11 @@ impl Analyzer<'_, '_> {
             }};
         }
 
-        match to {
+        if to.normalize().type_eq(rhs.normalize()) {
+            return Ok(());
+        }
+
+        match to.normalize() {
             Type::Ref(left) => match rhs {
                 Type::Ref(right) => {
                     // We need this as type may recurse, and thus cannot be handled by expander.
@@ -181,7 +188,7 @@ impl Analyzer<'_, '_> {
         }
 
         // Allow v = null and v = undefined if strict null check is false
-        if !self.rule.strict_null_checks {
+        if !self.rule().strict_null_checks {
             match rhs.normalize() {
                 Type::Keyword(TsKeywordType {
                     kind: TsKeywordTypeKind::TsNullKeyword,
@@ -294,6 +301,7 @@ impl Analyzer<'_, '_> {
             Type::Class(ref l) => match rhs.normalize() {
                 Type::Interface(..) | Type::TypeLit(..) | Type::Lit(..) => fail!(),
                 Type::ClassInstance(r) => return self.assign_class(span, l, &r.ty),
+                Type::Class(..) => return self.assign_class(span, l, rhs.normalize()),
                 _ => {}
             },
 
@@ -306,6 +314,8 @@ impl Analyzer<'_, '_> {
         }
 
         match *rhs.normalize() {
+            Type::Infer(..) => fail!(),
+
             // When strict null check is disabled, we can assign null / undefined to many things.
             Type::Keyword(TsKeywordType {
                 kind: TsKeywordTypeKind::TsUndefinedKeyword,
@@ -322,7 +332,7 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
 
-                if !self.rule.strict_null_checks {
+                if !self.rule().strict_null_checks {
                     return Ok(());
                 }
             }
@@ -396,10 +406,14 @@ impl Analyzer<'_, '_> {
 
             Type::Enum(ref e) => handle_enum_in_rhs!(e),
 
-            Type::EnumVariant(EnumVariant { ref enum_name, .. }) => {
-                if let Some(types) = self.find_type(enum_name) {
+            Type::EnumVariant(EnumVariant {
+                ref ctxt,
+                ref enum_name,
+                ..
+            }) => {
+                if let Some(types) = self.find_type(*ctxt, enum_name)? {
                     for ty in types {
-                        if let Type::Enum(ref e) = ty {
+                        if let Type::Enum(ref e) = ty.normalize() {
                             handle_enum_in_rhs!(e);
                         }
                     }
@@ -408,10 +422,19 @@ impl Analyzer<'_, '_> {
                 fail!()
             }
 
+            Type::Predicate(..) => match rhs {
+                Type::Keyword(TsKeywordType {
+                    kind: TsKeywordTypeKind::TsBooleanKeyword,
+                    ..
+                }) => return Ok(()),
+                _ => {}
+            },
+
             _ => {}
         }
 
         match *to.normalize() {
+            Type::Mapped(..) => fail!(),
             Type::Param(TypeParam {
                 constraint: Some(ref c),
                 ..
@@ -550,7 +573,7 @@ impl Analyzer<'_, '_> {
                         Type::EnumVariant(ref v) => {
                             // Allow assigning enum with numeric values to
                             // number.
-                            if let Some(types) = self.find_type(&v.enum_name) {
+                            if let Some(types) = self.find_type(v.ctxt, &v.enum_name)? {
                                 for ty in types {
                                     match *ty.normalize() {
                                         Type::Enum(ref e) => {
@@ -686,15 +709,18 @@ impl Analyzer<'_, '_> {
                 _ => fail!(),
             },
 
-            Type::Function(ty::Function { ref ret_ty, .. }) => {
+            Type::Function(ty::Function {
+                ret_ty: ref left_ret_ty,
+                ..
+            }) => {
                 // var fnr2: () => any = fnReturn2();
                 match *rhs.normalize() {
                     Type::Function(ty::Function {
-                        ret_ty: ref r_ret_ty,
+                        ret_ty: ref right_ret_ty,
                         ..
                     }) => {
                         // TODO: Verify type parameters.
-                        self.assign_inner(ret_ty, r_ret_ty, span)?;
+                        self.assign_inner(right_ret_ty, left_ret_ty, span)?;
                         // TODO: Verify parameter counts
 
                         return Ok(());
@@ -786,12 +812,17 @@ impl Analyzer<'_, '_> {
         }
 
         // TODO: Implement full type checker
-        //  unimplemented!("assign: \nLeft: {:?}\nRight: {:?}", to, rhs)
+        slog::error!(
+            self.logger,
+            "unimplemented: assign: \nLeft: {:?}\nRight: {:?}",
+            to,
+            rhs
+        );
         Ok(())
     }
 
     fn assign_class(&self, span: Span, l: &ty::Class, r: &Type) -> ValidationResult<()> {
-        debug_assert!(!span.is_dummy());
+        // debug_assert!(!span.is_dummy());
 
         let r = match r {
             Type::Class(r) => r,
@@ -822,11 +853,17 @@ impl Analyzer<'_, '_> {
 
                     parent = &p_cls.super_class;
                 }
-                _ => Err(vec![])?,
+                _ => Err(Error::Unimplemented {
+                    span,
+                    msg: format!("fine-grained class assignment"),
+                })?,
             }
         }
 
-        Err(vec![])?
+        Err(Error::Unimplemented {
+            span,
+            msg: format!("fine-grained class assignment"),
+        })?
     }
 
     /// This method is called when lhs of assignment is interface or type
@@ -844,7 +881,7 @@ impl Analyzer<'_, '_> {
         lhs: &[TypeElement],
         rhs: &Type,
     ) -> ValidationResult<()> {
-        debug_assert!(!span.is_dummy());
+        // debug_assert!(!span.is_dummy());
 
         let mut errors = Errors::default();
         let mut missing_fields = vec![];
@@ -888,7 +925,12 @@ impl Analyzer<'_, '_> {
                     };
                 }
 
-                _ => {}
+                _ => {
+                    return Err(Error::Unimplemented {
+                        span,
+                        msg: format!(""),
+                    })
+                }
             }
         }
 
@@ -898,7 +940,7 @@ impl Analyzer<'_, '_> {
             macro_rules! handle_type_elements {
                 ($rhs:expr) => {{
                     for r in $rhs {
-                        unhandled_rhs.push(r.span());
+                        // unhandled_rhs.push(r.span());
                     }
 
                     for (i, m) in lhs.into_iter().enumerate() {
@@ -924,7 +966,7 @@ impl Analyzer<'_, '_> {
                             {
                                 unhandled_rhs.remove(pos);
                             } else {
-                                panic!("it should be removable")
+                                // panic!("it should be removable")
                             }
                         }
                     }
@@ -944,7 +986,12 @@ impl Analyzer<'_, '_> {
                     // TODO: Check parent interface
                 }
 
-                _ => {}
+                _ => {
+                    return Err(Error::Unimplemented {
+                        span,
+                        msg: format!(""),
+                    })
+                }
             }
 
             if !errors.is_empty() {
@@ -992,7 +1039,7 @@ impl Analyzer<'_, '_> {
                 Type::Class(ty::Class { ref body, .. }) => {
                     match m {
                         TypeElement::Call(_) => {
-                            unimplemented!("assign: interface {{ () => ret; }} = class Foo {{}}")
+                            unimplemented!("ssign: interface {{ () => ret; }} = class Foo {{}}",)
                         }
                         TypeElement::Constructor(_) => {
                             // TODO: Check # of parameters
@@ -1146,14 +1193,21 @@ impl Analyzer<'_, '_> {
                                         )
                                     }
 
-                                    for (i, r) in rm.params.iter().enumerate() {
-                                        if let Some(ref l) = lm.params.get(i) {
-                                            let l_ty = &l.ty;
-                                            let r_ty = &r.ty;
-
-                                            self.assign_inner(l_ty, r_ty, span)?;
-                                        }
+                                    if lm.key.eq_ignore_span(&rm.key) {
+                                        return Ok(());
                                     }
+
+                                    // for (i, r) in
+                                    // rm.params.iter().enumerate() {
+                                    //     if let Some(ref l) = lm.params.get(i)
+                                    // {
+                                    //         let l_ty = &l.ty;
+                                    //         let r_ty = &r.ty;
+
+                                    //         self.assign_inner(l_ty, r_ty,
+                                    // span)?;
+                                    //     }
+                                    // }
                                 }
                                 _ => {}
                             },
@@ -1168,7 +1222,12 @@ impl Analyzer<'_, '_> {
         } else {
             match m {
                 // TODO: Check type of the index.
-                TypeElement::Index(..) => return Ok(()),
+                TypeElement::Index(..) => {
+                    return Err(Error::Unimplemented {
+                        span,
+                        msg: format!("Assignment to index"),
+                    })
+                }
                 TypeElement::Call(..) => {
                     //
                     for rm in rhs_members {
@@ -1186,7 +1245,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        Err(vec![])?
+        Ok(())
     }
 }
 

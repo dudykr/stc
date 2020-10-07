@@ -1,48 +1,51 @@
 [package]
 authors = ["강동윤 <kdy1@dudy.kr>"]
 edition = "2018"
-name = "swc_ts_checker"
+name = "stc_checker"
 publish = false
 version = "0.1.0"
 
 [dependencies]
-macros = {package = "swc_ts_checker_macros", path = "./macros"}
-ordered-float = "1.0.2"
-swc_atoms = {path = "../../atoms"}
-swc_common = {path = "../../common", features = ["concurrent"]}
-swc_ecma_ast = {path = "../../ecmascript/ast"}
-swc_ecma_codegen = {path = "../../ecmascript/codegen"}
-swc_ecma_parser = {path = "../../ecmascript/parser"}
-swc_ecma_utils = {path = "../../ecmascript/utils"}
-swc_ecma_visit = {path = "../../ecmascript/visit"}
-swc_ts_builtin_types = {path = "./builtin"}
-swc_ts_types = {path = "../types"}
-swc_visit = {path = "../../visit"}
-
 anyhow = "1"
 backtrace = {version = "0.3", features = ["serde"]}
 bitflags = "1"
-crossbeam = "0.7.1"
-dashmap = "3.5.1"
-derive_more = {version = "0.99.2", default-features = false, features = ["display"]}
+dashmap = {version = "3.11.10", features = ["raw-api"]}
+derivative = "2.1.1"
+derive_more = {version = "0.99.11", default-features = false, features = ["display"]}
 either = "1"
 fxhash = "0.2"
 itertools = "0.8"
-log = "0.4"
-node-resolve = "2.2"
 once_cell = "1.3.1"
+ordered-float = "1.0.2"
+parking_lot = "0.11"
 petgraph = "0.5"
 rayon = "1"
 retain_mut = "0.1"
 serde_json = "1"
+slog = {version = "2", features = ["release_max_level_off"]}
 smallvec = "0.6"
+stc_ast_rnode = {path = "../ast_rnode"}
+stc_builtin_types = {path = "./builtin"}
+stc_checker_macros = {path = "./macros"}
+stc_module_graph = {path = "../module_graph"}
+stc_types = {path = "../types"}
+stc_utils = {path = "../utils"}
+swc_atoms = "0.2.5"
+swc_common = {version = "0.10.6", features = ["concurrent"]}
+swc_ecma_ast = "0.35.0"
+swc_ecma_codegen = "0.41.4"
+swc_ecma_parser = "0.43.1"
+swc_ecma_transforms = "0.30.4"
+swc_ecma_utils = "0.25.0"
+swc_ecma_visit = "0.21.0"
+swc_visit = "0.2.2"
 
 [dev-dependencies]
-env_logger = "0.7.1"
 pretty_assertions = "0.5"
 serde = {version = "1", features = ["derive"]}
 sourcemap = "2.2"
-swc_ecma_codegen = {path = "../../ecmascript/codegen"}
+stc_testing = {path = "../../testing"}
+swc_ecma_codegen = "0.41.4"
 tempfile = "3"
-testing = {path = "../../testing"}
+testing = "0.10"
 walkdir = "2"

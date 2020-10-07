@@ -1,7 +1,1 @@
-[
-    {
-        "line": 1,
-        "column": 24,
-        "msg": "An implementation cannot be declared in ambient contexts."
-    }
-]
+[]

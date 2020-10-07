@@ -1,39 +1,79 @@
-use super::{
-    expr::TypeOfMode,
-    scope::ScopeKind,
-    util::{instantiate_class, VarVisitor},
-    Analyzer,
-};
-use crate::{
-    analyzer::{
-        props::ComputedPropMode,
-        util::{is_prop_name_eq, ResultExt},
-        Ctx,
-    },
-    errors::{Error, Errors},
-    ty,
-    util::{property_map::PropertyMap, EqIgnoreSpan, PatExt},
-    validator::{Validate, ValidateWith},
-    ValidationResult,
-};
+use super::expr::TypeOfMode;
+use super::props::ComputedPropMode;
+use super::util::instantiate_class;
+use super::util::is_prop_name_eq;
+use super::util::ResultExt;
+use super::util::VarVisitor;
+use super::Analyzer;
+use super::Ctx;
+use super::ScopeKind;
+use crate::errors::Error;
+use crate::errors::Errors;
+use crate::ty::LitGeneralizer;
+use crate::ty::TypeExt;
+use crate::util::map_with_mut::MapWithMut;
+use crate::util::property_map::PropertyMap;
+use crate::util::PatExt;
+use crate::validator;
+use crate::validator::ValidateWith;
+use crate::ValidationResult;
 use bitflags::_core::mem::take;
 use fxhash::FxHashSet;
-use macros::validator_method;
+use stc_checker_macros::extra_validator;
+use stc_types::eq::EqIgnoreSpan;
+use stc_types::ClassProperty;
+use stc_types::ConstructorSignature;
+use stc_types::FnParam;
+use stc_types::Fold;
+use stc_types::FoldWith;
+use stc_types::Id;
+use stc_types::Method;
+use stc_types::Operator;
+use stc_types::Type;
 use std::mem::replace;
 use swc_atoms::js_word;
-use swc_common::{util::move_map::MoveMap, Span, Spanned, DUMMY_SP};
+use swc_common::util::move_map::MoveMap;
+use swc_common::Span;
+use swc_common::Spanned;
+use swc_common::DUMMY_SP;
 use swc_ecma_ast::*;
 use swc_ecma_utils::private_ident;
-use swc_ecma_visit::{VisitMutWith, VisitWith};
-use swc_ts_types::{Id, Operator, Type};
-use ty::TypeExt;
+use swc_ecma_visit::VisitMutWith;
+use swc_ecma_visit::VisitWith;
 
 mod order;
 
-impl Validate<ClassProp> for Analyzer<'_, '_> {
-    type Output = ValidationResult<ty::ClassProperty>;
+impl Analyzer<'_, '_> {
+    fn validate_type_of_class_property(
+        &mut self,
+        span: Span,
+        readonly: bool,
+        is_static: bool,
+        type_ann: &mut Option<TsTypeAnn>,
+        value: &mut Option<Box<Expr>>,
+    ) -> ValidationResult<Option<Box<Type>>> {
+        let ty = try_opt!(type_ann.validate_with(self));
+        let value_ty =
+            try_opt!(value
+                .validate_with_args(self, (TypeOfMode::RValue, None, ty.as_ref().map(|v| &**v))));
 
-    fn validate(&mut self, p: &mut ClassProp) -> Self::Output {
+        Ok(ty.or_else(|| value_ty).map(|ty| match *ty {
+            Type::Symbol(..) if readonly && is_static => box Type::Operator(Operator {
+                span: ty.span(),
+                op: TsTypeOperatorOp::Unique,
+                ty: box Type::Keyword(TsKeywordType {
+                    span,
+                    kind: TsKeywordTypeKind::TsSymbolKeyword,
+                }),
+            }),
+            _ => ty,
+        }))
+    }
+}
+
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, p: &mut ClassProp) -> ValidationResult<ClassProperty> {
         self.record(p);
 
         // Verify key if key is computed
@@ -41,29 +81,29 @@ impl Validate<ClassProp> for Analyzer<'_, '_> {
             self.validate_computed_prop_key(p.span, &mut p.key);
         }
 
-        let value = {
-            let ty = try_opt!(p.type_ann.validate_with(self));
-            let value_ty = try_opt!(self.validate(&mut p.value));
-
-            ty.or_else(|| value_ty).map(|ty| match *ty {
-                Type::Symbol(..) if p.readonly && p.is_static => box Type::Operator(Operator {
-                    span: ty.span(),
-                    op: TsTypeOperatorOp::Unique,
-                    ty: box Type::Keyword(TsKeywordType {
-                        span: p.span,
-                        kind: TsKeywordTypeKind::TsSymbolKeyword,
-                    }),
-                }),
-                _ => ty,
-            })
-        };
-        if p.type_ann.is_none() {
-            p.type_ann = value
-                .as_ref()
-                .map(|value| value.clone().generalize_lit().into_owned().into());
+        let value = self.validate_type_of_class_property(
+            p.span,
+            p.readonly,
+            p.is_static,
+            &mut p.type_ann,
+            &mut p.value,
+        )?;
+        match p.accessibility {
+            Some(Accessibility::Private) => {
+                p.type_ann = None;
+            }
+            _ => {
+                if p.type_ann.is_none() {
+                    p.type_ann = value
+                        .as_ref()
+                        .map(|value| value.clone().generalize_lit().into());
+                }
+            }
         }
 
-        Ok(ty::ClassProperty {
+        p.value = None;
+
+        Ok(ClassProperty {
             span: p.span,
             key: p.key.clone(),
             value,
@@ -78,116 +118,151 @@ impl Validate<ClassProp> for Analyzer<'_, '_> {
     }
 }
 
-impl Validate<Constructor> for Analyzer<'_, '_> {
-    type Output = ValidationResult<ty::ConstructorSignature>;
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, p: &mut PrivateProp) -> ValidationResult<ClassProperty> {
+        self.record(p);
 
-    fn validate(&mut self, c: &mut Constructor) -> Self::Output {
-        self.record(c);
+        let value = self.validate_type_of_class_property(
+            p.span,
+            p.readonly,
+            p.is_static,
+            &mut p.type_ann,
+            &mut p.value,
+        )?;
 
-        let c_span = c.span();
+        p.value = None;
 
-        self.with_child(ScopeKind::Method, Default::default(), |child| {
-            let Constructor { ref mut params, .. } = *c;
-
-            {
-                // Validate params
-                // TODO: Move this to parser
-                let mut has_optional = false;
-                for p in params.iter_mut() {
-                    if has_optional {
-                        child.info.errors.push(Error::TS1016 { span: p.span() });
-                    }
-
-                    match *p {
-                        ParamOrTsParamProp::Param(Param {
-                            pat: Pat::Ident(Ident { optional, .. }),
-                            ..
-                        }) => {
-                            if optional {
-                                has_optional = true;
-                            }
-                        }
-                        _ => {}
-                    }
-                }
-            }
-
-            let mut ps = Vec::with_capacity(params.len());
-            for param in params.iter_mut() {
-                let mut names = vec![];
-
-                let mut visitor = VarVisitor { names: &mut names };
-
-                param.visit_with(&Invalid { span: DUMMY_SP } as _, &mut visitor);
-
-                child.scope.declaring.extend(names.clone());
-
-                let mut p = match &param {
-                    ParamOrTsParamProp::TsParamProp(TsParamProp {
-                        param: TsParamPropParam::Ident(i),
-                        ..
-                    }) => TsFnParam::Ident(i.clone()),
-                    ParamOrTsParamProp::TsParamProp(TsParamProp {
-                        param: TsParamPropParam::Assign(AssignPat { left: box pat, .. }),
-                        ..
-                    })
-                    | ParamOrTsParamProp::Param(Param { pat, .. }) => from_pat(pat.clone()),
-                };
-                let p: ty::FnParam = child.validate(&mut p)?;
-
-                match param {
-                    ParamOrTsParamProp::Param(Param { ref mut pat, .. }) => {
-                        match child.declare_vars_with_ty(VarDeclKind::Let, pat, Some(p.ty.clone()))
-                        {
-                            Ok(()) => {}
-                            Err(err) => {
-                                child.info.errors.push(err);
-                            }
-                        }
-                    }
-                    ParamOrTsParamProp::TsParamProp(ref param) => match param.param {
-                        TsParamPropParam::Ident(ref i)
-                        | TsParamPropParam::Assign(AssignPat {
-                            left: box Pat::Ident(ref i),
-                            ..
-                        }) => {
-                            match child.declare_var(
-                                i.span,
-                                VarDeclKind::Let,
-                                i.clone().into(),
-                                Some(p.ty.clone()),
-                                true,
-                                false,
-                            ) {
-                                Ok(()) => {}
-                                Err(err) => {
-                                    child.info.errors.push(err);
-                                }
-                            }
-                        }
-                        _ => unreachable!(),
-                    },
-                }
-
-                ps.push(p);
-
-                child.scope.remove_declaring(names);
-            }
-
-            Ok(ty::ConstructorSignature {
-                span: c.span,
-                params: ps,
-                ret_ty: None,
-                type_params: None,
-            })
+        Ok(ClassProperty {
+            span: p.span,
+            key: box Expr::PrivateName(p.key.clone()),
+            value,
+            is_static: p.is_static,
+            computed: p.computed,
+            accessibility: p.accessibility,
+            is_abstract: p.is_abstract,
+            is_optional: p.is_optional,
+            readonly: p.readonly,
+            definite: p.definite,
         })
     }
 }
 
-impl Validate<TsFnParam> for Analyzer<'_, '_> {
-    type Output = ValidationResult<ty::FnParam>;
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, c: &mut Constructor) -> ValidationResult<ConstructorSignature> {
+        self.record(c);
 
-    fn validate(&mut self, p: &mut TsFnParam) -> Self::Output {
+        let c_span = c.span();
+
+        self.with_child(
+            ScopeKind::Method,
+            Default::default(),
+            |child: &mut Analyzer| {
+                let Constructor { ref mut params, .. } = *c;
+
+                {
+                    // Validate params
+                    // TODO: Move this to parser
+                    let mut has_optional = false;
+                    for p in params.iter_mut() {
+                        if has_optional {
+                            child.storage.report(Error::TS1016 { span: p.span() });
+                        }
+
+                        match *p {
+                            ParamOrTsParamProp::Param(Param {
+                                pat: Pat::Ident(Ident { optional, .. }),
+                                ..
+                            }) => {
+                                if optional {
+                                    has_optional = true;
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+
+                let mut ps = Vec::with_capacity(params.len());
+                for param in params.iter_mut() {
+                    let mut names = vec![];
+
+                    let mut visitor = VarVisitor { names: &mut names };
+
+                    param.visit_with(&Invalid { span: DUMMY_SP } as _, &mut visitor);
+
+                    child.scope.declaring.extend(names.clone());
+
+                    let mut p = match &param {
+                        ParamOrTsParamProp::TsParamProp(TsParamProp {
+                            param: TsParamPropParam::Ident(i),
+                            ..
+                        }) => TsFnParam::Ident(i.clone()),
+                        ParamOrTsParamProp::TsParamProp(TsParamProp {
+                            param: TsParamPropParam::Assign(AssignPat { left: box pat, .. }),
+                            ..
+                        })
+                        | ParamOrTsParamProp::Param(Param { pat, .. }) => from_pat(pat.clone()),
+                    };
+                    let p: FnParam = p.validate_with(child)?;
+
+                    match param {
+                        ParamOrTsParamProp::Param(Param { ref mut pat, .. }) => {
+                            match child.declare_vars_with_ty(
+                                VarDeclKind::Let,
+                                pat,
+                                Some(p.ty.clone()),
+                            ) {
+                                Ok(()) => {}
+                                Err(err) => {
+                                    child.storage.report(err);
+                                }
+                            }
+                        }
+                        ParamOrTsParamProp::TsParamProp(ref param) => match param.param {
+                            TsParamPropParam::Ident(ref i)
+                            | TsParamPropParam::Assign(AssignPat {
+                                left: box Pat::Ident(ref i),
+                                ..
+                            }) => {
+                                match child.declare_var(
+                                    i.span,
+                                    VarDeclKind::Let,
+                                    i.clone().into(),
+                                    Some(p.ty.clone()),
+                                    true,
+                                    false,
+                                ) {
+                                    Ok(()) => {}
+                                    Err(err) => {
+                                        child.storage.report(err);
+                                    }
+                                }
+                            }
+                            _ => unreachable!(),
+                        },
+                    }
+
+                    ps.push(p);
+
+                    child.scope.remove_declaring(names);
+                }
+
+                Ok(ConstructorSignature {
+                    span: c.span,
+                    params: ps,
+                    ret_ty: None,
+                    type_params: None,
+                })
+            },
+        )
+    }
+}
+
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, p: &mut TsFnParam) -> ValidationResult<FnParam> {
         self.record(p);
 
         let span = p.span();
@@ -204,25 +279,25 @@ impl Validate<TsFnParam> for Analyzer<'_, '_> {
         }
 
         Ok(match p {
-            TsFnParam::Ident(i) => ty::FnParam {
+            TsFnParam::Ident(i) => FnParam {
                 span,
                 pat: Pat::Ident(i.clone()),
                 required: !i.optional,
                 ty: ty!(i.type_ann),
             },
-            TsFnParam::Array(p) => ty::FnParam {
+            TsFnParam::Array(p) => FnParam {
                 span,
                 pat: Pat::Array(p.clone()),
                 required: true,
                 ty: ty!(p.type_ann),
             },
-            TsFnParam::Rest(p) => ty::FnParam {
+            TsFnParam::Rest(p) => FnParam {
                 span,
                 pat: Pat::Rest(p.clone()),
                 required: false,
                 ty: ty!(p.type_ann),
             },
-            TsFnParam::Object(p) => ty::FnParam {
+            TsFnParam::Object(p) => FnParam {
                 span,
                 pat: Pat::Object(p.clone()),
                 required: true,
@@ -232,10 +307,16 @@ impl Validate<TsFnParam> for Analyzer<'_, '_> {
     }
 }
 
-impl Validate<ClassMethod> for Analyzer<'_, '_> {
-    type Output = ValidationResult<ty::Method>;
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, c: &mut PrivateMethod) -> ValidationResult<Method> {
+        unimplemented!("PrivateMethod")
+    }
+}
 
-    fn validate(&mut self, c: &mut ClassMethod) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, c: &mut ClassMethod) -> ValidationResult<Method> {
         self.record(c);
 
         let c_span = c.span();
@@ -244,12 +325,12 @@ impl Validate<ClassMethod> for Analyzer<'_, '_> {
         let (params, type_params, declared_ret_ty, inferred_ret_ty) = self.with_child(
             ScopeKind::Method,
             Default::default(),
-            |child| -> ValidationResult<_> {
+            |child: &mut Analyzer| -> ValidationResult<_> {
                 {
                     // It's error if abstract method has a body
 
                     if c.is_abstract && c.function.body.is_some() {
-                        child.info.errors.push(Error::TS1318 { span: key_span });
+                        child.storage.report(Error::TS1318 { span: key_span });
                     }
                 }
 
@@ -259,7 +340,7 @@ impl Validate<ClassMethod> for Analyzer<'_, '_> {
                     let mut has_optional = false;
                     for p in &c.function.params {
                         if has_optional {
-                            child.info.errors.push(Error::TS1016 { span: p.span() });
+                            child.storage.report(Error::TS1016 { span: p.span() });
                         }
 
                         match p.pat {
@@ -277,7 +358,7 @@ impl Validate<ClassMethod> for Analyzer<'_, '_> {
                 if (c.kind == MethodKind::Getter || c.kind == MethodKind::Setter)
                     && type_params.is_some()
                 {
-                    child.info.errors.push(Error::TS1094 { span: key_span })
+                    child.storage.report(Error::TS1094 { span: key_span })
                 }
 
                 let params = c.function.params.validate_with(child)?;
@@ -285,12 +366,12 @@ impl Validate<ClassMethod> for Analyzer<'_, '_> {
                 c.key.visit_mut_with(child);
                 // c.function.visit_children_with(child);
 
-                if child.ctx.in_declare && c.function.body.is_some() {
-                    child.info.errors.push(Error::TS1183 { span: key_span })
-                }
+                // if child.ctx.in_declare && c.function.body.is_some() {
+                //     child.storage.report(Error::TS1183 { span: key_span })
+                // }
 
                 if c.kind == MethodKind::Setter && c.function.return_type.is_some() {
-                    child.info.errors.push(Error::TS1095 { span: key_span })
+                    child.storage.report(Error::TS1095 { span: key_span })
                 }
 
                 let declared_ret_ty = try_opt!(c.function.return_type.validate_with(child));
@@ -316,7 +397,7 @@ impl Validate<ClassMethod> for Analyzer<'_, '_> {
 
             // getter property must have return statements.
             if let None = inferred_ret_ty {
-                self.info.errors.push(Error::TS2378 { span: key_span });
+                self.storage.report(Error::TS2378 { span: key_span });
             }
         }
 
@@ -335,13 +416,13 @@ impl Validate<ClassMethod> for Analyzer<'_, '_> {
 
         if c.kind != MethodKind::Setter {
             if self.may_generalize(&ret_ty) {
-                c.function.return_type = Some(ret_ty.clone().generalize_lit().into_owned().into());
+                c.function.return_type = Some(ret_ty.clone().generalize_lit().into());
             } else {
                 c.function.return_type = Some(ret_ty.clone().into());
             }
         }
 
-        Ok(ty::Method {
+        Ok(Method {
             span: c_span,
             key: c.key.clone(),
             is_static: c.is_static,
@@ -355,27 +436,64 @@ impl Validate<ClassMethod> for Analyzer<'_, '_> {
     }
 }
 
-impl Validate<ClassMember> for Analyzer<'_, '_> {
-    type Output = ValidationResult<Option<ty::ClassMember>>;
-
-    fn validate(&mut self, m: &mut swc_ecma_ast::ClassMember) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(
+        &mut self,
+        m: &mut swc_ecma_ast::ClassMember,
+    ) -> ValidationResult<Option<stc_types::ClassMember>> {
         Ok(match m {
-            swc_ecma_ast::ClassMember::PrivateMethod(_)
-            | swc_ecma_ast::ClassMember::PrivateProp(_)
-            | swc_ecma_ast::ClassMember::Empty(..) => None,
+            swc_ecma_ast::ClassMember::PrivateMethod(m) => {
+                Some(m.validate_with(self).map(From::from)?)
+            }
+            swc_ecma_ast::ClassMember::PrivateProp(m) => {
+                Some(m.validate_with(self).map(From::from)?)
+            }
+            swc_ecma_ast::ClassMember::Empty(..) => None,
 
             swc_ecma_ast::ClassMember::Constructor(v) => {
-                Some(ty::ClassMember::Constructor(v.validate_with(self)?))
+                Some(stc_types::ClassMember::Constructor(v.validate_with(self)?))
             }
-            swc_ecma_ast::ClassMember::Method(v) => {
-                Some(ty::ClassMember::Method(v.validate_with(self)?))
+            swc_ecma_ast::ClassMember::Method(method) => {
+                let v = method.validate_with(self)?;
+
+                if let Some(Accessibility::Private) = method.accessibility {
+                    let computed = method.key.is_computed();
+
+                    // Converts a private method to a private property without type.
+                    *m = ClassMember::ClassProp(ClassProp {
+                        span: method.span,
+                        key: match &mut method.key {
+                            PropName::Ident(i) => box Expr::Ident(i.take()),
+                            PropName::Str(s) => {
+                                box Expr::Ident(Ident::new(s.value.clone(), s.span))
+                            }
+                            PropName::Num(n) => box Expr::Lit(Lit::Num(n.clone())),
+                            PropName::Computed(e) => box e.expr.take(),
+                            PropName::BigInt(n) => box Expr::Lit(Lit::BigInt(n.clone())),
+                        },
+                        value: None,
+                        type_ann: None,
+                        is_static: method.is_static,
+                        decorators: Default::default(),
+                        computed,
+                        accessibility: Some(Accessibility::Private),
+                        is_abstract: false,
+                        is_optional: method.is_optional,
+                        readonly: false,
+                        declare: false,
+                        definite: false,
+                    });
+                }
+
+                Some(stc_types::ClassMember::Method(v))
             }
             swc_ecma_ast::ClassMember::ClassProp(v) => {
-                Some(ty::ClassMember::Property(v.validate_with(self)?))
+                Some(stc_types::ClassMember::Property(v.validate_with(self)?))
             }
-            swc_ecma_ast::ClassMember::TsIndexSignature(v) => {
-                Some(ty::ClassMember::IndexSignature(v.validate_with(self)?))
-            }
+            swc_ecma_ast::ClassMember::TsIndexSignature(v) => Some(
+                stc_types::ClassMember::IndexSignature(v.validate_with(self)?),
+            ),
         })
     }
 }
@@ -420,7 +538,7 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        let mut errors = vec![];
+        let mut errors = Errors::default();
         // Span of name
         let mut spans = vec![];
         let mut name: Option<&PropName> = None;
@@ -514,7 +632,7 @@ impl Analyzer<'_, '_> {
             errors.push(Error::TS2391 { span });
         }
 
-        self.info.errors.extend(errors);
+        self.storage.report_all(errors);
 
         c.body = c
             .body
@@ -531,7 +649,7 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    #[validator_method]
+    #[extra_validator]
     pub(super) fn validate_computed_prop_key(&mut self, span: Span, key: &mut Expr) {
         if self.is_builtin {
             // We don't need to validate builtins
@@ -551,7 +669,7 @@ impl Analyzer<'_, '_> {
             _ => false,
         };
 
-        let ty = match self.validate(key).map(|mut ty| {
+        let ty = match key.validate_with_default(self).map(|mut ty| {
             ty.respan(span);
             ty
         }) {
@@ -570,7 +688,7 @@ impl Analyzer<'_, '_> {
 
         match *ty.normalize() {
             Type::Lit(..) => {}
-            Type::Operator(ty::Operator {
+            Type::Operator(Operator {
                 op: TsTypeOperatorOp::Unique,
                 ty:
                     box Type::Keyword(TsKeywordType {
@@ -592,7 +710,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Should be called only from `Validate<Class>`.
-    fn validate_inherited_members(&mut self, name: Option<Span>, class: &ty::Class) {
+    fn validate_inherited_members(&mut self, name: Option<Span>, class: &stc_types::Class) {
         if class.is_abstract || self.ctx.in_declare {
             return;
         }
@@ -601,7 +719,7 @@ impl Analyzer<'_, '_> {
             // TODD: c.span().lo() + BytePos(5) (aka class token)
             class.span
         });
-        let mut errors = vec![];
+        let mut errors = Errors::default();
 
         let res: Result<_, Error> = try {
             if let Some(ref super_ty) = class.super_class {
@@ -609,7 +727,7 @@ impl Analyzer<'_, '_> {
                     Type::Class(sc) => {
                         'outer: for sm in &sc.body {
                             match sm {
-                                ty::ClassMember::Method(sm) => {
+                                stc_types::ClassMember::Method(sm) => {
                                     if sm.is_optional || !sm.is_abstract {
                                         // TODO: Validate parameters
 
@@ -619,7 +737,7 @@ impl Analyzer<'_, '_> {
 
                                     for m in &class.body {
                                         match m {
-                                            ty::ClassMember::Method(ref m) => {
+                                            stc_types::ClassMember::Method(ref m) => {
                                                 if !is_prop_name_eq(&m.key, &sm.key) {
                                                     continue;
                                                 }
@@ -655,7 +773,7 @@ impl Analyzer<'_, '_> {
             errors.push(err);
         }
 
-        self.info.errors.extend(errors);
+        self.storage.report_all(errors);
     }
 }
 
@@ -666,10 +784,9 @@ impl Analyzer<'_, '_> {
 /// 3. TsParamProp in constructors.
 /// 4. Properties from top to bottom.
 /// 5. Others, using dependency graph.
-impl Validate<Class> for Analyzer<'_, '_> {
-    type Output = ValidationResult<ty::Class>;
-
-    fn validate(&mut self, c: &mut Class) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, c: &mut Class) -> ValidationResult<stc_types::Class> {
         self.record(c);
 
         self.ctx.computed_prop_mode = ComputedPropMode::Class {
@@ -681,6 +798,7 @@ impl Validate<Class> for Analyzer<'_, '_> {
         let name = self.scope.this_class_name.take();
 
         let mut types_to_register: Vec<(Id, _)> = vec![];
+        let mut additional_members = vec![];
 
         // Scope is required because of type parameters.
         let c = self.with_child(
@@ -700,15 +818,17 @@ impl Validate<Class> for Analyzer<'_, '_> {
                                 Expr::Ident(..) => false,
                                 _ => true,
                             };
-                            let super_ty =
-                                child.validate_expr(expr, TypeOfMode::RValue, super_type_params)?;
+                            let super_ty = expr.validate_with_args(
+                                child,
+                                (TypeOfMode::RValue, super_type_params.as_ref(), None),
+                            )?;
 
                             match super_ty.normalize() {
                                 // We should handle mixin
                                 Type::Intersection(i) if need_base_class => {
                                     let mut has_class_in_super = false;
                                     let class_name =
-                                        name.clone().unwrap_or(Id::word("class_noname".into()));
+                                        name.clone().unwrap_or_else(|| Id::word("__class".into()));
                                     let new_ty =
                                         private_ident!(format!("{}_base", class_name.as_str()));
 
@@ -716,7 +836,7 @@ impl Validate<Class> for Analyzer<'_, '_> {
                                     types_to_register
                                         .push((new_ty.clone().into(), super_ty.clone()));
 
-                                    let super_ty = box Type::Intersection(ty::Intersection {
+                                    let super_ty = box Type::Intersection(stc_types::Intersection {
                                         types: i
                                             .types
                                             .iter()
@@ -729,10 +849,10 @@ impl Validate<Class> for Analyzer<'_, '_> {
                                                             .name
                                                             .as_ref()
                                                             .map(|id| {
-                                                                box Type::Query(ty::QueryType {
+                                                                box Type::Query(stc_types::QueryType {
                                                                     span: c.span,
                                                                     expr:
-                                                                        ty::QueryExpr::TsEntityName(
+                                                                        stc_types::QueryExpr::TsEntityName(
                                                                             id.clone().into(),
                                                                         ),
                                                                 })
@@ -780,8 +900,9 @@ impl Validate<Class> for Analyzer<'_, '_> {
                                     }
 
                                     c.super_class = Some(box Expr::Ident(new_ty.clone()));
-                                    Some(box Type::Ref(ty::Ref {
+                                    Some(box Type::Ref(stc_types::Ref {
                                         span: DUMMY_SP,
+                                        ctxt: child.ctx.module_id,
                                         type_name: TsEntityName::Ident(new_ty),
                                         // TODO: Handle type parameters
                                         type_args: None,
@@ -804,7 +925,9 @@ impl Validate<Class> for Analyzer<'_, '_> {
 
                 child.check_ambient_methods(c, false)?;
 
-                child.scope.super_class = super_class.clone().map(instantiate_class);
+                child.scope.super_class = super_class
+                    .clone()
+                    .map(|ty| instantiate_class(child.ctx.module_id, ty));
                 {
                     // Validate constructors
                     let mut constructor_spans = vec![];
@@ -818,9 +941,7 @@ impl Validate<Class> for Analyzer<'_, '_> {
                                     for p in &cons.params {
                                         match *p {
                                             ParamOrTsParamProp::TsParamProp(..) => child
-                                                .info
-                                                .errors
-                                                .push(Error::TS2369 { span: p.span() }),
+                                                .storage.report(Error::TS2369 { span: p.span() }),
                                             _ => {}
                                         }
                                     }
@@ -843,7 +964,7 @@ impl Validate<Class> for Analyzer<'_, '_> {
                                     match constructor_required_param_count {
                                         Some(v) if required_param_count != v => {
                                             for span in constructor_spans.drain(..) {
-                                                child.info.errors.push(Error::TS2394 { span })
+                                                child.storage.report(Error::TS2394 { span })
                                             }
                                         }
 
@@ -874,21 +995,23 @@ impl Validate<Class> for Analyzer<'_, '_> {
                             ClassMember::PrivateProp(_) => true,
                             ClassMember::TsIndexSignature(_) => true,
                             ClassMember::Method(m) => match &mut m.key {
-                                PropName::Computed(c) => match c.expr.validate_with(child) {
-                                    Ok(ty) => {
-                                        match *ty {
-                                            Type::EnumVariant(e) => return None,
-                                            _ => {}
+                                PropName::Computed(c) => {
+                                    match c.expr.validate_with_default(child) {
+                                        Ok(ty) => {
+                                            match *ty {
+                                                Type::EnumVariant(e) => return None,
+                                                _ => {}
+                                            }
+
+                                            true
                                         }
+                                        Err(err) => {
+                                            child.storage.report(err);
 
-                                        true
+                                            false
+                                        }
                                     }
-                                    Err(err) => {
-                                        child.info.errors.push(err);
-
-                                        false
-                                    }
-                                },
+                                }
                                 _ => true,
                             },
                             ClassMember::Empty(_) => false,
@@ -902,91 +1025,154 @@ impl Validate<Class> for Analyzer<'_, '_> {
 
                 // Handle nodes in order described above
                 let mut body = {
-                    // TODO: Handle static first
-
-                    // Handle ts parameter properties
+                    // Handle static properties
                     for (index, member) in c.body.iter_mut().enumerate() {
                         match member {
-                            ClassMember::Constructor(constructor) => {
-                                for param in &mut constructor.params {
-                                    match param {
-                                        ParamOrTsParamProp::TsParamProp(p) => {
-                                            let (i, ty) = match &mut p.param {
-                                                TsParamPropParam::Ident(i) => {
-                                                    let mut ty = i.type_ann.clone();
-                                                    let ty = try_opt!(ty.validate_with(child));
-                                                    (i, ty)
-                                                }
-                                                TsParamPropParam::Assign(AssignPat {
-                                                    span,
-                                                    left: box Pat::Ident(i),
-                                                    type_ann,
-                                                    right,
-                                                    ..
-                                                }) => {
-                                                    let mut ty = type_ann
-                                                        .clone()
-                                                        .or_else(|| i.type_ann.clone());
-                                                    let mut ty = try_opt!(ty.validate_with(child));
-                                                    if ty.is_none() {
-                                                        ty = Some(
-                                                            right
-                                                                .validate_with(child)?
-                                                                .generalize_lit(),
-                                                        );
-                                                    }
-                                                    (i, ty)
-                                                }
-                                                _ => unreachable!(),
-                                            };
-
-                                            let key = box Expr::Ident(Ident {
-                                                optional: false,
-                                                ..i.clone()
-                                            });
-
-                                            if let Some(ty) = &ty {
-                                                if i.type_ann.is_none() {
-                                                    i.type_ann = Some(TsTypeAnn {
-                                                        span: ty.span(),
-                                                        type_ann: ty.clone().into(),
-                                                    });
-                                                }
-                                            }
-                                            // Register a class property.
-
-                                            child.scope.this_class_members.push((
-                                                index,
-                                                ty::ClassMember::Property(ty::ClassProperty {
-                                                    span: p.span,
-                                                    key,
-                                                    value: ty,
-                                                    is_static: false,
-                                                    computed: false,
-                                                    accessibility: p.accessibility,
-                                                    is_abstract: false,
-                                                    is_optional: false,
-                                                    readonly: p.readonly,
-                                                    definite: false,
-                                                }),
-                                            ));
-                                        }
-                                        ParamOrTsParamProp::Param(..) => {}
-                                    }
+                            ClassMember::ClassProp(ClassProp {
+                                is_static: true, ..
+                            })
+                            | ClassMember::PrivateProp(PrivateProp {
+                                is_static: true, ..
+                            }) => {
+                                let m = member.validate_with(child)?;
+                                if let Some(member) = m {
+                                    let member = member.fold_with(&mut LitGeneralizer);
+                                    child.scope.this_class_members.push((index, member));
                                 }
                             }
                             _ => {}
                         }
                     }
 
+                    // Handle ts parameter properties
+                    for (index, constructor) in
+                        c.body
+                            .iter_mut()
+                            .enumerate()
+                            .filter_map(|(i, member)| match member {
+                                ClassMember::Constructor(c) => Some((i, c)),
+                                _ => None,
+                            })
+                    {
+                        for param in &mut constructor.params {
+                            match param {
+                                ParamOrTsParamProp::TsParamProp(p) => {
+                                    if p.accessibility == Some(Accessibility::Private) {
+                                        let is_optional = match p.param {
+                                            TsParamPropParam::Ident(_) => false,
+                                            TsParamPropParam::Assign(_) => true,
+                                        };
+                                        let mut key = match &p.param {
+                                            TsParamPropParam::Assign(AssignPat {
+                                                left: box Pat::Ident(key),
+                                                ..
+                                            })
+                                            | TsParamPropParam::Ident(key) => key.clone(),
+                                            _ => unreachable!(
+                                                "TypeScript parameter property with pattern other \
+                                                 than an identifier"
+                                            ),
+                                        };
+                                        key.type_ann = None;
+                                        let key = box Expr::Ident(key);
+                                        additional_members.push(ClassMember::ClassProp(
+                                            ClassProp {
+                                                span: p.span,
+                                                key,
+                                                value: None,
+                                                is_static: false,
+                                                computed: false,
+                                                accessibility: Some(Accessibility::Private),
+                                                is_abstract: false,
+                                                is_optional,
+                                                readonly: p.readonly,
+                                                definite: false,
+                                                type_ann: None,
+                                                decorators: Default::default(),
+                                                declare: false,
+                                            },
+                                        ));
+                                        p.accessibility = None;
+                                    }
+
+                                    let (i, ty) = match &mut p.param {
+                                        TsParamPropParam::Ident(i) => {
+                                            let mut ty = i.type_ann.clone();
+                                            let ty = try_opt!(ty.validate_with(child));
+                                            (i, ty)
+                                        }
+                                        TsParamPropParam::Assign(AssignPat {
+                                            span,
+                                            left: box Pat::Ident(i),
+                                            type_ann,
+                                            right,
+                                            ..
+                                        }) => {
+                                            let mut ty =
+                                                type_ann.clone().or_else(|| i.type_ann.clone());
+                                            let mut ty = try_opt!(ty.validate_with(child));
+                                            if ty.is_none() {
+                                                ty = Some(
+                                                    right
+                                                        .validate_with_default(child)?
+                                                        .generalize_lit(),
+                                                );
+                                            }
+                                            (i, ty)
+                                        }
+                                        _ => unreachable!(),
+                                    };
+
+                                    let key = box Expr::Ident(Ident {
+                                        optional: false,
+                                        ..i.clone()
+                                    });
+
+                                    if let Some(ty) = &ty {
+                                        if i.type_ann.is_none() {
+                                            i.type_ann = Some(TsTypeAnn {
+                                                span: ty.span(),
+                                                type_ann: ty.clone().into(),
+                                            });
+                                        }
+                                    }
+                                    // Register a class property.
+
+                                    child.scope.this_class_members.push((
+                                        index,
+                                        stc_types::ClassMember::Property(stc_types::ClassProperty {
+                                            span: p.span,
+                                            key,
+                                            value: ty,
+                                            is_static: false,
+                                            computed: false,
+                                            accessibility: p.accessibility,
+                                            is_abstract: false,
+                                            is_optional: false,
+                                            readonly: p.readonly,
+                                            definite: false,
+                                        }),
+                                    ));
+                                }
+                                ParamOrTsParamProp::Param(..) => {}
+                            }
+                        }
+                    }
+
                     // Handle properties
                     for (index, member) in c.body.iter_mut().enumerate() {
                         match member {
-                            ClassMember::ClassProp(..) | ClassMember::PrivateProp(..) => {
+                            ClassMember::ClassProp(ClassProp {
+                                is_static: false, ..
+                            })
+                            | ClassMember::PrivateProp(PrivateProp {
+                                is_static: false, ..
+                            }) => {
                                 //
-                                let ty = member.validate_with(child)?;
-                                if let Some(ty) = ty {
-                                    child.scope.this_class_members.push((index, ty));
+                                let class_member = member.validate_with(child)?;
+                                if let Some(member) = class_member {
+                                    let member = member.fold_with(&mut LitGeneralizer);
+                                    child.scope.this_class_members.push((index, member));
                                 }
                             }
                             _ => {}
@@ -1005,19 +1191,24 @@ impl Validate<Class> for Analyzer<'_, '_> {
 
                     // Actaully check types of method / constructors.
 
-                    for (index, member) in c.body.iter_mut().enumerate() {
-                        if child
-                            .scope
-                            .this_class_members
-                            .iter()
-                            .any(|(idx, _)| *idx == index)
-                        {
-                            continue;
-                        }
+                    let remaining = c
+                        .body
+                        .iter()
+                        .enumerate()
+                        .filter(|(index, _)| {
+                            child
+                                .scope
+                                .this_class_members
+                                .iter()
+                                .all(|(idx, _)| *idx != *index)
+                        })
+                        .map(|v| v.0)
+                        .collect::<Vec<_>>();
 
-                        // TODO: Reorder
+                    let order = child.calc_order_of_class_methods(remaining, &c.body);
 
-                        let ty = member.validate_with(child)?;
+                    for index in order {
+                        let ty = c.body[index].validate_with(child)?;
                         if let Some(ty) = ty {
                             child.scope.this_class_members.push((index, ty));
                         }
@@ -1033,33 +1224,32 @@ impl Validate<Class> for Analyzer<'_, '_> {
 
                     for (_, m) in body.iter_mut() {
                         match m {
-                            ty::ClassMember::IndexSignature(_)
-                            | ty::ClassMember::Constructor(_) => continue,
+                            stc_types::ClassMember::IndexSignature(_)
+                            | stc_types::ClassMember::Constructor(_) => continue,
 
-                            ty::ClassMember::Method(m) => match m.kind {
+                            stc_types::ClassMember::Method(m) => match m.kind {
                                 MethodKind::Getter => {
                                     prop_types.insert(m.key.clone(), m.ret_ty.clone());
                                 }
                                 _ => {}
                             },
 
-                            ty::ClassMember::Property(_) => {}
+                            stc_types::ClassMember::Property(_) => {}
                         }
                     }
 
                     for (index, m) in body.iter_mut() {
                         let orig = &mut c.body[*index];
                         match m {
-                            ty::ClassMember::IndexSignature(_)
-                            | ty::ClassMember::Constructor(_) => continue,
+                            stc_types::ClassMember::IndexSignature(_)
+                            | stc_types::ClassMember::Constructor(_) => continue,
 
-                            ty::ClassMember::Method(m) => match m.kind {
+                            stc_types::ClassMember::Method(m) => match m.kind {
                                 MethodKind::Setter => {
                                     if let Some(param) = m.params.first_mut() {
                                         if param.ty.is_any() {
                                             if let Some(ty) = prop_types.get_prop_name(&m.key) {
-                                                let new_ty =
-                                                    box ty.clone().generalize_lit().into_owned();
+                                                let new_ty = ty.clone().generalize_lit();
                                                 param.ty = new_ty.clone();
                                                 match orig {
                                                     ClassMember::Method(ref mut method) => {
@@ -1077,12 +1267,31 @@ impl Validate<Class> for Analyzer<'_, '_> {
                                 MethodKind::Getter => {}
                             },
 
-                            ty::ClassMember::Property(_) => {}
+                            stc_types::ClassMember::Property(_) => {}
                         }
                     }
                 }
 
-                let class = ty::Class {
+                if !additional_members.is_empty() {
+                    // Add private parameter properties to .d.ts file
+                    // let pos = c
+                    //     .body
+                    //     .iter()
+                    //     .position(|member| match member {
+                    //         ClassMember::Constructor(_) => true,
+                    //         _ => false,
+                    //     })
+                    //     .unwrap_or(0);
+                    let pos = 0;
+
+                    let mut new = Vec::with_capacity(c.body.len() + additional_members.len());
+                    new.extend(c.body.drain(..pos));
+                    new.extend(additional_members);
+                    new.extend(c.body.drain(..));
+                    c.body = new;
+                }
+
+                let class = stc_types::Class {
                     span: c.span,
                     name,
                     is_abstract: c.is_abstract,
@@ -1105,15 +1314,14 @@ impl Validate<Class> for Analyzer<'_, '_> {
     }
 }
 
-impl Validate<ClassExpr> for Analyzer<'_, '_> {
-    type Output = ValidationResult<()>;
-
-    fn validate(&mut self, c: &mut ClassExpr) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, c: &mut ClassExpr) -> ValidationResult<()> {
         self.scope.this_class_name = c.ident.as_ref().map(|v| v.into());
         let ty = match c.class.validate_with(self) {
             Ok(ty) => box ty.into(),
             Err(err) => {
-                self.info.errors.push(err);
+                self.storage.report(err);
                 Type::any(c.span())
             }
         };
@@ -1138,7 +1346,7 @@ impl Validate<ClassExpr> for Analyzer<'_, '_> {
                     ) {
                         Ok(()) => {}
                         Err(err) => {
-                            analyzer.info.errors.push(err);
+                            analyzer.storage.report(err);
                         }
                     }
                 }
@@ -1147,7 +1355,7 @@ impl Validate<ClassExpr> for Analyzer<'_, '_> {
 
                 Ok(())
             })
-            .store(&mut self.info.errors);
+            .report(&mut self.storage);
 
         self.scope.this = old_this;
 
@@ -1155,10 +1363,9 @@ impl Validate<ClassExpr> for Analyzer<'_, '_> {
     }
 }
 
-impl Validate<ClassDecl> for Analyzer<'_, '_> {
-    type Output = ValidationResult<()>;
-
-    fn validate(&mut self, c: &mut ClassDecl) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, c: &mut ClassDecl) -> ValidationResult<()> {
         self.record(c);
 
         let ctx = Ctx {
@@ -1179,16 +1386,17 @@ impl Analyzer<'_, '_> {
         let ty = match c.class.validate_with(self) {
             Ok(ty) => box ty.into(),
             Err(err) => {
-                self.info.errors.push(err);
+                self.storage.report(err);
                 Type::any(c.span())
             }
         };
+        let ty = ty.cheap();
 
         let old_this = self.scope.this.take();
         // self.scope.this = Some(ty.clone());
 
         self.register_type(c.ident.clone().into(), ty.clone().into())
-            .store(&mut self.info.errors);
+            .report(&mut self.storage);
 
         match self.declare_var(
             ty.span(),
@@ -1202,7 +1410,7 @@ impl Analyzer<'_, '_> {
         ) {
             Ok(()) => {}
             Err(err) => {
-                self.info.errors.push(err);
+                self.storage.report(err);
             }
         }
 

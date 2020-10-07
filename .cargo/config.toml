@@ -1,0 +1,61 @@
+[build]
+incremental = false
+rustflags = [
+  "--cfg",
+  "procmacro2_semver_exempt",
+  "-Z",
+  "thinlto=no",
+  "-C",
+  "target-feature=+sse2",
+]
+
+[net]
+git-fetch-with-cli = true
+
+[cargo-new]
+email = "kdy1@dudy.kr"
+name = "강동윤"
+
+# Rename this file to `config.toml` to enable "fast build" configuration. Please read the notes below.
+
+# NOTE: For maximum performance, build using a nightly compiler
+# If you are using rust stable, remove the "-Zshare-generics=y" below.
+
+[target.x86_64-unknown-linux-gnu]
+# linker = "/usr/bin/clang"
+rustflags = [
+  "--cfg",
+  "procmacro2_semver_exempt",
+  "-Z",
+  "thinlto=no",
+  "-C",
+  "target-feature=+sse2", # "-Clink-arg=-fuse-ld=lld",  # "-Zshare-generics=y",
+]
+
+# NOTE: you must manually install https://github.com/michaeleisel/zld on mac. you can easily do this with the "brew" package manager:
+# `brew install michaeleisel/zld/zld`
+[target.x86_64-apple-darwin]
+rustflags = [
+  "--cfg",
+  "procmacro2_semver_exempt",
+  "-Z",
+  "thinlto=no",
+  "-C",
+  "target-feature=+sse2",
+  "-C",
+  "link-arg=-fuse-ld=/usr/local/bin/zld",
+  "-Zshare-generics=y",
+  "-Zrun-dsymutil=no",
+]
+
+[target.x86_64-pc-windows-msvc]
+linker = "rust-lld.exe"
+rustflags = [
+  "--cfg",
+  "procmacro2_semver_exempt",
+  "-Z",
+  "thinlto=no",
+  "-C",
+  "target-feature=+sse2",
+  "-Zshare-generics=y",
+]

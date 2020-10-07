@@ -1,7 +1,1 @@
-[
-    {
-        "line": 35,
-        "column": 43,
-        "msg": "Argument of type 'E2' is not assignable to parameter of type 'E1'."
-    }
-]
+[]

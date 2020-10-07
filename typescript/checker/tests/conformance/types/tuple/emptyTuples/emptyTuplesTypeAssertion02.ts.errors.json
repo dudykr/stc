@@ -1,7 +1,1 @@
-[
-    {
-        "line": 4,
-        "column": 11,
-        "msg": "Tuple type '[]' of length '0' has no element at index '0'."
-    }
-]
+[]

@@ -1,12 +1,1 @@
-[
-    {
-        "line": 3,
-        "column": 9,
-        "msg": "Expression expected."
-    },
-    {
-        "line": 3,
-        "column": 23,
-        "msg": "Identifier expected."
-    }
-]
+[]

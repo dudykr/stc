@@ -1,7 +1,1 @@
-[
-    {
-        "line": 89,
-        "column": 9,
-        "msg": "This condition will always return 'false' since the types '\"A\" | \"B\" | \"C\" | \"D\"' and '\"X\"' have no overlap."
-    }
-]
+[]

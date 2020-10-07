@@ -1,9 +1,12 @@
 use super::{
     expr::TypeOfMode,
+    marks::MarkExt,
     scope::{ScopeKind, VarInfo},
     util::Comparator,
     Analyzer,
 };
+use crate::util::map_with_mut::MapWithMut;
+use crate::util::type_ext::TypeVecExt;
 use crate::{
     analyzer::util::ResultExt,
     errors::Error,
@@ -11,21 +14,23 @@ use crate::{
     ty::{Tuple, Type, TypeElement, TypeLit},
     type_facts::TypeFacts,
     util::EndsWithRet,
+    validator,
     validator::{Validate, ValidateWith},
     ValidationResult,
 };
 use fxhash::FxHashMap;
+use stc_types::Array;
+use stc_types::{eq::TypeEq, Id, TypeParamInstantiation};
 use std::{
     collections::hash_map::Entry,
     convert::TryFrom,
     hash::Hash,
-    mem::replace,
+    mem::{replace, take},
     ops::{AddAssign, BitOr, Not},
 };
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::*;
 use swc_ecma_visit::VisitMutWith;
-use swc_ts_types::Id;
 
 /// Conditional facts
 #[derive(Debug, Clone, Default)]
@@ -37,6 +42,22 @@ pub(crate) struct CondFacts {
 }
 
 impl CondFacts {
+    pub fn take(&mut self) -> Self {
+        Self {
+            facts: take(&mut self.facts),
+            vars: take(&mut self.vars),
+            excludes: take(&mut self.excludes),
+            types: take(&mut self.types),
+        }
+    }
+
+    fn clear(&mut self) {
+        self.facts.clear();
+        self.vars.clear();
+        self.excludes.clear();
+        self.types.clear();
+    }
+
     fn extend(&mut self, other: Self) {
         self.facts.extend(other.facts);
         self.vars.extend(other.vars);
@@ -65,8 +86,15 @@ impl CondFacts {
 
 #[derive(Debug, Default)]
 pub(super) struct Facts {
-    true_facts: CondFacts,
-    false_facts: CondFacts,
+    pub true_facts: CondFacts,
+    pub false_facts: CondFacts,
+}
+
+impl Facts {
+    pub fn clear(&mut self) {
+        self.true_facts.clear();
+        self.false_facts.clear();
+    }
 }
 
 impl Not for Facts {
@@ -198,31 +226,27 @@ impl BitOr for CondFacts {
     }
 }
 
-impl Validate<IfStmt> for Analyzer<'_, '_> {
-    type Output = ValidationResult<()>;
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, stmt: &mut IfStmt) -> ValidationResult<()> {
+        let _test = stmt.test.validate_with_default(self)?;
 
-    fn validate(&mut self, stmt: &mut IfStmt) -> Self::Output {
-        let mut facts = Default::default();
-        match self.detect_facts(&mut stmt.test, &mut facts) {
-            Ok(()) => (),
-            Err(err) => {
-                self.info.errors.push(err);
-                return Ok(());
-            }
-        };
+        let true_facts = self.cur_facts.true_facts.take();
+        let false_facts = self.cur_facts.false_facts.take();
+
         let ends_with_ret = stmt.cons.ends_with_ret();
-        self.with_child(ScopeKind::Flow, facts.true_facts, |child| {
-            stmt.cons.validate_with(child);
-        });
+        self.with_child(ScopeKind::Flow, true_facts, |child| {
+            stmt.cons.validate_with(child)
+        })?;
 
         if let Some(ref mut alt) = stmt.alt {
-            self.with_child(ScopeKind::Flow, facts.false_facts.clone(), |child| {
-                alt.validate_with(child);
-            });
+            self.with_child(ScopeKind::Flow, false_facts.clone(), |child| {
+                alt.validate_with(child)
+            })?;
         }
 
         if ends_with_ret {
-            self.scope.facts.extend(facts.false_facts);
+            self.scope.facts.extend(false_facts);
         }
 
         Ok(())
@@ -230,11 +254,135 @@ impl Validate<IfStmt> for Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
+    /// This method may remove `SafeSubscriber` from `Subscriber` |
+    /// `SafeSubscriber` or downgrade the type, like converting `Subscriber` |
+    /// `SafeSubscriber` into `SafeSubscriber`. This behavior is controlled by
+    /// the mark applied while handling type facts related to call.
+    fn adjust_ternary_type(
+        &mut self,
+        span: Span,
+        mut types: Vec<Box<Type>>,
+    ) -> ValidationResult<Vec<Box<Type>>> {
+        types.iter_mut().for_each(|ty| {
+            // Tuple -> Array
+            match ty.normalize_mut() {
+                Type::Tuple(tuple) => {
+                    let span = tuple.span;
+
+                    let mut elem_types: Vec<_> =
+                        tuple.elems.take().into_iter().map(|elem| elem.ty).collect();
+                    elem_types.dedup_type();
+                    let elem_type = Type::union(elem_types);
+                    *ty = box Type::Array(Array { span, elem_type });
+                }
+                _ => {}
+            }
+        });
+
+        let should_preserve = types
+            .iter()
+            .flat_map(|ty| ty.iter_union())
+            .flat_map(|ty| ty.iter_union())
+            .any(|ty| {
+                self.env
+                    .shared()
+                    .marks()
+                    .prevent_converting_to_children
+                    .is_marked(&ty)
+            });
+
+        if should_preserve {
+            return self.remove_child_types(span, types);
+        }
+
+        self.downcast_types(span, types)
+    }
+
+    fn downcast_types(
+        &mut self,
+        span: Span,
+        types: Vec<Box<Type>>,
+    ) -> ValidationResult<Vec<Box<Type>>> {
+        fn need_work(ty: &Type) -> bool {
+            match ty.normalize() {
+                Type::Lit(..)
+                | Type::Keyword(TsKeywordType {
+                    kind: TsKeywordTypeKind::TsNullKeyword,
+                    ..
+                }) => false,
+                _ => true,
+            }
+        }
+
+        let mut new = vec![];
+
+        'outer: for (ai, ty) in types.iter().flat_map(|ty| ty.iter_union()).enumerate() {
+            if need_work(&ty) {
+                for (bi, b) in types.iter().flat_map(|ty| ty.iter_union()).enumerate() {
+                    if ai == bi || !need_work(&b) {
+                        continue;
+                    }
+
+                    // If type is same, we need to add it.
+                    if b.type_eq(&ty) {
+                        break;
+                    }
+
+                    match self.extends(&b, ty) {
+                        Some(true) => {
+                            // Remove ty.
+                            continue 'outer;
+                        }
+                        res => {}
+                    }
+                }
+            }
+
+            new.push(box ty.clone());
+        }
+
+        Ok(new)
+    }
+
+    /// Remove `SafeSubscriber` from `Subscriber` | `SafeSubscriber`.
+    fn remove_child_types(
+        &mut self,
+        span: Span,
+        types: Vec<Box<Type>>,
+    ) -> ValidationResult<Vec<Box<Type>>> {
+        let mut new = vec![];
+
+        'outer: for (ai, ty) in types
+            .iter()
+            .flat_map(|ty| ty.iter_union())
+            .flat_map(|ty| ty.iter_union())
+            .enumerate()
+        {
+            for (bi, b) in types.iter().enumerate() {
+                if ai == bi {
+                    continue;
+                }
+
+                match self.extends(&ty, b) {
+                    Some(true) => {
+                        // Remove ty.
+                        continue 'outer;
+                    }
+                    res => {}
+                }
+            }
+
+            new.push(box ty.clone());
+        }
+
+        Ok(new)
+    }
+
     fn check_switch_discriminant(&mut self, s: &mut SwitchStmt) -> ValidationResult {
-        let discriminant_ty = self.validate(&mut s.discriminant)?;
+        let discriminant_ty = s.discriminant.validate_with_default(self)?;
         for case in &mut s.cases {
             if let Some(ref mut test) = case.test {
-                let case_ty = self.validate(test)?;
+                let case_ty = test.validate_with_default(self)?;
                 self.assign(&discriminant_ty, &case_ty, test.span())?
             }
         }
@@ -243,15 +391,14 @@ impl Analyzer<'_, '_> {
     }
 }
 
-impl Validate<SwitchStmt> for Analyzer<'_, '_> {
-    type Output = ValidationResult<()>;
-
-    fn validate(&mut self, stmt: &mut SwitchStmt) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, stmt: &mut SwitchStmt) -> ValidationResult<()> {
         self.record(stmt);
 
         let discriminant_ty = self
             .check_switch_discriminant(stmt)
-            .store(&mut self.info.errors);
+            .report(&mut self.storage);
 
         let mut false_facts = CondFacts::default();
         let mut true_facts = CondFacts::default();
@@ -275,24 +422,21 @@ impl Validate<SwitchStmt> for Analyzer<'_, '_> {
 
             let SwitchCase { cons, .. } = case;
             let last = i == len - 1;
-            let mut facts = Default::default();
 
             ends_with_ret = cons.ends_with_ret();
 
             match case.test {
                 Some(ref test) => {
-                    match self.detect_facts(
-                        &mut Expr::Bin(BinExpr {
-                            op: op!("==="),
-                            span,
-                            left: stmt.discriminant.clone(),
-                            right: test.clone(),
-                        }),
-                        &mut facts,
-                    ) {
-                        Ok(()) => {}
+                    let mut binary_test_expr = Expr::Bin(BinExpr {
+                        op: op!("==="),
+                        span,
+                        left: stmt.discriminant.clone(),
+                        right: test.clone(),
+                    });
+                    match binary_test_expr.validate_with_default(self) {
+                        Ok(..) => {}
                         Err(err) => {
-                            self.info.errors.push(err);
+                            self.storage.report(err);
                             errored = true;
                             continue;
                         }
@@ -301,11 +445,12 @@ impl Validate<SwitchStmt> for Analyzer<'_, '_> {
                 None => {}
             }
 
-            true_facts = true_facts | facts.true_facts;
+            true_facts = true_facts | self.cur_facts.true_facts.take();
             self.with_child(ScopeKind::Flow, true_facts.clone(), |child| {
                 cons.visit_mut_with(child);
-            });
-            false_facts += facts.false_facts;
+                Ok(())
+            })?;
+            false_facts += self.cur_facts.false_facts.take();
 
             if ends_with_ret || last {
                 true_facts = CondFacts::default();
@@ -326,7 +471,7 @@ impl Analyzer<'_, '_> {
         let res: Result<(), Error> = try {
             match *lhs {
                 PatOrExpr::Expr(ref mut expr) | PatOrExpr::Pat(box Pat::Expr(ref mut expr)) => {
-                    let lhs_ty = self.validate_expr(expr, TypeOfMode::LValue, None)?;
+                    let lhs_ty = expr.validate_with_args(self, (TypeOfMode::LValue, None, None))?;
                     let lhs_ty = self.expand(span, lhs_ty)?;
 
                     self.assign(&lhs_ty, &ty, span)?;
@@ -346,7 +491,7 @@ impl Analyzer<'_, '_> {
 
         match res {
             Ok(()) => {}
-            Err(err) => self.info.errors.push(err),
+            Err(err) => self.storage.report(err),
         }
     }
 
@@ -400,7 +545,7 @@ impl Analyzer<'_, '_> {
                                 ..var_info.clone()
                             }
                         } else {
-                            if let Some(types) = self.find_type(&i.into()) {
+                            if let Some(types) = self.find_type(self.ctx.module_id, &i.into())? {
                                 for ty in types {
                                     match &*ty {
                                         Type::Module(..) => {
@@ -552,262 +697,28 @@ impl Analyzer<'_, '_> {
         )
     }
 
-    fn add_true_false(&mut self, facts: &mut Facts, sym: &Id, ty: &Type) {
-        facts.insert_var(sym, box ty.clone(), false);
+    pub(super) fn add_type_fact(&mut self, sym: &Id, ty: Box<Type>) {
+        slog::info!(self.logger, "add_type_fact({}); ty = {:?}", sym, ty);
+        self.cur_facts.insert_var(sym, ty, false);
     }
 
-    /// Add type facts to `facts`. Facts which become true if test is true is
-    /// stored at `facts.true_fact`.
-    fn detect_facts(&mut self, test: &mut Expr, facts: &mut Facts) -> ValidationResult<()> {
-        match *test {
-            // Useless
-            Expr::Fn(..)
-            | Expr::Arrow(..)
-            | Expr::Lit(Lit::Bool(..))
-            | Expr::Lit(Lit::Str(..))
-            | Expr::Lit(Lit::Null(..))
-            | Expr::Lit(Lit::Num(..))
-            | Expr::Lit(Lit::Regex(..))
-            | Expr::MetaProp(..)
-            | Expr::JSXFragment(..)
-            | Expr::JSXNamespacedName(..)
-            | Expr::JSXEmpty(..) => return Ok(()),
-
-            // TODO: Handle this correctly. `this` can be undefined, so we should handle
-            // `this && this.foo`
-            Expr::This(..) => return Ok(()),
-
-            Expr::Call(..) => {
-                let ty = self.validate(test)?;
-                //match *ty.normalize() {
-                //    Type::Simple(ref sty) => match **sty {
-                //        TsType::TsTypePredicate(ref pred) => {
-                //            //
-                //            let name = Name::from(&pred.param_name);
-                //            let ty = Type::from(pred.type_ann.clone());
-                //            facts.insert_var(name.clone(), ty.clone(), false);
-                //        }
-                //        _ => {}
-                //    },
-                //    _ => {}
-                //}
-
-                return Ok(());
-            }
-
-            // Object literal *may* have side effect.
-            Expr::Object(..) => {}
-
-            // Array literal *may* have side effect.
-            Expr::Array(..) => {}
-
-            Expr::Await(AwaitExpr {
-                arg: ref mut expr, ..
-            })
-            | Expr::TsNonNull(TsNonNullExpr { ref mut expr, .. }) => {
-                self.detect_facts(expr, facts)?;
-            }
-
-            Expr::Seq(SeqExpr { ref mut exprs, .. }) => {
-                for expr in exprs {
-                    self.detect_facts(expr, facts)?;
-                }
-            }
-
-            Expr::Paren(ParenExpr { ref mut expr, .. }) => self.detect_facts(expr, facts)?,
-
-            Expr::Ident(ref i) => {
-                let sym = i.into();
-                let ty = self.validate(test)?;
-                self.add_true_false(facts, &sym, &ty);
-            }
-
-            Expr::Bin(BinExpr {
-                op: op!("&&"),
-                ref mut left,
-                ref mut right,
-                ..
-            }) => {
-                // order is important
-                self.detect_facts(left, facts)?;
-                self.detect_facts(right, facts)?;
-            }
-
-            Expr::Bin(BinExpr {
-                op: op!("||"),
-                ref mut left,
-                ref mut right,
-                ..
-            }) => {
-                let (mut l_facts, mut r_facts) = Default::default();
-                self.detect_facts(left, &mut l_facts)?;
-                self.detect_facts(right, &mut r_facts)?;
-
-                *facts += l_facts | r_facts;
-
-                return Ok(());
-            }
-
-            Expr::Bin(BinExpr {
-                op,
-                ref mut left,
-                ref mut right,
-                ..
-            }) => {
-                let l_ty = self.validate(left)?;
-                let r_ty = self.validate(right)?;
-
-                match op {
-                    op!("===") | op!("!==") | op!("==") | op!("!=") => {
-                        let is_eq = op == op!("===") || op == op!("==");
-
-                        let c = Comparator {
-                            left: &**left,
-                            right: &**right,
-                        };
-
-                        // Check typeof a === 'string'
-                        {
-                            match c.take_if_any_matches(|l, r| match l {
-                                Expr::Unary(UnaryExpr {
-                                    op: op!("typeof"),
-                                    ref arg,
-                                    ..
-                                }) => {
-                                    //
-                                    let name = Name::try_from(&**arg);
-                                    log::info!("cond_facts: typeof {:?}", name);
-                                    match r {
-                                        Expr::Lit(Lit::Str(Str { ref value, .. })) => Some((
-                                            name,
-                                            if is_eq {
-                                                (
-                                                    TypeFacts::typeof_eq(&*value),
-                                                    TypeFacts::typeof_neq(&*value),
-                                                )
-                                            } else {
-                                                (
-                                                    TypeFacts::typeof_neq(&*value),
-                                                    TypeFacts::typeof_eq(&*value),
-                                                )
-                                            },
-                                        )),
-                                        _ => None,
-                                    }
-                                }
-                                _ => None,
-                            }) {
-                                Some((Ok(name), (Some(t), Some(f)))) => {
-                                    // Add type facts
-
-                                    facts.true_facts.facts.insert(name.clone(), t);
-                                    facts.false_facts.facts.insert(name.clone(), f);
-                                    return Ok(());
-                                }
-                                _ => {}
-                            }
-                        }
-
-                        // Try narrowing type
-                        let c = Comparator {
-                            left: (&**left, &l_ty),
-                            right: (&**right, &r_ty),
-                        };
-
-                        match c.take_if_any_matches(|(l, l_ty), (_, r_ty)| match **l_ty {
-                            Type::Keyword(TsKeywordType {
-                                kind: TsKeywordTypeKind::TsUnknownKeyword,
-                                ..
-                            }) => {
-                                //
-                                Some((Name::try_from(l), r_ty))
-                            }
-                            _ => None,
-                        }) {
-                            Some((Ok(name), ty)) => {
-                                if is_eq {
-                                    facts.insert_var(name.clone(), ty.clone(), false);
-                                } else {
-                                    facts.insert_var(name.clone(), ty.clone(), true);
-                                }
-                                return Ok(());
-                            }
-                            _ => {}
-                        }
-
-                        return Ok(());
-                    }
-
-                    op!("instanceof") => {
-                        match **left {
-                            Expr::Ident(ref i) => {
-                                //
-
-                                facts.true_facts.vars.insert(Name::from(i), r_ty);
-
-                                return Ok(());
-                            }
-
-                            _ => {}
-                        }
-                    }
-
-                    _ => {}
-                }
-
-                unimplemented!("detect_facts({:?})", test)
-            }
-
-            Expr::Unary(UnaryExpr {
-                op: op!("!"),
-                ref mut arg,
-                ..
-            }) => {
-                let mut f = Default::default();
-                self.detect_facts(arg, &mut f)?;
-                *facts += !f;
-            }
-
-            Expr::Member(MemberExpr {
-                span,
-                ref mut obj,
-                ref mut prop,
-                computed: true,
-            }) => {
-                match obj {
-                    ExprOrSuper::Super(_) => {}
-                    ExprOrSuper::Expr(obj) => {
-                        self.detect_facts(obj, facts)?;
-                    }
-                }
-
-                self.detect_facts(prop, facts)?;
-            }
-
-            Expr::Member(ref mut e) => {
-                match &mut e.obj {
-                    ExprOrSuper::Super(_) => {}
-                    ExprOrSuper::Expr(obj) => {
-                        self.detect_facts(&mut **obj, facts)?;
-                    }
-                }
-                // Foo.a
-                if let Ok(name) = Name::try_from(&*e) {
-                    facts.true_facts.facts.insert(name, TypeFacts::Truthy);
-                }
-            }
-
-            _ => unimplemented!("detect_facts({:?})", test),
+    pub(super) fn add_deep_type_fact(&mut self, sym: Name, ty: Box<Type>, is_for_true: bool) {
+        if is_for_true {
+            self.cur_facts.true_facts.vars.insert(sym, ty);
+        } else {
+            self.cur_facts.false_facts.vars.insert(sym, ty);
         }
-
-        Ok(())
     }
 }
 
-impl Validate<CondExpr> for Analyzer<'_, '_> {
-    type Output = ValidationResult;
-
-    fn validate(&mut self, mut e: &mut CondExpr) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(
+        &mut self,
+        mut e: &mut CondExpr,
+        mode: TypeOfMode,
+        type_ann: Option<&Type>,
+    ) -> ValidationResult {
         self.record(e);
 
         let CondExpr {
@@ -818,15 +729,14 @@ impl Validate<CondExpr> for Analyzer<'_, '_> {
             ..
         } = *e;
 
-        let mut facts = Default::default();
-        self.detect_facts(test, &mut facts)?;
-
-        self.validate(test)?;
-        let cons = self.with_child(ScopeKind::Flow, facts.true_facts, |child| {
-            child.validate(cons)
+        test.validate_with_default(self)?;
+        let true_facts = self.cur_facts.true_facts.take();
+        let false_facts = self.cur_facts.false_facts.take();
+        let cons = self.with_child(ScopeKind::Flow, true_facts, |child| {
+            cons.validate_with_args(child, (mode, None, type_ann))
         })?;
-        let alt = self.with_child(ScopeKind::Flow, facts.false_facts, |child| {
-            child.validate(alt)
+        let alt = self.with_child(ScopeKind::Flow, false_facts, |child| {
+            alt.validate_with_args(child, (mode, None, type_ann))
         })?;
 
         match **test {
@@ -843,7 +753,12 @@ impl Validate<CondExpr> for Analyzer<'_, '_> {
             _ => {}
         }
 
-        Ok(Type::union(vec![cons, alt]))
+        if cons.type_eq(&alt) {
+            return Ok(cons);
+        }
+
+        let new_types = self.adjust_ternary_type(span, vec![cons, alt])?;
+        Ok(Type::union(new_types))
     }
 }
 

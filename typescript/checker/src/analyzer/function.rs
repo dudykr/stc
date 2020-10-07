@@ -1,24 +1,25 @@
 use super::Analyzer;
+use crate::errors::Errors;
 use crate::{
     analyzer::{pat::PatMode, util::ResultExt, Ctx, ScopeKind},
     errors::Error,
     ty,
     ty::{ClassInstance, FnParam, Tuple, Type, TypeParam},
+    validator,
     validator::{Validate, ValidateWith},
     ValidationResult,
 };
-use swc_common::Spanned;
+use stc_types::{Alias, FoldWith as _, Interface, Ref};
+use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
-use swc_ts_types::FoldWith as _;
 
-impl Validate<Function> for Analyzer<'_, '_> {
-    type Output = ValidationResult<ty::Function>;
-
-    fn validate(&mut self, f: &mut Function) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, f: &mut Function) -> ValidationResult<ty::Function> {
         self.record(f);
 
         self.with_child(ScopeKind::Fn, Default::default(), |child| {
-            let mut errors = vec![];
+            let mut errors = Errors::default();
 
             {
                 // Validate params
@@ -29,7 +30,7 @@ impl Validate<Function> for Analyzer<'_, '_> {
                         match p.pat {
                             Pat::Ident(Ident { optional: true, .. }) | Pat::Rest(..) => {}
                             _ => {
-                                child.info.errors.push(Error::TS1016 { span: p.span() });
+                                child.storage.report(Error::TS1016 { span: p.span() });
                             }
                         }
                     }
@@ -67,19 +68,23 @@ impl Validate<Function> for Analyzer<'_, '_> {
                     .collect::<Result<_, _>>()?;
             }
 
-            let mut declared_ret_ty = try_opt!(f.return_type.validate_with(child)).map(|ret_ty| {
+            let mut declared_ret_ty = try_opt!(f.return_type.validate_with(child));
+
+            if let Some(ret_ty) = declared_ret_ty {
                 let span = ret_ty.span();
-                match *ret_ty {
+                declared_ret_ty = Some(match *ret_ty {
                     Type::Class(cls) => box Type::ClassInstance(ClassInstance {
                         span,
                         ty: box Type::Class(cls),
                         type_args: None,
                     }),
+
                     _ => ret_ty,
-                }
-            });
+                });
+            }
+
             if let Some(ty) = &mut declared_ret_ty {
-                match &**ty {
+                match ty.normalize() {
                     Type::Ref(..) => {
                         child.prevent_expansion(ty);
                     }
@@ -97,6 +102,11 @@ impl Validate<Function> for Analyzer<'_, '_> {
 
             let inferred_return_type = match inferred_return_type {
                 Some(Some(inferred_return_type)) => {
+                    let inferred_return_type = match *inferred_return_type {
+                        Type::Ref(ty) => box Type::Ref(child.qualify_ref_type_args(span, ty)?),
+                        _ => inferred_return_type,
+                    };
+
                     if let Some(ref declared) = declared_ret_ty {
                         // Expand before assigning
                         let declared = child.expand_fully(f.span, declared.clone(), true)?;
@@ -131,6 +141,15 @@ impl Validate<Function> for Analyzer<'_, '_> {
                     }
 
                     // No return statement -> void
+                    if f.return_type.is_none() {
+                        f.return_type = Some(TsTypeAnn {
+                            span: DUMMY_SP,
+                            type_ann: box TsType::TsKeywordType(TsKeywordType {
+                                span,
+                                kind: TsKeywordTypeKind::TsVoidKeyword,
+                            }),
+                        });
+                    }
                     box Type::Keyword(TsKeywordType {
                         span,
                         kind: TsKeywordTypeKind::TsVoidKeyword,
@@ -139,7 +158,11 @@ impl Validate<Function> for Analyzer<'_, '_> {
                 None => Type::any(f.span),
             };
 
-            child.info.errors.extend(errors);
+            if f.return_type.is_none() {
+                f.return_type = Some(inferred_return_type.clone().into())
+            }
+
+            child.storage.report_all(errors);
 
             Ok(ty::Function {
                 span: f.span,
@@ -153,6 +176,61 @@ impl Validate<Function> for Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
+    /// Fill type arguments using default value.
+    ///
+    /// If the referred type has default type parameter, we have to include it
+    /// in function type of output (.d.ts)
+    fn qualify_ref_type_args(&mut self, span: Span, mut ty: Ref) -> ValidationResult<Ref> {
+        let actual_ty = self.type_of_ts_entity_name(
+            span,
+            self.ctx.module_id,
+            &ty.type_name,
+            ty.type_args.clone(),
+        )?;
+
+        let type_params = match actual_ty.foldable() {
+            Type::Alias(Alias {
+                type_params: Some(type_params),
+                ..
+            })
+            | Type::Interface(Interface {
+                type_params: Some(type_params),
+                ..
+            })
+            | Type::Class(stc_types::Class {
+                type_params: Some(type_params),
+                ..
+            }) => type_params,
+
+            _ => return Ok(ty),
+        };
+
+        let arg_cnt = ty.type_args.as_ref().map(|v| v.params.len()).unwrap_or(0);
+        if type_params.params.len() <= arg_cnt {
+            return Ok(ty);
+        }
+
+        self.prevent_expansion(&mut ty);
+
+        if let Some(args) = ty.type_args.as_mut() {
+            for (span, default) in type_params
+                .params
+                .into_iter()
+                .skip(arg_cnt)
+                .map(|param| (param.span, param.default))
+            {
+                if let Some(default) = default {
+                    args.params.push(default);
+                } else {
+                    self.storage.report(Error::ImplicitAny { span });
+                    args.params.push(Type::any(span));
+                }
+            }
+        }
+
+        Ok(ty)
+    }
+
     /// TODO: Handle recursive funciton
     fn visit_fn(&mut self, name: Option<&Ident>, f: &mut Function) -> Box<Type> {
         let fn_ty: Result<_, _> = try {
@@ -175,7 +253,7 @@ impl Analyzer<'_, '_> {
             //     ) {
             //         Ok(()) => {}
             //         Err(err) => {
-            //             self.info.errors.push(err);
+            //             self.storage.report(err);
             //         }
             //     }
             // }
@@ -213,7 +291,7 @@ impl Analyzer<'_, '_> {
                                 //if child.rule.no_implicit_any
                                 //    && child.span_allowed_implicit_any != f.span
                                 //{
-                                //    child.info.errors.push(Error::ImplicitAny {
+                                //    child.storage.report(Error::ImplicitAny {
                                 //        span: no_implicit_any_span.unwrap_or(span),
                                 //    });
                                 //}
@@ -235,28 +313,25 @@ impl Analyzer<'_, '_> {
         };
 
         match fn_ty {
-            Ok(ty) => box ty.into(),
+            Ok(ty) => Type::Function(ty).cheap(),
             Err(err) => {
-                self.info.errors.push(err);
+                self.storage.report(err);
                 Type::any(f.span)
             }
         }
     }
 }
 
-impl Validate<FnDecl> for Analyzer<'_, '_> {
-    type Output = ValidationResult<()>;
-
+#[validator]
+impl Analyzer<'_, '_> {
     /// NOTE: This method **should not call f.fold_children_with(self)**
-    fn validate(&mut self, f: &mut FnDecl) -> Self::Output {
-        let fn_ty = self.visit_fn(Some(&f.ident), &mut f.function).freeze();
+    fn validate(&mut self, f: &mut FnDecl) {
+        let fn_ty = self.visit_fn(Some(&f.ident), &mut f.function).cheap();
 
-        self.register_type(f.ident.clone().into(), fn_ty.clone())
-            .store(&mut self.info.errors);
         match self.override_var(VarDeclKind::Var, f.ident.clone().into(), fn_ty) {
             Ok(()) => {}
             Err(err) => {
-                self.info.errors.push(err);
+                self.storage.report(err);
             }
         }
 
@@ -264,11 +339,10 @@ impl Validate<FnDecl> for Analyzer<'_, '_> {
     }
 }
 
-impl Validate<FnExpr> for Analyzer<'_, '_> {
-    type Output = ValidationResult<()>;
-
+#[validator]
+impl Analyzer<'_, '_> {
     /// NOTE: This method **should not call f.fold_children_with(self)**
-    fn validate(&mut self, f: &mut FnExpr) -> Self::Output {
+    fn validate(&mut self, f: &mut FnExpr) {
         self.visit_fn(f.ident.as_ref(), &mut f.function);
 
         Ok(())

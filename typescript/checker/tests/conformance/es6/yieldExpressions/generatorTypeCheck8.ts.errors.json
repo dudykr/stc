@@ -1,7 +1,1 @@
-[
-    {
-        "line": 3,
-        "column": 17,
-        "msg": "Type 'Generator<string, any, undefined>' is not assignable to type 'BadGenerator'."
-    }
-]
+[]

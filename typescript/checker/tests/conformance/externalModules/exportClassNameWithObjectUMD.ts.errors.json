@@ -1,7 +1,1 @@
-[
-    {
-        "line": 3,
-        "column": 14,
-        "msg": "Class name cannot be 'Object' when targeting ES5 with module UMD."
-    }
-]
+[]

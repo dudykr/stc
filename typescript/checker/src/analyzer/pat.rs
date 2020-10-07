@@ -1,13 +1,18 @@
 use super::{Analyzer, Ctx};
+use crate::errors::Errors;
+use crate::util::type_ext::TypeVecExt;
 use crate::{
     analyzer::util::{ResultExt, VarVisitor},
     errors::Error,
     ty,
-    ty::Type,
-    util::{PatExt, TypeEq},
+    ty::{Type, TypeExt},
+    util::{map_with_mut::MapWithMut, PatExt},
+    validator,
     validator::{Validate, ValidateWith},
     ValidationResult,
 };
+use stc_types::{eq::TypeEq, Array};
+use swc_atoms::js_word;
 use swc_common::{Mark, Span, Spanned, SyntaxContext, DUMMY_SP};
 use swc_ecma_ast::*;
 use swc_ecma_visit::VisitMutWith;
@@ -24,7 +29,7 @@ pub(super) enum PatMode {
 impl Analyzer<'_, '_> {
     pub(crate) fn mark_as_implicit(&mut self, ty: &mut Type) {
         let span = ty.span();
-        let span = span.apply_mark(self.implicit_type_mark);
+        let span = span.apply_mark(self.marks().implicit_type_mark);
         ty.respan(span);
     }
 
@@ -41,7 +46,7 @@ impl Analyzer<'_, '_> {
                 break;
             }
 
-            if mark == self.implicit_type_mark {
+            if mark == self.marks().implicit_type_mark {
                 return true;
             }
         }
@@ -50,10 +55,9 @@ impl Analyzer<'_, '_> {
     }
 }
 
-impl Validate<Param> for Analyzer<'_, '_> {
-    type Output = ValidationResult<ty::FnParam>;
-
-    fn validate(&mut self, node: &mut Param) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, node: &mut Param) -> ValidationResult<ty::FnParam> {
         node.decorators.visit_mut_with(self);
         let ctx = Ctx {
             pat_mode: PatMode::Decl,
@@ -63,15 +67,69 @@ impl Validate<Param> for Analyzer<'_, '_> {
     }
 }
 
-impl Validate<Pat> for Analyzer<'_, '_> {
-    type Output = ValidationResult<ty::FnParam>;
-
-    fn validate(&mut self, p: &mut Pat) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, p: &mut Pat) -> ValidationResult<ty::FnParam> {
         use swc_ecma_visit::VisitWith;
 
         self.record(p);
         if !self.is_builtin {
             debug_assert_ne!(p.span(), DUMMY_SP, "A pattern should have a valid span");
+        }
+
+        // Mark pattern as optional if default value exists
+        match p {
+            Pat::Assign(assign_pat) => match &mut *assign_pat.left {
+                Pat::Ident(i) => {
+                    i.optional = true;
+                }
+                Pat::Array(arr) => {
+                    arr.optional = true;
+                }
+                Pat::Object(obj) => {
+                    obj.optional = true;
+                }
+                _ => {}
+            },
+            _ => {}
+        }
+
+        if let Pat::Assign(assign_pat) = p {
+            // Handle default value
+
+            let default_value_ty = assign_pat.right.validate_with_default(self)?;
+
+            let type_ann = assign_pat
+                .left
+                .get_mut_ty()
+                .map(|v| box v.take())
+                .unwrap_or_else(|| {
+                    let mut ty = default_value_ty.generalize_lit();
+
+                    match *ty {
+                        Type::Tuple(tuple) => {
+                            let mut types = tuple
+                                .elems
+                                .into_iter()
+                                .map(|element| element.ty)
+                                .collect::<Vec<_>>();
+
+                            types.dedup_type();
+
+                            ty = box Type::Array(Array {
+                                span: tuple.span,
+                                elem_type: Type::union(types),
+                            });
+                        }
+                        _ => {}
+                    }
+
+                    ty.into()
+                });
+
+            // Remove default value.
+            *p = assign_pat.left.take();
+            p.set_ty(Some(type_ann));
         }
 
         let ty = match p.get_mut_ty() {
@@ -81,6 +139,17 @@ impl Validate<Pat> for Analyzer<'_, '_> {
 
         match self.ctx.pat_mode {
             PatMode::Decl => {
+                match p {
+                    Pat::Ident(Ident {
+                        sym: js_word!("this"),
+                        ..
+                    }) => {
+                        assert!(ty.is_some(), "parameter named `this` should have type");
+                        self.scope.this = ty.clone();
+                    }
+                    _ => {}
+                }
+
                 let mut names = vec![];
 
                 let mut visitor = VarVisitor { names: &mut names };
@@ -92,7 +161,7 @@ impl Validate<Pat> for Analyzer<'_, '_> {
                 match self.declare_vars_with_ty(VarDeclKind::Let, p, ty.clone()) {
                     Ok(()) => {}
                     Err(err) => {
-                        self.info.errors.push(err);
+                        self.storage.report(err);
                     }
                 }
 
@@ -119,6 +188,8 @@ impl Validate<Pat> for Analyzer<'_, '_> {
             pat: p.clone(),
             required: match p {
                 Pat::Ident(i) => !i.optional,
+                Pat::Array(arr) => !arr.optional,
+                Pat::Object(obj) => !obj.optional,
                 _ => true,
             },
             ty,
@@ -126,17 +197,16 @@ impl Validate<Pat> for Analyzer<'_, '_> {
     }
 }
 
-impl Validate<RestPat> for Analyzer<'_, '_> {
-    type Output = ValidationResult<()>;
-
-    fn validate(&mut self, p: &mut RestPat) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, p: &mut RestPat) {
         p.visit_mut_children_with(self);
 
-        let mut errors = vec![];
+        let mut errors = Errors::default();
 
         if let Pat::Assign(AssignPat { ref mut right, .. }) = *p.arg {
             let res: Result<_, _> = try {
-                let value_ty = right.validate_with(self)?;
+                let value_ty = right.validate_with_default(self)?;
 
                 match value_ty.normalize() {
                     Type::Array(..)
@@ -165,16 +235,15 @@ impl Validate<RestPat> for Analyzer<'_, '_> {
             res.store(&mut errors);
         }
 
-        self.info.errors.extend(errors);
+        self.storage.report_all(errors);
 
         Ok(())
     }
 }
 
-impl Validate<AssignPat> for Analyzer<'_, '_> {
-    type Output = ValidationResult<()>;
-
-    fn validate(&mut self, p: &mut AssignPat) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, p: &mut AssignPat) {
         p.visit_mut_children_with(self);
 
         //
@@ -210,7 +279,7 @@ impl Validate<AssignPat> for Analyzer<'_, '_> {
                                         }
                                     }
 
-                                    self.info.errors.push(Error::TS2353 { span: prop.span() })
+                                    self.storage.report(Error::TS2353 { span: prop.span() })
                                 }
                                 _ => {}
                             }

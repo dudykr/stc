@@ -1,4 +1,5 @@
 use smallvec::{smallvec, SmallVec};
+use stc_types::Id;
 use std::{
     convert::{TryFrom, TryInto},
     fmt::{self, Debug, Formatter},
@@ -6,7 +7,6 @@ use std::{
 use swc_atoms::js_word;
 use swc_common::{iter::IdentifyLast, DUMMY_SP};
 use swc_ecma_ast::*;
-use swc_ts_types::Id;
 
 type Inner = SmallVec<[Id; 4]>;
 
@@ -60,7 +60,7 @@ impl From<TsEntityName> for Name {
     fn from(n: TsEntityName) -> Self {
         fn expand(buf: &mut Inner, n: TsEntityName) {
             match n {
-                TsEntityName::Ident(i) => buf.push(Id::word(i.sym)),
+                TsEntityName::Ident(i) => buf.push(Id::from(i)),
 
                 TsEntityName::TsQualifiedName(box q) => {
                     expand(buf, q.left);

@@ -1,7 +1,1 @@
-[
-    {
-        "line": 9,
-        "column": 11,
-        "msg": "An iterator must have a 'next()' method."
-    }
-]
+[]

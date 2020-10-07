@@ -1,0 +1,93 @@
+name: Cargo
+
+on: [push, pull_request]
+
+env:
+  CARGO_INCREMENTAL: 0
+  CI: "1"
+
+jobs:
+  fmt:
+    name: fmt
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install rustup
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rustup.sh
+          sh ./rustup.sh --default-toolchain none -y
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Install rustfmt
+        run: rustup component add rustfmt
+
+      - name: Run cargo fmt
+        run: cargo fmt --all -- --check
+
+  test:
+    name: test
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: Install rustup
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rustup.sh
+          sh ./rustup.sh --default-toolchain none -y
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Install apt dependencies
+        run: |
+          apt-get install -y wget
+          wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -
+          echo 'deb http://apt.llvm.org/focal/ llvm-toolchain-focal-11 main' >> /etc/apt/sources.list
+          apt-get update
+          apt-get install -y clang-11 lld-11
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "12"
+
+      - name: Checkout submodules
+        shell: bash
+        run: |
+          auth_header="$(git config --local --get http.https://github.com/.extraheader)"
+          git submodule sync --recursive
+          git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
+
+      - name: Install node dependencies
+        run: |
+          npm config set prefix ~/npm
+          echo "$HOME/npm/bin" >> $GITHUB_PATH
+          npm i
+          (cd typescript/dts && npm i)
+
+      - name: Install llvm ( windows only )
+        if: matrix.os == 'windows-latest'
+        run: choco install -y llvm
+
+      - name: Set llvm path
+        if: matrix.os == 'windows-latest'
+        uses: allenevans/set-env@v1.0.0
+        with:
+          LIBCLANG_PATH: 'C:\\Program Files\\LLVM\\bin'
+
+      - name: Cache
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      # Ensure that all components all compilable.
+      - name: Run cargo check for all targets
+        run: cargo check --color always --all --all-targets
+
+      - name: Run cargo tests
+        run: |
+          cargo test --color always --all -- -Z unstable-options --report-time=colored

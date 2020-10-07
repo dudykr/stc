@@ -1,9 +1,6 @@
-use crate::{
-    ty::{self, Array, Type},
-    util::TypeEq,
-};
+use crate::ty::{self, Array, Type};
+use stc_types::{eq::TypeEq, FoldWith};
 use swc_common::Spanned;
-use swc_ts_types::FoldWith;
 
 pub(super) struct TupleToArray;
 

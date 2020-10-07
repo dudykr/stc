@@ -15,13 +15,9 @@
   "[typescript]": {
     "editor.formatOnSave": true
   },
-  "rust.rustflags": "--cfg procmacro2_semver_exempt",
   // Important
-  "rust.cfg_test": false,
-  "rust-client.revealOutputChannelOn": "warn",
-  "rust-client.logToFile": true,
   "editor.formatOnSave": true,
   "git.ignoreLimitWarning": true,
-  "rust-analyzer.procMacro.enable": true,
-  "rust-analyzer.cargo.loadOutDirsFromCheck": true
+  "rust-analyzer.assist.importPrefix": "by_self",
+  "git.detectSubmodules": false
 }

@@ -1,7 +1,1 @@
-[
-    {
-        "line": 2,
-        "column": 18,
-        "msg": "Type annotation cannot appear on a constructor declaration."
-    }
-]
+[]

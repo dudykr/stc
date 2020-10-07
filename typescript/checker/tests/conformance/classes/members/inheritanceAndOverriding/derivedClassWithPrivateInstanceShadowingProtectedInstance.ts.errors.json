@@ -1,7 +1,1 @@
-[
-    {
-        "line": 14,
-        "column": 7,
-        "msg": "Class 'Derived' incorrectly extends base class 'Base'."
-    }
-]
+[]

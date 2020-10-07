@@ -3,20 +3,24 @@ use super::super::{
     Analyzer,
 };
 use crate::{
-    debug::print_backtrace,
+    analyzer::{Ctx, ScopeKind},
     errors::{Error, Errors},
-    ty::{Operator, Type, Union},
-    util::{is_str_lit_or_union, is_str_or_union, EqIgnoreSpan, RemoveTypes},
-    validator::Validate,
+    name::Name,
+    ty::{Operator, Type, TypeExt},
+    type_facts::TypeFacts,
+    util::{is_str_lit_or_union, is_str_or_union, RemoveTypes},
+    validator,
+    validator::{Validate, ValidateWith},
     ValidationResult,
 };
+use stc_types::eq::{EqIgnoreSpan, TypeEq};
+use std::convert::TryFrom;
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::*;
 use swc_ecma_utils::{ExprExt, Value::Known};
 
-impl Validate<BinExpr> for Analyzer<'_, '_> {
-    type Output = ValidationResult;
-
+#[validator]
+impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &mut BinExpr) -> ValidationResult {
         let BinExpr {
             span,
@@ -27,14 +31,67 @@ impl Validate<BinExpr> for Analyzer<'_, '_> {
 
         let mut errors = vec![];
 
-        let lt = self.validate(left).store(&mut errors).map(|mut ty| {
-            ty.respan(left.span());
-            ty
-        });
-        let rt = self.validate(right).store(&mut errors).map(|mut ty| {
-            ty.respan(right.span());
-            ty
-        });
+        let lt = left
+            .validate_with_default(self)
+            .and_then(|mut ty| {
+                if ty.is_ref_type() {
+                    let ctx = Ctx {
+                        preserve_ref: false,
+                        ignore_expand_prevention_for_top: true,
+                        ..self.ctx
+                    };
+                    ty = self.with_ctx(ctx).expand_fully(span, ty, true)?;
+                }
+                let span = ty.span();
+                ty.respan(left.span().with_ctxt(span.ctxt));
+
+                Ok(ty)
+            })
+            .store(&mut errors);
+
+        let facts = if op == op!("&&") {
+            // We need a new virtual scope.
+            self.cur_facts.true_facts.take()
+        } else {
+            Default::default()
+        };
+
+        let rhs = self
+            .with_child(
+                ScopeKind::Flow,
+                facts,
+                |child: &mut Analyzer| -> ValidationResult<_> {
+                    let ty = right.validate_with_default(child).and_then(|mut ty| {
+                        if ty.is_ref_type() {
+                            let ctx = Ctx {
+                                preserve_ref: false,
+                                ignore_expand_prevention_for_top: true,
+                                ..child.ctx
+                            };
+                            ty = child.with_ctx(ctx).expand_fully(span, ty, true)?;
+                        }
+
+                        let span = ty.span();
+                        ty.respan(right.span().with_ctxt(span.ctxt));
+
+                        Ok(ty)
+                    })?;
+
+                    let rhs_true_facts = child.cur_facts.true_facts.take();
+
+                    Ok((ty, rhs_true_facts))
+                },
+            )
+            .store(&mut errors);
+
+        let (rt, rhs_facts) = match rhs {
+            Some(v) => (Some(v.0), v.1),
+            None => (None, Default::default()),
+        };
+
+        if op == op!("||") {
+            self.cur_facts.true_facts += rhs_facts;
+        }
 
         self.validate_bin_inner(
             span,
@@ -47,6 +104,99 @@ impl Validate<BinExpr> for Analyzer<'_, '_> {
             (Some(l), Some(r)) => (l, r),
             _ => return Err(Error::Errors { span, errors }),
         };
+
+        // Handle control-flow based typing
+        match op {
+            op!("===") | op!("!==") | op!("==") | op!("!=") => {
+                let is_eq = op == op!("===") || op == op!("==");
+
+                let c = Comparator {
+                    left: &**left,
+                    right: &**right,
+                };
+
+                // Check typeof a === 'string'
+                {
+                    match c.take_if_any_matches(|l, r| match l {
+                        Expr::Unary(UnaryExpr {
+                            op: op!("typeof"),
+                            ref arg,
+                            ..
+                        }) => {
+                            //
+                            let name = Name::try_from(&**arg);
+                            slog::info!(self.logger, "cond_facts: typeof {:?}", name);
+                            match r {
+                                Expr::Lit(Lit::Str(Str { ref value, .. })) => Some((
+                                    name,
+                                    if is_eq {
+                                        (
+                                            TypeFacts::typeof_eq(&*value),
+                                            TypeFacts::typeof_neq(&*value),
+                                        )
+                                    } else {
+                                        (
+                                            TypeFacts::typeof_neq(&*value),
+                                            TypeFacts::typeof_eq(&*value),
+                                        )
+                                    },
+                                )),
+                                _ => None,
+                            }
+                        }
+                        _ => None,
+                    }) {
+                        Some((Ok(name), (Some(t), Some(f)))) => {
+                            // Add type facts
+                            self.cur_facts.true_facts.facts.insert(name.clone(), t);
+                            self.cur_facts.false_facts.facts.insert(name.clone(), f);
+                        }
+                        _ => {}
+                    }
+                }
+
+                // Try narrowing type
+                let c = Comparator {
+                    left: (&**left, &lt),
+                    right: (&**right, &rt),
+                };
+
+                match c.take_if_any_matches(|(l, l_ty), (_, r_ty)| match **l_ty {
+                    Type::Keyword(TsKeywordType {
+                        kind: TsKeywordTypeKind::TsUnknownKeyword,
+                        ..
+                    }) => {
+                        //
+                        Some((Name::try_from(l), r_ty))
+                    }
+                    _ => None,
+                }) {
+                    Some((Ok(name), ty)) => {
+                        if is_eq {
+                            self.add_deep_type_fact(name.clone(), ty.clone(), false);
+                        } else {
+                            self.add_deep_type_fact(name.clone(), ty.clone(), true);
+                        }
+                    }
+                    _ => {}
+                }
+            }
+
+            op!("instanceof") => {
+                match **left {
+                    Expr::Ident(ref i) => {
+                        //
+                        let ty = self.make_instance_or_report(&rt);
+
+                        self.cur_facts.true_facts.vars.insert(Name::from(i), ty);
+                    }
+
+                    _ => {}
+                }
+            }
+
+            _ => {}
+        }
 
         macro_rules! no_unknown {
             () => {{
@@ -239,7 +389,7 @@ impl Validate<BinExpr> for Analyzer<'_, '_> {
                     Type::This(..) | Type::Param(..) | Type::Ref(..) => false,
                     _ => true,
                 } {
-                    self.info.errors.push(Error::InvalidLhsInInstanceOf {
+                    self.storage.report(Error::InvalidLhsInInstanceOf {
                         ty: lt.clone(),
                         span: left.span(),
                     })
@@ -253,7 +403,7 @@ impl Validate<BinExpr> for Analyzer<'_, '_> {
                     ty if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) => true,
                     _ => false,
                 } {
-                    self.info.errors.push(Error::InvalidRhsInInstanceOf {
+                    self.storage.report(Error::InvalidRhsInInstanceOf {
                         span: right.span(),
                         ty: rt.clone(),
                     })
@@ -276,6 +426,15 @@ impl Validate<BinExpr> for Analyzer<'_, '_> {
 
             op!("||") | op!("&&") => {
                 no_unknown!();
+                let mut lt = lt;
+                let mut rt = rt;
+
+                if self.may_generalize(&lt) {
+                    lt = lt.generalize_lit();
+                }
+                if self.may_generalize(&rt) {
+                    rt = rt.generalize_lit();
+                }
 
                 match lt.normalize() {
                     Type::Keyword(TsKeywordType {
@@ -329,7 +488,29 @@ impl Validate<BinExpr> for Analyzer<'_, '_> {
                 return Ok(rt);
             }
 
-            op!("??") => unimplemented!("type_of_bin_expr (`??`)"),
+            op!("??") => {
+                let may_generalize_lt = self.may_generalize(&lt);
+
+                let mut lt = box lt.remove_falsy();
+                let mut rt = rt;
+                if may_generalize_lt {
+                    lt = lt.generalize_lit();
+                }
+                if self.may_generalize(&rt) {
+                    rt = rt.generalize_lit();
+                }
+                //
+                if lt.type_eq(&rt) {
+                    return Ok(lt);
+                }
+
+                let mut ty = Type::union(vec![lt, rt]);
+                if !may_generalize_lt {
+                    self.prevent_generalize(&mut ty);
+                }
+
+                Ok(ty)
+            }
         }
     }
 }
@@ -568,6 +749,6 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        self.info.errors.extend(errors);
+        self.storage.report_all(errors);
     }
 }

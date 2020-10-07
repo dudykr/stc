@@ -1,7 +1,1 @@
-[
-    {
-        "line": 1,
-        "column": 13,
-        "msg": "The right-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type."
-    }
-]
+[]

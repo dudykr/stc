@@ -1,7 +1,1 @@
-[
-    {
-        "line": 3,
-        "column": 6,
-        "msg": "An index signature parameter type must be either 'string' or 'number'."
-    }
-]
+[]

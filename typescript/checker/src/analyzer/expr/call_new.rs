@@ -3,12 +3,12 @@ use super::super::Analyzer;
 use crate::{
     analyzer::{
         expr::TypeOfMode,
+        marks::MarkExt,
         props::prop_name_to_expr,
         util::{instantiate_class, ResultExt},
         Ctx, ScopeKind,
     },
-    builtin_types,
-    debug::{print_backtrace, print_type},
+    debug::print_type,
     errors::Error,
     ty,
     ty::{
@@ -16,36 +16,40 @@ use crate::{
         QueryExpr, QueryType, Static, Type, TypeElement, TypeOrSpread, TypeParam,
         TypeParamInstantiation,
     },
-    util::{is_str_lit_or_union, EqIgnoreSpan, PatExt, TypeEq},
+    util::{is_str_lit_or_union, type_ext::TypeVecExt, PatExt},
+    validator,
     validator::{Validate, ValidateWith},
-    ValidationResult,
+    Lib, Marks, ValidationResult,
 };
 use fxhash::FxHashMap;
-use swc_atoms::js_word;
-use swc_common::{Span, Spanned};
-use swc_ecma_ast::*;
-use swc_ts_types::{
-    FoldWith as _, Id, IndexedAccessType, Ref, Symbol, TypeLit, VisitMut, VisitMutWith,
+use slog::Logger;
+use stc_checker_macros::extra_validator;
+use stc_types::{
+    eq::{EqIgnoreSpan, TypeEq},
+    Alias, FoldWith as _, Id, IndexedAccessType, Intersection, Ref, Symbol, TypeLit, Union,
+    VisitMut, VisitMutWith,
 };
+use std::borrow::Cow;
+use swc_atoms::js_word;
+use swc_common::{Span, Spanned, DUMMY_SP};
+use swc_ecma_ast::*;
 use ty::TypeExt;
 
-impl Validate<ExprOrSpread> for Analyzer<'_, '_> {
-    type Output = ValidationResult<TypeOrSpread>;
-
-    fn validate(&mut self, node: &mut ExprOrSpread) -> Self::Output {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, node: &mut ExprOrSpread) -> ValidationResult<TypeOrSpread> {
         let span = node.span();
         Ok(TypeOrSpread {
             span,
             spread: node.spread,
-            ty: node.expr.validate_with(self)?,
+            ty: node.expr.validate_with_default(self)?,
         })
     }
 }
 
-impl Validate<CallExpr> for Analyzer<'_, '_> {
-    type Output = ValidationResult;
-
-    fn validate(&mut self, e: &mut CallExpr) -> ValidationResult {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, e: &mut CallExpr, type_ann: Option<&Type>) -> ValidationResult {
         self.record(e);
 
         let CallExpr {
@@ -68,6 +72,7 @@ impl Validate<CallExpr> for Analyzer<'_, '_> {
             |analyzer: &mut Analyzer| {
                 analyzer.extract_call_new_expr_member(
                     callee,
+                    type_ann,
                     ExtractKind::Call,
                     args,
                     type_args.as_mut(),
@@ -77,10 +82,9 @@ impl Validate<CallExpr> for Analyzer<'_, '_> {
     }
 }
 
-impl Validate<NewExpr> for Analyzer<'_, '_> {
-    type Output = ValidationResult;
-
-    fn validate(&mut self, e: &mut NewExpr) -> ValidationResult {
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, e: &mut NewExpr, type_ann: Option<&Type>) -> ValidationResult {
         self.record(e);
 
         let NewExpr {
@@ -98,6 +102,7 @@ impl Validate<NewExpr> for Analyzer<'_, '_> {
             |analyzer: &mut Analyzer| {
                 analyzer.extract_call_new_expr_member(
                     callee,
+                    type_ann,
                     ExtractKind::New,
                     args.as_mut().map(|v| &mut **v).unwrap_or_else(|| &mut []),
                     type_args.as_mut(),
@@ -120,32 +125,34 @@ impl Analyzer<'_, '_> {
     fn extract_call_new_expr_member(
         &mut self,
         callee: &mut Expr,
+        type_ann: Option<&Type>,
         kind: ExtractKind,
         args: &mut [ExprOrSpread],
         type_args: Option<&mut TsTypeParamInstantiation>,
     ) -> ValidationResult {
+        debug_assert_eq!(self.scope.kind(), ScopeKind::Call);
+
         let span = callee.span();
 
-        log::debug!("extract_call_new_expr_member");
+        slog::debug!(self.logger, "extract_call_new_expr_member");
 
         match *callee {
             Expr::Ident(ref i) if i.sym == js_word!("require") => {
-                if let Some(dep) = self.resolved_import_vars.get(
-                    &args
-                        .iter()
-                        .cloned()
-                        .map(|arg| match arg {
-                            ExprOrSpread { spread: None, expr } => match *expr {
-                                Expr::Lit(Lit::Str(Str { span, value, .. })) => {
-                                    Ident::new(value.clone(), span).into()
-                                }
-                                _ => unimplemented!("dynamic import: require()"),
-                            },
-                            _ => unimplemented!("error reporting: spread element in require()"),
-                        })
-                        .next()
-                        .unwrap(),
-                ) {
+                let id = args
+                    .iter()
+                    .cloned()
+                    .map(|arg| match arg {
+                        ExprOrSpread { spread: None, expr } => match *expr {
+                            Expr::Lit(Lit::Str(Str { span, value, .. })) => {
+                                Ident::new(value.clone(), span).into()
+                            }
+                            _ => unimplemented!("dynamic import: require()"),
+                        },
+                        _ => unimplemented!("error reporting: spread element in require()"),
+                    })
+                    .next()
+                    .unwrap();
+                if let Some(dep) = self.find_imported_var(&id)? {
                     let dep = dep.clone();
                     unimplemented!("dep: {:#?}", dep);
                 }
@@ -167,47 +174,13 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        let arg_types = self.validate_args(args)?;
-        let mut new_arg_types;
-        let spread_arg_types =
-            if arg_types.iter().any(|arg| arg.spread.is_some()) {
-                new_arg_types = vec![];
-                for arg in &arg_types {
-                    if arg.spread.is_some() {
-                        match &*arg.ty {
-                            Type::Tuple(arg_ty) => {
-                                new_arg_types.extend(
-                                    arg_ty.elems.iter().map(|element| &element.ty).cloned().map(
-                                        |ty| TypeOrSpread {
-                                            span: arg.spread.unwrap(),
-                                            spread: None,
-                                            ty,
-                                        },
-                                    ),
-                                );
-                            }
-                            _ => unimplemented!(
-                                "spread argument with type other than tuple\nType: {:#?}",
-                                arg.ty
-                            ),
-                        }
-                    } else {
-                        new_arg_types.push(arg.clone());
-                    }
-                }
-
-                &*new_arg_types
-            } else {
-                &*arg_types
-            };
-
         match *callee {
             Expr::Ident(Ident {
                 sym: js_word!("Symbol"),
                 ..
             }) => {
                 // Symbol uses special type
-                if !arg_types.is_empty() {
+                if !args.is_empty() {
                     unimplemented!(
                         "Error reporting for calling `Symbol` with arguments is not implemented \
                          yet"
@@ -226,108 +199,6 @@ impl Analyzer<'_, '_> {
                 computed,
                 ..
             }) => {
-                let is_key_eq_prop = |e: &Expr| {
-                    let tmp;
-                    let v = match *e {
-                        Expr::Ident(ref i) => {
-                            tmp = Id::from(i);
-                            &tmp
-                        }
-                        Expr::Lit(Lit::Str(ref s)) => {
-                            tmp = Id::word(s.value.clone());
-                            &tmp
-                        }
-                        _ => return false,
-                    };
-
-                    let p = match **prop {
-                        Expr::Ident(ref i) => &i.sym,
-                        Expr::Lit(Lit::Str(ref s)) if computed => &s.value,
-                        _ => return false,
-                    };
-
-                    v.as_str() == &**p
-                };
-
-                macro_rules! search_members_for_prop {
-                    ($members:expr) => {{
-                        // Candidates of the method call.
-                        //
-                        // 4 is just an unscientific guess
-                        // TODO: Use smallvec
-                        let mut candidates = Vec::with_capacity(4);
-
-                        macro_rules! check {
-                            ($m:expr) => {{
-                                match $m {
-                                    TypeElement::Method(ref m) if kind == ExtractKind::Call => {
-                                        // We are interested only on methods named `prop`
-                                        if is_key_eq_prop(&m.key) {
-                                            candidates.push(m.clone());
-                                        }
-                                    }
-
-                                    _ => {}
-                                }
-                            }};
-                        }
-
-                        for m in $members {
-                            check!(m);
-                        }
-
-                        {
-                            // Handle methods from `interface Object`
-                            let i = builtin_types::get_type(
-                                self.libs,
-                                span,
-                                &Id::word(js_word!("Object")),
-                            )
-                            .expect("`interface Object` is must");
-                            let methods = match *i {
-                                Type::Static(Static {
-                                    ty: Type::Interface(i),
-                                    ..
-                                }) => &*i.body,
-
-                                _ => &[],
-                            };
-
-                            // TODO: Remove clone
-                            for m in methods.into_iter().map(|v| v.clone()) {
-                                check!(m);
-                            }
-                        }
-
-                        match candidates.len() {
-                            0 => {
-                                unimplemented!("no method with same name\nMembers: {:?}", $members)
-                            }
-                            1 => {
-                                // TODO:
-                                return self.check_method_call(
-                                    span,
-                                    &candidates.into_iter().next().unwrap(),
-                                    args,
-                                    &arg_types,
-                                );
-                            }
-                            _ => {
-                                //
-                                for c in candidates {
-                                    if c.params.len() == args.len() {
-                                        return self.check_method_call(span, &c, args, &arg_types);
-                                    }
-                                }
-
-                                unimplemented!(
-                                    "multiple methods with same name and same number of arguments"
-                                )
-                            }
-                        }
-                    }};
-                }
-
                 {
                     // Handle toString()
                     macro_rules! handle {
@@ -353,20 +224,24 @@ impl Analyzer<'_, '_> {
                 }
 
                 // Handle member expression
-                let obj_type = self.validate(obj)?.generalize_lit().into_owned();
+                let obj_type = obj.validate_with_default(self)?.generalize_lit();
 
                 let obj_type = match *obj_type.normalize() {
                     Type::Keyword(TsKeywordType {
                         kind: TsKeywordTypeKind::TsNumberKeyword,
                         ..
-                    }) => builtin_types::get_type(self.libs, span, &Id::word(js_word!("Number")))
+                    }) => self
+                        .env
+                        .get_global_type(span, &js_word!("Number"))
                         .expect("Builtin type named 'Number' should exist"),
                     Type::Keyword(TsKeywordType {
                         kind: TsKeywordTypeKind::TsStringKeyword,
                         ..
-                    }) => builtin_types::get_type(self.libs, span, &Id::word(js_word!("String")))
+                    }) => self
+                        .env
+                        .get_global_type(span, &js_word!("String"))
                         .expect("Builtin type named 'String' should exist"),
-                    _ => box obj_type,
+                    _ => obj_type,
                 };
 
                 match *obj_type.normalize() {
@@ -390,16 +265,20 @@ impl Analyzer<'_, '_> {
                                         .types
                                         .entry(param.name.clone())
                                         .or_default()
-                                        .push(box Type::Param(param.clone()));
+                                        .push(Type::Param(param.clone()).cheap());
                                 }
                             }
                         }
                         // TODO: Check parent interface
-                        search_members_for_prop!(i.body.iter());
+                        return self.search_members_for_callable_prop(
+                            kind, span, &i.body, prop, computed, args,
+                        );
                     }
 
                     Type::TypeLit(ref t) => {
-                        search_members_for_prop!(t.members.iter());
+                        return self.search_members_for_callable_prop(
+                            kind, span, &t.members, prop, computed, args,
+                        );
                     }
 
                     Type::Class(ty::Class { ref body, .. }) => {
@@ -422,9 +301,7 @@ impl Analyzer<'_, '_> {
                         kind: TsKeywordTypeKind::TsSymbolKeyword,
                         ..
                     }) => {
-                        if let Ok(ty) =
-                            builtin_types::get_type(self.libs, span, &Id::word(js_word!("Symbol")))
-                        {
+                        if let Ok(ty) = self.env.get_global_type(span, &js_word!("Symbol")) {
                             return Ok(ty);
                         }
                     }
@@ -441,6 +318,7 @@ impl Analyzer<'_, '_> {
 
                 let callee =
                     self.access_property(span, obj_type, prop, computed, TypeOfMode::RValue)?;
+                let callee = self.with_ctx(ctx).expand_fully(span, callee, true)?;
 
                 let type_args = match type_args {
                     None => None,
@@ -453,6 +331,9 @@ impl Analyzer<'_, '_> {
                     }
                 };
 
+                let arg_types = self.validate_args(args)?;
+                let spread_arg_types = self.spread_args(&arg_types);
+
                 self.get_best_return_type(
                     span,
                     callee,
@@ -460,7 +341,7 @@ impl Analyzer<'_, '_> {
                     type_args,
                     args,
                     &arg_types,
-                    spread_arg_types,
+                    &spread_arg_types,
                 )
             }
             _ => {
@@ -476,6 +357,7 @@ impl Analyzer<'_, '_> {
                         Expr::Ident(i) if kind == ExtractKind::New => {
                             let mut ty = Type::Ref(Ref {
                                 span: i.span,
+                                ctxt: analyzer.ctx.module_id,
                                 type_name: TsEntityName::Ident(i.clone()),
                                 type_args: Default::default(),
                             });
@@ -490,13 +372,13 @@ impl Analyzer<'_, '_> {
                     };
 
                     let mut callee_ty = {
-                        let callee_ty = callee.validate_with(analyzer)?;
+                        let callee_ty = callee.validate_with_default(analyzer)?;
                         match *callee_ty.normalize() {
                             Type::Keyword(TsKeywordType {
                                 kind: TsKeywordTypeKind::TsAnyKeyword,
                                 ..
                             }) if type_args.is_some() => {
-                                analyzer.info.errors.push(Error::TS2347 { span })
+                                analyzer.storage.report(Error::TS2347 { span })
                             }
                             _ => {}
                         }
@@ -516,7 +398,6 @@ impl Analyzer<'_, '_> {
                     if let Some(type_args) = &type_args {
                         let type_params = match callee_ty.normalize() {
                             Type::Function(f) => f.type_params.as_ref(),
-                            Type::Method(m) => m.type_params.as_ref(),
                             _ => None,
                         };
                         if let Some(type_param_decl) = type_params {
@@ -540,13 +421,16 @@ impl Analyzer<'_, '_> {
                         .with_ctx(ctx)
                         .expand_fully(span, callee_ty, false)?;
 
+                    let arg_types = analyzer.validate_args(args)?;
+                    let spread_arg_types = analyzer.spread_args(&arg_types);
+
                     let expanded_ty = analyzer.extract(
                         span,
                         callee_ty,
                         kind,
                         args,
                         &arg_types,
-                        spread_arg_types,
+                        &spread_arg_types,
                         type_args.as_ref(),
                     )?;
                     match *expanded_ty {
@@ -569,6 +453,200 @@ impl Analyzer<'_, '_> {
         }
     }
 
+    fn check_type_element_for_call(
+        &mut self,
+        kind: ExtractKind,
+        candidates: &mut Vec<MethodSignature>,
+        m: &TypeElement,
+        prop: &Expr,
+        computed: bool,
+    ) {
+        match m {
+            TypeElement::Method(m) if kind == ExtractKind::Call => {
+                // We are interested only on methods named `prop`
+                if is_key_eq_prop(prop, computed, &m.key) {
+                    candidates.push(m.clone());
+                }
+            }
+
+            TypeElement::Property(p) if kind == ExtractKind::Call => {
+                if is_key_eq_prop(prop, computed, &p.key) {
+                    // TODO: Remove useless clone
+                    let ty = p.type_ann.as_ref().cloned().unwrap_or(Type::any(m.span()));
+
+                    match ty.foldable() {
+                        Type::Keyword(TsKeywordType {
+                            kind: TsKeywordTypeKind::TsAnyKeyword,
+                            ..
+                        }) => candidates.push(MethodSignature {
+                            span: p.span,
+                            readonly: p.readonly,
+                            key: p.key.clone(),
+                            computed: p.computed,
+                            optional: p.optional,
+                            // TODO: Maybe we need Option<Vec<T>>.
+                            params: Default::default(),
+                            ret_ty: Default::default(),
+                            type_params: Default::default(),
+                        }),
+
+                        Type::Function(f) => {
+                            candidates.push(MethodSignature {
+                                span: f.span,
+                                readonly: p.readonly,
+                                key: p.key.clone(),
+                                computed,
+                                optional: p.optional,
+                                params: f.params,
+                                ret_ty: Some(f.ret_ty),
+                                type_params: f.type_params,
+                            });
+                        }
+
+                        _ => {}
+                    }
+                }
+            }
+
+            _ => {}
+        }
+    }
+
+    fn search_members_for_callable_prop(
+        &mut self,
+        kind: ExtractKind,
+        span: Span,
+        members: &[TypeElement],
+        prop: &Expr,
+        computed: bool,
+        args: &mut [ExprOrSpread],
+    ) -> ValidationResult {
+        // Candidates of the method call.
+        //
+        // 4 is just an unscientific guess
+        // TODO: Use smallvec
+        let mut candidates = Vec::with_capacity(4);
+
+        for m in members {
+            self.check_type_element_for_call(kind, &mut candidates, m, prop, computed);
+        }
+
+        {
+            // Handle methods from `interface Object`
+            let i = self
+                .env
+                .get_global_type(span, &js_word!("Object"))
+                .expect("`interface Object` is must");
+            let methods = match *i {
+                Type::Static(Static {
+                    ty: Type::Interface(i),
+                    ..
+                }) => &*i.body,
+
+                _ => &[],
+            };
+
+            // TODO: Remove clone
+            for m in methods {
+                self.check_type_element_for_call(kind, &mut candidates, m, prop, computed);
+            }
+        }
+
+        match candidates.len() {
+            0 => Err(Error::Unimplemented {
+                span,
+                msg: format!(
+                    "no method with same name\nMembers: {:?}\nKey: {:?}",
+                    members, prop
+                ),
+            }),
+            1 => {
+                let arg_types = self.validate_args(args)?;
+                // TODO:
+                return self.check_method_call(
+                    span,
+                    &candidates.into_iter().next().unwrap(),
+                    args,
+                    &arg_types,
+                );
+            }
+            _ => {
+                let arg_types = self.validate_args(args)?;
+
+                //
+                for c in candidates {
+                    if c.params.len() == args.len() {
+                        return self.check_method_call(span, &c, args, &arg_types);
+                    }
+                }
+
+                unimplemented!("multiple methods with same name and same number of arguments")
+            }
+        }
+    }
+
+    /// Returns `()`
+    fn spread_args<'a>(&mut self, arg_types: &'a [TypeOrSpread]) -> Cow<'a, [TypeOrSpread]> {
+        let mut new_arg_types;
+
+        if arg_types.iter().any(|arg| arg.spread.is_some()) {
+            new_arg_types = vec![];
+            for arg in arg_types {
+                if arg.spread.is_some() {
+                    match &*arg.ty {
+                        Type::Tuple(arg_ty) => {
+                            new_arg_types.extend(
+                                arg_ty
+                                    .elems
+                                    .iter()
+                                    .map(|element| &element.ty)
+                                    .cloned()
+                                    .map(|ty| TypeOrSpread {
+                                        span: arg.spread.unwrap(),
+                                        spread: None,
+                                        ty,
+                                    }),
+                            );
+                        }
+
+                        Type::Keyword(TsKeywordType {
+                            span,
+                            kind: TsKeywordTypeKind::TsAnyKeyword,
+                            ..
+                        }) => {
+                            self.scope.is_call_arg_count_unknown = true;
+                            new_arg_types.push(TypeOrSpread {
+                                span: *span,
+                                spread: None,
+                                ty: arg.ty.clone(),
+                            });
+                        }
+
+                        Type::Array(arr) => {
+                            self.scope.is_call_arg_count_unknown = true;
+                            new_arg_types.push(TypeOrSpread {
+                                span: arr.span,
+                                spread: None,
+                                ty: arr.elem_type.clone(),
+                            });
+                        }
+
+                        _ => unimplemented!(
+                            "spread argument with type other than tuple\nType: {:#?}",
+                            arg.ty
+                        ),
+                    }
+                } else {
+                    new_arg_types.push(arg.clone());
+                }
+            }
+
+            return Cow::Owned(new_arg_types);
+        } else {
+            return Cow::Borrowed(arg_types);
+        }
+    }
+
     fn extract(
         &mut self,
         span: Span,
@@ -579,6 +657,19 @@ impl Analyzer<'_, '_> {
         spread_arg_types: &[TypeOrSpread],
         type_args: Option<&TypeParamInstantiation>,
     ) -> ValidationResult {
+        match ty.normalize() {
+            Type::Ref(..) => {
+                let ctx = Ctx {
+                    preserve_ref: false,
+                    ignore_expand_prevention_for_top: true,
+                    ..self.ctx
+                };
+                let ty = self.with_ctx(ctx).expand_fully(span, ty, true)?;
+                return self.extract(span, ty, kind, args, arg_types, spread_arg_types, type_args);
+            }
+            _ => {}
+        }
+
         match kind {
             ExtractKind::New => match ty.normalize() {
                 Type::Class(ref cls) => {
@@ -588,12 +679,12 @@ impl Analyzer<'_, '_> {
                                 .types
                                 .entry(param.name.clone())
                                 .or_default()
-                                .push(box Type::Param(param.clone()));
+                                .push(Type::Param(param.clone()).cheap());
                         }
 
                         // Infer type arguments using constructors.
                         let constructors = cls.body.iter().filter_map(|member| match member {
-                            swc_ts_types::ClassMember::Constructor(c) => Some(c),
+                            stc_types::ClassMember::Constructor(c) => Some(c),
                             _ => None,
                         });
 
@@ -612,7 +703,7 @@ impl Analyzer<'_, '_> {
                             )?;
 
                             for (id, ty) in &inferred {
-                                print_type(&format!("{}", id), &self.cm, &ty);
+                                print_type(&self.logger, &format!("{}", id), &self.cm, &ty);
                             }
 
                             let type_args =
@@ -653,7 +744,7 @@ impl Analyzer<'_, '_> {
                 // TODO: Check if all types has constructor signature
                 return Ok(box Type::ClassInstance(ClassInstance {
                     span,
-                    ty: instantiate_class(ty),
+                    ty: instantiate_class(self.ctx.module_id, ty),
                     type_args: type_args.cloned(),
                 }));
             }
@@ -670,17 +761,7 @@ impl Analyzer<'_, '_> {
 
             Type::Function(ref f) if kind == ExtractKind::Call => self.get_return_type(
                 span,
-                f.type_params.as_ref().map(|v| &*v.params),
-                &f.params,
-                f.ret_ty.clone(),
-                type_args,
-                args,
-                arg_types,
-                spread_arg_types,
-            ),
-
-            Type::Method(ref f) if kind == ExtractKind::Call => self.get_return_type(
-                span,
+                kind,
                 f.type_params.as_ref().map(|v| &*v.params),
                 &f.params,
                 f.ret_ty.clone(),
@@ -726,10 +807,30 @@ impl Analyzer<'_, '_> {
                     spread_arg_types,
                     type_args,
                 ) {
-                    Ok(ty) => return Ok(ty),
-                    Err(err) => {
-                        // TODO: Check parent interface
-                        Err(err)?
+                    Ok(ty) => return Ok(ty.clone()),
+                    Err(first_err) => {
+                        //  Check parent interface
+                        for parent in &i.extends {
+                            let parent = self.type_of_ts_entity_name(
+                                span,
+                                self.ctx.module_id,
+                                &parent.expr,
+                                type_args.cloned(),
+                            )?;
+
+                            if let Ok(v) = self.extract(
+                                span,
+                                parent,
+                                kind,
+                                args,
+                                arg_types,
+                                spread_arg_types,
+                                type_args,
+                            ) {
+                                return Ok(v);
+                            }
+                        }
+                        Err(first_err)?
                     }
                 }
             }
@@ -798,6 +899,7 @@ impl Analyzer<'_, '_> {
                     //
                     match self.get_return_type(
                         span,
+                        kind,
                         type_params.as_ref().map(|v| &*v.params),
                         params,
                         ret_ty.clone().unwrap_or(Type::any(span)),
@@ -819,6 +921,7 @@ impl Analyzer<'_, '_> {
                 }) if kind == ExtractKind::New => {
                     match self.get_return_type(
                         span,
+                        kind,
                         type_params.as_ref().map(|v| &*v.params),
                         params,
                         ret_ty.clone().unwrap_or(Type::any(span)),
@@ -883,55 +986,19 @@ impl Analyzer<'_, '_> {
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
     ) -> ValidationResult {
+        let has_spread = arg_types.len() != spread_arg_types.len();
         let cnt = callee.normalize().iter_union().count();
 
-        log::info!("get_best_return_type: {} candidates", cnt);
+        if callee.is_any() {
+            return Ok(Type::any(span));
+        }
+
+        slog::info!(self.logger, "get_best_return_type: {} candidates", cnt);
 
         // TODO: Calculate return type only if selected
         // This can be done by storing type params, return type, params in the
         // candidates.
         let mut candidates = vec![];
-
-        macro_rules! check {
-            ($m:expr) => {{
-                let m = $m;
-
-                let type_params = m.type_params.as_ref().map(|v| &*v.params);
-                if cnt == 1
-                    || match self.is_exact_call(
-                        span,
-                        type_params,
-                        &m.params,
-                        type_args.as_ref(),
-                        &arg_types,
-                    ) {
-                        Ok(true) => true,
-                        _ => false,
-                    }
-                {
-                    let ret_ty = self.get_return_type(
-                        span,
-                        type_params,
-                        &m.params,
-                        m.ret_ty.clone(),
-                        type_args.as_ref(),
-                        args,
-                        &arg_types,
-                        spread_arg_types,
-                    )?;
-                    return Ok(ret_ty);
-                }
-
-                candidates.push((
-                    span,
-                    m.type_params.as_ref().map(|v| &*v.params),
-                    &m.params,
-                    m.ret_ty.clone(),
-                    type_args.as_ref(),
-                    &arg_types,
-                ));
-            }};
-        }
 
         for callee in callee.normalize().iter_union() {
             // TODO: Check if signature match.
@@ -967,11 +1034,45 @@ impl Analyzer<'_, '_> {
                         }
                     }
                 }
-                Type::Method(ref m) => {
-                    check!(m);
-                }
+
                 Type::Function(ref f) => {
-                    check!(f);
+                    let type_params = f.type_params.as_ref().map(|v| &*v.params);
+                    if !has_spread || cnt == 1 {
+                        if cnt == 1
+                            || match self.is_exact_call(
+                                span,
+                                type_params,
+                                &f.params,
+                                type_args.as_ref(),
+                                &arg_types,
+                            ) {
+                                Ok(true) => true,
+                                _ => false,
+                            }
+                        {
+                            let ret_ty = self.get_return_type(
+                                span,
+                                kind,
+                                type_params,
+                                &f.params,
+                                f.ret_ty.clone(),
+                                type_args.as_ref(),
+                                args,
+                                &arg_types,
+                                spread_arg_types,
+                            )?;
+                            return Ok(ret_ty);
+                        }
+                    }
+
+                    candidates.push((
+                        span,
+                        f.type_params.as_ref().map(|v| &*v.params),
+                        &f.params,
+                        f.ret_ty.clone(),
+                        type_args.as_ref(),
+                        &arg_types,
+                    ));
                 }
                 Type::Class(ref cls) if kind == ExtractKind::New => {
                     // TODO: Handle type parameters.
@@ -985,35 +1086,62 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if !candidates.is_empty() {
-            let (span, type_params, params, ret_ty, type_args, arg_types) =
-                candidates.into_iter().next().unwrap();
+        if candidates.is_empty() {
+            dbg!();
 
-            return self.get_return_type(
-                span,
-                type_params,
-                params,
-                ret_ty,
-                type_args,
-                args,
-                arg_types,
-                spread_arg_types,
-            );
+            return Err(if kind == ExtractKind::Call {
+                Error::NoCallSignature { span, callee }
+            } else {
+                Error::NoNewSignature { span, callee }
+            });
         }
 
-        dbg!();
+        if has_spread {
+            if let Some((span, type_params, params, ret_ty, type_args, arg_types)) = candidates
+                .iter()
+                .find(|(_, _, params, _, _, _)| {
+                    params.iter().any(|param| match param.pat {
+                        Pat::Rest(..) => true,
+                        _ => false,
+                    })
+                })
+                .cloned()
+            {
+                return self.get_return_type(
+                    span,
+                    kind,
+                    type_params,
+                    params,
+                    ret_ty,
+                    type_args,
+                    args,
+                    arg_types,
+                    spread_arg_types,
+                );
+            }
+        }
 
-        Err(if kind == ExtractKind::Call {
-            Error::NoCallSignature { span, callee }
-        } else {
-            Error::NoNewSignature { span, callee }
-        })
+        let (span, type_params, params, ret_ty, type_args, arg_types) =
+            candidates.into_iter().next().unwrap();
+
+        return self.get_return_type(
+            span,
+            kind,
+            type_params,
+            params,
+            ret_ty,
+            type_args,
+            args,
+            arg_types,
+            spread_arg_types,
+        );
     }
 
     /// Returns the return type of function.
     fn get_return_type(
         &mut self,
         span: Span,
+        kind: ExtractKind,
         type_params: Option<&[TypeParam]>,
         params: &[FnParam],
         ret_ty: Box<Type>,
@@ -1022,8 +1150,10 @@ impl Analyzer<'_, '_> {
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
     ) -> ValidationResult {
-        assert_eq!(args.len(), arg_types.len());
-        log::debug!(
+        let logger = self.logger.clone();
+
+        slog::debug!(
+            logger,
             "get_return_type: \ntype_params = {:?}\nret_ty = {:?}",
             type_params,
             ret_ty
@@ -1037,7 +1167,6 @@ impl Analyzer<'_, '_> {
                 let arg_ty = &arg_types[idx];
                 let (type_param_decl, actual_params) = match &*param.ty {
                     Type::Function(f) => (&f.type_params, &f.params),
-                    Type::Method(f) => (&f.type_params, &f.params),
                     _ => {
                         new_args.push(arg_ty.clone());
                         continue;
@@ -1045,14 +1174,19 @@ impl Analyzer<'_, '_> {
                 };
 
                 for param in type_params {
-                    log::info!("({}) Defining {}", analyzer.scope.depth(), param.name);
+                    slog::info!(
+                        analyzer.logger,
+                        "({}) Defining {}",
+                        analyzer.scope.depth(),
+                        param.name
+                    );
 
                     analyzer
                         .scope
                         .types
                         .entry(param.name.clone())
                         .or_default()
-                        .push(box Type::Param(param.clone()));
+                        .push(Type::Param(param.clone()).cheap());
                 }
 
                 if let Some(type_param_decl) = type_param_decl {
@@ -1062,7 +1196,7 @@ impl Analyzer<'_, '_> {
                             .types
                             .entry(param.name.clone())
                             .or_default()
-                            .push(box Type::Param(param.clone()));
+                            .push(Type::Param(param.clone()).cheap());
                     }
                 }
 
@@ -1090,7 +1224,10 @@ impl Analyzer<'_, '_> {
                             patch_arg(idx, pat);
                         }
 
-                        log::info!("Inferring type of arrow expr with updated type");
+                        slog::info!(
+                            analyzer.logger,
+                            "Inferring type of arrow expr with updated type"
+                        );
                         box Type::Function(arrow.validate_with(analyzer)?)
                     }
                     Expr::Fn(fn_expr) => {
@@ -1098,12 +1235,15 @@ impl Analyzer<'_, '_> {
                             patch_arg(idx, &mut param.pat)
                         }
 
-                        log::info!("Inferring type of function expr with updated type");
+                        slog::info!(
+                            analyzer.logger,
+                            "Inferring type of function expr with updated type"
+                        );
                         box Type::Function(fn_expr.function.validate_with(analyzer)?)
                     }
                     _ => arg_ty.ty.clone(),
                 };
-                print_type("mapped", &analyzer.cm, &ty);
+                print_type(&logger, "mapped", &analyzer.cm, &ty);
 
                 let new_arg = TypeOrSpread {
                     ty,
@@ -1163,36 +1303,123 @@ impl Analyzer<'_, '_> {
                 }),
             )?;
 
-            print_type("Return", &analyzer.cm, &ret_ty);
+            print_type(&logger, "Return", &analyzer.cm, &ret_ty);
             let mut ty = analyzer.expand_type_params(&inferred, ret_ty)?;
-            print_type("Return, expanded", &analyzer.cm, &ty);
-
-            ty = analyzer.simplify(ty);
-
-            print_type("Return, simplified", &analyzer.cm, &ty);
+            print_type(&logger, "Return, expanded", &analyzer.cm, &ty);
 
             ty.visit_mut_with(&mut ReturnTypeSimplifier { analyzer });
 
-            print_type("Return, simplified again", &analyzer.cm, &ty);
+            print_type(&logger, "Return, simplified", &analyzer.cm, &ty);
+
+            ty = analyzer.simplify(ty);
+
+            print_type(&logger, "Return, simplified again", &analyzer.cm, &ty);
 
             ty = ty.fold_with(&mut ReturnTypeGeneralizer { analyzer });
 
-            print_type("Return, generalized", &analyzer.cm, &ty);
+            print_type(&logger, "Return, generalized", &analyzer.cm, &ty);
+
+            if kind == ExtractKind::Call {
+                analyzer.add_call_facts(params, &args, &mut ty);
+            }
 
             return Ok(ty);
         }
 
         let mut ret_ty = ret_ty.clone();
         ret_ty.visit_mut_with(&mut ReturnTypeSimplifier { analyzer: self });
+        if kind == ExtractKind::Call {
+            self.add_call_facts(params, &args, &mut ret_ty);
+        }
         return Ok(ret_ty);
     }
 
-    pub(crate) fn generalize_ret_ty(&self, ty: Box<Type>) -> Box<Type> {
-        if self.ctx.generalize_ret_ty {
-            ty.generalize_lit()
-        } else {
-            ty
+    /// Note:
+    ///
+    /// ```ts
+    /// function isSubscriber(val: any): val is DummySubscriber;
+    /// const observerOrNext: () => void | Subscriber;
+    /// const subscriber = isSubscriber(observerOrNext) ? observerOrNext : new SafeSubscriber();
+    /// ```
+    ///
+    /// should make type of `subscriber` `SafeSubscriber`, not `Subscriber`.
+    /// I (kdy1) don't know why.
+    fn add_call_facts(&mut self, params: &[FnParam], args: &[ExprOrSpread], ret_ty: &mut Type) {
+        match ret_ty.normalize() {
+            Type::Predicate(p) => {
+                let ty = match &p.ty {
+                    Some(v) => v.normalize(),
+                    None => return,
+                };
+
+                match &p.param_name {
+                    TsThisTypeOrIdent::TsThisType(this) => {}
+                    TsThisTypeOrIdent::Ident(arg_id) => {
+                        for (idx, param) in params.iter().enumerate() {
+                            match &param.pat {
+                                Pat::Ident(i) if i.sym == arg_id.sym => {
+                                    // TODO: Check length of args.
+                                    let arg = &args[idx];
+                                    match &*arg.expr {
+                                        Expr::Ident(var_name) => {
+                                            self.store_call_fact_for_var(
+                                                var_name.span,
+                                                var_name.into(),
+                                                &ty,
+                                            );
+                                        }
+                                        _ => {}
+                                    }
+                                }
+                                _ => {}
+                            }
+                        }
+                    }
+                }
+            }
+            _ => {}
         }
+    }
+
+    #[extra_validator]
+    fn store_call_fact_for_var(&mut self, span: Span, var_name: Id, new_ty: &Type) {
+        if let Some(previous_types) = self.find_var_type(&var_name.clone().into()) {
+            let mut new_types = vec![];
+
+            let mut upcasted = false;
+            for ty in previous_types
+                .into_owned()
+                .iter_union()
+                .flat_map(|ty| ty.iter_union())
+            {
+                match self.extends(&new_ty, &ty) {
+                    Some(true) => {
+                        upcasted = true;
+                        new_types.push(box ty.clone());
+                    }
+                    _ => {}
+                }
+            }
+
+            // TODO: Use super class instread of
+            if !upcasted {
+                new_types.push(box new_ty.clone());
+            }
+
+            new_types.dedup_type();
+            let mut new_ty = Type::union(new_types);
+            if upcasted {
+                self.env
+                    .shared()
+                    .marks()
+                    .prevent_converting_to_children
+                    .apply_to_type(&mut new_ty);
+            }
+            self.add_type_fact(&var_name.into(), new_ty);
+            return;
+        }
+
+        self.add_type_fact(&var_name.into(), box new_ty.clone());
     }
 
     /// This method return [Err] if call is invalid
@@ -1204,6 +1431,10 @@ impl Analyzer<'_, '_> {
         type_args: Option<&TypeParamInstantiation>,
         arg_types: &[TypeOrSpread],
     ) -> ValidationResult<bool> {
+        if self.scope.is_call_arg_count_unknown {
+            return Ok(false);
+        }
+
         if let Some(type_params) = type_params {
             if let Some(type_args) = type_args {
                 // TODO: Handle defaults of the type parameter (Change to range)
@@ -1246,9 +1477,15 @@ impl Analyzer<'_, '_> {
                 },
                 _ => {}
             }
-            self.assign(&param.ty, &arg.ty, span)?;
-            if self.assign(&arg.ty, &param.ty, span).is_err() {
-                exact = false;
+
+            match param.ty.normalize() {
+                Type::Param(..) => {}
+                _ => {
+                    self.assign(&param.ty, &arg.ty, span)?;
+                    if self.assign(&arg.ty, &param.ty, span).is_err() {
+                        exact = false;
+                    }
+                }
             }
         }
 
@@ -1256,20 +1493,26 @@ impl Analyzer<'_, '_> {
     }
 
     fn validate_args(&mut self, args: &mut [ExprOrSpread]) -> Result<Vec<TypeOrSpread>, Error> {
-        let args: Vec<_> = args
-            .into_iter()
-            .map(|arg| {
-                self.validate(arg)
-                    .store(&mut self.info.errors)
-                    .unwrap_or_else(|| TypeOrSpread {
-                        span: arg.span(),
-                        spread: arg.spread,
-                        ty: Type::any(arg.expr.span()),
-                    })
-            })
-            .collect();
+        let ctx = Ctx {
+            in_argument: true,
+            ..self.ctx
+        };
+        self.with_ctx(ctx).with(|a: &mut Analyzer| {
+            let args: Vec<_> = args
+                .into_iter()
+                .map(|arg| {
+                    arg.validate_with(a)
+                        .report(&mut a.storage)
+                        .unwrap_or_else(|| TypeOrSpread {
+                            span: arg.span(),
+                            spread: arg.spread,
+                            ty: Type::any(arg.expr.span()),
+                        })
+                })
+                .collect();
 
-        Ok(args)
+            Ok(args)
+        })
     }
 }
 
@@ -1285,7 +1528,7 @@ impl ty::Fold for ReturnTypeGeneralizer<'_, '_, '_> {
 
         ty = ty.fold_children_with(self);
 
-        ty.generalize_lit().into_owned()
+        *ty.generalize_lit()
     }
 }
 
@@ -1299,6 +1542,26 @@ struct ReturnTypeSimplifier<'a, 'b, 'c> {
 }
 
 impl VisitMut for ReturnTypeSimplifier<'_, '_, '_> {
+    fn visit_mut_union(&mut self, union: &mut Union) {
+        let should_remove_null_and_undefined = union.types.iter().any(|ty| match ty.normalize() {
+            Type::TypeLit(..) => true,
+            Type::Ref(..) => true,
+            _ => false,
+        });
+
+        if should_remove_null_and_undefined {
+            union.types.retain(|ty| {
+                if ty.is_kwd(TsKeywordTypeKind::TsNullKeyword)
+                    | ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
+                {
+                    return false;
+                }
+
+                true
+            });
+        }
+    }
+
     fn visit_mut_type(&mut self, ty: &mut Type) {
         ty.visit_mut_children_with(self);
 
@@ -1344,17 +1607,21 @@ impl VisitMut for ReturnTypeSimplifier<'_, '_, '_> {
                     let mut a = self.analyzer.with_ctx(ctx);
                     let obj = a
                         .expand_fully(*span, obj_ty.clone(), true)
-                        .store(&mut a.info.errors);
+                        .report(&mut a.storage);
                     if let Some(obj) = obj {
                         if let Some(actual_ty) = a
                             .access_property(
                                 *span,
                                 obj,
-                                &mut Expr::Ident(Ident::new(value.clone(), lit_span)),
+                                &mut Expr::Lit(Lit::Str(Str {
+                                    span: lit_span,
+                                    value: value.clone(),
+                                    has_escape: false,
+                                })),
                                 true,
                                 TypeOfMode::RValue,
                             )
-                            .store(&mut a.info.errors)
+                            .report(&mut a.storage)
                         {
                             if types.iter().all(|prev_ty| !(**prev_ty).type_eq(&actual_ty)) {
                                 types.push(actual_ty);
@@ -1373,7 +1640,76 @@ impl VisitMut for ReturnTypeSimplifier<'_, '_, '_> {
                 self.analyzer.prevent_generalize(&mut ty.index_type);
             }
 
+            // Boxified<A | B | C> => Boxified<A> | Boxified<B> | Boxified<C>
+            Type::Ref(Ref {
+                span,
+                ctxt,
+                type_name: TsEntityName::Ident(i),
+                type_args: Some(type_args),
+            }) if type_args.params.len() == 1
+                && type_args.params.iter().any(|ty| match &**ty {
+                    Type::Union(..) => true,
+                    _ => false,
+                }) =>
+            {
+                // TODO: Replace .ok() with something better
+                if let Some(types) = self.analyzer.find_type(*ctxt, &(&*i).into()).ok().flatten() {
+                    for stored_ty in types {
+                        match stored_ty.normalize() {
+                            Type::Alias(Alias { ty: aliased_ty, .. }) => {
+                                let mut types = vec![];
+
+                                match &*type_args.params[0] {
+                                    Type::Union(type_arg) => {
+                                        for ty in &type_arg.types {
+                                            types.push(box Type::Ref(Ref {
+                                                span: *span,
+                                                ctxt: *ctxt,
+                                                type_name: TsEntityName::Ident(i.clone()),
+                                                type_args: Some(TypeParamInstantiation {
+                                                    span: type_args.span,
+                                                    params: vec![ty.clone()],
+                                                }),
+                                            }))
+                                        }
+                                    }
+
+                                    _ => unreachable!(),
+                                }
+
+                                *ty = *Type::union(types);
+                                return;
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+            }
+
             _ => {}
         }
     }
+}
+
+fn is_key_eq_prop(prop: &Expr, computed: bool, e: &Expr) -> bool {
+    let tmp;
+    let v = match *e {
+        Expr::Ident(ref i) => {
+            tmp = Id::from(i);
+            &tmp
+        }
+        Expr::Lit(Lit::Str(ref s)) => {
+            tmp = Id::word(s.value.clone());
+            &tmp
+        }
+        _ => return false,
+    };
+
+    let p = match &*prop {
+        Expr::Ident(ref i) => &i.sym,
+        Expr::Lit(Lit::Str(ref s)) if computed => &s.value,
+        _ => return false,
+    };
+
+    v.sym() == p
 }

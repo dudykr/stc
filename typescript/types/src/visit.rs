@@ -8,6 +8,7 @@ impl<T> Node for T {}
 
 define!({
     pub enum Type {
+        StaticThis(StaticThis),
         This(TsThisType),
         Lit(TsLitType),
         Query(QueryType),
@@ -26,7 +27,6 @@ define!({
         Intersection(Intersection),
         Function(Function),
         Constructor(Constructor),
-        Method(Method),
 
         Operator(Operator),
 
@@ -63,7 +63,7 @@ define!({
         ClassInstance(ClassInstance),
 
         Static(Static),
-        Arc(Arc<Type>),
+        Arc(CloneType),
 
         Optional(OptionalType),
 
@@ -96,6 +96,7 @@ define!({
 
     pub struct Ref {
         pub span: Span,
+        pub ctxt: ModuleId,
         pub type_name: TsEntityName,
         pub type_args: Option<TypeParamInstantiation>,
     }
@@ -124,7 +125,7 @@ define!({
 
     pub struct Module {
         pub span: Span,
-        pub exports: ModuleTypeInfo,
+        pub exports: ModuleTypeData,
     }
 
     pub struct Enum {
@@ -196,6 +197,7 @@ define!({
         pub span: Span,
         pub readonly: Option<TruePlusMinus>,
         pub optional: Option<TruePlusMinus>,
+        pub name_type: Option<Box<Type>>,
         pub type_param: TypeParam,
         pub ty: Option<Box<Type>>,
     }
@@ -356,6 +358,7 @@ define!({
 
     pub struct EnumVariant {
         pub span: Span,
+        pub ctxt: ModuleId,
         pub enum_name: Id,
         pub name: JsWord,
     }
@@ -406,5 +409,14 @@ define!({
     pub enum TsEntityName {
         TsQualifiedName(Box<TsQualifiedName>),
         Ident(Ident),
+    }
+
+    pub struct StaticThis {
+        pub span: Span,
+    }
+
+    pub struct CloneType {
+        pub span: Span,
+        pub ty: Arc<Type>,
     }
 });
