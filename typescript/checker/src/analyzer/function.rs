@@ -9,13 +9,24 @@ use crate::{
     validator::{Validate, ValidateWith},
     ValidationResult,
 };
-use stc_types::{Alias, FoldWith as _, Interface, Ref};
+use rnode::Fold;
+use rnode::FoldWith;
+use stc_ast_rnode::RFnDecl;
+use stc_ast_rnode::RFnExpr;
+use stc_ast_rnode::RFunction;
+use stc_ast_rnode::RIdent;
+use stc_ast_rnode::RPat;
+use stc_ast_rnode::RTsEntityName;
+use stc_ast_rnode::RTsKeywordType;
+use stc_ast_rnode::RTsType;
+use stc_ast_rnode::RTsTypeAnn;
+use stc_types::{Alias, Interface, Ref};
 use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, f: &mut Function) -> ValidationResult<ty::Function> {
+    fn validate(&mut self, f: &mut RFunction) -> ValidationResult<ty::Function> {
         self.record(f);
 
         self.with_child(ScopeKind::Fn, Default::default(), |child| {
@@ -28,7 +39,7 @@ impl Analyzer<'_, '_> {
                 for p in &f.params {
                     if has_optional {
                         match p.pat {
-                            Pat::Ident(Ident { optional: true, .. }) | Pat::Rest(..) => {}
+                            RPat::Ident(RIdent { optional: true, .. }) | RPat::Rest(..) => {}
                             _ => {
                                 child.storage.report(Error::TS1016 { span: p.span() });
                             }
@@ -36,7 +47,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     match p.pat {
-                        Pat::Ident(Ident { optional, .. }) => {
+                        RPat::Ident(RIdent { optional, .. }) => {
                             // Allow optional after optional parameter
                             if optional {
                                 has_optional = true;
@@ -124,15 +135,15 @@ impl Analyzer<'_, '_> {
                         span = declared.span();
 
                         match *declared.normalize() {
-                            Type::Keyword(TsKeywordType {
+                            Type::Keyword(RTsKeywordType {
                                 kind: TsKeywordTypeKind::TsAnyKeyword,
                                 ..
                             })
-                            | Type::Keyword(TsKeywordType {
+                            | Type::Keyword(RTsKeywordType {
                                 kind: TsKeywordTypeKind::TsVoidKeyword,
                                 ..
                             })
-                            | Type::Keyword(TsKeywordType {
+                            | Type::Keyword(RTsKeywordType {
                                 kind: TsKeywordTypeKind::TsNeverKeyword,
                                 ..
                             }) => {}
@@ -142,15 +153,15 @@ impl Analyzer<'_, '_> {
 
                     // No return statement -> void
                     if f.return_type.is_none() {
-                        f.return_type = Some(TsTypeAnn {
+                        f.return_type = Some(RTsTypeAnn {
                             span: DUMMY_SP,
-                            type_ann: box TsType::TsKeywordType(TsKeywordType {
+                            type_ann: box RTsType::TsKeywordType(RTsKeywordType {
                                 span,
                                 kind: TsKeywordTypeKind::TsVoidKeyword,
                             }),
                         });
                     }
-                    box Type::Keyword(TsKeywordType {
+                    box Type::Keyword(RTsKeywordType {
                         span,
                         kind: TsKeywordTypeKind::TsVoidKeyword,
                     })
@@ -232,7 +243,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO: Handle recursive funciton
-    fn visit_fn(&mut self, name: Option<&Ident>, f: &mut Function) -> Box<Type> {
+    fn visit_fn(&mut self, name: Option<&RIdent>, f: &mut RFunction) -> Box<Type> {
         let fn_ty: Result<_, _> = try {
             let no_implicit_any_span = name.as_ref().map(|name| name.span);
 
@@ -244,7 +255,7 @@ impl Analyzer<'_, '_> {
             //         name.into(),
             //         Some(Type::Query(QueryType {
             //             span: f.span,
-            //             expr: TsEntityName::Ident(name.clone()).into(),
+            //             expr: RTsEntityName::Ident(name.clone()).into(),
             //         })),
             //         // value is initialized
             //         true,
@@ -277,11 +288,11 @@ impl Analyzer<'_, '_> {
                                 let span = element.span();
 
                                 match element.ty.normalize() {
-                                    Type::Keyword(TsKeywordType {
+                                    Type::Keyword(RTsKeywordType {
                                         kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                         ..
                                     })
-                                    | Type::Keyword(TsKeywordType {
+                                    | Type::Keyword(RTsKeywordType {
                                         kind: TsKeywordTypeKind::TsNullKeyword,
                                         ..
                                     }) => {}
@@ -325,7 +336,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     /// NOTE: This method **should not call f.fold_children_with(self)**
-    fn validate(&mut self, f: &mut FnDecl) {
+    fn validate(&mut self, f: &mut RFnDecl) {
         let fn_ty = self.visit_fn(Some(&f.ident), &mut f.function).cheap();
 
         match self.override_var(VarDeclKind::Var, f.ident.clone().into(), fn_ty) {
@@ -342,7 +353,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     /// NOTE: This method **should not call f.fold_children_with(self)**
-    fn validate(&mut self, f: &mut FnExpr) {
+    fn validate(&mut self, f: &mut RFnExpr) {
         self.visit_fn(f.ident.as_ref(), &mut f.function);
 
         Ok(())
@@ -353,14 +364,14 @@ struct TypeParamHandler<'a> {
     params: Option<&'a [TypeParam]>,
 }
 
-impl ty::Fold for TypeParamHandler<'_> {
-    fn fold_type(&mut self, ty: Type) -> Type {
+impl Fold<Type> for TypeParamHandler<'_> {
+    fn fold(&mut self, ty: Type) -> Type {
         if let Some(params) = self.params {
             let ty: Type = ty.fold_children_with(self);
 
             match ty {
                 Type::Ref(ref r) if r.type_args.is_none() => match r.type_name {
-                    TsEntityName::Ident(ref i) => {
+                    RTsEntityName::Ident(ref i) => {
                         //
                         for param in params {
                             if param.name == i {

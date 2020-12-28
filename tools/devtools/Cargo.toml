@@ -14,10 +14,10 @@ sha-1 = "0.9"
 slog = "2"
 stc_checker = {path = "../../typescript/checker"}
 swc_atoms = "0.2.5"
-swc_common = { version = "0.10.6", features = ["concurrent"] }
-swc_ecma_ast = "0.35.0"
-swc_ecma_codegen = "0.41.4"
-swc_ecma_parser = "0.43.1"
-swc_ecma_utils = "0.25.0"
-swc_ecma_visit = "0.21.0"
+swc_common = { version = "0.10.8", features = ["concurrent"] }
+swc_ecma_ast = "0.36.1"
+swc_ecma_codegen = "0.42.0"
+swc_ecma_parser = "0.44.0"
+swc_ecma_utils = "0.26.0"
+swc_ecma_visit = "0.22.0"
 tempfile = "3"

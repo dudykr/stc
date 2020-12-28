@@ -8,6 +8,16 @@ use crate::{
     validator::{Validate, ValidateWith},
     ValidationResult,
 };
+use stc_ast_rnode::RBigInt;
+use stc_ast_rnode::RBool;
+use stc_ast_rnode::RExpr;
+use stc_ast_rnode::RLit;
+use stc_ast_rnode::RNumber;
+use stc_ast_rnode::RStr;
+use stc_ast_rnode::RTsKeywordType;
+use stc_ast_rnode::RTsLit;
+use stc_ast_rnode::RTsLitType;
+use stc_ast_rnode::RUnaryExpr;
 use stc_types::Union;
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned};
@@ -15,8 +25,8 @@ use swc_ecma_ast::*;
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &mut UnaryExpr) -> ValidationResult {
-        let UnaryExpr {
+    fn validate(&mut self, e: &mut RUnaryExpr) -> ValidationResult {
+        let RUnaryExpr {
             span,
             op,
             ref mut arg,
@@ -26,11 +36,11 @@ impl Analyzer<'_, '_> {
             // `delete foo` returns bool
 
             match **arg {
-                Expr::Member(ref mut e) => {
+                RExpr::Member(ref mut e) => {
                     self.type_of_member_expr(e, TypeOfMode::LValue)
                         .report(&mut self.storage);
 
-                    return Ok(box Type::Keyword(TsKeywordType {
+                    return Ok(box Type::Keyword(RTsKeywordType {
                         span,
                         kind: TsKeywordTypeKind::TsBooleanKeyword,
                     }));
@@ -84,12 +94,13 @@ impl Analyzer<'_, '_> {
                         ]
                         .iter()
                         .cloned()
-                        .map(|value| TsLitType {
+                        .map(|value| RTsLitType {
                             span,
-                            lit: TsLit::Str(Str {
+                            lit: RTsLit::Str(RStr {
                                 span,
                                 value,
                                 has_escape: false,
+                                kind: Default::default(),
                             }),
                         })
                         .map(Type::Lit)
@@ -97,7 +108,7 @@ impl Analyzer<'_, '_> {
                         .collect(),
                     }));
                 }
-                return Ok(box Type::Keyword(TsKeywordType {
+                return Ok(box Type::Keyword(RTsKeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsStringKeyword,
                 }));
@@ -108,15 +119,15 @@ impl Analyzer<'_, '_> {
             op!(unary, "-") | op!(unary, "+") => {
                 if let Some(arg) = &arg {
                     match &**arg {
-                        Type::Lit(TsLitType {
-                            lit: TsLit::Number(Number { span, value }),
+                        Type::Lit(RTsLitType {
+                            lit: RTsLit::Number(RNumber { span, value }),
                             ..
                         }) => {
                             let span = *span;
 
-                            return Ok(box Type::Lit(TsLitType {
+                            return Ok(box Type::Lit(RTsLitType {
                                 span,
-                                lit: TsLit::Number(Number {
+                                lit: RTsLit::Number(RNumber {
                                     span,
                                     value: if op == op!(unary, "-") {
                                         -(*value)
@@ -130,14 +141,14 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                return Ok(box Type::Keyword(TsKeywordType {
+                return Ok(box Type::Keyword(RTsKeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                 }));
             }
 
             op!("~") => {
-                return Ok(box Type::Keyword(TsKeywordType {
+                return Ok(box Type::Keyword(RTsKeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                 }));
@@ -146,7 +157,7 @@ impl Analyzer<'_, '_> {
         }
 
         match arg {
-            Some(box Type::Keyword(TsKeywordType {
+            Some(box Type::Keyword(RTsKeywordType {
                 kind: TsKeywordTypeKind::TsUnknownKeyword,
                 ..
             })) => return Err(Error::Unknown { span: arg.span() }),
@@ -166,7 +177,7 @@ impl Analyzer<'_, '_> {
         // This is a worst case. We only return the type without good error reporting.
         match op {
             op!("!") | op!("delete") => {
-                return Ok(box Type::Keyword(TsKeywordType {
+                return Ok(box Type::Keyword(RTsKeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
                 }))
@@ -193,17 +204,17 @@ impl Analyzer<'_, '_> {
             },
 
             op!("~") | op!(unary, "-") | op!(unary, "+") => match arg.normalize() {
-                Type::Keyword(TsKeywordType {
+                Type::Keyword(RTsKeywordType {
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                     ..
                 }) => {}
 
-                Type::Keyword(TsKeywordType {
+                Type::Keyword(RTsKeywordType {
                     kind: TsKeywordTypeKind::TsNullKeyword,
                     ..
                 }) => errors.push(Error::TS2531 { span: arg.span() }),
 
-                Type::Keyword(TsKeywordType {
+                Type::Keyword(RTsKeywordType {
                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
                     ..
                 }) => errors.push(Error::TS2532 { span: arg.span() }),
@@ -222,46 +233,46 @@ impl Analyzer<'_, '_> {
 
 fn negate(ty: Box<Type>) -> Box<Type> {
     match *ty {
-        Type::Lit(TsLitType { ref lit, span }) => match *lit {
-            TsLit::Bool(v) => {
-                return box Type::Lit(TsLitType {
-                    lit: TsLit::Bool(Bool {
+        Type::Lit(RTsLitType { ref lit, span }) => match *lit {
+            RTsLit::Bool(ref v) => {
+                return box Type::Lit(RTsLitType {
+                    lit: RTsLit::Bool(RBool {
                         value: !v.value,
-                        ..v
+                        ..v.clone()
                     }),
                     span,
                 });
             }
-            TsLit::Number(v) => {
-                return box Type::Lit(TsLitType {
-                    lit: TsLit::Bool(Bool {
+            RTsLit::Number(ref v) => {
+                return box Type::Lit(RTsLitType {
+                    lit: RTsLit::Bool(RBool {
                         value: v.value != 0.0,
                         span: v.span,
                     }),
                     span,
                 });
             }
-            TsLit::Str(ref v) => {
-                return box Type::Lit(TsLitType {
-                    lit: TsLit::Bool(Bool {
+            RTsLit::Str(ref v) => {
+                return box Type::Lit(RTsLitType {
+                    lit: RTsLit::Bool(RBool {
                         value: v.value != js_word!(""),
                         span: v.span,
                     }),
                     span,
                 });
             }
-            TsLit::Tpl(ref v) => {
-                return box Type::Lit(TsLitType {
-                    lit: TsLit::Bool(Bool {
+            RTsLit::Tpl(ref v) => {
+                return box Type::Lit(RTsLitType {
+                    lit: RTsLit::Bool(RBool {
                         value: v.quasis.iter().next().as_ref().unwrap().raw.value != js_word!(""),
                         span: v.span,
                     }),
                     span,
                 });
             }
-            TsLit::BigInt(ref v) => {
-                return box Type::Lit(TsLitType {
-                    lit: TsLit::BigInt(BigInt {
+            RTsLit::BigInt(ref v) => {
+                return box Type::Lit(RTsLitType {
+                    lit: RTsLit::BigInt(RBigInt {
                         value: -v.value.clone(),
                         span: v.span,
                     }),
@@ -273,7 +284,7 @@ fn negate(ty: Box<Type>) -> Box<Type> {
         _ => {}
     }
 
-    box TsKeywordType {
+    box RTsKeywordType {
         span: ty.span(),
         kind: TsKeywordTypeKind::TsBooleanKeyword,
     }

@@ -2,6 +2,7 @@
 #![allow(unused_imports)] // temporary
 #![allow(unused_mut)] // temporary
 #![allow(dead_code)] // temporary
+#![allow(incomplete_features)] // temporary
 #![deny(unused_must_use)]
 #![deny(unreachable_patterns)]
 #![deny(mutable_borrow_reservation_conflict)]
@@ -9,6 +10,7 @@
 #![feature(box_patterns)]
 #![feature(box_syntax)]
 #![feature(try_blocks)]
+#![feature(specialization)]
 #![feature(vec_remove_item)]
 #![feature(option_expect_none)]
 #![recursion_limit = "1024"]
@@ -34,7 +36,10 @@ use errors::Errors;
 use fxhash::FxHashMap;
 use once_cell::sync::OnceCell;
 use parking_lot::{Mutex, RwLock};
+use rnode::RNode;
+use rnode::VisitMutWith;
 use slog::Logger;
+use stc_ast_rnode::RModule;
 use stc_checker_macros::validator;
 use stc_module_graph::resolver::node::NodeResolver;
 pub use stc_module_graph::{resolver::Resolve, ModuleGraph};
@@ -51,7 +56,7 @@ use swc_common::{
 use swc_ecma_ast::Module;
 use swc_ecma_parser::{lexer::Lexer, JscTarget, Parser, StringInput, Syntax, TsConfig};
 use swc_ecma_transforms::resolver::ts_resolver;
-use swc_ecma_visit::{FoldWith as _, VisitMutWith};
+use swc_ecma_visit::FoldWith;
 
 #[macro_use]
 mod debug;
@@ -59,7 +64,6 @@ pub mod analyzer;
 mod dts;
 pub mod env;
 pub mod errors;
-pub mod hygiene;
 pub mod loader;
 mod mode;
 pub mod name;
@@ -122,7 +126,7 @@ pub struct Checker {
     module_types: RwLock<FxHashMap<ModuleId, Arc<OnceCell<Arc<ModuleTypeData>>>>>,
 
     /// Informatnion required to generate `.d.ts` files.
-    dts_modules: Arc<DashMap<ModuleId, Module>>,
+    dts_modules: Arc<DashMap<ModuleId, RModule>>,
 
     module_graph: Arc<ModuleGraph<StcComments, NodeResolver>>,
 
@@ -182,7 +186,7 @@ impl Checker {
 
     /// Removes dts module from `self` and return it.
     pub fn take_dts(&self, id: ModuleId) -> Option<Module> {
-        self.dts_modules.remove(&id).map(|v| v.1)
+        self.dts_modules.remove(&id).map(|v| v.1.into_orig())
     }
 
     pub fn id(&self, path: &Arc<PathBuf>) -> ModuleId {
@@ -264,9 +268,9 @@ impl Checker {
                             .iter()
                             .map(|&id| self.module_graph.clone_module(id))
                             .map(|module| {
-                                module.fold_with(&mut ts_resolver(
+                                RModule::from_orig(module.fold_with(&mut ts_resolver(
                                     self.env.shared().marks().top_level_mark,
-                                ))
+                                )))
                             })
                             .collect::<Vec<_>>();
                         {
@@ -374,6 +378,7 @@ impl Checker {
         self.run(|| {
             let mut module = self.module_graph.clone_module(id);
             module = module.fold_with(&mut ts_resolver(self.env.shared().marks().top_level_mark));
+            let mut module = RModule::from_orig(module);
 
             let mut storage = Single {
                 parent: None,

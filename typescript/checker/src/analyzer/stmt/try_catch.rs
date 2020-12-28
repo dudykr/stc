@@ -5,15 +5,16 @@ use crate::{
     validator::{Validate, ValidateWith},
     ValidationResult,
 };
+use rnode::VisitMutWith;
+use stc_ast_rnode::RCatchClause;
 use stc_types::Type;
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::*;
 use swc_ecma_utils::Value::Known;
-use swc_ecma_visit::{VisitMutWith, VisitWith};
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, s: &mut CatchClause) {
+    fn validate(&mut self, s: &mut RCatchClause) {
         let ctx = Ctx {
             pat_mode: PatMode::Decl,
             ..self.ctx

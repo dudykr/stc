@@ -7,24 +7,30 @@ use crate::{
     validator::{Validate, ValidateWith},
     ValidationResult,
 };
+use rnode::VisitMutWith;
+use stc_ast_rnode::RExpr;
+use stc_ast_rnode::RForInStmt;
+use stc_ast_rnode::RForOfStmt;
+use stc_ast_rnode::RPat;
+use stc_ast_rnode::RVarDecl;
+use stc_ast_rnode::RVarDeclOrPat;
 use stc_checker_macros::extra_validator;
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::*;
-use swc_ecma_visit::VisitMutWith;
 
 impl Analyzer<'_, '_> {
     #[extra_validator]
-    fn check_lhs_of_for_loop(&mut self, e: &mut VarDeclOrPat) {
+    fn check_lhs_of_for_loop(&mut self, e: &mut RVarDeclOrPat) {
         match *e {
-            VarDeclOrPat::VarDecl(ref mut v) => {
+            RVarDeclOrPat::VarDecl(ref mut v) => {
                 // Store variables
                 v.visit_mut_with(self);
             }
-            VarDeclOrPat::Pat(ref mut pat) => match *pat {
-                Pat::Expr(ref mut e) => {
+            RVarDeclOrPat::Pat(ref mut pat) => match *pat {
+                RPat::Expr(ref mut e) => {
                     e.validate_with_args(self, (TypeOfMode::LValue, None, None))?;
                 }
-                Pat::Ident(ref mut i) => {
+                RPat::Ident(ref mut i) => {
                     // TODO: verify
                     self.type_of_var(i, TypeOfMode::LValue, None)?;
                 }
@@ -33,14 +39,14 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn check_rhs_of_for_loop(&mut self, e: &mut Expr) -> ValidationResult {
+    fn check_rhs_of_for_loop(&mut self, e: &mut RExpr) -> ValidationResult {
         // Check iterable
         e.validate_with_default(self)
     }
 
-    fn validate_for_loop(&mut self, span: Span, lhs: &mut VarDeclOrPat, rty: Box<Type>) {
+    fn validate_for_loop(&mut self, span: Span, lhs: &mut RVarDeclOrPat, rty: Box<Type>) {
         match lhs {
-            VarDeclOrPat::Pat(Pat::Expr(l)) => {
+            RVarDeclOrPat::Pat(RPat::Expr(l)) => {
                 let lty = match l.validate_with_args(self, (TypeOfMode::LValue, None, None)) {
                     Ok(ty) => ty,
                     Err(..) => return,
@@ -64,14 +70,14 @@ impl Analyzer<'_, '_> {
     }
 
     #[extra_validator]
-    fn check_for_of_in_loop(&mut self, span: Span, mut left: &mut VarDeclOrPat, rhs: &mut Expr) {
+    fn check_for_of_in_loop(&mut self, span: Span, mut left: &mut RVarDeclOrPat, rhs: &mut RExpr) {
         self.with_child(
             ScopeKind::Flow,
             Default::default(),
             |child| -> ValidationResult<()> {
                 child.check_lhs_of_for_loop(left);
                 let rty = if match left {
-                    VarDeclOrPat::VarDecl(VarDecl { ref decls, .. }) => !decls.is_empty(),
+                    RVarDeclOrPat::VarDecl(RVarDecl { ref decls, .. }) => !decls.is_empty(),
                     _ => true,
                 } {
                     child.check_rhs_of_for_loop(rhs)?
@@ -89,7 +95,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, s: &mut ForInStmt) {
+    fn validate(&mut self, s: &mut RForInStmt) {
         self.check_for_of_in_loop(s.span, &mut s.left, &mut s.right);
 
         Ok(())
@@ -98,7 +104,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, s: &mut ForOfStmt) {
+    fn validate(&mut self, s: &mut RForOfStmt) {
         self.check_for_of_in_loop(s.span, &mut s.left, &mut s.right);
 
         Ok(())

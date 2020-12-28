@@ -7,7 +7,11 @@ use crate::{
     validator::{Validate, ValidateWith},
     ValidationResult,
 };
-use stc_types::{eq::TypeEq, TypeParamInstantiation};
+use stc_ast_rnode::RTsAsExpr;
+use stc_ast_rnode::RTsType;
+use stc_ast_rnode::RTsTypeAssertion;
+use stc_types::TypeParamInstantiation;
+use swc_common::TypeEq;
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::*;
 
@@ -15,7 +19,7 @@ use swc_ecma_ast::*;
 impl Analyzer<'_, '_> {
     fn validate(
         &mut self,
-        e: &mut TsTypeAssertion,
+        e: &mut RTsTypeAssertion,
         mode: TypeOfMode,
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
@@ -33,7 +37,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(
         &mut self,
-        e: &mut TsAsExpr,
+        e: &mut RTsAsExpr,
         mode: TypeOfMode,
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
@@ -65,7 +69,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         orig_ty: Box<Type>,
-        to: &mut TsType,
+        to: &mut RTsType,
     ) -> ValidationResult {
         let orig_ty = self.expand_fully(span, orig_ty, true)?;
 

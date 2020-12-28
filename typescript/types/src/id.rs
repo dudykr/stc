@@ -1,13 +1,18 @@
+use stc_ast_rnode::RIdent;
+use stc_ast_rnode::RTsEntityName;
+use stc_visit::Visit;
 use std::{
     cmp::PartialEq,
     fmt::{self, Debug, Display, Formatter},
 };
 use swc_atoms::JsWord;
+use swc_common::EqIgnoreSpan;
+use swc_common::TypeEq;
 use swc_common::{SyntaxContext, DUMMY_SP};
-use swc_ecma_ast::{Ident, TsEntityName};
+use swc_ecma_ast::Ident;
 use swc_ecma_utils::ident::IdentLike;
 
-#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Id {
     sym: JsWord,
     ctxt: SyntaxContext,
@@ -30,8 +35,8 @@ impl Id {
     }
 }
 
-impl From<&'_ Ident> for Id {
-    fn from(i: &Ident) -> Self {
+impl From<&'_ RIdent> for Id {
+    fn from(i: &RIdent) -> Self {
         Id {
             sym: i.sym.clone(),
             ctxt: i.span.ctxt(),
@@ -39,8 +44,8 @@ impl From<&'_ Ident> for Id {
     }
 }
 
-impl From<Ident> for Id {
-    fn from(i: Ident) -> Self {
+impl From<RIdent> for Id {
+    fn from(i: RIdent) -> Self {
         Id {
             sym: i.sym,
             ctxt: i.span.ctxt(),
@@ -48,20 +53,20 @@ impl From<Ident> for Id {
     }
 }
 
-impl From<Id> for Ident {
+impl From<Id> for RIdent {
     fn from(i: Id) -> Self {
-        Ident {
-            sym: i.sym,
-            type_ann: None,
+        RIdent {
             span: DUMMY_SP.with_ctxt(i.ctxt),
+            sym: i.sym,
+            type_ann: Default::default(),
             optional: false,
         }
     }
 }
 
-impl From<Id> for TsEntityName {
+impl From<Id> for RTsEntityName {
     fn from(i: Id) -> Self {
-        TsEntityName::Ident(i.into())
+        RTsEntityName::Ident(i.into())
     }
 }
 
@@ -84,9 +89,24 @@ impl PartialEq<&'_ Ident> for Id {
     }
 }
 
+impl PartialEq<RIdent> for Id {
+    fn eq(&self, other: &RIdent) -> bool {
+        self.sym == other.sym && self.ctxt == other.span.ctxt()
+    }
+}
+
+impl PartialEq<&'_ RIdent> for Id {
+    fn eq(&self, other: &&RIdent) -> bool {
+        self.sym == other.sym && self.ctxt == other.span.ctxt()
+    }
+}
+
 impl IdentLike for Id {
     fn from_ident(i: &Ident) -> Self {
-        i.into()
+        Self {
+            sym: i.sym.clone(),
+            ctxt: i.span.ctxt,
+        }
     }
 
     fn to_id(&self) -> (JsWord, SyntaxContext) {

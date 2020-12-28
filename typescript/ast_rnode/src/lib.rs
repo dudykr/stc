@@ -1,8 +1,45 @@
 use num_bigint::BigInt as BigIntValue;
 use rnode::define_rnode;
 use swc_atoms::JsWord;
+use swc_common::EqIgnoreSpan;
 use swc_common::Span;
-pub use swc_ecma_ast::*;
+use swc_common::TypeEq;
+use swc_ecma_ast::*;
+
+impl RIdent {
+    pub const fn new(sym: JsWord, span: Span) -> Self {
+        Self {
+            sym,
+            span,
+            type_ann: None,
+            optional: false,
+        }
+    }
+}
+
+/// Impl `TypeEq` using `EqIgnoreSpan`
+macro_rules! type_eq {
+    ($T:ty) => {
+        impl TypeEq for $T {
+            #[inline]
+            fn type_eq(&self, other: &Self) -> bool {
+                self.eq_ignore_span(&other)
+            }
+        }
+    };
+}
+
+type_eq!(RTsKeywordType);
+type_eq!(RTsThisType);
+type_eq!(RTsLitType);
+type_eq!(RTsThisTypeOrIdent);
+type_eq!(RStr);
+type_eq!(RIdent);
+type_eq!(RTsEntityName);
+type_eq!(RTsNamespaceDecl);
+type_eq!(RTsEnumMemberId);
+type_eq!(RExpr);
+type_eq!(RPropName);
 
 define_rnode!({
     pub struct Class {
@@ -34,6 +71,7 @@ define_rnode!({
         pub is_static: bool,
         pub decorators: Vec<Decorator>,
         pub computed: bool,
+        #[not_spanned]
         pub accessibility: Option<Accessibility>,
         pub is_abstract: bool,
         pub is_optional: bool,
@@ -49,6 +87,7 @@ define_rnode!({
         pub is_static: bool,
         pub decorators: Vec<Decorator>,
         pub computed: bool,
+        #[not_spanned]
         pub accessibility: Option<Accessibility>,
         pub is_abstract: bool,
         pub is_optional: bool,
@@ -59,8 +98,10 @@ define_rnode!({
         pub span: Span,
         pub key: PropName,
         pub function: Function,
+        #[not_spanned]
         pub kind: MethodKind,
         pub is_static: bool,
+        #[not_spanned]
         pub accessibility: Option<Accessibility>,
         pub is_abstract: bool,
         pub is_optional: bool,
@@ -69,8 +110,10 @@ define_rnode!({
         pub span: Span,
         pub key: PrivateName,
         pub function: Function,
+        #[not_spanned]
         pub kind: MethodKind,
         pub is_static: bool,
+        #[not_spanned]
         pub accessibility: Option<Accessibility>,
         pub is_abstract: bool,
         pub is_optional: bool,
@@ -80,6 +123,7 @@ define_rnode!({
         pub key: PropName,
         pub params: Vec<ParamOrTsParamProp>,
         pub body: Option<BlockStmt>,
+        #[not_spanned]
         pub accessibility: Option<Accessibility>,
         pub is_optional: bool,
     }
@@ -100,15 +144,18 @@ define_rnode!({
     pub struct FnDecl {
         pub ident: Ident,
         pub declare: bool,
+        #[span]
         pub function: Function,
     }
     pub struct ClassDecl {
         pub ident: Ident,
         pub declare: bool,
+        #[span]
         pub class: Class,
     }
     pub struct VarDecl {
         pub span: Span,
+        #[not_spanned]
         pub kind: VarDeclKind,
         pub declare: bool,
         pub decls: Vec<VarDeclarator>,
@@ -175,35 +222,42 @@ define_rnode!({
     }
     pub struct SpreadElement {
         pub dot3_token: Span,
+        #[span]
         pub expr: Box<Expr>,
     }
     pub struct UnaryExpr {
         pub span: Span,
+        #[not_spanned]
         pub op: UnaryOp,
         pub arg: Box<Expr>,
     }
     pub struct UpdateExpr {
         pub span: Span,
+        #[not_spanned]
         pub op: UpdateOp,
         pub prefix: bool,
         pub arg: Box<Expr>,
     }
     pub struct BinExpr {
         pub span: Span,
+        #[not_spanned]
         pub op: BinaryOp,
         pub left: Box<Expr>,
         pub right: Box<Expr>,
     }
     pub struct FnExpr {
         pub ident: Option<Ident>,
+        #[span]
         pub function: Function,
     }
     pub struct ClassExpr {
         pub ident: Option<Ident>,
+        #[span]
         pub class: Class,
     }
     pub struct AssignExpr {
         pub span: Span,
+        #[not_spanned]
         pub op: AssignOp,
         pub left: PatOrExpr,
         pub right: Box<Expr>,
@@ -251,7 +305,9 @@ define_rnode!({
         pub delegate: bool,
     }
     pub struct MetaPropExpr {
+        #[span(lo)]
         pub meta: Ident,
+        #[span(hi)]
         pub prop: Ident,
     }
     pub struct AwaitExpr {
@@ -289,6 +345,8 @@ define_rnode!({
     }
     pub struct ExprOrSpread {
         pub spread: Option<Span>,
+        // TODO: Use custom impl
+        #[span]
         pub expr: Box<Expr>,
     }
     pub enum BlockStmtOrExpr {
@@ -339,11 +397,15 @@ define_rnode!({
         Ident(Ident),
     }
     pub struct JSXMemberExpr {
+        #[span(lo)]
         pub obj: JSXObject,
+        #[span(hi)]
         pub prop: Ident,
     }
     pub struct JSXNamespacedName {
+        #[span(lo)]
         pub ns: Ident,
+        #[span(hi)]
         pub name: Ident,
     }
     pub struct JSXEmptyExpr {
@@ -440,12 +502,14 @@ define_rnode!({
     }
     pub struct BigInt {
         pub span: Span,
+        #[not_spanned]
         pub value: BigIntValue,
     }
     pub struct Str {
         pub span: Span,
         pub value: JsWord,
         pub has_escape: bool,
+        pub kind: StrKind,
     }
     pub struct Bool {
         pub span: Span,
@@ -554,6 +618,7 @@ define_rnode!({
         pub name: Ident,
     }
     pub struct ExportDefaultSpecifier {
+        #[span]
         pub exported: Ident,
     }
     pub struct ExportNamedSpecifier {
@@ -601,7 +666,9 @@ define_rnode!({
         Rest(RestPat),
     }
     pub struct KeyValuePatProp {
+        #[span(lo)]
         pub key: PropName,
+        #[span(hi)]
         pub value: Box<Pat>,
     }
     pub struct AssignPatProp {
@@ -618,11 +685,15 @@ define_rnode!({
         Method(MethodProp),
     }
     pub struct KeyValueProp {
+        #[span(lo)]
         pub key: PropName,
+        #[span(hi)]
         pub value: Box<Expr>,
     }
     pub struct AssignProp {
+        #[span(lo)]
         pub key: Ident,
+        #[span(hi)]
         pub value: Box<Expr>,
     }
     pub struct GetterProp {
@@ -638,7 +709,9 @@ define_rnode!({
         pub body: Option<BlockStmt>,
     }
     pub struct MethodProp {
+        #[span(lo)]
         pub key: PropName,
+        #[span(hi)]
         pub function: Function,
     }
     pub enum PropName {
@@ -804,6 +877,7 @@ define_rnode!({
     pub struct TsParamProp {
         pub span: Span,
         pub decorators: Vec<Decorator>,
+        #[not_spanned]
         pub accessibility: Option<Accessibility>,
         pub readonly: bool,
         pub param: TsParamPropParam,
@@ -813,7 +887,9 @@ define_rnode!({
         Assign(AssignPat),
     }
     pub struct TsQualifiedName {
+        #[span(lo)]
         pub left: TsEntityName,
+        #[span(hi)]
         pub right: Ident,
     }
     pub enum TsEntityName {
@@ -901,6 +977,7 @@ define_rnode!({
     }
     pub struct TsKeywordType {
         pub span: Span,
+        #[not_spanned]
         pub kind: TsKeywordTypeKind,
     }
 
@@ -1011,6 +1088,7 @@ define_rnode!({
     }
     pub struct TsTypeOperator {
         pub span: Span,
+        #[not_spanned]
         pub op: TsTypeOperatorOp,
         pub type_ann: Box<TsType>,
     }
@@ -1024,9 +1102,11 @@ define_rnode!({
 
     pub struct TsMappedType {
         pub span: Span,
+        #[not_spanned]
         pub readonly: Option<TruePlusMinus>,
         pub type_param: TsTypeParam,
         pub name_type: Option<Box<TsType>>,
+        #[not_spanned]
         pub optional: Option<TruePlusMinus>,
         pub type_ann: Option<Box<TsType>>,
     }

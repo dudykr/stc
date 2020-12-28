@@ -4,14 +4,18 @@ use crate::util::graph::NodeId;
 use fxhash::FxHashMap;
 use fxhash::FxHashSet;
 use petgraph::graphmap::DiGraphMap;
+use rnode::Visit;
+use rnode::VisitWith;
+use stc_ast_rnode::RClassMember;
+use stc_ast_rnode::RExpr;
+use stc_ast_rnode::RExprOrSuper;
+use stc_ast_rnode::RMemberExpr;
+use stc_types::rprop_name_to_expr;
 use stc_types::Id;
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::*;
 use swc_ecma_utils::prop_name_to_expr;
 use swc_ecma_visit::noop_visit_type;
-use swc_ecma_visit::Node;
-use swc_ecma_visit::Visit;
-use swc_ecma_visit::VisitWith;
 
 impl Analyzer<'_, '_> {
     /// This method ignores order of class properties or parameter properties.
@@ -22,7 +26,7 @@ impl Analyzer<'_, '_> {
     pub(super) fn calc_order_of_class_methods(
         &mut self,
         mut remaining_indexes: Vec<usize>,
-        members: &[ClassMember],
+        members: &[RClassMember],
     ) -> Vec<usize> {
         let mut keys = Inliner::<Key>::default();
         let mut graph = DiGraphMap::<NodeId<Key>, ()>::default();
@@ -36,22 +40,24 @@ impl Analyzer<'_, '_> {
             }
 
             match member {
-                ClassMember::Constructor(_) => continue,
+                RClassMember::Constructor(_) => continue,
 
-                ClassMember::TsIndexSignature(_) => {}
+                RClassMember::TsIndexSignature(_) => {}
 
-                ClassMember::ClassProp(_) | ClassMember::PrivateProp(_) | ClassMember::Empty(_) => {
+                RClassMember::ClassProp(_)
+                | RClassMember::PrivateProp(_)
+                | RClassMember::Empty(_) => {
                     // unreachable!
                     continue;
                 }
 
-                ClassMember::Method(..) | ClassMember::PrivateMethod(..) => {
+                RClassMember::Method(..) | RClassMember::PrivateMethod(..) => {
                     let key = match member {
-                        ClassMember::Method(v) => match prop_name_to_expr(v.key.clone()) {
-                            Expr::Ident(i) => Key::Id(i.into()),
+                        RClassMember::Method(v) => match rprop_name_to_expr(v.key.clone()) {
+                            RExpr::Ident(i) => Key::Id(i.into()),
                             _ => continue,
                         },
-                        ClassMember::PrivateMethod(v) => Key::Private(v.key.id.clone().into()),
+                        RClassMember::PrivateMethod(v) => Key::Private(v.key.id.clone().into()),
                         _ => unreachable!(),
                     };
                     let key = keys.inline(key);
@@ -61,7 +67,7 @@ impl Analyzer<'_, '_> {
                     let mut visitor = MethodAnalyzer {
                         result: Default::default(),
                     };
-                    member.visit_with(&Invalid { span: DUMMY_SP }, &mut visitor);
+                    member.visit_with(&mut visitor);
 
                     for dep in visitor.result.depends_on {
                         let dep = keys.inline(dep);
@@ -115,24 +121,22 @@ struct MethodAnalyzer {
     result: AnalysisResult,
 }
 
-impl Visit for MethodAnalyzer {
-    noop_visit_type!();
-
-    fn visit_member_expr(&mut self, e: &MemberExpr, _: &dyn Node) {
-        e.obj.visit_with(e, self);
+impl Visit<RMemberExpr> for MethodAnalyzer {
+    fn visit(&mut self, e: &RMemberExpr) {
+        e.obj.visit_with(self);
         if e.computed {
-            e.prop.visit_with(e, self);
+            e.prop.visit_with(self);
         }
 
         match &e.obj {
-            ExprOrSuper::Super(_) => {}
-            ExprOrSuper::Expr(box Expr::This(..)) => {
+            RExprOrSuper::Super(_) => {}
+            RExprOrSuper::Expr(box RExpr::This(..)) => {
                 // We detects this.#foo and this.foo
                 match &*e.prop {
-                    Expr::Ident(i) => {
+                    RExpr::Ident(i) => {
                         self.result.depends_on.insert(Key::Id(i.into()));
                     }
-                    Expr::PrivateName(i) => {
+                    RExpr::PrivateName(i) => {
                         self.result
                             .depends_on
                             .insert(Key::Private(i.id.clone().into()));

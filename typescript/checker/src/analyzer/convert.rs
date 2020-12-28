@@ -9,6 +9,57 @@ use crate::util::PatExt;
 use crate::validator;
 use crate::validator::ValidateWith;
 use crate::ValidationResult;
+use rnode::VisitMutWith;
+use stc_ast_rnode::RArrayPat;
+use stc_ast_rnode::RAssignPatProp;
+use stc_ast_rnode::RComputedPropName;
+use stc_ast_rnode::RExpr;
+use stc_ast_rnode::RIdent;
+use stc_ast_rnode::RObjectPat;
+use stc_ast_rnode::RObjectPatProp;
+use stc_ast_rnode::RPat;
+use stc_ast_rnode::RTsArrayType;
+use stc_ast_rnode::RTsCallSignatureDecl;
+use stc_ast_rnode::RTsConditionalType;
+use stc_ast_rnode::RTsConstructSignatureDecl;
+use stc_ast_rnode::RTsConstructorType;
+use stc_ast_rnode::RTsEntityName;
+use stc_ast_rnode::RTsExprWithTypeArgs;
+use stc_ast_rnode::RTsFnOrConstructorType;
+use stc_ast_rnode::RTsFnParam;
+use stc_ast_rnode::RTsFnType;
+use stc_ast_rnode::RTsImportType;
+use stc_ast_rnode::RTsIndexSignature;
+use stc_ast_rnode::RTsIndexedAccessType;
+use stc_ast_rnode::RTsInferType;
+use stc_ast_rnode::RTsInterfaceBody;
+use stc_ast_rnode::RTsInterfaceDecl;
+use stc_ast_rnode::RTsIntersectionType;
+use stc_ast_rnode::RTsKeywordType;
+use stc_ast_rnode::RTsMappedType;
+use stc_ast_rnode::RTsMethodSignature;
+use stc_ast_rnode::RTsOptionalType;
+use stc_ast_rnode::RTsParenthesizedType;
+use stc_ast_rnode::RTsPropertySignature;
+use stc_ast_rnode::RTsRestType;
+use stc_ast_rnode::RTsTupleElement;
+use stc_ast_rnode::RTsTupleType;
+use stc_ast_rnode::RTsType;
+use stc_ast_rnode::RTsTypeAliasDecl;
+use stc_ast_rnode::RTsTypeAnn;
+use stc_ast_rnode::RTsTypeElement;
+use stc_ast_rnode::RTsTypeLit;
+use stc_ast_rnode::RTsTypeOperator;
+use stc_ast_rnode::RTsTypeParam;
+use stc_ast_rnode::RTsTypeParamDecl;
+use stc_ast_rnode::RTsTypeParamInstantiation;
+use stc_ast_rnode::RTsTypePredicate;
+use stc_ast_rnode::RTsTypeQuery;
+use stc_ast_rnode::RTsTypeQueryExpr;
+use stc_ast_rnode::RTsTypeRef;
+use stc_ast_rnode::RTsUnionOrIntersectionType;
+use stc_ast_rnode::RTsUnionType;
+use stc_types::rprop_name_to_expr;
 use stc_types::Alias;
 use stc_types::Array;
 use stc_types::CallSignature;
@@ -47,13 +98,12 @@ use swc_common::Spanned;
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::*;
 use swc_ecma_utils::prop_name_to_expr;
-use swc_ecma_visit::VisitMutWith;
 
 /// We analyze dependencies between type parameters, and fold parameter in
 /// topological order.
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, decl: &mut TsTypeParamDecl) -> ValidationResult<TypeParamDecl> {
+    fn validate(&mut self, decl: &mut RTsTypeParamDecl) -> ValidationResult<TypeParamDecl> {
         self.record(decl);
 
         if self.is_builtin {
@@ -87,7 +137,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, p: &mut TsTypeParam) -> ValidationResult<TypeParam> {
+    fn validate(&mut self, p: &mut RTsTypeParam) -> ValidationResult<TypeParam> {
         self.record(p);
 
         let param = TypeParam {
@@ -105,7 +155,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     #[inline]
-    fn validate(&mut self, ann: &mut TsTypeAnn) -> ValidationResult {
+    fn validate(&mut self, ann: &mut RTsTypeAnn) -> ValidationResult {
         self.record(ann);
 
         ann.type_ann.validate_with(self)
@@ -114,7 +164,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, d: &mut TsTypeAliasDecl) -> ValidationResult<Alias> {
+    fn validate(&mut self, d: &mut RTsTypeAliasDecl) -> ValidationResult<Alias> {
         self.record(d);
         let mut span = d.span;
 
@@ -150,7 +200,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, d: &mut TsInterfaceDecl) -> ValidationResult<Interface> {
+    fn validate(&mut self, d: &mut RTsInterfaceDecl) -> ValidationResult<Interface> {
         let ty: Interface = self.with_child(
             ScopeKind::Flow,
             Default::default(),
@@ -183,7 +233,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut TsInterfaceBody) -> ValidationResult<Vec<TypeElement>> {
+    fn validate(&mut self, node: &mut RTsInterfaceBody) -> ValidationResult<Vec<TypeElement>> {
         let ctx = Ctx {
             computed_prop_mode: ComputedPropMode::Interface,
             ..self.ctx
@@ -195,7 +245,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, lit: &mut TsTypeLit) -> ValidationResult<TypeLit> {
+    fn validate(&mut self, lit: &mut RTsTypeLit) -> ValidationResult<TypeLit> {
         Ok(TypeLit {
             span: lit.span,
             members: lit.members.validate_with(self)?,
@@ -205,15 +255,15 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &mut TsTypeElement) -> ValidationResult<TypeElement> {
+    fn validate(&mut self, e: &mut RTsTypeElement) -> ValidationResult<TypeElement> {
         Ok(match e {
-            TsTypeElement::TsCallSignatureDecl(d) => TypeElement::Call(d.validate_with(self)?),
-            TsTypeElement::TsConstructSignatureDecl(d) => {
+            RTsTypeElement::TsCallSignatureDecl(d) => TypeElement::Call(d.validate_with(self)?),
+            RTsTypeElement::TsConstructSignatureDecl(d) => {
                 TypeElement::Constructor(d.validate_with(self)?)
             }
-            TsTypeElement::TsIndexSignature(d) => TypeElement::Index(d.validate_with(self)?),
-            TsTypeElement::TsMethodSignature(d) => TypeElement::Method(d.validate_with(self)?),
-            TsTypeElement::TsPropertySignature(d) => TypeElement::Property(d.validate_with(self)?),
+            RTsTypeElement::TsIndexSignature(d) => TypeElement::Index(d.validate_with(self)?),
+            RTsTypeElement::TsMethodSignature(d) => TypeElement::Method(d.validate_with(self)?),
+            RTsTypeElement::TsPropertySignature(d) => TypeElement::Property(d.validate_with(self)?),
         })
     }
 }
@@ -222,7 +272,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(
         &mut self,
-        d: &mut TsConstructSignatureDecl,
+        d: &mut RTsConstructSignatureDecl,
     ) -> ValidationResult<ConstructorSignature> {
         Ok(ConstructorSignature {
             span: d.span,
@@ -235,7 +285,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, d: &mut TsCallSignatureDecl) -> ValidationResult<CallSignature> {
+    fn validate(&mut self, d: &mut RTsCallSignatureDecl) -> ValidationResult<CallSignature> {
         Ok(CallSignature {
             span: d.span,
             params: d.params.validate_with(self)?,
@@ -247,7 +297,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, d: &mut TsMethodSignature) -> ValidationResult<MethodSignature> {
+    fn validate(&mut self, d: &mut RTsMethodSignature) -> ValidationResult<MethodSignature> {
         self.with_child(ScopeKind::Fn, Default::default(), |child: &mut Analyzer| {
             if d.computed {
                 child.validate_computed_prop_key(d.span(), &mut d.key);
@@ -269,7 +319,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, d: &mut TsIndexSignature) -> ValidationResult<IndexSignature> {
+    fn validate(&mut self, d: &mut RTsIndexSignature) -> ValidationResult<IndexSignature> {
         Ok(IndexSignature {
             span: d.span,
             params: d.params.validate_with(self)?,
@@ -281,9 +331,9 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, d: &mut TsPropertySignature) -> ValidationResult<PropertySignature> {
+    fn validate(&mut self, d: &mut RTsPropertySignature) -> ValidationResult<PropertySignature> {
         if !self.is_builtin && d.computed {
-            ComputedPropName {
+            RComputedPropName {
                 span: d.key.span(),
                 expr: d.key.clone(),
             }
@@ -323,7 +373,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &mut TsExprWithTypeArgs) -> ValidationResult<TsExpr> {
+    fn validate(&mut self, e: &mut RTsExprWithTypeArgs) -> ValidationResult<TsExpr> {
         Ok(TsExpr {
             span: e.span,
             expr: e.expr.clone(),
@@ -336,7 +386,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(
         &mut self,
-        i: &mut TsTypeParamInstantiation,
+        i: &mut RTsTypeParamInstantiation,
     ) -> ValidationResult<TypeParamInstantiation> {
         let params = i.params.validate_with(self)?;
 
@@ -349,7 +399,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &mut TsTupleType) -> ValidationResult<Tuple> {
+    fn validate(&mut self, t: &mut RTsTupleType) -> ValidationResult<Tuple> {
         Ok(Tuple {
             span: t.span,
             elems: t.elem_types.validate_with(self)?,
@@ -359,7 +409,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut TsTupleElement) -> ValidationResult<TupleElement> {
+    fn validate(&mut self, node: &mut RTsTupleElement) -> ValidationResult<TupleElement> {
         Ok(TupleElement {
             span: node.span,
             label: node.label.clone(),
@@ -370,7 +420,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &mut TsConditionalType) -> ValidationResult<Conditional> {
+    fn validate(&mut self, t: &mut RTsConditionalType) -> ValidationResult<Conditional> {
         Ok(Conditional {
             span: t.span,
             check_type: t.check_type.validate_with(self)?,
@@ -383,7 +433,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, ty: &mut TsMappedType) -> ValidationResult<Mapped> {
+    fn validate(&mut self, ty: &mut RTsMappedType) -> ValidationResult<Mapped> {
         Ok(Mapped {
             span: ty.span,
             readonly: ty.readonly,
@@ -397,7 +447,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, ty: &mut TsTypeOperator) -> ValidationResult<Operator> {
+    fn validate(&mut self, ty: &mut RTsTypeOperator) -> ValidationResult<Operator> {
         Ok(Operator {
             span: ty.span,
             op: ty.op,
@@ -408,7 +458,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut TsArrayType) -> ValidationResult<Array> {
+    fn validate(&mut self, node: &mut RTsArrayType) -> ValidationResult<Array> {
         Ok(Array {
             span: node.span,
             elem_type: node.elem_type.validate_with(self)?,
@@ -418,7 +468,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, u: &mut TsUnionType) -> ValidationResult<Union> {
+    fn validate(&mut self, u: &mut RTsUnionType) -> ValidationResult<Union> {
         Ok(Union {
             span: u.span,
             types: u.types.validate_with(self)?,
@@ -428,7 +478,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, u: &mut TsIntersectionType) -> ValidationResult<Intersection> {
+    fn validate(&mut self, u: &mut RTsIntersectionType) -> ValidationResult<Intersection> {
         Ok(Intersection {
             span: u.span,
             types: u.types.validate_with(self)?,
@@ -438,7 +488,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &mut TsFnType) -> ValidationResult<stc_types::Function> {
+    fn validate(&mut self, t: &mut RTsFnType) -> ValidationResult<stc_types::Function> {
         let type_params = try_opt!(t.type_params.validate_with(self));
 
         for param in &mut t.params {
@@ -460,7 +510,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &mut TsConstructorType) -> ValidationResult<stc_types::Constructor> {
+    fn validate(&mut self, t: &mut RTsConstructorType) -> ValidationResult<stc_types::Constructor> {
         let type_params = try_opt!(t.type_params.validate_with(self));
 
         for param in &mut t.params {
@@ -478,21 +528,21 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &mut TsParenthesizedType) -> ValidationResult {
+    fn validate(&mut self, t: &mut RTsParenthesizedType) -> ValidationResult {
         t.type_ann.validate_with(self)
     }
 }
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &mut TsTypeRef) -> ValidationResult {
+    fn validate(&mut self, t: &mut RTsTypeRef) -> ValidationResult {
         self.record(t);
 
         let type_args = try_opt!(t.type_params.validate_with(self));
         let mut contains_infer = false;
 
         match t.type_name {
-            TsEntityName::Ident(ref i) if i.sym == js_word!("Array") && type_args.is_some() => {
+            RTsEntityName::Ident(ref i) if i.sym == js_word!("Array") && type_args.is_some() => {
                 if type_args.as_ref().unwrap().params.len() == 1 {
                     return Ok(box Type::Array(Array {
                         span: t.span,
@@ -501,7 +551,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            TsEntityName::Ident(ref i) => {
+            RTsEntityName::Ident(ref i) => {
                 if let Some(types) = self.find_type(self.ctx.module_id, &i.into())? {
                     for ty in types {
                         if contains_infer_type(&ty) || self.contains_infer_type(&*ty) {
@@ -542,7 +592,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &mut TsInferType) -> ValidationResult<InferType> {
+    fn validate(&mut self, t: &mut RTsInferType) -> ValidationResult<InferType> {
         self.record(t);
 
         Ok(InferType {
@@ -554,7 +604,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &mut TsImportType) -> ValidationResult<ImportType> {
+    fn validate(&mut self, t: &mut RTsImportType) -> ValidationResult<ImportType> {
         self.record(t);
 
         Ok(ImportType {
@@ -568,21 +618,21 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &mut TsTypeQueryExpr) -> ValidationResult<QueryExpr> {
+    fn validate(&mut self, t: &mut RTsTypeQueryExpr) -> ValidationResult<QueryExpr> {
         self.record(t);
 
         let span = t.span();
 
         Ok(match t {
-            TsTypeQueryExpr::TsEntityName(t) => t.clone().into(),
-            TsTypeQueryExpr::Import(i) => i.validate_with(self)?.into(),
+            RTsTypeQueryExpr::TsEntityName(t) => t.clone().into(),
+            RTsTypeQueryExpr::Import(i) => i.validate_with(self)?.into(),
         })
     }
 }
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &mut TsRestType) -> ValidationResult<RestType> {
+    fn validate(&mut self, t: &mut RTsRestType) -> ValidationResult<RestType> {
         self.record(t);
 
         Ok(RestType {
@@ -594,7 +644,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &mut TsOptionalType) -> ValidationResult<OptionalType> {
+    fn validate(&mut self, t: &mut RTsOptionalType) -> ValidationResult<OptionalType> {
         self.record(t);
 
         Ok(OptionalType {
@@ -606,7 +656,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &mut TsTypeQuery) -> ValidationResult<QueryType> {
+    fn validate(&mut self, t: &mut RTsTypeQuery) -> ValidationResult<QueryType> {
         self.record(t);
 
         Ok(QueryType {
@@ -618,7 +668,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &mut TsTypePredicate) -> ValidationResult<Predicate> {
+    fn validate(&mut self, t: &mut RTsTypePredicate) -> ValidationResult<Predicate> {
         self.record(t);
         let mut ty = try_opt!(t.type_ann.validate_with(self));
         match &mut ty {
@@ -639,7 +689,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &mut TsIndexedAccessType) -> ValidationResult<IndexedAccessType> {
+    fn validate(&mut self, t: &mut RTsIndexedAccessType) -> ValidationResult<IndexedAccessType> {
         self.record(t);
 
         Ok(IndexedAccessType {
@@ -653,81 +703,81 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, ty: &mut TsType) -> ValidationResult {
+    fn validate(&mut self, ty: &mut RTsType) -> ValidationResult {
         self.record(ty);
 
         let ty = match ty {
-            TsType::TsThisType(this) => Type::This(this.clone()),
-            TsType::TsLitType(ty) => {
+            RTsType::TsThisType(this) => Type::This(this.clone()),
+            RTsType::TsLitType(ty) => {
                 let mut ty = Type::Lit(ty.clone());
                 self.prevent_generalize(&mut ty);
                 ty
             }
-            TsType::TsKeywordType(ty) => Type::Keyword(ty.clone()),
-            TsType::TsTupleType(ty) => Type::Tuple(ty.validate_with(self)?),
-            TsType::TsUnionOrIntersectionType(TsUnionOrIntersectionType::TsUnionType(u)) => {
+            RTsType::TsKeywordType(ty) => Type::Keyword(ty.clone()),
+            RTsType::TsTupleType(ty) => Type::Tuple(ty.validate_with(self)?),
+            RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsUnionType(u)) => {
                 Type::Union(u.validate_with(self)?)
             }
-            TsType::TsUnionOrIntersectionType(TsUnionOrIntersectionType::TsIntersectionType(i)) => {
-                Type::Intersection(i.validate_with(self)?)
-            }
-            TsType::TsArrayType(arr) => Type::Array(arr.validate_with(self)?),
-            TsType::TsFnOrConstructorType(TsFnOrConstructorType::TsFnType(f)) => {
+            RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsIntersectionType(
+                i,
+            )) => Type::Intersection(i.validate_with(self)?),
+            RTsType::TsArrayType(arr) => Type::Array(arr.validate_with(self)?),
+            RTsType::TsFnOrConstructorType(RTsFnOrConstructorType::TsFnType(f)) => {
                 Type::Function(f.validate_with(self)?)
             }
-            TsType::TsFnOrConstructorType(TsFnOrConstructorType::TsConstructorType(c)) => {
+            RTsType::TsFnOrConstructorType(RTsFnOrConstructorType::TsConstructorType(c)) => {
                 Type::Constructor(c.validate_with(self)?)
             }
-            TsType::TsTypeLit(lit) => Type::TypeLit(lit.validate_with(self)?),
-            TsType::TsConditionalType(cond) => Type::Conditional(cond.validate_with(self)?),
-            TsType::TsMappedType(ty) => Type::Mapped(ty.validate_with(self)?),
-            TsType::TsTypeOperator(ty) => Type::Operator(ty.validate_with(self)?),
-            TsType::TsParenthesizedType(ty) => return ty.validate_with(self),
-            TsType::TsTypeRef(ty) => *ty.validate_with(self)?,
-            TsType::TsTypeQuery(ty) => Type::Query(ty.validate_with(self)?),
-            TsType::TsOptionalType(ty) => Type::Optional(ty.validate_with(self)?),
-            TsType::TsRestType(ty) => Type::Rest(ty.validate_with(self)?),
-            TsType::TsInferType(ty) => Type::Infer(ty.validate_with(self)?),
-            TsType::TsIndexedAccessType(ty) => Type::IndexedAccessType(ty.validate_with(self)?),
-            TsType::TsTypePredicate(ty) => Type::Predicate(ty.validate_with(self)?),
-            TsType::TsImportType(ty) => Type::Import(ty.validate_with(self)?),
+            RTsType::TsTypeLit(lit) => Type::TypeLit(lit.validate_with(self)?),
+            RTsType::TsConditionalType(cond) => Type::Conditional(cond.validate_with(self)?),
+            RTsType::TsMappedType(ty) => Type::Mapped(ty.validate_with(self)?),
+            RTsType::TsTypeOperator(ty) => Type::Operator(ty.validate_with(self)?),
+            RTsType::TsParenthesizedType(ty) => return ty.validate_with(self),
+            RTsType::TsTypeRef(ty) => *ty.validate_with(self)?,
+            RTsType::TsTypeQuery(ty) => Type::Query(ty.validate_with(self)?),
+            RTsType::TsOptionalType(ty) => Type::Optional(ty.validate_with(self)?),
+            RTsType::TsRestType(ty) => Type::Rest(ty.validate_with(self)?),
+            RTsType::TsInferType(ty) => Type::Infer(ty.validate_with(self)?),
+            RTsType::TsIndexedAccessType(ty) => Type::IndexedAccessType(ty.validate_with(self)?),
+            RTsType::TsTypePredicate(ty) => Type::Predicate(ty.validate_with(self)?),
+            RTsType::TsImportType(ty) => Type::Import(ty.validate_with(self)?),
         };
         Ok(ty.cheap())
     }
 }
 
-pub(crate) fn default_any_pat(implicit_type_mark: Mark, p: &mut Pat) {
+pub(crate) fn default_any_pat(implicit_type_mark: Mark, p: &mut RPat) {
     match p {
-        Pat::Ident(i) => default_any_ident(implicit_type_mark, i),
-        Pat::Array(arr) => default_any_array_pat(implicit_type_mark, arr),
-        Pat::Object(obj) => default_any_object(implicit_type_mark, obj),
+        RPat::Ident(i) => default_any_ident(implicit_type_mark, i),
+        RPat::Array(arr) => default_any_array_pat(implicit_type_mark, arr),
+        RPat::Object(obj) => default_any_object(implicit_type_mark, obj),
         _ => {}
     }
 }
 
-pub(crate) fn default_any_ident(implicit_type_mark: Mark, i: &mut Ident) {
+pub(crate) fn default_any_ident(implicit_type_mark: Mark, i: &mut RIdent) {
     if i.type_ann.is_some() {
         return;
     }
 
-    i.type_ann = Some(TsTypeAnn {
+    i.type_ann = Some(RTsTypeAnn {
         span: DUMMY_SP.apply_mark(implicit_type_mark),
-        type_ann: box TsType::TsKeywordType(TsKeywordType {
+        type_ann: box RTsType::TsKeywordType(RTsKeywordType {
             span: DUMMY_SP.apply_mark(implicit_type_mark),
             kind: TsKeywordTypeKind::TsAnyKeyword,
         }),
     });
 }
 
-pub(crate) fn default_any_array_pat(implicit_type_mark: Mark, arr: &mut ArrayPat) {
+pub(crate) fn default_any_array_pat(implicit_type_mark: Mark, arr: &mut RArrayPat) {
     if arr.type_ann.is_some() {
         return;
     }
     let cnt = arr.elems.len();
 
-    arr.type_ann = Some(TsTypeAnn {
+    arr.type_ann = Some(RTsTypeAnn {
         span: arr.span,
-        type_ann: box TsType::TsTupleType(TsTupleType {
+        type_ann: box RTsType::TsTupleType(RTsTupleType {
             span: DUMMY_SP,
             elem_types: arr
                 .elems
@@ -736,22 +786,22 @@ pub(crate) fn default_any_array_pat(implicit_type_mark: Mark, arr: &mut ArrayPat
                     let span = elem.span();
                     // any
                     let ty = match elem {
-                        Some(Pat::Array(ref mut arr)) => {
+                        Some(RPat::Array(ref mut arr)) => {
                             default_any_array_pat(implicit_type_mark, arr);
                             arr.type_ann.take().unwrap().type_ann
                         }
-                        Some(Pat::Object(ref mut obj)) => {
+                        Some(RPat::Object(ref mut obj)) => {
                             default_any_object(implicit_type_mark, obj);
                             obj.type_ann.take().unwrap().type_ann
                         }
 
-                        _ => box TsType::TsKeywordType(TsKeywordType {
+                        _ => box RTsType::TsKeywordType(RTsKeywordType {
                             span: DUMMY_SP,
                             kind: TsKeywordTypeKind::TsAnyKeyword,
                         }),
                     };
 
-                    TsTupleElement {
+                    RTsTupleElement {
                         span,
                         // TODO?
                         label: None,
@@ -763,7 +813,7 @@ pub(crate) fn default_any_array_pat(implicit_type_mark: Mark, arr: &mut ArrayPat
     })
 }
 
-pub(crate) fn default_any_object(implicit_type_mark: Mark, obj: &mut ObjectPat) {
+pub(crate) fn default_any_object(implicit_type_mark: Mark, obj: &mut RObjectPat) {
     if obj.type_ann.is_some() {
         return;
     }
@@ -772,24 +822,24 @@ pub(crate) fn default_any_object(implicit_type_mark: Mark, obj: &mut ObjectPat) 
 
     for props in &mut obj.props {
         match props {
-            ObjectPatProp::KeyValue(p) => {
+            RObjectPatProp::KeyValue(p) => {
                 match *p.value {
-                    Pat::Array(_) | Pat::Object(_) => {
+                    RPat::Array(_) | RPat::Object(_) => {
                         default_any_pat(implicit_type_mark, &mut *p.value);
                     }
                     _ => {}
                 }
 
-                members.push(TsTypeElement::TsPropertySignature(TsPropertySignature {
+                members.push(RTsTypeElement::TsPropertySignature(RTsPropertySignature {
                     span: DUMMY_SP,
                     readonly: false,
-                    key: box prop_name_to_expr(p.key.clone()),
+                    key: box rprop_name_to_expr(p.key.clone()),
                     computed: false,
                     optional: false,
                     init: None,
                     params: vec![],
                     type_ann: {
-                        let type_ann = p.value.get_mut_ty().take().cloned().map(|ty| TsTypeAnn {
+                        let type_ann = p.value.get_mut_ty().take().cloned().map(|ty| RTsTypeAnn {
                             span: DUMMY_SP,
                             type_ann: box ty,
                         });
@@ -799,11 +849,11 @@ pub(crate) fn default_any_object(implicit_type_mark: Mark, obj: &mut ObjectPat) 
                     type_params: None,
                 }))
             }
-            ObjectPatProp::Assign(AssignPatProp { key, .. }) => {
-                members.push(TsTypeElement::TsPropertySignature(TsPropertySignature {
+            RObjectPatProp::Assign(RAssignPatProp { key, .. }) => {
+                members.push(RTsTypeElement::TsPropertySignature(RTsPropertySignature {
                     span: DUMMY_SP,
                     readonly: false,
-                    key: box Expr::Ident(key.clone()),
+                    key: box RExpr::Ident(key.clone()),
                     computed: false,
                     optional: false,
                     init: None,
@@ -812,24 +862,24 @@ pub(crate) fn default_any_object(implicit_type_mark: Mark, obj: &mut ObjectPat) 
                     type_params: None,
                 }))
             }
-            ObjectPatProp::Rest(..) => {}
+            RObjectPatProp::Rest(..) => {}
         }
     }
 
-    obj.type_ann = Some(TsTypeAnn {
+    obj.type_ann = Some(RTsTypeAnn {
         span: DUMMY_SP.apply_mark(implicit_type_mark),
-        type_ann: box TsType::TsTypeLit(TsTypeLit {
+        type_ann: box RTsType::TsTypeLit(RTsTypeLit {
             span: DUMMY_SP,
             members,
         }),
     })
 }
 
-pub(crate) fn default_any_param(implicit_type_mark: Mark, p: &mut TsFnParam) {
+pub(crate) fn default_any_param(implicit_type_mark: Mark, p: &mut RTsFnParam) {
     match p {
-        TsFnParam::Ident(i) => default_any_ident(implicit_type_mark, i),
-        TsFnParam::Array(arr) => default_any_array_pat(implicit_type_mark, arr),
-        TsFnParam::Rest(rest) => {}
-        TsFnParam::Object(obj) => default_any_object(implicit_type_mark, obj),
+        RTsFnParam::Ident(i) => default_any_ident(implicit_type_mark, i),
+        RTsFnParam::Array(arr) => default_any_array_pat(implicit_type_mark, arr),
+        RTsFnParam::Rest(rest) => {}
+        RTsFnParam::Object(obj) => default_any_object(implicit_type_mark, obj),
     }
 }

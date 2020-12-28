@@ -1,10 +1,23 @@
+use rnode::RNode;
+use stc_ast_rnode::RClassMember;
+use stc_ast_rnode::RParam;
+use stc_ast_rnode::RPat;
+use stc_ast_rnode::RTsExprWithTypeArgs;
+use stc_ast_rnode::RTsFnParam;
+use stc_ast_rnode::RTsTupleElement;
+use stc_ast_rnode::RTsType;
+use stc_ast_rnode::RTsTypeElement;
+use stc_ast_rnode::RTsTypeParam;
 use swc_ecma_ast::{
     ClassMember, Param, Pat, TsExprWithTypeArgs, TsFnParam, TsTupleElement, TsType, TsTypeElement,
     TsTypeParam,
 };
 
 /// Visit with output
-pub trait Validate<'context, T: ?Sized> {
+pub trait Validate<'context, T: ?Sized>
+where
+    T: RNode,
+{
     type Output;
     type Context: 'context + Copy;
 
@@ -14,6 +27,7 @@ pub trait Validate<'context, T: ?Sized> {
 impl<'c, T, V> Validate<'c, Box<T>> for V
 where
     Self: Validate<'c, T>,
+    T: RNode,
 {
     type Output = <Self as Validate<'c, T>>::Output;
     type Context = <Self as Validate<'c, T>>::Context;
@@ -26,6 +40,7 @@ where
 impl<'c, T, V> Validate<'c, Option<T>> for V
 where
     Self: Validate<'c, T>,
+    T: RNode,
 {
     type Output = Option<<Self as Validate<'c, T>>::Output>;
     type Context = <Self as Validate<'c, T>>::Context;
@@ -38,35 +53,36 @@ where
     }
 }
 
-pub trait ValidateInDeclOrder {}
+pub trait ValidateInDeclOrder: RNode {}
 
 impl<T> ValidateInDeclOrder for Box<T> where T: ValidateInDeclOrder {}
 
 impl<T> ValidateInDeclOrder for Option<T> where T: ValidateInDeclOrder {}
 
-impl ValidateInDeclOrder for Param {}
+impl ValidateInDeclOrder for RParam {}
 
-impl ValidateInDeclOrder for Pat {}
+impl ValidateInDeclOrder for RPat {}
 
-impl ValidateInDeclOrder for TsType {}
+impl ValidateInDeclOrder for RTsType {}
 
-impl ValidateInDeclOrder for TsFnParam {}
+impl ValidateInDeclOrder for RTsFnParam {}
 
-impl ValidateInDeclOrder for TsTypeParam {}
+impl ValidateInDeclOrder for RTsTypeParam {}
 
-impl ValidateInDeclOrder for TsExprWithTypeArgs {}
+impl ValidateInDeclOrder for RTsExprWithTypeArgs {}
 
-impl ValidateInDeclOrder for TsTupleElement {}
+impl ValidateInDeclOrder for RTsTupleElement {}
 
-impl ValidateInDeclOrder for TsTypeElement {}
+impl ValidateInDeclOrder for RTsTypeElement {}
 
 /// TODO: Remove this
-impl ValidateInDeclOrder for ClassMember {}
+impl ValidateInDeclOrder for RClassMember {}
 
 impl<'c, T, V, O, E> Validate<'c, Vec<T>> for V
 where
     Self: Validate<'c, T, Output = Result<O, E>>,
     T: ValidateInDeclOrder,
+    Vec<T>: RNode,
 {
     type Output = Result<Vec<O>, E>;
     type Context = <Self as Validate<'c, T>>::Context;
@@ -109,6 +125,7 @@ impl Unit for () {
 impl<'c, V, T> ValidateWith<'c, V> for T
 where
     V: Validate<'c, T>,
+    T: RNode,
 {
     type Output = V::Output;
     type Context = V::Context;

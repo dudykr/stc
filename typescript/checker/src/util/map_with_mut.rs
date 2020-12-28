@@ -1,3 +1,19 @@
+use stc_ast_rnode::RBool;
+use stc_ast_rnode::RClassMember;
+use stc_ast_rnode::RDecl;
+use stc_ast_rnode::REmptyStmt;
+use stc_ast_rnode::RExpr;
+use stc_ast_rnode::RIdent;
+use stc_ast_rnode::RInvalid;
+use stc_ast_rnode::RModuleItem;
+use stc_ast_rnode::RPat;
+use stc_ast_rnode::RPropName;
+use stc_ast_rnode::RStmt;
+use stc_ast_rnode::RTsKeywordType;
+use stc_ast_rnode::RTsLit;
+use stc_ast_rnode::RTsLitType;
+use stc_ast_rnode::RTsType;
+use stc_ast_rnode::RVarDecl;
 use stc_types::Type;
 use std::mem::replace;
 use swc_atoms::js_word;
@@ -26,9 +42,9 @@ pub(crate) trait MapWithMut: Sized {
 
 impl MapWithMut for Type {
     fn dummy() -> Self {
-        Type::Lit(TsLitType {
+        Type::Lit(RTsLitType {
             span: DUMMY_SP,
-            lit: TsLit::Bool(Bool {
+            lit: RTsLit::Bool(RBool {
                 span: DUMMY_SP,
                 value: false,
             }),
@@ -36,48 +52,48 @@ impl MapWithMut for Type {
     }
 }
 
-impl MapWithMut for Pat {
+impl MapWithMut for RPat {
     fn dummy() -> Self {
-        Pat::Invalid(Invalid { span: DUMMY_SP })
+        RPat::Invalid(RInvalid { span: DUMMY_SP })
     }
 }
 
-impl MapWithMut for TsType {
+impl MapWithMut for RTsType {
     fn dummy() -> Self {
-        TsType::TsKeywordType(TsKeywordType {
+        RTsType::TsKeywordType(RTsKeywordType {
             span: DUMMY_SP,
             kind: TsKeywordTypeKind::TsNeverKeyword,
         })
     }
 }
 
-impl MapWithMut for ClassMember {
+impl MapWithMut for RClassMember {
     fn dummy() -> Self {
-        ClassMember::Empty(EmptyStmt { span: DUMMY_SP })
+        RClassMember::Empty(REmptyStmt { span: DUMMY_SP })
     }
 }
 
-impl MapWithMut for Expr {
+impl MapWithMut for RExpr {
     fn dummy() -> Self {
-        Expr::Invalid(Invalid { span: DUMMY_SP })
+        RExpr::Invalid(RInvalid { span: DUMMY_SP })
     }
 }
 
-impl MapWithMut for Ident {
+impl MapWithMut for RIdent {
     fn dummy() -> Self {
-        Ident::new(js_word!(""), DUMMY_SP)
+        RIdent::new(js_word!(""), DUMMY_SP)
     }
 }
 
-impl MapWithMut for PropName {
+impl MapWithMut for RPropName {
     fn dummy() -> Self {
-        PropName::Ident(Ident::dummy())
+        RPropName::Ident(RIdent::dummy())
     }
 }
 
-impl MapWithMut for Decl {
+impl MapWithMut for RDecl {
     fn dummy() -> Self {
-        Decl::Var(VarDecl {
+        RDecl::Var(RVarDecl {
             span: DUMMY_SP,
             kind: VarDeclKind::Var,
             declare: false,
@@ -92,14 +108,14 @@ impl<T> MapWithMut for Vec<T> {
     }
 }
 
-impl MapWithMut for Stmt {
+impl MapWithMut for RStmt {
     fn dummy() -> Self {
-        Stmt::Empty(EmptyStmt { span: DUMMY_SP })
+        RStmt::Empty(REmptyStmt { span: DUMMY_SP })
     }
 }
 
-impl MapWithMut for ModuleItem {
+impl MapWithMut for RModuleItem {
     fn dummy() -> Self {
-        Stmt::dummy().into()
+        RStmt::dummy().into()
     }
 }

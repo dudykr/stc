@@ -9,12 +9,22 @@ use crate::ValidationResult;
 use fxhash::FxHashMap;
 use itertools::EitherOrBoth;
 use itertools::Itertools;
-use stc_types::eq::EqIgnoreSpan;
-use stc_types::eq::TypeEq;
+use rnode::Fold;
+use rnode::FoldWith;
+use rnode::Visit;
+use rnode::VisitMut;
+use rnode::VisitMutWith;
+use rnode::VisitWith;
+use stc_ast_rnode::RExpr;
+use stc_ast_rnode::RLit;
+use stc_ast_rnode::RPat;
+use stc_ast_rnode::RStr;
+use stc_ast_rnode::RTsEntityName;
+use stc_ast_rnode::RTsKeywordType;
+use stc_ast_rnode::RTsLit;
+use stc_ast_rnode::RTsLitType;
 use stc_types::Array;
 use stc_types::FnParam;
-use stc_types::Fold;
-use stc_types::FoldWith;
 use stc_types::Id;
 use stc_types::IndexSignature;
 use stc_types::IndexedAccessType;
@@ -29,22 +39,19 @@ use stc_types::TupleElement;
 use stc_types::Type;
 use stc_types::TypeElement;
 use stc_types::TypeLit;
-use stc_types::TypeNode;
 use stc_types::TypeOrSpread;
 use stc_types::TypeParam;
 use stc_types::TypeParamDecl;
 use stc_types::TypeParamInstantiation;
 use stc_types::Union;
-use stc_types::Visit;
-use stc_types::VisitMut;
-use stc_types::VisitMutWith;
-use stc_types::VisitWith;
 use std::collections::hash_map::Entry;
 use std::mem::take;
 use swc_atoms::js_word;
 use swc_atoms::JsWord;
+use swc_common::EqIgnoreSpan;
 use swc_common::Span;
 use swc_common::Spanned;
+use swc_common::TypeEq;
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::*;
 
@@ -272,7 +279,7 @@ impl Analyzer<'_, '_> {
 
         for (idx, p) in params.iter().enumerate() {
             let is_rest = match &p.pat {
-                Pat::Rest(_) => true,
+                RPat::Rest(_) => true,
                 _ => false,
             };
 
@@ -756,8 +763,8 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
                 Type::Param(arg) => match &param.type_name {
-                    TsEntityName::TsQualifiedName(_) => {}
-                    TsEntityName::Ident(param) => {
+                    RTsEntityName::TsQualifiedName(_) => {}
+                    RTsEntityName::Ident(param) => {
                         inferred
                             .type_params
                             .insert(param.clone().into(), box Type::Param(arg.clone()));
@@ -913,7 +920,7 @@ impl Analyzer<'_, '_> {
         match arg {
             // Handled by generic expander, so let's return it as-is.
             Type::Mapped(..) => {}
-            Type::Keyword(TsKeywordType {
+            Type::Keyword(RTsKeywordType {
                 kind: TsKeywordTypeKind::TsAnyKeyword,
                 ..
             }) => return Ok(()),
@@ -1097,13 +1104,14 @@ impl Analyzer<'_, '_> {
                         // let v = unboxify(b);
                         for arg_member in &arg.members {
                             if let Some(key) = arg_member.key() {
-                                match key {
-                                    Expr::Ident(i) => key_types.push(box Type::Lit(TsLitType {
+                                match &*key {
+                                    RExpr::Ident(i) => key_types.push(box Type::Lit(RTsLitType {
                                         span: param.span,
-                                        lit: TsLit::Str(Str {
+                                        lit: RTsLit::Str(RStr {
                                             span: i.span,
                                             value: i.sym.clone(),
                                             has_escape: false,
+                                            kind: Default::default(),
                                         }),
                                     })),
                                     _ => unimplemented!(
@@ -1340,12 +1348,13 @@ impl Analyzer<'_, '_> {
                                 let key_ty =
                                     arg.members.iter().filter_map(|element| match element {
                                         TypeElement::Property(p) => match &*p.key {
-                                            Expr::Ident(i) => Some(box Type::Lit(TsLitType {
+                                            RExpr::Ident(i) => Some(box Type::Lit(RTsLitType {
                                                 span: param.span,
-                                                lit: TsLit::Str(Str {
+                                                lit: RTsLit::Str(RStr {
                                                     span: i.span,
                                                     value: i.sym.clone(),
                                                     has_escape: false,
+                                                    kind: Default::default(),
                                                 }),
                                             })),
                                             _ => None,
@@ -1839,8 +1848,8 @@ impl Analyzer<'_, '_> {
             fixed: &'a FxHashMap<Id, Box<Type>>,
         }
 
-        impl stc_types::VisitMut for Renamer<'_> {
-            fn visit_mut_type(&mut self, node: &mut Type) {
+        impl VisitMut<Type> for Renamer<'_> {
+            fn visit_mut(&mut self, node: &mut Type) {
                 match node {
                     Type::Param(p) if self.fixed.contains_key(&p.name) => {
                         *node = (**self.fixed.get(&p.name).unwrap()).clone();
@@ -1891,7 +1900,7 @@ impl Analyzer<'_, '_> {
         // ty = self.expand(span, ty)?;
 
         let mut usage_visitor = TypeParamUsageFinder::default();
-        ty.normalize().visit_with(&ty, &mut usage_visitor);
+        ty.normalize().visit_with(&mut usage_visitor);
         if usage_visitor.params.is_empty() {
             slog::debug!(
                 self.logger,
@@ -1945,8 +1954,8 @@ struct TypeParamRenamer {
     inferred: FxHashMap<Id, Box<Type>>,
 }
 
-impl Fold for TypeParamRenamer {
-    fn fold_type(&mut self, mut ty: Type) -> Type {
+impl Fold<Type> for TypeParamRenamer {
+    fn fold(&mut self, mut ty: Type) -> Type {
         ty = ty.fold_children_with(self);
 
         match ty {
@@ -1967,11 +1976,14 @@ struct TypeParamUsageFinder {
     params: Vec<TypeParam>,
 }
 
-impl Visit for TypeParamUsageFinder {
+/// Noop as declaration is not usage.
+impl Visit<TypeParamDecl> for TypeParamUsageFinder {
     #[inline]
-    fn visit_type_param_decl(&mut self, _: &TypeParamDecl, _: &dyn TypeNode) {}
+    fn visit(&mut self, _: &TypeParamDecl) {}
+}
 
-    fn visit_type_param(&mut self, node: &TypeParam, _: &dyn TypeNode) {
+impl Visit<TypeParam> for TypeParamUsageFinder {
+    fn visit(&mut self, node: &TypeParam) {
         for p in &self.params {
             if node.name == p.name {
                 return;
@@ -1998,8 +2010,8 @@ struct TypeParamReplacer<'a> {
     to: &'a Type,
 }
 
-impl Fold for TypeParamReplacer<'_> {
-    fn fold_type(&mut self, mut ty: Type) -> Type {
+impl Fold<Type> for TypeParamReplacer<'_> {
+    fn fold(&mut self, mut ty: Type) -> Type {
         ty = ty.fold_children_with(self);
 
         match &ty {
@@ -2016,18 +2028,18 @@ impl Fold for TypeParamReplacer<'_> {
 
 struct TypeParamInliner<'a> {
     param: &'a Id,
-    value: &'a Str,
+    value: &'a RStr,
 }
 
-impl VisitMut for TypeParamInliner<'_> {
-    fn visit_mut_type(&mut self, ty: &mut Type) {
+impl VisitMut<Type> for TypeParamInliner<'_> {
+    fn visit_mut(&mut self, ty: &mut Type) {
         ty.visit_mut_children_with(self);
 
         match ty {
             Type::Param(p) if p.name == *self.param => {
-                *ty = Type::Lit(TsLitType {
+                *ty = Type::Lit(RTsLitType {
                     span: p.span,
-                    lit: TsLit::Str(self.value.clone()),
+                    lit: RTsLit::Str(self.value.clone()),
                 });
                 return;
             }
@@ -2058,6 +2070,7 @@ pub(crate) fn calc_true_plus_minus_in_arg(v: Option<TruePlusMinus>, previous: bo
     }
 }
 
+/// Replaceds type parameters with name `from` to type `to`.
 struct MappedKeyReplacer<'a> {
     /// The name of type parameter
     from: &'a Id,
@@ -2065,8 +2078,8 @@ struct MappedKeyReplacer<'a> {
     to: &'a Type,
 }
 
-impl VisitMut for MappedKeyReplacer<'_> {
-    fn visit_mut_type(&mut self, ty: &mut Type) {
+impl VisitMut<Type> for MappedKeyReplacer<'_> {
+    fn visit_mut(&mut self, ty: &mut Type) {
         match ty {
             Type::Param(param) if *self.from == param.name => {
                 *ty = self.to.clone();
@@ -2084,8 +2097,8 @@ struct MappedIndexTypeReplacer<'a> {
     to: &'a Type,
 }
 
-impl VisitMut for MappedIndexTypeReplacer<'_> {
-    fn visit_mut_type(&mut self, ty: &mut Type) {
+impl VisitMut<Type> for MappedIndexTypeReplacer<'_> {
+    fn visit_mut(&mut self, ty: &mut Type) {
         ty.visit_mut_children_with(self);
 
         match &*ty {
@@ -2136,8 +2149,8 @@ struct MappedReverser {
     did_work: bool,
 }
 
-impl Fold for MappedReverser {
-    fn fold_type(&mut self, mut ty: Type) -> Type {
+impl Fold<Type> for MappedReverser {
+    fn fold(&mut self, mut ty: Type) -> Type {
         ty = ty.fold_children_with(self);
 
         match ty {
@@ -2189,8 +2202,8 @@ impl Fold for MappedReverser {
 
 struct MappedIndexedSimplifier;
 
-impl Fold for MappedIndexedSimplifier {
-    fn fold_type(&mut self, mut ty: Type) -> Type {
+impl Fold<Type> for MappedIndexedSimplifier {
+    fn fold(&mut self, mut ty: Type) -> Type {
         ty = ty.fold_children_with(self);
 
         match ty {

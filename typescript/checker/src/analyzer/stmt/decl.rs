@@ -13,17 +13,38 @@ use crate::{
     validator::{Validate, ValidateWith},
     ValidationResult,
 };
-use stc_types::{Array, FoldWith, Id, Operator, Symbol};
+use rnode::FoldWith;
+use rnode::Visit;
+use rnode::VisitMutWith;
+use rnode::VisitWith;
+use stc_ast_rnode::RArrayPat;
+use stc_ast_rnode::RCallExpr;
+use stc_ast_rnode::RExpr;
+use stc_ast_rnode::RExprOrSuper;
+use stc_ast_rnode::RIdent;
+use stc_ast_rnode::RPat;
+use stc_ast_rnode::RTsArrayType;
+use stc_ast_rnode::RTsAsExpr;
+use stc_ast_rnode::RTsEntityName;
+use stc_ast_rnode::RTsKeywordType;
+use stc_ast_rnode::RTsType;
+use stc_ast_rnode::RTsTypeAnn;
+use stc_ast_rnode::RTsTypeCastExpr;
+use stc_ast_rnode::RTsTypeOperator;
+use stc_ast_rnode::RTsTypeQuery;
+use stc_ast_rnode::RTsTypeQueryExpr;
+use stc_ast_rnode::RVarDecl;
+use stc_ast_rnode::RVarDeclarator;
+use stc_types::{Array, Id, Operator, Symbol};
 use std::mem::take;
 use swc_atoms::js_word;
 use swc_common::{Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
-use swc_ecma_visit::VisitMutWith;
 use ty::TypeExt;
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, var: &mut VarDecl) {
+    fn validate(&mut self, var: &mut RVarDecl) {
         self.record(&*var);
 
         let ctx = Ctx {
@@ -40,12 +61,12 @@ impl Analyzer<'_, '_> {
         // Flatten var declarations
         for mut decl in take(&mut var.decls) {
             match decl.name {
-                Pat::Array(ArrayPat {
+                RPat::Array(RArrayPat {
                     span,
                     mut elems,
                     type_ann:
-                        Some(TsTypeAnn {
-                            type_ann: box TsType::TsTupleType(tuple),
+                        Some(RTsTypeAnn {
+                            type_ann: box RTsType::TsTupleType(tuple),
                             ..
                         }),
                     ..
@@ -60,7 +81,7 @@ impl Analyzer<'_, '_> {
                                     pat.set_ty(Some(ty));
                                 }
 
-                                var.decls.push(VarDeclarator {
+                                var.decls.push(RVarDeclarator {
                                     span,
                                     name: pat,
                                     init: None,
@@ -72,7 +93,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
                 // TODO
-                //  Pat::Object(obj) => {}
+                //  RPat::Object(obj) => {}
                 _ => var.decls.push(decl),
             }
         }
@@ -83,7 +104,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, v: &mut VarDeclarator) {
+    fn validate(&mut self, v: &mut RVarDeclarator) {
         self.record(v);
 
         let kind = self.ctx.var_kind;
@@ -115,9 +136,9 @@ impl Analyzer<'_, '_> {
             let forced_type_ann = {
                 // let a = {} as Foo
                 match v.init {
-                    Some(box Expr::TsAs(TsAsExpr { ref type_ann, .. }))
-                    | Some(box Expr::TsTypeCast(TsTypeCastExpr {
-                        type_ann: TsTypeAnn { ref type_ann, .. },
+                    Some(box RExpr::TsAs(RTsAsExpr { ref type_ann, .. }))
+                    | Some(box RExpr::TsTypeCast(RTsTypeCastExpr {
+                        type_ann: RTsTypeAnn { ref type_ann, .. },
                         ..
                     })) => Some(type_ann.clone()),
                     _ => None,
@@ -140,9 +161,9 @@ impl Analyzer<'_, '_> {
             if let Some(ref mut init) = v.init {
                 let span = init.span();
                 let is_symbol_call = match &**init {
-                    Expr::Call(CallExpr {
+                    RExpr::Call(RCallExpr {
                         callee:
-                            ExprOrSuper::Expr(box Expr::Ident(Ident {
+                            RExprOrSuper::Expr(box RExpr::Ident(RIdent {
                                 sym: js_word!("Symbol"),
                                 ..
                             })),
@@ -165,7 +186,7 @@ impl Analyzer<'_, '_> {
                 //     }
                 // };
                 let creates_new_this = match &**init {
-                    Expr::Object(..) => true,
+                    RExpr::Object(..) => true,
                     _ => false,
                 };
 
@@ -323,14 +344,14 @@ impl Analyzer<'_, '_> {
                         }
 
                         if self.scope.is_root() {
-                            if let Some(box Expr::Ident(ref alias)) = &v.init {
-                                if let Pat::Ident(ref mut i) = v.name {
-                                    i.type_ann = Some(TsTypeAnn {
+                            if let Some(box RExpr::Ident(ref alias)) = &v.init {
+                                if let RPat::Ident(ref mut i) = v.name {
+                                    i.type_ann = Some(RTsTypeAnn {
                                         span: DUMMY_SP,
-                                        type_ann: box TsType::TsTypeQuery(TsTypeQuery {
+                                        type_ann: box RTsType::TsTypeQuery(RTsTypeQuery {
                                             span,
-                                            expr_name: TsTypeQueryExpr::TsEntityName(
-                                                TsEntityName::Ident(alias.clone()),
+                                            expr_name: RTsTypeQueryExpr::TsEntityName(
+                                                RTsEntityName::Ident(alias.clone()),
                                             ),
                                         }),
                                     });
@@ -354,13 +375,13 @@ impl Analyzer<'_, '_> {
 
                                         // `err is Error` => boolean
                                         Type::Predicate(..) => {
-                                            box TsType::TsKeywordType(TsKeywordType {
+                                            box RTsType::TsKeywordType(RTsKeywordType {
                                                 span,
                                                 kind: TsKeywordTypeKind::TsBooleanKeyword,
                                             })
                                         }
 
-                                        Type::Keyword(TsKeywordType {
+                                        Type::Keyword(RTsKeywordType {
                                             span,
                                             kind: TsKeywordTypeKind::TsSymbolKeyword,
                                         })
@@ -368,7 +389,7 @@ impl Analyzer<'_, '_> {
                                             span,
                                             op: TsTypeOperatorOp::Unique,
                                             ty:
-                                                box Type::Keyword(TsKeywordType {
+                                                box Type::Keyword(RTsKeywordType {
                                                     kind: TsKeywordTypeKind::TsSymbolKeyword,
                                                     ..
                                                 }),
@@ -377,11 +398,11 @@ impl Analyzer<'_, '_> {
                                             match self.ctx.var_kind {
                                             // It's `uniqute symbol` only if it's `Symbol()`
                                             VarDeclKind::Const if is_symbol_call => {
-                                                box TsType::TsTypeOperator(TsTypeOperator {
+                                                box RTsType::TsTypeOperator(RTsTypeOperator {
                                                     span:*span,
                                                     op: TsTypeOperatorOp::Unique,
-                                                    type_ann: box TsType::TsKeywordType(
-                                                        TsKeywordType {
+                                                    type_ann: box RTsType::TsKeywordType(
+                                                        RTsKeywordType {
                                                             span:*span,
                                                             kind:
                                                                 TsKeywordTypeKind::TsSymbolKeyword,
@@ -390,7 +411,7 @@ impl Analyzer<'_, '_> {
                                                 })
                                             }
 
-                                            _ => box TsType::TsKeywordType(TsKeywordType {
+                                            _ => box RTsType::TsKeywordType(RTsKeywordType {
                                                 span:*span,
                                                 kind: TsKeywordTypeKind::TsSymbolKeyword,
                                             }),
@@ -407,18 +428,18 @@ impl Analyzer<'_, '_> {
                                                 }),
                                             ..
                                         }) => {
-                                            box TsType::TsArrayType(TsArrayType {
+                                            box RTsType::TsArrayType(RTsArrayType {
                                                 span: *span,
                                                 elem_type: match constraint {
                                                     Some(_constraint) => {
                                                         // TODO: We need something smarter
-                                                        box TsType::TsKeywordType(TsKeywordType {
+                                                        box RTsType::TsKeywordType(RTsKeywordType {
                                                             span: *elem_span,
                                                             kind: TsKeywordTypeKind::TsAnyKeyword,
                                                         })
                                                     }
                                                     None => {
-                                                        box TsType::TsKeywordType(TsKeywordType {
+                                                        box RTsType::TsKeywordType(RTsKeywordType {
                                                             span: *elem_span,
                                                             kind: TsKeywordTypeKind::TsAnyKeyword,
                                                         })
@@ -429,7 +450,7 @@ impl Analyzer<'_, '_> {
 
                                         // We failed to infer type of the type parameter.
                                         Type::Param(TypeParam { span, .. }) => {
-                                            box TsType::TsKeywordType(TsKeywordType {
+                                            box RTsType::TsKeywordType(RTsKeywordType {
                                                 span: *span,
                                                 kind: TsKeywordTypeKind::TsUnknownKeyword,
                                             })
@@ -459,11 +480,11 @@ impl Analyzer<'_, '_> {
                                     let span = element.span();
 
                                     match *element.ty.normalize() {
-                                        Type::Keyword(TsKeywordType {
+                                        Type::Keyword(RTsKeywordType {
                                             kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                             ..
                                         })
-                                        | Type::Keyword(TsKeywordType {
+                                        | Type::Keyword(RTsKeywordType {
                                             kind: TsKeywordTypeKind::TsNullKeyword,
                                             ..
                                         }) => {}
@@ -476,12 +497,12 @@ impl Analyzer<'_, '_> {
 
                                     if self.rule().no_implicit_any {
                                         match v.name {
-                                            Pat::Ident(ref i) => {
+                                            RPat::Ident(ref i) => {
                                                 let span = i.span;
                                                 type_errors.push(Error::ImplicitAny { span });
                                                 break;
                                             }
-                                            Pat::Array(ArrayPat { ref elems, .. }) => {
+                                            RPat::Array(RArrayPat { ref elems, .. }) => {
                                                 let span = elems[i].span();
                                                 type_errors.push(Error::ImplicitAny { span });
                                             }
@@ -507,7 +528,7 @@ impl Analyzer<'_, '_> {
                 }
             } else {
                 match v.name {
-                    Pat::Ident(ref mut i) => {
+                    RPat::Ident(ref mut i) => {
                         //
                         let sym: Id = (&*i).into();
                         let mut ty = try_opt!(i.type_ann.validate_with(self));
@@ -576,19 +597,19 @@ struct TypeParamFinder {
     found: bool,
 }
 
-impl ty::Visit for TypeParamFinder {
-    fn visit_type_param(&mut self, _: &TypeParam, _: &dyn ty::TypeNode) {
+impl Visit<TypeParam> for TypeParamFinder {
+    fn visit(&mut self, _: &TypeParam) {
         self.found = true;
     }
 }
 
 fn contains_type_param<T>(node: &T) -> bool
 where
-    T: ty::VisitWith<TypeParamFinder>,
+    T: VisitWith<TypeParamFinder>,
 {
     let mut v = TypeParamFinder { found: false };
 
-    node.visit_with(&node, &mut v);
+    node.visit_with(&mut v);
 
     v.found
 }

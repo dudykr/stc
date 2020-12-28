@@ -8,16 +8,32 @@ use crate::{
     validator::{Validate, ValidateWith},
     ValidationResult,
 };
+use rnode::Fold;
+use rnode::FoldWith;
+use rnode::Visit;
+use stc_ast_rnode::RBreakStmt;
+use stc_ast_rnode::RExpr;
+use stc_ast_rnode::RIdent;
+use stc_ast_rnode::RLit;
+use stc_ast_rnode::RReturnStmt;
+use stc_ast_rnode::RStmt;
+use stc_ast_rnode::RStr;
+use stc_ast_rnode::RThrowStmt;
+use stc_ast_rnode::RTsEntityName;
+use stc_ast_rnode::RTsKeywordType;
+use stc_ast_rnode::RTsLit;
+use stc_ast_rnode::RTsLitType;
+use stc_ast_rnode::RYieldExpr;
 use stc_types::ModuleId;
 use stc_types::{
-    eq::TypeEq, Fold, FoldWith, IndexedAccessType, MethodSignature, Operator, PropertySignature,
-    Ref, TypeElement, TypeParamInstantiation,
+    IndexedAccessType, MethodSignature, Operator, PropertySignature, Ref, TypeElement,
+    TypeParamInstantiation,
 };
 use std::{mem::take, ops::AddAssign};
+use swc_common::TypeEq;
 use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
 use swc_ecma_utils::{ExprExt, Value::Known};
-use swc_ecma_visit::{Node, Visit, VisitMut, VisitMutWith, VisitWith};
 
 #[derive(Debug, Default)]
 pub(in crate::analyzer) struct ReturnValues {
@@ -52,7 +68,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         is_async: bool,
         is_generator: bool,
-        stmts: &mut Vec<Stmt>,
+        stmts: &mut Vec<RStmt>,
     ) -> Result<Option<Box<Type>>, Error> {
         slog::debug!(self.logger, "visit_stmts_for_return()");
 
@@ -145,16 +161,16 @@ impl Analyzer<'_, '_> {
                 span,
                 ctxt: ModuleId::builtin(),
                 type_name: if is_async {
-                    TsEntityName::Ident(Ident::new("AsyncGenerator".into(), DUMMY_SP))
+                    RTsEntityName::Ident(RIdent::new("AsyncGenerator".into(), DUMMY_SP))
                 } else {
-                    TsEntityName::Ident(Ident::new("Generator".into(), DUMMY_SP))
+                    RTsEntityName::Ident(RIdent::new("Generator".into(), DUMMY_SP))
                 },
                 type_args: Some(TypeParamInstantiation {
                     span,
                     params: vec![
                         yield_ty,
                         ret_ty,
-                        box Type::Keyword(TsKeywordType {
+                        box Type::Keyword(RTsKeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsUnknownKeyword,
                         }),
@@ -173,7 +189,7 @@ impl Analyzer<'_, '_> {
             return Ok(Some(box Type::Ref(Ref {
                 span,
                 ctxt: ModuleId::builtin(),
-                type_name: TsEntityName::Ident(Ident::new("Promise".into(), DUMMY_SP)),
+                type_name: RTsEntityName::Ident(RIdent::new("Promise".into(), DUMMY_SP)),
                 type_args: Some(TypeParamInstantiation {
                     span,
                     params: vec![ret_ty],
@@ -197,11 +213,11 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut ReturnStmt) {
+    fn validate(&mut self, node: &mut RReturnStmt) {
         let ty = if let Some(res) = node.arg.validate_with_default(self) {
             res?
         } else {
-            box Type::Keyword(TsKeywordType {
+            box Type::Keyword(RTsKeywordType {
                 span: node.span,
                 kind: TsKeywordTypeKind::TsVoidKeyword,
             })
@@ -215,14 +231,14 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &mut YieldExpr) -> ValidationResult {
+    fn validate(&mut self, e: &mut RYieldExpr) -> ValidationResult {
         if let Some(res) = e.arg.validate_with_default(self) {
             self.scope.return_values.yield_types.push(res?);
         } else {
             self.scope
                 .return_values
                 .yield_types
-                .push(box Type::Keyword(TsKeywordType {
+                .push(box Type::Keyword(RTsKeywordType {
                     span: e.span,
                     kind: TsKeywordTypeKind::TsVoidKeyword,
                 }));
@@ -236,16 +252,20 @@ pub(super) struct LoopBreakerFinder {
     pub found: bool,
 }
 
-impl Visit for LoopBreakerFinder {
-    fn visit_break_stmt(&mut self, _: &BreakStmt, _: &dyn Node) {
+impl Visit<RBreakStmt> for LoopBreakerFinder {
+    fn visit(&mut self, _: &RBreakStmt) {
         self.found = true;
     }
+}
 
-    fn visit_throw_stmt(&mut self, _: &ThrowStmt, _: &dyn Node) {
+impl Visit<RThrowStmt> for LoopBreakerFinder {
+    fn visit(&mut self, _: &RThrowStmt) {
         self.found = true;
     }
+}
 
-    fn visit_return_stmt(&mut self, _: &ReturnStmt, _: &dyn Node) {
+impl Visit<RReturnStmt> for LoopBreakerFinder {
+    fn visit(&mut self, _: &RReturnStmt) {
         self.found = true;
     }
 }
@@ -263,8 +283,8 @@ struct KeyInliner<'a, 'b, 'c> {
     analyzer: &'a mut Analyzer<'b, 'c>,
 }
 
-impl Fold for KeyInliner<'_, '_, '_> {
-    fn fold_type(&mut self, mut ty: Type) -> Type {
+impl Fold<Type> for KeyInliner<'_, '_, '_> {
+    fn fold(&mut self, mut ty: Type) -> Type {
         ty = ty.fold_children_with(self);
 
         match ty {
@@ -373,13 +393,14 @@ impl Fold for KeyInliner<'_, '_, '_> {
                                         }
 
                                         match &*key {
-                                            Expr::Ident(i) => {
-                                                let ty = box Type::Lit(TsLitType {
+                                            RExpr::Ident(i) => {
+                                                let ty = box Type::Lit(RTsLitType {
                                                     span: i.span,
-                                                    lit: TsLit::Str(Str {
+                                                    lit: RTsLit::Str(RStr {
                                                         span: i.span,
                                                         value: i.sym.clone(),
                                                         has_escape: false,
+                                                        kind: Default::default(),
                                                     }),
                                                 });
 

@@ -1,6 +1,7 @@
 use super::Analyzer;
 use crate::{analyzer::util::ResultExt, ty, ty::Type};
-use stc_types::FoldWith as _;
+use rnode::Fold;
+use rnode::FoldWith;
 use swc_common::Spanned;
 
 impl Analyzer<'_, '_> {
@@ -14,8 +15,8 @@ struct ExpandAll<'a, 'b, 'm> {
     analyzer: &'m mut Analyzer<'a, 'b>,
 }
 
-impl ty::Fold for ExpandAll<'_, '_, '_> {
-    fn fold_type(&mut self, ty: Type) -> Type {
+impl Fold<Type> for ExpandAll<'_, '_, '_> {
+    fn fold(&mut self, ty: Type) -> Type {
         let ty: Type = ty.fold_children_with(self);
 
         match ty {

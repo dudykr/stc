@@ -7,10 +7,17 @@ use crate::{
     ValidationResult,
 };
 use fxhash::{FxHashMap, FxHashSet};
+use rnode::Fold;
+use rnode::FoldWith;
 use slog::Logger;
-use stc_types::{eq::TypeEq, Fold, FoldWith as _, Id, TypeParam};
+use stc_ast_rnode::RExpr;
+use stc_ast_rnode::RTsEntityName;
+use stc_ast_rnode::RTsKeywordType;
+use stc_types::{Id, TypeParam};
 use swc_atoms::js_word;
+use swc_common::EqIgnoreSpan;
 use swc_common::Spanned;
+use swc_common::TypeEq;
 use swc_ecma_ast::*;
 
 /// Generic expander.
@@ -118,7 +125,7 @@ impl Analyzer<'_, '_> {
         }
 
         match parent {
-            Type::Keyword(TsKeywordType {
+            Type::Keyword(RTsKeywordType {
                 kind: TsKeywordTypeKind::TsNullKeyword,
                 ..
             }) => return Some(false),
@@ -238,8 +245,8 @@ struct GenericExpander<'a, 'b, 'c, 'd> {
     dejavu: FxHashSet<Id>,
 }
 
-impl Fold for GenericExpander<'_, '_, '_, '_> {
-    fn fold_type(&mut self, ty: Type) -> Type {
+impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
+    fn fold(&mut self, ty: Type) -> Type {
         let old_fully = self.fully;
         self.fully |= match ty.normalize() {
             Type::Mapped(..) => true,
@@ -254,7 +261,7 @@ impl Fold for GenericExpander<'_, '_, '_, '_> {
             Type::StaticThis(..) | Type::Symbol(..) => return ty,
             Type::Ref(Ref {
                 span,
-                type_name: TsEntityName::Ident(ref i),
+                type_name: RTsEntityName::Ident(ref i),
                 ref type_args,
                 ..
             }) => {
@@ -643,7 +650,6 @@ impl Fold for GenericExpander<'_, '_, '_, '_> {
             | Type::IndexedAccessType(..)
             | Type::Mapped(..) => return ty.fold_children_with(self),
 
-            Type::Static(s) => return s.ty.clone().fold_with(self),
             Type::Arc(a) => return (*a.ty).clone().fold_with(self),
         }
     }
@@ -654,11 +660,11 @@ struct MappedHandler<'a, 'b, 'c, 'd> {
     param_name: &'d Id,
     prop_ty: &'d Type,
 
-    key: &'d Expr,
+    key: &'d RExpr,
 }
 
-impl Fold for MappedHandler<'_, '_, '_, '_> {
-    fn fold_type(&mut self, mut ty: Type) -> Type {
+impl Fold<Type> for MappedHandler<'_, '_, '_, '_> {
+    fn fold(&mut self, mut ty: Type) -> Type {
         match ty.normalize() {
             Type::IndexedAccessType(ty) => match ty.obj_type.normalize() {
                 Type::Param(TypeParam {

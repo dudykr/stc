@@ -2,18 +2,35 @@
 //!
 //! The visitor is too slow to compile everytime I make change.
 #![deny(unused)]
+#![allow(incomplete_features)]
 #![feature(box_syntax)]
+#![feature(specialization)]
 
-pub mod eq;
-pub use self::{
-    id::Id,
-    module_id::ModuleId,
-    visit::{Fold, FoldWith, Node as TypeNode, Visit, VisitMut, VisitMutWith, VisitWith},
-};
+pub use self::convert::rprop_name_to_expr;
+pub use self::{id::Id, module_id::ModuleId};
 use fxhash::FxHashMap;
 use is_macro::Is;
 use num_bigint::BigInt;
 use num_traits::Zero;
+use rnode::FoldWith;
+use rnode::VisitMut;
+use rnode::VisitMutWith;
+use rnode::VisitWith;
+use stc_ast_rnode::RExpr;
+use stc_ast_rnode::RIdent;
+use stc_ast_rnode::RPat;
+use stc_ast_rnode::RPropName;
+use stc_ast_rnode::RStr;
+use stc_ast_rnode::RTsEntityName;
+use stc_ast_rnode::RTsEnumMemberId;
+use stc_ast_rnode::RTsKeywordType;
+use stc_ast_rnode::RTsLit;
+use stc_ast_rnode::RTsLitType;
+use stc_ast_rnode::RTsNamespaceDecl;
+use stc_ast_rnode::RTsThisType;
+use stc_ast_rnode::RTsThisTypeOrIdent;
+use stc_visit::Visit;
+use std::borrow::Cow;
 use std::{
     fmt::Debug,
     iter::FusedIterator,
@@ -25,12 +42,10 @@ use std::{
     },
 };
 use swc_atoms::{js_word, JsWord};
+use swc_common::EqIgnoreSpan;
+use swc_common::TypeEq;
 use swc_common::{FromVariant, Span, Spanned, DUMMY_SP};
-use swc_ecma_ast::{
-    Accessibility, Expr, Ident, MethodKind, Pat, PropName, Str, TruePlusMinus, TsEntityName,
-    TsEnumMemberId, TsKeywordType, TsKeywordTypeKind, TsLit, TsLitType, TsNamespaceDecl,
-    TsThisType, TsThisTypeOrIdent, TsTypeOperatorOp,
-};
+use swc_ecma_ast::{Accessibility, MethodKind, TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp};
 use swc_ecma_utils::{
     Value,
     Value::{Known, Unknown},
@@ -40,7 +55,6 @@ mod convert;
 mod id;
 pub mod macros;
 pub mod module_id;
-mod visit;
 
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct ModuleTypeData {
@@ -49,6 +63,34 @@ pub struct ModuleTypeData {
 
     pub private_types: FxHashMap<Id, Vec<Box<Type>>>,
     pub types: FxHashMap<Id, Vec<Box<Type>>>,
+}
+
+impl<V: ?Sized> VisitWith<V> for ModuleTypeData {
+    fn visit_children_with(&self, _: &mut V) {}
+}
+
+impl<V: ?Sized> VisitMutWith<V> for ModuleTypeData {
+    fn visit_mut_children_with(&mut self, _: &mut V) {}
+}
+
+impl<V: ?Sized> FoldWith<V> for ModuleTypeData {
+    fn fold_children_with(self, _: &mut V) -> Self {
+        self
+    }
+}
+
+impl TypeEq for ModuleTypeData {
+    #[inline]
+    fn type_eq(&self, _: &Self) -> bool {
+        false
+    }
+}
+
+impl EqIgnoreSpan for ModuleTypeData {
+    #[inline]
+    fn eq_ignore_span(&self, _: &Self) -> bool {
+        false
+    }
 }
 
 impl AddAssign for ModuleTypeData {
@@ -62,11 +104,11 @@ impl AddAssign for ModuleTypeData {
 }
 
 /// This type is expected to stored in a [Box], like `Vec<Box<Type>>`.
-#[derive(Debug, Clone, PartialEq, Spanned, FromVariant, Is)]
+#[derive(Debug, Clone, PartialEq, Spanned, FromVariant, Is, EqIgnoreSpan, TypeEq, Visit)]
 pub enum Type {
     StaticThis(StaticThis),
-    This(TsThisType),
-    Lit(TsLitType),
+    This(RTsThisType),
+    Lit(#[use_eq_ignore_span] RTsLitType),
     Query(QueryType),
     Infer(InferType),
     Import(ImportType),
@@ -76,7 +118,7 @@ pub enum Type {
     #[is(name = "ref_type")]
     Ref(Ref),
     TypeLit(TypeLit),
-    Keyword(TsKeywordType),
+    Keyword(RTsKeywordType),
     Conditional(Conditional),
     Tuple(Tuple),
     Array(Array),
@@ -101,7 +143,7 @@ pub enum Type {
 
     /// export type A<B> = Foo<B>;
     Alias(Alias),
-    Namespace(TsNamespaceDecl),
+    Namespace(#[use_eq_ignore_span] RTsNamespaceDecl),
     Module(Module),
 
     Class(Class),
@@ -123,19 +165,56 @@ pub enum Type {
     /// ```
     ClassInstance(ClassInstance),
 
-    /// Used for storing core types.
-    ///
-    /// Don't match on this directly. Instead, use `.normalize()`.
-    #[is(name = "static_type")]
-    Static(Static),
-
-    Arc(CloneType),
+    Arc(Freezed),
 
     Rest(RestType),
 
     Optional(OptionalType),
 
     Symbol(Symbol),
+}
+
+fn _assert_send_sync() {
+    fn assert<T: Send + Sync>() {}
+
+    assert::<Type>();
+    assert::<StaticThis>();
+    assert::<RTsThisType>();
+    assert::<QueryType>();
+    assert::<InferType>();
+    assert::<ImportType>();
+    assert::<Predicate>();
+    assert::<IndexedAccessType>();
+
+    assert::<Ref>();
+    assert::<TypeLit>();
+    assert::<RTsKeywordType>();
+    assert::<Conditional>();
+    assert::<Tuple>();
+    assert::<Array>();
+    assert::<Union>();
+    assert::<Intersection>();
+    assert::<Function>();
+    assert::<Constructor>();
+
+    assert::<Operator>();
+
+    assert::<TypeParam>();
+    assert::<EnumVariant>();
+    assert::<Interface>();
+    assert::<Enum>();
+
+    assert::<Mapped>();
+    assert::<Alias>();
+    assert::<RTsNamespaceDecl>();
+    assert::<Module>();
+
+    assert::<Class>();
+    assert::<ClassInstance>();
+
+    assert::<RestType>();
+    assert::<OptionalType>();
+    assert::<Symbol>();
 }
 
 #[derive(Debug, Default)]
@@ -154,28 +233,28 @@ impl SymbolIdGenerator {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EqIgnoreSpan, TypeEq, Visit)]
 pub struct SymbolId(usize);
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Spanned)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Symbol {
     pub span: Span,
     pub id: SymbolId,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct RestType {
     pub span: Span,
     pub ty: Box<Type>,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct OptionalType {
     pub span: Span,
     pub ty: Box<Type>,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct IndexedAccessType {
     pub span: Span,
     pub readonly: bool,
@@ -183,66 +262,71 @@ pub struct IndexedAccessType {
     pub index_type: Box<Type>,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Ref {
     pub span: Span,
     /// Id of the module where the ref is used in.
     pub ctxt: ModuleId,
-    pub type_name: TsEntityName,
+    #[use_eq_ignore_span]
+    pub type_name: RTsEntityName,
     pub type_args: Option<TypeParamInstantiation>,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct InferType {
     pub span: Span,
     pub type_param: TypeParam,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct QueryType {
     pub span: Span,
     pub expr: QueryExpr,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned, FromVariant)]
+#[derive(Debug, Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit)]
 pub enum QueryExpr {
-    TsEntityName(TsEntityName),
+    TsEntityName(#[use_eq_ignore_span] RTsEntityName),
     Import(ImportType),
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct ImportType {
     pub span: Span,
-    pub arg: Str,
-    pub qualifier: Option<TsEntityName>,
+    pub arg: RStr,
+    #[use_eq_ignore_span]
+    pub qualifier: Option<RTsEntityName>,
     pub type_params: Option<TypeParamInstantiation>,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Module {
     pub span: Span,
     pub exports: ModuleTypeData,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Enum {
     pub span: Span,
     pub declare: bool,
     pub is_const: bool,
-    pub id: Ident,
+    #[use_eq_ignore_span]
+    pub id: RIdent,
     pub members: Vec<EnumMember>,
     pub has_num: bool,
     pub has_str: bool,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct EnumMember {
     pub span: Span,
-    pub id: TsEnumMemberId,
-    pub val: Expr,
+    #[use_eq_ignore_span]
+    pub id: RTsEnumMemberId,
+    #[use_eq_ignore_span]
+    pub val: Box<RExpr>,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Class {
     pub span: Span,
     pub is_abstract: bool,
@@ -253,7 +337,7 @@ pub struct Class {
     // pub implements: Vec<Box<Type>>,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct ClassInstance {
     pub span: Span,
     pub ty: Box<Type>,
@@ -261,7 +345,7 @@ pub struct ClassInstance {
     // pub implements: Vec<Box<Type>>,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned, FromVariant)]
+#[derive(Debug, Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit)]
 pub enum ClassMember {
     Constructor(ConstructorSignature),
     Method(Method),
@@ -269,13 +353,30 @@ pub enum ClassMember {
     IndexSignature(IndexSignature),
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+pub struct Method {
+    pub span: Span,
+    #[use_eq_ignore_span]
+    pub key: RPropName,
+    pub is_static: bool,
+    pub is_abstract: bool,
+    pub is_optional: bool,
+    pub type_params: Option<TypeParamDecl>,
+    pub params: Vec<FnParam>,
+    pub ret_ty: Box<Type>,
+    #[use_eq]
+    pub kind: MethodKind,
+}
+
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct ClassProperty {
     pub span: Span,
-    pub key: Box<Expr>,
+    #[use_eq_ignore_span]
+    pub key: Box<RExpr>,
     pub value: Option<Box<Type>>,
     pub is_static: bool,
     pub computed: bool,
+    #[use_eq]
     pub accessibility: Option<Accessibility>,
     pub is_abstract: bool,
     pub is_optional: bool,
@@ -283,30 +384,19 @@ pub struct ClassProperty {
     pub definite: bool,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned)]
-pub struct Method {
-    pub span: Span,
-    pub key: PropName,
-    pub is_static: bool,
-    pub is_abstract: bool,
-    pub is_optional: bool,
-    pub type_params: Option<TypeParamDecl>,
-    pub params: Vec<FnParam>,
-    pub ret_ty: Box<Type>,
-    pub kind: MethodKind,
-}
-
-#[derive(Debug, Clone, PartialEq, Spanned)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Mapped {
     pub span: Span,
+    #[use_eq]
     pub readonly: Option<TruePlusMinus>,
+    #[use_eq]
     pub optional: Option<TruePlusMinus>,
     pub name_type: Option<Box<Type>>,
     pub type_param: TypeParam,
     pub ty: Option<Box<Type>>,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Conditional {
     pub span: Span,
     pub check_type: Box<Type>,
@@ -315,40 +405,36 @@ pub struct Conditional {
     pub false_type: Box<Type>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Spanned)]
-pub struct Static {
-    pub span: Span,
-    pub ty: &'static Type,
-}
-
-#[derive(Debug, Clone, PartialEq, Spanned)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Operator {
     pub span: Span,
+    #[use_eq]
     pub op: TsTypeOperatorOp,
     pub ty: Box<Type>,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Tuple {
     pub span: Span,
     pub elems: Vec<TupleElement>,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct TupleElement {
     pub span: Span,
-    pub label: Option<Pat>,
+    #[not_type]
+    pub label: Option<RPat>,
     pub ty: Box<Type>,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Alias {
     pub span: Span,
     pub type_params: Option<TypeParamDecl>,
     pub ty: Box<Type>,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Interface {
     pub span: Span,
     pub name: Id,
@@ -357,33 +443,34 @@ pub struct Interface {
     pub body: Vec<TypeElement>,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct TypeLit {
     pub span: Span,
     pub members: Vec<TypeElement>,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct TypeParamDecl {
     pub span: Span,
     pub params: Vec<TypeParam>,
 }
 
 /// Typescript expression with type arguments
-#[derive(Debug, Clone, PartialEq, Spanned)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct TsExpr {
     pub span: Span,
-    pub expr: TsEntityName,
+    #[use_eq_ignore_span]
+    pub expr: RTsEntityName,
     pub type_args: Option<TypeParamInstantiation>,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct TypeParamInstantiation {
     pub span: Span,
     pub params: Vec<Box<Type>>,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned, FromVariant)]
+#[derive(Debug, Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit)]
 pub enum TypeElement {
     Call(CallSignature),
     Constructor(ConstructorSignature),
@@ -393,20 +480,21 @@ pub enum TypeElement {
 }
 
 impl TypeElement {
-    pub fn key(&self) -> Option<&Expr> {
-        static CONSTRUCTOR: Expr = Expr::Ident(Ident::new(js_word!("constructor"), DUMMY_SP));
-
+    pub fn key(&self) -> Option<Cow<RExpr>> {
         match self {
             TypeElement::Call(..) => None,
-            TypeElement::Constructor(..) => Some(&CONSTRUCTOR),
-            TypeElement::Property(p) => Some(&p.key),
-            TypeElement::Method(m) => Some(&m.key),
+            TypeElement::Constructor(..) => Some(Cow::Owned(RExpr::Ident(RIdent::new(
+                js_word!("constructor"),
+                DUMMY_SP,
+            )))),
+            TypeElement::Property(p) => Some(Cow::Borrowed(&p.key)),
+            TypeElement::Method(m) => Some(Cow::Borrowed(&m.key)),
             TypeElement::Index(_) => None,
         }
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct CallSignature {
     pub span: Span,
     pub params: Vec<FnParam>,
@@ -414,7 +502,7 @@ pub struct CallSignature {
     pub ret_ty: Option<Box<Type>>,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct ConstructorSignature {
     pub span: Span,
     pub params: Vec<FnParam>,
@@ -422,11 +510,12 @@ pub struct ConstructorSignature {
     pub type_params: Option<TypeParamDecl>,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct PropertySignature {
     pub span: Span,
     pub readonly: bool,
-    pub key: Box<Expr>,
+    #[use_eq_ignore_span]
+    pub key: Box<RExpr>,
     pub computed: bool,
     pub optional: bool,
     pub params: Vec<FnParam>,
@@ -434,11 +523,12 @@ pub struct PropertySignature {
     pub type_params: Option<TypeParamDecl>,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct MethodSignature {
     pub span: Span,
     pub readonly: bool,
-    pub key: Box<Expr>,
+    #[use_eq_ignore_span]
+    pub key: Box<RExpr>,
     pub computed: bool,
     pub optional: bool,
     pub params: Vec<FnParam>,
@@ -446,7 +536,7 @@ pub struct MethodSignature {
     pub type_params: Option<TypeParamDecl>,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct IndexSignature {
     pub params: Vec<FnParam>,
     pub type_ann: Option<Box<Type>>,
@@ -455,36 +545,37 @@ pub struct IndexSignature {
     pub span: Span,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Array {
     pub span: Span,
     pub elem_type: Box<Type>,
 }
 
 /// a | b
-#[derive(Debug, Clone, PartialEq, Spanned)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Union {
     pub span: Span,
     pub types: Vec<Box<Type>>,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct FnParam {
     pub span: Span,
     pub required: bool,
-    pub pat: Pat,
+    #[not_type]
+    pub pat: RPat,
     pub ty: Box<Type>,
 }
 
 /// a & b
-#[derive(Debug, Clone, PartialEq, Spanned)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Intersection {
     pub span: Span,
     pub types: Vec<Box<Type>>,
 }
 
 /// A type parameter
-#[derive(Debug, Clone, PartialEq, Spanned)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct TypeParam {
     pub span: Span,
     pub name: Id,
@@ -493,7 +584,7 @@ pub struct TypeParam {
 }
 
 /// FooEnum.A
-#[derive(Debug, Clone, PartialEq, Spanned)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct EnumVariant {
     pub span: Span,
     pub ctxt: ModuleId,
@@ -501,7 +592,7 @@ pub struct EnumVariant {
     pub name: JsWord,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Function {
     pub span: Span,
     pub type_params: Option<TypeParamDecl>,
@@ -509,7 +600,7 @@ pub struct Function {
     pub ret_ty: Box<Type>,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Constructor {
     pub span: Span,
     pub type_params: Option<TypeParamDecl>,
@@ -517,15 +608,16 @@ pub struct Constructor {
     pub type_ann: Box<Type>,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Predicate {
     pub span: Span,
-    pub param_name: TsThisTypeOrIdent,
+    #[use_eq_ignore_span]
+    pub param_name: RTsThisTypeOrIdent,
     pub asserts: bool,
     pub ty: Option<Box<Type>>,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct TypeOrSpread {
     pub span: Span,
     pub spread: Option<Span>,
@@ -603,7 +695,7 @@ impl Type {
 
     pub fn contains_void(&self) -> bool {
         match *self.normalize() {
-            Type::Keyword(TsKeywordType {
+            Type::Keyword(RTsKeywordType {
                 kind: TsKeywordTypeKind::TsVoidKeyword,
                 ..
             }) => true,
@@ -616,7 +708,7 @@ impl Type {
 
     pub fn is_any(&self) -> bool {
         match *self.normalize() {
-            Type::Keyword(TsKeywordType {
+            Type::Keyword(RTsKeywordType {
                 kind: TsKeywordTypeKind::TsAnyKeyword,
                 ..
             }) => true,
@@ -629,7 +721,7 @@ impl Type {
 
     pub fn is_unknown(&self) -> bool {
         match *self.normalize() {
-            Type::Keyword(TsKeywordType {
+            Type::Keyword(RTsKeywordType {
                 kind: TsKeywordTypeKind::TsUnknownKeyword,
                 ..
             }) => true,
@@ -642,7 +734,7 @@ impl Type {
 
     pub fn contains_undefined(&self) -> bool {
         match *self.normalize() {
-            Type::Keyword(TsKeywordType {
+            Type::Keyword(RTsKeywordType {
                 kind: TsKeywordTypeKind::TsUndefinedKeyword,
                 ..
             }) => true,
@@ -663,7 +755,6 @@ impl Type {
 
         match self {
             Type::Arc(..)
-            | Type::Static(..)
             | Type::Keyword(..)
             | Type::This(..)
             | Type::StaticThis(..)
@@ -690,7 +781,7 @@ impl Type {
 
     pub fn is_kwd(&self, k: TsKeywordTypeKind) -> bool {
         match *self.normalize() {
-            Type::Keyword(TsKeywordType { kind, .. }) if kind == k => true,
+            Type::Keyword(RTsKeywordType { kind, .. }) if kind == k => true,
             _ => false,
         }
     }
@@ -711,35 +802,35 @@ impl Type {
     }
 
     pub fn never<'any>(span: Span) -> Box<Type> {
-        box Type::Keyword(TsKeywordType {
+        box Type::Keyword(RTsKeywordType {
             span,
             kind: TsKeywordTypeKind::TsNeverKeyword,
         })
     }
 
     pub fn undefined<'any>(span: Span) -> Box<Type> {
-        box Type::Keyword(TsKeywordType {
+        box Type::Keyword(RTsKeywordType {
             span,
             kind: TsKeywordTypeKind::TsUndefinedKeyword,
         })
     }
 
     pub fn any<'any>(span: Span) -> Box<Type> {
-        box Type::Keyword(TsKeywordType {
+        box Type::Keyword(RTsKeywordType {
             span,
             kind: TsKeywordTypeKind::TsAnyKeyword,
         })
     }
 
     pub fn void<'any>(span: Span) -> Box<Type> {
-        box Type::Keyword(TsKeywordType {
+        box Type::Keyword(RTsKeywordType {
             span,
             kind: TsKeywordTypeKind::TsVoidKeyword,
         })
     }
 
     pub fn unknown<'any>(span: Span) -> Box<Type> {
-        box Type::Keyword(TsKeywordType {
+        box Type::Keyword(RTsKeywordType {
             span,
             kind: TsKeywordTypeKind::TsUnknownKeyword,
         })
@@ -794,8 +885,6 @@ impl Type {
             Type::ClassInstance(c) => c.span = span,
 
             Type::Param(p) => p.span = span,
-
-            Type::Static(s) => s.span = span,
 
             Type::Tuple(ty) => ty.span = span,
 
@@ -912,10 +1001,6 @@ impl Type {
         's: 'c,
     {
         match *self {
-            Type::Static(Static { ty, .. }) => unsafe {
-                // 'static lives longer than anything
-                transmute::<&'static Type, &'c Type>(ty)
-            },
             Type::Arc(ref s) => {
                 //
                 unsafe { transmute::<&'s Type, &'c Type>(&s.ty) }
@@ -932,12 +1017,7 @@ impl Type {
     /// TODO: Remove if possible
     pub fn normalize_mut(&mut self) -> &mut Type {
         match self {
-            Type::Static(Static { ty, span }) => {
-                let mut ty = ty.clone();
-                ty.respan(*span);
-                *self = ty;
-            }
-            Type::Arc(CloneType { ty, span }) => {
+            Type::Arc(Freezed { ty, span }) => {
                 let mut ty = (**ty).clone();
                 ty.respan(*span);
                 *self = ty;
@@ -986,12 +1066,12 @@ impl FusedIterator for Iter<'_> {}
 impl Type {
     pub fn is_str(&self) -> bool {
         match self.normalize() {
-            Type::Keyword(TsKeywordType {
+            Type::Keyword(RTsKeywordType {
                 kind: TsKeywordTypeKind::TsStringKeyword,
                 ..
             })
-            | Type::Lit(TsLitType {
-                lit: TsLit::Str(..),
+            | Type::Lit(RTsLitType {
+                lit: RTsLit::Str(..),
                 ..
             }) => true,
             _ => false,
@@ -1266,9 +1346,9 @@ impl Type {
 //}
 //
 //impl TypeElement {
-//    pub fn key(&self) -> Option<&Expr> {
-//        static CONSTRUCTOR_EXPR: Expr =
-//            { Expr::Ident(Ident::new(js_word!("constructor"), DUMMY_SP)) };
+//    pub fn key(&self) -> Option<&RExpr> {
+//        static CONSTRUCTOR_EXPR: RExpr =
+//            { RExpr::RIdent(RIdent::new(js_word!("constructor"), DUMMY_SP)) };
 //
 //        match *self {
 //            TypeElement::Call(..) => None,
@@ -1282,8 +1362,8 @@ impl Type {
 
 struct CheapClone;
 
-impl VisitMut for CheapClone {
-    fn visit_mut_type(&mut self, ty: &mut Type) {
+impl VisitMut<Type> for CheapClone {
+    fn visit_mut(&mut self, ty: &mut Type) {
         ty.visit_mut_children_with(self);
 
         if ty.is_clone_cheap() {
@@ -1292,13 +1372,13 @@ impl VisitMut for CheapClone {
 
         let new_ty = replace(
             ty,
-            Type::Keyword(TsKeywordType {
+            Type::Keyword(RTsKeywordType {
                 span: DUMMY_SP,
                 kind: TsKeywordTypeKind::TsAnyKeyword,
             }),
         );
 
-        *ty = Type::Arc(CloneType {
+        *ty = Type::Arc(Freezed {
             span: new_ty.span(),
             ty: Arc::new(new_ty),
         })
@@ -1321,19 +1401,18 @@ impl Type {
 
     pub fn as_bool(&self) -> Value<bool> {
         match self {
-            Type::Static(ty) => ty.ty.as_bool(),
             Type::Arc(ref ty) => ty.ty.as_bool(),
 
             Type::Class(_) | Type::TypeLit(_) => Known(true),
 
             Type::Lit(ty) => Known(match &ty.lit {
-                TsLit::Number(v) => v.value != 0.0,
-                TsLit::Str(v) => v.value != *"",
-                TsLit::Tpl(v) => v.quasis.first().unwrap().raw.value != *"",
-                TsLit::Bool(v) => v.value,
-                TsLit::BigInt(v) => v.value != BigInt::zero(),
+                RTsLit::Number(v) => v.value != 0.0,
+                RTsLit::Str(v) => v.value != *"",
+                RTsLit::Tpl(v) => v.quasis.first().unwrap().raw.value != *"",
+                RTsLit::Bool(v) => v.value,
+                RTsLit::BigInt(v) => v.value != BigInt::zero(),
             }),
-            Type::Keyword(TsKeywordType { kind, .. }) => Known(match kind {
+            Type::Keyword(RTsKeywordType { kind, .. }) => Known(match kind {
                 TsKeywordTypeKind::TsNeverKeyword
                 | TsKeywordTypeKind::TsStringKeyword
                 | TsKeywordTypeKind::TsNumberKeyword
@@ -1355,13 +1434,42 @@ impl Type {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Spanned)]
+#[derive(Debug, Clone, PartialEq, Eq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct StaticThis {
     pub span: Span,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned)]
-pub struct CloneType {
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq)]
+pub struct Freezed {
     pub span: Span,
     pub ty: Arc<Type>,
+}
+
+impl<V> VisitWith<V> for Freezed
+where
+    V: ?Sized,
+{
+    fn visit_children_with(&self, visitor: &mut V) {
+        self.span.visit_with(visitor);
+        self.ty.visit_with(visitor);
+    }
+}
+
+impl<V> VisitMutWith<V> for Freezed
+where
+    V: ?Sized,
+{
+    fn visit_mut_children_with(&mut self, v: &mut V) {
+        self.span.visit_mut_with(v);
+    }
+}
+
+impl<V> FoldWith<V> for Freezed
+where
+    V: ?Sized,
+{
+    fn fold_children_with(mut self, v: &mut V) -> Self {
+        self.span = self.span.fold_with(v);
+        self
+    }
 }

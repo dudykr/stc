@@ -9,16 +9,25 @@ use dashmap::DashMap;
 use derivative::Derivative;
 use fxhash::FxHashMap;
 use once_cell::sync::{Lazy, OnceCell};
+use rnode::RNode;
+use rnode::VisitMutWith;
 use slog::Logger;
+use stc_ast_rnode::RDecl;
+use stc_ast_rnode::RFnDecl;
+use stc_ast_rnode::RModule;
+use stc_ast_rnode::RModuleItem;
+use stc_ast_rnode::RPat;
+use stc_ast_rnode::RStmt;
+use stc_ast_rnode::RTsModuleName;
+use stc_ast_rnode::RVarDecl;
 pub use stc_builtin_types::Lib;
-use stc_types::{Id, ModuleTypeData, Static, Type};
+use stc_types::{Id, ModuleTypeData, Type};
 use std::{collections::hash_map::Entry, sync::Arc};
 use swc_atoms::{js_word, JsWord};
 use swc_common::Spanned;
 use swc_common::{Globals, Span, DUMMY_SP};
 use swc_ecma_ast::*;
 use swc_ecma_parser::JscTarget;
-use swc_ecma_visit::VisitMutWith;
 
 #[derive(Debug, Default)]
 pub struct BuiltIn {
@@ -40,17 +49,19 @@ impl BuiltIn {
                 TsNamespaceBody::TsModuleBlock(TsModuleBlock { body, .. }) => body,
                 TsNamespaceBody::TsNamespaceDecl(_) => unreachable!(),
             })
-            .flatten();
+            .flatten()
+            .cloned()
+            .map(RModuleItem::from_orig);
         Self::from_module_items(env, iter)
     }
 
-    pub fn from_modules(env: &StableEnv, modules: Vec<Module>) -> Self {
-        Self::from_module_items(env, modules.iter().flat_map(|module| &module.body))
+    pub fn from_modules(env: &StableEnv, modules: Vec<RModule>) -> Self {
+        Self::from_module_items(env, modules.into_iter().flat_map(|module| module.body))
     }
 
     pub fn from_module_items<'a, I>(env: &StableEnv, items: I) -> Self
     where
-        I: IntoIterator<Item = &'a ModuleItem>,
+        I: IntoIterator<Item = RModuleItem>,
     {
         slog::info!(env.logger, "Merging builtins");
 
@@ -58,15 +69,15 @@ impl BuiltIn {
         let mut storage = crate::mode::Builtin::default();
         let mut analyzer = Analyzer::for_builtin(env.clone(), &mut storage);
 
-        for item in items {
-            match *item {
-                ModuleItem::ModuleDecl(ref md) => unreachable!("ModuleDecl: {:#?}", md),
-                ModuleItem::Stmt(ref stmt) => match *stmt {
-                    Stmt::Decl(Decl::Var(VarDecl { ref decls, .. })) => {
+        for mut item in items {
+            match item {
+                RModuleItem::ModuleDecl(ref md) => unreachable!("ModuleDecl: {:#?}", md),
+                RModuleItem::Stmt(ref mut stmt) => match *stmt {
+                    RStmt::Decl(RDecl::Var(RVarDecl { ref decls, .. })) => {
                         assert_eq!(decls.len(), 1);
                         let decl = decls.iter().next().unwrap();
                         let name = match decl.name {
-                            Pat::Ident(ref i) => i,
+                            RPat::Ident(ref i) => i,
                             _ => unreachable!(),
                         };
                         result.vars.insert(
@@ -81,7 +92,7 @@ impl BuiltIn {
                         );
                     }
 
-                    Stmt::Decl(Decl::Fn(FnDecl {
+                    RStmt::Decl(RDecl::Fn(RFnDecl {
                         ref ident,
                         ref function,
                         ..
@@ -96,7 +107,7 @@ impl BuiltIn {
                         );
                     }
 
-                    Stmt::Decl(Decl::Class(ref c)) => {
+                    RStmt::Decl(RDecl::Class(ref c)) => {
                         debug_assert_eq!(result.types.get(&c.ident.sym.clone()), None);
 
                         // builtin libraries does not contain a class which extends
@@ -142,9 +153,9 @@ impl BuiltIn {
                         result.types.insert(c.ident.sym.clone(), box ty);
                     }
 
-                    Stmt::Decl(Decl::TsModule(ref m)) => {
+                    RStmt::Decl(RDecl::TsModule(ref mut m)) => {
                         let id = match m.id {
-                            TsModuleName::Ident(ref i) => i.sym.clone(),
+                            RTsModuleName::Ident(ref i) => i.sym.clone(),
                             _ => unreachable!(),
                         };
 
@@ -152,7 +163,7 @@ impl BuiltIn {
                         {
                             let mut analyzer = Analyzer::for_builtin(env.clone(), &mut data);
 
-                            m.body.clone().visit_mut_with(&mut analyzer);
+                            m.body.visit_mut_with(&mut analyzer);
                         }
 
                         match result.types.entry(id) {
@@ -182,7 +193,7 @@ impl BuiltIn {
                         }
                     }
 
-                    Stmt::Decl(Decl::TsTypeAlias(ref a)) => {
+                    RStmt::Decl(RDecl::TsTypeAlias(ref a)) => {
                         debug_assert_eq!(result.types.get(&a.id.sym.clone()), None);
 
                         let ty = a
@@ -195,7 +206,7 @@ impl BuiltIn {
                     }
 
                     // Merge interface
-                    Stmt::Decl(Decl::TsInterface(ref i)) => {
+                    RStmt::Decl(RDecl::TsInterface(ref i)) => {
                         let body = i
                             .clone()
                             .validate_with(&mut analyzer)

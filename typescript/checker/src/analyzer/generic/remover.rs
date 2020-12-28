@@ -1,6 +1,6 @@
 use fxhash::FxHashSet;
-use stc_types::Fold;
-use stc_types::FoldWith;
+use rnode::Fold;
+use rnode::FoldWith;
 use stc_types::Function;
 use stc_types::Id;
 use stc_types::TypeParam;
@@ -32,9 +32,8 @@ impl TypeParamRemover<'static> {
         }
     }
 }
-
-impl Fold for TypeParamRemover<'_> {
-    fn fold_opt_type_param_decl(&mut self, node: Option<TypeParamDecl>) -> Option<TypeParamDecl> {
+impl Fold<Option<TypeParamDecl>> for TypeParamRemover<'_> {
+    fn fold(&mut self, node: Option<TypeParamDecl>) -> Option<TypeParamDecl> {
         let mut node = node?;
 
         node.params = node.params.move_flat_map(|param| {
@@ -55,14 +54,18 @@ impl Fold for TypeParamRemover<'_> {
 
         Some(node)
     }
+}
 
-    fn fold_type_param(&mut self, node: TypeParam) -> TypeParam {
+impl Fold<TypeParam> for TypeParamRemover<'_> {
+    fn fold(&mut self, node: TypeParam) -> TypeParam {
         self.scope.params.insert(node.name.clone());
 
         node
     }
+}
 
-    fn fold_function(&mut self, node: Function) -> Function {
+impl Fold<Function> for TypeParamRemover<'_> {
+    fn fold(&mut self, node: Function) -> Function {
         let mut v = TypeParamRemover {
             scope: Scope {
                 parent: Some(&self.scope),

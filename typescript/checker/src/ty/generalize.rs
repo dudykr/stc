@@ -1,12 +1,14 @@
 use crate::ty::{self, Array, Type};
-use stc_types::{eq::TypeEq, FoldWith};
+use rnode::Fold;
+use rnode::FoldWith;
 use swc_common::Spanned;
+use swc_common::TypeEq;
 
 pub(super) struct TupleToArray;
 
-impl ty::Fold for TupleToArray {
-    fn fold_type(&mut self, ty: Type) -> Type {
-        let ty: Type = ty.fold_children_with(self);
+impl Fold<Type> for TupleToArray {
+    fn fold(&mut self, ty: Type) -> Type {
+        let ty = ty.fold_children_with(self);
         let span = ty.span();
 
         match ty {

@@ -13,8 +13,7 @@ use crate::{
     ty,
     ty::{
         CallSignature, ClassInstance, ConstructorSignature, FnParam, Method, MethodSignature,
-        QueryExpr, QueryType, Static, Type, TypeElement, TypeOrSpread, TypeParam,
-        TypeParamInstantiation,
+        QueryExpr, QueryType, Type, TypeElement, TypeOrSpread, TypeParam, TypeParamInstantiation,
     },
     util::{is_str_lit_or_union, type_ext::TypeVecExt, PatExt},
     validator,
@@ -22,22 +21,42 @@ use crate::{
     Lib, Marks, ValidationResult,
 };
 use fxhash::FxHashMap;
+use rnode::Fold;
+use rnode::FoldWith;
+use rnode::VisitMut;
+use rnode::VisitMutWith;
 use slog::Logger;
+use stc_ast_rnode::RCallExpr;
+use stc_ast_rnode::RExpr;
+use stc_ast_rnode::RExprOrSpread;
+use stc_ast_rnode::RExprOrSuper;
+use stc_ast_rnode::RIdent;
+use stc_ast_rnode::RLit;
+use stc_ast_rnode::RMemberExpr;
+use stc_ast_rnode::RNewExpr;
+use stc_ast_rnode::RPat;
+use stc_ast_rnode::RStr;
+use stc_ast_rnode::RTsEntityName;
+use stc_ast_rnode::RTsKeywordType;
+use stc_ast_rnode::RTsLit;
+use stc_ast_rnode::RTsLitType;
+use stc_ast_rnode::RTsThisTypeOrIdent;
+use stc_ast_rnode::RTsType;
+use stc_ast_rnode::RTsTypeParamInstantiation;
 use stc_checker_macros::extra_validator;
-use stc_types::{
-    eq::{EqIgnoreSpan, TypeEq},
-    Alias, FoldWith as _, Id, IndexedAccessType, Intersection, Ref, Symbol, TypeLit, Union,
-    VisitMut, VisitMutWith,
-};
+use stc_types::rprop_name_to_expr;
+use stc_types::{Alias, Id, IndexedAccessType, Intersection, Ref, Symbol, TypeLit, Union};
 use std::borrow::Cow;
 use swc_atoms::js_word;
+use swc_common::EqIgnoreSpan;
+use swc_common::TypeEq;
 use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
 use ty::TypeExt;
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut ExprOrSpread) -> ValidationResult<TypeOrSpread> {
+    fn validate(&mut self, node: &mut RExprOrSpread) -> ValidationResult<TypeOrSpread> {
         let span = node.span();
         Ok(TypeOrSpread {
             span,
@@ -49,10 +68,10 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &mut CallExpr, type_ann: Option<&Type>) -> ValidationResult {
+    fn validate(&mut self, e: &mut RCallExpr, type_ann: Option<&Type>) -> ValidationResult {
         self.record(e);
 
-        let CallExpr {
+        let RCallExpr {
             span,
             ref mut callee,
             ref mut args,
@@ -60,8 +79,8 @@ impl Analyzer<'_, '_> {
         } = *e;
 
         let callee = match callee {
-            ExprOrSuper::Super(..) => return Ok(Type::any(span)),
-            ExprOrSuper::Expr(callee) => callee,
+            RExprOrSuper::Super(..) => return Ok(Type::any(span)),
+            RExprOrSuper::Expr(callee) => callee,
         };
 
         // TODO: validate children
@@ -84,10 +103,10 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &mut NewExpr, type_ann: Option<&Type>) -> ValidationResult {
+    fn validate(&mut self, e: &mut RNewExpr, type_ann: Option<&Type>) -> ValidationResult {
         self.record(e);
 
-        let NewExpr {
+        let RNewExpr {
             span,
             ref mut callee,
             ref mut args,
@@ -124,11 +143,11 @@ impl Analyzer<'_, '_> {
     /// This method check arguments
     fn extract_call_new_expr_member(
         &mut self,
-        callee: &mut Expr,
+        callee: &mut RExpr,
         type_ann: Option<&Type>,
         kind: ExtractKind,
-        args: &mut [ExprOrSpread],
-        type_args: Option<&mut TsTypeParamInstantiation>,
+        args: &mut [RExprOrSpread],
+        type_args: Option<&mut RTsTypeParamInstantiation>,
     ) -> ValidationResult {
         debug_assert_eq!(self.scope.kind(), ScopeKind::Call);
 
@@ -137,14 +156,14 @@ impl Analyzer<'_, '_> {
         slog::debug!(self.logger, "extract_call_new_expr_member");
 
         match *callee {
-            Expr::Ident(ref i) if i.sym == js_word!("require") => {
+            RExpr::Ident(ref i) if i.sym == js_word!("require") => {
                 let id = args
                     .iter()
                     .cloned()
                     .map(|arg| match arg {
-                        ExprOrSpread { spread: None, expr } => match *expr {
-                            Expr::Lit(Lit::Str(Str { span, value, .. })) => {
-                                Ident::new(value.clone(), span).into()
+                        RExprOrSpread { spread: None, expr } => match *expr {
+                            RExpr::Lit(RLit::Str(RStr { span, value, .. })) => {
+                                RIdent::new(value.clone(), span).into()
                             }
                             _ => unimplemented!("dynamic import: require()"),
                         },
@@ -158,9 +177,9 @@ impl Analyzer<'_, '_> {
                 }
 
                 // if let Some(Type::Enum(ref e)) = self.scope.find_type(&i.into()) {
-                //     return Ok(TsType::TsTypeRef(TsTypeRef {
+                //     return Ok(RTsType::TsTypeRef(RTsTypeRef {
                 //         span,
-                //         type_name: TsEntityName::Ident(i.clone()),
+                //         type_name: RTsEntityName::Ident(i.clone()),
                 //         type_params: None,
                 //     })
                 //     .into());
@@ -175,7 +194,7 @@ impl Analyzer<'_, '_> {
         }
 
         match *callee {
-            Expr::Ident(Ident {
+            RExpr::Ident(RIdent {
                 sym: js_word!("Symbol"),
                 ..
             }) => {
@@ -193,8 +212,8 @@ impl Analyzer<'_, '_> {
                 }));
             }
 
-            Expr::Member(MemberExpr {
-                obj: ExprOrSuper::Expr(ref mut obj),
+            RExpr::Member(RMemberExpr {
+                obj: RExprOrSuper::Expr(ref mut obj),
                 ref mut prop,
                 computed,
                 ..
@@ -203,18 +222,18 @@ impl Analyzer<'_, '_> {
                     // Handle toString()
                     macro_rules! handle {
                         () => {{
-                            return Ok(box Type::from(TsKeywordType {
+                            return Ok(box Type::from(RTsKeywordType {
                                 span,
                                 kind: TsKeywordTypeKind::TsStringKeyword,
                             }));
                         }};
                     }
                     match **prop {
-                        Expr::Ident(Ident {
+                        RExpr::Ident(RIdent {
                             sym: js_word!("toString"),
                             ..
                         }) if !computed => handle!(),
-                        Expr::Lit(Lit::Str(Str {
+                        RExpr::Lit(RLit::Str(RStr {
                             value: js_word!("toString"),
                             ..
                         })) => handle!(),
@@ -227,14 +246,14 @@ impl Analyzer<'_, '_> {
                 let obj_type = obj.validate_with_default(self)?.generalize_lit();
 
                 let obj_type = match *obj_type.normalize() {
-                    Type::Keyword(TsKeywordType {
+                    Type::Keyword(RTsKeywordType {
                         kind: TsKeywordTypeKind::TsNumberKeyword,
                         ..
                     }) => self
                         .env
                         .get_global_type(span, &js_word!("Number"))
                         .expect("Builtin type named 'Number' should exist"),
-                    Type::Keyword(TsKeywordType {
+                    Type::Keyword(RTsKeywordType {
                         kind: TsKeywordTypeKind::TsStringKeyword,
                         ..
                     }) => self
@@ -250,7 +269,7 @@ impl Analyzer<'_, '_> {
                         return Ok(f.ret_ty.clone());
                     }
 
-                    Type::Keyword(TsKeywordType {
+                    Type::Keyword(RTsKeywordType {
                         kind: TsKeywordTypeKind::TsAnyKeyword,
                         ..
                     }) => {
@@ -289,7 +308,7 @@ impl Analyzer<'_, '_> {
                                     ref ret_ty,
                                     ..
                                 }) => {
-                                    if prop_name_to_expr(key).eq_ignore_span(&*prop) {
+                                    if rprop_name_to_expr(key.clone()).eq_ignore_span(&*prop) {
                                         return Ok(ret_ty.clone());
                                     }
                                 }
@@ -297,7 +316,7 @@ impl Analyzer<'_, '_> {
                             }
                         }
                     }
-                    Type::Keyword(TsKeywordType {
+                    Type::Keyword(RTsKeywordType {
                         kind: TsKeywordTypeKind::TsSymbolKeyword,
                         ..
                     }) => {
@@ -354,11 +373,11 @@ impl Analyzer<'_, '_> {
 
                 self.with_ctx(ctx).with(|analyzer: &mut Analyzer| {
                     let ret_ty = match callee {
-                        Expr::Ident(i) if kind == ExtractKind::New => {
+                        RExpr::Ident(i) if kind == ExtractKind::New => {
                             let mut ty = Type::Ref(Ref {
                                 span: i.span,
                                 ctxt: analyzer.ctx.module_id,
-                                type_name: TsEntityName::Ident(i.clone()),
+                                type_name: RTsEntityName::Ident(i.clone()),
                                 type_args: Default::default(),
                             });
                             // It's specified by user
@@ -374,7 +393,7 @@ impl Analyzer<'_, '_> {
                     let mut callee_ty = {
                         let callee_ty = callee.validate_with_default(analyzer)?;
                         match *callee_ty.normalize() {
-                            Type::Keyword(TsKeywordType {
+                            Type::Keyword(RTsKeywordType {
                                 kind: TsKeywordTypeKind::TsAnyKeyword,
                                 ..
                             }) if type_args.is_some() => {
@@ -458,7 +477,7 @@ impl Analyzer<'_, '_> {
         kind: ExtractKind,
         candidates: &mut Vec<MethodSignature>,
         m: &TypeElement,
-        prop: &Expr,
+        prop: &RExpr,
         computed: bool,
     ) {
         match m {
@@ -475,7 +494,7 @@ impl Analyzer<'_, '_> {
                     let ty = p.type_ann.as_ref().cloned().unwrap_or(Type::any(m.span()));
 
                     match ty.foldable() {
-                        Type::Keyword(TsKeywordType {
+                        Type::Keyword(RTsKeywordType {
                             kind: TsKeywordTypeKind::TsAnyKeyword,
                             ..
                         }) => candidates.push(MethodSignature {
@@ -517,9 +536,9 @@ impl Analyzer<'_, '_> {
         kind: ExtractKind,
         span: Span,
         members: &[TypeElement],
-        prop: &Expr,
+        prop: &RExpr,
         computed: bool,
-        args: &mut [ExprOrSpread],
+        args: &mut [RExprOrSpread],
     ) -> ValidationResult {
         // Candidates of the method call.
         //
@@ -537,11 +556,8 @@ impl Analyzer<'_, '_> {
                 .env
                 .get_global_type(span, &js_word!("Object"))
                 .expect("`interface Object` is must");
-            let methods = match *i {
-                Type::Static(Static {
-                    ty: Type::Interface(i),
-                    ..
-                }) => &*i.body,
+            let methods = match i.normalize() {
+                Type::Interface(i) => &*i.body,
 
                 _ => &[],
             };
@@ -609,7 +625,7 @@ impl Analyzer<'_, '_> {
                             );
                         }
 
-                        Type::Keyword(TsKeywordType {
+                        Type::Keyword(RTsKeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsAnyKeyword,
                             ..
@@ -652,7 +668,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         ty: Box<Type>,
         kind: ExtractKind,
-        args: &mut [ExprOrSpread],
+        args: &mut [RExprOrSpread],
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
         type_args: Option<&TypeParamInstantiation>,
@@ -696,7 +712,7 @@ impl Analyzer<'_, '_> {
                                 &type_params.params,
                                 &constructor.params,
                                 spread_arg_types,
-                                &Type::Keyword(TsKeywordType {
+                                &Type::Keyword(RTsKeywordType {
                                     span,
                                     kind: TsKeywordTypeKind::TsUnknownKeyword,
                                 }),
@@ -749,12 +765,12 @@ impl Analyzer<'_, '_> {
                 }));
             }
 
-            Type::Keyword(TsKeywordType {
+            Type::Keyword(RTsKeywordType {
                 kind: TsKeywordTypeKind::TsAnyKeyword,
                 ..
             }) => return Ok(Type::any(span)),
 
-            Type::Keyword(TsKeywordType {
+            Type::Keyword(RTsKeywordType {
                 kind: TsKeywordTypeKind::TsUnknownKeyword,
                 ..
             }) => return Err(Error::Unknown { span }),
@@ -859,7 +875,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Query(QueryType {
-                expr: QueryExpr::TsEntityName(TsEntityName::Ident(Ident { ref sym, .. })),
+                expr: QueryExpr::TsEntityName(RTsEntityName::Ident(RIdent { ref sym, .. })),
                 ..
             }) => {
                 //if self.scope.find_declaring_fn(sym) {
@@ -881,7 +897,7 @@ impl Analyzer<'_, '_> {
         ty: &Type,
         members: &[TypeElement],
         kind: ExtractKind,
-        args: &mut [ExprOrSpread],
+        args: &mut [RExprOrSpread],
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
         type_args: Option<&TypeParamInstantiation>,
@@ -958,7 +974,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         c: &MethodSignature,
-        args: &mut [ExprOrSpread],
+        args: &mut [RExprOrSpread],
         arg_types: &[TypeOrSpread],
     ) -> ValidationResult {
         // Validate arguments
@@ -982,7 +998,7 @@ impl Analyzer<'_, '_> {
         callee: Box<Type>,
         kind: ExtractKind,
         type_args: Option<TypeParamInstantiation>,
-        args: &mut [ExprOrSpread],
+        args: &mut [RExprOrSpread],
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
     ) -> ValidationResult {
@@ -1101,7 +1117,7 @@ impl Analyzer<'_, '_> {
                 .iter()
                 .find(|(_, _, params, _, _, _)| {
                     params.iter().any(|param| match param.pat {
-                        Pat::Rest(..) => true,
+                        RPat::Rest(..) => true,
                         _ => false,
                     })
                 })
@@ -1146,7 +1162,7 @@ impl Analyzer<'_, '_> {
         params: &[FnParam],
         ret_ty: Box<Type>,
         type_args: Option<&TypeParamInstantiation>,
-        args: &mut [ExprOrSpread],
+        args: &mut [RExprOrSpread],
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
     ) -> ValidationResult {
@@ -1200,13 +1216,13 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                let patch_arg = |idx: usize, pat: &mut Pat| {
+                let patch_arg = |idx: usize, pat: &mut RPat| {
                     let actual = &actual_params[idx];
 
                     let ty = pat.get_mut_ty();
                     if let Some(ty) = ty {
                         match ty {
-                            TsType::TsKeywordType(TsKeywordType {
+                            RTsType::TsKeywordType(RTsKeywordType {
                                 span,
                                 kind: TsKeywordTypeKind::TsAnyKeyword,
                             }) if analyzer.is_implicitly_typed_span(*span) => {
@@ -1219,7 +1235,7 @@ impl Analyzer<'_, '_> {
                 };
 
                 let ty = match &mut *arg.expr {
-                    Expr::Arrow(arrow) => {
+                    RExpr::Arrow(arrow) => {
                         for (idx, pat) in arrow.params.iter_mut().enumerate() {
                             patch_arg(idx, pat);
                         }
@@ -1230,7 +1246,7 @@ impl Analyzer<'_, '_> {
                         );
                         box Type::Function(arrow.validate_with(analyzer)?)
                     }
-                    Expr::Fn(fn_expr) => {
+                    RExpr::Fn(fn_expr) => {
                         for (idx, param) in fn_expr.function.params.iter_mut().enumerate() {
                             patch_arg(idx, &mut param.pat)
                         }
@@ -1344,7 +1360,7 @@ impl Analyzer<'_, '_> {
     ///
     /// should make type of `subscriber` `SafeSubscriber`, not `Subscriber`.
     /// I (kdy1) don't know why.
-    fn add_call_facts(&mut self, params: &[FnParam], args: &[ExprOrSpread], ret_ty: &mut Type) {
+    fn add_call_facts(&mut self, params: &[FnParam], args: &[RExprOrSpread], ret_ty: &mut Type) {
         match ret_ty.normalize() {
             Type::Predicate(p) => {
                 let ty = match &p.ty {
@@ -1353,15 +1369,15 @@ impl Analyzer<'_, '_> {
                 };
 
                 match &p.param_name {
-                    TsThisTypeOrIdent::TsThisType(this) => {}
-                    TsThisTypeOrIdent::Ident(arg_id) => {
+                    RTsThisTypeOrIdent::TsThisType(this) => {}
+                    RTsThisTypeOrIdent::Ident(arg_id) => {
                         for (idx, param) in params.iter().enumerate() {
                             match &param.pat {
-                                Pat::Ident(i) if i.sym == arg_id.sym => {
+                                RPat::Ident(i) if i.sym == arg_id.sym => {
                                     // TODO: Check length of args.
                                     let arg = &args[idx];
                                     match &*arg.expr {
-                                        Expr::Ident(var_name) => {
+                                        RExpr::Ident(var_name) => {
                                             self.store_call_fact_for_var(
                                                 var_name.span,
                                                 var_name.into(),
@@ -1492,7 +1508,7 @@ impl Analyzer<'_, '_> {
         Ok(exact)
     }
 
-    fn validate_args(&mut self, args: &mut [ExprOrSpread]) -> Result<Vec<TypeOrSpread>, Error> {
+    fn validate_args(&mut self, args: &mut [RExprOrSpread]) -> Result<Vec<TypeOrSpread>, Error> {
         let ctx = Ctx {
             in_argument: true,
             ..self.ctx
@@ -1520,8 +1536,8 @@ struct ReturnTypeGeneralizer<'a, 'b, 'c> {
     analyzer: &'a mut Analyzer<'b, 'c>,
 }
 
-impl ty::Fold for ReturnTypeGeneralizer<'_, '_, '_> {
-    fn fold_type(&mut self, mut ty: Type) -> Type {
+impl Fold<Type> for ReturnTypeGeneralizer<'_, '_, '_> {
+    fn fold(&mut self, mut ty: Type) -> Type {
         if !self.analyzer.may_generalize(&ty) {
             return ty;
         }
@@ -1541,8 +1557,8 @@ struct ReturnTypeSimplifier<'a, 'b, 'c> {
     analyzer: &'a mut Analyzer<'b, 'c>,
 }
 
-impl VisitMut for ReturnTypeSimplifier<'_, '_, '_> {
-    fn visit_mut_union(&mut self, union: &mut Union) {
+impl VisitMut<Union> for ReturnTypeSimplifier<'_, '_, '_> {
+    fn visit_mut(&mut self, union: &mut Union) {
         let should_remove_null_and_undefined = union.types.iter().any(|ty| match ty.normalize() {
             Type::TypeLit(..) => true,
             Type::Ref(..) => true,
@@ -1561,20 +1577,22 @@ impl VisitMut for ReturnTypeSimplifier<'_, '_, '_> {
             });
         }
     }
+}
 
-    fn visit_mut_type(&mut self, ty: &mut Type) {
+impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
+    fn visit_mut(&mut self, ty: &mut Type) {
         ty.visit_mut_children_with(self);
 
         match ty {
             Type::IndexedAccessType(IndexedAccessType {
                 obj_type:
-                    box Type::Keyword(TsKeywordType {
+                    box Type::Keyword(RTsKeywordType {
                         span,
                         kind: TsKeywordTypeKind::TsAnyKeyword,
                     }),
                 ..
             }) => {
-                *ty = Type::Keyword(TsKeywordType {
+                *ty = Type::Keyword(RTsKeywordType {
                     span: *span,
                     kind: TsKeywordTypeKind::TsAnyKeyword,
                 });
@@ -1591,9 +1609,9 @@ impl VisitMut for ReturnTypeSimplifier<'_, '_, '_> {
 
                 for index_ty in index_type.iter_union() {
                     let (lit_span, value) = match &*index_ty {
-                        Type::Lit(TsLitType {
+                        Type::Lit(RTsLitType {
                             span: lit_span,
-                            lit: TsLit::Str(Str { value, .. }),
+                            lit: RTsLit::Str(RStr { value, .. }),
                             ..
                         }) => (*lit_span, value.clone()),
                         _ => return,
@@ -1613,10 +1631,11 @@ impl VisitMut for ReturnTypeSimplifier<'_, '_, '_> {
                             .access_property(
                                 *span,
                                 obj,
-                                &mut Expr::Lit(Lit::Str(Str {
+                                &mut RExpr::Lit(RLit::Str(RStr {
                                     span: lit_span,
                                     value: value.clone(),
                                     has_escape: false,
+                                    kind: Default::default(),
                                 })),
                                 true,
                                 TypeOfMode::RValue,
@@ -1644,7 +1663,7 @@ impl VisitMut for ReturnTypeSimplifier<'_, '_, '_> {
             Type::Ref(Ref {
                 span,
                 ctxt,
-                type_name: TsEntityName::Ident(i),
+                type_name: RTsEntityName::Ident(i),
                 type_args: Some(type_args),
             }) if type_args.params.len() == 1
                 && type_args.params.iter().any(|ty| match &**ty {
@@ -1665,7 +1684,7 @@ impl VisitMut for ReturnTypeSimplifier<'_, '_, '_> {
                                             types.push(box Type::Ref(Ref {
                                                 span: *span,
                                                 ctxt: *ctxt,
-                                                type_name: TsEntityName::Ident(i.clone()),
+                                                type_name: RTsEntityName::Ident(i.clone()),
                                                 type_args: Some(TypeParamInstantiation {
                                                     span: type_args.span,
                                                     params: vec![ty.clone()],
@@ -1691,14 +1710,14 @@ impl VisitMut for ReturnTypeSimplifier<'_, '_, '_> {
     }
 }
 
-fn is_key_eq_prop(prop: &Expr, computed: bool, e: &Expr) -> bool {
+fn is_key_eq_prop(prop: &RExpr, computed: bool, e: &RExpr) -> bool {
     let tmp;
     let v = match *e {
-        Expr::Ident(ref i) => {
+        RExpr::Ident(ref i) => {
             tmp = Id::from(i);
             &tmp
         }
-        Expr::Lit(Lit::Str(ref s)) => {
+        RExpr::Lit(RLit::Str(ref s)) => {
             tmp = Id::word(s.value.clone());
             &tmp
         }
@@ -1706,8 +1725,8 @@ fn is_key_eq_prop(prop: &Expr, computed: bool, e: &Expr) -> bool {
     };
 
     let p = match &*prop {
-        Expr::Ident(ref i) => &i.sym,
-        Expr::Lit(Lit::Str(ref s)) if computed => &s.value,
+        RExpr::Ident(ref i) => &i.sym,
+        RExpr::Lit(RLit::Str(ref s)) if computed => &s.value,
         _ => return false,
     };
 

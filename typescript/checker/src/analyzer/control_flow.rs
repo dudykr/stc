@@ -19,8 +19,22 @@ use crate::{
     ValidationResult,
 };
 use fxhash::FxHashMap;
+use rnode::VisitMutWith;
+use stc_ast_rnode::RBinExpr;
+use stc_ast_rnode::RCondExpr;
+use stc_ast_rnode::RExpr;
+use stc_ast_rnode::RIfStmt;
+use stc_ast_rnode::RMemberExpr;
+use stc_ast_rnode::RObjectPatProp;
+use stc_ast_rnode::RPat;
+use stc_ast_rnode::RPatOrExpr;
+use stc_ast_rnode::RSwitchCase;
+use stc_ast_rnode::RSwitchStmt;
+use stc_ast_rnode::RTsKeywordType;
+use stc_ast_rnode::RTsType;
+use stc_ast_rnode::RTsTypeAnn;
 use stc_types::Array;
-use stc_types::{eq::TypeEq, Id, TypeParamInstantiation};
+use stc_types::{Id, TypeParamInstantiation};
 use std::{
     collections::hash_map::Entry,
     convert::TryFrom,
@@ -28,9 +42,9 @@ use std::{
     mem::{replace, take},
     ops::{AddAssign, BitOr, Not},
 };
+use swc_common::TypeEq;
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::*;
-use swc_ecma_visit::VisitMutWith;
 
 /// Conditional facts
 #[derive(Debug, Clone, Default)]
@@ -228,7 +242,7 @@ impl BitOr for CondFacts {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, stmt: &mut IfStmt) -> ValidationResult<()> {
+    fn validate(&mut self, stmt: &mut RIfStmt) -> ValidationResult<()> {
         let _test = stmt.test.validate_with_default(self)?;
 
         let true_facts = self.cur_facts.true_facts.take();
@@ -306,7 +320,7 @@ impl Analyzer<'_, '_> {
         fn need_work(ty: &Type) -> bool {
             match ty.normalize() {
                 Type::Lit(..)
-                | Type::Keyword(TsKeywordType {
+                | Type::Keyword(RTsKeywordType {
                     kind: TsKeywordTypeKind::TsNullKeyword,
                     ..
                 }) => false,
@@ -378,7 +392,7 @@ impl Analyzer<'_, '_> {
         Ok(new)
     }
 
-    fn check_switch_discriminant(&mut self, s: &mut SwitchStmt) -> ValidationResult {
+    fn check_switch_discriminant(&mut self, s: &mut RSwitchStmt) -> ValidationResult {
         let discriminant_ty = s.discriminant.validate_with_default(self)?;
         for case in &mut s.cases {
             if let Some(ref mut test) = case.test {
@@ -393,7 +407,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, stmt: &mut SwitchStmt) -> ValidationResult<()> {
+    fn validate(&mut self, stmt: &mut RSwitchStmt) -> ValidationResult<()> {
         self.record(stmt);
 
         let discriminant_ty = self
@@ -420,14 +434,14 @@ impl Analyzer<'_, '_> {
                 .map(|v| v.span())
                 .unwrap_or_else(|| stmt_span);
 
-            let SwitchCase { cons, .. } = case;
+            let RSwitchCase { cons, .. } = case;
             let last = i == len - 1;
 
             ends_with_ret = cons.ends_with_ret();
 
             match case.test {
                 Some(ref test) => {
-                    let mut binary_test_expr = Expr::Bin(BinExpr {
+                    let mut binary_test_expr = RExpr::Bin(RBinExpr {
                         op: op!("==="),
                         span,
                         left: stmt.discriminant.clone(),
@@ -467,10 +481,10 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
-    pub(super) fn try_assign(&mut self, span: Span, lhs: &mut PatOrExpr, ty: &Type) {
+    pub(super) fn try_assign(&mut self, span: Span, lhs: &mut RPatOrExpr, ty: &Type) {
         let res: Result<(), Error> = try {
             match *lhs {
-                PatOrExpr::Expr(ref mut expr) | PatOrExpr::Pat(box Pat::Expr(ref mut expr)) => {
+                RPatOrExpr::Expr(ref mut expr) | RPatOrExpr::Pat(box RPat::Expr(ref mut expr)) => {
                     let lhs_ty = expr.validate_with_args(self, (TypeOfMode::LValue, None, None))?;
                     let lhs_ty = self.expand(span, lhs_ty)?;
 
@@ -478,12 +492,12 @@ impl Analyzer<'_, '_> {
 
                     match **expr {
                         // TODO: Validate
-                        Expr::Member(MemberExpr { .. }) => return,
+                        RExpr::Member(RMemberExpr { .. }) => return,
                         _ => unimplemented!("assign: {:?} = {:?}", expr, ty),
                     }
                 }
 
-                PatOrExpr::Pat(ref mut pat) => {
+                RPatOrExpr::Pat(ref mut pat) => {
                     self.try_assign_pat(span, pat, ty)?;
                 }
             }
@@ -495,10 +509,10 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn try_assign_pat(&mut self, span: Span, lhs: &mut Pat, ty: &Type) -> Result<(), Error> {
+    fn try_assign_pat(&mut self, span: Span, lhs: &mut RPat, ty: &Type) -> Result<(), Error> {
         // Update variable's type
         match *lhs {
-            Pat::Ident(ref i) => {
+            RPat::Ident(ref i) => {
                 println!("Symbol: {}", i.sym);
 
                 if let Some(ref var_info) = self.scope.get_var(&i.into()) {
@@ -588,7 +602,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            Pat::Array(ref mut arr) => {
+            RPat::Array(ref mut arr) => {
                 //
                 for (i, elem) in arr.elems.iter_mut().enumerate() {
                     if let Some(elem) = elem.as_mut() {
@@ -614,7 +628,7 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
 
-            Pat::Object(ref mut obj) => {
+            RPat::Object(ref mut obj) => {
                 //
                 for prop in obj.props.iter_mut() {
                     match ty.normalize() {
@@ -622,13 +636,13 @@ impl Analyzer<'_, '_> {
                             self.try_assign_pat(
                                 span,
                                 match prop {
-                                    ObjectPatProp::KeyValue(kv) => &mut kv.value,
-                                    ObjectPatProp::Assign(a) => {
+                                    RObjectPatProp::KeyValue(kv) => &mut kv.value,
+                                    RObjectPatProp::Assign(a) => {
                                         if a.key.type_ann.is_none() {
-                                            a.key.type_ann = Some(TsTypeAnn {
+                                            a.key.type_ann = Some(RTsTypeAnn {
                                                 span,
-                                                type_ann: box TsType::TsKeywordType(
-                                                    TsKeywordType {
+                                                type_ann: box RTsType::TsKeywordType(
+                                                    RTsKeywordType {
                                                         span,
                                                         kind: TsKeywordTypeKind::TsAnyKeyword,
                                                     },
@@ -637,12 +651,12 @@ impl Analyzer<'_, '_> {
                                         }
                                         continue;
                                     }
-                                    ObjectPatProp::Rest(r) => {
+                                    RObjectPatProp::Rest(r) => {
                                         if r.type_ann.is_none() {
-                                            r.type_ann = Some(TsTypeAnn {
+                                            r.type_ann = Some(RTsTypeAnn {
                                                 span,
-                                                type_ann: box TsType::TsKeywordType(
-                                                    TsKeywordType {
+                                                type_ann: box RTsType::TsKeywordType(
+                                                    RTsKeywordType {
                                                         span,
                                                         kind: TsKeywordTypeKind::TsAnyKeyword,
                                                     },
@@ -665,11 +679,11 @@ impl Analyzer<'_, '_> {
                                     TypeElement::Call(_) => unimplemented!(),
                                     TypeElement::Constructor(_) => unimplemented!(),
                                     TypeElement::Property(p) => match prop {
-                                        ObjectPatProp::KeyValue(prop) => {
+                                        RObjectPatProp::KeyValue(prop) => {
                                             //
                                         }
-                                        ObjectPatProp::Assign(_) => {}
-                                        ObjectPatProp::Rest(_) => {}
+                                        RObjectPatProp::Assign(_) => {}
+                                        RObjectPatProp::Rest(_) => {}
                                     },
                                     TypeElement::Method(_) => unimplemented!(),
                                     TypeElement::Index(_) => unimplemented!(),
@@ -715,13 +729,13 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(
         &mut self,
-        mut e: &mut CondExpr,
+        mut e: &mut RCondExpr,
         mode: TypeOfMode,
         type_ann: Option<&Type>,
     ) -> ValidationResult {
         self.record(e);
 
-        let CondExpr {
+        let RCondExpr {
             span,
             ref mut test,
             ref mut alt,
@@ -740,7 +754,7 @@ impl Analyzer<'_, '_> {
         })?;
 
         match **test {
-            Expr::Ident(ref i) => {
+            RExpr::Ident(ref i) => {
                 // Check `declaring` before checking variables.
                 if self.scope.declaring.contains(&i.into()) {
                     return if self.ctx.allow_ref_declaring {

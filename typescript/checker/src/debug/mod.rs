@@ -1,8 +1,14 @@
 //! A module to validate while type checking
 use crate::ty::{self, Ref, Type};
 use backtrace::Backtrace;
+use rnode::Fold;
+use rnode::FoldWith;
+use rnode::RNode;
+use rnode::Visit;
+use rnode::VisitWith;
 use slog::Logger;
-use stc_types::{Fold, FoldWith, Id, TypeNode, VisitWith};
+use stc_ast_rnode::RTsType;
+use stc_types::Id;
 use std::io::{stderr, stdout};
 use swc_atoms::js_word;
 use swc_common::{sync::Lrc, FilePathMapping, SourceMap, DUMMY_SP};
@@ -29,7 +35,8 @@ pub fn print_type(logger: &Logger, name: &str, cm: &Lrc<SourceMap>, t: &Type) {
                     expr: box Expr::TsAs(TsAsExpr {
                         span: DUMMY_SP,
                         expr: box Expr::Ident(Ident::new("TYPE".into(), DUMMY_SP)),
-                        type_ann: t.clone().fold_with(&mut Visualizer).into(),
+                        type_ann: box RTsType::from(t.clone().fold_with(&mut Visualizer))
+                            .into_orig(),
                     }),
                 }))],
                 shebang: None,
@@ -50,14 +57,14 @@ pub fn assert_no_ref(ty: &Type) {
     struct Visitor {
         found: bool,
     }
-    impl ty::Visit for Visitor {
-        fn visit_ref(&mut self, _: &Ref, _: &dyn TypeNode) {
+    impl Visit<Ref> for Visitor {
+        fn visit(&mut self, _: &Ref) {
             self.found = true;
         }
     }
 
     let mut v = Visitor { found: false };
-    ty.visit_with(ty, &mut v);
+    ty.visit_with(&mut v);
     if v.found {
         print_backtrace();
         unreachable!("A type ({:#?}) should not contain unresolved reference", ty)
@@ -144,12 +151,14 @@ fn filter(mut bt: Backtrace) -> Backtrace {
 }
 
 struct Visualizer;
-impl Fold for Visualizer {
-    fn fold_id(&mut self, id: Id) -> Id {
+impl Fold<Id> for Visualizer {
+    fn fold(&mut self, id: Id) -> Id {
         Id::word(format!("{}", id).into())
     }
+}
 
-    fn fold_type(&mut self, mut ty: Type) -> Type {
+impl Fold<Type> for Visualizer {
+    fn fold(&mut self, mut ty: Type) -> Type {
         ty = ty.fold_children_with(self);
 
         match ty {

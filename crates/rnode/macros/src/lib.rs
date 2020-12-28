@@ -62,6 +62,7 @@ pub fn define_rnode(module: proc_macro::TokenStream) -> proc_macro::TokenStream 
     }
 
     let mut tts = q!({});
+
     for stmt in module.stmts {
         match stmt {
             Stmt::Item(item) => {
@@ -112,7 +113,15 @@ fn handle_item(nodes_to_convert: &[String], item: Item) -> Vec<Item> {
 
             gen.push(Item::Enum(ItemEnum {
                 attrs: take_attrs(q!({
-                    #[derive(Clone)]
+                    #[derive(
+                        Debug,
+                        Clone,
+                        PartialEq,
+                        ::swc_common::FromVariant,
+                        ::swc_common::Spanned,
+                        ::swc_common::EqIgnoreSpan,
+                        ::rnode::Visit,
+                    )]
                     struct Dummy;
                 })),
                 vis: e.vis.clone(),
@@ -210,7 +219,14 @@ fn handle_item(nodes_to_convert: &[String], item: Item) -> Vec<Item> {
 
                     gen.push(Item::Struct(ItemStruct {
                         attrs: take_attrs(q!({
-                            #[derive(Clone)]
+                            #[derive(
+                                Debug,
+                                Clone,
+                                PartialEq,
+                                ::swc_common::Spanned,
+                                ::swc_common::EqIgnoreSpan,
+                                ::rnode::Visit,
+                            )]
                             struct Dummy;
                         })),
                         vis: syn::Visibility::Public(VisPublic {
@@ -681,8 +697,35 @@ fn handle_field(
                     })
                 )
                 .parse(),
-                ty: q!(Vars { ty: &res.ty }, (std::rc::Rc<ty>)).parse(),
+                ty: q!(Vars { ty: &res.ty }, (std::rc::Rc<std::cell::RefCell<ty>>)).parse(),
                 ..res
+            };
+        } else if ref_cell {
+            return RNodeField {
+                from_orig: q!(
+                    Vars {
+                        orig: match_binding,
+                        inner_from_org: &res.from_orig,
+                    },
+                    ({
+                        let orig = *orig;
+                        std::cell::RefCell::new(inner_from_org)
+                    })
+                )
+                .parse(),
+                to_orig: q!(
+                    Vars {
+                        val: match_binding,
+                        inner_to_orig: &res.to_orig
+                    },
+                    ({
+                        let val = val.into_inner();
+                        let res = inner_to_orig;
+                        res.map(Box::new)
+                    })
+                )
+                .parse(),
+                ty: q!(Vars { ty: &res.ty }, (std::cell::RefCell<ty>)).parse(),
             };
         } else {
             return RNodeField {
@@ -712,6 +755,122 @@ fn handle_field(
         }
     }
 
+    if let Some(ty) = extract_opt(&ty) {
+        let mut info = handle_field(nodes_to_convert, &[], match_binding, ty);
+        let boxed = extract_box(ty);
+
+        if !rc && !ref_cell {
+            return RNodeField {
+                from_orig: q!(
+                    Vars {
+                        v: &match_binding,
+                        inner: &info.from_orig
+                    },
+                    (v.map(|v| { inner }))
+                )
+                .parse(),
+                to_orig: q!(
+                    Vars {
+                        v: &match_binding,
+                        inner: &info.to_orig
+                    },
+                    (v.map(|v| { inner }))
+                )
+                .parse(),
+                ty: q!(Vars { ty: &info.ty }, (Option<ty>)).parse(),
+            };
+        }
+
+        info.ty = OptionReplacer { nodes_to_convert }.fold_type(info.ty);
+
+        if rc {
+            info.from_orig = q!(
+                Vars {
+                    v: &match_binding,
+                    inner: &info.from_orig,
+                },
+                {
+                    match v.map(|v| inner) {
+                        Some(v) => std::rc::Rc::new(std::cell::RefCell::new(Some(v))),
+                        None => Default::default(),
+                    }
+                }
+            )
+            .parse();
+            info.ty = q!(Vars { ty: &info.ty }, (std::rc::Rc<std::cell::RefCell<ty>>)).parse()
+        } else {
+            info.from_orig = q!(
+                Vars {
+                    v: &match_binding,
+                    inner: &info.from_orig,
+                },
+                {
+                    match v.map(|v| inner) {
+                        Some(v) => std::cell::RefCell::new(Some(v)),
+                        None => Default::default(),
+                    }
+                }
+            )
+            .parse();
+            if let Some(boxed) = boxed {
+                let inner_info = handle_field(nodes_to_convert, attrs, match_binding, boxed);
+                info.to_orig = q!(
+                    Vars {
+                        inner: &inner_info.to_orig,
+                    },
+                    { inner.map(Box::new) }
+                )
+                .parse();
+                info.ty = q!(
+                    Vars { ty: &inner_info.ty },
+                    (std::cell::RefCell<Option<Box<ty>>>)
+                )
+                .parse();
+            } else {
+                info.ty = q!(Vars { ty: &info.ty }, (std::cell::RefCell<ty>)).parse()
+            }
+        }
+
+        return RNodeField { ..info };
+    }
+
+    if let Some(ty) = extract_vec(&ty) {
+        let mut info = handle_field(nodes_to_convert, attrs, match_binding, ty);
+        info.ty = q!(Vars { ty: &info.ty }, (Vec<ty>)).parse();
+
+        if !rc && !ref_cell {
+            info.to_orig = q!(
+                Vars {
+                    v: match_binding,
+                    inner: &info.to_orig,
+                },
+                { v.into_iter().map(|v| { inner }).collect() }
+            )
+            .parse();
+            info.from_orig = q!(
+                Vars {
+                    v: match_binding,
+                    inner: &info.from_orig,
+                },
+                { v.into_iter().map(|v| { inner }).collect() }
+            )
+            .parse();
+            return info;
+        }
+
+        return RNodeField {
+            from_orig: q!(
+                Vars {
+                    v: &match_binding,
+                    inner: &info.from_orig
+                },
+                { v.into_iter().map(|v| { inner }).collect() }
+            )
+            .parse(),
+            ..info
+        };
+    }
+
     if !rc && !ref_cell {
         return RNodeField {
             from_orig: q!(Vars { match_binding }, { match_binding }).parse(),
@@ -720,39 +879,6 @@ fn handle_field(
         };
     }
 
-    if let Some(ty) = extract_opt(&ty) {
-        let info = handle_field(nodes_to_convert, attrs, match_binding, ty);
-
-        return RNodeField {
-            from_orig: q!(
-                Vars {
-                    v: &match_binding,
-                    inner: &info.from_orig
-                },
-                (v.map(|v| { inner }))
-            )
-            .parse(),
-            ty: OptionReplacer { nodes_to_convert }.fold_type(info.ty),
-            ..info
-        };
-    }
-
-    if let Some(ty) = extract_vec(&ty) {
-        let mut info = handle_field(nodes_to_convert, attrs, match_binding, ty);
-        info.ty = q!(Vars { ty: &info.ty }, (Vec<ty>)).parse();
-
-        return RNodeField {
-            from_orig: q!(
-                Vars {
-                    v: &match_binding,
-                    inner: &info.from_orig
-                },
-                { v.into_iter().map(|v| inner).collect() }
-            )
-            .parse(),
-            ..info
-        };
-    }
     // Vec<T> -> Vec<Rc<RefCell<T>>>
     // T -> Rc<RefCell<T>>
     if rc {

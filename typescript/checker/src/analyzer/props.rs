@@ -7,10 +7,28 @@ use crate::{
     validator::{Validate, ValidateWith},
     ValidationResult,
 };
+use rnode::Visit;
+use rnode::VisitMutWith;
+use rnode::VisitWith;
+use stc_ast_rnode::RAssignProp;
+use stc_ast_rnode::RComputedPropName;
+use stc_ast_rnode::RExpr;
+use stc_ast_rnode::RExprOrSuper;
+use stc_ast_rnode::RGetterProp;
+use stc_ast_rnode::RIdent;
+use stc_ast_rnode::RKeyValueProp;
+use stc_ast_rnode::RLit;
+use stc_ast_rnode::RMemberExpr;
+use stc_ast_rnode::RMethodProp;
+use stc_ast_rnode::RNumber;
+use stc_ast_rnode::RProp;
+use stc_ast_rnode::RPropName;
+use stc_ast_rnode::RSetterProp;
+use stc_ast_rnode::RStr;
+use stc_ast_rnode::RTsKeywordType;
 use swc_atoms::js_word;
 use swc_common::{Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
-use swc_ecma_visit::{Node, VisitMutWith};
 
 #[derive(Debug, Clone, Copy)]
 pub(super) enum ComputedPropMode {
@@ -25,7 +43,7 @@ pub(super) enum ComputedPropMode {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut PropName) {
+    fn validate(&mut self, node: &mut RPropName) {
         self.record(node);
 
         node.visit_mut_children_with(self);
@@ -36,7 +54,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut ComputedPropName) {
+    fn validate(&mut self, node: &mut RComputedPropName) {
         self.record(node);
 
         let mode = self.ctx.computed_prop_mode;
@@ -44,9 +62,9 @@ impl Analyzer<'_, '_> {
         let span = node.span;
 
         let is_symbol_access = match *node.expr {
-            Expr::Member(MemberExpr {
+            RExpr::Member(RMemberExpr {
                 obj:
-                    ExprOrSuper::Expr(box Expr::Ident(Ident {
+                    RExprOrSuper::Expr(box RExpr::Ident(RIdent {
                         sym: js_word!("Symbol"),
                         ..
                     })),
@@ -113,26 +131,26 @@ impl Analyzer<'_, '_> {
         } {
             let ty = ty.generalize_lit();
             match *ty.normalize() {
-                Type::Keyword(TsKeywordType {
+                Type::Keyword(RTsKeywordType {
                     kind: TsKeywordTypeKind::TsAnyKeyword,
                     ..
                 })
-                | Type::Keyword(TsKeywordType {
+                | Type::Keyword(RTsKeywordType {
                     kind: TsKeywordTypeKind::TsStringKeyword,
                     ..
                 })
-                | Type::Keyword(TsKeywordType {
+                | Type::Keyword(RTsKeywordType {
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                     ..
                 })
-                | Type::Keyword(TsKeywordType {
+                | Type::Keyword(RTsKeywordType {
                     kind: TsKeywordTypeKind::TsSymbolKeyword,
                     ..
                 })
                 | Type::Operator(Operator {
                     op: TsTypeOperatorOp::Unique,
                     ty:
-                        box Type::Keyword(TsKeywordType {
+                        box Type::Keyword(RTsKeywordType {
                             kind: TsKeywordTypeKind::TsSymbolKeyword,
                             ..
                         }),
@@ -155,7 +173,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, prop: &mut Prop) -> ValidationResult<TypeElement> {
+    fn validate(&mut self, prop: &mut RProp) -> ValidationResult<TypeElement> {
         self.record(prop);
 
         let ctx = Ctx {
@@ -172,10 +190,10 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
-    fn validate_prop(&mut self, prop: &mut Prop) -> ValidationResult<TypeElement> {
+    fn validate_prop(&mut self, prop: &mut RProp) -> ValidationResult<TypeElement> {
         let computed = match prop {
-            Prop::KeyValue(ref kv) => match kv.key {
-                PropName::Computed(_) => true,
+            RProp::KeyValue(ref kv) => match kv.key {
+                RPropName::Computed(_) => true,
                 _ => false,
             },
             _ => false,
@@ -186,7 +204,7 @@ impl Analyzer<'_, '_> {
         let key = prop_key_to_expr(&prop);
 
         let shorthand_type_ann = match prop {
-            Prop::Shorthand(ref i) => {
+            RProp::Shorthand(ref i) => {
                 // TODO: Check if RValue is correct
                 self.type_of_var(&i, TypeOfMode::RValue, None)
                     .report(&mut self.storage)
@@ -197,7 +215,7 @@ impl Analyzer<'_, '_> {
         let span = prop.span();
 
         Ok(match *prop {
-            Prop::Shorthand(..) => PropertySignature {
+            RProp::Shorthand(..) => PropertySignature {
                 span: prop.span(),
                 key,
                 params: Default::default(),
@@ -209,9 +227,9 @@ impl Analyzer<'_, '_> {
             }
             .into(),
 
-            Prop::KeyValue(ref mut kv) => {
+            RProp::KeyValue(ref mut kv) => {
                 let computed = match kv.key {
-                    PropName::Computed(_) => true,
+                    RPropName::Computed(_) => true,
                     _ => false,
                 };
                 let ty = kv.value.validate_with_default(self)?;
@@ -229,11 +247,11 @@ impl Analyzer<'_, '_> {
                 .into()
             }
 
-            Prop::Assign(ref mut p) => unimplemented!("type_of_prop(AssignProperty): {:?}", p),
-            Prop::Getter(ref mut p) => p.validate_with(self)?,
-            Prop::Setter(ref mut p) => {
+            RProp::Assign(ref mut p) => unimplemented!("type_of_prop(AssignProperty): {:?}", p),
+            RProp::Getter(ref mut p) => p.validate_with(self)?,
+            RProp::Setter(ref mut p) => {
                 let computed = match p.key {
-                    PropName::Computed(_) => true,
+                    RPropName::Computed(_) => true,
                     _ => false,
                 };
                 let parma_span = p.param.span();
@@ -256,9 +274,9 @@ impl Analyzer<'_, '_> {
                 })?
             }
 
-            Prop::Method(ref mut p) => {
+            RProp::Method(ref mut p) => {
                 let computed = match p.key {
-                    PropName::Computed(..) => true,
+                    RPropName::Computed(..) => true,
                     _ => false,
                 };
 
@@ -267,7 +285,7 @@ impl Analyzer<'_, '_> {
                         // We mark as wip
                         if !computed {
                             match &p.key {
-                                PropName::Ident(i) => {
+                                RPropName::Ident(i) => {
                                     child.scope.declaring_prop = Some(i.into());
                                 }
                                 _ => {}
@@ -286,7 +304,7 @@ impl Analyzer<'_, '_> {
                                     &mut body.stmts,
                                 )?
                                 .unwrap_or_else(|| {
-                                    box Type::Keyword(TsKeywordType {
+                                    box Type::Keyword(RTsKeywordType {
                                         span: body.span,
                                         kind: TsKeywordTypeKind::TsVoidKeyword,
                                     })
@@ -330,11 +348,11 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, n: &mut GetterProp) -> ValidationResult<TypeElement> {
+    fn validate(&mut self, n: &mut RGetterProp) -> ValidationResult<TypeElement> {
         self.record(n);
 
         let computed = match n.key {
-            PropName::Computed(_) => true,
+            RPropName::Computed(_) => true,
             _ => false,
         };
 
@@ -376,32 +394,30 @@ impl Analyzer<'_, '_> {
     }
 }
 
-fn prop_key_to_expr(p: &Prop) -> Box<Expr> {
+fn prop_key_to_expr(p: &RProp) -> Box<RExpr> {
     match *p {
-        Prop::Shorthand(ref i) => box Expr::Ident(i.clone()),
-        Prop::Assign(AssignProp { ref key, .. }) => box Expr::Ident(key.clone()),
-        Prop::Getter(GetterProp { ref key, .. })
-        | Prop::KeyValue(KeyValueProp { ref key, .. })
-        | Prop::Method(MethodProp { ref key, .. })
-        | Prop::Setter(SetterProp { ref key, .. }) => prop_name_to_expr(key),
+        RProp::Shorthand(ref i) => box RExpr::Ident(i.clone()),
+        RProp::Assign(RAssignProp { ref key, .. }) => box RExpr::Ident(key.clone()),
+        RProp::Getter(RGetterProp { ref key, .. })
+        | RProp::KeyValue(RKeyValueProp { ref key, .. })
+        | RProp::Method(RMethodProp { ref key, .. })
+        | RProp::Setter(RSetterProp { ref key, .. }) => prop_name_to_expr(key),
     }
 }
 
-pub(super) fn prop_name_to_expr(key: &PropName) -> Box<Expr> {
+pub(super) fn prop_name_to_expr(key: &RPropName) -> Box<RExpr> {
     match key {
-        PropName::Computed(ref p) => p.expr.clone(),
-        PropName::Ident(ref ident) => box Expr::Ident(ident.clone()),
-        PropName::Str(ref s) => box Expr::Lit(Lit::Str(Str { ..s.clone() })),
-        PropName::Num(ref s) => box Expr::Lit(Lit::Num(Number { ..s.clone() })),
-        PropName::BigInt(n) => box Expr::Lit(Lit::BigInt(n.clone())),
+        RPropName::Computed(ref p) => p.expr.clone(),
+        RPropName::Ident(ref ident) => box RExpr::Ident(ident.clone()),
+        RPropName::Str(ref s) => box RExpr::Lit(RLit::Str(RStr { ..s.clone() })),
+        RPropName::Num(ref s) => box RExpr::Lit(RLit::Num(RNumber { ..s.clone() })),
+        RPropName::BigInt(n) => box RExpr::Lit(RLit::BigInt(n.clone())),
     }
 }
 
-fn is_valid_computed_key(key: &Expr) -> bool {
-    use swc_ecma_visit::VisitWith;
-
+fn is_valid_computed_key(key: &RExpr) -> bool {
     let mut v = ValidKeyChecker { valid: true };
-    key.visit_with(&Invalid { span: DUMMY_SP }, &mut v);
+    key.visit_with(&mut v);
     v.valid
 }
 
@@ -410,8 +426,8 @@ struct ValidKeyChecker {
     valid: bool,
 }
 
-impl swc_ecma_visit::Visit for ValidKeyChecker {
-    fn visit_ident(&mut self, _: &Ident, _: &dyn Node) {
+impl Visit<RIdent> for ValidKeyChecker {
+    fn visit(&mut self, _: &RIdent) {
         self.valid = false;
     }
 }
