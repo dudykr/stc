@@ -1,4 +1,5 @@
 use super::{Analyzer, Ctx};
+use crate::util::find_ids_in_pat;
 use crate::{
     analyzer::util::ResultExt,
     errors::Error,
@@ -7,6 +8,23 @@ use crate::{
     validator::{Validate, ValidateWith},
     ValidationResult,
 };
+use rnode::VisitMutWith;
+use stc_ast_rnode::RDecl;
+use stc_ast_rnode::RDefaultDecl;
+use stc_ast_rnode::RExportAll;
+use stc_ast_rnode::RExportDecl;
+use stc_ast_rnode::RExportDefaultDecl;
+use stc_ast_rnode::RExportDefaultExpr;
+use stc_ast_rnode::RExportSpecifier;
+use stc_ast_rnode::RExpr;
+use stc_ast_rnode::RIdent;
+use stc_ast_rnode::RNamedExport;
+use stc_ast_rnode::RPat;
+use stc_ast_rnode::RStmt;
+use stc_ast_rnode::RTsExportAssignment;
+use stc_ast_rnode::RTsTypeAnn;
+use stc_ast_rnode::RVarDecl;
+use stc_ast_rnode::RVarDeclarator;
 use stc_checker_macros::extra_validator;
 use stc_types::Id;
 use stc_types::ModuleId;
@@ -15,14 +33,13 @@ use swc_atoms::js_word;
 use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
 use swc_ecma_utils::find_ids;
-use swc_ecma_visit::VisitMutWith;
 
-// ModuleDecl::ExportNamed(export) => {}
+// RModuleDecl::ExportNamed(export) => {}
 //
-// ModuleDecl::ExportAll(export) => unimplemented!("export * from
+// RModuleDecl::ExportAll(export) => unimplemented!("export * from
 // 'other-file';"),
 //
-// ModuleDecl::TsNamespaceExport(ns) =>
+// RModuleDecl::TsNamespaceExport(ns) =>
 // unimplemented!("export namespace"),
 
 impl Analyzer<'_, '_> {
@@ -40,7 +57,7 @@ impl Analyzer<'_, '_> {
         //         Some(&sym)
         //     } else {
         //         match expr {
-        //             Expr::Ident(ref i) => {
+        //             RExpr::Ident(ref i) => {
         //                 tmp = i.clone().into();
         //                 Some(&tmp)
         //             }
@@ -93,7 +110,7 @@ impl Analyzer<'_, '_> {
         // }
     }
 
-    pub(super) fn export_default_expr(&mut self, expr: &mut Expr) {
+    pub(super) fn export_default_expr(&mut self, expr: &mut RExpr) {
         let span = expr.span();
         // assert_eq!(
         //     self.info.exports.vars.get(&Id::word(js_word!("default"))),
@@ -129,39 +146,39 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, export: &mut ExportDecl) {
+    fn validate(&mut self, export: &mut RExportDecl) {
         let span = export.span;
 
         match export.decl {
-            Decl::Fn(ref mut f) => {
+            RDecl::Fn(ref mut f) => {
                 f.declare = true;
                 f.visit_mut_with(self);
                 // self.export(f.span(), f.ident.clone().into(), None);
                 self.export_var(f.span(), f.ident.clone().into());
             }
-            Decl::TsInterface(ref mut i) => {
+            RDecl::TsInterface(ref mut i) => {
                 i.visit_mut_with(self);
 
                 self.export(i.span(), i.id.clone().into(), None)
             }
 
-            Decl::Class(ref mut c) => {
+            RDecl::Class(ref mut c) => {
                 c.declare = true;
                 c.visit_mut_with(self);
                 self.export(c.span(), c.ident.clone().into(), None);
                 self.export_var(c.span(), c.ident.clone().into());
             }
-            Decl::Var(ref mut var) => {
+            RDecl::Var(ref mut var) => {
                 let span = var.span;
                 var.visit_mut_with(self);
 
-                let ids: Vec<Id> = find_ids(&var.decls);
+                let ids: Vec<Id> = find_ids_in_pat(&var.decls);
 
                 for id in ids {
                     self.export_var(span, id)
                 }
             }
-            Decl::TsEnum(ref mut e) => {
+            RDecl::TsEnum(ref mut e) => {
                 let span = e.span();
 
                 let ty = e
@@ -176,8 +193,8 @@ impl Analyzer<'_, '_> {
                 self.storage
                     .export_type(span, self.ctx.module_id, e.id.clone().into());
             }
-            Decl::TsModule(..) => unimplemented!("export module "),
-            Decl::TsTypeAlias(ref mut decl) => {
+            RDecl::TsModule(..) => unimplemented!("export module "),
+            RDecl::TsTypeAlias(ref mut decl) => {
                 decl.visit_mut_with(self);
                 // export type Foo = 'a' | 'b';
                 // export type Foo = {};
@@ -194,11 +211,11 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, export: &mut ExportDefaultDecl) {
+    fn validate(&mut self, export: &mut RExportDefaultDecl) {
         let span = export.span();
 
         match export.decl {
-            DefaultDecl::Fn(ref mut f) => {
+            RDefaultDecl::Fn(ref mut f) => {
                 let i = f
                     .ident
                     .as_ref()
@@ -223,7 +240,7 @@ impl Analyzer<'_, '_> {
 
                 self.export(f.span(), Id::word(js_word!("default")), Some(i))
             }
-            DefaultDecl::Class(ref mut c) => {
+            RDefaultDecl::Class(ref mut c) => {
                 let id = c
                     .ident
                     .as_ref()
@@ -235,7 +252,7 @@ impl Analyzer<'_, '_> {
 
                 self.export(span, Id::word(js_word!("default")), Some(id));
             }
-            DefaultDecl::TsInterfaceDecl(ref i) => {
+            RDefaultDecl::TsInterfaceDecl(ref i) => {
                 let i = i.id.clone().into();
                 export.visit_mut_children_with(self);
 
@@ -297,20 +314,20 @@ impl Analyzer<'_, '_> {
     }
 
     /// Exports a variable.
-    fn export_expr(&mut self, name: Id, e: &mut Expr) -> ValidationResult<()> {
+    fn export_expr(&mut self, name: Id, e: &mut RExpr) -> ValidationResult<()> {
         let ty = e.validate_with_default(self)?;
 
         if *name.sym() == js_word!("default") {
             match e {
-                Expr::Ident(..) => return Ok(()),
+                RExpr::Ident(..) => return Ok(()),
                 _ => {}
             }
-            let var = VarDeclarator {
+            let var = RVarDeclarator {
                 span: DUMMY_SP,
-                name: Pat::Ident(Ident {
+                name: RPat::Ident(RIdent {
                     span: DUMMY_SP,
                     sym: "_default".into(),
-                    type_ann: Some(TsTypeAnn {
+                    type_ann: Some(RTsTypeAnn {
                         span: DUMMY_SP,
                         type_ann: ty.clone().into(),
                     }),
@@ -319,13 +336,13 @@ impl Analyzer<'_, '_> {
                 init: None,
                 definite: false,
             };
-            self.prepend_stmts.push(Stmt::Decl(Decl::Var(VarDecl {
+            self.prepend_stmts.push(RStmt::Decl(RDecl::Var(RVarDecl {
                 span: DUMMY_SP,
                 kind: VarDeclKind::Const,
                 declare: true,
                 decls: vec![var],
             })));
-            *e = Expr::Ident(Ident::new("_default".into(), DUMMY_SP));
+            *e = RExpr::Ident(RIdent::new("_default".into(), DUMMY_SP));
             return Ok(());
         }
 
@@ -336,7 +353,7 @@ impl Analyzer<'_, '_> {
 /// Done
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut TsExportAssignment) {
+    fn validate(&mut self, node: &mut RTsExportAssignment) {
         self.export_expr(Id::word(js_word!("default")), &mut node.expr)?;
 
         Ok(())
@@ -346,7 +363,7 @@ impl Analyzer<'_, '_> {
 /// Done
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut ExportDefaultExpr) {
+    fn validate(&mut self, node: &mut RExportDefaultExpr) {
         let ctx = Ctx {
             in_export_default_expr: true,
             ..self.ctx
@@ -360,7 +377,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut ExportAll) {
+    fn validate(&mut self, node: &mut RExportAll) {
         let span = node.span;
 
         let path = self.storage.path(self.ctx.module_id);
@@ -389,14 +406,14 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut NamedExport) {
+    fn validate(&mut self, node: &mut RNamedExport) {
         let span = node.span;
         let ctxt = self.ctx.module_id;
         let base = self.storage.path(ctxt);
 
         for specifier in &node.specifiers {
             match specifier {
-                ExportSpecifier::Namespace(_) => {
+                RExportSpecifier::Namespace(_) => {
                     // We need
                     match &node.src {
                         Some(src) => {
@@ -405,8 +422,8 @@ impl Analyzer<'_, '_> {
                         None => {}
                     }
                 }
-                ExportSpecifier::Default(_) => {}
-                ExportSpecifier::Named(named) => {
+                RExportSpecifier::Default(_) => {}
+                RExportSpecifier::Named(named) => {
                     //
 
                     match &node.src {

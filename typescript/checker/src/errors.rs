@@ -3,11 +3,12 @@ use crate::{
     name::Name,
     ty::{Type, TypeElement, TypeParamInstantiation},
 };
+use stc_ast_rnode::RExpr;
 use stc_types::{Class, Id, ModuleId};
 use std::{ops::RangeInclusive, path::PathBuf};
 use swc_atoms::JsWord;
 use swc_common::{errors::Handler, Span, Spanned, DUMMY_SP};
-use swc_ecma_ast::{Expr, UnaryOp, UpdateOp};
+use swc_ecma_ast::{UnaryOp, UpdateOp};
 
 impl Errors {
     /// This is used for debugging (by calling [pacic]).
@@ -55,7 +56,7 @@ pub enum Error {
     NoSuchPropertyInClass {
         span: Span,
         class_name: Option<Id>,
-        prop: Expr,
+        prop: RExpr,
     },
 
     TypeParameterCountMismatch {
@@ -177,7 +178,7 @@ pub enum Error {
     NoSuchProperty {
         span: Span,
         obj: Option<Box<Type>>,
-        prop: Option<Expr>,
+        prop: Option<RExpr>,
         prop_ty: Option<Box<Type>>,
     },
 

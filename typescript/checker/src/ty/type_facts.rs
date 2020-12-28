@@ -1,19 +1,22 @@
 use super::Type;
 use crate::{ty, type_facts::TypeFacts};
+use rnode::Fold;
+use rnode::FoldWith;
+use stc_ast_rnode::RTsKeywordType;
+use stc_types::Union;
 use swc_common::Spanned;
 use swc_ecma_ast::{TsKeywordType, TsKeywordTypeKind};
-use ty::FoldWith;
 
 pub(super) struct TypeFactsHandler {
     pub facts: TypeFacts,
 }
 
-impl ty::Fold for TypeFactsHandler {
-    fn fold_ts_keyword_type(&mut self, ty: TsKeywordType) -> TsKeywordType {
+impl Fold<RTsKeywordType> for TypeFactsHandler {
+    fn fold(&mut self, ty: RTsKeywordType) -> RTsKeywordType {
         if self.facts.contains(TypeFacts::Truthy) {
             match ty.kind {
                 TsKeywordTypeKind::TsUndefinedKeyword | TsKeywordTypeKind::TsNullKeyword => {
-                    return TsKeywordType {
+                    return RTsKeywordType {
                         span: ty.span,
                         kind: TsKeywordTypeKind::TsNeverKeyword,
                     }
@@ -47,7 +50,7 @@ impl ty::Fold for TypeFactsHandler {
 
         for (neq, kwd) in keyword_types {
             if self.facts.contains(*neq) {
-                return TsKeywordType {
+                return RTsKeywordType {
                     span: ty.span,
                     kind: TsKeywordTypeKind::TsNeverKeyword,
                 };
@@ -89,7 +92,7 @@ impl ty::Fold for TypeFactsHandler {
                     .collect::<Vec<_>>();
 
                 if !allowed_keywords.contains(&ty.kind) {
-                    return TsKeywordType {
+                    return RTsKeywordType {
                         span: ty.span,
                         kind: TsKeywordTypeKind::TsNeverKeyword,
                     };
@@ -99,8 +102,10 @@ impl ty::Fold for TypeFactsHandler {
 
         ty
     }
+}
 
-    fn fold_union(&mut self, mut u: ty::Union) -> ty::Union {
+impl Fold<Union> for TypeFactsHandler {
+    fn fold(&mut self, mut u: Union) -> Union {
         u = u.fold_children_with(self);
 
         u.types.retain(|v| !v.is_never());
@@ -114,8 +119,10 @@ impl ty::Fold for TypeFactsHandler {
 
         u
     }
+}
 
-    fn fold_type(&mut self, mut ty: ty::Type) -> ty::Type {
+impl Fold<Type> for TypeFactsHandler {
+    fn fold(&mut self, mut ty: Type) -> Type {
         ty = ty.foldable();
         ty = ty.fold_children_with(self);
         let span = ty.span();

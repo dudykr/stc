@@ -19,27 +19,58 @@ use crate::validator::ValidateWith;
 use crate::ValidationResult;
 use bitflags::_core::mem::take;
 use fxhash::FxHashSet;
+use rnode::FoldWith;
+use rnode::IntoRNode;
+use rnode::VisitMutWith;
+use rnode::VisitWith;
+use stc_ast_rnode::RAssignPat;
+use stc_ast_rnode::RClass;
+use stc_ast_rnode::RClassDecl;
+use stc_ast_rnode::RClassExpr;
+use stc_ast_rnode::RClassMember;
+use stc_ast_rnode::RClassMethod;
+use stc_ast_rnode::RClassProp;
+use stc_ast_rnode::RConstructor;
+use stc_ast_rnode::RDecl;
+use stc_ast_rnode::RExpr;
+use stc_ast_rnode::RExprOrSuper;
+use stc_ast_rnode::RIdent;
+use stc_ast_rnode::RLit;
+use stc_ast_rnode::RMemberExpr;
+use stc_ast_rnode::RParam;
+use stc_ast_rnode::RParamOrTsParamProp;
+use stc_ast_rnode::RPat;
+use stc_ast_rnode::RPrivateMethod;
+use stc_ast_rnode::RPrivateProp;
+use stc_ast_rnode::RPropName;
+use stc_ast_rnode::RStmt;
+use stc_ast_rnode::RTsEntityName;
+use stc_ast_rnode::RTsFnParam;
+use stc_ast_rnode::RTsKeywordType;
+use stc_ast_rnode::RTsParamProp;
+use stc_ast_rnode::RTsParamPropParam;
+use stc_ast_rnode::RTsTypeAliasDecl;
+use stc_ast_rnode::RTsTypeAnn;
+use stc_ast_rnode::RVarDecl;
+use stc_ast_rnode::RVarDeclarator;
 use stc_checker_macros::extra_validator;
-use stc_types::eq::EqIgnoreSpan;
 use stc_types::ClassProperty;
 use stc_types::ConstructorSignature;
 use stc_types::FnParam;
-use stc_types::Fold;
-use stc_types::FoldWith;
 use stc_types::Id;
 use stc_types::Method;
 use stc_types::Operator;
+use stc_types::Ref;
 use stc_types::Type;
 use std::mem::replace;
 use swc_atoms::js_word;
 use swc_common::util::move_map::MoveMap;
+use swc_common::EqIgnoreSpan;
 use swc_common::Span;
 use swc_common::Spanned;
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::*;
 use swc_ecma_utils::private_ident;
-use swc_ecma_visit::VisitMutWith;
-use swc_ecma_visit::VisitWith;
 
 mod order;
 
@@ -49,8 +80,8 @@ impl Analyzer<'_, '_> {
         span: Span,
         readonly: bool,
         is_static: bool,
-        type_ann: &mut Option<TsTypeAnn>,
-        value: &mut Option<Box<Expr>>,
+        type_ann: &mut Option<RTsTypeAnn>,
+        value: &mut Option<Box<RExpr>>,
     ) -> ValidationResult<Option<Box<Type>>> {
         let ty = try_opt!(type_ann.validate_with(self));
         let value_ty =
@@ -61,7 +92,7 @@ impl Analyzer<'_, '_> {
             Type::Symbol(..) if readonly && is_static => box Type::Operator(Operator {
                 span: ty.span(),
                 op: TsTypeOperatorOp::Unique,
-                ty: box Type::Keyword(TsKeywordType {
+                ty: box Type::Keyword(RTsKeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsSymbolKeyword,
                 }),
@@ -73,7 +104,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, p: &mut ClassProp) -> ValidationResult<ClassProperty> {
+    fn validate(&mut self, p: &mut RClassProp) -> ValidationResult<ClassProperty> {
         self.record(p);
 
         // Verify key if key is computed
@@ -120,7 +151,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, p: &mut PrivateProp) -> ValidationResult<ClassProperty> {
+    fn validate(&mut self, p: &mut RPrivateProp) -> ValidationResult<ClassProperty> {
         self.record(p);
 
         let value = self.validate_type_of_class_property(
@@ -135,7 +166,7 @@ impl Analyzer<'_, '_> {
 
         Ok(ClassProperty {
             span: p.span,
-            key: box Expr::PrivateName(p.key.clone()),
+            key: box RExpr::PrivateName(p.key.clone()),
             value,
             is_static: p.is_static,
             computed: p.computed,
@@ -150,7 +181,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, c: &mut Constructor) -> ValidationResult<ConstructorSignature> {
+    fn validate(&mut self, c: &mut RConstructor) -> ValidationResult<ConstructorSignature> {
         self.record(c);
 
         let c_span = c.span();
@@ -159,7 +190,7 @@ impl Analyzer<'_, '_> {
             ScopeKind::Method,
             Default::default(),
             |child: &mut Analyzer| {
-                let Constructor { ref mut params, .. } = *c;
+                let RConstructor { ref mut params, .. } = *c;
 
                 {
                     // Validate params
@@ -171,8 +202,8 @@ impl Analyzer<'_, '_> {
                         }
 
                         match *p {
-                            ParamOrTsParamProp::Param(Param {
-                                pat: Pat::Ident(Ident { optional, .. }),
+                            RParamOrTsParamProp::Param(RParam {
+                                pat: RPat::Ident(RIdent { optional, .. }),
                                 ..
                             }) => {
                                 if optional {
@@ -190,25 +221,25 @@ impl Analyzer<'_, '_> {
 
                     let mut visitor = VarVisitor { names: &mut names };
 
-                    param.visit_with(&Invalid { span: DUMMY_SP } as _, &mut visitor);
+                    param.visit_with(&mut visitor);
 
                     child.scope.declaring.extend(names.clone());
 
                     let mut p = match &param {
-                        ParamOrTsParamProp::TsParamProp(TsParamProp {
-                            param: TsParamPropParam::Ident(i),
+                        RParamOrTsParamProp::TsParamProp(RTsParamProp {
+                            param: RTsParamPropParam::Ident(i),
                             ..
-                        }) => TsFnParam::Ident(i.clone()),
-                        ParamOrTsParamProp::TsParamProp(TsParamProp {
-                            param: TsParamPropParam::Assign(AssignPat { left: box pat, .. }),
+                        }) => RTsFnParam::Ident(i.clone()),
+                        RParamOrTsParamProp::TsParamProp(RTsParamProp {
+                            param: RTsParamPropParam::Assign(RAssignPat { left: box pat, .. }),
                             ..
                         })
-                        | ParamOrTsParamProp::Param(Param { pat, .. }) => from_pat(pat.clone()),
+                        | RParamOrTsParamProp::Param(RParam { pat, .. }) => from_pat(pat.clone()),
                     };
                     let p: FnParam = p.validate_with(child)?;
 
                     match param {
-                        ParamOrTsParamProp::Param(Param { ref mut pat, .. }) => {
+                        RParamOrTsParamProp::Param(RParam { ref mut pat, .. }) => {
                             match child.declare_vars_with_ty(
                                 VarDeclKind::Let,
                                 pat,
@@ -220,10 +251,10 @@ impl Analyzer<'_, '_> {
                                 }
                             }
                         }
-                        ParamOrTsParamProp::TsParamProp(ref param) => match param.param {
-                            TsParamPropParam::Ident(ref i)
-                            | TsParamPropParam::Assign(AssignPat {
-                                left: box Pat::Ident(ref i),
+                        RParamOrTsParamProp::TsParamProp(ref param) => match param.param {
+                            RTsParamPropParam::Ident(ref i)
+                            | RTsParamPropParam::Assign(RAssignPat {
+                                left: box RPat::Ident(ref i),
                                 ..
                             }) => {
                                 match child.declare_var(
@@ -262,7 +293,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, p: &mut TsFnParam) -> ValidationResult<FnParam> {
+    fn validate(&mut self, p: &mut RTsFnParam) -> ValidationResult<FnParam> {
         self.record(p);
 
         let span = p.span();
@@ -279,27 +310,27 @@ impl Analyzer<'_, '_> {
         }
 
         Ok(match p {
-            TsFnParam::Ident(i) => FnParam {
+            RTsFnParam::Ident(i) => FnParam {
                 span,
-                pat: Pat::Ident(i.clone()),
+                pat: RPat::Ident(i.clone()),
                 required: !i.optional,
                 ty: ty!(i.type_ann),
             },
-            TsFnParam::Array(p) => FnParam {
+            RTsFnParam::Array(p) => FnParam {
                 span,
-                pat: Pat::Array(p.clone()),
+                pat: RPat::Array(p.clone()),
                 required: true,
                 ty: ty!(p.type_ann),
             },
-            TsFnParam::Rest(p) => FnParam {
+            RTsFnParam::Rest(p) => FnParam {
                 span,
-                pat: Pat::Rest(p.clone()),
+                pat: RPat::Rest(p.clone()),
                 required: false,
                 ty: ty!(p.type_ann),
             },
-            TsFnParam::Object(p) => FnParam {
+            RTsFnParam::Object(p) => FnParam {
                 span,
-                pat: Pat::Object(p.clone()),
+                pat: RPat::Object(p.clone()),
                 required: true,
                 ty: ty!(p.type_ann),
             },
@@ -309,14 +340,14 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, c: &mut PrivateMethod) -> ValidationResult<Method> {
+    fn validate(&mut self, c: &mut RPrivateMethod) -> ValidationResult<Method> {
         unimplemented!("PrivateMethod")
     }
 }
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, c: &mut ClassMethod) -> ValidationResult<Method> {
+    fn validate(&mut self, c: &mut RClassMethod) -> ValidationResult<Method> {
         self.record(c);
 
         let c_span = c.span();
@@ -344,7 +375,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         match p.pat {
-                            Pat::Ident(Ident { optional, .. }) => {
+                            RPat::Ident(RIdent { optional, .. }) => {
                                 if optional {
                                     has_optional = true;
                                 }
@@ -403,7 +434,7 @@ impl Analyzer<'_, '_> {
 
         let ret_ty = declared_ret_ty.unwrap_or_else(|| {
             inferred_ret_ty.unwrap_or_else(|| {
-                box Type::Keyword(TsKeywordType {
+                box Type::Keyword(RTsKeywordType {
                     span: c_span,
                     kind: if c.function.body.is_some() {
                         TsKeywordTypeKind::TsVoidKeyword
@@ -440,37 +471,36 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(
         &mut self,
-        m: &mut swc_ecma_ast::ClassMember,
+        m: &mut RClassMember,
     ) -> ValidationResult<Option<stc_types::ClassMember>> {
         Ok(match m {
-            swc_ecma_ast::ClassMember::PrivateMethod(m) => {
-                Some(m.validate_with(self).map(From::from)?)
-            }
-            swc_ecma_ast::ClassMember::PrivateProp(m) => {
-                Some(m.validate_with(self).map(From::from)?)
-            }
-            swc_ecma_ast::ClassMember::Empty(..) => None,
+            RClassMember::PrivateMethod(m) => Some(m.validate_with(self).map(From::from)?),
+            RClassMember::PrivateProp(m) => Some(m.validate_with(self).map(From::from)?),
+            RClassMember::Empty(..) => None,
 
-            swc_ecma_ast::ClassMember::Constructor(v) => {
+            RClassMember::Constructor(v) => {
                 Some(stc_types::ClassMember::Constructor(v.validate_with(self)?))
             }
-            swc_ecma_ast::ClassMember::Method(method) => {
+            RClassMember::Method(method) => {
                 let v = method.validate_with(self)?;
 
                 if let Some(Accessibility::Private) = method.accessibility {
-                    let computed = method.key.is_computed();
+                    let computed = match method.key {
+                        RPropName::Computed(_) => true,
+                        _ => false,
+                    };
 
                     // Converts a private method to a private property without type.
-                    *m = ClassMember::ClassProp(ClassProp {
+                    *m = RClassMember::ClassProp(RClassProp {
                         span: method.span,
                         key: match &mut method.key {
-                            PropName::Ident(i) => box Expr::Ident(i.take()),
-                            PropName::Str(s) => {
-                                box Expr::Ident(Ident::new(s.value.clone(), s.span))
+                            RPropName::Ident(i) => box RExpr::Ident(i.take()),
+                            RPropName::Str(s) => {
+                                box RExpr::Ident(RIdent::new(s.value.clone(), s.span))
                             }
-                            PropName::Num(n) => box Expr::Lit(Lit::Num(n.clone())),
-                            PropName::Computed(e) => box e.expr.take(),
-                            PropName::BigInt(n) => box Expr::Lit(Lit::BigInt(n.clone())),
+                            RPropName::Num(n) => box RExpr::Lit(RLit::Num(n.clone())),
+                            RPropName::Computed(e) => box e.expr.take(),
+                            RPropName::BigInt(n) => box RExpr::Lit(RLit::BigInt(n.clone())),
                         },
                         value: None,
                         type_ann: None,
@@ -488,33 +518,33 @@ impl Analyzer<'_, '_> {
 
                 Some(stc_types::ClassMember::Method(v))
             }
-            swc_ecma_ast::ClassMember::ClassProp(v) => {
+            RClassMember::ClassProp(v) => {
                 Some(stc_types::ClassMember::Property(v.validate_with(self)?))
             }
-            swc_ecma_ast::ClassMember::TsIndexSignature(v) => Some(
-                stc_types::ClassMember::IndexSignature(v.validate_with(self)?),
-            ),
+            RClassMember::TsIndexSignature(v) => Some(stc_types::ClassMember::IndexSignature(
+                v.validate_with(self)?,
+            )),
         })
     }
 }
 
 impl Analyzer<'_, '_> {
-    fn check_ambient_methods(&mut self, c: &mut Class, declare: bool) -> ValidationResult<()> {
+    fn check_ambient_methods(&mut self, c: &mut RClass, declare: bool) -> ValidationResult<()> {
         if self.ctx.in_declare {
             return Ok(());
         }
 
-        fn is_key_optional(key: &PropName) -> bool {
+        fn is_key_optional(key: &RPropName) -> bool {
             match key {
-                PropName::Ident(i) => i.optional,
+                RPropName::Ident(i) => i.optional,
                 _ => false,
             }
         }
 
-        fn is_prop_name_eq_include_computed(l: &PropName, r: &PropName) -> bool {
+        fn is_prop_name_eq_include_computed(l: &RPropName, r: &RPropName) -> bool {
             match l {
-                PropName::Computed(l) => match r {
-                    PropName::Computed(r) => {
+                RPropName::Computed(l) => match r {
+                    RPropName::Computed(r) => {
                         if l.eq_ignore_span(&r) {
                             // TODO: Return true only if l and r are both
                             // symbol type
@@ -541,7 +571,7 @@ impl Analyzer<'_, '_> {
         let mut errors = Errors::default();
         // Span of name
         let mut spans = vec![];
-        let mut name: Option<&PropName> = None;
+        let mut name: Option<&RPropName> = None;
         let mut removed = FxHashSet::default();
 
         for (idx, m) in c.body.iter_mut().enumerate() {
@@ -550,7 +580,7 @@ impl Analyzer<'_, '_> {
                     let m = $m;
 
                     let computed = match m.key {
-                        PropName::Computed(..) => true,
+                        RPropName::Computed(..) => true,
                         _ => false,
                     };
 
@@ -586,7 +616,7 @@ impl Analyzer<'_, '_> {
                             name = None;
                         } else {
                             let constructor_name =
-                                PropName::Ident(Ident::new(js_word!("constructor"), DUMMY_SP));
+                                RPropName::Ident(RIdent::new(js_word!("constructor"), DUMMY_SP));
 
                             if is_prop_name_eq_include_computed(&name.unwrap(), &constructor_name) {
                                 for span in replace(&mut spans, vec![]) {
@@ -614,12 +644,12 @@ impl Analyzer<'_, '_> {
             }
 
             match *m {
-                ClassMember::Constructor(ref m) => check!(m, m.body),
-                ClassMember::Method(
+                RClassMember::Constructor(ref m) => check!(m, m.body),
+                RClassMember::Method(
                     ref
                     m
                     @
-                    ClassMethod {
+                    RClassMethod {
                         is_abstract: false, ..
                     },
                 ) => check!(m, m.function.body),
@@ -650,7 +680,7 @@ impl Analyzer<'_, '_> {
     }
 
     #[extra_validator]
-    pub(super) fn validate_computed_prop_key(&mut self, span: Span, key: &mut Expr) {
+    pub(super) fn validate_computed_prop_key(&mut self, span: Span, key: &mut RExpr) {
         if self.is_builtin {
             // We don't need to validate builtins
             return;
@@ -658,9 +688,9 @@ impl Analyzer<'_, '_> {
 
         let mut errors = Errors::default();
         let is_symbol_access = match *key {
-            Expr::Member(MemberExpr {
+            RExpr::Member(RMemberExpr {
                 obj:
-                    ExprOrSuper::Expr(box Expr::Ident(Ident {
+                    RExprOrSuper::Expr(box RExpr::Ident(RIdent {
                         sym: js_word!("Symbol"),
                         ..
                     })),
@@ -691,7 +721,7 @@ impl Analyzer<'_, '_> {
             Type::Operator(Operator {
                 op: TsTypeOperatorOp::Unique,
                 ty:
-                    box Type::Keyword(TsKeywordType {
+                    box Type::Keyword(RTsKeywordType {
                         kind: TsKeywordTypeKind::TsSymbolKeyword,
                         ..
                     }),
@@ -786,7 +816,7 @@ impl Analyzer<'_, '_> {
 /// 5. Others, using dependency graph.
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, c: &mut Class) -> ValidationResult<stc_types::Class> {
+    fn validate(&mut self, c: &mut RClass) -> ValidationResult<stc_types::Class> {
         self.record(c);
 
         self.ctx.computed_prop_mode = ComputedPropMode::Class {
@@ -815,7 +845,7 @@ impl Analyzer<'_, '_> {
                     match &mut c.super_class {
                         Some(box expr) => {
                             let need_base_class = match expr {
-                                Expr::Ident(..) => false,
+                                RExpr::Ident(..) => false,
                                 _ => true,
                             };
                             let super_ty = expr.validate_with_args(
@@ -829,8 +859,8 @@ impl Analyzer<'_, '_> {
                                     let mut has_class_in_super = false;
                                     let class_name =
                                         name.clone().unwrap_or_else(|| Id::word("__class".into()));
-                                    let new_ty =
-                                        private_ident!(format!("{}_base", class_name.as_str()));
+                                    let new_ty: RIdent =
+                                        private_ident!(format!("{}_base", class_name.as_str())).into_rnode();
 
                                     // We should add it at same level as class
                                     types_to_register
@@ -869,14 +899,14 @@ impl Analyzer<'_, '_> {
                                     });
 
                                     if has_class_in_super {
-                                        child.prepend_stmts.push(Stmt::Decl(Decl::Var(VarDecl {
+                                        child.prepend_stmts.push(RStmt::Decl(RDecl::Var(RVarDecl {
                                             span: DUMMY_SP,
                                             kind: VarDeclKind::Const,
                                             declare: false,
-                                            decls: vec![VarDeclarator {
+                                            decls: vec![RVarDeclarator {
                                                 span: i.span,
-                                                name: Pat::Ident(Ident {
-                                                    type_ann: Some(TsTypeAnn {
+                                                name: RPat::Ident(RIdent {
+                                                    type_ann: Some(RTsTypeAnn {
                                                         span: DUMMY_SP,
                                                         type_ann: box super_ty.into(),
                                                     }),
@@ -887,8 +917,8 @@ impl Analyzer<'_, '_> {
                                             }],
                                         })));
                                     } else {
-                                        child.prepend_stmts.push(Stmt::Decl(Decl::TsTypeAlias(
-                                            TsTypeAliasDecl {
+                                        child.prepend_stmts.push(RStmt::Decl(RDecl::TsTypeAlias(
+                                            RTsTypeAliasDecl {
                                                 span: DUMMY_SP,
                                                 declare: false,
                                                 id: new_ty.clone(),
@@ -899,11 +929,11 @@ impl Analyzer<'_, '_> {
                                         )));
                                     }
 
-                                    c.super_class = Some(box Expr::Ident(new_ty.clone()));
-                                    Some(box Type::Ref(stc_types::Ref {
+                                    c.super_class = Some(box RExpr::Ident(new_ty.clone()));
+                                    Some(box Type::Ref(Ref {
                                         span: DUMMY_SP,
                                         ctxt: child.ctx.module_id,
-                                        type_name: TsEntityName::Ident(new_ty),
+                                        type_name: RTsEntityName::Ident(new_ty),
                                         // TODO: Handle type parameters
                                         type_args: None,
                                     }))
@@ -935,12 +965,12 @@ impl Analyzer<'_, '_> {
 
                     for m in c.body.iter() {
                         match *m {
-                            ClassMember::Constructor(ref cons) => {
+                            RClassMember::Constructor(ref cons) => {
                                 //
                                 if cons.body.is_none() {
                                     for p in &cons.params {
                                         match *p {
-                                            ParamOrTsParamProp::TsParamProp(..) => child
+                                            RParamOrTsParamProp::TsParamProp(..) => child
                                                 .storage.report(Error::TS2369 { span: p.span() }),
                                             _ => {}
                                         }
@@ -953,8 +983,8 @@ impl Analyzer<'_, '_> {
                                         .params
                                         .iter()
                                         .filter(|p| match p {
-                                            ParamOrTsParamProp::Param(Param {
-                                                pat: Pat::Ident(Ident { optional: true, .. }),
+                                            RParamOrTsParamProp::Param(RParam {
+                                                pat: RPat::Ident(RIdent { optional: true, .. }),
                                                 ..
                                             }) => false,
                                             _ => true,
@@ -989,13 +1019,13 @@ impl Analyzer<'_, '_> {
 
                     c.body = take(&mut c.body).move_flat_map(|mut v| {
                         if match &mut v {
-                            ClassMember::Constructor(_) => true,
-                            ClassMember::PrivateMethod(_) => true,
-                            ClassMember::ClassProp(_) => true,
-                            ClassMember::PrivateProp(_) => true,
-                            ClassMember::TsIndexSignature(_) => true,
-                            ClassMember::Method(m) => match &mut m.key {
-                                PropName::Computed(c) => {
+                            RClassMember::Constructor(_) => true,
+                            RClassMember::PrivateMethod(_) => true,
+                            RClassMember::ClassProp(_) => true,
+                            RClassMember::PrivateProp(_) => true,
+                            RClassMember::TsIndexSignature(_) => true,
+                            RClassMember::Method(m) => match &mut m.key {
+                                RPropName::Computed(c) => {
                                     match c.expr.validate_with_default(child) {
                                         Ok(ty) => {
                                             match *ty {
@@ -1014,7 +1044,7 @@ impl Analyzer<'_, '_> {
                                 }
                                 _ => true,
                             },
-                            ClassMember::Empty(_) => false,
+                            RClassMember::Empty(_) => false,
                         } {
                             Some(v)
                         } else {
@@ -1028,10 +1058,10 @@ impl Analyzer<'_, '_> {
                     // Handle static properties
                     for (index, member) in c.body.iter_mut().enumerate() {
                         match member {
-                            ClassMember::ClassProp(ClassProp {
+                            RClassMember::ClassProp(RClassProp {
                                 is_static: true, ..
                             })
-                            | ClassMember::PrivateProp(PrivateProp {
+                            | RClassMember::PrivateProp(RPrivateProp {
                                 is_static: true, ..
                             }) => {
                                 let m = member.validate_with(child)?;
@@ -1050,33 +1080,33 @@ impl Analyzer<'_, '_> {
                             .iter_mut()
                             .enumerate()
                             .filter_map(|(i, member)| match member {
-                                ClassMember::Constructor(c) => Some((i, c)),
+                                RClassMember::Constructor(c) => Some((i, c)),
                                 _ => None,
                             })
                     {
                         for param in &mut constructor.params {
                             match param {
-                                ParamOrTsParamProp::TsParamProp(p) => {
+                                RParamOrTsParamProp::TsParamProp(p) => {
                                     if p.accessibility == Some(Accessibility::Private) {
                                         let is_optional = match p.param {
-                                            TsParamPropParam::Ident(_) => false,
-                                            TsParamPropParam::Assign(_) => true,
+                                            RTsParamPropParam::Ident(_) => false,
+                                            RTsParamPropParam::Assign(_) => true,
                                         };
                                         let mut key = match &p.param {
-                                            TsParamPropParam::Assign(AssignPat {
-                                                left: box Pat::Ident(key),
+                                            RTsParamPropParam::Assign(RAssignPat {
+                                                left: box RPat::Ident(key),
                                                 ..
                                             })
-                                            | TsParamPropParam::Ident(key) => key.clone(),
+                                            | RTsParamPropParam::Ident(key) => key.clone(),
                                             _ => unreachable!(
                                                 "TypeScript parameter property with pattern other \
                                                  than an identifier"
                                             ),
                                         };
                                         key.type_ann = None;
-                                        let key = box Expr::Ident(key);
-                                        additional_members.push(ClassMember::ClassProp(
-                                            ClassProp {
+                                        let key = box RExpr::Ident(key);
+                                        additional_members.push(RClassMember::ClassProp(
+                                            RClassProp {
                                                 span: p.span,
                                                 key,
                                                 value: None,
@@ -1096,14 +1126,14 @@ impl Analyzer<'_, '_> {
                                     }
 
                                     let (i, ty) = match &mut p.param {
-                                        TsParamPropParam::Ident(i) => {
+                                        RTsParamPropParam::Ident(i) => {
                                             let mut ty = i.type_ann.clone();
                                             let ty = try_opt!(ty.validate_with(child));
                                             (i, ty)
                                         }
-                                        TsParamPropParam::Assign(AssignPat {
+                                        RTsParamPropParam::Assign(RAssignPat {
                                             span,
-                                            left: box Pat::Ident(i),
+                                            left: box RPat::Ident(i),
                                             type_ann,
                                             right,
                                             ..
@@ -1123,14 +1153,14 @@ impl Analyzer<'_, '_> {
                                         _ => unreachable!(),
                                     };
 
-                                    let key = box Expr::Ident(Ident {
+                                    let key = box RExpr::Ident(RIdent {
                                         optional: false,
                                         ..i.clone()
                                     });
 
                                     if let Some(ty) = &ty {
                                         if i.type_ann.is_none() {
-                                            i.type_ann = Some(TsTypeAnn {
+                                            i.type_ann = Some(RTsTypeAnn {
                                                 span: ty.span(),
                                                 type_ann: ty.clone().into(),
                                             });
@@ -1154,7 +1184,7 @@ impl Analyzer<'_, '_> {
                                         }),
                                     ));
                                 }
-                                ParamOrTsParamProp::Param(..) => {}
+                                RParamOrTsParamProp::Param(..) => {}
                             }
                         }
                     }
@@ -1162,10 +1192,10 @@ impl Analyzer<'_, '_> {
                     // Handle properties
                     for (index, member) in c.body.iter_mut().enumerate() {
                         match member {
-                            ClassMember::ClassProp(ClassProp {
+                            RClassMember::ClassProp(RClassProp {
                                 is_static: false, ..
                             })
-                            | ClassMember::PrivateProp(PrivateProp {
+                            | RClassMember::PrivateProp(RPrivateProp {
                                 is_static: false, ..
                             }) => {
                                 //
@@ -1252,7 +1282,7 @@ impl Analyzer<'_, '_> {
                                                 let new_ty = ty.clone().generalize_lit();
                                                 param.ty = new_ty.clone();
                                                 match orig {
-                                                    ClassMember::Method(ref mut method) => {
+                                                    RClassMember::Method(ref mut method) => {
                                                         method.function.params[0]
                                                             .pat
                                                             .set_ty(Some(new_ty.clone().into()))
@@ -1316,7 +1346,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, c: &mut ClassExpr) -> ValidationResult<()> {
+    fn validate(&mut self, c: &mut RClassExpr) -> ValidationResult<()> {
         self.scope.this_class_name = c.ident.as_ref().map(|v| v.into());
         let ty = match c.class.validate_with(self) {
             Ok(ty) => box ty.into(),
@@ -1365,7 +1395,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, c: &mut ClassDecl) -> ValidationResult<()> {
+    fn validate(&mut self, c: &mut RClassDecl) -> ValidationResult<()> {
         self.record(c);
 
         let ctx = Ctx {
@@ -1379,7 +1409,7 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
-    fn visit_class_decl(&mut self, c: &mut ClassDecl) {
+    fn visit_class_decl(&mut self, c: &mut RClassDecl) {
         c.ident.visit_mut_with(self);
 
         self.scope.this_class_name = Some(c.ident.clone().into());
@@ -1418,13 +1448,13 @@ impl Analyzer<'_, '_> {
     }
 }
 
-fn from_pat(pat: Pat) -> TsFnParam {
+fn from_pat(pat: RPat) -> RTsFnParam {
     match pat {
-        Pat::Ident(v) => v.into(),
-        Pat::Array(v) => v.into(),
-        Pat::Rest(v) => v.into(),
-        Pat::Object(v) => v.into(),
-        Pat::Assign(v) => from_pat(*v.left),
+        RPat::Ident(v) => v.into(),
+        RPat::Array(v) => v.into(),
+        RPat::Rest(v) => v.into(),
+        RPat::Object(v) => v.into(),
+        RPat::Assign(v) => from_pat(*v.left),
         _ => unreachable!("constructor with parameter {:?}", pat),
     }
 }

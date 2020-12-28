@@ -76,7 +76,7 @@ jobs:
           LIBCLANG_PATH: 'C:\\Program Files\\LLVM\\bin'
 
       - name: Cache
-      - uses: actions/cache@v2
+        uses: actions/cache@v2
         with:
           path: |
             ~/.cargo/registry

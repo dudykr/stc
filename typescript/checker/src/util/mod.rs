@@ -2,8 +2,29 @@ use crate::{
     ty,
     ty::{Class, FnParam, Intersection, Type, TypeElement, TypeParamInstantiation, Union},
 };
-use stc_types::VisitMutWith;
-use stc_types::{Id, InferType, TypeNode, TypeParam, Visit, VisitMut, VisitWith};
+use rnode::Visit;
+use rnode::VisitMut;
+use rnode::VisitMutWith;
+use rnode::VisitWith;
+use stc_ast_rnode::RArrayPat;
+use stc_ast_rnode::RAssignPat;
+use stc_ast_rnode::RBlockStmt;
+use stc_ast_rnode::RBool;
+use stc_ast_rnode::RExpr;
+use stc_ast_rnode::RIdent;
+use stc_ast_rnode::RModuleDecl;
+use stc_ast_rnode::RModuleItem;
+use stc_ast_rnode::RObjectPat;
+use stc_ast_rnode::RPat;
+use stc_ast_rnode::RPropName;
+use stc_ast_rnode::RRestPat;
+use stc_ast_rnode::RStmt;
+use stc_ast_rnode::RTsKeywordType;
+use stc_ast_rnode::RTsLit;
+use stc_ast_rnode::RTsLitType;
+use stc_ast_rnode::RTsType;
+use stc_ast_rnode::RTsTypeAnn;
+use stc_types::{Id, InferType, TypeParam};
 use swc_common::{Mark, Span, Spanned, SyntaxContext, DUMMY_SP};
 use swc_ecma_ast::*;
 use swc_ecma_utils::{drop_span, ModuleItemLike, StmtLike};
@@ -15,22 +36,22 @@ pub(crate) mod named;
 pub(crate) mod property_map;
 pub(crate) mod type_ext;
 pub(crate) trait ModuleItemOrStmt {
-    fn try_into(self) -> Result<ModuleDecl, Stmt>;
+    fn try_into(self) -> Result<RModuleDecl, RStmt>;
 }
 
-impl ModuleItemOrStmt for ModuleItem {
+impl ModuleItemOrStmt for RModuleItem {
     #[inline]
-    fn try_into(self) -> Result<ModuleDecl, Stmt> {
+    fn try_into(self) -> Result<RModuleDecl, RStmt> {
         match self {
-            ModuleItem::ModuleDecl(decl) => Ok(decl),
-            ModuleItem::Stmt(stmt) => Err(stmt),
+            RModuleItem::ModuleDecl(decl) => Ok(decl),
+            RModuleItem::Stmt(stmt) => Err(stmt),
         }
     }
 }
 
-impl ModuleItemOrStmt for Stmt {
+impl ModuleItemOrStmt for RStmt {
     #[inline]
-    fn try_into(self) -> Result<ModuleDecl, Stmt> {
+    fn try_into(self) -> Result<RModuleDecl, RStmt> {
         Err(self)
     }
 }
@@ -40,8 +61,8 @@ pub(crate) struct MarkFinder {
     mark: Mark,
 }
 
-impl Visit for MarkFinder {
-    fn visit_type(&mut self, ty: &Type, _: &dyn TypeNode) {
+impl Visit<Type> for MarkFinder {
+    fn visit(&mut self, ty: &Type) {
         if self.found {
             return;
         }
@@ -68,7 +89,7 @@ where
     T: VisitWith<MarkFinder>,
 {
     let mut v = MarkFinder { found: false, mark };
-    n.visit_with(n, &mut v);
+    n.visit_with(&mut v);
     v.found
 }
 
@@ -76,15 +97,15 @@ struct InferTypeFinder {
     found: bool,
 }
 
-impl Visit for InferTypeFinder {
-    fn visit_infer_type(&mut self, _: &InferType, _: &dyn TypeNode) {
+impl Visit<InferType> for InferTypeFinder {
+    fn visit(&mut self, _: &InferType) {
         self.found = true;
     }
 }
 
 pub(crate) fn contains_infer_type(n: &Type) -> bool {
     let mut v = InferTypeFinder { found: false };
-    n.visit_with(n, &mut v);
+    n.visit_with(&mut v);
     v.found
 }
 
@@ -93,12 +114,14 @@ pub(crate) struct Marker {
     pub mark: Mark,
 }
 
-impl VisitMut for Marker {
-    fn visit_mut_span(&mut self, span: &mut Span) {
+impl VisitMut<Span> for Marker {
+    fn visit_mut(&mut self, span: &mut Span) {
         span.ctxt = span.ctxt.apply_mark(self.mark);
     }
+}
 
-    fn visit_mut_type(&mut self, ty: &mut Type) {
+impl VisitMut<Type> for Marker {
+    fn visit_mut(&mut self, ty: &mut Type) {
         ty.normalize_mut();
         ty.visit_mut_children_with(self);
     }
@@ -107,8 +130,8 @@ impl VisitMut for Marker {
 /// TODO: Rename: `is_all_str_lit`
 pub(crate) fn is_str_lit_or_union(t: &Type) -> bool {
     match t {
-        Type::Lit(TsLitType {
-            lit: TsLit::Str(..),
+        Type::Lit(RTsLitType {
+            lit: RTsLit::Str(..),
             ..
         }) => true,
         Type::Union(Union { ref types, .. }) => types.iter().all(|ty| is_str_lit_or_union(&ty)),
@@ -118,11 +141,11 @@ pub(crate) fn is_str_lit_or_union(t: &Type) -> bool {
 
 pub(crate) fn is_str_or_union(t: &Type) -> bool {
     match t {
-        Type::Lit(TsLitType {
-            lit: TsLit::Str(..),
+        Type::Lit(RTsLitType {
+            lit: RTsLit::Str(..),
             ..
         }) => true,
-        Type::Keyword(TsKeywordType {
+        Type::Keyword(RTsKeywordType {
             kind: TsKeywordTypeKind::TsStringKeyword,
             ..
         }) => true,
@@ -131,26 +154,26 @@ pub(crate) fn is_str_or_union(t: &Type) -> bool {
     }
 }
 
-pub(crate) trait AsModuleDecl: StmtLike + ModuleItemLike {
+pub(crate) trait AsModuleDecl {
     const IS_MODULE_ITEM: bool;
-    fn as_module_decl(&self) -> Result<&ModuleDecl, &Stmt>;
+    fn as_module_decl(&self) -> Result<&RModuleDecl, &RStmt>;
 }
 
-impl AsModuleDecl for Stmt {
+impl AsModuleDecl for RStmt {
     const IS_MODULE_ITEM: bool = false;
 
-    fn as_module_decl(&self) -> Result<&ModuleDecl, &Stmt> {
+    fn as_module_decl(&self) -> Result<&RModuleDecl, &RStmt> {
         Err(self)
     }
 }
 
-impl AsModuleDecl for ModuleItem {
+impl AsModuleDecl for RModuleItem {
     const IS_MODULE_ITEM: bool = true;
 
-    fn as_module_decl(&self) -> Result<&ModuleDecl, &Stmt> {
+    fn as_module_decl(&self) -> Result<&RModuleDecl, &RStmt> {
         match self {
-            ModuleItem::ModuleDecl(decl) => Ok(decl),
-            ModuleItem::Stmt(stmt) => Err(stmt),
+            RModuleItem::ModuleDecl(decl) => Ok(decl),
+            RModuleItem::Stmt(stmt) => Err(stmt),
         }
     }
 }
@@ -167,15 +190,15 @@ pub(crate) trait RemoveTypes {
 impl RemoveTypes for Type {
     fn remove_falsy(self) -> Type {
         match self {
-            Type::Keyword(TsKeywordType { kind, span }) => match kind {
+            Type::Keyword(RTsKeywordType { kind, span }) => match kind {
                 TsKeywordTypeKind::TsUndefinedKeyword | TsKeywordTypeKind::TsNullKeyword => {
                     return *Type::never(span);
                 }
                 _ => {}
             },
-            Type::Lit(TsLitType {
+            Type::Lit(RTsLitType {
                 lit:
-                    TsLit::Bool(Bool {
+                    RTsLit::Bool(RBool {
                         value: false, span, ..
                     }),
                 ..
@@ -191,10 +214,11 @@ impl RemoveTypes for Type {
 
     fn remove_truthy(self) -> Type {
         match self {
-            Type::Lit(TsLitType {
-                lit: TsLit::Bool(Bool {
-                    value: true, span, ..
-                }),
+            Type::Lit(RTsLitType {
+                lit:
+                    RTsLit::Bool(RBool {
+                        value: true, span, ..
+                    }),
                 ..
             }) => return *Type::never(span),
 
@@ -316,18 +340,18 @@ pub(crate) trait EndsWithRet {
     fn ends_with_ret(&self) -> bool;
 }
 
-impl EndsWithRet for Stmt {
+impl EndsWithRet for RStmt {
     /// Returns true if the statement ends with return, break, continue;
     fn ends_with_ret(&self) -> bool {
         match *self {
-            Stmt::Return(..) | Stmt::Break(..) | Stmt::Continue(..) | Stmt::Throw(..) => true,
-            Stmt::Block(ref stmt) => stmt.ends_with_ret(),
+            RStmt::Return(..) | RStmt::Break(..) | RStmt::Continue(..) | RStmt::Throw(..) => true,
+            RStmt::Block(ref stmt) => stmt.ends_with_ret(),
             _ => false,
         }
     }
 }
 
-impl EndsWithRet for BlockStmt {
+impl EndsWithRet for RBlockStmt {
     /// Returns true if the statement ends with return, break, continue;
     fn ends_with_ret(&self) -> bool {
         self.stmts.ends_with_ret()
@@ -348,22 +372,24 @@ where
 }
 
 pub trait PatExt {
-    fn get_ty(&self) -> Option<&TsType>;
-    fn get_mut_ty(&mut self) -> Option<&mut TsType>;
-    fn set_ty(&mut self, ty: Option<Box<TsType>>);
+    fn get_ty(&self) -> Option<&RTsType>;
+    fn get_mut_ty(&mut self) -> Option<&mut RTsType>;
+    fn set_ty(&mut self, ty: Option<Box<RTsType>>);
 }
 
-impl PatExt for Pat {
-    fn get_ty(&self) -> Option<&TsType> {
+impl PatExt for RPat {
+    fn get_ty(&self) -> Option<&RTsType> {
         match *self {
-            Pat::Array(ArrayPat { ref type_ann, .. })
-            | Pat::Assign(AssignPat { ref type_ann, .. })
-            | Pat::Ident(Ident { ref type_ann, .. })
-            | Pat::Object(ObjectPat { ref type_ann, .. })
-            | Pat::Rest(RestPat { ref type_ann, .. }) => type_ann.as_ref().map(|ty| &*ty.type_ann),
+            RPat::Array(RArrayPat { ref type_ann, .. })
+            | RPat::Assign(RAssignPat { ref type_ann, .. })
+            | RPat::Ident(RIdent { ref type_ann, .. })
+            | RPat::Object(RObjectPat { ref type_ann, .. })
+            | RPat::Rest(RRestPat { ref type_ann, .. }) => {
+                type_ann.as_ref().map(|ty| &*ty.type_ann)
+            }
 
-            Pat::Invalid(..) | Pat::Expr(box Expr::Invalid(..)) => {
-                //Some(TsType::TsKeywordType(TsKeywordType {
+            RPat::Invalid(..) | RPat::Expr(box RExpr::Invalid(..)) => {
+                //Some(RTsType::TsKeywordType(RTsKeywordType {
                 //    span: self.span(),
                 //    kind: TsKeywordTypeKind::TsAnyKeyword,
                 //}))
@@ -374,48 +400,48 @@ impl PatExt for Pat {
         }
     }
 
-    fn get_mut_ty(&mut self) -> Option<&mut TsType> {
+    fn get_mut_ty(&mut self) -> Option<&mut RTsType> {
         match *self {
-            Pat::Array(ArrayPat {
+            RPat::Array(RArrayPat {
                 ref mut type_ann, ..
             })
-            | Pat::Assign(AssignPat {
+            | RPat::Assign(RAssignPat {
                 ref mut type_ann, ..
             })
-            | Pat::Ident(Ident {
+            | RPat::Ident(RIdent {
                 ref mut type_ann, ..
             })
-            | Pat::Object(ObjectPat {
+            | RPat::Object(RObjectPat {
                 ref mut type_ann, ..
             })
-            | Pat::Rest(RestPat {
+            | RPat::Rest(RRestPat {
                 ref mut type_ann, ..
             }) => type_ann.as_mut().map(|ty| &mut *ty.type_ann),
 
-            Pat::Invalid(..) | Pat::Expr(box Expr::Invalid(..)) => None,
+            RPat::Invalid(..) | RPat::Expr(box RExpr::Invalid(..)) => None,
 
             _ => None,
         }
     }
 
-    fn set_ty(&mut self, ty: Option<Box<TsType>>) {
+    fn set_ty(&mut self, ty: Option<Box<RTsType>>) {
         match *self {
-            Pat::Array(ArrayPat {
+            RPat::Array(RArrayPat {
                 ref mut type_ann, ..
             })
-            | Pat::Assign(AssignPat {
+            | RPat::Assign(RAssignPat {
                 ref mut type_ann, ..
             })
-            | Pat::Ident(Ident {
+            | RPat::Ident(RIdent {
                 ref mut type_ann, ..
             })
-            | Pat::Object(ObjectPat {
+            | RPat::Object(RObjectPat {
                 ref mut type_ann, ..
             })
-            | Pat::Rest(RestPat {
+            | RPat::Rest(RRestPat {
                 ref mut type_ann, ..
             }) => {
-                *type_ann = ty.map(|type_ann| TsTypeAnn {
+                *type_ann = ty.map(|type_ann| RTsTypeAnn {
                     span: type_ann.span(),
                     type_ann,
                 })
@@ -433,21 +459,56 @@ pub(crate) struct TypeParamFinder<'a> {
 
 pub(crate) fn contains_type_param<T>(node: &T, name: &Id) -> bool
 where
-    T: for<'a> stc_types::VisitWith<TypeParamFinder<'a>>,
+    T: for<'a> rnode::VisitWith<TypeParamFinder<'a>>,
 {
     let mut v = TypeParamFinder { name, found: false };
 
-    name.visit_with(&node, &mut v);
+    name.visit_with(&mut v);
 
     v.found
 }
 
-impl stc_types::Visit for TypeParamFinder<'_> {
-    fn visit_type_param(&mut self, p: &TypeParam, _: &dyn TypeNode) {
+impl rnode::Visit<TypeParam> for TypeParamFinder<'_> {
+    fn visit(&mut self, p: &TypeParam) {
         if p.name == *self.name {
             self.found = true
         } else {
             p.visit_children_with(self)
         }
+    }
+}
+
+/// Finds all idents of variable
+pub struct DestructuringFinder<'a, I: From<RIdent>> {
+    pub found: &'a mut Vec<I>,
+}
+
+pub fn find_ids_in_pat<T, I: From<RIdent>>(node: &T) -> Vec<I>
+where
+    T: for<'any> VisitWith<DestructuringFinder<'any, I>>,
+{
+    let mut found = vec![];
+
+    {
+        let mut v = DestructuringFinder { found: &mut found };
+        node.visit_with(&mut v);
+    }
+
+    found
+}
+
+/// No-op (we don't care about expressions)
+impl<I: From<RIdent>> Visit<RExpr> for DestructuringFinder<'_, I> {
+    fn visit(&mut self, _: &RExpr) {}
+}
+
+/// No-op (we don't care about expressions)
+impl<I: From<RIdent>> Visit<RPropName> for DestructuringFinder<'_, I> {
+    fn visit(&mut self, _: &RPropName) {}
+}
+
+impl<'a, I: From<RIdent>> Visit<RIdent> for DestructuringFinder<'a, I> {
+    fn visit(&mut self, i: &RIdent) {
+        self.found.push(i.clone().into());
     }
 }

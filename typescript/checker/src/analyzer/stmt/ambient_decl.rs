@@ -1,8 +1,14 @@
 use crate::errors::Error;
 use crate::errors::Errors;
 use crate::mode::Storage;
+use rnode::Visit;
+use rnode::VisitWith;
+use stc_ast_rnode::RDecl;
+use stc_ast_rnode::RFnDecl;
+use stc_ast_rnode::RIdent;
+use stc_ast_rnode::RStmt;
+use stc_ast_rnode::RTsModuleDecl;
 use swc_ecma_ast::*;
-use swc_ecma_visit::{Node, VisitWith};
 
 /// Handles
 ///
@@ -13,16 +19,16 @@ use swc_ecma_visit::{Node, VisitWith};
 /// bar() {}
 /// ```
 pub struct AmbientFunctionHandler<'a, 'b> {
-    pub last_ambient_name: Option<Ident>,
+    pub last_ambient_name: Option<RIdent>,
     pub errors: &'a mut Storage<'b>,
 }
 
-impl swc_ecma_visit::Visit for AmbientFunctionHandler<'_, '_> {
-    fn visit_stmt(&mut self, node: &Stmt, _: &dyn Node) {
+impl Visit<RStmt> for AmbientFunctionHandler<'_, '_> {
+    fn visit(&mut self, node: &RStmt) {
         node.visit_children_with(self);
 
         match node {
-            Stmt::Decl(Decl::Fn(..)) => {}
+            RStmt::Decl(RDecl::Fn(..)) => {}
             _ => {
                 // .take() is same as self.last_ambient_name = None
                 if let Some(ref i) = self.last_ambient_name.take() {
@@ -31,8 +37,10 @@ impl swc_ecma_visit::Visit for AmbientFunctionHandler<'_, '_> {
             }
         }
     }
+}
 
-    fn visit_fn_decl(&mut self, node: &FnDecl, _: &dyn Node) {
+impl Visit<RFnDecl> for AmbientFunctionHandler<'_, '_> {
+    fn visit(&mut self, node: &RFnDecl) {
         if node.declare {
             return;
         }
@@ -57,6 +65,8 @@ impl swc_ecma_visit::Visit for AmbientFunctionHandler<'_, '_> {
             }
         }
     }
+}
 
-    fn visit_ts_module_decl(&mut self, _: &TsModuleDecl, _: &dyn Node) {}
+impl Visit<RTsModuleDecl> for AmbientFunctionHandler<'_, '_> {
+    fn visit(&mut self, _: &RTsModuleDecl) {}
 }

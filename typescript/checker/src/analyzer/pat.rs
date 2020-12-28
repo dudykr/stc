@@ -11,11 +11,25 @@ use crate::{
     validator::{Validate, ValidateWith},
     ValidationResult,
 };
-use stc_types::{eq::TypeEq, Array};
+use rnode::VisitMutWith;
+use rnode::VisitWith;
+use stc_ast_rnode::RAssignPat;
+use stc_ast_rnode::RExpr;
+use stc_ast_rnode::RIdent;
+use stc_ast_rnode::RKeyValuePatProp;
+use stc_ast_rnode::RKeyValueProp;
+use stc_ast_rnode::RObjectPatProp;
+use stc_ast_rnode::RParam;
+use stc_ast_rnode::RPat;
+use stc_ast_rnode::RProp;
+use stc_ast_rnode::RPropOrSpread;
+use stc_ast_rnode::RRestPat;
+use stc_ast_rnode::RTsKeywordType;
+use stc_types::Array;
 use swc_atoms::js_word;
+use swc_common::TypeEq;
 use swc_common::{Mark, Span, Spanned, SyntaxContext, DUMMY_SP};
 use swc_ecma_ast::*;
-use swc_ecma_visit::VisitMutWith;
 
 #[derive(Debug, Clone, Copy)]
 pub(super) enum PatMode {
@@ -57,7 +71,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut Param) -> ValidationResult<ty::FnParam> {
+    fn validate(&mut self, node: &mut RParam) -> ValidationResult<ty::FnParam> {
         node.decorators.visit_mut_with(self);
         let ctx = Ctx {
             pat_mode: PatMode::Decl,
@@ -69,7 +83,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, p: &mut Pat) -> ValidationResult<ty::FnParam> {
+    fn validate(&mut self, p: &mut RPat) -> ValidationResult<ty::FnParam> {
         use swc_ecma_visit::VisitWith;
 
         self.record(p);
@@ -79,14 +93,14 @@ impl Analyzer<'_, '_> {
 
         // Mark pattern as optional if default value exists
         match p {
-            Pat::Assign(assign_pat) => match &mut *assign_pat.left {
-                Pat::Ident(i) => {
+            RPat::Assign(assign_pat) => match &mut *assign_pat.left {
+                RPat::Ident(i) => {
                     i.optional = true;
                 }
-                Pat::Array(arr) => {
+                RPat::Array(arr) => {
                     arr.optional = true;
                 }
-                Pat::Object(obj) => {
+                RPat::Object(obj) => {
                     obj.optional = true;
                 }
                 _ => {}
@@ -94,7 +108,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        if let Pat::Assign(assign_pat) = p {
+        if let RPat::Assign(assign_pat) = p {
             // Handle default value
 
             let default_value_ty = assign_pat.right.validate_with_default(self)?;
@@ -140,7 +154,7 @@ impl Analyzer<'_, '_> {
         match self.ctx.pat_mode {
             PatMode::Decl => {
                 match p {
-                    Pat::Ident(Ident {
+                    RPat::Ident(RIdent {
                         sym: js_word!("this"),
                         ..
                     }) => {
@@ -154,7 +168,7 @@ impl Analyzer<'_, '_> {
 
                 let mut visitor = VarVisitor { names: &mut names };
 
-                p.visit_with(&Invalid { span: DUMMY_SP }, &mut visitor);
+                p.visit_with(&mut visitor);
 
                 self.scope.declaring.extend(names.clone());
 
@@ -187,9 +201,9 @@ impl Analyzer<'_, '_> {
             span: p.span(),
             pat: p.clone(),
             required: match p {
-                Pat::Ident(i) => !i.optional,
-                Pat::Array(arr) => !arr.optional,
-                Pat::Object(obj) => !obj.optional,
+                RPat::Ident(i) => !i.optional,
+                RPat::Array(arr) => !arr.optional,
+                RPat::Object(obj) => !obj.optional,
                 _ => true,
             },
             ty,
@@ -199,18 +213,18 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, p: &mut RestPat) {
+    fn validate(&mut self, p: &mut RRestPat) {
         p.visit_mut_children_with(self);
 
         let mut errors = Errors::default();
 
-        if let Pat::Assign(AssignPat { ref mut right, .. }) = *p.arg {
+        if let RPat::Assign(RAssignPat { ref mut right, .. }) = *p.arg {
             let res: Result<_, _> = try {
                 let value_ty = right.validate_with_default(self)?;
 
                 match value_ty.normalize() {
                     Type::Array(..)
-                    | Type::Keyword(TsKeywordType {
+                    | Type::Keyword(RTsKeywordType {
                         kind: TsKeywordTypeKind::TsAnyKeyword,
                         ..
                     }) => {}
@@ -224,7 +238,7 @@ impl Analyzer<'_, '_> {
 
                 match *ty.normalize() {
                     Type::Array(..)
-                    | Type::Keyword(TsKeywordType {
+                    | Type::Keyword(RTsKeywordType {
                         kind: TsKeywordTypeKind::TsAnyKeyword,
                         ..
                     }) => {}
@@ -243,28 +257,28 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, p: &mut AssignPat) {
+    fn validate(&mut self, p: &mut RAssignPat) {
         p.visit_mut_children_with(self);
 
         //
         match *p.left {
-            Pat::Object(ref left) => {
+            RPat::Object(ref left) => {
                 //
                 match *p.right {
-                    Expr::Object(ref right) => {
+                    RExpr::Object(ref right) => {
                         'l: for e in &right.props {
                             match e {
-                                PropOrSpread::Prop(ref prop) => {
+                                RPropOrSpread::Prop(ref prop) => {
                                     //
                                     for lp in &left.props {
                                         match lp {
-                                            ObjectPatProp::KeyValue(KeyValuePatProp {
+                                            RObjectPatProp::KeyValue(RKeyValuePatProp {
                                                 key: ref pk,
                                                 ..
                                             }) => {
                                                 //
                                                 match **prop {
-                                                    Prop::KeyValue(KeyValueProp {
+                                                    RProp::KeyValue(RKeyValueProp {
                                                         ref key,
                                                         ..
                                                     }) => {

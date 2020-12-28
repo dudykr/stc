@@ -1,4 +1,5 @@
-use stc_types::{eq::TypeEq, Type};
+use stc_types::Type;
+use swc_common::TypeEq;
 
 pub trait TypeVecExt {
     fn dedup_type(&mut self);

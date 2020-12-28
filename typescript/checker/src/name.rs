@@ -1,4 +1,10 @@
 use smallvec::{smallvec, SmallVec};
+use stc_ast_rnode::RExpr;
+use stc_ast_rnode::RExprOrSuper;
+use stc_ast_rnode::RIdent;
+use stc_ast_rnode::RMemberExpr;
+use stc_ast_rnode::RTsEntityName;
+use stc_ast_rnode::RTsThisTypeOrIdent;
 use stc_types::Id;
 use std::{
     convert::{TryFrom, TryInto},
@@ -10,7 +16,7 @@ use swc_ecma_ast::*;
 
 type Inner = SmallVec<[Id; 4]>;
 
-/// Efficient alternative for [TsEntityName].
+/// Efficient alternative for [RTsEntityName].
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub struct Name(Inner);
 
@@ -28,16 +34,16 @@ impl Debug for Name {
     }
 }
 
-impl From<&'_ Ident> for Name {
+impl From<&'_ RIdent> for Name {
     #[inline]
-    fn from(i: &Ident) -> Name {
+    fn from(i: &RIdent) -> Name {
         Id::from(i).into()
     }
 }
 
-impl From<Ident> for Name {
+impl From<RIdent> for Name {
     #[inline]
-    fn from(i: Ident) -> Name {
+    fn from(i: RIdent) -> Name {
         Id::from(i).into()
     }
 }
@@ -56,13 +62,13 @@ impl From<Id> for Name {
     }
 }
 
-impl From<TsEntityName> for Name {
-    fn from(n: TsEntityName) -> Self {
-        fn expand(buf: &mut Inner, n: TsEntityName) {
+impl From<RTsEntityName> for Name {
+    fn from(n: RTsEntityName) -> Self {
+        fn expand(buf: &mut Inner, n: RTsEntityName) {
             match n {
-                TsEntityName::Ident(i) => buf.push(Id::from(i)),
+                RTsEntityName::Ident(i) => buf.push(Id::from(i)),
 
-                TsEntityName::TsQualifiedName(box q) => {
+                RTsEntityName::TsQualifiedName(box q) => {
                     expand(buf, q.left);
                     buf.push(Id::word(q.right.sym));
                 }
@@ -75,13 +81,13 @@ impl From<TsEntityName> for Name {
     }
 }
 
-impl From<&'_ TsEntityName> for Name {
-    fn from(n: &TsEntityName) -> Self {
-        fn expand(buf: &mut Inner, n: &TsEntityName) {
+impl From<&'_ RTsEntityName> for Name {
+    fn from(n: &RTsEntityName) -> Self {
+        fn expand(buf: &mut Inner, n: &RTsEntityName) {
             match n {
-                TsEntityName::Ident(i) => buf.push(i.into()),
+                RTsEntityName::Ident(i) => buf.push(i.into()),
 
-                TsEntityName::TsQualifiedName(box q) => {
+                RTsEntityName::TsQualifiedName(box q) => {
                     expand(buf, &q.left);
                     buf.push(q.right.clone().into());
                 }
@@ -94,41 +100,43 @@ impl From<&'_ TsEntityName> for Name {
     }
 }
 
-impl TryFrom<&'_ Expr> for Name {
+impl TryFrom<&'_ RExpr> for Name {
     type Error = ();
 
-    fn try_from(e: &Expr) -> Result<Self, Self::Error> {
+    fn try_from(e: &RExpr) -> Result<Self, Self::Error> {
         match *e {
-            Expr::Ident(ref i) => Ok(i.into()),
+            RExpr::Ident(ref i) => Ok(i.into()),
             // TODO
             _ => Err(()),
         }
     }
 }
 
-impl From<&'_ TsThisTypeOrIdent> for Name {
-    fn from(ty: &TsThisTypeOrIdent) -> Self {
+impl From<&'_ RTsThisTypeOrIdent> for Name {
+    fn from(ty: &RTsThisTypeOrIdent) -> Self {
         match *ty {
-            TsThisTypeOrIdent::TsThisType(..) => Name::from(Ident::new(js_word!("this"), DUMMY_SP)),
-            TsThisTypeOrIdent::Ident(ref i) => Name::from(i),
+            RTsThisTypeOrIdent::TsThisType(..) => {
+                Name::from(RIdent::new(js_word!("this"), DUMMY_SP))
+            }
+            RTsThisTypeOrIdent::Ident(ref i) => Name::from(i),
         }
     }
 }
 
-impl<'a> TryFrom<&'a MemberExpr> for Name {
+impl<'a> TryFrom<&'a RMemberExpr> for Name {
     type Error = ();
 
-    fn try_from(e: &MemberExpr) -> Result<Self, ()> {
+    fn try_from(e: &RMemberExpr) -> Result<Self, ()> {
         if e.computed {
             return Err(());
         }
 
         match &e.obj {
-            ExprOrSuper::Expr(box Expr::Ident(i)) => Ok(Name::from(i)),
-            ExprOrSuper::Expr(box Expr::Member(member)) => {
+            RExprOrSuper::Expr(box RExpr::Ident(i)) => Ok(Name::from(i)),
+            RExprOrSuper::Expr(box RExpr::Member(member)) => {
                 let mut obj: Name = member.try_into()?;
                 obj.0.push(match &*e.prop {
-                    Expr::Ident(i) => i.clone().into(),
+                    RExpr::Ident(i) => i.clone().into(),
                     _ => return Err(()),
                 });
                 Ok(obj)

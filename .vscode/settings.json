@@ -19,5 +19,13 @@
   "editor.formatOnSave": true,
   "git.ignoreLimitWarning": true,
   "rust-analyzer.assist.importPrefix": "by_self",
-  "git.detectSubmodules": false
+  "git.detectSubmodules": false,
+  "rust-analyzer.diagnostics.disabled": [
+    "unresolved-import",
+    "unresolved-extern-crate",
+    "missing-ok-in-tail-expr",
+    "mismatched-arg-count",
+    "macro-error",
+    "incorrect-ident-case"
+  ]
 }

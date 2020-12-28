@@ -6,6 +6,18 @@ use crate::{
 };
 use fxhash::FxHashMap;
 use rayon::prelude::*;
+use rnode::Visit;
+use rnode::VisitWith;
+use stc_ast_rnode::RCallExpr;
+use stc_ast_rnode::RExportAll;
+use stc_ast_rnode::RExpr;
+use stc_ast_rnode::RExprOrSuper;
+use stc_ast_rnode::RImportDecl;
+use stc_ast_rnode::RImportSpecifier;
+use stc_ast_rnode::RLit;
+use stc_ast_rnode::RModuleItem;
+use stc_ast_rnode::RNamedExport;
+use stc_ast_rnode::RStr;
 use stc_checker_macros::extra_validator;
 use stc_types::ModuleId;
 use stc_types::{Id, Type};
@@ -15,7 +27,6 @@ use swc_atoms::js_word;
 use swc_common::Span;
 use swc_common::{Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
-use swc_ecma_visit::Node;
 
 impl Analyzer<'_, '_> {
     pub(super) fn find_imported_var(&self, id: &Id) -> ValidationResult<Option<Box<Type>>> {
@@ -38,7 +49,7 @@ impl Analyzer<'_, '_> {
     }
 
     #[extra_validator]
-    pub(super) fn load_normal_imports(&mut self, items: &Vec<ModuleItem>) {
+    pub(super) fn load_normal_imports(&mut self, items: &Vec<RModuleItem>) {
         if self.is_builtin {
             return;
         }
@@ -110,14 +121,14 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut ImportDecl) {
+    fn validate(&mut self, node: &mut RImportDecl) {
         let ctxt = self.ctx.module_id;
         let base = self.storage.path(ctxt);
         let target = self.loader.module_id(&base, &node.src.value);
 
         for specifier in &node.specifiers {
             match specifier {
-                ImportSpecifier::Named(named) => {
+                RImportSpecifier::Named(named) => {
                     //
                     match &named.imported {
                         Some(imported) => {
@@ -140,7 +151,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
                 }
-                ImportSpecifier::Default(default) => {
+                RImportSpecifier::Default(default) => {
                     self.handle_import(
                         default.span,
                         ctxt,
@@ -149,7 +160,7 @@ impl Analyzer<'_, '_> {
                         Id::from(&default.local),
                     );
                 }
-                ImportSpecifier::Namespace(ns) => {}
+                RImportSpecifier::Namespace(ns) => {}
             }
         }
 
@@ -166,7 +177,7 @@ pub(super) struct ImportFinder<'a> {
 impl<'a> ImportFinder<'a> {
     pub fn find_imports<T>(storage: &'a Storage<'a>, node: &T) -> Vec<(ModuleId, DepInfo)>
     where
-        T: for<'any> swc_ecma_visit::VisitWith<ImportFinder<'any>>,
+        T: for<'any> VisitWith<ImportFinder<'any>>,
     {
         let mut v = Self {
             storage,
@@ -174,35 +185,35 @@ impl<'a> ImportFinder<'a> {
             cur_ctxt: ModuleId::builtin(),
         };
 
-        node.visit_with(&Invalid { span: DUMMY_SP }, &mut v);
+        node.visit_with(&mut v);
 
         v.to
     }
 }
 
-impl swc_ecma_visit::Visit for ImportFinder<'_> {
-    fn visit_module_items(&mut self, items: &[ModuleItem], _: &dyn Node) {
-        use swc_ecma_visit::VisitWith;
-
+impl Visit<Vec<RModuleItem>> for ImportFinder<'_> {
+    fn visit(&mut self, items: &Vec<RModuleItem>) {
         for (index, item) in items.iter().enumerate() {
             let ctxt = self.storage.module_id(index);
             self.cur_ctxt = ctxt;
 
-            item.visit_with(&Invalid { span: DUMMY_SP }, self);
+            item.visit_with(self);
         }
     }
+}
 
+impl Visit<RCallExpr> for ImportFinder<'_> {
     /// Extracts require('foo')
-    fn visit_call_expr(&mut self, expr: &CallExpr, _: &dyn Node) {
+    fn visit(&mut self, expr: &RCallExpr) {
         let span = expr.span();
 
         match expr.callee {
-            ExprOrSuper::Expr(box Expr::Ident(ref i)) if i.sym == js_word!("require") => {
+            RExprOrSuper::Expr(box RExpr::Ident(ref i)) if i.sym == js_word!("require") => {
                 let src = expr
                     .args
                     .iter()
                     .map(|v| match *v.expr {
-                        Expr::Lit(Lit::Str(Str { ref value, .. })) => value.clone(),
+                        RExpr::Lit(RLit::Str(RStr { ref value, .. })) => value.clone(),
                         _ => unimplemented!("error reporting for dynamic require"),
                     })
                     .next()
@@ -212,8 +223,10 @@ impl swc_ecma_visit::Visit for ImportFinder<'_> {
             _ => return,
         }
     }
+}
 
-    fn visit_import_decl(&mut self, import: &ImportDecl, _: &dyn Node) {
+impl Visit<RImportDecl> for ImportFinder<'_> {
+    fn visit(&mut self, import: &RImportDecl) {
         let span = import.span();
 
         self.to.push((
@@ -224,8 +237,10 @@ impl swc_ecma_visit::Visit for ImportFinder<'_> {
             },
         ));
     }
+}
 
-    fn visit_named_export(&mut self, export: &NamedExport, _: &dyn Node) {
+impl Visit<RNamedExport> for ImportFinder<'_> {
+    fn visit(&mut self, export: &RNamedExport) {
         if export.src.is_none() {
             return;
         }
@@ -238,8 +253,10 @@ impl swc_ecma_visit::Visit for ImportFinder<'_> {
             },
         ));
     }
+}
 
-    fn visit_export_all(&mut self, export: &ExportAll, _: &dyn Node) {
+impl Visit<RExportAll> for ImportFinder<'_> {
+    fn visit(&mut self, export: &RExportAll) {
         self.to.push((
             self.cur_ctxt,
             DepInfo {

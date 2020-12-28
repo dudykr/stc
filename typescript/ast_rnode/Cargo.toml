@@ -1,5 +1,5 @@
 [package]
-authors = ["kdy1 <kdy1@dudy.kr>"]
+authors = ["강동윤 <kdy1@dudy.kr>"]
 edition = "2018"
 name = "stc_ast_rnode"
 publish = false
@@ -9,7 +9,8 @@ version = "0.1.0"
 
 [dependencies]
 num-bigint = "0.2"
-rnode = {path = "../../rnode"}
+rnode = {path = "../../crates/rnode"}
+stc_visit = {path = "../../crates/visit"}
 swc_atoms = "0.2"
-swc_common = "0.10"
-swc_ecma_ast = "0.35"
+swc_common = "0.10.8"
+swc_ecma_ast = "0.36.1"

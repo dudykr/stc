@@ -21,15 +21,52 @@ use crate::{
     validator::{Validate, ValidateWith},
     ValidationResult,
 };
+use rnode::VisitMutWith;
+use stc_ast_rnode::RArrayLit;
+use stc_ast_rnode::RArrowExpr;
+use stc_ast_rnode::RAssignExpr;
+use stc_ast_rnode::RAwaitExpr;
+use stc_ast_rnode::RBlockStmtOrExpr;
+use stc_ast_rnode::RCallExpr;
+use stc_ast_rnode::RClassExpr;
+use stc_ast_rnode::RComputedPropName;
+use stc_ast_rnode::RExpr;
+use stc_ast_rnode::RExprOrSpread;
+use stc_ast_rnode::RExprOrSuper;
+use stc_ast_rnode::RFnExpr;
+use stc_ast_rnode::RIdent;
+use stc_ast_rnode::RLit;
+use stc_ast_rnode::RMemberExpr;
+use stc_ast_rnode::RNull;
+use stc_ast_rnode::RNumber;
+use stc_ast_rnode::RObjectLit;
+use stc_ast_rnode::RParenExpr;
+use stc_ast_rnode::RPat;
+use stc_ast_rnode::RPatOrExpr;
+use stc_ast_rnode::RPropName;
+use stc_ast_rnode::RPropOrSpread;
+use stc_ast_rnode::RSeqExpr;
+use stc_ast_rnode::RSpreadElement;
+use stc_ast_rnode::RStr;
+use stc_ast_rnode::RThisExpr;
+use stc_ast_rnode::RTsEntityName;
+use stc_ast_rnode::RTsKeywordType;
+use stc_ast_rnode::RTsLit;
+use stc_ast_rnode::RTsLitType;
+use stc_ast_rnode::RTsNonNullExpr;
+use stc_ast_rnode::RTsThisType;
+use stc_ast_rnode::RUnaryExpr;
+use stc_ast_rnode::RUpdateExpr;
+use stc_types::rprop_name_to_expr;
 use stc_types::{
-    eq::{EqIgnoreSpan, TypeEq},
     ClassProperty, Id, Method, ModuleId, Operator, QueryExpr, QueryType, StaticThis, TupleElement,
 };
 use std::{convert::TryFrom, mem::take};
 use swc_atoms::js_word;
+use swc_common::EqIgnoreSpan;
+use swc_common::TypeEq;
 use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
-use swc_ecma_visit::VisitMutWith;
 use ty::TypeExt;
 
 mod bin;
@@ -66,7 +103,7 @@ impl Default for TypeOfMode {
 impl Analyzer<'_, '_> {
     fn validate(
         &mut self,
-        e: &mut Expr,
+        e: &mut RExpr,
         mode: TypeOfMode,
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
@@ -77,25 +114,25 @@ impl Analyzer<'_, '_> {
 
         match e {
             // super() returns any
-            Expr::Call(CallExpr {
-                callee: ExprOrSuper::Super(..),
+            RExpr::Call(RCallExpr {
+                callee: RExprOrSuper::Super(..),
                 ..
             }) => Ok(Type::any(span)),
 
-            Expr::Bin(e) => e.validate_with(self),
-            Expr::Cond(e) => e.validate_with_args(self, (mode, type_ann)),
-            Expr::Seq(e) => e.validate_with_args(self, (mode, type_ann)),
-            Expr::Update(e) => e.validate_with(self),
-            Expr::New(e) => e.validate_with_args(self, type_ann),
-            Expr::Call(e) => e.validate_with_args(self, type_ann),
-            Expr::TsAs(e) => e.validate_with_args(self, (mode, type_args, type_ann)),
-            Expr::TsTypeAssertion(e) => e.validate_with_args(self, (mode, type_args, type_ann)),
-            Expr::Assign(e) => e.validate_with_args(self, (mode, type_ann)),
-            Expr::Unary(e) => e.validate_with(self),
+            RExpr::Bin(e) => e.validate_with(self),
+            RExpr::Cond(e) => e.validate_with_args(self, (mode, type_ann)),
+            RExpr::Seq(e) => e.validate_with_args(self, (mode, type_ann)),
+            RExpr::Update(e) => e.validate_with(self),
+            RExpr::New(e) => e.validate_with_args(self, type_ann),
+            RExpr::Call(e) => e.validate_with_args(self, type_ann),
+            RExpr::TsAs(e) => e.validate_with_args(self, (mode, type_args, type_ann)),
+            RExpr::TsTypeAssertion(e) => e.validate_with_args(self, (mode, type_args, type_ann)),
+            RExpr::Assign(e) => e.validate_with_args(self, (mode, type_ann)),
+            RExpr::Unary(e) => e.validate_with(self),
 
-            Expr::This(ThisExpr { span }) => {
+            RExpr::This(RThisExpr { span }) => {
                 if !self.scope.is_this_defined() {
-                    return Ok(box Type::Keyword(TsKeywordType {
+                    return Ok(box Type::Keyword(RTsKeywordType {
                         span: *span,
                         kind: TsKeywordTypeKind::TsUndefinedKeyword,
                     }));
@@ -104,10 +141,10 @@ impl Analyzer<'_, '_> {
                 if let Some(ty) = self.scope.this() {
                     return Ok(ty.into_owned());
                 }
-                return Ok(box Type::from(TsThisType { span }));
+                return Ok(box Type::from(RTsThisType { span }));
             }
 
-            Expr::Ident(ref i) => {
+            RExpr::Ident(ref i) => {
                 let ty = self.type_of_var(i, mode, type_args)?;
                 if mode == TypeOfMode::RValue {
                     // `i` is truthy
@@ -124,21 +161,21 @@ impl Analyzer<'_, '_> {
                 Ok(ty)
             }
 
-            Expr::Array(ArrayLit { ref mut elems, .. }) => {
+            RExpr::Array(RArrayLit { ref mut elems, .. }) => {
                 let mut can_be_tuple = true;
                 let mut elements = Vec::with_capacity(elems.len());
 
                 for elem in elems.iter_mut() {
                     let span = elem.span();
                     let ty = match elem {
-                        Some(ExprOrSpread {
+                        Some(RExprOrSpread {
                             spread: None,
                             ref mut expr,
                         }) => {
                             let ty = expr.validate_with_default(self)?;
                             ty
                         }
-                        Some(ExprOrSpread {
+                        Some(RExprOrSpread {
                             spread: Some(..),
                             expr,
                         }) => {
@@ -158,7 +195,7 @@ impl Analyzer<'_, '_> {
                                     can_be_tuple = false;
                                     elements.extend(tuple.elems);
                                 }
-                                Type::Keyword(TsKeywordType {
+                                Type::Keyword(RTsKeywordType {
                                     kind: TsKeywordTypeKind::TsAnyKeyword,
                                     ..
                                 }) => {
@@ -209,43 +246,43 @@ impl Analyzer<'_, '_> {
                 }));
             }
 
-            Expr::Lit(Lit::Bool(v)) => {
-                return Ok(box Type::Lit(TsLitType {
+            RExpr::Lit(RLit::Bool(v)) => {
+                return Ok(box Type::Lit(RTsLitType {
                     span: v.span,
-                    lit: TsLit::Bool(*v),
+                    lit: RTsLit::Bool(v.clone()),
                 }));
             }
-            Expr::Lit(Lit::Str(ref v)) => {
-                return Ok(box Type::Lit(TsLitType {
+            RExpr::Lit(RLit::Str(ref v)) => {
+                return Ok(box Type::Lit(RTsLitType {
                     span: v.span,
-                    lit: TsLit::Str(v.clone()),
+                    lit: RTsLit::Str(v.clone()),
                 }));
             }
-            Expr::Lit(Lit::Num(v)) => {
-                return Ok(box Type::Lit(TsLitType {
+            RExpr::Lit(RLit::Num(v)) => {
+                return Ok(box Type::Lit(RTsLitType {
                     span: v.span,
-                    lit: TsLit::Number(*v),
+                    lit: RTsLit::Number(v.clone()),
                 }));
             }
-            Expr::Lit(Lit::Null(Null { span })) => {
+            RExpr::Lit(RLit::Null(RNull { span })) => {
                 if self.ctx.in_export_default_expr {
                     // TODO: strict mode
-                    return Ok(box Type::Keyword(TsKeywordType {
+                    return Ok(box Type::Keyword(RTsKeywordType {
                         span: *span,
                         kind: TsKeywordTypeKind::TsAnyKeyword,
                     }));
                 }
 
-                return Ok(box Type::Keyword(TsKeywordType {
+                return Ok(box Type::Keyword(RTsKeywordType {
                     span: *span,
                     kind: TsKeywordTypeKind::TsNullKeyword,
                 }));
             }
-            Expr::Lit(Lit::Regex(..)) => {
+            RExpr::Lit(RLit::Regex(..)) => {
                 return Ok(box Type::Ref(Ref {
                     span,
                     ctxt: ModuleId::builtin(),
-                    type_name: TsEntityName::Ident(Ident {
+                    type_name: RTsEntityName::Ident(RIdent {
                         span,
                         sym: js_word!("RegExp"),
                         optional: false,
@@ -255,16 +292,16 @@ impl Analyzer<'_, '_> {
                 }));
             }
 
-            Expr::Paren(ParenExpr { ref mut expr, .. }) => {
+            RExpr::Paren(RParenExpr { ref mut expr, .. }) => {
                 expr.validate_with_args(self, (mode, type_args, type_ann))
             }
 
-            Expr::Tpl(ref t) => {
+            RExpr::Tpl(ref t) => {
                 // Check if tpl is constant. If it is, it's type is string literal.
                 if t.exprs.is_empty() {
-                    return Ok(box Type::Lit(TsLitType {
+                    return Ok(box Type::Lit(RTsLitType {
                         span: t.span(),
-                        lit: TsLit::Str(
+                        lit: RTsLit::Str(
                             t.quasis[0]
                                 .cooked
                                 .clone()
@@ -273,29 +310,29 @@ impl Analyzer<'_, '_> {
                     }));
                 }
 
-                return Ok(box Type::Keyword(TsKeywordType {
+                return Ok(box Type::Keyword(RTsKeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsStringKeyword,
                 }));
             }
 
-            Expr::TsNonNull(TsNonNullExpr { ref mut expr, .. }) => Ok(box expr
+            RExpr::TsNonNull(RTsNonNullExpr { ref mut expr, .. }) => Ok(box expr
                 .validate_with_args(self, (mode, type_args, type_ann))?
                 .remove_falsy()),
 
-            Expr::Object(e) => {
+            RExpr::Object(e) => {
                 return e.validate_with(self);
             }
 
             // https://github.com/Microsoft/TypeScript/issues/26959
-            Expr::Yield(..) => {
+            RExpr::Yield(..) => {
                 e.visit_mut_children_with(self);
                 return Ok(Type::any(span));
             }
 
-            Expr::Await(AwaitExpr { .. }) => unimplemented!("typeof(AwaitExpr)"),
+            RExpr::Await(RAwaitExpr { .. }) => unimplemented!("typeof(AwaitExpr)"),
 
-            Expr::Class(ClassExpr {
+            RExpr::Class(RClassExpr {
                 ref ident,
                 ref mut class,
                 ..
@@ -304,15 +341,15 @@ impl Analyzer<'_, '_> {
                 return Ok(box class.validate_with(self)?.into());
             }
 
-            Expr::Arrow(ref mut e) => return Ok(box e.validate_with(self)?.into()),
+            RExpr::Arrow(ref mut e) => return Ok(box e.validate_with(self)?.into()),
 
-            Expr::Fn(FnExpr {
+            RExpr::Fn(RFnExpr {
                 ref mut function, ..
             }) => {
                 return Ok(box function.validate_with(self)?.into());
             }
 
-            Expr::Member(ref mut expr) => {
+            RExpr::Member(ref mut expr) => {
                 // Foo.a
                 if let Ok(name) = Name::try_from(&*expr) {
                     self.cur_facts
@@ -324,13 +361,13 @@ impl Analyzer<'_, '_> {
                 return self.type_of_member_expr(expr, mode);
             }
 
-            Expr::MetaProp(..) => unimplemented!("typeof(MetaProp)"),
+            RExpr::MetaProp(..) => unimplemented!("typeof(MetaProp)"),
 
-            Expr::Invalid(ref i) => return Ok(Type::any(i.span())),
+            RExpr::Invalid(ref i) => return Ok(Type::any(i.span())),
 
-            Expr::OptChain(expr) => expr.validate_with_args(self, type_ann),
+            RExpr::OptChain(expr) => expr.validate_with_args(self, type_ann),
 
-            Expr::TsConstAssertion(expr) => {
+            RExpr::TsConstAssertion(expr) => {
                 if mode == TypeOfMode::RValue {
                     return expr.expr.validate_with_args(self, (mode, None, type_ann));
                 } else {
@@ -351,10 +388,10 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &mut ExprOrSuper) -> ValidationResult {
+    fn validate(&mut self, e: &mut RExprOrSuper) -> ValidationResult {
         match e {
-            ExprOrSuper::Expr(e) => e.validate_with_default(self),
-            ExprOrSuper::Super(s) => Ok(Type::any(s.span)),
+            RExprOrSuper::Expr(e) => e.validate_with_default(self),
+            RExprOrSuper::Super(s) => Ok(Type::any(s.span)),
         }
     }
 }
@@ -363,7 +400,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(
         &mut self,
-        e: &mut ParenExpr,
+        e: &mut RParenExpr,
         mode: TypeOfMode,
         type_ann: Option<&Type>,
     ) -> ValidationResult {
@@ -375,7 +412,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(
         &mut self,
-        e: &mut AssignExpr,
+        e: &mut RAssignExpr,
         mode: TypeOfMode,
         type_ann: Option<&Type>,
     ) -> ValidationResult {
@@ -387,7 +424,8 @@ impl Analyzer<'_, '_> {
             let span = e.span();
 
             let any_span = match e.left {
-                PatOrExpr::Pat(box Pat::Ident(ref i)) | PatOrExpr::Expr(box Expr::Ident(ref i)) => {
+                RPatOrExpr::Pat(box RPat::Ident(ref i))
+                | RPatOrExpr::Expr(box RExpr::Ident(ref i)) => {
                     // Type is any if self.declaring contains ident
                     if analyzer.scope.declaring.contains(&i.into()) {
                         Some(span)
@@ -421,7 +459,7 @@ impl Analyzer<'_, '_> {
             };
 
             match &mut e.left {
-                PatOrExpr::Pat(box Pat::Ident(i)) => {
+                RPatOrExpr::Pat(box RPat::Ident(i)) => {
                     // TODO: Implemennt this
                     let rhs_is_always_true = true;
 
@@ -449,19 +487,19 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &mut UpdateExpr) -> ValidationResult {
+    fn validate(&mut self, e: &mut RUpdateExpr) -> ValidationResult {
         let span = e.span;
 
         let ty = e
             .arg
             .validate_with_args(self, (TypeOfMode::LValue, None, None))
             .and_then(|ty| match *ty.normalize() {
-                Type::Keyword(TsKeywordType {
+                Type::Keyword(RTsKeywordType {
                     kind: TsKeywordTypeKind::TsStringKeyword,
                     ..
                 })
-                | Type::Lit(TsLitType {
-                    lit: TsLit::Str(..),
+                | Type::Lit(RTsLitType {
+                    lit: RTsLit::Str(..),
                     ..
                 })
                 | Type::Array(..) => Err(Error::TS2356 { span: e.arg.span() }),
@@ -479,7 +517,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        Ok(box Type::Keyword(TsKeywordType {
+        Ok(box Type::Keyword(RTsKeywordType {
             kind: TsKeywordTypeKind::TsNumberKeyword,
             span,
         }))
@@ -490,11 +528,11 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(
         &mut self,
-        e: &mut SeqExpr,
+        e: &mut RSeqExpr,
         mode: TypeOfMode,
         type_ann: Option<&Type>,
     ) -> ValidationResult {
-        let SeqExpr {
+        let RSeqExpr {
             span,
             ref mut exprs,
         } = *e;
@@ -510,19 +548,19 @@ impl Analyzer<'_, '_> {
 
             if !is_last {
                 match **e {
-                    Expr::Ident(..)
-                    | Expr::Lit(..)
-                    | Expr::Arrow(..)
-                    | Expr::Unary(UnaryExpr {
+                    RExpr::Ident(..)
+                    | RExpr::Lit(..)
+                    | RExpr::Arrow(..)
+                    | RExpr::Unary(RUnaryExpr {
                         op: op!(unary, "-"),
                         ..
                     })
-                    | Expr::Unary(UnaryExpr {
+                    | RExpr::Unary(RUnaryExpr {
                         op: op!(unary, "+"),
                         ..
                     })
-                    | Expr::Unary(UnaryExpr { op: op!("!"), .. })
-                    | Expr::Unary(UnaryExpr {
+                    | RExpr::Unary(RUnaryExpr { op: op!("!"), .. })
+                    | RExpr::Unary(RUnaryExpr {
                         op: op!("typeof"), ..
                     }) if !self.rule().allow_unreachable_code => {
                         self.storage.report(Error::UselessSeqExpr {
@@ -534,7 +572,7 @@ impl Analyzer<'_, '_> {
                 }
             }
             match **e {
-                Expr::Ident(ref i) => {
+                RExpr::Ident(ref i) => {
                     if self.scope.declaring.contains(&i.into()) {
                         is_any = true;
                     }
@@ -568,7 +606,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         obj: Box<Type>,
-        prop: &mut Expr,
+        prop: &mut RExpr,
         computed: bool,
         type_mode: TypeOfMode,
     ) -> ValidationResult {
@@ -577,7 +615,7 @@ impl Analyzer<'_, '_> {
             a: &mut Analyzer,
             span: Span,
             obj: &Type,
-            prop: &mut Expr,
+            prop: &mut RExpr,
             computed: bool,
             type_mode: TypeOfMode,
             members: &[TypeElement],
@@ -586,7 +624,7 @@ impl Analyzer<'_, '_> {
                 prop.validate_with_default(a)?
             } else {
                 match prop {
-                    Expr::Ident(..) => box Type::Keyword(TsKeywordType {
+                    RExpr::Ident(..) => box Type::Keyword(RTsKeywordType {
                         kind: TsKeywordTypeKind::TsStringKeyword,
                         span,
                     }),
@@ -602,23 +640,23 @@ impl Analyzer<'_, '_> {
                         _ => false,
                     };
                     let is_eq = match prop {
-                        Expr::Ident(Ident { sym: ref value, .. }) if !computed => match key {
-                            Expr::Ident(Ident {
+                        RExpr::Ident(RIdent { sym: ref value, .. }) if !computed => match &*key {
+                            RExpr::Ident(RIdent {
                                 sym: ref r_value, ..
                             }) => value == r_value,
 
-                            Expr::Lit(Lit::Str(Str {
+                            RExpr::Lit(RLit::Str(RStr {
                                 value: ref r_value, ..
                             })) => value == r_value,
                             _ => false,
                         },
 
-                        Expr::Lit(Lit::Str(Str { ref value, .. })) if computed => match key {
-                            Expr::Ident(Ident {
+                        RExpr::Lit(RLit::Str(RStr { ref value, .. })) if computed => match &*key {
+                            RExpr::Ident(RIdent {
                                 sym: ref r_value, ..
                             }) => value == r_value,
 
-                            Expr::Lit(Lit::Str(Str {
+                            RExpr::Lit(RLit::Str(RStr {
                                 value: ref r_value, ..
                             })) => value == r_value,
                             _ => false,
@@ -753,7 +791,7 @@ impl Analyzer<'_, '_> {
         {
             if let Some(declaring) = &self.scope.declaring_prop() {
                 match prop {
-                    Expr::Ident(key) => {
+                    RExpr::Ident(key) => {
                         if key.sym == *declaring.sym() {
                             return Ok(Type::any(span));
                         }
@@ -763,11 +801,11 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match *obj {
+        match &*obj {
             Type::This(this) if self.scope.is_this_ref_to_object_lit() => {
                 if computed
                     && match prop {
-                        Expr::Cond(..) => true,
+                        RExpr::Cond(..) => true,
                         _ => false,
                     }
                 {
@@ -802,10 +840,10 @@ impl Analyzer<'_, '_> {
                                     is_static: false, ..
                                 },
                             ) => match &member.key {
-                                PropName::Ident(key) => {
+                                RPropName::Ident(key) => {
                                     //
                                     match prop {
-                                        Expr::Ident(i) if i.sym == key.sym => {
+                                        RExpr::Ident(i) if i.sym == key.sym => {
                                             return Ok(box Type::Function(ty::Function {
                                                 span: member.span,
                                                 type_params: member.type_params.clone(),
@@ -817,11 +855,11 @@ impl Analyzer<'_, '_> {
                                         _ => {}
                                     }
                                 }
-                                PropName::Str(_) => {}
-                                PropName::Num(_) => {}
-                                PropName::BigInt(_) => {}
+                                RPropName::Str(_) => {}
+                                RPropName::Num(_) => {}
+                                RPropName::BigInt(_) => {}
 
-                                PropName::Computed(key) => {
+                                RPropName::Computed(key) => {
                                     if (*key.expr).type_eq(&*prop) {
                                         return Ok(box Type::Function(ty::Function {
                                             span: member.span,
@@ -841,8 +879,8 @@ impl Analyzer<'_, '_> {
                                 },
                             ) => {
                                 match &*member.key {
-                                    Expr::Ident(member_key) => match &*prop {
-                                        Expr::Ident(prop) => {
+                                    RExpr::Ident(member_key) => match &*prop {
+                                        RExpr::Ident(prop) => {
                                             if prop.sym == member_key.sym {
                                                 return Ok(member
                                                     .value
@@ -917,7 +955,7 @@ impl Analyzer<'_, '_> {
                 return Ok(box Type::IndexedAccessType(IndexedAccessType {
                     span,
                     readonly: false,
-                    obj_type: box Type::This(this),
+                    obj_type: box Type::This(this.clone()),
                     index_type: prop_ty,
                 }));
             }
@@ -934,10 +972,10 @@ impl Analyzer<'_, '_> {
                             },
                         ) => {
                             match &member.key {
-                                PropName::Ident(key) => {
+                                RPropName::Ident(key) => {
                                     //
                                     match prop {
-                                        Expr::Ident(i) if i.sym == key.sym => {
+                                        RExpr::Ident(i) if i.sym == key.sym => {
                                             return Ok(box Type::Function(ty::Function {
                                                 span: member.span,
                                                 type_params: member.type_params.clone(),
@@ -949,11 +987,11 @@ impl Analyzer<'_, '_> {
                                         _ => {}
                                     }
                                 }
-                                PropName::Str(_) => {}
-                                PropName::Num(_) => {}
-                                PropName::BigInt(_) => {}
+                                RPropName::Str(_) => {}
+                                RPropName::Num(_) => {}
+                                RPropName::BigInt(_) => {}
 
-                                PropName::Computed(key) => {
+                                RPropName::Computed(key) => {
                                     if (*key.expr).type_eq(&*prop) {
                                         return Ok(box Type::Function(ty::Function {
                                             span: member.span,
@@ -977,7 +1015,7 @@ impl Analyzer<'_, '_> {
                                 return Ok(property
                                     .value
                                     .clone()
-                                    .unwrap_or_else(|| Type::any(span)));
+                                    .unwrap_or_else(|| Type::any(span.clone())));
                             }
                         }
 
@@ -988,7 +1026,7 @@ impl Analyzer<'_, '_> {
                 dbg!();
 
                 return Err(Error::NoSuchProperty {
-                    span,
+                    span: *span,
                     obj: Some(obj.clone()),
                     prop: Some(prop.clone()),
                     prop_ty: None,
@@ -1019,13 +1057,13 @@ impl Analyzer<'_, '_> {
                             //         TsEnumMemberId::Ident(Ident { ref sym, .. })
                             //         | TsEnumMemberId::Str(Str { value: ref sym, .. }) => {
                             //             if sym == $sym {
-                            //                 return Ok(Type::Lit(TsLitType {
+                            //                 return Ok(Type::Lit(RTsLitType {
                             //                     span: m.span(),
                             //                     lit: match m.val.clone() {
-                            //                         Expr::Lit(Lit::Str(s)) => TsLit::Str(s),
-                            //                         Expr::Lit(Lit::Num(v)) =>
-                            // TsLit::Number(v),                         _ =>
-                            // unreachable!(),                     },
+                            //                         RExpr::Lit(RLit::Str(s)) =>
+                            // RTsLit::Str(s),
+                            // RExpr::Lit(RLit::Num(v)) => RTsLit::Number(v),
+                            // _ => unreachable!(),                     },
                             //                 }));
                             //             }
                             //         }
@@ -1054,25 +1092,25 @@ impl Analyzer<'_, '_> {
                     }};
                 }
                 match *prop {
-                    Expr::Ident(Ident { ref sym, .. }) if !computed => {
+                    RExpr::Ident(RIdent { ref sym, .. }) if !computed => {
                         ret!(sym);
                     }
-                    Expr::Lit(Lit::Str(Str { value: ref sym, .. })) => {
+                    RExpr::Lit(RLit::Str(RStr { value: ref sym, .. })) => {
                         ret!(sym);
                     }
-                    Expr::Lit(Lit::Num(Number { value, .. })) => {
+                    RExpr::Lit(RLit::Num(RNumber { value, .. })) => {
                         let idx = value.round() as usize;
                         if e.members.len() > idx {
                             let v = &e.members[idx];
-                            if match v.val {
-                                Expr::Lit(Lit::Str(..)) | Expr::Lit(Lit::Num(..)) => true,
+                            if match *v.val {
+                                RExpr::Lit(RLit::Str(..)) | RExpr::Lit(RLit::Num(..)) => true,
                                 _ => false,
                             } {
-                                let new_obj_ty = box Type::Lit(TsLitType {
+                                let new_obj_ty = box Type::Lit(RTsLitType {
                                     span,
-                                    lit: match v.val.clone() {
-                                        Expr::Lit(Lit::Str(s)) => TsLit::Str(s),
-                                        Expr::Lit(Lit::Num(v)) => TsLit::Number(v),
+                                    lit: match *v.val.clone() {
+                                        RExpr::Lit(RLit::Str(s)) => RTsLit::Str(s),
+                                        RExpr::Lit(RLit::Num(v)) => RTsLit::Number(v),
                                         _ => unreachable!(),
                                     },
                                 });
@@ -1080,7 +1118,7 @@ impl Analyzer<'_, '_> {
                                     .access_property(span, new_obj_ty, prop, computed, type_mode);
                             }
                         }
-                        return Ok(box Type::Keyword(TsKeywordType {
+                        return Ok(box Type::Keyword(RTsKeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsStringKeyword,
                         }));
@@ -1114,15 +1152,17 @@ impl Analyzer<'_, '_> {
                         match ty.normalize() {
                             Type::Enum(ref e) => {
                                 for v in e.members.iter() {
-                                    if match v.val {
-                                        Expr::Lit(Lit::Str(..)) | Expr::Lit(Lit::Num(..)) => true,
+                                    if match *v.val {
+                                        RExpr::Lit(RLit::Str(..)) | RExpr::Lit(RLit::Num(..)) => {
+                                            true
+                                        }
                                         _ => false,
                                     } {
-                                        let new_obj_ty = box Type::Lit(TsLitType {
+                                        let new_obj_ty = box Type::Lit(RTsLitType {
                                             span: *span,
-                                            lit: match v.val.clone() {
-                                                Expr::Lit(Lit::Str(s)) => TsLit::Str(s),
-                                                Expr::Lit(Lit::Num(v)) => TsLit::Number(v),
+                                            lit: match *v.val.clone() {
+                                                RExpr::Lit(RLit::Str(s)) => RTsLit::Str(s),
+                                                RExpr::Lit(RLit::Num(v)) => RTsLit::Number(v),
                                                 _ => unreachable!(),
                                             },
                                         });
@@ -1144,7 +1184,7 @@ impl Analyzer<'_, '_> {
                     match v {
                         ty::ClassMember::Property(ref class_prop) => {
                             match &*class_prop.key {
-                                Expr::Ident(i) if !computed => {
+                                RExpr::Ident(i) if !computed => {
                                     if self.scope.declaring_prop.as_ref() == Some(&i.into()) {
                                         return Err(Error::ReferencedInInit { span });
                                     }
@@ -1154,16 +1194,16 @@ impl Analyzer<'_, '_> {
                             }
 
                             let has_same_key = match &*prop {
-                                Expr::Ident(prop) => match &*class_prop.key {
-                                    Expr::Ident(key) if !computed => {
+                                RExpr::Ident(prop) => match &*class_prop.key {
+                                    RExpr::Ident(key) if !computed => {
                                         // ctxt is ignored because syntax context of property in a
                                         // member expression is always empty.
                                         prop.sym == key.sym
                                     }
                                     _ => false,
                                 },
-                                Expr::Lit(Lit::Str(v)) if computed => match &*class_prop.key {
-                                    Expr::Ident(key) => v.value == key.sym,
+                                RExpr::Lit(RLit::Str(v)) if computed => match &*class_prop.key {
+                                    RExpr::Ident(key) => v.value == key.sym,
                                     _ => false,
                                 },
                                 _ => false,
@@ -1177,18 +1217,18 @@ impl Analyzer<'_, '_> {
                             }
                         }
                         ty::ClassMember::Method(ref mtd) => {
-                            let mtd_key = prop_name_to_expr(&mtd.key);
+                            let mtd_key = rprop_name_to_expr(mtd.key.clone());
                             // TODO: Check if this is correct.
 
                             let has_same_key = match &*prop {
-                                Expr::Ident(prop) => match &*mtd_key {
-                                    Expr::Ident(key) => {
+                                RExpr::Ident(prop) => match &mtd_key {
+                                    RExpr::Ident(key) => {
                                         prop.span.ctxt == key.span.ctxt && prop.sym == key.sym
                                     }
                                     _ => false,
                                 },
                                 _ => false,
-                            } || (*mtd_key).eq_ignore_span(prop);
+                            } || mtd_key.eq_ignore_span(prop);
 
                             if has_same_key {
                                 return Ok(box Type::Function(stc_types::Function {
@@ -1201,7 +1241,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         ty::ClassMember::Constructor(ref cons) => match prop {
-                            Expr::Ident(ref i) if i.sym == *"constructor" => {
+                            RExpr::Ident(ref i) if i.sym == *"constructor" => {
                                 return Ok(box Type::Constructor(ty::Constructor {
                                     span,
                                     type_params: cons.type_params.clone(),
@@ -1276,12 +1316,13 @@ impl Analyzer<'_, '_> {
                     prop.validate_with_default(self)?
                 } else {
                     match prop {
-                        Expr::Ident(i) => box Type::Lit(TsLitType {
+                        RExpr::Ident(i) => box Type::Lit(RTsLitType {
                             span: i.span,
-                            lit: TsLit::Str(Str {
+                            lit: RTsLit::Str(RStr {
                                 span: i.span,
                                 value: i.sym.clone(),
                                 has_escape: false,
+                                kind: Default::default(),
                             }),
                         }),
                         _ => unreachable!(),
@@ -1299,22 +1340,22 @@ impl Analyzer<'_, '_> {
                 }));
             }
 
-            Type::Keyword(TsKeywordType {
+            Type::Keyword(RTsKeywordType {
                 kind: TsKeywordTypeKind::TsAnyKeyword,
                 ..
             }) => {
-                return Ok(box Type::Keyword(TsKeywordType {
+                return Ok(box Type::Keyword(RTsKeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsAnyKeyword,
                 }));
             }
 
-            Type::Keyword(TsKeywordType {
+            Type::Keyword(RTsKeywordType {
                 kind: TsKeywordTypeKind::TsUnknownKeyword,
                 ..
             }) => return Err(Error::Unknown { span: obj.span() }),
 
-            Type::Keyword(TsKeywordType { kind, .. }) if !self.is_builtin => {
+            Type::Keyword(RTsKeywordType { kind, .. }) if !self.is_builtin => {
                 let word = match kind {
                     TsKeywordTypeKind::TsStringKeyword => js_word!("String"),
                     TsKeywordTypeKind::TsNumberKeyword => js_word!("Number"),
@@ -1351,12 +1392,12 @@ impl Analyzer<'_, '_> {
                 if computed {
                     match prop.validate_with_default(self) {
                         Ok(ty) => match ty.normalize() {
-                            Type::Keyword(TsKeywordType {
+                            Type::Keyword(RTsKeywordType {
                                 kind: TsKeywordTypeKind::TsNumberKeyword,
                                 ..
                             })
-                            | Type::Lit(TsLitType {
-                                lit: TsLit::Number(..),
+                            | Type::Lit(RTsLitType {
+                                lit: RTsLit::Number(..),
                                 ..
                             }) => return Ok(elem_type.clone()),
 
@@ -1483,7 +1524,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Tuple(Tuple { ref elems, .. }) => match *prop {
-                Expr::Lit(Lit::Num(n)) => {
+                RExpr::Lit(RLit::Num(ref n)) => {
                     let v = n.value.round() as i64;
                     if v < 0 || elems.len() <= v as usize {
                         return Err(Error::TupleIndexError {
@@ -1534,7 +1575,7 @@ impl Analyzer<'_, '_> {
                         ty::ClassMember::Method(ref m) => {
                             // TODO: normalized string / ident
                             match &m.key {
-                                PropName::Computed(ComputedPropName { expr, .. }) => {
+                                RPropName::Computed(RComputedPropName { expr, .. }) => {
                                     if (&**expr).eq_ignore_span(&prop) {
                                         return Ok(box Type::Function(ty::Function {
                                             span,
@@ -1545,8 +1586,8 @@ impl Analyzer<'_, '_> {
                                     }
                                 }
                                 // TODO: Merge code
-                                PropName::Ident(method_key) => match &*prop {
-                                    Expr::Ident(prop) => {
+                                RPropName::Ident(method_key) => match &*prop {
+                                    RExpr::Ident(prop) => {
                                         if prop.sym == method_key.sym
                                             && prop.span.ctxt == method_key.span.ctxt
                                         {
@@ -1581,7 +1622,7 @@ impl Analyzer<'_, '_> {
 
             Type::Module(ty::Module { ref exports, .. }) => {
                 match prop {
-                    Expr::Ident(ref i) => {
+                    RExpr::Ident(ref i) => {
                         if let Some(item) = exports.vars.get(&i.into()) {
                             return Ok(item.clone());
                         }
@@ -1658,8 +1699,8 @@ impl Analyzer<'_, '_> {
                     }));
                 } else {
                     match &r.type_name {
-                        TsEntityName::TsQualifiedName(_) => {}
-                        TsEntityName::Ident(i) => {
+                        RTsEntityName::TsQualifiedName(_) => {}
+                        RTsEntityName::Ident(i) => {
                             if let Some(class) = self.scope.get_this_class_name() {
                                 if class == *i {
                                     return self.access_property(
@@ -1690,13 +1731,14 @@ impl Analyzer<'_, '_> {
                     obj_type: obj,
                     readonly: false,
                     index_type: match prop {
-                        Expr::Ident(i) if !computed => {
-                            let mut prop_ty = box Type::Lit(TsLitType {
+                        RExpr::Ident(i) if !computed => {
+                            let mut prop_ty = box Type::Lit(RTsLitType {
                                 span: DUMMY_SP,
-                                lit: TsLit::Str(Str {
+                                lit: RTsLit::Str(RStr {
                                     span: DUMMY_SP,
                                     value: i.sym.clone(),
                                     has_escape: false,
+                                    kind: Default::default(),
                                 }),
                             });
                             self.prevent_generalize(&mut prop_ty);
@@ -1735,7 +1777,7 @@ impl Analyzer<'_, '_> {
         );
     }
 
-    fn type_to_query_if_required(&mut self, span: Span, i: &Ident, ty: Box<Type>) -> Box<Type> {
+    fn type_to_query_if_required(&mut self, span: Span, i: &RIdent, ty: Box<Type>) -> Box<Type> {
         if self.scope.is_calling() {
             return ty;
         }
@@ -1750,7 +1792,7 @@ impl Analyzer<'_, '_> {
                     // We should return typeof function name
                     return box Type::Query(QueryType {
                         span,
-                        expr: QueryExpr::TsEntityName(TsEntityName::Ident(i.clone())),
+                        expr: QueryExpr::TsEntityName(RTsEntityName::Ident(i.clone())),
                     });
                 }
                 return ty;
@@ -1762,7 +1804,7 @@ impl Analyzer<'_, '_> {
     /// Returned type reflects conditional type facts.
     pub(super) fn type_of_var(
         &mut self,
-        i: &Ident,
+        i: &RIdent,
         type_mode: TypeOfMode,
         type_args: Option<&TypeParamInstantiation>,
     ) -> ValidationResult {
@@ -1816,7 +1858,7 @@ impl Analyzer<'_, '_> {
     /// exclusion)
     fn type_of_raw_var(
         &mut self,
-        i: &Ident,
+        i: &RIdent,
         type_mode: TypeOfMode,
         type_args: Option<&TypeParamInstantiation>,
     ) -> ValidationResult {
@@ -1839,7 +1881,7 @@ impl Analyzer<'_, '_> {
                 return Ok(box Type::Ref(Ref {
                     span,
                     ctxt: self.ctx.module_id,
-                    type_name: TsEntityName::Ident(i.clone()),
+                    type_name: RTsEntityName::Ident(i.clone()),
                     type_args: None,
                 }));
             }
@@ -1938,7 +1980,7 @@ impl Analyzer<'_, '_> {
         Ok(box Type::Ref(Ref {
             span,
             ctxt: self.ctx.module_id,
-            type_name: TsEntityName::Ident(i.clone()),
+            type_name: RTsEntityName::Ident(i.clone()),
             type_args: None,
         }))
     }
@@ -1947,11 +1989,11 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         ctxt: ModuleId,
-        n: &TsEntityName,
+        n: &RTsEntityName,
         type_args: Option<TypeParamInstantiation>,
     ) -> ValidationResult {
         match *n {
-            TsEntityName::Ident(ref i) => {
+            RTsEntityName::Ident(ref i) => {
                 if let Some(types) = self.find_type(ctxt, &i.into())? {
                     for ty in types {
                         match ty.normalize() {
@@ -1993,7 +2035,6 @@ impl Analyzer<'_, '_> {
                             Type::Alias(_) => {}
                             Type::Namespace(_) => {}
                             Type::Module(_) => {}
-                            Type::Static(_) => {}
                             Type::Arc(_) => {}
                         }
                     }
@@ -2004,11 +2045,11 @@ impl Analyzer<'_, '_> {
                 Ok(box Type::Ref(Ref {
                     span,
                     ctxt: self.ctx.module_id,
-                    type_name: TsEntityName::Ident(i.clone()),
+                    type_name: RTsEntityName::Ident(i.clone()),
                     type_args,
                 }))
             }
-            TsEntityName::TsQualifiedName(ref qname) => {
+            RTsEntityName::TsQualifiedName(ref qname) => {
                 let obj_ty = self.type_of_ts_entity_name(span, ctxt, &qname.left, None)?;
 
                 let ctx = Ctx {
@@ -2021,7 +2062,7 @@ impl Analyzer<'_, '_> {
                 self.access_property(
                     span,
                     obj_ty,
-                    &mut Expr::Ident(qname.right.clone()),
+                    &mut RExpr::Ident(qname.right.clone()),
                     false,
                     TypeOfMode::RValue,
                 )
@@ -2031,10 +2072,10 @@ impl Analyzer<'_, '_> {
 
     fn type_of_member_expr(
         &mut self,
-        expr: &mut MemberExpr,
+        expr: &mut RMemberExpr,
         type_mode: TypeOfMode,
     ) -> ValidationResult {
-        let MemberExpr {
+        let RMemberExpr {
             ref mut obj,
             computed,
             ref mut prop,
@@ -2044,7 +2085,7 @@ impl Analyzer<'_, '_> {
 
         let mut errors = vec![];
         let obj_ty = match *obj {
-            ExprOrSuper::Expr(ref mut obj) => {
+            RExprOrSuper::Expr(ref mut obj) => {
                 let obj_ty = match obj.validate_with_default(self) {
                     Ok(ty) => ty,
                     Err(err) => {
@@ -2061,7 +2102,7 @@ impl Analyzer<'_, '_> {
                 obj_ty
             }
 
-            ExprOrSuper::Super(..) => {
+            RExprOrSuper::Super(..) => {
                 if let Some(v) = self.scope.get_super_class() {
                     v.clone()
                 } else {
@@ -2124,7 +2165,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, f: &mut ArrowExpr) -> ValidationResult<ty::Function> {
+    fn validate(&mut self, f: &mut RArrowExpr) -> ValidationResult<ty::Function> {
         self.record(f);
 
         self.with_child(
@@ -2172,11 +2213,11 @@ impl Analyzer<'_, '_> {
 
                 let inferred_return_type = {
                     match f.body {
-                        BlockStmtOrExpr::Expr(ref mut e) => Some({
+                        RBlockStmtOrExpr::Expr(ref mut e) => Some({
                             let ty = e.validate_with_default(child)?;
                             ty.generalize_lit()
                         }),
-                        BlockStmtOrExpr::BlockStmt(ref mut s) => child.visit_stmts_for_return(
+                        RBlockStmtOrExpr::BlockStmt(ref mut s) => child.visit_stmts_for_return(
                             f.span,
                             f.is_async,
                             f.is_generator,
@@ -2190,7 +2231,7 @@ impl Analyzer<'_, '_> {
                     match &mut *ty {
                         Type::Union(ty) => {
                             ty.types.retain(|ty| match &**ty {
-                                Type::Keyword(TsKeywordType {
+                                Type::Keyword(RTsKeywordType {
                                     kind: TsKeywordTypeKind::TsVoidKeyword,
                                     ..
                                 }) => false,
@@ -2225,7 +2266,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut ObjectLit) -> ValidationResult {
+    fn validate(&mut self, node: &mut RObjectLit) -> ValidationResult {
         self.with_child(
             ScopeKind::ObjectLit,
             Default::default(),
@@ -2236,13 +2277,13 @@ impl Analyzer<'_, '_> {
 
                 for prop in node.props.iter_mut() {
                     match *prop {
-                        PropOrSpread::Prop(ref mut prop) => {
+                        RPropOrSpread::Prop(ref mut prop) => {
                             let p: TypeElement = prop.validate_with(a)?;
                             if let Some(key) = p.key() {
                                 if a.scope.this_object_members.iter_mut().any(|element| {
                                     match element {
                                         ty::TypeElement::Property(prop)
-                                            if (*prop.key).eq_ignore_span(key) =>
+                                            if (*prop.key).eq_ignore_span(&*key) =>
                                         {
                                             prop.readonly = false;
                                             true
@@ -2256,7 +2297,7 @@ impl Analyzer<'_, '_> {
 
                             a.scope.this_object_members.push(p);
                         }
-                        PropOrSpread::Spread(SpreadElement { ref mut expr, .. }) => {
+                        RPropOrSpread::Spread(RSpreadElement { ref mut expr, .. }) => {
                             match *expr.validate_with_default(a)? {
                                 Type::TypeLit(TypeLit {
                                     members: spread_members,
@@ -2268,13 +2309,13 @@ impl Analyzer<'_, '_> {
                                 // Use last type on ...any or ...unknown
                                 ty
                                 @
-                                Type::Keyword(TsKeywordType {
+                                Type::Keyword(RTsKeywordType {
                                     kind: TsKeywordTypeKind::TsUnknownKeyword,
                                     ..
                                 })
                                 | ty
                                 @
-                                Type::Keyword(TsKeywordType {
+                                Type::Keyword(RTsKeywordType {
                                     kind: TsKeywordTypeKind::TsAnyKeyword,
                                     ..
                                 }) => special_type = Some(ty),

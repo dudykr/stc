@@ -27,7 +27,24 @@ use crate::{
 use bitflags::_core::mem::{replace, take};
 use fxhash::{FxHashMap, FxHashSet};
 use rayon::prelude::*;
+use rnode::VisitMutWith;
+use rnode::VisitWith;
 use slog::Logger;
+use stc_ast_rnode::RDecorator;
+use stc_ast_rnode::REmptyStmt;
+use stc_ast_rnode::RExpr;
+use stc_ast_rnode::RIdent;
+use stc_ast_rnode::RModule;
+use stc_ast_rnode::RModuleDecl;
+use stc_ast_rnode::RModuleItem;
+use stc_ast_rnode::RNamedExport;
+use stc_ast_rnode::RScript;
+use stc_ast_rnode::RStmt;
+use stc_ast_rnode::RTsImportEqualsDecl;
+use stc_ast_rnode::RTsModuleDecl;
+use stc_ast_rnode::RTsModuleName;
+use stc_ast_rnode::RTsModuleRef;
+use stc_ast_rnode::RTsNamespaceDecl;
 use stc_builtin_types::Lib;
 use stc_types::{Id, ModuleId, ModuleTypeData, SymbolIdGenerator};
 use std::{
@@ -40,7 +57,6 @@ use swc_atoms::JsWord;
 use swc_common::{Mark, SourceMap, Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::{ModuleItem, *};
 use swc_ecma_parser::JscTarget;
-use swc_ecma_visit::{VisitMutWith, VisitWith};
 
 macro_rules! try_opt {
     ($e:expr) => {{
@@ -127,7 +143,7 @@ pub struct Analyzer<'a, 'b> {
 
     imports_by_id: FxHashMap<Id, ModuleInfo>,
 
-    pending_exports: Vec<((Id, Span), Expr)>,
+    pending_exports: Vec<((Id, Span), RExpr)>,
 
     imports: FxHashMap<(ModuleId, ModuleId), Arc<ModuleTypeData>>,
 
@@ -148,7 +164,7 @@ pub struct Analyzer<'a, 'b> {
     /// ```
     ///
     /// we need to prepend statements.
-    prepend_stmts: Vec<Stmt>,
+    prepend_stmts: Vec<RStmt>,
 
     /// Used to handle
     ///
@@ -171,7 +187,7 @@ pub struct Analyzer<'a, 'b> {
     /// ```
     ///
     /// we need to append statements.
-    append_stmts: Vec<Stmt>,
+    append_stmts: Vec<RStmt>,
 
     scope: Scope<'a>,
 
@@ -246,7 +262,7 @@ fn make_module_ty(span: Span, exports: ModuleTypeData) -> ty::Module {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut Script) -> ValidationResult<ty::Module> {
+    fn validate(&mut self, node: &mut RScript) -> ValidationResult<ty::Module> {
         let span = node.span;
 
         let (errors, data) = {
@@ -538,7 +554,7 @@ impl Load for NoopLoader {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, modules: &mut Vec<Module>) {
+    fn validate(&mut self, modules: &mut Vec<RModule>) {
         let mut counts = vec![];
         let mut items = vec![];
         for m in modules.drain(..) {
@@ -552,7 +568,7 @@ impl Analyzer<'_, '_> {
         let mut result = vec![];
 
         for cnt in counts {
-            result.push(Module {
+            result.push(RModule {
                 // TODO
                 span: DUMMY_SP,
                 body: stmts.drain(0..cnt).flatten().collect(),
@@ -569,12 +585,12 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, items: &mut Vec<ModuleItem>) {
+    fn validate(&mut self, items: &mut Vec<RModuleItem>) {
         self.load_normal_imports(&items);
 
         let mut has_normal_export = false;
         items.iter().for_each(|item| match item {
-            ModuleItem::ModuleDecl(ModuleDecl::TsExportAssignment(decl)) => {
+            RModuleItem::ModuleDecl(RModuleDecl::TsExportAssignment(decl)) => {
                 if self.export_equals_span.is_dummy() {
                     self.export_equals_span = decl.span;
                 }
@@ -584,12 +600,12 @@ impl Analyzer<'_, '_> {
 
                 //
             }
-            ModuleItem::ModuleDecl(item) => match item {
-                ModuleDecl::ExportDecl(..)
-                | ModuleDecl::ExportAll(..)
-                | ModuleDecl::ExportDefaultDecl(..)
-                | ModuleDecl::ExportDefaultExpr(..)
-                | ModuleDecl::TsNamespaceExport(..) => {
+            RModuleItem::ModuleDecl(item) => match item {
+                RModuleDecl::ExportDecl(..)
+                | RModuleDecl::ExportAll(..)
+                | RModuleDecl::ExportDefaultDecl(..)
+                | RModuleDecl::ExportDefaultExpr(..)
+                | RModuleDecl::TsNamespaceExport(..) => {
                     has_normal_export = true;
                     if !self.export_equals_span.is_dummy() {
                         self.storage.report(Error::TS2309 {
@@ -608,7 +624,7 @@ impl Analyzer<'_, '_> {
                 errors: &mut self.storage,
             };
 
-            items.visit_with(&Invalid { span: DUMMY_SP }, &mut visitor);
+            items.visit_with(&mut visitor);
 
             if visitor.last_ambient_name.is_some() {
                 visitor.errors.report(Error::TS2391 {
@@ -625,16 +641,16 @@ impl Analyzer<'_, '_> {
 
         items.retain(|item| {
             match item {
-                ModuleItem::ModuleDecl(decl) => match decl {
-                    ModuleDecl::ExportNamed(export @ NamedExport { src: None, .. })
+                RModuleItem::ModuleDecl(decl) => match decl {
+                    RModuleDecl::ExportNamed(export @ RNamedExport { src: None, .. })
                         if export.specifiers.is_empty() =>
                     {
                         return false
                     }
                     _ => {}
                 },
-                ModuleItem::Stmt(stmt) => match stmt {
-                    Stmt::Decl(..) => {}
+                RModuleItem::Stmt(stmt) => match stmt {
+                    RStmt::Decl(..) => {}
                     _ => return false,
                 },
             }
@@ -651,13 +667,13 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, items: &mut Vec<Stmt>) {
+    fn validate(&mut self, items: &mut Vec<RStmt>) {
         let mut visitor = AmbientFunctionHandler {
             last_ambient_name: None,
             errors: &mut self.storage,
         };
 
-        items.visit_with(&Invalid { span: DUMMY_SP }, &mut visitor);
+        items.visit_with(&mut visitor);
 
         if visitor.last_ambient_name.is_some() {
             visitor.errors.report(Error::TS2391 {
@@ -672,7 +688,7 @@ impl Analyzer<'_, '_> {
 
             new.extend(self.prepend_stmts.drain(..));
 
-            new.push(replace(item, Stmt::Empty(EmptyStmt { span: DUMMY_SP })));
+            new.push(replace(item, RStmt::Empty(REmptyStmt { span: DUMMY_SP })));
 
             new.extend(self.append_stmts.drain(..));
         }
@@ -686,7 +702,7 @@ impl Analyzer<'_, '_> {
 /// Done
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, d: &mut Decorator) {
+    fn validate(&mut self, d: &mut RDecorator) {
         d.expr.validate_with_default(self).report(&mut self.storage);
 
         Ok(())
@@ -695,11 +711,11 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut TsImportEqualsDecl) {
+    fn validate(&mut self, node: &mut RTsImportEqualsDecl) {
         self.record(node);
 
         match node.module_ref {
-            TsModuleRef::TsEntityName(ref e) => {
+            RTsModuleRef::TsEntityName(ref e) => {
                 match self.type_of_ts_entity_name(node.span, self.ctx.module_id, e, None) {
                     Ok(..) => {}
                     Err(err) => self.storage.report(err),
@@ -714,14 +730,14 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, decl: &mut TsNamespaceDecl) {
+    fn validate(&mut self, decl: &mut RTsNamespaceDecl) {
         todo!("namespace is not supported yet")
     }
 }
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, decl: &mut TsModuleDecl) {
+    fn validate(&mut self, decl: &mut RTsModuleDecl) {
         let span = decl.span;
         let ctxt = self.ctx.module_id;
         let global = decl.global;
@@ -744,9 +760,9 @@ impl Analyzer<'_, '_> {
                     child
                         .register_type(
                             match decl.id {
-                                TsModuleName::Ident(ref i) => i.into(),
-                                TsModuleName::Str(ref s) => {
-                                    Ident::new(s.value.clone(), s.span).into()
+                                RTsModuleName::Ident(ref i) => i.into(),
+                                RTsModuleName::Str(ref s) => {
+                                    RIdent::new(s.value.clone(), s.span).into()
                                 }
                             },
                             box Type::Module(module),

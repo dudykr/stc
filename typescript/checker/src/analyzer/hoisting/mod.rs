@@ -1,3 +1,4 @@
+use crate::util::find_ids_in_pat;
 use crate::{
     analyzer::Analyzer,
     util::{
@@ -16,12 +17,35 @@ use petgraph::{
     visit::{Dfs, DfsPostOrder},
     EdgeDirection::Incoming,
 };
+use rnode::Visit;
+use rnode::VisitMutWith;
+use rnode::VisitWith;
+use stc_ast_rnode::RArrowExpr;
+use stc_ast_rnode::RClassDecl;
+use stc_ast_rnode::RDecl;
+use stc_ast_rnode::REmptyStmt;
+use stc_ast_rnode::RExportDecl;
+use stc_ast_rnode::RExportNamedSpecifier;
+use stc_ast_rnode::RExpr;
+use stc_ast_rnode::RFnDecl;
+use stc_ast_rnode::RFunction;
+use stc_ast_rnode::RIdent;
+use stc_ast_rnode::RMemberExpr;
+use stc_ast_rnode::RModuleDecl;
+use stc_ast_rnode::RPat;
+use stc_ast_rnode::RProp;
+use stc_ast_rnode::RStmt;
+use stc_ast_rnode::RTsEntityName;
+use stc_ast_rnode::RTsEnumDecl;
+use stc_ast_rnode::RTsInterfaceDecl;
+use stc_ast_rnode::RTsModuleDecl;
+use stc_ast_rnode::RTsTypeAliasDecl;
+use stc_ast_rnode::RVarDeclarator;
 use stc_types::Id;
 use std::{cell::RefCell, mem::replace, rc::Rc};
 use swc_common::{Span, DUMMY_SP};
 use swc_ecma_ast::*;
 use swc_ecma_utils::{find_ids, DestructuringFinder, ModuleItemLike, StmtLike};
-use swc_ecma_visit::{Node, Visit, VisitMutWith, VisitWith};
 
 #[cfg(test)]
 mod tests;
@@ -54,7 +78,11 @@ impl Analyzer<'_, '_> {
     /// Note: This method removes all items from `stmts`.
     pub(super) fn validate_stmts_with_hoisting<T>(&mut self, stmts: &mut Vec<T>) -> Vec<Vec<T>>
     where
-        T: AsModuleDecl + ModuleItemOrStmt + VisitWith<RequirementCalculartor> + VisitMutWith<Self>,
+        T: AsModuleDecl
+            + ModuleItemOrStmt
+            + VisitWith<RequirementCalculartor>
+            + VisitMutWith<Self>
+            + From<RStmt>,
     {
         let mut new: Vec<Vec<T>> = (0..stmts.len()).map(|_| vec![]).collect();
         let (order, skip) = self.reorder_stmts(&stmts);
@@ -78,21 +106,21 @@ impl Analyzer<'_, '_> {
             if skip.contains(&idx) {
                 new[idx] = vec![replace(
                     &mut stmts[idx],
-                    T::from_stmt(Stmt::Empty(EmptyStmt { span: DUMMY_SP })),
+                    T::from(RStmt::Empty(REmptyStmt { span: DUMMY_SP })),
                 )];
             } else {
                 let type_decl_id = type_decl_id(&stmts[idx]);
 
                 stmts[idx].visit_mut_with(self);
 
-                new[idx].extend(self.prepend_stmts.drain(..).map(T::from_stmt));
+                new[idx].extend(self.prepend_stmts.drain(..).map(T::from));
 
                 new[idx].push(replace(
                     &mut stmts[idx],
-                    T::from_stmt(Stmt::Empty(EmptyStmt { span: DUMMY_SP })),
+                    T::from(RStmt::Empty(REmptyStmt { span: DUMMY_SP })),
                 ));
 
-                new[idx].extend(self.append_stmts.drain(..).map(T::from_stmt));
+                new[idx].extend(self.append_stmts.drain(..).map(T::from));
             }
         }
 
@@ -113,7 +141,11 @@ impl Analyzer<'_, '_> {
     /// ```
     pub(super) fn validate_stmts_and_collect<T>(&mut self, stmts: &mut Vec<T>)
     where
-        T: AsModuleDecl + ModuleItemOrStmt + VisitWith<RequirementCalculartor> + VisitMutWith<Self>,
+        T: AsModuleDecl
+            + ModuleItemOrStmt
+            + VisitWith<RequirementCalculartor>
+            + VisitMutWith<Self>
+            + From<RStmt>,
     {
         let new = self.validate_stmts_with_hoisting(stmts);
         stmts.clear();
@@ -175,13 +207,13 @@ impl Analyzer<'_, '_> {
             graph.add_node(idx);
 
             match item.as_module_decl() {
-                Ok(ModuleDecl::Import(import)) => {}
+                Ok(RModuleDecl::Import(import)) => {}
 
                 // We only check declarations because ids are created by declarations.
-                Ok(ModuleDecl::ExportDecl(ExportDecl { decl, .. })) | Err(Stmt::Decl(decl)) => {
+                Ok(RModuleDecl::ExportDecl(RExportDecl { decl, .. })) | Err(RStmt::Decl(decl)) => {
                     //
                     match decl {
-                        Decl::Class(ClassDecl { ident, .. }) => {
+                        RDecl::Class(RClassDecl { ident, .. }) => {
                             declared_by
                                 .entry(TypedId {
                                     id: Id::from(ident),
@@ -197,7 +229,7 @@ impl Analyzer<'_, '_> {
                                 .or_default()
                                 .push(idx);
                         }
-                        Decl::Fn(FnDecl { ident, .. }) => {
+                        RDecl::Fn(RFnDecl { ident, .. }) => {
                             declared_by
                                 .entry(TypedId {
                                     id: Id::from(ident),
@@ -206,10 +238,10 @@ impl Analyzer<'_, '_> {
                                 .or_default()
                                 .push(idx);
                         }
-                        Decl::Var(vars) => {
+                        RDecl::Var(vars) => {
                             for var in &vars.decls {
                                 //
-                                let ids: Vec<Id> = find_ids(&var.name);
+                                let ids: Vec<Id> = find_ids_in_pat(&var.name);
                                 for id in ids {
                                     declared_by
                                         .entry(TypedId {
@@ -221,9 +253,9 @@ impl Analyzer<'_, '_> {
                                 }
                             }
                         }
-                        Decl::TsInterface(TsInterfaceDecl { id, .. })
-                        | Decl::TsTypeAlias(TsTypeAliasDecl { id, .. })
-                        | Decl::TsEnum(TsEnumDecl { id, .. }) => {
+                        RDecl::TsInterface(RTsInterfaceDecl { id, .. })
+                        | RDecl::TsTypeAlias(RTsTypeAliasDecl { id, .. })
+                        | RDecl::TsEnum(RTsEnumDecl { id, .. }) => {
                             declared_by
                                 .entry(TypedId {
                                     id: Id::from(id),
@@ -232,7 +264,7 @@ impl Analyzer<'_, '_> {
                                 .or_default()
                                 .push(idx);
                         }
-                        Decl::TsModule(_) => {}
+                        RDecl::TsModule(_) => {}
                     }
                 }
                 _ => {}
@@ -246,22 +278,22 @@ impl Analyzer<'_, '_> {
             }
 
             match item.as_module_decl() {
-                Ok(ModuleDecl::ExportDecl(ExportDecl {
-                    decl: Decl::TsTypeAlias(..),
+                Ok(RModuleDecl::ExportDecl(RExportDecl {
+                    decl: RDecl::TsTypeAlias(..),
                     ..
                 }))
-                | Err(Stmt::Decl(Decl::TsTypeAlias(..))) => continue,
+                | Err(RStmt::Decl(RDecl::TsTypeAlias(..))) => continue,
 
-                Ok(ModuleDecl::ExportDecl(ExportDecl {
-                    decl: Decl::TsModule(TsModuleDecl { global: true, .. }),
+                Ok(RModuleDecl::ExportDecl(RExportDecl {
+                    decl: RDecl::TsModule(RTsModuleDecl { global: true, .. }),
                     ..
                 }))
-                | Err(Stmt::Decl(Decl::TsModule(TsModuleDecl { global: true, .. }))) => continue,
+                | Err(RStmt::Decl(RDecl::TsModule(RTsModuleDecl { global: true, .. }))) => continue,
                 _ => {}
             }
 
             let mut visitor = RequirementCalculartor::default();
-            item.visit_with(&Invalid { span: DUMMY_SP }, &mut visitor);
+            item.visit_with(&mut visitor);
 
             for id in visitor.required_ids {
                 if let Some(declarator_indexes) = declared_by.get(&id) {
@@ -351,14 +383,14 @@ pub(super) struct RequirementCalculartor {
 }
 
 impl RequirementCalculartor {
-    fn insert_var(&mut self, i: &Ident) {
+    fn insert_var(&mut self, i: &RIdent) {
         self.required_ids.push(TypedId {
             id: i.into(),
             kind: IdKind::VAR,
         });
     }
 
-    fn insert_type(&mut self, i: &Ident) {
+    fn insert_type(&mut self, i: &RIdent) {
         self.required_ids.push(TypedId {
             id: i.into(),
             kind: IdKind::TYPE,
@@ -366,19 +398,21 @@ impl RequirementCalculartor {
     }
 }
 
-impl Visit for RequirementCalculartor {
-    fn visit_ts_entity_name(&mut self, n: &TsEntityName, _: &dyn Node) {
+impl Visit<RTsEntityName> for RequirementCalculartor {
+    fn visit(&mut self, n: &RTsEntityName) {
         match n {
-            TsEntityName::TsQualifiedName(n) => {
-                n.visit_with(n, self);
+            RTsEntityName::TsQualifiedName(n) => {
+                n.visit_with(self);
             }
-            TsEntityName::Ident(i) => {
+            RTsEntityName::Ident(i) => {
                 self.insert_type(i);
             }
         }
     }
+}
 
-    fn visit_var_declarator(&mut self, var: &VarDeclarator, _: &dyn Node) {
+impl Visit<RVarDeclarator> for RequirementCalculartor {
+    fn visit(&mut self, var: &RVarDeclarator) {
         let in_var_decl = self.in_var_decl;
         self.in_var_decl = true;
 
@@ -386,35 +420,43 @@ impl Visit for RequirementCalculartor {
 
         self.in_var_decl = in_var_decl;
     }
+}
 
-    fn visit_export_named_specifier(&mut self, n: &ExportNamedSpecifier, _: &dyn Node) {
+impl Visit<RExportNamedSpecifier> for RequirementCalculartor {
+    fn visit(&mut self, n: &RExportNamedSpecifier) {
         self.insert_var(&n.orig);
     }
+}
 
-    fn visit_member_expr(&mut self, n: &MemberExpr, _: &dyn Node) {
-        n.obj.visit_with(n, self);
+impl Visit<RMemberExpr> for RequirementCalculartor {
+    fn visit(&mut self, n: &RMemberExpr) {
+        n.obj.visit_with(self);
 
         if n.computed {
-            n.prop.visit_with(n, self);
+            n.prop.visit_with(self);
         }
     }
+}
 
-    fn visit_expr(&mut self, n: &Expr, _: &dyn Node) {
+impl Visit<RExpr> for RequirementCalculartor {
+    fn visit(&mut self, n: &RExpr) {
         n.visit_children_with(self);
 
         match n {
-            Expr::Ident(i) => {
+            RExpr::Ident(i) => {
                 self.insert_var(i);
             }
             _ => {}
         }
     }
+}
 
-    fn visit_pat(&mut self, n: &Pat, _: &dyn Node) {
+impl Visit<RPat> for RequirementCalculartor {
+    fn visit(&mut self, n: &RPat) {
         n.visit_children_with(self);
 
         match n {
-            Pat::Ident(i) => {
+            RPat::Ident(i) => {
                 if self.in_var_decl {
                     return;
                 }
@@ -423,12 +465,14 @@ impl Visit for RequirementCalculartor {
             _ => {}
         }
     }
+}
 
-    fn visit_prop(&mut self, n: &Prop, _: &dyn Node) {
+impl Visit<RProp> for RequirementCalculartor {
+    fn visit(&mut self, n: &RProp) {
         n.visit_children_with(self);
 
         match n {
-            Prop::Shorthand(i) => {
+            RProp::Shorthand(i) => {
                 self.insert_var(i);
             }
             _ => {}
@@ -455,72 +499,70 @@ pub(super) struct StmtDependencyFinder {
     no_decl: bool,
 }
 
-impl Visit for StmtDependencyFinder {
-    fn visit_fn_decl(&mut self, node: &FnDecl, _: &dyn Node) {
-        use swc_ecma_visit::VisitWith;
-
+impl Visit<RFnDecl> for StmtDependencyFinder {
+    fn visit(&mut self, node: &RFnDecl) {
         if !self.no_decl {
             self.ids.insert(node.ident.clone().into());
         }
         node.visit_children_with(self);
     }
+}
 
-    fn visit_var_declarator(&mut self, node: &VarDeclarator, _: &dyn Node) {
-        use swc_ecma_visit::VisitWith;
-
+impl Visit<RVarDeclarator> for StmtDependencyFinder {
+    fn visit(&mut self, node: &RVarDeclarator) {
         if !self.no_decl {
             {
                 let mut v = DestructuringFinder {
                     found: &mut self.ids_buf,
                 };
-                node.name.visit_with(node, &mut v);
+                node.name.visit_with(&mut v);
             }
 
             self.ids.extend(self.ids_buf.drain(..));
         }
 
-        node.init.visit_with(node, self);
+        node.init.visit_with(self);
     }
+}
 
-    fn visit_class_decl(&mut self, node: &ClassDecl, _: &dyn Node) {
-        use swc_ecma_visit::VisitWith;
-
+impl Visit<RClassDecl> for StmtDependencyFinder {
+    fn visit(&mut self, node: &RClassDecl) {
         let old = self.no_decl;
-        node.class.visit_with(node, self);
+        node.class.visit_with(self);
         self.no_decl = old;
     }
+}
 
-    fn visit_function(&mut self, n: &Function, _: &dyn Node) {
-        use swc_ecma_visit::VisitWith;
-
-        let old = self.no_decl;
-        n.visit_children_with(self);
-        self.no_decl = old;
-    }
-
-    fn visit_arrow_expr(&mut self, n: &ArrowExpr, _: &dyn Node) {
-        use swc_ecma_visit::VisitWith;
-
+impl Visit<RFunction> for StmtDependencyFinder {
+    fn visit(&mut self, n: &RFunction) {
         let old = self.no_decl;
         n.visit_children_with(self);
         self.no_decl = old;
     }
+}
 
-    fn visit_member_expr(&mut self, node: &MemberExpr, _: &dyn Node) {
-        use swc_ecma_visit::VisitWith;
+impl Visit<RArrowExpr> for StmtDependencyFinder {
+    fn visit(&mut self, n: &RArrowExpr) {
+        let old = self.no_decl;
+        n.visit_children_with(self);
+        self.no_decl = old;
+    }
+}
 
-        node.obj.visit_with(node, self);
+impl Visit<RMemberExpr> for StmtDependencyFinder {
+    fn visit(&mut self, node: &RMemberExpr) {
+        node.obj.visit_with(self);
 
         if node.computed {
-            node.prop.visit_with(node, self);
+            node.prop.visit_with(self);
         }
     }
+}
 
-    fn visit_expr(&mut self, node: &Expr, _: &dyn Node) {
-        use swc_ecma_visit::VisitWith;
-
+impl Visit<RExpr> for StmtDependencyFinder {
+    fn visit(&mut self, node: &RExpr) {
         match node {
-            Expr::Ident(ref i) => {
+            RExpr::Ident(ref i) => {
                 self.deps.insert(i.into());
             }
             _ => {}
@@ -535,8 +577,8 @@ struct TypeParamDepFinder<'a> {
     deps: &'a mut FxHashSet<Id>,
 }
 
-impl Visit for TypeParamDepFinder<'_> {
-    fn visit_ident(&mut self, node: &Ident, _: &dyn Node) {
+impl Visit<RIdent> for TypeParamDepFinder<'_> {
+    fn visit(&mut self, node: &RIdent) {
         if *self.id == node {
             return;
         }
@@ -551,21 +593,21 @@ where
 {
     let decl = match t.as_module_decl() {
         Ok(decl) => match decl {
-            ModuleDecl::ExportDecl(export) => &export.decl,
+            RModuleDecl::ExportDecl(export) => &export.decl,
             _ => return None,
         },
         Err(stmt) => match stmt {
-            Stmt::Decl(decl) => decl,
+            RStmt::Decl(decl) => decl,
             _ => return None,
         },
     };
 
     Some(Id::from(match decl {
-        Decl::Class(c) => &c.ident,
-        Decl::TsInterface(i) => &i.id,
-        Decl::TsTypeAlias(a) => &a.id,
-        Decl::TsEnum(e) => &e.id,
-        Decl::TsModule(..) => return None,
-        Decl::Fn(_) | Decl::Var(_) => return None,
+        RDecl::Class(c) => &c.ident,
+        RDecl::TsInterface(i) => &i.id,
+        RDecl::TsTypeAlias(a) => &a.id,
+        RDecl::TsEnum(e) => &e.id,
+        RDecl::TsModule(..) => return None,
+        RDecl::Fn(_) | RDecl::Var(_) => return None,
     }))
 }

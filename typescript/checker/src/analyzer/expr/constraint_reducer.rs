@@ -1,5 +1,7 @@
 use crate::util::map_with_mut::MapWithMut;
-use stc_types::{Mapped, Type, TypeParam, VisitMut, VisitMutWith};
+use rnode::VisitMut;
+use rnode::VisitMutWith;
+use stc_types::{Mapped, Type, TypeParam};
 
 pub fn reduce(m: &Mapped) -> Option<Box<Type>> {
     let mut type_param = m.type_param.clone();
@@ -9,8 +11,8 @@ pub fn reduce(m: &Mapped) -> Option<Box<Type>> {
 
 struct ConstraintReducer;
 
-impl VisitMut for ConstraintReducer {
-    fn visit_mut_type(&mut self, ty: &mut Type) {
+impl VisitMut<Type> for ConstraintReducer {
+    fn visit_mut(&mut self, ty: &mut Type) {
         ty.visit_mut_children_with(self);
 
         match ty {

@@ -8,14 +8,25 @@ use crate::{
     ValidationResult,
 };
 use fxhash::FxHashMap;
+use rnode::Visit;
+use rnode::VisitWith;
+use stc_ast_rnode::RBinExpr;
+use stc_ast_rnode::RExpr;
+use stc_ast_rnode::RIdent;
+use stc_ast_rnode::RLit;
+use stc_ast_rnode::RNumber;
+use stc_ast_rnode::RStr;
+use stc_ast_rnode::RTsEnumDecl;
+use stc_ast_rnode::RTsEnumMemberId;
+use stc_ast_rnode::RTsLit;
+use stc_ast_rnode::RTsLitType;
 use stc_types::Id;
 use swc_atoms::JsWord;
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::*;
-use swc_ecma_visit::{Node, Visit, VisitWith};
 
-/// Value does not contain TsLit::Bool
-type EnumValues = FxHashMap<JsWord, TsLit>;
+/// Value does not contain RTsLit::Bool
+type EnumValues = FxHashMap<JsWord, RTsLit>;
 
 /// We don't visit enum variants to allow
 ///
@@ -34,7 +45,7 @@ type EnumValues = FxHashMap<JsWord, TsLit>;
 #[validator]
 impl Analyzer<'_, '_> {
     #[inline(never)]
-    fn validate(&mut self, e: &mut TsEnumDecl) -> ValidationResult<Enum> {
+    fn validate(&mut self, e: &mut RTsEnumDecl) -> ValidationResult<Enum> {
         let mut default = 0;
         let mut values = Default::default();
         let ty: Result<_, _> = try {
@@ -51,28 +62,28 @@ impl Analyzer<'_, '_> {
                         m.init.as_ref().map(|v| &**v),
                     )
                     .map(|val| {
-                        match val {
-                            TsLit::Number(n) => {
+                        match &val {
+                            RTsLit::Number(n) => {
                                 default = n.value as i32 + 1;
                             }
                             _ => {}
                         }
                         values.insert(
                             match &m.id {
-                                TsEnumMemberId::Ident(i) => i.sym.clone(),
-                                TsEnumMemberId::Str(s) => s.value.clone(),
+                                RTsEnumMemberId::Ident(i) => i.sym.clone(),
+                                RTsEnumMemberId::Str(s) => s.value.clone(),
                             },
                             val.clone(),
                         );
 
                         match val {
-                            TsLit::Number(v) => Expr::Lit(Lit::Num(v)),
-                            TsLit::Str(v) => Expr::Lit(Lit::Str(v)),
-                            TsLit::Bool(v) => Expr::Lit(Lit::Bool(v)),
-                            TsLit::Tpl(v) => {
-                                Expr::Lit(Lit::Str(v.quasis.into_iter().next().unwrap().raw))
+                            RTsLit::Number(v) => RExpr::Lit(RLit::Num(v)),
+                            RTsLit::Str(v) => RExpr::Lit(RLit::Str(v)),
+                            RTsLit::Bool(v) => RExpr::Lit(RLit::Bool(v)),
+                            RTsLit::Tpl(v) => {
+                                RExpr::Lit(RLit::Str(v.quasis.into_iter().next().unwrap().raw))
                             }
-                            TsLit::BigInt(v) => Expr::Lit(Lit::BigInt(v)),
+                            RTsLit::BigInt(v) => RExpr::Lit(RLit::BigInt(v)),
                         }
                     })
                     .or_else(|err| match &m.init {
@@ -82,7 +93,7 @@ impl Analyzer<'_, '_> {
 
                     Ok(EnumMember {
                         id: m.id.clone(),
-                        val,
+                        val: box val,
                         span: m.span,
                     })
                 })
@@ -90,12 +101,12 @@ impl Analyzer<'_, '_> {
 
             Enum {
                 span: e.span,
-                has_num: members.iter().any(|m| match m.val {
-                    Expr::Lit(Lit::Num(..)) => true,
+                has_num: members.iter().any(|m| match *m.val {
+                    RExpr::Lit(RLit::Num(..)) => true,
                     _ => false,
                 }),
-                has_str: members.iter().any(|m| match m.val {
-                    Expr::Lit(Lit::Str(..)) => true,
+                has_str: members.iter().any(|m| match *m.val {
+                    RExpr::Lit(RLit::Str(..)) => true,
                     _ => false,
                 }),
                 declare: e.declare,
@@ -136,7 +147,7 @@ impl Analyzer<'_, '_> {
                         error: false,
                         decl: &e,
                     };
-                    init.visit_with(init, &mut v);
+                    init.visit_with(&mut v);
                     if v.error {
                         self.storage
                             .report(Error::InvalidInitInConstEnum { span: init.span() })
@@ -154,24 +165,27 @@ impl Analyzer<'_, '_> {
 /// If both of the default value and the initialization is None, this method
 /// returns [Err].
 fn compute(
-    e: &TsEnumDecl,
+    e: &RTsEnumDecl,
     span: Span,
     values: &mut EnumValues,
     default: Option<i32>,
-    init: Option<&Expr>,
-) -> Result<TsLit, Error> {
+    init: Option<&RExpr>,
+) -> Result<RTsLit, Error> {
     fn compute_bin(
-        e: &TsEnumDecl,
+        e: &RTsEnumDecl,
         span: Span,
         values: &mut EnumValues,
-        expr: &BinExpr,
-    ) -> Result<TsLit, Error> {
+        expr: &RBinExpr,
+    ) -> Result<RTsLit, Error> {
         let l = compute(e, span, values, None, Some(&expr.left))?;
         let r = compute(e, span, values, None, Some(&expr.right))?;
 
         Ok(match (l, r) {
-            (TsLit::Number(Number { value: l, .. }), TsLit::Number(Number { value: r, .. })) => {
-                TsLit::Number(Number {
+            (
+                RTsLit::Number(RNumber { value: l, .. }),
+                RTsLit::Number(RNumber { value: r, .. }),
+            ) => {
+                RTsLit::Number(RNumber {
                     span,
                     value: match expr.op {
                         op!(bin, "+") => l + r,
@@ -192,48 +206,51 @@ fn compute(
                     },
                 })
             }
-            (TsLit::Str(l), TsLit::Str(r)) if expr.op == op!(bin, "+") => TsLit::Str(Str {
+            (RTsLit::Str(l), RTsLit::Str(r)) if expr.op == op!(bin, "+") => RTsLit::Str(RStr {
                 span,
                 value: format!("{}{}", l.value, r.value).into(),
                 has_escape: l.has_escape || r.has_escape,
+                kind: Default::default(),
             }),
-            (TsLit::Number(l), TsLit::Str(r)) if expr.op == op!(bin, "+") => TsLit::Str(Str {
+            (RTsLit::Number(l), RTsLit::Str(r)) if expr.op == op!(bin, "+") => RTsLit::Str(RStr {
                 span,
                 value: format!("{}{}", l.value, r.value).into(),
                 has_escape: r.has_escape,
+                kind: Default::default(),
             }),
-            (TsLit::Str(l), TsLit::Number(r)) if expr.op == op!(bin, "+") => TsLit::Str(Str {
+            (RTsLit::Str(l), RTsLit::Number(r)) if expr.op == op!(bin, "+") => RTsLit::Str(RStr {
                 span,
                 value: format!("{}{}", l.value, r.value).into(),
                 has_escape: l.has_escape,
+                kind: Default::default(),
             }),
             _ => Err(Error::InvalidEnumInit { span })?,
         })
     }
 
-    fn try_str(e: &Expr) -> Result<Str, ()> {
+    fn try_str(e: &RExpr) -> Result<RStr, ()> {
         match *e {
-            Expr::Lit(Lit::Str(ref s)) => return Ok(s.clone()),
+            RExpr::Lit(RLit::Str(ref s)) => return Ok(s.clone()),
             _ => Err(()),
         }
     }
 
     if let Some(expr) = init {
         match expr {
-            Expr::Lit(Lit::Str(s)) => return Ok(TsLit::Str(s.clone())),
-            Expr::Lit(Lit::Num(s)) => return Ok(TsLit::Number(*s)),
-            Expr::Bin(ref bin) => return compute_bin(e, span, values, &bin),
-            Expr::Paren(ref paren) => return compute(e, span, values, default, Some(&paren.expr)),
+            RExpr::Lit(RLit::Str(s)) => return Ok(RTsLit::Str(s.clone())),
+            RExpr::Lit(RLit::Num(s)) => return Ok(RTsLit::Number(s.clone())),
+            RExpr::Bin(ref bin) => return compute_bin(e, span, values, &bin),
+            RExpr::Paren(ref paren) => return compute(e, span, values, default, Some(&paren.expr)),
 
-            Expr::Ident(ref id) => {
+            RExpr::Ident(ref id) => {
                 if let Some(v) = values.get(&id.sym) {
                     return Ok(v.clone());
                 }
                 //
                 for m in e.members.iter() {
                     match m.id {
-                        TsEnumMemberId::Str(Str { value: ref sym, .. })
-                        | TsEnumMemberId::Ident(Ident { ref sym, .. }) => {
+                        RTsEnumMemberId::Str(RStr { value: ref sym, .. })
+                        | RTsEnumMemberId::Ident(RIdent { ref sym, .. }) => {
                             if *sym == id.sym {
                                 return compute(
                                     e,
@@ -248,11 +265,11 @@ fn compute(
                 }
                 return Err(Error::InvalidEnumInit { span });
             }
-            Expr::Unary(ref expr) => {
+            RExpr::Unary(ref expr) => {
                 let v = compute(e, span, values, None, Some(&expr.arg))?;
                 match v {
-                    TsLit::Number(Number { value: v, .. }) => {
-                        return Ok(TsLit::Number(Number {
+                    RTsLit::Number(RNumber { value: v, .. }) => {
+                        return Ok(RTsLit::Number(RNumber {
                             span,
                             value: match expr.op {
                                 op!(unary, "+") => v,
@@ -269,14 +286,14 @@ fn compute(
                             },
                         }))
                     }
-                    TsLit::Str(_) => {}
-                    TsLit::Bool(_) => {}
-                    TsLit::Tpl(_) => {}
-                    TsLit::BigInt(_) => unimplemented!("BigInt in enum"),
+                    RTsLit::Str(_) => {}
+                    RTsLit::Bool(_) => {}
+                    RTsLit::Tpl(_) => {}
+                    RTsLit::BigInt(_) => unimplemented!("BigInt in enum"),
                 }
             }
 
-            Expr::Tpl(ref t) if t.exprs.is_empty() => {
+            RExpr::Tpl(ref t) if t.exprs.is_empty() => {
                 if let Some(v) = &t.quasis[0].cooked {
                     return Ok(v.clone().into());
                 }
@@ -286,7 +303,7 @@ fn compute(
         }
     } else {
         if let Some(value) = default {
-            return Ok(TsLit::Number(Number {
+            return Ok(RTsLit::Number(RNumber {
                 span,
                 value: value as _,
             }));
@@ -315,16 +332,18 @@ impl Analyzer<'_, '_> {
                     for ty in types {
                         if let Type::Enum(Enum { members, .. }) = ty.normalize() {
                             if let Some(v) = members.iter().find(|m| match m.id {
-                                TsEnumMemberId::Ident(Ident { ref sym, .. })
-                                | TsEnumMemberId::Str(Str { value: ref sym, .. }) => *sym == v.name,
+                                RTsEnumMemberId::Ident(RIdent { ref sym, .. })
+                                | RTsEnumMemberId::Str(RStr { value: ref sym, .. }) => {
+                                    *sym == v.name
+                                }
                             }) {
-                                match v.val {
-                                    Expr::Lit(Lit::Str(..)) | Expr::Lit(Lit::Num(..)) => {
-                                        return Ok(Type::Lit(TsLitType {
+                                match *v.val {
+                                    RExpr::Lit(RLit::Str(..)) | RExpr::Lit(RLit::Num(..)) => {
+                                        return Ok(Type::Lit(RTsLitType {
                                             span: v.span,
-                                            lit: match v.val.clone() {
-                                                Expr::Lit(Lit::Str(s)) => TsLit::Str(s),
-                                                Expr::Lit(Lit::Num(n)) => TsLit::Number(n),
+                                            lit: match *v.val.clone() {
+                                                RExpr::Lit(RLit::Str(s)) => RTsLit::Str(s),
+                                                RExpr::Lit(RLit::Num(n)) => RTsLit::Number(n),
                                                 _ => unreachable!(),
                                             },
                                         }));
@@ -344,27 +363,27 @@ impl Analyzer<'_, '_> {
 }
 
 struct LitValidator<'a> {
-    decl: &'a TsEnumDecl,
+    decl: &'a RTsEnumDecl,
     error: bool,
 }
 
-impl Visit for LitValidator<'_> {
-    fn visit_expr(&mut self, e: &Expr, _: &dyn Node) {
+impl Visit<RExpr> for LitValidator<'_> {
+    fn visit(&mut self, e: &RExpr) {
         e.visit_children_with(self);
 
         match e {
-            Expr::Lit(..) => {}
-            Expr::Ident(ref i) => {
+            RExpr::Lit(..) => {}
+            RExpr::Ident(ref i) => {
                 let is_ref = self.decl.members.iter().any(|m| match m.id {
-                    TsEnumMemberId::Ident(Ident { ref sym, .. })
-                    | TsEnumMemberId::Str(Str { value: ref sym, .. }) => *sym == i.sym,
+                    RTsEnumMemberId::Ident(RIdent { ref sym, .. })
+                    | RTsEnumMemberId::Str(RStr { value: ref sym, .. }) => *sym == i.sym,
                 });
                 if !is_ref {
                     self.error = true;
                     return;
                 }
             }
-            Expr::Unary(..) | Expr::Bin(..) | Expr::Paren(..) => {}
+            RExpr::Unary(..) | RExpr::Bin(..) | RExpr::Paren(..) => {}
 
             _ => {
                 self.error = true;

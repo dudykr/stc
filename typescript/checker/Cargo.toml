@@ -21,6 +21,7 @@ parking_lot = "0.11"
 petgraph = "0.5"
 rayon = "1"
 retain_mut = "0.1"
+rnode = {path = "../../crates/rnode"}
 serde_json = "1"
 slog = {version = "2", features = ["release_max_level_off"]}
 smallvec = "0.6"
@@ -31,13 +32,13 @@ stc_module_graph = {path = "../module_graph"}
 stc_types = {path = "../types"}
 stc_utils = {path = "../utils"}
 swc_atoms = "0.2.5"
-swc_common = {version = "0.10.6", features = ["concurrent"]}
-swc_ecma_ast = "0.35.0"
-swc_ecma_codegen = "0.41.4"
-swc_ecma_parser = "0.43.1"
-swc_ecma_transforms = "0.30.4"
-swc_ecma_utils = "0.25.0"
-swc_ecma_visit = "0.21.0"
+swc_common = { version = "0.10.8", features = ["concurrent"] }
+swc_ecma_ast = "0.36.1"
+swc_ecma_codegen = "0.42.0"
+swc_ecma_parser = "0.44.0"
+swc_ecma_transforms = "0.31.0"
+swc_ecma_utils = "0.26.0"
+swc_ecma_visit = "0.22.0"
 swc_visit = "0.2.2"
 
 [dev-dependencies]
@@ -45,7 +46,7 @@ pretty_assertions = "0.5"
 serde = {version = "1", features = ["derive"]}
 sourcemap = "2.2"
 stc_testing = {path = "../../testing"}
-swc_ecma_codegen = "0.41.4"
+swc_ecma_codegen = "0.42.0"
 tempfile = "3"
 testing = "0.10"
 walkdir = "2"

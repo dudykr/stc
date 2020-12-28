@@ -1,12 +1,42 @@
 //! Dead code elimination for types.
 use crate::util::{map_with_mut::MapWithMut, PatExt};
 use fxhash::FxHashSet;
-use stc_types::{Id, ModuleTypeData, Type, TypeNode};
+use rnode::Visit;
+use rnode::VisitMut;
+use rnode::VisitMutWith;
+use rnode::VisitWith;
+use stc_ast_rnode::RBlockStmt;
+use stc_ast_rnode::RClassDecl;
+use stc_ast_rnode::RClassMember;
+use stc_ast_rnode::RClassMethod;
+use stc_ast_rnode::RClassProp;
+use stc_ast_rnode::RDecl;
+use stc_ast_rnode::REmptyStmt;
+use stc_ast_rnode::RExpr;
+use stc_ast_rnode::RFnDecl;
+use stc_ast_rnode::RFunction;
+use stc_ast_rnode::RInvalid;
+use stc_ast_rnode::RLit;
+use stc_ast_rnode::RModuleDecl;
+use stc_ast_rnode::RModuleItem;
+use stc_ast_rnode::RPat;
+use stc_ast_rnode::RPropName;
+use stc_ast_rnode::RStmt;
+use stc_ast_rnode::RTsEnumDecl;
+use stc_ast_rnode::RTsEnumMember;
+use stc_ast_rnode::RTsKeywordType;
+use stc_ast_rnode::RTsModuleDecl;
+use stc_ast_rnode::RTsType;
+use stc_ast_rnode::RTsTypeAliasDecl;
+use stc_ast_rnode::RTsTypeAnn;
+use stc_ast_rnode::RVarDecl;
+use stc_ast_rnode::RVarDeclarator;
+use stc_types::rprop_name_to_expr;
+use stc_types::{Id, ModuleTypeData, Type};
 use std::sync::Arc;
 use swc_common::{util::move_map::MoveMap, Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
 use swc_ecma_utils::{prop_name_to_expr, StmtLike};
-use swc_ecma_visit::{Fold, FoldWith, VisitMut, VisitMutWith};
 
 #[derive(Debug)]
 pub(super) struct DceForDts<'a> {
@@ -41,15 +71,17 @@ impl DceForDts<'_> {
     }
 }
 
-impl VisitMut for DceForDts<'_> {
-    fn visit_mut_block_stmt(&mut self, mut node: &mut BlockStmt) {
+impl VisitMut<RBlockStmt> for DceForDts<'_> {
+    fn visit_mut(&mut self, mut node: &mut RBlockStmt) {
         let old = self.top_level;
         self.top_level = false;
         node.visit_mut_children_with(self);
         self.top_level = old;
     }
+}
 
-    fn visit_mut_function(&mut self, mut node: &mut Function) {
+impl VisitMut<RFunction> for DceForDts<'_> {
+    fn visit_mut(&mut self, mut node: &mut RFunction) {
         node.is_generator = false;
         node.is_async = false;
 
@@ -58,22 +90,24 @@ impl VisitMut for DceForDts<'_> {
         node.visit_mut_children_with(self);
         self.top_level = old;
     }
+}
 
-    fn visit_mut_var_decl(&mut self, node: &mut VarDecl) {
+impl VisitMut<RVarDecl> for DceForDts<'_> {
+    fn visit_mut(&mut self, node: &mut RVarDecl) {
         node.visit_mut_children_with(self);
         node.declare = true;
 
         node.decls.retain(|v| match v.name {
-            Pat::Invalid(..) => false,
+            RPat::Invalid(..) => false,
             _ => true,
         });
 
         if node.kind != VarDeclKind::Const {
             node.decls.iter_mut().for_each(|node| match node.init {
-                Some(box Expr::Lit(Lit::Num(..))) => {
+                Some(box RExpr::Lit(RLit::Num(..))) => {
                     node.init = None;
                     node.name
-                        .set_ty(Some(box TsType::TsKeywordType(TsKeywordType {
+                        .set_ty(Some(box RTsType::TsKeywordType(RTsKeywordType {
                             span: DUMMY_SP,
                             kind: TsKeywordTypeKind::TsNumberKeyword,
                         })))
@@ -82,24 +116,26 @@ impl VisitMut for DceForDts<'_> {
             });
         }
     }
+}
 
-    fn visit_mut_var_declarator(&mut self, node: &mut VarDeclarator) {
+impl VisitMut<RVarDeclarator> for DceForDts<'_> {
+    fn visit_mut(&mut self, node: &mut RVarDeclarator) {
         if match &node.name {
-            Pat::Array(arr) => arr.elems.is_empty(),
-            Pat::Object(obj) => obj.props.is_empty(),
+            RPat::Array(arr) => arr.elems.is_empty(),
+            RPat::Object(obj) => obj.props.is_empty(),
             _ => false,
         } {
-            node.name = Pat::Invalid(Invalid { span: DUMMY_SP });
+            node.name = RPat::Invalid(RInvalid { span: DUMMY_SP });
             node.init = None;
             return;
         }
 
         match node.init {
-            Some(box Expr::Lit(Lit::Null(..))) | Some(box Expr::Lit(Lit::JSXText(..))) => {
+            Some(box RExpr::Lit(RLit::Null(..))) | Some(box RExpr::Lit(RLit::JSXText(..))) => {
                 node.init = None;
             }
 
-            Some(box Expr::Lit(..)) => {}
+            Some(box RExpr::Lit(..)) => {}
             _ => {
                 node.init = None;
             }
@@ -111,10 +147,10 @@ impl VisitMut for DceForDts<'_> {
         }
 
         match node.name {
-            Pat::Ident(ref mut i) => {
+            RPat::Ident(ref mut i) => {
                 if i.type_ann.is_none() {
                     if let Some(ty) = self.info.private_vars.get(&i.clone().into()) {
-                        i.type_ann = Some(TsTypeAnn {
+                        i.type_ann = Some(RTsTypeAnn {
                             span: DUMMY_SP,
                             type_ann: box ty.clone().into(),
                         });
@@ -128,17 +164,21 @@ impl VisitMut for DceForDts<'_> {
             node.name.visit_mut_with(self);
         }
     }
+}
 
-    fn visit_mut_pat(&mut self, node: &mut Pat) {
+impl VisitMut<RPat> for DceForDts<'_> {
+    fn visit_mut(&mut self, node: &mut RPat) {
         node.visit_mut_children_with(self);
 
         match node {
-            Pat::Assign(a) => *node = a.left.take(),
+            RPat::Assign(a) => *node = a.left.take(),
             _ => {}
         }
     }
+}
 
-    fn visit_mut_fn_decl(&mut self, node: &mut FnDecl) {
+impl VisitMut<RFnDecl> for DceForDts<'_> {
+    fn visit_mut(&mut self, node: &mut RFnDecl) {
         node.declare = !self.in_declare;
 
         node.visit_mut_children_with(self);
@@ -149,13 +189,15 @@ impl VisitMut for DceForDts<'_> {
 
         node.function.return_type = self.get_mapped(&node.ident.clone().into(), |ty| match ty {
             Type::Function(stc_types::Function { ref ret_ty, .. }) => {
-                Some(TsTypeAnn::from((**ret_ty).clone()))
+                Some(RTsTypeAnn::from((**ret_ty).clone()))
             }
             _ => None,
         });
     }
+}
 
-    fn visit_mut_ts_module_decl(&mut self, node: &mut TsModuleDecl) {
+impl VisitMut<RTsModuleDecl> for DceForDts<'_> {
+    fn visit_mut(&mut self, node: &mut RTsModuleDecl) {
         self.prevent_empty_export = true;
 
         let old_in_declare = self.in_declare;
@@ -172,8 +214,10 @@ impl VisitMut for DceForDts<'_> {
         self.top_level = old_top_level;
         self.in_declare = old_in_declare;
     }
+}
 
-    fn visit_mut_ts_enum_decl(&mut self, node: &mut TsEnumDecl) {
+impl VisitMut<RTsEnumDecl> for DceForDts<'_> {
+    fn visit_mut(&mut self, node: &mut RTsEnumDecl) {
         let mut is_all_lit = true;
         let mut should_init_only_first = true;
         let has_no_init = node.members.iter().all(|v| v.init.is_none());
@@ -186,8 +230,8 @@ impl VisitMut for DceForDts<'_> {
             match ty {
                 Type::Enum(e) => {
                     //
-                    if e.members.iter().any(|m| match m.val {
-                        Expr::Tpl(..) | Expr::Lit(..) => false,
+                    if e.members.iter().any(|m| match *m.val {
+                        RExpr::Tpl(..) | RExpr::Lit(..) => false,
 
                         _ => true,
                     }) {
@@ -205,21 +249,21 @@ impl VisitMut for DceForDts<'_> {
                 e.members
                     .iter()
                     .enumerate()
-                    .map(|(i, member)| TsEnumMember {
+                    .map(|(i, member)| RTsEnumMember {
                         span: member.span,
                         id: member.id.clone(),
                         init: if is_all_lit {
                             if has_no_init {
-                                Some(box member.val.clone())
+                                Some(member.val.clone())
                             } else {
                                 if should_init_only_first {
                                     if i == 0 {
-                                        Some(box member.val.clone())
+                                        Some(member.val.clone())
                                     } else {
                                         None
                                     }
                                 } else {
-                                    Some(box member.val.clone())
+                                    Some(member.val.clone())
                                 }
                             }
                         } else {
@@ -234,15 +278,19 @@ impl VisitMut for DceForDts<'_> {
         node.declare = !self.in_declare;
         node.members = members.unwrap_or(node.members.take());
     }
+}
 
-    fn visit_mut_ts_type_alias_decl(&mut self, node: &mut TsTypeAliasDecl) {
+impl VisitMut<RTsTypeAliasDecl> for DceForDts<'_> {
+    fn visit_mut(&mut self, node: &mut RTsTypeAliasDecl) {
         node.declare = !self.in_declare;
         node.visit_mut_children_with(self)
     }
+}
 
-    fn visit_mut_class_member(&mut self, node: &mut ClassMember) {
+impl VisitMut<RClassMember> for DceForDts<'_> {
+    fn visit_mut(&mut self, node: &mut RClassMember) {
         match node {
-            ClassMember::Method(ClassMethod {
+            RClassMember::Method(RClassMethod {
                 span,
                 key,
                 is_static,
@@ -251,14 +299,14 @@ impl VisitMut for DceForDts<'_> {
                 is_optional,
                 ..
             }) => {
-                *node = ClassMember::ClassProp(ClassProp {
+                *node = RClassMember::ClassProp(RClassProp {
                     span: *span,
                     declare: false,
                     computed: match key {
-                        PropName::Computed(..) => true,
+                        RPropName::Computed(..) => true,
                         _ => false,
                     },
-                    key: box prop_name_to_expr(key.take()),
+                    key: box rprop_name_to_expr(key.take()),
                     value: None,
                     type_ann: None,
                     is_static: *is_static,
@@ -276,8 +324,10 @@ impl VisitMut for DceForDts<'_> {
 
         node.visit_mut_children_with(self)
     }
+}
 
-    fn visit_mut_class_decl(&mut self, node: &mut ClassDecl) {
+impl VisitMut<RClassDecl> for DceForDts<'_> {
+    fn visit_mut(&mut self, node: &mut RClassDecl) {
         node.declare = !self.in_declare;
 
         let old_class = self.current_class.take();
@@ -293,8 +343,10 @@ impl VisitMut for DceForDts<'_> {
 
         self.current_class = old_class;
     }
+}
 
-    fn visit_mut_class_prop(&mut self, node: &mut ClassProp) {
+impl VisitMut<RClassProp> for DceForDts<'_> {
+    fn visit_mut(&mut self, node: &mut RClassProp) {
         node.value = None;
 
         if node.accessibility == Some(Accessibility::Private) {
@@ -307,8 +359,10 @@ impl VisitMut for DceForDts<'_> {
 
         node.visit_mut_children_with(self)
     }
+}
 
-    fn visit_mut_stmts(&mut self, stmts: &mut Vec<Stmt>) {
+impl VisitMut<Vec<RStmt>> for DceForDts<'_> {
+    fn visit_mut(&mut self, stmts: &mut Vec<RStmt>) {
         if !self.top_level {
             stmts.clear();
             return;
@@ -316,20 +370,22 @@ impl VisitMut for DceForDts<'_> {
 
         stmts.visit_mut_children_with(self);
     }
+}
 
-    fn visit_mut_module_items(&mut self, items: &mut Vec<ModuleItem>) {
+impl VisitMut<Vec<RModuleItem>> for DceForDts<'_> {
+    fn visit_mut(&mut self, items: &mut Vec<RModuleItem>) {
         items.visit_mut_children_with(self);
 
         items.retain(|item| match item {
-            ModuleItem::Stmt(Stmt::Decl(Decl::TsInterface(..))) if self.in_declare => false,
+            RModuleItem::Stmt(RStmt::Decl(RDecl::TsInterface(..))) if self.in_declare => false,
 
-            ModuleItem::ModuleDecl(_) | ModuleItem::Stmt(Stmt::Decl(..)) => true,
+            RModuleItem::ModuleDecl(_) | RModuleItem::Stmt(RStmt::Decl(..)) => true,
 
             _ => false,
         });
 
         if self.top_level && self.forced_module && !self.prevent_empty_export {
-            // items.push(ModuleItem::ModuleDecl(ModuleDecl::ExportNamed(
+            // items.push(RModuleItem::ModuleDecl(RModuleDecl::ExportNamed(
             //     NamedExport {
             //         span: DUMMY_SP,
             //         specifiers: vec![],
@@ -339,23 +395,25 @@ impl VisitMut for DceForDts<'_> {
             // )));
         }
     }
+}
 
-    fn visit_mut_module_item(&mut self, node: &mut ModuleItem) {
+impl VisitMut<RModuleItem> for DceForDts<'_> {
+    fn visit_mut(&mut self, node: &mut RModuleItem) {
         node.visit_mut_children_with(self);
         let span = node.span();
 
         match node {
-            ModuleItem::Stmt(Stmt::Decl(Decl::TsInterface(i))) => {
+            RModuleItem::Stmt(RStmt::Decl(RDecl::TsInterface(i))) => {
                 if self.used.get(&i.id.clone().into()).is_none() {
                     self.forced_module = true;
-                    *node = Stmt::Empty(EmptyStmt { span }).into();
+                    *node = RStmt::Empty(REmptyStmt { span }).into();
                     return;
                 }
                 return;
             }
 
-            ModuleItem::ModuleDecl(ModuleDecl::ExportDecl(export)) if self.in_declare => {
-                *node = ModuleItem::Stmt(Stmt::Decl(export.decl.take()));
+            RModuleItem::ModuleDecl(RModuleDecl::ExportDecl(export)) if self.in_declare => {
+                *node = RModuleItem::Stmt(RStmt::Decl(export.decl.take()));
                 return;
             }
             _ => {}
@@ -383,10 +441,10 @@ pub fn get_used(info: &ModuleTypeData) -> FxHashSet<Id> {
 
 fn track<T>(used: &mut FxHashSet<Id>, node: &T)
 where
-    T: for<'any> stc_types::VisitWith<Tracker<'any>>,
+    T: for<'any> VisitWith<Tracker<'any>>,
 {
     let mut v = Tracker { used };
-    node.visit_with(&node, &mut v);
+    node.visit_with(&mut v);
 }
 
 #[derive(Debug)]
@@ -394,8 +452,8 @@ struct Tracker<'a> {
     used: &'a mut FxHashSet<Id>,
 }
 
-impl stc_types::Visit for Tracker<'_> {
-    fn visit_id(&mut self, node: &Id, _: &dyn TypeNode) {
+impl Visit<Id> for Tracker<'_> {
+    fn visit(&mut self, node: &Id) {
         self.used.insert(node.clone());
     }
 }

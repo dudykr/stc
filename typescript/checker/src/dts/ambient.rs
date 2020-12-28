@@ -1,7 +1,19 @@
 use retain_mut::RetainMut;
+use rnode::VisitMut;
+use rnode::VisitMutWith;
+use stc_ast_rnode::RBlockStmt;
+use stc_ast_rnode::RClassMember;
+use stc_ast_rnode::RDecl;
+use stc_ast_rnode::REmptyStmt;
+use stc_ast_rnode::RExportDecl;
+use stc_ast_rnode::RIdent;
+use stc_ast_rnode::RModuleDecl;
+use stc_ast_rnode::RModuleItem;
+use stc_ast_rnode::RPropName;
+use stc_ast_rnode::RStmt;
+use stc_ast_rnode::RTsModuleDecl;
 use swc_common::{util::move_map::MoveMap, DUMMY_SP};
 use swc_ecma_ast::*;
-use swc_ecma_visit::{VisitMut, VisitMutWith};
 
 /// Handles
 ///
@@ -13,22 +25,22 @@ use swc_ecma_visit::{VisitMut, VisitMutWith};
 /// ```
 #[derive(Debug, Default)]
 pub(crate) struct RealImplRemover {
-    last_ambient_fn_name: Option<Ident>,
+    last_ambient_fn_name: Option<RIdent>,
 }
 
-impl VisitMut for RealImplRemover {
-    fn visit_mut_stmt(&mut self, node: &mut Stmt) {
+impl VisitMut<RStmt> for RealImplRemover {
+    fn visit_mut(&mut self, node: &mut RStmt) {
         node.visit_mut_children_with(self);
 
         match node {
-            Stmt::Decl(Decl::Fn(ref decl)) => {
+            RStmt::Decl(RDecl::Fn(ref decl)) => {
                 if decl.function.body.is_none() {
                     self.last_ambient_fn_name = Some(decl.ident.clone());
                 } else {
                     let name = self.last_ambient_fn_name.take();
                     if let Some(prev_name) = name {
                         if prev_name.sym == decl.ident.sym {
-                            *node = Stmt::Empty(EmptyStmt { span: DUMMY_SP });
+                            *node = RStmt::Empty(REmptyStmt { span: DUMMY_SP });
                             return;
                         }
                     }
@@ -37,13 +49,14 @@ impl VisitMut for RealImplRemover {
             _ => {}
         }
     }
-
-    fn visit_mut_module_item(&mut self, node: &mut ModuleItem) {
+}
+impl VisitMut<RModuleItem> for RealImplRemover {
+    fn visit_mut(&mut self, node: &mut RModuleItem) {
         node.visit_mut_children_with(self);
 
         match &node {
-            ModuleItem::ModuleDecl(ModuleDecl::ExportDecl(ExportDecl {
-                decl: Decl::Fn(decl),
+            RModuleItem::ModuleDecl(RModuleDecl::ExportDecl(RExportDecl {
+                decl: RDecl::Fn(decl),
                 ..
             })) => {
                 if decl.function.body.is_none() {
@@ -52,7 +65,7 @@ impl VisitMut for RealImplRemover {
                     let name = self.last_ambient_fn_name.take();
                     if let Some(prev_name) = name {
                         if prev_name.sym == decl.ident.sym {
-                            *node = ModuleItem::Stmt(Stmt::Empty(EmptyStmt { span: DUMMY_SP }));
+                            *node = RModuleItem::Stmt(RStmt::Empty(REmptyStmt { span: DUMMY_SP }));
                             return;
                         }
                     }
@@ -61,13 +74,15 @@ impl VisitMut for RealImplRemover {
             _ => {}
         }
     }
+}
 
-    fn visit_mut_class_members(&mut self, members: &mut Vec<ClassMember>) {
+impl VisitMut<Vec<RClassMember>> for RealImplRemover {
+    fn visit_mut(&mut self, members: &mut Vec<RClassMember>) {
         let mut last_ambient = None;
 
         members.retain_mut(|member| match member {
-            ClassMember::Method(m) => match m.key {
-                PropName::Ident(ref i) => {
+            RClassMember::Method(m) => match m.key {
+                RPropName::Ident(ref i) => {
                     if m.function.body.is_none() {
                         last_ambient = Some(i.sym.clone());
                         return true;
@@ -85,10 +100,14 @@ impl VisitMut for RealImplRemover {
             _ => true,
         });
     }
+}
 
-    #[inline]
-    fn visit_mut_block_stmt(&mut self, _: &mut BlockStmt) {}
+/// Noop.
+impl VisitMut<RBlockStmt> for RealImplRemover {
+    fn visit_mut(&mut self, _: &mut RBlockStmt) {}
+}
 
-    #[inline]
-    fn visit_mut_ts_module_decl(&mut self, _: &mut TsModuleDecl) {}
+/// Noop.
+impl VisitMut<RTsModuleDecl> for RealImplRemover {
+    fn visit_mut(&mut self, _: &mut RTsModuleDecl) {}
 }

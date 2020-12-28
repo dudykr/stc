@@ -21,12 +21,34 @@ use crate::{
 };
 use fxhash::{FxHashMap, FxHashSet};
 use once_cell::sync::Lazy;
+use rnode::Fold;
+use rnode::FoldWith;
+use rnode::Visit;
+use rnode::VisitMut;
+use rnode::VisitMutWith;
+use rnode::VisitWith;
 use slog::Logger;
 use smallvec::SmallVec;
+use stc_ast_rnode::RArrayPat;
+use stc_ast_rnode::RAssignPatProp;
+use stc_ast_rnode::RExpr;
+use stc_ast_rnode::RIdent;
+use stc_ast_rnode::RKeyValuePatProp;
+use stc_ast_rnode::RObjectPat;
+use stc_ast_rnode::RObjectPatProp;
+use stc_ast_rnode::RPat;
+use stc_ast_rnode::RPropName;
+use stc_ast_rnode::RRestPat;
+use stc_ast_rnode::RTsEntityName;
+use stc_ast_rnode::RTsKeywordType;
+use stc_ast_rnode::RTsQualifiedName;
+use stc_ast_rnode::RTsType;
+use stc_ast_rnode::RTsTypeAnn;
+use stc_ast_rnode::RTsTypeParamInstantiation;
+use stc_ast_rnode::RTsTypeRef;
 use stc_types::{
-    eq::TypeEq, Conditional, FnParam, FoldWith, Id, IndexedAccessType, Mapped, ModuleId, Operator,
-    QueryExpr, QueryType, StaticThis, TupleElement, TypeParam, TypeParamInstantiation, VisitMut,
-    VisitMutWith, VisitWith,
+    Conditional, FnParam, Id, IndexedAccessType, Mapped, ModuleId, Operator, QueryExpr, QueryType,
+    StaticThis, TupleElement, TypeParam, TypeParamInstantiation,
 };
 use std::{
     borrow::Cow,
@@ -38,6 +60,7 @@ use std::{
     time::Duration,
 };
 use swc_atoms::js_word;
+use swc_common::TypeEq;
 use swc_common::{util::move_map::MoveMap, Mark, Span, Spanned, SyntaxContext, DUMMY_SP};
 use swc_ecma_ast::*;
 
@@ -427,14 +450,14 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    pub fn declare_vars(&mut self, kind: VarDeclKind, pat: &mut Pat) -> Result<(), Error> {
+    pub fn declare_vars(&mut self, kind: VarDeclKind, pat: &mut RPat) -> Result<(), Error> {
         self.declare_vars_inner_with_ty(kind, pat, false, None)
     }
 
     pub fn declare_vars_with_ty(
         &mut self,
         kind: VarDeclKind,
-        pat: &mut Pat,
+        pat: &mut RPat,
         ty: Option<Box<Type>>,
     ) -> Result<(), Error> {
         self.declare_vars_inner_with_ty(kind, pat, false, ty)
@@ -443,7 +466,7 @@ impl Analyzer<'_, '_> {
     pub(super) fn declare_vars_inner(
         &mut self,
         kind: VarDeclKind,
-        pat: &mut Pat,
+        pat: &mut RPat,
         export: bool,
     ) -> Result<(), Error> {
         self.declare_vars_inner_with_ty(kind, pat, export, None)
@@ -456,7 +479,7 @@ impl Analyzer<'_, '_> {
     fn declare_vars_inner_with_ty(
         &mut self,
         kind: VarDeclKind,
-        pat: &mut Pat,
+        pat: &mut RPat,
         export: bool,
         ty: Option<Box<Type>>,
     ) -> Result<(), Error> {
@@ -470,7 +493,7 @@ impl Analyzer<'_, '_> {
         }
 
         match *pat {
-            Pat::Ident(ref mut i) => {
+            RPat::Ident(ref mut i) => {
                 let name: Id = Id::from(i.clone());
                 if !self.is_builtin {
                     debug_assert_ne!(span, DUMMY_SP);
@@ -499,7 +522,7 @@ impl Analyzer<'_, '_> {
                 }
                 return Ok(());
             }
-            Pat::Assign(ref mut p) => {
+            RPat::Assign(ref mut p) => {
                 let ty = p.right.validate_with_default(self)?;
                 slog::debug!(
                     self.logger,
@@ -513,7 +536,7 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
 
-            Pat::Array(ArrayPat {
+            RPat::Array(RArrayPat {
                 span,
                 ref mut elems,
                 ref mut type_ann,
@@ -529,14 +552,17 @@ impl Analyzer<'_, '_> {
                 }
 
                 if type_ann.is_none() {
-                    *type_ann = Some(TsTypeAnn {
+                    *type_ann = Some(RTsTypeAnn {
                         span,
-                        type_ann: box TsType::TsTypeRef(TsTypeRef {
+                        type_ann: box RTsType::TsTypeRef(RTsTypeRef {
                             span,
-                            type_name: TsEntityName::Ident(Ident::new("Iterable".into(), DUMMY_SP)),
-                            type_params: Some(TsTypeParamInstantiation {
+                            type_name: RTsEntityName::Ident(RIdent::new(
+                                "Iterable".into(),
+                                DUMMY_SP,
+                            )),
+                            type_params: Some(RTsTypeParamInstantiation {
                                 span,
-                                params: vec![box TsType::TsKeywordType(TsKeywordType {
+                                params: vec![box RTsType::TsKeywordType(RTsKeywordType {
                                     span: DUMMY_SP,
                                     kind: TsKeywordTypeKind::TsAnyKeyword,
                                 })],
@@ -558,7 +584,7 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
 
-            Pat::Object(ObjectPat {
+            RPat::Object(RObjectPat {
                 ref props,
                 ref mut type_ann,
                 ..
@@ -575,13 +601,13 @@ impl Analyzer<'_, '_> {
                 }
                 for prop in props {
                     match *prop {
-                        ObjectPatProp::KeyValue(KeyValuePatProp { .. }) => {
+                        RObjectPatProp::KeyValue(RKeyValuePatProp { .. }) => {
                             unimplemented!("ket value pattern in object pattern")
                         }
-                        ObjectPatProp::Assign(AssignPatProp { .. }) => {
+                        RObjectPatProp::Assign(RAssignPatProp { .. }) => {
                             unimplemented!("assign pattern in object pattern")
                         }
-                        ObjectPatProp::Rest(RestPat { .. }) => {
+                        RObjectPatProp::Rest(RRestPat { .. }) => {
                             unimplemented!("rest pattern in object pattern")
                         }
                     }
@@ -590,7 +616,7 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
 
-            Pat::Rest(RestPat {
+            RPat::Rest(RRestPat {
                 ref arg,
                 type_ann: ref mut ty,
                 ..
@@ -600,7 +626,7 @@ impl Analyzer<'_, '_> {
 
                 let new_ty = arg.get_mut_ty().take();
                 if ty.is_none() {
-                    *ty = new_ty.cloned().map(Box::new).map(|type_ann| TsTypeAnn {
+                    *ty = new_ty.cloned().map(Box::new).map(|type_ann| RTsTypeAnn {
                         span: DUMMY_SP,
                         type_ann,
                     });
@@ -609,7 +635,7 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
 
-            Pat::Invalid(..) | Pat::Expr(box Expr::Invalid(..)) => Ok(()),
+            RPat::Invalid(..) | RPat::Expr(box RExpr::Invalid(..)) => Ok(()),
 
             _ => unimplemented!("declare_vars for patterns other than ident: {:#?}", pat),
         }
@@ -752,7 +778,7 @@ impl Analyzer<'_, '_> {
 
     fn find_local_type(&self, name: &Id) -> Option<ItemRef<Type>> {
         #[allow(dead_code)]
-        static ANY: Type = Type::Keyword(TsKeywordType {
+        static ANY: Type = Type::Keyword(RTsKeywordType {
             span: DUMMY_SP,
             kind: TsKeywordTypeKind::TsAnyKeyword,
         });
@@ -942,13 +968,13 @@ impl Analyzer<'_, '_> {
     pub fn declare_complex_vars(
         &mut self,
         kind: VarDeclKind,
-        pat: &Pat,
+        pat: &RPat,
         ty: Box<Type>,
     ) -> ValidationResult<()> {
         let span = pat.span();
 
         match *pat {
-            Pat::Ident(ref i) => {
+            RPat::Ident(ref i) => {
                 slog::debug!(&self.logger, "declare_complex_vars: declaring {}", i.sym);
                 self.declare_var(
                     span,
@@ -964,7 +990,7 @@ impl Analyzer<'_, '_> {
                 Ok(())
             }
 
-            Pat::Array(ArrayPat { ref elems, .. }) => {
+            RPat::Array(RArrayPat { ref elems, .. }) => {
                 // Handle tuple
                 //
                 //      const [a , setA] = useState();
@@ -1048,7 +1074,7 @@ impl Analyzer<'_, '_> {
                         return Ok(());
                     }
 
-                    Type::Keyword(TsKeywordType {
+                    Type::Keyword(RTsKeywordType {
                         kind: TsKeywordTypeKind::TsAnyKeyword,
                         ..
                     }) => {
@@ -1069,8 +1095,8 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            Pat::Object(ObjectPat { ref props, .. }) => {
-                fn find<'a>(members: &[TypeElement], key: &PropName) -> Option<Box<Type>> {
+            RPat::Object(RObjectPat { ref props, .. }) => {
+                fn find<'a>(members: &[TypeElement], key: &RPropName) -> Option<Box<Type>> {
                     let mut index_el = None;
                     // First, we search for Property
                     for m in members {
@@ -1102,13 +1128,15 @@ impl Analyzer<'_, '_> {
                     a: &mut Analyzer,
                     kind: VarDeclKind,
                     span: Span,
-                    props: &[ObjectPatProp],
+                    props: &[RObjectPatProp],
                     members: &[TypeElement],
                 ) -> ValidationResult<()> {
                     for p in props.iter() {
                         match *p {
-                            ObjectPatProp::KeyValue(KeyValuePatProp {
-                                ref key, ref value, ..
+                            RObjectPatProp::KeyValue(RKeyValuePatProp {
+                                ref key,
+                                ref value,
+                                ..
                             }) => {
                                 if let Some(ty) = find(&members, key) {
                                     a.declare_complex_vars(kind, value, ty)?;
@@ -1116,13 +1144,13 @@ impl Analyzer<'_, '_> {
                                 }
                             }
 
-                            ObjectPatProp::Assign(AssignPatProp {
+                            RObjectPatProp::Assign(RAssignPatProp {
                                 ref key,
                                 value: None,
                                 ..
                             }) => {
-                                if let Some(ty) = find(&members, &PropName::Ident(key.clone())) {
-                                    a.declare_complex_vars(kind, &Pat::Ident(key.clone()), ty)?;
+                                if let Some(ty) = find(&members, &RPropName::Ident(key.clone())) {
+                                    a.declare_complex_vars(kind, &RPat::Ident(key.clone()), ty)?;
                                     return Ok(());
                                 }
                             }
@@ -1152,13 +1180,13 @@ impl Analyzer<'_, '_> {
                         return handle_elems(self, kind, span, props, &body);
                     }
 
-                    Type::Keyword(TsKeywordType {
+                    Type::Keyword(RTsKeywordType {
                         kind: TsKeywordTypeKind::TsAnyKeyword,
                         ..
                     }) => {
                         for p in props.iter() {
                             match p {
-                                ObjectPatProp::KeyValue(ref kv) => {
+                                RObjectPatProp::KeyValue(ref kv) => {
                                     self.declare_complex_vars(
                                         kind,
                                         &kv.value,
@@ -1166,7 +1194,7 @@ impl Analyzer<'_, '_> {
                                     )?;
                                 }
 
-                                ObjectPatProp::Assign(AssignPatProp {
+                                RObjectPatProp::Assign(RAssignPatProp {
                                     span,
                                     key,
                                     value: None,
@@ -1174,7 +1202,7 @@ impl Analyzer<'_, '_> {
                                 }) => {
                                     self.declare_complex_vars(
                                         kind,
-                                        &Pat::Ident(key.clone()),
+                                        &RPat::Ident(key.clone()),
                                         Type::any(*span),
                                     )?;
                                 }
@@ -1186,7 +1214,7 @@ impl Analyzer<'_, '_> {
                         return Ok(());
                     }
 
-                    Type::Keyword(TsKeywordType {
+                    Type::Keyword(RTsKeywordType {
                         kind: TsKeywordTypeKind::TsUnknownKeyword,
                         ..
                     }) => {
@@ -1199,7 +1227,7 @@ impl Analyzer<'_, '_> {
                         // WTF...
                         for p in props.iter().rev() {
                             let span = match p {
-                                ObjectPatProp::Rest(RestPat { ref arg, .. }) => arg.span(),
+                                RObjectPatProp::Rest(RRestPat { ref arg, .. }) => arg.span(),
                                 _ => p.span(),
                             };
                             return Err(Error::Unknown { span });
@@ -1226,7 +1254,7 @@ impl Analyzer<'_, '_> {
 
                         for prop in props {
                             match prop {
-                                ObjectPatProp::KeyValue(prop) => {
+                                RObjectPatProp::KeyValue(prop) => {
                                     let mut key_expr = prop_name_to_expr(&prop.key);
 
                                     let ty = self.access_property(
@@ -1239,8 +1267,8 @@ impl Analyzer<'_, '_> {
 
                                     self.declare_complex_vars(kind, &prop.value, ty)?;
                                 }
-                                ObjectPatProp::Assign(prop) => {
-                                    let mut key_expr = box Expr::Ident(prop.key.clone());
+                                RObjectPatProp::Assign(prop) => {
+                                    let mut key_expr = box RExpr::Ident(prop.key.clone());
 
                                     let ty = self.access_property(
                                         span,
@@ -1257,13 +1285,13 @@ impl Analyzer<'_, '_> {
                                         None => {
                                             self.declare_complex_vars(
                                                 kind,
-                                                &Pat::Ident(prop.key.clone()),
+                                                &RPat::Ident(prop.key.clone()),
                                                 ty,
                                             )?;
                                         }
                                     }
                                 }
-                                ObjectPatProp::Rest(_) => {
+                                RObjectPatProp::Rest(_) => {
                                     unimplemented!("rest pattern where rhs is this")
                                 }
                             }
@@ -1582,7 +1610,7 @@ impl Expander<'_, '_, '_> {
         }
 
         match type_name {
-            TsEntityName::Ident(ref i) => {
+            RTsEntityName::Ident(ref i) => {
                 if let Some(class) = &self.analyzer.scope.get_this_class_name() {
                     if *class == *i {
                         return Ok(None);
@@ -1608,7 +1636,7 @@ impl Expander<'_, '_, '_> {
                     for t in types {
                         if !self.expand_union {
                             let mut finder = UnionFinder { found: false };
-                            t.visit_with(&t, &mut finder);
+                            t.visit_with(&mut finder);
                             if finder.found {
                                 return Ok(None);
                             }
@@ -1731,8 +1759,8 @@ impl Expander<'_, '_, '_> {
             // Handle enum variant type.
             //
             //  let a: StringEnum.Foo = x;
-            TsEntityName::TsQualifiedName(box TsQualifiedName {
-                left: TsEntityName::Ident(ref left),
+            RTsEntityName::TsQualifiedName(box RTsQualifiedName {
+                left: RTsEntityName::Ident(ref left),
                 ref right,
             }) => {
                 if left.sym == js_word!("void") {
@@ -1775,8 +1803,8 @@ impl Expander<'_, '_, '_> {
     }
 }
 
-impl ty::Fold for Expander<'_, '_, '_> {
-    fn fold_function(&mut self, mut f: ty::Function) -> ty::Function {
+impl Fold<ty::Function> for Expander<'_, '_, '_> {
+    fn fold(&mut self, mut f: ty::Function) -> ty::Function {
         f.type_params = f.type_params.fold_with(self);
         f.params = f.params.fold_with(self);
         if self.analyzer.ctx.preserve_ret_ty {
@@ -1785,16 +1813,20 @@ impl ty::Fold for Expander<'_, '_, '_> {
 
         f
     }
+}
 
-    fn fold_fn_param(&mut self, param: FnParam) -> FnParam {
+impl Fold<FnParam> for Expander<'_, '_, '_> {
+    fn fold(&mut self, param: FnParam) -> FnParam {
         if self.analyzer.ctx.preserve_params {
             return param;
         }
 
         param.fold_children_with(self)
     }
+}
 
-    fn fold_type(&mut self, mut ty: Type) -> Type {
+impl Fold<Type> for Expander<'_, '_, '_> {
+    fn fold(&mut self, mut ty: Type) -> Type {
         if self.analyzer.is_builtin {
             return ty;
         }
@@ -1872,7 +1904,7 @@ impl ty::Fold for Expander<'_, '_, '_> {
                         match cond_ty.check_type.normalize_mut() {
                             Type::Query(QueryType {
                                 span,
-                                expr: QueryExpr::TsEntityName(TsEntityName::Ident(name)),
+                                expr: QueryExpr::TsEntityName(RTsEntityName::Ident(name)),
                                 ..
                             }) => {
                                 let id = (&*name).into();
@@ -1939,7 +1971,7 @@ impl ty::Fold for Expander<'_, '_, '_> {
 
         if !self.expand_union {
             let mut finder = UnionFinder { found: false };
-            ty.visit_with(&ty, &mut finder);
+            ty.visit_with(&mut finder);
             if finder.found {
                 return ty;
             }
@@ -2184,12 +2216,16 @@ impl ty::Fold for Expander<'_, '_, '_> {
 
         ty
     }
+}
 
-    fn fold_class(&mut self, node: stc_types::Class) -> stc_types::Class {
+impl Fold<stc_types::Class> for Expander<'_, '_, '_> {
+    fn fold(&mut self, node: stc_types::Class) -> stc_types::Class {
         node
     }
+}
 
-    fn fold_class_member(&mut self, node: stc_types::ClassMember) -> stc_types::ClassMember {
+impl Fold<stc_types::ClassMember> for Expander<'_, '_, '_> {
+    fn fold(&mut self, node: stc_types::ClassMember) -> stc_types::ClassMember {
         node
     }
 }
@@ -2199,12 +2235,16 @@ struct UnionFinder {
     found: bool,
 }
 
-impl ty::Visit for UnionFinder {
-    fn visit_property_signature(&mut self, _: &PropertySignature, _: &dyn ty::TypeNode) {}
+impl Visit<PropertySignature> for UnionFinder {
+    fn visit(&mut self, _: &PropertySignature) {}
+}
 
-    fn visit_method_signature(&mut self, _: &ty::MethodSignature, _: &dyn ty::TypeNode) {}
+impl Visit<ty::MethodSignature> for UnionFinder {
+    fn visit(&mut self, _: &ty::MethodSignature) {}
+}
 
-    fn visit_union(&mut self, u: &Union, _: &dyn ty::TypeNode) {
+impl Visit<Union> for UnionFinder {
+    fn visit(&mut self, u: &Union) {
         self.found = true;
     }
 }
@@ -2213,11 +2253,14 @@ pub(crate) struct ExpansionPreventer {
     mark: Mark,
 }
 
-impl VisitMut for ExpansionPreventer {
-    fn visit_mut_ref(&mut self, ty: &mut Ref) {
+impl VisitMut<Ref> for ExpansionPreventer {
+    fn visit_mut(&mut self, ty: &mut Ref) {
         ty.span = ty.span.apply_mark(self.mark);
     }
-    fn visit_mut_type(&mut self, ty: &mut Type) {
+}
+
+impl VisitMut<Type> for ExpansionPreventer {
+    fn visit_mut(&mut self, ty: &mut Type) {
         ty.normalize_mut();
         ty.visit_mut_children_with(self)
     }

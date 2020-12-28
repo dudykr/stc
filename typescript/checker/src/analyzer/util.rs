@@ -4,10 +4,16 @@ use crate::errors::Error;
 use crate::mode::Storage;
 use crate::ValidationResult;
 use crate::{analyzer::generic::is_literals, ty, ty::Type, util::is_str_lit_or_union};
+use rnode::Fold;
+use rnode::FoldWith;
+use rnode::Visit;
+use stc_ast_rnode::RExpr;
+use stc_ast_rnode::RIdent;
+use stc_ast_rnode::RPropName;
+use stc_ast_rnode::RStr;
 use stc_types::TypeElement;
 use stc_types::{
-    ClassInstance, FoldWith, Id, IndexedAccessType, Intersection, ModuleId, QueryExpr, QueryType,
-    Ref, Tuple,
+    ClassInstance, Id, IndexedAccessType, Intersection, ModuleId, QueryExpr, QueryType, Ref, Tuple,
 };
 use std::iter::once;
 use swc_common::Span;
@@ -180,13 +186,15 @@ pub(super) struct Generalizer {
     pub force: bool,
 }
 
-impl ty::Fold for Generalizer {
-    #[inline(always)]
-    fn fold_function(&mut self, node: ty::Function) -> ty::Function {
+impl Fold<stc_types::Function> for Generalizer {
+    #[inline]
+    fn fold(&mut self, node: ty::Function) -> ty::Function {
         node
     }
+}
 
-    fn fold_type(&mut self, mut ty: Type) -> Type {
+impl Fold<Type> for Generalizer {
+    fn fold(&mut self, mut ty: Type) -> Type {
         match ty {
             Type::IndexedAccessType(IndexedAccessType { ref index_type, .. })
                 if is_str_lit_or_union(&index_type) =>
@@ -295,23 +303,23 @@ where
     }
 }
 
-pub(super) fn is_prop_name_eq(l: &PropName, r: &PropName) -> bool {
+pub(super) fn is_prop_name_eq(l: &RPropName, r: &RPropName) -> bool {
     macro_rules! check {
         ($l:expr, $r:expr) => {{
             let l = $l;
             let r = $r;
 
             match l {
-                PropName::Ident(Ident { ref sym, .. })
-                | PropName::Str(Str { value: ref sym, .. }) => match *r {
-                    PropName::Ident(Ident { sym: ref r_sym, .. })
-                    | PropName::Str(Str {
+                RPropName::Ident(RIdent { ref sym, .. })
+                | RPropName::Str(RStr { value: ref sym, .. }) => match &*r {
+                    RPropName::Ident(RIdent { sym: ref r_sym, .. })
+                    | RPropName::Str(RStr {
                         value: ref r_sym, ..
                     }) => return sym == r_sym,
-                    PropName::Num(n) => return sym == &*n.value.to_string(),
+                    RPropName::Num(n) => return sym == &*n.value.to_string(),
                     _ => return false,
                 },
-                PropName::Computed(..) => return false,
+                RPropName::Computed(..) => return false,
                 _ => {}
             }
         }};
@@ -327,10 +335,12 @@ pub(super) struct VarVisitor<'a> {
     pub names: &'a mut Vec<Id>,
 }
 
-impl swc_ecma_visit::Visit for VarVisitor<'_> {
-    fn visit_expr(&mut self, _: &Expr, _: &dyn Node) {}
+impl Visit<RExpr> for VarVisitor<'_> {
+    fn visit(&mut self, _: &RExpr) {}
+}
 
-    fn visit_ident(&mut self, i: &Ident, _: &dyn Node) {
+impl Visit<RIdent> for VarVisitor<'_> {
+    fn visit(&mut self, i: &RIdent) {
         self.names.push(i.into())
     }
 }

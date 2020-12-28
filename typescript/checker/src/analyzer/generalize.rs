@@ -6,13 +6,24 @@ use crate::{
     util::{is_str_lit_or_union, Marker},
     Lib, Marks,
 };
+use rnode::Fold;
+use rnode::FoldWith;
+use rnode::VisitMutWith;
 use slog::Logger;
+use stc_ast_rnode::RExpr;
+use stc_ast_rnode::RIdent;
+use stc_ast_rnode::RLit;
+use stc_ast_rnode::RNumber;
+use stc_ast_rnode::RStr;
+use stc_ast_rnode::RTsKeywordType;
+use stc_ast_rnode::RTsLit;
+use stc_ast_rnode::RTsLitType;
 use stc_types::{
-    eq::{EqIgnoreSpan, TypeEq},
-    Array, Class, ClassMember, Fold, FoldWith, Id, IndexedAccessType, Mapped, Operator,
-    PropertySignature, Static, TypeElement, TypeLit, TypeParam, Union, VisitMutWith,
+    Array, Class, ClassMember, Id, IndexedAccessType, Mapped, Operator, PropertySignature,
+    TypeElement, TypeLit, TypeParam, Union,
 };
 use swc_atoms::js_word;
+use swc_common::EqIgnoreSpan;
 use swc_common::{Mark, Span, Spanned};
 use swc_ecma_ast::{
     Expr, Ident, Number, Str, TsKeywordType, TsKeywordTypeKind, TsLit, TsLitType, TsTypeOperatorOp,
@@ -109,8 +120,8 @@ impl Simplifier<'_> {
     }
 }
 
-impl Fold for Simplifier<'_> {
-    fn fold_union(&mut self, mut union: Union) -> Union {
+impl Fold<Union> for Simplifier<'_> {
+    fn fold(&mut self, mut union: Union) -> Union {
         let should_remove_null_and_undefined = union.types.iter().any(|ty| match ty.normalize() {
             Type::TypeLit(..) => true,
             Type::Ref(..) => true,
@@ -147,8 +158,10 @@ impl Fold for Simplifier<'_> {
 
         union
     }
+}
 
-    fn fold_type(&mut self, mut ty: Type) -> Type {
+impl Fold<Type> for Simplifier<'_> {
+    fn fold(&mut self, mut ty: Type) -> Type {
         ty = ty.foldable();
 
         match ty {
@@ -208,7 +221,7 @@ impl Fold for Simplifier<'_> {
                             TsKeywordTypeKind::TsUnknownKeyword => return *Type::unknown(span),
                             TsKeywordTypeKind::TsNeverKeyword => return *Type::never(span),
                             TsKeywordTypeKind::TsIntrinsicKeyword => {
-                                return Type::Keyword(TsKeywordType {
+                                return Type::Keyword(RTsKeywordType {
                                     span,
                                     kind: TsKeywordTypeKind::TsIntrinsicKeyword,
                                 })
@@ -234,8 +247,9 @@ impl Fold for Simplifier<'_> {
                     .unwrap();
 
                 let s = match &*index_type {
-                    Type::Lit(TsLitType {
-                        lit: TsLit::Str(s), ..
+                    Type::Lit(RTsLitType {
+                        lit: RTsLit::Str(s),
+                        ..
                     }) => s.clone(),
                     _ => {
                         return Type::IndexedAccessType(IndexedAccessType {
@@ -257,7 +271,9 @@ impl Fold for Simplifier<'_> {
                                     type_ann: Some(type_ann),
                                     ..
                                 }) => match &**key {
-                                    Expr::Ident(i) if i.sym == s.value => return *type_ann.clone(),
+                                    RExpr::Ident(i) if i.sym == s.value => {
+                                        return *type_ann.clone()
+                                    }
                                     _ => {}
                                 },
                                 TypeElement::Method(_) => {}
@@ -295,8 +311,9 @@ impl Fold for Simplifier<'_> {
                 let members = constraint
                     .iter_union()
                     .filter_map(|ty| match ty {
-                        Type::Lit(TsLitType {
-                            lit: TsLit::Str(s), ..
+                        Type::Lit(RTsLitType {
+                            lit: RTsLit::Str(s),
+                            ..
                         }) => Some(s),
                         _ => None,
                     })
@@ -305,7 +322,7 @@ impl Fold for Simplifier<'_> {
                             span,
                             // TODO:
                             readonly: false,
-                            key: box Expr::Ident(Ident::new(key.value.clone(), key.span)),
+                            key: box RExpr::Ident(RIdent::new(key.value.clone(), key.span)),
                             computed: false,
                             optional: false,
                             params: Default::default(),
@@ -347,14 +364,14 @@ impl Fold for Simplifier<'_> {
                 index_type:
                     index_type
                     @
-                    box Type::Lit(TsLitType {
-                        lit: TsLit::Str(..),
+                    box Type::Lit(RTsLitType {
+                        lit: RTsLit::Str(..),
                         ..
                     }),
                 ..
             }) if obj.types.iter().all(|ty| match &**ty {
                 Type::TypeLit(..) => true,
-                Type::Keyword(TsKeywordType {
+                Type::Keyword(RTsKeywordType {
                     kind: TsKeywordTypeKind::TsUnknownKeyword,
                     ..
                 }) => true,
@@ -374,7 +391,7 @@ impl Fold for Simplifier<'_> {
                 members.dedup_by(|a, b| {
                     if let Some(a_key) = a.key() {
                         if let Some(b_key) = b.key() {
-                            if a_key.eq_ignore_span(b_key) {
+                            if a_key.eq_ignore_span(&*b_key) {
                                 true
                             } else {
                                 false
@@ -401,8 +418,9 @@ impl Fold for Simplifier<'_> {
                 readonly,
                 obj_type: box Type::Union(obj),
                 index_type:
-                    box Type::Lit(TsLitType {
-                        lit: TsLit::Str(s), ..
+                    box Type::Lit(RTsLitType {
+                        lit: RTsLit::Str(s),
+                        ..
                     }),
                 ..
             }) if obj.types.iter().all(|ty| match &**ty {
@@ -423,7 +441,7 @@ impl Fold for Simplifier<'_> {
 
                         match element {
                             TypeElement::Property(p) => match &*p.key {
-                                Expr::Ident(i) if i.sym == s.value => {
+                                RExpr::Ident(i) if i.sym == s.value => {
                                     Some(p.type_ann.unwrap_or_else(|| Type::any(span)))
                                 }
                                 _ => None,
@@ -442,9 +460,9 @@ impl Fold for Simplifier<'_> {
                 span,
                 obj_type: box Type::Tuple(tuple),
                 index_type:
-                    box Type::Lit(TsLitType {
+                    box Type::Lit(RTsLitType {
                         lit:
-                            TsLit::Str(Str {
+                            RTsLit::Str(RStr {
                                 value: js_word!("length"),
                                 ..
                             }),
@@ -453,9 +471,9 @@ impl Fold for Simplifier<'_> {
                 ..
             }) => {
                 let span = span.apply_mark(self.prevent_generalize_mark);
-                return Type::Lit(TsLitType {
+                return Type::Lit(RTsLitType {
                     span,
-                    lit: TsLit::Number(Number {
+                    lit: RTsLit::Number(RNumber {
                         span,
                         value: tuple.elems.len() as _,
                     }),
@@ -466,9 +484,9 @@ impl Fold for Simplifier<'_> {
                 span,
                 obj_type: box Type::Array(..),
                 index_type:
-                    box Type::Lit(TsLitType {
+                    box Type::Lit(RTsLitType {
                         lit:
-                            TsLit::Str(Str {
+                            RTsLit::Str(RStr {
                                 value: js_word!("length"),
                                 ..
                             }),
@@ -476,7 +494,7 @@ impl Fold for Simplifier<'_> {
                     }),
                 ..
             }) => {
-                return Type::Keyword(TsKeywordType {
+                return Type::Keyword(RTsKeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                 });
@@ -486,8 +504,8 @@ impl Fold for Simplifier<'_> {
                 span,
                 obj_type: box Type::Tuple(tuple),
                 index_type:
-                    box Type::Lit(TsLitType {
-                        lit: TsLit::Str(Str { value, .. }),
+                    box Type::Lit(RTsLitType {
+                        lit: RTsLit::Str(RStr { value, .. }),
                         ..
                     }),
                 ..
@@ -544,15 +562,16 @@ impl Fold for Simplifier<'_> {
                 for member in &members {
                     for key in constraint.iter_union() {
                         let key = match key {
-                            Type::Lit(TsLitType {
-                                lit: TsLit::Str(v), ..
+                            Type::Lit(RTsLitType {
+                                lit: RTsLit::Str(v),
+                                ..
                             }) => v.clone(),
                             _ => unreachable!(),
                         };
 
                         if let Some(member_key) = member.key() {
-                            let member_key = match member_key {
-                                Expr::Ident(i) => i,
+                            let member_key = match member_key.into_owned() {
+                                RExpr::Ident(i) => i,
                                 _ => unimplemented!(),
                             };
 
@@ -586,27 +605,31 @@ impl Fold for Simplifier<'_> {
                         ..
                     }),
                 index_type:
-                    box Type::Lit(TsLitType {
-                        lit: TsLit::Str(v), ..
+                    box Type::Lit(RTsLitType {
+                        lit: RTsLit::Str(v),
+                        ..
                     }),
                 ..
             })
             | Type::IndexedAccessType(IndexedAccessType {
                 obj_type: box Type::TypeLit(TypeLit { members, .. }),
                 index_type:
-                    box Type::Lit(TsLitType {
-                        lit: TsLit::Str(v), ..
+                    box Type::Lit(RTsLitType {
+                        lit: RTsLit::Str(v),
+                        ..
                     }),
                 ..
-            }) if members.iter().any(|element| match element.key() {
-                Some(Expr::Ident(key)) => key.sym == v.value,
-                _ => false,
-            }) =>
+            }) if members
+                .iter()
+                .any(|element| match element.key().as_deref() {
+                    Some(RExpr::Ident(key)) => key.sym == v.value,
+                    _ => false,
+                }) =>
             {
                 let el = members
                     .into_iter()
-                    .find(|element| match element.key() {
-                        Some(Expr::Ident(key)) => key.sym == v.value,
+                    .find(|element| match element.key().as_deref() {
+                        Some(RExpr::Ident(key)) => key.sym == v.value,
                         _ => false,
                     })
                     .unwrap();
@@ -634,15 +657,16 @@ impl Fold for Simplifier<'_> {
             Type::IndexedAccessType(IndexedAccessType {
                 obj_type: box Type::Class(Class { body, .. }),
                 index_type:
-                    box Type::Lit(TsLitType {
-                        lit: TsLit::Str(s), ..
+                    box Type::Lit(RTsLitType {
+                        lit: RTsLit::Str(s),
+                        ..
                     }),
                 ..
             }) if body.iter().any(|member| match member {
                 ClassMember::Constructor(_) => false,
                 ClassMember::Method(_) => false,
                 ClassMember::Property(p) => match &*p.key {
-                    Expr::Ident(i) => i.sym == s.value,
+                    RExpr::Ident(i) => i.sym == s.value,
                     _ => false,
                 },
                 ClassMember::IndexSignature(_) => false,
@@ -654,7 +678,7 @@ impl Fold for Simplifier<'_> {
                         ClassMember::Constructor(_) => false,
                         ClassMember::Method(_) => false,
                         ClassMember::Property(p) => match &*p.key {
-                            Expr::Ident(i) => i.sym == s.value,
+                            RExpr::Ident(i) => i.sym == s.value,
                             _ => unreachable!(),
                         },
                         ClassMember::IndexSignature(_) => false,
@@ -684,8 +708,9 @@ impl Fold for Simplifier<'_> {
                     .types
                     .into_iter()
                     .map(|key| match *key {
-                        Type::Lit(TsLitType {
-                            lit: TsLit::Str(s), ..
+                        Type::Lit(RTsLitType {
+                            lit: RTsLit::Str(s),
+                            ..
                         }) => s,
                         _ => unreachable!(),
                     })
@@ -696,7 +721,7 @@ impl Fold for Simplifier<'_> {
                                 ClassMember::Constructor(_) => false,
                                 ClassMember::Method(_) => false,
                                 ClassMember::Property(p) => match &*p.key {
-                                    Expr::Ident(i) => i.sym == key.value,
+                                    RExpr::Ident(i) => i.sym == key.value,
                                     _ => unreachable!(),
                                 },
                                 ClassMember::IndexSignature(_) => false,

@@ -2,7 +2,14 @@ use self::{generalize::TupleToArray, type_facts::TypeFactsHandler};
 use crate::util::type_ext::TypeVecExt;
 use crate::{type_facts::TypeFacts, util::is_str_lit_or_union};
 use retain_mut::RetainMut;
-use stc_types::eq::TypeEq;
+use rnode::Fold;
+use rnode::FoldWith;
+use stc_ast_rnode::RBool;
+use stc_ast_rnode::RNumber;
+use stc_ast_rnode::RStr;
+use stc_ast_rnode::RTsKeywordType;
+use stc_ast_rnode::RTsLit;
+use stc_ast_rnode::RTsLitType;
 pub(crate) use stc_types::*;
 use swc_ecma_ast::{Bool, Number, Str, TsKeywordType, TsKeywordTypeKind, TsLit, TsLitType};
 
@@ -11,22 +18,26 @@ mod type_facts;
 
 pub(crate) struct LitGeneralizer;
 
-impl Fold for LitGeneralizer {
-    fn fold_ref(&mut self, mut r: Ref) -> Ref {
+impl Fold<Ref> for LitGeneralizer {
+    fn fold(&mut self, mut r: Ref) -> Ref {
         r.type_name = r.type_name.fold_with(self);
 
         r
     }
+}
 
-    fn fold_union(&mut self, mut union: Union) -> Union {
+impl Fold<Union> for LitGeneralizer {
+    fn fold(&mut self, mut union: Union) -> Union {
         union = union.fold_children_with(self);
 
         union.types.dedup_type();
 
         union
     }
+}
 
-    fn fold_tuple(&mut self, mut tuple: Tuple) -> Tuple {
+impl Fold<Tuple> for LitGeneralizer {
+    fn fold(&mut self, mut tuple: Tuple) -> Tuple {
         tuple = tuple.fold_children_with(self);
 
         let has_rest = tuple
@@ -64,8 +75,10 @@ impl Fold for LitGeneralizer {
 
         tuple
     }
+}
 
-    fn fold_type(&mut self, mut ty: Type) -> Type {
+impl Fold<Type> for LitGeneralizer {
+    fn fold(&mut self, mut ty: Type) -> Type {
         match &ty {
             Type::IndexedAccessType(IndexedAccessType { index_type, .. })
                 if is_str_lit_or_union(&index_type) =>
@@ -78,23 +91,25 @@ impl Fold for LitGeneralizer {
         ty = ty.fold_children_with(self);
 
         match ty {
-            Type::Lit(TsLitType { span, ref lit, .. }) => {
-                return Type::Keyword(TsKeywordType {
+            Type::Lit(RTsLitType { span, ref lit, .. }) => {
+                return Type::Keyword(RTsKeywordType {
                     span,
                     kind: match *lit {
-                        TsLit::Bool(Bool { .. }) => TsKeywordTypeKind::TsBooleanKeyword,
-                        TsLit::Number(Number { .. }) => TsKeywordTypeKind::TsNumberKeyword,
-                        TsLit::Str(Str { .. }) => TsKeywordTypeKind::TsStringKeyword,
-                        TsLit::Tpl(..) => TsKeywordTypeKind::TsStringKeyword,
-                        TsLit::BigInt(..) => TsKeywordTypeKind::TsBigIntKeyword,
+                        RTsLit::Bool(RBool { .. }) => TsKeywordTypeKind::TsBooleanKeyword,
+                        RTsLit::Number(RNumber { .. }) => TsKeywordTypeKind::TsNumberKeyword,
+                        RTsLit::Str(RStr { .. }) => TsKeywordTypeKind::TsStringKeyword,
+                        RTsLit::Tpl(..) => TsKeywordTypeKind::TsStringKeyword,
+                        RTsLit::BigInt(..) => TsKeywordTypeKind::TsBigIntKeyword,
                     },
                 })
             }
             _ => ty,
         }
     }
+}
 
-    fn fold_function(&mut self, node: Function) -> Function {
+impl Fold<Function> for LitGeneralizer {
+    fn fold(&mut self, node: Function) -> Function {
         node
     }
 }

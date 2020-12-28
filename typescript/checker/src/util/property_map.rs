@@ -1,12 +1,17 @@
 use fxhash::FxHashMap;
+use rnode::Fold;
+use rnode::FoldWith;
+use stc_ast_rnode::RComputedPropName;
+use stc_ast_rnode::RExpr;
+use stc_ast_rnode::RPropName;
+use swc_common::EqIgnoreSpan;
+use swc_common::Span;
 use swc_common::DUMMY_SP;
-use swc_ecma_ast::{ComputedPropName, Expr, PropName};
-use swc_ecma_utils::drop_span;
 
 /// **Note**: this struct ignores span of key.
 #[derive(Debug)]
 pub struct PropertyMap<V> {
-    inner: FxHashMap<PropName, V>,
+    inner: Vec<(RPropName, V)>,
 }
 
 impl<V> Default for PropertyMap<V> {
@@ -18,23 +23,29 @@ impl<V> Default for PropertyMap<V> {
 }
 
 impl<V> PropertyMap<V> {
-    pub fn get(&self, expr: &Expr) -> Option<&V> {
-        let expr = PropName::Computed(ComputedPropName {
+    pub fn get(&self, expr: &RExpr) -> Option<&V> {
+        let expr = RPropName::Computed(RComputedPropName {
             span: DUMMY_SP,
-            expr: box drop_span(expr.clone()),
+            expr: box expr.clone(),
         });
 
-        self.inner.get(&expr)
+        self.inner.iter().rev().find_map(|(k, v)| {
+            if k.eq_ignore_span(&expr) {
+                Some(v)
+            } else {
+                None
+            }
+        })
     }
 
-    pub fn get_prop_name(&self, p: &PropName) -> Option<&V> {
-        let expr = drop_span(p.clone());
-
-        self.inner.get(&expr)
+    pub fn get_prop_name(&self, p: &RPropName) -> Option<&V> {
+        self.inner
+            .iter()
+            .rev()
+            .find_map(|(k, v)| if k.eq_ignore_span(&p) { Some(v) } else { None })
     }
 
-    pub fn insert(&mut self, key: PropName, v: V) {
-        let key = drop_span(key);
-        self.inner.insert(key, v);
+    pub fn insert(&mut self, key: RPropName, v: V) {
+        self.inner.push((key, v));
     }
 }

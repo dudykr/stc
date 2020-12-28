@@ -7,16 +7,18 @@ use crate::{
     validator::{Validate, ValidateWith},
     ValidationResult,
 };
+use stc_ast_rnode::RExpr;
+use stc_ast_rnode::ROptChainExpr;
 use stc_types::Type;
 use swc_ecma_ast::*;
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut OptChainExpr, type_ann: Option<&Type>) -> ValidationResult {
+    fn validate(&mut self, node: &mut ROptChainExpr, type_ann: Option<&Type>) -> ValidationResult {
         let span = node.span;
 
         match &mut *node.expr {
-            Expr::Member(me) => {
+            RExpr::Member(me) => {
                 let obj = me.obj.validate_with(self)?;
                 let mut obj = box obj.remove_falsy();
 
@@ -41,7 +43,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            Expr::Call(ce) => {
+            RExpr::Call(ce) => {
                 let ty = ce.validate_with_args(self, type_ann)?;
 
                 if self.rule().strict_null_checks {
