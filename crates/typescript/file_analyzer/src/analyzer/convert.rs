@@ -8,7 +8,7 @@ use crate::validator;
 use crate::validator::ValidateWith;
 use crate::ValidationResult;
 use rnode::NodeId;
-use rnode::VisitMutWith;
+use rnode::VisitWith;
 use stc_ts_ast_rnode::RArrayPat;
 use stc_ts_ast_rnode::RAssignPatProp;
 use stc_ts_ast_rnode::RComputedPropName;

@@ -54,7 +54,7 @@ macro_rules! forward {
     ($name:ident,$T:ty) => {
         /// Delegates to `Validate<T>`
         impl Visit<$T> for Analyzer<'_, '_> {
-            fn visit(&mut self, n: &mut $T) {
+            fn visit(&mut self, n: &$T) {
                 let res = n.validate_with_default(self);
                 match res {
                     // ignored

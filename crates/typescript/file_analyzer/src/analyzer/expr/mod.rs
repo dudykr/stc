@@ -22,6 +22,7 @@ use crate::{
 };
 use rnode::NodeId;
 use rnode::VisitMutWith;
+use rnode::VisitWith;
 use stc_ts_ast_rnode::RArrayLit;
 use stc_ts_ast_rnode::RArrowExpr;
 use stc_ts_ast_rnode::RAssignExpr;

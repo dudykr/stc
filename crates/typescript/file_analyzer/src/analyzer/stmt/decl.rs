@@ -15,7 +15,6 @@ use crate::{
 use rnode::FoldWith;
 use rnode::NodeId;
 use rnode::Visit;
-use rnode::VisitMutWith;
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RArrayPat;
 use stc_ts_ast_rnode::RCallExpr;

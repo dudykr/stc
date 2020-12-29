@@ -5,6 +5,7 @@ use crate::{
 };
 use rnode::NodeId;
 use rnode::VisitMutWith;
+use rnode::VisitWith;
 use stc_ts_ast_rnode::RDecl;
 use stc_ts_ast_rnode::RDefaultDecl;
 use stc_ts_ast_rnode::RExportAll;
