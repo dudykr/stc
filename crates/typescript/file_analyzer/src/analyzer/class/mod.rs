@@ -57,8 +57,11 @@ use stc_ts_types::ClassProperty;
 use stc_ts_types::ConstructorSignature;
 use stc_ts_types::FnParam;
 use stc_ts_types::Id;
+use stc_ts_types::Intersection;
 use stc_ts_types::Method;
 use stc_ts_types::Operator;
+use stc_ts_types::QueryExpr;
+use stc_ts_types::QueryType;
 use stc_ts_types::Ref;
 use stc_ts_types::Type;
 use stc_ts_utils::PatExt;
@@ -843,7 +846,7 @@ impl Analyzer<'_, '_> {
                     // Then, we can expand super class
 
                     let super_type_params = try_opt!(c.super_type_params.validate_with(child));
-                    match & c.super_class {
+                    match &c.super_class {
                         Some(box expr) => {
                             let need_base_class = match expr {
                                 RExpr::Ident(..) => false,
@@ -861,13 +864,14 @@ impl Analyzer<'_, '_> {
                                     let class_name =
                                         name.clone().unwrap_or_else(|| Id::word("__class".into()));
                                     let new_ty: RIdent =
-                                        private_ident!(format!("{}_base", class_name.as_str())).into_rnode(&mut NodeIdGenerator::invalid());
+                                        private_ident!(format!("{}_base", class_name.as_str()))
+                                            .into_rnode(&mut NodeIdGenerator::invalid());
 
                                     // We should add it at same level as class
                                     types_to_register
                                         .push((new_ty.clone().into(), super_ty.clone()));
 
-                                    let super_ty = box Type::Intersection(stc_ts_types::Intersection {
+                                    let super_ty = box Type::Intersection(Intersection {
                                         types: i
                                             .types
                                             .iter()
@@ -880,12 +884,11 @@ impl Analyzer<'_, '_> {
                                                             .name
                                                             .as_ref()
                                                             .map(|id| {
-                                                                box Type::Query(stc_ts_types::QueryType {
+                                                                box Type::Query(QueryType {
                                                                     span: c.span,
-                                                                    expr:
-                                                                        stc_ts_types::QueryExpr::TsEntityName(
-                                                                            id.clone().into(),
-                                                                        ),
+                                                                    expr: QueryExpr::TsEntityName(
+                                                                        id.clone().into(),
+                                                                    ),
                                                                 })
                                                             })
                                                             .expect("Super class should be named");
@@ -900,27 +903,29 @@ impl Analyzer<'_, '_> {
                                     });
 
                                     if has_class_in_super {
-                                        child.prepend_stmts.push(RStmt::Decl(RDecl::Var(RVarDecl {
-                                            node_id: NodeId::invalid(),
-                                            span: DUMMY_SP,
-                                            kind: VarDeclKind::Const,
-                                            declare: false,
-                                            decls: vec![RVarDeclarator {
+                                        child.prepend_stmts.push(RStmt::Decl(RDecl::Var(
+                                            RVarDecl {
                                                 node_id: NodeId::invalid(),
-                                                span: i.span,
-                                                name: RPat::Ident(RIdent {
+                                                span: DUMMY_SP,
+                                                kind: VarDeclKind::Const,
+                                                declare: false,
+                                                decls: vec![RVarDeclarator {
                                                     node_id: NodeId::invalid(),
-                                                    type_ann: Some(RTsTypeAnn {
+                                                    span: i.span,
+                                                    name: RPat::Ident(RIdent {
                                                         node_id: NodeId::invalid(),
-                                                        span: DUMMY_SP,
-                                                        type_ann: box super_ty.into(),
+                                                        type_ann: Some(RTsTypeAnn {
+                                                            node_id: NodeId::invalid(),
+                                                            span: DUMMY_SP,
+                                                            type_ann: box super_ty.into(),
+                                                        }),
+                                                        ..new_ty.clone()
                                                     }),
-                                                    ..new_ty.clone()
-                                                }),
-                                                init: None,
-                                                definite: false,
-                                            }],
-                                        })));
+                                                    init: None,
+                                                    definite: false,
+                                                }],
+                                            },
+                                        )));
                                     } else {
                                         child.prepend_stmts.push(RStmt::Decl(RDecl::TsTypeAlias(
                                             RTsTypeAliasDecl {
@@ -937,10 +942,8 @@ impl Analyzer<'_, '_> {
 
                                     if let Some(m) = &mut child.mutations {
                                         let node_id = c.node_id;
-                                        m.for_classes
-                                            .entry(node_id)
-                                            .or_default()
-                                            .super_class = Some(box RExpr::Ident(new_ty.clone()));
+                                        m.for_classes.entry(node_id).or_default().super_class =
+                                            Some(box RExpr::Ident(new_ty.clone()));
                                     }
                                     Some(box Type::Ref(Ref {
                                         span: DUMMY_SP,
@@ -983,7 +986,8 @@ impl Analyzer<'_, '_> {
                                     for p in &cons.params {
                                         match *p {
                                             RParamOrTsParamProp::TsParamProp(..) => child
-                                                .storage.report(Error::TS2369 { span: p.span() }),
+                                                .storage
+                                                .report(Error::TS2369 { span: p.span() }),
                                             _ => {}
                                         }
                                     }
@@ -1070,7 +1074,7 @@ impl Analyzer<'_, '_> {
                     // Handle static properties
                     for (index, member) in c.body.iter().enumerate() {
                         match member {
-                            RClassMember::ClassProp(RClassProp {
+                            RClassMember::ClassProp(RCssProp {
                                 is_static: true, ..
                             })
                             | RClassMember::PrivateProp(RPrivateProp {
@@ -1096,7 +1100,7 @@ impl Analyzer<'_, '_> {
                                 _ => None,
                             })
                     {
-                        for param in & constructor.params {
+                        for param in &constructor.params {
                             match param {
                                 RParamOrTsParamProp::TsParamProp(p) => {
                                     if p.accessibility == Some(Accessibility::Private) {
@@ -1184,18 +1188,20 @@ impl Analyzer<'_, '_> {
 
                                     child.scope.this_class_members.push((
                                         index,
-                                        stc_ts_types::ClassMember::Property(stc_ts_types::ClassProperty {
-                                            span: p.span,
-                                            key,
-                                            value: ty,
-                                            is_static: false,
-                                            computed: false,
-                                            accessibility: p.accessibility,
-                                            is_abstract: false,
-                                            is_optional: false,
-                                            readonly: p.readonly,
-                                            definite: false,
-                                        }),
+                                        stc_ts_types::ClassMember::Property(
+                                            stc_ts_types::ClassProperty {
+                                                span: p.span,
+                                                key,
+                                                value: ty,
+                                                is_static: false,
+                                                computed: false,
+                                                accessibility: p.accessibility,
+                                                is_abstract: false,
+                                                is_optional: false,
+                                                readonly: p.readonly,
+                                                definite: false,
+                                            },
+                                        ),
                                     ));
                                 }
                                 RParamOrTsParamProp::Param(..) => {}
@@ -1224,14 +1230,14 @@ impl Analyzer<'_, '_> {
                     }
 
                     // Handle user-declared method signatures.
-                    for member in & c.body {}
+                    for member in &c.body {}
 
                     // Handle body of methods and a constructor
                     // (in try mode - we ignores error if it's not related to the type of return
                     // value)
                     //
                     // This is to infer return types of methods
-                    for member in & c.body {}
+                    for member in &c.body {}
 
                     // Actaully check types of method / constructors.
 
@@ -1283,7 +1289,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     for (index, m) in body.iter_mut() {
-                        let orig = & c.body[*index];
+                        let orig = &c.body[*index];
                         match m {
                             stc_ts_types::ClassMember::IndexSignature(_)
                             | stc_ts_types::ClassMember::Constructor(_) => continue,
