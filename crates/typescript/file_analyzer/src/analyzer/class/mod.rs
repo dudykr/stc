@@ -1074,7 +1074,7 @@ impl Analyzer<'_, '_> {
                     // Handle static properties
                     for (index, member) in c.body.iter().enumerate() {
                         match member {
-                            RClassMember::ClassProp(RCssProp {
+                            RClassMember::ClassProp(RClassProp {
                                 is_static: true, ..
                             })
                             | RClassMember::PrivateProp(RPrivateProp {
