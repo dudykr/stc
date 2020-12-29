@@ -7,6 +7,7 @@
 extern crate test;
 
 use anyhow::Context;
+use rnode::NodeIdGenerator;
 use rnode::RNode;
 use stc_testing::get_git_root;
 use stc_testing::term_logger;
@@ -91,6 +92,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
             info: Default::default(),
         };
 
+        let mut node_id_gen = NodeIdGenerator::default();
         let comments = StcComments::default();
 
         let lexer = Lexer::new(
@@ -108,7 +110,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
         let module = GLOBALS.set(stable_env.swc_globals(), || {
             module.fold_with(&mut ts_resolver(stable_env.marks().top_level_mark()))
         });
-        let mut module = RModule::from_orig(module);
+        let mut module = RModule::from_orig(&mut node_id_gen, module);
 
         {
             let mut analyzer = Analyzer::root(

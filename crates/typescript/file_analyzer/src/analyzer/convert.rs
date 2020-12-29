@@ -7,6 +7,7 @@ use crate::util::contains_infer_type;
 use crate::validator;
 use crate::validator::ValidateWith;
 use crate::ValidationResult;
+use rnode::NodeId;
 use rnode::VisitMutWith;
 use stc_ts_ast_rnode::RArrayPat;
 use stc_ts_ast_rnode::RAssignPatProp;
@@ -332,6 +333,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, d: &mut RTsPropertySignature) -> ValidationResult<PropertySignature> {
         if !self.is_builtin && d.computed {
             RComputedPropName {
+                node_id: NodeId::invalid(),
                 span: d.key.span(),
                 expr: d.key.clone(),
             }
@@ -762,6 +764,7 @@ pub(crate) fn default_any_ident(implicit_type_mark: Mark, i: &mut RIdent) {
     }
 
     i.type_ann = Some(RTsTypeAnn {
+        node_id: NodeId::invalid(),
         span: DUMMY_SP.apply_mark(implicit_type_mark),
         type_ann: box RTsType::TsKeywordType(RTsKeywordType {
             span: DUMMY_SP.apply_mark(implicit_type_mark),
@@ -777,8 +780,10 @@ pub(crate) fn default_any_array_pat(implicit_type_mark: Mark, arr: &mut RArrayPa
     let cnt = arr.elems.len();
 
     arr.type_ann = Some(RTsTypeAnn {
+        node_id: NodeId::invalid(),
         span: arr.span,
         type_ann: box RTsType::TsTupleType(RTsTupleType {
+            node_id: NodeId::invalid(),
             span: DUMMY_SP,
             elem_types: arr
                 .elems
@@ -803,6 +808,7 @@ pub(crate) fn default_any_array_pat(implicit_type_mark: Mark, arr: &mut RArrayPa
                     };
 
                     RTsTupleElement {
+                        node_id: NodeId::invalid(),
                         span,
                         // TODO?
                         label: None,
@@ -832,6 +838,7 @@ pub(crate) fn default_any_object(implicit_type_mark: Mark, obj: &mut RObjectPat)
                 }
 
                 members.push(RTsTypeElement::TsPropertySignature(RTsPropertySignature {
+                    node_id: NodeId::invalid(),
                     span: DUMMY_SP,
                     readonly: false,
                     key: box rprop_name_to_expr(p.key.clone()),
@@ -841,6 +848,7 @@ pub(crate) fn default_any_object(implicit_type_mark: Mark, obj: &mut RObjectPat)
                     params: vec![],
                     type_ann: {
                         let type_ann = p.value.get_mut_ty().take().cloned().map(|ty| RTsTypeAnn {
+                            node_id: NodeId::invalid(),
                             span: DUMMY_SP,
                             type_ann: box ty,
                         });
@@ -852,6 +860,7 @@ pub(crate) fn default_any_object(implicit_type_mark: Mark, obj: &mut RObjectPat)
             }
             RObjectPatProp::Assign(RAssignPatProp { key, .. }) => {
                 members.push(RTsTypeElement::TsPropertySignature(RTsPropertySignature {
+                    node_id: NodeId::invalid(),
                     span: DUMMY_SP,
                     readonly: false,
                     key: box RExpr::Ident(key.clone()),
@@ -868,8 +877,10 @@ pub(crate) fn default_any_object(implicit_type_mark: Mark, obj: &mut RObjectPat)
     }
 
     obj.type_ann = Some(RTsTypeAnn {
+        node_id: NodeId::invalid(),
         span: DUMMY_SP.apply_mark(implicit_type_mark),
         type_ann: box RTsType::TsTypeLit(RTsTypeLit {
+            node_id: NodeId::invalid(),
             span: DUMMY_SP,
             members,
         }),

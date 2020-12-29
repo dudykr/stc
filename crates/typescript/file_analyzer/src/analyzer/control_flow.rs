@@ -17,6 +17,7 @@ use crate::{
     ValidationResult,
 };
 use fxhash::FxHashMap;
+use rnode::NodeId;
 use rnode::VisitMutWith;
 use stc_ts_ast_rnode::RBinExpr;
 use stc_ts_ast_rnode::RCondExpr;
@@ -440,6 +441,7 @@ impl Analyzer<'_, '_> {
             match case.test {
                 Some(ref test) => {
                     let mut binary_test_expr = RExpr::Bin(RBinExpr {
+                        node_id: NodeId::invalid(),
                         op: op!("==="),
                         span,
                         left: stmt.discriminant.clone(),
@@ -638,6 +640,7 @@ impl Analyzer<'_, '_> {
                                     RObjectPatProp::Assign(a) => {
                                         if a.key.type_ann.is_none() {
                                             a.key.type_ann = Some(RTsTypeAnn {
+                                                node_id: NodeId::invalid(),
                                                 span,
                                                 type_ann: box RTsType::TsKeywordType(
                                                     RTsKeywordType {
@@ -652,6 +655,7 @@ impl Analyzer<'_, '_> {
                                     RObjectPatProp::Rest(r) => {
                                         if r.type_ann.is_none() {
                                             r.type_ann = Some(RTsTypeAnn {
+                                                node_id: NodeId::invalid(),
                                                 span,
                                                 type_ann: box RTsType::TsKeywordType(
                                                     RTsKeywordType {

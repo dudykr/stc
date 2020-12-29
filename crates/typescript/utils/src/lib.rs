@@ -5,6 +5,7 @@
 
 pub use self::comments::StcComments;
 pub use self::map_with_mut::MapWithMut;
+use rnode::NodeId;
 use rnode::Visit;
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RArrayPat;
@@ -128,6 +129,7 @@ impl PatExt for RPat {
                 ref mut type_ann, ..
             }) => {
                 *type_ann = ty.map(|type_ann| RTsTypeAnn {
+                    node_id: NodeId::invalid(),
                     span: type_ann.span(),
                     type_ann,
                 })

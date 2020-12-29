@@ -23,6 +23,7 @@ use crate::{
 };
 use bitflags::_core::mem::{replace, take};
 use fxhash::FxHashMap;
+use rnode::NodeId;
 use rnode::VisitMutWith;
 use rnode::VisitWith;
 use slog::Logger;
@@ -262,7 +263,10 @@ impl Analyzer<'_, '_> {
 
         let (errors, data) = {
             let mut new = self.new(Scope::root(self.logger.clone()));
-            node.visit_mut_children_with(&mut new);
+            {
+                node.visit_mut_children_with(&mut new);
+            }
+
             let errors = new.storage.take_errors();
             let data = new.storage.take_info(self.ctx.module_id);
 
@@ -565,6 +569,7 @@ impl Analyzer<'_, '_> {
 
         for cnt in counts {
             result.push(RModule {
+                node_id: NodeId::invalid(),
                 // TODO
                 span: DUMMY_SP,
                 body: stmts.drain(0..cnt).flatten().collect(),

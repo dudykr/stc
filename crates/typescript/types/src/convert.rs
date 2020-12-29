@@ -26,6 +26,7 @@ use super::TypeParamDecl;
 use super::TypeParamInstantiation;
 use super::Union;
 use crate::{OptionalType, RestType, StaticThis, Symbol};
+use rnode::NodeId;
 use stc_ts_ast_rnode::RArrayPat;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RIdent;
@@ -142,6 +143,7 @@ impl From<RestType> for RTsType {
 impl From<RestType> for RTsRestType {
     fn from(ty: RestType) -> Self {
         RTsRestType {
+            node_id: NodeId::invalid(),
             span: ty.span,
             type_ann: ty.ty.into(),
         }
@@ -157,6 +159,7 @@ impl From<OptionalType> for RTsType {
 impl From<OptionalType> for RTsOptionalType {
     fn from(ty: OptionalType) -> Self {
         RTsOptionalType {
+            node_id: NodeId::invalid(),
             span: ty.span,
             type_ann: ty.ty.into(),
         }
@@ -166,6 +169,7 @@ impl From<OptionalType> for RTsOptionalType {
 impl From<QueryType> for RTsType {
     fn from(t: QueryType) -> Self {
         RTsType::TsTypeQuery(RTsTypeQuery {
+            node_id: NodeId::invalid(),
             span: t.span,
             expr_name: t.expr.into(),
         })
@@ -184,6 +188,7 @@ impl From<QueryExpr> for RTsTypeQueryExpr {
 impl From<ImportType> for RTsImportType {
     fn from(t: ImportType) -> Self {
         RTsImportType {
+            node_id: NodeId::invalid(),
             span: t.span,
             arg: t.arg,
             qualifier: t.qualifier,
@@ -195,6 +200,7 @@ impl From<ImportType> for RTsImportType {
 impl From<InferType> for RTsType {
     fn from(t: InferType) -> Self {
         RTsType::TsInferType(RTsInferType {
+            node_id: NodeId::invalid(),
             span: t.span,
             type_param: t.type_param.into(),
         })
@@ -204,6 +210,7 @@ impl From<InferType> for RTsType {
 impl From<ImportType> for RTsType {
     fn from(t: ImportType) -> Self {
         RTsType::TsImportType(RTsImportType {
+            node_id: NodeId::invalid(),
             span: t.span,
             arg: t.arg,
             qualifier: t.qualifier,
@@ -215,6 +222,7 @@ impl From<ImportType> for RTsType {
 impl From<Predicate> for RTsType {
     fn from(t: Predicate) -> Self {
         RTsType::TsTypePredicate(RTsTypePredicate {
+            node_id: NodeId::invalid(),
             span: t.span,
             asserts: t.asserts,
             param_name: t.param_name,
@@ -228,6 +236,7 @@ impl From<IndexedAccessType> for RTsType {
         let obj_type = match t.obj_type.normalize() {
             Type::Intersection(..) | Type::Union(..) => {
                 box RTsType::TsParenthesizedType(RTsParenthesizedType {
+                    node_id: NodeId::invalid(),
                     span: t.obj_type.span(),
                     type_ann: t.obj_type.into(),
                 })
@@ -236,6 +245,7 @@ impl From<IndexedAccessType> for RTsType {
         };
 
         RTsType::TsIndexedAccessType(RTsIndexedAccessType {
+            node_id: NodeId::invalid(),
             span: t.span,
             readonly: t.readonly,
             obj_type,
@@ -247,6 +257,7 @@ impl From<IndexedAccessType> for RTsType {
 impl From<Ref> for RTsType {
     fn from(t: Ref) -> Self {
         RTsType::TsTypeRef(RTsTypeRef {
+            node_id: NodeId::invalid(),
             span: t.span,
             type_name: t.type_name,
             type_params: t.type_args.map(From::from),
@@ -257,6 +268,7 @@ impl From<Ref> for RTsType {
 impl From<TypeLit> for RTsType {
     fn from(t: TypeLit) -> Self {
         RTsType::TsTypeLit(RTsTypeLit {
+            node_id: NodeId::invalid(),
             span: t.span,
             members: t.members.into_iter().map(From::from).collect(),
         })
@@ -266,6 +278,7 @@ impl From<TypeLit> for RTsType {
 impl From<Conditional> for RTsType {
     fn from(t: Conditional) -> Self {
         RTsType::TsConditionalType(RTsConditionalType {
+            node_id: NodeId::invalid(),
             span: t.span,
             check_type: box (*t.check_type).into(),
             extends_type: box (*t.extends_type).into(),
@@ -278,6 +291,7 @@ impl From<Conditional> for RTsType {
 impl From<Tuple> for RTsType {
     fn from(t: Tuple) -> Self {
         RTsType::TsTupleType(RTsTupleType {
+            node_id: NodeId::invalid(),
             span: t.span,
             elem_types: t.elems.into_iter().map(From::from).collect(),
         })
@@ -287,6 +301,7 @@ impl From<Tuple> for RTsType {
 impl From<TupleElement> for RTsTupleElement {
     fn from(e: TupleElement) -> Self {
         RTsTupleElement {
+            node_id: NodeId::invalid(),
             span: e.span,
             label: e.label,
             ty: e.ty.into(),
@@ -299,8 +314,10 @@ impl From<Array> for RTsType {
         match t.elem_type.normalize() {
             Type::Union(..) | Type::Intersection(..) => {
                 return RTsType::TsArrayType(RTsArrayType {
+                    node_id: NodeId::invalid(),
                     span: t.span,
                     elem_type: box RTsType::TsParenthesizedType(RTsParenthesizedType {
+                        node_id: NodeId::invalid(),
                         span: t.elem_type.span(),
                         type_ann: box t.elem_type.into(),
                     }),
@@ -309,6 +326,7 @@ impl From<Array> for RTsType {
             _ => {}
         }
         RTsType::TsArrayType(RTsArrayType {
+            node_id: NodeId::invalid(),
             span: t.span,
             elem_type: box (*t.elem_type).into(),
         })
@@ -318,6 +336,7 @@ impl From<Array> for RTsType {
 impl From<Union> for RTsType {
     fn from(t: Union) -> Self {
         RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsUnionType(RTsUnionType {
+            node_id: NodeId::invalid(),
             span: t.span,
             types: t.types.into_iter().map(From::from).collect(),
         }))
@@ -328,6 +347,7 @@ impl From<Intersection> for RTsType {
     fn from(t: Intersection) -> Self {
         RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsIntersectionType(
             RTsIntersectionType {
+                node_id: NodeId::invalid(),
                 span: t.span,
                 types: t.types.into_iter().map(From::from).collect(),
             },
@@ -338,6 +358,7 @@ impl From<Intersection> for RTsType {
 impl From<Function> for RTsType {
     fn from(t: Function) -> Self {
         RTsType::TsFnOrConstructorType(RTsFnOrConstructorType::TsFnType(RTsFnType {
+            node_id: NodeId::invalid(),
             span: t.span,
             params: t.params.into_iter().map(From::from).collect(),
             type_params: t.type_params.map(From::from),
@@ -350,6 +371,7 @@ impl From<super::Constructor> for RTsType {
     fn from(t: super::Constructor) -> Self {
         RTsType::TsFnOrConstructorType(RTsFnOrConstructorType::TsConstructorType(
             RTsConstructorType {
+                node_id: NodeId::invalid(),
                 span: t.span,
                 params: t.params.into_iter().map(From::from).collect(),
                 type_params: t.type_params.map(From::from),
@@ -362,6 +384,7 @@ impl From<super::Constructor> for RTsType {
 impl From<TypeParamDecl> for RTsTypeParamDecl {
     fn from(t: TypeParamDecl) -> Self {
         RTsTypeParamDecl {
+            node_id: NodeId::invalid(),
             span: t.span,
             params: t.params.into_iter().map(From::from).collect(),
         }
@@ -371,6 +394,7 @@ impl From<TypeParamDecl> for RTsTypeParamDecl {
 impl From<Type> for RTsTypeAnn {
     fn from(t: Type) -> Self {
         RTsTypeAnn {
+            node_id: NodeId::invalid(),
             span: t.span(),
             type_ann: box t.into(),
         }
@@ -392,6 +416,7 @@ impl From<Box<Type>> for Box<RTsType> {
 impl From<TypeParam> for RTsTypeParam {
     fn from(t: TypeParam) -> Self {
         RTsTypeParam {
+            node_id: NodeId::invalid(),
             span: t.span,
             // TODO
             name: t.name.into(),
@@ -404,6 +429,7 @@ impl From<TypeParam> for RTsTypeParam {
 impl From<Operator> for RTsType {
     fn from(t: Operator) -> Self {
         RTsTypeOperator {
+            node_id: NodeId::invalid(),
             span: t.span,
             op: t.op,
             type_ann: t.ty.into(),
@@ -415,6 +441,7 @@ impl From<Operator> for RTsType {
 impl From<TypeParam> for RTsType {
     fn from(t: TypeParam) -> Self {
         RTsType::TsTypeRef(RTsTypeRef {
+            node_id: NodeId::invalid(),
             span: t.span,
             // TODO
             type_name: t.name.into(),
@@ -426,8 +453,10 @@ impl From<TypeParam> for RTsType {
 impl From<EnumVariant> for RTsType {
     fn from(t: EnumVariant) -> Self {
         RTsType::TsTypeRef(RTsTypeRef {
+            node_id: NodeId::invalid(),
             span: t.span,
             type_name: RTsEntityName::TsQualifiedName(box RTsQualifiedName {
+                node_id: NodeId::invalid(),
                 left: t.enum_name.into(),
                 right: RIdent::new(t.name, DUMMY_SP),
             }),
@@ -439,6 +468,7 @@ impl From<EnumVariant> for RTsType {
 impl From<Enum> for RTsType {
     fn from(t: Enum) -> Self {
         RTsType::TsTypeRef(RTsTypeRef {
+            node_id: NodeId::invalid(),
             span: t.span,
             // TODO
             type_name: t.id.into(),
@@ -450,6 +480,7 @@ impl From<Enum> for RTsType {
 impl From<Interface> for RTsType {
     fn from(t: Interface) -> Self {
         RTsTypeRef {
+            node_id: NodeId::invalid(),
             span: t.span,
             // TODO
             type_name: RTsEntityName::Ident(t.name.into()),
@@ -462,6 +493,7 @@ impl From<Interface> for RTsType {
 impl From<super::Mapped> for RTsType {
     fn from(t: super::Mapped) -> Self {
         RTsMappedType {
+            node_id: NodeId::invalid(),
             span: t.span,
 
             name_type: t.name_type.map(From::from),
@@ -490,6 +522,7 @@ impl From<super::Module> for RTsType {
 impl From<TypeParamInstantiation> for RTsTypeParamInstantiation {
     fn from(t: TypeParamInstantiation) -> Self {
         RTsTypeParamInstantiation {
+            node_id: NodeId::invalid(),
             span: t.span,
             params: t.params.into_iter().map(|v| box v.into()).collect(),
         }
@@ -499,6 +532,7 @@ impl From<TypeParamInstantiation> for RTsTypeParamInstantiation {
 impl From<Operator> for RTsTypeOperator {
     fn from(t: Operator) -> Self {
         RTsTypeOperator {
+            node_id: NodeId::invalid(),
             span: t.span,
             op: t.op,
             type_ann: t.ty.into(),
@@ -510,6 +544,7 @@ impl From<super::Class> for RTsType {
     fn from(t: super::Class) -> Self {
         // TODO: Handle generics
         RTsTypeLit {
+            node_id: NodeId::invalid(),
             span: t.span,
             members: t.body.into_iter().map(From::from).collect(),
         }
@@ -528,6 +563,7 @@ impl From<super::ClassMember> for RTsTypeElement {
         match m {
             super::ClassMember::Constructor(c) => {
                 RTsTypeElement::TsConstructSignatureDecl(RTsConstructSignatureDecl {
+                    node_id: NodeId::invalid(),
                     span: c.span,
                     params: c.params.into_iter().map(From::from).collect(),
                     type_ann: c.ret_ty.map(From::from),
@@ -536,6 +572,7 @@ impl From<super::ClassMember> for RTsTypeElement {
             }
             super::ClassMember::Method(m) => {
                 RTsTypeElement::TsMethodSignature(RTsMethodSignature {
+                    node_id: NodeId::invalid(),
                     span: m.span,
                     readonly: false,
                     computed: match &m.key {
@@ -546,6 +583,7 @@ impl From<super::ClassMember> for RTsTypeElement {
                     optional: m.is_optional,
                     params: m.params.into_iter().map(From::from).collect(),
                     type_ann: Some(RTsTypeAnn {
+                        node_id: NodeId::invalid(),
                         span: DUMMY_SP,
                         type_ann: box (*m.ret_ty).into(),
                     }),
@@ -554,6 +592,7 @@ impl From<super::ClassMember> for RTsTypeElement {
             }
             super::ClassMember::Property(p) => {
                 RTsTypeElement::TsPropertySignature(RTsPropertySignature {
+                    node_id: NodeId::invalid(),
                     span: p.span,
                     readonly: p.readonly,
                     key: p.key,
@@ -562,6 +601,7 @@ impl From<super::ClassMember> for RTsTypeElement {
                     init: None,
                     params: vec![],
                     type_ann: p.value.map(|ty| RTsTypeAnn {
+                        node_id: NodeId::invalid(),
                         span: DUMMY_SP,
                         type_ann: box ty.into(),
                     }),
@@ -570,9 +610,11 @@ impl From<super::ClassMember> for RTsTypeElement {
             }
             super::ClassMember::IndexSignature(s) => {
                 RTsTypeElement::TsIndexSignature(RTsIndexSignature {
+                    node_id: NodeId::invalid(),
                     span: s.span,
                     params: s.params.into_iter().map(From::from).collect(),
                     type_ann: s.type_ann.map(|ty| RTsTypeAnn {
+                        node_id: NodeId::invalid(),
                         span: DUMMY_SP,
                         type_ann: box ty.into(),
                     }),
@@ -587,6 +629,7 @@ impl From<TypeElement> for RTsTypeElement {
     fn from(e: TypeElement) -> Self {
         match e {
             TypeElement::Call(e) => RTsTypeElement::TsCallSignatureDecl(RTsCallSignatureDecl {
+                node_id: NodeId::invalid(),
                 span: e.span,
                 params: e.params.into_iter().map(|v| v.into()).collect(),
                 type_ann: e.ret_ty.map(From::from),
@@ -594,6 +637,7 @@ impl From<TypeElement> for RTsTypeElement {
             }),
             TypeElement::Constructor(e) => {
                 RTsTypeElement::TsConstructSignatureDecl(RTsConstructSignatureDecl {
+                    node_id: NodeId::invalid(),
                     span: e.span,
                     params: e.params.into_iter().map(|v| v.into()).collect(),
                     type_ann: e.ret_ty.map(From::from),
@@ -601,6 +645,7 @@ impl From<TypeElement> for RTsTypeElement {
                 })
             }
             TypeElement::Property(e) => RTsTypeElement::TsPropertySignature(RTsPropertySignature {
+                node_id: NodeId::invalid(),
                 span: e.span,
                 readonly: e.readonly,
                 key: e.key,
@@ -612,6 +657,7 @@ impl From<TypeElement> for RTsTypeElement {
                 type_params: e.type_params.map(From::from),
             }),
             TypeElement::Method(e) => RTsTypeElement::TsMethodSignature(RTsMethodSignature {
+                node_id: NodeId::invalid(),
                 span: e.span,
                 readonly: e.readonly,
                 key: e.key,
@@ -622,6 +668,7 @@ impl From<TypeElement> for RTsTypeElement {
                 type_params: e.type_params.map(From::from),
             }),
             TypeElement::Index(e) => RTsTypeElement::TsIndexSignature(RTsIndexSignature {
+                node_id: NodeId::invalid(),
                 params: e.params.into_iter().map(From::from).collect(),
                 type_ann: e.type_ann.map(From::from),
                 readonly: e.readonly,
@@ -635,6 +682,7 @@ impl From<FnParam> for RTsFnParam {
     fn from(t: FnParam) -> Self {
         let ty = t.ty;
         let type_ann = Some(RTsTypeAnn {
+            node_id: NodeId::invalid(),
             span: DUMMY_SP,
             type_ann: box ty.into(),
         });
@@ -647,24 +695,28 @@ impl From<FnParam> for RTsFnParam {
         ) -> RTsFnParam {
             match pat {
                 RPat::Ident(i) => RTsFnParam::Ident(RIdent {
+                    node_id: NodeId::invalid(),
                     span,
                     sym: i.sym,
                     type_ann: type_ann.into(),
                     optional,
                 }),
                 RPat::Array(a) => RTsFnParam::Array(RArrayPat {
+                    node_id: NodeId::invalid(),
                     span,
                     type_ann: type_ann.into(),
                     elems: a.elems,
                     optional,
                 }),
                 RPat::Rest(r) => RTsFnParam::Rest(RRestPat {
+                    node_id: NodeId::invalid(),
                     span,
                     dot3_token: r.dot3_token,
                     arg: r.arg,
                     type_ann: type_ann.into(),
                 }),
                 RPat::Object(o) => RTsFnParam::Object(RObjectPat {
+                    node_id: NodeId::invalid(),
                     span,
                     type_ann: type_ann.into(),
                     props: o.props,

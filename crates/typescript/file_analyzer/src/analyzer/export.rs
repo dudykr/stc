@@ -3,6 +3,7 @@ use crate::{
     analyzer::util::ResultExt, errors::Error, ty::Type, validator, validator::ValidateWith,
     ValidationResult,
 };
+use rnode::NodeId;
 use rnode::VisitMutWith;
 use stc_ts_ast_rnode::RDecl;
 use stc_ts_ast_rnode::RDefaultDecl;
@@ -317,11 +318,14 @@ impl Analyzer<'_, '_> {
                 _ => {}
             }
             let var = RVarDeclarator {
+                node_id: NodeId::invalid(),
                 span: DUMMY_SP,
                 name: RPat::Ident(RIdent {
+                    node_id: NodeId::invalid(),
                     span: DUMMY_SP,
                     sym: "_default".into(),
                     type_ann: Some(RTsTypeAnn {
+                        node_id: NodeId::invalid(),
                         span: DUMMY_SP,
                         type_ann: ty.clone().into(),
                     }),
@@ -331,6 +335,7 @@ impl Analyzer<'_, '_> {
                 definite: false,
             };
             self.prepend_stmts.push(RStmt::Decl(RDecl::Var(RVarDecl {
+                node_id: NodeId::invalid(),
                 span: DUMMY_SP,
                 kind: VarDeclKind::Const,
                 declare: true,

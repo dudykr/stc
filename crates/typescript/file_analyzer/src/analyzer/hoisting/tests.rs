@@ -1,11 +1,13 @@
 use crate::analyzer::tests::run_test;
+use rnode::NodeIdGenerator;
 use rnode::RNode;
 use stc_ts_ast_rnode::RModule;
 
 #[track_caller]
 fn assert_order(src: &str, expected: Vec<usize>) {
     run_test(|tester| {
-        let module = RModule::from_orig(tester.parse("main.ts", src));
+        let orig = tester.parse("main.ts", src);
+        let module = RModule::from_orig(&mut NodeIdGenerator::invalid(), orig);
         let (actual, _) = tester.analyzer.reorder_stmts(&module.body);
 
         assert_eq!(expected, actual);

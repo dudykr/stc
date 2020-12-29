@@ -11,6 +11,7 @@ use crate::{
 };
 use rnode::Fold;
 use rnode::FoldWith;
+use rnode::NodeId;
 use stc_ts_ast_rnode::RFnDecl;
 use stc_ts_ast_rnode::RFnExpr;
 use stc_ts_ast_rnode::RFunction;
@@ -154,6 +155,7 @@ impl Analyzer<'_, '_> {
                     // No return statement -> void
                     if f.return_type.is_none() {
                         f.return_type = Some(RTsTypeAnn {
+                            node_id: NodeId::invalid(),
                             span: DUMMY_SP,
                             type_ann: box RTsType::TsKeywordType(RTsKeywordType {
                                 span,

@@ -20,6 +20,7 @@ use crate::{
     validator::ValidateWith,
     ValidationResult,
 };
+use rnode::NodeId;
 use rnode::VisitMutWith;
 use stc_ts_ast_rnode::RArrayLit;
 use stc_ts_ast_rnode::RArrowExpr;
@@ -129,7 +130,7 @@ impl Analyzer<'_, '_> {
             RExpr::Assign(e) => e.validate_with_args(self, (mode, type_ann)),
             RExpr::Unary(e) => e.validate_with(self),
 
-            RExpr::This(RThisExpr { span }) => {
+            RExpr::This(RThisExpr { span, .. }) => {
                 if !self.scope.is_this_defined() {
                     return Ok(box Type::Keyword(RTsKeywordType {
                         span: *span,
@@ -247,18 +248,21 @@ impl Analyzer<'_, '_> {
 
             RExpr::Lit(RLit::Bool(v)) => {
                 return Ok(box Type::Lit(RTsLitType {
+                    node_id: NodeId::invalid(),
                     span: v.span,
                     lit: RTsLit::Bool(v.clone()),
                 }));
             }
             RExpr::Lit(RLit::Str(ref v)) => {
                 return Ok(box Type::Lit(RTsLitType {
+                    node_id: NodeId::invalid(),
                     span: v.span,
                     lit: RTsLit::Str(v.clone()),
                 }));
             }
             RExpr::Lit(RLit::Num(v)) => {
                 return Ok(box Type::Lit(RTsLitType {
+                    node_id: NodeId::invalid(),
                     span: v.span,
                     lit: RTsLit::Number(v.clone()),
                 }));
@@ -282,6 +286,7 @@ impl Analyzer<'_, '_> {
                     span,
                     ctxt: ModuleId::builtin(),
                     type_name: RTsEntityName::Ident(RIdent {
+                        node_id: NodeId::invalid(),
                         span,
                         sym: js_word!("RegExp"),
                         optional: false,
@@ -299,6 +304,7 @@ impl Analyzer<'_, '_> {
                 // Check if tpl is constant. If it is, it's type is string literal.
                 if t.exprs.is_empty() {
                     return Ok(box Type::Lit(RTsLitType {
+                        node_id: NodeId::invalid(),
                         span: t.span(),
                         lit: RTsLit::Str(
                             t.quasis[0]
@@ -534,6 +540,7 @@ impl Analyzer<'_, '_> {
         let RSeqExpr {
             span,
             ref mut exprs,
+            ..
         } = *e;
 
         assert!(exprs.len() >= 1);
@@ -1106,6 +1113,7 @@ impl Analyzer<'_, '_> {
                                 _ => false,
                             } {
                                 let new_obj_ty = box Type::Lit(RTsLitType {
+                                    node_id: NodeId::invalid(),
                                     span,
                                     lit: match *v.val.clone() {
                                         RExpr::Lit(RLit::Str(s)) => RTsLit::Str(s),
@@ -1158,6 +1166,7 @@ impl Analyzer<'_, '_> {
                                         _ => false,
                                     } {
                                         let new_obj_ty = box Type::Lit(RTsLitType {
+                                            node_id: NodeId::invalid(),
                                             span: *span,
                                             lit: match *v.val.clone() {
                                                 RExpr::Lit(RLit::Str(s)) => RTsLit::Str(s),
@@ -1316,6 +1325,7 @@ impl Analyzer<'_, '_> {
                 } else {
                     match prop {
                         RExpr::Ident(i) => box Type::Lit(RTsLitType {
+                            node_id: NodeId::invalid(),
                             span: i.span,
                             lit: RTsLit::Str(RStr {
                                 span: i.span,
@@ -1732,6 +1742,7 @@ impl Analyzer<'_, '_> {
                     index_type: match prop {
                         RExpr::Ident(i) if !computed => {
                             let mut prop_ty = box Type::Lit(RTsLitType {
+                                node_id: NodeId::invalid(),
                                 span: DUMMY_SP,
                                 lit: RTsLit::Str(RStr {
                                     span: DUMMY_SP,

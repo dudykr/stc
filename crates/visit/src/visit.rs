@@ -1,12 +1,13 @@
+use crate::Visitable;
 use std::cell::RefCell;
 use std::rc::Rc;
 use swc_common::Span;
 
-pub trait Visit<T: ?Sized> {
+pub trait Visit<T: ?Sized + Visitable> {
     fn visit(&mut self, value: &T);
 }
 
-pub trait VisitWith<V: ?Sized> {
+pub trait VisitWith<V: ?Sized>: Visitable {
     fn visit_with(&self, visitor: &mut V)
     where
         V: Visit<Self>,
@@ -29,7 +30,7 @@ where
 
 impl<T, V> VisitWith<V> for Box<T>
 where
-    T: ?Sized,
+    T: ?Sized + Visitable,
     V: ?Sized + Visit<T>,
 {
     fn visit_children_with(&self, v: &mut V) {
@@ -39,6 +40,7 @@ where
 
 impl<T, V> VisitWith<V> for [T]
 where
+    T: Visitable,
     V: ?Sized + Visit<T>,
 {
     fn visit_children_with(&self, visitor: &mut V) {
@@ -48,6 +50,7 @@ where
 
 impl<T, V> VisitWith<V> for RefCell<T>
 where
+    T: Visitable,
     V: ?Sized + Visit<T>,
 {
     fn visit_children_with(&self, v: &mut V) {
@@ -76,6 +79,7 @@ where
 
 impl<T, V> VisitWith<V> for Rc<T>
 where
+    T: Visitable,
     V: ?Sized + Visit<T>,
 {
     fn visit_children_with(&self, visitor: &mut V) {
@@ -85,6 +89,7 @@ where
 
 impl<T, V> VisitWith<V> for Vec<T>
 where
+    T: Visitable,
     V: ?Sized + Visit<T>,
 {
     fn visit_children_with(&self, visitor: &mut V) {
@@ -94,6 +99,7 @@ where
 
 impl<T, V> VisitWith<V> for Option<T>
 where
+    T: Visitable,
     V: ?Sized + Visit<T>,
 {
     fn visit_children_with(&self, visitor: &mut V) {

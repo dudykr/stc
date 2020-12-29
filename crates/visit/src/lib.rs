@@ -4,6 +4,7 @@
 pub use self::fold::{Fold, FoldWith};
 pub use self::visit::{Visit, VisitWith};
 pub use self::visit_mut::{VisitMut, VisitMutWith};
+pub use self::visitable::Visitable;
 use num_bigint::BigInt;
 pub use stc_visit_macros::Visit;
 use swc_atoms::JsWord;
@@ -12,9 +13,12 @@ use swc_common::SyntaxContext;
 mod fold;
 mod visit;
 mod visit_mut;
+mod visitable;
 
 macro_rules! noop {
     ($T:ty) => {
+        impl Visitable for $T {}
+
         impl<V: ?Sized> FoldWith<V> for $T {
             ///  Noop
             #[inline]

@@ -36,6 +36,7 @@ impl Analyzer<'_, '_> {
             op,
             ref mut left,
             ref mut right,
+            ..
         } = *e;
 
         let mut errors = vec![];

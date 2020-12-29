@@ -1,3 +1,4 @@
+use rnode::NodeId;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_visit::Visit;
@@ -56,6 +57,7 @@ impl From<RIdent> for Id {
 impl From<Id> for RIdent {
     fn from(i: Id) -> Self {
         RIdent {
+            node_id: NodeId::invalid(),
             span: DUMMY_SP.with_ctxt(i.ctxt),
             sym: i.sym,
             type_ann: Default::default(),

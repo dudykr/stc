@@ -3,6 +3,7 @@
 extern crate proc_macro;
 
 use pmutil::q;
+use pmutil::smart_quote;
 use pmutil::IdentExt;
 use pmutil::Quote;
 use pmutil::SpanExt;
@@ -37,7 +38,14 @@ use syn::Type;
 use syn::TypePath;
 use syn::Variant;
 use syn::VisPublic;
+use syn::Visibility;
 
+///
+/// # Struct attributed
+///
+/// ## `#[skip_node_id]`
+///
+/// Don't inject `node_id`.
 #[proc_macro]
 pub fn define_rnode(module: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let module: Block = syn::parse(module).expect("#[rnode] should be applied to a module");
@@ -161,7 +169,10 @@ fn handle_item(nodes_to_convert: &[String], item: Item) -> Vec<Item> {
                         impl rnode::RNode for REnum {
                             type Orig = OrigType;
 
-                            fn from_orig(orig: Self::Orig) -> Self {
+                            fn from_orig(
+                                id_gen: &mut rnode::NodeIdGenerator,
+                                orig: Self::Orig,
+                            ) -> Self {
                                 from_orig_body
                             }
 
@@ -179,7 +190,7 @@ fn handle_item(nodes_to_convert: &[String], item: Item) -> Vec<Item> {
             match &s.fields {
                 Fields::Named(fields) => {
                     let (from_orig_arm, to_orig_arm) =
-                        handle_struct_fields(nodes_to_convert, &s.ident, &s.fields);
+                        handle_struct_fields(&s.attrs, nodes_to_convert, &s.ident, &s.fields);
                     let field_rnode_info = fields
                         .named
                         .iter()
@@ -200,6 +211,20 @@ fn handle_item(nodes_to_convert: &[String], item: Item) -> Vec<Item> {
                     let struct_name = s.ident.new_ident_with(|name| format!("R{}", name));
 
                     let mut named = Punctuated::<_, Token![,]>::default();
+                    if !skip_node_id(&s.attrs) {
+                        named.push(Field {
+                            attrs: Default::default(),
+                            vis: Visibility::Public(VisPublic {
+                                pub_token: struct_name.span().as_token(),
+                            }),
+                            ident: Some(orig_name.new_ident_with(|_| "node_id")),
+                            colon_token: Some(struct_name.span().as_token()),
+                            ty: Quote::new(orig_name.span())
+                                .quote_with(smart_quote!(Vars {}, (::rnode::NodeId)))
+                                .parse(),
+                        });
+                    }
+
                     for (field, info) in field_rnode_info {
                         named.push(Field {
                             attrs: field
@@ -255,7 +280,10 @@ fn handle_item(nodes_to_convert: &[String], item: Item) -> Vec<Item> {
                                 impl rnode::RNode for RStruct {
                                     type Orig = OrigType;
 
-                                    fn from_orig(orig: Self::Orig) -> Self {
+                                    fn from_orig(
+                                        id_gen: &mut rnode::NodeIdGenerator,
+                                        orig: Self::Orig,
+                                    ) -> Self {
                                         match orig {
                                             from_orig_arm
                                         }
@@ -435,12 +463,19 @@ fn handle_enum_variant_fields(
     (from_orig_arm, to_orig_arm)
 }
 
+fn skip_node_id(attrs: &[Attribute]) -> bool {
+    attrs.iter().any(|attr| attr.path.is_ident("skip_node_id"))
+}
+
 /// Cretes `(from_orig_arm, to_orig_arm)`
 fn handle_struct_fields(
+    attrs: &[Attribute],
     nodes_to_convert: &[String],
     struct_name: &Ident,
     f: &Fields,
 ) -> (Arm, Arm) {
+    let skip_node_id = skip_node_id(attrs);
+
     let mut from_orig_body: Vec<Stmt> = vec![];
     let mut to_orig_body: Vec<Stmt> = vec![];
 
@@ -448,6 +483,22 @@ fn handle_struct_fields(
     let mut to_orig_bindings = Punctuated::<_, Token![,]>::default();
 
     let mut bindings = Punctuated::<_, Token![,]>::default();
+
+    if !skip_node_id {
+        to_orig_bindings.push(Pat::Ident(PatIdent {
+            attrs: Default::default(),
+            by_ref: None,
+            mutability: None,
+            ident: struct_name.new_ident_with(|_| "node_id"),
+            subpat: None,
+        }));
+        from_orig_body.push(
+            q!({
+                let node_id = id_gen.gen();
+            })
+            .parse(),
+        );
+    }
 
     for (idx, field, info) in f.iter().enumerate().map(|(idx, field)| {
         (
@@ -512,7 +563,7 @@ fn handle_struct_fields(
         }));
     }
 
-    from_orig_body.push(
+    from_orig_body.push(if skip_node_id {
         q!(
             Vars {
                 bindings: &bindings,
@@ -521,8 +572,18 @@ fn handle_struct_fields(
                 return Self { bindings };
             }
         )
-        .parse(),
-    );
+        .parse()
+    } else {
+        q!(
+            Vars {
+                bindings: &bindings,
+            },
+            {
+                return Self { node_id, bindings };
+            }
+        )
+        .parse()
+    });
     to_orig_body.push(
         q!(
             Vars {
@@ -626,8 +687,10 @@ fn handle_field(
     match_binding: &Ident,
     ty: &Type,
 ) -> RNodeField {
-    let rc = attrs.iter().any(|attr| attr.path.is_ident("rc"));
-    let ref_cell = attrs.iter().any(|attr| attr.path.is_ident("refcell"));
+    // let rc = attrs.iter().any(|attr| attr.path.is_ident("rc"));
+    // let ref_cell = attrs.iter().any(|attr| attr.path.is_ident("refcell"));
+    let rc = false;
+    let ref_cell = false;
 
     if rc && ref_cell {
         panic!(
@@ -654,7 +717,7 @@ fn handle_field(
                             },
                             ({
                                 use rnode::IntoRNode;
-                                match_binding.into_rnode()
+                                match_binding.into_rnode(id_gen)
                             })
                         )
                         .parse(),

@@ -30,6 +30,7 @@ use stc_ts_ast_rnode::RTsNamespaceDecl;
 use stc_ts_ast_rnode::RTsThisType;
 use stc_ts_ast_rnode::RTsThisTypeOrIdent;
 use stc_visit::Visit;
+use stc_visit::Visitable;
 use std::borrow::Cow;
 use std::{
     fmt::Debug,
@@ -64,6 +65,8 @@ pub struct ModuleTypeData {
     pub private_types: FxHashMap<Id, Vec<Box<Type>>>,
     pub types: FxHashMap<Id, Vec<Box<Type>>>,
 }
+
+impl Visitable for ModuleTypeData {}
 
 impl<V: ?Sized> VisitWith<V> for ModuleTypeData {
     fn visit_children_with(&self, _: &mut V) {}
@@ -1444,6 +1447,8 @@ pub struct Freezed {
     pub span: Span,
     pub ty: Arc<Type>,
 }
+
+impl Visitable for Freezed {}
 
 impl<V> VisitWith<V> for Freezed
 where

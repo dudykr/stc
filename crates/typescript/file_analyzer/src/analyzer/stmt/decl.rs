@@ -13,6 +13,7 @@ use crate::{
     ValidationResult,
 };
 use rnode::FoldWith;
+use rnode::NodeId;
 use rnode::Visit;
 use rnode::VisitMutWith;
 use rnode::VisitWith;
@@ -82,6 +83,7 @@ impl Analyzer<'_, '_> {
                                 }
 
                                 var.decls.push(RVarDeclarator {
+                                    node_id: NodeId::invalid(),
                                     span,
                                     name: pat,
                                     init: None,
@@ -347,8 +349,10 @@ impl Analyzer<'_, '_> {
                             if let Some(box RExpr::Ident(ref alias)) = &v.init {
                                 if let RPat::Ident(ref mut i) = v.name {
                                     i.type_ann = Some(RTsTypeAnn {
+                                        node_id: NodeId::invalid(),
                                         span: DUMMY_SP,
                                         type_ann: box RTsType::TsTypeQuery(RTsTypeQuery {
+                                            node_id: NodeId::invalid(),
                                             span,
                                             expr_name: RTsTypeQueryExpr::TsEntityName(
                                                 RTsEntityName::Ident(alias.clone()),
@@ -399,6 +403,7 @@ impl Analyzer<'_, '_> {
                                             // It's `uniqute symbol` only if it's `Symbol()`
                                             VarDeclKind::Const if is_symbol_call => {
                                                 box RTsType::TsTypeOperator(RTsTypeOperator {
+                                                    node_id: NodeId::invalid(),
                                                     span:*span,
                                                     op: TsTypeOperatorOp::Unique,
                                                     type_ann: box RTsType::TsKeywordType(
@@ -429,6 +434,7 @@ impl Analyzer<'_, '_> {
                                             ..
                                         }) => {
                                             box RTsType::TsArrayType(RTsArrayType {
+                                                node_id: NodeId::invalid(),
                                                 span: *span,
                                                 elem_type: match constraint {
                                                     Some(_constraint) => {

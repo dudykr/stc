@@ -3,6 +3,7 @@
 
 extern crate test;
 
+use rnode::NodeIdGenerator;
 use rnode::RNode;
 use slog::Logger;
 use stc_ts_ast_rnode::RModule;
@@ -184,12 +185,13 @@ fn run_bench(b: &mut Bencher, path: PathBuf) {
             SourceFileInput::from(&*fm),
             Some(&comments),
         );
+        let mut node_id_gen = NodeIdGenerator::default();
         let mut parser = Parser::new_from(lexer);
         let module = parser.parse_module().unwrap();
         let module = GLOBALS.set(stable_env.swc_globals(), || {
             module.fold_with(&mut ts_resolver(stable_env.marks().top_level_mark()))
         });
-        let module = RModule::from_orig(module);
+        let module = RModule::from_orig(&mut node_id_gen, module);
 
         b.iter(|| {
             let mut storage = Single {

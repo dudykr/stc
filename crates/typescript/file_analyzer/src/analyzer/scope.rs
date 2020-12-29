@@ -20,6 +20,7 @@ use fxhash::{FxHashMap, FxHashSet};
 use once_cell::sync::Lazy;
 use rnode::Fold;
 use rnode::FoldWith;
+use rnode::NodeId;
 use rnode::Visit;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
@@ -531,6 +532,7 @@ impl Analyzer<'_, '_> {
                 ref mut elems,
                 ref mut type_ann,
                 ref mut optional,
+                ..
             }) => {
                 // TODO: Handle type annotation
 
@@ -543,14 +545,17 @@ impl Analyzer<'_, '_> {
 
                 if type_ann.is_none() {
                     *type_ann = Some(RTsTypeAnn {
+                        node_id: NodeId::invalid(),
                         span,
                         type_ann: box RTsType::TsTypeRef(RTsTypeRef {
+                            node_id: NodeId::invalid(),
                             span,
                             type_name: RTsEntityName::Ident(RIdent::new(
                                 "Iterable".into(),
                                 DUMMY_SP,
                             )),
                             type_params: Some(RTsTypeParamInstantiation {
+                                node_id: NodeId::invalid(),
                                 span,
                                 params: vec![box RTsType::TsKeywordType(RTsKeywordType {
                                     span: DUMMY_SP,
@@ -617,6 +622,7 @@ impl Analyzer<'_, '_> {
                 let new_ty = arg.get_mut_ty().take();
                 if ty.is_none() {
                     *ty = new_ty.cloned().map(Box::new).map(|type_ann| RTsTypeAnn {
+                        node_id: NodeId::invalid(),
                         span: DUMMY_SP,
                         type_ann,
                     });
@@ -1752,6 +1758,7 @@ impl Expander<'_, '_, '_> {
             RTsEntityName::TsQualifiedName(box RTsQualifiedName {
                 left: RTsEntityName::Ident(ref left),
                 ref right,
+                ..
             }) => {
                 if left.sym == js_word!("void") {
                     return Ok(Some(*Type::any(span)));

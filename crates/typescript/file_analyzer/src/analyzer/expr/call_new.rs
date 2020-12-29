@@ -75,6 +75,7 @@ impl Analyzer<'_, '_> {
             ref mut callee,
             ref mut args,
             ref mut type_args,
+            ..
         } = *e;
 
         let callee = match callee {
@@ -110,6 +111,7 @@ impl Analyzer<'_, '_> {
             ref mut callee,
             ref mut args,
             ref mut type_args,
+            ..
         } = *e;
 
         // TODO: e.visit_children

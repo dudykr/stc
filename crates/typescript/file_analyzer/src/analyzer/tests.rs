@@ -9,6 +9,7 @@ use crate::tests::MARKS;
 use crate::DepInfo;
 use crate::Lib;
 use once_cell::sync::Lazy;
+use rnode::NodeIdGenerator;
 use stc_testing::logger;
 use stc_ts_types::ModuleId;
 use stc_ts_types::ModuleTypeData;
@@ -39,6 +40,7 @@ static ENV: Lazy<Env> = Lazy::new(|| {
 pub struct Tester<'a, 'b> {
     cm: Arc<SourceMap>,
     pub analyzer: Analyzer<'a, 'b>,
+    pub node_id_gen: NodeIdGenerator,
 }
 
 pub fn run_test<F, Ret>(op: F) -> Result<Ret, StdErr>
@@ -66,6 +68,7 @@ where
             let mut tester = Tester {
                 cm: cm.clone(),
                 analyzer,
+                node_id_gen: Default::default(),
             };
             let ret = op(&mut tester);
 

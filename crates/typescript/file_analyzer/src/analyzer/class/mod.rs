@@ -19,6 +19,8 @@ use bitflags::_core::mem::take;
 use fxhash::FxHashSet;
 use rnode::FoldWith;
 use rnode::IntoRNode;
+use rnode::NodeId;
+use rnode::NodeIdGenerator;
 use rnode::VisitMutWith;
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RAssignPat;
@@ -492,6 +494,7 @@ impl Analyzer<'_, '_> {
 
                     // Converts a private method to a private property without type.
                     *m = RClassMember::ClassProp(RClassProp {
+                        node_id: NodeId::invalid(),
                         span: method.span,
                         key: match &mut method.key {
                             RPropName::Ident(i) => box RExpr::Ident(i.take()),
@@ -860,7 +863,7 @@ impl Analyzer<'_, '_> {
                                     let class_name =
                                         name.clone().unwrap_or_else(|| Id::word("__class".into()));
                                     let new_ty: RIdent =
-                                        private_ident!(format!("{}_base", class_name.as_str())).into_rnode();
+                                        private_ident!(format!("{}_base", class_name.as_str())).into_rnode(&mut NodeIdGenerator::invalid());
 
                                     // We should add it at same level as class
                                     types_to_register
@@ -900,13 +903,17 @@ impl Analyzer<'_, '_> {
 
                                     if has_class_in_super {
                                         child.prepend_stmts.push(RStmt::Decl(RDecl::Var(RVarDecl {
+                                            node_id: NodeId::invalid(),
                                             span: DUMMY_SP,
                                             kind: VarDeclKind::Const,
                                             declare: false,
                                             decls: vec![RVarDeclarator {
+                                                node_id: NodeId::invalid(),
                                                 span: i.span,
                                                 name: RPat::Ident(RIdent {
+                                                    node_id: NodeId::invalid(),
                                                     type_ann: Some(RTsTypeAnn {
+                                                        node_id: NodeId::invalid(),
                                                         span: DUMMY_SP,
                                                         type_ann: box super_ty.into(),
                                                     }),
@@ -919,6 +926,7 @@ impl Analyzer<'_, '_> {
                                     } else {
                                         child.prepend_stmts.push(RStmt::Decl(RDecl::TsTypeAlias(
                                             RTsTypeAliasDecl {
+                                                node_id: NodeId::invalid(),
                                                 span: DUMMY_SP,
                                                 declare: false,
                                                 id: new_ty.clone(),
@@ -1107,6 +1115,7 @@ impl Analyzer<'_, '_> {
                                         let key = box RExpr::Ident(key);
                                         additional_members.push(RClassMember::ClassProp(
                                             RClassProp {
+                                                node_id: NodeId::invalid(),
                                                 span: p.span,
                                                 key,
                                                 value: None,
@@ -1161,6 +1170,7 @@ impl Analyzer<'_, '_> {
                                     if let Some(ty) = &ty {
                                         if i.type_ann.is_none() {
                                             i.type_ann = Some(RTsTypeAnn {
+                                                node_id: NodeId::invalid(),
                                                 span: ty.span(),
                                                 type_ann: ty.clone().into(),
                                             });

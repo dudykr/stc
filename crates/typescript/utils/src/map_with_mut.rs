@@ -1,3 +1,4 @@
+use rnode::NodeId;
 use stc_ts_ast_rnode::RBool;
 use stc_ts_ast_rnode::RClassMember;
 use stc_ts_ast_rnode::RDecl;
@@ -43,6 +44,7 @@ pub trait MapWithMut: Sized {
 impl MapWithMut for Type {
     fn dummy() -> Self {
         Type::Lit(RTsLitType {
+            node_id: NodeId::invalid(),
             span: DUMMY_SP,
             lit: RTsLit::Bool(RBool {
                 span: DUMMY_SP,
@@ -94,6 +96,7 @@ impl MapWithMut for RPropName {
 impl MapWithMut for RDecl {
     fn dummy() -> Self {
         RDecl::Var(RVarDecl {
+            node_id: NodeId::invalid(),
             span: DUMMY_SP,
             kind: VarDeclKind::Var,
             declare: false,

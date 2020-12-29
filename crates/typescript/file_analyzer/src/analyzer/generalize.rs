@@ -7,6 +7,7 @@ use crate::{
 };
 use rnode::Fold;
 use rnode::FoldWith;
+use rnode::NodeId;
 use rnode::VisitMutWith;
 use slog::Logger;
 use stc_ts_ast_rnode::RExpr;
@@ -468,6 +469,7 @@ impl Fold<Type> for Simplifier<'_> {
             }) => {
                 let span = span.apply_mark(self.prevent_generalize_mark);
                 return Type::Lit(RTsLitType {
+                    node_id: NodeId::invalid(),
                     span,
                     lit: RTsLit::Number(RNumber {
                         span,

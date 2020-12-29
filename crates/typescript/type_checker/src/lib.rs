@@ -8,6 +8,7 @@ use fxhash::FxHashMap;
 use once_cell::sync::OnceCell;
 use parking_lot::Mutex;
 use parking_lot::RwLock;
+use rnode::NodeIdGenerator;
 use rnode::RNode;
 use rnode::VisitMutWith;
 use slog::Logger;
@@ -170,6 +171,7 @@ impl Checker {
                     }
 
                     {
+                        let mut node_id_gen = NodeIdGenerator::default();
                         let mut storage = Group {
                             parent: None,
                             files: Arc::new(
@@ -194,9 +196,12 @@ impl Checker {
                             .iter()
                             .map(|&id| self.module_graph.clone_module(id))
                             .map(|module| {
-                                RModule::from_orig(module.fold_with(&mut ts_resolver(
-                                    self.env.shared().marks().top_level_mark(),
-                                )))
+                                RModule::from_orig(
+                                    &mut node_id_gen,
+                                    module.fold_with(&mut ts_resolver(
+                                        self.env.shared().marks().top_level_mark(),
+                                    )),
+                                )
                             })
                             .collect::<Vec<_>>();
                         {
@@ -302,9 +307,10 @@ impl Checker {
 
     fn analyze_non_circular_module(&self, id: ModuleId, path: Arc<PathBuf>) -> Arc<ModuleTypeData> {
         self.run(|| {
+            let mut node_id_gen = NodeIdGenerator::default();
             let mut module = self.module_graph.clone_module(id);
             module = module.fold_with(&mut ts_resolver(self.env.shared().marks().top_level_mark()));
-            let mut module = RModule::from_orig(module);
+            let mut module = RModule::from_orig(&mut node_id_gen, module);
 
             let mut storage = Single {
                 parent: None,

@@ -10,6 +10,7 @@ use itertools::EitherOrBoth;
 use itertools::Itertools;
 use rnode::Fold;
 use rnode::FoldWith;
+use rnode::NodeId;
 use rnode::Visit;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
@@ -1103,6 +1104,7 @@ impl Analyzer<'_, '_> {
                             if let Some(key) = arg_member.key() {
                                 match &*key {
                                     RExpr::Ident(i) => key_types.push(box Type::Lit(RTsLitType {
+                                        node_id: NodeId::invalid(),
                                         span: param.span,
                                         lit: RTsLit::Str(RStr {
                                             span: i.span,
@@ -1346,6 +1348,7 @@ impl Analyzer<'_, '_> {
                                     arg.members.iter().filter_map(|element| match element {
                                         TypeElement::Property(p) => match &*p.key {
                                             RExpr::Ident(i) => Some(box Type::Lit(RTsLitType {
+                                                node_id: NodeId::invalid(),
                                                 span: param.span,
                                                 lit: RTsLit::Str(RStr {
                                                     span: i.span,
@@ -2035,6 +2038,7 @@ impl VisitMut<Type> for TypeParamInliner<'_> {
         match ty {
             Type::Param(p) if p.name == *self.param => {
                 *ty = Type::Lit(RTsLitType {
+                    node_id: NodeId::invalid(),
                     span: p.span,
                     lit: RTsLit::Str(self.value.clone()),
                 });

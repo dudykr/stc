@@ -1,6 +1,7 @@
 //! Dead code elimination for types.
 
 use fxhash::FxHashSet;
+use rnode::NodeId;
 use rnode::Visit;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
@@ -151,6 +152,7 @@ impl VisitMut<RVarDeclarator> for DceForDts<'_> {
                 if i.type_ann.is_none() {
                     if let Some(ty) = self.info.private_vars.get(&i.clone().into()) {
                         i.type_ann = Some(RTsTypeAnn {
+                            node_id: NodeId::invalid(),
                             span: DUMMY_SP,
                             type_ann: box ty.clone().into(),
                         });
@@ -250,6 +252,7 @@ impl VisitMut<RTsEnumDecl> for DceForDts<'_> {
                     .iter()
                     .enumerate()
                     .map(|(i, member)| RTsEnumMember {
+                        node_id: NodeId::invalid(),
                         span: member.span,
                         id: member.id.clone(),
                         init: if is_all_lit {
@@ -300,6 +303,7 @@ impl VisitMut<RClassMember> for DceForDts<'_> {
                 ..
             }) => {
                 *node = RClassMember::ClassProp(RClassProp {
+                    node_id: NodeId::invalid(),
                     span: *span,
                     declare: false,
                     computed: match key {
