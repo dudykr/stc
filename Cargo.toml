@@ -1,5 +1,5 @@
 [workspace]
-members = ["bindings/libstc", "bindings/node-stc", "tools/dev-stc"]
+members = ["bindings/libstc", "bindings/node-stc"]
 
 [package]
 authors = ["강동윤 <kdy1@dudy.kr>"]
@@ -13,8 +13,9 @@ version = "0.1.0"
 anyhow = "1"
 languageserver-types = "0.54.0"
 slog = {version = "2", features = ["release_max_level_off"]}
-stc_checker = {path = "./typescript/checker"}
-stc_dts = {path = "./typescript/dts"}
+stc_ts_file_analyzer = { path = "crates/typescript/file_analyzer" }
+stc_ts_type_checker = {path = "./crates/typescript/type_checker"}
+stc_utils = {path = "crates/utils"}
 structopt = "0.3.20"
 swc_common = {version = "0.10.8", features = ["tty-emitter"]}
 swc_ecma_parser = "0.44.0"
@@ -29,5 +30,4 @@ codegen-units = 1
 debug = true
 
 [profile.dev.package]
-stc_builtin_types = {opt-level = 3}
 swc_ecma_parser = {opt-level = 3}

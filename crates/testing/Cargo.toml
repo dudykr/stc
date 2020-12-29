@@ -1,15 +1,15 @@
 [package]
 authors = ["강동윤 <kdy1@dudy.kr"]
-description = "Binding for stc, speedy type chcekr"
 edition = "2018"
-name = "libstc"
+name = "stc_testing"
 publish = false
 version = "0.0.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[lib]
-crate-type = ["staticlib"]
-name = "stc"
-
 [dependencies]
+ansi_term = "0.12"
+once_cell = "1.5.2"
+slog = "2"
+slog-envlogger = "2"
+slog-term = "2.6.0"
