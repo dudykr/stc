@@ -131,7 +131,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, s: &RBlockStmt) {
         self.with_child(ScopeKind::Block, Default::default(), |analyzer| {
-            s.stmts.visit_mut_with(analyzer);
+            s.stmts.visit_with(analyzer);
             Ok(())
         })?;
 

@@ -56,7 +56,7 @@ impl Analyzer<'_, '_> {
             ..self.ctx
         };
         self.with_ctx(ctx).with(|a| {
-            var.decls.visit_mut_with(a);
+            var.decls.visit_with(a);
         });
 
         // Flatten var declarations

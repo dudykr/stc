@@ -473,7 +473,7 @@ impl Analyzer<'_, '_> {
                         analyzer.mark_var_as_truthy(Id::from(&*i))?;
                     }
                 }
-                _ => e.left.visit_mut_with(analyzer),
+                _ => e.left.visit_with(analyzer),
             }
 
             if e.op == op!("=") {
