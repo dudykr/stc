@@ -152,12 +152,11 @@ pub fn validator(
                     // Find `T`
                     if node_type == None {
                         match ty {
-                            Type::Reference(ty) if ty.mutability.is_some() => {
+                            Type::Reference(ty) if ty.mutability.is_none() => {
                                 node_type = Some(ty.elem.clone());
                             }
                             _ => unimplemented!(
-                                "first argument should be self and second argument must be `&mut \
-                                 T`"
+                                "first argument should be self and second argument must be `&T`"
                             ),
                         }
                         node_pat = Some(pat_ty.pat.clone());
@@ -204,7 +203,7 @@ pub fn validator(
 
                     fn validate(
                         &mut self,
-                        node_pat: &mut NodeType,
+                        node_pat: & NodeType,
                         ctxt: Self::Context,
                     ) -> ReturnType {
                         let (conext_pats) = ctxt;
