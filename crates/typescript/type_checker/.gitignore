@@ -1,0 +1,5 @@
+*.d.ts
+*.js
+tests/reference/
+tests/success.txt
+tests/done_sorted.txt

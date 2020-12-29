@@ -63,7 +63,6 @@ jobs:
           npm config set prefix ~/npm
           echo "$HOME/npm/bin" >> $GITHUB_PATH
           npm i
-          (cd typescript/dts && npm i)
 
       - name: Install llvm ( windows only )
         if: matrix.os == 'windows-latest'

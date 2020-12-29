@@ -1,0 +1,25 @@
+[package]
+authors = ["강동윤 <kdy1@dudy.kr>"]
+edition = "2018"
+name = "stc_ts_module_loader"
+version = "0.1.0"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1"
+dashmap = "3"
+fxhash = "0.2"
+num_cpus = "1"
+once_cell = "1"
+parking_lot = "0.11"
+petgraph = "0.5"
+rayon = "1"
+serde = {version = "1", features = ["derive"]}
+serde_json = "1"
+stc_ts_types = { path = "../types" }
+swc_atoms = "0.2.5"
+swc_common = {version = "0.10.8", features = ["concurrent"]}
+swc_ecma_ast = "0.36.1"
+swc_ecma_parser = "0.44.0"
+swc_ecma_visit = "0.22.0"
