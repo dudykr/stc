@@ -8,6 +8,7 @@ use self::{
     stmt::AmbientFunctionHandler,
     util::ResultExt,
 };
+use crate::dts::Mutations;
 use crate::mode::Builtin;
 use crate::mode::Storage;
 use crate::{
@@ -131,6 +132,8 @@ pub struct Analyzer<'a, 'b> {
     logger: Logger,
     env: Env,
     cm: Arc<SourceMap>,
+
+    mutations: Option<Mutations>,
 
     storage: Storage<'b>,
 
