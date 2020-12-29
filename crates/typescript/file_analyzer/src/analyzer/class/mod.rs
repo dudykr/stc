@@ -532,7 +532,7 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
-    fn check_ambient_methods(&mut self, c: &mut RClass, declare: bool) -> ValidationResult<()> {
+    fn check_ambient_methods(&mut self, c: &RClass, declare: bool) -> ValidationResult<()> {
         if self.ctx.in_declare {
             return Ok(());
         }
@@ -1412,14 +1412,14 @@ impl Analyzer<'_, '_> {
             in_declare: self.ctx.in_declare || c.declare,
             ..self.ctx
         };
-        self.with_ctx(ctx).visit_class_decl(c);
+        self.with_ctx(ctx).visit_class_decl_inner(c);
 
         Ok(())
     }
 }
 
 impl Analyzer<'_, '_> {
-    fn visit_class_decl(&mut self, c: &mut RClassDecl) {
+    fn visit_class_decl_inner(&mut self, c: &RClassDecl) {
         c.ident.visit_with(self);
 
         self.scope.this_class_name = Some(c.ident.clone().into());

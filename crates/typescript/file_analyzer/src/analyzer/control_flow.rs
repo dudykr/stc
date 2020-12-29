@@ -18,7 +18,7 @@ use crate::{
 };
 use fxhash::FxHashMap;
 use rnode::NodeId;
-use rnode::VisitMutWith;
+use rnode::VisitWith;
 use stc_ts_ast_rnode::RBinExpr;
 use stc_ts_ast_rnode::RCondExpr;
 use stc_ts_ast_rnode::RExpr;
@@ -391,7 +391,7 @@ impl Analyzer<'_, '_> {
         Ok(new)
     }
 
-    fn check_switch_discriminant(&mut self, s: &mut RSwitchStmt) -> ValidationResult {
+    fn check_switch_discriminant(&mut self, s: &RSwitchStmt) -> ValidationResult {
         let discriminant_ty = s.discriminant.validate_with_default(self)?;
         for case in &mut s.cases {
             if let Some(ref mut test) = case.test {

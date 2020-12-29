@@ -65,7 +65,7 @@ pub(super) enum TypeOrderItem {
 
 impl Analyzer<'_, '_> {
     /// Note: This method removes all items from `stmts`.
-    pub(super) fn validate_stmts_with_hoisting<T>(&mut self, stmts: &mut Vec<T>) -> Vec<Vec<T>>
+    pub(super) fn validate_stmts_with_hoisting<T>(&mut self, stmts: &Vec<T>) -> Vec<Vec<T>>
     where
         T: AsModuleDecl
             + ModuleItemOrStmt
@@ -128,7 +128,7 @@ impl Analyzer<'_, '_> {
     /// const a = 5;
     /// const b = foo();
     /// ```
-    pub(super) fn validate_stmts_and_collect<T>(&mut self, stmts: &mut Vec<T>)
+    pub(super) fn validate_stmts_and_collect<T>(&mut self, stmts: &Vec<T>)
     where
         T: AsModuleDecl
             + ModuleItemOrStmt
