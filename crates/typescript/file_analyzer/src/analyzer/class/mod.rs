@@ -158,8 +158,6 @@ impl Analyzer<'_, '_> {
             &p.value,
         )?;
 
-        p.value = None;
-
         Ok(ClassProperty {
             span: p.span,
             key: box RExpr::PrivateName(p.key.clone()),

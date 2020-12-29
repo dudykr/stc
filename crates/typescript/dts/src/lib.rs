@@ -243,6 +243,14 @@ impl VisitMut<RClassProp> for Dts {
     }
 }
 
+impl VisitMut<RPrivateProp> for Dts {
+    fn visit_mut(&mut self, prop: &mut RPrivateProp) {
+        prop.visit_mut_children_with(self);
+
+        prop.value = None;
+    }
+}
+
 impl VisitMut<Option<RBlockStmt>> for Dts {
     fn visit_mut(&mut self, value: &mut Option<RBlockStmt>) {
         *value = None;
