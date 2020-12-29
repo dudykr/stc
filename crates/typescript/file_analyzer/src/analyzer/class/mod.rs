@@ -120,9 +120,7 @@ impl Analyzer<'_, '_> {
             &p.value,
         )?;
         match p.accessibility {
-            Some(Accessibility::Private) => {
-                p.type_ann = None;
-            }
+            Some(Accessibility::Private) => {}
             _ => {
                 if p.type_ann.is_none() {
                     p.type_ann = value

@@ -235,6 +235,10 @@ impl VisitMut<RClassProp> for Dts {
     fn visit_mut(&mut self, prop: &mut RClassProp) {
         prop.visit_mut_children_with(self);
 
+        if let Some(Accessibility::Private) = prop.accessibility {
+            prop.type_ann = None;
+        }
+
         prop.value = None;
     }
 }
