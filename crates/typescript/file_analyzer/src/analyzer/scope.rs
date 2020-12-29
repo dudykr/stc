@@ -441,14 +441,14 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    pub fn declare_vars(&mut self, kind: VarDeclKind, pat: &mut RPat) -> Result<(), Error> {
+    pub fn declare_vars(&mut self, kind: VarDeclKind, pat: &RPat) -> Result<(), Error> {
         self.declare_vars_inner_with_ty(kind, pat, false, None)
     }
 
     pub fn declare_vars_with_ty(
         &mut self,
         kind: VarDeclKind,
-        pat: &mut RPat,
+        pat: &RPat,
         ty: Option<Box<Type>>,
     ) -> Result<(), Error> {
         self.declare_vars_inner_with_ty(kind, pat, false, ty)
@@ -457,7 +457,7 @@ impl Analyzer<'_, '_> {
     pub(super) fn declare_vars_inner(
         &mut self,
         kind: VarDeclKind,
-        pat: &mut RPat,
+        pat: &RPat,
         export: bool,
     ) -> Result<(), Error> {
         self.declare_vars_inner_with_ty(kind, pat, export, None)
@@ -470,7 +470,7 @@ impl Analyzer<'_, '_> {
     fn declare_vars_inner_with_ty(
         &mut self,
         kind: VarDeclKind,
-        pat: &mut RPat,
+        pat: &RPat,
         export: bool,
         ty: Option<Box<Type>>,
     ) -> Result<(), Error> {

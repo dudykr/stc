@@ -182,7 +182,7 @@ impl Analyzer<'_, '_> {
         };
 
         let old_this = self.scope.this.take();
-        let res = self.with_ctx(ctx).validate_prop(prop);
+        let res = self.with_ctx(ctx).validate_prop_inner(prop);
         self.scope.this = old_this;
 
         res
@@ -190,7 +190,7 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
-    fn validate_prop(&mut self, prop: &mut RProp) -> ValidationResult<TypeElement> {
+    fn validate_prop_inner(&mut self, prop: &RProp) -> ValidationResult<TypeElement> {
         let computed = match prop {
             RProp::KeyValue(ref kv) => match kv.key {
                 RPropName::Computed(_) => true,

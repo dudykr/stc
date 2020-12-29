@@ -7,7 +7,6 @@ use fxhash::{FxHashMap, FxHashSet};
 use petgraph::graphmap::DiGraphMap;
 use petgraph::EdgeDirection::Incoming;
 use rnode::Visit;
-use rnode::VisitMutWith;
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RArrowExpr;
 use stc_ts_ast_rnode::RClassDecl;
@@ -70,7 +69,7 @@ impl Analyzer<'_, '_> {
         T: AsModuleDecl
             + ModuleItemOrStmt
             + VisitWith<RequirementCalculartor>
-            + VisitMutWith<Self>
+            + VisitWith<Self>
             + From<RStmt>,
     {
         let mut new: Vec<Vec<T>> = (0..stmts.len()).map(|_| vec![]).collect();
@@ -133,7 +132,7 @@ impl Analyzer<'_, '_> {
         T: AsModuleDecl
             + ModuleItemOrStmt
             + VisitWith<RequirementCalculartor>
-            + VisitMutWith<Self>
+            + VisitWith<Self>
             + From<RStmt>,
     {
         let new = self.validate_stmts_with_hoisting(stmts);

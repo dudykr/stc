@@ -4,7 +4,6 @@ use crate::{
     validator,
     validator::ValidateWith,
 };
-use rnode::VisitMutWith;
 use stc_ts_ast_rnode::RCatchClause;
 
 #[validator]
