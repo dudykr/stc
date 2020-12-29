@@ -24,9 +24,9 @@ use std::path::PathBuf;
 use swc_atoms::JsWord;
 use swc_common::Span;
 
-#[macro_use]
-mod debug;
 pub mod analyzer;
+mod debug;
+pub mod dts;
 pub mod env;
 pub mod errors;
 pub mod loader;
