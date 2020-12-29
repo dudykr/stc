@@ -3,6 +3,7 @@ use super::util::ResultExt;
 use super::Analyzer;
 use super::Ctx;
 use super::ScopeKind;
+use crate::dts::Mutations;
 use crate::util::contains_infer_type;
 use crate::validator;
 use crate::validator::ValidateWith;
@@ -492,7 +493,7 @@ impl Analyzer<'_, '_> {
         let type_params = try_opt!(t.type_params.validate_with(self));
 
         for param in &t.params {
-            default_any_param(self.marks().implicit_type_mark, &param);
+            default_any_param(&mut self.mutations, self.marks().implicit_type_mark, &param);
         }
 
         let mut params: Vec<_> = t.params.validate_with(self)?;
@@ -512,9 +513,10 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsConstructorType) -> ValidationResult<stc_ts_types::Constructor> {
         let type_params = try_opt!(t.type_params.validate_with(self));
+        let implicit_type_mark = self.marks().implicit_type_mark;
 
         for param in &t.params {
-            default_any_param(self.marks().implicit_type_mark, param);
+            default_any_param(&mut self.mutations, implicit_type_mark, param);
         }
 
         Ok(stc_ts_types::Constructor {
@@ -746,16 +748,16 @@ impl Analyzer<'_, '_> {
     }
 }
 
-pub(crate) fn default_any_pat(implicit_type_mark: Mark, p: &RPat) {
+pub(crate) fn default_any_pat(m: &mut Option<Mutations>, implicit_type_mark: Mark, p: &RPat) {
     match p {
-        RPat::Ident(i) => default_any_ident(implicit_type_mark, i),
-        RPat::Array(arr) => default_any_array_pat(implicit_type_mark, arr),
-        RPat::Object(obj) => default_any_object(implicit_type_mark, obj),
+        RPat::Ident(i) => default_any_ident(m, implicit_type_mark, i),
+        RPat::Array(arr) => default_any_array_pat(m, implicit_type_mark, arr),
+        RPat::Object(obj) => default_any_object(m, implicit_type_mark, obj),
         _ => {}
     }
 }
 
-pub(crate) fn default_any_ident(implicit_type_mark: Mark, i: &RIdent) {
+pub(crate) fn default_any_ident(m: &mut Option<Mutations>, implicit_type_mark: Mark, i: &RIdent) {
     if i.type_ann.is_some() {
         return;
     }
@@ -770,7 +772,11 @@ pub(crate) fn default_any_ident(implicit_type_mark: Mark, i: &RIdent) {
     });
 }
 
-pub(crate) fn default_any_array_pat(implicit_type_mark: Mark, arr: &RArrayPat) {
+pub(crate) fn default_any_array_pat(
+    m: &mut Option<Mutations>,
+    implicit_type_mark: Mark,
+    arr: &RArrayPat,
+) {
     if arr.type_ann.is_some() {
         return;
     }
@@ -790,11 +796,11 @@ pub(crate) fn default_any_array_pat(implicit_type_mark: Mark, arr: &RArrayPat) {
                     // any
                     let ty = match elem {
                         Some(RPat::Array(ref mut arr)) => {
-                            default_any_array_pat(implicit_type_mark, arr);
+                            default_any_array_pat(m, implicit_type_mark, arr);
                             arr.type_ann.take().unwrap().type_ann
                         }
                         Some(RPat::Object(ref mut obj)) => {
-                            default_any_object(implicit_type_mark, obj);
+                            default_any_object(m, implicit_type_mark, obj);
                             obj.type_ann.take().unwrap().type_ann
                         }
 
@@ -817,7 +823,11 @@ pub(crate) fn default_any_array_pat(implicit_type_mark: Mark, arr: &RArrayPat) {
     })
 }
 
-pub(crate) fn default_any_object(implicit_type_mark: Mark, obj: &RObjectPat) {
+pub(crate) fn default_any_object(
+    m: &mut Option<Mutations>,
+    implicit_type_mark: Mark,
+    obj: &RObjectPat,
+) {
     if obj.type_ann.is_some() {
         return;
     }
@@ -829,7 +839,7 @@ pub(crate) fn default_any_object(implicit_type_mark: Mark, obj: &RObjectPat) {
             RObjectPatProp::KeyValue(p) => {
                 match *p.value {
                     RPat::Array(_) | RPat::Object(_) => {
-                        default_any_pat(implicit_type_mark, &*p.value);
+                        default_any_pat(m, implicit_type_mark, &*p.value);
                     }
                     _ => {}
                 }
@@ -884,11 +894,15 @@ pub(crate) fn default_any_object(implicit_type_mark: Mark, obj: &RObjectPat) {
     })
 }
 
-pub(crate) fn default_any_param(implicit_type_mark: Mark, p: &RTsFnParam) {
+pub(crate) fn default_any_param(
+    m: &mut Option<Mutations>,
+    implicit_type_mark: Mark,
+    p: &RTsFnParam,
+) {
     match p {
-        RTsFnParam::Ident(i) => default_any_ident(implicit_type_mark, i),
-        RTsFnParam::Array(arr) => default_any_array_pat(implicit_type_mark, arr),
+        RTsFnParam::Ident(i) => default_any_ident(m, implicit_type_mark, i),
+        RTsFnParam::Array(arr) => default_any_array_pat(m, implicit_type_mark, arr),
         RTsFnParam::Rest(rest) => {}
-        RTsFnParam::Object(obj) => default_any_object(implicit_type_mark, obj),
+        RTsFnParam::Object(obj) => default_any_object(m, implicit_type_mark, obj),
     }
 }

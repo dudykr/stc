@@ -2193,7 +2193,7 @@ impl Analyzer<'_, '_> {
                     };
 
                     for p in &mut f.params {
-                        default_any_pat(child.marks().implicit_type_mark, p);
+                        default_any_pat(&mut self.mutations, child.marks().implicit_type_mark, p);
                     }
 
                     f.params.validate_with(&mut *child.with_ctx(ctx))?
