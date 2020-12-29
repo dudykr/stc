@@ -109,6 +109,7 @@ impl Analyzer<'_, '_> {
         self.record(v);
 
         let kind = self.ctx.var_kind;
+        let node_id = v.node_id;
 
         let res: Result<_, _> = try {
             let v_span = v.span();
@@ -152,7 +153,9 @@ impl Analyzer<'_, '_> {
             macro_rules! remove_declaring {
                 () => {{
                     if should_remove_value {
-                        v.init = None;
+                        if let Some(m) = &mut self.mutations {
+                            m.for_var_decls.entry(node_id).or_default().remove_init = true;
+                        }
                     }
 
                     debug_assert_eq!(Some(self.scope.declaring.clone()), debug_declaring);
