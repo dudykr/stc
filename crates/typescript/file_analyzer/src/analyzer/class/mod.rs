@@ -132,8 +132,6 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        p.value = None;
-
         Ok(ClassProperty {
             span: p.span,
             key: p.key.clone(),

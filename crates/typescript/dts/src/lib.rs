@@ -231,6 +231,14 @@ struct Dts {
     used_vars: FxHashSet<Id>,
 }
 
+impl VisitMut<RClassProp> for Dts {
+    fn visit_mut(&mut self, prop: &mut RClassProp) {
+        prop.visit_mut_children_with(self);
+
+        prop.value = None;
+    }
+}
+
 impl VisitMut<Option<RBlockStmt>> for Dts {
     fn visit_mut(&mut self, value: &mut Option<RBlockStmt>) {
         *value = None;
