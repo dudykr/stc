@@ -25,7 +25,7 @@ impl Analyzer<'_, '_> {
                     None => {}
                 }
 
-                s.body.visit_mut_with(child);
+                s.body.visit_with(child);
 
                 Ok(())
             },

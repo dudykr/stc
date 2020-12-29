@@ -396,7 +396,7 @@ impl Analyzer<'_, '_> {
 
                 let params = c.function.params.validate_with(child)?;
 
-                c.key.visit_mut_with(child);
+                c.key.visit_with(child);
                 // c.function.visit_children_with(child);
 
                 // if child.ctx.in_declare && c.function.body.is_some() {
@@ -826,7 +826,7 @@ impl Analyzer<'_, '_> {
             has_body: !self.ctx.in_declare,
         };
 
-        c.decorators.visit_mut_with(self);
+        c.decorators.visit_with(self);
         self.resolve_parent_interfaces(&mut c.implements);
         let name = self.scope.this_class_name.take();
 
@@ -954,7 +954,7 @@ impl Analyzer<'_, '_> {
                     }
                 };
 
-                c.implements.visit_mut_with(child);
+                c.implements.visit_with(child);
 
                 // TODO: Check for implements
 
@@ -1420,7 +1420,7 @@ impl Analyzer<'_, '_> {
 
 impl Analyzer<'_, '_> {
     fn visit_class_decl(&mut self, c: &mut RClassDecl) {
-        c.ident.visit_mut_with(self);
+        c.ident.visit_with(self);
 
         self.scope.this_class_name = Some(c.ident.clone().into());
         let ty = match c.class.validate_with(self) {

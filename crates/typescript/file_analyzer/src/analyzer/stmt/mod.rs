@@ -73,7 +73,7 @@ impl Analyzer<'_, '_> {
         let test = node.test.validate_with_default(self)?;
         self.check_for_inifinite_loop(&test, &node.body);
 
-        node.body.visit_mut_with(self);
+        node.body.visit_with(self);
 
         Ok(())
     }
@@ -85,7 +85,7 @@ impl Analyzer<'_, '_> {
         let test = node.test.validate_with_default(self)?;
         self.check_for_inifinite_loop(&test, &node.body);
 
-        node.body.visit_mut_with(self);
+        node.body.visit_with(self);
 
         Ok(())
     }
@@ -94,7 +94,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RForStmt) {
-        node.init.visit_mut_with(self);
+        node.init.visit_with(self);
 
         let test = try_opt!(node.test.validate_with_default(self));
         let always_true = Type::Lit(RTsLitType {
@@ -110,7 +110,7 @@ impl Analyzer<'_, '_> {
             &node.body,
         );
 
-        node.update.visit_mut_with(self);
+        node.update.visit_with(self);
         node.body.validate_with(self)?;
 
         Ok(())
@@ -121,7 +121,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, s: &RWithStmt) {
-        s.obj.visit_mut_with(self);
+        s.obj.visit_with(self);
 
         Ok(())
     }

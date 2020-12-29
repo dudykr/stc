@@ -461,7 +461,7 @@ impl Analyzer<'_, '_> {
 
             true_facts = true_facts | self.cur_facts.true_facts.take();
             self.with_child(ScopeKind::Flow, true_facts.clone(), |child| {
-                cons.visit_mut_with(child);
+                cons.visit_with(child);
                 Ok(())
             })?;
             false_facts += self.cur_facts.false_facts.take();

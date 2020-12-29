@@ -23,7 +23,7 @@ impl Analyzer<'_, '_> {
         match *e {
             RVarDeclOrPat::VarDecl(ref mut v) => {
                 // Store variables
-                v.visit_mut_with(self);
+                v.visit_with(self);
             }
             RVarDeclOrPat::Pat(ref mut pat) => match *pat {
                 RPat::Expr(ref mut e) => {

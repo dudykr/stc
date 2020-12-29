@@ -337,7 +337,7 @@ impl Analyzer<'_, '_> {
                 span: d.key.span(),
                 expr: d.key.clone(),
             }
-            .visit_mut_with(self);
+            .visit_with(self);
         }
 
         Ok(PropertySignature {

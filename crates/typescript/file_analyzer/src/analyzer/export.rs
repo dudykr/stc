@@ -147,25 +147,25 @@ impl Analyzer<'_, '_> {
         match export.decl {
             RDecl::Fn(ref mut f) => {
                 f.declare = true;
-                f.visit_mut_with(self);
+                f.visit_with(self);
                 // self.export(f.span(), f.ident.clone().into(), None);
                 self.export_var(f.span(), f.ident.clone().into());
             }
             RDecl::TsInterface(ref mut i) => {
-                i.visit_mut_with(self);
+                i.visit_with(self);
 
                 self.export(i.span(), i.id.clone().into(), None)
             }
 
             RDecl::Class(ref mut c) => {
                 c.declare = true;
-                c.visit_mut_with(self);
+                c.visit_with(self);
                 self.export(c.span(), c.ident.clone().into(), None);
                 self.export_var(c.span(), c.ident.clone().into());
             }
             RDecl::Var(ref mut var) => {
                 let span = var.span;
-                var.visit_mut_with(self);
+                var.visit_with(self);
 
                 let ids: Vec<Id> = find_ids_in_pat(&var.decls);
 
@@ -190,7 +190,7 @@ impl Analyzer<'_, '_> {
             }
             RDecl::TsModule(..) => unimplemented!("export module "),
             RDecl::TsTypeAlias(ref mut decl) => {
-                decl.visit_mut_with(self);
+                decl.visit_with(self);
                 // export type Foo = 'a' | 'b';
                 // export type Foo = {};
 

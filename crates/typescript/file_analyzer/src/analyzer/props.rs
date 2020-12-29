@@ -358,7 +358,7 @@ impl Analyzer<'_, '_> {
 
         let type_ann = self
             .with_child(ScopeKind::Method, Default::default(), |child| {
-                n.key.visit_mut_with(child);
+                n.key.visit_with(child);
 
                 if let Some(body) = &mut n.body {
                     let ret_ty =

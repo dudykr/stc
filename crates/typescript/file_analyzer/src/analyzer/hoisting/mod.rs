@@ -100,7 +100,7 @@ impl Analyzer<'_, '_> {
             } else {
                 let type_decl_id = type_decl_id(&stmts[idx]);
 
-                stmts[idx].visit_mut_with(self);
+                stmts[idx].visit_with(self);
 
                 new[idx].extend(self.prepend_stmts.drain(..).map(T::from));
 

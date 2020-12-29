@@ -685,7 +685,7 @@ impl Analyzer<'_, '_> {
         let mut new = Vec::with_capacity(items.len());
 
         for (i, item) in items.iter_mut().enumerate() {
-            item.visit_mut_with(self);
+            item.visit_with(self);
 
             new.extend(self.prepend_stmts.drain(..));
 
