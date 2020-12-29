@@ -55,7 +55,7 @@ use ty::TypeExt;
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut RExprOrSpread) -> ValidationResult<TypeOrSpread> {
+    fn validate(&mut self, node: &RExprOrSpread) -> ValidationResult<TypeOrSpread> {
         let span = node.span();
         Ok(TypeOrSpread {
             span,
@@ -67,7 +67,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &mut RCallExpr, type_ann: Option<&Type>) -> ValidationResult {
+    fn validate(&mut self, e: &RCallExpr, type_ann: Option<&Type>) -> ValidationResult {
         self.record(e);
 
         let RCallExpr {
@@ -103,7 +103,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &mut RNewExpr, type_ann: Option<&Type>) -> ValidationResult {
+    fn validate(&mut self, e: &RNewExpr, type_ann: Option<&Type>) -> ValidationResult {
         self.record(e);
 
         let RNewExpr {

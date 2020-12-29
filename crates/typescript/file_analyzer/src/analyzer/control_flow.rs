@@ -241,7 +241,7 @@ impl BitOr for CondFacts {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, stmt: &mut RIfStmt) -> ValidationResult<()> {
+    fn validate(&mut self, stmt: &RIfStmt) -> ValidationResult<()> {
         let _test = stmt.test.validate_with_default(self)?;
 
         let true_facts = self.cur_facts.true_facts.take();
@@ -406,7 +406,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, stmt: &mut RSwitchStmt) -> ValidationResult<()> {
+    fn validate(&mut self, stmt: &RSwitchStmt) -> ValidationResult<()> {
         self.record(stmt);
 
         let discriminant_ty = self
@@ -731,7 +731,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(
         &mut self,
-        mut e: &mut RCondExpr,
+        mut e: &RCondExpr,
         mode: TypeOfMode,
         type_ann: Option<&Type>,
     ) -> ValidationResult {

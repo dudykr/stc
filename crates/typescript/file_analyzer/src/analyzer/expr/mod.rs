@@ -103,7 +103,7 @@ impl Default for TypeOfMode {
 impl Analyzer<'_, '_> {
     fn validate(
         &mut self,
-        e: &mut RExpr,
+        e: &RExpr,
         mode: TypeOfMode,
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
@@ -393,7 +393,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &mut RExprOrSuper) -> ValidationResult {
+    fn validate(&mut self, e: &RExprOrSuper) -> ValidationResult {
         match e {
             RExprOrSuper::Expr(e) => e.validate_with_default(self),
             RExprOrSuper::Super(s) => Ok(Type::any(s.span)),
@@ -405,7 +405,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(
         &mut self,
-        e: &mut RParenExpr,
+        e: &RParenExpr,
         mode: TypeOfMode,
         type_ann: Option<&Type>,
     ) -> ValidationResult {
@@ -417,7 +417,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(
         &mut self,
-        e: &mut RAssignExpr,
+        e: &RAssignExpr,
         mode: TypeOfMode,
         type_ann: Option<&Type>,
     ) -> ValidationResult {
@@ -492,7 +492,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &mut RUpdateExpr) -> ValidationResult {
+    fn validate(&mut self, e: &RUpdateExpr) -> ValidationResult {
         let span = e.span;
 
         let ty = e
@@ -533,7 +533,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(
         &mut self,
-        e: &mut RSeqExpr,
+        e: &RSeqExpr,
         mode: TypeOfMode,
         type_ann: Option<&Type>,
     ) -> ValidationResult {
@@ -2175,7 +2175,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, f: &mut RArrowExpr) -> ValidationResult<ty::Function> {
+    fn validate(&mut self, f: &RArrowExpr) -> ValidationResult<ty::Function> {
         self.record(f);
 
         self.with_child(
@@ -2276,7 +2276,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut RObjectLit) -> ValidationResult {
+    fn validate(&mut self, node: &RObjectLit) -> ValidationResult {
         self.with_child(
             ScopeKind::ObjectLit,
             Default::default(),

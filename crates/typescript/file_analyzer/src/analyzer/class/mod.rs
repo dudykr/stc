@@ -106,7 +106,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, p: &mut RClassProp) -> ValidationResult<ClassProperty> {
+    fn validate(&mut self, p: &RClassProp) -> ValidationResult<ClassProperty> {
         self.record(p);
 
         // Verify key if key is computed
@@ -153,7 +153,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, p: &mut RPrivateProp) -> ValidationResult<ClassProperty> {
+    fn validate(&mut self, p: &RPrivateProp) -> ValidationResult<ClassProperty> {
         self.record(p);
 
         let value = self.validate_type_of_class_property(
@@ -183,7 +183,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, c: &mut RConstructor) -> ValidationResult<ConstructorSignature> {
+    fn validate(&mut self, c: &RConstructor) -> ValidationResult<ConstructorSignature> {
         self.record(c);
 
         let c_span = c.span();
@@ -295,7 +295,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, p: &mut RTsFnParam) -> ValidationResult<FnParam> {
+    fn validate(&mut self, p: &RTsFnParam) -> ValidationResult<FnParam> {
         self.record(p);
 
         let span = p.span();
@@ -342,14 +342,14 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, c: &mut RPrivateMethod) -> ValidationResult<Method> {
+    fn validate(&mut self, c: &RPrivateMethod) -> ValidationResult<Method> {
         unimplemented!("PrivateMethod")
     }
 }
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, c: &mut RClassMethod) -> ValidationResult<Method> {
+    fn validate(&mut self, c: &RClassMethod) -> ValidationResult<Method> {
         self.record(c);
 
         let c_span = c.span();
@@ -473,7 +473,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(
         &mut self,
-        m: &mut RClassMember,
+        m: &RClassMember,
     ) -> ValidationResult<Option<stc_ts_types::ClassMember>> {
         Ok(match m {
             RClassMember::PrivateMethod(m) => Some(m.validate_with(self).map(From::from)?),
@@ -819,7 +819,7 @@ impl Analyzer<'_, '_> {
 /// 5. Others, using dependency graph.
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, c: &mut RClass) -> ValidationResult<stc_ts_types::Class> {
+    fn validate(&mut self, c: &RClass) -> ValidationResult<stc_ts_types::Class> {
         self.record(c);
 
         self.ctx.computed_prop_mode = ComputedPropMode::Class {
@@ -1356,7 +1356,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, c: &mut RClassExpr) -> ValidationResult<()> {
+    fn validate(&mut self, c: &RClassExpr) -> ValidationResult<()> {
         self.scope.this_class_name = c.ident.as_ref().map(|v| v.into());
         let ty = match c.class.validate_with(self) {
             Ok(ty) => box ty.into(),
@@ -1405,7 +1405,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, c: &mut RClassDecl) -> ValidationResult<()> {
+    fn validate(&mut self, c: &RClassDecl) -> ValidationResult<()> {
         self.record(c);
 
         let ctx = Ctx {

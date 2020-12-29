@@ -102,7 +102,7 @@ use swc_ecma_ast::*;
 /// topological order.
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, decl: &mut RTsTypeParamDecl) -> ValidationResult<TypeParamDecl> {
+    fn validate(&mut self, decl: &RTsTypeParamDecl) -> ValidationResult<TypeParamDecl> {
         self.record(decl);
 
         if self.is_builtin {
@@ -136,7 +136,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, p: &mut RTsTypeParam) -> ValidationResult<TypeParam> {
+    fn validate(&mut self, p: &RTsTypeParam) -> ValidationResult<TypeParam> {
         self.record(p);
 
         let param = TypeParam {
@@ -154,7 +154,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     #[inline]
-    fn validate(&mut self, ann: &mut RTsTypeAnn) -> ValidationResult {
+    fn validate(&mut self, ann: &RTsTypeAnn) -> ValidationResult {
         self.record(ann);
 
         ann.type_ann.validate_with(self)
@@ -163,7 +163,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, d: &mut RTsTypeAliasDecl) -> ValidationResult<Alias> {
+    fn validate(&mut self, d: &RTsTypeAliasDecl) -> ValidationResult<Alias> {
         self.record(d);
         let mut span = d.span;
 
@@ -199,7 +199,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, d: &mut RTsInterfaceDecl) -> ValidationResult<Interface> {
+    fn validate(&mut self, d: &RTsInterfaceDecl) -> ValidationResult<Interface> {
         let ty: Interface = self.with_child(
             ScopeKind::Flow,
             Default::default(),
@@ -232,7 +232,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut RTsInterfaceBody) -> ValidationResult<Vec<TypeElement>> {
+    fn validate(&mut self, node: &RTsInterfaceBody) -> ValidationResult<Vec<TypeElement>> {
         let ctx = Ctx {
             computed_prop_mode: ComputedPropMode::Interface,
             ..self.ctx
@@ -244,7 +244,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, lit: &mut RTsTypeLit) -> ValidationResult<TypeLit> {
+    fn validate(&mut self, lit: &RTsTypeLit) -> ValidationResult<TypeLit> {
         Ok(TypeLit {
             span: lit.span,
             members: lit.members.validate_with(self)?,
@@ -254,7 +254,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &mut RTsTypeElement) -> ValidationResult<TypeElement> {
+    fn validate(&mut self, e: &RTsTypeElement) -> ValidationResult<TypeElement> {
         Ok(match e {
             RTsTypeElement::TsCallSignatureDecl(d) => TypeElement::Call(d.validate_with(self)?),
             RTsTypeElement::TsConstructSignatureDecl(d) => {
@@ -271,7 +271,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(
         &mut self,
-        d: &mut RTsConstructSignatureDecl,
+        d: &RTsConstructSignatureDecl,
     ) -> ValidationResult<ConstructorSignature> {
         Ok(ConstructorSignature {
             span: d.span,
@@ -284,7 +284,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, d: &mut RTsCallSignatureDecl) -> ValidationResult<CallSignature> {
+    fn validate(&mut self, d: &RTsCallSignatureDecl) -> ValidationResult<CallSignature> {
         Ok(CallSignature {
             span: d.span,
             params: d.params.validate_with(self)?,
@@ -296,7 +296,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, d: &mut RTsMethodSignature) -> ValidationResult<MethodSignature> {
+    fn validate(&mut self, d: &RTsMethodSignature) -> ValidationResult<MethodSignature> {
         self.with_child(ScopeKind::Fn, Default::default(), |child: &mut Analyzer| {
             if d.computed {
                 child.validate_computed_prop_key(d.span(), &mut d.key);
@@ -318,7 +318,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, d: &mut RTsIndexSignature) -> ValidationResult<IndexSignature> {
+    fn validate(&mut self, d: &RTsIndexSignature) -> ValidationResult<IndexSignature> {
         Ok(IndexSignature {
             span: d.span,
             params: d.params.validate_with(self)?,
@@ -330,7 +330,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, d: &mut RTsPropertySignature) -> ValidationResult<PropertySignature> {
+    fn validate(&mut self, d: &RTsPropertySignature) -> ValidationResult<PropertySignature> {
         if !self.is_builtin && d.computed {
             RComputedPropName {
                 node_id: NodeId::invalid(),
@@ -373,7 +373,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &mut RTsExprWithTypeArgs) -> ValidationResult<TsExpr> {
+    fn validate(&mut self, e: &RTsExprWithTypeArgs) -> ValidationResult<TsExpr> {
         Ok(TsExpr {
             span: e.span,
             expr: e.expr.clone(),
@@ -386,7 +386,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(
         &mut self,
-        i: &mut RTsTypeParamInstantiation,
+        i: &RTsTypeParamInstantiation,
     ) -> ValidationResult<TypeParamInstantiation> {
         let params = i.params.validate_with(self)?;
 
@@ -399,7 +399,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &mut RTsTupleType) -> ValidationResult<Tuple> {
+    fn validate(&mut self, t: &RTsTupleType) -> ValidationResult<Tuple> {
         Ok(Tuple {
             span: t.span,
             elems: t.elem_types.validate_with(self)?,
@@ -409,7 +409,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut RTsTupleElement) -> ValidationResult<TupleElement> {
+    fn validate(&mut self, node: &RTsTupleElement) -> ValidationResult<TupleElement> {
         Ok(TupleElement {
             span: node.span,
             label: node.label.clone(),
@@ -420,7 +420,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &mut RTsConditionalType) -> ValidationResult<Conditional> {
+    fn validate(&mut self, t: &RTsConditionalType) -> ValidationResult<Conditional> {
         Ok(Conditional {
             span: t.span,
             check_type: t.check_type.validate_with(self)?,
@@ -433,7 +433,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, ty: &mut RTsMappedType) -> ValidationResult<Mapped> {
+    fn validate(&mut self, ty: &RTsMappedType) -> ValidationResult<Mapped> {
         Ok(Mapped {
             span: ty.span,
             readonly: ty.readonly,
@@ -447,7 +447,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, ty: &mut RTsTypeOperator) -> ValidationResult<Operator> {
+    fn validate(&mut self, ty: &RTsTypeOperator) -> ValidationResult<Operator> {
         Ok(Operator {
             span: ty.span,
             op: ty.op,
@@ -458,7 +458,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut RTsArrayType) -> ValidationResult<Array> {
+    fn validate(&mut self, node: &RTsArrayType) -> ValidationResult<Array> {
         Ok(Array {
             span: node.span,
             elem_type: node.elem_type.validate_with(self)?,
@@ -468,7 +468,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, u: &mut RTsUnionType) -> ValidationResult<Union> {
+    fn validate(&mut self, u: &RTsUnionType) -> ValidationResult<Union> {
         Ok(Union {
             span: u.span,
             types: u.types.validate_with(self)?,
@@ -478,7 +478,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, u: &mut RTsIntersectionType) -> ValidationResult<Intersection> {
+    fn validate(&mut self, u: &RTsIntersectionType) -> ValidationResult<Intersection> {
         Ok(Intersection {
             span: u.span,
             types: u.types.validate_with(self)?,
@@ -488,7 +488,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &mut RTsFnType) -> ValidationResult<stc_ts_types::Function> {
+    fn validate(&mut self, t: &RTsFnType) -> ValidationResult<stc_ts_types::Function> {
         let type_params = try_opt!(t.type_params.validate_with(self));
 
         for param in &mut t.params {
@@ -510,10 +510,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(
-        &mut self,
-        t: &mut RTsConstructorType,
-    ) -> ValidationResult<stc_ts_types::Constructor> {
+    fn validate(&mut self, t: &RTsConstructorType) -> ValidationResult<stc_ts_types::Constructor> {
         let type_params = try_opt!(t.type_params.validate_with(self));
 
         for param in &mut t.params {
@@ -531,14 +528,14 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &mut RTsParenthesizedType) -> ValidationResult {
+    fn validate(&mut self, t: &RTsParenthesizedType) -> ValidationResult {
         t.type_ann.validate_with(self)
     }
 }
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &mut RTsTypeRef) -> ValidationResult {
+    fn validate(&mut self, t: &RTsTypeRef) -> ValidationResult {
         self.record(t);
 
         let type_args = try_opt!(t.type_params.validate_with(self));
@@ -595,7 +592,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &mut RTsInferType) -> ValidationResult<InferType> {
+    fn validate(&mut self, t: &RTsInferType) -> ValidationResult<InferType> {
         self.record(t);
 
         Ok(InferType {
@@ -607,7 +604,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &mut RTsImportType) -> ValidationResult<ImportType> {
+    fn validate(&mut self, t: &RTsImportType) -> ValidationResult<ImportType> {
         self.record(t);
 
         Ok(ImportType {
@@ -621,7 +618,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &mut RTsTypeQueryExpr) -> ValidationResult<QueryExpr> {
+    fn validate(&mut self, t: &RTsTypeQueryExpr) -> ValidationResult<QueryExpr> {
         self.record(t);
 
         let span = t.span();
@@ -635,7 +632,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &mut RTsRestType) -> ValidationResult<RestType> {
+    fn validate(&mut self, t: &RTsRestType) -> ValidationResult<RestType> {
         self.record(t);
 
         Ok(RestType {
@@ -647,7 +644,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &mut RTsOptionalType) -> ValidationResult<OptionalType> {
+    fn validate(&mut self, t: &RTsOptionalType) -> ValidationResult<OptionalType> {
         self.record(t);
 
         Ok(OptionalType {
@@ -659,7 +656,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &mut RTsTypeQuery) -> ValidationResult<QueryType> {
+    fn validate(&mut self, t: &RTsTypeQuery) -> ValidationResult<QueryType> {
         self.record(t);
 
         Ok(QueryType {
@@ -671,7 +668,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &mut RTsTypePredicate) -> ValidationResult<Predicate> {
+    fn validate(&mut self, t: &RTsTypePredicate) -> ValidationResult<Predicate> {
         self.record(t);
         let mut ty = try_opt!(t.type_ann.validate_with(self));
         match &mut ty {
@@ -692,7 +689,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &mut RTsIndexedAccessType) -> ValidationResult<IndexedAccessType> {
+    fn validate(&mut self, t: &RTsIndexedAccessType) -> ValidationResult<IndexedAccessType> {
         self.record(t);
 
         Ok(IndexedAccessType {
@@ -706,7 +703,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, ty: &mut RTsType) -> ValidationResult {
+    fn validate(&mut self, ty: &RTsType) -> ValidationResult {
         self.record(ty);
 
         let ty = match ty {

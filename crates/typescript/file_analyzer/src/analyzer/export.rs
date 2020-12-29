@@ -141,7 +141,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, export: &mut RExportDecl) {
+    fn validate(&mut self, export: &RExportDecl) {
         let span = export.span;
 
         match export.decl {
@@ -206,7 +206,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, export: &mut RExportDefaultDecl) {
+    fn validate(&mut self, export: &RExportDefaultDecl) {
         let span = export.span();
 
         match export.decl {
@@ -352,7 +352,7 @@ impl Analyzer<'_, '_> {
 /// Done
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut RTsExportAssignment) {
+    fn validate(&mut self, node: &RTsExportAssignment) {
         self.export_expr(Id::word(js_word!("default")), &mut node.expr)?;
 
         Ok(())
@@ -362,7 +362,7 @@ impl Analyzer<'_, '_> {
 /// Done
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut RExportDefaultExpr) {
+    fn validate(&mut self, node: &RExportDefaultExpr) {
         let ctx = Ctx {
             in_export_default_expr: true,
             ..self.ctx
@@ -376,7 +376,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut RExportAll) {
+    fn validate(&mut self, node: &RExportAll) {
         let span = node.span;
 
         let path = self.storage.path(self.ctx.module_id);
@@ -405,7 +405,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut RNamedExport) {
+    fn validate(&mut self, node: &RNamedExport) {
         let span = node.span;
         let ctxt = self.ctx.module_id;
         let base = self.storage.path(ctxt);
