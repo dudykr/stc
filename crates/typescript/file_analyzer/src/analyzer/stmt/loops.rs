@@ -68,7 +68,7 @@ impl Analyzer<'_, '_> {
     }
 
     #[extra_validator]
-    fn check_for_of_in_loop(&mut self, span: Span, mut left: &RVarDeclOrPat, rhs: &RExpr) {
+    fn check_for_of_in_loop(&mut self, span: Span, left: &RVarDeclOrPat, rhs: &RExpr) {
         self.with_child(
             ScopeKind::Flow,
             Default::default(),
@@ -83,7 +83,7 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 };
 
-                child.validate_for_loop(span, &mut left, rty);
+                child.validate_for_loop(span, &left, rty);
 
                 Ok(())
             },
@@ -94,7 +94,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, s: &RForInStmt) {
-        self.check_for_of_in_loop(s.span, &mut s.left, &mut s.right);
+        self.check_for_of_in_loop(s.span, &s.left, &s.right);
 
         Ok(())
     }
@@ -103,7 +103,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, s: &RForOfStmt) {
-        self.check_for_of_in_loop(s.span, &mut s.left, &mut s.right);
+        self.check_for_of_in_loop(s.span, &s.left, &s.right);
 
         Ok(())
     }

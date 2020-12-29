@@ -39,7 +39,7 @@ impl Analyzer<'_, '_> {
             _ => false,
         };
 
-        s.visit_mut_children_with(self);
+        s.visit_children_with(self);
 
         self.scope.return_values.in_conditional = old_in_conditional;
 
