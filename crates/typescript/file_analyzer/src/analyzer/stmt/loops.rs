@@ -21,15 +21,15 @@ impl Analyzer<'_, '_> {
     #[extra_validator]
     fn check_lhs_of_for_loop(&mut self, e: &RVarDeclOrPat) {
         match *e {
-            RVarDeclOrPat::VarDecl(ref mut v) => {
+            RVarDeclOrPat::VarDecl(ref v) => {
                 // Store variables
                 v.visit_with(self);
             }
-            RVarDeclOrPat::Pat(ref mut pat) => match *pat {
-                RPat::Expr(ref mut e) => {
+            RVarDeclOrPat::Pat(ref pat) => match pat {
+                RPat::Expr(ref e) => {
                     e.validate_with_args(self, (TypeOfMode::LValue, None, None))?;
                 }
-                RPat::Ident(ref mut i) => {
+                RPat::Ident(ref i) => {
                     // TODO: verify
                     self.type_of_var(i, TypeOfMode::LValue, None)?;
                 }
