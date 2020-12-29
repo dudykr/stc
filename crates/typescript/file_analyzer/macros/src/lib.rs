@@ -201,11 +201,7 @@ pub fn validator(
                     type Output = ReturnType;
                     type Context = (ContextType);
 
-                    fn validate(
-                        &mut self,
-                        node_pat: & NodeType,
-                        ctxt: Self::Context,
-                    ) -> ReturnType {
+                    fn validate(&mut self, node_pat: &NodeType, ctxt: Self::Context) -> ReturnType {
                         let (conext_pats) = ctxt;
                         body
                     }
