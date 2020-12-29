@@ -25,7 +25,7 @@ use swc_ecma_ast::*;
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &mut RUnaryExpr) -> ValidationResult {
+    fn validate(&mut self, e: &RUnaryExpr) -> ValidationResult {
         let RUnaryExpr {
             span,
             op,

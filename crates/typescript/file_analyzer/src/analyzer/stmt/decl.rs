@@ -45,7 +45,7 @@ use ty::TypeExt;
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, var: &mut RVarDecl) {
+    fn validate(&mut self, var: &RVarDecl) {
         self.record(&*var);
 
         let ctx = Ctx {
@@ -106,7 +106,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, v: &mut RVarDeclarator) {
+    fn validate(&mut self, v: &RVarDeclarator) {
         self.record(v);
 
         let kind = self.ctx.var_kind;

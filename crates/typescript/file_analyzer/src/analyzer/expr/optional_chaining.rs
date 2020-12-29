@@ -12,7 +12,7 @@ use stc_ts_types::Type;
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut ROptChainExpr, type_ann: Option<&Type>) -> ValidationResult {
+    fn validate(&mut self, node: &ROptChainExpr, type_ann: Option<&Type>) -> ValidationResult {
         let span = node.span;
 
         match &mut *node.expr {

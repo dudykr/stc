@@ -31,7 +31,7 @@ mod try_catch;
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, s: &mut RStmt) {
+    fn validate(&mut self, s: &RStmt) {
         let old_in_conditional = self.scope.return_values.in_conditional;
         self.scope.return_values.in_conditional |= match s {
             RStmt::If(_) => true,
@@ -69,7 +69,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut RWhileStmt) {
+    fn validate(&mut self, node: &RWhileStmt) {
         let test = node.test.validate_with_default(self)?;
         self.check_for_inifinite_loop(&test, &node.body);
 
@@ -81,7 +81,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut RDoWhileStmt) {
+    fn validate(&mut self, node: &RDoWhileStmt) {
         let test = node.test.validate_with_default(self)?;
         self.check_for_inifinite_loop(&test, &node.body);
 
@@ -93,7 +93,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut RForStmt) {
+    fn validate(&mut self, node: &RForStmt) {
         node.init.visit_mut_with(self);
 
         let test = try_opt!(node.test.validate_with_default(self));
@@ -120,7 +120,7 @@ impl Analyzer<'_, '_> {
 /// NOTE: We does **not** dig into with statements.
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, s: &mut RWithStmt) {
+    fn validate(&mut self, s: &RWithStmt) {
         s.obj.visit_mut_with(self);
 
         Ok(())
@@ -129,7 +129,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, s: &mut RBlockStmt) {
+    fn validate(&mut self, s: &RBlockStmt) {
         self.with_child(ScopeKind::Block, Default::default(), |analyzer| {
             s.stmts.visit_mut_with(analyzer);
             Ok(())
@@ -141,7 +141,7 @@ impl Analyzer<'_, '_> {
 
 impl Analyzer<'_, '_> {
     /// Validate that parent interfaces are all resolved.
-    pub fn resolve_parent_interfaces(&mut self, parents: &mut [RTsExprWithTypeArgs]) {
+    pub fn resolve_parent_interfaces(&mut self, parents: &[RTsExprWithTypeArgs]) {
         for parent in parents {
             // Verify parent interface
             let res: Result<_, _> = try {

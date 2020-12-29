@@ -94,7 +94,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, s: &mut RForInStmt) {
+    fn validate(&mut self, s: &RForInStmt) {
         self.check_for_of_in_loop(s.span, &mut s.left, &mut s.right);
 
         Ok(())
@@ -103,7 +103,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, s: &mut RForOfStmt) {
+    fn validate(&mut self, s: &RForOfStmt) {
         self.check_for_of_in_loop(s.span, &mut s.left, &mut s.right);
 
         Ok(())

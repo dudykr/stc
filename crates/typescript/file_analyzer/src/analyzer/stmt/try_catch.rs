@@ -9,7 +9,7 @@ use stc_ts_ast_rnode::RCatchClause;
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, s: &mut RCatchClause) {
+    fn validate(&mut self, s: &RCatchClause) {
         let ctx = Ctx {
             pat_mode: PatMode::Decl,
             ..self.ctx

@@ -73,7 +73,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut RParam) -> ValidationResult<ty::FnParam> {
+    fn validate(&mut self, node: &RParam) -> ValidationResult<ty::FnParam> {
         node.decorators.visit_mut_with(self);
         let ctx = Ctx {
             pat_mode: PatMode::Decl,
@@ -85,7 +85,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, p: &mut RPat) -> ValidationResult<ty::FnParam> {
+    fn validate(&mut self, p: &RPat) -> ValidationResult<ty::FnParam> {
         self.record(p);
         if !self.is_builtin {
             debug_assert_ne!(p.span(), DUMMY_SP, "A pattern should have a valid span");
@@ -213,7 +213,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, p: &mut RRestPat) {
+    fn validate(&mut self, p: &RRestPat) {
         p.visit_mut_children_with(self);
 
         let mut errors = Errors::default();
@@ -257,7 +257,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, p: &mut RAssignPat) {
+    fn validate(&mut self, p: &RAssignPat) {
         p.visit_mut_children_with(self);
 
         //

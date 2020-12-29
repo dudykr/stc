@@ -43,7 +43,7 @@ pub(super) enum ComputedPropMode {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut RPropName) {
+    fn validate(&mut self, node: &RPropName) {
         self.record(node);
 
         node.visit_mut_children_with(self);
@@ -54,7 +54,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut RComputedPropName) {
+    fn validate(&mut self, node: &RComputedPropName) {
         self.record(node);
 
         let mode = self.ctx.computed_prop_mode;
@@ -173,7 +173,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, prop: &mut RProp) -> ValidationResult<TypeElement> {
+    fn validate(&mut self, prop: &RProp) -> ValidationResult<TypeElement> {
         self.record(prop);
 
         let ctx = Ctx {
@@ -348,7 +348,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, n: &mut RGetterProp) -> ValidationResult<TypeElement> {
+    fn validate(&mut self, n: &RGetterProp) -> ValidationResult<TypeElement> {
         self.record(n);
 
         let computed = match n.key {

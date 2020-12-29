@@ -211,7 +211,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut RReturnStmt) {
+    fn validate(&mut self, node: &RReturnStmt) {
         let ty = if let Some(res) = node.arg.validate_with_default(self) {
             res?
         } else {
@@ -229,7 +229,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &mut RYieldExpr) -> ValidationResult {
+    fn validate(&mut self, e: &RYieldExpr) -> ValidationResult {
         if let Some(res) = e.arg.validate_with_default(self) {
             self.scope.return_values.yield_types.push(res?);
         } else {

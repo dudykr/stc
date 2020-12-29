@@ -115,7 +115,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut RImportDecl) {
+    fn validate(&mut self, node: &RImportDecl) {
         let ctxt = self.ctx.module_id;
         let base = self.storage.path(ctxt);
         let target = self.loader.module_id(&base, &node.src.value);

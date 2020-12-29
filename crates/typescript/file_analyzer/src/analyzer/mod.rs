@@ -258,7 +258,7 @@ fn make_module_ty(span: Span, exports: ModuleTypeData) -> ty::Module {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut RScript) -> ValidationResult<ty::Module> {
+    fn validate(&mut self, node: &RScript) -> ValidationResult<ty::Module> {
         let span = node.span;
 
         let (errors, data) = {
@@ -554,7 +554,7 @@ impl Load for NoopLoader {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, modules: &mut Vec<RModule>) {
+    fn validate(&mut self, modules: &Vec<RModule>) {
         let mut counts = vec![];
         let mut items = vec![];
         for m in modules.drain(..) {
@@ -586,7 +586,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, items: &mut Vec<RModuleItem>) {
+    fn validate(&mut self, items: &Vec<RModuleItem>) {
         self.load_normal_imports(&items);
 
         let mut has_normal_export = false;
@@ -668,7 +668,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, items: &mut Vec<RStmt>) {
+    fn validate(&mut self, items: &Vec<RStmt>) {
         let mut visitor = AmbientFunctionHandler {
             last_ambient_name: None,
             errors: &mut self.storage,
@@ -703,7 +703,7 @@ impl Analyzer<'_, '_> {
 /// Done
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, d: &mut RDecorator) {
+    fn validate(&mut self, d: &RDecorator) {
         d.expr.validate_with_default(self).report(&mut self.storage);
 
         Ok(())
@@ -712,7 +712,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut RTsImportEqualsDecl) {
+    fn validate(&mut self, node: &RTsImportEqualsDecl) {
         self.record(node);
 
         match node.module_ref {
@@ -731,14 +731,14 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, decl: &mut RTsNamespaceDecl) {
+    fn validate(&mut self, decl: &RTsNamespaceDecl) {
         todo!("namespace is not supported yet")
     }
 }
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, decl: &mut RTsModuleDecl) {
+    fn validate(&mut self, decl: &RTsModuleDecl) {
         let span = decl.span;
         let ctxt = self.ctx.module_id;
         let global = decl.global;

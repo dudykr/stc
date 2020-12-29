@@ -27,7 +27,7 @@ use swc_ecma_ast::*;
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, f: &mut RFunction) -> ValidationResult<ty::Function> {
+    fn validate(&mut self, f: &RFunction) -> ValidationResult<ty::Function> {
         self.record(f);
 
         self.with_child(ScopeKind::Fn, Default::default(), |child| {
@@ -338,7 +338,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     /// NOTE: This method **should not call f.fold_children_with(self)**
-    fn validate(&mut self, f: &mut RFnDecl) {
+    fn validate(&mut self, f: &RFnDecl) {
         let fn_ty = self.visit_fn(Some(&f.ident), &mut f.function).cheap();
 
         match self.override_var(VarDeclKind::Var, f.ident.clone().into(), fn_ty) {
@@ -355,7 +355,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     /// NOTE: This method **should not call f.fold_children_with(self)**
-    fn validate(&mut self, f: &mut RFnExpr) {
+    fn validate(&mut self, f: &RFnExpr) {
         self.visit_fn(f.ident.as_ref(), &mut f.function);
 
         Ok(())

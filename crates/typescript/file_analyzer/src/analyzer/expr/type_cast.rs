@@ -14,7 +14,7 @@ use swc_common::{Span, Spanned};
 impl Analyzer<'_, '_> {
     fn validate(
         &mut self,
-        e: &mut RTsTypeAssertion,
+        e: &RTsTypeAssertion,
         mode: TypeOfMode,
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
@@ -32,7 +32,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(
         &mut self,
-        e: &mut RTsAsExpr,
+        e: &RTsAsExpr,
         mode: TypeOfMode,
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
