@@ -1,5 +1,6 @@
 use fxhash::FxHashMap;
 use rnode::NodeId;
+use stc_ts_ast_rnode::RExpr;
 use stc_ts_types::Type;
 
 /// Stores ast mutation informations.
@@ -13,6 +14,7 @@ pub struct Mutations {
     pub for_pats: FxHashMap<NodeId, PatMut>,
     pub for_var_decls: FxHashMap<NodeId, VarDeclMut>,
     pub for_fns: FxHashMap<NodeId, FunctionMut>,
+    pub for_classes: FxHashMap<NodeId, ClassMut>,
 }
 
 #[derive(Default)]
@@ -28,4 +30,9 @@ pub struct VarDeclMut {
 #[derive(Default)]
 pub struct FunctionMut {
     pub ret_ty: Option<Box<Type>>,
+}
+
+#[derive(Default)]
+pub struct ClassMut {
+    pub super_class: Option<Box<RExpr>>,
 }
