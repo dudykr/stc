@@ -190,13 +190,13 @@ impl Analyzer<'_, '_> {
             ScopeKind::Method,
             Default::default(),
             |child: &mut Analyzer| {
-                let RConstructor { ref mut params, .. } = *c;
+                let RConstructor { ref params, .. } = *c;
 
                 {
                     // Validate params
                     // TODO: Move this to parser
                     let mut has_optional = false;
-                    for p in params.iter_mut() {
+                    for p in params.iter() {
                         if has_optional {
                             child.storage.report(Error::TS1016 { span: p.span() });
                         }
@@ -216,7 +216,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 let mut ps = Vec::with_capacity(params.len());
-                for param in params.iter_mut() {
+                for param in params.iter() {
                     let mut names = vec![];
 
                     let mut visitor = VarVisitor { names: &mut names };
@@ -239,7 +239,7 @@ impl Analyzer<'_, '_> {
                     let p: FnParam = p.validate_with(child)?;
 
                     match param {
-                        RParamOrTsParamProp::Param(RParam { ref mut pat, .. }) => {
+                        RParamOrTsParamProp::Param(RParam { ref pat, .. }) => {
                             match child.declare_vars_with_ty(
                                 VarDeclKind::Let,
                                 pat,
@@ -411,13 +411,14 @@ impl Analyzer<'_, '_> {
                 let is_async = c.function.is_async;
                 let is_generator = c.function.is_generator;
 
-                let inferred_ret_ty = match c.function.body.as_mut().map(|bs| {
-                    child.visit_stmts_for_return(span, is_async, is_generator, &mut bs.stmts)
-                }) {
-                    Some(Ok(ty)) => ty,
-                    Some(err) => err?,
-                    None => None,
-                };
+                let inferred_ret_ty =
+                    match c.function.body.as_ref().map(|bs| {
+                        child.visit_stmts_for_return(span, is_async, is_generator, &bs.stmts)
+                    }) {
+                        Some(Ok(ty)) => ty,
+                        Some(err) => err?,
+                        None => None,
+                    };
 
                 Ok((params, type_params, declared_ret_ty, inferred_ret_ty))
             },
@@ -1062,7 +1063,7 @@ impl Analyzer<'_, '_> {
                 // Handle nodes in order described above
                 let mut body = {
                     // Handle static properties
-                    for (index, member) in c.body.iter_mut().enumerate() {
+                    for (index, member) in c.body.iter().enumerate() {
                         match member {
                             RClassMember::ClassProp(RClassProp {
                                 is_static: true, ..

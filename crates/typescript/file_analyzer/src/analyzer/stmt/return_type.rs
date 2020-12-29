@@ -66,7 +66,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         is_async: bool,
         is_generator: bool,
-        stmts: &mut Vec<RStmt>,
+        stmts: &Vec<RStmt>,
     ) -> Result<Option<Box<Type>>, Error> {
         slog::debug!(self.logger, "visit_stmts_for_return()");
 
