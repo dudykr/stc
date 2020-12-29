@@ -1084,7 +1084,7 @@ impl Analyzer<'_, '_> {
                     // Handle ts parameter properties
                     for (index, constructor) in
                         c.body
-                            .iter_mut()
+                            .iter()
                             .enumerate()
                             .filter_map(|(i, member)| match member {
                                 RClassMember::Constructor(c) => Some((i, c)),
@@ -1199,7 +1199,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     // Handle properties
-                    for (index, member) in c.body.iter_mut().enumerate() {
+                    for (index, member) in c.body.iter().enumerate() {
                         match member {
                             RClassMember::ClassProp(RClassProp {
                                 is_static: false, ..
@@ -1219,14 +1219,14 @@ impl Analyzer<'_, '_> {
                     }
 
                     // Handle user-declared method signatures.
-                    for member in &mut c.body {}
+                    for member in & c.body {}
 
                     // Handle body of methods and a constructor
                     // (in try mode - we ignores error if it's not related to the type of return
                     // value)
                     //
                     // This is to infer return types of methods
-                    for member in &mut c.body {}
+                    for member in & c.body {}
 
                     // Actaully check types of method / constructors.
 
@@ -1278,7 +1278,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     for (index, m) in body.iter_mut() {
-                        let orig = &mut c.body[*index];
+                        let orig = & c.body[*index];
                         match m {
                             stc_ts_types::ClassMember::IndexSignature(_)
                             | stc_ts_types::ClassMember::Constructor(_) => continue,

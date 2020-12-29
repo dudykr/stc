@@ -217,7 +217,7 @@ impl Analyzer<'_, '_> {
                     .register_type(d.id.clone().into(), box ty.clone().into())
                     .report(&mut child.storage);
 
-                child.resolve_parent_interfaces(&mut d.extends);
+                child.resolve_parent_interfaces(&d.extends);
 
                 Ok(ty)
             },
@@ -299,7 +299,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, d: &RTsMethodSignature) -> ValidationResult<MethodSignature> {
         self.with_child(ScopeKind::Fn, Default::default(), |child: &mut Analyzer| {
             if d.computed {
-                child.validate_computed_prop_key(d.span(), &mut d.key);
+                child.validate_computed_prop_key(d.span(), &d.key);
             }
 
             Ok(MethodSignature {
@@ -513,7 +513,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsConstructorType) -> ValidationResult<stc_ts_types::Constructor> {
         let type_params = try_opt!(t.type_params.validate_with(self));
 
-        for param in &mut t.params {
+        for param in &t.params {
             default_any_param(self.marks().implicit_type_mark, param);
         }
 

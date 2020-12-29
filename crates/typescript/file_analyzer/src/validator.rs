@@ -43,7 +43,7 @@ where
 
     fn validate(&mut self, node: &Option<T>, ctxt: Self::Context) -> Self::Output {
         match node {
-            Some(ref mut n) => Some(self.validate(n, ctxt)),
+            Some(ref n) => Some(self.validate(n, ctxt)),
             None => None,
         }
     }
@@ -84,10 +84,7 @@ where
     type Context = <Self as Validate<'c, T>>::Context;
 
     fn validate(&mut self, nodes: &Vec<T>, ctxt: Self::Context) -> Self::Output {
-        nodes
-            .iter_mut()
-            .map(|node| self.validate(node, ctxt))
-            .collect()
+        nodes.iter().map(|node| self.validate(node, ctxt)).collect()
     }
 }
 
