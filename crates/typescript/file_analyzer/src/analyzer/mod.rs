@@ -133,7 +133,7 @@ pub struct Analyzer<'scope, 'b> {
     env: Env,
     cm: Arc<SourceMap>,
 
-    mutations: Option<&'b mut Mutations>,
+    pub mutations: Option<Mutations>,
 
     storage: Storage<'b>,
 
@@ -294,7 +294,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         env: Env,
         cm: Arc<SourceMap>,
         storage: Storage<'b>,
-        mutations: Option<&'b mut Mutations>,
+        mutations: Option<Mutations>,
         loader: &'b dyn Load,
     ) -> Self {
         Self::new_inner(
@@ -350,7 +350,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         env: Env,
         cm: Arc<SourceMap>,
         storage: Storage<'b>,
-        mutations: Option<&'b mut Mutations>,
+        mutations: Option<Mutations>,
         loader: &'b dyn Load,
         scope: Scope<'scope>,
         is_builtin: bool,
