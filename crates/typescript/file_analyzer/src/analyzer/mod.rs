@@ -128,12 +128,12 @@ pub(crate) struct Ctx {
 }
 
 /// Note: All methods named `validate_*` return [Err] iff it's not recoverable.
-pub struct Analyzer<'a, 'b> {
+pub struct Analyzer<'scope, 'b> {
     logger: Logger,
     env: Env,
     cm: Arc<SourceMap>,
 
-    mutations: Option<Mutations>,
+    mutations: Option<&'b mut Mutations>,
 
     storage: Storage<'b>,
 
@@ -188,7 +188,7 @@ pub struct Analyzer<'a, 'b> {
     /// we need to append statements.
     append_stmts: Vec<RStmt>,
 
-    scope: Scope<'a>,
+    scope: Scope<'scope>,
 
     ctx: Ctx,
 
@@ -288,12 +288,13 @@ fn _assert_types() {
     is_send::<Info>();
 }
 
-impl<'a, 'b> Analyzer<'a, 'b> {
+impl<'scope, 'b> Analyzer<'scope, 'b> {
     pub fn root(
         logger: Logger,
         env: Env,
         cm: Arc<SourceMap>,
         storage: Storage<'b>,
+        mutations: Option<&'b mut Mutations>,
         loader: &'b dyn Load,
     ) -> Self {
         Self::new_inner(
@@ -301,6 +302,7 @@ impl<'a, 'b> Analyzer<'a, 'b> {
             env,
             cm,
             storage,
+            mutations,
             loader,
             Scope::root(logger),
             false,
@@ -321,6 +323,7 @@ impl<'a, 'b> Analyzer<'a, 'b> {
             ),
             Arc::new(SourceMap::default()),
             box storage,
+            None,
             &NoopLoader,
             Scope::root(logger),
             true,
@@ -328,12 +331,13 @@ impl<'a, 'b> Analyzer<'a, 'b> {
         )
     }
 
-    fn new(&'b self, scope: Scope<'a>) -> Self {
+    fn new(&'b self, scope: Scope<'scope>) -> Self {
         Self::new_inner(
             self.logger.clone(),
             self.env.clone(),
             self.cm.clone(),
             self.storage.subscope(),
+            None,
             self.loader,
             scope,
             self.is_builtin,
@@ -346,8 +350,9 @@ impl<'a, 'b> Analyzer<'a, 'b> {
         env: Env,
         cm: Arc<SourceMap>,
         storage: Storage<'b>,
+        mutations: Option<&'b mut Mutations>,
         loader: &'b dyn Load,
-        scope: Scope<'a>,
+        scope: Scope<'scope>,
         is_builtin: bool,
         symbols: Arc<SymbolIdGenerator>,
     ) -> Self {
@@ -356,6 +361,7 @@ impl<'a, 'b> Analyzer<'a, 'b> {
             env,
             cm,
             storage,
+            mutations,
             export_equals_span: DUMMY_SP,
             // builtin types are declared
             in_declare: is_builtin,
@@ -413,6 +419,7 @@ impl<'a, 'b> Analyzer<'a, 'b> {
         let ctx = self.ctx;
         let imports = take(&mut self.imports);
         let imports_by_id = take(&mut self.imports_by_id);
+        let mutations = self.mutations.take();
         let cur_facts = take(&mut self.cur_facts);
 
         let child_scope = Scope::new(&self.scope, kind, facts);
@@ -426,10 +433,12 @@ impl<'a, 'b> Analyzer<'a, 'b> {
             dup,
             prepend_stmts,
             append_stmts,
+            mutations,
         ) = {
             let mut child = self.new(child_scope);
             child.imports = imports;
             child.imports_by_id = imports_by_id;
+            child.mutations = mutations;
             child.cur_facts = cur_facts;
             child.ctx = ctx;
 
@@ -445,6 +454,7 @@ impl<'a, 'b> Analyzer<'a, 'b> {
                 child.duplicated_tracker,
                 child.prepend_stmts,
                 child.append_stmts,
+                child.mutations.take(),
             )
         };
         self.storage.report_all(errors);
@@ -452,6 +462,7 @@ impl<'a, 'b> Analyzer<'a, 'b> {
         self.imports = imports;
         self.imports_by_id = imports_by_id;
         self.cur_facts = cur_facts;
+        self.mutations = mutations;
 
         // if !self.is_builtin {
         //     assert_eq!(
@@ -482,7 +493,7 @@ impl<'a, 'b> Analyzer<'a, 'b> {
         ret
     }
 
-    fn with_ctx(&mut self, ctx: Ctx) -> WithCtx<'_, 'a, 'b> {
+    fn with_ctx(&mut self, ctx: Ctx) -> WithCtx<'_, 'scope, 'b> {
         let orig_ctx = self.ctx;
         self.ctx = ctx;
         WithCtx {
