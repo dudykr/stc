@@ -29,7 +29,7 @@ where
     type Context = <Self as Validate<'c, T>>::Context;
 
     fn validate(&mut self, node: &Box<T>, ctxt: Self::Context) -> Self::Output {
-        self.validate(&mut **node, ctxt)
+        self.validate(&**node, ctxt)
     }
 }
 
