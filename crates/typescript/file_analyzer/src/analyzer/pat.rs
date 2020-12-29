@@ -93,7 +93,7 @@ impl Analyzer<'_, '_> {
 
         // Mark pattern as optional if default value exists
         match p {
-            RPat::Assign(assign_pat) => match &mut *assign_pat.left {
+            RPat::Assign(assign_pat) => match &*assign_pat.left {
                 RPat::Ident(i) => {
                     i.optional = true;
                 }
@@ -218,7 +218,7 @@ impl Analyzer<'_, '_> {
 
         let mut errors = Errors::default();
 
-        if let RPat::Assign(RAssignPat { ref mut right, .. }) = *p.arg {
+        if let RPat::Assign(RAssignPat { ref right, .. }) = *p.arg {
             let res: Result<_, _> = try {
                 let value_ty = right.validate_with_default(self)?;
 
@@ -232,7 +232,7 @@ impl Analyzer<'_, '_> {
                 }
             };
             res.store(&mut errors);
-        } else if let Some(ref mut type_ann) = p.type_ann {
+        } else if let Some(ref type_ann) = p.type_ann {
             let res: Result<_, _> = try {
                 let ty = type_ann.validate_with(self)?;
 
