@@ -108,7 +108,7 @@ impl Analyzer<'_, '_> {
             let is_async = f.is_async;
             let is_generator = f.is_generator;
 
-            let inferred_return_type = try_opt!(f.body.as_mut().map(
+            let inferred_return_type = try_opt!(f.body.as_ref().map(
                 |body| child.visit_stmts_for_return(span, is_async, is_generator, &mut body.stmts)
             ));
 
