@@ -443,12 +443,12 @@ impl Analyzer<'_, '_> {
         if c.kind != MethodKind::Setter {
             let node_id = c.function.node_id;
 
+            let ret_ty = if self.may_generalize(&ret_ty) {
+                ret_ty.clone().generalize_lit()
+            } else {
+                ret_ty.clone()
+            };
             if let Some(m) = &mut self.mutations {
-                let ret_ty = if self.may_generalize(&ret_ty) {
-                    ret_ty.clone().generalize_lit()
-                } else {
-                    ret_ty.clone()
-                };
                 m.for_fns.entry(node_id).or_default().ret_ty = Some(ret_ty);
             }
         }
