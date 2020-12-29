@@ -1142,7 +1142,7 @@ impl Analyzer<'_, '_> {
                                         p.accessibility = None;
                                     }
 
-                                    let (i, ty) = match &mut p.param {
+                                    let (i, ty) = match &p.param {
                                         RTsParamPropParam::Ident(i) => {
                                             let mut ty = i.type_ann.clone();
                                             let ty = try_opt!(ty.validate_with(child));
@@ -1302,10 +1302,17 @@ impl Analyzer<'_, '_> {
                                                 let new_ty = ty.clone().generalize_lit();
                                                 param.ty = new_ty.clone();
                                                 match orig {
-                                                    RClassMember::Method(ref mut method) => {
-                                                        method.function.params[0]
-                                                            .pat
-                                                            .set_ty(Some(new_ty.clone().into()))
+                                                    RClassMember::Method(ref method) => {
+                                                        let node_id =
+                                                            method.function.params[0].pat.node_id();
+                                                        if let Some(node_id) = node_id {
+                                                            if let Some(m) = &mut child.mutations {
+                                                                m.for_pats
+                                                                    .entry(node_id)
+                                                                    .or_default()
+                                                                    .ty = Some(new_ty.clone())
+                                                            }
+                                                        }
                                                     }
                                                     _ => {}
                                                 }

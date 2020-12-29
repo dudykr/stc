@@ -62,6 +62,7 @@ pub trait PatExt {
     fn get_ty(&self) -> Option<&RTsType>;
     fn get_mut_ty(&mut self) -> Option<&mut RTsType>;
     fn set_ty(&mut self, ty: Option<Box<RTsType>>);
+    fn node_id(&self) -> Option<NodeId>;
 }
 
 impl PatExt for RPat {
@@ -137,5 +138,17 @@ impl PatExt for RPat {
 
             _ => {}
         }
+    }
+
+    fn node_id(&self) -> Option<NodeId> {
+        Some(match self {
+            RPat::Ident(i) => i.node_id,
+            RPat::Array(a) => a.node_id,
+            RPat::Rest(r) => r.node_id,
+            RPat::Object(o) => o.node_id,
+            RPat::Assign(a) => a.node_id,
+            RPat::Invalid(_) => return None,
+            RPat::Expr(_) => return None,
+        })
     }
 }
