@@ -12,6 +12,7 @@ use stc_ts_types::Type;
 pub struct Mutations {
     pub for_pats: FxHashMap<NodeId, PatMut>,
     pub for_var_decls: FxHashMap<NodeId, VarDeclMut>,
+    pub for_fns: FxHashMap<NodeId, FunctionMut>,
 }
 
 #[derive(Default)]
@@ -22,4 +23,9 @@ pub struct PatMut {
 #[derive(Default)]
 pub struct VarDeclMut {
     pub remove_init: bool,
+}
+
+#[derive(Default)]
+pub struct FunctionMut {
+    pub ret_ty: Option<Box<Type>>,
 }

@@ -441,10 +441,15 @@ impl Analyzer<'_, '_> {
         });
 
         if c.kind != MethodKind::Setter {
-            if self.may_generalize(&ret_ty) {
-                c.function.return_type = Some(ret_ty.clone().generalize_lit().into());
-            } else {
-                c.function.return_type = Some(ret_ty.clone().into());
+            let node_id = c.function.node_id;
+
+            if let Some(m) = &mut self.mutations {
+                let ret_ty = if self.may_generalize(&ret_ty) {
+                    ret_ty.clone().generalize_lit()
+                } else {
+                    ret_ty.clone()
+                };
+                m.for_fns.entry(node_id).or_default().ret_ty = Some(ret_ty);
             }
         }
 
@@ -1085,7 +1090,7 @@ impl Analyzer<'_, '_> {
                                 _ => None,
                             })
                     {
-                        for param in &mut constructor.params {
+                        for param in & constructor.params {
                             match param {
                                 RParamOrTsParamProp::TsParamProp(p) => {
                                     if p.accessibility == Some(Accessibility::Private) {
