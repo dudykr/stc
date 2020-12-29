@@ -491,8 +491,8 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsFnType) -> ValidationResult<stc_ts_types::Function> {
         let type_params = try_opt!(t.type_params.validate_with(self));
 
-        for param in &mut t.params {
-            default_any_param(self.marks().implicit_type_mark, param);
+        for param in &t.params {
+            default_any_param(self.marks().implicit_type_mark, &param);
         }
 
         let mut params: Vec<_> = t.params.validate_with(self)?;
@@ -884,7 +884,7 @@ pub(crate) fn default_any_object(implicit_type_mark: Mark, obj: &mut RObjectPat)
     })
 }
 
-pub(crate) fn default_any_param(implicit_type_mark: Mark, p: &mut RTsFnParam) {
+pub(crate) fn default_any_param(implicit_type_mark: Mark, p: &RTsFnParam) {
     match p {
         RTsFnParam::Ident(i) => default_any_ident(implicit_type_mark, i),
         RTsFnParam::Array(arr) => default_any_array_pat(implicit_type_mark, arr),

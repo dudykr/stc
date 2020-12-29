@@ -61,7 +61,6 @@ use stc_ts_types::Method;
 use stc_ts_types::Operator;
 use stc_ts_types::Ref;
 use stc_ts_types::Type;
-use stc_ts_utils::MapWithMut;
 use stc_ts_utils::PatExt;
 use std::mem::replace;
 use swc_atoms::js_word;
@@ -826,7 +825,7 @@ impl Analyzer<'_, '_> {
         };
 
         c.decorators.visit_with(self);
-        self.resolve_parent_interfaces(&mut c.implements);
+        self.resolve_parent_interfaces(&c.implements);
         let name = self.scope.this_class_name.take();
 
         let mut types_to_register: Vec<(Id, _)> = vec![];
@@ -844,7 +843,7 @@ impl Analyzer<'_, '_> {
                     // Then, we can expand super class
 
                     let super_type_params = try_opt!(c.super_type_params.validate_with(child));
-                    match &mut c.super_class {
+                    match & c.super_class {
                         Some(box expr) => {
                             let need_base_class = match expr {
                                 RExpr::Ident(..) => false,

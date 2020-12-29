@@ -252,7 +252,7 @@ impl Analyzer<'_, '_> {
             stmt.cons.validate_with(child)
         })?;
 
-        if let Some(ref mut alt) = stmt.alt {
+        if let Some(alt) = &stmt.alt {
             self.with_child(ScopeKind::Flow, false_facts.clone(), |child| {
                 alt.validate_with(child)
             })?;
@@ -393,8 +393,8 @@ impl Analyzer<'_, '_> {
 
     fn check_switch_discriminant(&mut self, s: &RSwitchStmt) -> ValidationResult {
         let discriminant_ty = s.discriminant.validate_with_default(self)?;
-        for case in &mut s.cases {
-            if let Some(ref mut test) = case.test {
+        for case in &s.cases {
+            if let Some(test) = &case.test {
                 let case_ty = test.validate_with_default(self)?;
                 self.assign(&discriminant_ty, &case_ty, test.span())?
             }
@@ -422,7 +422,7 @@ impl Analyzer<'_, '_> {
 
         let mut errored = false;
         // Check cases *in order*
-        for (i, case) in stmt.cases.iter_mut().enumerate() {
+        for (i, case) in stmt.cases.iter().enumerate() {
             if errored {
                 break;
             }
@@ -731,7 +731,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(
         &mut self,
-        mut e: &RCondExpr,
+        e: &RCondExpr,
         mode: TypeOfMode,
         type_ann: Option<&Type>,
     ) -> ValidationResult {
@@ -739,9 +739,9 @@ impl Analyzer<'_, '_> {
 
         let RCondExpr {
             span,
-            ref mut test,
-            ref mut alt,
-            ref mut cons,
+            ref test,
+            ref alt,
+            ref cons,
             ..
         } = *e;
 
