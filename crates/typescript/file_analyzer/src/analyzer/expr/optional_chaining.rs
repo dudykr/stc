@@ -15,7 +15,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &ROptChainExpr, type_ann: Option<&Type>) -> ValidationResult {
         let span = node.span;
 
-        match &mut *node.expr {
+        match &*node.expr {
             RExpr::Member(me) => {
                 let obj = me.obj.validate_with(self)?;
                 let mut obj = box obj.remove_falsy();
@@ -30,7 +30,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 let ty =
-                    self.access_property(span, obj, &mut me.prop, me.computed, TypeOfMode::RValue)?;
+                    self.access_property(span, obj, &me.prop, me.computed, TypeOfMode::RValue)?;
 
                 //
 

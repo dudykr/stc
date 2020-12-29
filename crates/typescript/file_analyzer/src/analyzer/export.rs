@@ -145,26 +145,24 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, export: &RExportDecl) {
         let span = export.span;
 
-        match export.decl {
-            RDecl::Fn(ref mut f) => {
-                f.declare = true;
+        match &export.decl {
+            RDecl::Fn(ref f) => {
                 f.visit_with(self);
                 // self.export(f.span(), f.ident.clone().into(), None);
                 self.export_var(f.span(), f.ident.clone().into());
             }
-            RDecl::TsInterface(ref mut i) => {
+            RDecl::TsInterface(ref i) => {
                 i.visit_with(self);
 
                 self.export(i.span(), i.id.clone().into(), None)
             }
 
-            RDecl::Class(ref mut c) => {
-                c.declare = true;
+            RDecl::Class(ref c) => {
                 c.visit_with(self);
                 self.export(c.span(), c.ident.clone().into(), None);
                 self.export_var(c.span(), c.ident.clone().into());
             }
-            RDecl::Var(ref mut var) => {
+            RDecl::Var(ref var) => {
                 let span = var.span;
                 var.visit_with(self);
 
@@ -174,7 +172,7 @@ impl Analyzer<'_, '_> {
                     self.export_var(span, id)
                 }
             }
-            RDecl::TsEnum(ref mut e) => {
+            RDecl::TsEnum(ref e) => {
                 let span = e.span();
 
                 let ty = e
@@ -190,7 +188,7 @@ impl Analyzer<'_, '_> {
                     .export_type(span, self.ctx.module_id, e.id.clone().into());
             }
             RDecl::TsModule(..) => unimplemented!("export module "),
-            RDecl::TsTypeAlias(ref mut decl) => {
+            RDecl::TsTypeAlias(ref decl) => {
                 decl.visit_with(self);
                 // export type Foo = 'a' | 'b';
                 // export type Foo = {};

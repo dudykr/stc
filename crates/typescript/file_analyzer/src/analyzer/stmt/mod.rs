@@ -7,7 +7,6 @@ use crate::{
     validator::ValidateWith,
 };
 use rnode::NodeId;
-use rnode::VisitMutWith;
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RBlockStmt;
 use stc_ts_ast_rnode::RBool;

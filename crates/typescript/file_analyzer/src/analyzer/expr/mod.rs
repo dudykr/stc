@@ -613,7 +613,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         obj: Box<Type>,
-        prop: &mut RExpr,
+        prop: &RExpr,
         computed: bool,
         type_mode: TypeOfMode,
     ) -> ValidationResult {
@@ -622,7 +622,7 @@ impl Analyzer<'_, '_> {
             a: &mut Analyzer,
             span: Span,
             obj: &Type,
-            prop: &mut RExpr,
+            prop: &RExpr,
             computed: bool,
             type_mode: TypeOfMode,
             members: &[TypeElement],
