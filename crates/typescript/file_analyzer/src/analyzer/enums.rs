@@ -6,6 +6,7 @@ use crate::{
     validator, ValidationResult,
 };
 use fxhash::FxHashMap;
+use rnode::NodeId;
 use rnode::Visit;
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RBinExpr;
@@ -338,6 +339,7 @@ impl Analyzer<'_, '_> {
                                 match *v.val {
                                     RExpr::Lit(RLit::Str(..)) | RExpr::Lit(RLit::Num(..)) => {
                                         return Ok(Type::Lit(RTsLitType {
+                                            node_id: NodeId::invalid(),
                                             span: v.span,
                                             lit: match *v.val.clone() {
                                                 RExpr::Lit(RLit::Str(s)) => RTsLit::Str(s),

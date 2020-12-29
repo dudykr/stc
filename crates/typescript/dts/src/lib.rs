@@ -10,6 +10,7 @@ use self::{
     dce::{get_used, DceForDts},
 };
 use fxhash::FxHashSet;
+use rnode::NodeId;
 use rnode::Visit;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
@@ -51,8 +52,8 @@ use stc_ts_ast_rnode::RTsTypeAnn;
 use stc_ts_ast_rnode::RVarDecl;
 use stc_ts_types::Id;
 use stc_ts_types::ModuleTypeData;
-use stc_ts_utils::MapWithMut;
 use stc_ts_utils::find_ids_in_pat;
+use stc_ts_utils::MapWithMut;
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::*;
 
@@ -395,6 +396,7 @@ impl VisitMut<Vec<RClassMember>> for Dts {
                                 RParamOrTsParamProp::TsParamProp(ref mut p) => {
                                     if p.accessibility.is_some() || p.readonly {
                                         props.push(RClassMember::ClassProp(RClassProp {
+                                            node_id: NodeId::invalid(),
                                             span: Default::default(),
                                             declare: false,
                                             key: box match &p.param {
@@ -471,8 +473,10 @@ impl VisitMut<Vec<RClassMember>> for Dts {
                 props.insert(
                     0,
                     RClassMember::PrivateProp(RPrivateProp {
+                        node_id: NodeId::invalid(),
                         span: DUMMY_SP,
                         key: RPrivateName {
+                            node_id: NodeId::invalid(),
                             span: DUMMY_SP,
                             id: RIdent::new("private".into(), DUMMY_SP),
                         },
@@ -503,6 +507,7 @@ impl VisitMut<RTsIndexSignature> for Dts {
 
         if sig.type_ann.is_none() {
             sig.type_ann = Some(RTsTypeAnn {
+                node_id: NodeId::invalid(),
                 span: DUMMY_SP,
                 type_ann: box RTsType::TsKeywordType(RTsKeywordType {
                     span: DUMMY_SP,

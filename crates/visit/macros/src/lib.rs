@@ -40,6 +40,11 @@ pub fn derive(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
     tts.push_tokens(&items.visit_mut);
     tts.push_tokens(&items.visit);
 
+    tts.push_tokens(&q!(Vars { Type: &input.ident }, {
+        #[automatically_derived]
+        impl stc_visit::Visitable for Type {}
+    }));
+
     tts.dump().into()
 }
 

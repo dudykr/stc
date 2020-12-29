@@ -9,6 +9,7 @@ use crate::{
 };
 use rnode::Fold;
 use rnode::FoldWith;
+use rnode::NodeId;
 use rnode::Visit;
 use stc_ts_ast_rnode::RBreakStmt;
 use stc_ts_ast_rnode::RExpr;
@@ -392,6 +393,7 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                                         match &*key {
                                             RExpr::Ident(i) => {
                                                 let ty = box Type::Lit(RTsLitType {
+                                                    node_id: NodeId::invalid(),
                                                     span: i.span,
                                                     lit: RTsLit::Str(RStr {
                                                         span: i.span,

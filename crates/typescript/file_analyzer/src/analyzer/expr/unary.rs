@@ -8,6 +8,7 @@ use crate::{
     validator::ValidateWith,
     ValidationResult,
 };
+use rnode::NodeId;
 use stc_ts_ast_rnode::RBigInt;
 use stc_ts_ast_rnode::RBool;
 use stc_ts_ast_rnode::RExpr;
@@ -29,6 +30,7 @@ impl Analyzer<'_, '_> {
             span,
             op,
             ref mut arg,
+            ..
         } = *e;
 
         if let op!("delete") = op {
@@ -94,6 +96,7 @@ impl Analyzer<'_, '_> {
                         .iter()
                         .cloned()
                         .map(|value| RTsLitType {
+                            node_id: NodeId::invalid(),
                             span,
                             lit: RTsLit::Str(RStr {
                                 span,
@@ -125,6 +128,7 @@ impl Analyzer<'_, '_> {
                             let span = *span;
 
                             return Ok(box Type::Lit(RTsLitType {
+                                node_id: NodeId::invalid(),
                                 span,
                                 lit: RTsLit::Number(RNumber {
                                     span,
@@ -232,9 +236,14 @@ impl Analyzer<'_, '_> {
 
 fn negate(ty: Box<Type>) -> Box<Type> {
     match *ty {
-        Type::Lit(RTsLitType { ref lit, span }) => match *lit {
+        Type::Lit(RTsLitType {
+            ref lit,
+            span,
+            node_id,
+        }) => match *lit {
             RTsLit::Bool(ref v) => {
                 return box Type::Lit(RTsLitType {
+                    node_id,
                     lit: RTsLit::Bool(RBool {
                         value: !v.value,
                         ..v.clone()
@@ -244,6 +253,7 @@ fn negate(ty: Box<Type>) -> Box<Type> {
             }
             RTsLit::Number(ref v) => {
                 return box Type::Lit(RTsLitType {
+                    node_id: NodeId::invalid(),
                     lit: RTsLit::Bool(RBool {
                         value: v.value != 0.0,
                         span: v.span,
@@ -253,6 +263,7 @@ fn negate(ty: Box<Type>) -> Box<Type> {
             }
             RTsLit::Str(ref v) => {
                 return box Type::Lit(RTsLitType {
+                    node_id: NodeId::invalid(),
                     lit: RTsLit::Bool(RBool {
                         value: v.value != js_word!(""),
                         span: v.span,
@@ -262,6 +273,7 @@ fn negate(ty: Box<Type>) -> Box<Type> {
             }
             RTsLit::Tpl(ref v) => {
                 return box Type::Lit(RTsLitType {
+                    node_id: NodeId::invalid(),
                     lit: RTsLit::Bool(RBool {
                         value: v.quasis.iter().next().as_ref().unwrap().raw.value != js_word!(""),
                         span: v.span,
@@ -271,6 +283,7 @@ fn negate(ty: Box<Type>) -> Box<Type> {
             }
             RTsLit::BigInt(ref v) => {
                 return box Type::Lit(RTsLitType {
+                    node_id: NodeId::invalid(),
                     lit: RTsLit::BigInt(RBigInt {
                         value: -v.value.clone(),
                         span: v.span,

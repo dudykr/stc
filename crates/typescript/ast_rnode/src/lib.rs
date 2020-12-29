@@ -1,5 +1,6 @@
 use num_bigint::BigInt as BigIntValue;
 use rnode::define_rnode;
+use rnode::NodeId;
 use swc_atoms::JsWord;
 use swc_common::EqIgnoreSpan;
 use swc_common::Span;
@@ -13,6 +14,7 @@ impl RIdent {
             span,
             type_ann: None,
             optional: false,
+            node_id: NodeId::invalid(),
         }
     }
 }
@@ -343,6 +345,7 @@ define_rnode!({
     pub struct Super {
         pub span: Span,
     }
+    #[skip_node_id]
     pub struct ExprOrSpread {
         pub spread: Option<Span>,
         // TODO: Use custom impl
@@ -485,9 +488,11 @@ define_rnode!({
     pub struct JSXOpeningFragment {
         pub span: Span,
     }
+    #[skip_node_id]
     pub struct JSXClosingFragment {
         pub span: Span,
     }
+    #[skip_node_id]
     pub struct Invalid {
         pub span: Span,
     }
@@ -500,29 +505,35 @@ define_rnode!({
         Regex(Regex),
         JSXText(JSXText),
     }
+    #[skip_node_id]
     pub struct BigInt {
         pub span: Span,
         #[not_spanned]
         pub value: BigIntValue,
     }
+    #[skip_node_id]
     pub struct Str {
         pub span: Span,
         pub value: JsWord,
         pub has_escape: bool,
         pub kind: StrKind,
     }
+    #[skip_node_id]
     pub struct Bool {
         pub span: Span,
         pub value: bool,
     }
+    #[skip_node_id]
     pub struct Null {
         pub span: Span,
     }
+    #[skip_node_id]
     pub struct Regex {
         pub span: Span,
         pub exp: JsWord,
         pub flags: JsWord,
     }
+    #[skip_node_id]
     pub struct Number {
         pub span: Span,
         pub value: f64,
@@ -754,6 +765,7 @@ define_rnode!({
         pub span: Span,
         pub expr: Box<Expr>,
     }
+    #[skip_node_id]
     pub struct EmptyStmt {
         pub span: Span,
     }
@@ -975,12 +987,13 @@ define_rnode!({
         TsFnType(TsFnType),
         TsConstructorType(TsConstructorType),
     }
+    #[skip_node_id]
     pub struct TsKeywordType {
         pub span: Span,
         #[not_spanned]
         pub kind: TsKeywordTypeKind,
     }
-
+    #[skip_node_id]
     pub struct TsThisType {
         pub span: Span,
     }

@@ -1,12 +1,13 @@
 use std::cell::RefCell;
-use std::rc::Rc;
 use swc_common::Span;
 
-pub trait VisitMut<T> {
+use crate::Visitable;
+
+pub trait VisitMut<T: Visitable> {
     fn visit_mut(&mut self, value: &mut T);
 }
 
-pub trait VisitMutWith<V: ?Sized>: Sized {
+pub trait VisitMutWith<V: ?Sized>: Sized + Visitable {
     fn visit_mut_with(&mut self, visitor: &mut V)
     where
         V: VisitMut<Self>,
@@ -28,6 +29,7 @@ where
 
 impl<T, V> VisitMutWith<V> for Box<T>
 where
+    T: Visitable,
     V: ?Sized + VisitMut<T>,
 {
     fn visit_mut_children_with(&mut self, v: &mut V) {
@@ -37,6 +39,7 @@ where
 
 impl<T, V> VisitMutWith<V> for RefCell<T>
 where
+    T: Visitable,
     V: ?Sized + VisitMut<T>,
 {
     fn visit_mut_children_with(&mut self, v: &mut V) {
@@ -65,6 +68,7 @@ where
 
 impl<T, V> VisitMutWith<V> for Vec<T>
 where
+    T: Visitable,
     V: ?Sized + VisitMut<T>,
 {
     fn visit_mut_children_with(&mut self, visitor: &mut V) {
@@ -74,6 +78,7 @@ where
 
 impl<T, V> VisitMutWith<V> for Option<T>
 where
+    T: Visitable,
     V: ?Sized + VisitMut<T>,
 {
     fn visit_mut_children_with(&mut self, visitor: &mut V) {
@@ -81,14 +86,5 @@ where
             Some(value) => visitor.visit_mut(value),
             None => {}
         }
-    }
-}
-
-impl<T, V> VisitMutWith<V> for Rc<RefCell<T>>
-where
-    V: ?Sized + VisitMut<T>,
-{
-    fn visit_mut_children_with(&mut self, visitor: &mut V) {
-        visitor.visit_mut(&mut *self.borrow_mut())
     }
 }

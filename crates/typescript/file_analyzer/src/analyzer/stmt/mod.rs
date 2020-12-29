@@ -6,6 +6,7 @@ use crate::{
     validator,
     validator::ValidateWith,
 };
+use rnode::NodeId;
 use rnode::VisitMutWith;
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RBlockStmt;
@@ -97,6 +98,7 @@ impl Analyzer<'_, '_> {
 
         let test = try_opt!(node.test.validate_with_default(self));
         let always_true = Type::Lit(RTsLitType {
+            node_id: NodeId::invalid(),
             span: node.span,
             lit: RTsLit::Bool(RBool {
                 span: DUMMY_SP,

@@ -9,6 +9,7 @@ use dashmap::DashMap;
 use derivative::Derivative;
 use fxhash::FxHashMap;
 use once_cell::sync::Lazy;
+use rnode::NodeIdGenerator;
 use rnode::RNode;
 use rnode::VisitMutWith;
 use slog::Logger;
@@ -39,6 +40,8 @@ impl BuiltIn {
     pub fn from_ts_libs(env: &StableEnv, libs: &[Lib]) -> Self {
         debug_assert_ne!(libs, &[], "No typescript library file is specified");
 
+        let mut node_id_gen = NodeIdGenerator::default();
+
         slog::info!(env.logger, "Loading typescript builtins: {:?}", libs);
 
         let modules = stc_ts_builtin_types::load(libs);
@@ -51,7 +54,7 @@ impl BuiltIn {
             })
             .flatten()
             .cloned()
-            .map(RModuleItem::from_orig);
+            .map(|orig| RModuleItem::from_orig(&mut node_id_gen, orig));
         Self::from_module_items(env, iter)
     }
 

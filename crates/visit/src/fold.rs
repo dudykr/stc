@@ -1,12 +1,12 @@
+use crate::Visitable;
 use std::cell::RefCell;
-use std::rc::Rc;
 use swc_common::Span;
 
-pub trait Fold<T> {
+pub trait Fold<T: Visitable> {
     fn fold(&mut self, value: T) -> T;
 }
 
-pub trait FoldWith<V: ?Sized>: Sized {
+pub trait FoldWith<V: ?Sized>: Sized + Visitable {
     fn fold_with(self, visitor: &mut V) -> Self
     where
         V: Fold<Self>,
@@ -19,7 +19,7 @@ pub trait FoldWith<V: ?Sized>: Sized {
 
 impl<T, V> Fold<T> for V
 where
-    T: FoldWith<Self>,
+    T: Visitable + FoldWith<Self>,
     V: ?Sized,
 {
     default fn fold(&mut self, val: T) -> T {
@@ -29,6 +29,7 @@ where
 
 impl<T, V> FoldWith<V> for Box<T>
 where
+    T: Visitable,
     V: ?Sized + Fold<T>,
 {
     fn fold_children_with(self, v: &mut V) -> Self {
@@ -38,6 +39,7 @@ where
 
 impl<T, V> FoldWith<V> for RefCell<T>
 where
+    T: Visitable,
     V: ?Sized + Fold<T>,
 {
     fn fold_children_with(self, v: &mut V) -> Self {
@@ -68,6 +70,7 @@ where
 
 impl<T, V> FoldWith<V> for Vec<T>
 where
+    T: Visitable,
     V: ?Sized + Fold<T>,
 {
     fn fold_children_with(self, visitor: &mut V) -> Self {
@@ -77,26 +80,13 @@ where
 
 impl<T, V> FoldWith<V> for Option<T>
 where
+    T: Visitable,
     V: ?Sized + Fold<T>,
 {
     fn fold_children_with(self, visitor: &mut V) -> Self {
         match self {
             Some(value) => Some(visitor.fold(value)),
             None => None,
-        }
-    }
-}
-
-impl<T, V> FoldWith<V> for Rc<T>
-where
-    V: ?Sized + Fold<T>,
-{
-    /// Noop if it's stored in somewhere. TODO(kdy1): panic?
-    #[inline]
-    fn fold_children_with(self, visitor: &mut V) -> Self {
-        match Rc::try_unwrap(self) {
-            Ok(value) => Rc::new(visitor.fold(value)),
-            Err(value) => value,
         }
     }
 }

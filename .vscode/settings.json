@@ -26,6 +26,8 @@
     "missing-ok-in-tail-expr",
     "mismatched-arg-count",
     "macro-error",
-    "incorrect-ident-case"
+    "incorrect-ident-case",
+    "no-such-field",
+    "missing-structure-fields"
   ]
 }
