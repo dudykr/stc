@@ -1,3 +1,4 @@
+edition = "2018"
 format_strings = true
 required_version = "1.4.30"
 use_field_init_shorthand = true

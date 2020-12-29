@@ -935,7 +935,13 @@ impl Analyzer<'_, '_> {
                                         )));
                                     }
 
-                                    c.super_class = Some(box RExpr::Ident(new_ty.clone()));
+                                    if let Some(m) = &mut child.mutations {
+                                        let node_id = c.node_id;
+                                        m.for_classes
+                                            .entry(node_id)
+                                            .or_default()
+                                            .super_class = Some(box RExpr::Ident(new_ty.clone()));
+                                    }
                                     Some(box Type::Ref(Ref {
                                         span: DUMMY_SP,
                                         ctxt: child.ctx.module_id,
