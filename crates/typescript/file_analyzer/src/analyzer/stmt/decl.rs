@@ -585,8 +585,7 @@ impl Analyzer<'_, '_> {
 
             debug_assert_eq!(self.ctx.allow_ref_declaring, true);
             if v.name.get_ty().is_none() {
-                self.declare_vars(kind, &mut v.name)
-                    .report(&mut self.storage);
+                self.declare_vars(kind, &v.name).report(&mut self.storage);
             }
 
             remove_declaring!();

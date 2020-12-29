@@ -4,6 +4,7 @@ use crate::{
     validator,
     validator::ValidateWith,
 };
+use rnode::VisitWith;
 use stc_ts_ast_rnode::RCatchClause;
 
 #[validator]
@@ -17,7 +18,7 @@ impl Analyzer<'_, '_> {
             ScopeKind::Block,
             Default::default(),
             |child: &mut Analyzer| {
-                match &mut s.param {
+                match &s.param {
                     Some(pat) => {
                         pat.validate_with(child)?;
                     }

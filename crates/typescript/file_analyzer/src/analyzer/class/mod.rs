@@ -21,7 +21,6 @@ use rnode::FoldWith;
 use rnode::IntoRNode;
 use rnode::NodeId;
 use rnode::NodeIdGenerator;
-use rnode::VisitMutWith;
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RAssignPat;
 use stc_ts_ast_rnode::RClass;
@@ -82,8 +81,8 @@ impl Analyzer<'_, '_> {
         span: Span,
         readonly: bool,
         is_static: bool,
-        type_ann: &mut Option<RTsTypeAnn>,
-        value: &mut Option<Box<RExpr>>,
+        type_ann: &Option<RTsTypeAnn>,
+        value: &Option<Box<RExpr>>,
     ) -> ValidationResult<Option<Box<Type>>> {
         let ty = try_opt!(type_ann.validate_with(self));
         let value_ty =
@@ -111,15 +110,15 @@ impl Analyzer<'_, '_> {
 
         // Verify key if key is computed
         if p.computed {
-            self.validate_computed_prop_key(p.span, &mut p.key);
+            self.validate_computed_prop_key(p.span, &p.key);
         }
 
         let value = self.validate_type_of_class_property(
             p.span,
             p.readonly,
             p.is_static,
-            &mut p.type_ann,
-            &mut p.value,
+            &p.type_ann,
+            &p.value,
         )?;
         match p.accessibility {
             Some(Accessibility::Private) => {
@@ -160,8 +159,8 @@ impl Analyzer<'_, '_> {
             p.span,
             p.readonly,
             p.is_static,
-            &mut p.type_ann,
-            &mut p.value,
+            &p.type_ann,
+            &p.value,
         )?;
 
         p.value = None;
@@ -496,13 +495,13 @@ impl Analyzer<'_, '_> {
                     *m = RClassMember::ClassProp(RClassProp {
                         node_id: NodeId::invalid(),
                         span: method.span,
-                        key: match &mut method.key {
-                            RPropName::Ident(i) => box RExpr::Ident(i.take()),
+                        key: match &method.key {
+                            RPropName::Ident(i) => box RExpr::Ident(i.clone()),
                             RPropName::Str(s) => {
                                 box RExpr::Ident(RIdent::new(s.value.clone(), s.span))
                             }
                             RPropName::Num(n) => box RExpr::Lit(RLit::Num(n.clone())),
-                            RPropName::Computed(e) => box e.expr.take(),
+                            RPropName::Computed(e) => e.expr.clone(),
                             RPropName::BigInt(n) => box RExpr::Lit(RLit::BigInt(n.clone())),
                         },
                         value: None,
@@ -577,7 +576,7 @@ impl Analyzer<'_, '_> {
         let mut name: Option<&RPropName> = None;
         let mut removed = FxHashSet::default();
 
-        for (idx, m) in c.body.iter_mut().enumerate() {
+        for (idx, m) in c.body.iter().enumerate() {
             macro_rules! check {
                 ($m:expr, $body:expr) => {{
                     let m = $m;
@@ -683,7 +682,7 @@ impl Analyzer<'_, '_> {
     }
 
     #[extra_validator]
-    pub(super) fn validate_computed_prop_key(&mut self, span: Span, key: &mut RExpr) {
+    pub(super) fn validate_computed_prop_key(&mut self, span: Span, key: &RExpr) {
         if self.is_builtin {
             // We don't need to validate builtins
             return;
@@ -1391,7 +1390,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                c.visit_mut_children_with(analyzer);
+                c.visit_children_with(analyzer);
 
                 Ok(())
             })
