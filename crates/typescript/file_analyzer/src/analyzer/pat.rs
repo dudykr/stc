@@ -118,10 +118,10 @@ impl Analyzer<'_, '_> {
 
             let default_value_ty = assign_pat.right.validate_with_default(self)?;
 
-            let type_ann = assign_pat
+            let ty = assign_pat
                 .left
-                .get_mut_ty()
-                .map(|v| box v.take())
+                .get_ty()
+                .map(|v| v.validate_with(self))
                 .unwrap_or_else(|| {
                     let mut ty = default_value_ty.generalize_lit();
 
@@ -143,12 +143,16 @@ impl Analyzer<'_, '_> {
                         _ => {}
                     }
 
-                    ty.into()
-                });
+                    Ok(ty)
+                })?;
 
             // Remove default value.
             *p = assign_pat.left.take();
-            p.set_ty(Some(type_ann));
+            if let Some(pat_node_id) = p.node_id() {
+                if let Some(m) = &mut self.mutations {
+                    m.for_pats.entry(pat_node_id).or_default().ty = Some(ty)
+                }
+            }
         }
 
         let ty = match p.get_mut_ty() {
