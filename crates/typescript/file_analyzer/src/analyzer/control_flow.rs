@@ -604,8 +604,8 @@ impl Analyzer<'_, '_> {
 
             RPat::Array(ref arr) => {
                 //
-                for (i, elem) in arr.elems.iter_mut().enumerate() {
-                    if let Some(elem) = elem.as_mut() {
+                for (i, elem) in arr.elems.iter().enumerate() {
+                    if let Some(elem) = elem {
                         match ty.normalize() {
                             ty if ty.is_any() => {
                                 self.try_assign_pat(span, elem, ty)?;
