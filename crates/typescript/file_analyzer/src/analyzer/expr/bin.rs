@@ -34,8 +34,8 @@ impl Analyzer<'_, '_> {
         let RBinExpr {
             span,
             op,
-            ref mut left,
-            ref mut right,
+            ref left,
+            ref right,
             ..
         } = *e;
 
