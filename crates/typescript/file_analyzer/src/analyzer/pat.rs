@@ -153,7 +153,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let ty = match p.get_mut_ty() {
+        let ty = match p.get_ty() {
             None => None,
             Some(ty) => Some(ty.validate_with(self)?),
         };
