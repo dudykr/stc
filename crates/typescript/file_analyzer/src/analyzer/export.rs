@@ -222,7 +222,10 @@ impl Analyzer<'_, '_> {
                     }
                 };
                 if f.function.return_type.is_none() {
-                    f.function.return_type = Some(fn_ty.ret_ty.clone().into());
+                    if let Some(m) = &mut self.mutations {
+                        m.for_fns.entry(f.function.node_id).or_default().ty =
+                            Some(fn_ty.ret_ty.clone());
+                    }
                 }
                 self.register_type(i.clone(), box fn_ty.clone().into())
                     .report(&mut self.storage);
