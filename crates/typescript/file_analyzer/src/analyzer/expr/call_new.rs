@@ -124,7 +124,7 @@ impl Analyzer<'_, '_> {
                     callee,
                     type_ann,
                     ExtractKind::New,
-                    args.as_mut().map(|v| &mut **v).unwrap_or_else(|| &mut []),
+                    args.as_ref().map(|v| &mut **v).unwrap_or_else(|| &mut []),
                     type_args.as_ref(),
                 )
             },
