@@ -577,7 +577,6 @@ impl Analyzer<'_, '_> {
         let mut stmts = self.validate_stmts_with_hoisting(&items);
         debug_assert_eq!(stmts.len(), counts.iter().copied().sum::<usize>());
         let mut result = vec![];
-
         for cnt in counts {
             result.push(RModule {
                 node_id: NodeId::invalid(),
@@ -588,8 +587,6 @@ impl Analyzer<'_, '_> {
                 shebang: None,
             });
         }
-
-        *modules = result;
 
         Ok(())
     }

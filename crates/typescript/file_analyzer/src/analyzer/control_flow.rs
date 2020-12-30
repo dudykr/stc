@@ -630,13 +630,13 @@ impl Analyzer<'_, '_> {
 
             RPat::Object(ref obj) => {
                 //
-                for prop in obj.props.iter_mut() {
+                for prop in obj.props.iter() {
                     match ty.normalize() {
                         ty if ty.is_any() => {
                             self.try_assign_pat(
                                 span,
                                 match prop {
-                                    RObjectPatProp::KeyValue(kv) => &mut kv.value,
+                                    RObjectPatProp::KeyValue(kv) => &kv.value,
                                     RObjectPatProp::Assign(a) => {
                                         if a.key.type_ann.is_none() {
                                             a.key.type_ann = Some(RTsTypeAnn {

@@ -171,7 +171,7 @@ impl Analyzer<'_, '_> {
                     let ty = match elem {
                         Some(RExprOrSpread {
                             spread: None,
-                            ref mut expr,
+                            ref expr,
                         }) => {
                             let ty = expr.validate_with_default(self)?;
                             ty
