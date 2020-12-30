@@ -1006,40 +1006,27 @@ impl Analyzer<'_, '_> {
 
                 {
                     // Remove class members with const EnumVariant keys.
-
-                    c.body = take(&mut c.body).move_flat_map(|mut v| {
-                        if match &mut v {
-                            RClassMember::Constructor(_) => true,
-                            RClassMember::PrivateMethod(_) => true,
-                            RClassMember::ClassProp(_) => true,
-                            RClassMember::PrivateProp(_) => true,
-                            RClassMember::TsIndexSignature(_) => true,
-                            RClassMember::Method(m) => match &mut m.key {
-                                RPropName::Computed(c) => {
-                                    match c.expr.validate_with_default(child) {
-                                        Ok(ty) => {
-                                            match *ty {
-                                                Type::EnumVariant(e) => return None,
-                                                _ => {}
-                                            }
-
-                                            true
-                                        }
-                                        Err(err) => {
-                                            child.storage.report(err);
-
-                                            false
+                    c.body.iter().for_each(|v| match v {
+                        RClassMember::Method(method) => match &method.key {
+                            RPropName::Computed(c) => match c.expr.validate_with_default(child) {
+                                Ok(ty) => match *ty {
+                                    Type::EnumVariant(e) => {
+                                        //
+                                        if let Some(m) = &mut child.mutations {
+                                            m.for_class_members
+                                                .entry(method.node_id)
+                                                .or_default()
+                                                .remove = true;
                                         }
                                     }
+                                    _ => {}
+                                },
+                                Err(err) => {
+                                    child.storage.report(err);
                                 }
-                                _ => true,
                             },
-                            RClassMember::Empty(_) => false,
-                        } {
-                            Some(v)
-                        } else {
-                            None
-                        }
+                            _ => {}
+                        },
                     });
                 }
 

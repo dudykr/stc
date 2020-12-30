@@ -15,6 +15,7 @@ pub struct Mutations {
     pub for_var_decls: FxHashMap<NodeId, VarDeclMut>,
     pub for_fns: FxHashMap<NodeId, FunctionMut>,
     pub for_classes: FxHashMap<NodeId, ClassMut>,
+    pub for_class_members: FxHashMap<NodeId, ClassMemberMut>,
 }
 
 #[derive(Default)]
@@ -37,4 +38,9 @@ pub struct FunctionMut {
 #[derive(Default)]
 pub struct ClassMut {
     pub super_class: Option<Box<RExpr>>,
+}
+
+#[derive(Default)]
+pub struct ClassMemberMut {
+    pub remove: bool,
 }

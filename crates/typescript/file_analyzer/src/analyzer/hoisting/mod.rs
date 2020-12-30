@@ -126,9 +126,7 @@ impl Analyzer<'_, '_> {
             + VisitWith<Self>
             + From<RStmt>,
     {
-        let new = self.validate_stmts_with_hoisting(stmts);
-        stmts.clear();
-        stmts.extend(new.into_iter().flatten())
+        self.validate_stmts_with_hoisting(stmts);
     }
 
     /// Returns (the order of evaluation, skipped index). This methods is used

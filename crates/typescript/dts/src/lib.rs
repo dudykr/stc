@@ -533,6 +533,12 @@ impl VisitMut<RPat> for Dts {
 
 impl VisitMut<Vec<RClassMember>> for Dts {
     fn visit_mut(&mut self, members: &mut Vec<RClassMember>) {
+        // Remove empty members.
+        members.retain(|member| match member {
+            RClassMember::Empty(..) => false,
+            _ => true,
+        });
+
         members.visit_mut_children_with(self);
 
         members.map_with_mut(|members| {
