@@ -200,7 +200,7 @@ impl Analyzer<'_, '_> {
                     None
                 };
 
-                let declared_ty = v.name.get_mut_ty();
+                let declared_ty = v.name.get_ty();
                 if declared_ty.is_some() {
                     //TODO:
                     // self.span_allowed_implicit_any = span;
@@ -304,7 +304,10 @@ impl Analyzer<'_, '_> {
                                     }
                                 }
                                 Type::TypeLit(..) | Type::Function(..) | Type::Query(..) => {
-                                    v.init = None;
+                                    if let Some(m) = &mut self.mutations {
+                                        m.for_var_decls.entry(v.node_id).or_default().remove_init =
+                                            true;
+                                    }
                                 }
                                 _ => {}
                             }
