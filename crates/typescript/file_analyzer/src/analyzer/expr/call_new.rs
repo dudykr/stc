@@ -72,9 +72,9 @@ impl Analyzer<'_, '_> {
 
         let RCallExpr {
             span,
-            ref mut callee,
-            ref mut args,
-            ref mut type_args,
+            ref callee,
+            ref args,
+            ref type_args,
             ..
         } = *e;
 
@@ -108,9 +108,9 @@ impl Analyzer<'_, '_> {
 
         let RNewExpr {
             span,
-            ref mut callee,
-            ref mut args,
-            ref mut type_args,
+            ref callee,
+            ref args,
+            ref type_args,
             ..
         } = *e;
 
