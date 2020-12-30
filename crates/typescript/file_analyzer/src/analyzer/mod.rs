@@ -649,7 +649,7 @@ impl Analyzer<'_, '_> {
         if self.is_builtin {
             items.visit_children_with(self);
         } else {
-            self.validate_stmts_and_collect(items);
+            self.validate_stmts_and_collect(&items_ref);
         }
 
         self.handle_pending_exports();

@@ -115,7 +115,7 @@ impl Analyzer<'_, '_> {
     /// const a = 5;
     /// const b = foo();
     /// ```
-    pub(super) fn validate_stmts_and_collect<T>(&mut self, stmts: &Vec<T>)
+    pub(super) fn validate_stmts_and_collect<T>(&mut self, stmts: &Vec<&T>)
     where
         T: AsModuleDecl
             + ModuleItemOrStmt

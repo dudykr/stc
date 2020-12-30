@@ -78,7 +78,7 @@ impl Analyzer<'_, '_> {
                 ..self.ctx
             };
             self.with_ctx(ctx).with(|analyzer: &mut Analyzer| {
-                analyzer.validate_stmts_and_collect(stmts);
+                analyzer.validate_stmts_and_collect(&stmts.iter().collect::<Vec<_>>());
 
                 take(&mut analyzer.scope.return_values)
             })
