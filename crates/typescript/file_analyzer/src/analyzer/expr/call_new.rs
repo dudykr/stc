@@ -1217,7 +1217,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                let patch_arg = |idx: usize, pat: &RPat| {
+                let mut patch_arg = |idx: usize, pat: &RPat| {
                     let actual = &actual_params[idx];
 
                     let ty = pat.get_ty();
