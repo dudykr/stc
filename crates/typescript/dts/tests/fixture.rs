@@ -12,6 +12,7 @@ use rnode::RNode;
 use stc_testing::get_git_root;
 use stc_testing::term_logger;
 use stc_ts_ast_rnode::RModule;
+use stc_ts_dts::apply_mutations;
 use stc_ts_dts::cleanup_module_for_dts;
 use stc_ts_dts_mutations::Mutations;
 use stc_ts_file_analyzer::analyzer::Analyzer;
@@ -130,6 +131,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
         }
 
         {
+            apply_mutations(mutations, &mut module);
             cleanup_module_for_dts(&mut module.body, &storage.info.exports);
         }
 
