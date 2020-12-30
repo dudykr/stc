@@ -29,5 +29,6 @@
     "incorrect-ident-case",
     "no-such-field",
     "missing-structure-fields"
-  ]
+  ],
+  "rust-analyzer.updates.channel": "stable"
 }
