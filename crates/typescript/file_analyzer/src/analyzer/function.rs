@@ -30,7 +30,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, f: &RFunction) -> ValidationResult<ty::Function> {
         self.record(f);
 
-        self.with_child(ScopeKind::Fn, Default::default(), |child| {
+        self.with_child(ScopeKind::Fn, Default::default(), |child: &mut Analyzer| {
             let mut errors = Errors::default();
 
             {
@@ -154,14 +154,13 @@ impl Analyzer<'_, '_> {
 
                     // No return statement -> void
                     if f.return_type.is_none() {
-                        f.return_type = Some(RTsTypeAnn {
-                            node_id: NodeId::invalid(),
-                            span: DUMMY_SP,
-                            type_ann: box RTsType::TsKeywordType(RTsKeywordType {
-                                span,
-                                kind: TsKeywordTypeKind::TsVoidKeyword,
-                            }),
-                        });
+                        if let Some(m) = &mut child.mutations {
+                            m.for_fns.entry(f.node_id).or_default().ret_ty =
+                                Some(box Type::Keyword(RTsKeywordType {
+                                    span,
+                                    kind: TsKeywordTypeKind::TsVoidKeyword,
+                                }));
+                        }
                     }
                     box Type::Keyword(RTsKeywordType {
                         span,
