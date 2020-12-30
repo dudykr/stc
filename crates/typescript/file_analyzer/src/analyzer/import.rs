@@ -43,7 +43,7 @@ impl Analyzer<'_, '_> {
     }
 
     #[extra_validator]
-    pub(super) fn load_normal_imports(&mut self, items: &Vec<RModuleItem>) {
+    pub(super) fn load_normal_imports(&mut self, items: &Vec<&RModuleItem>) {
         if self.is_builtin {
             return;
         }

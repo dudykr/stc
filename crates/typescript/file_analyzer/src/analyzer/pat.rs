@@ -25,7 +25,6 @@ use stc_ts_ast_rnode::RPropOrSpread;
 use stc_ts_ast_rnode::RRestPat;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_types::Array;
-use stc_ts_utils::MapWithMut;
 use stc_ts_utils::PatExt;
 use swc_atoms::js_word;
 use swc_common::TypeEq;

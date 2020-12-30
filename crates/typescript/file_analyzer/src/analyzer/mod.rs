@@ -568,13 +568,13 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, modules: &Vec<RModule>) {
         let mut counts = vec![];
         let mut items = vec![];
-        for m in modules.drain(..) {
+        for m in modules {
             counts.push(m.body.len());
-            items.extend(m.body);
+            items.extend(&m.body);
         }
         self.load_normal_imports(&items);
 
-        let mut stmts = self.validate_stmts_with_hoisting(&mut items);
+        let mut stmts = self.validate_stmts_with_hoisting(&items);
         debug_assert_eq!(stmts.len(), counts.iter().copied().sum::<usize>());
         let mut result = vec![];
 
@@ -598,7 +598,8 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, items: &Vec<RModuleItem>) {
-        self.load_normal_imports(&items);
+        let mut items_ref = items.iter().collect::<Vec<_>>();
+        self.load_normal_imports(&items_ref);
 
         let mut has_normal_export = false;
         items.iter().for_each(|item| match item {

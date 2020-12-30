@@ -61,7 +61,7 @@ pub(super) enum TypeOrderItem {
 
 impl Analyzer<'_, '_> {
     /// Note: This method removes all items from `stmts`.
-    pub(super) fn validate_stmts_with_hoisting<T>(&mut self, stmts: &Vec<T>) -> Vec<Vec<T>>
+    pub(super) fn validate_stmts_with_hoisting<T>(&mut self, stmts: &Vec<&T>) -> Vec<Vec<T>>
     where
         T: AsModuleDecl
             + ModuleItemOrStmt
@@ -77,7 +77,7 @@ impl Analyzer<'_, '_> {
         if self.scope.is_root() {
             // We should track type declarations.
             for &idx in &order {
-                let type_decl_id = type_decl_id(&stmts[idx]);
+                let type_decl_id = type_decl_id(&*stmts[idx]);
                 if let Some(id) = type_decl_id {
                     type_decls.entry(id).or_default().push(idx);
                 }
@@ -90,7 +90,7 @@ impl Analyzer<'_, '_> {
 
             if skip.contains(&idx) {
             } else {
-                let type_decl_id = type_decl_id(&stmts[idx]);
+                let type_decl_id = type_decl_id(&*stmts[idx]);
 
                 stmts[idx].visit_with(self);
 
@@ -164,7 +164,7 @@ impl Analyzer<'_, '_> {
     /// export type C = 5 | 10;
     /// export type B = A;
     /// ```
-    pub(super) fn reorder_stmts<T>(&mut self, stmts: &[T]) -> (Vec<usize>, FxHashSet<usize>)
+    pub(super) fn reorder_stmts<T>(&mut self, stmts: &[&T]) -> (Vec<usize>, FxHashSet<usize>)
     where
         T: AsModuleDecl + VisitWith<RequirementCalculartor>,
     {

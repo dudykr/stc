@@ -1,5 +1,6 @@
 use fxhash::FxHashMap;
 use rnode::NodeId;
+use stc_ts_ast_rnode::RClassMember;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_types::Type;
 
@@ -39,6 +40,7 @@ pub struct FunctionMut {
 #[derive(Default)]
 pub struct ClassMut {
     pub super_class: Option<Box<RExpr>>,
+    pub additional_members: Vec<RClassMember>,
 }
 
 #[derive(Default)]
