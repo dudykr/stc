@@ -146,7 +146,7 @@ impl Analyzer<'_, '_> {
                 })?;
 
             // Remove default value.
-            if let Some(pat_node_id) = p.node_id() {
+            if let Some(pat_node_id) = assign_pat.left.node_id() {
                 if let Some(m) = &mut self.mutations {
                     m.for_pats.entry(pat_node_id).or_default().ty = Some(ty)
                 }
