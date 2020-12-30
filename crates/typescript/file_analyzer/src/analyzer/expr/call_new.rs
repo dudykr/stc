@@ -1228,7 +1228,7 @@ impl Analyzer<'_, '_> {
                                 kind: TsKeywordTypeKind::TsAnyKeyword,
                             }) if analyzer.is_implicitly_typed_span(*span) => {
                                 if let Some(node_id) = pat.node_id() {
-                                    if let Some(m) = &mut self.mutations {
+                                    if let Some(m) = &mut analyzer.mutations {
                                         m.for_pats.entry(node_id).or_default().ty =
                                             Some(actual.ty.clone());
                                     }

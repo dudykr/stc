@@ -201,7 +201,11 @@ impl Analyzer<'_, '_> {
         });
 
         if p.get_ty().is_none() {
-            p.set_ty(Some(box ty.clone().into()));
+            if let Some(node_id) = p.node_id() {
+                if let Some(m) = &mut self.mutations {
+                    m.for_pats.entry(node_id).or_default().ty = Some(box ty.clone())
+                }
+            }
         }
 
         Ok(ty::FnParam {
