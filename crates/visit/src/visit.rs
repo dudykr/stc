@@ -109,3 +109,13 @@ where
         }
     }
 }
+
+impl<T, V> VisitWith<V> for &'_ T
+where
+    T: Visitable,
+    V: ?Sized + Visit<T>,
+{
+    fn visit_children_with(&self, visitor: &mut V) {
+        visitor.visit(&**self);
+    }
+}
