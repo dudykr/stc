@@ -30,5 +30,7 @@
     "no-such-field",
     "missing-structure-fields"
   ],
+  "rust-analyzer.cargo.loadOutDirsFromCheck": true,
+  "rust-analyzer.procMacro.enable": true,
   "rust-analyzer.updates.channel": "stable"
 }
