@@ -33,6 +33,7 @@ use stc_ts_ast_rnode::RImportSpecifier;
 use stc_ts_ast_rnode::RMemberExpr;
 use stc_ts_ast_rnode::RModuleDecl;
 use stc_ts_ast_rnode::RModuleItem;
+use stc_ts_ast_rnode::RNamedExport;
 use stc_ts_ast_rnode::RParamOrTsParamProp;
 use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RPrivateName;
@@ -274,6 +275,26 @@ impl VisitMut<RTsModuleDecl> for Dts {
 
 impl VisitMut<Vec<RModuleItem>> for Dts {
     fn visit_mut(&mut self, items: &mut Vec<RModuleItem>) {
+        items.retain(|item| {
+            match item {
+                RModuleItem::ModuleDecl(decl) => match decl {
+                    RModuleDecl::ExportNamed(export @ RNamedExport { src: None, .. })
+                        if export.specifiers.is_empty() =>
+                    {
+                        return false
+                    }
+                    _ => {}
+                },
+                RModuleItem::Stmt(stmt) => match stmt {
+                    RStmt::Decl(..) => {}
+                    _ => return false,
+                },
+            }
+
+            // Let's be conservative
+            true
+        });
+
         let is_module = items.iter().any(|item| match item {
             RModuleItem::ModuleDecl(_) => true,
             RModuleItem::Stmt(_) => false,

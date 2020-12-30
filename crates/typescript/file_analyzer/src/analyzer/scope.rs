@@ -586,17 +586,18 @@ impl Analyzer<'_, '_> {
             RPat::Object(RObjectPat {
                 ref props,
                 ref type_ann,
+                node_id,
                 ..
             }) => {
                 if type_ann.is_none() {
-                    *type_ann = Some(
-                        Type::TypeLit(TypeLit {
-                            span,
-                            // TODO: Fill it
-                            members: vec![],
-                        })
-                        .into(),
-                    );
+                    if let Some(m) = &mut self.mutations {
+                        m.for_pats.entry(*node_id).or_default().ty =
+                            Some(box Type::TypeLit(TypeLit {
+                                span,
+                                // TODO: Fill it
+                                members: vec![],
+                            }));
+                    }
                 }
                 for prop in props {
                     match *prop {

@@ -35,7 +35,6 @@ use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RModule;
 use stc_ts_ast_rnode::RModuleDecl;
 use stc_ts_ast_rnode::RModuleItem;
-use stc_ts_ast_rnode::RNamedExport;
 use stc_ts_ast_rnode::RScript;
 use stc_ts_ast_rnode::RStmt;
 use stc_ts_ast_rnode::RTsImportEqualsDecl;
@@ -649,30 +648,10 @@ impl Analyzer<'_, '_> {
         }
 
         if self.is_builtin {
-            items.visit_mut_children_with(self);
+            items.visit_children_with(self);
         } else {
             self.validate_stmts_and_collect(items);
         }
-
-        items.retain(|item| {
-            match item {
-                RModuleItem::ModuleDecl(decl) => match decl {
-                    RModuleDecl::ExportNamed(export @ RNamedExport { src: None, .. })
-                        if export.specifiers.is_empty() =>
-                    {
-                        return false
-                    }
-                    _ => {}
-                },
-                RModuleItem::Stmt(stmt) => match stmt {
-                    RStmt::Decl(..) => {}
-                    _ => return false,
-                },
-            }
-
-            // Let's be conservative
-            true
-        });
 
         self.handle_pending_exports();
 

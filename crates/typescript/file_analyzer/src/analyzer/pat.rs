@@ -11,7 +11,6 @@ use crate::{
     validator::ValidateWith,
     ValidationResult,
 };
-use rnode::VisitMutWith;
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RAssignPat;
 use stc_ts_ast_rnode::RExpr;
@@ -258,7 +257,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, p: &RAssignPat) {
-        p.visit_mut_children_with(self);
+        p.visit_children_with(self);
 
         //
         match *p.left {
