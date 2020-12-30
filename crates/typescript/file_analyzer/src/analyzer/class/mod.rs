@@ -1176,11 +1176,10 @@ impl Analyzer<'_, '_> {
 
                                     if let Some(ty) = &ty {
                                         if i.type_ann.is_none() {
-                                            i.type_ann = Some(RTsTypeAnn {
-                                                node_id: NodeId::invalid(),
-                                                span: ty.span(),
-                                                type_ann: ty.clone().into(),
-                                            });
+                                            if let Some(m) = &mut child.mutations {
+                                                m.for_pats.entry(i.node_id).or_default().ty =
+                                                    Some(ty.clone());
+                                            }
                                         }
                                     }
                                     // Register a class property.
