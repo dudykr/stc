@@ -486,7 +486,7 @@ impl Analyzer<'_, '_> {
                     debug_assert_ne!(span, DUMMY_SP);
                 }
                 let ty = match ty {
-                    None => try_opt!(i.type_ann.as_mut().map(|v| v.type_ann.validate_with(self))),
+                    None => try_opt!(i.type_ann.as_ref().map(|v| v.type_ann.validate_with(self))),
                     Some(ty) => Some(ty),
                 };
                 self.declare_var(
@@ -565,9 +565,9 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                for elem in elems.iter_mut() {
+                for elem in elems.iter() {
                     match *elem {
-                        Some(ref mut elem) => {
+                        Some(ref elem) => {
                             self.declare_vars_inner(kind, elem, export)?;
                         }
                         // Skip

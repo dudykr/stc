@@ -92,21 +92,12 @@ impl Analyzer<'_, '_> {
             self.ctx.module_id = module_id;
 
             if skip.contains(&idx) {
-                new[idx] = vec![replace(
-                    &mut stmts[idx],
-                    T::from(RStmt::Empty(REmptyStmt { span: DUMMY_SP })),
-                )];
             } else {
                 let type_decl_id = type_decl_id(&stmts[idx]);
 
                 stmts[idx].visit_with(self);
 
                 new[idx].extend(self.prepend_stmts.drain(..).map(T::from));
-
-                new[idx].push(replace(
-                    &mut stmts[idx],
-                    T::from(RStmt::Empty(REmptyStmt { span: DUMMY_SP })),
-                ));
 
                 new[idx].extend(self.append_stmts.drain(..).map(T::from));
             }

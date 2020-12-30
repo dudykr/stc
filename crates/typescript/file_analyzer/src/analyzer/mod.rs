@@ -266,7 +266,7 @@ impl Analyzer<'_, '_> {
         let (errors, data) = {
             let mut new = self.new(Scope::root(self.logger.clone()));
             {
-                node.visit_mut_children_with(&mut new);
+                node.visit_children_with(&mut new);
             }
 
             let errors = new.storage.take_errors();
@@ -746,7 +746,7 @@ impl Analyzer<'_, '_> {
             |child: &mut Analyzer| {
                 child.ctx.in_declare = decl.declare;
 
-                decl.visit_mut_children_with(child);
+                decl.visit_children_with(child);
 
                 let exports = take(&mut child.storage.take_info(ctxt));
                 if !global {

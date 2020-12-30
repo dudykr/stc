@@ -109,7 +109,7 @@ impl Analyzer<'_, '_> {
             let is_generator = f.is_generator;
 
             let inferred_return_type = try_opt!(f.body.as_ref().map(
-                |body| child.visit_stmts_for_return(span, is_async, is_generator, &mut body.stmts)
+                |body| child.visit_stmts_for_return(span, is_async, is_generator, &body.stmts)
             ));
 
             let inferred_return_type = match inferred_return_type {
@@ -245,7 +245,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO: Handle recursive funciton
-    fn visit_fn(&mut self, name: Option<&RIdent>, f: &mut RFunction) -> Box<Type> {
+    fn visit_fn(&mut self, name: Option<&RIdent>, f: &RFunction) -> Box<Type> {
         let fn_ty: Result<_, _> = try {
             let no_implicit_any_span = name.as_ref().map(|name| name.span);
 
@@ -339,7 +339,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     /// NOTE: This method **should not call f.fold_children_with(self)**
     fn validate(&mut self, f: &RFnDecl) {
-        let fn_ty = self.visit_fn(Some(&f.ident), &mut f.function).cheap();
+        let fn_ty = self.visit_fn(Some(&f.ident), &f.function).cheap();
 
         match self.override_var(VarDeclKind::Var, f.ident.clone().into(), fn_ty) {
             Ok(()) => {}
@@ -356,7 +356,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     /// NOTE: This method **should not call f.fold_children_with(self)**
     fn validate(&mut self, f: &RFnExpr) {
-        self.visit_fn(f.ident.as_ref(), &mut f.function);
+        self.visit_fn(f.ident.as_ref(), &f.function);
 
         Ok(())
     }

@@ -124,7 +124,7 @@ impl Analyzer<'_, '_> {
                     callee,
                     type_ann,
                     ExtractKind::New,
-                    args.as_ref().map(|v| &mut **v).unwrap_or_else(|| &mut []),
+                    args.as_ref().map(|v| &**v).unwrap_or_else(|| &mut []),
                     type_args.as_ref(),
                 )
             },
@@ -214,8 +214,8 @@ impl Analyzer<'_, '_> {
             }
 
             RExpr::Member(RMemberExpr {
-                obj: RExprOrSuper::Expr(ref mut obj),
-                ref mut prop,
+                obj: RExprOrSuper::Expr(ref obj),
+                ref prop,
                 computed,
                 ..
             }) => {
@@ -1217,7 +1217,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                let patch_arg = |idx: usize, pat: &mut RPat| {
+                let patch_arg = |idx: usize, pat: &RPat| {
                     let actual = &actual_params[idx];
 
                     let ty = pat.get_mut_ty();
@@ -1235,9 +1235,9 @@ impl Analyzer<'_, '_> {
                     }
                 };
 
-                let ty = match &mut *arg.expr {
+                let ty = match &*arg.expr {
                     RExpr::Arrow(arrow) => {
-                        for (idx, pat) in arrow.params.iter_mut().enumerate() {
+                        for (idx, pat) in arrow.params.iter().enumerate() {
                             patch_arg(idx, pat);
                         }
 
@@ -1248,8 +1248,8 @@ impl Analyzer<'_, '_> {
                         box Type::Function(arrow.validate_with(analyzer)?)
                     }
                     RExpr::Fn(fn_expr) => {
-                        for (idx, param) in fn_expr.function.params.iter_mut().enumerate() {
-                            patch_arg(idx, &mut param.pat)
+                        for (idx, param) in fn_expr.function.params.iter().enumerate() {
+                            patch_arg(idx, &param.pat)
                         }
 
                         slog::info!(

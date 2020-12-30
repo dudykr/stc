@@ -481,10 +481,10 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
-    pub(super) fn try_assign(&mut self, span: Span, lhs: &mut RPatOrExpr, ty: &Type) {
+    pub(super) fn try_assign(&mut self, span: Span, lhs: &RPatOrExpr, ty: &Type) {
         let res: Result<(), Error> = try {
             match *lhs {
-                RPatOrExpr::Expr(ref mut expr) | RPatOrExpr::Pat(box RPat::Expr(ref mut expr)) => {
+                RPatOrExpr::Expr(ref expr) | RPatOrExpr::Pat(box RPat::Expr(ref expr)) => {
                     let lhs_ty = expr.validate_with_args(self, (TypeOfMode::LValue, None, None))?;
                     let lhs_ty = self.expand(span, lhs_ty)?;
 
@@ -497,7 +497,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                RPatOrExpr::Pat(ref mut pat) => {
+                RPatOrExpr::Pat(ref pat) => {
                     self.try_assign_pat(span, pat, ty)?;
                 }
             }
@@ -509,7 +509,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn try_assign_pat(&mut self, span: Span, lhs: &mut RPat, ty: &Type) -> Result<(), Error> {
+    fn try_assign_pat(&mut self, span: Span, lhs: &RPat, ty: &Type) -> Result<(), Error> {
         // Update variable's type
         match *lhs {
             RPat::Ident(ref i) => {
@@ -602,7 +602,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            RPat::Array(ref mut arr) => {
+            RPat::Array(ref arr) => {
                 //
                 for (i, elem) in arr.elems.iter_mut().enumerate() {
                     if let Some(elem) = elem.as_mut() {
@@ -628,7 +628,7 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
 
-            RPat::Object(ref mut obj) => {
+            RPat::Object(ref obj) => {
                 //
                 for prop in obj.props.iter_mut() {
                     match ty.normalize() {

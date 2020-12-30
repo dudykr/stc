@@ -46,7 +46,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RPropName) {
         self.record(node);
 
-        node.visit_mut_children_with(self);
+        node.visit_children_with(self);
 
         Ok(())
     }
@@ -227,7 +227,7 @@ impl Analyzer<'_, '_> {
             }
             .into(),
 
-            RProp::KeyValue(ref mut kv) => {
+            RProp::KeyValue(ref kv) => {
                 let computed = match kv.key {
                     RPropName::Computed(_) => true,
                     _ => false,
@@ -247,15 +247,15 @@ impl Analyzer<'_, '_> {
                 .into()
             }
 
-            RProp::Assign(ref mut p) => unimplemented!("type_of_prop(AssignProperty): {:?}", p),
-            RProp::Getter(ref mut p) => p.validate_with(self)?,
-            RProp::Setter(ref mut p) => {
+            RProp::Assign(ref p) => unimplemented!("type_of_prop(AssignProperty): {:?}", p),
+            RProp::Getter(ref p) => p.validate_with(self)?,
+            RProp::Setter(ref p) => {
                 let computed = match p.key {
                     RPropName::Computed(_) => true,
                     _ => false,
                 };
                 let parma_span = p.param.span();
-                let mut param = &mut p.param;
+                let mut param = &p.param;
 
                 self.with_child(ScopeKind::Method, Default::default(), {
                     |child| -> ValidationResult<_> {
@@ -274,7 +274,7 @@ impl Analyzer<'_, '_> {
                 })?
             }
 
-            RProp::Method(ref mut p) => {
+            RProp::Method(ref p) => {
                 let computed = match p.key {
                     RPropName::Computed(..) => true,
                     _ => false,
@@ -295,7 +295,7 @@ impl Analyzer<'_, '_> {
                         let type_params = try_opt!(p.function.type_params.validate_with(child));
                         let params = p.function.params.validate_with(child)?;
 
-                        if let Some(body) = &mut p.function.body {
+                        if let Some(body) = &p.function.body {
                             let inferred_ret_ty = child
                                 .visit_stmts_for_return(
                                     p.function.span,
@@ -360,9 +360,8 @@ impl Analyzer<'_, '_> {
             .with_child(ScopeKind::Method, Default::default(), |child| {
                 n.key.visit_with(child);
 
-                if let Some(body) = &mut n.body {
-                    let ret_ty =
-                        child.visit_stmts_for_return(n.span, false, false, &mut body.stmts)?;
+                if let Some(body) = &n.body {
+                    let ret_ty = child.visit_stmts_for_return(n.span, false, false, &body.stmts)?;
                     if let None = ret_ty {
                         // getter property must have return statements.
                         child.storage.report(Error::TS2378 { span: n.key.span() });

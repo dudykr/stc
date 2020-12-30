@@ -307,7 +307,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Exports a variable.
-    fn export_expr(&mut self, name: Id, e: &mut RExpr) -> ValidationResult<()> {
+    fn export_expr(&mut self, name: Id, e: &RExpr) -> ValidationResult<()> {
         let ty = e.validate_with_default(self)?;
 
         if *name.sym() == js_word!("default") {
@@ -351,7 +351,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RTsExportAssignment) {
-        self.export_expr(Id::word(js_word!("default")), &mut node.expr)?;
+        self.export_expr(Id::word(js_word!("default")), &node.expr)?;
 
         Ok(())
     }
@@ -366,7 +366,7 @@ impl Analyzer<'_, '_> {
             ..self.ctx
         };
         self.with_ctx(ctx)
-            .export_expr(Id::word(js_word!("default")), &mut node.expr)?;
+            .export_expr(Id::word(js_word!("default")), &node.expr)?;
 
         Ok(())
     }
