@@ -633,43 +633,28 @@ impl Analyzer<'_, '_> {
                 for prop in obj.props.iter() {
                     match ty.normalize() {
                         ty if ty.is_any() => {
-                            self.try_assign_pat(
-                                span,
-                                match prop {
-                                    RObjectPatProp::KeyValue(kv) => &kv.value,
-                                    RObjectPatProp::Assign(a) => {
-                                        if a.key.type_ann.is_none() {
-                                            a.key.type_ann = Some(RTsTypeAnn {
-                                                node_id: NodeId::invalid(),
-                                                span,
-                                                type_ann: box RTsType::TsKeywordType(
-                                                    RTsKeywordType {
-                                                        span,
-                                                        kind: TsKeywordTypeKind::TsAnyKeyword,
-                                                    },
-                                                ),
-                                            })
+                            let lhs = match prop {
+                                RObjectPatProp::KeyValue(kv) => &kv.value,
+                                RObjectPatProp::Assign(a) => {
+                                    if a.key.type_ann.is_none() {
+                                        if let Some(m) = &mut self.mutations {
+                                            m.for_pats.entry(a.key.node_id).or_default().ty =
+                                                Some(Type::any(span));
                                         }
-                                        continue;
                                     }
-                                    RObjectPatProp::Rest(r) => {
-                                        if r.type_ann.is_none() {
-                                            r.type_ann = Some(RTsTypeAnn {
-                                                node_id: NodeId::invalid(),
-                                                span,
-                                                type_ann: box RTsType::TsKeywordType(
-                                                    RTsKeywordType {
-                                                        span,
-                                                        kind: TsKeywordTypeKind::TsAnyKeyword,
-                                                    },
-                                                ),
-                                            })
+                                    continue;
+                                }
+                                RObjectPatProp::Rest(r) => {
+                                    if r.type_ann.is_none() {
+                                        if let Some(m) = &mut self.mutations {
+                                            m.for_pats.entry(r.node_id).or_default().ty =
+                                                Some(Type::any(span));
                                         }
-                                        continue;
                                     }
-                                },
-                                &Type::any(ty.span()),
-                            )?;
+                                    continue;
+                                }
+                            };
+                            self.try_assign_pat(span, lhs, &Type::any(ty.span()))?;
                         }
 
                         Type::Ref(..) => {}
