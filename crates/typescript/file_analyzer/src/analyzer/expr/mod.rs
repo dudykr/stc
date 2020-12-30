@@ -2091,7 +2091,7 @@ impl Analyzer<'_, '_> {
 
         let mut errors = vec![];
         let obj_ty = match *obj {
-            RExprOrSuper::Expr(ref mut obj) => {
+            RExprOrSuper::Expr(ref obj) => {
                 let obj_ty = match obj.validate_with_default(self) {
                     Ok(ty) => ty,
                     Err(err) => {
