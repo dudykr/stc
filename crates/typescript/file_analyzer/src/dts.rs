@@ -18,6 +18,7 @@ pub struct Mutations {
     pub for_classes: FxHashMap<NodeId, ClassMut>,
     pub for_class_members: FxHashMap<NodeId, ClassMemberMut>,
     pub for_class_props: FxHashMap<NodeId, ClassPropMut>,
+    pub for_export_defaults: FxHashMap<NodeId, ExportDefaultMut>,
 }
 
 #[derive(Default)]
@@ -51,4 +52,9 @@ pub struct ClassMemberMut {
 #[derive(Default)]
 pub struct ClassPropMut {
     pub ty: Option<Box<Type>>,
+}
+
+#[derive(Default)]
+pub struct ExportDefaultMut {
+    pub replace_with: Option<Box<RExpr>>,
 }

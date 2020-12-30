@@ -310,7 +310,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Exports a variable.
-    fn export_expr(&mut self, name: Id, e: &RExpr) -> ValidationResult<()> {
+    fn export_expr(&mut self, name: Id, item_node_id: NodeId, e: &RExpr) -> ValidationResult<()> {
         let ty = e.validate_with_default(self)?;
 
         if *name.sym() == js_word!("default") {
@@ -342,7 +342,15 @@ impl Analyzer<'_, '_> {
                 declare: true,
                 decls: vec![var],
             })));
-            *e = RExpr::Ident(RIdent::new("_default".into(), DUMMY_SP));
+
+            if let Some(m) = &mut self.mutations {
+                m.for_export_defaults
+                    .entry(item_node_id)
+                    .or_default()
+                    .replace_with =
+                    Some(box RExpr::Ident(RIdent::new("_default".into(), DUMMY_SP)));
+            }
+
             return Ok(());
         }
 
@@ -354,7 +362,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RTsExportAssignment) {
-        self.export_expr(Id::word(js_word!("default")), &node.expr)?;
+        self.export_expr(Id::word(js_word!("default")), node.node_id, &node.expr)?;
 
         Ok(())
     }
@@ -369,7 +377,7 @@ impl Analyzer<'_, '_> {
             ..self.ctx
         };
         self.with_ctx(ctx)
-            .export_expr(Id::word(js_word!("default")), &node.expr)?;
+            .export_expr(Id::word(js_word!("default")), node.node_id, &node.expr)?;
 
         Ok(())
     }
