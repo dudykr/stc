@@ -174,11 +174,11 @@ fn fn_var_2() {
     export function foo() {
         return bar()
     }
-    
+
     function bar() {
         return baz;
     }
-    
+
     const baz = 5;
     ",
         vec![2, 1, 0],
@@ -192,7 +192,7 @@ fn simple_01() {
         export type C = B;
 
         export type A = 5;
-            
+
         ",
         vec![0, 1],
     );

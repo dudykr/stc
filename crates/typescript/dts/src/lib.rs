@@ -235,7 +235,7 @@ struct Dts {
 impl VisitMut<RTsParamProp> for Dts {
     fn visit_mut(&mut self, p: &mut RTsParamProp) {
         p.visit_mut_children_with(self);
-        
+
         if p.accessibility == Some(Accessibility::Private) {
             p.accessibility = None;
         }

@@ -16,7 +16,6 @@ use syn::{
 /// This macro converts
 ///
 /// ```ignore
-/// 
 /// impl Foo {
 ///     #[extra_validator]
 ///     fn validate_foo(&mut self, arg: Arg1) -> Result<Ret, ()> {
@@ -30,7 +29,6 @@ use syn::{
 ///
 ///
 /// ```ignore
-/// 
 /// impl Foo {
 ///     fn validate_foo(&mut self, arg: Arg1) -> Result<Ret, ()> {
 ///         let res: Result<Ret, Error> = try {

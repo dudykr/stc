@@ -87,7 +87,7 @@ pub enum Error {
         rhs: Span,
     },
 
-    /// TS2539  
+    /// TS2539
     CannotAssignToNonVariable {
         span: Span,
     },
