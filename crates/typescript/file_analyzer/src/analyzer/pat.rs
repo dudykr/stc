@@ -214,7 +214,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, p: &RRestPat) {
-        p.visit_mut_children_with(self);
+        p.visit_children_with(self);
 
         let mut errors = Errors::default();
 
