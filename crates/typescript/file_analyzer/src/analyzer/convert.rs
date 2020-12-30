@@ -350,17 +350,11 @@ impl Analyzer<'_, '_> {
                     Some(v) => match v {
                         Ok(v) => Some(v),
                         Err(e) => {
-                            d.type_ann = Some(Type::any(d.span).into());
-
                             self.storage.report(e);
                             Some(Type::any(d.span))
                         }
                     },
-                    None => {
-                        d.type_ann = Some(Type::any(d.span).into());
-
-                        Some(Type::any(d.span))
-                    }
+                    None => Some(Type::any(d.span)),
                 }
             },
             type_params: try_opt!(d.type_params.validate_with(self)),

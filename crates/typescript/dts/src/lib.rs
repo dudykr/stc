@@ -4,7 +4,6 @@
 #![feature(box_syntax)]
 #![feature(box_patterns)]
 #![feature(specialization)]
-
 use self::{
     ambient::RealImplRemover,
     dce::{get_used, DceForDts},
@@ -49,6 +48,7 @@ use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsModuleDecl;
 use stc_ts_ast_rnode::RTsParamProp;
 use stc_ts_ast_rnode::RTsParamPropParam;
+use stc_ts_ast_rnode::RTsPropertySignature;
 use stc_ts_ast_rnode::RTsType;
 use stc_ts_ast_rnode::RTsTypeAliasDecl;
 use stc_ts_ast_rnode::RTsTypeAnn;
@@ -233,6 +233,21 @@ struct Dts {
     preserve_stmt: bool,
     used_types: FxHashSet<Id>,
     used_vars: FxHashSet<Id>,
+}
+
+impl VisitMut<RTsPropertySignature> for Dts {
+    fn visit_mut(&mut self, ps: &mut RTsPropertySignature) {
+        if ps.type_ann.is_none() {
+            ps.type_ann = Some(RTsTypeAnn {
+                node_id: NodeId::invalid(),
+                span: DUMMY_SP,
+                type_ann: box RTsType::TsKeywordType(RTsKeywordType {
+                    span: DUMMY_SP,
+                    kind: TsKeywordTypeKind::TsAnyKeyword,
+                }),
+            });
+        }
+    }
 }
 
 impl VisitMut<Vec<RVarDeclarator>> for Dts {

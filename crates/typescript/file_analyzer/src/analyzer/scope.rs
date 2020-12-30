@@ -20,7 +20,6 @@ use fxhash::{FxHashMap, FxHashSet};
 use once_cell::sync::Lazy;
 use rnode::Fold;
 use rnode::FoldWith;
-use rnode::NodeId;
 use rnode::Visit;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
@@ -40,10 +39,7 @@ use stc_ts_ast_rnode::RRestPat;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsQualifiedName;
-use stc_ts_ast_rnode::RTsType;
-use stc_ts_ast_rnode::RTsTypeAnn;
-use stc_ts_ast_rnode::RTsTypeParamInstantiation;
-use stc_ts_ast_rnode::RTsTypeRef;
+use stc_ts_types::TypeParamInstantiation;
 use stc_ts_types::{
     Conditional, FnParam, Id, IndexedAccessType, Mapped, ModuleId, Operator, QueryExpr, QueryType,
     StaticThis, TupleElement, TypeParam,
@@ -548,26 +544,25 @@ impl Analyzer<'_, '_> {
                 }
 
                 if type_ann.is_none() {
-                    *type_ann = Some(RTsTypeAnn {
-                        node_id: NodeId::invalid(),
-                        span: *span,
-                        type_ann: box RTsType::TsTypeRef(RTsTypeRef {
-                            node_id: NodeId::invalid(),
+                    let ctxt = self.ctx.module_id;
+                    if let Some(m) = &mut self.mutations {
+                        //
+                        m.for_pats.entry(*node_id).or_default().ty = Some(box Type::Ref(Ref {
                             span: *span,
+                            ctxt,
                             type_name: RTsEntityName::Ident(RIdent::new(
                                 "Iterable".into(),
                                 DUMMY_SP,
                             )),
-                            type_params: Some(RTsTypeParamInstantiation {
-                                node_id: NodeId::invalid(),
+                            type_args: Some(TypeParamInstantiation {
                                 span: *span,
-                                params: vec![box RTsType::TsKeywordType(RTsKeywordType {
+                                params: vec![box Type::Keyword(RTsKeywordType {
                                     span: DUMMY_SP,
                                     kind: TsKeywordTypeKind::TsAnyKeyword,
                                 })],
                             }),
-                        }),
-                    });
+                        }));
+                    }
                 }
 
                 for elem in elems.iter_mut() {
