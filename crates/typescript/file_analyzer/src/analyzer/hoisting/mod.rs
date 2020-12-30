@@ -11,7 +11,6 @@ use rnode::VisitWith;
 use stc_ts_ast_rnode::RArrowExpr;
 use stc_ts_ast_rnode::RClassDecl;
 use stc_ts_ast_rnode::RDecl;
-use stc_ts_ast_rnode::REmptyStmt;
 use stc_ts_ast_rnode::RExportDecl;
 use stc_ts_ast_rnode::RExportNamedSpecifier;
 use stc_ts_ast_rnode::RExpr;
@@ -31,8 +30,6 @@ use stc_ts_ast_rnode::RTsTypeAliasDecl;
 use stc_ts_ast_rnode::RVarDeclarator;
 use stc_ts_types::Id;
 use stc_ts_utils::find_ids_in_pat;
-use std::mem::replace;
-use swc_common::DUMMY_SP;
 use swc_ecma_utils::DestructuringFinder;
 
 #[cfg(test)]

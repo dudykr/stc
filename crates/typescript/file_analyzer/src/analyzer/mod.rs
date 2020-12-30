@@ -22,14 +22,11 @@ use crate::{
     validator::ValidateWith,
     DepInfo, Rule, ValidationResult,
 };
-use bitflags::_core::mem::{replace, take};
 use fxhash::FxHashMap;
 use rnode::NodeId;
-use rnode::VisitMutWith;
 use rnode::VisitWith;
 use slog::Logger;
 use stc_ts_ast_rnode::RDecorator;
-use stc_ts_ast_rnode::REmptyStmt;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RModule;
@@ -43,6 +40,7 @@ use stc_ts_ast_rnode::RTsModuleName;
 use stc_ts_ast_rnode::RTsModuleRef;
 use stc_ts_ast_rnode::RTsNamespaceDecl;
 use stc_ts_types::{Id, ModuleId, ModuleTypeData, SymbolIdGenerator};
+use std::mem::take;
 use std::{
     fmt::Debug,
     ops::{Deref, DerefMut},
