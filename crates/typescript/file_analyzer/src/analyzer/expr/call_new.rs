@@ -1230,7 +1230,7 @@ impl Analyzer<'_, '_> {
                                 if let Some(node_id) = pat.node_id() {
                                     if let Some(m) = &mut self.mutations {
                                         m.for_pats.entry(node_id).or_default().ty =
-                                            Some(actual_ty.clone());
+                                            Some(actual.ty.clone());
                                     }
                                 }
                                 return;
