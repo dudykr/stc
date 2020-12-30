@@ -311,14 +311,19 @@ impl Analyzer<'_, '_> {
 
                             // TODO: Preserve return type if `this` is not involved in return type.
                             if p.function.return_type.is_none() {
-                                if child
+                                let ret_ty = if child
                                     .marks()
                                     .infected_by_this_in_object_literal
                                     .is_marked(&inferred_ret_ty)
                                 {
-                                    p.function.return_type = Some(Type::any(span).into())
+                                    Type::any(span)
                                 } else {
-                                    p.function.return_type = Some(inferred_ret_ty.clone().into())
+                                    inferred_ret_ty.clone()
+                                };
+
+                                if let Some(m) = &mut child.mutations {
+                                    m.for_fns.entry(p.function.node_id).or_default().ret_ty =
+                                        Some(ret_ty);
                                 }
                             }
 

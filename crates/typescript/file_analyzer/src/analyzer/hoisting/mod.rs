@@ -100,8 +100,6 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        stmts.clear();
-
         new
     }
 
