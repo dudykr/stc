@@ -22,23 +22,22 @@ use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RExprOrSuper;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RPat;
-use stc_ts_ast_rnode::RTsArrayType;
 use stc_ts_ast_rnode::RTsAsExpr;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsType;
 use stc_ts_ast_rnode::RTsTypeAnn;
 use stc_ts_ast_rnode::RTsTypeCastExpr;
-use stc_ts_ast_rnode::RTsTypeOperator;
-use stc_ts_ast_rnode::RTsTypeQuery;
 use stc_ts_ast_rnode::RTsTypeQueryExpr;
 use stc_ts_ast_rnode::RVarDecl;
 use stc_ts_ast_rnode::RVarDeclarator;
+use stc_ts_types::QueryExpr;
+use stc_ts_types::QueryType;
 use stc_ts_types::{Array, Id, Operator, Symbol};
 use stc_ts_utils::PatExt;
 use std::mem::take;
 use swc_atoms::js_word;
-use swc_common::{Spanned, DUMMY_SP};
+use swc_common::Spanned;
 use swc_ecma_ast::*;
 use ty::TypeExt;
 
@@ -449,17 +448,15 @@ impl Analyzer<'_, '_> {
 
                             if let Some(box RExpr::Ident(ref alias)) = &v.init {
                                 if let RPat::Ident(ref i) = v.name {
-                                    i.type_ann = Some(RTsTypeAnn {
-                                        node_id: NodeId::invalid(),
-                                        span: DUMMY_SP,
-                                        type_ann: box RTsType::TsTypeQuery(RTsTypeQuery {
-                                            node_id: NodeId::invalid(),
-                                            span,
-                                            expr_name: RTsTypeQueryExpr::TsEntityName(
-                                                RTsEntityName::Ident(alias.clone()),
-                                            ),
-                                        }),
-                                    });
+                                    if let Some(m) = &mut self.mutations {
+                                        m.for_pats.entry(i.node_id).or_default().ty =
+                                            Some(box Type::Query(QueryType {
+                                                span,
+                                                expr: QueryExpr::TsEntityName(
+                                                    RTsEntityName::Ident(alias.clone()),
+                                                ),
+                                            }));
+                                    }
                                 }
                             }
                             if !should_remove_value {
