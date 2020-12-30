@@ -8,7 +8,6 @@ use crate::{
     ValidationResult,
 };
 use rnode::Visit;
-use rnode::VisitMutWith;
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RAssignProp;
 use stc_ts_ast_rnode::RComputedPropName;

@@ -34,7 +34,6 @@ use stc_ts_ast_rnode::RDecl;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RExprOrSuper;
 use stc_ts_ast_rnode::RIdent;
-use stc_ts_ast_rnode::RLit;
 use stc_ts_ast_rnode::RMemberExpr;
 use stc_ts_ast_rnode::RParam;
 use stc_ts_ast_rnode::RParamOrTsParamProp;
@@ -67,7 +66,6 @@ use stc_ts_types::Type;
 use stc_ts_utils::PatExt;
 use std::mem::replace;
 use swc_atoms::js_word;
-use swc_common::util::move_map::MoveMap;
 use swc_common::EqIgnoreSpan;
 use swc_common::Span;
 use swc_common::Spanned;
@@ -1027,6 +1025,8 @@ impl Analyzer<'_, '_> {
                             },
                             _ => {}
                         },
+
+                        _ => {}
                     });
                 }
 
