@@ -73,8 +73,12 @@ impl Analyzer<'_, '_> {
                             Some(pat) => {
                                 //
                                 if i < tuple.elem_types.len() {
-                                    let ty = box tuple.elem_types[i].ty.clone();
-                                    pat.set_ty(Some(ty));
+                                    let ty = tuple.elem_types[i].ty.clone().validate_with(self)?;
+                                    if let Some(node_id) = pat.node_id() {
+                                        if let Some(m) = &mut self.mutations {
+                                            m.for_pats.entry(node_id).or_default().ty = Some(ty)
+                                        }
+                                    }
                                 }
                             }
                             None => {}
