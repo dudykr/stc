@@ -1283,21 +1283,14 @@ impl Analyzer<'_, '_> {
 
                 if !additional_members.is_empty() {
                     // Add private parameter properties to .d.ts file
-                    // let pos = c
-                    //     .body
-                    //     .iter()
-                    //     .position(|member| match member {
-                    //         ClassMember::Constructor(_) => true,
-                    //         _ => false,
-                    //     })
-                    //     .unwrap_or(0);
-                    let pos = 0;
 
-                    let mut new = Vec::with_capacity(c.body.len() + additional_members.len());
-                    new.extend(c.body.drain(..pos));
-                    new.extend(additional_members);
-                    new.extend(c.body.drain(..));
-                    c.body = new;
+                    if let Some(m) = &mut child.mutations {
+                        m.for_classes
+                            .entry(c.node_id)
+                            .or_default()
+                            .additional_members
+                            .extend(additional_members);
+                    }
                 }
 
                 let class = stc_ts_types::Class {
