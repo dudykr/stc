@@ -898,7 +898,7 @@ impl Analyzer<'_, '_> {
         ty: &Type,
         members: &[TypeElement],
         kind: ExtractKind,
-        args: &mut [RExprOrSpread],
+        args: &[RExprOrSpread],
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
         type_args: Option<&TypeParamInstantiation>,
@@ -975,7 +975,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         c: &MethodSignature,
-        args: &mut [RExprOrSpread],
+        args: &[RExprOrSpread],
         arg_types: &[TypeOrSpread],
     ) -> ValidationResult {
         // Validate arguments
