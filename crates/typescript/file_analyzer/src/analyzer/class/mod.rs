@@ -124,9 +124,10 @@ impl Analyzer<'_, '_> {
             Some(Accessibility::Private) => {}
             _ => {
                 if p.type_ann.is_none() {
-                    p.type_ann = value
-                        .as_ref()
-                        .map(|value| value.clone().generalize_lit().into());
+                    if let Some(m) = &mut self.mutations {
+                        m.for_class_props.entry(p.node_id).or_default().ty =
+                            value.clone().map(|ty| ty.generalize_lit());
+                    }
                 }
             }
         }
@@ -548,7 +549,6 @@ impl Analyzer<'_, '_> {
         // Span of name
         let mut spans = vec![];
         let mut name: Option<&RPropName> = None;
-        let mut removed = FxHashSet::default();
 
         for (idx, m) in c.body.iter().enumerate() {
             macro_rules! check {
@@ -585,7 +585,13 @@ impl Analyzer<'_, '_> {
                             // TODO: Verify parameters
 
                             if name.is_some() {
-                                removed.insert(idx);
+                                if let Some(mutations) = &mut self.mutations {
+                                    mutations
+                                        .for_class_members
+                                        .entry(m.node_id)
+                                        .or_default()
+                                        .remove = true;
+                                }
                             }
 
                             spans.clear();
@@ -639,18 +645,6 @@ impl Analyzer<'_, '_> {
         }
 
         self.storage.report_all(errors);
-
-        c.body = c
-            .body
-            .drain(..)
-            .enumerate()
-            .filter_map(|(i, m)| {
-                if removed.contains(&i) {
-                    return None;
-                }
-                Some(m)
-            })
-            .collect();
 
         Ok(())
     }

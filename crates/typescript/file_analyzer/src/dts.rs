@@ -16,6 +16,7 @@ pub struct Mutations {
     pub for_fns: FxHashMap<NodeId, FunctionMut>,
     pub for_classes: FxHashMap<NodeId, ClassMut>,
     pub for_class_members: FxHashMap<NodeId, ClassMemberMut>,
+    pub for_class_props: FxHashMap<NodeId, ClassPropMut>,
 }
 
 #[derive(Default)]
@@ -43,4 +44,9 @@ pub struct ClassMut {
 #[derive(Default)]
 pub struct ClassMemberMut {
     pub remove: bool,
+}
+
+#[derive(Default)]
+pub struct ClassPropMut {
+    pub ty: Option<Box<Type>>,
 }
