@@ -142,7 +142,7 @@ impl Analyzer<'_, '_> {
                     | Some(box RExpr::TsTypeCast(RTsTypeCastExpr {
                         type_ann: RTsTypeAnn { ref type_ann, .. },
                         ..
-                    })) => Some(type_ann.clone()),
+                    })) => Some(type_ann.validate_with(self)?),
                     _ => None,
                 }
             };
@@ -162,7 +162,7 @@ impl Analyzer<'_, '_> {
                 }};
             }
 
-            if let Some(ref mut init) = v.init {
+            if let Some(ref init) = v.init {
                 let span = init.span();
                 let is_symbol_call = match &**init {
                     RExpr::Call(RCallExpr {
@@ -348,8 +348,104 @@ impl Analyzer<'_, '_> {
                         }
 
                         if self.scope.is_root() {
+                            let ty = Some(forced_type_ann.unwrap_or_else(|| {
+                                let ty = ty.clone();
+
+                                // Normalize unresolved parameters
+                                let ty = match ty.normalize() {
+                                    Type::Param(TypeParam {
+                                        constraint: Some(ty),
+                                        ..
+                                    }) => ty.clone(),
+                                    _ => ty,
+                                };
+
+                                let ty = match ty.normalize() {
+                                    Type::ClassInstance(c) => c.ty.clone(),
+
+                                    // `err is Error` => boolean
+                                    Type::Predicate(..) => box Type::Keyword(RTsKeywordType {
+                                        span,
+                                        kind: TsKeywordTypeKind::TsBooleanKeyword,
+                                    }),
+
+                                    Type::Keyword(RTsKeywordType {
+                                        span,
+                                        kind: TsKeywordTypeKind::TsSymbolKeyword,
+                                    })
+                                    | Type::Operator(Operator {
+                                        span,
+                                        op: TsTypeOperatorOp::Unique,
+                                        ty:
+                                            box Type::Keyword(RTsKeywordType {
+                                                kind: TsKeywordTypeKind::TsSymbolKeyword,
+                                                ..
+                                            }),
+                                    })
+                                    | Type::Symbol(Symbol { span, .. }) => {
+                                        match self.ctx.var_kind {
+                                            // It's `uniqute symbol` only if it's `Symbol()`
+                                            VarDeclKind::Const if is_symbol_call => {
+                                                box Type::Operator(Operator {
+                                                    span: *span,
+                                                    op: TsTypeOperatorOp::Unique,
+                                                    ty: box Type::Keyword(RTsKeywordType {
+                                                        span: *span,
+                                                        kind: TsKeywordTypeKind::TsSymbolKeyword,
+                                                    }),
+                                                })
+                                            }
+
+                                            _ => box Type::Keyword(RTsKeywordType {
+                                                span: *span,
+                                                kind: TsKeywordTypeKind::TsSymbolKeyword,
+                                            }),
+                                        }
+                                    }
+
+                                    Type::Array(Array {
+                                        span,
+                                        elem_type:
+                                            box Type::Param(TypeParam {
+                                                span: elem_span,
+                                                constraint,
+                                                ..
+                                            }),
+                                        ..
+                                    }) => {
+                                        box Type::Array(Array {
+                                            span: *span,
+                                            elem_type: match constraint {
+                                                Some(_constraint) => {
+                                                    // TODO: We need something smarter
+                                                    box Type::Keyword(RTsKeywordType {
+                                                        span: *elem_span,
+                                                        kind: TsKeywordTypeKind::TsAnyKeyword,
+                                                    })
+                                                }
+                                                None => box Type::Keyword(RTsKeywordType {
+                                                    span: *elem_span,
+                                                    kind: TsKeywordTypeKind::TsAnyKeyword,
+                                                }),
+                                            },
+                                        })
+                                    }
+
+                                    // We failed to infer type of the type parameter.
+                                    Type::Param(TypeParam { span, .. }) => {
+                                        box Type::Keyword(RTsKeywordType {
+                                            span: *span,
+                                            kind: TsKeywordTypeKind::TsUnknownKeyword,
+                                        })
+                                    }
+                                    _ => ty,
+                                };
+
+                                ty
+                            }));
+
                             if let Some(box RExpr::Ident(ref alias)) = &v.init {
-                                if let RPat::Ident(ref mut i) = v.name {
+                                if let RPat::Ident(ref i) = v.name {
                                     i.type_ann = Some(RTsTypeAnn {
                                         node_id: NodeId::invalid(),
                                         span: DUMMY_SP,
@@ -364,110 +460,12 @@ impl Analyzer<'_, '_> {
                                 }
                             }
                             if !should_remove_value {
-                                v.name.set_ty(Some(forced_type_ann.unwrap_or_else(|| {
-                                    let ty = ty.clone();
-
-                                    // Normalize unresolved parameters
-                                    let ty = match ty.normalize() {
-                                        Type::Param(TypeParam {
-                                            constraint: Some(ty),
-                                            ..
-                                        }) => ty.clone(),
-                                        _ => ty,
-                                    };
-
-                                    let ty = match ty.normalize() {
-                                        Type::ClassInstance(c) => box c.ty.clone().into(),
-
-                                        // `err is Error` => boolean
-                                        Type::Predicate(..) => {
-                                            box RTsType::TsKeywordType(RTsKeywordType {
-                                                span,
-                                                kind: TsKeywordTypeKind::TsBooleanKeyword,
-                                            })
-                                        }
-
-                                        Type::Keyword(RTsKeywordType {
-                                            span,
-                                            kind: TsKeywordTypeKind::TsSymbolKeyword,
-                                        })
-                                        | Type::Operator(Operator {
-                                            span,
-                                            op: TsTypeOperatorOp::Unique,
-                                            ty:
-                                                box Type::Keyword(RTsKeywordType {
-                                                    kind: TsKeywordTypeKind::TsSymbolKeyword,
-                                                    ..
-                                                }),
-                                        })
-                                        | Type::Symbol(Symbol { span, .. }) => {
-                                            match self.ctx.var_kind {
-                                            // It's `uniqute symbol` only if it's `Symbol()`
-                                            VarDeclKind::Const if is_symbol_call => {
-                                                box RTsType::TsTypeOperator(RTsTypeOperator {
-                                                    node_id: NodeId::invalid(),
-                                                    span:*span,
-                                                    op: TsTypeOperatorOp::Unique,
-                                                    type_ann: box RTsType::TsKeywordType(
-                                                        RTsKeywordType {
-                                                            span:*span,
-                                                            kind:
-                                                                TsKeywordTypeKind::TsSymbolKeyword,
-                                                        },
-                                                    ),
-                                                })
-                                            }
-
-                                            _ => box RTsType::TsKeywordType(RTsKeywordType {
-                                                span:*span,
-                                                kind: TsKeywordTypeKind::TsSymbolKeyword,
-                                            }),
-                                        }
-                                        }
-
-                                        Type::Array(Array {
-                                            span,
-                                            elem_type:
-                                                box Type::Param(TypeParam {
-                                                    span: elem_span,
-                                                    constraint,
-                                                    ..
-                                                }),
-                                            ..
-                                        }) => {
-                                            box RTsType::TsArrayType(RTsArrayType {
-                                                node_id: NodeId::invalid(),
-                                                span: *span,
-                                                elem_type: match constraint {
-                                                    Some(_constraint) => {
-                                                        // TODO: We need something smarter
-                                                        box RTsType::TsKeywordType(RTsKeywordType {
-                                                            span: *elem_span,
-                                                            kind: TsKeywordTypeKind::TsAnyKeyword,
-                                                        })
-                                                    }
-                                                    None => {
-                                                        box RTsType::TsKeywordType(RTsKeywordType {
-                                                            span: *elem_span,
-                                                            kind: TsKeywordTypeKind::TsAnyKeyword,
-                                                        })
-                                                    }
-                                                },
-                                            })
-                                        }
-
-                                        // We failed to infer type of the type parameter.
-                                        Type::Param(TypeParam { span, .. }) => {
-                                            box RTsType::TsKeywordType(RTsKeywordType {
-                                                span: *span,
-                                                kind: TsKeywordTypeKind::TsUnknownKeyword,
-                                            })
-                                        }
-                                        _ => ty.into(),
-                                    };
-
-                                    ty.into()
-                                })));
+                                let node_id = v.name.node_id();
+                                if let Some(node_id) = node_id {
+                                    if let Some(m) = &mut self.mutations {
+                                        m.for_pats.entry(node_id).or_default().ty = ty;
+                                    }
+                                }
                             }
                         }
                         match ty.normalize() {
@@ -536,7 +534,7 @@ impl Analyzer<'_, '_> {
                 }
             } else {
                 match v.name {
-                    RPat::Ident(ref mut i) => {
+                    RPat::Ident(ref i) => {
                         //
                         let sym: Id = (&*i).into();
                         let mut ty = try_opt!(i.type_ann.validate_with(self));
