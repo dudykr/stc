@@ -491,10 +491,9 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsFnType) -> ValidationResult<stc_ts_types::Function> {
         let type_params = try_opt!(t.type_params.validate_with(self));
-        let implicit_type_mark = self.marks().implicit_type_mark;
 
         for param in &t.params {
-            default_any_param(&mut self.mutations, implicit_type_mark, &param);
+            self.default_any_param(&param);
         }
 
         let mut params: Vec<_> = t.params.validate_with(self)?;
@@ -514,10 +513,9 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsConstructorType) -> ValidationResult<stc_ts_types::Constructor> {
         let type_params = try_opt!(t.type_params.validate_with(self));
-        let implicit_type_mark = self.marks().implicit_type_mark;
 
         for param in &t.params {
-            default_any_param(&mut self.mutations, implicit_type_mark, param);
+            self.default_any_param(param);
         }
 
         Ok(stc_ts_types::Constructor {
@@ -749,70 +747,79 @@ impl Analyzer<'_, '_> {
     }
 }
 
-pub(crate) fn default_any_pat(m: &mut Option<Mutations>, implicit_type_mark: Mark, p: &RPat) {
-    match p {
-        RPat::Ident(i) => default_any_ident(m, implicit_type_mark, i),
-        RPat::Array(arr) => default_any_array_pat(m, implicit_type_mark, arr),
-        RPat::Object(obj) => default_any_object(m, implicit_type_mark, obj),
-        _ => {}
-    }
-}
-
-pub(crate) fn default_any_ident(m: &mut Option<Mutations>, implicit_type_mark: Mark, i: &RIdent) {
-    if i.type_ann.is_some() {
-        return;
+impl Analyzer<'_, '_> {
+    /// Handle implicit defaults.
+    pub(crate) fn default_any_pat(&mut self, p: &RPat) {
+        match p {
+            RPat::Ident(i) => self.default_any_ident(i),
+            RPat::Array(arr) => self.default_any_array_pat(arr),
+            RPat::Object(obj) => self.default_any_object(obj),
+            _ => {}
+        }
     }
 
-    i.type_ann = Some(RTsTypeAnn {
-        node_id: NodeId::invalid(),
-        span: DUMMY_SP.apply_mark(implicit_type_mark),
-        type_ann: box RTsType::TsKeywordType(RTsKeywordType {
-            span: DUMMY_SP.apply_mark(implicit_type_mark),
-            kind: TsKeywordTypeKind::TsAnyKeyword,
-        }),
-    });
-}
+    /// Handle implicit defaults.
+    pub(crate) fn default_any_ident(&mut self, i: &RIdent) {
+        if i.type_ann.is_some() {
+            return;
+        }
 
-pub(crate) fn default_any_array_pat(
-    m: &mut Option<Mutations>,
-    implicit_type_mark: Mark,
-    arr: &RArrayPat,
-) {
-    if arr.type_ann.is_some() {
-        return;
+        let implicit_type_mark = self.marks().implicit_type_mark;
+
+        if let Some(m) = &mut self.mutations {
+            m.for_pats.entry(i.node_id).or_default().ty =
+                Some(Type::any(DUMMY_SP.apply_mark(implicit_type_mark)));
+        }
     }
-    let cnt = arr.elems.len();
 
-    arr.type_ann = Some(RTsTypeAnn {
-        node_id: NodeId::invalid(),
-        span: arr.span,
-        type_ann: box RTsType::TsTupleType(RTsTupleType {
-            node_id: NodeId::invalid(),
+    /// Handle implicit defaults.
+    pub(crate) fn default_any_array_pat(&mut self, arr: &RArrayPat) {
+        if arr.type_ann.is_some() {
+            return;
+        }
+        let cnt = arr.elems.len();
+
+        let ty = box Type::Tuple(Tuple {
             span: DUMMY_SP,
-            elem_types: arr
+            elems: arr
                 .elems
-                .iter_mut()
+                .iter()
                 .map(|elem| {
                     let span = elem.span();
                     // any
                     let ty = match elem {
-                        Some(RPat::Array(ref mut arr)) => {
-                            default_any_array_pat(m, implicit_type_mark, arr);
-                            arr.type_ann.take().unwrap().type_ann
+                        Some(RPat::Array(ref arr)) => {
+                            self.default_any_array_pat(arr);
+                            if let Some(m) = &mut self.mutations {
+                                m.for_pats
+                                    .entry(arr.node_id)
+                                    .or_default()
+                                    .ty
+                                    .take()
+                                    .unwrap()
+                            } else {
+                                Type::any(DUMMY_SP)
+                            }
                         }
-                        Some(RPat::Object(ref mut obj)) => {
-                            default_any_object(m, implicit_type_mark, obj);
-                            obj.type_ann.take().unwrap().type_ann
+                        Some(RPat::Object(ref obj)) => {
+                            self.default_any_object(obj);
+
+                            if let Some(m) = &mut self.mutations {
+                                m.for_pats
+                                    .entry(obj.node_id)
+                                    .or_default()
+                                    .ty
+                                    .take()
+                                    .unwrap()
+                            } else {
+                                Type::any(DUMMY_SP)
+                            }
                         }
 
-                        _ => box RTsType::TsKeywordType(RTsKeywordType {
-                            span: DUMMY_SP,
-                            kind: TsKeywordTypeKind::TsAnyKeyword,
-                        }),
+                        _ => Type::any(DUMMY_SP),
                     };
 
-                    RTsTupleElement {
-                        node_id: NodeId::invalid(),
+                    TupleElement {
                         span,
                         // TODO?
                         label: None,
@@ -820,90 +827,88 @@ pub(crate) fn default_any_array_pat(
                     }
                 })
                 .collect(),
-        }),
-    })
-}
-
-pub(crate) fn default_any_object(
-    m: &mut Option<Mutations>,
-    implicit_type_mark: Mark,
-    obj: &RObjectPat,
-) {
-    if obj.type_ann.is_some() {
-        return;
-    }
-
-    let mut members = Vec::with_capacity(obj.props.len());
-
-    for props in &mut obj.props {
-        match props {
-            RObjectPatProp::KeyValue(p) => {
-                match *p.value {
-                    RPat::Array(_) | RPat::Object(_) => {
-                        default_any_pat(m, implicit_type_mark, &*p.value);
-                    }
-                    _ => {}
-                }
-
-                members.push(RTsTypeElement::TsPropertySignature(RTsPropertySignature {
-                    node_id: NodeId::invalid(),
-                    span: DUMMY_SP,
-                    readonly: false,
-                    key: box rprop_name_to_expr(p.key.clone()),
-                    computed: false,
-                    optional: false,
-                    init: None,
-                    params: vec![],
-                    type_ann: {
-                        let type_ann = p.value.get_mut_ty().take().cloned().map(|ty| RTsTypeAnn {
-                            node_id: NodeId::invalid(),
-                            span: DUMMY_SP,
-                            type_ann: box ty,
-                        });
-                        p.value.set_ty(None);
-                        type_ann
-                    },
-                    type_params: None,
-                }))
-            }
-            RObjectPatProp::Assign(RAssignPatProp { key, .. }) => {
-                members.push(RTsTypeElement::TsPropertySignature(RTsPropertySignature {
-                    node_id: NodeId::invalid(),
-                    span: DUMMY_SP,
-                    readonly: false,
-                    key: box RExpr::Ident(key.clone()),
-                    computed: false,
-                    optional: false,
-                    init: None,
-                    params: vec![],
-                    type_ann: None,
-                    type_params: None,
-                }))
-            }
-            RObjectPatProp::Rest(..) => {}
+        });
+        if let Some(m) = m {
+            m.for_pats.entry(arr.node_id).or_default().ty = Some(ty);
         }
     }
 
-    obj.type_ann = Some(RTsTypeAnn {
-        node_id: NodeId::invalid(),
-        span: DUMMY_SP.apply_mark(implicit_type_mark),
-        type_ann: box RTsType::TsTypeLit(RTsTypeLit {
-            node_id: NodeId::invalid(),
-            span: DUMMY_SP,
-            members,
-        }),
-    })
-}
+    /// Handle implicit defaults.
+    pub(crate) fn default_any_object(&mut self, obj: &RObjectPat) {
+        if obj.type_ann.is_some() {
+            return;
+        }
 
-pub(crate) fn default_any_param(
-    m: &mut Option<Mutations>,
-    implicit_type_mark: Mark,
-    p: &RTsFnParam,
-) {
-    match p {
-        RTsFnParam::Ident(i) => default_any_ident(m, implicit_type_mark, i),
-        RTsFnParam::Array(arr) => default_any_array_pat(m, implicit_type_mark, arr),
-        RTsFnParam::Rest(rest) => {}
-        RTsFnParam::Object(obj) => default_any_object(m, implicit_type_mark, obj),
+        let mut members = Vec::with_capacity(obj.props.len());
+
+        for props in &mut obj.props {
+            match props {
+                RObjectPatProp::KeyValue(p) => {
+                    match *p.value {
+                        RPat::Array(_) | RPat::Object(_) => {
+                            default_any_pat(m, &*p.value);
+                        }
+                        _ => {}
+                    }
+
+                    members.push(RTsTypeElement::TsPropertySignature(RTsPropertySignature {
+                        node_id: NodeId::invalid(),
+                        span: DUMMY_SP,
+                        readonly: false,
+                        key: box rprop_name_to_expr(p.key.clone()),
+                        computed: false,
+                        optional: false,
+                        init: None,
+                        params: vec![],
+                        type_ann: {
+                            let type_ann =
+                                p.value.get_mut_ty().take().cloned().map(|ty| RTsTypeAnn {
+                                    node_id: NodeId::invalid(),
+                                    span: DUMMY_SP,
+                                    type_ann: box ty,
+                                });
+                            p.value.set_ty(None);
+                            type_ann
+                        },
+                        type_params: None,
+                    }))
+                }
+                RObjectPatProp::Assign(RAssignPatProp { key, .. }) => {
+                    members.push(RTsTypeElement::TsPropertySignature(RTsPropertySignature {
+                        node_id: NodeId::invalid(),
+                        span: DUMMY_SP,
+                        readonly: false,
+                        key: box RExpr::Ident(key.clone()),
+                        computed: false,
+                        optional: false,
+                        init: None,
+                        params: vec![],
+                        type_ann: None,
+                        type_params: None,
+                    }))
+                }
+                RObjectPatProp::Rest(..) => {}
+            }
+        }
+
+        obj.type_ann = Some(RTsTypeAnn {
+            node_id: NodeId::invalid(),
+            span: DUMMY_SP.apply_mark(implicit_type_mark),
+            type_ann: box RTsType::TsTypeLit(RTsTypeLit {
+                node_id: NodeId::invalid(),
+                span: DUMMY_SP,
+                members,
+            }),
+        })
+    }
+
+    /// Handle implicit defaults.
+    pub(crate) fn default_any_param(&mut self, p: &RTsFnParam) {
+        match p {
+            RTsFnParam::Ident(i) => default_any_ident(m, i),
+            RTsFnParam::Array(arr) => default_any_array_pat(m, arr),
+            RTsFnParam::Rest(rest) => {}
+            RTsFnParam::Object(obj) => default_any_object(m, obj),
+        }
     }
 }
