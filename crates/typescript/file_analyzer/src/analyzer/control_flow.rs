@@ -30,8 +30,6 @@ use stc_ts_ast_rnode::RPatOrExpr;
 use stc_ts_ast_rnode::RSwitchCase;
 use stc_ts_ast_rnode::RSwitchStmt;
 use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_ast_rnode::RTsType;
-use stc_ts_ast_rnode::RTsTypeAnn;
 use stc_ts_types::Array;
 use stc_ts_types::Id;
 use stc_ts_utils::MapWithMut;
