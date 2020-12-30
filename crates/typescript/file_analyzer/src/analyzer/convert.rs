@@ -491,9 +491,10 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsFnType) -> ValidationResult<stc_ts_types::Function> {
         let type_params = try_opt!(t.type_params.validate_with(self));
+        let implicit_type_mark = self.marks().implicit_type_mark;
 
         for param in &t.params {
-            default_any_param(&mut self.mutations, self.marks().implicit_type_mark, &param);
+            default_any_param(&mut self.mutations, implicit_type_mark, &param);
         }
 
         let mut params: Vec<_> = t.params.validate_with(self)?;
