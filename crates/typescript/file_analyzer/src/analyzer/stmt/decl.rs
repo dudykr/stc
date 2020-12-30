@@ -571,7 +571,7 @@ impl Analyzer<'_, '_> {
                         //  );
 
                         if self.ctx.in_declare {
-                            match self.declare_vars(kind, &mut v.name) {
+                            match self.declare_vars(kind, &v.name) {
                                 Ok(()) => {}
                                 Err(err) => {
                                     self.storage.report(err);

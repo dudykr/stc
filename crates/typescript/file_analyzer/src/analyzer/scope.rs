@@ -483,8 +483,8 @@ impl Analyzer<'_, '_> {
             assert_ne!(span, DUMMY_SP);
         }
 
-        match *pat {
-            RPat::Ident(ref mut i) => {
+        match &*pat {
+            RPat::Ident(i) => {
                 let name: Id = Id::from(i.clone());
                 if !self.is_builtin {
                     debug_assert_ne!(span, DUMMY_SP);
@@ -513,7 +513,7 @@ impl Analyzer<'_, '_> {
                 }
                 return Ok(());
             }
-            RPat::Assign(ref mut p) => {
+            RPat::Assign(ref p) => {
                 let ty = p.right.validate_with_default(self)?;
                 slog::debug!(
                     self.logger,
@@ -522,41 +522,45 @@ impl Analyzer<'_, '_> {
                     p.left,
                     ty
                 );
-                self.declare_vars_inner_with_ty(kind, &mut p.left, export, Some(ty))?;
+                self.declare_vars_inner_with_ty(kind, &p.left, export, Some(ty))?;
 
                 return Ok(());
             }
 
             RPat::Array(RArrayPat {
                 span,
-                ref mut elems,
-                ref mut type_ann,
-                ref mut optional,
+                ref elems,
+                ref type_ann,
+                ref optional,
+                node_id,
                 ..
             }) => {
                 // TODO: Handle type annotation
 
                 if type_ann.is_none() {
                     if let Some(ty) = ty {
-                        *type_ann = Some(ty.generalize_lit().generalize_tuple().into());
-                        *optional = true;
+                        if let Some(m) = &mut self.mutations {
+                            m.for_pats.entry(*node_id).or_default().optional = Some(true);
+                            m.for_pats.entry(*node_id).or_default().ty =
+                                Some(ty.generalize_lit().generalize_tuple().into());
+                        }
                     }
                 }
 
                 if type_ann.is_none() {
                     *type_ann = Some(RTsTypeAnn {
                         node_id: NodeId::invalid(),
-                        span,
+                        span: *span,
                         type_ann: box RTsType::TsTypeRef(RTsTypeRef {
                             node_id: NodeId::invalid(),
-                            span,
+                            span: *span,
                             type_name: RTsEntityName::Ident(RIdent::new(
                                 "Iterable".into(),
                                 DUMMY_SP,
                             )),
                             type_params: Some(RTsTypeParamInstantiation {
                                 node_id: NodeId::invalid(),
-                                span,
+                                span: *span,
                                 params: vec![box RTsType::TsKeywordType(RTsKeywordType {
                                     span: DUMMY_SP,
                                     kind: TsKeywordTypeKind::TsAnyKeyword,
@@ -581,7 +585,7 @@ impl Analyzer<'_, '_> {
 
             RPat::Object(RObjectPat {
                 ref props,
-                ref mut type_ann,
+                ref type_ann,
                 ..
             }) => {
                 if type_ann.is_none() {
@@ -613,11 +617,11 @@ impl Analyzer<'_, '_> {
 
             RPat::Rest(RRestPat {
                 ref arg,
-                type_ann: ref mut ty,
+                type_ann: ref ty,
                 ..
             }) => {
                 let mut arg = arg.clone();
-                self.declare_vars_inner(kind, &mut arg, export)?;
+                self.declare_vars_inner(kind, &arg, export)?;
 
                 let new_ty = arg.get_mut_ty().take();
                 if ty.is_none() {

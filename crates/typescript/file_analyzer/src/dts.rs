@@ -19,6 +19,8 @@ pub struct Mutations {
 
 #[derive(Default)]
 pub struct PatMut {
+    /// None: No change
+    pub optional: Option<bool>,
     pub ty: Option<Box<Type>>,
 }
 
