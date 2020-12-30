@@ -839,7 +839,7 @@ impl Analyzer<'_, '_> {
 
         let mut members = Vec::with_capacity(obj.props.len());
 
-        for props in &mut obj.props {
+        for props in &obj.props {
             match props {
                 RObjectPatProp::KeyValue(p) => {
                     match *p.value {
