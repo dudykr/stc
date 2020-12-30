@@ -13,7 +13,6 @@ use crate::{
     ValidationResult,
 };
 use rnode::FoldWith;
-use rnode::NodeId;
 use rnode::Visit;
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RArrayPat;
@@ -34,7 +33,6 @@ use stc_ts_types::QueryExpr;
 use stc_ts_types::QueryType;
 use stc_ts_types::{Array, Id, Operator, Symbol};
 use stc_ts_utils::PatExt;
-use std::mem::take;
 use swc_atoms::js_word;
 use swc_common::Spanned;
 use swc_ecma_ast::*;
@@ -56,12 +54,12 @@ impl Analyzer<'_, '_> {
             var.decls.visit_with(a);
         });
 
-        // Flatten var declarations
-        for mut decl in take(&mut var.decls) {
-            match decl.name {
+        // Set type of tuples.
+        for mut decl in &var.decls {
+            match &decl.name {
                 RPat::Array(RArrayPat {
                     span,
-                    mut elems,
+                    elems,
                     type_ann:
                         Some(RTsTypeAnn {
                             type_ann: box RTsType::TsTupleType(tuple),
@@ -70,22 +68,14 @@ impl Analyzer<'_, '_> {
                     ..
                 }) => {
                     //
-                    for (i, elem) in elems.into_iter().enumerate() {
+                    for (i, elem) in elems.iter().enumerate() {
                         match elem {
-                            Some(mut pat) => {
+                            Some(pat) => {
                                 //
                                 if i < tuple.elem_types.len() {
                                     let ty = box tuple.elem_types[i].ty.clone();
                                     pat.set_ty(Some(ty));
                                 }
-
-                                var.decls.push(RVarDeclarator {
-                                    node_id: NodeId::invalid(),
-                                    span,
-                                    name: pat,
-                                    init: None,
-                                    definite: false,
-                                })
                             }
                             None => {}
                         }
@@ -93,7 +83,7 @@ impl Analyzer<'_, '_> {
                 }
                 // TODO
                 //  RPat::Object(obj) => {}
-                _ => var.decls.push(decl),
+                _ => {}
             }
         }
 

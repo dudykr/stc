@@ -15,6 +15,7 @@ use rnode::Visit;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
 use rnode::VisitWith;
+use stc_ts_ast_rnode::RArrayPat;
 use stc_ts_ast_rnode::RAssignPat;
 use stc_ts_ast_rnode::RBlockStmt;
 use stc_ts_ast_rnode::RClass;
@@ -52,6 +53,7 @@ use stc_ts_ast_rnode::RTsType;
 use stc_ts_ast_rnode::RTsTypeAliasDecl;
 use stc_ts_ast_rnode::RTsTypeAnn;
 use stc_ts_ast_rnode::RVarDecl;
+use stc_ts_ast_rnode::RVarDeclarator;
 use stc_ts_types::Id;
 use stc_ts_types::ModuleTypeData;
 use stc_ts_utils::find_ids_in_pat;
@@ -231,6 +233,45 @@ struct Dts {
     preserve_stmt: bool,
     used_types: FxHashSet<Id>,
     used_vars: FxHashSet<Id>,
+}
+
+impl VisitMut<Vec<RVarDeclarator>> for Dts {
+    fn visit_mut(&mut self, decls: &mut Vec<RVarDeclarator>) {
+        decls.visit_mut_children_with(self);
+
+        // Flatten var declarations
+        for decl in decls.take() {
+            match decl.name {
+                RPat::Array(RArrayPat {
+                    span,
+                    elems,
+                    type_ann:
+                        Some(RTsTypeAnn {
+                            type_ann: box RTsType::TsTupleType(..),
+                            ..
+                        }),
+                    ..
+                }) => {
+                    //
+                    for elem in elems.into_iter() {
+                        match elem {
+                            Some(name) => decls.push(RVarDeclarator {
+                                node_id: NodeId::invalid(),
+                                span,
+                                name,
+                                init: None,
+                                definite: false,
+                            }),
+                            None => {}
+                        }
+                    }
+                }
+                // TODO
+                //  RPat::Object(obj) => {}
+                _ => decls.push(decl),
+            }
+        }
+    }
 }
 
 impl VisitMut<RTsParamProp> for Dts {
