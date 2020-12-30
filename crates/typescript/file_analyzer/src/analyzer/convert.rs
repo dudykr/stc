@@ -842,38 +842,34 @@ impl Analyzer<'_, '_> {
                         }
                         _ => {}
                     }
+                    let ty = if let Some(value_node_id) = p.value.node_id() {
+                        if let Some(m) = &mut self.mutations {
+                            m.for_pats.entry(value_node_id).or_default().ty.take()
+                        } else {
+                            None
+                        }
+                    } else {
+                        None
+                    };
 
-                    members.push(RTsTypeElement::TsPropertySignature(RTsPropertySignature {
-                        node_id: NodeId::invalid(),
+                    members.push(TypeElement::Property(PropertySignature {
                         span: DUMMY_SP,
                         readonly: false,
                         key: box rprop_name_to_expr(p.key.clone()),
                         computed: false,
                         optional: false,
-                        init: None,
                         params: vec![],
-                        type_ann: {
-                            let type_ann =
-                                p.value.get_mut_ty().take().cloned().map(|ty| RTsTypeAnn {
-                                    node_id: NodeId::invalid(),
-                                    span: DUMMY_SP,
-                                    type_ann: box ty,
-                                });
-                            p.value.set_ty(None);
-                            type_ann
-                        },
+                        type_ann: ty,
                         type_params: None,
                     }))
                 }
                 RObjectPatProp::Assign(RAssignPatProp { key, .. }) => {
-                    members.push(RTsTypeElement::TsPropertySignature(RTsPropertySignature {
-                        node_id: NodeId::invalid(),
+                    members.push(TypeElement::Property(PropertySignature {
                         span: DUMMY_SP,
                         readonly: false,
                         key: box RExpr::Ident(key.clone()),
                         computed: false,
                         optional: false,
-                        init: None,
                         params: vec![],
                         type_ann: None,
                         type_params: None,
@@ -883,15 +879,12 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        obj.type_ann = Some(RTsTypeAnn {
-            node_id: NodeId::invalid(),
-            span: DUMMY_SP.apply_mark(implicit_type_mark),
-            type_ann: box RTsType::TsTypeLit(RTsTypeLit {
-                node_id: NodeId::invalid(),
-                span: DUMMY_SP,
+        if let Some(m) = &mut self.mutations {
+            m.for_pats.entry(obj.node_id).or_default().ty = Some(box Type::TypeLit(TypeLit {
+                span: DUMMY_SP.apply_mark(implicit_type_mark),
                 members,
-            }),
-        })
+            }))
+        }
     }
 
     /// Handle implicit defaults.
