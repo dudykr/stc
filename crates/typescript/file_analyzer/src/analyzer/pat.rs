@@ -94,13 +94,19 @@ impl Analyzer<'_, '_> {
         match p {
             RPat::Assign(assign_pat) => match &*assign_pat.left {
                 RPat::Ident(i) => {
-                    i.optional = true;
+                    if let Some(m) = &mut self.mutations {
+                        m.for_pats.entry(i.node_id).or_default().optional = Some(true);
+                    }
                 }
                 RPat::Array(arr) => {
-                    arr.optional = true;
+                    if let Some(m) = &mut self.mutations {
+                        m.for_pats.entry(arr.node_id).or_default().optional = Some(true);
+                    }
                 }
                 RPat::Object(obj) => {
-                    obj.optional = true;
+                    if let Some(m) = &mut self.mutations {
+                        m.for_pats.entry(obj.node_id).or_default().optional = Some(true);
+                    }
                 }
                 _ => {}
             },
