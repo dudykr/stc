@@ -21,7 +21,6 @@ use crate::{
     ValidationResult,
 };
 use rnode::NodeId;
-use rnode::VisitMutWith;
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RArrayLit;
 use stc_ts_ast_rnode::RArrowExpr;
@@ -332,7 +331,7 @@ impl Analyzer<'_, '_> {
 
             // https://github.com/Microsoft/TypeScript/issues/26959
             RExpr::Yield(..) => {
-                e.visit_mut_children_with(self);
+                e.visit_children_with(self);
                 return Ok(Type::any(span));
             }
 

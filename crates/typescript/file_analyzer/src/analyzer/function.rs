@@ -11,7 +11,6 @@ use crate::{
 };
 use rnode::Fold;
 use rnode::FoldWith;
-use rnode::NodeId;
 use stc_ts_ast_rnode::RFnDecl;
 use stc_ts_ast_rnode::RFnExpr;
 use stc_ts_ast_rnode::RFunction;
@@ -19,10 +18,8 @@ use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_ast_rnode::RTsType;
-use stc_ts_ast_rnode::RTsTypeAnn;
 use stc_ts_types::{Alias, Interface, Ref};
-use swc_common::{Span, Spanned, DUMMY_SP};
+use swc_common::{Span, Spanned};
 use swc_ecma_ast::*;
 
 #[validator]
