@@ -1220,14 +1220,19 @@ impl Analyzer<'_, '_> {
                 let patch_arg = |idx: usize, pat: &RPat| {
                     let actual = &actual_params[idx];
 
-                    let ty = pat.get_mut_ty();
+                    let ty = pat.get_ty();
                     if let Some(ty) = ty {
                         match ty {
                             RTsType::TsKeywordType(RTsKeywordType {
                                 span,
                                 kind: TsKeywordTypeKind::TsAnyKeyword,
                             }) if analyzer.is_implicitly_typed_span(*span) => {
-                                *ty = actual.ty.clone().into();
+                                if let Some(node_id) = pat.node_id() {
+                                    if let Some(m) = &mut self.mutations {
+                                        m.for_pats.entry(node_id).or_default().ty =
+                                            Some(actual_ty.clone());
+                                    }
+                                }
                                 return;
                             }
                             _ => {}
