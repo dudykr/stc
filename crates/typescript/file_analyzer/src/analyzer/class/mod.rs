@@ -492,32 +492,6 @@ impl Analyzer<'_, '_> {
                         RPropName::Computed(_) => true,
                         _ => false,
                     };
-
-                    // Converts a private method to a private property without type.
-                    *m = RClassMember::ClassProp(RClassProp {
-                        node_id: NodeId::invalid(),
-                        span: method.span,
-                        key: match &method.key {
-                            RPropName::Ident(i) => box RExpr::Ident(i.clone()),
-                            RPropName::Str(s) => {
-                                box RExpr::Ident(RIdent::new(s.value.clone(), s.span))
-                            }
-                            RPropName::Num(n) => box RExpr::Lit(RLit::Num(n.clone())),
-                            RPropName::Computed(e) => e.expr.clone(),
-                            RPropName::BigInt(n) => box RExpr::Lit(RLit::BigInt(n.clone())),
-                        },
-                        value: None,
-                        type_ann: None,
-                        is_static: method.is_static,
-                        decorators: Default::default(),
-                        computed,
-                        accessibility: Some(Accessibility::Private),
-                        is_abstract: false,
-                        is_optional: method.is_optional,
-                        readonly: false,
-                        declare: false,
-                        definite: false,
-                    });
                 }
 
                 Some(stc_ts_types::ClassMember::Method(v))

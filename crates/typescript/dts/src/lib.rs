@@ -30,6 +30,7 @@ use stc_ts_ast_rnode::RFnDecl;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RImportDecl;
 use stc_ts_ast_rnode::RImportSpecifier;
+use stc_ts_ast_rnode::RLit;
 use stc_ts_ast_rnode::RMemberExpr;
 use stc_ts_ast_rnode::RModuleDecl;
 use stc_ts_ast_rnode::RModuleItem;
@@ -233,6 +234,50 @@ struct Dts {
     preserve_stmt: bool,
     used_types: FxHashSet<Id>,
     used_vars: FxHashSet<Id>,
+}
+
+impl VisitMut<RClassMember> for Dts {
+    fn visit_mut(&mut self, m: &mut RClassMember) {
+        match m {
+            RClassMember::Method(method) => {
+                if let Some(Accessibility::Private) = method.accessibility {
+                    let computed = match method.key {
+                        RPropName::Computed(..) => true,
+                        _ => false,
+                    };
+                    // Converts a private method to a private property without type.
+                    *m = RClassMember::ClassProp(RClassProp {
+                        node_id: NodeId::invalid(),
+                        span: method.span,
+                        key: match &method.key {
+                            RPropName::Ident(i) => box RExpr::Ident(i.clone()),
+                            RPropName::Str(s) => {
+                                box RExpr::Ident(RIdent::new(s.value.clone(), s.span))
+                            }
+                            RPropName::Num(n) => box RExpr::Lit(RLit::Num(n.clone())),
+                            RPropName::Computed(e) => e.expr.clone(),
+                            RPropName::BigInt(n) => box RExpr::Lit(RLit::BigInt(n.clone())),
+                        },
+                        value: None,
+                        type_ann: None,
+                        is_static: method.is_static,
+                        decorators: Default::default(),
+                        computed,
+                        accessibility: Some(Accessibility::Private),
+                        is_abstract: false,
+                        is_optional: method.is_optional,
+                        readonly: false,
+                        declare: false,
+                        definite: false,
+                    });
+                    return;
+                }
+            }
+
+            _ => {}
+        }
+        m.visit_mut_children_with(self);
+    }
 }
 
 impl VisitMut<RTsPropertySignature> for Dts {

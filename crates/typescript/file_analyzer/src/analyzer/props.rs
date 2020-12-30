@@ -301,7 +301,7 @@ impl Analyzer<'_, '_> {
                                     p.function.span,
                                     p.function.is_async,
                                     p.function.is_generator,
-                                    &mut body.stmts,
+                                    &body.stmts,
                                 )?
                                 .unwrap_or_else(|| {
                                     box Type::Keyword(RTsKeywordType {

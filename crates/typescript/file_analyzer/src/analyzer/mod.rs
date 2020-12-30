@@ -675,19 +675,9 @@ impl Analyzer<'_, '_> {
             })
         }
 
-        let mut new = Vec::with_capacity(items.len());
-
-        for (i, item) in items.iter_mut().enumerate() {
+        for item in items.iter() {
             item.visit_with(self);
-
-            new.extend(self.prepend_stmts.drain(..));
-
-            new.push(replace(item, RStmt::Empty(REmptyStmt { span: DUMMY_SP })));
-
-            new.extend(self.append_stmts.drain(..));
         }
-
-        *items = new;
 
         Ok(())
     }
