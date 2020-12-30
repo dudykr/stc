@@ -64,6 +64,7 @@ use swc_ecma_ast::*;
 
 mod ambient;
 mod dce;
+mod mutations;
 
 /// Make `module` suitable for .d.ts file.
 ///

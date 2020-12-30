@@ -15,6 +15,7 @@ use stc_ts_ast_rnode::RModule;
 use stc_ts_dts::cleanup_module_for_dts;
 use stc_ts_file_analyzer::analyzer::Analyzer;
 use stc_ts_file_analyzer::analyzer::NoopLoader;
+use stc_ts_file_analyzer::dts::Mutations;
 use stc_ts_file_analyzer::env::Env;
 use stc_ts_file_analyzer::mode::Single;
 use stc_ts_file_analyzer::validator::ValidateWith;
@@ -111,18 +112,21 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
             module.fold_with(&mut ts_resolver(stable_env.marks().top_level_mark()))
         });
         let mut module = RModule::from_orig(&mut node_id_gen, module);
-
+        let mut mutations = Mutations::default();
         {
             let mut analyzer = Analyzer::root(
                 term_logger(),
                 env,
                 cm.clone(),
                 box &mut storage,
+                Some(mutations),
                 &NoopLoader,
             );
             GLOBALS.set(stable_env.swc_globals(), || {
                 module.validate_with(&mut analyzer).unwrap();
             });
+
+            mutations = analyzer.mutations.unwrap()
         }
 
         {

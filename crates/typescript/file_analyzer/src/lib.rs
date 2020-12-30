@@ -26,7 +26,6 @@ use swc_common::Span;
 
 pub mod analyzer;
 mod debug;
-pub mod dts;
 pub mod env;
 pub mod errors;
 pub mod loader;
