@@ -4,11 +4,13 @@ use stc_ts_ast_rnode::RClassMember;
 use stc_ts_ast_rnode::RClassProp;
 use stc_ts_ast_rnode::REmptyStmt;
 use stc_ts_ast_rnode::RFunction;
+use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RModule;
 use stc_ts_dts_mutations::ClassMemberMut;
 use stc_ts_dts_mutations::ClassPropMut;
 use stc_ts_dts_mutations::FunctionMut;
 use stc_ts_dts_mutations::Mutations;
+use stc_ts_dts_mutations::PatMut;
 use swc_common::DUMMY_SP;
 
 pub fn apply_mutations(mutations: Mutations, m: &mut RModule) {
@@ -62,6 +64,21 @@ impl VisitMut<RClassProp> for Operator {
         if let Some(ClassPropMut { ty }) = self.mutations.for_class_props.remove(&p.node_id) {
             if let Some(ty) = ty {
                 p.type_ann = Some(ty.into())
+            }
+        }
+    }
+}
+
+impl VisitMut<RIdent> for Operator {
+    fn visit_mut(&mut self, i: &mut RIdent) {
+        i.visit_mut_children_with(self);
+
+        if let Some(PatMut { ty, optional }) = self.mutations.for_pats.remove(&i.node_id) {
+            if let Some(ty) = ty {
+                i.type_ann = Some(ty.into())
+            }
+            if let Some(optional) = optional {
+                i.optional = optional;
             }
         }
     }
