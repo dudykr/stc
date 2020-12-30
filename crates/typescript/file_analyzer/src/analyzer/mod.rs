@@ -8,7 +8,6 @@ use self::{
     stmt::AmbientFunctionHandler,
     util::ResultExt,
 };
-use crate::dts::Mutations;
 use crate::mode::Builtin;
 use crate::mode::Storage;
 use crate::{
@@ -39,6 +38,7 @@ use stc_ts_ast_rnode::RTsModuleDecl;
 use stc_ts_ast_rnode::RTsModuleName;
 use stc_ts_ast_rnode::RTsModuleRef;
 use stc_ts_ast_rnode::RTsNamespaceDecl;
+use stc_ts_dts_mutations::Mutations;
 use stc_ts_types::{Id, ModuleId, ModuleTypeData, SymbolIdGenerator};
 use std::mem::take;
 use std::{

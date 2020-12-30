@@ -8,6 +8,7 @@ use self::{
     ambient::RealImplRemover,
     dce::{get_used, DceForDts},
 };
+pub use crate::mutations::apply_mutations;
 use fxhash::FxHashSet;
 use rnode::NodeId;
 use rnode::Visit;
