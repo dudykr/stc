@@ -144,11 +144,11 @@ impl Analyzer<'_, '_> {
     /// This method check arguments
     fn extract_call_new_expr_member(
         &mut self,
-        callee: &mut RExpr,
+        callee: &RExpr,
         type_ann: Option<&Type>,
         kind: ExtractKind,
-        args: &mut [RExprOrSpread],
-        type_args: Option<&mut RTsTypeParamInstantiation>,
+        args: &[RExprOrSpread],
+        type_args: Option<&RTsTypeParamInstantiation>,
     ) -> ValidationResult {
         debug_assert_eq!(self.scope.kind(), ScopeKind::Call);
 
