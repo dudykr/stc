@@ -1139,7 +1139,6 @@ impl Analyzer<'_, '_> {
                                                 declare: false,
                                             },
                                         ));
-                                        p.accessibility = None;
                                     }
 
                                     let (i, ty) = match &p.param {

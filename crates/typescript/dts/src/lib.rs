@@ -45,6 +45,7 @@ use stc_ts_ast_rnode::RTsIndexSignature;
 use stc_ts_ast_rnode::RTsInterfaceDecl;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsModuleDecl;
+use stc_ts_ast_rnode::RTsParamProp;
 use stc_ts_ast_rnode::RTsParamPropParam;
 use stc_ts_ast_rnode::RTsType;
 use stc_ts_ast_rnode::RTsTypeAliasDecl;
@@ -229,6 +230,16 @@ struct Dts {
     preserve_stmt: bool,
     used_types: FxHashSet<Id>,
     used_vars: FxHashSet<Id>,
+}
+
+impl VisitMut<RTsParamProp> for Dts {
+    fn visit_mut(&mut self, p: &mut RTsParamProp) {
+        p.visit_mut_children_with(self);
+        
+        if p.accessibility == Some(Accessibility::Private) {
+            p.accessibility = None;
+        }
+    }
 }
 
 impl VisitMut<RClassProp> for Dts {
