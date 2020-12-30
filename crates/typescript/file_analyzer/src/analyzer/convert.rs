@@ -3,7 +3,6 @@ use super::util::ResultExt;
 use super::Analyzer;
 use super::Ctx;
 use super::ScopeKind;
-use crate::dts::Mutations;
 use crate::util::contains_infer_type;
 use crate::validator;
 use crate::validator::ValidateWith;
@@ -35,7 +34,6 @@ use stc_ts_ast_rnode::RTsInferType;
 use stc_ts_ast_rnode::RTsInterfaceBody;
 use stc_ts_ast_rnode::RTsInterfaceDecl;
 use stc_ts_ast_rnode::RTsIntersectionType;
-use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsMappedType;
 use stc_ts_ast_rnode::RTsMethodSignature;
 use stc_ts_ast_rnode::RTsOptionalType;
@@ -94,10 +92,8 @@ use stc_ts_types::TypeParamInstantiation;
 use stc_ts_types::Union;
 use stc_ts_utils::PatExt;
 use swc_atoms::js_word;
-use swc_common::Mark;
 use swc_common::Spanned;
 use swc_common::DUMMY_SP;
-use swc_ecma_ast::*;
 
 /// We analyze dependencies between type parameters, and fold parameter in
 /// topological order.
@@ -823,12 +819,12 @@ impl Analyzer<'_, '_> {
                         span,
                         // TODO?
                         label: None,
-                        ty: *ty,
+                        ty,
                     }
                 })
                 .collect(),
         });
-        if let Some(m) = m {
+        if let Some(m) = &mut self.mutations {
             m.for_pats.entry(arr.node_id).or_default().ty = Some(ty);
         }
     }
@@ -839,6 +835,8 @@ impl Analyzer<'_, '_> {
             return;
         }
 
+        let implicit_type_mark = self.marks().implicit_type_mark;
+
         let mut members = Vec::with_capacity(obj.props.len());
 
         for props in &mut obj.props {
@@ -846,7 +844,7 @@ impl Analyzer<'_, '_> {
                 RObjectPatProp::KeyValue(p) => {
                     match *p.value {
                         RPat::Array(_) | RPat::Object(_) => {
-                            default_any_pat(m, &*p.value);
+                            self.default_any_pat(&*p.value);
                         }
                         _ => {}
                     }
@@ -905,10 +903,10 @@ impl Analyzer<'_, '_> {
     /// Handle implicit defaults.
     pub(crate) fn default_any_param(&mut self, p: &RTsFnParam) {
         match p {
-            RTsFnParam::Ident(i) => default_any_ident(m, i),
-            RTsFnParam::Array(arr) => default_any_array_pat(m, arr),
+            RTsFnParam::Ident(i) => self.default_any_ident(i),
+            RTsFnParam::Array(arr) => self.default_any_array_pat(arr),
             RTsFnParam::Rest(rest) => {}
-            RTsFnParam::Object(obj) => default_any_object(m, obj),
+            RTsFnParam::Object(obj) => self.default_any_object(obj),
         }
     }
 }

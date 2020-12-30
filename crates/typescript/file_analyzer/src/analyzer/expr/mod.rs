@@ -4,7 +4,7 @@ use crate::errors::Errors;
 use crate::util::type_ext::TypeVecExt;
 use crate::util::RemoveTypes;
 use crate::{
-    analyzer::{convert::default_any_pat, pat::PatMode, Ctx, ScopeKind},
+    analyzer::{pat::PatMode, Ctx, ScopeKind},
     debug::print_backtrace,
     errors::Error,
     name::Name,
@@ -2192,8 +2192,8 @@ impl Analyzer<'_, '_> {
                         ..child.ctx
                     };
 
-                    for p in &mut f.params {
-                        default_any_pat(&mut self.mutations, child.marks().implicit_type_mark, p);
+                    for p in &f.params {
+                        child.default_any_pat(p);
                     }
 
                     f.params.validate_with(&mut *child.with_ctx(ctx))?
