@@ -94,7 +94,7 @@ impl Analyzer<'_, '_> {
                     type_ann,
                     ExtractKind::Call,
                     args,
-                    type_args.as_mut(),
+                    type_args.as_ref(),
                 )
             },
         )
@@ -125,7 +125,7 @@ impl Analyzer<'_, '_> {
                     type_ann,
                     ExtractKind::New,
                     args.as_mut().map(|v| &mut **v).unwrap_or_else(|| &mut []),
-                    type_args.as_mut(),
+                    type_args.as_ref(),
                 )
             },
         )
@@ -539,7 +539,7 @@ impl Analyzer<'_, '_> {
         members: &[TypeElement],
         prop: &RExpr,
         computed: bool,
-        args: &mut [RExprOrSpread],
+        args: &[RExprOrSpread],
     ) -> ValidationResult {
         // Candidates of the method call.
         //
@@ -669,7 +669,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         ty: Box<Type>,
         kind: ExtractKind,
-        args: &mut [RExprOrSpread],
+        args: &[RExprOrSpread],
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
         type_args: Option<&TypeParamInstantiation>,
@@ -999,7 +999,7 @@ impl Analyzer<'_, '_> {
         callee: Box<Type>,
         kind: ExtractKind,
         type_args: Option<TypeParamInstantiation>,
-        args: &mut [RExprOrSpread],
+        args: &[RExprOrSpread],
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
     ) -> ValidationResult {
@@ -1163,7 +1163,7 @@ impl Analyzer<'_, '_> {
         params: &[FnParam],
         ret_ty: Box<Type>,
         type_args: Option<&TypeParamInstantiation>,
-        args: &mut [RExprOrSpread],
+        args: &[RExprOrSpread],
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
     ) -> ValidationResult {
@@ -1509,7 +1509,7 @@ impl Analyzer<'_, '_> {
         Ok(exact)
     }
 
-    fn validate_args(&mut self, args: &mut [RExprOrSpread]) -> Result<Vec<TypeOrSpread>, Error> {
+    fn validate_args(&mut self, args: &[RExprOrSpread]) -> Result<Vec<TypeOrSpread>, Error> {
         let ctx = Ctx {
             in_argument: true,
             ..self.ctx
