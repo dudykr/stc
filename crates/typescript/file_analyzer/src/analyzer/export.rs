@@ -4,7 +4,6 @@ use crate::{
     ValidationResult,
 };
 use rnode::NodeId;
-use rnode::VisitMutWith;
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RDecl;
 use stc_ts_ast_rnode::RDefaultDecl;
@@ -209,7 +208,7 @@ impl Analyzer<'_, '_> {
         let span = export.span();
 
         match export.decl {
-            RDefaultDecl::Fn(ref mut f) => {
+            RDefaultDecl::Fn(ref f) => {
                 let i = f
                     .ident
                     .as_ref()
@@ -234,7 +233,7 @@ impl Analyzer<'_, '_> {
 
                 self.export(f.span(), Id::word(js_word!("default")), Some(i))
             }
-            RDefaultDecl::Class(ref mut c) => {
+            RDefaultDecl::Class(ref c) => {
                 let id = c
                     .ident
                     .as_ref()
@@ -248,7 +247,7 @@ impl Analyzer<'_, '_> {
             }
             RDefaultDecl::TsInterfaceDecl(ref i) => {
                 let i = i.id.clone().into();
-                export.visit_mut_children_with(self);
+                export.visit_children_with(self);
 
                 // TODO: Register type
 
