@@ -44,14 +44,14 @@ impl VisitMut<RClassMember> for Operator {
             RClassMember::Empty(_) => return,
         };
 
-        member.visit_mut_children_with(self);
-
         if let Some(ClassMemberMut { remove }) = self.mutations.for_class_members.remove(&node_id) {
             if remove {
                 *member = RClassMember::Empty(REmptyStmt { span: DUMMY_SP });
                 return;
             }
         }
+
+        member.visit_mut_children_with(self);
     }
 }
 
