@@ -5,12 +5,14 @@ use stc_ts_ast_rnode::RClassMember;
 use stc_ts_ast_rnode::RClassMethod;
 use stc_ts_ast_rnode::RClassProp;
 use stc_ts_ast_rnode::REmptyStmt;
+use stc_ts_ast_rnode::RExportDefaultExpr;
 use stc_ts_ast_rnode::RFunction;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RModule;
 use stc_ts_ast_rnode::RObjectPat;
 use stc_ts_dts_mutations::ClassMemberMut;
 use stc_ts_dts_mutations::ClassPropMut;
+use stc_ts_dts_mutations::ExportDefaultMut;
 use stc_ts_dts_mutations::FunctionMut;
 use stc_ts_dts_mutations::Mutations;
 use stc_ts_dts_mutations::PatMut;
@@ -112,6 +114,20 @@ impl VisitMut<RArrayPat> for Operator {
             }
             if let Some(optional) = optional {
                 arr.optional = optional;
+            }
+        }
+    }
+}
+
+impl VisitMut<RExportDefaultExpr> for Operator {
+    fn visit_mut(&mut self, export: &mut RExportDefaultExpr) {
+        export.visit_mut_children_with(self);
+
+        if let Some(ExportDefaultMut { replace_with }) =
+            self.mutations.for_export_defaults.remove(&export.node_id)
+        {
+            if let Some(expr) = replace_with {
+                export.expr = expr;
             }
         }
     }
