@@ -293,6 +293,7 @@ impl Analyzer<'_, '_> {
 
                         let type_params = try_opt!(p.function.type_params.validate_with(child));
                         let params = p.function.params.validate_with(child)?;
+                        let mut inferred = None;
 
                         if let Some(body) = &p.function.body {
                             let inferred_ret_ty = child
@@ -327,10 +328,13 @@ impl Analyzer<'_, '_> {
                                 }
                             }
 
+                            inferred = Some(inferred_ret_ty)
+
                             // TODO: Assign
                         }
 
                         let ret_ty = try_opt!(p.function.return_type.validate_with(child));
+                        let ret_ty = ret_ty.or(inferred);
 
                         Ok(MethodSignature {
                             span,
