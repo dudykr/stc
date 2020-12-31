@@ -22,7 +22,6 @@ use crate::{
     DepInfo, Rule, ValidationResult,
 };
 use fxhash::FxHashMap;
-use rnode::NodeId;
 use rnode::VisitWith;
 use slog::Logger;
 use stc_ts_ast_rnode::RDecorator;
@@ -537,19 +536,7 @@ impl Analyzer<'_, '_> {
         }
         self.load_normal_imports(&items);
 
-        let mut stmts = self.validate_stmts_with_hoisting(&items);
-        debug_assert_eq!(stmts.len(), counts.iter().copied().sum::<usize>());
-        let mut result = vec![];
-        for cnt in counts {
-            result.push(RModule {
-                node_id: NodeId::invalid(),
-                // TODO
-                span: DUMMY_SP,
-                body: stmts.drain(0..cnt).flatten().collect(),
-                // TODO
-                shebang: None,
-            });
-        }
+        self.validate_stmts_with_hoisting(&items);
 
         Ok(())
     }

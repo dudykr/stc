@@ -1,21 +1,26 @@
+use std::mem::take;
+
 use rnode::VisitMut;
 use rnode::VisitMutWith;
 use stc_ts_ast_rnode::RArrayPat;
 use stc_ts_ast_rnode::RClassMember;
-use stc_ts_ast_rnode::RClassMethod;
 use stc_ts_ast_rnode::RClassProp;
 use stc_ts_ast_rnode::REmptyStmt;
 use stc_ts_ast_rnode::RExportDefaultExpr;
 use stc_ts_ast_rnode::RFunction;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RModule;
+use stc_ts_ast_rnode::RModuleItem;
 use stc_ts_ast_rnode::RObjectPat;
 use stc_ts_dts_mutations::ClassMemberMut;
 use stc_ts_dts_mutations::ClassPropMut;
 use stc_ts_dts_mutations::ExportDefaultMut;
 use stc_ts_dts_mutations::FunctionMut;
+use stc_ts_dts_mutations::ModuleItemMut;
 use stc_ts_dts_mutations::Mutations;
 use stc_ts_dts_mutations::PatMut;
+use stc_ts_utils::HasNodeId;
+use stc_ts_utils::MapWithMut;
 use swc_common::DUMMY_SP;
 
 pub fn apply_mutations(mutations: Mutations, m: &mut RModule) {
@@ -25,6 +30,38 @@ pub fn apply_mutations(mutations: Mutations, m: &mut RModule) {
 
 struct Operator {
     mutations: Mutations,
+}
+
+impl VisitMut<Vec<RModuleItem>> for Operator {
+    fn visit_mut(&mut self, items: &mut Vec<RModuleItem>) {
+        let mut new = Vec::with_capacity(items.len() * 11 / 10);
+
+        for mut item in items.take() {
+            let node_id = item.node_id();
+
+            if let Some(node_id) = node_id {
+                if let Some(ModuleItemMut { prepend_stmts, .. }) =
+                    self.mutations.for_module_items.get_mut(&node_id)
+                {
+                    new.extend(take(prepend_stmts).into_iter().map(RModuleItem::Stmt));
+                }
+            }
+
+            item.visit_mut_children_with(self);
+
+            new.push(item);
+
+            if let Some(node_id) = node_id {
+                if let Some(ModuleItemMut { append_stmts, .. }) =
+                    self.mutations.for_module_items.get_mut(&node_id)
+                {
+                    new.extend(take(append_stmts).into_iter().map(RModuleItem::Stmt));
+                }
+            }
+        }
+
+        *items = new;
+    }
 }
 
 impl VisitMut<RFunction> for Operator {

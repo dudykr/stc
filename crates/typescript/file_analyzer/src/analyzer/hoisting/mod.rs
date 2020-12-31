@@ -30,6 +30,7 @@ use stc_ts_ast_rnode::RTsTypeAliasDecl;
 use stc_ts_ast_rnode::RVarDeclarator;
 use stc_ts_types::Id;
 use stc_ts_utils::find_ids_in_pat;
+use stc_ts_utils::HasNodeId;
 use swc_ecma_utils::DestructuringFinder;
 
 #[cfg(test)]
@@ -61,15 +62,15 @@ pub(super) enum TypeOrderItem {
 
 impl Analyzer<'_, '_> {
     /// Note: This method removes all items from `stmts`.
-    pub(super) fn validate_stmts_with_hoisting<T>(&mut self, stmts: &Vec<&T>) -> Vec<Vec<T>>
+    pub(super) fn validate_stmts_with_hoisting<T>(&mut self, stmts: &Vec<&T>)
     where
         T: AsModuleDecl
             + ModuleItemOrStmt
             + VisitWith<RequirementCalculartor>
             + VisitWith<Self>
-            + From<RStmt>,
+            + From<RStmt>
+            + HasNodeId,
     {
-        let mut new: Vec<Vec<T>> = (0..stmts.len()).map(|_| vec![]).collect();
         let (order, skip) = self.reorder_stmts(&stmts);
         let mut type_decls =
             FxHashMap::<Id, Vec<usize>>::with_capacity_and_hasher(order.len(), Default::default());
@@ -92,15 +93,31 @@ impl Analyzer<'_, '_> {
             } else {
                 let type_decl_id = type_decl_id(&*stmts[idx]);
 
+                let node_id = stmts[idx].node_id();
                 stmts[idx].visit_with(self);
 
-                new[idx].extend(self.prepend_stmts.drain(..).map(T::from));
+                if self.scope.is_root() {
+                    let prepended = self.prepend_stmts.drain(..);
+                    let appended = self.append_stmts.drain(..);
 
-                new[idx].extend(self.append_stmts.drain(..).map(T::from));
+                    if let Some(node_id) = node_id {
+                        if let Some(m) = &mut self.mutations {
+                            m.for_module_items
+                                .entry(node_id)
+                                .or_default()
+                                .prepend_stmts
+                                .extend(prepended);
+
+                            m.for_module_items
+                                .entry(node_id)
+                                .or_default()
+                                .append_stmts
+                                .extend(appended);
+                        }
+                    }
+                }
             }
         }
-
-        new
     }
 
     /// A special method is require code like
@@ -119,7 +136,8 @@ impl Analyzer<'_, '_> {
             + ModuleItemOrStmt
             + VisitWith<RequirementCalculartor>
             + VisitWith<Self>
-            + From<RStmt>,
+            + From<RStmt>
+            + HasNodeId,
     {
         self.validate_stmts_with_hoisting(stmts);
     }
