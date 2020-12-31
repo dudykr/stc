@@ -13,6 +13,7 @@ use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RModule;
 use stc_ts_ast_rnode::RModuleItem;
 use stc_ts_ast_rnode::RObjectPat;
+use stc_ts_ast_rnode::RVarDeclarator;
 use stc_ts_dts_mutations::ClassMemberMut;
 use stc_ts_dts_mutations::ClassMut;
 use stc_ts_dts_mutations::ClassPropMut;
@@ -21,6 +22,7 @@ use stc_ts_dts_mutations::FunctionMut;
 use stc_ts_dts_mutations::ModuleItemMut;
 use stc_ts_dts_mutations::Mutations;
 use stc_ts_dts_mutations::PatMut;
+use stc_ts_dts_mutations::VarDeclMut;
 use stc_ts_utils::HasNodeId;
 use stc_ts_utils::MapWithMut;
 use swc_common::DUMMY_SP;
@@ -63,6 +65,18 @@ impl VisitMut<Vec<RModuleItem>> for Operator {
         }
 
         *items = new;
+    }
+}
+
+impl VisitMut<RVarDeclarator> for Operator {
+    fn visit_mut(&mut self, d: &mut RVarDeclarator) {
+        d.visit_mut_children_with(self);
+
+        if let Some(VarDeclMut { remove_init }) = self.mutations.for_var_decls.remove(&d.node_id) {
+            if remove_init {
+                d.init = None;
+            }
+        }
     }
 }
 
