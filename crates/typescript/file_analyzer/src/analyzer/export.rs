@@ -223,8 +223,15 @@ impl Analyzer<'_, '_> {
                 };
                 if f.function.return_type.is_none() {
                     if let Some(m) = &mut self.mutations {
-                        m.for_fns.entry(f.function.node_id).or_default().ret_ty =
-                            Some(fn_ty.ret_ty.clone());
+                        if m.for_fns
+                            .entry(f.function.node_id)
+                            .or_default()
+                            .ret_ty
+                            .is_none()
+                        {
+                            m.for_fns.entry(f.function.node_id).or_default().ret_ty =
+                                Some(fn_ty.ret_ty.clone());
+                        }
                     }
                 }
                 self.register_type(i.clone(), box fn_ty.clone().into())

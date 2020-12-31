@@ -152,11 +152,13 @@ impl Analyzer<'_, '_> {
                     // No return statement -> void
                     if f.return_type.is_none() {
                         if let Some(m) = &mut child.mutations {
-                            m.for_fns.entry(f.node_id).or_default().ret_ty =
-                                Some(box Type::Keyword(RTsKeywordType {
-                                    span,
-                                    kind: TsKeywordTypeKind::TsVoidKeyword,
-                                }));
+                            if m.for_fns.entry(f.node_id).or_default().ret_ty.is_none() {
+                                m.for_fns.entry(f.node_id).or_default().ret_ty =
+                                    Some(box Type::Keyword(RTsKeywordType {
+                                        span,
+                                        kind: TsKeywordTypeKind::TsVoidKeyword,
+                                    }));
+                            }
                         }
                     }
                     box Type::Keyword(RTsKeywordType {
