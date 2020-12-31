@@ -10,7 +10,7 @@ use anyhow::Context;
 use rnode::NodeIdGenerator;
 use rnode::RNode;
 use stc_testing::get_git_root;
-use stc_testing::term_logger;
+use stc_testing::logger;
 use stc_ts_ast_rnode::RModule;
 use stc_ts_dts::apply_mutations;
 use stc_ts_dts::cleanup_module_for_dts;
@@ -107,6 +107,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
             Some(&comments),
         );
         let mut parser = Parser::new_from(lexer);
+        let log = logger();
         let module = parser.parse_module().unwrap();
         let module = GLOBALS.set(stable_env.swc_globals(), || {
             module.fold_with(&mut ts_resolver(stable_env.marks().top_level_mark()))
@@ -114,13 +115,8 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
         let mut module = RModule::from_orig(&mut node_id_gen, module);
         let mutations;
         {
-            let mut analyzer = Analyzer::root(
-                term_logger(),
-                env,
-                cm.clone(),
-                box &mut storage,
-                &NoopLoader,
-            );
+            let mut analyzer =
+                Analyzer::root(log.logger, env, cm.clone(), box &mut storage, &NoopLoader);
             GLOBALS.set(stable_env.swc_globals(), || {
                 module.validate_with(&mut analyzer).unwrap();
             });
