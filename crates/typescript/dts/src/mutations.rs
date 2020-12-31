@@ -13,6 +13,7 @@ use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RModule;
 use stc_ts_ast_rnode::RModuleItem;
 use stc_ts_ast_rnode::RObjectPat;
+use stc_ts_ast_rnode::RRestPat;
 use stc_ts_ast_rnode::RVarDeclarator;
 use stc_ts_dts_mutations::ClassMemberMut;
 use stc_ts_dts_mutations::ClassMut;
@@ -183,6 +184,18 @@ impl VisitMut<RArrayPat> for Operator {
             }
             if let Some(optional) = optional {
                 arr.optional = optional;
+            }
+        }
+    }
+}
+
+impl VisitMut<RRestPat> for Operator {
+    fn visit_mut(&mut self, r: &mut RRestPat) {
+        r.visit_mut_children_with(self);
+
+        if let Some(PatMut { ty, optional: _ }) = self.mutations.for_pats.remove(&r.node_id) {
+            if let Some(ty) = ty {
+                r.type_ann = Some(ty.into())
             }
         }
     }
