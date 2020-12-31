@@ -143,47 +143,10 @@ pub struct Analyzer<'scope, 'b> {
     pending_exports: Vec<((Id, Span), RExpr)>,
 
     imports: FxHashMap<(ModuleId, ModuleId), Arc<ModuleTypeData>>,
-
-    /// Used to handle
-    ///
-    /// ```ts
-    /// declare function Mix<T, U>(c1: T, c2: U): T & U;
-    /// class C1 extends Mix(Private, Private2) {
-    /// }
-    /// ```
-    ///
-    /// As code above becomes
-    ///
-    /// ```ts
-    /// declare const C1_base: typeof Private & typeof Private2;
-    /// declare class C1 extends C1_base {
-    /// }
-    /// ```
-    ///
-    /// we need to prepend statements.
+    /// See docs of ModuleitemMut for documentation.
     prepend_stmts: Vec<RStmt>,
 
-    /// Used to handle
-    ///
-    /// ```ts
-    /// export default function someFunc() {
-    ///     return 'hello!';
-    /// }
-    ///
-    /// someFunc.someProp = 'yo';
-    /// ```
-    ///
-    /// As the code above becomes
-    ///
-    /// ```ts
-    /// declare function someFunc(): string;
-    /// declare namespace someFunc {
-    ///     var someProp: string;
-    /// }
-    /// export default someFunc;
-    /// ```
-    ///
-    /// we need to append statements.
+    /// See docs of ModuleitemMut for documentation.
     append_stmts: Vec<RStmt>,
 
     scope: Scope<'scope>,

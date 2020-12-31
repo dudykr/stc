@@ -2,6 +2,7 @@ use fxhash::FxHashMap;
 use rnode::NodeId;
 use stc_ts_ast_rnode::RClassMember;
 use stc_ts_ast_rnode::RExpr;
+use stc_ts_ast_rnode::RStmt;
 use stc_ts_types::Type;
 
 /// Stores ast mutation informations.
@@ -19,6 +20,7 @@ pub struct Mutations {
     pub for_class_members: FxHashMap<NodeId, ClassMemberMut>,
     pub for_class_props: FxHashMap<NodeId, ClassPropMut>,
     pub for_export_defaults: FxHashMap<NodeId, ExportDefaultMut>,
+    pub for_module_items: FxHashMap<NodeId, ModuleItemMut>,
 }
 
 #[derive(Default)]
@@ -57,4 +59,49 @@ pub struct ClassPropMut {
 #[derive(Default)]
 pub struct ExportDefaultMut {
     pub replace_with: Option<Box<RExpr>>,
+}
+
+#[derive(Default)]
+pub struct ModuleItemMut {
+    /// Used to handle
+    ///
+    /// ```ts
+    /// declare function Mix<T, U>(c1: T, c2: U): T & U;
+    /// class C1 extends Mix(Private, Private2) {
+    /// }
+    /// ```
+    ///
+    /// As code above becomes
+    ///
+    /// ```ts
+    /// declare const C1_base: typeof Private & typeof Private2;
+    /// declare class C1 extends C1_base {
+    /// }
+    /// ```
+    ///
+    /// we need to prepend statements.
+    pub prepend_stmts: Vec<RStmt>,
+
+    /// Used to handle
+    ///
+    /// ```ts
+    /// export default function someFunc() {
+    ///     return 'hello!';
+    /// }
+    ///
+    /// someFunc.someProp = 'yo';
+    /// ```
+    ///
+    /// As the code above becomes
+    ///
+    /// ```ts
+    /// declare function someFunc(): string;
+    /// declare namespace someFunc {
+    ///     var someProp: string;
+    /// }
+    /// export default someFunc;
+    /// ```
+    ///
+    /// we need to append statements.
+    pub append_stmts: Vec<RStmt>,
 }
