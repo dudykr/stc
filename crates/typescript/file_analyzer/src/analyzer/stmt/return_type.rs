@@ -58,9 +58,6 @@ impl AddAssign for ReturnValues {
 
 impl Analyzer<'_, '_> {
     /// This method returns `Generator` if `yield` is found.
-    ///
-    /// TODO: Handle yield
-    /// TODO: prevent visiting children (to improve performance greatly)
     pub(in crate::analyzer) fn visit_stmts_for_return(
         &mut self,
         span: Span,
