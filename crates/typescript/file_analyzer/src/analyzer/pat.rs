@@ -159,7 +159,6 @@ impl Analyzer<'_, '_> {
         }) {
             None => {
                 if let Some(node_id) = p.node_id() {
-                    dbg!(node_id);
                     self.mutations
                         .as_ref()
                         .and_then(|m| m.for_pats.get(&node_id))
