@@ -90,6 +90,7 @@ use stc_ts_types::TypeParam;
 use stc_ts_types::TypeParamDecl;
 use stc_ts_types::TypeParamInstantiation;
 use stc_ts_types::Union;
+use stc_ts_utils::OptionExt;
 use stc_ts_utils::PatExt;
 use swc_atoms::js_word;
 use swc_common::Spanned;
@@ -757,8 +758,11 @@ impl Analyzer<'_, '_> {
         let implicit_type_mark = self.marks().implicit_type_mark;
 
         if let Some(m) = &mut self.mutations {
-            m.for_pats.entry(i.node_id).or_default().ty =
-                Some(Type::any(DUMMY_SP.apply_mark(implicit_type_mark)));
+            m.for_pats
+                .entry(i.node_id)
+                .or_default()
+                .ty
+                .fill_with(|| Type::any(DUMMY_SP.apply_mark(implicit_type_mark)));
         }
     }
 
@@ -819,7 +823,11 @@ impl Analyzer<'_, '_> {
                 .collect(),
         });
         if let Some(m) = &mut self.mutations {
-            m.for_pats.entry(arr.node_id).or_default().ty = Some(ty);
+            m.for_pats
+                .entry(arr.node_id)
+                .or_default()
+                .ty
+                .fill_with(|| ty);
         }
     }
 
@@ -880,10 +888,12 @@ impl Analyzer<'_, '_> {
         }
 
         if let Some(m) = &mut self.mutations {
-            m.for_pats.entry(obj.node_id).or_default().ty = Some(box Type::TypeLit(TypeLit {
-                span: DUMMY_SP.apply_mark(implicit_type_mark),
-                members,
-            }))
+            m.for_pats.entry(obj.node_id).or_default().ty.fill_with(|| {
+                box Type::TypeLit(TypeLit {
+                    span: DUMMY_SP.apply_mark(implicit_type_mark),
+                    members,
+                })
+            });
         }
     }
 
