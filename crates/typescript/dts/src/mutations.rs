@@ -3,6 +3,7 @@ use std::mem::take;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
 use stc_ts_ast_rnode::RArrayPat;
+use stc_ts_ast_rnode::RClass;
 use stc_ts_ast_rnode::RClassMember;
 use stc_ts_ast_rnode::RClassProp;
 use stc_ts_ast_rnode::REmptyStmt;
@@ -13,6 +14,7 @@ use stc_ts_ast_rnode::RModule;
 use stc_ts_ast_rnode::RModuleItem;
 use stc_ts_ast_rnode::RObjectPat;
 use stc_ts_dts_mutations::ClassMemberMut;
+use stc_ts_dts_mutations::ClassMut;
 use stc_ts_dts_mutations::ClassPropMut;
 use stc_ts_dts_mutations::ExportDefaultMut;
 use stc_ts_dts_mutations::FunctionMut;
@@ -61,6 +63,22 @@ impl VisitMut<Vec<RModuleItem>> for Operator {
         }
 
         *items = new;
+    }
+}
+
+impl VisitMut<RClass> for Operator {
+    fn visit_mut(&mut self, c: &mut RClass) {
+        c.visit_mut_children_with(self);
+
+        if let Some(ClassMut {
+            super_class,
+            additional_members,
+        }) = self.mutations.for_classes.remove(&c.node_id)
+        {
+            if let Some(super_class) = super_class {
+                c.super_class = Some(super_class);
+            }
+        }
     }
 }
 
