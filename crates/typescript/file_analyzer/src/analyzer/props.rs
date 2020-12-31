@@ -296,7 +296,7 @@ impl Analyzer<'_, '_> {
                         let mut inferred = None;
 
                         if let Some(body) = &p.function.body {
-                            let inferred_ret_ty = child
+                            let mut inferred_ret_ty = child
                                 .visit_stmts_for_return(
                                     p.function.span,
                                     p.function.is_async,
@@ -310,21 +310,21 @@ impl Analyzer<'_, '_> {
                                     })
                                 });
 
-                            // TODO: Preserve return type if `this` is not involved in return type.
+                            // Preserve return type if `this` is not involved in return type.
                             if p.function.return_type.is_none() {
-                                let ret_ty = if child
+                                inferred_ret_ty = if child
                                     .marks()
                                     .infected_by_this_in_object_literal
                                     .is_marked(&inferred_ret_ty)
                                 {
                                     Type::any(span)
                                 } else {
-                                    inferred_ret_ty.clone()
+                                    inferred_ret_ty
                                 };
 
                                 if let Some(m) = &mut child.mutations {
                                     m.for_fns.entry(p.function.node_id).or_default().ret_ty =
-                                        Some(ret_ty);
+                                        Some(inferred_ret_ty.clone());
                                 }
                             }
 
