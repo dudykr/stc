@@ -130,6 +130,7 @@ pub struct Analyzer<'scope, 'b> {
     env: Env,
     cm: Arc<SourceMap>,
 
+    /// This is [None] only for `.d.ts` files.
     pub mutations: Option<Mutations>,
 
     storage: Storage<'b>,
@@ -291,7 +292,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         env: Env,
         cm: Arc<SourceMap>,
         storage: Storage<'b>,
-        mutations: Option<Mutations>,
         loader: &'b dyn Load,
     ) -> Self {
         Self::new_inner(
@@ -299,7 +299,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             env,
             cm,
             storage,
-            mutations,
+            Some(Default::default()),
             loader,
             Scope::root(logger),
             false,

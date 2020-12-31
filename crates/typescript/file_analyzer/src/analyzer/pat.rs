@@ -154,7 +154,16 @@ impl Analyzer<'_, '_> {
         }
 
         let ty = match p.get_ty() {
-            None => None,
+            None => {
+                if let Some(node_id) = p.node_id() {
+                    self.mutations
+                        .as_ref()
+                        .and_then(|m| m.for_pats.get(&node_id))
+                        .and_then(|v| v.ty.clone())
+                } else {
+                    None
+                }
+            }
             Some(ty) => Some(ty.validate_with(self)?),
         };
 

@@ -192,7 +192,7 @@ impl Checker {
                             info: Default::default(),
                         };
                         let ids = set.iter().copied().collect::<Vec<_>>();
-                        let mut modules = ids
+                        let modules = ids
                             .iter()
                             .map(|&id| self.module_graph.clone_module(id))
                             .map(|module| {
