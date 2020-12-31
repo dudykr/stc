@@ -27,7 +27,7 @@ stc_ts_dts_mutations = {path = "../dts_mutations"}
 stc_ts_file_analyzer_macros = {path = "./macros"}
 stc_ts_types = {path = "../types"}
 stc_ts_utils = {path = "../utils"}
-stc_utils = {path = "../../utils"}
+stc_utils = { path = "../../utils" }
 swc_atoms = "0.2.5"
 swc_common = {version = "0.10.8", features = ["concurrent"]}
 swc_ecma_ast = "0.36.2"
