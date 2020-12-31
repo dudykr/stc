@@ -169,8 +169,10 @@ impl Analyzer<'_, '_> {
 
             if f.return_type.is_none() {
                 if let Some(m) = &mut child.mutations {
-                    m.for_fns.entry(f.node_id).or_default().ret_ty =
-                        Some(inferred_return_type.clone())
+                    if m.for_fns.entry(f.node_id).or_default().ret_ty.is_none() {
+                        m.for_fns.entry(f.node_id).or_default().ret_ty =
+                            Some(inferred_return_type.clone())
+                    }
                 }
             }
 
