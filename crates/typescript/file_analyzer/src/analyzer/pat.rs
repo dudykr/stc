@@ -26,6 +26,7 @@ use stc_ts_ast_rnode::RRestPat;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_types::Array;
 use stc_ts_utils::PatExt;
+use stc_utils::TryOpt;
 use swc_atoms::js_word;
 use swc_common::TypeEq;
 use swc_common::{Mark, Span, Spanned, SyntaxContext, DUMMY_SP};
@@ -162,15 +163,17 @@ impl Analyzer<'_, '_> {
                     .and_then(|v| v.ty.clone())
             })
             .flatten()
+            .map(Ok)
             .or_else(|| {
                 match p.get_ty().or_else(|| match p {
                     RPat::Assign(p) => p.left.get_ty(),
                     _ => None,
                 }) {
                     None => None,
-                    Some(ty) => Some(ty.validate_with(self)?),
+                    Some(ty) => Some(ty.validate_with(self)),
                 }
-            });
+            })
+            .try_opt()?;
 
         match self.ctx.pat_mode {
             PatMode::Decl => {
