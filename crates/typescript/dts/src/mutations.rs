@@ -1,11 +1,14 @@
 use rnode::VisitMut;
 use rnode::VisitMutWith;
+use stc_ts_ast_rnode::RArrayPat;
 use stc_ts_ast_rnode::RClassMember;
+use stc_ts_ast_rnode::RClassMethod;
 use stc_ts_ast_rnode::RClassProp;
 use stc_ts_ast_rnode::REmptyStmt;
 use stc_ts_ast_rnode::RFunction;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RModule;
+use stc_ts_ast_rnode::RObjectPat;
 use stc_ts_dts_mutations::ClassMemberMut;
 use stc_ts_dts_mutations::ClassPropMut;
 use stc_ts_dts_mutations::FunctionMut;
@@ -79,6 +82,36 @@ impl VisitMut<RIdent> for Operator {
             }
             if let Some(optional) = optional {
                 i.optional = optional;
+            }
+        }
+    }
+}
+
+impl VisitMut<RObjectPat> for Operator {
+    fn visit_mut(&mut self, obj: &mut RObjectPat) {
+        obj.visit_mut_children_with(self);
+
+        if let Some(PatMut { ty, optional }) = self.mutations.for_pats.remove(&obj.node_id) {
+            if let Some(ty) = ty {
+                obj.type_ann = Some(ty.into())
+            }
+            if let Some(optional) = optional {
+                obj.optional = optional;
+            }
+        }
+    }
+}
+
+impl VisitMut<RArrayPat> for Operator {
+    fn visit_mut(&mut self, arr: &mut RArrayPat) {
+        arr.visit_mut_children_with(self);
+
+        if let Some(PatMut { ty, optional }) = self.mutations.for_pats.remove(&arr.node_id) {
+            if let Some(ty) = ty {
+                arr.type_ann = Some(ty.into())
+            }
+            if let Some(optional) = optional {
+                arr.optional = optional;
             }
         }
     }
