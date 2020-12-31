@@ -511,7 +511,10 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
             RPat::Assign(ref p) => {
-                let ty = p.right.validate_with_default(self)?;
+                let ty = match ty {
+                    Some(ty) => ty,
+                    None => p.right.validate_with_default(self)?,
+                };
                 slog::debug!(
                     self.logger,
                     "({}) declare_vars: Assign({:?}), ty = {:?}",
