@@ -153,22 +153,24 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let ty = match p.get_ty().or_else(|| match p {
-            RPat::Assign(p) => p.left.get_ty(),
-            _ => None,
-        }) {
-            None => {
-                if let Some(node_id) = p.node_id() {
-                    self.mutations
-                        .as_ref()
-                        .and_then(|m| m.for_pats.get(&node_id))
-                        .and_then(|v| v.ty.clone())
-                } else {
-                    None
+        let ty = p
+            .node_id()
+            .map(|node_id| {
+                self.mutations
+                    .as_ref()
+                    .and_then(|m| m.for_pats.get(&node_id))
+                    .and_then(|v| v.ty.clone())
+            })
+            .flatten()
+            .or_else(|| {
+                match p.get_ty().or_else(|| match p {
+                    RPat::Assign(p) => p.left.get_ty(),
+                    _ => None,
+                }) {
+                    None => None,
+                    Some(ty) => Some(ty.validate_with(self)?),
                 }
-            }
-            Some(ty) => Some(ty.validate_with(self)?),
-        };
+            });
 
         match self.ctx.pat_mode {
             PatMode::Decl => {
