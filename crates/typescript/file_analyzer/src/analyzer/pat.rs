@@ -153,9 +153,13 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let ty = match p.get_ty() {
+        let ty = match p.get_ty().or_else(|| match p {
+            RPat::Assign(p) => p.left.get_ty(),
+            _ => None,
+        }) {
             None => {
                 if let Some(node_id) = p.node_id() {
+                    dbg!(node_id);
                     self.mutations
                         .as_ref()
                         .and_then(|m| m.for_pats.get(&node_id))
