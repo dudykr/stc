@@ -39,7 +39,6 @@ use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_ast_rnode::RTsThisTypeOrIdent;
-use stc_ts_ast_rnode::RTsType;
 use stc_ts_ast_rnode::RTsTypeParamInstantiation;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::rprop_name_to_expr;
@@ -1220,10 +1219,19 @@ impl Analyzer<'_, '_> {
                 let mut patch_arg = |idx: usize, pat: &RPat| {
                     let actual = &actual_params[idx];
 
-                    let ty = pat.get_ty();
-                    if let Some(ty) = ty {
-                        match ty {
-                            RTsType::TsKeywordType(RTsKeywordType {
+                    let default_any_ty: Option<_> = try {
+                        let node_id = pat.node_id()?;
+                        analyzer
+                            .mutations
+                            .as_ref()?
+                            .for_pats
+                            .get(&node_id)?
+                            .ty
+                            .clone()?
+                    };
+                    if let Some(ty) = default_any_ty {
+                        match &*ty {
+                            Type::Keyword(RTsKeywordType {
                                 span,
                                 kind: TsKeywordTypeKind::TsAnyKeyword,
                             }) if analyzer.is_implicitly_typed_span(*span) => {
