@@ -44,6 +44,7 @@ use stc_ts_types::{
     Conditional, FnParam, Id, IndexedAccessType, Mapped, ModuleId, Operator, QueryExpr, QueryType,
     StaticThis, TupleElement, TypeParam,
 };
+use stc_ts_utils::OptionExt;
 use stc_ts_utils::PatExt;
 use std::{borrow::Cow, collections::hash_map::Entry, fmt::Debug, iter, iter::repeat, slice};
 use swc_atoms::js_word;
@@ -537,8 +538,11 @@ impl Analyzer<'_, '_> {
                     if let Some(ty) = ty {
                         if let Some(m) = &mut self.mutations {
                             m.for_pats.entry(*node_id).or_default().optional = Some(true);
-                            m.for_pats.entry(*node_id).or_default().ty =
-                                Some(ty.generalize_lit().generalize_tuple().into());
+                            m.for_pats
+                                .entry(*node_id)
+                                .or_default()
+                                .ty
+                                .fill_with(|| ty.generalize_lit().generalize_tuple().into());
                         }
                     }
                 }
@@ -547,21 +551,23 @@ impl Analyzer<'_, '_> {
                     let ctxt = self.ctx.module_id;
                     if let Some(m) = &mut self.mutations {
                         //
-                        m.for_pats.entry(*node_id).or_default().ty = Some(box Type::Ref(Ref {
-                            span: *span,
-                            ctxt,
-                            type_name: RTsEntityName::Ident(RIdent::new(
-                                "Iterable".into(),
-                                DUMMY_SP,
-                            )),
-                            type_args: Some(TypeParamInstantiation {
+                        m.for_pats.entry(*node_id).or_default().ty.fill_with(|| {
+                            box Type::Ref(Ref {
                                 span: *span,
-                                params: vec![box Type::Keyword(RTsKeywordType {
-                                    span: DUMMY_SP,
-                                    kind: TsKeywordTypeKind::TsAnyKeyword,
-                                })],
-                            }),
-                        }));
+                                ctxt,
+                                type_name: RTsEntityName::Ident(RIdent::new(
+                                    "Iterable".into(),
+                                    DUMMY_SP,
+                                )),
+                                type_args: Some(TypeParamInstantiation {
+                                    span: *span,
+                                    params: vec![box Type::Keyword(RTsKeywordType {
+                                        span: DUMMY_SP,
+                                        kind: TsKeywordTypeKind::TsAnyKeyword,
+                                    })],
+                                }),
+                            })
+                        });
                     }
                 }
 
