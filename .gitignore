@@ -49,3 +49,4 @@ yarn.lock
 
 *.trace
 *.txt
+Cargo.lock
