@@ -39,6 +39,7 @@ use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_ast_rnode::RTsThisTypeOrIdent;
+use stc_ts_ast_rnode::RTsType;
 use stc_ts_ast_rnode::RTsTypeParamInstantiation;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::rprop_name_to_expr;
@@ -1216,7 +1217,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                let mut patch_arg = |idx: usize, pat: &RPat| {
+                let mut patch_arg = |idx: usize, pat: &RPat| -> ValidationResult<()> {
                     let actual = &actual_params[idx];
 
                     let default_any_ty: Option<_> = try {
@@ -1235,23 +1236,26 @@ impl Analyzer<'_, '_> {
                                 span,
                                 kind: TsKeywordTypeKind::TsAnyKeyword,
                             }) if analyzer.is_implicitly_typed_span(*span) => {
+                                // TODO: Make this eficient
+                                let new_ty =
+                                    RTsType::from(actual.ty.clone()).validate_with(analyzer)?;
                                 if let Some(node_id) = pat.node_id() {
                                     if let Some(m) = &mut analyzer.mutations {
-                                        m.for_pats.entry(node_id).or_default().ty =
-                                            Some(actual.ty.clone());
+                                        m.for_pats.entry(node_id).or_default().ty = Some(new_ty);
                                     }
                                 }
-                                return;
+                                return Ok(());
                             }
                             _ => {}
                         }
                     }
+                    Ok(())
                 };
 
                 let ty = match &*arg.expr {
                     RExpr::Arrow(arrow) => {
                         for (idx, pat) in arrow.params.iter().enumerate() {
-                            patch_arg(idx, pat);
+                            patch_arg(idx, pat)?;
                         }
 
                         slog::info!(
@@ -1262,7 +1266,7 @@ impl Analyzer<'_, '_> {
                     }
                     RExpr::Fn(fn_expr) => {
                         for (idx, param) in fn_expr.function.params.iter().enumerate() {
-                            patch_arg(idx, &param.pat)
+                            patch_arg(idx, &param.pat)?;
                         }
 
                         slog::info!(
