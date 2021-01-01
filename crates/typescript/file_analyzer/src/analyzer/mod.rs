@@ -528,10 +528,8 @@ impl Load for NoopLoader {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, modules: &Vec<RModule>) {
-        let mut counts = vec![];
         let mut items = vec![];
         for m in modules {
-            counts.push(m.body.len());
             items.extend(&m.body);
         }
         self.load_normal_imports(&items);
