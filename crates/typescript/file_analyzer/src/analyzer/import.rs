@@ -162,7 +162,7 @@ impl Analyzer<'_, '_> {
     }
 }
 
-pub(super) struct ImportFinder<'a> {
+struct ImportFinder<'a> {
     storage: &'a Storage<'a>,
     cur_ctxt: ModuleId,
     to: Vec<(ModuleId, DepInfo)>,
@@ -185,8 +185,8 @@ impl<'a> ImportFinder<'a> {
     }
 }
 
-impl Visit<Vec<RModuleItem>> for ImportFinder<'_> {
-    fn visit(&mut self, items: &Vec<RModuleItem>) {
+impl Visit<Vec<&'_ RModuleItem>> for ImportFinder<'_> {
+    fn visit(&mut self, items: &Vec<&RModuleItem>) {
         for (index, item) in items.iter().enumerate() {
             let ctxt = self.storage.module_id(index);
             self.cur_ctxt = ctxt;
