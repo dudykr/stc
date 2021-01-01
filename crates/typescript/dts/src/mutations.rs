@@ -28,16 +28,16 @@ use stc_ts_utils::HasNodeId;
 use stc_ts_utils::MapWithMut;
 use swc_common::DUMMY_SP;
 
-pub fn apply_mutations(mutations: Mutations, m: &mut RModule) {
+pub fn apply_mutations(mutations: &mut Mutations, m: &mut RModule) {
     let mut v = Operator { mutations };
     m.visit_mut_with(&mut v);
 }
 
-struct Operator {
-    mutations: Mutations,
+struct Operator<'a> {
+    mutations: &'a mut Mutations,
 }
 
-impl VisitMut<Vec<RModuleItem>> for Operator {
+impl VisitMut<Vec<RModuleItem>> for Operator<'_> {
     fn visit_mut(&mut self, items: &mut Vec<RModuleItem>) {
         let mut new = Vec::with_capacity(items.len() * 11 / 10);
 
@@ -69,7 +69,7 @@ impl VisitMut<Vec<RModuleItem>> for Operator {
     }
 }
 
-impl VisitMut<RVarDeclarator> for Operator {
+impl VisitMut<RVarDeclarator> for Operator<'_> {
     fn visit_mut(&mut self, d: &mut RVarDeclarator) {
         d.visit_mut_children_with(self);
 
@@ -81,7 +81,7 @@ impl VisitMut<RVarDeclarator> for Operator {
     }
 }
 
-impl VisitMut<RClass> for Operator {
+impl VisitMut<RClass> for Operator<'_> {
     fn visit_mut(&mut self, c: &mut RClass) {
         c.visit_mut_children_with(self);
 
@@ -97,7 +97,7 @@ impl VisitMut<RClass> for Operator {
     }
 }
 
-impl VisitMut<RFunction> for Operator {
+impl VisitMut<RFunction> for Operator<'_> {
     fn visit_mut(&mut self, f: &mut RFunction) {
         f.visit_mut_children_with(self);
 
@@ -109,7 +109,7 @@ impl VisitMut<RFunction> for Operator {
     }
 }
 
-impl VisitMut<RClassMember> for Operator {
+impl VisitMut<RClassMember> for Operator<'_> {
     fn visit_mut(&mut self, member: &mut RClassMember) {
         let node_id = match member {
             RClassMember::Constructor(c) => c.node_id,
@@ -132,7 +132,7 @@ impl VisitMut<RClassMember> for Operator {
     }
 }
 
-impl VisitMut<RClassProp> for Operator {
+impl VisitMut<RClassProp> for Operator<'_> {
     fn visit_mut(&mut self, p: &mut RClassProp) {
         p.visit_mut_children_with(self);
 
@@ -144,7 +144,7 @@ impl VisitMut<RClassProp> for Operator {
     }
 }
 
-impl VisitMut<RIdent> for Operator {
+impl VisitMut<RIdent> for Operator<'_> {
     fn visit_mut(&mut self, i: &mut RIdent) {
         i.visit_mut_children_with(self);
 
@@ -159,7 +159,7 @@ impl VisitMut<RIdent> for Operator {
     }
 }
 
-impl VisitMut<RObjectPat> for Operator {
+impl VisitMut<RObjectPat> for Operator<'_> {
     fn visit_mut(&mut self, obj: &mut RObjectPat) {
         obj.visit_mut_children_with(self);
 
@@ -174,7 +174,7 @@ impl VisitMut<RObjectPat> for Operator {
     }
 }
 
-impl VisitMut<RArrayPat> for Operator {
+impl VisitMut<RArrayPat> for Operator<'_> {
     fn visit_mut(&mut self, arr: &mut RArrayPat) {
         arr.visit_mut_children_with(self);
 
@@ -189,7 +189,7 @@ impl VisitMut<RArrayPat> for Operator {
     }
 }
 
-impl VisitMut<RRestPat> for Operator {
+impl VisitMut<RRestPat> for Operator<'_> {
     fn visit_mut(&mut self, r: &mut RRestPat) {
         r.visit_mut_children_with(self);
 
@@ -201,7 +201,7 @@ impl VisitMut<RRestPat> for Operator {
     }
 }
 
-impl VisitMut<RExportDefaultExpr> for Operator {
+impl VisitMut<RExportDefaultExpr> for Operator<'_> {
     fn visit_mut(&mut self, export: &mut RExportDefaultExpr) {
         export.visit_mut_children_with(self);
 
