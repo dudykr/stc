@@ -7,7 +7,10 @@ version = "0.1.0"
 
 [dependencies]
 anyhow = "1.0.37"
+rnode = { path = "../../rnode/" }
 stc_testing = { path = "../../testing" }
+stc_ts_ast_rnode = { path = "../ast_rnode" }
+stc_ts_types = { path = "../types" }
 swc_atoms = "0.2.5"
 swc_common = "0.10.8"
 swc_ecma_ast = "0.36.2"
