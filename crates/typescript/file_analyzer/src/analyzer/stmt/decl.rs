@@ -1,5 +1,6 @@
 use super::super::{pat::PatMode, Analyzer, Ctx};
 use crate::errors::Errors;
+use crate::util::type_ext::TypeVecExt;
 use crate::{
     analyzer::{
         expr::TypeOfMode,
@@ -328,6 +329,25 @@ impl Analyzer<'_, '_> {
                                         ..f.clone()
                                     })
                                 }
+
+                                Type::Tuple(tuple)
+                                    if tuple.elems.iter().all(|e| match &*e.ty {
+                                        Type::Keyword(..) => true,
+                                        _ => false,
+                                    }) =>
+                                {
+                                    let mut types = tuple
+                                        .elems
+                                        .iter()
+                                        .map(|e| e.ty.clone())
+                                        .collect::<Vec<_>>();
+                                    types.dedup_type();
+                                    box Type::Array(Array {
+                                        span: tuple.span,
+                                        elem_type: Type::union(types),
+                                    })
+                                }
+
                                 _ => ty,
                             };
                         }
@@ -436,6 +456,7 @@ impl Analyzer<'_, '_> {
                                             kind: TsKeywordTypeKind::TsUnknownKeyword,
                                         })
                                     }
+
                                     _ => ty,
                                 };
 
