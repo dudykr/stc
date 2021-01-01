@@ -63,6 +63,7 @@ use stc_ts_types::QueryType;
 use stc_ts_types::Ref;
 use stc_ts_types::Type;
 use stc_ts_utils::PatExt;
+use stc_utils::TryOpt;
 use std::mem::replace;
 use swc_atoms::js_word;
 use swc_common::EqIgnoreSpan;
@@ -294,13 +295,24 @@ impl Analyzer<'_, '_> {
         let span = p.span();
 
         macro_rules! ty {
-            ($e:expr) => {{
-                let e: Option<_> = try_opt!($e.validate_with(self));
-                e.unwrap_or_else(|| {
-                    let mut ty = Type::any(span);
-                    self.mark_as_implicit(&mut ty);
-                    ty
-                })
+            ($node_id:expr, $e:expr) => {{
+                match self
+                    .mutations
+                    .as_mut()
+                    .map(|m| m.for_pats.get(&$node_id).map(|p| p.ty.clone()))
+                    .flatten()
+                    .flatten()
+                {
+                    Some(ty) => ty,
+                    None => {
+                        let e: Option<_> = $e.validate_with(self).try_opt()?;
+                        e.unwrap_or_else(|| {
+                            let mut ty = Type::any(span);
+                            self.mark_as_implicit(&mut ty);
+                            ty
+                        })
+                    }
+                }
             }};
         }
 
@@ -309,25 +321,25 @@ impl Analyzer<'_, '_> {
                 span,
                 pat: RPat::Ident(i.clone()),
                 required: !i.optional,
-                ty: ty!(i.type_ann),
+                ty: ty!(i.node_id, i.type_ann),
             },
             RTsFnParam::Array(p) => FnParam {
                 span,
                 pat: RPat::Array(p.clone()),
                 required: true,
-                ty: ty!(p.type_ann),
+                ty: ty!(p.node_id, p.type_ann),
             },
             RTsFnParam::Rest(p) => FnParam {
                 span,
                 pat: RPat::Rest(p.clone()),
                 required: false,
-                ty: ty!(p.type_ann),
+                ty: ty!(p.node_id, p.type_ann),
             },
             RTsFnParam::Object(p) => FnParam {
                 span,
                 pat: RPat::Object(p.clone()),
                 required: true,
-                ty: ty!(p.type_ann),
+                ty: ty!(p.node_id, p.type_ann),
             },
         })
     }
