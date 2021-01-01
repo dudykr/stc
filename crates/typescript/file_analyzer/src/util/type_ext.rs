@@ -7,7 +7,7 @@ pub trait TypeVecExt {
 
 impl TypeVecExt for Vec<Box<Type>> {
     fn dedup_type(&mut self) {
-        let mut types = Vec::with_capacity(self.len());
+        let mut types: Vec<Box<Type>> = Vec::with_capacity(self.len());
         for ty in self.drain(..) {
             if types.iter().any(|stored| stored.type_eq(ty)) {
                 continue;
