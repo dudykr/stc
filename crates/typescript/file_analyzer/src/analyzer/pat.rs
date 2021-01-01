@@ -11,7 +11,6 @@ use crate::{
     validator::ValidateWith,
     ValidationResult,
 };
-use rnode::VisitMutWith;
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RAssignPat;
 use stc_ts_ast_rnode::RExpr;
@@ -26,8 +25,8 @@ use stc_ts_ast_rnode::RPropOrSpread;
 use stc_ts_ast_rnode::RRestPat;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_types::Array;
-use stc_ts_utils::MapWithMut;
 use stc_ts_utils::PatExt;
+use stc_utils::TryOpt;
 use swc_atoms::js_word;
 use swc_common::TypeEq;
 use swc_common::{Mark, Span, Spanned, SyntaxContext, DUMMY_SP};
@@ -73,8 +72,8 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut RParam) -> ValidationResult<ty::FnParam> {
-        node.decorators.visit_mut_with(self);
+    fn validate(&mut self, node: &RParam) -> ValidationResult<ty::FnParam> {
+        node.decorators.visit_with(self);
         let ctx = Ctx {
             pat_mode: PatMode::Decl,
             ..self.ctx
@@ -85,7 +84,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, p: &mut RPat) -> ValidationResult<ty::FnParam> {
+    fn validate(&mut self, p: &RPat) -> ValidationResult<ty::FnParam> {
         self.record(p);
         if !self.is_builtin {
             debug_assert_ne!(p.span(), DUMMY_SP, "A pattern should have a valid span");
@@ -93,15 +92,21 @@ impl Analyzer<'_, '_> {
 
         // Mark pattern as optional if default value exists
         match p {
-            RPat::Assign(assign_pat) => match &mut *assign_pat.left {
+            RPat::Assign(assign_pat) => match &*assign_pat.left {
                 RPat::Ident(i) => {
-                    i.optional = true;
+                    if let Some(m) = &mut self.mutations {
+                        m.for_pats.entry(i.node_id).or_default().optional = Some(true);
+                    }
                 }
                 RPat::Array(arr) => {
-                    arr.optional = true;
+                    if let Some(m) = &mut self.mutations {
+                        m.for_pats.entry(arr.node_id).or_default().optional = Some(true);
+                    }
                 }
                 RPat::Object(obj) => {
-                    obj.optional = true;
+                    if let Some(m) = &mut self.mutations {
+                        m.for_pats.entry(obj.node_id).or_default().optional = Some(true);
+                    }
                 }
                 _ => {}
             },
@@ -113,10 +118,10 @@ impl Analyzer<'_, '_> {
 
             let default_value_ty = assign_pat.right.validate_with_default(self)?;
 
-            let type_ann = assign_pat
+            let ty = assign_pat
                 .left
-                .get_mut_ty()
-                .map(|v| box v.take())
+                .get_ty()
+                .map(|v| v.validate_with(self))
                 .unwrap_or_else(|| {
                     let mut ty = default_value_ty.generalize_lit();
 
@@ -138,18 +143,37 @@ impl Analyzer<'_, '_> {
                         _ => {}
                     }
 
-                    ty.into()
-                });
+                    Ok(ty)
+                })?;
 
             // Remove default value.
-            *p = assign_pat.left.take();
-            p.set_ty(Some(type_ann));
+            if let Some(pat_node_id) = assign_pat.left.node_id() {
+                if let Some(m) = &mut self.mutations {
+                    m.for_pats.entry(pat_node_id).or_default().ty = Some(ty)
+                }
+            }
         }
 
-        let ty = match p.get_mut_ty() {
-            None => None,
-            Some(ty) => Some(ty.validate_with(self)?),
-        };
+        let ty = p
+            .node_id()
+            .map(|node_id| {
+                self.mutations
+                    .as_ref()
+                    .and_then(|m| m.for_pats.get(&node_id))
+                    .and_then(|v| v.ty.clone())
+            })
+            .flatten()
+            .map(Ok)
+            .or_else(|| {
+                match p.get_ty().or_else(|| match p {
+                    RPat::Assign(p) => p.left.get_ty(),
+                    _ => None,
+                }) {
+                    None => None,
+                    Some(ty) => Some(ty.validate_with(self)),
+                }
+            })
+            .try_opt()?;
 
         match self.ctx.pat_mode {
             PatMode::Decl => {
@@ -194,7 +218,13 @@ impl Analyzer<'_, '_> {
         });
 
         if p.get_ty().is_none() {
-            p.set_ty(Some(box ty.clone().into()));
+            if let Some(node_id) = p.node_id() {
+                if let Some(m) = &mut self.mutations {
+                    if m.for_pats.entry(node_id).or_default().ty.is_none() {
+                        m.for_pats.entry(node_id).or_default().ty = Some(ty.clone())
+                    }
+                }
+            }
         }
 
         Ok(ty::FnParam {
@@ -213,12 +243,12 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, p: &mut RRestPat) {
-        p.visit_mut_children_with(self);
+    fn validate(&mut self, p: &RRestPat) {
+        p.visit_children_with(self);
 
         let mut errors = Errors::default();
 
-        if let RPat::Assign(RAssignPat { ref mut right, .. }) = *p.arg {
+        if let RPat::Assign(RAssignPat { ref right, .. }) = *p.arg {
             let res: Result<_, _> = try {
                 let value_ty = right.validate_with_default(self)?;
 
@@ -232,7 +262,7 @@ impl Analyzer<'_, '_> {
                 }
             };
             res.store(&mut errors);
-        } else if let Some(ref mut type_ann) = p.type_ann {
+        } else if let Some(ref type_ann) = p.type_ann {
             let res: Result<_, _> = try {
                 let ty = type_ann.validate_with(self)?;
 
@@ -257,8 +287,8 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, p: &mut RAssignPat) {
-        p.visit_mut_children_with(self);
+    fn validate(&mut self, p: &RAssignPat) {
+        p.visit_children_with(self);
 
         //
         match *p.left {

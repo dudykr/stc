@@ -44,7 +44,7 @@ type EnumValues = FxHashMap<JsWord, RTsLit>;
 #[validator]
 impl Analyzer<'_, '_> {
     #[inline(never)]
-    fn validate(&mut self, e: &mut RTsEnumDecl) -> ValidationResult<Enum> {
+    fn validate(&mut self, e: &RTsEnumDecl) -> ValidationResult<Enum> {
         let mut default = 0;
         let mut values = Default::default();
         let ty: Result<_, _> = try {

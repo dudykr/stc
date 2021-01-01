@@ -30,12 +30,12 @@ use swc_ecma_utils::Value::Known;
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &mut RBinExpr) -> ValidationResult {
+    fn validate(&mut self, e: &RBinExpr) -> ValidationResult {
         let RBinExpr {
             span,
             op,
-            ref mut left,
-            ref mut right,
+            ref left,
+            ref right,
             ..
         } = *e;
 

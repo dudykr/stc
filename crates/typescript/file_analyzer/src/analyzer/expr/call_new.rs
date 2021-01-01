@@ -55,7 +55,7 @@ use ty::TypeExt;
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut RExprOrSpread) -> ValidationResult<TypeOrSpread> {
+    fn validate(&mut self, node: &RExprOrSpread) -> ValidationResult<TypeOrSpread> {
         let span = node.span();
         Ok(TypeOrSpread {
             span,
@@ -67,14 +67,14 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &mut RCallExpr, type_ann: Option<&Type>) -> ValidationResult {
+    fn validate(&mut self, e: &RCallExpr, type_ann: Option<&Type>) -> ValidationResult {
         self.record(e);
 
         let RCallExpr {
             span,
-            ref mut callee,
-            ref mut args,
-            ref mut type_args,
+            ref callee,
+            ref args,
+            ref type_args,
             ..
         } = *e;
 
@@ -94,7 +94,7 @@ impl Analyzer<'_, '_> {
                     type_ann,
                     ExtractKind::Call,
                     args,
-                    type_args.as_mut(),
+                    type_args.as_ref(),
                 )
             },
         )
@@ -103,14 +103,14 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &mut RNewExpr, type_ann: Option<&Type>) -> ValidationResult {
+    fn validate(&mut self, e: &RNewExpr, type_ann: Option<&Type>) -> ValidationResult {
         self.record(e);
 
         let RNewExpr {
             span,
-            ref mut callee,
-            ref mut args,
-            ref mut type_args,
+            ref callee,
+            ref args,
+            ref type_args,
             ..
         } = *e;
 
@@ -124,8 +124,8 @@ impl Analyzer<'_, '_> {
                     callee,
                     type_ann,
                     ExtractKind::New,
-                    args.as_mut().map(|v| &mut **v).unwrap_or_else(|| &mut []),
-                    type_args.as_mut(),
+                    args.as_ref().map(|v| &**v).unwrap_or_else(|| &mut []),
+                    type_args.as_ref(),
                 )
             },
         )
@@ -144,11 +144,11 @@ impl Analyzer<'_, '_> {
     /// This method check arguments
     fn extract_call_new_expr_member(
         &mut self,
-        callee: &mut RExpr,
+        callee: &RExpr,
         type_ann: Option<&Type>,
         kind: ExtractKind,
-        args: &mut [RExprOrSpread],
-        type_args: Option<&mut RTsTypeParamInstantiation>,
+        args: &[RExprOrSpread],
+        type_args: Option<&RTsTypeParamInstantiation>,
     ) -> ValidationResult {
         debug_assert_eq!(self.scope.kind(), ScopeKind::Call);
 
@@ -214,8 +214,8 @@ impl Analyzer<'_, '_> {
             }
 
             RExpr::Member(RMemberExpr {
-                obj: RExprOrSuper::Expr(ref mut obj),
-                ref mut prop,
+                obj: RExprOrSuper::Expr(ref obj),
+                ref prop,
                 computed,
                 ..
             }) => {
@@ -539,7 +539,7 @@ impl Analyzer<'_, '_> {
         members: &[TypeElement],
         prop: &RExpr,
         computed: bool,
-        args: &mut [RExprOrSpread],
+        args: &[RExprOrSpread],
     ) -> ValidationResult {
         // Candidates of the method call.
         //
@@ -669,7 +669,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         ty: Box<Type>,
         kind: ExtractKind,
-        args: &mut [RExprOrSpread],
+        args: &[RExprOrSpread],
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
         type_args: Option<&TypeParamInstantiation>,
@@ -898,7 +898,7 @@ impl Analyzer<'_, '_> {
         ty: &Type,
         members: &[TypeElement],
         kind: ExtractKind,
-        args: &mut [RExprOrSpread],
+        args: &[RExprOrSpread],
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
         type_args: Option<&TypeParamInstantiation>,
@@ -975,7 +975,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         c: &MethodSignature,
-        args: &mut [RExprOrSpread],
+        args: &[RExprOrSpread],
         arg_types: &[TypeOrSpread],
     ) -> ValidationResult {
         // Validate arguments
@@ -999,7 +999,7 @@ impl Analyzer<'_, '_> {
         callee: Box<Type>,
         kind: ExtractKind,
         type_args: Option<TypeParamInstantiation>,
-        args: &mut [RExprOrSpread],
+        args: &[RExprOrSpread],
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
     ) -> ValidationResult {
@@ -1163,7 +1163,7 @@ impl Analyzer<'_, '_> {
         params: &[FnParam],
         ret_ty: Box<Type>,
         type_args: Option<&TypeParamInstantiation>,
-        args: &mut [RExprOrSpread],
+        args: &[RExprOrSpread],
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
     ) -> ValidationResult {
@@ -1217,28 +1217,45 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                let patch_arg = |idx: usize, pat: &mut RPat| {
+                let mut patch_arg = |idx: usize, pat: &RPat| -> ValidationResult<()> {
                     let actual = &actual_params[idx];
 
-                    let ty = pat.get_mut_ty();
-                    if let Some(ty) = ty {
-                        match ty {
-                            RTsType::TsKeywordType(RTsKeywordType {
+                    let default_any_ty: Option<_> = try {
+                        let node_id = pat.node_id()?;
+                        analyzer
+                            .mutations
+                            .as_ref()?
+                            .for_pats
+                            .get(&node_id)?
+                            .ty
+                            .clone()?
+                    };
+                    if let Some(ty) = default_any_ty {
+                        match &*ty {
+                            Type::Keyword(RTsKeywordType {
                                 span,
                                 kind: TsKeywordTypeKind::TsAnyKeyword,
                             }) if analyzer.is_implicitly_typed_span(*span) => {
-                                *ty = actual.ty.clone().into();
-                                return;
+                                // TODO: Make this eficient
+                                let new_ty =
+                                    RTsType::from(actual.ty.clone()).validate_with(analyzer)?;
+                                if let Some(node_id) = pat.node_id() {
+                                    if let Some(m) = &mut analyzer.mutations {
+                                        m.for_pats.entry(node_id).or_default().ty = Some(new_ty);
+                                    }
+                                }
+                                return Ok(());
                             }
                             _ => {}
                         }
                     }
+                    Ok(())
                 };
 
-                let ty = match &mut *arg.expr {
+                let ty = match &*arg.expr {
                     RExpr::Arrow(arrow) => {
-                        for (idx, pat) in arrow.params.iter_mut().enumerate() {
-                            patch_arg(idx, pat);
+                        for (idx, pat) in arrow.params.iter().enumerate() {
+                            patch_arg(idx, pat)?;
                         }
 
                         slog::info!(
@@ -1248,8 +1265,8 @@ impl Analyzer<'_, '_> {
                         box Type::Function(arrow.validate_with(analyzer)?)
                     }
                     RExpr::Fn(fn_expr) => {
-                        for (idx, param) in fn_expr.function.params.iter_mut().enumerate() {
-                            patch_arg(idx, &mut param.pat)
+                        for (idx, param) in fn_expr.function.params.iter().enumerate() {
+                            patch_arg(idx, &param.pat)?;
                         }
 
                         slog::info!(
@@ -1509,7 +1526,7 @@ impl Analyzer<'_, '_> {
         Ok(exact)
     }
 
-    fn validate_args(&mut self, args: &mut [RExprOrSpread]) -> Result<Vec<TypeOrSpread>, Error> {
+    fn validate_args(&mut self, args: &[RExprOrSpread]) -> Result<Vec<TypeOrSpread>, Error> {
         let ctx = Ctx {
             in_argument: true,
             ..self.ctx

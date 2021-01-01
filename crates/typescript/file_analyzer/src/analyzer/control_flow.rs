@@ -18,7 +18,7 @@ use crate::{
 };
 use fxhash::FxHashMap;
 use rnode::NodeId;
-use rnode::VisitMutWith;
+use rnode::VisitWith;
 use stc_ts_ast_rnode::RBinExpr;
 use stc_ts_ast_rnode::RCondExpr;
 use stc_ts_ast_rnode::RExpr;
@@ -30,8 +30,6 @@ use stc_ts_ast_rnode::RPatOrExpr;
 use stc_ts_ast_rnode::RSwitchCase;
 use stc_ts_ast_rnode::RSwitchStmt;
 use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_ast_rnode::RTsType;
-use stc_ts_ast_rnode::RTsTypeAnn;
 use stc_ts_types::Array;
 use stc_ts_types::Id;
 use stc_ts_utils::MapWithMut;
@@ -241,7 +239,7 @@ impl BitOr for CondFacts {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, stmt: &mut RIfStmt) -> ValidationResult<()> {
+    fn validate(&mut self, stmt: &RIfStmt) -> ValidationResult<()> {
         let _test = stmt.test.validate_with_default(self)?;
 
         let true_facts = self.cur_facts.true_facts.take();
@@ -252,7 +250,7 @@ impl Analyzer<'_, '_> {
             stmt.cons.validate_with(child)
         })?;
 
-        if let Some(ref mut alt) = stmt.alt {
+        if let Some(alt) = &stmt.alt {
             self.with_child(ScopeKind::Flow, false_facts.clone(), |child| {
                 alt.validate_with(child)
             })?;
@@ -391,10 +389,10 @@ impl Analyzer<'_, '_> {
         Ok(new)
     }
 
-    fn check_switch_discriminant(&mut self, s: &mut RSwitchStmt) -> ValidationResult {
+    fn check_switch_discriminant(&mut self, s: &RSwitchStmt) -> ValidationResult {
         let discriminant_ty = s.discriminant.validate_with_default(self)?;
-        for case in &mut s.cases {
-            if let Some(ref mut test) = case.test {
+        for case in &s.cases {
+            if let Some(test) = &case.test {
                 let case_ty = test.validate_with_default(self)?;
                 self.assign(&discriminant_ty, &case_ty, test.span())?
             }
@@ -406,7 +404,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, stmt: &mut RSwitchStmt) -> ValidationResult<()> {
+    fn validate(&mut self, stmt: &RSwitchStmt) -> ValidationResult<()> {
         self.record(stmt);
 
         let discriminant_ty = self
@@ -422,7 +420,7 @@ impl Analyzer<'_, '_> {
 
         let mut errored = false;
         // Check cases *in order*
-        for (i, case) in stmt.cases.iter_mut().enumerate() {
+        for (i, case) in stmt.cases.iter().enumerate() {
             if errored {
                 break;
             }
@@ -461,7 +459,7 @@ impl Analyzer<'_, '_> {
 
             true_facts = true_facts | self.cur_facts.true_facts.take();
             self.with_child(ScopeKind::Flow, true_facts.clone(), |child| {
-                cons.visit_mut_with(child);
+                cons.visit_with(child);
                 Ok(())
             })?;
             false_facts += self.cur_facts.false_facts.take();
@@ -481,10 +479,10 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
-    pub(super) fn try_assign(&mut self, span: Span, lhs: &mut RPatOrExpr, ty: &Type) {
+    pub(super) fn try_assign(&mut self, span: Span, lhs: &RPatOrExpr, ty: &Type) {
         let res: Result<(), Error> = try {
             match *lhs {
-                RPatOrExpr::Expr(ref mut expr) | RPatOrExpr::Pat(box RPat::Expr(ref mut expr)) => {
+                RPatOrExpr::Expr(ref expr) | RPatOrExpr::Pat(box RPat::Expr(ref expr)) => {
                     let lhs_ty = expr.validate_with_args(self, (TypeOfMode::LValue, None, None))?;
                     let lhs_ty = self.expand(span, lhs_ty)?;
 
@@ -497,7 +495,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                RPatOrExpr::Pat(ref mut pat) => {
+                RPatOrExpr::Pat(ref pat) => {
                     self.try_assign_pat(span, pat, ty)?;
                 }
             }
@@ -509,7 +507,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn try_assign_pat(&mut self, span: Span, lhs: &mut RPat, ty: &Type) -> Result<(), Error> {
+    fn try_assign_pat(&mut self, span: Span, lhs: &RPat, ty: &Type) -> Result<(), Error> {
         // Update variable's type
         match *lhs {
             RPat::Ident(ref i) => {
@@ -602,10 +600,10 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            RPat::Array(ref mut arr) => {
+            RPat::Array(ref arr) => {
                 //
-                for (i, elem) in arr.elems.iter_mut().enumerate() {
-                    if let Some(elem) = elem.as_mut() {
+                for (i, elem) in arr.elems.iter().enumerate() {
+                    if let Some(elem) = elem {
                         match ty.normalize() {
                             ty if ty.is_any() => {
                                 self.try_assign_pat(span, elem, ty)?;
@@ -628,48 +626,33 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
 
-            RPat::Object(ref mut obj) => {
+            RPat::Object(ref obj) => {
                 //
-                for prop in obj.props.iter_mut() {
+                for prop in obj.props.iter() {
                     match ty.normalize() {
                         ty if ty.is_any() => {
-                            self.try_assign_pat(
-                                span,
-                                match prop {
-                                    RObjectPatProp::KeyValue(kv) => &mut kv.value,
-                                    RObjectPatProp::Assign(a) => {
-                                        if a.key.type_ann.is_none() {
-                                            a.key.type_ann = Some(RTsTypeAnn {
-                                                node_id: NodeId::invalid(),
-                                                span,
-                                                type_ann: box RTsType::TsKeywordType(
-                                                    RTsKeywordType {
-                                                        span,
-                                                        kind: TsKeywordTypeKind::TsAnyKeyword,
-                                                    },
-                                                ),
-                                            })
+                            let lhs = match prop {
+                                RObjectPatProp::KeyValue(kv) => &kv.value,
+                                RObjectPatProp::Assign(a) => {
+                                    if a.key.type_ann.is_none() {
+                                        if let Some(m) = &mut self.mutations {
+                                            m.for_pats.entry(a.key.node_id).or_default().ty =
+                                                Some(Type::any(span));
                                         }
-                                        continue;
                                     }
-                                    RObjectPatProp::Rest(r) => {
-                                        if r.type_ann.is_none() {
-                                            r.type_ann = Some(RTsTypeAnn {
-                                                node_id: NodeId::invalid(),
-                                                span,
-                                                type_ann: box RTsType::TsKeywordType(
-                                                    RTsKeywordType {
-                                                        span,
-                                                        kind: TsKeywordTypeKind::TsAnyKeyword,
-                                                    },
-                                                ),
-                                            })
+                                    continue;
+                                }
+                                RObjectPatProp::Rest(r) => {
+                                    if r.type_ann.is_none() {
+                                        if let Some(m) = &mut self.mutations {
+                                            m.for_pats.entry(r.node_id).or_default().ty =
+                                                Some(Type::any(span));
                                         }
-                                        continue;
                                     }
-                                },
-                                &Type::any(ty.span()),
-                            )?;
+                                    continue;
+                                }
+                            };
+                            self.try_assign_pat(span, lhs, &Type::any(ty.span()))?;
                         }
 
                         Type::Ref(..) => {}
@@ -731,7 +714,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(
         &mut self,
-        mut e: &mut RCondExpr,
+        e: &RCondExpr,
         mode: TypeOfMode,
         type_ann: Option<&Type>,
     ) -> ValidationResult {
@@ -739,9 +722,9 @@ impl Analyzer<'_, '_> {
 
         let RCondExpr {
             span,
-            ref mut test,
-            ref mut alt,
-            ref mut cons,
+            ref test,
+            ref alt,
+            ref cons,
             ..
         } = *e;
 

@@ -1,5 +1,6 @@
 use super::super::{pat::PatMode, Analyzer, Ctx};
 use crate::errors::Errors;
+use crate::util::type_ext::TypeVecExt;
 use crate::{
     analyzer::{
         expr::TypeOfMode,
@@ -13,9 +14,7 @@ use crate::{
     ValidationResult,
 };
 use rnode::FoldWith;
-use rnode::NodeId;
 use rnode::Visit;
-use rnode::VisitMutWith;
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RArrayPat;
 use stc_ts_ast_rnode::RCallExpr;
@@ -23,29 +22,25 @@ use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RExprOrSuper;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RPat;
-use stc_ts_ast_rnode::RTsArrayType;
 use stc_ts_ast_rnode::RTsAsExpr;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_ast_rnode::RTsType;
 use stc_ts_ast_rnode::RTsTypeAnn;
 use stc_ts_ast_rnode::RTsTypeCastExpr;
-use stc_ts_ast_rnode::RTsTypeOperator;
-use stc_ts_ast_rnode::RTsTypeQuery;
-use stc_ts_ast_rnode::RTsTypeQueryExpr;
 use stc_ts_ast_rnode::RVarDecl;
 use stc_ts_ast_rnode::RVarDeclarator;
+use stc_ts_types::QueryExpr;
+use stc_ts_types::QueryType;
 use stc_ts_types::{Array, Id, Operator, Symbol};
 use stc_ts_utils::PatExt;
-use std::mem::take;
 use swc_atoms::js_word;
-use swc_common::{Spanned, DUMMY_SP};
+use swc_common::Spanned;
 use swc_ecma_ast::*;
 use ty::TypeExt;
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, var: &mut RVarDecl) {
+    fn validate(&mut self, var: &RVarDecl) {
         self.record(&*var);
 
         let ctx = Ctx {
@@ -56,47 +51,46 @@ impl Analyzer<'_, '_> {
             ..self.ctx
         };
         self.with_ctx(ctx).with(|a| {
-            var.decls.visit_mut_with(a);
+            var.decls.visit_with(a);
         });
 
-        // Flatten var declarations
-        for mut decl in take(&mut var.decls) {
-            match decl.name {
+        // Set type of tuples.
+        for decl in &var.decls {
+            match &decl.name {
                 RPat::Array(RArrayPat {
                     span,
-                    mut elems,
-                    type_ann:
-                        Some(RTsTypeAnn {
-                            type_ann: box RTsType::TsTupleType(tuple),
-                            ..
-                        }),
+                    elems,
+                    node_id,
                     ..
                 }) => {
-                    //
-                    for (i, elem) in elems.into_iter().enumerate() {
-                        match elem {
-                            Some(mut pat) => {
-                                //
-                                if i < tuple.elem_types.len() {
-                                    let ty = box tuple.elem_types[i].ty.clone();
-                                    pat.set_ty(Some(ty));
+                    if let Some(m) = &self.mutations {
+                        if let Some(box Type::Tuple(tuple)) =
+                            m.for_pats.get(&node_id).map(|m| &m.ty).cloned().flatten()
+                        {
+                            for (i, elem) in elems.iter().enumerate() {
+                                match elem {
+                                    Some(pat) => {
+                                        //
+                                        if i < tuple.elems.len() {
+                                            let ty = &tuple.elems[i].ty;
+                                            if let Some(node_id) = pat.node_id() {
+                                                if let Some(m) = &mut self.mutations {
+                                                    m.for_pats.entry(node_id).or_default().ty =
+                                                        Some(ty.clone());
+                                                }
+                                            }
+                                        }
+                                    }
+                                    None => {}
                                 }
-
-                                var.decls.push(RVarDeclarator {
-                                    node_id: NodeId::invalid(),
-                                    span,
-                                    name: pat,
-                                    init: None,
-                                    definite: false,
-                                })
                             }
-                            None => {}
                         }
                     }
+                    //
                 }
                 // TODO
                 //  RPat::Object(obj) => {}
-                _ => var.decls.push(decl),
+                _ => {}
             }
         }
 
@@ -106,10 +100,11 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, v: &mut RVarDeclarator) {
+    fn validate(&mut self, v: &RVarDeclarator) {
         self.record(v);
 
         let kind = self.ctx.var_kind;
+        let node_id = v.node_id;
 
         let res: Result<_, _> = try {
             let v_span = v.span();
@@ -142,7 +137,7 @@ impl Analyzer<'_, '_> {
                     | Some(box RExpr::TsTypeCast(RTsTypeCastExpr {
                         type_ann: RTsTypeAnn { ref type_ann, .. },
                         ..
-                    })) => Some(type_ann.clone()),
+                    })) => Some(type_ann.validate_with(self)?),
                     _ => None,
                 }
             };
@@ -153,14 +148,16 @@ impl Analyzer<'_, '_> {
             macro_rules! remove_declaring {
                 () => {{
                     if should_remove_value {
-                        v.init = None;
+                        if let Some(m) = &mut self.mutations {
+                            m.for_var_decls.entry(node_id).or_default().remove_init = true;
+                        }
                     }
 
                     debug_assert_eq!(Some(self.scope.declaring.clone()), debug_declaring);
                 }};
             }
 
-            if let Some(ref mut init) = v.init {
+            if let Some(ref init) = v.init {
                 let span = init.span();
                 let is_symbol_call = match &**init {
                     RExpr::Call(RCallExpr {
@@ -198,7 +195,7 @@ impl Analyzer<'_, '_> {
                     None
                 };
 
-                let declared_ty = v.name.get_mut_ty();
+                let declared_ty = v.name.get_ty();
                 if declared_ty.is_some() {
                     //TODO:
                     // self.span_allowed_implicit_any = span;
@@ -302,7 +299,10 @@ impl Analyzer<'_, '_> {
                                     }
                                 }
                                 Type::TypeLit(..) | Type::Function(..) | Type::Query(..) => {
-                                    v.init = None;
+                                    if let Some(m) = &mut self.mutations {
+                                        m.for_var_decls.entry(v.node_id).or_default().remove_init =
+                                            true;
+                                    }
                                 }
                                 _ => {}
                             }
@@ -328,6 +328,25 @@ impl Analyzer<'_, '_> {
                                         ..f.clone()
                                     })
                                 }
+
+                                Type::Tuple(tuple)
+                                    if tuple.elems.iter().all(|e| match &*e.ty {
+                                        Type::Keyword(..) => true,
+                                        _ => false,
+                                    }) =>
+                                {
+                                    let mut types = tuple
+                                        .elems
+                                        .iter()
+                                        .map(|e| e.ty.clone())
+                                        .collect::<Vec<_>>();
+                                    types.dedup_type();
+                                    box Type::Array(Array {
+                                        span: tuple.span,
+                                        elem_type: Type::union(types),
+                                    })
+                                }
+
                                 _ => ty,
                             };
                         }
@@ -346,126 +365,123 @@ impl Analyzer<'_, '_> {
                         }
 
                         if self.scope.is_root() {
-                            if let Some(box RExpr::Ident(ref alias)) = &v.init {
-                                if let RPat::Ident(ref mut i) = v.name {
-                                    i.type_ann = Some(RTsTypeAnn {
-                                        node_id: NodeId::invalid(),
-                                        span: DUMMY_SP,
-                                        type_ann: box RTsType::TsTypeQuery(RTsTypeQuery {
-                                            node_id: NodeId::invalid(),
-                                            span,
-                                            expr_name: RTsTypeQueryExpr::TsEntityName(
-                                                RTsEntityName::Ident(alias.clone()),
-                                            ),
-                                        }),
-                                    });
-                                }
-                            }
-                            if !should_remove_value {
-                                v.name.set_ty(Some(forced_type_ann.unwrap_or_else(|| {
-                                    let ty = ty.clone();
+                            let ty = Some(forced_type_ann.unwrap_or_else(|| {
+                                let ty = ty.clone();
 
-                                    // Normalize unresolved parameters
-                                    let ty = match ty.normalize() {
-                                        Type::Param(TypeParam {
-                                            constraint: Some(ty),
-                                            ..
-                                        }) => ty.clone(),
-                                        _ => ty,
-                                    };
+                                // Normalize unresolved parameters
+                                let ty = match ty.normalize() {
+                                    Type::Param(TypeParam {
+                                        constraint: Some(ty),
+                                        ..
+                                    }) => ty.clone(),
+                                    _ => ty,
+                                };
 
-                                    let ty = match ty.normalize() {
-                                        Type::ClassInstance(c) => box c.ty.clone().into(),
+                                let ty = match ty.normalize() {
+                                    Type::ClassInstance(c) => c.ty.clone(),
 
-                                        // `err is Error` => boolean
-                                        Type::Predicate(..) => {
-                                            box RTsType::TsKeywordType(RTsKeywordType {
-                                                span,
-                                                kind: TsKeywordTypeKind::TsBooleanKeyword,
-                                            })
-                                        }
+                                    // `err is Error` => boolean
+                                    Type::Predicate(..) => box Type::Keyword(RTsKeywordType {
+                                        span,
+                                        kind: TsKeywordTypeKind::TsBooleanKeyword,
+                                    }),
 
-                                        Type::Keyword(RTsKeywordType {
-                                            span,
-                                            kind: TsKeywordTypeKind::TsSymbolKeyword,
-                                        })
-                                        | Type::Operator(Operator {
-                                            span,
-                                            op: TsTypeOperatorOp::Unique,
-                                            ty:
-                                                box Type::Keyword(RTsKeywordType {
-                                                    kind: TsKeywordTypeKind::TsSymbolKeyword,
-                                                    ..
-                                                }),
-                                        })
-                                        | Type::Symbol(Symbol { span, .. }) => {
-                                            match self.ctx.var_kind {
+                                    Type::Keyword(RTsKeywordType {
+                                        span,
+                                        kind: TsKeywordTypeKind::TsSymbolKeyword,
+                                    })
+                                    | Type::Operator(Operator {
+                                        span,
+                                        op: TsTypeOperatorOp::Unique,
+                                        ty:
+                                            box Type::Keyword(RTsKeywordType {
+                                                kind: TsKeywordTypeKind::TsSymbolKeyword,
+                                                ..
+                                            }),
+                                    })
+                                    | Type::Symbol(Symbol { span, .. }) => {
+                                        match self.ctx.var_kind {
                                             // It's `uniqute symbol` only if it's `Symbol()`
                                             VarDeclKind::Const if is_symbol_call => {
-                                                box RTsType::TsTypeOperator(RTsTypeOperator {
-                                                    node_id: NodeId::invalid(),
-                                                    span:*span,
+                                                box Type::Operator(Operator {
+                                                    span: *span,
                                                     op: TsTypeOperatorOp::Unique,
-                                                    type_ann: box RTsType::TsKeywordType(
-                                                        RTsKeywordType {
-                                                            span:*span,
-                                                            kind:
-                                                                TsKeywordTypeKind::TsSymbolKeyword,
-                                                        },
-                                                    ),
+                                                    ty: box Type::Keyword(RTsKeywordType {
+                                                        span: *span,
+                                                        kind: TsKeywordTypeKind::TsSymbolKeyword,
+                                                    }),
                                                 })
                                             }
 
-                                            _ => box RTsType::TsKeywordType(RTsKeywordType {
-                                                span:*span,
+                                            _ => box Type::Keyword(RTsKeywordType {
+                                                span: *span,
                                                 kind: TsKeywordTypeKind::TsSymbolKeyword,
                                             }),
                                         }
-                                        }
+                                    }
 
-                                        Type::Array(Array {
-                                            span,
-                                            elem_type:
-                                                box Type::Param(TypeParam {
-                                                    span: elem_span,
-                                                    constraint,
-                                                    ..
+                                    Type::Array(Array {
+                                        span,
+                                        elem_type:
+                                            box Type::Param(TypeParam {
+                                                span: elem_span,
+                                                constraint,
+                                                ..
+                                            }),
+                                        ..
+                                    }) => {
+                                        box Type::Array(Array {
+                                            span: *span,
+                                            elem_type: match constraint {
+                                                Some(_constraint) => {
+                                                    // TODO: We need something smarter
+                                                    box Type::Keyword(RTsKeywordType {
+                                                        span: *elem_span,
+                                                        kind: TsKeywordTypeKind::TsAnyKeyword,
+                                                    })
+                                                }
+                                                None => box Type::Keyword(RTsKeywordType {
+                                                    span: *elem_span,
+                                                    kind: TsKeywordTypeKind::TsAnyKeyword,
                                                 }),
-                                            ..
-                                        }) => {
-                                            box RTsType::TsArrayType(RTsArrayType {
-                                                node_id: NodeId::invalid(),
-                                                span: *span,
-                                                elem_type: match constraint {
-                                                    Some(_constraint) => {
-                                                        // TODO: We need something smarter
-                                                        box RTsType::TsKeywordType(RTsKeywordType {
-                                                            span: *elem_span,
-                                                            kind: TsKeywordTypeKind::TsAnyKeyword,
-                                                        })
-                                                    }
-                                                    None => {
-                                                        box RTsType::TsKeywordType(RTsKeywordType {
-                                                            span: *elem_span,
-                                                            kind: TsKeywordTypeKind::TsAnyKeyword,
-                                                        })
-                                                    }
-                                                },
-                                            })
-                                        }
+                                            },
+                                        })
+                                    }
 
-                                        // We failed to infer type of the type parameter.
-                                        Type::Param(TypeParam { span, .. }) => {
-                                            box RTsType::TsKeywordType(RTsKeywordType {
-                                                span: *span,
-                                                kind: TsKeywordTypeKind::TsUnknownKeyword,
-                                            })
-                                        }
-                                        _ => ty.into(),
-                                    };
+                                    // We failed to infer type of the type parameter.
+                                    Type::Param(TypeParam { span, .. }) => {
+                                        box Type::Keyword(RTsKeywordType {
+                                            span: *span,
+                                            kind: TsKeywordTypeKind::TsUnknownKeyword,
+                                        })
+                                    }
 
-                                    ty.into()
-                                })));
+                                    _ => ty,
+                                };
+
+                                ty
+                            }));
+
+                            if let Some(box RExpr::Ident(ref alias)) = &v.init {
+                                if let RPat::Ident(ref i) = v.name {
+                                    if let Some(m) = &mut self.mutations {
+                                        m.for_pats.entry(i.node_id).or_default().ty =
+                                            Some(box Type::Query(QueryType {
+                                                span,
+                                                expr: QueryExpr::TsEntityName(
+                                                    RTsEntityName::Ident(alias.clone()),
+                                                ),
+                                            }));
+                                    }
+                                }
+                            }
+                            if !should_remove_value {
+                                let node_id = v.name.node_id();
+                                if let Some(node_id) = node_id {
+                                    if let Some(m) = &mut self.mutations {
+                                        m.for_pats.entry(node_id).or_default().ty = ty;
+                                    }
+                                }
                             }
                         }
                         match ty.normalize() {
@@ -534,7 +550,7 @@ impl Analyzer<'_, '_> {
                 }
             } else {
                 match v.name {
-                    RPat::Ident(ref mut i) => {
+                    RPat::Ident(ref i) => {
                         //
                         let sym: Id = (&*i).into();
                         let mut ty = try_opt!(i.type_ann.validate_with(self));
@@ -569,7 +585,7 @@ impl Analyzer<'_, '_> {
                         //  );
 
                         if self.ctx.in_declare {
-                            match self.declare_vars(kind, &mut v.name) {
+                            match self.declare_vars(kind, &v.name) {
                                 Ok(()) => {}
                                 Err(err) => {
                                     self.storage.report(err);
@@ -586,8 +602,7 @@ impl Analyzer<'_, '_> {
 
             debug_assert_eq!(self.ctx.allow_ref_declaring, true);
             if v.name.get_ty().is_none() {
-                self.declare_vars(kind, &mut v.name)
-                    .report(&mut self.storage);
+                self.declare_vars(kind, &v.name).report(&mut self.storage);
             }
 
             remove_declaring!();

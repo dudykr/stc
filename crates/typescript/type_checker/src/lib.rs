@@ -10,9 +10,10 @@ use parking_lot::Mutex;
 use parking_lot::RwLock;
 use rnode::NodeIdGenerator;
 use rnode::RNode;
-use rnode::VisitMutWith;
+use rnode::VisitWith;
 use slog::Logger;
 use stc_ts_ast_rnode::RModule;
+use stc_ts_dts::apply_mutations;
 use stc_ts_dts::cleanup_module_for_dts;
 use stc_ts_file_analyzer::analyzer::Analyzer;
 use stc_ts_file_analyzer::env::Env;
@@ -192,7 +193,7 @@ impl Checker {
                             info: Default::default(),
                         };
                         let ids = set.iter().copied().collect::<Vec<_>>();
-                        let mut modules = ids
+                        let modules = ids
                             .iter()
                             .map(|&id| self.module_graph.clone_module(id))
                             .map(|module| {
@@ -204,6 +205,7 @@ impl Checker {
                                 )
                             })
                             .collect::<Vec<_>>();
+                        let mut mutations;
                         {
                             let mut a = Analyzer::root(
                                 self.logger
@@ -214,12 +216,14 @@ impl Checker {
                                 self,
                             );
                             let _ = modules.validate_with(&mut a);
+                            mutations = a.mutations.unwrap();
                         }
 
                         for (id, mut dts_module) in ids.iter().zip(modules) {
                             let type_data = storage.info.entry(*id).or_default();
 
                             {
+                                apply_mutations(&mut mutations, &mut dts_module);
                                 cleanup_module_for_dts(&mut dts_module.body, &type_data);
                             }
 
@@ -318,6 +322,7 @@ impl Checker {
                 path: path.clone(),
                 info: Default::default(),
             };
+            let mut mutations;
             {
                 let mut a = Analyzer::root(
                     self.logger
@@ -328,11 +333,13 @@ impl Checker {
                     self,
                 );
 
-                module.visit_mut_with(&mut a);
+                module.visit_with(&mut a);
+                mutations = a.mutations.unwrap();
             }
 
             {
                 // Get .d.ts file
+                apply_mutations(&mut mutations, &mut module);
                 cleanup_module_for_dts(&mut module.body, &storage.info.exports);
             }
 

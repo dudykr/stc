@@ -404,7 +404,10 @@ impl Mode for Group<'_> {
             }
         }
 
-        unreachable!("failed to get path by module id")
+        unreachable!(
+            "failed to get path by module id({:?}):  {:?}",
+            id, self.files
+        )
     }
 
     fn subscope(&self) -> Storage {

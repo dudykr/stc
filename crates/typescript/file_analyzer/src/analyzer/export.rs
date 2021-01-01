@@ -4,7 +4,7 @@ use crate::{
     ValidationResult,
 };
 use rnode::NodeId;
-use rnode::VisitMutWith;
+use rnode::VisitWith;
 use stc_ts_ast_rnode::RDecl;
 use stc_ts_ast_rnode::RDefaultDecl;
 use stc_ts_ast_rnode::RExportAll;
@@ -141,31 +141,29 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, export: &mut RExportDecl) {
+    fn validate(&mut self, export: &RExportDecl) {
         let span = export.span;
 
-        match export.decl {
-            RDecl::Fn(ref mut f) => {
-                f.declare = true;
-                f.visit_mut_with(self);
+        match &export.decl {
+            RDecl::Fn(ref f) => {
+                f.visit_with(self);
                 // self.export(f.span(), f.ident.clone().into(), None);
                 self.export_var(f.span(), f.ident.clone().into());
             }
-            RDecl::TsInterface(ref mut i) => {
-                i.visit_mut_with(self);
+            RDecl::TsInterface(ref i) => {
+                i.visit_with(self);
 
                 self.export(i.span(), i.id.clone().into(), None)
             }
 
-            RDecl::Class(ref mut c) => {
-                c.declare = true;
-                c.visit_mut_with(self);
+            RDecl::Class(ref c) => {
+                c.visit_with(self);
                 self.export(c.span(), c.ident.clone().into(), None);
                 self.export_var(c.span(), c.ident.clone().into());
             }
-            RDecl::Var(ref mut var) => {
+            RDecl::Var(ref var) => {
                 let span = var.span;
-                var.visit_mut_with(self);
+                var.visit_with(self);
 
                 let ids: Vec<Id> = find_ids_in_pat(&var.decls);
 
@@ -173,7 +171,7 @@ impl Analyzer<'_, '_> {
                     self.export_var(span, id)
                 }
             }
-            RDecl::TsEnum(ref mut e) => {
+            RDecl::TsEnum(ref e) => {
                 let span = e.span();
 
                 let ty = e
@@ -189,8 +187,8 @@ impl Analyzer<'_, '_> {
                     .export_type(span, self.ctx.module_id, e.id.clone().into());
             }
             RDecl::TsModule(..) => unimplemented!("export module "),
-            RDecl::TsTypeAlias(ref mut decl) => {
-                decl.visit_mut_with(self);
+            RDecl::TsTypeAlias(ref decl) => {
+                decl.visit_with(self);
                 // export type Foo = 'a' | 'b';
                 // export type Foo = {};
 
@@ -206,11 +204,11 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, export: &mut RExportDefaultDecl) {
+    fn validate(&mut self, export: &RExportDefaultDecl) {
         let span = export.span();
 
         match export.decl {
-            RDefaultDecl::Fn(ref mut f) => {
+            RDefaultDecl::Fn(ref f) => {
                 let i = f
                     .ident
                     .as_ref()
@@ -224,7 +222,17 @@ impl Analyzer<'_, '_> {
                     }
                 };
                 if f.function.return_type.is_none() {
-                    f.function.return_type = Some(fn_ty.ret_ty.clone().into());
+                    if let Some(m) = &mut self.mutations {
+                        if m.for_fns
+                            .entry(f.function.node_id)
+                            .or_default()
+                            .ret_ty
+                            .is_none()
+                        {
+                            m.for_fns.entry(f.function.node_id).or_default().ret_ty =
+                                Some(fn_ty.ret_ty.clone());
+                        }
+                    }
                 }
                 self.register_type(i.clone(), box fn_ty.clone().into())
                     .report(&mut self.storage);
@@ -235,7 +243,7 @@ impl Analyzer<'_, '_> {
 
                 self.export(f.span(), Id::word(js_word!("default")), Some(i))
             }
-            RDefaultDecl::Class(ref mut c) => {
+            RDefaultDecl::Class(ref c) => {
                 let id = c
                     .ident
                     .as_ref()
@@ -249,7 +257,7 @@ impl Analyzer<'_, '_> {
             }
             RDefaultDecl::TsInterfaceDecl(ref i) => {
                 let i = i.id.clone().into();
-                export.visit_mut_children_with(self);
+                export.visit_children_with(self);
 
                 // TODO: Register type
 
@@ -309,7 +317,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Exports a variable.
-    fn export_expr(&mut self, name: Id, e: &mut RExpr) -> ValidationResult<()> {
+    fn export_expr(&mut self, name: Id, item_node_id: NodeId, e: &RExpr) -> ValidationResult<()> {
         let ty = e.validate_with_default(self)?;
 
         if *name.sym() == js_word!("default") {
@@ -341,7 +349,15 @@ impl Analyzer<'_, '_> {
                 declare: true,
                 decls: vec![var],
             })));
-            *e = RExpr::Ident(RIdent::new("_default".into(), DUMMY_SP));
+
+            if let Some(m) = &mut self.mutations {
+                m.for_export_defaults
+                    .entry(item_node_id)
+                    .or_default()
+                    .replace_with =
+                    Some(box RExpr::Ident(RIdent::new("_default".into(), DUMMY_SP)));
+            }
+
             return Ok(());
         }
 
@@ -352,8 +368,8 @@ impl Analyzer<'_, '_> {
 /// Done
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut RTsExportAssignment) {
-        self.export_expr(Id::word(js_word!("default")), &mut node.expr)?;
+    fn validate(&mut self, node: &RTsExportAssignment) {
+        self.export_expr(Id::word(js_word!("default")), node.node_id, &node.expr)?;
 
         Ok(())
     }
@@ -362,13 +378,13 @@ impl Analyzer<'_, '_> {
 /// Done
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut RExportDefaultExpr) {
+    fn validate(&mut self, node: &RExportDefaultExpr) {
         let ctx = Ctx {
             in_export_default_expr: true,
             ..self.ctx
         };
         self.with_ctx(ctx)
-            .export_expr(Id::word(js_word!("default")), &mut node.expr)?;
+            .export_expr(Id::word(js_word!("default")), node.node_id, &node.expr)?;
 
         Ok(())
     }
@@ -376,7 +392,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut RExportAll) {
+    fn validate(&mut self, node: &RExportAll) {
         let span = node.span;
 
         let path = self.storage.path(self.ctx.module_id);
@@ -405,7 +421,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut RNamedExport) {
+    fn validate(&mut self, node: &RNamedExport) {
         let span = node.span;
         let ctxt = self.ctx.module_id;
         let base = self.storage.path(ctxt);

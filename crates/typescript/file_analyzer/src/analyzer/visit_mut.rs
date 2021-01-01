@@ -2,8 +2,8 @@
 
 use super::Analyzer;
 use crate::{validator, validator::ValidateWith};
-use rnode::VisitMut;
-use rnode::VisitMutWith;
+use rnode::Visit;
+use rnode::VisitWith;
 use stc_ts_ast_rnode::RArrowExpr;
 use stc_ts_ast_rnode::RBlockStmt;
 use stc_ts_ast_rnode::RCatchClause;
@@ -53,8 +53,8 @@ use stc_ts_ast_rnode::RYieldExpr;
 macro_rules! forward {
     ($name:ident,$T:ty) => {
         /// Delegates to `Validate<T>`
-        impl VisitMut<$T> for Analyzer<'_, '_> {
-            fn visit_mut(&mut self, n: &mut $T) {
+        impl Visit<$T> for Analyzer<'_, '_> {
+            fn visit(&mut self, n: &$T) {
                 let res = n.validate_with_default(self);
                 match res {
                     // ignored
@@ -72,8 +72,8 @@ macro_rules! use_visit_mut {
     ($T:ty) => {
         #[validator]
         impl Analyzer<'_, '_> {
-            fn validate(&mut self, node: &mut $T) {
-                node.visit_mut_children_with(self);
+            fn validate(&mut self, node: &$T) {
+                node.visit_children_with(self);
                 Ok(())
             }
         }

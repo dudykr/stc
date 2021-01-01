@@ -8,7 +8,6 @@ use crate::{
     ValidationResult,
 };
 use rnode::Visit;
-use rnode::VisitMutWith;
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RAssignProp;
 use stc_ts_ast_rnode::RComputedPropName;
@@ -43,10 +42,10 @@ pub(super) enum ComputedPropMode {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut RPropName) {
+    fn validate(&mut self, node: &RPropName) {
         self.record(node);
 
-        node.visit_mut_children_with(self);
+        node.visit_children_with(self);
 
         Ok(())
     }
@@ -54,7 +53,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut RComputedPropName) {
+    fn validate(&mut self, node: &RComputedPropName) {
         self.record(node);
 
         let mode = self.ctx.computed_prop_mode;
@@ -173,7 +172,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, prop: &mut RProp) -> ValidationResult<TypeElement> {
+    fn validate(&mut self, prop: &RProp) -> ValidationResult<TypeElement> {
         self.record(prop);
 
         let ctx = Ctx {
@@ -182,7 +181,7 @@ impl Analyzer<'_, '_> {
         };
 
         let old_this = self.scope.this.take();
-        let res = self.with_ctx(ctx).validate_prop(prop);
+        let res = self.with_ctx(ctx).validate_prop_inner(prop);
         self.scope.this = old_this;
 
         res
@@ -190,7 +189,7 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
-    fn validate_prop(&mut self, prop: &mut RProp) -> ValidationResult<TypeElement> {
+    fn validate_prop_inner(&mut self, prop: &RProp) -> ValidationResult<TypeElement> {
         let computed = match prop {
             RProp::KeyValue(ref kv) => match kv.key {
                 RPropName::Computed(_) => true,
@@ -227,7 +226,7 @@ impl Analyzer<'_, '_> {
             }
             .into(),
 
-            RProp::KeyValue(ref mut kv) => {
+            RProp::KeyValue(ref kv) => {
                 let computed = match kv.key {
                     RPropName::Computed(_) => true,
                     _ => false,
@@ -247,15 +246,15 @@ impl Analyzer<'_, '_> {
                 .into()
             }
 
-            RProp::Assign(ref mut p) => unimplemented!("type_of_prop(AssignProperty): {:?}", p),
-            RProp::Getter(ref mut p) => p.validate_with(self)?,
-            RProp::Setter(ref mut p) => {
+            RProp::Assign(ref p) => unimplemented!("type_of_prop(AssignProperty): {:?}", p),
+            RProp::Getter(ref p) => p.validate_with(self)?,
+            RProp::Setter(ref p) => {
                 let computed = match p.key {
                     RPropName::Computed(_) => true,
                     _ => false,
                 };
                 let parma_span = p.param.span();
-                let mut param = &mut p.param;
+                let mut param = &p.param;
 
                 self.with_child(ScopeKind::Method, Default::default(), {
                     |child| -> ValidationResult<_> {
@@ -274,7 +273,7 @@ impl Analyzer<'_, '_> {
                 })?
             }
 
-            RProp::Method(ref mut p) => {
+            RProp::Method(ref p) => {
                 let computed = match p.key {
                     RPropName::Computed(..) => true,
                     _ => false,
@@ -294,14 +293,15 @@ impl Analyzer<'_, '_> {
 
                         let type_params = try_opt!(p.function.type_params.validate_with(child));
                         let params = p.function.params.validate_with(child)?;
+                        let mut inferred = None;
 
-                        if let Some(body) = &mut p.function.body {
-                            let inferred_ret_ty = child
+                        if let Some(body) = &p.function.body {
+                            let mut inferred_ret_ty = child
                                 .visit_stmts_for_return(
                                     p.function.span,
                                     p.function.is_async,
                                     p.function.is_generator,
-                                    &mut body.stmts,
+                                    &body.stmts,
                                 )?
                                 .unwrap_or_else(|| {
                                     box Type::Keyword(RTsKeywordType {
@@ -310,23 +310,31 @@ impl Analyzer<'_, '_> {
                                     })
                                 });
 
-                            // TODO: Preserve return type if `this` is not involved in return type.
+                            // Preserve return type if `this` is not involved in return type.
                             if p.function.return_type.is_none() {
-                                if child
+                                inferred_ret_ty = if child
                                     .marks()
                                     .infected_by_this_in_object_literal
                                     .is_marked(&inferred_ret_ty)
                                 {
-                                    p.function.return_type = Some(Type::any(span).into())
+                                    Type::any(span)
                                 } else {
-                                    p.function.return_type = Some(inferred_ret_ty.clone().into())
+                                    inferred_ret_ty
+                                };
+
+                                if let Some(m) = &mut child.mutations {
+                                    m.for_fns.entry(p.function.node_id).or_default().ret_ty =
+                                        Some(inferred_ret_ty.clone());
                                 }
                             }
+
+                            inferred = Some(inferred_ret_ty)
 
                             // TODO: Assign
                         }
 
                         let ret_ty = try_opt!(p.function.return_type.validate_with(child));
+                        let ret_ty = ret_ty.or(inferred);
 
                         Ok(MethodSignature {
                             span,
@@ -348,7 +356,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, n: &mut RGetterProp) -> ValidationResult<TypeElement> {
+    fn validate(&mut self, n: &RGetterProp) -> ValidationResult<TypeElement> {
         self.record(n);
 
         let computed = match n.key {
@@ -358,11 +366,10 @@ impl Analyzer<'_, '_> {
 
         let type_ann = self
             .with_child(ScopeKind::Method, Default::default(), |child| {
-                n.key.visit_mut_with(child);
+                n.key.visit_with(child);
 
-                if let Some(body) = &mut n.body {
-                    let ret_ty =
-                        child.visit_stmts_for_return(n.span, false, false, &mut body.stmts)?;
+                if let Some(body) = &n.body {
+                    let ret_ty = child.visit_stmts_for_return(n.span, false, false, &body.stmts)?;
                     if let None = ret_ty {
                         // getter property must have return statements.
                         child.storage.report(Error::TS2378 { span: n.key.span() });

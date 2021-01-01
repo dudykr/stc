@@ -43,7 +43,7 @@ impl Analyzer<'_, '_> {
     }
 
     #[extra_validator]
-    pub(super) fn load_normal_imports(&mut self, items: &Vec<RModuleItem>) {
+    pub(super) fn load_normal_imports(&mut self, items: &Vec<&RModuleItem>) {
         if self.is_builtin {
             return;
         }
@@ -115,7 +115,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut RImportDecl) {
+    fn validate(&mut self, node: &RImportDecl) {
         let ctxt = self.ctx.module_id;
         let base = self.storage.path(ctxt);
         let target = self.loader.module_id(&base, &node.src.value);
@@ -162,7 +162,7 @@ impl Analyzer<'_, '_> {
     }
 }
 
-pub(super) struct ImportFinder<'a> {
+struct ImportFinder<'a> {
     storage: &'a Storage<'a>,
     cur_ctxt: ModuleId,
     to: Vec<(ModuleId, DepInfo)>,
@@ -185,11 +185,16 @@ impl<'a> ImportFinder<'a> {
     }
 }
 
-impl Visit<Vec<RModuleItem>> for ImportFinder<'_> {
-    fn visit(&mut self, items: &Vec<RModuleItem>) {
+impl Visit<Vec<&'_ RModuleItem>> for ImportFinder<'_> {
+    fn visit(&mut self, items: &Vec<&RModuleItem>) {
         for (index, item) in items.iter().enumerate() {
             let ctxt = self.storage.module_id(index);
             self.cur_ctxt = ctxt;
+
+            if cfg!(debug_assertions) {
+                // Ensure that it's valid context.
+                let _ = self.storage.path(ctxt);
+            }
 
             item.visit_with(self);
         }

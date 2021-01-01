@@ -14,7 +14,7 @@ use swc_common::{Span, Spanned};
 impl Analyzer<'_, '_> {
     fn validate(
         &mut self,
-        e: &mut RTsTypeAssertion,
+        e: &RTsTypeAssertion,
         mode: TypeOfMode,
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
@@ -24,7 +24,7 @@ impl Analyzer<'_, '_> {
             .expr
             .validate_with_args(self, (mode, type_args, type_ann))?;
 
-        self.validate_type_cast(e.span, orig_ty, &mut e.type_ann)
+        self.validate_type_cast(e.span, orig_ty, &e.type_ann)
     }
 }
 
@@ -32,7 +32,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(
         &mut self,
-        e: &mut RTsAsExpr,
+        e: &RTsAsExpr,
         mode: TypeOfMode,
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
@@ -42,7 +42,7 @@ impl Analyzer<'_, '_> {
             .expr
             .validate_with_args(self, (mode, type_args, type_ann))?;
 
-        self.validate_type_cast(e.span, orig_ty, &mut e.type_ann)
+        self.validate_type_cast(e.span, orig_ty, &e.type_ann)
     }
 }
 
@@ -64,7 +64,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         orig_ty: Box<Type>,
-        to: &mut RTsType,
+        to: &RTsType,
     ) -> ValidationResult {
         let orig_ty = self.expand_fully(span, orig_ty, true)?;
 

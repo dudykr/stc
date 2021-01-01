@@ -1,0 +1,1 @@
+export const arr = [1, 'str', 3, 4, 5]
