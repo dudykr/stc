@@ -55,35 +55,41 @@ impl Analyzer<'_, '_> {
         });
 
         // Set type of tuples.
-        for mut decl in &var.decls {
+        for decl in &var.decls {
             match &decl.name {
                 RPat::Array(RArrayPat {
                     span,
                     elems,
-                    type_ann:
-                        Some(RTsTypeAnn {
-                            type_ann: box RTsType::TsTupleType(tuple),
-                            ..
-                        }),
+                    node_id,
                     ..
                 }) => {
-                    //
-                    for (i, elem) in elems.iter().enumerate() {
-                        match elem {
-                            Some(pat) => {
-                                //
-                                if i < tuple.elem_types.len() {
-                                    let ty = tuple.elem_types[i].ty.clone().validate_with(self)?;
-                                    if let Some(node_id) = pat.node_id() {
-                                        if let Some(m) = &mut self.mutations {
-                                            m.for_pats.entry(node_id).or_default().ty = Some(ty)
+                    if let Some(m) = &self.mutations {
+                        if let Some(box Type::Tuple(tuple)) =
+                            m.for_pats.get(&node_id).map(|m| &m.ty).cloned().flatten()
+                        {
+                            for (i, elem) in elems.iter().enumerate() {
+                                match elem {
+                                    Some(pat) => {
+                                        //
+                                        if i < tuple.elems.len() {
+                                            let ty = &tuple.elems[i].ty;
+                                            if let Some(node_id) = pat.node_id() {
+                                                if let Some(m) = &mut self.mutations {
+                                                    m.for_pats
+                                                        .entry(node_id)
+                                                        .or_default()
+                                                        .ty
+                                                        .fill_With(|| ty.clone());
+                                                }
+                                            }
                                         }
                                     }
+                                    None => {}
                                 }
                             }
-                            None => {}
                         }
                     }
+                    //
                 }
                 // TODO
                 //  RPat::Object(obj) => {}
