@@ -26,10 +26,7 @@ use testing::{assert_eq, NormalizedOutput};
 
 #[test]
 fn rxjs() -> Result<(), Error> {
-    let dir = PathBuf::new()
-        .join("..")
-        .join("..")
-        .join("..")
+    let dir = get_git_root()
         .join("vendor")
         .join("rxjs")
         .join("src")
@@ -49,10 +46,7 @@ fn rxjs() -> Result<(), Error> {
 #[test]
 #[ignore = "Not implemented yet"]
 fn vite_js() {
-    let dir = PathBuf::new()
-        .join("..")
-        .join("..")
-        .join("..")
+    let dir = get_git_root()
         .join("vendor")
         .join("vite")
         .join("src")
@@ -67,10 +61,7 @@ fn vite_js() {
 #[test]
 #[ignore = "Not done yet"]
 fn redux() {
-    let dir = PathBuf::new()
-        .join("..")
-        .join("..")
-        .join("..")
+    let dir = get_git_root()
         .join("vendor")
         .join("redux")
         .join("src")
