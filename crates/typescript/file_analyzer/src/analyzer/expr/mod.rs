@@ -784,6 +784,8 @@ impl Analyzer<'_, '_> {
 
         if !self.is_builtin {
             debug_assert!(!span.is_dummy());
+
+            slog::debug!(&self.logger, "access_property");
         }
 
         // Recursive method call
