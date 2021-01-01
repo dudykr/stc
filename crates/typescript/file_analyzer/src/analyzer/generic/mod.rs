@@ -703,14 +703,6 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                Type::Keyword(RTsKeywordType {
-                    kind: TsKeywordTypeKind::TsNullKeyword,
-                    ..
-                }) => {
-                    // Prevent logging
-                    return Ok(());
-                }
-
                 _ => {
                     dbg!();
                 }
@@ -953,6 +945,25 @@ impl Analyzer<'_, '_> {
                 }
             }
             Type::Alias(arg) => return self.infer_type(inferred, param, &arg.ty),
+            _ => {}
+        }
+
+        match arg {
+            Type::Keyword(RTsKeywordType {
+                kind: TsKeywordTypeKind::TsNullKeyword,
+                ..
+            })
+            | Type::Keyword(RTsKeywordType {
+                kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                ..
+            })
+            | Type::Keyword(RTsKeywordType {
+                kind: TsKeywordTypeKind::TsVoidKeyword,
+                ..
+            }) => {
+                // Prevent logging
+                return Ok(());
+            }
             _ => {}
         }
 
