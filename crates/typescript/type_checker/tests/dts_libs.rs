@@ -1,6 +1,7 @@
 #![feature(box_syntax)]
 
 use anyhow::Context;
+use anyhow::Error;
 use ignore::WalkBuilder;
 use stc_testing::get_git_root;
 use stc_testing::term_logger;
@@ -24,9 +25,9 @@ use swc_ecma_utils::drop_span;
 use testing::{assert_eq, NormalizedOutput};
 
 #[test]
-#[ignore = "Not done yet"]
-fn rxjs() {
+fn rxjs() -> Result<(), Error> {
     let dir = PathBuf::new()
+        .join("..")
         .join("..")
         .join("..")
         .join("vendor")
@@ -41,12 +42,15 @@ fn rxjs() {
         &dir,
         vec![dir.join("index.ts"), dir.join("webSocket").join("index.ts")],
     );
+
+    Ok(())
 }
 
 #[test]
 #[ignore = "Not implemented yet"]
 fn vite_js() {
     let dir = PathBuf::new()
+        .join("..")
         .join("..")
         .join("..")
         .join("vendor")
@@ -64,6 +68,7 @@ fn vite_js() {
 #[ignore = "Not done yet"]
 fn redux() {
     let dir = PathBuf::new()
+        .join("..")
         .join("..")
         .join("..")
         .join("vendor")
