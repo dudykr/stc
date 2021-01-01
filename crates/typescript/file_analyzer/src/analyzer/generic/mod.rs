@@ -445,6 +445,10 @@ impl Analyzer<'_, '_> {
         let param = param.normalize();
         let arg = arg.normalize();
 
+        if param.is_keyword(){
+            return Ok(())
+        }
+
         let p;
         let param = match param {
             Type::Mapped(..) => {
