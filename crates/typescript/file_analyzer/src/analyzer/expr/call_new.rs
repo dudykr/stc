@@ -265,11 +265,6 @@ impl Analyzer<'_, '_> {
                 };
 
                 match *obj_type.normalize() {
-                    Type::Function(ref f) if kind == ExtractKind::Call => {
-                        //
-                        return Ok(f.ret_ty.clone());
-                    }
-
                     Type::Keyword(RTsKeywordType {
                         kind: TsKeywordTypeKind::TsAnyKeyword,
                         ..
@@ -1161,7 +1156,7 @@ impl Analyzer<'_, '_> {
         kind: ExtractKind,
         type_params: Option<&[TypeParam]>,
         params: &[FnParam],
-        ret_ty: Box<Type>,
+        mut ret_ty: Box<Type>,
         type_args: Option<&TypeParamInstantiation>,
         args: &[RExprOrSpread],
         arg_types: &[TypeOrSpread],
@@ -1357,10 +1352,13 @@ impl Analyzer<'_, '_> {
                 analyzer.add_call_facts(params, &args, &mut ty);
             }
 
+            ty.reposition(span);
+
             return Ok(ty);
         }
 
         let mut ret_ty = ret_ty.clone();
+        ret_ty.reposition(span);
         ret_ty.visit_mut_with(&mut ReturnTypeSimplifier { analyzer: self });
         if kind == ExtractKind::Call {
             self.add_call_facts(params, &args, &mut ret_ty);
