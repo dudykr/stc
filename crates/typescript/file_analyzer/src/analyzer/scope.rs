@@ -1104,7 +1104,7 @@ impl Analyzer<'_, '_> {
                         return Ok(());
                     }
 
-                    _ => unimplemented!("declare_complex_vars(pat={:?}\nty={:?}\n)", pat, ty),
+                    _ => unimplemented!("declare_complex_vars(pat={:#?}\nty={:#?}\n)", pat, ty),
                 }
             }
 
