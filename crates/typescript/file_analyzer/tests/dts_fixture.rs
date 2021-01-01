@@ -35,7 +35,7 @@ fn visulize(file_name: PathBuf) {
     println!("{}", fname);
 
     let res = testing::Tester::new()
-        .print_errors(|cm, handler| {
+        .print_errors(|cm, handler| -> Result<(), _> {
             let handler = Arc::new(handler);
             let fm = cm.load_file(&file_name).unwrap();
             let env = Env::simple(
