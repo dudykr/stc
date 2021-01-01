@@ -10,7 +10,7 @@ use parking_lot::Mutex;
 use parking_lot::RwLock;
 use rnode::NodeIdGenerator;
 use rnode::RNode;
-use rnode::VisitMutWith;
+use rnode::VisitWith;
 use slog::Logger;
 use stc_ts_ast_rnode::RModule;
 use stc_ts_dts::apply_mutations;
@@ -333,7 +333,7 @@ impl Checker {
                     self,
                 );
 
-                module.visit_mut_with(&mut a);
+                module.visit_with(&mut a);
                 mutations = a.mutations.unwrap();
             }
 
