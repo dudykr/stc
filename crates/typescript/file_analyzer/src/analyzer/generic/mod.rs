@@ -445,8 +445,8 @@ impl Analyzer<'_, '_> {
         let param = param.normalize();
         let arg = arg.normalize();
 
-        if param.is_keyword(){
-            return Ok(())
+        if param.is_keyword() {
+            return Ok(());
         }
 
         let p;
@@ -702,6 +702,15 @@ impl Analyzer<'_, '_> {
                         _ => {}
                     }
                 }
+
+                Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsNullKeyword,
+                    ..
+                }) => {
+                    // Prevent logging
+                    return Ok(());
+                }
+
                 _ => {
                     dbg!();
                 }
@@ -1526,9 +1535,9 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        {
-            match &param.type_param.constraint {
-                Some(constraint) => match constraint.normalize() {
+        match &param.type_param.constraint {
+            Some(constraint) => {
+                match constraint.normalize() {
                     Type::Operator(
                         operator
                         @
@@ -1579,15 +1588,15 @@ impl Analyzer<'_, '_> {
                                                                 )?;
                                                             }
                                                             members.push(TypeElement::Property(PropertySignature {
-                                                                optional: calc_true_plus_minus_in_param(
-                                                                    param.optional, p.optional,
-                                                                ),
-                                                                readonly: calc_true_plus_minus_in_param(
-                                                                    param.readonly, p.readonly,
-                                                                ),
-                                                                type_ann: None,
-                                                                ..p.clone()
-                                                            }));
+                                                            optional: calc_true_plus_minus_in_param(
+                                                                param.optional, p.optional,
+                                                            ),
+                                                            readonly: calc_true_plus_minus_in_param(
+                                                                param.readonly, p.readonly,
+                                                            ),
+                                                            type_ann: None,
+                                                            ..p.clone()
+                                                        }));
                                                         }
 
                                                         _ => unimplemented!(
@@ -1625,9 +1634,9 @@ impl Analyzer<'_, '_> {
                         _ => {}
                     },
                     _ => {}
-                },
-                None => {}
+                }
             }
+            None => {}
         }
 
         {
