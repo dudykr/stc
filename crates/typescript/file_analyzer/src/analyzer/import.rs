@@ -191,6 +191,11 @@ impl Visit<Vec<RModuleItem>> for ImportFinder<'_> {
             let ctxt = self.storage.module_id(index);
             self.cur_ctxt = ctxt;
 
+            if cfg!(debug_assertions) {
+                // Ensure that it's valid context.
+                let _ = self.storage.path(ctxt);
+            }
+
             item.visit_with(self);
         }
     }
