@@ -90,6 +90,7 @@ impl Analyzer<'_, '_> {
             Default::default(),
             |analyzer: &mut Analyzer| {
                 analyzer.extract_call_new_expr_member(
+                    span,
                     callee,
                     type_ann,
                     ExtractKind::Call,
@@ -121,6 +122,7 @@ impl Analyzer<'_, '_> {
             Default::default(),
             |analyzer: &mut Analyzer| {
                 analyzer.extract_call_new_expr_member(
+                    span,
                     callee,
                     type_ann,
                     ExtractKind::New,
@@ -144,6 +146,7 @@ impl Analyzer<'_, '_> {
     /// This method check arguments
     fn extract_call_new_expr_member(
         &mut self,
+        span: Span,
         callee: &RExpr,
         type_ann: Option<&Type>,
         kind: ExtractKind,
@@ -151,8 +154,6 @@ impl Analyzer<'_, '_> {
         type_args: Option<&RTsTypeParamInstantiation>,
     ) -> ValidationResult {
         debug_assert_eq!(self.scope.kind(), ScopeKind::Call);
-
-        let span = callee.span();
 
         slog::debug!(self.logger, "extract_call_new_expr_member");
 
