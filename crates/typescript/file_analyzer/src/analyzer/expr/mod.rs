@@ -1544,19 +1544,14 @@ impl Analyzer<'_, '_> {
                     return Ok(elems[v as usize].ty.clone());
                 }
                 _ => {
-                    if elems.is_empty() {
-                        return Ok(Type::any(span));
-                    }
-
-                    //                    if types.len() == 1 {
-                    //                        return Ok(Cow::Borrowed(&types[0]));
-                    //                    }
-
-                    // Drop labels
-                    return Ok(box Type::Union(Union {
+                    let mut types = elems.iter().map(|e| e.ty.clone()).collect::<Vec<_>>();
+                    types.dedup_type();
+                    let obj = box Type::Array(Array {
                         span,
-                        types: elems.iter().map(|element| &element.ty).cloned().collect(),
-                    }));
+                        elem_type: Type::union(types),
+                    });
+
+                    return self.access_property(span, obj, prop, computed, type_mode);
                 }
             },
 
