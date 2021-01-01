@@ -1629,7 +1629,7 @@ impl Expander<'_, '_, '_> {
 
                 slog::info!(self.logger, "Info: {}{:?}", i.sym, i.span.ctxt);
                 if !trying_primitive_expansion && self.dejavu.contains(&i.into()) {
-                    slog::error!(self.logger, "Dejvu: {}{:?}", &i.sym, i.span.ctxt);
+                    slog::error!(self.logger, "Dejavu: {}{:?}", &i.sym, i.span.ctxt);
                     return Ok(None);
                 }
 
