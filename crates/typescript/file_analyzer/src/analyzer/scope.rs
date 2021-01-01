@@ -2,6 +2,7 @@ use super::{
     control_flow::CondFacts, expr::TypeOfMode, props::prop_name_to_expr,
     stmt::return_type::ReturnValues, Analyzer, Ctx,
 };
+use crate::analyzer::ResultExt;
 use crate::{
     loader::ModuleInfo,
     ty::{
@@ -1144,7 +1145,7 @@ impl Analyzer<'_, '_> {
                     members: &[TypeElement],
                 ) -> ValidationResult<()> {
                     for p in props.iter() {
-                        match *p {
+                        match p {
                             RObjectPatProp::KeyValue(RKeyValuePatProp {
                                 ref key,
                                 ref value,
@@ -1156,11 +1157,13 @@ impl Analyzer<'_, '_> {
                                 }
                             }
 
-                            RObjectPatProp::Assign(RAssignPatProp {
-                                ref key,
-                                value: None,
-                                ..
-                            }) => {
+                            RObjectPatProp::Assign(RAssignPatProp { ref key, value, .. }) => {
+                                match value.validate_with_default(a) {
+                                    Some(res) => {
+                                        res.report(&mut a.storage);
+                                    }
+                                    _ => {}
+                                }
                                 if let Some(ty) = find(&members, &RPropName::Ident(key.clone())) {
                                     a.declare_complex_vars(kind, &RPat::Ident(key.clone()), ty)?;
                                     return Ok(());
