@@ -983,7 +983,9 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult<()> {
         let span = pat.span();
 
-        match *pat {
+        match pat {
+            RPat::Assign(p) => return self.declare_complex_vars(kind, &p.left, ty),
+
             RPat::Ident(ref i) => {
                 slog::debug!(&self.logger, "declare_complex_vars: declaring {}", i.sym);
                 self.declare_var(
