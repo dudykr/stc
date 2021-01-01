@@ -40,6 +40,7 @@ use stc_ts_ast_rnode::RTsQualifiedName;
 use stc_ts_errors::debug::print_backtrace;
 use stc_ts_errors::Error;
 use stc_ts_types::name::Name;
+use stc_ts_types::Array;
 use stc_ts_types::TypeParamInstantiation;
 use stc_ts_types::{
     Conditional, FnParam, Id, IndexedAccessType, Mapped, ModuleId, Operator, QueryExpr, QueryType,
@@ -47,6 +48,7 @@ use stc_ts_types::{
 };
 use stc_ts_utils::OptionExt;
 use stc_ts_utils::PatExt;
+use stc_utils::TryOpt;
 use std::{borrow::Cow, collections::hash_map::Entry, fmt::Debug, iter, iter::repeat, slice};
 use swc_atoms::js_word;
 use swc_common::TypeEq;
@@ -1037,6 +1039,21 @@ impl Analyzer<'_, '_> {
                         return Ok(());
                     }
 
+                    Type::Array(Array { elem_type, .. }) => {
+                        for elem in elems.into_iter() {
+                            match *elem {
+                                Some(ref elem) => {
+                                    self.declare_complex_vars(kind, elem, elem_type.clone())?;
+                                }
+                                None => {
+                                    // Skip
+                                }
+                            }
+                        }
+
+                        return Ok(());
+                    }
+
                     // [a, b] | [c, d] => [a | c, b | d]
                     Type::Union(Union { types, .. }) => {
                         let mut errors = vec![];
@@ -1210,11 +1227,10 @@ impl Analyzer<'_, '_> {
                                 }
 
                                 RObjectPatProp::Assign(RAssignPatProp {
-                                    span,
-                                    key,
-                                    value: None,
-                                    ..
+                                    span, key, value, ..
                                 }) => {
+                                    let ty = value.validate_with_default(self).try_opt()?;
+
                                     self.declare_complex_vars(
                                         kind,
                                         &RPat::Ident(key.clone()),
