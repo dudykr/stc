@@ -20,9 +20,6 @@ impl Visit<Type> for TypeVisualizer<'_> {
     fn visit(&mut self, value: &Type) {
         value.visit_children_with(self);
         let span = value.span();
-        if span.is_dummy() {
-            return;
-        }
 
         let ty = RTsType::from(value.clone());
         let ty = ty.into_orig();
