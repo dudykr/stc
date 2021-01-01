@@ -75,11 +75,8 @@ impl Analyzer<'_, '_> {
                                             let ty = &tuple.elems[i].ty;
                                             if let Some(node_id) = pat.node_id() {
                                                 if let Some(m) = &mut self.mutations {
-                                                    m.for_pats
-                                                        .entry(node_id)
-                                                        .or_default()
-                                                        .ty
-                                                        .fill_With(|| ty.clone());
+                                                    m.for_pats.entry(node_id).or_default().ty =
+                                                        Some(ty.clone());
                                                 }
                                             }
                                         }
