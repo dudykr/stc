@@ -1,0 +1,15 @@
+[package]
+authors = ["강동윤 <kdy1@dudy.kr>"]
+edition = "2018"
+name = "stc_ts_testing"
+publish = false
+version = "0.1.0"
+
+[dependencies]
+stc_testing = { path = "../../testing" }
+swc_atoms = "0.2.5"
+swc_common = "0.10.8"
+swc_ecma_codegen = "0.42.2"
+swc_ecma_parser = "0.44.1"
+swc_ecma_utils = "0.26.0"
+swc_ecma_visit = "0.22.0"

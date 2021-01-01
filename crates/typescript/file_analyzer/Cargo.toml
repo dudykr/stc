@@ -40,6 +40,7 @@ swc_ecma_utils = "0.26.0"
 
 [dev-dependencies]
 stc_testing = {path = "../../testing"}
+stc_ts_testing = { path = "../testing" }
 swc_ecma_parser = "0.44.1"
 swc_ecma_transforms = "0.31.2"
 swc_ecma_visit = "0.22.0"
