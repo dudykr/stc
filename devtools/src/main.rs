@@ -1,14 +1,22 @@
+use self::copy_tests::CopyTests;
+use anyhow::Error;
 use structopt::StructOpt;
 
-#[derive(StructOpt)]
+mod copy_tests;
+
+#[derive(Debug, StructOpt)]
 pub enum Command {
-    CopyTests {
-        /// Include tests only if there's no import.
-        #[structopt(long)]
-        no_import: bool,
-    },
+    CopyTests(CopyTests),
 }
 
-fn main() {
-    println!("Hello, world!");
+fn main() -> Result<(), Error> {
+    let cmd: Command = Command::from_args();
+
+    match cmd {
+        Command::CopyTests(cmd) => {
+            cmd.run()?;
+        }
+    }
+
+    Ok(())
 }
