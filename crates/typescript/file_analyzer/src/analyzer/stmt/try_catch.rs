@@ -4,12 +4,12 @@ use crate::{
     validator,
     validator::ValidateWith,
 };
-use rnode::VisitMutWith;
+use rnode::VisitWith;
 use stc_ts_ast_rnode::RCatchClause;
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, s: &mut RCatchClause) {
+    fn validate(&mut self, s: &RCatchClause) {
         let ctx = Ctx {
             pat_mode: PatMode::Decl,
             ..self.ctx
@@ -18,14 +18,14 @@ impl Analyzer<'_, '_> {
             ScopeKind::Block,
             Default::default(),
             |child: &mut Analyzer| {
-                match &mut s.param {
+                match &s.param {
                     Some(pat) => {
                         pat.validate_with(child)?;
                     }
                     None => {}
                 }
 
-                s.body.visit_mut_with(child);
+                s.body.visit_with(child);
 
                 Ok(())
             },

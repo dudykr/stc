@@ -4,7 +4,7 @@ use crate::errors::Errors;
 use crate::util::type_ext::TypeVecExt;
 use crate::util::RemoveTypes;
 use crate::{
-    analyzer::{convert::default_any_pat, pat::PatMode, Ctx, ScopeKind},
+    analyzer::{pat::PatMode, Ctx, ScopeKind},
     debug::print_backtrace,
     errors::Error,
     name::Name,
@@ -21,7 +21,7 @@ use crate::{
     ValidationResult,
 };
 use rnode::NodeId;
-use rnode::VisitMutWith;
+use rnode::VisitWith;
 use stc_ts_ast_rnode::RArrayLit;
 use stc_ts_ast_rnode::RArrowExpr;
 use stc_ts_ast_rnode::RAssignExpr;
@@ -103,7 +103,7 @@ impl Default for TypeOfMode {
 impl Analyzer<'_, '_> {
     fn validate(
         &mut self,
-        e: &mut RExpr,
+        e: &RExpr,
         mode: TypeOfMode,
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
@@ -161,16 +161,16 @@ impl Analyzer<'_, '_> {
                 Ok(ty)
             }
 
-            RExpr::Array(RArrayLit { ref mut elems, .. }) => {
+            RExpr::Array(RArrayLit { ref elems, .. }) => {
                 let mut can_be_tuple = true;
                 let mut elements = Vec::with_capacity(elems.len());
 
-                for elem in elems.iter_mut() {
+                for elem in elems.iter() {
                     let span = elem.span();
                     let ty = match elem {
                         Some(RExprOrSpread {
                             spread: None,
-                            ref mut expr,
+                            ref expr,
                         }) => {
                             let ty = expr.validate_with_default(self)?;
                             ty
@@ -296,7 +296,7 @@ impl Analyzer<'_, '_> {
                 }));
             }
 
-            RExpr::Paren(RParenExpr { ref mut expr, .. }) => {
+            RExpr::Paren(RParenExpr { ref expr, .. }) => {
                 expr.validate_with_args(self, (mode, type_args, type_ann))
             }
 
@@ -321,7 +321,7 @@ impl Analyzer<'_, '_> {
                 }));
             }
 
-            RExpr::TsNonNull(RTsNonNullExpr { ref mut expr, .. }) => Ok(box expr
+            RExpr::TsNonNull(RTsNonNullExpr { ref expr, .. }) => Ok(box expr
                 .validate_with_args(self, (mode, type_args, type_ann))?
                 .remove_falsy()),
 
@@ -331,7 +331,7 @@ impl Analyzer<'_, '_> {
 
             // https://github.com/Microsoft/TypeScript/issues/26959
             RExpr::Yield(..) => {
-                e.visit_mut_children_with(self);
+                e.visit_children_with(self);
                 return Ok(Type::any(span));
             }
 
@@ -339,22 +339,20 @@ impl Analyzer<'_, '_> {
 
             RExpr::Class(RClassExpr {
                 ref ident,
-                ref mut class,
+                ref class,
                 ..
             }) => {
                 self.scope.this_class_name = ident.as_ref().map(|i| i.into());
                 return Ok(box class.validate_with(self)?.into());
             }
 
-            RExpr::Arrow(ref mut e) => return Ok(box e.validate_with(self)?.into()),
+            RExpr::Arrow(ref e) => return Ok(box e.validate_with(self)?.into()),
 
-            RExpr::Fn(RFnExpr {
-                ref mut function, ..
-            }) => {
+            RExpr::Fn(RFnExpr { ref function, .. }) => {
                 return Ok(box function.validate_with(self)?.into());
             }
 
-            RExpr::Member(ref mut expr) => {
+            RExpr::Member(ref expr) => {
                 // Foo.a
                 if let Ok(name) = Name::try_from(&*expr) {
                     self.cur_facts
@@ -393,7 +391,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &mut RExprOrSuper) -> ValidationResult {
+    fn validate(&mut self, e: &RExprOrSuper) -> ValidationResult {
         match e {
             RExprOrSuper::Expr(e) => e.validate_with_default(self),
             RExprOrSuper::Super(s) => Ok(Type::any(s.span)),
@@ -405,7 +403,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(
         &mut self,
-        e: &mut RParenExpr,
+        e: &RParenExpr,
         mode: TypeOfMode,
         type_ann: Option<&Type>,
     ) -> ValidationResult {
@@ -417,7 +415,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(
         &mut self,
-        e: &mut RAssignExpr,
+        e: &RAssignExpr,
         mode: TypeOfMode,
         type_ann: Option<&Type>,
     ) -> ValidationResult {
@@ -463,7 +461,7 @@ impl Analyzer<'_, '_> {
                 Err(()) => Type::any(span),
             };
 
-            match &mut e.left {
+            match &e.left {
                 RPatOrExpr::Pat(box RPat::Ident(i)) => {
                     // TODO: Implemennt this
                     let rhs_is_always_true = true;
@@ -473,12 +471,12 @@ impl Analyzer<'_, '_> {
                         analyzer.mark_var_as_truthy(Id::from(&*i))?;
                     }
                 }
-                _ => e.left.visit_mut_with(analyzer),
+                _ => e.left.visit_with(analyzer),
             }
 
             if e.op == op!("=") {
                 let rhs_ty = analyzer.expand_fully(span, rhs_ty.clone(), true)?;
-                analyzer.try_assign(span, &mut e.left, &rhs_ty);
+                analyzer.try_assign(span, &e.left, &rhs_ty);
             }
 
             if let Some(span) = any_span {
@@ -492,7 +490,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &mut RUpdateExpr) -> ValidationResult {
+    fn validate(&mut self, e: &RUpdateExpr) -> ValidationResult {
         let span = e.span;
 
         let ty = e
@@ -533,14 +531,12 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(
         &mut self,
-        e: &mut RSeqExpr,
+        e: &RSeqExpr,
         mode: TypeOfMode,
         type_ann: Option<&Type>,
     ) -> ValidationResult {
         let RSeqExpr {
-            span,
-            ref mut exprs,
-            ..
+            span, ref exprs, ..
         } = *e;
 
         assert!(exprs.len() >= 1);
@@ -549,7 +545,7 @@ impl Analyzer<'_, '_> {
         let len = exprs.len();
 
         let mut is_any = false;
-        for (i, e) in exprs.iter_mut().enumerate() {
+        for (i, e) in exprs.iter().enumerate() {
             let is_last = i == len - 1;
 
             if !is_last {
@@ -601,7 +597,7 @@ impl Analyzer<'_, '_> {
         }
 
         return exprs
-            .last_mut()
+            .last()
             .unwrap()
             .validate_with_args(self, (mode, None, type_ann));
     }
@@ -612,7 +608,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         obj: Box<Type>,
-        prop: &mut RExpr,
+        prop: &RExpr,
         computed: bool,
         type_mode: TypeOfMode,
     ) -> ValidationResult {
@@ -621,7 +617,7 @@ impl Analyzer<'_, '_> {
             a: &mut Analyzer,
             span: Span,
             obj: &Type,
-            prop: &mut RExpr,
+            prop: &RExpr,
             computed: bool,
             type_mode: TypeOfMode,
             members: &[TypeElement],
@@ -788,6 +784,8 @@ impl Analyzer<'_, '_> {
 
         if !self.is_builtin {
             debug_assert!(!span.is_dummy());
+
+            slog::debug!(&self.logger, "access_property");
         }
 
         // Recursive method call
@@ -1546,19 +1544,14 @@ impl Analyzer<'_, '_> {
                     return Ok(elems[v as usize].ty.clone());
                 }
                 _ => {
-                    if elems.is_empty() {
-                        return Ok(Type::any(span));
-                    }
-
-                    //                    if types.len() == 1 {
-                    //                        return Ok(Cow::Borrowed(&types[0]));
-                    //                    }
-
-                    // Drop labels
-                    return Ok(box Type::Union(Union {
+                    let mut types = elems.iter().map(|e| e.ty.clone()).collect::<Vec<_>>();
+                    types.dedup_type();
+                    let obj = box Type::Array(Array {
                         span,
-                        types: elems.iter().map(|element| &element.ty).cloned().collect(),
-                    }));
+                        elem_type: Type::union(types),
+                    });
+
+                    return self.access_property(span, obj, prop, computed, type_mode);
                 }
             },
 
@@ -2082,20 +2075,20 @@ impl Analyzer<'_, '_> {
 
     fn type_of_member_expr(
         &mut self,
-        expr: &mut RMemberExpr,
+        expr: &RMemberExpr,
         type_mode: TypeOfMode,
     ) -> ValidationResult {
         let RMemberExpr {
-            ref mut obj,
+            ref obj,
             computed,
-            ref mut prop,
+            ref prop,
             span,
             ..
         } = *expr;
 
         let mut errors = vec![];
         let obj_ty = match *obj {
-            RExprOrSuper::Expr(ref mut obj) => {
+            RExprOrSuper::Expr(ref obj) => {
                 let obj_ty = match obj.validate_with_default(self) {
                     Ok(ty) => ty,
                     Err(err) => {
@@ -2175,7 +2168,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, f: &mut RArrowExpr) -> ValidationResult<ty::Function> {
+    fn validate(&mut self, f: &RArrowExpr) -> ValidationResult<ty::Function> {
         self.record(f);
 
         self.with_child(
@@ -2191,8 +2184,8 @@ impl Analyzer<'_, '_> {
                         ..child.ctx
                     };
 
-                    for p in &mut f.params {
-                        default_any_pat(child.marks().implicit_type_mark, p);
+                    for p in &f.params {
+                        child.default_any_pat(p);
                     }
 
                     f.params.validate_with(&mut *child.with_ctx(ctx))?
@@ -2223,15 +2216,15 @@ impl Analyzer<'_, '_> {
 
                 let inferred_return_type = {
                     match f.body {
-                        RBlockStmtOrExpr::Expr(ref mut e) => Some({
+                        RBlockStmtOrExpr::Expr(ref e) => Some({
                             let ty = e.validate_with_default(child)?;
                             ty.generalize_lit()
                         }),
-                        RBlockStmtOrExpr::BlockStmt(ref mut s) => child.visit_stmts_for_return(
+                        RBlockStmtOrExpr::BlockStmt(ref s) => child.visit_stmts_for_return(
                             f.span,
                             f.is_async,
                             f.is_generator,
-                            &mut s.stmts,
+                            &s.stmts,
                         )?,
                     }
                 };
@@ -2276,7 +2269,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut RObjectLit) -> ValidationResult {
+    fn validate(&mut self, node: &RObjectLit) -> ValidationResult {
         self.with_child(
             ScopeKind::ObjectLit,
             Default::default(),
@@ -2285,9 +2278,9 @@ impl Analyzer<'_, '_> {
 
                 // TODO: Change order
 
-                for prop in node.props.iter_mut() {
+                for prop in node.props.iter() {
                     match *prop {
-                        RPropOrSpread::Prop(ref mut prop) => {
+                        RPropOrSpread::Prop(ref prop) => {
                             let p: TypeElement = prop.validate_with(a)?;
                             if let Some(key) = p.key() {
                                 if a.scope.this_object_members.iter_mut().any(|element| {
@@ -2307,7 +2300,7 @@ impl Analyzer<'_, '_> {
 
                             a.scope.this_object_members.push(p);
                         }
-                        RPropOrSpread::Spread(RSpreadElement { ref mut expr, .. }) => {
+                        RPropOrSpread::Spread(RSpreadElement { ref expr, .. }) => {
                             match *expr.validate_with_default(a)? {
                                 Type::TypeLit(TypeLit {
                                     members: spread_members,

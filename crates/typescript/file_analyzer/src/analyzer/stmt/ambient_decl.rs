@@ -11,7 +11,7 @@ use stc_ts_ast_rnode::RTsModuleDecl;
 /// Handles
 ///
 /// ```ts
-/// 
+/// // This is invalid
 /// foo();
 /// bar();
 /// bar() {}

@@ -58,15 +58,12 @@ impl AddAssign for ReturnValues {
 
 impl Analyzer<'_, '_> {
     /// This method returns `Generator` if `yield` is found.
-    ///
-    /// TODO: Handle yield
-    /// TODO: prevent visiting children (to improve performance greatly)
     pub(in crate::analyzer) fn visit_stmts_for_return(
         &mut self,
         span: Span,
         is_async: bool,
         is_generator: bool,
-        stmts: &mut Vec<RStmt>,
+        stmts: &Vec<RStmt>,
     ) -> Result<Option<Box<Type>>, Error> {
         slog::debug!(self.logger, "visit_stmts_for_return()");
 
@@ -78,7 +75,7 @@ impl Analyzer<'_, '_> {
                 ..self.ctx
             };
             self.with_ctx(ctx).with(|analyzer: &mut Analyzer| {
-                analyzer.validate_stmts_and_collect(stmts);
+                analyzer.validate_stmts_and_collect(&stmts.iter().collect::<Vec<_>>());
 
                 take(&mut analyzer.scope.return_values)
             })
@@ -126,7 +123,7 @@ impl Analyzer<'_, '_> {
         let mut actual = Vec::with_capacity(values.return_types.len());
         for mut ty in values.return_types {
             ty = ty.fold_with(&mut KeyInliner { analyzer: self });
-            // Always generalize for nowx
+            // Always generalize for now
             // TODO: Fix this
             if values.should_generalize || is_async || is_generator || true {
                 ty = ty.generalize_lit();
@@ -211,7 +208,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut RReturnStmt) {
+    fn validate(&mut self, node: &RReturnStmt) {
         let ty = if let Some(res) = node.arg.validate_with_default(self) {
             res?
         } else {
@@ -229,7 +226,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &mut RYieldExpr) -> ValidationResult {
+    fn validate(&mut self, e: &RYieldExpr) -> ValidationResult {
         if let Some(res) = e.arg.validate_with_default(self) {
             self.scope.return_values.yield_types.push(res?);
         } else {

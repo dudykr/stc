@@ -61,6 +61,7 @@ fn vite_js() {
 }
 
 #[test]
+#[ignore = "Not done yet"]
 fn redux() {
     let dir = PathBuf::new()
         .join("..")

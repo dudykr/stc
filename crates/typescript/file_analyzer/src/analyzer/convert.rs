@@ -8,7 +8,7 @@ use crate::validator;
 use crate::validator::ValidateWith;
 use crate::ValidationResult;
 use rnode::NodeId;
-use rnode::VisitMutWith;
+use rnode::VisitWith;
 use stc_ts_ast_rnode::RArrayPat;
 use stc_ts_ast_rnode::RAssignPatProp;
 use stc_ts_ast_rnode::RComputedPropName;
@@ -34,7 +34,6 @@ use stc_ts_ast_rnode::RTsInferType;
 use stc_ts_ast_rnode::RTsInterfaceBody;
 use stc_ts_ast_rnode::RTsInterfaceDecl;
 use stc_ts_ast_rnode::RTsIntersectionType;
-use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsMappedType;
 use stc_ts_ast_rnode::RTsMethodSignature;
 use stc_ts_ast_rnode::RTsOptionalType;
@@ -91,18 +90,17 @@ use stc_ts_types::TypeParam;
 use stc_ts_types::TypeParamDecl;
 use stc_ts_types::TypeParamInstantiation;
 use stc_ts_types::Union;
+use stc_ts_utils::OptionExt;
 use stc_ts_utils::PatExt;
 use swc_atoms::js_word;
-use swc_common::Mark;
 use swc_common::Spanned;
 use swc_common::DUMMY_SP;
-use swc_ecma_ast::*;
 
 /// We analyze dependencies between type parameters, and fold parameter in
 /// topological order.
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, decl: &mut RTsTypeParamDecl) -> ValidationResult<TypeParamDecl> {
+    fn validate(&mut self, decl: &RTsTypeParamDecl) -> ValidationResult<TypeParamDecl> {
         self.record(decl);
 
         if self.is_builtin {
@@ -136,7 +134,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, p: &mut RTsTypeParam) -> ValidationResult<TypeParam> {
+    fn validate(&mut self, p: &RTsTypeParam) -> ValidationResult<TypeParam> {
         self.record(p);
 
         let param = TypeParam {
@@ -154,7 +152,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     #[inline]
-    fn validate(&mut self, ann: &mut RTsTypeAnn) -> ValidationResult {
+    fn validate(&mut self, ann: &RTsTypeAnn) -> ValidationResult {
         self.record(ann);
 
         ann.type_ann.validate_with(self)
@@ -163,7 +161,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, d: &mut RTsTypeAliasDecl) -> ValidationResult<Alias> {
+    fn validate(&mut self, d: &RTsTypeAliasDecl) -> ValidationResult<Alias> {
         self.record(d);
         let mut span = d.span;
 
@@ -199,7 +197,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, d: &mut RTsInterfaceDecl) -> ValidationResult<Interface> {
+    fn validate(&mut self, d: &RTsInterfaceDecl) -> ValidationResult<Interface> {
         let ty: Interface = self.with_child(
             ScopeKind::Flow,
             Default::default(),
@@ -217,7 +215,7 @@ impl Analyzer<'_, '_> {
                     .register_type(d.id.clone().into(), box ty.clone().into())
                     .report(&mut child.storage);
 
-                child.resolve_parent_interfaces(&mut d.extends);
+                child.resolve_parent_interfaces(&d.extends);
 
                 Ok(ty)
             },
@@ -232,7 +230,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut RTsInterfaceBody) -> ValidationResult<Vec<TypeElement>> {
+    fn validate(&mut self, node: &RTsInterfaceBody) -> ValidationResult<Vec<TypeElement>> {
         let ctx = Ctx {
             computed_prop_mode: ComputedPropMode::Interface,
             ..self.ctx
@@ -244,7 +242,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, lit: &mut RTsTypeLit) -> ValidationResult<TypeLit> {
+    fn validate(&mut self, lit: &RTsTypeLit) -> ValidationResult<TypeLit> {
         Ok(TypeLit {
             span: lit.span,
             members: lit.members.validate_with(self)?,
@@ -254,7 +252,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &mut RTsTypeElement) -> ValidationResult<TypeElement> {
+    fn validate(&mut self, e: &RTsTypeElement) -> ValidationResult<TypeElement> {
         Ok(match e {
             RTsTypeElement::TsCallSignatureDecl(d) => TypeElement::Call(d.validate_with(self)?),
             RTsTypeElement::TsConstructSignatureDecl(d) => {
@@ -271,7 +269,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(
         &mut self,
-        d: &mut RTsConstructSignatureDecl,
+        d: &RTsConstructSignatureDecl,
     ) -> ValidationResult<ConstructorSignature> {
         Ok(ConstructorSignature {
             span: d.span,
@@ -284,7 +282,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, d: &mut RTsCallSignatureDecl) -> ValidationResult<CallSignature> {
+    fn validate(&mut self, d: &RTsCallSignatureDecl) -> ValidationResult<CallSignature> {
         Ok(CallSignature {
             span: d.span,
             params: d.params.validate_with(self)?,
@@ -296,10 +294,10 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, d: &mut RTsMethodSignature) -> ValidationResult<MethodSignature> {
+    fn validate(&mut self, d: &RTsMethodSignature) -> ValidationResult<MethodSignature> {
         self.with_child(ScopeKind::Fn, Default::default(), |child: &mut Analyzer| {
             if d.computed {
-                child.validate_computed_prop_key(d.span(), &mut d.key);
+                child.validate_computed_prop_key(d.span(), &d.key);
             }
 
             Ok(MethodSignature {
@@ -318,7 +316,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, d: &mut RTsIndexSignature) -> ValidationResult<IndexSignature> {
+    fn validate(&mut self, d: &RTsIndexSignature) -> ValidationResult<IndexSignature> {
         Ok(IndexSignature {
             span: d.span,
             params: d.params.validate_with(self)?,
@@ -330,14 +328,14 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, d: &mut RTsPropertySignature) -> ValidationResult<PropertySignature> {
+    fn validate(&mut self, d: &RTsPropertySignature) -> ValidationResult<PropertySignature> {
         if !self.is_builtin && d.computed {
             RComputedPropName {
                 node_id: NodeId::invalid(),
                 span: d.key.span(),
                 expr: d.key.clone(),
             }
-            .visit_mut_with(self);
+            .visit_with(self);
         }
 
         Ok(PropertySignature {
@@ -353,17 +351,11 @@ impl Analyzer<'_, '_> {
                     Some(v) => match v {
                         Ok(v) => Some(v),
                         Err(e) => {
-                            d.type_ann = Some(Type::any(d.span).into());
-
                             self.storage.report(e);
                             Some(Type::any(d.span))
                         }
                     },
-                    None => {
-                        d.type_ann = Some(Type::any(d.span).into());
-
-                        Some(Type::any(d.span))
-                    }
+                    None => Some(Type::any(d.span)),
                 }
             },
             type_params: try_opt!(d.type_params.validate_with(self)),
@@ -373,7 +365,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &mut RTsExprWithTypeArgs) -> ValidationResult<TsExpr> {
+    fn validate(&mut self, e: &RTsExprWithTypeArgs) -> ValidationResult<TsExpr> {
         Ok(TsExpr {
             span: e.span,
             expr: e.expr.clone(),
@@ -386,7 +378,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(
         &mut self,
-        i: &mut RTsTypeParamInstantiation,
+        i: &RTsTypeParamInstantiation,
     ) -> ValidationResult<TypeParamInstantiation> {
         let params = i.params.validate_with(self)?;
 
@@ -399,7 +391,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &mut RTsTupleType) -> ValidationResult<Tuple> {
+    fn validate(&mut self, t: &RTsTupleType) -> ValidationResult<Tuple> {
         Ok(Tuple {
             span: t.span,
             elems: t.elem_types.validate_with(self)?,
@@ -409,7 +401,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut RTsTupleElement) -> ValidationResult<TupleElement> {
+    fn validate(&mut self, node: &RTsTupleElement) -> ValidationResult<TupleElement> {
         Ok(TupleElement {
             span: node.span,
             label: node.label.clone(),
@@ -420,7 +412,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &mut RTsConditionalType) -> ValidationResult<Conditional> {
+    fn validate(&mut self, t: &RTsConditionalType) -> ValidationResult<Conditional> {
         Ok(Conditional {
             span: t.span,
             check_type: t.check_type.validate_with(self)?,
@@ -433,7 +425,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, ty: &mut RTsMappedType) -> ValidationResult<Mapped> {
+    fn validate(&mut self, ty: &RTsMappedType) -> ValidationResult<Mapped> {
         Ok(Mapped {
             span: ty.span,
             readonly: ty.readonly,
@@ -447,7 +439,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, ty: &mut RTsTypeOperator) -> ValidationResult<Operator> {
+    fn validate(&mut self, ty: &RTsTypeOperator) -> ValidationResult<Operator> {
         Ok(Operator {
             span: ty.span,
             op: ty.op,
@@ -458,7 +450,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut RTsArrayType) -> ValidationResult<Array> {
+    fn validate(&mut self, node: &RTsArrayType) -> ValidationResult<Array> {
         Ok(Array {
             span: node.span,
             elem_type: node.elem_type.validate_with(self)?,
@@ -468,7 +460,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, u: &mut RTsUnionType) -> ValidationResult<Union> {
+    fn validate(&mut self, u: &RTsUnionType) -> ValidationResult<Union> {
         Ok(Union {
             span: u.span,
             types: u.types.validate_with(self)?,
@@ -478,7 +470,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, u: &mut RTsIntersectionType) -> ValidationResult<Intersection> {
+    fn validate(&mut self, u: &RTsIntersectionType) -> ValidationResult<Intersection> {
         Ok(Intersection {
             span: u.span,
             types: u.types.validate_with(self)?,
@@ -488,11 +480,11 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &mut RTsFnType) -> ValidationResult<stc_ts_types::Function> {
+    fn validate(&mut self, t: &RTsFnType) -> ValidationResult<stc_ts_types::Function> {
         let type_params = try_opt!(t.type_params.validate_with(self));
 
-        for param in &mut t.params {
-            default_any_param(self.marks().implicit_type_mark, param);
+        for param in &t.params {
+            self.default_any_param(&param);
         }
 
         let mut params: Vec<_> = t.params.validate_with(self)?;
@@ -510,14 +502,11 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(
-        &mut self,
-        t: &mut RTsConstructorType,
-    ) -> ValidationResult<stc_ts_types::Constructor> {
+    fn validate(&mut self, t: &RTsConstructorType) -> ValidationResult<stc_ts_types::Constructor> {
         let type_params = try_opt!(t.type_params.validate_with(self));
 
-        for param in &mut t.params {
-            default_any_param(self.marks().implicit_type_mark, param);
+        for param in &t.params {
+            self.default_any_param(param);
         }
 
         Ok(stc_ts_types::Constructor {
@@ -531,14 +520,14 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &mut RTsParenthesizedType) -> ValidationResult {
+    fn validate(&mut self, t: &RTsParenthesizedType) -> ValidationResult {
         t.type_ann.validate_with(self)
     }
 }
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &mut RTsTypeRef) -> ValidationResult {
+    fn validate(&mut self, t: &RTsTypeRef) -> ValidationResult {
         self.record(t);
 
         let type_args = try_opt!(t.type_params.validate_with(self));
@@ -595,7 +584,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &mut RTsInferType) -> ValidationResult<InferType> {
+    fn validate(&mut self, t: &RTsInferType) -> ValidationResult<InferType> {
         self.record(t);
 
         Ok(InferType {
@@ -607,7 +596,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &mut RTsImportType) -> ValidationResult<ImportType> {
+    fn validate(&mut self, t: &RTsImportType) -> ValidationResult<ImportType> {
         self.record(t);
 
         Ok(ImportType {
@@ -621,7 +610,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &mut RTsTypeQueryExpr) -> ValidationResult<QueryExpr> {
+    fn validate(&mut self, t: &RTsTypeQueryExpr) -> ValidationResult<QueryExpr> {
         self.record(t);
 
         let span = t.span();
@@ -635,7 +624,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &mut RTsRestType) -> ValidationResult<RestType> {
+    fn validate(&mut self, t: &RTsRestType) -> ValidationResult<RestType> {
         self.record(t);
 
         Ok(RestType {
@@ -647,7 +636,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &mut RTsOptionalType) -> ValidationResult<OptionalType> {
+    fn validate(&mut self, t: &RTsOptionalType) -> ValidationResult<OptionalType> {
         self.record(t);
 
         Ok(OptionalType {
@@ -659,7 +648,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &mut RTsTypeQuery) -> ValidationResult<QueryType> {
+    fn validate(&mut self, t: &RTsTypeQuery) -> ValidationResult<QueryType> {
         self.record(t);
 
         Ok(QueryType {
@@ -671,7 +660,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &mut RTsTypePredicate) -> ValidationResult<Predicate> {
+    fn validate(&mut self, t: &RTsTypePredicate) -> ValidationResult<Predicate> {
         self.record(t);
         let mut ty = try_opt!(t.type_ann.validate_with(self));
         match &mut ty {
@@ -692,7 +681,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &mut RTsIndexedAccessType) -> ValidationResult<IndexedAccessType> {
+    fn validate(&mut self, t: &RTsIndexedAccessType) -> ValidationResult<IndexedAccessType> {
         self.record(t);
 
         Ok(IndexedAccessType {
@@ -706,7 +695,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, ty: &mut RTsType) -> ValidationResult {
+    fn validate(&mut self, ty: &RTsType) -> ValidationResult {
         self.record(ty);
 
         let ty = match ty {
@@ -749,149 +738,172 @@ impl Analyzer<'_, '_> {
     }
 }
 
-pub(crate) fn default_any_pat(implicit_type_mark: Mark, p: &mut RPat) {
-    match p {
-        RPat::Ident(i) => default_any_ident(implicit_type_mark, i),
-        RPat::Array(arr) => default_any_array_pat(implicit_type_mark, arr),
-        RPat::Object(obj) => default_any_object(implicit_type_mark, obj),
-        _ => {}
-    }
-}
-
-pub(crate) fn default_any_ident(implicit_type_mark: Mark, i: &mut RIdent) {
-    if i.type_ann.is_some() {
-        return;
+impl Analyzer<'_, '_> {
+    /// Handle implicit defaults.
+    pub(crate) fn default_any_pat(&mut self, p: &RPat) {
+        match p {
+            RPat::Ident(i) => self.default_any_ident(i),
+            RPat::Array(arr) => self.default_any_array_pat(arr),
+            RPat::Object(obj) => self.default_any_object(obj),
+            _ => {}
+        }
     }
 
-    i.type_ann = Some(RTsTypeAnn {
-        node_id: NodeId::invalid(),
-        span: DUMMY_SP.apply_mark(implicit_type_mark),
-        type_ann: box RTsType::TsKeywordType(RTsKeywordType {
-            span: DUMMY_SP.apply_mark(implicit_type_mark),
-            kind: TsKeywordTypeKind::TsAnyKeyword,
-        }),
-    });
-}
+    /// Handle implicit defaults.
+    pub(crate) fn default_any_ident(&mut self, i: &RIdent) {
+        if i.type_ann.is_some() {
+            return;
+        }
 
-pub(crate) fn default_any_array_pat(implicit_type_mark: Mark, arr: &mut RArrayPat) {
-    if arr.type_ann.is_some() {
-        return;
+        let implicit_type_mark = self.marks().implicit_type_mark;
+
+        if let Some(m) = &mut self.mutations {
+            m.for_pats
+                .entry(i.node_id)
+                .or_default()
+                .ty
+                .fill_with(|| Type::any(DUMMY_SP.apply_mark(implicit_type_mark)));
+        }
     }
-    let cnt = arr.elems.len();
 
-    arr.type_ann = Some(RTsTypeAnn {
-        node_id: NodeId::invalid(),
-        span: arr.span,
-        type_ann: box RTsType::TsTupleType(RTsTupleType {
-            node_id: NodeId::invalid(),
+    /// Handle implicit defaults.
+    pub(crate) fn default_any_array_pat(&mut self, arr: &RArrayPat) {
+        if arr.type_ann.is_some() {
+            return;
+        }
+        let cnt = arr.elems.len();
+
+        let ty = box Type::Tuple(Tuple {
             span: DUMMY_SP,
-            elem_types: arr
+            elems: arr
                 .elems
-                .iter_mut()
+                .iter()
                 .map(|elem| {
                     let span = elem.span();
                     // any
                     let ty = match elem {
-                        Some(RPat::Array(ref mut arr)) => {
-                            default_any_array_pat(implicit_type_mark, arr);
-                            arr.type_ann.take().unwrap().type_ann
+                        Some(RPat::Array(ref arr)) => {
+                            self.default_any_array_pat(arr);
+                            if let Some(m) = &mut self.mutations {
+                                m.for_pats
+                                    .entry(arr.node_id)
+                                    .or_default()
+                                    .ty
+                                    .take()
+                                    .unwrap()
+                            } else {
+                                Type::any(DUMMY_SP)
+                            }
                         }
-                        Some(RPat::Object(ref mut obj)) => {
-                            default_any_object(implicit_type_mark, obj);
-                            obj.type_ann.take().unwrap().type_ann
+                        Some(RPat::Object(ref obj)) => {
+                            self.default_any_object(obj);
+
+                            if let Some(m) = &mut self.mutations {
+                                m.for_pats
+                                    .entry(obj.node_id)
+                                    .or_default()
+                                    .ty
+                                    .take()
+                                    .unwrap()
+                            } else {
+                                Type::any(DUMMY_SP)
+                            }
                         }
 
-                        _ => box RTsType::TsKeywordType(RTsKeywordType {
-                            span: DUMMY_SP,
-                            kind: TsKeywordTypeKind::TsAnyKeyword,
-                        }),
+                        _ => Type::any(DUMMY_SP),
                     };
 
-                    RTsTupleElement {
-                        node_id: NodeId::invalid(),
+                    TupleElement {
                         span,
                         // TODO?
                         label: None,
-                        ty: *ty,
+                        ty,
                     }
                 })
                 .collect(),
-        }),
-    })
-}
-
-pub(crate) fn default_any_object(implicit_type_mark: Mark, obj: &mut RObjectPat) {
-    if obj.type_ann.is_some() {
-        return;
-    }
-
-    let mut members = Vec::with_capacity(obj.props.len());
-
-    for props in &mut obj.props {
-        match props {
-            RObjectPatProp::KeyValue(p) => {
-                match *p.value {
-                    RPat::Array(_) | RPat::Object(_) => {
-                        default_any_pat(implicit_type_mark, &mut *p.value);
-                    }
-                    _ => {}
-                }
-
-                members.push(RTsTypeElement::TsPropertySignature(RTsPropertySignature {
-                    node_id: NodeId::invalid(),
-                    span: DUMMY_SP,
-                    readonly: false,
-                    key: box rprop_name_to_expr(p.key.clone()),
-                    computed: false,
-                    optional: false,
-                    init: None,
-                    params: vec![],
-                    type_ann: {
-                        let type_ann = p.value.get_mut_ty().take().cloned().map(|ty| RTsTypeAnn {
-                            node_id: NodeId::invalid(),
-                            span: DUMMY_SP,
-                            type_ann: box ty,
-                        });
-                        p.value.set_ty(None);
-                        type_ann
-                    },
-                    type_params: None,
-                }))
-            }
-            RObjectPatProp::Assign(RAssignPatProp { key, .. }) => {
-                members.push(RTsTypeElement::TsPropertySignature(RTsPropertySignature {
-                    node_id: NodeId::invalid(),
-                    span: DUMMY_SP,
-                    readonly: false,
-                    key: box RExpr::Ident(key.clone()),
-                    computed: false,
-                    optional: false,
-                    init: None,
-                    params: vec![],
-                    type_ann: None,
-                    type_params: None,
-                }))
-            }
-            RObjectPatProp::Rest(..) => {}
+        });
+        if let Some(m) = &mut self.mutations {
+            m.for_pats
+                .entry(arr.node_id)
+                .or_default()
+                .ty
+                .fill_with(|| ty);
         }
     }
 
-    obj.type_ann = Some(RTsTypeAnn {
-        node_id: NodeId::invalid(),
-        span: DUMMY_SP.apply_mark(implicit_type_mark),
-        type_ann: box RTsType::TsTypeLit(RTsTypeLit {
-            node_id: NodeId::invalid(),
-            span: DUMMY_SP,
-            members,
-        }),
-    })
-}
+    /// Handle implicit defaults.
+    pub(crate) fn default_any_object(&mut self, obj: &RObjectPat) {
+        if obj.type_ann.is_some() {
+            return;
+        }
 
-pub(crate) fn default_any_param(implicit_type_mark: Mark, p: &mut RTsFnParam) {
-    match p {
-        RTsFnParam::Ident(i) => default_any_ident(implicit_type_mark, i),
-        RTsFnParam::Array(arr) => default_any_array_pat(implicit_type_mark, arr),
-        RTsFnParam::Rest(rest) => {}
-        RTsFnParam::Object(obj) => default_any_object(implicit_type_mark, obj),
+        let implicit_type_mark = self.marks().implicit_type_mark;
+
+        let mut members = Vec::with_capacity(obj.props.len());
+
+        for props in &obj.props {
+            match props {
+                RObjectPatProp::KeyValue(p) => {
+                    match *p.value {
+                        RPat::Array(_) | RPat::Object(_) => {
+                            self.default_any_pat(&*p.value);
+                        }
+                        _ => {}
+                    }
+                    let ty = if let Some(value_node_id) = p.value.node_id() {
+                        if let Some(m) = &mut self.mutations {
+                            m.for_pats.entry(value_node_id).or_default().ty.take()
+                        } else {
+                            None
+                        }
+                    } else {
+                        None
+                    };
+
+                    members.push(TypeElement::Property(PropertySignature {
+                        span: DUMMY_SP,
+                        readonly: false,
+                        key: box rprop_name_to_expr(p.key.clone()),
+                        computed: false,
+                        optional: false,
+                        params: vec![],
+                        type_ann: ty,
+                        type_params: None,
+                    }))
+                }
+                RObjectPatProp::Assign(RAssignPatProp { key, .. }) => {
+                    members.push(TypeElement::Property(PropertySignature {
+                        span: DUMMY_SP,
+                        readonly: false,
+                        key: box RExpr::Ident(key.clone()),
+                        computed: false,
+                        optional: false,
+                        params: vec![],
+                        type_ann: None,
+                        type_params: None,
+                    }))
+                }
+                RObjectPatProp::Rest(..) => {}
+            }
+        }
+
+        if let Some(m) = &mut self.mutations {
+            m.for_pats.entry(obj.node_id).or_default().ty.fill_with(|| {
+                box Type::TypeLit(TypeLit {
+                    span: DUMMY_SP.apply_mark(implicit_type_mark),
+                    members,
+                })
+            });
+        }
+    }
+
+    /// Handle implicit defaults.
+    pub(crate) fn default_any_param(&mut self, p: &RTsFnParam) {
+        match p {
+            RTsFnParam::Ident(i) => self.default_any_ident(i),
+            RTsFnParam::Array(arr) => self.default_any_array_pat(arr),
+            RTsFnParam::Rest(rest) => {}
+            RTsFnParam::Object(obj) => self.default_any_object(obj),
+        }
     }
 }

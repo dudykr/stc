@@ -7,12 +7,10 @@ use fxhash::{FxHashMap, FxHashSet};
 use petgraph::graphmap::DiGraphMap;
 use petgraph::EdgeDirection::Incoming;
 use rnode::Visit;
-use rnode::VisitMutWith;
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RArrowExpr;
 use stc_ts_ast_rnode::RClassDecl;
 use stc_ts_ast_rnode::RDecl;
-use stc_ts_ast_rnode::REmptyStmt;
 use stc_ts_ast_rnode::RExportDecl;
 use stc_ts_ast_rnode::RExportNamedSpecifier;
 use stc_ts_ast_rnode::RExpr;
@@ -32,8 +30,7 @@ use stc_ts_ast_rnode::RTsTypeAliasDecl;
 use stc_ts_ast_rnode::RVarDeclarator;
 use stc_ts_types::Id;
 use stc_ts_utils::find_ids_in_pat;
-use std::mem::replace;
-use swc_common::DUMMY_SP;
+use stc_ts_utils::HasNodeId;
 use swc_ecma_utils::DestructuringFinder;
 
 #[cfg(test)]
@@ -65,15 +62,15 @@ pub(super) enum TypeOrderItem {
 
 impl Analyzer<'_, '_> {
     /// Note: This method removes all items from `stmts`.
-    pub(super) fn validate_stmts_with_hoisting<T>(&mut self, stmts: &mut Vec<T>) -> Vec<Vec<T>>
+    pub(super) fn validate_stmts_with_hoisting<T>(&mut self, stmts: &Vec<&T>)
     where
         T: AsModuleDecl
             + ModuleItemOrStmt
             + VisitWith<RequirementCalculartor>
-            + VisitMutWith<Self>
-            + From<RStmt>,
+            + VisitWith<Self>
+            + From<RStmt>
+            + HasNodeId,
     {
-        let mut new: Vec<Vec<T>> = (0..stmts.len()).map(|_| vec![]).collect();
         let (order, skip) = self.reorder_stmts(&stmts);
         let mut type_decls =
             FxHashMap::<Id, Vec<usize>>::with_capacity_and_hasher(order.len(), Default::default());
@@ -81,7 +78,7 @@ impl Analyzer<'_, '_> {
         if self.scope.is_root() {
             // We should track type declarations.
             for &idx in &order {
-                let type_decl_id = type_decl_id(&stmts[idx]);
+                let type_decl_id = type_decl_id(&*stmts[idx]);
                 if let Some(id) = type_decl_id {
                     type_decls.entry(id).or_default().push(idx);
                 }
@@ -93,29 +90,35 @@ impl Analyzer<'_, '_> {
             self.ctx.module_id = module_id;
 
             if skip.contains(&idx) {
-                new[idx] = vec![replace(
-                    &mut stmts[idx],
-                    T::from(RStmt::Empty(REmptyStmt { span: DUMMY_SP })),
-                )];
             } else {
-                let type_decl_id = type_decl_id(&stmts[idx]);
+                let type_decl_id = type_decl_id(&*stmts[idx]);
 
-                stmts[idx].visit_mut_with(self);
+                let node_id = stmts[idx].node_id();
+                self.ctx.module_id = self.storage.module_id(idx);
+                stmts[idx].visit_with(self);
 
-                new[idx].extend(self.prepend_stmts.drain(..).map(T::from));
+                if self.scope.is_root() {
+                    let prepended = self.prepend_stmts.drain(..);
+                    let appended = self.append_stmts.drain(..);
 
-                new[idx].push(replace(
-                    &mut stmts[idx],
-                    T::from(RStmt::Empty(REmptyStmt { span: DUMMY_SP })),
-                ));
+                    if let Some(node_id) = node_id {
+                        if let Some(m) = &mut self.mutations {
+                            m.for_module_items
+                                .entry(node_id)
+                                .or_default()
+                                .prepend_stmts
+                                .extend(prepended);
 
-                new[idx].extend(self.append_stmts.drain(..).map(T::from));
+                            m.for_module_items
+                                .entry(node_id)
+                                .or_default()
+                                .append_stmts
+                                .extend(appended);
+                        }
+                    }
+                }
             }
         }
-
-        stmts.clear();
-
-        new
     }
 
     /// A special method is require code like
@@ -128,17 +131,16 @@ impl Analyzer<'_, '_> {
     /// const a = 5;
     /// const b = foo();
     /// ```
-    pub(super) fn validate_stmts_and_collect<T>(&mut self, stmts: &mut Vec<T>)
+    pub(super) fn validate_stmts_and_collect<T>(&mut self, stmts: &Vec<&T>)
     where
         T: AsModuleDecl
             + ModuleItemOrStmt
             + VisitWith<RequirementCalculartor>
-            + VisitMutWith<Self>
-            + From<RStmt>,
+            + VisitWith<Self>
+            + From<RStmt>
+            + HasNodeId,
     {
-        let new = self.validate_stmts_with_hoisting(stmts);
-        stmts.clear();
-        stmts.extend(new.into_iter().flatten())
+        self.validate_stmts_with_hoisting(stmts);
     }
 
     /// Returns (the order of evaluation, skipped index). This methods is used
@@ -179,7 +181,7 @@ impl Analyzer<'_, '_> {
     /// export type C = 5 | 10;
     /// export type B = A;
     /// ```
-    pub(super) fn reorder_stmts<T>(&mut self, stmts: &[T]) -> (Vec<usize>, FxHashSet<usize>)
+    pub(super) fn reorder_stmts<T>(&mut self, stmts: &[&T]) -> (Vec<usize>, FxHashSet<usize>)
     where
         T: AsModuleDecl + VisitWith<RequirementCalculartor>,
     {

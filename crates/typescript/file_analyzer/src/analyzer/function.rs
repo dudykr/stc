@@ -11,7 +11,6 @@ use crate::{
 };
 use rnode::Fold;
 use rnode::FoldWith;
-use rnode::NodeId;
 use stc_ts_ast_rnode::RFnDecl;
 use stc_ts_ast_rnode::RFnExpr;
 use stc_ts_ast_rnode::RFunction;
@@ -19,18 +18,16 @@ use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_ast_rnode::RTsType;
-use stc_ts_ast_rnode::RTsTypeAnn;
 use stc_ts_types::{Alias, Interface, Ref};
-use swc_common::{Span, Spanned, DUMMY_SP};
+use swc_common::{Span, Spanned};
 use swc_ecma_ast::*;
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, f: &mut RFunction) -> ValidationResult<ty::Function> {
+    fn validate(&mut self, f: &RFunction) -> ValidationResult<ty::Function> {
         self.record(f);
 
-        self.with_child(ScopeKind::Fn, Default::default(), |child| {
+        self.with_child(ScopeKind::Fn, Default::default(), |child: &mut Analyzer| {
             let mut errors = Errors::default();
 
             {
@@ -108,8 +105,8 @@ impl Analyzer<'_, '_> {
             let is_async = f.is_async;
             let is_generator = f.is_generator;
 
-            let inferred_return_type = try_opt!(f.body.as_mut().map(
-                |body| child.visit_stmts_for_return(span, is_async, is_generator, &mut body.stmts)
+            let inferred_return_type = try_opt!(f.body.as_ref().map(
+                |body| child.visit_stmts_for_return(span, is_async, is_generator, &body.stmts)
             ));
 
             let inferred_return_type = match inferred_return_type {
@@ -154,14 +151,15 @@ impl Analyzer<'_, '_> {
 
                     // No return statement -> void
                     if f.return_type.is_none() {
-                        f.return_type = Some(RTsTypeAnn {
-                            node_id: NodeId::invalid(),
-                            span: DUMMY_SP,
-                            type_ann: box RTsType::TsKeywordType(RTsKeywordType {
-                                span,
-                                kind: TsKeywordTypeKind::TsVoidKeyword,
-                            }),
-                        });
+                        if let Some(m) = &mut child.mutations {
+                            if m.for_fns.entry(f.node_id).or_default().ret_ty.is_none() {
+                                m.for_fns.entry(f.node_id).or_default().ret_ty =
+                                    Some(box Type::Keyword(RTsKeywordType {
+                                        span,
+                                        kind: TsKeywordTypeKind::TsVoidKeyword,
+                                    }));
+                            }
+                        }
                     }
                     box Type::Keyword(RTsKeywordType {
                         span,
@@ -172,7 +170,12 @@ impl Analyzer<'_, '_> {
             };
 
             if f.return_type.is_none() {
-                f.return_type = Some(inferred_return_type.clone().into())
+                if let Some(m) = &mut child.mutations {
+                    if m.for_fns.entry(f.node_id).or_default().ret_ty.is_none() {
+                        m.for_fns.entry(f.node_id).or_default().ret_ty =
+                            Some(inferred_return_type.clone())
+                    }
+                }
             }
 
             child.storage.report_all(errors);
@@ -245,7 +248,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO: Handle recursive funciton
-    fn visit_fn(&mut self, name: Option<&RIdent>, f: &mut RFunction) -> Box<Type> {
+    fn visit_fn(&mut self, name: Option<&RIdent>, f: &RFunction) -> Box<Type> {
         let fn_ty: Result<_, _> = try {
             let no_implicit_any_span = name.as_ref().map(|name| name.span);
 
@@ -338,8 +341,8 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     /// NOTE: This method **should not call f.fold_children_with(self)**
-    fn validate(&mut self, f: &mut RFnDecl) {
-        let fn_ty = self.visit_fn(Some(&f.ident), &mut f.function).cheap();
+    fn validate(&mut self, f: &RFnDecl) {
+        let fn_ty = self.visit_fn(Some(&f.ident), &f.function).cheap();
 
         match self.override_var(VarDeclKind::Var, f.ident.clone().into(), fn_ty) {
             Ok(()) => {}
@@ -355,8 +358,8 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     /// NOTE: This method **should not call f.fold_children_with(self)**
-    fn validate(&mut self, f: &mut RFnExpr) {
-        self.visit_fn(f.ident.as_ref(), &mut f.function);
+    fn validate(&mut self, f: &RFnExpr) {
+        self.visit_fn(f.ident.as_ref(), &f.function);
 
         Ok(())
     }

@@ -25,19 +25,16 @@ use swc_ecma_ast::*;
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &mut RUnaryExpr) -> ValidationResult {
+    fn validate(&mut self, e: &RUnaryExpr) -> ValidationResult {
         let RUnaryExpr {
-            span,
-            op,
-            ref mut arg,
-            ..
+            span, op, ref arg, ..
         } = *e;
 
         if let op!("delete") = op {
             // `delete foo` returns bool
 
             match **arg {
-                RExpr::Member(ref mut e) => {
+                RExpr::Member(ref e) => {
                     self.type_of_member_expr(e, TypeOfMode::LValue)
                         .report(&mut self.storage);
 

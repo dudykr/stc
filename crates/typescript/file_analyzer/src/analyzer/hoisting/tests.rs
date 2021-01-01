@@ -8,7 +8,9 @@ fn assert_order(src: &str, expected: Vec<usize>) {
     run_test(|tester| {
         let orig = tester.parse("main.ts", src);
         let module = RModule::from_orig(&mut NodeIdGenerator::invalid(), orig);
-        let (actual, _) = tester.analyzer.reorder_stmts(&module.body);
+        let (actual, _) = tester
+            .analyzer
+            .reorder_stmts(&&module.body.iter().collect::<Vec<_>>());
 
         assert_eq!(expected, actual);
     })
@@ -174,11 +176,11 @@ fn fn_var_2() {
     export function foo() {
         return bar()
     }
-    
+
     function bar() {
         return baz;
     }
-    
+
     const baz = 5;
     ",
         vec![2, 1, 0],
@@ -192,7 +194,7 @@ fn simple_01() {
         export type C = B;
 
         export type A = 5;
-            
+
         ",
         vec![0, 1],
     );

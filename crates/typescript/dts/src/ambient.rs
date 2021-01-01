@@ -17,7 +17,6 @@ use swc_common::DUMMY_SP;
 /// Handles
 ///
 /// ```ts
-/// 
 /// foo();
 /// bar();
 /// bar() {}

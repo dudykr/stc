@@ -19,3 +19,14 @@ pub fn early_error() -> bool {
 
     *EARLY_ERROR
 }
+
+pub trait TryOpt<T, E>: Sized + Into<Option<Result<T, E>>> {
+    fn try_opt(self) -> Result<Option<T>, E> {
+        match self.into() {
+            Some(res) => Ok(Some(res?)),
+            None => Ok(None),
+        }
+    }
+}
+
+impl<T, E> TryOpt<T, E> for Option<Result<T, E>> {}

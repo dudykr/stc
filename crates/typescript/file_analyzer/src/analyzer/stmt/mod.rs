@@ -7,7 +7,6 @@ use crate::{
     validator::ValidateWith,
 };
 use rnode::NodeId;
-use rnode::VisitMutWith;
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RBlockStmt;
 use stc_ts_ast_rnode::RBool;
@@ -31,7 +30,7 @@ mod try_catch;
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, s: &mut RStmt) {
+    fn validate(&mut self, s: &RStmt) {
         let old_in_conditional = self.scope.return_values.in_conditional;
         self.scope.return_values.in_conditional |= match s {
             RStmt::If(_) => true,
@@ -39,7 +38,7 @@ impl Analyzer<'_, '_> {
             _ => false,
         };
 
-        s.visit_mut_children_with(self);
+        s.visit_children_with(self);
 
         self.scope.return_values.in_conditional = old_in_conditional;
 
@@ -69,11 +68,11 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut RWhileStmt) {
+    fn validate(&mut self, node: &RWhileStmt) {
         let test = node.test.validate_with_default(self)?;
         self.check_for_inifinite_loop(&test, &node.body);
 
-        node.body.visit_mut_with(self);
+        node.body.visit_with(self);
 
         Ok(())
     }
@@ -81,11 +80,11 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut RDoWhileStmt) {
+    fn validate(&mut self, node: &RDoWhileStmt) {
         let test = node.test.validate_with_default(self)?;
         self.check_for_inifinite_loop(&test, &node.body);
 
-        node.body.visit_mut_with(self);
+        node.body.visit_with(self);
 
         Ok(())
     }
@@ -93,8 +92,8 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut RForStmt) {
-        node.init.visit_mut_with(self);
+    fn validate(&mut self, node: &RForStmt) {
+        node.init.visit_with(self);
 
         let test = try_opt!(node.test.validate_with_default(self));
         let always_true = Type::Lit(RTsLitType {
@@ -110,7 +109,7 @@ impl Analyzer<'_, '_> {
             &node.body,
         );
 
-        node.update.visit_mut_with(self);
+        node.update.visit_with(self);
         node.body.validate_with(self)?;
 
         Ok(())
@@ -120,8 +119,8 @@ impl Analyzer<'_, '_> {
 /// NOTE: We does **not** dig into with statements.
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, s: &mut RWithStmt) {
-        s.obj.visit_mut_with(self);
+    fn validate(&mut self, s: &RWithStmt) {
+        s.obj.visit_with(self);
 
         Ok(())
     }
@@ -129,9 +128,9 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, s: &mut RBlockStmt) {
+    fn validate(&mut self, s: &RBlockStmt) {
         self.with_child(ScopeKind::Block, Default::default(), |analyzer| {
-            s.stmts.visit_mut_with(analyzer);
+            s.stmts.visit_with(analyzer);
             Ok(())
         })?;
 
@@ -141,7 +140,7 @@ impl Analyzer<'_, '_> {
 
 impl Analyzer<'_, '_> {
     /// Validate that parent interfaces are all resolved.
-    pub fn resolve_parent_interfaces(&mut self, parents: &mut [RTsExprWithTypeArgs]) {
+    pub fn resolve_parent_interfaces(&mut self, parents: &[RTsExprWithTypeArgs]) {
         for parent in parents {
             // Verify parent interface
             let res: Result<_, _> = try {

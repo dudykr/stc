@@ -17,7 +17,7 @@ where
     type Output;
     type Context: 'context + Copy;
 
-    fn validate(&mut self, node: &mut T, ctxt: Self::Context) -> Self::Output;
+    fn validate(&mut self, node: &T, ctxt: Self::Context) -> Self::Output;
 }
 
 impl<'c, T, V> Validate<'c, Box<T>> for V
@@ -28,8 +28,8 @@ where
     type Output = <Self as Validate<'c, T>>::Output;
     type Context = <Self as Validate<'c, T>>::Context;
 
-    fn validate(&mut self, node: &mut Box<T>, ctxt: Self::Context) -> Self::Output {
-        self.validate(&mut **node, ctxt)
+    fn validate(&mut self, node: &Box<T>, ctxt: Self::Context) -> Self::Output {
+        self.validate(&**node, ctxt)
     }
 }
 
@@ -41,9 +41,9 @@ where
     type Output = Option<<Self as Validate<'c, T>>::Output>;
     type Context = <Self as Validate<'c, T>>::Context;
 
-    fn validate(&mut self, node: &mut Option<T>, ctxt: Self::Context) -> Self::Output {
+    fn validate(&mut self, node: &Option<T>, ctxt: Self::Context) -> Self::Output {
         match node {
-            Some(ref mut n) => Some(self.validate(n, ctxt)),
+            Some(ref n) => Some(self.validate(n, ctxt)),
             None => None,
         }
     }
@@ -83,32 +83,29 @@ where
     type Output = Result<Vec<O>, E>;
     type Context = <Self as Validate<'c, T>>::Context;
 
-    fn validate(&mut self, nodes: &mut Vec<T>, ctxt: Self::Context) -> Self::Output {
-        nodes
-            .iter_mut()
-            .map(|node| self.validate(node, ctxt))
-            .collect()
+    fn validate(&mut self, nodes: &Vec<T>, ctxt: Self::Context) -> Self::Output {
+        nodes.iter().map(|node| self.validate(node, ctxt)).collect()
     }
 }
 
 pub trait ValidateWith<'c, V> {
     type Output;
     type Context: 'c + Copy;
-    fn validate_with(&mut self, v: &mut V) -> Self::Output
+    fn validate_with(&self, v: &mut V) -> Self::Output
     where
         Self::Context: Unit,
     {
         self.validate_with_args(v, Unit::make())
     }
 
-    fn validate_with_default(&mut self, v: &mut V) -> Self::Output
+    fn validate_with_default(&self, v: &mut V) -> Self::Output
     where
         Self::Context: Default,
     {
         self.validate_with_args(v, Default::default())
     }
 
-    fn validate_with_args(&mut self, v: &mut V, ctxt: Self::Context) -> Self::Output;
+    fn validate_with_args(&self, v: &mut V, ctxt: Self::Context) -> Self::Output;
 }
 
 pub trait Unit {
@@ -127,7 +124,7 @@ where
     type Context = V::Context;
 
     #[inline]
-    fn validate_with_args(&mut self, v: &mut V, ctxt: Self::Context) -> Self::Output {
+    fn validate_with_args(&self, v: &mut V, ctxt: Self::Context) -> Self::Output {
         v.validate(self, ctxt)
     }
 }

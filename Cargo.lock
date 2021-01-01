@@ -1765,6 +1765,7 @@ dependencies = [
  "slog",
  "stc_testing",
  "stc_ts_ast_rnode",
+ "stc_ts_dts_mutations",
  "stc_ts_file_analyzer",
  "stc_ts_types",
  "stc_ts_utils",
@@ -1777,6 +1778,16 @@ dependencies = [
  "swc_ecma_visit",
  "testing",
  "testing_macros",
+]
+
+[[package]]
+name = "stc_ts_dts_mutations"
+version = "0.1.0"
+dependencies = [
+ "fxhash",
+ "rnode",
+ "stc_ts_ast_rnode",
+ "stc_ts_types",
 ]
 
 [[package]]
@@ -1799,6 +1810,7 @@ dependencies = [
  "stc_testing",
  "stc_ts_ast_rnode",
  "stc_ts_builtin_types",
+ "stc_ts_dts_mutations",
  "stc_ts_file_analyzer_macros",
  "stc_ts_types",
  "stc_ts_utils",

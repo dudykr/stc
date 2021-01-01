@@ -21,20 +21,15 @@ use crate::{
     validator::ValidateWith,
     DepInfo, Rule, ValidationResult,
 };
-use bitflags::_core::mem::{replace, take};
 use fxhash::FxHashMap;
-use rnode::NodeId;
-use rnode::VisitMutWith;
 use rnode::VisitWith;
 use slog::Logger;
 use stc_ts_ast_rnode::RDecorator;
-use stc_ts_ast_rnode::REmptyStmt;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RModule;
 use stc_ts_ast_rnode::RModuleDecl;
 use stc_ts_ast_rnode::RModuleItem;
-use stc_ts_ast_rnode::RNamedExport;
 use stc_ts_ast_rnode::RScript;
 use stc_ts_ast_rnode::RStmt;
 use stc_ts_ast_rnode::RTsImportEqualsDecl;
@@ -42,7 +37,9 @@ use stc_ts_ast_rnode::RTsModuleDecl;
 use stc_ts_ast_rnode::RTsModuleName;
 use stc_ts_ast_rnode::RTsModuleRef;
 use stc_ts_ast_rnode::RTsNamespaceDecl;
+use stc_ts_dts_mutations::Mutations;
 use stc_ts_types::{Id, ModuleId, ModuleTypeData, SymbolIdGenerator};
+use std::mem::take;
 use std::{
     fmt::Debug,
     ops::{Deref, DerefMut},
@@ -127,10 +124,13 @@ pub(crate) struct Ctx {
 }
 
 /// Note: All methods named `validate_*` return [Err] iff it's not recoverable.
-pub struct Analyzer<'a, 'b> {
+pub struct Analyzer<'scope, 'b> {
     logger: Logger,
     env: Env,
     cm: Arc<SourceMap>,
+
+    /// This is [None] only for `.d.ts` files.
+    pub mutations: Option<Mutations>,
 
     storage: Storage<'b>,
 
@@ -142,50 +142,13 @@ pub struct Analyzer<'a, 'b> {
     pending_exports: Vec<((Id, Span), RExpr)>,
 
     imports: FxHashMap<(ModuleId, ModuleId), Arc<ModuleTypeData>>,
-
-    /// Used to handle
-    ///
-    /// ```ts
-    /// declare function Mix<T, U>(c1: T, c2: U): T & U;
-    /// class C1 extends Mix(Private, Private2) {
-    /// }
-    /// ```
-    ///
-    /// As code above becomes
-    ///
-    /// ```ts
-    /// declare const C1_base: typeof Private & typeof Private2;
-    /// declare class C1 extends C1_base {
-    /// }
-    /// ```
-    ///
-    /// we need to prepend statements.
+    /// See docs of ModuleitemMut for documentation.
     prepend_stmts: Vec<RStmt>,
 
-    /// Used to handle
-    ///
-    /// ```ts
-    /// export default function someFunc() {
-    ///     return 'hello!';
-    /// }
-    ///
-    /// someFunc.someProp = 'yo';
-    /// ```
-    ///
-    /// As the code above becomes
-    ///
-    /// ```ts
-    /// declare function someFunc(): string;
-    /// declare namespace someFunc {
-    ///     var someProp: string;
-    /// }
-    /// export default someFunc;
-    /// ```
-    ///
-    /// we need to append statements.
+    /// See docs of ModuleitemMut for documentation.
     append_stmts: Vec<RStmt>,
 
-    scope: Scope<'a>,
+    scope: Scope<'scope>,
 
     ctx: Ctx,
 
@@ -258,13 +221,13 @@ fn make_module_ty(span: Span, exports: ModuleTypeData) -> ty::Module {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut RScript) -> ValidationResult<ty::Module> {
+    fn validate(&mut self, node: &RScript) -> ValidationResult<ty::Module> {
         let span = node.span;
 
         let (errors, data) = {
             let mut new = self.new(Scope::root(self.logger.clone()));
             {
-                node.visit_mut_children_with(&mut new);
+                node.visit_children_with(&mut new);
             }
 
             let errors = new.storage.take_errors();
@@ -285,7 +248,7 @@ fn _assert_types() {
     is_send::<Info>();
 }
 
-impl<'a, 'b> Analyzer<'a, 'b> {
+impl<'scope, 'b> Analyzer<'scope, 'b> {
     pub fn root(
         logger: Logger,
         env: Env,
@@ -298,6 +261,7 @@ impl<'a, 'b> Analyzer<'a, 'b> {
             env,
             cm,
             storage,
+            Some(Default::default()),
             loader,
             Scope::root(logger),
             false,
@@ -318,6 +282,7 @@ impl<'a, 'b> Analyzer<'a, 'b> {
             ),
             Arc::new(SourceMap::default()),
             box storage,
+            None,
             &NoopLoader,
             Scope::root(logger),
             true,
@@ -325,12 +290,13 @@ impl<'a, 'b> Analyzer<'a, 'b> {
         )
     }
 
-    fn new(&'b self, scope: Scope<'a>) -> Self {
+    fn new(&'b self, scope: Scope<'scope>) -> Self {
         Self::new_inner(
             self.logger.clone(),
             self.env.clone(),
             self.cm.clone(),
             self.storage.subscope(),
+            None,
             self.loader,
             scope,
             self.is_builtin,
@@ -343,8 +309,9 @@ impl<'a, 'b> Analyzer<'a, 'b> {
         env: Env,
         cm: Arc<SourceMap>,
         storage: Storage<'b>,
+        mutations: Option<Mutations>,
         loader: &'b dyn Load,
-        scope: Scope<'a>,
+        scope: Scope<'scope>,
         is_builtin: bool,
         symbols: Arc<SymbolIdGenerator>,
     ) -> Self {
@@ -353,6 +320,7 @@ impl<'a, 'b> Analyzer<'a, 'b> {
             env,
             cm,
             storage,
+            mutations,
             export_equals_span: DUMMY_SP,
             // builtin types are declared
             in_declare: is_builtin,
@@ -410,6 +378,7 @@ impl<'a, 'b> Analyzer<'a, 'b> {
         let ctx = self.ctx;
         let imports = take(&mut self.imports);
         let imports_by_id = take(&mut self.imports_by_id);
+        let mutations = self.mutations.take();
         let cur_facts = take(&mut self.cur_facts);
 
         let child_scope = Scope::new(&self.scope, kind, facts);
@@ -423,10 +392,12 @@ impl<'a, 'b> Analyzer<'a, 'b> {
             dup,
             prepend_stmts,
             append_stmts,
+            mutations,
         ) = {
             let mut child = self.new(child_scope);
             child.imports = imports;
             child.imports_by_id = imports_by_id;
+            child.mutations = mutations;
             child.cur_facts = cur_facts;
             child.ctx = ctx;
 
@@ -442,6 +413,7 @@ impl<'a, 'b> Analyzer<'a, 'b> {
                 child.duplicated_tracker,
                 child.prepend_stmts,
                 child.append_stmts,
+                child.mutations.take(),
             )
         };
         self.storage.report_all(errors);
@@ -449,6 +421,7 @@ impl<'a, 'b> Analyzer<'a, 'b> {
         self.imports = imports;
         self.imports_by_id = imports_by_id;
         self.cur_facts = cur_facts;
+        self.mutations = mutations;
 
         // if !self.is_builtin {
         //     assert_eq!(
@@ -479,7 +452,7 @@ impl<'a, 'b> Analyzer<'a, 'b> {
         ret
     }
 
-    fn with_ctx(&mut self, ctx: Ctx) -> WithCtx<'_, 'a, 'b> {
+    fn with_ctx(&mut self, ctx: Ctx) -> WithCtx<'_, 'scope, 'b> {
         let orig_ctx = self.ctx;
         self.ctx = ctx;
         WithCtx {
@@ -554,31 +527,14 @@ impl Load for NoopLoader {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, modules: &mut Vec<RModule>) {
-        let mut counts = vec![];
+    fn validate(&mut self, modules: &Vec<RModule>) {
         let mut items = vec![];
-        for m in modules.drain(..) {
-            counts.push(m.body.len());
-            items.extend(m.body);
+        for m in modules {
+            items.extend(&m.body);
         }
         self.load_normal_imports(&items);
 
-        let mut stmts = self.validate_stmts_with_hoisting(&mut items);
-        debug_assert_eq!(stmts.len(), counts.iter().copied().sum::<usize>());
-        let mut result = vec![];
-
-        for cnt in counts {
-            result.push(RModule {
-                node_id: NodeId::invalid(),
-                // TODO
-                span: DUMMY_SP,
-                body: stmts.drain(0..cnt).flatten().collect(),
-                // TODO
-                shebang: None,
-            });
-        }
-
-        *modules = result;
+        self.validate_stmts_with_hoisting(&items);
 
         Ok(())
     }
@@ -586,8 +542,9 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, items: &mut Vec<RModuleItem>) {
-        self.load_normal_imports(&items);
+    fn validate(&mut self, items: &Vec<RModuleItem>) {
+        let mut items_ref = items.iter().collect::<Vec<_>>();
+        self.load_normal_imports(&items_ref);
 
         let mut has_normal_export = false;
         items.iter().for_each(|item| match item {
@@ -635,30 +592,10 @@ impl Analyzer<'_, '_> {
         }
 
         if self.is_builtin {
-            items.visit_mut_children_with(self);
+            items.visit_children_with(self);
         } else {
-            self.validate_stmts_and_collect(items);
+            self.validate_stmts_and_collect(&items_ref);
         }
-
-        items.retain(|item| {
-            match item {
-                RModuleItem::ModuleDecl(decl) => match decl {
-                    RModuleDecl::ExportNamed(export @ RNamedExport { src: None, .. })
-                        if export.specifiers.is_empty() =>
-                    {
-                        return false
-                    }
-                    _ => {}
-                },
-                RModuleItem::Stmt(stmt) => match stmt {
-                    RStmt::Decl(..) => {}
-                    _ => return false,
-                },
-            }
-
-            // Let's be conservative
-            true
-        });
 
         self.handle_pending_exports();
 
@@ -668,7 +605,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, items: &mut Vec<RStmt>) {
+    fn validate(&mut self, items: &Vec<RStmt>) {
         let mut visitor = AmbientFunctionHandler {
             last_ambient_name: None,
             errors: &mut self.storage,
@@ -682,19 +619,9 @@ impl Analyzer<'_, '_> {
             })
         }
 
-        let mut new = Vec::with_capacity(items.len());
-
-        for (i, item) in items.iter_mut().enumerate() {
-            item.visit_mut_with(self);
-
-            new.extend(self.prepend_stmts.drain(..));
-
-            new.push(replace(item, RStmt::Empty(REmptyStmt { span: DUMMY_SP })));
-
-            new.extend(self.append_stmts.drain(..));
+        for item in items.iter() {
+            item.visit_with(self);
         }
-
-        *items = new;
 
         Ok(())
     }
@@ -703,7 +630,7 @@ impl Analyzer<'_, '_> {
 /// Done
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, d: &mut RDecorator) {
+    fn validate(&mut self, d: &RDecorator) {
         d.expr.validate_with_default(self).report(&mut self.storage);
 
         Ok(())
@@ -712,7 +639,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &mut RTsImportEqualsDecl) {
+    fn validate(&mut self, node: &RTsImportEqualsDecl) {
         self.record(node);
 
         match node.module_ref {
@@ -731,14 +658,14 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, decl: &mut RTsNamespaceDecl) {
+    fn validate(&mut self, decl: &RTsNamespaceDecl) {
         todo!("namespace is not supported yet")
     }
 }
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, decl: &mut RTsModuleDecl) {
+    fn validate(&mut self, decl: &RTsModuleDecl) {
         let span = decl.span;
         let ctxt = self.ctx.module_id;
         let global = decl.global;
@@ -753,7 +680,7 @@ impl Analyzer<'_, '_> {
             |child: &mut Analyzer| {
                 child.ctx.in_declare = decl.declare;
 
-                decl.visit_mut_children_with(child);
+                decl.visit_children_with(child);
 
                 let exports = take(&mut child.storage.take_info(ctxt));
                 if !global {

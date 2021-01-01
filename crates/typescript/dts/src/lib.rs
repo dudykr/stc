@@ -4,17 +4,18 @@
 #![feature(box_syntax)]
 #![feature(box_patterns)]
 #![feature(specialization)]
-
 use self::{
     ambient::RealImplRemover,
     dce::{get_used, DceForDts},
 };
+pub use crate::mutations::apply_mutations;
 use fxhash::FxHashSet;
 use rnode::NodeId;
 use rnode::Visit;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
 use rnode::VisitWith;
+use stc_ts_ast_rnode::RArrayPat;
 use stc_ts_ast_rnode::RAssignPat;
 use stc_ts_ast_rnode::RBlockStmt;
 use stc_ts_ast_rnode::RClass;
@@ -30,9 +31,11 @@ use stc_ts_ast_rnode::RFnDecl;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RImportDecl;
 use stc_ts_ast_rnode::RImportSpecifier;
+use stc_ts_ast_rnode::RLit;
 use stc_ts_ast_rnode::RMemberExpr;
 use stc_ts_ast_rnode::RModuleDecl;
 use stc_ts_ast_rnode::RModuleItem;
+use stc_ts_ast_rnode::RNamedExport;
 use stc_ts_ast_rnode::RParamOrTsParamProp;
 use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RPrivateName;
@@ -45,11 +48,14 @@ use stc_ts_ast_rnode::RTsIndexSignature;
 use stc_ts_ast_rnode::RTsInterfaceDecl;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsModuleDecl;
+use stc_ts_ast_rnode::RTsParamProp;
 use stc_ts_ast_rnode::RTsParamPropParam;
+use stc_ts_ast_rnode::RTsPropertySignature;
 use stc_ts_ast_rnode::RTsType;
 use stc_ts_ast_rnode::RTsTypeAliasDecl;
 use stc_ts_ast_rnode::RTsTypeAnn;
 use stc_ts_ast_rnode::RVarDecl;
+use stc_ts_ast_rnode::RVarDeclarator;
 use stc_ts_types::Id;
 use stc_ts_types::ModuleTypeData;
 use stc_ts_utils::find_ids_in_pat;
@@ -59,6 +65,7 @@ use swc_ecma_ast::*;
 
 mod ambient;
 mod dce;
+mod mutations;
 
 /// Make `module` suitable for .d.ts file.
 ///
@@ -231,6 +238,134 @@ struct Dts {
     used_vars: FxHashSet<Id>,
 }
 
+impl VisitMut<RClassMember> for Dts {
+    fn visit_mut(&mut self, m: &mut RClassMember) {
+        match m {
+            RClassMember::Method(method) => {
+                if let Some(Accessibility::Private) = method.accessibility {
+                    let computed = match method.key {
+                        RPropName::Computed(..) => true,
+                        _ => false,
+                    };
+                    // Converts a private method to a private property without type.
+                    *m = RClassMember::ClassProp(RClassProp {
+                        node_id: NodeId::invalid(),
+                        span: method.span,
+                        key: match &method.key {
+                            RPropName::Ident(i) => box RExpr::Ident(i.clone()),
+                            RPropName::Str(s) => {
+                                box RExpr::Ident(RIdent::new(s.value.clone(), s.span))
+                            }
+                            RPropName::Num(n) => box RExpr::Lit(RLit::Num(n.clone())),
+                            RPropName::Computed(e) => e.expr.clone(),
+                            RPropName::BigInt(n) => box RExpr::Lit(RLit::BigInt(n.clone())),
+                        },
+                        value: None,
+                        type_ann: None,
+                        is_static: method.is_static,
+                        decorators: Default::default(),
+                        computed,
+                        accessibility: Some(Accessibility::Private),
+                        is_abstract: false,
+                        is_optional: method.is_optional,
+                        readonly: false,
+                        declare: false,
+                        definite: false,
+                    });
+                    return;
+                }
+            }
+
+            _ => {}
+        }
+        m.visit_mut_children_with(self);
+    }
+}
+
+impl VisitMut<RTsPropertySignature> for Dts {
+    fn visit_mut(&mut self, ps: &mut RTsPropertySignature) {
+        if ps.type_ann.is_none() {
+            ps.type_ann = Some(RTsTypeAnn {
+                node_id: NodeId::invalid(),
+                span: DUMMY_SP,
+                type_ann: box RTsType::TsKeywordType(RTsKeywordType {
+                    span: DUMMY_SP,
+                    kind: TsKeywordTypeKind::TsAnyKeyword,
+                }),
+            });
+        }
+    }
+}
+
+impl VisitMut<Vec<RVarDeclarator>> for Dts {
+    fn visit_mut(&mut self, decls: &mut Vec<RVarDeclarator>) {
+        decls.visit_mut_children_with(self);
+
+        // Flatten var declarations
+        for decl in decls.take() {
+            match decl.name {
+                RPat::Array(RArrayPat {
+                    span,
+                    elems,
+                    type_ann:
+                        Some(RTsTypeAnn {
+                            type_ann: box RTsType::TsTupleType(..),
+                            ..
+                        }),
+                    ..
+                }) => {
+                    //
+                    for elem in elems.into_iter() {
+                        match elem {
+                            Some(name) => decls.push(RVarDeclarator {
+                                node_id: NodeId::invalid(),
+                                span,
+                                name,
+                                init: None,
+                                definite: false,
+                            }),
+                            None => {}
+                        }
+                    }
+                }
+                // TODO
+                //  RPat::Object(obj) => {}
+                _ => decls.push(decl),
+            }
+        }
+    }
+}
+
+impl VisitMut<RTsParamProp> for Dts {
+    fn visit_mut(&mut self, p: &mut RTsParamProp) {
+        p.visit_mut_children_with(self);
+
+        if p.accessibility == Some(Accessibility::Private) {
+            p.accessibility = None;
+        }
+    }
+}
+
+impl VisitMut<RClassProp> for Dts {
+    fn visit_mut(&mut self, prop: &mut RClassProp) {
+        prop.visit_mut_children_with(self);
+
+        if let Some(Accessibility::Private) = prop.accessibility {
+            prop.type_ann = None;
+        }
+
+        prop.value = None;
+    }
+}
+
+impl VisitMut<RPrivateProp> for Dts {
+    fn visit_mut(&mut self, prop: &mut RPrivateProp) {
+        prop.visit_mut_children_with(self);
+
+        prop.value = None;
+    }
+}
+
 impl VisitMut<Option<RBlockStmt>> for Dts {
     fn visit_mut(&mut self, value: &mut Option<RBlockStmt>) {
         *value = None;
@@ -243,6 +378,26 @@ impl VisitMut<RTsModuleDecl> for Dts {
 
 impl VisitMut<Vec<RModuleItem>> for Dts {
     fn visit_mut(&mut self, items: &mut Vec<RModuleItem>) {
+        items.retain(|item| {
+            match item {
+                RModuleItem::ModuleDecl(decl) => match decl {
+                    RModuleDecl::ExportNamed(export @ RNamedExport { src: None, .. })
+                        if export.specifiers.is_empty() =>
+                    {
+                        return false
+                    }
+                    _ => {}
+                },
+                RModuleItem::Stmt(stmt) => match stmt {
+                    RStmt::Decl(..) => {}
+                    _ => return false,
+                },
+            }
+
+            // Let's be conservative
+            true
+        });
+
         let is_module = items.iter().any(|item| match item {
             RModuleItem::ModuleDecl(_) => true,
             RModuleItem::Stmt(_) => false,
@@ -380,6 +535,12 @@ impl VisitMut<RPat> for Dts {
 
 impl VisitMut<Vec<RClassMember>> for Dts {
     fn visit_mut(&mut self, members: &mut Vec<RClassMember>) {
+        // Remove empty members.
+        members.retain(|member| match member {
+            RClassMember::Empty(..) => false,
+            _ => true,
+        });
+
         members.visit_mut_children_with(self);
 
         members.map_with_mut(|members| {
