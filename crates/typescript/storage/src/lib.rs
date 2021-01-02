@@ -1,4 +1,8 @@
+#![feature(box_syntax)]
+
 use fxhash::FxHashMap;
+use stc_ts_errors::Error;
+use stc_ts_errors::Errors;
 use stc_ts_types::Id;
 use stc_ts_types::ModuleId;
 use stc_ts_types::ModuleTypeData;
@@ -14,7 +18,7 @@ use swc_common::DUMMY_SP;
 #[derive(Debug, Default)]
 pub struct Info {
     pub errors: Errors,
-    pub exports: ty::ModuleTypeData,
+    pub exports: ModuleTypeData,
 }
 
 pub type Storage<'b> = Box<dyn 'b + Mode>;
