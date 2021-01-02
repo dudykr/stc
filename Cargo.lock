@@ -1795,6 +1795,17 @@ name = "stc_ts_env"
 version = "0.1.0"
 
 [[package]]
+name = "stc_ts_errors"
+version = "0.1.0"
+dependencies = [
+ "stc_ts_ast_rnode",
+ "stc_ts_types",
+ "swc_atoms",
+ "swc_common",
+ "swc_ecma_ast",
+]
+
+[[package]]
 name = "stc_ts_file_analyzer"
 version = "0.1.0"
 dependencies = [
@@ -1871,6 +1882,12 @@ dependencies = [
 [[package]]
 name = "stc_ts_storage"
 version = "0.1.0"
+dependencies = [
+ "fxhash",
+ "stc_ts_errors",
+ "stc_ts_types",
+ "swc_common",
+]
 
 [[package]]
 name = "stc_ts_type_checker"

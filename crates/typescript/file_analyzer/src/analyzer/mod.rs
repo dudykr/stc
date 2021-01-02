@@ -181,11 +181,7 @@ impl Analyzer<'_, '_> {
     }
 }
 
-#[derive(Debug, Default)]
-pub struct Info {
-    pub errors: Errors,
-    pub exports: ty::ModuleTypeData,
-}
+
 
 // TODO:
 //#[validator] #[validator]impl Analyzer<'_, '_> {

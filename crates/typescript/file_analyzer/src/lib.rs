@@ -27,9 +27,7 @@ use swc_common::Span;
 pub mod analyzer;
 mod debug;
 pub mod env;
-pub mod errors;
 pub mod loader;
-pub mod mode;
 pub mod name;
 #[cfg(test)]
 mod tests;
