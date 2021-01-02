@@ -1941,6 +1941,7 @@ dependencies = [
  "num-traits",
  "parking_lot 0.11.1",
  "rnode",
+ "smallvec 1.6.0",
  "stc_ts_ast_rnode",
  "stc_visit",
  "swc_atoms",
