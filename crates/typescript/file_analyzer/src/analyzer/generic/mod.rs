@@ -1,8 +1,8 @@
 use self::remover::TypeParamRemover;
 use super::Analyzer;
 use super::Ctx;
-use crate::debug::print_backtrace;
-use crate::debug::print_type;
+use stc_ts_errors::debug::print_type;
+use stc_ts_errors::debug::print_backtrace;
 use crate::util::RemoveTypes;
 use crate::ValidationResult;
 use fxhash::FxHashMap;

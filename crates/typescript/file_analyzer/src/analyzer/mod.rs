@@ -8,12 +8,8 @@ use self::{
     stmt::AmbientFunctionHandler,
     util::ResultExt,
 };
-use crate::mode::Builtin;
-use crate::mode::Storage;
 use crate::{
-    debug::duplicate::DuplicateTracker,
     env::{Env, StableEnv},
-    errors::{Error, Errors},
     loader::{Load, ModuleInfo},
     ty,
     ty::Type,
@@ -38,6 +34,13 @@ use stc_ts_ast_rnode::RTsModuleName;
 use stc_ts_ast_rnode::RTsModuleRef;
 use stc_ts_ast_rnode::RTsNamespaceDecl;
 use stc_ts_dts_mutations::Mutations;
+use stc_ts_errors::debug::duplicate::DuplicateTracker;
+use stc_ts_errors::debug::print_type;
+use stc_ts_errors::Error;
+use stc_ts_errors::Errors;
+use stc_ts_storage::Builtin;
+use stc_ts_storage::Info;
+use stc_ts_storage::Storage;
 use stc_ts_types::{Id, ModuleId, ModuleTypeData, SymbolIdGenerator};
 use std::mem::take;
 use std::{
@@ -180,8 +183,6 @@ impl Analyzer<'_, '_> {
         }
     }
 }
-
-
 
 // TODO:
 //#[validator] #[validator]impl Analyzer<'_, '_> {
