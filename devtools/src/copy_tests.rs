@@ -1,13 +1,37 @@
 use anyhow::bail;
 use anyhow::Error;
+use std::path::Path;
 use std::path::PathBuf;
+use std::sync::Arc;
 use structopt::StructOpt;
+use swc_common::errors::ColorConfig;
+use swc_common::errors::Handler;
+use swc_common::input::SourceFileInput;
+use swc_common::SourceMap;
+use swc_common::DUMMY_SP;
+use swc_ecma_ast::*;
+use swc_ecma_parser::lexer::Lexer;
+use swc_ecma_parser::Parser;
+use swc_ecma_parser::Syntax;
+use swc_ecma_parser::TsConfig;
+use swc_ecma_visit::Node;
+use swc_ecma_visit::Visit;
+use swc_ecma_visit::VisitWith;
+use walkdir::WalkDir;
 
 #[derive(Debug, StructOpt)]
 pub struct CopyTests {
-    /// Include tests only if there's no import.
+    /// Include tests only if there's no import or export from other file.
     #[structopt(long)]
-    no_import: bool,
+    no_dep_only: bool,
+
+    /// Include tests only if there's no import or export from other file.
+    #[structopt(long)]
+    dep_only: bool,
+
+    /// Include tests only if there's no error.
+    #[structopt(long)]
+    no_error_only: bool,
 
     src: PathBuf,
 
@@ -15,7 +39,98 @@ pub struct CopyTests {
 }
 
 impl CopyTests {
+    fn should_include(&self, path: &Path) -> Result<bool, Error> {
+        let mut cm = Arc::new(SourceMap::default());
+        let mut handler =
+            Handler::with_tty_emitter(ColorConfig::Always, true, false, cm.clone().into());
+
+        let fm = cm.load_file(path)?;
+
+        if !self.no_dep_only && !self.dep_only && !self.no_error_only {
+            return Ok(true);
+        }
+
+        let lexer = Lexer::new(
+            Syntax::Typescript(TsConfig {
+                dynamic_import: true,
+                ..Default::default()
+            }),
+            swc_ecma_parser::JscTarget::Es2020,
+            SourceFileInput::from(&*fm),
+            None,
+        );
+        let mut parser = Parser::new_from(lexer);
+        let program = parser
+            .parse_program()
+            .map_err(|_| Error::msg("failed to parse"));
+        let program = match program {
+            Ok(v) => v,
+            Err(err) => {
+                if self.no_error_only {
+                    return Ok(false);
+                }
+                return Ok(true);
+            }
+        };
+
+        let has_dep = {
+            let mut v = DepFinder { found: false };
+            program.visit_with(&Invalid { span: DUMMY_SP }, &mut v);
+            v.found
+        };
+        if (self.no_dep_only && has_dep) || (self.dep_only && !has_dep) {
+            return Ok(false);
+        }
+
+        Ok(true)
+    }
+
+    fn get_files_to_copy(&self) -> Result<Vec<PathBuf>, Error> {
+        let mut files = vec![];
+        for entry in WalkDir::new(&self.src) {
+            let entry = entry?;
+
+            if entry.file_type().is_dir() {
+                continue;
+            }
+
+            let path_str = entry.path().to_string_lossy();
+            if !path_str.ends_with(".ts") && !path_str.ends_with(".ts") {
+                continue;
+            }
+
+            if !self.should_include(entry.path())? {
+                continue;
+            }
+
+            files.push(entry.into_path());
+        }
+
+        Ok(files)
+    }
+
     pub fn run(self) -> Result<(), Error> {
+        let files = self.get_files_to_copy()?;
+        eprintln!("{:?}", files);
+
         bail!("not implemented yet")
+    }
+}
+
+struct DepFinder {
+    found: bool,
+}
+
+impl Visit for DepFinder {
+    fn visit_import_decl(&mut self, n: &ImportDecl, _parent: &dyn Node) {
+        self.found = true;
+    }
+
+    fn visit_export_all(&mut self, n: &ExportAll, _parent: &dyn Node) {
+        self.found = true;
+    }
+
+    fn visit_named_export(&mut self, n: &NamedExport, _parent: &dyn Node) {
+        self.found |= n.src.is_some();
     }
 }
