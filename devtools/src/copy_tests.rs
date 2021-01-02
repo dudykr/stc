@@ -171,6 +171,10 @@ impl Visit for DepFinder {
 fn has_error(path: &Path) -> bool {
     Command::new("tsc")
         .arg(path)
+        .arg("--target")
+        .arg("es2020")
+        .arg("--lib")
+        .arg("es2020")
         .status()
         .map(|s| s.success())
         .unwrap_or(true)
