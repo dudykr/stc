@@ -40,9 +40,9 @@ pub struct CopyTests {
 
 impl CopyTests {
     fn should_include(&self, path: &Path) -> Result<bool, Error> {
-        let mut cm = Arc::new(SourceMap::default());
-        let mut handler =
-            Handler::with_tty_emitter(ColorConfig::Always, true, false, cm.clone().into());
+        let cm = Arc::new(SourceMap::default());
+        let _handler =
+            Handler::with_tty_emitter(ColorConfig::Always, true, false, Some(cm.clone()));
 
         let fm = cm.load_file(path)?;
 
@@ -99,7 +99,7 @@ impl CopyTests {
                 continue;
             }
 
-            if !self.should_include(entry.path())? {
+            if !self.should_include(entry.path()).unwrap_or_else(|_| false) {
                 continue;
             }
 
