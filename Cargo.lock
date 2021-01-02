@@ -1027,7 +1027,7 @@ dependencies = [
  "instant",
  "libc",
  "redox_syscall",
- "smallvec 1.5.1",
+ "smallvec 1.6.0",
  "winapi",
 ]
 
@@ -1654,9 +1654,9 @@ dependencies = [
 
 [[package]]
 name = "smallvec"
-version = "1.5.1"
+version = "1.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ae524f056d7d770e174287294f562e95044c68e88dec909a00d2094805db9d75"
+checksum = "1a55ca5f3b68e41c979bf8c46a6f1da892ca4db8f94023ce0bd32407573b1ac0"
 
 [[package]]
 name = "sourcemap"
@@ -1826,7 +1826,7 @@ dependencies = [
  "retain_mut",
  "rnode",
  "slog",
- "smallvec 1.5.1",
+ "smallvec 1.6.0",
  "stc_testing",
  "stc_ts_ast_rnode",
  "stc_ts_builtin_types",
@@ -2160,7 +2160,7 @@ dependencies = [
  "log",
  "num-bigint",
  "serde",
- "smallvec 1.5.1",
+ "smallvec 1.6.0",
  "swc_atoms",
  "swc_common",
  "swc_ecma_ast",
@@ -2205,7 +2205,7 @@ dependencies = [
  "scoped-tls",
  "serde",
  "serde_json",
- "smallvec 1.5.1",
+ "smallvec 1.6.0",
  "swc_atoms",
  "swc_common",
  "swc_ecma_ast",
