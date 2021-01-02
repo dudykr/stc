@@ -1,9 +1,12 @@
 use anyhow::bail;
 use anyhow::Error;
+use std::fs::copy;
+use std::fs::create_dir_all;
 use std::panic::catch_unwind;
 use std::panic::AssertUnwindSafe;
 use std::path::Path;
 use std::path::PathBuf;
+use std::process::Command;
 use std::sync::Arc;
 use structopt::StructOpt;
 use swc_common::errors::ColorConfig;
@@ -88,6 +91,10 @@ impl CopyTests {
             return Ok(false);
         }
 
+        if self.no_error_only && has_error(path) {
+            return Ok(false);
+        }
+
         Ok(true)
     }
 
@@ -118,6 +125,19 @@ impl CopyTests {
     pub fn run(self) -> Result<(), Error> {
         let files = self.get_files_to_copy()?;
         eprintln!("{:?}", files);
+        let _ = create_dir_all(&self.dst);
+
+        for file in files {
+            let rel_path = file.strip_prefix(&self.src);
+            let rel_path = match rel_path {
+                Ok(v) => v,
+                Err(_) => continue,
+            };
+
+            let to = self.dst.join(rel_path);
+
+            let _ = copy(&file, &to);
+        }
 
         bail!("not implemented yet")
     }
@@ -128,15 +148,23 @@ struct DepFinder {
 }
 
 impl Visit for DepFinder {
-    fn visit_import_decl(&mut self, n: &ImportDecl, _parent: &dyn Node) {
+    fn visit_import_decl(&mut self, _: &ImportDecl, _parent: &dyn Node) {
         self.found = true;
     }
 
-    fn visit_export_all(&mut self, n: &ExportAll, _parent: &dyn Node) {
+    fn visit_export_all(&mut self, _: &ExportAll, _parent: &dyn Node) {
         self.found = true;
     }
 
     fn visit_named_export(&mut self, n: &NamedExport, _parent: &dyn Node) {
         self.found |= n.src.is_some();
     }
+}
+
+fn has_error(path: &Path) -> bool {
+    Command::new("tsc")
+        .arg(path)
+        .status()
+        .map(|s| s.success())
+        .unwrap_or(true)
 }
