@@ -7,8 +7,6 @@ use crate::{
         util::{instantiate_class, ResultExt},
         Ctx, ScopeKind,
     },
-    debug::print_type,
-    errors::Error,
     ty,
     ty::{
         CallSignature, ClassInstance, ConstructorSignature, FnParam, Method, MethodSignature,
@@ -41,6 +39,8 @@ use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_ast_rnode::RTsThisTypeOrIdent;
 use stc_ts_ast_rnode::RTsType;
 use stc_ts_ast_rnode::RTsTypeParamInstantiation;
+use stc_ts_errors::debug::print_type;
+use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::rprop_name_to_expr;
 use stc_ts_types::{Alias, Id, IndexedAccessType, Ref, Symbol, TypeLit, Union};

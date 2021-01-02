@@ -7,7 +7,6 @@ use super::{
 };
 use crate::util::type_ext::TypeVecExt;
 use crate::{
-    errors::Error,
     name::Name,
     ty::{Tuple, Type, TypeElement, TypeLit},
     type_facts::TypeFacts,
@@ -30,6 +29,8 @@ use stc_ts_ast_rnode::RPatOrExpr;
 use stc_ts_ast_rnode::RSwitchCase;
 use stc_ts_ast_rnode::RSwitchStmt;
 use stc_ts_ast_rnode::RTsKeywordType;
+use stc_ts_errors::Error;
+use stc_ts_errors::Errors;
 use stc_ts_types::Array;
 use stc_ts_types::Id;
 use stc_ts_utils::MapWithMut;

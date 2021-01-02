@@ -4,7 +4,6 @@ use super::super::{
 };
 use crate::{
     analyzer::{Ctx, ScopeKind},
-    errors::{Error, Errors},
     name::Name,
     ty::{Operator, Type, TypeExt},
     type_facts::TypeFacts,
@@ -21,6 +20,8 @@ use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_ast_rnode::RUnaryExpr;
+use stc_ts_errors::Error;
+use stc_ts_errors::Errors;
 use std::convert::TryFrom;
 use swc_common::EqIgnoreSpan;
 use swc_common::TypeEq;

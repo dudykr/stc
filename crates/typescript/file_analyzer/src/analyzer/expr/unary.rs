@@ -1,8 +1,6 @@
 use super::super::Analyzer;
-use crate::errors::Errors;
 use crate::{
     analyzer::{expr::TypeOfMode, util::ResultExt},
-    errors::Error,
     ty::Type,
     validator,
     validator::ValidateWith,

@@ -1,8 +1,6 @@
 use super::Analyzer;
 use crate::{
     analyzer::util::ResultExt,
-    debug::print_backtrace,
-    errors::{Error, Errors},
     ty::{self, TypeExt},
     ValidationResult,
 };
@@ -11,6 +9,9 @@ use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_ast_rnode::RTsThisType;
+use stc_ts_errors::debug::print_backtrace;
+use stc_ts_errors::Error;
+use stc_ts_errors::Errors;
 use stc_ts_types::{
     Array, ClassInstance, EnumVariant, FnParam, Interface, Intersection, Tuple, Type, TypeElement,
     TypeLit, TypeParam, Union,
