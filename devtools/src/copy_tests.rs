@@ -1,5 +1,7 @@
 use anyhow::bail;
 use anyhow::Error;
+use std::panic::catch_unwind;
+use std::panic::AssertUnwindSafe;
 use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -60,12 +62,16 @@ impl CopyTests {
             None,
         );
         let mut parser = Parser::new_from(lexer);
-        let program = parser
-            .parse_program()
-            .map_err(|_| Error::msg("failed to parse"));
+        let program = catch_unwind(AssertUnwindSafe(|| {
+            parser
+                .parse_program()
+                .map_err(|_| Error::msg("failed to parse"))
+        }))
+        .map_err(|_| Error::msg("panic while parsing"))?;
+
         let program = match program {
             Ok(v) => v,
-            Err(err) => {
+            Err(..) => {
                 if self.no_error_only {
                     return Ok(false);
                 }
