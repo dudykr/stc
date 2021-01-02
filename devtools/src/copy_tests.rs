@@ -143,10 +143,12 @@ impl CopyTests {
                 return;
             }
 
+            let _ = create_dir_all(&to.parent().unwrap());
+
             let _ = copy(&file, &to);
         });
 
-        bail!("not implemented yet")
+        Ok(())
     }
 }
 
