@@ -44,7 +44,7 @@ pub struct CopyTests {
 }
 
 impl CopyTests {
-    fn should_include(&self, path: &Path) -> Result<bool, Error> {
+    fn should_include_cheap(&self, path: &Path) -> Result<bool, Error> {
         let cm = Arc::new(SourceMap::default());
         let _handler =
             Handler::with_tty_emitter(ColorConfig::Always, true, false, Some(cm.clone()));
@@ -91,14 +91,10 @@ impl CopyTests {
             return Ok(false);
         }
 
-        if self.no_error_only && has_error(path) {
-            return Ok(false);
-        }
-
         Ok(true)
     }
 
-    fn get_files_to_copy(&self) -> Result<Vec<PathBuf>, Error> {
+    fn get_files_to_copy_cheap(&self) -> Result<Vec<PathBuf>, Error> {
         let mut files = vec![];
         for entry in WalkDir::new(&self.src) {
             let entry = entry?;
@@ -112,7 +108,10 @@ impl CopyTests {
                 continue;
             }
 
-            if !self.should_include(entry.path()).unwrap_or_else(|_| false) {
+            if !self
+                .should_include_cheap(entry.path())
+                .unwrap_or_else(|_| false)
+            {
                 continue;
             }
 
@@ -123,7 +122,7 @@ impl CopyTests {
     }
 
     pub fn run(self) -> Result<(), Error> {
-        let files = self.get_files_to_copy()?;
+        let files = self.get_files_to_copy_cheap()?;
         eprintln!("{:?}", files);
         let _ = create_dir_all(&self.dst);
 
@@ -135,6 +134,13 @@ impl CopyTests {
             };
 
             let to = self.dst.join(rel_path);
+            if to.exists() {
+                continue;
+            }
+
+            if self.no_error_only && has_error(&file) {
+                continue;
+            }
 
             let _ = copy(&file, &to);
         }
