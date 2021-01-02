@@ -1791,6 +1791,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "stc_ts_env"
+version = "0.1.0"
+
+[[package]]
 name = "stc_ts_file_analyzer"
 version = "0.1.0"
 dependencies = [
@@ -1811,7 +1815,9 @@ dependencies = [
  "stc_ts_ast_rnode",
  "stc_ts_builtin_types",
  "stc_ts_dts_mutations",
+ "stc_ts_env",
  "stc_ts_file_analyzer_macros",
+ "stc_ts_storage",
  "stc_ts_types",
  "stc_ts_utils",
  "stc_utils",
@@ -1861,6 +1867,10 @@ dependencies = [
  "swc_ecma_parser",
  "swc_ecma_visit",
 ]
+
+[[package]]
+name = "stc_ts_storage"
+version = "0.1.0"
 
 [[package]]
 name = "stc_ts_type_checker"
