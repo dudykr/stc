@@ -14,7 +14,6 @@ use crate::validator;
 use crate::validator::ValidateWith;
 use crate::ValidationResult;
 use bitflags::_core::mem::take;
-use rnode::FoldWith;
 use rnode::IntoRNode;
 use rnode::NodeId;
 use rnode::NodeIdGenerator;
