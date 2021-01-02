@@ -1798,11 +1798,16 @@ version = "0.1.0"
 name = "stc_ts_errors"
 version = "0.1.0"
 dependencies = [
+ "backtrace",
+ "fxhash",
+ "rnode",
+ "slog",
  "stc_ts_ast_rnode",
  "stc_ts_types",
  "swc_atoms",
  "swc_common",
  "swc_ecma_ast",
+ "swc_ecma_codegen",
 ]
 
 [[package]]

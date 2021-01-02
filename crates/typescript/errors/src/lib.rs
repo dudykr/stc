@@ -1,13 +1,19 @@
-use crate::{
-    name::Name,
-    ty::{Type, TypeElement, TypeParamInstantiation},
-};
+#![allow(incomplete_features)]
+#![feature(box_syntax)]
+#![feature(specialization)]
+
 use stc_ts_ast_rnode::RExpr;
-use stc_ts_types::{Id, ModuleId};
+use stc_ts_types::Id;
+use stc_ts_types::ModuleId;
+use stc_ts_types::Type;
+use stc_ts_types::TypeElement;
+use stc_ts_types::TypeParamInstantiation;
 use std::{ops::RangeInclusive, path::PathBuf};
 use swc_atoms::JsWord;
 use swc_common::{errors::Handler, Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::{UnaryOp, UpdateOp};
+
+pub mod debug;
 
 impl Errors {
     /// This is used for debugging (by calling [pacic]).
@@ -197,7 +203,7 @@ pub enum Error {
 
     /// TS2304
     NameNotFound {
-        name: Name,
+        name: Id,
         ctxt: ModuleId,
         type_args: Option<TypeParamInstantiation>,
         span: Span,

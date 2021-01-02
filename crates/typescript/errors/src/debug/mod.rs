@@ -1,4 +1,5 @@
 //! A module to validate while type checking
+
 use backtrace::Backtrace;
 use rnode::Fold;
 use rnode::FoldWith;
