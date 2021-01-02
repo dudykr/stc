@@ -1,5 +1,6 @@
 use anyhow::bail;
 use anyhow::Error;
+use rayon::prelude::*;
 use std::fs::copy;
 use std::fs::create_dir_all;
 use std::panic::catch_unwind;
@@ -126,24 +127,24 @@ impl CopyTests {
         eprintln!("{:?}", files);
         let _ = create_dir_all(&self.dst);
 
-        for file in files {
+        files.into_par_iter().for_each(|file| {
             let rel_path = file.strip_prefix(&self.src);
             let rel_path = match rel_path {
                 Ok(v) => v,
-                Err(_) => continue,
+                Err(_) => return,
             };
 
             let to = self.dst.join(rel_path);
             if to.exists() {
-                continue;
+                return;
             }
 
             if self.no_error_only && has_error(&file) {
-                continue;
+                return;
             }
 
             let _ = copy(&file, &to);
-        }
+        });
 
         bail!("not implemented yet")
     }
