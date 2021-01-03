@@ -90,6 +90,7 @@ impl Analyzer<'_, '_> {
             Default::default(),
             |analyzer: &mut Analyzer| {
                 analyzer.extract_call_new_expr_member(
+                    span,
                     callee,
                     type_ann,
                     ExtractKind::Call,
@@ -121,6 +122,7 @@ impl Analyzer<'_, '_> {
             Default::default(),
             |analyzer: &mut Analyzer| {
                 analyzer.extract_call_new_expr_member(
+                    span,
                     callee,
                     type_ann,
                     ExtractKind::New,
@@ -144,6 +146,7 @@ impl Analyzer<'_, '_> {
     /// This method check arguments
     fn extract_call_new_expr_member(
         &mut self,
+        span: Span,
         callee: &RExpr,
         type_ann: Option<&Type>,
         kind: ExtractKind,
@@ -151,8 +154,6 @@ impl Analyzer<'_, '_> {
         type_args: Option<&RTsTypeParamInstantiation>,
     ) -> ValidationResult {
         debug_assert_eq!(self.scope.kind(), ScopeKind::Call);
-
-        let span = callee.span();
 
         slog::debug!(self.logger, "extract_call_new_expr_member");
 
@@ -265,11 +266,6 @@ impl Analyzer<'_, '_> {
                 };
 
                 match *obj_type.normalize() {
-                    Type::Function(ref f) if kind == ExtractKind::Call => {
-                        //
-                        return Ok(f.ret_ty.clone());
-                    }
-
                     Type::Keyword(RTsKeywordType {
                         kind: TsKeywordTypeKind::TsAnyKeyword,
                         ..
@@ -1161,7 +1157,7 @@ impl Analyzer<'_, '_> {
         kind: ExtractKind,
         type_params: Option<&[TypeParam]>,
         params: &[FnParam],
-        ret_ty: Box<Type>,
+        mut ret_ty: Box<Type>,
         type_args: Option<&TypeParamInstantiation>,
         args: &[RExprOrSpread],
         arg_types: &[TypeOrSpread],
@@ -1357,10 +1353,13 @@ impl Analyzer<'_, '_> {
                 analyzer.add_call_facts(params, &args, &mut ty);
             }
 
+            ty.reposition(span);
+
             return Ok(ty);
         }
 
         let mut ret_ty = ret_ty.clone();
+        ret_ty.reposition(span);
         ret_ty.visit_mut_with(&mut ReturnTypeSimplifier { analyzer: self });
         if kind == ExtractKind::Call {
             self.add_call_facts(params, &args, &mut ret_ty);

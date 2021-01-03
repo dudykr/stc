@@ -66,6 +66,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
                 tsx: fname.contains("tsx"),
                 ..ts_config
             },
+            None,
         );
         checker.check(Arc::new(file_name.into()));
         let errors = ::stc_ts_errors::Error::flatten(checker.take_errors());

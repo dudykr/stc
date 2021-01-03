@@ -65,6 +65,7 @@ fn run_bench(b: &mut Bencher, path: &Path) {
                 TsConfig {
                     ..Default::default()
                 },
+                None,
             );
 
             let id = checker.check(Arc::new(path.to_path_buf()));

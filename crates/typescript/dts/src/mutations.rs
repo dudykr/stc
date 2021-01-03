@@ -1,5 +1,3 @@
-use std::mem::take;
-
 use rnode::VisitMut;
 use rnode::VisitMutWith;
 use stc_ts_ast_rnode::RArrayPat;
@@ -26,6 +24,7 @@ use stc_ts_dts_mutations::PatMut;
 use stc_ts_dts_mutations::VarDeclMut;
 use stc_ts_utils::HasNodeId;
 use stc_ts_utils::MapWithMut;
+use std::mem::take;
 use swc_common::DUMMY_SP;
 
 pub fn apply_mutations(mutations: &mut Mutations, m: &mut RModule) {

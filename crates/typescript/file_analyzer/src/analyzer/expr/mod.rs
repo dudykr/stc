@@ -112,280 +112,290 @@ impl Analyzer<'_, '_> {
 
         let span = e.span();
 
-        match e {
-            // super() returns any
-            RExpr::Call(RCallExpr {
-                callee: RExprOrSuper::Super(..),
-                ..
-            }) => Ok(Type::any(span)),
+        let ty = (|| {
+            match e {
+                // super() returns any
+                RExpr::Call(RCallExpr {
+                    callee: RExprOrSuper::Super(..),
+                    ..
+                }) => Ok(Type::any(span)),
 
-            RExpr::Bin(e) => e.validate_with(self),
-            RExpr::Cond(e) => e.validate_with_args(self, (mode, type_ann)),
-            RExpr::Seq(e) => e.validate_with_args(self, (mode, type_ann)),
-            RExpr::Update(e) => e.validate_with(self),
-            RExpr::New(e) => e.validate_with_args(self, type_ann),
-            RExpr::Call(e) => e.validate_with_args(self, type_ann),
-            RExpr::TsAs(e) => e.validate_with_args(self, (mode, type_args, type_ann)),
-            RExpr::TsTypeAssertion(e) => e.validate_with_args(self, (mode, type_args, type_ann)),
-            RExpr::Assign(e) => e.validate_with_args(self, (mode, type_ann)),
-            RExpr::Unary(e) => e.validate_with(self),
-
-            RExpr::This(RThisExpr { span, .. }) => {
-                if !self.scope.is_this_defined() {
-                    return Ok(box Type::Keyword(RTsKeywordType {
-                        span: *span,
-                        kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                    }));
+                RExpr::Bin(e) => e.validate_with(self),
+                RExpr::Cond(e) => e.validate_with_args(self, (mode, type_ann)),
+                RExpr::Seq(e) => e.validate_with_args(self, (mode, type_ann)),
+                RExpr::Update(e) => e.validate_with(self),
+                RExpr::New(e) => e.validate_with_args(self, type_ann),
+                RExpr::Call(e) => e.validate_with_args(self, type_ann),
+                RExpr::TsAs(e) => e.validate_with_args(self, (mode, type_args, type_ann)),
+                RExpr::TsTypeAssertion(e) => {
+                    e.validate_with_args(self, (mode, type_args, type_ann))
                 }
-                let span = *span;
-                if let Some(ty) = self.scope.this() {
-                    return Ok(ty.into_owned());
-                }
-                return Ok(box Type::from(RTsThisType { span }));
-            }
+                RExpr::Assign(e) => e.validate_with_args(self, (mode, type_ann)),
+                RExpr::Unary(e) => e.validate_with(self),
 
-            RExpr::Ident(ref i) => {
-                let ty = self.type_of_var(i, mode, type_args)?;
-                if mode == TypeOfMode::RValue {
-                    // `i` is truthy
-                    self.cur_facts
-                        .true_facts
-                        .facts
-                        .insert(i.into(), TypeFacts::Truthy);
-                    self.cur_facts
-                        .false_facts
-                        .facts
-                        .insert(i.into(), TypeFacts::Falsy);
+                RExpr::This(RThisExpr { span, .. }) => {
+                    if !self.scope.is_this_defined() {
+                        return Ok(box Type::Keyword(RTsKeywordType {
+                            span: *span,
+                            kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                        }));
+                    }
+                    let span = *span;
+                    if let Some(ty) = self.scope.this() {
+                        return Ok(ty.into_owned());
+                    }
+                    return Ok(box Type::from(RTsThisType { span }));
                 }
 
-                Ok(ty)
-            }
+                RExpr::Ident(ref i) => {
+                    let ty = self.type_of_var(i, mode, type_args)?;
+                    if mode == TypeOfMode::RValue {
+                        // `i` is truthy
+                        self.cur_facts
+                            .true_facts
+                            .facts
+                            .insert(i.into(), TypeFacts::Truthy);
+                        self.cur_facts
+                            .false_facts
+                            .facts
+                            .insert(i.into(), TypeFacts::Falsy);
+                    }
 
-            RExpr::Array(RArrayLit { ref elems, .. }) => {
-                let mut can_be_tuple = true;
-                let mut elements = Vec::with_capacity(elems.len());
+                    Ok(ty)
+                }
 
-                for elem in elems.iter() {
-                    let span = elem.span();
-                    let ty = match elem {
-                        Some(RExprOrSpread {
-                            spread: None,
-                            ref expr,
-                        }) => {
-                            let ty = expr.validate_with_default(self)?;
-                            ty
-                        }
-                        Some(RExprOrSpread {
-                            spread: Some(..),
-                            expr,
-                        }) => {
-                            let element_type = expr.validate_with_default(self)?;
-                            let element_type = box element_type.foldable();
+                RExpr::Array(RArrayLit { ref elems, .. }) => {
+                    let mut can_be_tuple = true;
+                    let mut elements = Vec::with_capacity(elems.len());
 
-                            match *element_type {
-                                Type::Array(array) => {
-                                    can_be_tuple = false;
-                                    elements.push(TupleElement {
-                                        span,
-                                        label: None,
-                                        ty: array.elem_type,
-                                    });
-                                }
-                                Type::Tuple(tuple) => {
-                                    can_be_tuple = false;
-                                    elements.extend(tuple.elems);
-                                }
-                                Type::Keyword(RTsKeywordType {
-                                    kind: TsKeywordTypeKind::TsAnyKeyword,
-                                    ..
-                                }) => {
-                                    can_be_tuple = false;
-                                    elements.push(TupleElement {
-                                        span,
-                                        label: None,
-                                        ty: element_type.clone(),
-                                    });
-                                }
-                                _ => unimplemented!("type of array spread: {:?}", element_type),
+                    for elem in elems.iter() {
+                        let span = elem.span();
+                        let ty = match elem {
+                            Some(RExprOrSpread {
+                                spread: None,
+                                ref expr,
+                            }) => {
+                                let ty = expr.validate_with_default(self)?;
+                                ty
                             }
-                            continue;
-                        }
-                        None => {
-                            let ty = Type::undefined(span);
-                            ty
-                        }
-                    };
-                    elements.push(TupleElement {
-                        span,
-                        label: None,
-                        ty,
-                    });
-                }
+                            Some(RExprOrSpread {
+                                spread: Some(..),
+                                expr,
+                            }) => {
+                                let element_type = expr.validate_with_default(self)?;
+                                let element_type = box element_type.foldable();
 
-                if self.ctx.in_export_default_expr && elements.is_empty() {
-                    return Ok(box Type::Array(Array {
+                                match *element_type {
+                                    Type::Array(array) => {
+                                        can_be_tuple = false;
+                                        elements.push(TupleElement {
+                                            span,
+                                            label: None,
+                                            ty: array.elem_type,
+                                        });
+                                    }
+                                    Type::Tuple(tuple) => {
+                                        can_be_tuple = false;
+                                        elements.extend(tuple.elems);
+                                    }
+                                    Type::Keyword(RTsKeywordType {
+                                        kind: TsKeywordTypeKind::TsAnyKeyword,
+                                        ..
+                                    }) => {
+                                        can_be_tuple = false;
+                                        elements.push(TupleElement {
+                                            span,
+                                            label: None,
+                                            ty: element_type.clone(),
+                                        });
+                                    }
+                                    _ => unimplemented!("type of array spread: {:?}", element_type),
+                                }
+                                continue;
+                            }
+                            None => {
+                                let ty = Type::undefined(span);
+                                ty
+                            }
+                        };
+                        elements.push(TupleElement {
+                            span,
+                            label: None,
+                            ty,
+                        });
+                    }
+
+                    if self.ctx.in_export_default_expr && elements.is_empty() {
+                        return Ok(box Type::Array(Array {
+                            span,
+                            elem_type: Type::any(span),
+                        }));
+                    }
+
+                    if !can_be_tuple {
+                        let mut types: Vec<_> =
+                            elements.into_iter().map(|element| element.ty).collect();
+                        types.dedup_type();
+
+                        return Ok(box Type::Array(Array {
+                            span,
+                            elem_type: Type::union(types),
+                        }));
+                    }
+
+                    return Ok(box Type::Tuple(Tuple {
                         span,
-                        elem_type: Type::any(span),
+                        elems: elements,
                     }));
                 }
 
-                if !can_be_tuple {
-                    let mut types: Vec<_> =
-                        elements.into_iter().map(|element| element.ty).collect();
-                    types.dedup_type();
-
-                    return Ok(box Type::Array(Array {
-                        span,
-                        elem_type: Type::union(types),
-                    }));
-                }
-
-                return Ok(box Type::Tuple(Tuple {
-                    span,
-                    elems: elements,
-                }));
-            }
-
-            RExpr::Lit(RLit::Bool(v)) => {
-                return Ok(box Type::Lit(RTsLitType {
-                    node_id: NodeId::invalid(),
-                    span: v.span,
-                    lit: RTsLit::Bool(v.clone()),
-                }));
-            }
-            RExpr::Lit(RLit::Str(ref v)) => {
-                return Ok(box Type::Lit(RTsLitType {
-                    node_id: NodeId::invalid(),
-                    span: v.span,
-                    lit: RTsLit::Str(v.clone()),
-                }));
-            }
-            RExpr::Lit(RLit::Num(v)) => {
-                return Ok(box Type::Lit(RTsLitType {
-                    node_id: NodeId::invalid(),
-                    span: v.span,
-                    lit: RTsLit::Number(v.clone()),
-                }));
-            }
-            RExpr::Lit(RLit::Null(RNull { span })) => {
-                if self.ctx.in_export_default_expr {
-                    // TODO: strict mode
-                    return Ok(box Type::Keyword(RTsKeywordType {
-                        span: *span,
-                        kind: TsKeywordTypeKind::TsAnyKeyword,
-                    }));
-                }
-
-                return Ok(box Type::Keyword(RTsKeywordType {
-                    span: *span,
-                    kind: TsKeywordTypeKind::TsNullKeyword,
-                }));
-            }
-            RExpr::Lit(RLit::Regex(..)) => {
-                return Ok(box Type::Ref(Ref {
-                    span,
-                    ctxt: ModuleId::builtin(),
-                    type_name: RTsEntityName::Ident(RIdent {
-                        node_id: NodeId::invalid(),
-                        span,
-                        sym: js_word!("RegExp"),
-                        optional: false,
-                        type_ann: None,
-                    }),
-                    type_args: None,
-                }));
-            }
-
-            RExpr::Paren(RParenExpr { ref expr, .. }) => {
-                expr.validate_with_args(self, (mode, type_args, type_ann))
-            }
-
-            RExpr::Tpl(ref t) => {
-                // Check if tpl is constant. If it is, it's type is string literal.
-                if t.exprs.is_empty() {
+                RExpr::Lit(RLit::Bool(v)) => {
                     return Ok(box Type::Lit(RTsLitType {
                         node_id: NodeId::invalid(),
-                        span: t.span(),
-                        lit: RTsLit::Str(
-                            t.quasis[0]
-                                .cooked
-                                .clone()
-                                .unwrap_or_else(|| t.quasis[0].raw.clone()),
-                        ),
+                        span: v.span,
+                        lit: RTsLit::Bool(v.clone()),
+                    }));
+                }
+                RExpr::Lit(RLit::Str(ref v)) => {
+                    return Ok(box Type::Lit(RTsLitType {
+                        node_id: NodeId::invalid(),
+                        span: v.span,
+                        lit: RTsLit::Str(v.clone()),
+                    }));
+                }
+                RExpr::Lit(RLit::Num(v)) => {
+                    return Ok(box Type::Lit(RTsLitType {
+                        node_id: NodeId::invalid(),
+                        span: v.span,
+                        lit: RTsLit::Number(v.clone()),
+                    }));
+                }
+                RExpr::Lit(RLit::Null(RNull { span })) => {
+                    if self.ctx.in_export_default_expr {
+                        // TODO: strict mode
+                        return Ok(box Type::Keyword(RTsKeywordType {
+                            span: *span,
+                            kind: TsKeywordTypeKind::TsAnyKeyword,
+                        }));
+                    }
+
+                    return Ok(box Type::Keyword(RTsKeywordType {
+                        span: *span,
+                        kind: TsKeywordTypeKind::TsNullKeyword,
+                    }));
+                }
+                RExpr::Lit(RLit::Regex(..)) => {
+                    return Ok(box Type::Ref(Ref {
+                        span,
+                        ctxt: ModuleId::builtin(),
+                        type_name: RTsEntityName::Ident(RIdent {
+                            node_id: NodeId::invalid(),
+                            span,
+                            sym: js_word!("RegExp"),
+                            optional: false,
+                            type_ann: None,
+                        }),
+                        type_args: None,
                     }));
                 }
 
-                return Ok(box Type::Keyword(RTsKeywordType {
-                    span,
-                    kind: TsKeywordTypeKind::TsStringKeyword,
-                }));
-            }
-
-            RExpr::TsNonNull(RTsNonNullExpr { ref expr, .. }) => Ok(box expr
-                .validate_with_args(self, (mode, type_args, type_ann))?
-                .remove_falsy()),
-
-            RExpr::Object(e) => {
-                return e.validate_with(self);
-            }
-
-            // https://github.com/Microsoft/TypeScript/issues/26959
-            RExpr::Yield(..) => {
-                e.visit_children_with(self);
-                return Ok(Type::any(span));
-            }
-
-            RExpr::Await(RAwaitExpr { .. }) => unimplemented!("typeof(AwaitExpr)"),
-
-            RExpr::Class(RClassExpr {
-                ref ident,
-                ref class,
-                ..
-            }) => {
-                self.scope.this_class_name = ident.as_ref().map(|i| i.into());
-                return Ok(box class.validate_with(self)?.into());
-            }
-
-            RExpr::Arrow(ref e) => return Ok(box e.validate_with(self)?.into()),
-
-            RExpr::Fn(RFnExpr { ref function, .. }) => {
-                return Ok(box function.validate_with(self)?.into());
-            }
-
-            RExpr::Member(ref expr) => {
-                // Foo.a
-                if let Ok(name) = Name::try_from(&*expr) {
-                    self.cur_facts
-                        .true_facts
-                        .facts
-                        .insert(name, TypeFacts::Truthy);
+                RExpr::Paren(RParenExpr { ref expr, .. }) => {
+                    expr.validate_with_args(self, (mode, type_args, type_ann))
                 }
 
-                return self.type_of_member_expr(expr, mode);
-            }
+                RExpr::Tpl(ref t) => {
+                    // Check if tpl is constant. If it is, it's type is string literal.
+                    if t.exprs.is_empty() {
+                        return Ok(box Type::Lit(RTsLitType {
+                            node_id: NodeId::invalid(),
+                            span: t.span(),
+                            lit: RTsLit::Str(
+                                t.quasis[0]
+                                    .cooked
+                                    .clone()
+                                    .unwrap_or_else(|| t.quasis[0].raw.clone()),
+                            ),
+                        }));
+                    }
 
-            RExpr::MetaProp(..) => unimplemented!("typeof(MetaProp)"),
-
-            RExpr::Invalid(ref i) => return Ok(Type::any(i.span())),
-
-            RExpr::OptChain(expr) => expr.validate_with_args(self, type_ann),
-
-            RExpr::TsConstAssertion(expr) => {
-                if mode == TypeOfMode::RValue {
-                    return expr.expr.validate_with_args(self, (mode, None, type_ann));
-                } else {
-                    return Err(Error::Unimplemented {
+                    return Ok(box Type::Keyword(RTsKeywordType {
                         span,
-                        msg: format!(
-                            "Proper error reporting for using const assertion expression in left \
-                             hand side of an assignment expression"
-                        ),
-                    });
+                        kind: TsKeywordTypeKind::TsStringKeyword,
+                    }));
                 }
-            }
 
-            _ => unimplemented!("typeof ({:?})", e),
+                RExpr::TsNonNull(RTsNonNullExpr { ref expr, .. }) => Ok(box expr
+                    .validate_with_args(self, (mode, type_args, type_ann))?
+                    .remove_falsy()),
+
+                RExpr::Object(e) => {
+                    return e.validate_with(self);
+                }
+
+                // https://github.com/Microsoft/TypeScript/issues/26959
+                RExpr::Yield(..) => {
+                    e.visit_children_with(self);
+                    return Ok(Type::any(span));
+                }
+
+                RExpr::Await(RAwaitExpr { .. }) => unimplemented!("typeof(AwaitExpr)"),
+
+                RExpr::Class(RClassExpr {
+                    ref ident,
+                    ref class,
+                    ..
+                }) => {
+                    self.scope.this_class_name = ident.as_ref().map(|i| i.into());
+                    return Ok(box class.validate_with(self)?.into());
+                }
+
+                RExpr::Arrow(ref e) => return Ok(box e.validate_with(self)?.into()),
+
+                RExpr::Fn(RFnExpr { ref function, .. }) => {
+                    return Ok(box function.validate_with(self)?.into());
+                }
+
+                RExpr::Member(ref expr) => {
+                    // Foo.a
+                    if let Ok(name) = Name::try_from(&*expr) {
+                        self.cur_facts
+                            .true_facts
+                            .facts
+                            .insert(name, TypeFacts::Truthy);
+                    }
+
+                    return self.type_of_member_expr(expr, mode);
+                }
+
+                RExpr::MetaProp(..) => unimplemented!("typeof(MetaProp)"),
+
+                RExpr::Invalid(ref i) => return Ok(Type::any(i.span())),
+
+                RExpr::OptChain(expr) => expr.validate_with_args(self, type_ann),
+
+                RExpr::TsConstAssertion(expr) => {
+                    if mode == TypeOfMode::RValue {
+                        return expr.expr.validate_with_args(self, (mode, None, type_ann));
+                    } else {
+                        return Err(Error::Unimplemented {
+                            span,
+                            msg: format!(
+                                "Proper error reporting for using const assertion expression in \
+                                 left hand side of an assignment expression"
+                            ),
+                        });
+                    }
+                }
+
+                _ => unimplemented!("typeof ({:?})", e),
+            }
+        })()?;
+
+        if let Some(debugger) = &self.debugger {
+            debugger.dump_type(span, &ty);
         }
+
+        Ok(ty)
     }
 }
 
