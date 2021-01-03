@@ -44,7 +44,11 @@ fn is_ignored(path: &Path) -> bool {
     static IGNORED: Lazy<Vec<String>> = Lazy::new(|| {
         let content = read_to_string("tests/ignored.txt").unwrap();
 
-        content.lines().map(|v| v.to_string()).collect()
+        content
+            .lines()
+            .filter(|v| !v.trim().is_empty())
+            .map(|v| v.to_string())
+            .collect()
     });
 
     IGNORED
