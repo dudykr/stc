@@ -14,6 +14,7 @@ use self::common::SwcComments;
 use once_cell::sync::Lazy;
 use stc_testing::logger;
 use stc_ts_builtin_types::Lib;
+use stc_ts_errors::debug::debugger::Debugger;
 use stc_ts_file_analyzer::env::Env;
 use stc_ts_file_analyzer::Rule;
 use stc_ts_testing::tsc::TsTestCase;
@@ -226,6 +227,10 @@ fn do_test(path: &Path) -> Result<(), StdErr> {
                     tsx: str_name.contains("tsx"),
                     ..ts_config
                 },
+                Some(Debugger {
+                    cm: cm.clone(),
+                    handler: type_info_handler.clone(),
+                }),
             );
 
             checker.check(Arc::new(path.into()));

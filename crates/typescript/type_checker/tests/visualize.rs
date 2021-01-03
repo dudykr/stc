@@ -9,6 +9,7 @@ use rnode::VisitWith;
 use stc_testing::logger;
 use stc_ts_ast_rnode::RModule;
 use stc_ts_builtin_types::Lib;
+use stc_ts_errors::debug::debugger::Debugger;
 use stc_ts_file_analyzer::analyzer::Analyzer;
 use stc_ts_file_analyzer::analyzer::NoopLoader;
 use stc_ts_file_analyzer::env::Env;
@@ -75,45 +76,20 @@ fn visualize(file_name: PathBuf) {
             });
             let module = RModule::from_orig(&mut node_id_gen, module);
             {
-                let mut analyzer =
-                    Analyzer::root(log.logger, env, cm.clone(), box &mut storage, &NoopLoader);
+                let mut analyzer = Analyzer::root(
+                    log.logger,
+                    env,
+                    cm.clone(),
+                    box &mut storage,
+                    &NoopLoader,
+                    Some(Debugger {
+                        cm: cm.clone(),
+                        handler: handler.clone(),
+                    }),
+                );
                 GLOBALS.set(stable_env.swc_globals(), || {
                     module.validate_with(&mut analyzer).unwrap();
                 });
-            }
-
-            let e = storage.info.exports;
-
-            for (_, ty) in e.private_vars {
-                ty.visit_with(&mut TypeVisualizer {
-                    cm: cm.clone(),
-                    handler: &handler,
-                });
-            }
-
-            for (_, ty) in e.vars {
-                ty.visit_with(&mut TypeVisualizer {
-                    cm: cm.clone(),
-                    handler: &handler,
-                });
-            }
-
-            for (_, types) in e.private_types {
-                for ty in types {
-                    ty.visit_with(&mut TypeVisualizer {
-                        cm: cm.clone(),
-                        handler: &handler,
-                    });
-                }
-            }
-
-            for (_, types) in e.types {
-                for ty in types {
-                    ty.visit_with(&mut TypeVisualizer {
-                        cm: cm.clone(),
-                        handler: &handler,
-                    });
-                }
             }
 
             Err(())

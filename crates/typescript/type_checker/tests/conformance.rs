@@ -233,6 +233,7 @@ fn do_test(treat_error_as_bug: bool, file_name: &Path) -> Result<(), StdErr> {
                     tsx: fname.contains("tsx"),
                     ..ts_config
                 },
+                None,
             );
 
             checker.check(Arc::new(file_name.into()));

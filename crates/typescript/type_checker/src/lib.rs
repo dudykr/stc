@@ -15,6 +15,7 @@ use slog::Logger;
 use stc_ts_ast_rnode::RModule;
 use stc_ts_dts::apply_mutations;
 use stc_ts_dts::cleanup_module_for_dts;
+use stc_ts_errors::debug::debugger::Debugger;
 use stc_ts_errors::Error;
 use stc_ts_file_analyzer::analyzer::Analyzer;
 use stc_ts_file_analyzer::env::Env;
@@ -64,6 +65,8 @@ pub struct Checker {
     errors: Mutex<Vec<Error>>,
 
     env: Env,
+
+    debugger: Option<Debugger>,
 }
 
 impl Checker {
@@ -73,6 +76,7 @@ impl Checker {
         handler: Arc<Handler>,
         env: Env,
         parser_config: TsConfig,
+        debugger: Option<Debugger>,
     ) -> Self {
         Checker {
             logger,
@@ -90,6 +94,7 @@ impl Checker {
             )),
             started: Default::default(),
             errors: Default::default(),
+            debugger,
         }
     }
 
@@ -214,6 +219,7 @@ impl Checker {
                                 self.cm.clone(),
                                 box &mut storage,
                                 self,
+                                self.debugger.clone(),
                             );
                             let _ = modules.validate_with(&mut a);
                             mutations = a.mutations.unwrap();
@@ -331,6 +337,7 @@ impl Checker {
                     self.cm.clone(),
                     box &mut storage,
                     self,
+                    self.debugger.clone(),
                 );
 
                 module.visit_with(&mut a);

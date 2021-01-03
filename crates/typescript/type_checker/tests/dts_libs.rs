@@ -114,6 +114,7 @@ fn test_project(_name: &str, dir: &Path, entries: Vec<PathBuf>) {
             TsConfig {
                 ..Default::default()
             },
+            None,
         );
 
         for main in entries {
