@@ -45,7 +45,7 @@ use testing::Tester;
 
 fn is_ignored(path: &Path) -> bool {
     static IGNORED: Lazy<Vec<String>> = Lazy::new(|| {
-        let content = read_to_string("tests/ignored.txt").unwrap();
+        let content = read_to_string("tests/types.ignored.txt").unwrap();
 
         content
             .lines()
