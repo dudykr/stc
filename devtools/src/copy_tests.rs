@@ -1,4 +1,3 @@
-use anyhow::bail;
 use anyhow::Error;
 use rayon::prelude::*;
 use std::fs::copy;
