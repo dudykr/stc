@@ -56,6 +56,10 @@ fn is_ignored(path: &Path) -> bool {
 fn types() {
     let args: Vec<_> = env::args().collect();
     let tests = load_fixtures("conformance", |file_name| {
+        if is_ignored(&file_name) {
+            return None;
+        }
+
         Some(box move || {
             do_test(&file_name).unwrap();
         })
