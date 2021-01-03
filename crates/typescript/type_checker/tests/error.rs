@@ -12,6 +12,7 @@ mod common;
 use self::common::load_fixtures;
 use serde::Deserialize;
 use stc_testing::logger;
+use stc_ts_builtin_types::Lib;
 use stc_ts_file_analyzer::env::Env;
 use stc_ts_type_checker::Checker;
 use std::{env, path::Path, sync::Arc};
@@ -67,7 +68,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
             },
         );
         checker.check(Arc::new(file_name.into()));
-        let errors = ::stc_ts_file_analyzer::errors::Error::flatten(checker.take_errors());
+        let errors = ::stc_ts_errors::Error::flatten(checker.take_errors());
 
         checker.run(|| {
             for e in errors {
