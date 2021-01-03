@@ -12,7 +12,6 @@ mod common;
 use self::common::load_fixtures;
 use self::common::SwcComments;
 use once_cell::sync::Lazy;
-use serde::Deserialize;
 use stc_testing::logger;
 use stc_ts_builtin_types::Lib;
 use stc_ts_file_analyzer::env::Env;
@@ -22,12 +21,10 @@ use stc_ts_type_checker::Checker;
 use std::collections::HashSet;
 use std::env;
 use std::fs::read_to_string;
-use std::fs::File;
 use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Arc;
 use swc_common::errors::ColorConfig;
-use swc_common::errors::DiagnosticBuilder;
 use swc_common::errors::Handler;
 use swc_common::input::SourceFileInput;
 use swc_common::FileName;
@@ -207,7 +204,7 @@ fn do_test(path: &Path) -> Result<(), StdErr> {
     .ok()
     .unwrap_or_default();
 
-    let tester = testing::Tester::new();
+    let tester = Tester::new();
 
     let visualized = tester
         .errors(|cm, handler| -> Result<(), _> {
@@ -219,7 +216,7 @@ fn do_test(path: &Path) -> Result<(), StdErr> {
             ));
 
             let log = logger();
-            let handler = Arc::new(handler);
+            let type_info_handler = Arc::new(handler);
             let mut checker = Checker::new(
                 log.logger,
                 cm.clone(),
