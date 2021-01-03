@@ -10,7 +10,7 @@ use swc_ecma_codegen::Emitter;
 use swc_ecma_codegen::Node;
 
 /// This trait **must** be used as a generic.
-pub trait Debugger: Sized {
+pub trait Debugger: Sized + Send + Sync {
     fn dump_type(&self, span: Span, ty: &Type);
 }
 #[cfg(debug_assertions)]
@@ -55,6 +55,6 @@ impl Debugger for DumpAll {
 pub struct Noop {}
 
 impl Debugger for Noop {
-    #[inline]
+    #[inline(always)]
     fn dump_type(&self, _: Span, _: &Type) {}
 }

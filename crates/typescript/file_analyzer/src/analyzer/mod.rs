@@ -34,6 +34,7 @@ use stc_ts_ast_rnode::RTsModuleName;
 use stc_ts_ast_rnode::RTsModuleRef;
 use stc_ts_ast_rnode::RTsNamespaceDecl;
 use stc_ts_dts_mutations::Mutations;
+use stc_ts_errors::debug::debugger::Debugger;
 use stc_ts_errors::debug::duplicate::DuplicateTracker;
 use stc_ts_errors::Error;
 use stc_ts_storage::Builtin;
@@ -125,7 +126,7 @@ pub(crate) struct Ctx {
 }
 
 /// Note: All methods named `validate_*` return [Err] iff it's not recoverable.
-pub struct Analyzer<'scope, 'b> {
+pub struct Analyzer<'scope, 'b, D: Debugger> {
     logger: Logger,
     env: Env,
     cm: Arc<SourceMap>,
