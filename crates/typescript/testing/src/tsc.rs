@@ -37,7 +37,7 @@ impl TsTestCase {
         cm: &Arc<SourceMap>,
         handler: &Handler,
         file_name: &Path,
-        commets: &dyn Comments,
+        comments: Option<&dyn Comments>,
     ) -> Result<Self, Error> {
         let s = read_to_string(&file_name).with_context(|| {
             format!(
@@ -81,7 +81,7 @@ impl TsTestCase {
             }),
             swc_ecma_parser::JscTarget::Es2020,
             SourceFileInput::from(&*fm),
-            Some(commets),
+            comments,
         );
 
         let mut parser = Parser::new_from(lexer);

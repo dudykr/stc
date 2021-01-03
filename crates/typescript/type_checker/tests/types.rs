@@ -17,14 +17,18 @@ use stc_testing::logger;
 use stc_ts_builtin_types::Lib;
 use stc_ts_file_analyzer::env::Env;
 use stc_ts_file_analyzer::Rule;
+use stc_ts_testing::tsc::TsTestCase;
 use stc_ts_type_checker::Checker;
 use std::collections::HashSet;
 use std::env;
 use std::fs::read_to_string;
 use std::fs::File;
 use std::path::Path;
+use std::path::PathBuf;
 use std::sync::Arc;
+use swc_common::errors::ColorConfig;
 use swc_common::errors::DiagnosticBuilder;
+use swc_common::errors::Handler;
 use swc_common::input::SourceFileInput;
 use swc_common::FileName;
 use swc_common::Span;
@@ -37,6 +41,7 @@ use swc_ecma_parser::TsConfig;
 use swc_ecma_visit::Fold;
 use swc_ecma_visit::FoldWith;
 use test::test_main;
+use testing::run_test2;
 use testing::StdErr;
 use testing::Tester;
 
@@ -71,11 +76,11 @@ fn types() {
     test_main(&args, tests, Default::default());
 }
 
-fn do_test(file_name: &Path) -> Result<(), StdErr> {
-    let fname = file_name.display().to_string();
+fn do_test(path: &Path) -> Result<(), StdErr> {
+    let str_name = path.display().to_string();
 
     let (libs, rule, ts_config, target) = ::testing::run_test(false, |cm, handler| {
-        let fm = cm.load_file(file_name).expect("failed to read file");
+        let fm = cm.load_file(path).expect("failed to read file");
 
         Ok({
             // We parse files twice. At first, we read comments and detect
@@ -85,7 +90,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
 
             let mut parser = Parser::new(
                 Syntax::Typescript(TsConfig {
-                    tsx: fname.contains("tsx"),
+                    tsx: str_name.contains("tsx"),
                     ..Default::default()
                 }),
                 SourceFileInput::from(&*fm),
@@ -202,116 +207,77 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
     .ok()
     .unwrap_or_default();
 
-    let ref_errors = if let Some(ref mut ref_errors) = ref_errors {
-        ref_errors
-    } else {
-        unreachable!()
-    };
+    let tester = testing::Tester::new();
 
-    let tester = Tester::new();
-    let diagnostics = tester
-        .errors(|cm, handler| {
+    let visualized = tester
+        .errors(|cm, handler| -> Result<(), _> {
+            let handler_for_errors = Arc::new(Handler::with_tty_emitter(
+                ColorConfig::Always,
+                true,
+                false,
+                Some(cm.clone()),
+            ));
+
             let log = logger();
             let handler = Arc::new(handler);
             let mut checker = Checker::new(
                 log.logger,
                 cm.clone(),
-                handler.clone(),
+                handler_for_errors.clone(),
                 Env::simple(rule, target, &libs),
                 TsConfig {
-                    tsx: fname.contains("tsx"),
+                    tsx: str_name.contains("tsx"),
                     ..ts_config
                 },
             );
 
-            checker.check(Arc::new(file_name.into()));
+            checker.check(Arc::new(path.into()));
 
             let errors = ::stc_ts_errors::Error::flatten(checker.take_errors());
 
             checker.run(|| {
                 for e in errors {
-                    e.emit(&handler);
+                    e.emit(&handler_for_errors);
                 }
             });
 
-            if false {
-                return Ok(());
-            }
-
-            return Err(());
+            Err(())
         })
-        .expect_err("");
+        .expect_err("should fail");
 
-    let mut actual_error_lines = diagnostics
-        .iter()
-        .map(|d| {
-            let span = d.span.primary_span().unwrap();
-            let cp = tester.cm.lookup_char_pos(span.lo());
+    let mut spec = run_test2(false, |cm, handler| {
+        Ok(TsTestCase::parse(
+            &cm,
+            &handler,
+            &PathBuf::from("tests")
+                .join("references")
+                .join(path.file_name().unwrap()),
+            None,
+        )
+        .unwrap())
+    })
+    .unwrap();
 
-            (cp.line, cp.col.0 + 1)
-        })
-        .collect::<Vec<_>>();
-
-    let full_actual_error_lc = actual_error_lines.clone();
-
-    for line_col in full_actual_error_lc.clone() {
-        if let Some(..) = ref_errors.remove_item(&line_col) {
-            actual_error_lines.remove_item(&line_col);
-        }
-    }
-
-    //
-    //      - All reference errors are matched
-    //      - Actual errors does not remain
-    let success = ref_errors.is_empty() && actual_error_lines.is_empty();
-
-    let res: Result<(), _> = tester.print_errors(|_, handler| {
-        // If we failed, we only emit errors which has wrong line.
-
-        for (d, line_col) in diagnostics.into_iter().zip(full_actual_error_lc.clone()) {
-            if success
-                || env::var("PRINT_ALL").unwrap_or(String::from("")) == "1"
-                || actual_error_lines.contains(&line_col)
-            {
-                DiagnosticBuilder::new_diagnostic(&handler, d).emit();
+    for d in visualized {
+        let sp = d.span.primary_span().unwrap();
+        let text = tester
+            .cm
+            .span_to_snippet(sp)
+            .expect("failed to convert span into source ocde");
+        let matching = spec.type_data.iter().position(|data| data.expr == text);
+        if let Some(matching) = matching {
+            dbg!(&d.message[0].0);
+            if spec.type_data[matching].ty == d.message[0].0 {
+                spec.type_data.remove(matching);
             }
         }
-
-        Err(())
-    });
-
-    let err = match res {
-        Ok(_) => StdErr::from(String::from("")),
-        Err(err) => err,
-    };
-
-    let err_count = actual_error_lines.len();
-
-    if !success {
-        panic!(
-            "\n============================================================\n{:?}
-============================================================\n{} unmatched errors out of {} \
-             errors. Got {} extra errors.\nWanted: {:?}\nUnwanted: {:?}\n\nAll required errors: \
-             {:?}\nAll actual errors: {:?}",
-            err,
-            ref_errors.len(),
-            full_ref_err_cnt,
-            err_count,
-            ref_errors,
-            actual_error_lines,
-            full_ref_errors.as_ref().unwrap(),
-            full_actual_error_lc,
-        );
     }
 
-    if err
-        .compare_to_file(format!("{}.stderr", file_name.display()))
-        .is_err()
-    {
-        panic!()
+    if spec.type_data.is_empty() {
+        return Ok(());
     }
 
-    Ok(())
+    panic!("type mismatch: Remaining type data: {:?}", spec.type_data)
 }
 
 fn make_test(c: &SwcComments, module: Module) -> Module {
