@@ -13,7 +13,6 @@ use self::common::load_fixtures;
 use serde::Deserialize;
 use stc_testing::logger;
 use stc_ts_file_analyzer::env::Env;
-use stc_ts_file_analyzer::Lib;
 use stc_ts_type_checker::Checker;
 use std::{env, path::Path, sync::Arc};
 use swc_ecma_parser::{JscTarget, TsConfig};

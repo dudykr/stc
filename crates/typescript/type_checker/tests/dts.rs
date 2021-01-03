@@ -10,7 +10,6 @@ use anyhow::Context;
 use stc_testing::get_git_root;
 use stc_testing::logger;
 use stc_ts_file_analyzer::env::Env;
-use stc_ts_file_analyzer::Lib;
 use stc_ts_type_checker::Checker;
 use std::fs::read_to_string;
 use std::{

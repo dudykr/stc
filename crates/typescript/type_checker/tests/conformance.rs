@@ -14,7 +14,6 @@ use self::common::SwcComments;
 use serde::Deserialize;
 use stc_testing::logger;
 use stc_ts_file_analyzer::env::Env;
-use stc_ts_file_analyzer::Lib;
 use stc_ts_file_analyzer::Rule;
 use stc_ts_type_checker::Checker;
 use std::collections::HashSet;

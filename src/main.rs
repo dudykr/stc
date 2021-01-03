@@ -2,7 +2,6 @@ use anyhow::Error;
 use slog::Discard;
 use slog::Logger;
 use stc_ts_file_analyzer::env::Env;
-use stc_ts_file_analyzer::Lib;
 use stc_ts_file_analyzer::Rule;
 use stc_ts_type_checker::Checker;
 use std::path::PathBuf;
