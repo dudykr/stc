@@ -22,13 +22,20 @@ use stc_ts_type_checker::Checker;
 use std::collections::HashSet;
 use std::env;
 use std::fs::read_to_string;
+use std::io;
+use std::io::Write;
 use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::sync::RwLock;
 use swc_common::errors::ColorConfig;
+use swc_common::errors::EmitterWriter;
 use swc_common::errors::Handler;
+use swc_common::errors::HandlerFlags;
 use swc_common::input::SourceFileInput;
 use swc_common::FileName;
+use swc_common::SourceMap;
+use swc_common::SourceMapper;
 use swc_common::Span;
 use swc_common::Spanned;
 use swc_ecma_ast::*;
@@ -40,6 +47,7 @@ use swc_ecma_visit::Fold;
 use swc_ecma_visit::FoldWith;
 use test::test_main;
 use testing::run_test2;
+use testing::NormalizedOutput;
 use testing::StdErr;
 use testing::Tester;
 
@@ -221,42 +229,38 @@ fn do_test(path: &Path) -> Result<(), StdErr> {
     let tester = Tester::new();
 
     let visualized = tester
-        .print_errors(|cm, type_handler| -> Result<(), _> {
-            let type_handler = Arc::new(type_handler);
+        .print_errors(|cm, type_info_handler| -> Result<(), _> {
+            let (handler_for_errors, error_text) = new_handler(cm.clone());
+            let handler_for_errors = Arc::new(handler_for_errors);
 
-            let errors = testing::run_test2(false, |error_cm, error_handler| -> Result<(), _> {
-                let error_handler = Arc::new(error_handler);
+            let log = logger();
+            let type_info_handler = Arc::new(type_info_handler);
+            let mut checker = Checker::new(
+                log.logger,
+                cm.clone(),
+                handler_for_errors.clone(),
+                Env::simple(rule, target, &libs),
+                TsConfig {
+                    tsx: str_name.contains("tsx"),
+                    ..ts_config
+                },
+                Some(Debugger {
+                    cm: cm.clone(),
+                    handler: type_info_handler.clone(),
+                }),
+            );
 
-                let log = logger();
-                let mut checker = Checker::new(
-                    log.logger,
-                    error_cm.clone(),
-                    error_handler.clone(),
-                    Env::simple(rule, target, &libs),
-                    TsConfig {
-                        tsx: str_name.contains("tsx"),
-                        ..ts_config
-                    },
-                    Some(Debugger {
-                        cm: error_cm.clone(),
-                        handler: type_handler.clone(),
-                    }),
-                );
+            checker.check(Arc::new(path.into()));
 
-                checker.check(Arc::new(path.into()));
+            let errors = ::stc_ts_errors::Error::flatten(checker.take_errors());
 
-                let errors = ::stc_ts_errors::Error::flatten(checker.take_errors());
+            checker.run(|| {
+                for e in errors {
+                    e.emit(&handler_for_errors);
+                }
+            });
 
-                checker.run(|| {
-                    for e in errors {
-                        e.emit(&error_handler);
-                    }
-                });
-
-                Err(())
-            })
-            .unwrap_err();
-            eprintln!("{}", errors);
+            eprintln!("{}", NormalizedOutput::from(error_text));
 
             Err(())
         })
@@ -431,5 +435,44 @@ struct Spanner {
 impl Fold for Spanner {
     fn fold_span(&mut self, _: Span) -> Span {
         self.span
+    }
+}
+
+/// Creates a new handler for testing.
+fn new_handler(cm: Arc<SourceMap>) -> (Handler, BufferedError) {
+    let buf: BufferedError = Default::default();
+
+    let e = EmitterWriter::new(Box::new(buf.clone()), Some(cm.clone()), false, true);
+
+    let handler = Handler::with_emitter_and_flags(
+        Box::new(e),
+        HandlerFlags {
+            treat_err_as_bug: false,
+            can_emit_warnings: true,
+            ..Default::default()
+        },
+    );
+
+    (handler, buf)
+}
+
+#[derive(Clone, Default)]
+struct BufferedError(Arc<RwLock<Vec<u8>>>);
+
+impl Write for BufferedError {
+    fn write(&mut self, d: &[u8]) -> io::Result<usize> {
+        self.0.write().unwrap().write(d)
+    }
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+}
+
+impl From<BufferedError> for NormalizedOutput {
+    fn from(buf: BufferedError) -> Self {
+        let s = buf.0.read().unwrap();
+        let s: String = String::from_utf8_lossy(&s).into();
+
+        s.into()
     }
 }
