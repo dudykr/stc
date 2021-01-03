@@ -56,6 +56,7 @@ use stc_ts_ast_rnode::RUpdateExpr;
 use stc_ts_errors::debug::print_backtrace;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
+use stc_ts_types::name::Name;
 use stc_ts_types::rprop_name_to_expr;
 use stc_ts_types::{
     ClassProperty, Id, Method, ModuleId, Operator, QueryExpr, QueryType, StaticThis, TupleElement,

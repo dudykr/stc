@@ -3,6 +3,7 @@
 #![feature(specialization)]
 
 use stc_ts_ast_rnode::RExpr;
+use stc_ts_types::name::Name;
 use stc_ts_types::Id;
 use stc_ts_types::ModuleId;
 use stc_ts_types::Type;
@@ -203,7 +204,7 @@ pub enum Error {
 
     /// TS2304
     NameNotFound {
-        name: Id,
+        name: Name,
         ctxt: ModuleId,
         type_args: Option<TypeParamInstantiation>,
         span: Span,
