@@ -25,6 +25,7 @@ use swc_ecma_utils::drop_span;
 use testing::{assert_eq, NormalizedOutput};
 
 #[test]
+#[ignore = "Not implemented yet"]
 fn rxjs() -> Result<(), Error> {
     let dir = get_git_root()
         .join("vendor")
