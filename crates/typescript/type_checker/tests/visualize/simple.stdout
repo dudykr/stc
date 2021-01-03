@@ -1,5 +1,5 @@
 warning: Type
- --> $DIR/tests/fixture/simple.ts:1:48
+ --> $DIR/tests/visualize/simple.ts:1:48
   |
 1 | export const arr = [1, '2', 3, 4, 5].map(v => !!v);
   |                                                ^^
@@ -7,7 +7,7 @@ warning: Type
   = note: boolean
 
 warning: Type
- --> $DIR/tests/fixture/simple.ts:1:20
+ --> $DIR/tests/visualize/simple.ts:1:20
   |
 1 | export const arr = [1, '2', 3, 4, 5].map(v => !!v);
   |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

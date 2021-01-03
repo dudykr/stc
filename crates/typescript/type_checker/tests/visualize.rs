@@ -120,6 +120,6 @@ fn visualize(file_name: PathBuf) {
         })
         .unwrap_err();
 
-    res.compare_to_file(&file_name.with_extension("types"))
+    res.compare_to_file(&file_name.with_extension("stdout"))
         .unwrap();
 }
