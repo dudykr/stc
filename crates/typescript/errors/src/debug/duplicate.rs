@@ -5,7 +5,7 @@ use std::fmt::Debug;
 use swc_common::Spanned;
 
 #[derive(Debug, Default)]
-pub(crate) struct DuplicateTracker {
+pub struct DuplicateTracker {
     visited: FxHashMap<String, Backtrace>,
 }
 

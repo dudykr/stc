@@ -1,7 +1,6 @@
 use super::super::Analyzer;
 use crate::{
     analyzer::{expr::TypeOfMode, ScopeKind},
-    errors::Error,
     ty::{Array, Type},
     validator,
     validator::ValidateWith,
@@ -14,6 +13,7 @@ use stc_ts_ast_rnode::RForOfStmt;
 use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RVarDecl;
 use stc_ts_ast_rnode::RVarDeclOrPat;
+use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
 use swc_common::{Span, Spanned};
 

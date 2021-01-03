@@ -1,3 +1,4 @@
+use crate::Id;
 use smallvec::{smallvec, SmallVec};
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RExprOrSuper;
@@ -5,7 +6,6 @@ use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RMemberExpr;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsThisTypeOrIdent;
-use stc_ts_types::Id;
 use std::{
     convert::{TryFrom, TryInto},
     fmt::{self, Debug, Formatter},

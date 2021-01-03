@@ -1,7 +1,6 @@
 use super::{Analyzer, Ctx};
 use crate::{
-    analyzer::util::ResultExt, errors::Error, ty::Type, validator, validator::ValidateWith,
-    ValidationResult,
+    analyzer::util::ResultExt, ty::Type, validator, validator::ValidateWith, ValidationResult,
 };
 use rnode::NodeId;
 use rnode::VisitWith;
@@ -21,6 +20,7 @@ use stc_ts_ast_rnode::RTsExportAssignment;
 use stc_ts_ast_rnode::RTsTypeAnn;
 use stc_ts_ast_rnode::RVarDecl;
 use stc_ts_ast_rnode::RVarDeclarator;
+use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::Id;
 use stc_ts_types::ModuleId;

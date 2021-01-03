@@ -1,7 +1,6 @@
 use super::Analyzer;
 use crate::{
     analyzer::util::ResultExt,
-    errors::Error,
     ty::{Enum, EnumMember, Type},
     validator, ValidationResult,
 };
@@ -19,6 +18,7 @@ use stc_ts_ast_rnode::RTsEnumDecl;
 use stc_ts_ast_rnode::RTsEnumMemberId;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
+use stc_ts_errors::Error;
 use stc_ts_types::Id;
 use swc_atoms::JsWord;
 use swc_common::{Span, Spanned};

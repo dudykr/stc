@@ -1,7 +1,6 @@
 use crate::util::type_ext::TypeVecExt;
 use crate::{
     analyzer::{Analyzer, Ctx},
-    errors::Error,
     ty::{Array, Type, TypeExt},
     validator,
     validator::ValidateWith,
@@ -23,6 +22,7 @@ use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_ast_rnode::RYieldExpr;
+use stc_ts_errors::Error;
 use stc_ts_types::ModuleId;
 use stc_ts_types::{
     IndexedAccessType, MethodSignature, Operator, PropertySignature, Ref, TypeElement,

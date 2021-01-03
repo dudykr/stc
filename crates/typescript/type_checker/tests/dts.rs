@@ -9,8 +9,8 @@ extern crate test;
 use anyhow::Context;
 use stc_testing::get_git_root;
 use stc_testing::logger;
+use stc_ts_builtin_types::Lib;
 use stc_ts_file_analyzer::env::Env;
-use stc_ts_file_analyzer::Lib;
 use stc_ts_type_checker::Checker;
 use std::fs::read_to_string;
 use std::{
@@ -84,7 +84,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
 
         let id = checker.check(Arc::new(file_name.clone().into()));
 
-        let errors = ::stc_ts_file_analyzer::errors::Error::flatten(checker.take_errors());
+        let errors = ::stc_ts_errors::Error::flatten(checker.take_errors());
 
         let expected_module = {
             let mut buf = vec![];

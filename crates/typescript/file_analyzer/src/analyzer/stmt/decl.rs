@@ -1,12 +1,10 @@
 use super::super::{pat::PatMode, Analyzer, Ctx};
-use crate::errors::Errors;
 use crate::util::type_ext::TypeVecExt;
 use crate::{
     analyzer::{
         expr::TypeOfMode,
         util::{Generalizer, ResultExt},
     },
-    errors::Error,
     ty::{self, Tuple, Type, TypeParam},
     util::RemoveTypes,
     validator,
@@ -29,6 +27,8 @@ use stc_ts_ast_rnode::RTsTypeAnn;
 use stc_ts_ast_rnode::RTsTypeCastExpr;
 use stc_ts_ast_rnode::RVarDecl;
 use stc_ts_ast_rnode::RVarDeclarator;
+use stc_ts_errors::Error;
+use stc_ts_errors::Errors;
 use stc_ts_types::QueryExpr;
 use stc_ts_types::QueryType;
 use stc_ts_types::{Array, Id, Operator, Symbol};

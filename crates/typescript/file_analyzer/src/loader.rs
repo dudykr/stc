@@ -1,4 +1,5 @@
-use crate::{errors::Error, DepInfo};
+use crate::DepInfo;
+use stc_ts_errors::Error;
 use stc_ts_types::{ModuleId, ModuleTypeData};
 use std::{path::PathBuf, sync::Arc};
 use swc_atoms::JsWord;

@@ -1,0 +1,12 @@
+[package]
+authors = ["강동윤 <kdy1@dudy.kr>"]
+edition = "2018"
+name = "stc_ts_storage"
+publish = false
+version = "0.1.0"
+
+[dependencies]
+fxhash = "0.2.1"
+stc_ts_errors = { path = "../errors" }
+stc_ts_types = { path = "../types" }
+swc_common = "0.10.8"

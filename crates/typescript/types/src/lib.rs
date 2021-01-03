@@ -4,6 +4,7 @@
 #![deny(unused)]
 #![allow(incomplete_features)]
 #![feature(box_syntax)]
+#![feature(box_patterns)]
 #![feature(specialization)]
 
 pub use self::convert::rprop_name_to_expr;
@@ -56,6 +57,7 @@ mod convert;
 mod id;
 pub mod macros;
 pub mod module_id;
+pub mod name;
 
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct ModuleTypeData {

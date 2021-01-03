@@ -1,0 +1,8 @@
+[package]
+authors = ["강동윤 <kdy1@dudy.kr>"]
+edition = "2018"
+name = "stc_ts_env"
+publish = false
+version = "0.1.0"
+
+[dependencies]

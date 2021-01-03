@@ -4,8 +4,8 @@ use anyhow::Context;
 use ignore::WalkBuilder;
 use stc_testing::get_git_root;
 use stc_testing::term_logger;
+use stc_ts_builtin_types::Lib;
 use stc_ts_file_analyzer::env::Env;
-use stc_ts_file_analyzer::Lib;
 use stc_ts_type_checker::Checker;
 use std::{
     fs::read_to_string,

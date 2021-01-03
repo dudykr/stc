@@ -1,7 +1,8 @@
-use crate::analyzer::Info;
-use crate::errors::Error;
-use crate::errors::Errors;
+#![feature(box_syntax)]
+
 use fxhash::FxHashMap;
+use stc_ts_errors::Error;
+use stc_ts_errors::Errors;
 use stc_ts_types::Id;
 use stc_ts_types::ModuleId;
 use stc_ts_types::ModuleTypeData;
@@ -13,6 +14,12 @@ use std::sync::Arc;
 use swc_common::iter::IdentifyLast;
 use swc_common::Span;
 use swc_common::DUMMY_SP;
+
+#[derive(Debug, Default)]
+pub struct Info {
+    pub errors: Errors,
+    pub exports: ModuleTypeData,
+}
 
 pub type Storage<'b> = Box<dyn 'b + Mode>;
 
@@ -233,12 +240,12 @@ impl TypeStore for Single<'_> {
         take(&mut self.info.exports)
     }
 
-    fn reexport_type(&mut self, span: Span, ctxt: ModuleId, id: Id, ty: Box<Type>) {
+    fn reexport_type(&mut self, _span: Span, ctxt: ModuleId, id: Id, ty: Box<Type>) {
         debug_assert_eq!(ctxt, self.id);
         self.info.exports.types.entry(id).or_default().push(ty);
     }
 
-    fn reexport_var(&mut self, span: Span, ctxt: ModuleId, id: Id, ty: Box<Type>) {
+    fn reexport_var(&mut self, _span: Span, ctxt: ModuleId, id: Id, ty: Box<Type>) {
         debug_assert_eq!(ctxt, self.id);
         // TODO: error reporting for duplicate
         self.info.exports.vars.insert(id, ty);
@@ -246,7 +253,7 @@ impl TypeStore for Single<'_> {
 }
 
 impl<'a> Mode for Single<'a> {
-    fn module_id(&self, stmt_index: usize) -> ModuleId {
+    fn module_id(&self, _stmt_index: usize) -> ModuleId {
         self.id
     }
 
@@ -306,7 +313,7 @@ impl TypeStore for Group<'_> {
     }
 
     fn store_private_var(&mut self, ctxt: ModuleId, id: Id, ty: Box<Type>) {
-        let mut map = self.info.entry(ctxt).or_default();
+        let map = self.info.entry(ctxt).or_default();
 
         match map.private_vars.entry(id) {
             Entry::Occupied(e) => {
@@ -363,7 +370,7 @@ impl TypeStore for Group<'_> {
         self.info.remove(&ctxt).unwrap_or_default()
     }
 
-    fn reexport_type(&mut self, span: Span, ctxt: ModuleId, id: Id, ty: Box<Type>) {
+    fn reexport_type(&mut self, _span: Span, ctxt: ModuleId, id: Id, ty: Box<Type>) {
         self.info
             .entry(ctxt)
             .or_default()
@@ -373,7 +380,7 @@ impl TypeStore for Group<'_> {
             .push(ty);
     }
 
-    fn reexport_var(&mut self, span: Span, ctxt: ModuleId, id: Id, ty: Box<Type>) {
+    fn reexport_var(&mut self, _span: Span, ctxt: ModuleId, id: Id, ty: Box<Type>) {
         // TODO: Error reporting for duplicates
         self.info.entry(ctxt).or_default().vars.insert(id, ty);
     }
@@ -469,16 +476,16 @@ impl TypeStore for Builtin {
 
     fn export_type(&mut self, _: Span, _: ModuleId, _: Id) {}
 
-    fn get_local_type(&self, ctxt: ModuleId, id: Id) -> Option<Box<Type>> {
+    fn get_local_type(&self, _ctxt: ModuleId, id: Id) -> Option<Box<Type>> {
         let types = self.types.get(&id).cloned()?;
         Some(Type::intersection(DUMMY_SP, types))
     }
 
-    fn get_local_var(&self, ctxt: ModuleId, id: Id) -> Option<Box<Type>> {
+    fn get_local_var(&self, _ctxt: ModuleId, id: Id) -> Option<Box<Type>> {
         self.vars.get(&id).cloned()
     }
 
-    fn take_info(&mut self, ctxt: ModuleId) -> ModuleTypeData {
+    fn take_info(&mut self, _ctxt: ModuleId) -> ModuleTypeData {
         unimplemented!("builtin.take_info")
     }
 
@@ -523,7 +530,7 @@ mod tests {
             path: path2.clone(),
             stmt_count: 5,
         };
-        let mut group = Group {
+        let group = Group {
             parent: None,
             files: Arc::new(vec![file1.clone(), file2.clone()]),
             info: Default::default(),

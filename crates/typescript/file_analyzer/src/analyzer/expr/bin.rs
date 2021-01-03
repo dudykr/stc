@@ -4,8 +4,6 @@ use super::super::{
 };
 use crate::{
     analyzer::{Ctx, ScopeKind},
-    errors::{Error, Errors},
-    name::Name,
     ty::{Operator, Type, TypeExt},
     type_facts::TypeFacts,
     util::{is_str_lit_or_union, is_str_or_union, RemoveTypes},
@@ -21,6 +19,9 @@ use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_ast_rnode::RUnaryExpr;
+use stc_ts_errors::Error;
+use stc_ts_errors::Errors;
+use stc_ts_types::name::Name;
 use std::convert::TryFrom;
 use swc_common::EqIgnoreSpan;
 use swc_common::TypeEq;
