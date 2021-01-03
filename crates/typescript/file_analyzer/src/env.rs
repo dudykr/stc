@@ -20,7 +20,6 @@ use stc_ts_ast_rnode::RStmt;
 use stc_ts_ast_rnode::RTsModuleName;
 use stc_ts_ast_rnode::RVarDecl;
 use stc_ts_builtin_types::Lib;
-use stc_ts_errors::debug::print_type;
 use stc_ts_errors::Error;
 use stc_ts_storage::Builtin;
 use stc_ts_types::{Id, ModuleTypeData, Type};

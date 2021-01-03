@@ -27,7 +27,6 @@ use stc_ts_ast_rnode::RTsTypeAnn;
 use stc_ts_ast_rnode::RTsTypeCastExpr;
 use stc_ts_ast_rnode::RVarDecl;
 use stc_ts_ast_rnode::RVarDeclarator;
-use stc_ts_errors::debug::print_type;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_types::QueryExpr;

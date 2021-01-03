@@ -7,7 +7,6 @@ use stc_ts_ast_rnode::RTsAsExpr;
 use stc_ts_ast_rnode::RTsType;
 use stc_ts_ast_rnode::RTsTypeAssertion;
 use stc_ts_errors::Error;
-use stc_ts_errors::Errors;
 use stc_ts_types::TypeParamInstantiation;
 use swc_common::TypeEq;
 use swc_common::{Span, Spanned};

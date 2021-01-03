@@ -22,7 +22,6 @@ use stc_ts_ast_rnode::RProp;
 use stc_ts_ast_rnode::RPropOrSpread;
 use stc_ts_ast_rnode::RRestPat;
 use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_errors::debug::print_type;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_types::Array;
