@@ -35,7 +35,6 @@ use swc_common::errors::HandlerFlags;
 use swc_common::input::SourceFileInput;
 use swc_common::FileName;
 use swc_common::SourceMap;
-use swc_common::SourceMapper;
 use swc_common::Span;
 use swc_common::Spanned;
 use swc_ecma_ast::*;
@@ -266,7 +265,7 @@ fn do_test(path: &Path) -> Result<(), StdErr> {
         })
         .expect_err("should fail");
 
-    let mut spec = run_test2(false, |cm, _| {
+    let spec = run_test2(false, |cm, _| {
         let handler = Arc::new(Handler::with_tty_emitter(
             ColorConfig::Always,
             true,
@@ -287,6 +286,8 @@ fn do_test(path: &Path) -> Result<(), StdErr> {
         .unwrap())
     })
     .unwrap();
+
+    // TODO: Match on type data.
 
     if spec.type_data.is_empty() {
         return Ok(());
