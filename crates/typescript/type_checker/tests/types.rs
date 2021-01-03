@@ -230,7 +230,7 @@ fn do_test(path: &Path) -> Result<(), StdErr> {
                 let log = logger();
                 let mut checker = Checker::new(
                     log.logger,
-                    cm.clone(),
+                    error_cm.clone(),
                     error_handler.clone(),
                     Env::simple(rule, target, &libs),
                     TsConfig {
@@ -238,7 +238,7 @@ fn do_test(path: &Path) -> Result<(), StdErr> {
                         ..ts_config
                     },
                     Some(Debugger {
-                        cm: cm.clone(),
+                        cm: error_cm.clone(),
                         handler: type_handler.clone(),
                     }),
                 );
