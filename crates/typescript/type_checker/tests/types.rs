@@ -11,6 +11,7 @@ mod common;
 
 use self::common::load_fixtures;
 use self::common::SwcComments;
+use once_cell::sync::Lazy;
 use serde::Deserialize;
 use stc_testing::logger;
 use stc_ts_builtin_types::Lib;
@@ -19,6 +20,7 @@ use stc_ts_file_analyzer::Rule;
 use stc_ts_type_checker::Checker;
 use std::collections::HashSet;
 use std::env;
+use std::fs::read_to_string;
 use std::fs::File;
 use std::path::Path;
 use std::sync::Arc;
@@ -38,53 +40,33 @@ use test::test_main;
 use testing::StdErr;
 use testing::Tester;
 
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
-struct Error {
-    pub line: usize,
-    pub column: usize,
-    pub msg: String,
+fn is_ignored(path: &Path) -> bool {
+    static IGNORED: Lazy<Vec<String>> = Lazy::new(|| {
+        let content = read_to_string("tests/ignored.txt").unwrap();
+
+        content.lines().map(|v| v.to_string()).collect()
+    });
+
+    IGNORED
+        .iter()
+        .any(|line| path.to_string_lossy().contains(line))
 }
 
 #[test]
-fn conformance() {
+fn types() {
     let args: Vec<_> = env::args().collect();
     let tests = load_fixtures("conformance", |file_name| {
         Some(box move || {
-            do_test(false, &file_name).unwrap();
+            do_test(&file_name).unwrap();
         })
     });
     test_main(&args, tests, Default::default());
 }
 
-fn do_test(treat_error_as_bug: bool, file_name: &Path) -> Result<(), StdErr> {
+fn do_test(file_name: &Path) -> Result<(), StdErr> {
     let fname = file_name.display().to_string();
-    let mut ref_errors = {
-        let fname = file_name.file_name().unwrap();
-        let errors_file =
-            file_name.with_file_name(format!("{}.errors.json", fname.to_string_lossy()));
-        if !errors_file.exists() {
-            println!("errors file does not exists: {}", errors_file.display());
-            Some(vec![])
-        } else {
-            let errors: Vec<Error> = serde_json::from_reader(
-                File::open(errors_file).expect("failed to open error sfile"),
-            )
-            .expect("failed to parse errors.txt.json");
 
-            // TODO: Match column and message
-
-            Some(
-                errors
-                    .into_iter()
-                    .map(|e| (e.line, e.column))
-                    .collect::<Vec<_>>(),
-            )
-        }
-    };
-    let full_ref_errors = ref_errors.clone();
-    let full_ref_err_cnt = full_ref_errors.as_ref().map(Vec::len).unwrap_or(0);
-
-    let (libs, rule, ts_config, target) = ::testing::run_test(treat_error_as_bug, |cm, handler| {
+    let (libs, rule, ts_config, target) = ::testing::run_test(false, |cm, handler| {
         let fm = cm.load_file(file_name).expect("failed to read file");
 
         Ok({
