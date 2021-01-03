@@ -5,7 +5,6 @@
 
 use rnode::NodeIdGenerator;
 use rnode::RNode;
-use rnode::VisitWith;
 use stc_testing::logger;
 use stc_ts_ast_rnode::RModule;
 use stc_ts_builtin_types::Lib;
@@ -15,7 +14,6 @@ use stc_ts_file_analyzer::analyzer::NoopLoader;
 use stc_ts_file_analyzer::env::Env;
 use stc_ts_file_analyzer::validator::ValidateWith;
 use stc_ts_storage::Single;
-use stc_ts_testing::visualizer::TypeVisualizer;
 use stc_ts_types::module_id;
 use stc_ts_utils::StcComments;
 use std::path::PathBuf;
