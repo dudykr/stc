@@ -21,7 +21,6 @@ use stc_ts_ast_rnode::RTsTypeAnn;
 use stc_ts_ast_rnode::RVarDecl;
 use stc_ts_ast_rnode::RVarDeclarator;
 use stc_ts_errors::Error;
-use stc_ts_errors::Errors;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::Id;
 use stc_ts_types::ModuleId;

@@ -29,7 +29,6 @@ use stc_ts_ast_rnode::RSwitchCase;
 use stc_ts_ast_rnode::RSwitchStmt;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_errors::Error;
-use stc_ts_errors::Errors;
 use stc_ts_types::name::Name;
 use stc_ts_types::Array;
 use stc_ts_types::Id;
