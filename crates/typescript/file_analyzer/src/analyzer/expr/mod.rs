@@ -4,7 +4,6 @@ use crate::util::type_ext::TypeVecExt;
 use crate::util::RemoveTypes;
 use crate::{
     analyzer::{pat::PatMode, Ctx, ScopeKind},
-    name::Name,
     ty,
     ty::{
         Array, ClassInstance, EnumVariant, IndexSignature, IndexedAccessType, Interface,

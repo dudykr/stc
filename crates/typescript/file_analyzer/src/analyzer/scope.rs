@@ -4,7 +4,6 @@ use super::{
 };
 use crate::{
     loader::ModuleInfo,
-    name::Name,
     ty::{
         self, Alias, EnumVariant, IndexSignature, Interface, PropertySignature, Ref, Tuple, Type,
         TypeElement, TypeExt, TypeLit, Union,

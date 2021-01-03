@@ -14,8 +14,9 @@
 #![feature(option_expect_none)]
 #![recursion_limit = "1024"]
 
+pub use self::analyzer::Marks;
 use self::env::StableEnv;
-pub use self::{analyzer::Marks, env::Lib};
+use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::validator;
 use stc_ts_types::Type;
 pub use stc_ts_types::{Id, ModuleTypeData};
