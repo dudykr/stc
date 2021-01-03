@@ -1,10 +1,8 @@
 use super::{Analyzer, Ctx};
-use crate::errors::Errors;
 use crate::ty::TypeExt;
 use crate::util::type_ext::TypeVecExt;
 use crate::{
     analyzer::util::{ResultExt, VarVisitor},
-    errors::Error,
     ty,
     ty::Type,
     validator,
@@ -24,6 +22,8 @@ use stc_ts_ast_rnode::RProp;
 use stc_ts_ast_rnode::RPropOrSpread;
 use stc_ts_ast_rnode::RRestPat;
 use stc_ts_ast_rnode::RTsKeywordType;
+use stc_ts_errors::Error;
+use stc_ts_errors::Errors;
 use stc_ts_types::Array;
 use stc_ts_utils::PatExt;
 use stc_utils::TryOpt;

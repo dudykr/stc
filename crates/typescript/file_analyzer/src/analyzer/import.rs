@@ -1,7 +1,6 @@
 use super::{util::ResultExt, Analyzer};
-use crate::mode::Storage;
 use crate::DepInfo;
-use crate::{errors::Error, loader::ModuleInfo, validator, ValidationResult};
+use crate::{loader::ModuleInfo, validator, ValidationResult};
 use rayon::prelude::*;
 use rnode::Visit;
 use rnode::VisitWith;
@@ -15,7 +14,9 @@ use stc_ts_ast_rnode::RLit;
 use stc_ts_ast_rnode::RModuleItem;
 use stc_ts_ast_rnode::RNamedExport;
 use stc_ts_ast_rnode::RStr;
+use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
+use stc_ts_storage::Storage;
 use stc_ts_types::ModuleId;
 use stc_ts_types::{Id, Type};
 use swc_atoms::js_word;

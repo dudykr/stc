@@ -1,8 +1,6 @@
 use super::Analyzer;
-use crate::errors::Errors;
 use crate::{
     analyzer::{pat::PatMode, Ctx, ScopeKind},
-    errors::Error,
     ty,
     ty::{ClassInstance, FnParam, Tuple, Type, TypeParam},
     validator,
@@ -18,6 +16,8 @@ use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
+use stc_ts_errors::Error;
+use stc_ts_errors::Errors;
 use stc_ts_types::{Alias, Interface, Ref};
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::*;

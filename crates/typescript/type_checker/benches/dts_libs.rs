@@ -4,8 +4,8 @@
 extern crate test;
 
 use slog::Logger;
+use stc_ts_builtin_types::Lib;
 use stc_ts_file_analyzer::env::Env;
-use stc_ts_file_analyzer::Lib;
 use stc_ts_type_checker::Checker;
 use std::{
     hint::black_box,

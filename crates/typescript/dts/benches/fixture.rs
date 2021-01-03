@@ -7,13 +7,13 @@ use rnode::NodeIdGenerator;
 use rnode::RNode;
 use slog::Logger;
 use stc_ts_ast_rnode::RModule;
+use stc_ts_builtin_types::Lib;
 use stc_ts_dts::cleanup_module_for_dts;
 use stc_ts_file_analyzer::analyzer::Analyzer;
 use stc_ts_file_analyzer::analyzer::NoopLoader;
 use stc_ts_file_analyzer::env::Env;
-use stc_ts_file_analyzer::mode::Single;
 use stc_ts_file_analyzer::validator::ValidateWith;
-use stc_ts_file_analyzer::Lib;
+use stc_ts_storage::Single;
 use stc_ts_types::module_id;
 use stc_ts_utils::StcComments;
 use std::{

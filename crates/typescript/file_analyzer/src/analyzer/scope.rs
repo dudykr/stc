@@ -3,10 +3,7 @@ use super::{
     stmt::return_type::ReturnValues, Analyzer, Ctx,
 };
 use crate::{
-    debug::print_backtrace,
-    errors::Error,
     loader::ModuleInfo,
-    name::Name,
     ty::{
         self, Alias, EnumVariant, IndexSignature, Interface, PropertySignature, Ref, Tuple, Type,
         TypeElement, TypeExt, TypeLit, Union,
@@ -39,6 +36,9 @@ use stc_ts_ast_rnode::RRestPat;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsQualifiedName;
+use stc_ts_errors::debug::print_backtrace;
+use stc_ts_errors::Error;
+use stc_ts_types::name::Name;
 use stc_ts_types::TypeParamInstantiation;
 use stc_ts_types::{
     Conditional, FnParam, Id, IndexedAccessType, Mapped, ModuleId, Operator, QueryExpr, QueryType,

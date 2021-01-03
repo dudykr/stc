@@ -1,7 +1,5 @@
-use crate::mode::Builtin;
 use crate::{
     analyzer::{Analyzer, ScopeKind},
-    errors::Error,
     validator::ValidateWith,
     Marks, Rule,
 };
@@ -21,7 +19,9 @@ use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RStmt;
 use stc_ts_ast_rnode::RTsModuleName;
 use stc_ts_ast_rnode::RVarDecl;
-pub use stc_ts_builtin_types::Lib;
+use stc_ts_builtin_types::Lib;
+use stc_ts_errors::Error;
+use stc_ts_storage::Builtin;
 use stc_ts_types::{Id, ModuleTypeData, Type};
 use std::{collections::hash_map::Entry, sync::Arc};
 use swc_atoms::JsWord;
@@ -69,7 +69,7 @@ impl BuiltIn {
         slog::info!(env.logger, "Merging builtins");
 
         let mut result = Self::default();
-        let mut storage = crate::mode::Builtin::default();
+        let mut storage = Builtin::default();
         let mut analyzer = Analyzer::for_builtin(env.clone(), &mut storage);
 
         for mut item in items {

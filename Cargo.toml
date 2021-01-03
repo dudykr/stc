@@ -13,6 +13,7 @@ version = "0.1.0"
 anyhow = "1"
 languageserver-types = "0.54.0"
 slog = {version = "2", features = ["release_max_level_off"]}
+stc_ts_builtin_types = { path = "./crates/typescript/builtin_types" }
 stc_ts_file_analyzer = { path = "crates/typescript/file_analyzer" }
 stc_ts_type_checker = {path = "./crates/typescript/type_checker"}
 stc_utils = {path = "crates/utils"}

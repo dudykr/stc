@@ -14,9 +14,9 @@
 #![feature(option_expect_none)]
 #![recursion_limit = "1024"]
 
+pub use self::analyzer::Marks;
 use self::env::StableEnv;
-pub use self::{analyzer::Marks, env::Lib};
-use crate::errors::Error;
+use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::validator;
 use stc_ts_types::Type;
 pub use stc_ts_types::{Id, ModuleTypeData};
@@ -25,12 +25,8 @@ use swc_atoms::JsWord;
 use swc_common::Span;
 
 pub mod analyzer;
-mod debug;
 pub mod env;
-pub mod errors;
 pub mod loader;
-pub mod mode;
-pub mod name;
 #[cfg(test)]
 mod tests;
 pub mod ty;

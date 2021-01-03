@@ -1,5 +1,3 @@
-use crate::errors::Error;
-use crate::mode::Storage;
 use rnode::Visit;
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RDecl;
@@ -7,6 +5,8 @@ use stc_ts_ast_rnode::RFnDecl;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RStmt;
 use stc_ts_ast_rnode::RTsModuleDecl;
+use stc_ts_errors::Error;
+use stc_ts_storage::Storage;
 
 /// Handles
 ///

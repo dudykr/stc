@@ -1,7 +1,6 @@
 use super::{marks::MarkExt, scope::ScopeKind, Analyzer};
 use crate::{
     analyzer::{expr::TypeOfMode, util::ResultExt, Ctx},
-    errors::{Error, Errors},
     ty::{MethodSignature, Operator, PropertySignature, Type, TypeElement, TypeExt},
     validator,
     validator::ValidateWith,
@@ -25,6 +24,8 @@ use stc_ts_ast_rnode::RPropName;
 use stc_ts_ast_rnode::RSetterProp;
 use stc_ts_ast_rnode::RStr;
 use stc_ts_ast_rnode::RTsKeywordType;
+use stc_ts_errors::Error;
+use stc_ts_errors::Errors;
 use swc_atoms::js_word;
 use swc_common::Spanned;
 use swc_ecma_ast::*;

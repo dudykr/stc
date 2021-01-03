@@ -1,8 +1,6 @@
 use super::super::Analyzer;
-use crate::errors::Errors;
 use crate::{
     analyzer::{expr::TypeOfMode, util::ResultExt},
-    errors::Error,
     ty::Type,
     validator,
     validator::ValidateWith,
@@ -18,6 +16,8 @@ use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_ast_rnode::RUnaryExpr;
+use stc_ts_errors::Error;
+use stc_ts_errors::Errors;
 use stc_ts_types::Union;
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned};

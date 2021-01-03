@@ -13,7 +13,7 @@ fxhash = "0.2.1"
 retain_mut = "0.1.1"
 rnode = {path = "../../rnode/"}
 stc_ts_ast_rnode = {path = "../ast_rnode"}
-stc_ts_dts_mutations = { path = "../dts_mutations" }
+stc_ts_dts_mutations = {path = "../dts_mutations"}
 stc_ts_types = {path = "../types"}
 stc_ts_utils = {path = "../utils"}
 swc_common = "0.10.8"
@@ -23,7 +23,9 @@ swc_ecma_ast = "0.36.2"
 anyhow = "1.0.37"
 slog = "2.7.0"
 stc_testing = {path = "../../testing"}
+stc_ts_builtin_types = {path = "../builtin_types"}
 stc_ts_file_analyzer = {path = "../file_analyzer"}
+stc_ts_storage = {path = "../storage"}
 swc_common = "0.10.8"
 swc_ecma_ast = "0.36.2"
 swc_ecma_codegen = "0.42.2"

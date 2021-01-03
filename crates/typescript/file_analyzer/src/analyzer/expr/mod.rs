@@ -1,13 +1,9 @@
 use super::{marks::MarkExt, Analyzer};
 use crate::analyzer::util::ResultExt;
-use crate::errors::Errors;
 use crate::util::type_ext::TypeVecExt;
 use crate::util::RemoveTypes;
 use crate::{
     analyzer::{pat::PatMode, Ctx, ScopeKind},
-    debug::print_backtrace,
-    errors::Error,
-    name::Name,
     ty,
     ty::{
         Array, ClassInstance, EnumVariant, IndexSignature, IndexedAccessType, Interface,
@@ -57,6 +53,10 @@ use stc_ts_ast_rnode::RTsNonNullExpr;
 use stc_ts_ast_rnode::RTsThisType;
 use stc_ts_ast_rnode::RUnaryExpr;
 use stc_ts_ast_rnode::RUpdateExpr;
+use stc_ts_errors::debug::print_backtrace;
+use stc_ts_errors::Error;
+use stc_ts_errors::Errors;
+use stc_ts_types::name::Name;
 use stc_ts_types::rprop_name_to_expr;
 use stc_ts_types::{
     ClassProperty, Id, Method, ModuleId, Operator, QueryExpr, QueryType, StaticThis, TupleElement,

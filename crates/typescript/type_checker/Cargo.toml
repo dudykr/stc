@@ -16,9 +16,12 @@ parking_lot = "0.11.1"
 rnode = {path = "../../rnode"}
 slog = "2.7.0"
 stc_ts_ast_rnode = {path = "../ast_rnode"}
+stc_ts_builtin_types = {path = "../builtin_types"}
 stc_ts_dts = {path = "../dts"}
+stc_ts_errors = {path = "../errors/"}
 stc_ts_file_analyzer = {path = "../file_analyzer"}
 stc_ts_module_loader = {path = "../module_loader"}
+stc_ts_storage = {path = "../storage"}
 stc_ts_types = {path = "../types"}
 stc_ts_utils = {path = "../utils"}
 stc_utils = {path = "../../utils"}
