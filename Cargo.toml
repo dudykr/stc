@@ -13,10 +13,10 @@ version = "0.1.0"
 anyhow = "1"
 languageserver-types = "0.54.0"
 slog = {version = "2", features = ["release_max_level_off"]}
-stc_ts_builtin_types = {path = "./crates/typescript/builtin_types"}
-stc_ts_file_analyzer = {path = "crates/typescript/file_analyzer"}
-stc_ts_type_checker = {path = "./crates/typescript/type_checker"}
-stc_utils = {path = "crates/utils"}
+stc_ts_builtin_types = {path = "./typescript/builtin_types"}
+stc_ts_file_analyzer = {path = "typescript/file_analyzer"}
+stc_ts_type_checker = {path = "./typescript/type_checker"}
+stc_utils = {path = "utils"}
 structopt = "0.3.20"
 swc_common = {version = "0.10.8", features = ["tty-emitter"]}
 swc_ecma_parser = "0.44.0"
