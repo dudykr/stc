@@ -9,18 +9,16 @@ use swc_ecma_codegen::text_writer::JsWriter;
 use swc_ecma_codegen::Emitter;
 use swc_ecma_codegen::Node;
 
-/// This trait **must** be used as a generic.
-pub trait Debugger: Sized + Send + Sync {
-    fn dump_type(&self, span: Span, ty: &Type);
-}
-#[cfg(debug_assertions)]
-pub struct DumpAll {
+#[derive(Clone)]
+pub struct Debugger {
+    #[cfg(debug_assertions)]
     pub cm: Arc<SourceMap>,
+    #[cfg(debug_assertions)]
     pub handler: Arc<Handler>,
 }
 
 #[cfg(debug_assertions)]
-impl DumpAll {
+impl Debugger {
     fn dump(&self, ty: &Type) -> String {
         let ty = RTsType::from(ty.clone());
         let ty = ty.into_orig();
@@ -39,11 +37,8 @@ impl DumpAll {
 
         String::from_utf8_lossy(&buf).to_string()
     }
-}
 
-#[cfg(debug_assertions)]
-impl Debugger for DumpAll {
-    fn dump_type(&self, span: Span, ty: &Type) {
+    pub fn dump_type(&self, span: Span, ty: &Type) {
         let ty_str = self.dump(ty);
         self.handler
             .struct_span_warn(span, "Type")
@@ -52,9 +47,7 @@ impl Debugger for DumpAll {
     }
 }
 
-pub struct Noop {}
-
-impl Debugger for Noop {
-    #[inline(always)]
-    fn dump_type(&self, _: Span, _: &Type) {}
+#[cfg(not(debug_assertions))]
+impl Debugger {
+    pub fn dump_type(&self, _: Span, _: &Type) {}
 }

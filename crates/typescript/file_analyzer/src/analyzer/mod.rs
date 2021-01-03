@@ -126,7 +126,7 @@ pub(crate) struct Ctx {
 }
 
 /// Note: All methods named `validate_*` return [Err] iff it's not recoverable.
-pub struct Analyzer<'scope, 'b, D: Debugger> {
+pub struct Analyzer<'scope, 'b> {
     logger: Logger,
     env: Env,
     cm: Arc<SourceMap>,
@@ -166,6 +166,8 @@ pub struct Analyzer<'scope, 'b, D: Debugger> {
 
     /// Used while inferencing types.
     mapped_type_param_name: Vec<Id>,
+
+    debugger: Option<Debugger>,
 }
 
 /// TODO
@@ -251,6 +253,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         cm: Arc<SourceMap>,
         storage: Storage<'b>,
         loader: &'b dyn Load,
+        debugger: Option<Debugger>,
     ) -> Self {
         Self::new_inner(
             logger.clone(),
@@ -262,6 +265,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             Scope::root(logger),
             false,
             Default::default(),
+            debugger,
         )
     }
 
@@ -283,6 +287,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             Scope::root(logger),
             true,
             Default::default(),
+            None,
         )
     }
 
@@ -297,6 +302,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             scope,
             self.is_builtin,
             self.symbols.clone(),
+            self.debugger.clone(),
         )
     }
 
@@ -310,6 +316,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         scope: Scope<'scope>,
         is_builtin: bool,
         symbols: Arc<SymbolIdGenerator>,
+        debugger: Option<Debugger>,
     ) -> Self {
         Self {
             logger,
@@ -350,6 +357,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             symbols,
             mapped_type_param_name: vec![],
             imports_by_id: Default::default(),
+            debugger,
         }
     }
 
