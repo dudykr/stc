@@ -221,40 +221,42 @@ fn do_test(path: &Path) -> Result<(), StdErr> {
     let tester = Tester::new();
 
     let visualized = tester
-        .print_errors(|cm, type_info_handler| -> Result<(), _> {
-            let handler_for_errors = Arc::new(Handler::with_tty_emitter(
-                ColorConfig::Always,
-                true,
-                false,
-                Some(cm.clone()),
-            ));
+        .print_errors(|cm, type_handler| -> Result<(), _> {
+            let type_handler = Arc::new(type_handler);
 
-            let log = logger();
-            let type_info_handler = Arc::new(type_info_handler);
-            let mut checker = Checker::new(
-                log.logger,
-                cm.clone(),
-                handler_for_errors.clone(),
-                Env::simple(rule, target, &libs),
-                TsConfig {
-                    tsx: str_name.contains("tsx"),
-                    ..ts_config
-                },
-                Some(Debugger {
-                    cm: cm.clone(),
-                    handler: type_info_handler.clone(),
-                }),
-            );
+            let errors = testing::run_test2(false, |error_cm, error_handler| -> Result<(), _> {
+                let error_handler = Arc::new(error_handler);
 
-            checker.check(Arc::new(path.into()));
+                let log = logger();
+                let mut checker = Checker::new(
+                    log.logger,
+                    cm.clone(),
+                    error_handler.clone(),
+                    Env::simple(rule, target, &libs),
+                    TsConfig {
+                        tsx: str_name.contains("tsx"),
+                        ..ts_config
+                    },
+                    Some(Debugger {
+                        cm: cm.clone(),
+                        handler: type_handler.clone(),
+                    }),
+                );
 
-            let errors = ::stc_ts_errors::Error::flatten(checker.take_errors());
+                checker.check(Arc::new(path.into()));
 
-            checker.run(|| {
-                for e in errors {
-                    e.emit(&handler_for_errors);
-                }
-            });
+                let errors = ::stc_ts_errors::Error::flatten(checker.take_errors());
+
+                checker.run(|| {
+                    for e in errors {
+                        e.emit(&error_handler);
+                    }
+                });
+
+                Err(())
+            })
+            .unwrap_err();
+            eprintln!("{}", errors);
 
             Err(())
         })
