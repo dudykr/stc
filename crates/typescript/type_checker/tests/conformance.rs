@@ -46,7 +46,6 @@ struct Error {
 }
 
 #[test]
-#[ignore]
 fn conformance() {
     let args: Vec<_> = env::args().collect();
     let tests = load_fixtures("conformnce", |file_name| {
