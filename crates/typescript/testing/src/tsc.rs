@@ -48,7 +48,7 @@ impl TsTestCase {
         let mut code = String::new();
         let mut type_data = vec![];
 
-        for line in s.lines() {
+        for line in s.lines().skip(1) {
             if line.starts_with('>') {
                 let idx = line.find(" : ");
                 let idx = match idx {
@@ -61,8 +61,8 @@ impl TsTestCase {
                     }
                 };
 
-                let expr = line[..idx].to_string();
-                let ty = line[idx..].to_string();
+                let expr = line[1..idx].to_string();
+                let ty = line[idx + 3..].to_string();
 
                 type_data.push(TypeInfo { expr, ty });
             } else {

@@ -54,9 +54,22 @@ fn is_ignored(path: &Path) -> bool {
             .collect()
     });
 
-    IGNORED
+    static PASS: Lazy<Vec<String>> = Lazy::new(|| {
+        let content = read_to_string("tests/types.pass.txt").unwrap();
+
+        content
+            .lines()
+            .filter(|v| !v.trim().is_empty())
+            .map(|v| v.to_string())
+            .collect()
+    });
+
+    !PASS
         .iter()
         .any(|line| path.to_string_lossy().contains(line))
+        || IGNORED
+            .iter()
+            .any(|line| path.to_string_lossy().contains(line))
 }
 
 #[test]
@@ -208,7 +221,7 @@ fn do_test(path: &Path) -> Result<(), StdErr> {
     let tester = Tester::new();
 
     let visualized = tester
-        .errors(|cm, handler| -> Result<(), _> {
+        .print_errors(|cm, type_info_handler| -> Result<(), _> {
             let handler_for_errors = Arc::new(Handler::with_tty_emitter(
                 ColorConfig::Always,
                 true,
@@ -217,7 +230,7 @@ fn do_test(path: &Path) -> Result<(), StdErr> {
             ));
 
             let log = logger();
-            let type_info_handler = Arc::new(handler);
+            let type_info_handler = Arc::new(type_info_handler);
             let mut checker = Checker::new(
                 log.logger,
                 cm.clone(),
@@ -247,39 +260,37 @@ fn do_test(path: &Path) -> Result<(), StdErr> {
         })
         .expect_err("should fail");
 
-    let mut spec = run_test2(false, |cm, handler| {
+    let mut spec = run_test2(false, |cm, _| {
+        let handler = Arc::new(Handler::with_tty_emitter(
+            ColorConfig::Always,
+            true,
+            false,
+            Some(cm.clone()),
+        ));
+
         Ok(TsTestCase::parse(
             &cm,
             &handler,
             &PathBuf::from("tests")
-                .join("references")
-                .join(path.file_name().unwrap()),
+                .join("reference")
+                .join(path.with_extension("types").file_name().unwrap())
+                .canonicalize()
+                .unwrap(),
             None,
         )
         .unwrap())
     })
     .unwrap();
 
-    for d in visualized {
-        let sp = d.span.primary_span().unwrap();
-        let text = tester
-            .cm
-            .span_to_snippet(sp)
-            .expect("failed to convert span into source ocde");
-        let matching = spec.type_data.iter().position(|data| data.expr == text);
-        if let Some(matching) = matching {
-            dbg!(&d.message[0].0);
-            if spec.type_data[matching].ty == d.message[0].0 {
-                spec.type_data.remove(matching);
-            }
-        }
-    }
-
     if spec.type_data.is_empty() {
         return Ok(());
     }
 
-    panic!("type mismatch: Remaining type data: {:?}", spec.type_data)
+    visualized
+        .compare_to_file(path.with_extension("stdout"))
+        .unwrap();
+
+    Ok(())
 }
 
 fn make_test(c: &SwcComments, module: Module) -> Module {
