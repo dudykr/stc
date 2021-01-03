@@ -818,6 +818,10 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
+        if to.normalize().is_ref_type() {
+            return Ok(());
+        }
+
         // TODO: Implement full type checker
         slog::error!(
             self.logger,

@@ -209,6 +209,7 @@ fn run_bench(b: &mut Bencher, path: PathBuf) {
                     cm.clone(),
                     box &mut storage,
                     &NoopLoader,
+                    None,
                 );
                 GLOBALS.set(stable_env.swc_globals(), || {
                     module.validate_with(&mut analyzer).unwrap();

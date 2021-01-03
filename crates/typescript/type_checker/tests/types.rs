@@ -11,20 +11,30 @@ mod common;
 
 use self::common::load_fixtures;
 use self::common::SwcComments;
-use serde::Deserialize;
+use once_cell::sync::Lazy;
 use stc_testing::logger;
 use stc_ts_builtin_types::Lib;
+use stc_ts_errors::debug::debugger::Debugger;
 use stc_ts_file_analyzer::env::Env;
 use stc_ts_file_analyzer::Rule;
+use stc_ts_testing::tsc::TsTestCase;
 use stc_ts_type_checker::Checker;
 use std::collections::HashSet;
 use std::env;
-use std::fs::File;
+use std::fs::read_to_string;
+use std::io;
+use std::io::Write;
 use std::path::Path;
+use std::path::PathBuf;
 use std::sync::Arc;
-use swc_common::errors::DiagnosticBuilder;
+use std::sync::RwLock;
+use swc_common::errors::ColorConfig;
+use swc_common::errors::EmitterWriter;
+use swc_common::errors::Handler;
+use swc_common::errors::HandlerFlags;
 use swc_common::input::SourceFileInput;
 use swc_common::FileName;
+use swc_common::SourceMap;
 use swc_common::Span;
 use swc_common::Spanned;
 use swc_ecma_ast::*;
@@ -35,58 +45,60 @@ use swc_ecma_parser::TsConfig;
 use swc_ecma_visit::Fold;
 use swc_ecma_visit::FoldWith;
 use test::test_main;
+use testing::run_test2;
+use testing::NormalizedOutput;
 use testing::StdErr;
 use testing::Tester;
 
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
-struct Error {
-    pub line: usize,
-    pub column: usize,
-    pub msg: String,
+fn is_ignored(path: &Path) -> bool {
+    static IGNORED: Lazy<Vec<String>> = Lazy::new(|| {
+        let content = read_to_string("tests/types.ignored.txt").unwrap();
+
+        content
+            .lines()
+            .filter(|v| !v.trim().is_empty())
+            .map(|v| v.to_string())
+            .collect()
+    });
+
+    static PASS: Lazy<Vec<String>> = Lazy::new(|| {
+        let content = read_to_string("tests/types.pass.txt").unwrap();
+
+        content
+            .lines()
+            .filter(|v| !v.trim().is_empty())
+            .map(|v| v.to_string())
+            .collect()
+    });
+
+    !PASS
+        .iter()
+        .any(|line| path.to_string_lossy().contains(line))
+        || IGNORED
+            .iter()
+            .any(|line| path.to_string_lossy().contains(line))
 }
 
 #[test]
-#[ignore = "Not implemented yet"]
-fn conformance() {
+fn types() {
     let args: Vec<_> = env::args().collect();
     let tests = load_fixtures("conformance", |file_name| {
+        if is_ignored(&file_name) {
+            return None;
+        }
+
         Some(box move || {
-            do_test(false, &file_name).unwrap();
+            do_test(&file_name).unwrap();
         })
     });
     test_main(&args, tests, Default::default());
 }
 
-fn do_test(treat_error_as_bug: bool, file_name: &Path) -> Result<(), StdErr> {
-    let fname = file_name.display().to_string();
-    let mut ref_errors = {
-        let fname = file_name.file_name().unwrap();
-        let errors_file =
-            file_name.with_file_name(format!("{}.errors.json", fname.to_string_lossy()));
-        if !errors_file.exists() {
-            println!("errors file does not exists: {}", errors_file.display());
-            Some(vec![])
-        } else {
-            let errors: Vec<Error> = serde_json::from_reader(
-                File::open(errors_file).expect("failed to open error sfile"),
-            )
-            .expect("failed to parse errors.txt.json");
+fn do_test(path: &Path) -> Result<(), StdErr> {
+    let str_name = path.display().to_string();
 
-            // TODO: Match column and message
-
-            Some(
-                errors
-                    .into_iter()
-                    .map(|e| (e.line, e.column))
-                    .collect::<Vec<_>>(),
-            )
-        }
-    };
-    let full_ref_errors = ref_errors.clone();
-    let full_ref_err_cnt = full_ref_errors.as_ref().map(Vec::len).unwrap_or(0);
-
-    let (libs, rule, ts_config, target) = ::testing::run_test(treat_error_as_bug, |cm, handler| {
-        let fm = cm.load_file(file_name).expect("failed to read file");
+    let (libs, rule, ts_config, target) = ::testing::run_test(false, |cm, handler| {
+        let fm = cm.load_file(path).expect("failed to read file");
 
         Ok({
             // We parse files twice. At first, we read comments and detect
@@ -96,7 +108,7 @@ fn do_test(treat_error_as_bug: bool, file_name: &Path) -> Result<(), StdErr> {
 
             let mut parser = Parser::new(
                 Syntax::Typescript(TsConfig {
-                    tsx: fname.contains("tsx"),
+                    tsx: str_name.contains("tsx"),
                     ..Default::default()
                 }),
                 SourceFileInput::from(&*fm),
@@ -213,115 +225,77 @@ fn do_test(treat_error_as_bug: bool, file_name: &Path) -> Result<(), StdErr> {
     .ok()
     .unwrap_or_default();
 
-    let ref_errors = if let Some(ref mut ref_errors) = ref_errors {
-        ref_errors
-    } else {
-        unreachable!()
-    };
-
     let tester = Tester::new();
-    let diagnostics = tester
-        .errors(|cm, handler| {
+
+    let visualized = tester
+        .print_errors(|cm, type_info_handler| -> Result<(), _> {
+            let (handler_for_errors, error_text) = new_handler(cm.clone());
+            let handler_for_errors = Arc::new(handler_for_errors);
+
             let log = logger();
-            let handler = Arc::new(handler);
+            let type_info_handler = Arc::new(type_info_handler);
             let mut checker = Checker::new(
                 log.logger,
                 cm.clone(),
-                handler.clone(),
+                handler_for_errors.clone(),
                 Env::simple(rule, target, &libs),
                 TsConfig {
-                    tsx: fname.contains("tsx"),
+                    tsx: str_name.contains("tsx"),
                     ..ts_config
                 },
-                None,
+                Some(Debugger {
+                    cm: cm.clone(),
+                    handler: type_info_handler.clone(),
+                }),
             );
 
-            checker.check(Arc::new(file_name.into()));
+            checker.check(Arc::new(path.into()));
 
             let errors = ::stc_ts_errors::Error::flatten(checker.take_errors());
 
             checker.run(|| {
                 for e in errors {
-                    e.emit(&handler);
+                    e.emit(&handler_for_errors);
                 }
             });
 
-            if false {
-                return Ok(());
-            }
+            eprintln!("{}", NormalizedOutput::from(error_text));
 
-            return Err(());
+            Err(())
         })
-        .expect_err("");
+        .expect_err("should fail");
 
-    let mut actual_error_lines = diagnostics
-        .iter()
-        .map(|d| {
-            let span = d.span.primary_span().unwrap();
-            let cp = tester.cm.lookup_char_pos(span.lo());
+    let spec = run_test2(false, |cm, _| {
+        let handler = Arc::new(Handler::with_tty_emitter(
+            ColorConfig::Always,
+            true,
+            false,
+            Some(cm.clone()),
+        ));
 
-            (cp.line, cp.col.0 + 1)
-        })
-        .collect::<Vec<_>>();
+        Ok(TsTestCase::parse(
+            &cm,
+            &handler,
+            &PathBuf::from("tests")
+                .join("reference")
+                .join(path.with_extension("types").file_name().unwrap())
+                .canonicalize()
+                .unwrap(),
+            None,
+        )
+        .unwrap())
+    })
+    .unwrap();
 
-    let full_actual_error_lc = actual_error_lines.clone();
+    // TODO: Match on type data.
 
-    for line_col in full_actual_error_lc.clone() {
-        if let Some(..) = ref_errors.remove_item(&line_col) {
-            actual_error_lines.remove_item(&line_col);
-        }
+    if spec.type_data.is_empty() {
+        return Ok(());
     }
 
-    //
-    //      - All reference errors are matched
-    //      - Actual errors does not remain
-    let success = ref_errors.is_empty() && actual_error_lines.is_empty();
-
-    let res: Result<(), _> = tester.print_errors(|_, handler| {
-        // If we failed, we only emit errors which has wrong line.
-
-        for (d, line_col) in diagnostics.into_iter().zip(full_actual_error_lc.clone()) {
-            if success
-                || env::var("PRINT_ALL").unwrap_or(String::from("")) == "1"
-                || actual_error_lines.contains(&line_col)
-            {
-                DiagnosticBuilder::new_diagnostic(&handler, d).emit();
-            }
-        }
-
-        Err(())
-    });
-
-    let err = match res {
-        Ok(_) => StdErr::from(String::from("")),
-        Err(err) => err,
-    };
-
-    let err_count = actual_error_lines.len();
-
-    if !success {
-        panic!(
-            "\n============================================================\n{:?}
-============================================================\n{} unmatched errors out of {} \
-             errors. Got {} extra errors.\nWanted: {:?}\nUnwanted: {:?}\n\nAll required errors: \
-             {:?}\nAll actual errors: {:?}",
-            err,
-            ref_errors.len(),
-            full_ref_err_cnt,
-            err_count,
-            ref_errors,
-            actual_error_lines,
-            full_ref_errors.as_ref().unwrap(),
-            full_actual_error_lc,
-        );
-    }
-
-    if err
-        .compare_to_file(format!("{}.stderr", file_name.display()))
-        .is_err()
-    {
-        panic!()
-    }
+    visualized
+        .compare_to_file(path.with_extension("stdout"))
+        .unwrap();
 
     Ok(())
 }
@@ -462,5 +436,44 @@ struct Spanner {
 impl Fold for Spanner {
     fn fold_span(&mut self, _: Span) -> Span {
         self.span
+    }
+}
+
+/// Creates a new handler for testing.
+fn new_handler(cm: Arc<SourceMap>) -> (Handler, BufferedError) {
+    let buf: BufferedError = Default::default();
+
+    let e = EmitterWriter::new(Box::new(buf.clone()), Some(cm.clone()), false, true);
+
+    let handler = Handler::with_emitter_and_flags(
+        Box::new(e),
+        HandlerFlags {
+            treat_err_as_bug: false,
+            can_emit_warnings: true,
+            ..Default::default()
+        },
+    );
+
+    (handler, buf)
+}
+
+#[derive(Clone, Default)]
+struct BufferedError(Arc<RwLock<Vec<u8>>>);
+
+impl Write for BufferedError {
+    fn write(&mut self, d: &[u8]) -> io::Result<usize> {
+        self.0.write().unwrap().write(d)
+    }
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+}
+
+impl From<BufferedError> for NormalizedOutput {
+    fn from(buf: BufferedError) -> Self {
+        let s = buf.0.read().unwrap();
+        let s: String = String::from_utf8_lossy(&s).into();
+
+        s.into()
     }
 }

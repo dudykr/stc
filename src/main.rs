@@ -56,6 +56,7 @@ fn main() -> Result<(), Error> {
         TsConfig {
             ..Default::default()
         },
+        None,
     );
 
     if cli_options.declaration {

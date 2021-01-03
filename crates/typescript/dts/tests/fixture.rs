@@ -115,8 +115,14 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
         let mut module = RModule::from_orig(&mut node_id_gen, module);
         let mut mutations;
         {
-            let mut analyzer =
-                Analyzer::root(log.logger, env, cm.clone(), box &mut storage, &NoopLoader);
+            let mut analyzer = Analyzer::root(
+                log.logger,
+                env,
+                cm.clone(),
+                box &mut storage,
+                &NoopLoader,
+                None,
+            );
             GLOBALS.set(stable_env.swc_globals(), || {
                 module.validate_with(&mut analyzer).unwrap();
             });

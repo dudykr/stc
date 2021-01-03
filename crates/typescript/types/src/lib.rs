@@ -843,6 +843,13 @@ impl Type {
 }
 
 impl Type {
+    /// Respan but preserve SyntaxContext
+    pub fn reposition(&mut self, from: Span) {
+        let ctxt = self.span().ctxt;
+        let span = from.with_ctxt(ctxt);
+        self.respan(span)
+    }
+
     pub fn respan(&mut self, span: Span) {
         if self.span() == span {
             return;

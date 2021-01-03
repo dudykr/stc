@@ -2,6 +2,7 @@ use super::{
     control_flow::CondFacts, expr::TypeOfMode, props::prop_name_to_expr,
     stmt::return_type::ReturnValues, Analyzer, Ctx,
 };
+use crate::analyzer::ResultExt;
 use crate::{
     loader::ModuleInfo,
     ty::{
@@ -39,6 +40,7 @@ use stc_ts_ast_rnode::RTsQualifiedName;
 use stc_ts_errors::debug::print_backtrace;
 use stc_ts_errors::Error;
 use stc_ts_types::name::Name;
+use stc_ts_types::Array;
 use stc_ts_types::TypeParamInstantiation;
 use stc_ts_types::{
     Conditional, FnParam, Id, IndexedAccessType, Mapped, ModuleId, Operator, QueryExpr, QueryType,
@@ -46,6 +48,7 @@ use stc_ts_types::{
 };
 use stc_ts_utils::OptionExt;
 use stc_ts_utils::PatExt;
+use stc_utils::TryOpt;
 use std::{borrow::Cow, collections::hash_map::Entry, fmt::Debug, iter, iter::repeat, slice};
 use swc_atoms::js_word;
 use swc_common::TypeEq;
@@ -983,7 +986,9 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult<()> {
         let span = pat.span();
 
-        match *pat {
+        match pat {
+            RPat::Assign(p) => return self.declare_complex_vars(kind, &p.left, ty),
+
             RPat::Ident(ref i) => {
                 slog::debug!(&self.logger, "declare_complex_vars: declaring {}", i.sym);
                 self.declare_var(
@@ -1024,6 +1029,21 @@ impl Analyzer<'_, '_> {
                                         elem,
                                         tuple_element.ty.clone(),
                                     )?;
+                                }
+                                None => {
+                                    // Skip
+                                }
+                            }
+                        }
+
+                        return Ok(());
+                    }
+
+                    Type::Array(Array { elem_type, .. }) => {
+                        for elem in elems.into_iter() {
+                            match *elem {
+                                Some(ref elem) => {
+                                    self.declare_complex_vars(kind, elem, elem_type.clone())?;
                                 }
                                 None => {
                                     // Skip
@@ -1101,7 +1121,7 @@ impl Analyzer<'_, '_> {
                         return Ok(());
                     }
 
-                    _ => unimplemented!("declare_complex_vars(pat={:?}\nty={:?}\n)", pat, ty),
+                    _ => unimplemented!("declare_complex_vars(pat={:#?}\nty={:#?}\n)", pat, ty),
                 }
             }
 
@@ -1142,7 +1162,7 @@ impl Analyzer<'_, '_> {
                     members: &[TypeElement],
                 ) -> ValidationResult<()> {
                     for p in props.iter() {
-                        match *p {
+                        match p {
                             RObjectPatProp::KeyValue(RKeyValuePatProp {
                                 ref key,
                                 ref value,
@@ -1154,11 +1174,13 @@ impl Analyzer<'_, '_> {
                                 }
                             }
 
-                            RObjectPatProp::Assign(RAssignPatProp {
-                                ref key,
-                                value: None,
-                                ..
-                            }) => {
+                            RObjectPatProp::Assign(RAssignPatProp { ref key, value, .. }) => {
+                                match value.validate_with_default(a) {
+                                    Some(res) => {
+                                        res.report(&mut a.storage);
+                                    }
+                                    _ => {}
+                                }
                                 if let Some(ty) = find(&members, &RPropName::Ident(key.clone())) {
                                     a.declare_complex_vars(kind, &RPat::Ident(key.clone()), ty)?;
                                     return Ok(());
@@ -1205,11 +1227,10 @@ impl Analyzer<'_, '_> {
                                 }
 
                                 RObjectPatProp::Assign(RAssignPatProp {
-                                    span,
-                                    key,
-                                    value: None,
-                                    ..
+                                    span, key, value, ..
                                 }) => {
+                                    let ty = value.validate_with_default(self).try_opt()?;
+
                                     self.declare_complex_vars(
                                         kind,
                                         &RPat::Ident(key.clone()),
@@ -1629,7 +1650,7 @@ impl Expander<'_, '_, '_> {
 
                 slog::info!(self.logger, "Info: {}{:?}", i.sym, i.span.ctxt);
                 if !trying_primitive_expansion && self.dejavu.contains(&i.into()) {
-                    slog::error!(self.logger, "Dejvu: {}{:?}", &i.sym, i.span.ctxt);
+                    slog::error!(self.logger, "Dejavu: {}{:?}", &i.sym, i.span.ctxt);
                     return Ok(None);
                 }
 

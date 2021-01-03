@@ -1,0 +1,19 @@
+[package]
+authors = ["강동윤 <kdy1@dudy.kr>"]
+edition = "2018"
+name = "stc-devtools"
+publish = false
+version = "0.1.0"
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.37"
+rayon = "1.5.0"
+structopt = "0.3.21"
+swc_atoms = "0.2.5"
+swc_common = { version = "0.10.8", features = ["tty-emitter", "concurrent"] }
+swc_ecma_ast = "0.36.2"
+swc_ecma_parser = "0.44.1"
+swc_ecma_utils = "0.26.0"
+swc_ecma_visit = "0.22.0"
+walkdir = "2.3.1"

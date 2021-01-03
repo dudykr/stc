@@ -20,7 +20,7 @@ impl Analyzer<'_, '_> {
                 let obj = me.obj.validate_with(self)?;
                 let mut obj = box obj.remove_falsy();
 
-                if obj.is_ref_type() {
+                if obj.normalize().is_ref_type() {
                     let ctx = Ctx {
                         preserve_ref: false,
                         ignore_expand_prevention_for_top: true,

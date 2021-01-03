@@ -15,6 +15,7 @@ use swc_common::{sync::Lrc, SourceMap, DUMMY_SP};
 use swc_ecma_ast::*;
 use swc_ecma_codegen::{text_writer::JsWriter, Emitter};
 
+pub mod debugger;
 pub mod duplicate;
 
 pub fn print_type(logger: &Logger, name: &str, cm: &Lrc<SourceMap>, t: &Type) {

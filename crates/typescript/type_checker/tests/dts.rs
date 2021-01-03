@@ -80,6 +80,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
                 decorators: true,
                 ..Default::default()
             },
+            None,
         );
 
         let id = checker.check(Arc::new(file_name.clone().into()));

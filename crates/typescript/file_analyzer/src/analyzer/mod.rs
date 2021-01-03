@@ -34,6 +34,7 @@ use stc_ts_ast_rnode::RTsModuleName;
 use stc_ts_ast_rnode::RTsModuleRef;
 use stc_ts_ast_rnode::RTsNamespaceDecl;
 use stc_ts_dts_mutations::Mutations;
+use stc_ts_errors::debug::debugger::Debugger;
 use stc_ts_errors::debug::duplicate::DuplicateTracker;
 use stc_ts_errors::Error;
 use stc_ts_storage::Builtin;
@@ -165,6 +166,8 @@ pub struct Analyzer<'scope, 'b> {
 
     /// Used while inferencing types.
     mapped_type_param_name: Vec<Id>,
+
+    debugger: Option<Debugger>,
 }
 
 /// TODO
@@ -250,6 +253,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         cm: Arc<SourceMap>,
         storage: Storage<'b>,
         loader: &'b dyn Load,
+        debugger: Option<Debugger>,
     ) -> Self {
         Self::new_inner(
             logger.clone(),
@@ -261,6 +265,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             Scope::root(logger),
             false,
             Default::default(),
+            debugger,
         )
     }
 
@@ -282,6 +287,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             Scope::root(logger),
             true,
             Default::default(),
+            None,
         )
     }
 
@@ -296,6 +302,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             scope,
             self.is_builtin,
             self.symbols.clone(),
+            self.debugger.clone(),
         )
     }
 
@@ -309,6 +316,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         scope: Scope<'scope>,
         is_builtin: bool,
         symbols: Arc<SymbolIdGenerator>,
+        debugger: Option<Debugger>,
     ) -> Self {
         Self {
             logger,
@@ -349,6 +357,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             symbols,
             mapped_type_param_name: vec![],
             imports_by_id: Default::default(),
+            debugger,
         }
     }
 

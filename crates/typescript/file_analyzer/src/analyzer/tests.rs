@@ -64,6 +64,7 @@ where
                 cm.clone(),
                 box &mut storage,
                 &Loader {},
+                None,
             );
             let mut tester = Tester {
                 cm: cm.clone(),
