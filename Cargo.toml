@@ -1,5 +1,5 @@
 [workspace]
-members = ["bindings/libstc", "bindings/node-stc", "devtools"]
+members = ["bindings/libstc", "bindings/node-stc", "devtools", "typescript/lang_server"]
 
 [package]
 authors = ["강동윤 <kdy1@dudy.kr>"]
@@ -11,7 +11,6 @@ version = "0.1.0"
 
 [dependencies]
 anyhow = "1"
-languageserver-types = "0.54.0"
 slog = {version = "2", features = ["release_max_level_off"]}
 stc_ts_builtin_types = {path = "./typescript/builtin_types"}
 stc_ts_file_analyzer = {path = "typescript/file_analyzer"}
