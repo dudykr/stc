@@ -48,7 +48,7 @@ struct Error {
 #[test]
 fn conformance() {
     let args: Vec<_> = env::args().collect();
-    let tests = load_fixtures("conformnce", |file_name| {
+    let tests = load_fixtures("conformance", |file_name| {
         Some(box move || {
             do_test(false, &file_name).unwrap();
         })
