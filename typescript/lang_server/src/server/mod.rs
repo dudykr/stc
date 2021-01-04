@@ -11,6 +11,7 @@ use lsp_types::InitializeParams;
 mod capabilities;
 mod dispatcher;
 mod handlers;
+mod state;
 
 pub fn run() -> Result<(), Error> {
     log::info!("server will start");
