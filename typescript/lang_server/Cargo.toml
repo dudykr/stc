@@ -19,6 +19,7 @@ serde_json = "1.0.61"
 stc_ts_builtin_types = {path = "../builtin_types"}
 stc_ts_env = {path = "../env"}
 stc_ts_errors = {path = "../errors"}
+stc_ts_ls_base_db = { path = "./base_db" }
 stc_ts_type_checker = {path = "../type_checker"}
 stc_ts_types = {path = "../types"}
 stdx = {git = "https://github.com/rust-analyzer/rust-analyzer.git", rev = "2020-12-28"}
