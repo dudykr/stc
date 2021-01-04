@@ -7,9 +7,14 @@ version = "0.1.0"
 
 [dependencies]
 anyhow = "1.0.37"
+crossbeam-channel = "0.5.0"
+env_logger = "0.8.2"
+log = "0.4.11"
 lsp-server = "0.5.0"
 lsp-types = "0.86.0"
 rayon = "1.5.0"
+serde = {version = "1.0.118", features = ["derive"]}
+serde_json = "1.0.61"
 stc_ts_builtin_types = {path = "../builtin_types"}
 stc_ts_env = {path = "../env"}
 stc_ts_errors = {path = "../errors"}
@@ -18,3 +23,5 @@ stc_ts_types = {path = "../types"}
 structopt = "0.3.21"
 swc_atoms = "0.2.5"
 swc_common = "0.10.8"
+vfs = {git = "https://github.com/rust-analyzer/rust-analyzer.git", branch = "2020-12-28"}
+vfs-notify = {git = "https://github.com/rust-analyzer/rust-analyzer.git", branch = "2020-12-28"}
