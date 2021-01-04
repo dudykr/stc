@@ -23,5 +23,5 @@ stc_ts_types = {path = "../types"}
 structopt = "0.3.21"
 swc_atoms = "0.2.5"
 swc_common = "0.10.8"
-vfs = {git = "https://github.com/rust-analyzer/rust-analyzer.git", branch = "2020-12-28"}
-vfs-notify = {git = "https://github.com/rust-analyzer/rust-analyzer.git", branch = "2020-12-28"}
+vfs = {git = "https://github.com/rust-analyzer/rust-analyzer.git", rev = "2020-12-28"}
+vfs-notify = {git = "https://github.com/rust-analyzer/rust-analyzer.git", rev = "2020-12-28"}
