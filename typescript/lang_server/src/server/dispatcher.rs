@@ -1,22 +1,24 @@
+use super::state::GlobalState;
+use super::state::GlobalStateSnapshot;
+use anyhow::anyhow;
+use anyhow::Context;
+use anyhow::Error;
+use lsp_types::notification::Notification;
+use serde::de::DeserializeOwned;
+use serde::Serialize;
 use std::fmt;
 use std::panic;
 
-use super::Runner;
-use anyhow::Context;
-use anyhow::Error;
-use serde::de::DeserializeOwned;
-use serde::Serialize;
-
 pub(crate) struct RequestDispatcher<'a> {
     pub(crate) req: Option<lsp_server::Request>,
-    pub(crate) global_state: &'a mut Runner,
+    pub(crate) global_state: &'a mut GlobalState,
 }
 
 impl<'a> RequestDispatcher<'a> {
     /// Dispatches the request onto the current thread
     pub(crate) fn on_sync<R>(
         &mut self,
-        f: fn(&mut Runner, R::Params) -> Result<R::Result, Error>,
+        f: fn(&mut GlobalState, R::Params) -> Result<R::Result, Error>,
     ) -> Result<&mut Self, Error>
     where
         R: lsp_types::request::Request + 'static,
@@ -34,7 +36,7 @@ impl<'a> RequestDispatcher<'a> {
             let result = f(world.0, params);
             result_to_response::<R>(id, result)
         })
-        .map_err(|_err| format!("sync task {:?} panicked", R::METHOD))?;
+        .map_err(|_err| anyhow!("sync task {:?} panicked", R::METHOD))?;
         self.global_state.respond(response);
         Ok(self)
     }
@@ -54,14 +56,18 @@ impl<'a> RequestDispatcher<'a> {
             None => return self,
         };
 
-        self.global_state.task_pool.handle.spawn({
+        rayon::spawn({
             let world = self.global_state.snapshot();
 
             move || {
                 let _pctx =
                     stdx::panic_context::enter(format!("request: {} {:#?}", R::METHOD, params));
                 let result = f(world, params);
-                Task::Response(result_to_response::<R>(id, result))
+                let resp = result_to_response::<R>(id, result);
+                let res = world.respond(resp);
+                if let Err(err) = res {
+                    log::error!("failed to response: {:?}", res)
+                }
             }
         });
 
@@ -90,7 +96,7 @@ impl<'a> RequestDispatcher<'a> {
             _ => return None,
         };
 
-        let res = serde_json::from_value(R::METHOD, req.params)
+        let res = serde_json::from_value(req.params)
             .with_context(|| format!("failed to deseriialize `{}` from json", R::METHOD));
 
         match res {
@@ -148,10 +154,10 @@ pub(crate) struct NotificationDispatcher<'a> {
 impl<'a> NotificationDispatcher<'a> {
     pub(crate) fn on<N>(
         &mut self,
-        f: fn(&mut GlobalState, N::Params) -> Result<()>,
-    ) -> Result<&mut Self>
+        f: fn(&mut GlobalState, N::Params) -> Result<(), Error>,
+    ) -> Result<&mut Self, Error>
     where
-        N: lsp_types::notification::Notification + 'static,
+        N: Notification + 'static,
         N::Params: DeserializeOwned + Send + 'static,
     {
         let not = match self.not.take() {
