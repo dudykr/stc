@@ -1,3 +1,7 @@
+use anyhow::Error;
+
+mod server;
+
 fn main() -> Result<(), Error> {
-    let (connection, io_threads) = Connection::stdio();
+    server::run()
 }
