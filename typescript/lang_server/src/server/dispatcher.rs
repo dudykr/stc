@@ -42,7 +42,7 @@ impl<'a> RequestDispatcher<'a> {
     /// Dispatches the request onto thread pool
     pub(crate) fn on<R>(
         &mut self,
-        f: fn(GlobalStateSnapshot, R::Params) -> Result<R::Result>,
+        f: fn(GlobalStateSnapshot, R::Params) -> Result<R::Result, Error>,
     ) -> &mut Self
     where
         R: lsp_types::request::Request + 'static,
