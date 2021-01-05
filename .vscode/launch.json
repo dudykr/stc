@@ -10,12 +10,13 @@
       "outFiles": ["${workspaceRoot}/editors/vscode/out/**/*.js"],
       "preLaunchTask": {
         "type": "npm",
-        "script": "watch"
+        "script": "watch",
+        "cwd": "${workspaceRoot}/editors/vscode"
       }
     },
     {
       // Used for testing the extension with a local build of the LSP server (in `target/debug`).
-      "name": "Run Extension (Debug Build)",
+      "name": "Run extension (Debug Build)",
       "type": "extensionHost",
       "request": "launch",
       "runtimeExecutable": "${execPath}",
@@ -23,15 +24,13 @@
         "--disable-extensions",
         "--extensionDevelopmentPath=${workspaceFolder}/editors/vscode"
       ],
-      "outFiles": ["${workspaceFolder}/editors/vscode/out/**/*.js"],
-      "preLaunchTask": "Build server",
-      "skipFiles": ["<node_internals>/**/*.js"]
+      "preLaunchTask": "Build server"
     }
   ],
   "compounds": [
     {
       "name": "Client + Server",
-      "configurations": ["Launch Client", "Run Extension (Debug Build)"]
+      "configurations": ["Launch Client", "Run extension (Debug Build)"]
     }
   ]
 }

@@ -16,13 +16,15 @@
   },
   "activationEvents": [
     "onLanguage:javascript",
-    "onLanguage:typescript"
+    "onLanguage:typescriptreact",
+    "onLanguage:typescript",
+    "onLanguage:typescriptreact"
   ],
-  "main": "lib/index.js",
+  "main": "out/index.js",
   "contributes": {
     "configuration": {
       "type": "object",
-      "title": "Example configuration",
+      "title": "STC",
       "properties": {
         "languageServerExample.maxNumberOfProblems": {
           "scope": "resource",
