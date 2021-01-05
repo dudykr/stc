@@ -1,5 +1,6 @@
 use self::capabilities::server_capabilities;
 use self::state::GlobalState;
+use anyhow::bail;
 use anyhow::Context;
 use anyhow::Error;
 use crossbeam_channel::Receiver;
@@ -127,7 +128,7 @@ impl GlobalState {
             self.handle_event(event)?
         }
 
-        Err("client exited without proper shutdown sequence")?
+        bail!("client exited without proper shutdown sequence")
     }
 
     fn next_event(&self, inbox: &Receiver<Message>) -> Option<Event> {
@@ -148,7 +149,7 @@ impl GlobalState {
                 //
                 match msg {
                     Message::Request(req) => {
-                        self.handle_request(req)?;
+                        self.handle_request(req);
                     }
                     Message::Notification(noti) => {
                         self.handle_notification(noti)?;
@@ -172,7 +173,7 @@ impl GlobalState {
         Ok(())
     }
 
-    fn handle_request(&mut self, req: Request) -> Result<(), Error> {
+    fn handle_request(&mut self, req: Request) {
         RequestDispatcher {
             req: Some(req),
             global_state: self,
@@ -181,5 +182,7 @@ impl GlobalState {
         .finish();
     }
 
-    fn handle_notification(&mut self, noti: Notification) -> Result<(), Error> {}
+    fn handle_notification(&mut self, noti: Notification) -> Result<(), Error> {
+        bail!("unimplemented")
+    }
 }

@@ -9,7 +9,6 @@ use lsp_server::Response;
 use lsp_types::TextDocumentPositionParams;
 use std::ops::Deref;
 use std::time::Instant;
-use swc_common::BytePos;
 use swc_common::SourceFileAndBytePos;
 
 pub(crate) type ReqQueue = lsp_server::ReqQueue<(String, Instant), ReqHandler>;
@@ -31,6 +30,18 @@ pub(crate) struct GlobalStateSnapshot {
 }
 
 impl GlobalState {
+    pub(crate) fn send_request<R: lsp_types::request::Request>(
+        &mut self,
+        params: R::Params,
+        handler: ReqHandler,
+    ) {
+        let request = self
+            .req_queue
+            .outgoing
+            .register(R::METHOD.to_string(), params, handler);
+        self.sender.send(request.into());
+    }
+
     pub fn new(sender: Sender<Message>) -> Self {
         Self {
             shared: Shared { sender },
@@ -42,6 +53,11 @@ impl GlobalState {
         GlobalStateSnapshot {
             shared: self.shared.clone(),
         }
+    }
+
+    pub(crate) fn handle_response_from_client(&mut self, response: lsp_server::Response) {
+        let handler = self.req_queue.outgoing.complete(response.id.clone());
+        handler(self, response)
     }
 }
 
@@ -70,6 +86,21 @@ impl Shared {
     ) -> Result<SourceFileAndBytePos, Error> {
         dbg!(&param.text_document.uri, param.position);
         bail!("unimplemented")
+    }
+
+    pub(crate) fn show_message(&self, typ: lsp_types::MessageType, message: String) {
+        let message = message.into();
+        self.send_notification::<lsp_types::notification::ShowMessage>(
+            lsp_types::ShowMessageParams { typ, message },
+        )
+    }
+
+    pub(crate) fn send_notification<N: lsp_types::notification::Notification>(
+        &self,
+        params: N::Params,
+    ) {
+        let noti = lsp_server::Notification::new(N::METHOD.to_string(), params);
+        self.sender.send(noti.into());
     }
 }
 

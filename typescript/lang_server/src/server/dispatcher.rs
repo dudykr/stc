@@ -1,3 +1,6 @@
+use crate::util::is_canceled;
+use crate::util::LspError;
+
 use super::state::GlobalState;
 use super::state::GlobalStateSnapshot;
 use anyhow::anyhow;
@@ -128,7 +131,7 @@ where
         Err(e) => match e.downcast::<LspError>() {
             Ok(lsp_error) => lsp_server::Response::new_err(id, lsp_error.code, lsp_error.message),
             Err(e) => {
-                if is_canceled(&*e) {
+                if is_canceled(&e) {
                     lsp_server::Response::new_err(
                         id,
                         lsp_server::ErrorCode::ContentModified as i32,
