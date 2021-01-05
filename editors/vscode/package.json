@@ -1,6 +1,7 @@
 {
   "name": "stc-ls-vscode",
   "version": "0.1.0",
+  "publisher": "kdy1",
   "author": "DongYoon Kang <kdy1@dudy.kr>",
   "description": "Super fast typescript language server",
   "license": "SEE LICENSE IN STC_LICENSE.md",
