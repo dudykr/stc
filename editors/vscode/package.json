@@ -1,11 +1,60 @@
 {
   "name": "stc-ls-vscode",
   "version": "0.1.0",
+  "author": "DongYoon Kang <kdy1@dudy.kr>",
   "description": "Super fast typescript language server",
-  "main": "lib/index.js",
-  "scripts": {
-    "test": "jest"
+  "license": "SEE LICENSE IN STC_LICENSE.md",
+  "categories": [],
+  "keywords": [
+    "typescript",
+    "javascript",
+    "autocompletion"
+  ],
+  "engines": {
+    "vscode": "^1.43.0"
   },
-  "author": "kdy1 <kdy1@dudy.kr>",
-  "license": "SEE LICENSE IN STC_LICENSE.md"
+  "activationEvents": [
+    "onLanguage:javascript",
+    "onLanguage:typescript"
+  ],
+  "main": "lib/index.js",
+  "contributes": {
+    "configuration": {
+      "type": "object",
+      "title": "Example configuration",
+      "properties": {
+        "languageServerExample.maxNumberOfProblems": {
+          "scope": "resource",
+          "type": "number",
+          "default": 100,
+          "description": "Controls the maximum number of problems produced by the server."
+        },
+        "languageServerExample.trace.server": {
+          "scope": "window",
+          "type": "string",
+          "enum": [
+            "off",
+            "messages",
+            "verbose"
+          ],
+          "default": "off",
+          "description": "Traces the communication between VS Code and the language server."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -b",
+    "watch": "tsc -b -w",
+    "test": "sh ./scripts/e2e.sh"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.52.0",
+    "typescript": "^4.1.3",
+    "vscode-test": "^1.4.1"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^7.0.0"
+  }
 }
