@@ -1,3 +1,4 @@
+use anyhow::bail;
 use anyhow::Context;
 use anyhow::Error;
 use crossbeam_channel::Sender;
@@ -67,6 +68,8 @@ impl Shared {
         &self,
         param: TextDocumentPositionParams,
     ) -> Result<SourceFileAndBytePos, Error> {
+        dbg!(&param.text_document.uri, param.position);
+        bail!("unimplemented")
     }
 }
 
