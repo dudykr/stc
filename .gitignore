@@ -13,9 +13,9 @@ core
 *.log
 Cargo.lock
 
-.vscode/*
-!.vscode/settings.json
-!.vscode/extensions.json
+/.vscode/*
+/!.vscode/settings.json
+/!.vscode/extensions.json
 
 /.idea
 *.iml
