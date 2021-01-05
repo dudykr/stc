@@ -61,15 +61,16 @@ impl<'a> RequestDispatcher<'a> {
 
         rayon::spawn({
             let world = self.global_state.snapshot();
+            let world2 = self.global_state.snapshot();
 
             move || {
                 let _pctx =
                     stdx::panic_context::enter(format!("request: {} {:#?}", R::METHOD, params));
                 let result = f(world, params);
                 let resp = result_to_response::<R>(id, result);
-                let res = world.respond(resp);
+                let res = world2.respond(resp);
                 if let Err(err) = res {
-                    log::error!("failed to response: {:?}", res)
+                    log::error!("failed to response: {:?}", err)
                 }
             }
         });

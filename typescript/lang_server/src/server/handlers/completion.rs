@@ -4,7 +4,7 @@ use anyhow::Error;
 use lsp_types::CompletionParams;
 use lsp_types::CompletionResponse;
 
-pub fn handler_completion(
+pub(crate) fn handler_completion(
     state: GlobalStateSnapshot,
     params: CompletionParams,
 ) -> Result<Option<CompletionResponse>, Error> {
