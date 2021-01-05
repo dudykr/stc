@@ -12,6 +12,7 @@ env_logger = "0.8.2"
 log = "0.4.11"
 lsp-server = "0.5.0"
 lsp-types = "0.86.0"
+once_cell = "1.5.2"
 profile = {git = "https://github.com/rust-analyzer/rust-analyzer.git", rev = "2020-12-28"}
 rayon = "1.5.0"
 serde = {version = "1.0.118", features = ["derive"]}

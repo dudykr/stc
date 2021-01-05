@@ -1,6 +1,7 @@
 use lsp_types::CallHierarchyOptions;
 use lsp_types::CallHierarchyServerCapability;
 use lsp_types::ClientCapabilities;
+use lsp_types::CodeActionKind;
 use lsp_types::CodeActionOptions;
 use lsp_types::CodeActionProviderCapability;
 use lsp_types::CompletionOptions;
@@ -18,21 +19,34 @@ use lsp_types::MonikerRegistrationOptions;
 use lsp_types::MonikerServerCapabilities;
 use lsp_types::OneOf;
 use lsp_types::ReferencesOptions;
+use lsp_types::SaveOptions;
 use lsp_types::ServerCapabilities;
 use lsp_types::SignatureHelpOptions;
 use lsp_types::StaticTextDocumentRegistrationOptions;
 use lsp_types::TextDocumentRegistrationOptions;
 use lsp_types::TextDocumentSyncCapability;
+use lsp_types::TextDocumentSyncKind;
 use lsp_types::TextDocumentSyncOptions;
+use lsp_types::TextDocumentSyncSaveOptions;
 use lsp_types::TypeDefinitionProviderCapability;
 use lsp_types::WorkDoneProgressOptions;
+use lsp_types::WorkspaceFileOperationsServerCapabilities;
+use lsp_types::WorkspaceFoldersServerCapabilities;
 use lsp_types::WorkspaceServerCapabilities;
 use lsp_types::WorkspaceSymbolOptions;
 
-pub fn server_capabilities(capabilities: ClientCapabilities) -> ServerCapabilities {
+pub fn server_capabilities(_capabilities: ClientCapabilities) -> ServerCapabilities {
     ServerCapabilities {
         text_document_sync: Some(TextDocumentSyncCapability::Options(
-            TextDocumentSyncOptions {},
+            TextDocumentSyncOptions {
+                open_close: Some(false),
+                change: Some(TextDocumentSyncKind::Full),
+                will_save: Some(true),
+                will_save_wait_until: Some(true),
+                save: Some(TextDocumentSyncSaveOptions::SaveOptions(SaveOptions {
+                    include_text: Some(false),
+                })),
+            },
         )),
         selection_range_provider: None,
         hover_provider: Some(HoverProviderCapability::Options(HoverOptions {
@@ -40,18 +54,36 @@ pub fn server_capabilities(capabilities: ClientCapabilities) -> ServerCapabiliti
                 work_done_progress: Some(true),
             },
         })),
-        completion_provider: Some(CompletionOptions {}),
-        signature_help_provider: Some(SignatureHelpOptions {}),
+        completion_provider: Some(CompletionOptions {
+            resolve_provider: None,
+            trigger_characters: None,
+            work_done_progress_options: WorkDoneProgressOptions {
+                work_done_progress: Some(true),
+            },
+        }),
+        signature_help_provider: Some(SignatureHelpOptions {
+            trigger_characters: Some(vec![":".to_string()]),
+            retrigger_characters: None,
+            work_done_progress_options: WorkDoneProgressOptions {
+                work_done_progress: Some(true),
+            },
+        }),
         definition_provider: Some(OneOf::Right(DefinitionOptions {
             work_done_progress_options: WorkDoneProgressOptions {
                 work_done_progress: Some(true),
             },
         })),
         type_definition_provider: Some(TypeDefinitionProviderCapability::Options(
-            StaticTextDocumentRegistrationOptions {},
+            StaticTextDocumentRegistrationOptions {
+                id: Some("stc-ts-lang-server".to_string()),
+                document_selector: None,
+            },
         )),
         implementation_provider: Some(ImplementationProviderCapability::Options(
-            StaticTextDocumentRegistrationOptions {},
+            StaticTextDocumentRegistrationOptions {
+                id: Some("stc-ts-lang-server".to_string()),
+                document_selector: None,
+            },
         )),
         references_provider: Some(OneOf::Right(ReferencesOptions {
             work_done_progress_options: WorkDoneProgressOptions {
@@ -74,6 +106,7 @@ pub fn server_capabilities(capabilities: ClientCapabilities) -> ServerCapabiliti
                 work_done_progress: Some(true),
             },
             resolve_provider: None,
+            code_action_kinds: Some(vec![CodeActionKind::QUICKFIX]),
         })),
         code_lens_provider: None,
         document_formatting_provider: None,
@@ -93,15 +126,39 @@ pub fn server_capabilities(capabilities: ClientCapabilities) -> ServerCapabiliti
                 work_done_progress: Some(true),
             },
         })),
-        execute_command_provider: Some(ExecuteCommandOptions {}),
-        workspace: Some(WorkspaceServerCapabilities {}),
+        execute_command_provider: Some(ExecuteCommandOptions {
+            commands: vec!["Run".to_string()],
+            work_done_progress_options: WorkDoneProgressOptions {
+                work_done_progress: Some(true),
+            },
+        }),
+        workspace: Some(WorkspaceServerCapabilities {
+            workspace_folders: Some(WorkspaceFoldersServerCapabilities {
+                supported: Some(true),
+                change_notifications: Some(OneOf::Left(true)),
+            }),
+            file_operations: Some(WorkspaceFileOperationsServerCapabilities {
+                did_create: None,
+                will_create: None,
+                did_rename: None,
+                will_rename: None,
+                did_delete: None,
+                will_delete: None,
+            }),
+        }),
         call_hierarchy_provider: Some(CallHierarchyServerCapability::Options(
-            CallHierarchyOptions {},
+            CallHierarchyOptions {
+                work_done_progress_options: WorkDoneProgressOptions {
+                    work_done_progress: Some(true),
+                },
+            },
         )),
         semantic_tokens_provider: None,
         moniker_provider: Some(OneOf::Right(
             MonikerServerCapabilities::RegistrationOptions(MonikerRegistrationOptions {
-                text_document_registration_options: TextDocumentRegistrationOptions {},
+                text_document_registration_options: TextDocumentRegistrationOptions {
+                    document_selector: None,
+                },
                 moniker_options: MonikerOptions {
                     work_done_progress_options: WorkDoneProgressOptions {
                         work_done_progress: Some(true),
