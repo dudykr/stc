@@ -1,0 +1,11 @@
+{
+  "name": "stc-ls-vscode",
+  "version": "0.1.0",
+  "description": "Super fast typescript language server",
+  "main": "lib/index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "author": "kdy1 <kdy1@dudy.kr>",
+  "license": "SEE LICENSE IN STC_LICENSE.md"
+}
