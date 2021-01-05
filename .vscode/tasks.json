@@ -11,10 +11,16 @@
       "detail": "tsc -b"
     },
     {
-      "label": "Build Server",
+      "label": "Build server",
       "group": "build",
       "type": "shell",
       "command": "cargo build -p stc-ts-lang-server",
+      "problemMatcher": "$rustc"
+    },
+
+    {
+      "label": "Build server and extension",
+      "dependsOn": ["Build server", "Build vscode extension"],
       "problemMatcher": "$rustc"
     }
   ]
