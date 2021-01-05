@@ -1,0 +1,21 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build vscode extension",
+      "type": "npm",
+      "script": "compile",
+      "path": "editors/vscode/",
+      "problemMatcher": ["$tsc"],
+      "group": "build",
+      "detail": "tsc -b"
+    },
+    {
+      "label": "Build Server",
+      "group": "build",
+      "type": "shell",
+      "command": "cargo build -p stc-ts-lang-server",
+      "problemMatcher": "$rustc"
+    }
+  ]
+}
