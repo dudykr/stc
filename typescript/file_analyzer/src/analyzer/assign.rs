@@ -794,6 +794,7 @@ impl Analyzer<'_, '_> {
 
                         return Ok(());
                     }
+                    Type::Array(..) => fail!(),
                     _ => {}
                 }
             }
