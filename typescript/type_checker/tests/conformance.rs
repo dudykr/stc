@@ -117,8 +117,7 @@ fn conformance() {
 }
 
 fn load_expected_errors(ts_file: &Path) -> Result<Vec<RefError>, Error> {
-    let fname = ts_file.file_name().unwrap();
-    let errors_file = ts_file.with_file_name(format!("{}.errors.json", fname.to_string_lossy()));
+    let errors_file = ts_file.with_extension("errors.json");
     if !errors_file.exists() {
         println!("errors file does not exists: {}", errors_file.display());
         Ok(vec![])
