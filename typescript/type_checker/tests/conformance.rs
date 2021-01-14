@@ -11,6 +11,7 @@ mod common;
 
 use self::common::load_fixtures;
 use self::common::SwcComments;
+use once_cell::sync::Lazy;
 use serde::Deserialize;
 use stc_testing::logger;
 use stc_ts_builtin_types::Lib;
@@ -19,6 +20,7 @@ use stc_ts_file_analyzer::Rule;
 use stc_ts_type_checker::Checker;
 use std::collections::HashSet;
 use std::env;
+use std::fs::read_to_string;
 use std::fs::File;
 use std::panic::catch_unwind;
 use std::path::Path;
@@ -47,10 +49,43 @@ struct Error {
     pub msg: String,
 }
 
+fn is_ignored(path: &Path) -> bool {
+    static IGNORED: Lazy<Vec<String>> = Lazy::new(|| {
+        let content = read_to_string("tests/conformance.ignored.txt").unwrap();
+
+        content
+            .lines()
+            .filter(|v| !v.trim().is_empty())
+            .map(|v| v.to_string())
+            .collect()
+    });
+
+    static PASS: Lazy<Vec<String>> = Lazy::new(|| {
+        let content = read_to_string("tests/conformance.pass.txt").unwrap();
+
+        content
+            .lines()
+            .filter(|v| !v.trim().is_empty())
+            .map(|v| v.to_string())
+            .collect()
+    });
+
+    !PASS
+        .iter()
+        .any(|line| path.to_string_lossy().contains(line))
+        || IGNORED
+            .iter()
+            .any(|line| path.to_string_lossy().contains(line))
+}
+
 #[test]
 fn conformance() {
     let args: Vec<_> = env::args().collect();
     let tests = load_fixtures("conformance", |path| {
+        if is_ignored(&path) {
+            return None;
+        }
+
         let str_name = path.display().to_string();
 
         // If parser returns error, ignore it for now.
