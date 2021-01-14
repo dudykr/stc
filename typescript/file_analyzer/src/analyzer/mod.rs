@@ -651,6 +651,7 @@ impl Analyzer<'_, '_> {
 
         let ctx = Ctx {
             in_global: global,
+            in_declare: self.ctx.in_declare || decl.declare,
             ..self.ctx
         };
         self.with_ctx(ctx).with_child(
