@@ -33,15 +33,15 @@ stc_ts_utils = {path = "../utils"}
 stc_utils = {path = "../../utils"}
 swc_atoms = "0.2.5"
 swc_common = {version = "0.10.8", features = ["concurrent"]}
-swc_ecma_ast = "0.36.2"
+swc_ecma_ast = "0.36.3"
 swc_ecma_codegen = "0.42.2"
-swc_ecma_parser = "0.44.1"
-swc_ecma_utils = "0.26.0"
+swc_ecma_parser = "0.44.2"
+swc_ecma_utils = "0.26.1"
 
 [dev-dependencies]
 stc_testing = {path = "../../testing"}
 stc_ts_testing = { path = "../testing" }
-swc_ecma_parser = "0.44.1"
-swc_ecma_transforms = "0.31.2"
+swc_ecma_parser = "0.44.2"
+swc_ecma_transforms = "0.32.2"
 swc_ecma_visit = "0.22.0"
 testing = "0.10.2"

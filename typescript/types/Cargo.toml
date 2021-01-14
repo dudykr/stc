@@ -18,7 +18,7 @@ stc_ts_ast_rnode = {path = "../ast_rnode"}
 stc_visit = {path = "../../visit"}
 swc_atoms = "0.2.5"
 swc_common = "0.10.8"
-swc_ecma_ast = "0.36.1"
-swc_ecma_utils = "0.26.0"
+swc_ecma_ast = "0.36.3"
+swc_ecma_utils = "0.26.1"
 swc_ecma_visit = "0.22.0"
 swc_visit = "0.2.2"
