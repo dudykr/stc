@@ -651,7 +651,7 @@ impl Analyzer<'_, '_> {
             in_declare: self.ctx.in_declare || decl.declare,
             ..self.ctx
         };
-        self.with_ctx(ctx).with_child(
+        let ty = self.with_ctx(ctx).with_child(
             ScopeKind::Block,
             Default::default(),
             |child: &mut Analyzer| {
@@ -659,22 +659,24 @@ impl Analyzer<'_, '_> {
 
                 let exports = take(&mut child.storage.take_info(ctxt));
                 if !global {
-                    let module = child.finalize(ty::Module { span, exports });
-                    child
-                        .register_type(
-                            match decl.id {
-                                RTsModuleName::Ident(ref i) => i.into(),
-                                RTsModuleName::Str(ref s) => {
-                                    RIdent::new(s.value.clone(), s.span).into()
-                                }
-                            },
-                            box Type::Module(module),
-                        )
-                        .report(&mut child.storage);
+                    return Ok(Some(child.finalize(ty::Module { span, exports })));
                 }
 
-                Ok(())
+                Ok(None)
             },
-        )
+        )?;
+
+        if let Some(module) = ty {
+            self.register_type(
+                match decl.id {
+                    RTsModuleName::Ident(ref i) => i.into(),
+                    RTsModuleName::Str(ref s) => RIdent::new(s.value.clone(), s.span).into(),
+                },
+                box Type::Module(module),
+            )
+            .report(&mut self.storage);
+        }
+
+        Ok(())
     }
 }
