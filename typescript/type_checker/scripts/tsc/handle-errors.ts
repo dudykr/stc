@@ -24,14 +24,22 @@ function extract(content: string): ErrorRef[] {
         if (str.startsWith('====')) {
             break
         }
+        if (str.startsWith(' ')) {
+            continue
+        }
         const [, data] = str.split('(', 2);
-        if (!data) { continue }
+        if (!data) {
+            continue
+        }
 
         const [line, column] = (data.split(')', 2)[0].split(',').map(v => parseInt(v)))
 
         const code = data.split('error ', 2)[1]?.split(':')[0];
 
         console.log(line, column, code);
+        if (!line || !column || !code) {
+            throw new Error(`invalid line found: ${str}`)
+        }
         errors.push({
             line,
             column,
