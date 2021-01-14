@@ -51,8 +51,8 @@ function extract(content: string): ErrorRef[] {
         if (!fs.existsSync(errorFilePath)) {
             continue
         }
-
-        const errorJsonPath = path.join(dir, 'errors.json');
+        const nameWithoutExt = fname.split('.').slice(0, -1).join('.');
+        const errorJsonPath = path.join(dir, `${nameWithoutExt}.errors.json`);
 
         const content = await fs.promises.readFile(errorFilePath, 'utf-8');
         const errors = extract(content)
