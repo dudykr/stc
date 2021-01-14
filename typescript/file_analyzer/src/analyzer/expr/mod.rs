@@ -2007,6 +2007,17 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult {
         match *n {
             RTsEntityName::Ident(ref i) => {
+                if i.sym == js_word!("Array") {
+                    if let Some(type_args) = type_args {
+                        // TODO: Validate number of args.
+                        return Ok(Box::new(Type::Array(Array {
+                            span,
+                            // TODO: Check length (After implementing error recovery for the parser)
+                            elem_type: type_args.params.into_iter().next().unwrap(),
+                        })));
+                    }
+                }
+
                 if let Some(types) = self.find_type(ctxt, &i.into())? {
                     for ty in types {
                         match ty.normalize() {
