@@ -419,7 +419,7 @@ pub enum Error {
         span: Span,
     },
 
-    TS2391 {
+    FnImplMissingOrNotFollowedByDecl {
         span: Span,
     },
 
@@ -529,7 +529,7 @@ impl Error {
             Error::TS1166 { .. } => 1166,
             Error::TS1345 { .. } => 1345,
             Error::TS2353 { .. } => 2353,
-            Error::TS2391 { .. } => 2391,
+            Error::FnImplMissingOrNotFollowedByDecl { .. } => 2391,
             Error::TS2464 { .. } => 2464,
             Error::TS2356 { .. } => 2356,
             Error::TS2369 { .. } => 2369,
@@ -548,9 +548,10 @@ impl Error {
 
     fn msg(&self) -> Cow<'static, str> {
         match self {
-            Self::TS2391 { .. } => "Function implementation is missing or not immediately \
-                                    following the declaration"
-                .into(),
+            Self::FnImplMissingOrNotFollowedByDecl { .. } => {
+                "Function implementation is missing or not immediately following the declaration"
+                    .into()
+            }
 
             _ => format!("{:#?}", self).into(),
         }

@@ -577,7 +577,7 @@ impl Analyzer<'_, '_> {
                             && !is_prop_name_eq_include_computed(&name.unwrap(), &m.key)
                         {
                             for span in replace(&mut spans, vec![]) {
-                                errors.push(Error::TS2391 { span });
+                                errors.push(Error::FnImplMissingOrNotFollowedByDecl { span });
                             }
                         }
 
@@ -613,11 +613,11 @@ impl Analyzer<'_, '_> {
 
                             if is_prop_name_eq_include_computed(&name.unwrap(), &constructor_name) {
                                 for span in replace(&mut spans, vec![]) {
-                                    errors.push(Error::TS2391 { span });
+                                    errors.push(Error::FnImplMissingOrNotFollowedByDecl { span });
                                 }
                             } else if is_prop_name_eq_include_computed(&m.key, &constructor_name) {
                                 for span in replace(&mut spans, vec![]) {
-                                    errors.push(Error::TS2389 { span });
+                                    errors.push(Error::FnImplMissingOrNotFollowedByDecl { span });
                                 }
                             } else {
                                 spans = vec![];
@@ -652,7 +652,7 @@ impl Analyzer<'_, '_> {
 
         // Class definition ended with `foo();`
         for span in replace(&mut spans, vec![]) {
-            errors.push(Error::TS2391 { span });
+            errors.push(Error::FnImplMissingOrNotFollowedByDecl { span });
         }
 
         self.storage.report_all(errors);

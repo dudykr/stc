@@ -30,7 +30,8 @@ impl Visit<RStmt> for AmbientFunctionHandler<'_, '_> {
             _ => {
                 // .take() is same as self.last_ambient_name = None
                 if let Some(ref i) = self.last_ambient_name.take() {
-                    self.errors.report(Error::TS2391 { span: i.span });
+                    self.errors
+                        .report(Error::FnImplMissingOrNotFollowedByDecl { span: i.span });
                 }
             }
         }

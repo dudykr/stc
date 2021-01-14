@@ -589,9 +589,11 @@ impl Analyzer<'_, '_> {
             items.visit_with(&mut visitor);
 
             if visitor.last_ambient_name.is_some() {
-                visitor.errors.report(Error::TS2391 {
-                    span: visitor.last_ambient_name.unwrap().span,
-                })
+                visitor
+                    .errors
+                    .report(Error::FnImplMissingOrNotFollowedByDecl {
+                        span: visitor.last_ambient_name.unwrap().span,
+                    })
             }
         }
 
@@ -618,9 +620,11 @@ impl Analyzer<'_, '_> {
         items.visit_with(&mut visitor);
 
         if visitor.last_ambient_name.is_some() {
-            visitor.errors.report(Error::TS2391 {
-                span: visitor.last_ambient_name.unwrap().span,
-            })
+            visitor
+                .errors
+                .report(Error::FnImplMissingOrNotFollowedByDecl {
+                    span: visitor.last_ambient_name.unwrap().span,
+                })
         }
 
         for item in items.iter() {
