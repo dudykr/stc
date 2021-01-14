@@ -915,6 +915,9 @@ impl Analyzer<'_, '_> {
         rhs: &Type,
     ) -> ValidationResult<()> {
         // debug_assert!(!span.is_dummy());
+        if lhs.is_empty() {
+            return Ok(());
+        }
 
         let mut errors = Errors::default();
         let mut missing_fields = vec![];
@@ -961,7 +964,7 @@ impl Analyzer<'_, '_> {
                 _ => {
                     return Err(Error::Unimplemented {
                         span,
-                        msg: format!(""),
+                        msg: format!("assign_to_type_elements"),
                     })
                 }
             }
@@ -1022,7 +1025,7 @@ impl Analyzer<'_, '_> {
                 _ => {
                     return Err(Error::Unimplemented {
                         span,
-                        msg: format!(""),
+                        msg: format!("assign_to_type_elements - ??"),
                     })
                 }
             }
