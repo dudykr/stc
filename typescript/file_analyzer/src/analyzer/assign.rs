@@ -754,25 +754,23 @@ impl Analyzer<'_, '_> {
                             fail!();
                         }
 
+                        let mut errors = Errors::default();
                         for (l, r) in elems.into_iter().zip(rhs_elems) {
-                            match self.assign_inner(&l.ty, &r.ty, span) {
-                                // Great
-                                Ok(()) => {}
-                                Err(err) => {
-                                    // I don't know why, but
-                                    //
-                                    //      var [a, b]: [number, any] = [undefined, undefined];
-                                    //
-                                    // is valid typescript.
-                                    match *r.ty.normalize() {
-                                        Type::Keyword(RTsKeywordType {
-                                            kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                                            ..
-                                        }) => {}
-                                        _ => return Err(err),
-                                    }
-                                }
+                            for el in elems {
+                                let err = match *r.ty.normalize() {
+                                    Type::Keyword(RTsKeywordType {
+                                        kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                                        ..
+                                    }) => continue,
+                                    _ => {}
+                                };
+
+                                errors.extend(self.assign_inner(&l.ty, &r.ty, span).err());
                             }
+                        }
+
+                        if !errors.is_empty() {
+                            Err(errors)?;
                         }
 
                         return Ok(());
