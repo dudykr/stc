@@ -9,6 +9,7 @@ use stc_ts_types::ModuleId;
 use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeParamInstantiation;
+use std::borrow::Cow;
 use std::{ops::RangeInclusive, path::PathBuf};
 use swc_atoms::JsWord;
 use swc_common::errors::DiagnosticId;
@@ -545,45 +546,27 @@ impl Error {
         }
     }
 
+    fn msg(&self) -> Cow<'static, str> {
+        match self {
+            Self::TS2391 { .. } => "Function implementation is missing or not immediately \
+                                    following the declaration"
+                .into(),
+
+            _ => format!("{:#?}", self).into(),
+        }
+    }
+
     #[cold]
     pub fn emit(self, h: &Handler) {
         let span = self.span();
 
-        let mut err = match self {
-            Error::Unimplemented { ref msg, .. } => {
-                h.struct_err(&format!("unimplemented\n{}", msg))
-            }
-            //            Error::TS2378 { .. } => h.struct_err("A 'get' accessor must return a
-            // value"),            Error::TS1094 { .. } => h.struct_err("An accessor
-            // cannot have type parameters"),            Error::TS1166 { .. } =>
-            // h.struct_err(                "A computed property name in a class
-            // property declaration must refer to an \                 expression whose
-            // type is a literal type or a 'unique symbol' type.",            ),
-            //            Error::TS1183 { .. } => {
-            //                h.struct_err("An implementation cannot be declared in ambient
-            // contexts")            }
-            //            Error::TS1318 { .. } => {
-            //                h.struct_err("An abstract accessor cannot have an implementation")
-            //            }
-            //            Error::TS1095 { .. } => {
-            //                h.struct_err("A 'set' accessor cannot have a return type annotation")
-            //            }
-            //            Error::TS2567 { .. } => h.struct_err(
-            //                "Enum declarations can only merge with namespace or other enum
-            // declarations",            ),
-            _ => h.struct_span_err_with_code(
-                span,
-                &format!("{:#?}", self),
-                DiagnosticId::Error(format!("ts{}", self.code())),
-            ),
-        };
-        err.set_span(span);
+        let mut err = h.struct_span_err_with_code(
+            span,
+            &self.msg(),
+            DiagnosticId::Error(format!("ts{}", self.code())),
+        );
 
-        //        err.code(DiagnosticId::Error(String::from(match self {
-        //            _ => "",
-        //        })));
-
-        err.set_span(span).emit();
+        err.emit();
     }
 
     #[cold]
