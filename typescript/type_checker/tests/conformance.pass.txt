@@ -1,1 +1,1 @@
-ambient
+ambientDeclarations.ts
