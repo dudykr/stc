@@ -23,7 +23,7 @@ use swc_common::{Span, Spanned};
 use swc_ecma_ast::*;
 
 impl Analyzer<'_, '_> {
-    pub fn assign(&self, left: &Type, right: &Type, span: Span) -> Result<(), Error> {
+    pub fn assign(&mut self, left: &Type, right: &Type, span: Span) -> Result<(), Error> {
         if self.is_builtin {
             return Ok(());
         }
@@ -81,7 +81,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn assign_inner(&self, to: &Type, rhs: &Type, span: Span) -> Result<(), Error> {
+    fn assign_inner(&mut self, to: &Type, rhs: &Type, span: Span) -> Result<(), Error> {
         // debug_assert!(!span.is_dummy(), "\n\t{:?}\n<-\n\t{:?}", to, rhs);
 
         macro_rules! fail {
@@ -687,10 +687,25 @@ impl Analyzer<'_, '_> {
 
             Type::This(RTsThisType { span }) => return Err(Error::CannotAssingToThis { span }),
 
-            Type::Interface(Interface { ref body, .. }) => {
+            Type::Interface(Interface {
+                ref body,
+                ref extends,
+                ..
+            }) => {
                 self.assign_to_type_elements(span, to.span(), &body, rhs)?;
 
                 // TODO: Handle extends
+
+                for parent in extends {
+                    let parent = self.type_of_ts_entity_name(
+                        span,
+                        self.ctx.module_id,
+                        &parent.expr,
+                        parent.type_args.clone(),
+                    )?;
+
+                    self.assign(&parent, &rhs, span)?;
+                }
 
                 return Ok(());
             }
@@ -893,7 +908,7 @@ impl Analyzer<'_, '_> {
     /// let b: { key: string } = foo;
     /// ```
     fn assign_to_type_elements(
-        &self,
+        &mut self,
         span: Span,
         lhs_span: Span,
         lhs: &[TypeElement],
@@ -1174,7 +1189,7 @@ impl Analyzer<'_, '_> {
 
     /// This method assigns each property to corresponding property.
     fn assign_type_elements_to_type_element(
-        &self,
+        &mut self,
         span: Span,
         missing_fields: &mut Vec<TypeElement>,
         m: &TypeElement,

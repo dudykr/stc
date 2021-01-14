@@ -1457,7 +1457,7 @@ impl Analyzer<'_, '_> {
 
     /// This method return [Err] if call is invalid
     fn is_exact_call(
-        &self,
+        &mut self,
         span: Span,
         type_params: Option<&[TypeParam]>,
         params: &[FnParam],
