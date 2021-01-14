@@ -670,7 +670,10 @@ impl Analyzer<'_, '_> {
             self.register_type(
                 match decl.id {
                     RTsModuleName::Ident(ref i) => i.into(),
-                    RTsModuleName::Str(ref s) => RIdent::new(s.value.clone(), s.span).into(),
+                    RTsModuleName::Str(ref s) => {
+                        //TODO
+                        return Ok(());
+                    }
                 },
                 box Type::Module(module),
             )
