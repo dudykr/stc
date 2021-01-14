@@ -541,6 +541,7 @@ impl Error {
             Error::TS2567 { .. } => 2567,
             Error::TS2585 { .. } => 2585,
             Error::TS2704 { .. } => 2704,
+            Error::AssignFailed { .. } => 2322,
 
             _ => 0,
         }
@@ -564,7 +565,7 @@ impl Error {
         let mut err = h.struct_span_err_with_code(
             span,
             &self.msg(),
-            DiagnosticId::Error(format!("ts{}", self.code())),
+            DiagnosticId::Error(format!("TS{}", self.code())),
         );
 
         err.emit();
