@@ -1,4 +1,3 @@
-pub(super) use self::ambient_decl::AmbientFunctionHandler;
 use self::return_type::LoopBreakerFinder;
 use super::Analyzer;
 use crate::{

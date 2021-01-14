@@ -5,7 +5,6 @@ use self::{
     pat::PatMode,
     props::ComputedPropMode,
     scope::Scope,
-    stmt::AmbientFunctionHandler,
     util::ResultExt,
 };
 use crate::{
@@ -581,20 +580,7 @@ impl Analyzer<'_, '_> {
         });
 
         if !self.in_declare {
-            let mut visitor = AmbientFunctionHandler {
-                last_ambient_name: None,
-                errors: &mut self.storage,
-            };
-
-            items.visit_with(&mut visitor);
-
-            if visitor.last_ambient_name.is_some() {
-                visitor
-                    .errors
-                    .report(Error::FnImplMissingOrNotFollowedByDecl {
-                        span: visitor.last_ambient_name.unwrap().span,
-                    })
-            }
+            self.validate_ambient_fns(&items);
         }
 
         if self.is_builtin {
@@ -612,21 +598,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, items: &Vec<RStmt>) {
-        let mut visitor = AmbientFunctionHandler {
-            last_ambient_name: None,
-            errors: &mut self.storage,
-        };
-
-        items.visit_with(&mut visitor);
-
-        if visitor.last_ambient_name.is_some() {
-            visitor
-                .errors
-                .report(Error::FnImplMissingOrNotFollowedByDecl {
-                    span: visitor.last_ambient_name.unwrap().span,
-                })
-        }
-
         for item in items.iter() {
             item.visit_with(self);
         }
