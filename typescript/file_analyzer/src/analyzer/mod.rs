@@ -136,7 +136,6 @@ pub struct Analyzer<'scope, 'b> {
     storage: Storage<'b>,
 
     export_equals_span: Span,
-    in_declare: bool,
 
     imports_by_id: FxHashMap<Id, ModuleInfo>,
 
@@ -324,8 +323,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             storage,
             mutations,
             export_equals_span: DUMMY_SP,
-            // builtin types are declared
-            in_declare: is_builtin,
             imports: Default::default(),
             pending_exports: Default::default(),
             prepend_stmts: Default::default(),
@@ -579,7 +576,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         });
 
-        if !self.in_declare {
+        if !self.ctx.in_declare {
             self.validate_ambient_fns(&items);
         }
 
@@ -658,8 +655,6 @@ impl Analyzer<'_, '_> {
             ScopeKind::Block,
             Default::default(),
             |child: &mut Analyzer| {
-                child.ctx.in_declare = decl.declare;
-
                 decl.visit_children_with(child);
 
                 let exports = take(&mut child.storage.take_info(ctxt));
