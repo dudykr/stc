@@ -1,1 +1,5 @@
-ambientDeclarations.ts
+asyncArrowFunction2_es5.ts
+asyncArrowFunction1_es5.ts
+asyncArrowFunction5_es5.ts
+asyncArrowFunction6_es5.ts
+asyncArrowFunctionCapturesThis_es5.ts
