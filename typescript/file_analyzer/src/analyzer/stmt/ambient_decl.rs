@@ -5,6 +5,7 @@ use stc_ts_ast_rnode::RFnDecl;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RStmt;
 use stc_ts_ast_rnode::RTsModuleDecl;
+use stc_ts_ast_rnode::RTsNamespaceDecl;
 use stc_ts_errors::Error;
 use stc_ts_storage::Storage;
 
@@ -63,6 +64,16 @@ impl Visit<RFnDecl> for AmbientFunctionHandler<'_, '_> {
                 }
             }
         }
+    }
+}
+
+impl Visit<RTsNamespaceDecl> for AmbientFunctionHandler<'_, '_> {
+    fn visit(&mut self, value: &RTsNamespaceDecl) {
+        if value.declare {
+            return;
+        }
+
+        value.visit_children_with(self);
     }
 }
 
