@@ -20,6 +20,7 @@ use stc_ts_type_checker::Checker;
 use std::collections::HashSet;
 use std::env;
 use std::fs::File;
+use std::panic::catch_unwind;
 use std::path::Path;
 use std::sync::Arc;
 use swc_common::errors::DiagnosticBuilder;
@@ -56,15 +57,19 @@ fn conformance() {
 
         let cm = SourceMap::default();
         let fm = cm.load_file(&path).unwrap();
-        let mut parser = Parser::new(
-            Syntax::Typescript(TsConfig {
-                tsx: str_name.contains("tsx"),
-                ..Default::default()
-            }),
-            SourceFileInput::from(&*fm),
-            None,
-        );
-        parser.parse_module().ok()?;
+
+        catch_unwind(|| {
+            let mut parser = Parser::new(
+                Syntax::Typescript(TsConfig {
+                    tsx: str_name.contains("tsx"),
+                    ..Default::default()
+                }),
+                SourceFileInput::from(&*fm),
+                None,
+            );
+            parser.parse_module().ok()
+        })
+        .ok()??;
 
         Some(box move || {
             do_test(false, &path).unwrap();
