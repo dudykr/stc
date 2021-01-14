@@ -263,6 +263,10 @@ pub enum Error {
         cause: Vec<Error>,
     },
 
+    InvalidAssignmentOfArray {
+        span: Span,
+    },
+
     /// a or b or c
     UnionError {
         span: Span,
@@ -541,7 +545,7 @@ impl Error {
             Error::TS2567 { .. } => 2567,
             Error::TS2585 { .. } => 2585,
             Error::TS2704 { .. } => 2704,
-            Error::AssignFailed { .. } => 2322,
+            Error::AssignFailed { .. } | Error::InvalidAssignmentOfArray { .. } => 2322,
 
             _ => 0,
         }

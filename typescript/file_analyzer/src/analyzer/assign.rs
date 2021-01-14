@@ -1023,6 +1023,8 @@ impl Analyzer<'_, '_> {
                     // TODO: Check parent interface
                 }
 
+                Type::Array(..) => return Err(Error::InvalidAssignmentOfArray { span }),
+
                 _ => {
                     return Err(Error::Unimplemented {
                         span,
