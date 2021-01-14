@@ -1,5 +1,8 @@
-asyncArrowFunction2_es5.ts
 asyncArrowFunction1_es5.ts
+asyncArrowFunction2_es5.ts
 asyncArrowFunction5_es5.ts
 asyncArrowFunction6_es5.ts
-classes
+classAbstractAccessor.ts
+classAbstractAsIdentifier.ts
+classAbstractConstructor.ts
+classAbstractDeclarations.d.ts
