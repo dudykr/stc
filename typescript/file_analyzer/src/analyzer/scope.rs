@@ -427,7 +427,7 @@ impl Analyzer<'_, '_> {
             self.storage
                 .store_private_type(ModuleId::builtin(), name, ty.cheap());
         } else {
-            slog::trace!(self.logger, "register_type({})", name);
+            slog::debug!(self.logger, "register_type({})", name);
             let ty = ty.cheap();
 
             if self.scope.is_root() {
