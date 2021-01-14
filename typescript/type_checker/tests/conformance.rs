@@ -25,6 +25,7 @@ use std::sync::Arc;
 use swc_common::errors::DiagnosticBuilder;
 use swc_common::input::SourceFileInput;
 use swc_common::FileName;
+use swc_common::SourceMap;
 use swc_common::Span;
 use swc_common::Spanned;
 use swc_ecma_ast::*;
@@ -48,9 +49,25 @@ struct Error {
 #[test]
 fn conformance() {
     let args: Vec<_> = env::args().collect();
-    let tests = load_fixtures("conformance", |file_name| {
+    let tests = load_fixtures("conformance", |path| {
+        let str_name = path.display().to_string();
+
+        // If parser returns error, ignore it for now.
+
+        let cm = SourceMap::default();
+        let fm = cm.load_file(&path).unwrap();
+        let mut parser = Parser::new(
+            Syntax::Typescript(TsConfig {
+                tsx: str_name.contains("tsx"),
+                ..Default::default()
+            }),
+            SourceFileInput::from(&*fm),
+            None,
+        );
+        parser.parse_module().ok()?;
+
         Some(box move || {
-            do_test(false, &file_name).unwrap();
+            do_test(false, &path).unwrap();
         })
     });
     test_main(&args, tests, Default::default());
