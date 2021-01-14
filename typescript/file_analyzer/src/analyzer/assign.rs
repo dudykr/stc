@@ -466,9 +466,14 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::Tuple(Tuple { ref elems, .. }) => {
+                    let mut errors = Errors::default();
                     for el in elems {
-                        self.assign_inner(elem_type, &el.ty, span)?;
+                        errors.extend(self.assign_inner(elem_type, &el.ty, span).err());
                     }
+                    if !errors.is_empty() {
+                        Err(errors)?;
+                    }
+
                     return Ok(());
                 }
                 _ => fail!(),
