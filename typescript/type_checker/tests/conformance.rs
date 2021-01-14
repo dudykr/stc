@@ -109,6 +109,14 @@ fn conformance() {
         })
         .ok()??;
 
+        if let Ok(errors) = load_expected_errors(&path) {
+            for err in errors {
+                if err.code.starts_with("TS1") && err.code.len() == 6 {
+                    return None;
+                }
+            }
+        }
+
         Some(box move || {
             do_test(false, &path).unwrap();
         })
