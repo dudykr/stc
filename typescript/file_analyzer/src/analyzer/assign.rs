@@ -45,6 +45,7 @@ impl Analyzer<'_, '_> {
         res.map_err(|err| match err {
             Error::AssignFailed { .. } => err,
             Error::Errors { .. } => err,
+            Error::Unimplemented { .. } => err,
             _ => Error::AssignFailed {
                 span: err.span(),
                 left: box left.clone(),
