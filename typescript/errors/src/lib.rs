@@ -11,6 +11,7 @@ use stc_ts_types::TypeElement;
 use stc_ts_types::TypeParamInstantiation;
 use std::{ops::RangeInclusive, path::PathBuf};
 use swc_atoms::JsWord;
+use swc_common::errors::DiagnosticId;
 use swc_common::{errors::Handler, Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::{UnaryOp, UpdateOp};
 
@@ -503,6 +504,47 @@ pub enum Error {
 }
 
 impl Error {
+    /// TypeScript error code.
+    fn code(&self) -> usize {
+        match self {
+            Error::TS1016 { .. } => 1016,
+            Error::TS1063 { .. } => 1063,
+            Error::TS1094 { .. } => 1094,
+            Error::TS1095 { .. } => 1095,
+            Error::TS1168 { .. } => 1168,
+            Error::TS1169 { .. } => 1169,
+            Error::TS1183 { .. } => 1183,
+            Error::TS1318 { .. } => 1318,
+            Error::TS1319 { .. } => 1319,
+            Error::TS2309 { .. } => 2309,
+            Error::TS2347 { .. } => 2347,
+            Error::TS2360 { .. } => 2360,
+            Error::TS2361 { .. } => 2361,
+            Error::TS2362 { .. } => 2362,
+            Error::TS2363 { .. } => 2363,
+            Error::TS2365 { .. } => 2365,
+            Error::TS2370 { .. } => 2370,
+            Error::TS2394 { .. } => 2394,
+            Error::TS1166 { .. } => 1166,
+            Error::TS1345 { .. } => 1345,
+            Error::TS2353 { .. } => 2353,
+            Error::TS2391 { .. } => 2391,
+            Error::TS2464 { .. } => 2464,
+            Error::TS2356 { .. } => 2356,
+            Error::TS2369 { .. } => 2369,
+            Error::TS2389 { .. } => 2389,
+            Error::TS2447 { .. } => 2447,
+            Error::TS2515 { .. } => 2515,
+            Error::TS2531 { .. } => 2531,
+            Error::TS2532 { .. } => 2532,
+            Error::TS2567 { .. } => 2567,
+            Error::TS2585 { .. } => 2585,
+            Error::TS2704 { .. } => 2704,
+
+            _ => 0,
+        }
+    }
+
     #[cold]
     pub fn emit(self, h: &Handler) {
         let span = self.span();
@@ -529,7 +571,11 @@ impl Error {
             //            Error::TS2567 { .. } => h.struct_err(
             //                "Enum declarations can only merge with namespace or other enum
             // declarations",            ),
-            _ => h.struct_err(&format!("{:#?}", self)),
+            _ => h.struct_span_err_with_code(
+                span,
+                &format!("{:#?}", self),
+                DiagnosticId::Error(format!("ts{}", self.code())),
+            ),
         };
         err.set_span(span);
 
