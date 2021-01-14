@@ -754,6 +754,9 @@ impl Analyzer<'_, '_> {
                         if elems.len() < rhs_elems.len() {
                             fail!();
                         }
+                        if !elems.is_empty() && rhs_elems.is_empty() {
+                            fail!();
+                        }
 
                         let mut errors = Errors::default();
                         for (l, r) in elems.into_iter().zip(rhs_elems) {
