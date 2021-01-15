@@ -2197,6 +2197,19 @@ impl Analyzer<'_, '_> {
         };
 
         match ty {
+            Type::Ref(Ref { span, .. }) => {
+                let ctx = Ctx {
+                    ignore_expand_prevention_for_top: true,
+                    preserve_ref: false,
+                    ..self.ctx
+                };
+                let ty = self.with_ctx(ctx).expand_fully(*span, box ty.clone(), true);
+                let ty = match ty {
+                    Ok(v) => v,
+                    Err(..) => return false,
+                };
+                return self.prefer_tuple(Some(&ty));
+            }
             Type::Tuple(..) => true,
             Type::TypeLit(ty) => self.prefer_tuple_type_elements(&ty.members),
             Type::Interface(ty) => {
