@@ -21,7 +21,6 @@ use stc_ts_ast_rnode::RBinExpr;
 use stc_ts_ast_rnode::RCondExpr;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RIfStmt;
-use stc_ts_ast_rnode::RMemberExpr;
 use stc_ts_ast_rnode::RObjectPatProp;
 use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RPatOrExpr;
