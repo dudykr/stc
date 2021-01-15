@@ -73,7 +73,7 @@ impl Analyzer<'_, '_> {
                     .collect::<Result<_, _>>()?,
             })),
             _ => {
-                unimplemented!("append type: {:?} <= {:?}", to, rhs)
+                unimplemented!("append_type:\n{:?}\n{:?}", to, rhs)
             }
         }
     }
@@ -104,7 +104,7 @@ impl Analyzer<'_, '_> {
                     .collect::<Result<_, _>>()?,
             })),
             _ => {
-                unimplemented!("append type element: {:?} <= {:?}", to, rhs)
+                unimplemented!("append_type_element\n{:?}\n{:?}", to, rhs)
             }
         }
     }
