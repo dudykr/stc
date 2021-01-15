@@ -5,6 +5,7 @@ use crate::{
     ValidationResult,
 };
 use stc_ts_ast_rnode::RExpr;
+use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
@@ -12,10 +13,12 @@ use stc_ts_ast_rnode::RTsThisType;
 use stc_ts_errors::debug::print_backtrace;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
+use stc_ts_types::Ref;
 use stc_ts_types::{
     Array, ClassInstance, EnumVariant, FnParam, Interface, Intersection, Tuple, Type, TypeElement,
     TypeLit, TypeParam, Union,
 };
+use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::EqIgnoreSpan;
 use swc_common::TypeEq;
@@ -81,8 +84,37 @@ impl Analyzer<'_, '_> {
         }
     }
 
+    fn normalize_for_assign<'a>(&mut self, ty: &'a Type) -> Cow<'a, Type> {
+        let ty = ty.normalize();
+
+        match ty {
+            Type::Ref(Ref {
+                span,
+                type_name: RTsEntityName::Ident(type_name),
+                type_args: None,
+                ..
+            }) => {
+                return Cow::Owned(Type::Keyword(RTsKeywordType {
+                    span: *span,
+                    kind: match type_name.sym {
+                        js_word!("Boolean") => TsKeywordTypeKind::TsBooleanKeyword,
+                        js_word!("Number") => TsKeywordTypeKind::TsNumberKeyword,
+                        js_word!("String") => TsKeywordTypeKind::TsStringKeyword,
+                        _ => return Cow::Borrowed(ty),
+                    },
+                }))
+            }
+            _ => {}
+        }
+
+        Cow::Borrowed(ty)
+    }
+
     fn assign_inner(&mut self, to: &Type, rhs: &Type, span: Span) -> Result<(), Error> {
         // debug_assert!(!span.is_dummy(), "\n\t{:?}\n<-\n\t{:?}", to, rhs);
+        let to = self.normalize_for_assign(to);
+        let rhs = self.normalize_for_assign(rhs);
+
         let to = to.normalize();
         let rhs = rhs.normalize();
 
