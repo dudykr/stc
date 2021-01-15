@@ -1,4 +1,5 @@
 use super::{super::Analyzer, TypeOfMode};
+use crate::analyzer::util::ResultExt;
 use crate::{
     analyzer::util::instantiate_class, ty::Type, validator, validator::ValidateWith,
     ValidationResult,
@@ -76,20 +77,21 @@ impl Analyzer<'_, '_> {
 
         self.prevent_expansion(&mut casted_ty);
 
-        self.validate_type_cast_inner(span, &orig_ty, &casted_ty)?;
+        self.validate_type_cast_inner(span, &orig_ty, &casted_ty)
+            .report(&mut self.storage);
 
         Ok(casted_ty)
     }
 
     fn validate_type_cast_inner(
-        &self,
+        &mut self,
         span: Span,
-        orig_ty: &Type,
-        casted_ty: &Type,
+        orig: &Type,
+        casted: &Type,
     ) -> ValidationResult<()> {
-        match *orig_ty.normalize() {
+        match orig {
             Type::Union(ref rt) => {
-                let castable = rt.types.iter().any(|v| casted_ty.type_eq(v));
+                let castable = rt.types.iter().any(|v| casted.type_eq(v));
 
                 if castable {
                     return Ok(());
@@ -99,10 +101,10 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        match *casted_ty.normalize() {
+        match casted {
             Type::Tuple(ref lt) => {
                 //
-                match *orig_ty.normalize() {
+                match *orig.normalize() {
                     Type::Tuple(ref rt) => {
                         //
                         if lt.elems.len() != rt.elems.len() {
@@ -145,7 +147,7 @@ impl Analyzer<'_, '_> {
 
             Type::Array(ref lt) => {
                 //
-                match orig_ty {
+                match orig {
                     Type::Tuple(ref rt) => {
                         if rt.elems[0].ty.type_eq(&lt.elem_type) {
                             return Ok(());
@@ -163,10 +165,10 @@ impl Analyzer<'_, '_> {
 
         // self.assign(&casted_ty, &orig_ty, span)?;
 
-        match casted_ty {
+        match casted {
             Type::Tuple(ref rt) => {
                 //
-                match orig_ty {
+                match orig {
                     Type::Tuple(ref lt) => {}
                     _ => {}
                 }
@@ -174,6 +176,21 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
+        if self.has_overlap(&orig, &casted)? {
+            return Ok(());
+        }
+
         Ok(())
+    }
+
+    pub(crate) fn has_overlap(&mut self, l: &Type, r: &Type) -> ValidationResult<bool> {
+        let l = l.normalize();
+        let r = r.normalize();
+
+        if l.type_eq(r) {
+            return Ok(true);
+        }
+
+        Ok(false)
     }
 }

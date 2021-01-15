@@ -506,6 +506,10 @@ pub enum Error {
     NonSymbolTypedFieldFromSymbol {
         span: Span,
     },
+
+    NonOverlappingTypeCast {
+        span: Span,
+    },
 }
 
 impl Error {
@@ -550,6 +554,8 @@ impl Error {
             | Error::InvalidAssignmentOfArray { .. }
             | Error::UnknownPropertyInObjectLiteralAssignment { .. } => 2322,
 
+            Error::NonOverlappingTypeCast { .. } => 2352,
+
             _ => 0,
         }
     }
@@ -560,6 +566,11 @@ impl Error {
                 "Function implementation is missing or not immediately following the declaration"
                     .into()
             }
+            Self::NonOverlappingTypeCast { .. } => "Conversion of type may be a mistake because \
+                                                    neither type sufficiently overlaps with the \
+                                                    other. If this was intentional, convert the \
+                                                    expression to 'unknown' first."
+                .into(),
 
             _ => format!("{:#?}", self).into(),
         }
