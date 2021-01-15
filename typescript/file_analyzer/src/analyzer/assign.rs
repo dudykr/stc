@@ -433,8 +433,7 @@ impl Analyzer<'_, '_> {
                 if errors.is_empty() {
                     return Ok(());
                 }
-                print_backtrace();
-                return Err(Error::UnionError { span, errors });
+                return Err(Error::Errors { span, errors });
             }
 
             Type::Keyword(RTsKeywordType {
