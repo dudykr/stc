@@ -455,15 +455,7 @@ impl Analyzer<'_, '_> {
                     elem_type: ref rhs_elem_type,
                     ..
                 }) => {
-                    //
-                    return self
-                        .assign_inner(&elem_type, &rhs_elem_type, span)
-                        .map_err(|cause| Error::AssignFailed {
-                            span,
-                            left: box to.clone(),
-                            right: box rhs.clone(),
-                            cause: vec![cause],
-                        });
+                    return self.assign(&elem_type, &rhs_elem_type, span);
                 }
 
                 Type::Tuple(Tuple { ref elems, .. }) => {
