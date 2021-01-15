@@ -104,6 +104,6 @@ impl Visit<RTsModuleDecl> for AmbientFunctionHandler<'_, '_> {
             return;
         }
 
-        decl.visit_with(self);
+        decl.visit_children_with(self);
     }
 }
