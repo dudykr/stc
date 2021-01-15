@@ -117,6 +117,10 @@ impl Analyzer<'_, '_> {
 
         let to = to.normalize();
         let rhs = rhs.normalize();
+        if cfg!(debug_assertions) && span.lo() == swc_common::BytePos(0) {
+            dbg!(span);
+            print_backtrace();
+        }
 
         macro_rules! fail {
             () => {{
@@ -376,9 +380,7 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
             }
-            Type::Union(Union {
-                ref types, span, ..
-            }) => {
+            Type::Union(Union { ref types, .. }) => {
                 let errors = types
                     .iter()
                     .filter_map(|rhs| match self.assign_inner(to, rhs, span) {
@@ -389,6 +391,7 @@ impl Analyzer<'_, '_> {
                 if errors.is_empty() {
                     return Ok(());
                 }
+                print_backtrace();
                 return Err(Error::UnionError { span, errors });
             }
 
