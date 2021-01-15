@@ -11,4 +11,3 @@ assignmentGenericLookupTypeNarrowing.ts
 assignmentGenericLookupTypeNarrowing.ts
 compoundAdditionAssignmentLHSCannotBeAssigned.ts
 literals
-objectLiterals
