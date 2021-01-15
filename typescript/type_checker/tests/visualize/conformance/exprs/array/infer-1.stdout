@@ -30,7 +30,7 @@ warning: Type
 2 | export let b1: { x: boolean }[] = foo({ x: true }, { x: false });
   |                                                         ^^^^^
   |
-  = note: falsee
+  = note: false
 
 warning: Type
  --> $DIR/tests/visualize/conformance/exprs/array/infer-1.ts:2:52
@@ -39,7 +39,7 @@ warning: Type
   |                                                    ^^^^^^^^^^^^
   |
   = note: {
-              x: falsee;
+              x: false;
           }
 
 warning: Type
