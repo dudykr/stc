@@ -75,7 +75,7 @@ impl Analyzer<'_, '_> {
                         types: rhs
                             .types
                             .into_iter()
-                            .map(|rhs| self.append_type(box Type::TypeLit(lit.clone()), rhs))
+                            .map(|rhs| self.append_type(box to.clone(), rhs))
                             .collect::<Result<_, _>>()?,
                     }))
                 }
