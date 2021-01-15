@@ -16,6 +16,7 @@ use stc_ts_errors::debug::print_backtrace;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_types::Mapped;
+use stc_ts_types::MethodSignature;
 use stc_ts_types::PropertySignature;
 use stc_ts_types::Ref;
 use stc_ts_types::{
@@ -1337,8 +1338,14 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            // No property with `key` found.
-            missing_fields.push(m.clone());
+            match m {
+                TypeElement::Property(PropertySignature { optional: true, .. })
+                | TypeElement::Method(MethodSignature { optional: true, .. }) => {}
+                _ => {
+                    // No property with `key` found.
+                    missing_fields.push(m.clone());
+                }
+            }
         } else {
             match m {
                 // TODO: Check type of the index.
