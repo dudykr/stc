@@ -999,7 +999,7 @@ impl Analyzer<'_, '_> {
             macro_rules! handle_type_elements {
                 ($rhs:expr) => {{
                     for r in $rhs {
-                        // unhandled_rhs.push(r.span());
+                        unhandled_rhs.push(r.span());
                     }
 
                     for (i, m) in lhs.into_iter().enumerate() {

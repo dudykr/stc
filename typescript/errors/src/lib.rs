@@ -545,7 +545,10 @@ impl Error {
             Error::TS2567 { .. } => 2567,
             Error::TS2585 { .. } => 2585,
             Error::TS2704 { .. } => 2704,
-            Error::AssignFailed { .. } | Error::InvalidAssignmentOfArray { .. } => 2322,
+
+            Error::AssignFailed { .. }
+            | Error::InvalidAssignmentOfArray { .. }
+            | Error::UnknownPropertyInObjectLiteralAssignment { .. } => 2322,
 
             _ => 0,
         }
