@@ -1,5 +1,3 @@
-use std::mem::take;
-
 use crate::analyzer::Analyzer;
 use crate::analyzer::ScopeKind;
 use crate::validator::ValidateWith;
@@ -7,14 +5,11 @@ use crate::ValidationResult;
 use stc_ts_ast_rnode::RObjectLit;
 use stc_ts_ast_rnode::RPropOrSpread;
 use stc_ts_ast_rnode::RSpreadElement;
-use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_file_analyzer_macros::validator;
 use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
 use stc_ts_types::Union;
-use swc_common::EqIgnoreSpan;
-use swc_ecma_ast::TsKeywordTypeKind;
 
 #[validator]
 impl Analyzer<'_, '_> {
@@ -23,83 +18,36 @@ impl Analyzer<'_, '_> {
             ScopeKind::ObjectLit,
             Default::default(),
             |a: &mut Analyzer| {
-                let mut special_type = None;
-
-                // TODO: Change order
+                let mut ty = box Type::TypeLit(TypeLit {
+                    span: node.span,
+                    members: vec![],
+                });
 
                 for prop in node.props.iter() {
-                    match *prop {
-                        RPropOrSpread::Prop(ref prop) => {
-                            let p: TypeElement = prop.validate_with(a)?;
-                            if let Some(key) = p.key() {
-                                if a.scope.this_object_members.iter_mut().any(|element| {
-                                    match element {
-                                        TypeElement::Property(prop)
-                                            if (*prop.key).eq_ignore_span(&*key) =>
-                                        {
-                                            prop.readonly = false;
-                                            true
-                                        }
-                                        _ => false,
-                                    }
-                                }) {
-                                    continue;
-                                }
-                            }
-
-                            a.scope.this_object_members.push(p);
-                        }
-                        RPropOrSpread::Spread(RSpreadElement { ref expr, .. }) => {
-                            match *expr.validate_with_default(a)? {
-                                Type::TypeLit(TypeLit {
-                                    members: spread_members,
-                                    ..
-                                }) => {
-                                    a.scope.this_object_members.extend(spread_members);
-                                }
-
-                                // Use last type on ...any or ...unknown
-                                ty
-                                @
-                                Type::Keyword(RTsKeywordType {
-                                    kind: TsKeywordTypeKind::TsUnknownKeyword,
-                                    ..
-                                })
-                                | ty
-                                @
-                                Type::Keyword(RTsKeywordType {
-                                    kind: TsKeywordTypeKind::TsAnyKeyword,
-                                    ..
-                                }) => special_type = Some(ty),
-
-                                ty => unimplemented!("spread with non-type-lit: {:#?}", ty),
-                            }
-                        }
-                    }
+                    ty = a.append_prop_or_spread_to_type(ty, prop)?;
                 }
 
-                if let Some(ty) = special_type {
-                    return Ok(box ty);
-                }
-
-                Ok(box Type::TypeLit(TypeLit {
-                    span: node.span,
-                    members: take(&mut a.scope.this_object_members),
-                }))
+                Ok(ty)
             },
         )
     }
 }
 
 impl Analyzer<'_, '_> {
-    fn add_prop_or_spread_to_type(
+    fn append_prop_or_spread_to_type(
         &mut self,
         to: Box<Type>,
         prop: &RPropOrSpread,
     ) -> ValidationResult {
         match prop {
-            RPropOrSpread::Spread(spread) => {}
-            RPropOrSpread::Prop(prop) => {}
+            RPropOrSpread::Spread(RSpreadElement { expr, .. }) => {
+                let prop_ty: Box<Type> = expr.validate_with_default(self)?;
+                self.append_type(to, prop_ty)
+            }
+            RPropOrSpread::Prop(prop) => {
+                let p: TypeElement = prop.validate_with(self)?;
+                self.append_type_element(to, p)
+            }
         }
     }
 
@@ -114,18 +62,43 @@ impl Analyzer<'_, '_> {
         if rhs.is_any() || rhs.is_unknown() {
             return Ok(to);
         }
-
-        match to.foldable() {
+        let to = to.foldable();
+        match to {
             Type::Union(to) => Ok(box Type::Union(Union {
                 span: to.span,
                 types: to
                     .types
                     .into_iter()
-                    .map(|to| self.append_type(to, rhs))
+                    .map(|to| self.append_type(to, rhs.clone()))
                     .collect::<Result<_, _>>()?,
             })),
             _ => {
                 unimplemented!("append type: {:?} <= {:?}", to, rhs)
+            }
+        }
+    }
+
+    fn append_type_element(
+        &mut self,
+        to: Box<Type>,
+        rhs: TypeElement,
+    ) -> ValidationResult<Box<Type>> {
+        if to.is_any() || to.is_unknown() {
+            return Ok(to);
+        }
+        let to = to.foldable();
+
+        match to {
+            Type::Union(to) => Ok(box Type::Union(Union {
+                span: to.span,
+                types: to
+                    .types
+                    .into_iter()
+                    .map(|to| self.append_type_element(to, rhs.clone()))
+                    .collect::<Result<_, _>>()?,
+            })),
+            _ => {
+                unimplemented!("append type element: {:?} <= {:?}", to, rhs)
             }
         }
     }
