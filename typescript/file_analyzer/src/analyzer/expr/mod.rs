@@ -2192,7 +2192,7 @@ impl Analyzer<'_, '_> {
 
     fn prefer_tuple(&mut self, type_ann: Option<&Type>) -> bool {
         let ty = match type_ann {
-            Some(ty) => ty,
+            Some(ty) => ty.normalize(),
             None => return false,
         };
 
