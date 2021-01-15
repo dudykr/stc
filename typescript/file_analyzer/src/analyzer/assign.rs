@@ -1010,20 +1010,38 @@ impl Analyzer<'_, '_> {
                 }};
             }
 
-            match *rhs.normalize() {
+            match rhs.normalize() {
                 Type::TypeLit(TypeLit {
-                    members: ref rhs_members,
+                    members: rhs_members,
                     ..
                 }) => {
                     handle_type_elements!(&*rhs_members);
                 }
 
-                Type::Interface(Interface { ref body, .. }) => {
+                Type::Interface(Interface { body, .. }) => {
                     handle_type_elements!(&*body);
                     // TODO: Check parent interface
                 }
 
                 Type::Array(..) => return Err(Error::InvalidAssignmentOfArray { span }),
+
+                Type::Tuple(rhs) => {
+                    // Handle { 0: nubmer } = [1]
+                    let rhs_len = rhs.elems.len();
+
+                    // TODO: Check for literal properties
+
+                    // for el in lhs {
+                    //     match el {
+                    //         TypeElement::Property(l_el) => {
+                    //             match l
+                    //         }
+                    //         _ => {}
+                    //     }
+                    // }
+
+                    return Ok(());
+                }
 
                 _ => {
                     return Err(Error::Unimplemented {
