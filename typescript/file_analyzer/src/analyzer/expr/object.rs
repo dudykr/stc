@@ -12,7 +12,6 @@ use stc_ts_ast_rnode::RPropOrSpread;
 use stc_ts_ast_rnode::RSpreadElement;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_file_analyzer_macros::validator;
-use stc_ts_types::MethodSignature;
 use stc_ts_types::PropertySignature;
 use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
