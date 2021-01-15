@@ -2190,8 +2190,8 @@ impl Analyzer<'_, '_> {
         return Err(Error::Errors { span, errors });
     }
 
-    fn prefer_tuple(&mut self, ty: Option<&Type>) -> bool {
-        let ty = match ty {
+    fn prefer_tuple(&mut self, type_ann: Option<&Type>) -> bool {
+        let ty = match type_ann {
             Some(ty) => ty,
             None => return false,
         };
