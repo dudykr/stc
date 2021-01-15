@@ -10,3 +10,4 @@ asOperator1.ts
 assignmentGenericLookupTypeNarrowing.ts
 assignmentGenericLookupTypeNarrowing.ts
 compoundAdditionAssignmentLHSCannotBeAssigned.ts
+literals
