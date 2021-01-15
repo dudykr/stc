@@ -143,8 +143,7 @@ fn load_expected_errors(ts_file: &Path) -> Result<Vec<RefError>, Error> {
 fn do_test(treat_error_as_bug: bool, file_name: &Path) -> Result<(), StdErr> {
     let fname = file_name.display().to_string();
     let mut expected_errors = load_expected_errors(&file_name).unwrap();
-    let full_ref_errors = expected_errors.clone();
-    let full_ref_err_cnt = full_ref_errors.len();
+    let mut err_shift_n = 0;
 
     let (libs, rule, ts_config, target) = ::testing::run_test(treat_error_as_bug, |cm, handler| {
         let fm = cm.load_file(file_name).expect("failed to read file");
@@ -184,6 +183,7 @@ fn do_test(treat_error_as_bug: bool, file_name: &Path) -> Result<(), StdErr> {
                         if !s.starts_with("@") {
                             continue;
                         }
+                        err_shift_n += 1;
                         let s = &s[1..]; // '@'
 
                         if s.starts_with("target:") || s.starts_with("Target:") {
@@ -274,6 +274,14 @@ fn do_test(treat_error_as_bug: bool, file_name: &Path) -> Result<(), StdErr> {
     })
     .ok()
     .unwrap_or_default();
+
+    for err in &mut expected_errors {
+        // Typescript conformance test remove lines starting with @-directives.
+        err.line += err_shift_n;
+    }
+
+    let full_ref_errors = expected_errors.clone();
+    let full_ref_err_cnt = full_ref_errors.len();
 
     let tester = Tester::new();
     let diagnostics = tester
