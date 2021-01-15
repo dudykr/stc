@@ -58,6 +58,7 @@ use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_types::name::Name;
 use stc_ts_types::rprop_name_to_expr;
+use stc_ts_types::PropertySignature;
 use stc_ts_types::{
     ClassProperty, Id, Method, ModuleId, Operator, QueryExpr, QueryType, StaticThis, TupleElement,
 };
@@ -165,6 +166,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 RExpr::Array(RArrayLit { ref elems, .. }) => {
+                    let prefer_tuple = self.prefer_tuple(type_ann);
                     let mut can_be_tuple = true;
                     let mut elements = Vec::with_capacity(elems.len());
 
@@ -195,7 +197,9 @@ impl Analyzer<'_, '_> {
                                         });
                                     }
                                     Type::Tuple(tuple) => {
-                                        can_be_tuple = false;
+                                        if !prefer_tuple {
+                                            can_be_tuple = false;
+                                        }
                                         elements.extend(tuple.elems);
                                     }
                                     Type::Keyword(RTsKeywordType {
@@ -2184,6 +2188,75 @@ impl Analyzer<'_, '_> {
             return Err(errors.remove(0));
         }
         return Err(Error::Errors { span, errors });
+    }
+
+    fn prefer_tuple(&mut self, ty: Option<&Type>) -> bool {
+        let ty = match ty {
+            Some(ty) => ty,
+            None => return false,
+        };
+
+        match ty {
+            Type::Tuple(..) => true,
+            Type::TypeLit(ty) => self.prefer_tuple_type_elements(&ty.members),
+            Type::Interface(ty) => {
+                if !self.prefer_tuple_type_elements(&ty.body) {
+                    return false;
+                }
+
+                for parent in &ty.extends {
+                    let parent_ty = self.type_of_ts_entity_name(
+                        parent.span,
+                        self.ctx.module_id,
+                        &parent.expr,
+                        parent.type_args.clone(),
+                    );
+
+                    let parent_ty = match parent_ty {
+                        Ok(v) => v,
+                        Err(..) => return false,
+                    };
+                    if !self.prefer_tuple(Some(&*parent_ty)) {
+                        return false;
+                    }
+                }
+
+                true
+                //
+            }
+            _ => false,
+        }
+    }
+
+    fn prefer_tuple_type_elements(&mut self, elems: &[TypeElement]) -> bool {
+        // If a type literal contains [number]: T, it should be treated as an array.
+        if elems.iter().any(|el| match el {
+            TypeElement::Index(el) => {
+                if el.params.is_empty() {
+                    return false;
+                }
+                match el.params[0].ty.normalize() {
+                    Type::Keyword(RTsKeywordType {
+                        kind: TsKeywordTypeKind::TsNumberKeyword,
+                        ..
+                    }) => true,
+                    _ => false,
+                }
+            }
+            _ => false,
+        }) {
+            return false;
+        }
+
+        // Check for numeric keys like '0', '1', '2'.
+        elems.iter().any(|el| match el {
+            TypeElement::Property(PropertySignature {
+                key: box RExpr::Lit(RLit::Num(..)),
+                computed: false,
+                ..
+            }) => true,
+            _ => false,
+        })
     }
 }
 
