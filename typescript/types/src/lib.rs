@@ -485,6 +485,23 @@ pub enum TypeElement {
 }
 
 impl TypeElement {
+    /// Returns [Some] iff `self` is non-computed element.
+    pub fn non_computed_key(&self) -> Option<&RIdent> {
+        match self {
+            TypeElement::Property(PropertySignature {
+                key: box RExpr::Ident(key),
+                computed: false,
+                ..
+            }) => Some(key),
+            TypeElement::Method(MethodSignature {
+                key: box RExpr::Ident(key),
+                computed: false,
+                ..
+            }) => Some(key),
+            _ => None,
+        }
+    }
+
     pub fn key(&self) -> Option<Cow<RExpr>> {
         match self {
             TypeElement::Call(..) => None,
