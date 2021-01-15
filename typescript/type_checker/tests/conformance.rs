@@ -180,10 +180,6 @@ fn do_test(treat_error_as_bug: bool, file_name: &Path) -> Result<(), StdErr> {
                 Some(ref cmts) => {
                     for cmt in cmts.iter() {
                         let s = cmt.text.trim();
-                        if s.is_empty() {
-                            err_shift_n += 1;
-                            continue;
-                        }
                         if !s.starts_with("@") {
                             continue;
                         }
