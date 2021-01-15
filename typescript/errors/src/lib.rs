@@ -516,6 +516,11 @@ pub enum Error {
         span: Span,
         op: AssignOp,
     },
+
+    InvalidOpAssign {
+        span: Span,
+        op: AssignOp,
+    },
 }
 
 impl Error {
@@ -558,7 +563,8 @@ impl Error {
 
             Error::AssignFailed { .. }
             | Error::InvalidAssignmentOfArray { .. }
-            | Error::UnknownPropertyInObjectLiteralAssignment { .. } => 2322,
+            | Error::UnknownPropertyInObjectLiteralAssignment { .. }
+            | Error::InvalidOpAssign { .. } => 2322,
 
             Error::NonOverlappingTypeCast { .. } => 2352,
 

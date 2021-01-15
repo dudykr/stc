@@ -47,7 +47,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        Err(Error::InvalidOperatorForLhs { span, op })
+        Err(Error::InvalidOpAssign { span, op })
     }
 
     pub(crate) fn assign(&mut self, left: &Type, right: &Type, span: Span) -> ValidationResult<()> {
