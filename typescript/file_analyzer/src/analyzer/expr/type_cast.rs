@@ -5,6 +5,9 @@ use crate::{
     ValidationResult,
 };
 use stc_ts_ast_rnode::RTsAsExpr;
+use stc_ts_ast_rnode::RTsKeywordType;
+use stc_ts_ast_rnode::RTsLit;
+use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_ast_rnode::RTsType;
 use stc_ts_ast_rnode::RTsTypeAssertion;
 use stc_ts_errors::Error;
@@ -193,13 +196,14 @@ impl Analyzer<'_, '_> {
             return Ok(true);
         }
 
+        Ok(self.check_for_overlap(l, r)? || self.check_for_overlap(r, l)?)
+    }
+
+    fn check_for_overlap(&mut self, l: &Type, r: &Type) -> ValidationResult<bool> {
         // Overlaps with all types.
         if l.is_any()
-            || r.is_any()
             || l.is_kwd(TsKeywordTypeKind::TsNullKeyword)
-            || r.is_kwd(TsKeywordTypeKind::TsNullKeyword)
             || l.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
-            || r.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
         {
             return Ok(true);
         }
@@ -215,14 +219,47 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        match r {
-            Type::Union(r) => {
-                for r in &r.types {
-                    if self.has_overlap(l, r)? {
-                        return Ok(true);
-                    }
-                }
-            }
+        match (l, r) {
+            (
+                Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsNumberKeyword,
+                    ..
+                }),
+                Type::Lit(RTsLitType {
+                    lit: RTsLit::Number(..),
+                    ..
+                }),
+            ) => return Ok(true),
+            (
+                Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsStringKeyword,
+                    ..
+                }),
+                Type::Lit(RTsLitType {
+                    lit: RTsLit::Str(..),
+                    ..
+                }),
+            ) => return Ok(true),
+            (
+                Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsBooleanKeyword,
+                    ..
+                }),
+                Type::Lit(RTsLitType {
+                    lit: RTsLit::Bool(..),
+                    ..
+                }),
+            ) => return Ok(true),
+            (
+                Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsBigIntKeyword,
+                    ..
+                }),
+                Type::Lit(RTsLitType {
+                    lit: RTsLit::BigInt(..),
+                    ..
+                }),
+            ) => return Ok(true),
             _ => {}
         }
 
