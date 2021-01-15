@@ -213,6 +213,24 @@ impl Analyzer<'_, '_> {
         }
 
         match to {
+            // Str contains `kind`, and it's not handled properly by type_eq.
+            Type::Lit(RTsLitType {
+                lit: RTsLit::Str(to),
+                ..
+            }) => match rhs {
+                Type::Lit(RTsLitType {
+                    lit: RTsLit::Str(rhs),
+                    ..
+                }) => {
+                    if to.value == rhs.value {
+                        return Ok(());
+                    } else {
+                        fail!()
+                    }
+                }
+                _ => {}
+            },
+
             Type::Ref(left) => match rhs {
                 Type::Ref(right) => {
                     // We need this as type may recurse, and thus cannot be handled by expander.
