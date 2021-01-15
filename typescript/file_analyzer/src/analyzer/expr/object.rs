@@ -64,18 +64,28 @@ impl Analyzer<'_, '_> {
         }
         let to = to.foldable();
         match to {
-            Type::Union(to) => Ok(box Type::Union(Union {
-                span: to.span,
-                types: to
-                    .types
-                    .into_iter()
-                    .map(|to| self.append_type(to, rhs.clone()))
-                    .collect::<Result<_, _>>()?,
-            })),
-            _ => {
-                unimplemented!("append_type:\n{:?}\n{:?}", to, rhs)
+            Type::TypeLit(mut to) => match *rhs {
+                Type::TypeLit(rhs) => {
+                    to.members.extend(rhs.members);
+                    return Ok(box Type::TypeLit(to));
+                }
+                _ => {}
+            },
+
+            Type::Union(to) => {
+                return Ok(box Type::Union(Union {
+                    span: to.span,
+                    types: to
+                        .types
+                        .into_iter()
+                        .map(|to| self.append_type(to, rhs.clone()))
+                        .collect::<Result<_, _>>()?,
+                }))
             }
+            _ => {}
         }
+
+        unimplemented!("append_type:\n{:?}\n{:?}", to, rhs)
     }
 
     fn append_type_element(
