@@ -390,13 +390,6 @@ fn do_test(treat_error_as_bug: bool, file_name: &Path) -> Result<(), StdErr> {
         );
     }
 
-    if err
-        .compare_to_file(format!("{}.stderr", file_name.display()))
-        .is_err()
-    {
-        panic!()
-    }
-
     Ok(())
 }
 
