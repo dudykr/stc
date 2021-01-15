@@ -13,6 +13,8 @@ use stc_ts_ast_rnode::RTsThisType;
 use stc_ts_errors::debug::print_backtrace;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
+use stc_ts_types::Mapped;
+use stc_ts_types::Operator;
 use stc_ts_types::Ref;
 use stc_ts_types::{
     Array, ClassInstance, EnumVariant, FnParam, Interface, Intersection, Tuple, Type, TypeElement,
@@ -476,14 +478,12 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        match *to {
-            Type::Mapped(..) => fail!(),
+        match to {
+            Type::Mapped(to) => return self.assign_to_mapped(span, to, rhs),
             Type::Param(TypeParam {
                 constraint: Some(ref c),
                 ..
-            }) => {
-                return self.assign_inner(c, rhs, span);
-            }
+            }) => return self.assign_inner(c, rhs, span),
 
             Type::Array(Array { ref elem_type, .. }) => match rhs {
                 Type::Array(Array {
@@ -569,17 +569,17 @@ impl Analyzer<'_, '_> {
             Type::Keyword(RTsKeywordType { kind, .. }) => {
                 match *rhs {
                     Type::Keyword(RTsKeywordType { kind: rhs_kind, .. }) => {
-                        if rhs_kind == kind {
+                        if rhs_kind == *kind {
                             return Ok(());
                         }
 
                         if rhs_kind == TsKeywordTypeKind::TsUndefinedKeyword
-                            && kind == TsKeywordTypeKind::TsVoidKeyword
+                            && *kind == TsKeywordTypeKind::TsVoidKeyword
                         {
                             return Ok(());
                         }
 
-                        if kind == TsKeywordTypeKind::TsUndefinedKeyword
+                        if *kind == TsKeywordTypeKind::TsUndefinedKeyword
                             && rhs_kind == TsKeywordTypeKind::TsVoidKeyword
                         {
                             return Ok(());
@@ -712,7 +712,9 @@ impl Analyzer<'_, '_> {
                 }
             },
 
-            Type::This(RTsThisType { span }) => return Err(Error::CannotAssingToThis { span }),
+            Type::This(RTsThisType { span }) => {
+                return Err(Error::CannotAssingToThis { span: *span })
+            }
 
             Type::Interface(Interface {
                 ref body,
@@ -1325,6 +1327,86 @@ impl Analyzer<'_, '_> {
         }
 
         Ok(())
+    }
+
+    fn extract_keys(&mut self, span: Span, ty: &Type) -> ValidationResult<Type> {
+        let ty = ty.normalize();
+
+        match ty {
+            Type::TypeLit(ty) => {
+                //
+                for member in &ty.members {}
+            }
+            _ => {}
+        }
+
+        Err(Error::Unimplemented {
+            span,
+            msg: format!("Extract keys"),
+        })
+    }
+
+    /// Handles `P in 'foo' | 'bar'`. Note that `'foo' | 'bar'` part should be
+    /// passed as `keys`.
+    ///
+    ///
+    /// Currently only literals and unions are supported for `keys`.
+    fn assign_keys(&mut self, span: Span, keys: &Type, rhs: &Type) -> ValidationResult<()> {
+        let keys = keys.normalize();
+        let rhs = rhs.normalize();
+
+        let rhs_keys = self.extract_keys(span, &rhs)?;
+
+        self.assign(&keys, &rhs_keys, span)
+    }
+
+    /// Returns `Ok(true)` if assignment was successfult and returns `Ok(false)`
+    /// if the method doesn't know the way to handle assignment.
+    fn assign_to_mapped(&mut self, span: Span, to: &Mapped, rhs: &Type) -> ValidationResult<()> {
+        let rhs = rhs.normalize();
+
+        // Validate keys
+        match &to.type_param.constraint {
+            Some(constraint) => self.assign_keys(span, &constraint, rhs)?,
+            None => {}
+        }
+
+        let ty = match &to.ty {
+            Some(v) => v.normalize(),
+            None => return Ok(()),
+        };
+
+        match rhs {
+            Type::TypeLit(rhs) => {
+                //
+                for member in &rhs.members {
+                    match member {
+                        TypeElement::Property(prop) => {
+                            if let Some(prop_ty) = &prop.type_ann {
+                                self.assign(&ty, &prop_ty, span)?;
+                            }
+                        }
+                        _ => {
+                            return Err(Error::Unimplemented {
+                                span,
+                                msg: format!(
+                                    "Assignment to mapped type: type element - {:?}",
+                                    member
+                                ),
+                            })
+                        }
+                    }
+                }
+
+                return Ok(());
+            }
+            _ => {}
+        }
+
+        Err(Error::Unimplemented {
+            span,
+            msg: format!("Assignment to mapped type"),
+        })
     }
 }
 
