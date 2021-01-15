@@ -176,6 +176,12 @@ impl Analyzer<'_, '_> {
                                 ref expr,
                             }) => {
                                 let ty = expr.validate_with_default(self)?;
+                                match &*ty {
+                                    Type::TypeLit(..) => {
+                                        can_be_tuple = false;
+                                    }
+                                    _ => {}
+                                }
                                 ty
                             }
                             Some(RExprOrSpread {
