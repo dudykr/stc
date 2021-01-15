@@ -2,6 +2,8 @@ use crate::analyzer::Analyzer;
 use crate::analyzer::ScopeKind;
 use crate::validator::ValidateWith;
 use crate::ValidationResult;
+use rnode::VisitMut;
+use rnode::VisitMutWith;
 use stc_ts_ast_rnode::RObjectLit;
 use stc_ts_ast_rnode::RPropOrSpread;
 use stc_ts_ast_rnode::RSpreadElement;
@@ -33,7 +35,37 @@ impl Analyzer<'_, '_> {
     }
 }
 
+struct ObjectUnionNormalizer;
+
+impl VisitMut<Union> for ObjectUnionNormalizer {
+    fn visit_mut(&mut self, u: &mut Union) {
+        u.visit_mut_children_with(self);
+
+        // If an union does not contains object literals, skip it.
+        if u.types.iter().all(|ty| !ty.is_type_lit()) {
+            return;
+        }
+
+        // We need to know shape of normalized type literal.
+
+        //
+        // u.types.iter_mut()
+    }
+}
+
 impl Analyzer<'_, '_> {
+    /// Object literals in unions are normalized upon widening.
+    ///
+    ///```ts
+    /// var a = [{ a: 0 }, { a: 1, b: "x" }];
+    /// ```
+    ///
+    /// Type of `a` in the code above is `{ a: number, b?: undefined } | {
+    /// a:number, b: string }`.
+    pub(super) fn normalize_union_of_objects(&mut self, ty: &mut Type) {
+        ty.visit_mut_with(&mut ObjectUnionNormalizer);
+    }
+
     fn append_prop_or_spread_to_type(
         &mut self,
         to: Box<Type>,

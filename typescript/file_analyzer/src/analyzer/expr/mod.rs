@@ -245,10 +245,13 @@ impl Analyzer<'_, '_> {
                             elements.into_iter().map(|element| element.ty).collect();
                         types.dedup_type();
 
-                        return Ok(box Type::Array(Array {
+                        let mut ty = box Type::Array(Array {
                             span,
                             elem_type: Type::union(types),
-                        }));
+                        });
+                        self.normalize_union_of_objects(&mut ty);
+
+                        return Ok(ty);
                     }
 
                     return Ok(box Type::Tuple(Tuple {
