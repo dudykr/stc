@@ -331,7 +331,7 @@ impl Analyzer<'_, '_> {
             Type::Keyword(RTsKeywordType {
                 kind: TsKeywordTypeKind::TsUndefinedKeyword,
                 ..
-            }) => return Ok(()),
+            }) => fail!(),
 
             // Anything is assignable to unknown
             Type::Keyword(RTsKeywordType {
