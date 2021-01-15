@@ -967,6 +967,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
+        print_backtrace();
         slog::error!(
             self.logger,
             "infer_arg_type: unimplemented\nparam  = {:#?}\narg = {:#?}",
