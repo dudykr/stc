@@ -11,3 +11,6 @@ assignmentGenericLookupTypeNarrowing.ts
 assignmentGenericLookupTypeNarrowing.ts
 compoundAdditionAssignmentLHSCannotBeAssigned.ts
 literals
+enumConstantMemberWithStringEmitDeclaration.ts
+enumConstantMemberWithTemplateLiteralsEmitDeclaration.ts
+enumClassification.ts
