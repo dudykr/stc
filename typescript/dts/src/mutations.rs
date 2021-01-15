@@ -86,7 +86,7 @@ impl VisitMut<RClass> for Operator<'_> {
 
         if let Some(ClassMut {
             super_class,
-            additional_members,
+            additional_members: _,
         }) = self.mutations.for_classes.remove(&c.node_id)
         {
             if let Some(super_class) = super_class {
