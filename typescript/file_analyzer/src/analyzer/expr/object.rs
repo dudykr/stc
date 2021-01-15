@@ -115,7 +115,7 @@ impl Analyzer<'_, '_> {
             return Ok(to);
         }
 
-        match *to {
+        match to.foldable() {
             Type::Union(to) => Ok(box Type::Union(Union {
                 span: to.span,
                 types: to
