@@ -14,3 +14,6 @@ literals
 enumConstantMemberWithStringEmitDeclaration.ts
 enumConstantMemberWithTemplateLiteralsEmitDeclaration.ts
 enumClassification.ts
+arrowFunctionWithParameterNameAsync_es2017.ts
+asyncArrowFunction1_es2017.ts
+asyncArrowFunction4_es2017.ts
