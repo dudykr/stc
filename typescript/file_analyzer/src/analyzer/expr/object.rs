@@ -12,6 +12,7 @@ use stc_ts_file_analyzer_macros::validator;
 use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
+use stc_ts_types::Union;
 use swc_common::EqIgnoreSpan;
 use swc_ecma_ast::TsKeywordTypeKind;
 
@@ -87,5 +88,45 @@ impl Analyzer<'_, '_> {
                 }))
             },
         )
+    }
+}
+
+impl Analyzer<'_, '_> {
+    fn add_prop_or_spread_to_type(
+        &mut self,
+        to: Box<Type>,
+        prop: &RPropOrSpread,
+    ) -> ValidationResult {
+        match prop {
+            RPropOrSpread::Spread(spread) => {}
+            RPropOrSpread::Prop(prop) => {}
+        }
+    }
+
+    /// If rhs is an union type, return type will be union.
+    ///
+    /// `{ a: number } + ( {b: number} | { c: number } )` => `{ a: number, b:
+    /// number } | { a: number, c: number }`
+    fn append_type(&mut self, to: Box<Type>, rhs: Box<Type>) -> ValidationResult<Box<Type>> {
+        if to.is_any() || to.is_unknown() {
+            return Ok(to);
+        }
+        if rhs.is_any() || rhs.is_unknown() {
+            return Ok(to);
+        }
+
+        match *to {
+            Type::Union(to) => Ok(box Type::Union(Union {
+                span: to.span,
+                types: to
+                    .types
+                    .into_iter()
+                    .map(|to| self.append_type(to, rhs))
+                    .collect::<Result<_, _>>()?,
+            })),
+            _ => {
+                unimplemented!("append type: {:?} <= {:?}", to, rhs)
+            }
+        }
     }
 }
