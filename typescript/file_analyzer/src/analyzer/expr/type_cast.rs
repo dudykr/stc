@@ -11,6 +11,7 @@ use stc_ts_errors::Error;
 use stc_ts_types::TypeParamInstantiation;
 use swc_common::TypeEq;
 use swc_common::{Span, Spanned};
+use swc_ecma_ast::TsKeywordTypeKind;
 
 #[validator]
 impl Analyzer<'_, '_> {
@@ -193,7 +194,13 @@ impl Analyzer<'_, '_> {
         }
 
         // Overlaps with all types.
-        if l.is_any() || r.is_any() {
+        if l.is_any()
+            || r.is_any()
+            || l.is_kwd(TsKeywordTypeKind::TsNullKeyword)
+            || r.is_kwd(TsKeywordTypeKind::TsNullKeyword)
+            || l.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
+            || r.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
+        {
             return Ok(true);
         }
 
