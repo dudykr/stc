@@ -376,6 +376,7 @@ impl From<super::Constructor> for RTsType {
                 params: t.params.into_iter().map(From::from).collect(),
                 type_params: t.type_params.map(From::from),
                 type_ann: t.type_ann.into(),
+                is_abstract: t.is_abstract,
             },
         ))
     }

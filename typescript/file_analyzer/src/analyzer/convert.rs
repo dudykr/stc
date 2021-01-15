@@ -514,6 +514,7 @@ impl Analyzer<'_, '_> {
             type_params,
             params: t.params.validate_with(self)?,
             type_ann: t.type_ann.validate_with(self)?,
+            is_abstract: t.is_abstract,
         })
     }
 }

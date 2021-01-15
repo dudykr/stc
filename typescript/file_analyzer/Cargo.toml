@@ -43,6 +43,6 @@ swc_ecma_utils = "0.27.0"
 stc_testing = {path = "../../testing"}
 stc_ts_testing = { path = "../testing" }
 swc_ecma_parser = "0.45.0"
-swc_ecma_transforms = "0.32.2"
+swc_ecma_transforms = "0.33.0"
 swc_ecma_visit = "0.23.0"
 testing = "0.10.2"

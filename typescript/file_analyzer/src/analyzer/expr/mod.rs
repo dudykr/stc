@@ -1272,6 +1272,7 @@ impl Analyzer<'_, '_> {
                                     type_params: cons.type_params.clone(),
                                     params: cons.params.clone(),
                                     type_ann: cons.ret_ty.clone().unwrap_or_else(|| obj.clone()),
+                                    is_abstract: false,
                                 }))
                             }
                             _ => {}

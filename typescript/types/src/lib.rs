@@ -628,6 +628,7 @@ pub struct Constructor {
     pub type_params: Option<TypeParamDecl>,
     pub params: Vec<FnParam>,
     pub type_ann: Box<Type>,
+    pub is_abstract: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
