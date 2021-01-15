@@ -479,24 +479,33 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
-    pub(super) fn try_assign(&mut self, span: Span, lhs: &RPatOrExpr, ty: &Type) {
+    pub(super) fn try_assign(&mut self, span: Span, op: AssignOp, lhs: &RPatOrExpr, ty: &Type) {
         let res: Result<(), Error> = try {
             match *lhs {
                 RPatOrExpr::Expr(ref expr) | RPatOrExpr::Pat(box RPat::Expr(ref expr)) => {
                     let lhs_ty = expr.validate_with_args(self, (TypeOfMode::LValue, None, None))?;
                     let lhs_ty = self.expand(span, lhs_ty)?;
 
-                    self.assign(&lhs_ty, &ty, span)?;
-
-                    match **expr {
-                        // TODO: Validate
-                        RExpr::Member(RMemberExpr { .. }) => return,
-                        _ => unimplemented!("assign: {:?} = {:?}", expr, ty),
+                    if op == op!("=") {
+                        self.assign(&lhs_ty, &ty, span)?;
+                    } else {
+                        self.assign_with_op(span, op, &lhs_ty, &ty)?;
                     }
                 }
 
                 RPatOrExpr::Pat(ref pat) => {
-                    self.try_assign_pat(span, pat, ty)?;
+                    if op == op!("=") {
+                        self.try_assign_pat(span, pat, ty)?;
+                    } else {
+                        // TODO
+                        match &**pat {
+                            RPat::Ident(left) => {
+                                let lhs = self.type_of_var(left, TypeOfMode::LValue, None)?;
+                                self.assign_with_op(span, op, &lhs, &ty)?;
+                            }
+                            _ => Err(Error::InvalidOperatorForLhs { span, op })?,
+                        }
+                    }
                 }
             }
         };

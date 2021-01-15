@@ -30,7 +30,34 @@ use swc_common::{Span, Spanned};
 use swc_ecma_ast::*;
 
 impl Analyzer<'_, '_> {
-    pub fn assign(&mut self, left: &Type, right: &Type, span: Span) -> Result<(), Error> {
+    pub(crate) fn assign_with_op(
+        &mut self,
+        span: Span,
+        op: AssignOp,
+        lhs: &Type,
+        rhs: &Type,
+    ) -> ValidationResult<()> {
+        debug_assert_ne!(op, op!("="));
+
+        let lhs = lhs.normalize();
+        let rhs = rhs.normalize();
+
+        match op {
+            op!("+=") => {}
+            _ => {}
+        }
+
+        slog::error!(
+            self.logger,
+            "unimplemented: assign ({:?}): \nLeft: {:?}\nRight: {:?}",
+            op,
+            lhs,
+            rhs
+        );
+        Ok(())
+    }
+
+    pub(crate) fn assign(&mut self, left: &Type, right: &Type, span: Span) -> ValidationResult<()> {
         if self.is_builtin {
             return Ok(());
         }

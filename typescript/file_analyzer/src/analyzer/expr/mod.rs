@@ -488,10 +488,8 @@ impl Analyzer<'_, '_> {
                 _ => e.left.visit_with(analyzer),
             }
 
-            if e.op == op!("=") {
-                let rhs_ty = analyzer.expand_fully(span, rhs_ty.clone(), true)?;
-                analyzer.try_assign(span, &e.left, &rhs_ty);
-            }
+            let rhs_ty = analyzer.expand_fully(span, rhs_ty.clone(), true)?;
+            analyzer.try_assign(span, e.op, &e.left, &rhs_ty);
 
             if let Some(span) = any_span {
                 return Ok(Type::any(span));
