@@ -4,7 +4,9 @@ use crate::{
     ty::{self, TypeExt},
     ValidationResult,
 };
+use rnode::NodeId;
 use stc_ts_ast_rnode::RExpr;
+use stc_ts_ast_rnode::RStr;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
@@ -14,7 +16,7 @@ use stc_ts_errors::debug::print_backtrace;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_types::Mapped;
-use stc_ts_types::Operator;
+use stc_ts_types::PropertySignature;
 use stc_ts_types::Ref;
 use stc_ts_types::{
     Array, ClassInstance, EnumVariant, FnParam, Interface, Intersection, Tuple, Type, TypeElement,
@@ -1329,13 +1331,37 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    fn extract_keys(&mut self, span: Span, ty: &Type) -> ValidationResult<Type> {
+    fn extract_keys(&mut self, span: Span, ty: &Type) -> ValidationResult {
         let ty = ty.normalize();
 
         match ty {
             Type::TypeLit(ty) => {
                 //
-                for member in &ty.members {}
+                let mut keys = vec![];
+                for member in &ty.members {
+                    match member {
+                        TypeElement::Property(PropertySignature {
+                            span,
+                            key: box RExpr::Ident(key),
+                            computed: false,
+                            ..
+                        }) => {
+                            keys.push(Box::new(Type::Lit(RTsLitType {
+                                node_id: NodeId::invalid(),
+                                span: *span,
+                                lit: RTsLit::Str(RStr {
+                                    span: *span,
+                                    has_escape: false,
+                                    kind: Default::default(),
+                                    value: key.sym.clone(),
+                                }),
+                            })));
+                        }
+                        _ => {}
+                    }
+                }
+
+                return Ok(Type::union(keys));
             }
             _ => {}
         }
