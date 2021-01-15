@@ -260,6 +260,7 @@ fn do_test(treat_error_as_bug: bool, file_name: &Path) -> Result<(), StdErr> {
                             rule.no_implicit_this = v;
                         } else if s.starts_with("skipDefaultLibCheck") {
                             // TODO
+                        } else if s.starts_with("module") {
                         } else {
                             panic!("Comment is not handled: {}", s);
                         }
