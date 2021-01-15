@@ -180,7 +180,7 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        Ok(())
+        Err(Error::NonOverlappingTypeCast { span })
     }
 
     pub(crate) fn has_overlap(&mut self, l: &Type, r: &Type) -> ValidationResult<bool> {
