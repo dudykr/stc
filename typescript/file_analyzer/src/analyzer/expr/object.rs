@@ -62,12 +62,22 @@ impl Analyzer<'_, '_> {
         if rhs.is_any() || rhs.is_unknown() {
             return Ok(to);
         }
-        let to = to.foldable();
+        let mut to = to.foldable();
         match to {
-            Type::TypeLit(mut to) => match *rhs {
+            Type::TypeLit(ref mut lit) => match *rhs {
                 Type::TypeLit(rhs) => {
-                    to.members.extend(rhs.members);
-                    return Ok(box Type::TypeLit(to));
+                    lit.members.extend(rhs.members);
+                    return Ok(box to);
+                }
+                Type::Union(rhs) => {
+                    return Ok(box Type::Union(Union {
+                        span: lit.span,
+                        types: rhs
+                            .types
+                            .into_iter()
+                            .map(|rhs| self.append_type(box Type::TypeLit(lit.clone()), rhs))
+                            .collect::<Result<_, _>>()?,
+                    }))
                 }
                 _ => {}
             },
