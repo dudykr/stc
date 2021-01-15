@@ -204,6 +204,28 @@ impl Analyzer<'_, '_> {
             return Ok(true);
         }
 
+        match l {
+            Type::Union(l) => {
+                for l in &l.types {
+                    if self.has_overlap(l, r)? {
+                        return Ok(true);
+                    }
+                }
+            }
+            _ => {}
+        }
+
+        match r {
+            Type::Union(r) => {
+                for r in &r.types {
+                    if self.has_overlap(l, r)? {
+                        return Ok(true);
+                    }
+                }
+            }
+            _ => {}
+        }
+
         Ok(false)
     }
 }
