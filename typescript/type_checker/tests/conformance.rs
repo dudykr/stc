@@ -30,6 +30,7 @@ use std::sync::Arc;
 use swc_common::errors::DiagnosticBuilder;
 use swc_common::errors::DiagnosticId;
 use swc_common::input::SourceFileInput;
+use swc_common::BytePos;
 use swc_common::FileName;
 use swc_common::SourceMap;
 use swc_common::Span;
@@ -183,7 +184,7 @@ fn do_test(treat_error_as_bug: bool, file_name: &Path) -> Result<(), StdErr> {
                         if !s.starts_with("@") {
                             continue;
                         }
-                        err_shift_n += 1;
+                        err_shift_n = cm.lookup_char_pos(cmt.span.hi + BytePos(1)).line;
                         let s = &s[1..]; // '@'
 
                         if s.starts_with("target:") || s.starts_with("Target:") {
@@ -274,6 +275,8 @@ fn do_test(treat_error_as_bug: bool, file_name: &Path) -> Result<(), StdErr> {
     })
     .ok()
     .unwrap_or_default();
+
+    dbg!(err_shift_n);
 
     for err in &mut expected_errors {
         // Typescript conformance test remove lines starting with @-directives.
