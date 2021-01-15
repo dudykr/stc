@@ -47,14 +47,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        slog::error!(
-            self.logger,
-            "unimplemented: assign ({:?}): \nLeft: {:?}\nRight: {:?}",
-            op,
-            lhs,
-            rhs
-        );
-        Ok(())
+        Err(Error::InvalidOperatorForLhs { span, op })
     }
 
     pub(crate) fn assign(&mut self, left: &Type, right: &Type, span: Span) -> ValidationResult<()> {
