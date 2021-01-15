@@ -5,3 +5,4 @@ asyncArrowFunction6_es5.ts
 arrayLiterals3.ts
 arrayLiteralInference.ts
 arrayLiterals
+asOperator2.ts
