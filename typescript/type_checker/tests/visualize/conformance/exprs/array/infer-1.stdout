@@ -1,0 +1,54 @@
+warning: Type
+ --> $DIR/tests/visualize/conformance/exprs/array/infer-1.ts:2:35
+  |
+2 | export let b1: { x: boolean }[] = foo({ x: true }, { x: false });
+  |                                   ^^^
+  |
+  = note: <T>(...args: T[]) => T[]
+
+warning: Type
+ --> $DIR/tests/visualize/conformance/exprs/array/infer-1.ts:2:44
+  |
+2 | export let b1: { x: boolean }[] = foo({ x: true }, { x: false });
+  |                                            ^^^^
+  |
+  = note: true
+
+warning: Type
+ --> $DIR/tests/visualize/conformance/exprs/array/infer-1.ts:2:39
+  |
+2 | export let b1: { x: boolean }[] = foo({ x: true }, { x: false });
+  |                                       ^^^^^^^^^^^
+  |
+  = note: {
+              x: true;
+          }
+
+warning: Type
+ --> $DIR/tests/visualize/conformance/exprs/array/infer-1.ts:2:57
+  |
+2 | export let b1: { x: boolean }[] = foo({ x: true }, { x: false });
+  |                                                         ^^^^^
+  |
+  = note: falsee
+
+warning: Type
+ --> $DIR/tests/visualize/conformance/exprs/array/infer-1.ts:2:52
+  |
+2 | export let b1: { x: boolean }[] = foo({ x: true }, { x: false });
+  |                                                    ^^^^^^^^^^^^
+  |
+  = note: {
+              x: falsee;
+          }
+
+warning: Type
+ --> $DIR/tests/visualize/conformance/exprs/array/infer-1.ts:2:35
+  |
+2 | export let b1: { x: boolean }[] = foo({ x: true }, { x: false });
+  |                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: ({
+              x: boolean;
+          })[]
+
