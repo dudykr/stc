@@ -2,16 +2,24 @@ use crate::analyzer::Analyzer;
 use crate::analyzer::ScopeKind;
 use crate::validator::ValidateWith;
 use crate::ValidationResult;
+use indexmap::IndexSet;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
+use stc_ts_ast_rnode::RExpr;
+use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RObjectLit;
 use stc_ts_ast_rnode::RPropOrSpread;
 use stc_ts_ast_rnode::RSpreadElement;
+use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_file_analyzer_macros::validator;
+use stc_ts_types::MethodSignature;
+use stc_ts_types::PropertySignature;
 use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
 use stc_ts_types::Union;
+use swc_atoms::JsWord;
+use swc_common::DUMMY_SP;
 
 #[validator]
 impl Analyzer<'_, '_> {
@@ -37,19 +45,66 @@ impl Analyzer<'_, '_> {
 
 struct ObjectUnionNormalizer;
 
+impl ObjectUnionNormalizer {
+    /// We need to know shape of normalized type literal.
+    ///
+    /// We use indexset to remove duplicate while preserving order.
+    fn find_keys(&self, types: &[Box<Type>]) -> IndexSet<JsWord> {
+        types
+            .iter()
+            .filter_map(|ty| match &**ty {
+                Type::TypeLit(ty) => Some(&ty.members),
+                _ => None,
+            })
+            .flatten()
+            .filter_map(|member| member.non_computed_key().map(|i| i.sym.clone()))
+            .collect()
+    }
+}
+
 impl VisitMut<Union> for ObjectUnionNormalizer {
     fn visit_mut(&mut self, u: &mut Union) {
         u.visit_mut_children_with(self);
 
         // If an union does not contains object literals, skip it.
-        if u.types.iter().all(|ty| !ty.is_type_lit()) {
+        if u.types.iter().all(|ty| !ty.normalize().is_type_lit()) {
             return;
         }
+        let keys = self.find_keys(&u.types);
 
-        // We need to know shape of normalized type literal.
+        // Add properties.
+        for ty in u.types.iter_mut() {
+            match ty.normalize_mut() {
+                Type::TypeLit(ty) => {
+                    for key in &keys {
+                        let has_key = ty.members.iter().any(|member| {
+                            if let Some(member_key) = member.non_computed_key() {
+                                *key == member_key.sym
+                            } else {
+                                false
+                            }
+                        });
 
-        //
-        // u.types.iter_mut()
+                        if !has_key {
+                            ty.members.push(TypeElement::Property(PropertySignature {
+                                span: DUMMY_SP,
+                                readonly: false,
+                                key: box RExpr::Ident(RIdent::new(key.clone(), DUMMY_SP)),
+                                computed: false,
+                                optional: true,
+                                params: Default::default(),
+                                type_ann: Some(box Type::Keyword(RTsKeywordType {
+                                    span: DUMMY_SP,
+                                    kind: swc_ecma_ast::TsKeywordTypeKind::TsUndefinedKeyword,
+                                })),
+                                type_params: Default::default(),
+                            }))
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
     }
 }
 
