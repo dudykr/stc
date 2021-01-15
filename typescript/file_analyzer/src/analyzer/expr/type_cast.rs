@@ -173,6 +173,7 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
             }
+
             _ => {}
         }
 
@@ -188,6 +189,11 @@ impl Analyzer<'_, '_> {
         let r = r.normalize();
 
         if l.type_eq(r) {
+            return Ok(true);
+        }
+
+        // Overlaps with all types.
+        if l.is_any() || r.is_any() {
             return Ok(true);
         }
 
