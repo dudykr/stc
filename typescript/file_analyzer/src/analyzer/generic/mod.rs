@@ -306,6 +306,12 @@ impl Analyzer<'_, '_> {
                             }),
                         )?;
                     }
+                    Type::Array(p_ty)=>{
+                        // Handle varargs. This result in union of all types.
+                        for arg in &args[idx..] {
+                            self.infer_type(&mut inferred, &p_ty.elem_type, &arg.ty)?;
+                        }
+                    }
                     _ => {
                         // Handle varargs
                         for arg in &args[idx..] {
