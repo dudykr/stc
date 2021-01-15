@@ -6,3 +6,4 @@ arrayLiterals3.ts
 arrayLiteralInference.ts
 arrayLiterals
 asOperator2.ts
+asOperator1.ts
