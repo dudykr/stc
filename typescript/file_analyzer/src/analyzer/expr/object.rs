@@ -86,9 +86,15 @@ impl Analyzer<'_, '_> {
         if to.is_any() || to.is_unknown() {
             return Ok(to);
         }
-        let to = to.foldable();
+        let mut to = to.foldable();
 
         match to {
+            Type::TypeLit(ref mut lit) => {
+                // TODO: Remove previous member with same key.
+
+                lit.members.push(rhs);
+                Ok(box to)
+            }
             Type::Union(to) => Ok(box Type::Union(Union {
                 span: to.span,
                 types: to
