@@ -83,6 +83,8 @@ impl Analyzer<'_, '_> {
 
     fn assign_inner(&mut self, to: &Type, rhs: &Type, span: Span) -> Result<(), Error> {
         // debug_assert!(!span.is_dummy(), "\n\t{:?}\n<-\n\t{:?}", to, rhs);
+        let to = to.normalize();
+        let rhs = rhs.normalize();
 
         macro_rules! fail {
             () => {{
@@ -106,7 +108,7 @@ impl Analyzer<'_, '_> {
                 //
                 //      let e1: E = E.a
                 //      let e2: E = e1
-                match *to.normalize() {
+                match *to {
                     Type::Enum(ref left_enum) => {
                         if left_enum.id.sym == *e.id.sym {
                             return Ok(());
@@ -170,7 +172,7 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        match to.normalize() {
+        match to {
             Type::Ref(left) => match rhs {
                 Type::Ref(right) => {
                     // We need this as type may recurse, and thus cannot be handled by expander.
@@ -197,7 +199,7 @@ impl Analyzer<'_, '_> {
 
         // Allow v = null and v = undefined if strict null check is false
         if !self.rule().strict_null_checks {
-            match rhs.normalize() {
+            match rhs {
                 Type::Keyword(RTsKeywordType {
                     kind: TsKeywordTypeKind::TsNullKeyword,
                     ..
@@ -222,8 +224,8 @@ impl Analyzer<'_, '_> {
 
             for (kwd, interface) in special_cases {
                 let rhs = rhs.clone().generalize_lit();
-                match to.normalize() {
-                    Type::Keyword(k) if k.kind == *kwd => match *rhs.normalize() {
+                match to {
+                    Type::Keyword(k) if k.kind == *kwd => match *rhs {
                         Type::Interface(ref i) => {
                             if i.name.as_str() == *interface {
                                 return Err(Error::AssignedWrapperToPrimitive { span });
@@ -231,18 +233,16 @@ impl Analyzer<'_, '_> {
                         }
                         _ => {}
                     },
-                    Type::Interface(ref i) if i.name.as_str() == *interface => {
-                        match *rhs.normalize() {
-                            Type::Keyword(ref k) if k.kind == *kwd => return Ok(()),
-                            _ => {}
-                        }
-                    }
+                    Type::Interface(ref i) if i.name.as_str() == *interface => match *rhs {
+                        Type::Keyword(ref k) if k.kind == *kwd => return Ok(()),
+                        _ => {}
+                    },
                     _ => {}
                 }
             }
         }
 
-        match *to.normalize() {
+        match *to {
             // let a: any = 'foo'
             Type::Keyword(RTsKeywordType {
                 kind: TsKeywordTypeKind::TsAnyKeyword,
@@ -321,7 +321,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        match *rhs.normalize() {
+        match *rhs {
             Type::Infer(..) => fail!(),
 
             // When strict null check is disabled, we can assign null / undefined to many things.
@@ -441,7 +441,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        match *to.normalize() {
+        match *to {
             Type::Mapped(..) => fail!(),
             Type::Param(TypeParam {
                 constraint: Some(ref c),
@@ -734,7 +734,7 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {
                 // var fnr2: () => any = fnReturn2();
-                match *rhs.normalize() {
+                match *rhs {
                     Type::Function(ty::Function {
                         ret_ty: ref right_ret_ty,
                         ..
@@ -828,12 +828,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        // This is slow (at the time of writing)
         if to.type_eq(&rhs) {
-            return Ok(());
-        }
-
-        if to.normalize().is_ref_type() {
             return Ok(());
         }
 
