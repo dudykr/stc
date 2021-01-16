@@ -62,7 +62,7 @@ impl Analyzer<'_, '_> {
             }
 
             if rhs.is_enum_variant() {
-                // TODO: Check for actual value.
+                // TODO: Check if actual value is numberx.
                 return Ok(());
             }
 
@@ -75,8 +75,13 @@ impl Analyzer<'_, '_> {
         }
 
         if lhs.is_enum_variant() || lhs.is_enum_type() {
+            // TODO: Check if actual value is number.
             if rhs.is_num() {
-                // TODO: Check for actual value.
+                return Ok(());
+            }
+
+            if rhs.is_enum_variant() {
+                // TODO: Check if actual value is number.
                 return Ok(());
             }
         }
