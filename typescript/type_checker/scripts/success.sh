@@ -2,10 +2,12 @@
 
 set -eu
 
-cargo test --test conformance \
+TEST='' cargo test --test conformance \
   | grep '.\.\. ok$' \
   | sed -e 's!test tsc::conformance::!!' \
   | sed -e 's! ... ok!!' \
   | sed -e 's!::!/!g' \
   | sed -e 's!test !!' \
-  > tests/success.txt
+  >> tests/conformance.pass.txt
+
+./scripts/sort.sh
