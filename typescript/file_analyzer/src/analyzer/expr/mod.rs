@@ -814,13 +814,14 @@ impl Analyzer<'_, '_> {
 
         match &*obj {
             Type::This(this) if self.scope.is_this_ref_to_object_lit() => {
-                if computed
-                    && match prop {
-                        RExpr::Cond(..) => true,
-                        _ => false,
+                if let Key::Computed(prop) = prop {
+                    //
+                    match &*prop.expr {
+                        RExpr::Cond(..) => {
+                            return Ok(Type::any(span));
+                        }
+                        _ => {}
                     }
-                {
-                    return Ok(Type::any(span));
                 }
 
                 // TODO: Remove clone
@@ -903,6 +904,8 @@ impl Analyzer<'_, '_> {
                         prop: prop.clone(),
                     });
                 }
+
+                let prop_ty = prop.computed().unwrap();
 
                 if let Some(super_class) = self.scope.get_super_class() {
                     let super_class = super_class.clone();
