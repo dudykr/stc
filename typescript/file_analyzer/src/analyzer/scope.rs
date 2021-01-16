@@ -734,7 +734,7 @@ impl Analyzer<'_, '_> {
         {
             // Improted variables
             if let Some(info) = self.imports_by_id.get(name) {
-                if let Some(var_ty) = info.data.vars.get(name) {
+                if let Some(var_ty) = info.data.vars.get(name.sym()) {
                     return Some(Cow::Borrowed(var_ty));
                 }
             }
@@ -789,7 +789,7 @@ impl Analyzer<'_, '_> {
         }
 
         if let Some(ModuleInfo { data, .. }) = self.imports_by_id.get(name) {
-            if let Some(types) = data.types.get(name) {
+            if let Some(types) = data.types.get(name.sym()) {
                 let types = types.clone();
                 return Ok(Some(ItemRef::Owned(types.into_iter())));
             }
@@ -800,7 +800,7 @@ impl Analyzer<'_, '_> {
         }
 
         if let Some(data) = self.imports.get(&(self.ctx.module_id, target)) {
-            if let Some(types) = data.types.get(name) {
+            if let Some(types) = data.types.get(name.sym()) {
                 let types = types.clone();
                 return Ok(Some(ItemRef::Owned(types.into_iter())));
             }

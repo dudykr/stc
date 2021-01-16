@@ -62,10 +62,10 @@ pub mod name;
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct ModuleTypeData {
     pub private_vars: FxHashMap<Id, Box<Type>>,
-    pub vars: FxHashMap<Id, Box<Type>>,
+    pub vars: FxHashMap<JsWord, Box<Type>>,
 
     pub private_types: FxHashMap<Id, Vec<Box<Type>>>,
-    pub types: FxHashMap<Id, Vec<Box<Type>>>,
+    pub types: FxHashMap<JsWord, Vec<Box<Type>>>,
 }
 
 impl Visitable for ModuleTypeData {}

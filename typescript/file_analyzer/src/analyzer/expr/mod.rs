@@ -1654,17 +1654,20 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Module(ty::Module { ref exports, .. }) => {
-                match prop {
-                    RExpr::Ident(ref i) => {
-                        if let Some(item) = exports.vars.get(&i.into()) {
-                            return Ok(item.clone());
+                if !computed {
+                    match prop {
+                        RExpr::Ident(ref i) => {
+                            if let Some(item) = exports.vars.get(&i.sym) {
+                                return Ok(item.clone());
+                            }
+                            //                        if let Some(item) =
+                            // exports.types.get(sym) {
+                            //                            return
+                            // Ok(item.clone());
+                            //                        }
                         }
-                        //                        if let Some(item) =
-                        // exports.types.get(sym) {
-                        //                            return Ok(item.clone());
-                        //                        }
+                        _ => {}
                     }
-                    _ => {}
                 }
                 // No property found
                 return Err(Error::NoSuchPropertyInModule { span });

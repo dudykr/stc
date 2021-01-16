@@ -493,16 +493,16 @@ impl Analyzer<'_, '_> {
         let mut did_work = false;
 
         if let Some(data) = self.imports.get(&(ctxt, from)) {
-            if let Some(ty) = data.vars.get(&orig) {
+            if let Some(ty) = data.vars.get(orig.sym()) {
                 did_work = true;
                 self.storage
-                    .reexport_var(span, ctxt, id.clone(), ty.clone());
+                    .reexport_var(span, ctxt, id.sym().clone(), ty.clone());
             }
 
-            if let Some(ty) = data.types.get(&orig) {
+            if let Some(ty) = data.types.get(orig.sym()) {
                 did_work = true;
                 let ty = Type::union(ty.clone());
-                self.storage.reexport_type(span, ctxt, id.clone(), ty);
+                self.storage.reexport_type(span, ctxt, id.sym().clone(), ty);
             }
         }
 
