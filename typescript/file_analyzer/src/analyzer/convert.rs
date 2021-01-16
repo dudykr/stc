@@ -1,5 +1,4 @@
 use super::props::ComputedPropMode;
-use super::util::ResultExt;
 use super::Analyzer;
 use super::Ctx;
 use super::ScopeKind;
