@@ -380,10 +380,8 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                                         computed,
                                         ..
                                     })
-                                    | TypeElement::Method(MethodSignature {
-                                        key, computed, ..
-                                    }) => {
-                                        if computed {
+                                    | TypeElement::Method(MethodSignature { key, .. }) => {
+                                        if key.is_computed() {
                                             unimplemented!("Computed key mixed with T[keyof S]");
                                         }
 

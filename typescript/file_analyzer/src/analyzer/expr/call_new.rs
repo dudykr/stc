@@ -279,27 +279,15 @@ impl Analyzer<'_, '_> {
                 computed,
                 ..
             }) => {
+                let prop = self.validate_key(prop, computed)?;
                 {
                     // Handle toString()
-                    macro_rules! handle {
-                        () => {{
-                            return Ok(box Type::from(RTsKeywordType {
-                                span,
-                                kind: TsKeywordTypeKind::TsStringKeyword,
-                            }));
-                        }};
-                    }
-                    match **prop {
-                        RExpr::Ident(RIdent {
-                            sym: js_word!("toString"),
-                            ..
-                        }) if !computed => handle!(),
-                        RExpr::Lit(RLit::Str(RStr {
-                            value: js_word!("toString"),
-                            ..
-                        })) => handle!(),
 
-                        _ => {}
+                    if prop == js_word!("toString") {
+                        return Ok(box Type::from(RTsKeywordType {
+                            span,
+                            kind: TsKeywordTypeKind::TsStringKeyword,
+                        }));
                     }
                 }
 
@@ -364,7 +352,7 @@ impl Analyzer<'_, '_> {
                                     ref ret_ty,
                                     ..
                                 }) => {
-                                    if rprop_name_to_expr(key.clone()).eq_ignore_span(&*prop) {
+                                    if key.type_eq(&*prop) {
                                         return Ok(ret_ty.clone());
                                     }
                                 }
