@@ -260,7 +260,7 @@ impl Analyzer<'_, '_> {
                 .into()
             }
 
-            RProp::Assign(ref p) => unimplemented!("type_of_prop(AssignProperty): {:?}", p),
+            RProp::Assign(ref p) => unimplemented!("validate_key(AssignProperty): {:?}", p),
             RProp::Getter(ref p) => p.validate_with(self)?,
             RProp::Setter(ref p) => {
                 let computed = match p.key {

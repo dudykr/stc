@@ -134,7 +134,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let key = self.type_of_prop(&p.key, p.computed)?;
+        let key = self.validate_key(&p.key, p.computed)?;
 
         Ok(ClassProperty {
             span: p.span,

@@ -635,7 +635,7 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
-    pub(crate) fn type_of_prop(&mut self, prop: &RExpr, computed: bool) -> ValidationResult<Key> {
+    pub(crate) fn validate_key(&mut self, prop: &RExpr, computed: bool) -> ValidationResult<Key> {
         if computed {
             prop.validate_with_default(self)
         } else {
@@ -667,7 +667,7 @@ impl Analyzer<'_, '_> {
             type_mode: TypeOfMode,
             members: &[TypeElement],
         ) -> ValidationResult<Option<Box<Type>>> {
-            let prop_ty = a.type_of_prop(prop, computed)?;
+            let prop_ty = a.validate_key(prop, computed)?;
 
             let mut candidates = vec![];
             for el in members.iter() {
@@ -1221,7 +1221,7 @@ impl Analyzer<'_, '_> {
             },
 
             Type::Class(ref c) => {
-                let prop_ty = self.type_of_prop(prop, computed)?;
+                let prop_ty = self.validate_key(prop, computed)?;
 
                 for v in c.body.iter() {
                     match v {
