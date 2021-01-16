@@ -106,14 +106,8 @@ fn test_project(_name: &str, dir: &Path, entries: Vec<PathBuf>) {
             term_logger(),
             cm.clone(),
             handler.clone(),
-            Env::simple(
-                Default::default(),
-                JscTarget::Es2020,
-                &Lib::load("es2020.full"),
-            ),
-            TsConfig {
-                ..Default::default()
-            },
+            Env::simple(Default::default(), JscTarget::Es2020, &Lib::load("es2020.full")),
+            TsConfig { ..Default::default() },
             None,
         );
 
@@ -124,9 +118,7 @@ fn test_project(_name: &str, dir: &Path, entries: Vec<PathBuf>) {
         }
 
         for err in checker.take_errors() {
-            handler
-                .struct_span_err(err.span(), &format!("{:?}", err))
-                .emit();
+            handler.struct_span_err(err.span(), &format!("{:?}", err)).emit();
         }
 
         for entry in WalkBuilder::new(dir).git_ignore(false).build() {
@@ -158,11 +150,7 @@ fn test_project(_name: &str, dir: &Path, entries: Vec<PathBuf>) {
             let expected_dts = parse_dts(
                 &cm,
                 &read_to_string(file_path.with_extension("d.ts")).unwrap_or_else(|err| {
-                    panic!(
-                        "Failed to read .d.ts file for {}: {}",
-                        file_path.display(),
-                        err
-                    );
+                    panic!("Failed to read .d.ts file for {}: {}", file_path.display(), err);
                 }),
             );
             if generated_dts == expected_dts {
@@ -176,10 +164,7 @@ fn test_project(_name: &str, dir: &Path, entries: Vec<PathBuf>) {
                 continue;
             }
 
-            println!(
-                "---------- Input ----------\n{}",
-                read_to_string(entry.path()).unwrap()
-            );
+            println!("---------- Input ----------\n{}", read_to_string(entry.path()).unwrap());
             println!("---------- Expected ----------\n{}", expected);
             println!("---------- Generated ----------\n{}", generated);
 
@@ -208,9 +193,7 @@ fn parse_dts(cm: &SourceMap, src: &str) -> Module {
     let mut module = parser.parse_module().unwrap();
 
     module.body.retain(|item| match item {
-        ModuleItem::ModuleDecl(ModuleDecl::ExportNamed(NamedExport { specifiers, .. }))
-            if specifiers.is_empty() =>
-        {
+        ModuleItem::ModuleDecl(ModuleDecl::ExportNamed(NamedExport { specifiers, .. })) if specifiers.is_empty() => {
             false
         }
         ModuleItem::Stmt(Stmt::Empty(..)) => false,
@@ -230,10 +213,7 @@ fn print(cm: &Arc<SourceMap>, m: &Module) -> NormalizedOutput {
             wr: box JsWriter::new(cm.clone(), "\n", &mut buf, None),
         };
 
-        emitter
-            .emit_module(&m)
-            .context("failed to emit module")
-            .unwrap();
+        emitter.emit_module(&m).context("failed to emit module").unwrap();
     }
     String::from_utf8(buf).unwrap().into()
 }

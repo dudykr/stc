@@ -29,8 +29,7 @@ impl Analyzer<'_, '_> {
                     obj = self.with_ctx(ctx).expand_fully(span, obj, true)?;
                 }
 
-                let ty =
-                    self.access_property(span, obj, &me.prop, me.computed, TypeOfMode::RValue)?;
+                let ty = self.access_property(span, obj, &me.prop, me.computed, TypeOfMode::RValue)?;
 
                 //
 

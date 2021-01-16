@@ -164,11 +164,7 @@ fn run_bench(b: &mut Bencher, path: PathBuf) {
 
     ::testing::run_test2(false, |cm, _| {
         let fm = cm.load_file(&path).unwrap();
-        let env = Env::simple(
-            Default::default(),
-            JscTarget::Es2020,
-            &Lib::load("es2020.full"),
-        );
+        let env = Env::simple(Default::default(), JscTarget::Es2020, &Lib::load("es2020.full"));
         let stable_env = env.shared().clone();
         let generator = module_id::Generator::default();
         let path = Arc::new(path.clone());

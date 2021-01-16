@@ -26,26 +26,11 @@ impl Fold<RTsKeywordType> for TypeFactsHandler {
         }
 
         let keyword_types = &[
-            (
-                TypeFacts::TypeofNEString,
-                TsKeywordTypeKind::TsStringKeyword,
-            ),
-            (
-                TypeFacts::TypeofNENumber,
-                TsKeywordTypeKind::TsNumberKeyword,
-            ),
-            (
-                TypeFacts::TypeofNEBoolean,
-                TsKeywordTypeKind::TsBooleanKeyword,
-            ),
-            (
-                TypeFacts::TypeofNEBigInt,
-                TsKeywordTypeKind::TsBigIntKeyword,
-            ),
-            (
-                TypeFacts::TypeofNESymbol,
-                TsKeywordTypeKind::TsSymbolKeyword,
-            ),
+            (TypeFacts::TypeofNEString, TsKeywordTypeKind::TsStringKeyword),
+            (TypeFacts::TypeofNENumber, TsKeywordTypeKind::TsNumberKeyword),
+            (TypeFacts::TypeofNEBoolean, TsKeywordTypeKind::TsBooleanKeyword),
+            (TypeFacts::TypeofNEBigInt, TsKeywordTypeKind::TsBigIntKeyword),
+            (TypeFacts::TypeofNESymbol, TsKeywordTypeKind::TsSymbolKeyword),
         ];
 
         for (neq, kwd) in keyword_types {
@@ -58,31 +43,14 @@ impl Fold<RTsKeywordType> for TypeFactsHandler {
         }
         {
             let keyword_types = &[
-                (
-                    TypeFacts::TypeofEQString,
-                    TsKeywordTypeKind::TsStringKeyword,
-                ),
-                (
-                    TypeFacts::TypeofEQNumber,
-                    TsKeywordTypeKind::TsNumberKeyword,
-                ),
-                (
-                    TypeFacts::TypeofEQBoolean,
-                    TsKeywordTypeKind::TsBooleanKeyword,
-                ),
-                (
-                    TypeFacts::TypeofEQBigInt,
-                    TsKeywordTypeKind::TsBigIntKeyword,
-                ),
-                (
-                    TypeFacts::TypeofEQSymbol,
-                    TsKeywordTypeKind::TsSymbolKeyword,
-                ),
+                (TypeFacts::TypeofEQString, TsKeywordTypeKind::TsStringKeyword),
+                (TypeFacts::TypeofEQNumber, TsKeywordTypeKind::TsNumberKeyword),
+                (TypeFacts::TypeofEQBoolean, TsKeywordTypeKind::TsBooleanKeyword),
+                (TypeFacts::TypeofEQBigInt, TsKeywordTypeKind::TsBigIntKeyword),
+                (TypeFacts::TypeofEQSymbol, TsKeywordTypeKind::TsSymbolKeyword),
             ];
 
-            let has_any = keyword_types
-                .iter()
-                .any(|&(fact, _)| self.facts.contains(fact));
+            let has_any = keyword_types.iter().any(|&(fact, _)| self.facts.contains(fact));
 
             if has_any {
                 let allowed_keywords = keyword_types
@@ -129,9 +97,7 @@ impl Fold<Type> for TypeFactsHandler {
 
         match ty {
             Type::Union(ref u) if u.types.is_empty() => return *Type::never(u.span),
-            Type::Intersection(ref i) if i.types.iter().any(|ty| ty.is_never()) => {
-                return *Type::never(i.span)
-            }
+            Type::Intersection(ref i) if i.types.iter().any(|ty| ty.is_never()) => return *Type::never(i.span),
             _ => {}
         }
 

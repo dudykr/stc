@@ -8,9 +8,7 @@ fn assert_order(src: &str, expected: Vec<usize>) {
     run_test(|tester| {
         let orig = tester.parse("main.ts", src);
         let module = RModule::from_orig(&mut NodeIdGenerator::invalid(), orig);
-        let (actual, _) = tester
-            .analyzer
-            .reorder_stmts(&&module.body.iter().collect::<Vec<_>>());
+        let (actual, _) = tester.analyzer.reorder_stmts(&&module.body.iter().collect::<Vec<_>>());
 
         assert_eq!(expected, actual);
     })

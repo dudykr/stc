@@ -585,18 +585,14 @@ impl Error {
     fn msg(&self) -> Cow<'static, str> {
         match self {
             Self::FnImplMissingOrNotFollowedByDecl { .. } => {
-                "Function implementation is missing or not immediately following the declaration"
-                    .into()
+                "Function implementation is missing or not immediately following the declaration".into()
             }
-            Self::NonOverlappingTypeCast { .. } => "Conversion of type may be a mistake because \
-                                                    neither type sufficiently overlaps with the \
-                                                    other. If this was intentional, convert the \
-                                                    expression to 'unknown' first."
+            Self::NonOverlappingTypeCast { .. } => "Conversion of type may be a mistake because neither type \
+                                                    sufficiently overlaps with the other. If this was intentional, \
+                                                    convert the expression to 'unknown' first."
                 .into(),
 
-            Self::AssignOpCannotBeApplied { op, .. } => {
-                format!("Operator '{}' cannot be applied to types", op).into()
-            }
+            Self::AssignOpCannotBeApplied { op, .. } => format!("Operator '{}' cannot be applied to types", op).into(),
 
             Self::NonSymbolComputedPropInFormOfSymbol { .. } => {
                 "A computed property name of the form '{TODO}' must be of type 'symbol'.".into()
@@ -610,11 +606,7 @@ impl Error {
     pub fn emit(self, h: &Handler) {
         let span = self.span();
 
-        let mut err = h.struct_span_err_with_code(
-            span,
-            &self.msg(),
-            DiagnosticId::Error(format!("TS{}", self.code())),
-        );
+        let mut err = h.struct_span_err_with_code(span, &self.msg(), DiagnosticId::Error(format!("TS{}", self.code())));
 
         err.emit();
     }
@@ -637,10 +629,7 @@ impl Error {
 impl From<Vec<Error>> for Error {
     #[inline]
     fn from(errors: Vec<Error>) -> Self {
-        Error::Errors {
-            span: DUMMY_SP,
-            errors,
-        }
+        Error::Errors { span: DUMMY_SP, errors }
     }
 }
 

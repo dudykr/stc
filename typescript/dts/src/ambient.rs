@@ -54,8 +54,7 @@ impl VisitMut<RModuleItem> for RealImplRemover {
 
         match &node {
             RModuleItem::ModuleDecl(RModuleDecl::ExportDecl(RExportDecl {
-                decl: RDecl::Fn(decl),
-                ..
+                decl: RDecl::Fn(decl), ..
             })) => {
                 if decl.function.body.is_none() {
                     self.last_ambient_fn_name = Some(decl.ident.clone());

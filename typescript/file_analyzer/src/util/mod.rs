@@ -122,8 +122,7 @@ impl VisitMut<Type> for Marker {
 pub(crate) fn is_str_lit_or_union(t: &Type) -> bool {
     match t {
         Type::Lit(RTsLitType {
-            lit: RTsLit::Str(..),
-            ..
+            lit: RTsLit::Str(..), ..
         }) => true,
         Type::Union(Union { ref types, .. }) => types.iter().all(|ty| is_str_lit_or_union(&ty)),
         _ => false,
@@ -133,8 +132,7 @@ pub(crate) fn is_str_lit_or_union(t: &Type) -> bool {
 pub(crate) fn is_str_or_union(t: &Type) -> bool {
     match t {
         Type::Lit(RTsLitType {
-            lit: RTsLit::Str(..),
-            ..
+            lit: RTsLit::Str(..), ..
         }) => true,
         Type::Keyword(RTsKeywordType {
             kind: TsKeywordTypeKind::TsStringKeyword,
@@ -188,10 +186,7 @@ impl RemoveTypes for Type {
                 _ => {}
             },
             Type::Lit(RTsLitType {
-                lit:
-                    RTsLit::Bool(RBool {
-                        value: false, span, ..
-                    }),
+                lit: RTsLit::Bool(RBool { value: false, span, .. }),
                 ..
             }) => return *Type::never(span),
 
@@ -206,10 +201,7 @@ impl RemoveTypes for Type {
     fn remove_truthy(self) -> Type {
         match self {
             Type::Lit(RTsLitType {
-                lit:
-                    RTsLit::Bool(RBool {
-                        value: true, span, ..
-                    }),
+                lit: RTsLit::Bool(RBool { value: true, span, .. }),
                 ..
             }) => return *Type::never(span),
 
@@ -236,11 +228,7 @@ impl RemoveTypes for Intersection {
             return *types.into_iter().next().unwrap();
         }
 
-        Intersection {
-            span: self.span,
-            types,
-        }
-        .into()
+        Intersection { span: self.span, types }.into()
     }
 
     fn remove_truthy(self) -> Type {
@@ -257,11 +245,7 @@ impl RemoveTypes for Intersection {
             return *types.into_iter().next().unwrap();
         }
 
-        Intersection {
-            span: self.span,
-            types,
-        }
-        .into()
+        Intersection { span: self.span, types }.into()
     }
 }
 
@@ -282,11 +266,7 @@ impl RemoveTypes for Union {
             return *types.into_iter().next().unwrap();
         }
 
-        Union {
-            span: self.span,
-            types,
-        }
-        .into()
+        Union { span: self.span, types }.into()
     }
 
     fn remove_truthy(self) -> Type {
@@ -305,11 +285,7 @@ impl RemoveTypes for Union {
             return *types.into_iter().next().unwrap();
         }
 
-        Union {
-            span: self.span,
-            types,
-        }
-        .into()
+        Union { span: self.span, types }.into()
     }
 }
 

@@ -46,12 +46,7 @@ fn passes() {
 fn do_test(file_name: &Path) -> Result<(), StdErr> {
     let fname = file_name.display().to_string();
 
-    let (libs, rule, ts_config, target) = (
-        vec![Lib::Es5],
-        Default::default(),
-        Default::default(),
-        JscTarget::Es5,
-    );
+    let (libs, rule, ts_config, target) = (vec![Lib::Es5], Default::default(), Default::default(), JscTarget::Es5);
 
     let res = ::testing::run_test2(false, |cm, handler| {
         let log = logger();

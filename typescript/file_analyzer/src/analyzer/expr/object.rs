@@ -23,22 +23,18 @@ use swc_common::DUMMY_SP;
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RObjectLit) -> ValidationResult {
-        self.with_child(
-            ScopeKind::ObjectLit,
-            Default::default(),
-            |a: &mut Analyzer| {
-                let mut ty = box Type::TypeLit(TypeLit {
-                    span: node.span,
-                    members: vec![],
-                });
+        self.with_child(ScopeKind::ObjectLit, Default::default(), |a: &mut Analyzer| {
+            let mut ty = box Type::TypeLit(TypeLit {
+                span: node.span,
+                members: vec![],
+            });
 
-                for prop in node.props.iter() {
-                    ty = a.append_prop_or_spread_to_type(ty, prop)?;
-                }
+            for prop in node.props.iter() {
+                ty = a.append_prop_or_spread_to_type(ty, prop)?;
+            }
 
-                Ok(ty)
-            },
-        )
+            Ok(ty)
+        })
     }
 }
 
@@ -120,11 +116,7 @@ impl Analyzer<'_, '_> {
         ty.visit_mut_with(&mut ObjectUnionNormalizer);
     }
 
-    fn append_prop_or_spread_to_type(
-        &mut self,
-        to: Box<Type>,
-        prop: &RPropOrSpread,
-    ) -> ValidationResult {
+    fn append_prop_or_spread_to_type(&mut self, to: Box<Type>, prop: &RPropOrSpread) -> ValidationResult {
         match prop {
             RPropOrSpread::Spread(RSpreadElement { expr, .. }) => {
                 let prop_ty: Box<Type> = expr.validate_with_default(self)?;
@@ -184,11 +176,7 @@ impl Analyzer<'_, '_> {
         unimplemented!("append_type:\n{:?}\n{:?}", to, rhs)
     }
 
-    fn append_type_element(
-        &mut self,
-        to: Box<Type>,
-        rhs: TypeElement,
-    ) -> ValidationResult<Box<Type>> {
+    fn append_type_element(&mut self, to: Box<Type>, rhs: TypeElement) -> ValidationResult<Box<Type>> {
         if to.is_any() || to.is_unknown() {
             return Ok(to);
         }

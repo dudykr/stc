@@ -21,11 +21,9 @@ impl Analyzer<'_, '_> {
         nodes.visit_with(&mut visitor);
 
         if visitor.last_ambient_name.is_some() {
-            visitor
-                .errors
-                .report(Error::FnImplMissingOrNotFollowedByDecl {
-                    span: visitor.last_ambient_name.unwrap().span,
-                })
+            visitor.errors.report(Error::FnImplMissingOrNotFollowedByDecl {
+                span: visitor.last_ambient_name.unwrap().span,
+            })
         }
     }
 }
@@ -78,9 +76,7 @@ impl Visit<RFnDecl> for AmbientFunctionHandler<'_, '_> {
                 if node.ident.sym == name.sym {
                     self.last_ambient_name = None;
                 } else {
-                    self.errors.report(Error::TS2389 {
-                        span: node.ident.span,
-                    });
+                    self.errors.report(Error::TS2389 { span: node.ident.span });
                     self.last_ambient_name = None;
                 }
             }

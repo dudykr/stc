@@ -181,11 +181,7 @@ impl Analyzer<'_, '_> {
                     } else {
                         child.prevent_expansion(&mut ty);
                     }
-                    let alias = Alias {
-                        span,
-                        ty,
-                        type_params,
-                    };
+                    let alias = Alias { span, ty, type_params };
                     Ok(alias)
                 },
             )?
@@ -199,28 +195,24 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, d: &RTsInterfaceDecl) -> ValidationResult<Interface> {
-        let ty: Interface = self.with_child(
-            ScopeKind::Flow,
-            Default::default(),
-            |child| -> ValidationResult<_> {
-                let mut ty = Interface {
-                    span: d.span,
-                    name: d.id.clone().into(),
-                    type_params: try_opt!(d.type_params.validate_with(&mut *child)),
-                    extends: d.extends.validate_with(child)?,
-                    body: d.body.validate_with(child)?,
-                };
-                child.prevent_expansion(&mut ty.body);
+        let ty: Interface = self.with_child(ScopeKind::Flow, Default::default(), |child| -> ValidationResult<_> {
+            let mut ty = Interface {
+                span: d.span,
+                name: d.id.clone().into(),
+                type_params: try_opt!(d.type_params.validate_with(&mut *child)),
+                extends: d.extends.validate_with(child)?,
+                body: d.body.validate_with(child)?,
+            };
+            child.prevent_expansion(&mut ty.body);
 
-                child
-                    .register_type(d.id.clone().into(), box ty.clone().into())
-                    .report(&mut child.storage);
+            child
+                .register_type(d.id.clone().into(), box ty.clone().into())
+                .report(&mut child.storage);
 
-                child.resolve_parent_interfaces(&d.extends);
+            child.resolve_parent_interfaces(&d.extends);
 
-                Ok(ty)
-            },
-        )?;
+            Ok(ty)
+        })?;
 
         // TODO: Recover
         self.register_type(d.id.clone().into(), Type::Interface(ty.clone()).cheap())?;
@@ -256,9 +248,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RTsTypeElement) -> ValidationResult<TypeElement> {
         Ok(match e {
             RTsTypeElement::TsCallSignatureDecl(d) => TypeElement::Call(d.validate_with(self)?),
-            RTsTypeElement::TsConstructSignatureDecl(d) => {
-                TypeElement::Constructor(d.validate_with(self)?)
-            }
+            RTsTypeElement::TsConstructSignatureDecl(d) => TypeElement::Constructor(d.validate_with(self)?),
             RTsTypeElement::TsIndexSignature(d) => TypeElement::Index(d.validate_with(self)?),
             RTsTypeElement::TsMethodSignature(d) => TypeElement::Method(d.validate_with(self)?),
             RTsTypeElement::TsPropertySignature(d) => TypeElement::Property(d.validate_with(self)?),
@@ -268,10 +258,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(
-        &mut self,
-        d: &RTsConstructSignatureDecl,
-    ) -> ValidationResult<ConstructorSignature> {
+    fn validate(&mut self, d: &RTsConstructSignatureDecl) -> ValidationResult<ConstructorSignature> {
         Ok(ConstructorSignature {
             span: d.span,
             params: d.params.validate_with(self)?,
@@ -378,16 +365,10 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(
-        &mut self,
-        i: &RTsTypeParamInstantiation,
-    ) -> ValidationResult<TypeParamInstantiation> {
+    fn validate(&mut self, i: &RTsTypeParamInstantiation) -> ValidationResult<TypeParamInstantiation> {
         let params = i.params.validate_with(self)?;
 
-        Ok(TypeParamInstantiation {
-            span: i.span,
-            params,
-        })
+        Ok(TypeParamInstantiation { span: i.span, params })
     }
 }
 
@@ -564,11 +545,7 @@ impl Analyzer<'_, '_> {
         }
 
         if !self.is_builtin {
-            slog::warn!(
-                self.logger,
-                "Crating a ref from TsTypeRef: {:?}",
-                t.type_name
-            );
+            slog::warn!(self.logger, "Crating a ref from TsTypeRef: {:?}", t.type_name);
         }
         let mut span = t.span;
         if contains_infer {
@@ -713,9 +690,9 @@ impl Analyzer<'_, '_> {
             RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsUnionType(u)) => {
                 Type::Union(u.validate_with(self)?)
             }
-            RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsIntersectionType(
-                i,
-            )) => Type::Intersection(i.validate_with(self)?),
+            RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsIntersectionType(i)) => {
+                Type::Intersection(i.validate_with(self)?)
+            }
             RTsType::TsArrayType(arr) => Type::Array(arr.validate_with(self)?),
             RTsType::TsFnOrConstructorType(RTsFnOrConstructorType::TsFnType(f)) => {
                 Type::Function(f.validate_with(self)?)
@@ -788,12 +765,7 @@ impl Analyzer<'_, '_> {
                         Some(RPat::Array(ref arr)) => {
                             self.default_any_array_pat(arr);
                             if let Some(m) = &mut self.mutations {
-                                m.for_pats
-                                    .entry(arr.node_id)
-                                    .or_default()
-                                    .ty
-                                    .take()
-                                    .unwrap()
+                                m.for_pats.entry(arr.node_id).or_default().ty.take().unwrap()
                             } else {
                                 Type::any(DUMMY_SP)
                             }
@@ -802,12 +774,7 @@ impl Analyzer<'_, '_> {
                             self.default_any_object(obj);
 
                             if let Some(m) = &mut self.mutations {
-                                m.for_pats
-                                    .entry(obj.node_id)
-                                    .or_default()
-                                    .ty
-                                    .take()
-                                    .unwrap()
+                                m.for_pats.entry(obj.node_id).or_default().ty.take().unwrap()
                             } else {
                                 Type::any(DUMMY_SP)
                             }
@@ -826,11 +793,7 @@ impl Analyzer<'_, '_> {
                 .collect(),
         });
         if let Some(m) = &mut self.mutations {
-            m.for_pats
-                .entry(arr.node_id)
-                .or_default()
-                .ty
-                .fill_with(|| ty);
+            m.for_pats.entry(arr.node_id).or_default().ty.fill_with(|| ty);
         }
     }
 

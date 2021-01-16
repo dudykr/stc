@@ -44,9 +44,7 @@ impl VisitMut<Vec<RModuleItem>> for Operator<'_> {
             let node_id = item.node_id();
 
             if let Some(node_id) = node_id {
-                if let Some(ModuleItemMut { prepend_stmts, .. }) =
-                    self.mutations.for_module_items.get_mut(&node_id)
-                {
+                if let Some(ModuleItemMut { prepend_stmts, .. }) = self.mutations.for_module_items.get_mut(&node_id) {
                     new.extend(take(prepend_stmts).into_iter().map(RModuleItem::Stmt));
                 }
             }
@@ -56,9 +54,7 @@ impl VisitMut<Vec<RModuleItem>> for Operator<'_> {
             new.push(item);
 
             if let Some(node_id) = node_id {
-                if let Some(ModuleItemMut { append_stmts, .. }) =
-                    self.mutations.for_module_items.get_mut(&node_id)
-                {
+                if let Some(ModuleItemMut { append_stmts, .. }) = self.mutations.for_module_items.get_mut(&node_id) {
                     new.extend(take(append_stmts).into_iter().map(RModuleItem::Stmt));
                 }
             }
@@ -204,9 +200,7 @@ impl VisitMut<RExportDefaultExpr> for Operator<'_> {
     fn visit_mut(&mut self, export: &mut RExportDefaultExpr) {
         export.visit_mut_children_with(self);
 
-        if let Some(ExportDefaultMut { replace_with }) =
-            self.mutations.for_export_defaults.remove(&export.node_id)
-        {
+        if let Some(ExportDefaultMut { replace_with }) = self.mutations.for_export_defaults.remove(&export.node_id) {
             if let Some(expr) = replace_with {
                 export.expr = expr;
             }

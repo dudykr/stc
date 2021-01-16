@@ -26,9 +26,7 @@ use swc_ecma_ast::*;
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RUnaryExpr) -> ValidationResult {
-        let RUnaryExpr {
-            span, op, ref arg, ..
-        } = *e;
+        let RUnaryExpr { span, op, ref arg, .. } = *e;
 
         if let op!("delete") = op {
             // `delete foo` returns bool
@@ -64,10 +62,8 @@ impl Analyzer<'_, '_> {
             op!(unary, "+") | op!(unary, "-") | op!("~") => {
                 if let Some(arg) = &arg {
                     if arg.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) {
-                        self.storage.report(Error::NumericUnaryOpToSymbol {
-                            span: arg.span(),
-                            op,
-                        })
+                        self.storage
+                            .report(Error::NumericUnaryOpToSymbol { span: arg.span(), op })
                     }
                 }
             }
@@ -129,11 +125,7 @@ impl Analyzer<'_, '_> {
                                 span,
                                 lit: RTsLit::Number(RNumber {
                                     span,
-                                    value: if op == op!(unary, "-") {
-                                        -(*value)
-                                    } else {
-                                        *value
-                                    },
+                                    value: if op == op!(unary, "-") { -(*value) } else { *value },
                                 }),
                             }));
                         }
@@ -196,9 +188,7 @@ impl Analyzer<'_, '_> {
 
         match op {
             op!("typeof") | op!("delete") | op!("void") => match arg.normalize() {
-                Type::EnumVariant(..) if op == op!("delete") => {
-                    errors.push(Error::TS2704 { span: arg.span() })
-                }
+                Type::EnumVariant(..) if op == op!("delete") => errors.push(Error::TS2704 { span: arg.span() }),
 
                 _ => {}
             },
@@ -233,11 +223,7 @@ impl Analyzer<'_, '_> {
 
 fn negate(ty: Box<Type>) -> Box<Type> {
     match *ty {
-        Type::Lit(RTsLitType {
-            ref lit,
-            span,
-            node_id,
-        }) => match *lit {
+        Type::Lit(RTsLitType { ref lit, span, node_id }) => match *lit {
             RTsLit::Bool(ref v) => {
                 return box Type::Lit(RTsLitType {
                     node_id,

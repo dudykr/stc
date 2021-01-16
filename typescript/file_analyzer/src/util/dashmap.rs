@@ -54,7 +54,6 @@ where
             Some(v) => v,
             None => return,
         };
-        lock.entry(k)
-            .or_insert_with(|| SharedValue::new(Default::default()));
+        lock.entry(k).or_insert_with(|| SharedValue::new(Default::default()));
     }
 }

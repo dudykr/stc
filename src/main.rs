@@ -48,14 +48,8 @@ fn main() -> Result<(), Error> {
         Logger::root(Discard, slog::o!()),
         cm.clone(),
         handler,
-        Env::simple(
-            Rule::default(),
-            JscTarget::Es2020,
-            &Lib::load("es2020.full"),
-        ),
-        TsConfig {
-            ..Default::default()
-        },
+        Env::simple(Rule::default(), JscTarget::Es2020, &Lib::load("es2020.full")),
+        TsConfig { ..Default::default() },
         None,
     );
 

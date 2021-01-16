@@ -102,8 +102,7 @@ impl Analyzer<'_, '_> {
                 }) if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) => {}
                 _ => {
                     //
-                    self.storage
-                        .report(Error::NonSymbolComputedPropInFormOfSymbol { span });
+                    self.storage.report(Error::NonSymbolComputedPropInFormOfSymbol { span });
                 }
             }
         }
@@ -120,12 +119,9 @@ impl Analyzer<'_, '_> {
                         _ if is_valid_key => {}
                         Type::Lit(..) => {}
                         Type::EnumVariant(..) => {}
-                        _ if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword)
-                            || ty.is_unique_symbol() => {}
+                        _ if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) || ty.is_unique_symbol() => {}
                         _ => match mode {
-                            ComputedPropMode::Interface => {
-                                errors.push(Error::TS1169 { span: node.span })
-                            }
+                            ComputedPropMode::Interface => errors.push(Error::TS1169 { span: node.span }),
                             _ => {}
                         },
                     }
@@ -218,8 +214,7 @@ impl Analyzer<'_, '_> {
         let shorthand_type_ann = match prop {
             RProp::Shorthand(ref i) => {
                 // TODO: Check if RValue is correct
-                self.type_of_var(&i, TypeOfMode::RValue, None)
-                    .report(&mut self.storage)
+                self.type_of_var(&i, TypeOfMode::RValue, None).report(&mut self.storage)
             }
             _ => None,
         };
@@ -402,11 +397,7 @@ impl Analyzer<'_, '_> {
             params: Default::default(),
             optional: false,
             readonly: true,
-            type_ann: if computed {
-                type_ann
-            } else {
-                Some(Type::any(n.span))
-            },
+            type_ann: if computed { type_ann } else { Some(Type::any(n.span)) },
             type_params: Default::default(),
         }
         .into())

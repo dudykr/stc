@@ -21,8 +21,8 @@ use stc_ts_types::MethodSignature;
 use stc_ts_types::PropertySignature;
 use stc_ts_types::Ref;
 use stc_ts_types::{
-    Array, ClassInstance, EnumVariant, FnParam, Interface, Intersection, Tuple, Type, TypeElement,
-    TypeLit, TypeParam, Union,
+    Array, ClassInstance, EnumVariant, FnParam, Interface, Intersection, Tuple, Type, TypeElement, TypeLit, TypeParam,
+    Union,
 };
 use std::borrow::Cow;
 use swc_atoms::js_word;
@@ -39,13 +39,7 @@ pub(crate) struct AssignOpts {
 }
 
 impl Analyzer<'_, '_> {
-    pub(crate) fn assign_with_op(
-        &mut self,
-        span: Span,
-        op: AssignOp,
-        lhs: &Type,
-        rhs: &Type,
-    ) -> ValidationResult<()> {
+    pub(crate) fn assign_with_op(&mut self, span: Span, op: AssignOp, lhs: &Type, rhs: &Type) -> ValidationResult<()> {
         debug_assert_ne!(op, op!("="));
 
         let l = self.expand_top_ref(span, Cow::Borrowed(lhs))?;
@@ -146,8 +140,7 @@ impl Analyzer<'_, '_> {
             },
         })
         .map_err(|err| {
-            if cfg!(debug_assertions) && std::env::var("SWC_DTS").map(|v| v == "1").unwrap_or(false)
-            {
+            if cfg!(debug_assertions) && std::env::var("SWC_DTS").map(|v| v == "1").unwrap_or(false) {
                 println!("assign failed");
                 print_backtrace();
             }
@@ -302,12 +295,10 @@ impl Analyzer<'_, '_> {
         match to {
             // Str contains `kind`, and it's not handled properly by type_eq.
             Type::Lit(RTsLitType {
-                lit: RTsLit::Str(to),
-                ..
+                lit: RTsLit::Str(to), ..
             }) => match rhs {
                 Type::Lit(RTsLitType {
-                    lit: RTsLit::Str(rhs),
-                    ..
+                    lit: RTsLit::Str(rhs), ..
                 }) => {
                     if to.value == rhs.value {
                         return Ok(());
@@ -321,9 +312,7 @@ impl Analyzer<'_, '_> {
             Type::Ref(left) => match rhs {
                 Type::Ref(right) => {
                     // We need this as type may recurse, and thus cannot be handled by expander.
-                    if left.type_name.type_eq(&right.type_name)
-                        && left.type_args.type_eq(&right.type_args)
-                    {
+                    if left.type_name.type_eq(&right.type_name) && left.type_args.type_eq(&right.type_args) {
                         return Ok(());
                     }
                 }
@@ -513,9 +502,7 @@ impl Analyzer<'_, '_> {
                 kind: TsKeywordTypeKind::TsUnknownKeyword,
                 ..
             }) => {
-                if to.is_kwd(TsKeywordTypeKind::TsAnyKeyword)
-                    || to.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
-                {
+                if to.is_kwd(TsKeywordTypeKind::TsAnyKeyword) || to.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
                     return Ok(());
                 }
 
@@ -529,9 +516,7 @@ impl Analyzer<'_, '_> {
             }) => {
                 //
                 match to {
-                    Type::Param(TypeParam {
-                        name: ref l_name, ..
-                    }) => {
+                    Type::Param(TypeParam { name: ref l_name, .. }) => {
                         if name == l_name {
                             return Ok(());
                         }
@@ -552,9 +537,7 @@ impl Analyzer<'_, '_> {
                         );
                     }
                     None => match to.normalize() {
-                        Type::TypeLit(TypeLit { ref members, .. }) if members.is_empty() => {
-                            return Ok(())
-                        }
+                        Type::TypeLit(TypeLit { ref members, .. }) if members.is_empty() => return Ok(()),
                         _ => {}
                     },
                 }
@@ -644,10 +627,7 @@ impl Analyzer<'_, '_> {
                 // TODO: Multiple error
                 for v in vs {
                     if let Err(error) = v {
-                        return Err(Error::IntersectionError {
-                            span,
-                            error: box error,
-                        });
+                        return Err(Error::IntersectionError { span, error: box error });
                     }
                 }
 
@@ -709,8 +689,7 @@ impl Analyzer<'_, '_> {
                 match kind {
                     TsKeywordTypeKind::TsStringKeyword => match *rhs {
                         Type::Lit(RTsLitType {
-                            lit: RTsLit::Str(..),
-                            ..
+                            lit: RTsLit::Str(..), ..
                         }) => return Ok(()),
                         Type::Lit(..) => fail!(),
                         _ => {}
@@ -747,8 +726,7 @@ impl Analyzer<'_, '_> {
 
                     TsKeywordTypeKind::TsBooleanKeyword => match *rhs {
                         Type::Lit(RTsLitType {
-                            lit: RTsLit::Bool(..),
-                            ..
+                            lit: RTsLit::Bool(..), ..
                         }) => return Ok(()),
                         Type::Lit(..) => fail!(),
                         _ => return Ok(()),
@@ -770,9 +748,7 @@ impl Analyzer<'_, '_> {
                             | Type::Interface(..)
                             | Type::Module(..)
                             | Type::EnumVariant(..) => fail!(),
-                            Type::Function(..) => {
-                                return Err(Error::CannotAssignToNonVariable { span: rhs.span() })
-                            }
+                            Type::Function(..) => return Err(Error::CannotAssignToNonVariable { span: rhs.span() }),
                             _ => {}
                         }
                     }
@@ -825,26 +801,18 @@ impl Analyzer<'_, '_> {
                 }
             },
 
-            Type::This(RTsThisType { span }) => {
-                return Err(Error::CannotAssingToThis { span: *span })
-            }
+            Type::This(RTsThisType { span }) => return Err(Error::CannotAssingToThis { span: *span }),
 
             Type::Interface(Interface {
-                ref body,
-                ref extends,
-                ..
+                ref body, ref extends, ..
             }) => {
                 self.assign_to_type_elements(opts, to.span(), &body, rhs)?;
 
                 // TODO: Handle extends
 
                 for parent in extends {
-                    let parent = self.type_of_ts_entity_name(
-                        span,
-                        self.ctx.module_id,
-                        &parent.expr,
-                        parent.type_args.clone(),
-                    )?;
+                    let parent =
+                        self.type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr, parent.type_args.clone())?;
 
                     self.assign(&parent, &rhs, span)?;
                 }
@@ -866,9 +834,7 @@ impl Analyzer<'_, '_> {
 
                     // Extra check to handle "has_escape"
                     match (lit, r_lit) {
-                        (&RTsLit::Str(ref l), &RTsLit::Str(ref r)) if l.value == r.value => {
-                            return Ok(())
-                        }
+                        (&RTsLit::Str(ref l), &RTsLit::Str(ref r)) if l.value == r.value => return Ok(()),
                         _ => {}
                     }
 
@@ -905,8 +871,7 @@ impl Analyzer<'_, '_> {
                 //
                 match *rhs.normalize() {
                     Type::Tuple(Tuple {
-                        elems: ref rhs_elems,
-                        ..
+                        elems: ref rhs_elems, ..
                     }) => {
                         if elems.len() < rhs_elems.len() {
                             fail!();
@@ -961,17 +926,12 @@ impl Analyzer<'_, '_> {
             Type::ClassInstance(ClassInstance { ty: ref l_ty, .. }) => match *rhs.normalize() {
                 Type::Keyword(..) | Type::TypeLit(..) | Type::Lit(..) => fail!(),
 
-                Type::ClassInstance(ClassInstance { ty: ref r_ty, .. }) => {
-                    return self.assign_inner(l_ty, &r_ty, opts)
-                }
+                Type::ClassInstance(ClassInstance { ty: ref r_ty, .. }) => return self.assign_inner(l_ty, &r_ty, opts),
                 _ => {}
             },
 
             Type::Constructor(ref lc) => match *rhs.normalize() {
-                Type::Lit(..)
-                | Type::Class(ty::Class {
-                    is_abstract: true, ..
-                }) => fail!(),
+                Type::Lit(..) | Type::Class(ty::Class { is_abstract: true, .. }) => fail!(),
                 _ => {}
             },
 
@@ -983,12 +943,7 @@ impl Analyzer<'_, '_> {
         }
 
         // TODO: Implement full type checker
-        slog::error!(
-            self.logger,
-            "unimplemented: assign: \nLeft: {:?}\nRight: {:?}",
-            to,
-            rhs
-        );
+        slog::error!(self.logger, "unimplemented: assign: \nLeft: {:?}\nRight: {:?}", to, rhs);
         Ok(())
     }
 
@@ -1065,8 +1020,7 @@ impl Analyzer<'_, '_> {
             .iter()
             .filter_map(|e| match e {
                 TypeElement::Index(ref i)
-                    if i.params.len() == 1
-                        && i.params[0].ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword) =>
+                    if i.params.len() == 1 && i.params[0].ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword) =>
                 {
                     Some(i.type_ann.as_ref())
                 }
@@ -1128,12 +1082,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     for (i, m) in lhs.into_iter().enumerate() {
-                        let res = self.assign_type_elements_to_type_element(
-                            opts,
-                            &mut missing_fields,
-                            m,
-                            $rhs,
-                        );
+                        let res = self.assign_type_elements_to_type_element(opts, &mut missing_fields, m, $rhs);
 
                         let success = match res {
                             Ok(()) => true,
@@ -1144,10 +1093,7 @@ impl Analyzer<'_, '_> {
                             }
                         };
                         if success && $rhs.len() > i {
-                            if let Some(pos) = unhandled_rhs
-                                .iter()
-                                .position(|span| *span == $rhs[i].span())
-                            {
+                            if let Some(pos) = unhandled_rhs.iter().position(|span| *span == $rhs[i].span()) {
                                 unhandled_rhs.remove(pos);
                             } else {
                                 // panic!("it should be removable")
@@ -1159,8 +1105,7 @@ impl Analyzer<'_, '_> {
 
             match rhs.normalize() {
                 Type::TypeLit(TypeLit {
-                    members: rhs_members,
-                    ..
+                    members: rhs_members, ..
                 }) => {
                     handle_type_elements!(&*rhs_members);
                 }
@@ -1268,12 +1213,12 @@ impl Analyzer<'_, '_> {
                                 }
                             }
                         }
-                        TypeElement::Method(_) => unimplemented!(
-                            "assign: interface {{ method() => ret; }} = class Foo {{}}"
-                        ),
-                        TypeElement::Index(_) => unimplemented!(
-                            "assign: interface {{ [key: string]: Type; }} = class Foo {{}}"
-                        ),
+                        TypeElement::Method(_) => {
+                            unimplemented!("assign: interface {{ method() => ret; }} = class Foo {{}}")
+                        }
+                        TypeElement::Index(_) => {
+                            unimplemented!("assign: interface {{ [key: string]: Type; }} = class Foo {{}}")
+                        }
                     }
 
                     // TODO: missing fields
@@ -1296,8 +1241,7 @@ impl Analyzer<'_, '_> {
                                 match rm {
                                     ty::ClassMember::Property(ref rp) => {
                                         match rp.accessibility {
-                                            Some(Accessibility::Private)
-                                            | Some(Accessibility::Protected) => {
+                                            Some(Accessibility::Private) | Some(Accessibility::Protected) => {
                                                 errors.push(Error::AccessibilityDiffers { span });
                                             }
                                             _ => {}
@@ -1316,9 +1260,9 @@ impl Analyzer<'_, '_> {
                         TypeElement::Method(_) => {
                             unimplemented!("assign: interface {{ method() => ret; }} = new Foo()")
                         }
-                        TypeElement::Index(_) => unimplemented!(
-                            "assign: interface {{ [key: string]: Type; }} = new Foo()"
-                        ),
+                        TypeElement::Index(_) => {
+                            unimplemented!("assign: interface {{ [key: string]: Type; }} = new Foo()")
+                        }
                     }
                     // TOOD: missing fields
                 }
@@ -1388,12 +1332,8 @@ impl Analyzer<'_, '_> {
                             TypeElement::Method(ref lm) => match rm {
                                 TypeElement::Method(ref rm) => {
                                     //
-                                    if count_required_params(&lm.params)
-                                        > count_required_params(&rm.params)
-                                    {
-                                        unimplemented!(
-                                            "assignment: method property in type literal"
-                                        )
+                                    if count_required_params(&lm.params) > count_required_params(&rm.params) {
+                                        unimplemented!("assignment: method property in type literal")
                                     }
 
                                     if lm.key.eq_ignore_span(&rm.key) {
@@ -1540,10 +1480,7 @@ impl Analyzer<'_, '_> {
                         _ => {
                             return Err(Error::Unimplemented {
                                 span,
-                                msg: format!(
-                                    "Assignment to mapped type: type element - {:?}",
-                                    member
-                                ),
+                                msg: format!("Assignment to mapped type: type element - {:?}", member),
                             })
                         }
                     }

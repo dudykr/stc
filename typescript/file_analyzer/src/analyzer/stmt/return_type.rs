@@ -25,8 +25,7 @@ use stc_ts_errors::Error;
 use stc_ts_types::Key;
 use stc_ts_types::ModuleId;
 use stc_ts_types::{
-    IndexedAccessType, MethodSignature, Operator, PropertySignature, Ref, TypeElement,
-    TypeParamInstantiation,
+    IndexedAccessType, MethodSignature, Operator, PropertySignature, Ref, TypeElement, TypeParamInstantiation,
 };
 use std::{mem::take, ops::AddAssign};
 use swc_common::TypeEq;
@@ -382,10 +381,7 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                                         }
 
                                         match key {
-                                            Key::Normal {
-                                                span: i_span,
-                                                sym: key,
-                                            } => {
+                                            Key::Normal { span: i_span, sym: key } => {
                                                 let ty = box Type::Lit(RTsLitType {
                                                     node_id: NodeId::invalid(),
                                                     span: i_span,
@@ -397,10 +393,7 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                                                     }),
                                                 });
 
-                                                if types
-                                                    .iter()
-                                                    .all(|previous| !previous.type_eq(&ty))
-                                                {
+                                                if types.iter().all(|previous| !previous.type_eq(&ty)) {
                                                     types.push(ty);
                                                 }
                                             }

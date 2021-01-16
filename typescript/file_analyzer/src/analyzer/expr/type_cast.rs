@@ -1,9 +1,6 @@
 use super::{super::Analyzer, TypeOfMode};
 use crate::analyzer::util::ResultExt;
-use crate::{
-    analyzer::util::instantiate_class, ty::Type, validator, validator::ValidateWith,
-    ValidationResult,
-};
+use crate::{analyzer::util::instantiate_class, ty::Type, validator, validator::ValidateWith, ValidationResult};
 use stc_ts_ast_rnode::RTsAsExpr;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
@@ -26,9 +23,7 @@ impl Analyzer<'_, '_> {
         type_ann: Option<&Type>,
     ) -> ValidationResult {
         // We don't apply type annotation because it can corrupt type checking.
-        let orig_ty = e
-            .expr
-            .validate_with_args(self, (mode, type_args, type_ann))?;
+        let orig_ty = e.expr.validate_with_args(self, (mode, type_args, type_ann))?;
 
         self.validate_type_cast(e.span, orig_ty, &e.type_ann)
     }
@@ -48,9 +43,7 @@ impl Analyzer<'_, '_> {
         }
 
         // We don't apply type annotation because it can corrupt type checking.
-        let orig_ty = e
-            .expr
-            .validate_with_args(self, (mode, type_args, type_ann))?;
+        let orig_ty = e.expr.validate_with_args(self, (mode, type_args, type_ann))?;
 
         self.validate_type_cast(e.span, orig_ty, &e.type_ann)
     }
@@ -70,12 +63,7 @@ impl Analyzer<'_, '_> {
     /// ```
     ///
     /// results in error.
-    fn validate_type_cast(
-        &mut self,
-        span: Span,
-        orig_ty: Box<Type>,
-        to: &RTsType,
-    ) -> ValidationResult {
+    fn validate_type_cast(&mut self, span: Span, orig_ty: Box<Type>, to: &RTsType) -> ValidationResult {
         let orig_ty = self.expand_fully(span, orig_ty, true)?;
 
         let casted_ty = to.validate_with(self)?;
@@ -91,12 +79,7 @@ impl Analyzer<'_, '_> {
         Ok(casted_ty)
     }
 
-    fn validate_type_cast_inner(
-        &mut self,
-        span: Span,
-        orig: &Type,
-        casted: &Type,
-    ) -> ValidationResult<()> {
+    fn validate_type_cast_inner(&mut self, span: Span, orig: &Type, casted: &Type) -> ValidationResult<()> {
         match orig {
             Type::Union(ref rt) => {
                 let castable = rt.types.iter().any(|v| casted.type_eq(v));
@@ -132,11 +115,7 @@ impl Analyzer<'_, '_> {
                             // }
                             let right_element = &rt.elems[i];
 
-                            let res = self.validate_type_cast_inner(
-                                span,
-                                &right_element.ty,
-                                &left_element.ty,
-                            );
+                            let res = self.validate_type_cast_inner(span, &right_element.ty, &left_element.ty);
 
                             if res.is_err() {
                                 all_castable = false;
@@ -205,10 +184,7 @@ impl Analyzer<'_, '_> {
 
     fn check_for_overlap(&mut self, l: &Type, r: &Type) -> ValidationResult<bool> {
         // Overlaps with all types.
-        if l.is_any()
-            || l.is_kwd(TsKeywordTypeKind::TsNullKeyword)
-            || l.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
-        {
+        if l.is_any() || l.is_kwd(TsKeywordTypeKind::TsNullKeyword) || l.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
             return Ok(true);
         }
 
@@ -240,8 +216,7 @@ impl Analyzer<'_, '_> {
                     ..
                 }),
                 Type::Lit(RTsLitType {
-                    lit: RTsLit::Str(..),
-                    ..
+                    lit: RTsLit::Str(..), ..
                 }),
             ) => return Ok(true),
             (
@@ -250,8 +225,7 @@ impl Analyzer<'_, '_> {
                     ..
                 }),
                 Type::Lit(RTsLitType {
-                    lit: RTsLit::Bool(..),
-                    ..
+                    lit: RTsLit::Bool(..), ..
                 }),
             ) => return Ok(true),
             (

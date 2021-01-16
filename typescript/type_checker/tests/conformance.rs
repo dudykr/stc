@@ -74,12 +74,8 @@ fn is_ignored(path: &Path) -> bool {
             .collect()
     });
 
-    !PASS
-        .iter()
-        .any(|line| path.to_string_lossy().contains(line))
-        || IGNORED
-            .iter()
-            .any(|line| path.to_string_lossy().contains(line))
+    !PASS.iter().any(|line| path.to_string_lossy().contains(line))
+        || IGNORED.iter().any(|line| path.to_string_lossy().contains(line))
 }
 
 #[test]
@@ -379,9 +375,7 @@ fn do_test(treat_error_as_bug: bool, file_name: &Path) -> Result<(), StdErr> {
         // If we failed, we only emit errors which has wrong line.
 
         for (d, line_col) in diagnostics.into_iter().zip(full_actual_errors.clone()) {
-            if success
-                || env::var("PRINT_ALL").unwrap_or(String::from("")) == "1"
-                || actual_errors.contains(&line_col)
+            if success || env::var("PRINT_ALL").unwrap_or(String::from("")) == "1" || actual_errors.contains(&line_col)
             {
                 DiagnosticBuilder::new_diagnostic(&handler, d).emit();
             }
@@ -400,9 +394,8 @@ fn do_test(treat_error_as_bug: bool, file_name: &Path) -> Result<(), StdErr> {
     if !success {
         panic!(
             "\n============================================================\n{:?}
-============================================================\n{} unmatched errors out of {} \
-             errors. Got {} extra errors.\nWanted: {:?}\nUnwanted: {:?}\n\nAll required errors: \
-             {:?}\nAll actual errors: {:?}",
+============================================================\n{} unmatched errors out of {} errors. Got {} extra \
+             errors.\nWanted: {:?}\nUnwanted: {:?}\n\nAll required errors: {:?}\nAll actual errors: {:?}",
             err,
             expected_errors.len(),
             full_ref_err_cnt,

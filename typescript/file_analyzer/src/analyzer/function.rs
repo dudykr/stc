@@ -105,9 +105,12 @@ impl Analyzer<'_, '_> {
             let is_async = f.is_async;
             let is_generator = f.is_generator;
 
-            let inferred_return_type = try_opt!(f.body.as_ref().map(
-                |body| child.visit_stmts_for_return(span, is_async, is_generator, &body.stmts)
-            ));
+            let inferred_return_type = try_opt!(f.body.as_ref().map(|body| child.visit_stmts_for_return(
+                span,
+                is_async,
+                is_generator,
+                &body.stmts
+            )));
 
             let inferred_return_type = match inferred_return_type {
                 Some(Some(inferred_return_type)) => {
@@ -172,8 +175,7 @@ impl Analyzer<'_, '_> {
             if f.return_type.is_none() {
                 if let Some(m) = &mut child.mutations {
                     if m.for_fns.entry(f.node_id).or_default().ret_ty.is_none() {
-                        m.for_fns.entry(f.node_id).or_default().ret_ty =
-                            Some(inferred_return_type.clone())
+                        m.for_fns.entry(f.node_id).or_default().ret_ty = Some(inferred_return_type.clone())
                     }
                 }
             }
@@ -197,12 +199,7 @@ impl Analyzer<'_, '_> {
     /// If the referred type has default type parameter, we have to include it
     /// in function type of output (.d.ts)
     fn qualify_ref_type_args(&mut self, span: Span, mut ty: Ref) -> ValidationResult<Ref> {
-        let actual_ty = self.type_of_ts_entity_name(
-            span,
-            self.ctx.module_id,
-            &ty.type_name,
-            ty.type_args.clone(),
-        )?;
+        let actual_ty = self.type_of_ts_entity_name(span, self.ctx.module_id, &ty.type_name, ty.type_args.clone())?;
 
         let type_params = match actual_ty.foldable() {
             Type::Alias(Alias {

@@ -37,11 +37,7 @@ fn visualize(file_name: PathBuf) {
         .print_errors(|cm, handler| -> Result<(), _> {
             let handler = Arc::new(handler);
             let fm = cm.load_file(&file_name).unwrap();
-            let env = Env::simple(
-                Default::default(),
-                JscTarget::Es2020,
-                &Lib::load("es2019.full"),
-            );
+            let env = Env::simple(Default::default(), JscTarget::Es2020, &Lib::load("es2019.full"));
             let stable_env = env.shared().clone();
             let generator = module_id::Generator::default();
             let path = Arc::new(file_name.clone());
@@ -94,6 +90,5 @@ fn visualize(file_name: PathBuf) {
         })
         .unwrap_err();
 
-    res.compare_to_file(&file_name.with_extension("stdout"))
-        .unwrap();
+    res.compare_to_file(&file_name.with_extension("stdout")).unwrap();
 }

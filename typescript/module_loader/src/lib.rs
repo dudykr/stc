@@ -140,9 +140,7 @@ where
         let (_, id) = self.id_generator.generate(path);
         self.paths.insert(id, path.clone());
 
-        self.loaded
-            .insert(id, loaded.module)
-            .expect_none("duplicate?");
+        self.loaded.insert(id, loaded.module).expect_none("duplicate?");
 
         let dep_module_ids = loaded
             .deps
@@ -161,8 +159,7 @@ where
         for dep_id in dep_module_ids {
             deps.graph.add_edge(id, dep_id, ());
 
-            let cycles =
-                all_simple_paths(&deps.graph, dep_id, id, 0, None).collect::<Vec<Vec<ModuleId>>>();
+            let cycles = all_simple_paths(&deps.graph, dep_id, id, 0, None).collect::<Vec<Vec<ModuleId>>>();
 
             for path in cycles {
                 let set = deps.circular.iter_mut().find(|set| {

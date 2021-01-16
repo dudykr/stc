@@ -76,8 +76,7 @@ impl Analyzer<'_, '_> {
 
             match res {
                 Ok(info) => {
-                    self.insert_import_info(ctxt, info)
-                        .report(&mut self.storage);
+                    self.insert_import_info(ctxt, info).report(&mut self.storage);
                 }
                 Err(err) => self.storage.report(err),
             }
@@ -101,8 +100,7 @@ impl Analyzer<'_, '_> {
                 if orig.sym() == i {
                     for ty in types {
                         did_work = true;
-                        self.storage
-                            .store_private_type(ctxt, id.clone(), ty.clone());
+                        self.storage.store_private_type(ctxt, id.clone(), ty.clone());
                     }
                 }
             }
@@ -127,13 +125,7 @@ impl Analyzer<'_, '_> {
                     //
                     match &named.imported {
                         Some(imported) => {
-                            self.handle_import(
-                                named.span,
-                                ctxt,
-                                target,
-                                Id::from(imported),
-                                Id::from(&named.local),
-                            );
+                            self.handle_import(named.span, ctxt, target, Id::from(imported), Id::from(&named.local));
                         }
                         None => {
                             self.handle_import(

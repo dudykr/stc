@@ -164,12 +164,7 @@ impl TypeStore for Single<'_> {
     fn store_private_type(&mut self, ctxt: ModuleId, id: Id, ty: Box<Type>) {
         debug_assert_eq!(ctxt, self.id);
 
-        self.info
-            .exports
-            .private_types
-            .entry(id)
-            .or_default()
-            .push(ty);
+        self.info.exports.private_types.entry(id).or_default().push(ty);
     }
 
     fn store_private_var(&mut self, ctxt: ModuleId, id: Id, ty: Box<Type>) {
@@ -372,13 +367,7 @@ impl TypeStore for Group<'_> {
     }
 
     fn reexport_type(&mut self, _span: Span, ctxt: ModuleId, id: JsWord, ty: Box<Type>) {
-        self.info
-            .entry(ctxt)
-            .or_default()
-            .types
-            .entry(id)
-            .or_default()
-            .push(ty);
+        self.info.entry(ctxt).or_default().types.entry(id).or_default().push(ty);
     }
 
     fn reexport_var(&mut self, _span: Span, ctxt: ModuleId, id: JsWord, ty: Box<Type>) {
@@ -412,10 +401,7 @@ impl Mode for Group<'_> {
             }
         }
 
-        unreachable!(
-            "failed to get path by module id({:?}):  {:?}",
-            id, self.files
-        )
+        unreachable!("failed to get path by module id({:?}):  {:?}", id, self.files)
     }
 
     fn subscope(&self) -> Storage {
@@ -464,8 +450,7 @@ impl TypeStore for Builtin {
         match self.vars.entry(id.sym().clone()) {
             Entry::Occupied(entry) => {
                 let (id, prev_ty) = entry.remove_entry();
-                self.vars
-                    .insert(id, Type::intersection(DUMMY_SP, vec![prev_ty, ty]));
+                self.vars.insert(id, Type::intersection(DUMMY_SP, vec![prev_ty, ty]));
             }
             Entry::Vacant(entry) => {
                 entry.insert(ty);

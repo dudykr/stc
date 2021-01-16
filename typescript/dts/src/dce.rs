@@ -58,11 +58,7 @@ impl DceForDts<'_> {
     {
         if let Some(types) = self.info.private_types.get(sym) {
             for ty in &*types {
-                debug_assert!(
-                    ty.is_clone_cheap(),
-                    "All exported types must be freezed: {:?}",
-                    ty
-                );
+                debug_assert!(ty.is_clone_cheap(), "All exported types must be freezed: {:?}", ty);
             }
 
             types.iter().filter_map(|ty| pred(ty.normalize())).next()
@@ -107,11 +103,10 @@ impl VisitMut<RVarDecl> for DceForDts<'_> {
             node.decls.iter_mut().for_each(|node| match node.init {
                 Some(box RExpr::Lit(RLit::Num(..))) => {
                     node.init = None;
-                    node.name
-                        .set_ty(Some(box RTsType::TsKeywordType(RTsKeywordType {
-                            span: DUMMY_SP,
-                            kind: TsKeywordTypeKind::TsNumberKeyword,
-                        })))
+                    node.name.set_ty(Some(box RTsType::TsKeywordType(RTsKeywordType {
+                        span: DUMMY_SP,
+                        kind: TsKeywordTypeKind::TsNumberKeyword,
+                    })))
                 }
                 _ => {}
             });
@@ -190,9 +185,7 @@ impl VisitMut<RFnDecl> for DceForDts<'_> {
         }
 
         node.function.return_type = self.get_mapped(&node.ident.clone().into(), |ty| match ty {
-            Type::Function(stc_ts_types::Function { ref ret_ty, .. }) => {
-                Some(RTsTypeAnn::from((**ret_ty).clone()))
-            }
+            Type::Function(stc_ts_types::Function { ref ret_ty, .. }) => Some(RTsTypeAnn::from((**ret_ty).clone())),
             _ => None,
         });
     }

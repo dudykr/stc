@@ -1,12 +1,10 @@
-use super::{
-    control_flow::CondFacts, expr::TypeOfMode, stmt::return_type::ReturnValues, Analyzer, Ctx,
-};
+use super::{control_flow::CondFacts, expr::TypeOfMode, stmt::return_type::ReturnValues, Analyzer, Ctx};
 use crate::analyzer::ResultExt;
 use crate::{
     loader::ModuleInfo,
     ty::{
-        self, Alias, EnumVariant, IndexSignature, Interface, PropertySignature, Ref, Tuple, Type,
-        TypeElement, TypeExt, TypeLit, Union,
+        self, Alias, EnumVariant, IndexSignature, Interface, PropertySignature, Ref, Tuple, Type, TypeElement, TypeExt,
+        TypeLit, Union,
     },
     type_facts::TypeFacts,
     util::{contains_infer_type, contains_mark, MarkFinder, RemoveTypes},
@@ -43,8 +41,8 @@ use stc_ts_types::Array;
 use stc_ts_types::Key;
 use stc_ts_types::TypeParamInstantiation;
 use stc_ts_types::{
-    Conditional, FnParam, Id, IndexedAccessType, Mapped, ModuleId, Operator, QueryExpr, QueryType,
-    StaticThis, TupleElement, TypeParam,
+    Conditional, FnParam, Id, IndexedAccessType, Mapped, ModuleId, Operator, QueryExpr, QueryType, StaticThis,
+    TupleElement, TypeParam,
 };
 use stc_ts_utils::OptionExt;
 use stc_ts_utils::PatExt;
@@ -144,15 +142,11 @@ impl Scope<'_> {
         }
 
         match self.kind {
-            ScopeKind::Fn | ScopeKind::Method | ScopeKind::Class | ScopeKind::ObjectLit => {
-                return true
-            }
+            ScopeKind::Fn | ScopeKind::Method | ScopeKind::Class | ScopeKind::ObjectLit => return true,
             _ => {}
         }
 
-        self.parent
-            .map(|scope| scope.is_this_defined())
-            .unwrap_or(false)
+        self.parent.map(|scope| scope.is_this_defined()).unwrap_or(false)
     }
 
     pub fn is_root(&self) -> bool {
@@ -328,12 +322,7 @@ impl Scope<'_> {
 
 impl Analyzer<'_, '_> {
     /// Overrides a variable. Used for removing lazily-typed stuffs.
-    pub(super) fn override_var(
-        &mut self,
-        kind: VarDeclKind,
-        name: Id,
-        ty: Box<Type>,
-    ) -> Result<(), Error> {
+    pub(super) fn override_var(&mut self, kind: VarDeclKind, name: Id, ty: Box<Type>) -> Result<(), Error> {
         self.declare_var(ty.span(), kind, name, Some(ty), true, true)?;
 
         Ok(())
@@ -367,12 +356,7 @@ impl Analyzer<'_, '_> {
     ///  - `expand_union` should be true if you are going to use it in
     ///    assignment, and false if you are going to use it in user-visible
     ///    stuffs (e.g. type annotation for .d.ts file)
-    pub(super) fn expand_fully(
-        &mut self,
-        span: Span,
-        ty: Box<Type>,
-        expand_union: bool,
-    ) -> ValidationResult {
+    pub(super) fn expand_fully(&mut self, span: Span, ty: Box<Type>, expand_union: bool) -> ValidationResult {
         if self.is_builtin {
             return Ok(ty);
         }
@@ -392,11 +376,7 @@ impl Analyzer<'_, '_> {
         Ok(ty)
     }
 
-    pub(super) fn expand_top_ref<'a>(
-        &mut self,
-        span: Span,
-        ty: Cow<'a, Type>,
-    ) -> ValidationResult<Cow<'a, Type>> {
+    pub(super) fn expand_top_ref<'a>(&mut self, span: Span, ty: Cow<'a, Type>) -> ValidationResult<Cow<'a, Type>> {
         if !ty.normalize().is_ref_type() {
             return Ok(ty);
         }
@@ -448,8 +428,7 @@ impl Analyzer<'_, '_> {
                 _ => false,
             }
         {
-            self.storage
-                .store_private_type(ModuleId::builtin(), name, ty.cheap());
+            self.storage.store_private_type(ModuleId::builtin(), name, ty.cheap());
         } else {
             slog::debug!(self.logger, "register_type({})", name);
             let ty = ty.cheap();
@@ -469,21 +448,11 @@ impl Analyzer<'_, '_> {
         self.declare_vars_inner_with_ty(kind, pat, false, None)
     }
 
-    pub fn declare_vars_with_ty(
-        &mut self,
-        kind: VarDeclKind,
-        pat: &RPat,
-        ty: Option<Box<Type>>,
-    ) -> Result<(), Error> {
+    pub fn declare_vars_with_ty(&mut self, kind: VarDeclKind, pat: &RPat, ty: Option<Box<Type>>) -> Result<(), Error> {
         self.declare_vars_inner_with_ty(kind, pat, false, ty)
     }
 
-    pub(super) fn declare_vars_inner(
-        &mut self,
-        kind: VarDeclKind,
-        pat: &RPat,
-        export: bool,
-    ) -> Result<(), Error> {
+    pub(super) fn declare_vars_inner(&mut self, kind: VarDeclKind, pat: &RPat, export: bool) -> Result<(), Error> {
         self.declare_vars_inner_with_ty(kind, pat, export, None)
     }
 
@@ -528,11 +497,8 @@ impl Analyzer<'_, '_> {
                     kind == VarDeclKind::Var,
                 )?;
                 if export {
-                    self.storage.store_private_var(
-                        self.ctx.module_id,
-                        name.clone(),
-                        ty.unwrap_or(Type::any(i.span)),
-                    );
+                    self.storage
+                        .store_private_var(self.ctx.module_id, name.clone(), ty.unwrap_or(Type::any(i.span)));
                     self.storage.export_var(span, self.ctx.module_id, name);
                 }
                 return Ok(());
@@ -585,10 +551,7 @@ impl Analyzer<'_, '_> {
                             box Type::Ref(Ref {
                                 span: *span,
                                 ctxt,
-                                type_name: RTsEntityName::Ident(RIdent::new(
-                                    "Iterable".into(),
-                                    DUMMY_SP,
-                                )),
+                                type_name: RTsEntityName::Ident(RIdent::new("Iterable".into(), DUMMY_SP)),
                                 type_args: Some(TypeParamInstantiation {
                                     span: *span,
                                     params: vec![box Type::Keyword(RTsKeywordType {
@@ -622,12 +585,11 @@ impl Analyzer<'_, '_> {
             }) => {
                 if type_ann.is_none() {
                     if let Some(m) = &mut self.mutations {
-                        m.for_pats.entry(*node_id).or_default().ty =
-                            Some(box Type::TypeLit(TypeLit {
-                                span,
-                                // TODO: Fill it
-                                members: vec![],
-                            }));
+                        m.for_pats.entry(*node_id).or_default().ty = Some(box Type::TypeLit(TypeLit {
+                            span,
+                            // TODO: Fill it
+                            members: vec![],
+                        }));
                     }
                 }
                 for prop in props {
@@ -714,11 +676,7 @@ impl Analyzer<'_, '_> {
         let mut scope = Some(&self.scope);
         while let Some(s) = scope {
             if let Some(ref v) = s.facts.vars.get(&Name::from(name)) {
-                slog::debug!(
-                    self.logger,
-                    "Scope.find_var_type({}): Handled from facts",
-                    name
-                );
+                slog::debug!(self.logger, "Scope.find_var_type({}): Handled from facts", name);
                 return Some(Cow::Borrowed(v));
             }
 
@@ -777,11 +735,7 @@ impl Analyzer<'_, '_> {
         None
     }
 
-    pub fn find_type(
-        &self,
-        target: ModuleId,
-        name: &Id,
-    ) -> ValidationResult<Option<ItemRef<Type>>> {
+    pub fn find_type(&self, target: ModuleId, name: &Id) -> ValidationResult<Option<ItemRef<Type>>> {
         if target == self.ctx.module_id || target.is_builtin() {
             if let Some(v) = self.find_local_type(name) {
                 return Ok(Some(v));
@@ -829,12 +783,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        slog::debug!(
-            self.logger,
-            "({}) Analyzer.find_type(`{}`)",
-            self.scope.depth(),
-            name
-        );
+        slog::debug!(self.logger, "({}) Analyzer.find_type(`{}`)", self.scope.depth(), name);
 
         if !self.is_builtin {
             if let Ok(ty) = self.env.get_global_type(DUMMY_SP, name.sym()) {
@@ -850,19 +799,12 @@ impl Analyzer<'_, '_> {
             return Some(ty);
         }
 
-        if let Some(ty) = self
-            .storage
-            .get_local_type(self.ctx.module_id, name.clone())
-        {
+        if let Some(ty) = self.storage.get_local_type(self.ctx.module_id, name.clone()) {
             return Some(ItemRef::Owned(vec![ty].into_iter()));
         }
 
         if !self.is_builtin {
-            slog::debug!(
-                self.logger,
-                "Scope.find_type: failed to find type '{}'",
-                name
-            );
+            slog::debug!(self.logger, "Scope.find_type: failed to find type '{}'", name);
         }
 
         None
@@ -907,8 +849,7 @@ impl Analyzer<'_, '_> {
 
         if self.scope.is_root() || self.scope.is_module() {
             if let Some(ty) = ty.clone() {
-                self.storage
-                    .store_private_var(self.ctx.module_id, name.clone(), ty)
+                self.storage.store_private_var(self.ctx.module_id, name.clone(), ty)
             }
         }
 
@@ -950,8 +891,7 @@ impl Analyzer<'_, '_> {
 
                                     _ => {
                                         let ty = self.expand_fully(span, ty.clone(), true)?;
-                                        let var_ty =
-                                            self.expand_fully(span, generalized_var_ty, true)?;
+                                        let var_ty = self.expand_fully(span, generalized_var_ty, true)?;
 
                                         let res = self.assign(&ty, &var_ty, span);
 
@@ -1002,12 +942,7 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    pub fn declare_complex_vars(
-        &mut self,
-        kind: VarDeclKind,
-        pat: &RPat,
-        ty: Box<Type>,
-    ) -> ValidationResult<()> {
+    pub fn declare_complex_vars(&mut self, kind: VarDeclKind, pat: &RPat, ty: Box<Type>) -> ValidationResult<()> {
         let span = pat.span();
 
         match pat {
@@ -1048,11 +983,7 @@ impl Analyzer<'_, '_> {
                         for (elem, tuple_element) in elems.into_iter().zip(tuple_elements) {
                             match *elem {
                                 Some(ref elem) => {
-                                    self.declare_complex_vars(
-                                        kind,
-                                        elem,
-                                        tuple_element.ty.clone(),
-                                    )?;
+                                    self.declare_complex_vars(kind, elem, tuple_element.ty.clone())?;
                                 }
                                 None => {
                                     // Skip
@@ -1085,8 +1016,7 @@ impl Analyzer<'_, '_> {
                         for ty in types.iter() {
                             match *ty.normalize() {
                                 Type::Tuple(Tuple {
-                                    elems: ref elem_types,
-                                    ..
+                                    elems: ref elem_types, ..
                                 }) => {
                                     buf.push(elem_types);
                                 }
@@ -1100,23 +1030,17 @@ impl Analyzer<'_, '_> {
                         }
 
                         for (elem, tuple_elements) in
-                            elems.into_iter().zip(buf.into_iter().chain(repeat(&vec![
-                                TupleElement {
-                                    span: DUMMY_SP,
-                                    label: None,
-                                    ty: Type::undefined(span),
-                                },
-                            ])))
+                            elems.into_iter().zip(buf.into_iter().chain(repeat(&vec![TupleElement {
+                                span: DUMMY_SP,
+                                label: None,
+                                ty: Type::undefined(span),
+                            }])))
                         {
                             match *elem {
                                 Some(ref elem) => {
                                     let ty = box Union {
                                         span,
-                                        types: tuple_elements
-                                            .into_iter()
-                                            .map(|element| &element.ty)
-                                            .cloned()
-                                            .collect(),
+                                        types: tuple_elements.into_iter().map(|element| &element.ty).cloned().collect(),
                                     }
                                     .into();
                                     self.declare_complex_vars(kind, elem, ty)?;
@@ -1187,11 +1111,7 @@ impl Analyzer<'_, '_> {
                 ) -> ValidationResult<()> {
                     for p in props.iter() {
                         match p {
-                            RObjectPatProp::KeyValue(RKeyValuePatProp {
-                                ref key,
-                                ref value,
-                                ..
-                            }) => {
+                            RObjectPatProp::KeyValue(RKeyValuePatProp { ref key, ref value, .. }) => {
                                 if let Some(ty) = find(&members, key) {
                                     a.declare_complex_vars(kind, value, ty)?;
                                     return Ok(());
@@ -1242,23 +1162,13 @@ impl Analyzer<'_, '_> {
                         for p in props.iter() {
                             match p {
                                 RObjectPatProp::KeyValue(ref kv) => {
-                                    self.declare_complex_vars(
-                                        kind,
-                                        &kv.value,
-                                        Type::any(kv.span()),
-                                    )?;
+                                    self.declare_complex_vars(kind, &kv.value, Type::any(kv.span()))?;
                                 }
 
-                                RObjectPatProp::Assign(RAssignPatProp {
-                                    span, key, value, ..
-                                }) => {
+                                RObjectPatProp::Assign(RAssignPatProp { span, key, value, .. }) => {
                                     let ty = value.validate_with_default(self).try_opt()?;
 
-                                    self.declare_complex_vars(
-                                        kind,
-                                        &RPat::Ident(key.clone()),
-                                        Type::any(*span),
-                                    )?;
+                                    self.declare_complex_vars(kind, &RPat::Ident(key.clone()), Type::any(*span))?;
                                 }
 
                                 _ => unimplemented!("handle_elems({:#?})", p),
@@ -1311,12 +1221,7 @@ impl Analyzer<'_, '_> {
                                 RObjectPatProp::KeyValue(prop) => {
                                     let mut key = prop.key.validate_with(self)?;
 
-                                    let ty = self.access_property(
-                                        span,
-                                        ty.clone(),
-                                        &key,
-                                        TypeOfMode::RValue,
-                                    )?;
+                                    let ty = self.access_property(span, ty.clone(), &key, TypeOfMode::RValue)?;
 
                                     self.declare_complex_vars(kind, &prop.value, ty)?;
                                 }
@@ -1326,23 +1231,14 @@ impl Analyzer<'_, '_> {
                                         sym: prop.key.sym.clone(),
                                     };
 
-                                    let ty = self.access_property(
-                                        span,
-                                        ty.clone(),
-                                        &key,
-                                        TypeOfMode::RValue,
-                                    )?;
+                                    let ty = self.access_property(span, ty.clone(), &key, TypeOfMode::RValue)?;
 
                                     match prop.value {
                                         Some(_) => {
                                             unimplemented!("pattern with default where rhs is this")
                                         }
                                         None => {
-                                            self.declare_complex_vars(
-                                                kind,
-                                                &RPat::Ident(prop.key.clone()),
-                                                ty,
-                                            )?;
+                                            self.declare_complex_vars(kind, &RPat::Ident(prop.key.clone()), ty)?;
                                         }
                                     }
                                 }
@@ -1476,11 +1372,7 @@ impl<'a> Scope<'a> {
             ScopeKind::ObjectLit => return true,
 
             ScopeKind::Class => return false,
-            ScopeKind::Call
-            | ScopeKind::Method
-            | ScopeKind::Flow
-            | ScopeKind::Block
-            | ScopeKind::Module => {}
+            ScopeKind::Call | ScopeKind::Method | ScopeKind::Flow | ScopeKind::Block | ScopeKind::Module => {}
         }
 
         match self.parent {
@@ -1517,12 +1409,7 @@ impl<'a> Scope<'a> {
         Self::new_inner(logger, None, ScopeKind::Fn, Default::default())
     }
 
-    fn new_inner(
-        logger: Logger,
-        parent: Option<&'a Scope<'a>>,
-        kind: ScopeKind,
-        facts: CondFacts,
-    ) -> Self {
+    fn new_inner(logger: Logger, parent: Option<&'a Scope<'a>>, kind: ScopeKind, facts: CondFacts) -> Self {
         Scope {
             logger,
             parent,
@@ -1750,18 +1637,13 @@ impl Expander<'_, '_, '_> {
                                         &type_params.params,
                                         &[],
                                         &[],
-                                        &Type::TypeLit(TypeLit {
-                                            span,
-                                            members: vec![],
-                                        }),
+                                        &Type::TypeLit(TypeLit { span, members: vec![] }),
                                     )?;
                                     inferred.iter_mut().for_each(|(_, ty)| {
                                         self.analyzer.allow_expansion(&mut **ty);
                                     });
 
-                                    let mut ty = *self
-                                        .analyzer
-                                        .expand_type_params(&inferred, box ty.foldable())?;
+                                    let mut ty = *self.analyzer.expand_type_params(&inferred, box ty.foldable())?;
 
                                     if is_alias {
                                         self.dejavu.insert(i.into());
@@ -1773,9 +1655,7 @@ impl Expander<'_, '_, '_> {
                                 }
 
                                 match ty.normalize() {
-                                    Type::Interface(..)
-                                        if !trying_primitive_expansion && was_top_level =>
-                                    {
+                                    Type::Interface(..) if !trying_primitive_expansion && was_top_level => {
                                         return Ok(Some(ty.clone()));
                                     }
                                     _ => {}
@@ -1914,8 +1794,7 @@ impl Fold<Type> for Expander<'_, '_, '_> {
         let trying_primitive_expansion = self.analyzer.scope.expand_triage_depth != 0;
 
         // If we are trying to expand types as primitive, we ignore config
-        let is_expansion_prevented =
-            !trying_primitive_expansion && self.analyzer.is_expansion_prevented(&ty);
+        let is_expansion_prevented = !trying_primitive_expansion && self.analyzer.is_expansion_prevented(&ty);
 
         if self.analyzer.scope.expand_triage_depth != 0 {
             self.analyzer.scope.expand_triage_depth += 1;
@@ -1978,11 +1857,7 @@ impl Fold<Type> for Expander<'_, '_, '_> {
                                 if let Some(ty) = self.analyzer.find_var_type(&id) {
                                     *cond_ty.check_type = *ty.into_owned();
                                 } else {
-                                    slog::error!(
-                                        self.analyzer.logger,
-                                        "Failed to find variable named {:?}",
-                                        id
-                                    );
+                                    slog::error!(self.analyzer.logger, "Failed to find variable named {:?}", id);
                                 }
                             }
 
@@ -2129,30 +2004,21 @@ impl Fold<Type> for Expander<'_, '_, '_> {
                                 .cloned()
                                 .enumerate()
                                 .map(|(idx, mut element)| {
-                                    if let Some(v) =
-                                        self.analyzer.extends(&element.ty, &extends_type)
-                                    {
+                                    if let Some(v) = self.analyzer.extends(&element.ty, &extends_type) {
                                         let ty = if v { true_type } else { false_type };
 
                                         let (unwrapped, ty) = unwrap_type(&ty);
                                         let mut ty = box ty;
                                         if unwrapped {
                                             match *ty {
-                                                Type::Tuple(Tuple { elems, .. }) => {
-                                                    ty = elems[idx].ty.clone()
-                                                }
+                                                Type::Tuple(Tuple { elems, .. }) => ty = elems[idx].ty.clone(),
                                                 _ => {}
                                             };
                                         }
-                                        let type_params = self
-                                            .analyzer
-                                            .infer_ts_infer_types(&extends_type, &element.ty)
-                                            .ok();
+                                        let type_params =
+                                            self.analyzer.infer_ts_infer_types(&extends_type, &element.ty).ok();
                                         if let Some(type_params) = type_params {
-                                            ty = self
-                                                .analyzer
-                                                .expand_type_params(&type_params, ty)
-                                                .unwrap();
+                                            ty = self.analyzer.expand_type_params(&type_params, ty).unwrap();
                                         }
 
                                         element.ty = ty;
@@ -2174,15 +2040,9 @@ impl Fold<Type> for Expander<'_, '_, '_> {
                         let ty = if v { true_type } else { false_type };
                         let (_, mut ty) = unwrap_type(&**ty);
 
-                        let type_params = self
-                            .analyzer
-                            .infer_ts_infer_types(&extends_type, &obj_type)
-                            .ok();
+                        let type_params = self.analyzer.infer_ts_infer_types(&extends_type, &obj_type).ok();
                         if let Some(type_params) = type_params {
-                            ty = *self
-                                .analyzer
-                                .expand_type_params(&type_params, box ty)
-                                .unwrap();
+                            ty = *self.analyzer.expand_type_params(&type_params, box ty).unwrap();
                         }
 
                         return ty;
@@ -2193,10 +2053,7 @@ impl Fold<Type> for Expander<'_, '_, '_> {
 
                 Type::Interface(i) => {
                     // TODO: Handle type params
-                    return Type::TypeLit(TypeLit {
-                        span,
-                        members: i.body,
-                    });
+                    return Type::TypeLit(TypeLit { span, members: i.body });
                 }
 
                 Type::Union(Union { span, types }) => {
@@ -2242,20 +2099,11 @@ impl Fold<Type> for Expander<'_, '_, '_> {
                 ..
             }) => {
                 // We need to handle infer type.
-                let type_params = self
-                    .analyzer
-                    .infer_ts_infer_types(&extends_type, &check_type)
-                    .ok();
+                let type_params = self.analyzer.infer_ts_infer_types(&extends_type, &check_type).ok();
 
                 if let Some(type_params) = type_params {
-                    true_type = self
-                        .analyzer
-                        .expand_type_params(&type_params, true_type)
-                        .unwrap();
-                    false_type = self
-                        .analyzer
-                        .expand_type_params(&type_params, false_type)
-                        .unwrap();
+                    true_type = self.analyzer.expand_type_params(&type_params, true_type).unwrap();
+                    false_type = self.analyzer.expand_type_params(&type_params, false_type).unwrap();
                 }
 
                 match check_type.normalize_mut() {

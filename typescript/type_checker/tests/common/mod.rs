@@ -46,10 +46,7 @@ where
 
         let input = {
             let mut buf = String::new();
-            File::open(entry.path())
-                .unwrap()
-                .read_to_string(&mut buf)
-                .unwrap();
+            File::open(entry.path()).unwrap().read_to_string(&mut buf).unwrap();
             buf
         };
 
@@ -70,10 +67,7 @@ where
                 allow_fail: false,
             },
             testfn: DynTestFn(box move || {
-                eprintln!(
-                    "\n\n========== Running test {}\nSource:\n{}\n",
-                    file_name, input
-                );
+                eprintln!("\n\n========== Running test {}\nSource:\n{}\n", file_name, input);
 
                 test_fn()
             }),

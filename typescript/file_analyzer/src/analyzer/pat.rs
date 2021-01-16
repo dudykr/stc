@@ -127,11 +127,7 @@ impl Analyzer<'_, '_> {
 
                     match *ty {
                         Type::Tuple(tuple) => {
-                            let mut types = tuple
-                                .elems
-                                .into_iter()
-                                .map(|element| element.ty)
-                                .collect::<Vec<_>>();
+                            let mut types = tuple.elems.into_iter().map(|element| element.ty).collect::<Vec<_>>();
 
                             types.dedup_type();
 
@@ -179,8 +175,7 @@ impl Analyzer<'_, '_> {
             PatMode::Decl => {
                 match p {
                     RPat::Ident(RIdent {
-                        sym: js_word!("this"),
-                        ..
+                        sym: js_word!("this"), ..
                     }) => {
                         assert!(ty.is_some(), "parameter named `this` should have type");
                         self.scope.this = ty.clone();
@@ -302,16 +297,10 @@ impl Analyzer<'_, '_> {
                                     //
                                     for lp in &left.props {
                                         match lp {
-                                            RObjectPatProp::KeyValue(RKeyValuePatProp {
-                                                key: ref pk,
-                                                ..
-                                            }) => {
+                                            RObjectPatProp::KeyValue(RKeyValuePatProp { key: ref pk, .. }) => {
                                                 //
                                                 match **prop {
-                                                    RProp::KeyValue(RKeyValueProp {
-                                                        ref key,
-                                                        ..
-                                                    }) => {
+                                                    RProp::KeyValue(RKeyValueProp { ref key, .. }) => {
                                                         if pk.type_eq(key) {
                                                             continue 'l;
                                                         }

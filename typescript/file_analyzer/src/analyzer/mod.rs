@@ -271,12 +271,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
 
         Self::new_inner(
             logger.clone(),
-            Env::new(
-                env,
-                Default::default(),
-                JscTarget::Es2020,
-                Default::default(),
-            ),
+            Env::new(env, Default::default(), JscTarget::Es2020, Default::default()),
             Arc::new(SourceMap::default()),
             box storage,
             None,
@@ -365,12 +360,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
     }
 
     /// TODO: Move return values to parent scope
-    pub(crate) fn with_child<F, Ret>(
-        &mut self,
-        kind: ScopeKind,
-        facts: CondFacts,
-        op: F,
-    ) -> ValidationResult<Ret>
+    pub(crate) fn with_child<F, Ret>(&mut self, kind: ScopeKind, facts: CondFacts, op: F) -> ValidationResult<Ret>
     where
         F: for<'aa, 'bb> FnOnce(&mut Analyzer<'aa, 'bb>) -> ValidationResult<Ret>,
     {
@@ -502,11 +492,7 @@ impl Load for NoopLoader {
         false
     }
 
-    fn load_non_circular_dep(
-        &self,
-        base: Arc<PathBuf>,
-        import: &DepInfo,
-    ) -> Result<ModuleInfo, Error> {
+    fn load_non_circular_dep(&self, base: Arc<PathBuf>, import: &DepInfo) -> Result<ModuleInfo, Error> {
         unimplemented!()
     }
 
@@ -650,10 +636,9 @@ impl Analyzer<'_, '_> {
             in_declare: self.ctx.in_declare || decl.declare,
             ..self.ctx
         };
-        let ty = self.with_ctx(ctx).with_child(
-            ScopeKind::Module,
-            Default::default(),
-            |child: &mut Analyzer| {
+        let ty = self
+            .with_ctx(ctx)
+            .with_child(ScopeKind::Module, Default::default(), |child: &mut Analyzer| {
                 decl.visit_children_with(child);
 
                 let exports = take(&mut child.storage.take_info(ctxt));
@@ -662,8 +647,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 Ok(None)
-            },
-        )?;
+            })?;
 
         if let Some(module) = ty {
             self.register_type(

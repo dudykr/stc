@@ -1,9 +1,6 @@
 use crate::{
     analyzer::{Analyzer, Ctx},
-    ty::{
-        Array, IndexedAccessType, Mapped, Operator, PropertySignature, Ref, Type, TypeElement,
-        TypeLit,
-    },
+    ty::{Array, IndexedAccessType, Mapped, Operator, PropertySignature, Ref, Type, TypeElement, TypeLit},
     ValidationResult,
 };
 use fxhash::{FxHashMap, FxHashSet};
@@ -129,11 +126,7 @@ impl Analyzer<'_, '_> {
                 ..
             }) => return Some(false),
             Type::Union(parent) => {
-                for res in parent
-                    .types
-                    .iter()
-                    .map(|parent| self.extends(child, &parent))
-                {
+                for res in parent.types.iter().map(|parent| self.extends(child, &parent)) {
                     if res != Some(true) {
                         return Some(false);
                     }
@@ -203,9 +196,11 @@ impl Analyzer<'_, '_> {
             },
             Type::Tuple(child_tuple) => match parent {
                 Type::Array(parent_array) => {
-                    if child_tuple.elems.iter().all(|child_element| {
-                        self.extends(&child_element.ty, &parent_array.elem_type) == Some(true)
-                    }) {
+                    if child_tuple
+                        .elems
+                        .iter()
+                        .all(|child_element| self.extends(&child_element.ty, &parent_array.elem_type) == Some(true))
+                    {
                         return Some(true);
                     }
                 }
@@ -444,32 +439,25 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
 
                                         for member in &ty.members {
                                             match member {
-                                                TypeElement::Property(p) => members.push(
-                                                    TypeElement::Property(PropertySignature {
-                                                        type_ann: m.ty.clone().fold_with(
-                                                            &mut MappedHandler {
-                                                                analyzer: self.analyzer,
-                                                                key: &p.key,
-                                                                param_name: &param.name,
-                                                                prop_ty: &*p
-                                                                    .type_ann
-                                                                    .clone()
-                                                                    .unwrap_or_else(|| {
-                                                                        Type::any(p.span)
-                                                                    }),
-                                                            },
-                                                        ),
+                                                TypeElement::Property(p) => {
+                                                    members.push(TypeElement::Property(PropertySignature {
+                                                        type_ann: m.ty.clone().fold_with(&mut MappedHandler {
+                                                            analyzer: self.analyzer,
+                                                            key: &p.key,
+                                                            param_name: &param.name,
+                                                            prop_ty: &*p
+                                                                .type_ann
+                                                                .clone()
+                                                                .unwrap_or_else(|| Type::any(p.span)),
+                                                        }),
                                                         ..p.clone()
-                                                    }),
-                                                ),
+                                                    }))
+                                                }
                                                 _ => {}
                                             }
                                         }
 
-                                        return Type::TypeLit(TypeLit {
-                                            span: ty.span,
-                                            members,
-                                        });
+                                        return Type::TypeLit(TypeLit { span: ty.span, members });
                                     }
                                     _ => {}
                                 }
@@ -583,18 +571,16 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                                 for member in members {
                                     match member {
                                         TypeElement::Method(method) => {
-                                            new_members.push(TypeElement::Property(
-                                                PropertySignature {
-                                                    span: method.span,
-                                                    readonly: method.readonly,
-                                                    key: method.key.clone(),
-                                                    computed: method.computed,
-                                                    optional: method.optional,
-                                                    params: vec![],
-                                                    type_ann: m.ty.clone().map(|v| v),
-                                                    type_params: None,
-                                                },
-                                            ));
+                                            new_members.push(TypeElement::Property(PropertySignature {
+                                                span: method.span,
+                                                readonly: method.readonly,
+                                                key: method.key.clone(),
+                                                computed: method.computed,
+                                                optional: method.optional,
+                                                params: vec![],
+                                                type_ann: m.ty.clone().map(|v| v),
+                                                type_params: None,
+                                            }));
                                         }
                                         TypeElement::Property(p) => {
                                             let mut p = p.clone();
@@ -667,8 +653,7 @@ impl Fold<Type> for MappedHandler<'_, '_, '_, '_> {
         match ty.normalize() {
             Type::IndexedAccessType(ty) => match ty.obj_type.normalize() {
                 Type::Param(TypeParam {
-                    name: obj_param_name,
-                    ..
+                    name: obj_param_name, ..
                 }) => match ty.index_type.normalize() {
                     Type::Param(TypeParam {
                         name: index_param_name,
@@ -684,9 +669,7 @@ impl Fold<Type> for MappedHandler<'_, '_, '_, '_> {
                             },
                         ) => match operator.ty.normalize() {
                             Type::Param(constraint_param) => {
-                                if *obj_param_name == constraint_param.name
-                                    && *self.param_name == *obj_param_name
-                                {
+                                if *obj_param_name == constraint_param.name && *self.param_name == *obj_param_name {
                                     return self.prop_ty.clone();
                                 }
                             }

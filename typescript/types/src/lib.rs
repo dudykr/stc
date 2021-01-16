@@ -798,25 +798,13 @@ impl Type {
         }
 
         match self {
-            Type::Arc(..)
-            | Type::Keyword(..)
-            | Type::This(..)
-            | Type::StaticThis(..)
-            | Type::Symbol(..) => true,
+            Type::Arc(..) | Type::Keyword(..) | Type::This(..) | Type::StaticThis(..) | Type::Symbol(..) => true,
 
             Type::Param(TypeParam {
-                constraint,
-                default,
-                ..
+                constraint, default, ..
             }) => {
-                constraint
-                    .as_ref()
-                    .map(|ty| ty.is_clone_cheap())
-                    .unwrap_or(true)
-                    && default
-                        .as_ref()
-                        .map(|ty| ty.is_clone_cheap())
-                        .unwrap_or(true)
+                constraint.as_ref().map(|ty| ty.is_clone_cheap()).unwrap_or(true)
+                    && default.as_ref().map(|ty| ty.is_clone_cheap()).unwrap_or(true)
             }
 
             _ => false,
@@ -1122,8 +1110,7 @@ impl Type {
                 ..
             })
             | Type::Lit(RTsLitType {
-                lit: RTsLit::Str(..),
-                ..
+                lit: RTsLit::Str(..), ..
             }) => true,
             _ => false,
         }

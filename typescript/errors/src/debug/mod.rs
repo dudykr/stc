@@ -36,8 +36,7 @@ pub fn print_type(logger: &Logger, name: &str, cm: &Lrc<SourceMap>, t: &Type) {
                     expr: box Expr::TsAs(TsAsExpr {
                         span: DUMMY_SP,
                         expr: box Expr::Ident(Ident::new("TYPE".into(), DUMMY_SP)),
-                        type_ann: box RTsType::from(t.clone().fold_with(&mut Visualizer))
-                            .into_orig(),
+                        type_ann: box RTsType::from(t.clone().fold_with(&mut Visualizer)).into_orig(),
                     }),
                 }))],
                 shebang: None,
@@ -45,12 +44,7 @@ pub fn print_type(logger: &Logger, name: &str, cm: &Lrc<SourceMap>, t: &Type) {
             .unwrap();
     }
     let s = String::from_utf8_lossy(&buf);
-    slog::info!(
-        logger,
-        "===== ===== ===== Type ({}) ===== ===== =====\n{}",
-        name,
-        s
-    );
+    slog::info!(logger, "===== ===== ===== Type ({}) ===== ===== =====\n{}", name, s);
 }
 
 /// Ensures that `ty` does not **contain** [Type::Ref].

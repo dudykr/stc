@@ -29,13 +29,7 @@ use swc_ecma_transforms::resolver::ts_resolver;
 use swc_ecma_visit::FoldWith;
 use testing::StdErr;
 
-static ENV: Lazy<Env> = Lazy::new(|| {
-    Env::simple(
-        Default::default(),
-        JscTarget::Es2020,
-        &Lib::load("es2020.full"),
-    )
-});
+static ENV: Lazy<Env> = Lazy::new(|| Env::simple(Default::default(), JscTarget::Es2020, &Lib::load("es2020.full")));
 
 pub struct Tester<'a, 'b> {
     cm: Arc<SourceMap>,
@@ -58,14 +52,7 @@ where
         let log = logger();
         let handler = Arc::new(handler);
         swc_common::GLOBALS.set(&crate::tests::GLOBALS, || {
-            let analyzer = Analyzer::root(
-                log.logger,
-                ENV.clone(),
-                cm.clone(),
-                box &mut storage,
-                &Loader {},
-                None,
-            );
+            let analyzer = Analyzer::root(log.logger, ENV.clone(), cm.clone(), box &mut storage, &Loader {}, None);
             let mut tester = Tester {
                 cm: cm.clone(),
                 analyzer,
@@ -81,9 +68,7 @@ where
 impl Tester<'_, '_> {
     pub fn parse(&self, name: &str, src: &str) -> Module {
         swc_common::GLOBALS.set(&GLOBALS, || {
-            let fm = self
-                .cm
-                .new_source_file(FileName::Real(name.into()), src.into());
+            let fm = self.cm.new_source_file(FileName::Real(name.into()), src.into());
 
             let lexer = Lexer::new(
                 Syntax::Typescript(TsConfig {
@@ -115,11 +100,7 @@ impl Load for Loader {
         unimplemented!()
     }
 
-    fn load_non_circular_dep(
-        &self,
-        base: Arc<PathBuf>,
-        import: &DepInfo,
-    ) -> Result<ModuleInfo, Error> {
+    fn load_non_circular_dep(&self, base: Arc<PathBuf>, import: &DepInfo) -> Result<ModuleInfo, Error> {
         unimplemented!()
     }
 

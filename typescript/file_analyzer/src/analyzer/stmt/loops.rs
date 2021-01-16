@@ -51,14 +51,7 @@ impl Analyzer<'_, '_> {
                     Err(..) => return,
                 };
 
-                match self.assign(
-                    &Type::Array(Array {
-                        span,
-                        elem_type: lty,
-                    }),
-                    &rty,
-                    lhs.span(),
-                ) {
+                match self.assign(&Type::Array(Array { span, elem_type: lty }), &rty, lhs.span()) {
                     Ok(..) => {}
                     Err(err) => self.storage.report(err),
                 }
@@ -69,25 +62,21 @@ impl Analyzer<'_, '_> {
 
     #[extra_validator]
     fn check_for_of_in_loop(&mut self, span: Span, left: &RVarDeclOrPat, rhs: &RExpr) {
-        self.with_child(
-            ScopeKind::Flow,
-            Default::default(),
-            |child| -> ValidationResult<()> {
-                child.check_lhs_of_for_loop(left);
-                let rty = if match left {
-                    RVarDeclOrPat::VarDecl(RVarDecl { ref decls, .. }) => !decls.is_empty(),
-                    _ => true,
-                } {
-                    child.check_rhs_of_for_loop(rhs)?
-                } else {
-                    return Ok(());
-                };
+        self.with_child(ScopeKind::Flow, Default::default(), |child| -> ValidationResult<()> {
+            child.check_lhs_of_for_loop(left);
+            let rty = if match left {
+                RVarDeclOrPat::VarDecl(RVarDecl { ref decls, .. }) => !decls.is_empty(),
+                _ => true,
+            } {
+                child.check_rhs_of_for_loop(rhs)?
+            } else {
+                return Ok(());
+            };
 
-                child.validate_for_loop(span, &left, rty);
+            child.validate_for_loop(span, &left, rty);
 
-                Ok(())
-            },
-        )?;
+            Ok(())
+        })?;
     }
 }
 
