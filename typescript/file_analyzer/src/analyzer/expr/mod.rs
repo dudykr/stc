@@ -1156,18 +1156,17 @@ impl Analyzer<'_, '_> {
                             }
                         }
 
-                        ty::ClassMember::Constructor(ref cons) => match prop {
-                            RExpr::Ident(ref i) if i.sym == *"constructor" => {
+                        ty::ClassMember::Constructor(ref cons) => {
+                            if prop == "constructor" {
                                 return Ok(box Type::Constructor(ty::Constructor {
                                     span,
                                     type_params: cons.type_params.clone(),
                                     params: cons.params.clone(),
                                     type_ann: cons.ret_ty.clone().unwrap_or_else(|| obj.clone()),
                                     is_abstract: false,
-                                }))
+                                }));
                             }
-                            _ => {}
-                        },
+                        }
 
                         ref member => unimplemented!(
                             "propert access to class member: {:?}\nprop: {:?}",

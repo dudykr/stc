@@ -253,6 +253,21 @@ impl PartialEq<JsWord> for Key {
     }
 }
 
+impl PartialEq<&JsWord> for Key {
+    fn eq(&self, other: &&JsWord) -> bool {
+        *self == **other
+    }
+}
+
+impl PartialEq<str> for Key {
+    fn eq(&self, other: &str) -> bool {
+        match self {
+            Key::Normal { sym, .. } => *sym == *other,
+            _ => false,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, EqIgnoreSpan, TypeEq, Visit, Spanned)]
 pub struct ComputedKey {
     pub span: Span,
