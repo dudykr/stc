@@ -404,7 +404,8 @@ impl Analyzer<'_, '_> {
             ignore_expand_prevention_for_all: false,
             ..self.ctx
         };
-        self.expand_fully(span, box ty.into_owned(), true)
+        self.with_ctx(ctx)
+            .expand_fully(span, box ty.into_owned(), true)
             .map(|v| *v)
             .map(Cow::Owned)
     }
