@@ -89,24 +89,21 @@ impl Analyzer<'_, '_> {
         };
 
         if is_symbol_access {
-            match mode {
-                ComputedPropMode::Object { .. } => match ty.normalize() {
-                    Type::Keyword(RTsKeywordType {
-                        kind: TsKeywordTypeKind::TsSymbolKeyword,
-                        ..
-                    }) => {}
-                    Type::Operator(Operator {
-                        op: TsTypeOperatorOp::Unique,
-                        ty,
-                        ..
-                    }) if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) => {}
-                    _ => {
-                        //
-                        self.storage
-                            .report(Error::NonSymbolComputedPropInFormOfSymbol { span });
-                    }
-                },
-                _ => {}
+            match ty.normalize() {
+                Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsSymbolKeyword,
+                    ..
+                }) => {}
+                Type::Operator(Operator {
+                    op: TsTypeOperatorOp::Unique,
+                    ty,
+                    ..
+                }) if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) => {}
+                _ => {
+                    //
+                    self.storage
+                        .report(Error::NonSymbolComputedPropInFormOfSymbol { span });
+                }
             }
         }
 
@@ -211,8 +208,12 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate_prop_inner(&mut self, prop: &RProp) -> ValidationResult<TypeElement> {
         let computed = match prop {
-            RProp::KeyValue(ref kv) => match kv.key {
-                RPropName::Computed(_) => true,
+            RProp::KeyValue(ref kv) => match &kv.key {
+                RPropName::Computed(c) => {
+                    c.visit_with(self);
+
+                    true
+                }
                 _ => false,
             },
             _ => false,
