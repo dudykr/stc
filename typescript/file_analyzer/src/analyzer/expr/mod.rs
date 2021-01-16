@@ -1876,7 +1876,7 @@ impl Analyzer<'_, '_> {
             exclude_types(&mut ty, self.cur_facts.true_facts.excludes.get(&id));
         }
 
-        slog::debug!(self.logger, "Type: {:?}", ty);
+        slog::debug!(self.logger, "{:?} = Type: {:?}", id, ty);
 
         Ok(ty)
     }
