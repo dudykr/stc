@@ -1352,24 +1352,11 @@ impl Analyzer<'_, '_> {
 
                 // TODO: Check parent interfaces
 
-                if computed {
-                    let prop_ty = Some(prop.validate_with_default(self)?);
-                    dbg!();
-                    return Err(Error::NoSuchProperty {
-                        span,
-                        obj: Some(obj),
-                        prop: Some(prop.clone()),
-                        prop_ty,
-                    });
-                } else {
-                    dbg!();
-                    return Err(Error::NoSuchProperty {
-                        span,
-                        obj: Some(obj),
-                        prop: Some(prop.clone()),
-                        prop_ty: None,
-                    });
-                };
+                return Err(Error::NoSuchProperty {
+                    span,
+                    obj: Some(obj),
+                    prop: Some(prop.clone()),
+                });
             }
 
             Type::TypeLit(TypeLit { ref members, .. }) => {
