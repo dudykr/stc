@@ -7,7 +7,6 @@ use fxhash::{FxHashMap, FxHashSet};
 use rnode::Fold;
 use rnode::FoldWith;
 use slog::Logger;
-use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_types::{Id, TypeParam};
