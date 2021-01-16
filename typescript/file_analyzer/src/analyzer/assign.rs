@@ -56,7 +56,9 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        if lhs.is_num() {
+        if lhs.is_num() || lhs.is_enum_variant() || lhs.is_enum_type() {
+            // TODO: Check if actual value is number.
+
             if rhs.is_num() {
                 return Ok(());
             }
@@ -74,14 +76,8 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if lhs.is_enum_variant() || lhs.is_enum_type() {
-            // TODO: Check if actual value is number.
-            if rhs.is_num() {
-                return Ok(());
-            }
-
-            if rhs.is_enum_variant() {
-                // TODO: Check if actual value is number.
+        if lhs.is_type_lit() {
+            if rhs.is_str() {
                 return Ok(());
             }
         }
