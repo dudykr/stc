@@ -586,7 +586,9 @@ impl Analyzer<'_, '_> {
                     span: *span,
                     sym: sym.clone(),
                 }),
-                _ => unreachable!(),
+                RExpr::Lit(RLit::Num(n)) => Ok(Key::Num(n.clone())),
+                RExpr::Lit(RLit::BigInt(n)) => Ok(Key::BigInt(n.clone())),
+                _ => unreachable!("non-computed-key: {:?}", prop),
             }
         }
     }
