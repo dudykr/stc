@@ -534,6 +534,8 @@ impl Analyzer<'_, '_> {
                         _ => {}
                     },
                 }
+
+                fail!()
             }
 
             Type::Enum(ref e) => handle_enum_in_rhs!(e),
