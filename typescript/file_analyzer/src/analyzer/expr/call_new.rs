@@ -171,7 +171,7 @@ impl Analyzer<'_, '_> {
                 .map(|expr| RExprOrSpread { spread: None, expr }),
         );
 
-        self.with_child(
+        let res = self.with_child(
             ScopeKind::Call,
             Default::default(),
             |analyzer: &mut Analyzer| {
@@ -179,12 +179,16 @@ impl Analyzer<'_, '_> {
                     span,
                     &e.tag,
                     Default::default(),
-                    ExtractKind::New,
+                    ExtractKind::Call,
                     args.as_ref(),
                     Default::default(),
                 )
             },
-        )
+        );
+
+        // dbg!(&res);
+
+        res
     }
 }
 
