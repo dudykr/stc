@@ -1,6 +1,5 @@
 use super::{
-    control_flow::CondFacts, expr::TypeOfMode, props::prop_name_to_expr,
-    stmt::return_type::ReturnValues, Analyzer, Ctx,
+    control_flow::CondFacts, expr::TypeOfMode, stmt::return_type::ReturnValues, Analyzer, Ctx,
 };
 use crate::analyzer::ResultExt;
 use crate::{
@@ -1222,7 +1221,6 @@ impl Analyzer<'_, '_> {
                         span,
                         obj: None,
                         prop: None,
-                        prop_ty: None,
                     });
                 }
 
@@ -1311,20 +1309,19 @@ impl Analyzer<'_, '_> {
                         for prop in props {
                             match prop {
                                 RObjectPatProp::KeyValue(prop) => {
-                                    let mut key_expr = prop_name_to_expr(&prop.key);
+                                    let mut key = prop.key.validate_with(self)?;
 
                                     let ty = self.access_property(
                                         span,
                                         ty.clone(),
-                                        &mut key_expr,
-                                        false,
+                                        &key,
                                         TypeOfMode::RValue,
                                     )?;
 
                                     self.declare_complex_vars(kind, &prop.value, ty)?;
                                 }
                                 RObjectPatProp::Assign(prop) => {
-                                    let mut key_expr = Key::Normal {
+                                    let mut key = Key::Normal {
                                         span: prop.key.span,
                                         sym: prop.key.sym.clone(),
                                     };
@@ -1332,7 +1329,7 @@ impl Analyzer<'_, '_> {
                                     let ty = self.access_property(
                                         span,
                                         ty.clone(),
-                                        &key_expr,
+                                        &key,
                                         TypeOfMode::RValue,
                                     )?;
 

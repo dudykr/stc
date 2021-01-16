@@ -1969,9 +1969,10 @@ impl Analyzer<'_, '_> {
             }
         };
 
+        let prop = self.validate_key(prop, computed)?;
         if computed {
             let obj_ty = self.expand_fully(span, obj_ty, true)?;
-            let ty = match self.access_property(span, obj_ty, prop, type_mode) {
+            let ty = match self.access_property(span, obj_ty, &prop, type_mode) {
                 Ok(v) => Ok(v),
                 Err(err) => {
                     errors.push(err);
@@ -2005,7 +2006,7 @@ impl Analyzer<'_, '_> {
             };
             let obj_ty = self.with_ctx(ctx).expand_fully(span, obj_ty, true)?;
 
-            match self.access_property(span, obj_ty, prop, type_mode) {
+            match self.access_property(span, obj_ty, &prop, type_mode) {
                 Ok(v) => return Ok(v),
                 Err(err) => {
                     errors.push(err);
