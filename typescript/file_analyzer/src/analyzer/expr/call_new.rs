@@ -290,11 +290,7 @@ impl Analyzer<'_, '_> {
                         if self.scope.is_calling() {
                             if let Some(type_params) = &i.type_params {
                                 for param in &type_params.params {
-                                    self.scope
-                                        .types
-                                        .entry(param.name.clone())
-                                        .or_default()
-                                        .push(Type::Param(param.clone()).cheap());
+                                    self.register_type(param.name.clone(), box Type::Param(param.clone()));
                                 }
                             }
                         }
@@ -660,11 +656,7 @@ impl Analyzer<'_, '_> {
                 Type::Class(ref cls) => {
                     if let Some(type_params) = &cls.type_params {
                         for param in &type_params.params {
-                            self.scope
-                                .types
-                                .entry(param.name.clone())
-                                .or_default()
-                                .push(Type::Param(param.clone()).cheap());
+                            self.register_type(param.name.clone(), box Type::Param(param.clone()));
                         }
 
                         // Infer type arguments using constructors.
@@ -1141,22 +1133,12 @@ impl Analyzer<'_, '_> {
                 for param in type_params {
                     slog::info!(analyzer.logger, "({}) Defining {}", analyzer.scope.depth(), param.name);
 
-                    analyzer
-                        .scope
-                        .types
-                        .entry(param.name.clone())
-                        .or_default()
-                        .push(Type::Param(param.clone()).cheap());
+                    analyzer.register_type(param.name.clone(), box Type::Param(param.clone()));
                 }
 
                 if let Some(type_param_decl) = type_param_decl {
                     for param in &type_param_decl.params {
-                        analyzer
-                            .scope
-                            .types
-                            .entry(param.name.clone())
-                            .or_default()
-                            .push(Type::Param(param.clone()).cheap());
+                        analyzer.register_type(param.name.clone(), box Type::Param(param.clone()));
                     }
                 }
 

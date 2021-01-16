@@ -70,7 +70,7 @@ pub(crate) struct Scope<'a> {
     pub declaring: SmallVec<[Id; 8]>,
 
     pub(super) vars: FxHashMap<Id, VarInfo>,
-    pub(super) types: FxHashMap<Id, Vec<Box<Type>>>,
+    types: FxHashMap<Id, Box<Type>>,
     pub(super) facts: CondFacts,
 
     pub(super) declaring_fn: Option<Id>,
@@ -429,7 +429,7 @@ impl Analyzer<'_, '_> {
             slog::debug!(self.logger, "register_type({})", name);
             let ty = ty.cheap();
 
-            if self.scope.is_root() {
+            if self.scope.is_root() || self.scope.is_module() {
                 self.storage
                     .store_private_type(self.ctx.module_id, name.clone(), ty.clone());
             }
