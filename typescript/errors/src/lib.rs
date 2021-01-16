@@ -568,6 +568,8 @@ impl Error {
 
             Error::NonOverlappingTypeCast { .. } => 2352,
 
+            Error::NoSuchProperty { .. } => 2339,
+
             _ => 0,
         }
     }
