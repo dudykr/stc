@@ -895,20 +895,23 @@ impl Analyzer<'_, '_> {
 
             Type::Enum(ref e) => {
                 // TODO: Check if variant exists.
-                macro_rules! ret {
-                    ($sym:expr) => {{
+
+                match prop {
+                    Key::Normal { sym, .. } => {
                         // Computed values are not permitted in an enum with string valued members.
                         if e.is_const && type_mode == TypeOfMode::RValue {
                             // for m in &e.members {
                             //     match m.id {
-                            //         TsEnumMemberId::Ident(Ident { ref sym, .. })
-                            //         | TsEnumMemberId::Str(Str { value: ref sym, .. }) => {
+                            //         TsEnumMemberId::Ident(Ident { ref sym, ..
+                            // })
+                            //         | TsEnumMemberId::Str(Str { value: ref
+                            // sym, .. }) => {
                             //             if sym == $sym {
                             //                 return Ok(Type::Lit(RTsLitType {
                             //                     span: m.span(),
                             //                     lit: match m.val.clone() {
-                            //                         RExpr::Lit(RLit::Str(s)) =>
-                            // RTsLit::Str(s),
+                            //                         RExpr::Lit(RLit::Str(s))
+                            // => RTsLit::Str(s),
                             // RExpr::Lit(RLit::Num(v)) => RTsLit::Number(v),
                             // _ => unreachable!(),                     },
                             //                 }));
@@ -919,7 +922,8 @@ impl Analyzer<'_, '_> {
                         }
 
                         if e.is_const && computed {
-                            // return Err(Error::ConstEnumNonIndexAccess { span: prop.span() });
+                            // return Err(Error::ConstEnumNonIndexAccess { span:
+                            // prop.span() });
                         }
 
                         if e.is_const && type_mode == TypeOfMode::LValue {
@@ -934,16 +938,8 @@ impl Analyzer<'_, '_> {
                             },
                             ctxt: self.ctx.module_id,
                             enum_name: e.id.clone().into(),
-                            name: $sym.clone(),
+                            name: sym.clone(),
                         }));
-                    }};
-                }
-                match prop {
-                    RExpr::Ident(RIdent { ref sym, .. }) if !computed => {
-                        ret!(sym);
-                    }
-                    RExpr::Lit(RLit::Str(RStr { value: ref sym, .. })) => {
-                        ret!(sym);
                     }
                     Key::Num(RNumber { value, .. }) => {
                         let idx = value.round() as usize;

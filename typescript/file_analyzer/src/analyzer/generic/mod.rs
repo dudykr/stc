@@ -1052,7 +1052,7 @@ impl Analyzer<'_, '_> {
                                         node_id: NodeId::invalid(),
                                         span: param.span,
                                         lit: RTsLit::Str(RStr {
-                                            span: i_span,
+                                            span: *i_span,
                                             value: sym.clone(),
                                             has_escape: false,
                                             kind: Default::default(),
