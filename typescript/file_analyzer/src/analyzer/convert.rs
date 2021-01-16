@@ -296,6 +296,8 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, d: &RTsMethodSignature) -> ValidationResult<MethodSignature> {
         self.with_child(ScopeKind::Fn, Default::default(), |child: &mut Analyzer| {
+            let key = child.type_of_prop(&d.key, d.computed)?;
+
             if d.computed {
                 child.validate_computed_prop_key(d.span(), &d.key);
             }
@@ -303,7 +305,7 @@ impl Analyzer<'_, '_> {
             Ok(MethodSignature {
                 span: d.span,
                 readonly: d.readonly,
-                key: d.key.clone(),
+                key,
                 computed: d.computed,
                 optional: d.optional,
                 type_params: try_opt!(d.type_params.validate_with(child)),

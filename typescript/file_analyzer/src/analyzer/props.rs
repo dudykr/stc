@@ -26,6 +26,7 @@ use stc_ts_ast_rnode::RStr;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
+use stc_ts_types::Key;
 use swc_atoms::js_word;
 use swc_common::Spanned;
 use swc_ecma_ast::*;
@@ -43,7 +44,7 @@ pub(super) enum ComputedPropMode {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &RPropName) {
+    fn validate(&mut self, node: &RPropName) -> ValidationResult<Key> {
         self.record(node);
 
         node.visit_children_with(self);

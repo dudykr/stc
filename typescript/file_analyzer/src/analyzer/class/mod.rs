@@ -70,6 +70,7 @@ use swc_atoms::js_word;
 use swc_common::EqIgnoreSpan;
 use swc_common::Span;
 use swc_common::Spanned;
+use swc_common::TypeEq;
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::*;
 use swc_ecma_utils::private_ident;
@@ -473,7 +474,7 @@ impl Analyzer<'_, '_> {
 
         Ok(Method {
             span: c_span,
-            key: c.key.clone(),
+            key,
             is_static: c.is_static,
             is_abstract: c.is_abstract,
             is_optional: c.is_optional,
@@ -754,7 +755,7 @@ impl Analyzer<'_, '_> {
                                     for m in &class.body {
                                         match m {
                                             stc_ts_types::ClassMember::Method(ref m) => {
-                                                if !is_prop_name_eq(&m.key, &sm.key) {
+                                                if !&m.key.type_eq(&sm.key) {
                                                     continue;
                                                 }
 
@@ -1140,11 +1141,6 @@ impl Analyzer<'_, '_> {
                                         _ => unreachable!(),
                                     };
 
-                                    let key = box RExpr::Ident(RIdent {
-                                        optional: false,
-                                        ..i.clone()
-                                    });
-
                                     if let Some(ty) = &ty {
                                         if i.type_ann.is_none() {
                                             if let Some(m) = &mut child.mutations {
@@ -1160,10 +1156,9 @@ impl Analyzer<'_, '_> {
                                         stc_ts_types::ClassMember::Property(
                                             stc_ts_types::ClassProperty {
                                                 span: p.span,
-                                                key,
+                                                key: Key::Normal(i.sym.clone()),
                                                 value: ty,
                                                 is_static: false,
-                                                computed: false,
                                                 accessibility: p.accessibility,
                                                 is_abstract: false,
                                                 is_optional: false,
