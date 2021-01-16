@@ -295,6 +295,8 @@ impl Scope<'_> {
                                     unreachable!()
                                 }
                             }
+
+                            prev.make_cheap();
                         }
                     }
                     Entry::Vacant(mut e) => {
@@ -318,12 +320,14 @@ impl Scope<'_> {
                             unreachable!()
                         }
                     }
+                    prev.make_cheap();
                 } else {
                     let prev_ty = replace(prev, Type::any(DUMMY_SP));
-                    *prev = box Type::Intersection(Intersection {
+                    *prev = Type::Intersection(Intersection {
                         span: DUMMY_SP,
                         types: vec![prev_ty, ty],
-                    });
+                    })
+                    .cheap();
                 }
             }
             Entry::Vacant(e) => {
