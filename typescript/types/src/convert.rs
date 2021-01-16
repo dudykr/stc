@@ -772,10 +772,10 @@ impl Key {
     pub(crate) fn into_expr(self) -> Box<RExpr> {
         match self {
             Key::Computed(v) => v.expr,
-            Key::Normal(prop) => box RExpr::Ident(RIdent {
+            Key::Normal { span, sym } => box RExpr::Ident(RIdent {
                 node_id: NodeId::invalid(),
-                span: DUMMY_SP,
-                sym: prop,
+                span,
+                sym,
                 optional: false,
                 type_ann: None,
             }),

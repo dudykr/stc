@@ -240,14 +240,14 @@ impl SymbolIdGenerator {
 #[derive(Debug, Clone, PartialEq, EqIgnoreSpan, TypeEq, Visit)]
 pub enum Key {
     Computed(ComputedKey),
-    Normal(JsWord),
+    Normal { span: Span, sym: JsWord },
     Private(#[use_eq_ignore_span] RPrivateName),
 }
 
 impl PartialEq<JsWord> for Key {
     fn eq(&self, other: &JsWord) -> bool {
         match self {
-            Key::Normal(v) => *v == *other,
+            Key::Normal { sym, .. } => *sym == *other,
             _ => false,
         }
     }
@@ -510,7 +510,7 @@ impl TypeElement {
         let key = self.key()?;
         match key {
             Key::Computed(_) => None,
-            Key::Normal(v) => Some(v),
+            Key::Normal { sym, .. } => Some(sym),
             Key::Private(_) => None,
         }
     }
