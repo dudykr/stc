@@ -260,13 +260,9 @@ impl Fold<Type> for Simplifier<'_> {
                             match element {
                                 TypeElement::Property(PropertySignature {
                                     key,
-                                    computed: false,
                                     type_ann: Some(type_ann),
                                     ..
-                                }) => match &**key {
-                                    RExpr::Ident(i) if i.sym == s.value => return *type_ann.clone(),
-                                    _ => {}
-                                },
+                                }) if *key == s.value => return *type_ann.clone(),
                                 TypeElement::Method(_) => {}
 
                                 _ => {}

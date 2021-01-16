@@ -12,6 +12,7 @@ use stc_ts_ast_rnode::RPropOrSpread;
 use stc_ts_ast_rnode::RSpreadElement;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_file_analyzer_macros::validator;
+use stc_ts_types::Key;
 use stc_ts_types::PropertySignature;
 use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
@@ -74,7 +75,7 @@ impl VisitMut<Union> for ObjectUnionNormalizer {
                     for key in &keys {
                         let has_key = ty.members.iter().any(|member| {
                             if let Some(member_key) = member.non_computed_key() {
-                                *key == member_key.sym
+                                *key == *member_key
                             } else {
                                 false
                             }
@@ -84,8 +85,10 @@ impl VisitMut<Union> for ObjectUnionNormalizer {
                             ty.members.push(TypeElement::Property(PropertySignature {
                                 span: DUMMY_SP,
                                 readonly: false,
-                                key: box RExpr::Ident(RIdent::new(key.clone(), DUMMY_SP)),
-                                computed: false,
+                                key: Key::Normal {
+                                    span: DUMMY_SP,
+                                    sym: key.clone(),
+                                },
                                 optional: true,
                                 params: Default::default(),
                                 type_ann: Some(box Type::Keyword(RTsKeywordType {
