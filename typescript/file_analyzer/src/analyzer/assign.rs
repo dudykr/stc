@@ -541,7 +541,14 @@ impl Analyzer<'_, '_> {
 
                 match *constraint {
                     Some(ref c) => {
-                        return self.assign_inner(to, c, opts);
+                        return self.assign_inner(
+                            to,
+                            c,
+                            AssignOpts {
+                                allow_unknown_rhs: true,
+                                ..opts
+                            },
+                        );
                     }
                     None => match to.normalize() {
                         Type::TypeLit(TypeLit { ref members, .. }) if members.is_empty() => {
@@ -1114,7 +1121,9 @@ impl Analyzer<'_, '_> {
             macro_rules! handle_type_elements {
                 ($rhs:expr) => {{
                     for r in $rhs {
-                        unhandled_rhs.push(r.span());
+                        if !opts.allow_unknown_rhs {
+                            unhandled_rhs.push(r.span());
+                        }
                     }
 
                     for (i, m) in lhs.into_iter().enumerate() {
