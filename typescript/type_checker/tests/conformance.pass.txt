@@ -21,7 +21,6 @@ asOperatorContextualType.ts
 asOperatorNames.ts
 assignmentGenericLookupTypeNarrowing.ts
 assignmentLHSIsReference.ts
-assignmentTypeNarrowing.ts
 asyncArrowFunction1_es2017.ts
 asyncArrowFunction1_es5.ts
 asyncArrowFunction2_es5.ts
