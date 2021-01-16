@@ -9,6 +9,7 @@ use rnode::FoldWith;
 use slog::Logger;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
+use stc_ts_types::Key;
 use stc_ts_types::{Id, TypeParam};
 use swc_atoms::js_word;
 use swc_common::Spanned;

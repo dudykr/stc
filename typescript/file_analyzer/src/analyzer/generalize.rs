@@ -551,12 +551,7 @@ impl Fold<Type> for Simplifier<'_> {
                         };
 
                         if let Some(member_key) = member.key() {
-                            let member_key = match member_key.into_owned() {
-                                RExpr::Ident(i) => i,
-                                _ => unimplemented!(),
-                            };
-
-                            if member_key.sym != key.value {
+                            if *member_key != key.value {
                                 continue;
                             }
                         }
