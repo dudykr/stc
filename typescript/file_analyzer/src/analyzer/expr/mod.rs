@@ -1063,8 +1063,7 @@ impl Analyzer<'_, '_> {
                                         _ => unreachable!(),
                                     },
                                 });
-                                return self
-                                    .access_property(span, new_obj_ty, prop, computed, type_mode);
+                                return self.access_property(span, new_obj_ty, prop, type_mode);
                             }
                         }
                         return Ok(box Type::Keyword(RTsKeywordType {
@@ -1116,9 +1115,8 @@ impl Analyzer<'_, '_> {
                                                 _ => unreachable!(),
                                             },
                                         });
-                                        return self.access_property(
-                                            *span, new_obj_ty, prop, computed, type_mode,
-                                        );
+                                        return self
+                                            .access_property(*span, new_obj_ty, prop, type_mode);
                                     }
                                 }
                             }
@@ -1191,7 +1189,7 @@ impl Analyzer<'_, '_> {
                         box super_ty.normalize().clone(),
                         true,
                     )?;
-                    if let Ok(v) = self.access_property(span, super_ty, prop, computed, type_mode) {
+                    if let Ok(v) = self.access_property(span, super_ty, prop, type_mode) {
                         return Ok(v);
                     }
                 }
@@ -1221,7 +1219,6 @@ impl Analyzer<'_, '_> {
                                 span,
                                 constraint.clone(),
                                 prop,
-                                computed,
                                 type_mode,
                             ) {
                                 return Ok(ty);
@@ -1295,7 +1292,7 @@ impl Analyzer<'_, '_> {
                 };
                 let interface = self.env.get_global_type(span, &word)?;
 
-                return self.access_property(span, interface, prop, computed, type_mode);
+                return self.access_property(span, interface, prop, type_mode);
             }
 
             Type::Array(Array { elem_type, .. }) => {
@@ -1327,14 +1324,14 @@ impl Analyzer<'_, '_> {
 
                 let array_ty = self.env.get_global_type(span, &js_word!("Array"))?;
 
-                return self.access_property(span, array_ty, prop, computed, type_mode);
+                return self.access_property(span, array_ty, prop, type_mode);
             }
 
             Type::Interface(Interface {
                 ref body, extends, ..
             }) => {
-                if let Ok(Some(v)) = self
-                    .access_property_of_type_elements(span, &obj, prop, computed, type_mode, body)
+                if let Ok(Some(v)) =
+                    self.access_property_of_type_elements(span, &obj, prop, type_mode, body)
                 {
                     return Ok(v);
                 }
@@ -1348,7 +1345,7 @@ impl Analyzer<'_, '_> {
                     )?;
 
                     // TODO: Check if multiple interface has same property.
-                    if let Ok(ty) = self.access_property(span, obj, prop, computed, type_mode) {
+                    if let Ok(ty) = self.access_property(span, obj, prop, type_mode) {
                         return Ok(ty);
                     }
                 }
@@ -1415,7 +1412,7 @@ impl Analyzer<'_, '_> {
                     };
                     let ty = self.with_ctx(ctx).expand_fully(span, ty, true)?;
 
-                    match self.access_property(span, ty.clone(), prop, computed, type_mode) {
+                    match self.access_property(span, ty.clone(), prop, type_mode) {
                         Ok(ty) => tys.push(ty),
                         Err(err) => errors.push(err),
                     }
@@ -1530,7 +1527,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::ClassInstance(ClassInstance { ty, .. }) => {
-                return self.access_property(span, ty.clone(), prop, computed, type_mode)
+                return self.access_property(span, ty.clone(), prop, type_mode)
             }
 
             Type::Module(ty::Module { ref exports, .. }) => {
@@ -1555,7 +1552,7 @@ impl Analyzer<'_, '_> {
 
             Type::This(..) => {
                 if let Some(this) = self.scope.this().map(|this| this.into_owned()) {
-                    return self.access_property(span, this, prop, computed, type_mode);
+                    return self.access_property(span, this, prop, type_mode);
                 } else if self.ctx.in_argument {
                     // We will adjust `this` using information from callee.
                     return Ok(Type::any(span));
@@ -1566,10 +1563,7 @@ impl Analyzer<'_, '_> {
                 // TODO: Verify if multiple type has field
                 let mut new = vec![];
                 for ty in types {
-                    if let Some(v) = self
-                        .access_property(span, ty.clone(), prop, computed, type_mode)
-                        .ok()
-                    {
+                    if let Some(v) = self.access_property(span, ty.clone(), prop, type_mode).ok() {
                         new.push(v);
                     }
                 }
@@ -1594,7 +1588,7 @@ impl Analyzer<'_, '_> {
                         ..
                     })) => {
                         if let Ok(obj) = self.env.get_global_type(span, &js_word!("Array")) {
-                            return self.access_property(span, obj, prop, computed, type_mode);
+                            return self.access_property(span, obj, prop, type_mode);
                         }
                     }
                     _ => {}
@@ -1623,7 +1617,6 @@ impl Analyzer<'_, '_> {
                                         span,
                                         box Type::StaticThis(StaticThis { span }),
                                         prop,
-                                        computed,
                                         type_mode,
                                     );
                                 }
@@ -1673,14 +1666,14 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {
                 let obj = self.type_of_ts_entity_name(span, self.ctx.module_id, name, None)?;
-                return self.access_property(span, obj, prop, computed, type_mode);
+                return self.access_property(span, obj, prop, type_mode);
             }
 
             Type::Function(f) if type_mode == TypeOfMode::RValue => {
                 // Use builtin type `Function`
                 let interface = self.env.get_global_type(f.span, &js_word!("Function"))?;
 
-                return self.access_property(span, interface, prop, computed, type_mode);
+                return self.access_property(span, interface, prop, type_mode);
             }
 
             _ => {}
@@ -2037,7 +2030,7 @@ impl Analyzer<'_, '_> {
 
         if computed {
             let obj_ty = self.expand_fully(span, obj_ty, true)?;
-            let ty = match self.access_property(span, obj_ty, prop, computed, type_mode) {
+            let ty = match self.access_property(span, obj_ty, prop, type_mode) {
                 Ok(v) => Ok(v),
                 Err(err) => {
                     errors.push(err);
@@ -2071,7 +2064,7 @@ impl Analyzer<'_, '_> {
             };
             let obj_ty = self.with_ctx(ctx).expand_fully(span, obj_ty, true)?;
 
-            match self.access_property(span, obj_ty, prop, computed, type_mode) {
+            match self.access_property(span, obj_ty, prop, type_mode) {
                 Ok(v) => return Ok(v),
                 Err(err) => {
                     errors.push(err);
