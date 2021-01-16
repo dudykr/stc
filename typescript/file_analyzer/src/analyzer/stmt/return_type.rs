@@ -382,13 +382,16 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                                         }
 
                                         match key {
-                                            Key::Normal(i) => {
+                                            Key::Normal {
+                                                span: i_span,
+                                                sym: key,
+                                            } => {
                                                 let ty = box Type::Lit(RTsLitType {
                                                     node_id: NodeId::invalid(),
-                                                    span: i.span,
+                                                    span: i_span,
                                                     lit: RTsLit::Str(RStr {
-                                                        span: i.span,
-                                                        value: i.sym.clone(),
+                                                        span: i_span,
+                                                        value: key.clone(),
                                                         has_escape: false,
                                                         kind: Default::default(),
                                                     }),
