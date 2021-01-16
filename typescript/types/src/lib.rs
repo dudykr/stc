@@ -242,6 +242,15 @@ pub enum Key {
     Normal(JsWord),
 }
 
+impl PartialEq<JsWord> for Key {
+    fn eq(&self, other: &JsWord) -> bool {
+        match self {
+            Key::Computed(_) => false,
+            Key::Normal(v) => *v == *other,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, EqIgnoreSpan, TypeEq, Visit)]
 pub struct ComputedKey {
     pub span: Span,
