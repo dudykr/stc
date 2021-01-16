@@ -913,9 +913,7 @@ impl Analyzer<'_, '_> {
                     };
                     let super_class = self.with_ctx(ctx).expand_fully(span, super_class, true)?;
 
-                    if let Ok(v) =
-                        self.access_property(span, super_class, prop, computed, type_mode)
-                    {
+                    if let Ok(v) = self.access_property(span, super_class, prop, type_mode) {
                         return Ok(v);
                     }
                 }

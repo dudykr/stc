@@ -2,9 +2,9 @@
 #![feature(box_syntax)]
 #![feature(specialization)]
 
-use stc_ts_ast_rnode::RExpr;
 use stc_ts_types::name::Name;
 use stc_ts_types::Id;
+use stc_ts_types::Key;
 use stc_ts_types::ModuleId;
 use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
@@ -65,7 +65,7 @@ pub enum Error {
     NoSuchPropertyInClass {
         span: Span,
         class_name: Option<Id>,
-        prop: RExpr,
+        prop: Key,
     },
 
     TypeParameterCountMismatch {
@@ -187,8 +187,7 @@ pub enum Error {
     NoSuchProperty {
         span: Span,
         obj: Option<Box<Type>>,
-        prop: Option<RExpr>,
-        prop_ty: Option<Box<Type>>,
+        prop: Option<Key>,
     },
 
     TooManyTupleElements {
