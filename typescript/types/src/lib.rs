@@ -505,7 +505,7 @@ pub enum TypeElement {
 }
 
 impl TypeElement {
-    /// Returns [Some] iff `self` is non-computed element.
+    /// Returns [Some] iff `self` is an element with a normal key.
     pub fn non_computed_key(&self) -> Option<&JsWord> {
         let key = self.key()?;
         match key {
