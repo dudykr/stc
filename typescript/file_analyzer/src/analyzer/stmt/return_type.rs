@@ -326,7 +326,7 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                                         unimplemented!("Constructor signature in S[keyof S]")
                                     }
                                     TypeElement::Property(p) => {
-                                        if p.computed {
+                                        if p.key.is_computed() {
                                             unimplemented!("Computed key mixed with S[keyof S]")
                                         }
 

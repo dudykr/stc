@@ -55,6 +55,7 @@ use stc_ts_types::ConstructorSignature;
 use stc_ts_types::FnParam;
 use stc_ts_types::Id;
 use stc_ts_types::Intersection;
+use stc_ts_types::Key;
 use stc_ts_types::Method;
 use stc_ts_types::Operator;
 use stc_ts_types::QueryExpr;
@@ -132,12 +133,13 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        let key = self.type_of_prop(&p.key, p.computed)?;
+
         Ok(ClassProperty {
             span: p.span,
-            key: p.key.clone(),
+            key,
             value,
             is_static: p.is_static,
-            computed: p.computed,
             accessibility: p.accessibility,
             is_abstract: p.is_abstract,
             is_optional: p.is_optional,
@@ -152,6 +154,8 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, p: &RPrivateProp) -> ValidationResult<ClassProperty> {
         self.record(p);
 
+        let key = Key::Private(p.key.clone());
+
         let value = self.validate_type_of_class_property(
             p.span,
             p.readonly,
@@ -162,10 +166,9 @@ impl Analyzer<'_, '_> {
 
         Ok(ClassProperty {
             span: p.span,
-            key: box RExpr::PrivateName(p.key.clone()),
+            key,
             value,
             is_static: p.is_static,
-            computed: p.computed,
             accessibility: p.accessibility,
             is_abstract: p.is_abstract,
             is_optional: p.is_optional,
@@ -356,6 +359,8 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, c: &RClassMethod) -> ValidationResult<Method> {
         self.record(c);
+
+        let key = c.key.validate_with(self)?;
 
         let c_span = c.span();
         let key_span = c.key.span();

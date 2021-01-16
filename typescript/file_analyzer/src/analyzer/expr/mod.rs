@@ -55,6 +55,7 @@ use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_types::name::Name;
 use stc_ts_types::rprop_name_to_expr;
+use stc_ts_types::Key;
 use stc_ts_types::PropertySignature;
 use stc_ts_types::{
     ClassProperty, Id, Method, ModuleId, Operator, QueryExpr, QueryType, StaticThis, TupleElement,
@@ -634,6 +635,20 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
+    pub(crate) fn type_of_prop(&mut self, prop: &RExpr, computed: bool) -> ValidationResult<Key> {
+        if computed {
+            prop.validate_with_default(self)
+        } else {
+            match prop {
+                RExpr::Ident(RIdent { span, .. }) => Ok(box Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsStringKeyword,
+                    span: *span,
+                })),
+                _ => unreachable!(),
+            }
+        }
+    }
+
     pub(super) fn access_property(
         &mut self,
         span: Span,
@@ -652,17 +667,7 @@ impl Analyzer<'_, '_> {
             type_mode: TypeOfMode,
             members: &[TypeElement],
         ) -> ValidationResult<Option<Box<Type>>> {
-            let prop_ty = if computed {
-                prop.validate_with_default(a)?
-            } else {
-                match prop {
-                    RExpr::Ident(..) => box Type::Keyword(RTsKeywordType {
-                        kind: TsKeywordTypeKind::TsStringKeyword,
-                        span,
-                    }),
-                    _ => unreachable!(),
-                }
-            };
+            let prop_ty = a.type_of_prop(prop, computed)?;
 
             let mut candidates = vec![];
             for el in members.iter() {
@@ -1216,10 +1221,12 @@ impl Analyzer<'_, '_> {
             },
 
             Type::Class(ref c) => {
+                let prop_ty = self.type_of_prop(prop, computed)?;
+
                 for v in c.body.iter() {
                     match v {
                         ty::ClassMember::Property(ref class_prop) => {
-                            match &*class_prop.key {
+                            match class_prop.key {
                                 RExpr::Ident(i) if !computed => {
                                     if self.scope.declaring_prop.as_ref() == Some(&i.into()) {
                                         return Err(Error::ReferencedInInit { span });
@@ -1243,7 +1250,9 @@ impl Analyzer<'_, '_> {
                                     _ => false,
                                 },
                                 _ => false,
-                            } || (*class_prop.key).eq_ignore_span(&*prop);
+                            } || (computed
+                                && prop_ty.type_eq(&class_prop.key_ty)
+                                && (*class_prop.key).eq_ignore_span(&*prop));
                             //
                             if has_same_key {
                                 return Ok(match class_prop.value {
@@ -1253,18 +1262,7 @@ impl Analyzer<'_, '_> {
                             }
                         }
                         ty::ClassMember::Method(ref mtd) => {
-                            let mtd_key = rprop_name_to_expr(mtd.key.clone());
-                            // TODO: Check if this is correct.
-
-                            let has_same_key = match &*prop {
-                                RExpr::Ident(prop) => match &mtd_key {
-                                    RExpr::Ident(key) => {
-                                        prop.span.ctxt == key.span.ctxt && prop.sym == key.sym
-                                    }
-                                    _ => false,
-                                },
-                                _ => false,
-                            } || mtd_key.eq_ignore_span(prop);
+                            let has_same_key = mtd.key.type_eq(prop_ty);
 
                             if has_same_key {
                                 return Ok(box Type::Function(stc_ts_types::Function {
@@ -2000,10 +1998,6 @@ impl Analyzer<'_, '_> {
             if let Ok(ty) = self.env.get_global_var(span, &i.sym) {
                 return Ok(ty);
             }
-        }
-
-        if i.sym == js_word!("Symbol") && !self.is_builtin {
-            return Ok(self.env.get_global_var(i.span, &js_word!("Symbol"))?);
         }
 
         slog::error!(

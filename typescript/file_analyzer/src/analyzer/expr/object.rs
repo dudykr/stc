@@ -56,7 +56,7 @@ impl ObjectUnionNormalizer {
                 _ => None,
             })
             .flatten()
-            .filter_map(|member| member.non_computed_key().map(|i| i.sym.clone()))
+            .filter_map(|member| member.non_computed_key().cloned())
             .collect()
     }
 }

@@ -15,6 +15,7 @@ use stc_ts_ast_rnode::RTsThisType;
 use stc_ts_errors::debug::print_backtrace;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
+use stc_ts_types::Key;
 use stc_ts_types::Mapped;
 use stc_ts_types::MethodSignature;
 use stc_ts_types::PropertySignature;
@@ -1221,10 +1222,8 @@ impl Analyzer<'_, '_> {
             // Handle `toString()`
             match m {
                 TypeElement::Method(ref m) => {
-                    //
-                    match *m.key {
-                        RExpr::Ident(ref i) if i.sym == js_word!("toString") => continue,
-                        _ => {}
+                    if m.key == js_word!("toString") {
+                        continue;
                     }
                 }
                 _ => {}
@@ -1304,7 +1303,7 @@ impl Analyzer<'_, '_> {
                                             _ => {}
                                         }
 
-                                        if is_key_eq(&lp.key, &rp.key) {
+                                        if lp.key.type_eq(&rp.key) {
                                             continue 'l;
                                         }
                                     }
@@ -1469,8 +1468,7 @@ impl Analyzer<'_, '_> {
                     match member {
                         TypeElement::Property(PropertySignature {
                             span,
-                            key: box RExpr::Ident(key),
-                            computed: false,
+                            key: Key::Normal(key),
                             ..
                         }) => {
                             keys.push(Box::new(Type::Lit(RTsLitType {
@@ -1480,7 +1478,7 @@ impl Analyzer<'_, '_> {
                                     span: *span,
                                     has_escape: false,
                                     kind: Default::default(),
-                                    value: key.sym.clone(),
+                                    value: key.clone(),
                                 }),
                             })));
                         }
