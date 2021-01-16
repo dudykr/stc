@@ -57,12 +57,24 @@ impl Analyzer<'_, '_> {
             if rhs.is_num() {
                 return Ok(());
             }
-            if rhs.is_enum_variant() {}
+
+            if rhs.is_enum_variant() {
+                // TODO: Check for actual value.
+                return Ok(());
+            }
 
             if rhs.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
                 || rhs.is_kwd(TsKeywordTypeKind::TsNullKeyword)
+                || rhs.is_kwd(TsKeywordTypeKind::TsVoidKeyword)
             {
                 return Err(Error::AssignOpCannotBeApplied { span, op });
+            }
+        }
+
+        if lhs.is_enum_variant() || lhs.is_enum_type() {
+            if rhs.is_num() {
+                // TODO: Check for actual value.
+                return Ok(());
             }
         }
 
