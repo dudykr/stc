@@ -53,6 +53,19 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
+        if lhs.is_num() {
+            if rhs.is_num() {
+                return Ok(());
+            }
+            if rhs.is_enum_variant() {}
+
+            if rhs.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
+                || rhs.is_kwd(TsKeywordTypeKind::TsNumberKeyword)
+            {
+                return Err(Error::AssignOpCannotBeApplied { span, op });
+            }
+        }
+
         match op {
             op!("+=") => {}
             _ => {}

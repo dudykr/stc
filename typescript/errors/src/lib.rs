@@ -521,6 +521,11 @@ pub enum Error {
         span: Span,
         op: AssignOp,
     },
+
+    AssignOpCannotBeApplied {
+        span: Span,
+        op: AssignOp,
+    },
 }
 
 impl Error {
@@ -569,6 +574,7 @@ impl Error {
             Error::NonOverlappingTypeCast { .. } => 2352,
 
             Error::NoSuchProperty { .. } => 2339,
+            Error::AssignOpCannotBeApplied { .. } => 2365,
 
             _ => 0,
         }
@@ -585,6 +591,10 @@ impl Error {
                                                     other. If this was intentional, convert the \
                                                     expression to 'unknown' first."
                 .into(),
+
+            Self::AssignOpCannotBeApplied { op, .. } => {
+                "Operator '{}' cannot be applied to types".into()
+            }
 
             _ => format!("{:#?}", self).into(),
         }
