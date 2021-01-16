@@ -943,7 +943,7 @@ impl Analyzer<'_, '_> {
                                 is_static: true, ..
                             },
                         ) => {
-                            if member.key == prop {
+                            if member.key.type_eq(prop) {
                                 return Ok(box Type::Function(ty::Function {
                                     span: member.span,
                                     type_params: member.type_params.clone(),
@@ -978,7 +978,6 @@ impl Analyzer<'_, '_> {
                     span: *span,
                     obj: Some(obj.clone()),
                     prop: Some(prop.clone()),
-                    prop_ty: None,
                 });
             }
 
