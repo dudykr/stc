@@ -1928,6 +1928,16 @@ impl Analyzer<'_, '_> {
             ty
         );
 
+        // 
+        match ty.normalize() {
+            Type::Function(..) => {}
+            _ => {
+                return Ok(ty)
+            }
+        }
+
+
+
         // ty = self.expand(span, ty)?;
 
         let mut usage_visitor = TypeParamUsageFinder::default();
