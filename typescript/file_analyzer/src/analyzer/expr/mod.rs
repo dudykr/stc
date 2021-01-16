@@ -1130,40 +1130,17 @@ impl Analyzer<'_, '_> {
             },
 
             Type::Class(ref c) => {
-                let prop_ty = self.validate_key(prop, computed)?;
-
                 for v in c.body.iter() {
                     match v {
                         ty::ClassMember::Property(ref class_prop) => {
-                            match class_prop.key {
-                                RExpr::Ident(i) if !computed => {
-                                    if self.scope.declaring_prop.as_ref() == Some(&i.into()) {
-                                        return Err(Error::ReferencedInInit { span });
-                                    }
+                            if let Some(declaring) = self.scope.declaring_prop.as_ref() {
+                                if class_prop.key == *declaring.sym() {
+                                    return Err(Error::ReferencedInInit { span });
                                 }
-
-                                _ => {}
                             }
 
-                            let has_same_key = match &*prop {
-                                RExpr::Ident(prop) => match &*class_prop.key {
-                                    RExpr::Ident(key) if !computed => {
-                                        // ctxt is ignored because syntax context of property in a
-                                        // member expression is always empty.
-                                        prop.sym == key.sym
-                                    }
-                                    _ => false,
-                                },
-                                RExpr::Lit(RLit::Str(v)) if computed => match &*class_prop.key {
-                                    RExpr::Ident(key) => v.value == key.sym,
-                                    _ => false,
-                                },
-                                _ => false,
-                            } || (computed
-                                && prop_ty.type_eq(&class_prop.key_ty)
-                                && (*class_prop.key).eq_ignore_span(&*prop));
                             //
-                            if has_same_key {
+                            if class_prop.key.type_eq(prop) {
                                 return Ok(match class_prop.value {
                                     Some(ref ty) => ty.clone(),
                                     None => Type::any(span),
@@ -1171,9 +1148,7 @@ impl Analyzer<'_, '_> {
                             }
                         }
                         ty::ClassMember::Method(ref mtd) => {
-                            let has_same_key = mtd.key.type_eq(prop_ty);
-
-                            if has_same_key {
+                            if mtd.key.type_eq(prop) {
                                 return Ok(box Type::Function(stc_ts_types::Function {
                                     span: mtd.span,
                                     type_params: mtd.type_params.clone(),
