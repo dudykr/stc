@@ -20,6 +20,7 @@ use rnode::VisitWith;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RPat;
+use stc_ts_ast_rnode::RPrivateName;
 use stc_ts_ast_rnode::RStr;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsEnumMemberId;
@@ -240,13 +241,14 @@ impl SymbolIdGenerator {
 pub enum Key {
     Computed(ComputedKey),
     Normal(JsWord),
+    Private(#[use_eq_ignore_span] RPrivateName),
 }
 
 impl PartialEq<JsWord> for Key {
     fn eq(&self, other: &JsWord) -> bool {
         match self {
-            Key::Computed(_) => false,
             Key::Normal(v) => *v == *other,
+            _ => false,
         }
     }
 }
@@ -509,6 +511,7 @@ impl TypeElement {
         match key {
             Key::Computed(_) => None,
             Key::Normal(v) => Some(v),
+            Key::Private(_) => None,
         }
     }
 

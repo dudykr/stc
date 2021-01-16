@@ -779,6 +779,7 @@ impl Key {
                 optional: false,
                 type_ann: None,
             }),
+            Key::Private(name) => box RExpr::PrivateName(name),
         }
     }
 }
