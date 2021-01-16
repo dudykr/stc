@@ -2,7 +2,7 @@
 
 set -eu
 
-cargo test --test tests conformance \
+cargo test --test conformance \
   | grep '.\.\. ok$' \
   | sed -e 's!test tsc::conformance::!!' \
   | sed -e 's! ... ok!!' \
