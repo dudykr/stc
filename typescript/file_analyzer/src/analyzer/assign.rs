@@ -43,6 +43,10 @@ impl Analyzer<'_, '_> {
         let lhs = lhs.normalize();
         let rhs = rhs.normalize();
 
+        if lhs.is_any() || rhs.is_any() {
+            return Ok(());
+        }
+
         match op {
             op!("+=") => {}
             _ => {}
