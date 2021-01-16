@@ -822,9 +822,9 @@ impl Analyzer<'_, '_> {
 
                 // TODO: Remove clone
                 let members = self.scope.object_lit_members().to_vec();
-                if let Some(mut v) = access_property_of_type_elements(
-                    self, span, &obj, prop, computed, type_mode, &members,
-                )? {
+                if let Some(mut v) =
+                    self.access_property_of_type_elements(span, &obj, prop, type_mode, &members)?
+                {
                     self.marks()
                         .infected_by_this_in_object_literal
                         .apply_to_type(&mut v);
@@ -1418,9 +1418,9 @@ impl Analyzer<'_, '_> {
             Type::Interface(Interface {
                 ref body, extends, ..
             }) => {
-                if let Ok(Some(v)) = access_property_of_type_elements(
-                    self, span, &obj, prop, computed, type_mode, body,
-                ) {
+                if let Ok(Some(v)) = self
+                    .access_property_of_type_elements(span, &obj, prop, computed, type_mode, body)
+                {
                     return Ok(v);
                 }
 
@@ -1461,8 +1461,8 @@ impl Analyzer<'_, '_> {
             }
 
             Type::TypeLit(TypeLit { ref members, .. }) => {
-                if let Some(v) = access_property_of_type_elements(
-                    self, span, &obj, prop, computed, type_mode, members,
+                if let Some(v) = self.access_property_of_type_elements(
+                    span, &obj, prop, computed, type_mode, members,
                 )? {
                     return Ok(v);
                 }
