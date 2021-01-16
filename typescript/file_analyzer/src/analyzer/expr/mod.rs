@@ -24,7 +24,6 @@ use stc_ts_ast_rnode::RAwaitExpr;
 use stc_ts_ast_rnode::RBlockStmtOrExpr;
 use stc_ts_ast_rnode::RCallExpr;
 use stc_ts_ast_rnode::RClassExpr;
-use stc_ts_ast_rnode::RComputedPropName;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RExprOrSpread;
 use stc_ts_ast_rnode::RExprOrSuper;
@@ -37,7 +36,6 @@ use stc_ts_ast_rnode::RNumber;
 use stc_ts_ast_rnode::RParenExpr;
 use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RPatOrExpr;
-use stc_ts_ast_rnode::RPropName;
 use stc_ts_ast_rnode::RSeqExpr;
 use stc_ts_ast_rnode::RStr;
 use stc_ts_ast_rnode::RThisExpr;
@@ -53,14 +51,12 @@ use stc_ts_errors::debug::print_backtrace;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_types::name::Name;
-use stc_ts_types::rprop_name_to_expr;
 use stc_ts_types::ComputedKey;
 use stc_ts_types::Key;
 use stc_ts_types::PropertySignature;
 use stc_ts_types::{ClassProperty, Id, Method, ModuleId, Operator, QueryExpr, QueryType, StaticThis, TupleElement};
 use std::convert::TryFrom;
 use swc_atoms::js_word;
-use swc_common::EqIgnoreSpan;
 use swc_common::SyntaxContext;
 use swc_common::TypeEq;
 use swc_common::{Span, Spanned, DUMMY_SP};
@@ -1959,10 +1955,7 @@ impl Analyzer<'_, '_> {
 
         // Check for numeric keys like '0', '1', '2'.
         elems.iter().any(|el| match el {
-            TypeElement::Property(PropertySignature {
-                key: box RExpr::Lit(RLit::Num(..)),
-                ..
-            }) => true,
+            TypeElement::Property(PropertySignature { key: Key::Num(..), .. }) => true,
             _ => false,
         })
     }

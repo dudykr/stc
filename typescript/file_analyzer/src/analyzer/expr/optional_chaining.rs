@@ -17,6 +17,7 @@ impl Analyzer<'_, '_> {
 
         match &*node.expr {
             RExpr::Member(me) => {
+                let prop = self.validate_key(&me.prop, me.computed)?;
                 let obj = me.obj.validate_with(self)?;
                 let mut obj = box obj.remove_falsy();
 
@@ -29,7 +30,7 @@ impl Analyzer<'_, '_> {
                     obj = self.with_ctx(ctx).expand_fully(span, obj, true)?;
                 }
 
-                let ty = self.access_property(span, obj, &me.prop, me.computed, TypeOfMode::RValue)?;
+                let ty = self.access_property(span, obj, &prop, TypeOfMode::RValue)?;
 
                 //
 
