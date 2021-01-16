@@ -116,7 +116,6 @@ es2017/useObjectValuesAndEntries1.ts
 es2017/useSharedArrayBuffer1.ts
 es2018/usePromiseFinally.ts
 es2019/globalThisTypeIndexAccess.ts
-es2020/bigintMissingESNext.ts
 es6/Symbols/symbolDeclarationEmit1.ts
 es6/Symbols/symbolDeclarationEmit10.ts
 es6/Symbols/symbolDeclarationEmit11.ts
