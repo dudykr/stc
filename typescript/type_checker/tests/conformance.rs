@@ -97,6 +97,11 @@ fn conformance() {
         let cm = SourceMap::default();
         let fm = cm.load_file(&path).unwrap();
 
+        // Postpone multi-file tests.
+        if fm.src.to_lowercase().contains("@filename") {
+            return None;
+        }
+
         catch_unwind(|| {
             let mut parser = Parser::new(
                 Syntax::Typescript(TsConfig {
