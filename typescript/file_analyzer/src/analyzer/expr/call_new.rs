@@ -20,6 +20,7 @@ use crate::{
 use fxhash::FxHashMap;
 use rnode::Fold;
 use rnode::FoldWith;
+use rnode::NodeId;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
 use stc_ts_ast_rnode::RCallExpr;
@@ -27,11 +28,14 @@ use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RExprOrSpread;
 use stc_ts_ast_rnode::RExprOrSuper;
 use stc_ts_ast_rnode::RIdent;
+use stc_ts_ast_rnode::RInvalid;
 use stc_ts_ast_rnode::RLit;
 use stc_ts_ast_rnode::RMemberExpr;
 use stc_ts_ast_rnode::RNewExpr;
 use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RStr;
+use stc_ts_ast_rnode::RTaggedTpl;
+use stc_ts_ast_rnode::RTsAsExpr;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
@@ -39,6 +43,7 @@ use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_ast_rnode::RTsThisTypeOrIdent;
 use stc_ts_ast_rnode::RTsType;
 use stc_ts_ast_rnode::RTsTypeParamInstantiation;
+use stc_ts_ast_rnode::RTsTypeRef;
 use stc_ts_errors::debug::print_type;
 use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
@@ -49,6 +54,7 @@ use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::EqIgnoreSpan;
 use swc_common::TypeEq;
+use swc_common::DUMMY_SP;
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::*;
 use ty::TypeExt;
@@ -128,6 +134,54 @@ impl Analyzer<'_, '_> {
                     ExtractKind::New,
                     args.as_ref().map(|v| &**v).unwrap_or_else(|| &mut []),
                     type_args.as_ref(),
+                )
+            },
+        )
+    }
+}
+
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, e: &RTaggedTpl) -> ValidationResult {
+        let span = e.span;
+
+        let tpl_str_arg = RExprOrSpread {
+            spread: None,
+            expr: box RExpr::TsAs(RTsAsExpr {
+                node_id: NodeId::invalid(),
+                span: DUMMY_SP,
+                expr: box RExpr::Invalid(RInvalid { span }),
+                type_ann: box RTsType::TsTypeRef(RTsTypeRef {
+                    node_id: NodeId::invalid(),
+                    span: DUMMY_SP,
+                    type_name: RTsEntityName::Ident(RIdent::new(
+                        "TemplateStringsArray".into(),
+                        DUMMY_SP,
+                    )),
+                    type_params: None,
+                }),
+            }),
+        };
+        let mut args = vec![tpl_str_arg];
+
+        args.extend(
+            e.exprs
+                .iter()
+                .cloned()
+                .map(|expr| RExprOrSpread { spread: None, expr }),
+        );
+
+        self.with_child(
+            ScopeKind::Call,
+            Default::default(),
+            |analyzer: &mut Analyzer| {
+                analyzer.extract_call_new_expr_member(
+                    span,
+                    &e.tag,
+                    Default::default(),
+                    ExtractKind::New,
+                    args.as_ref(),
+                    Default::default(),
                 )
             },
         )

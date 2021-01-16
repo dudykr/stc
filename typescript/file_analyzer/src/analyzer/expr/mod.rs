@@ -119,6 +119,8 @@ impl Analyzer<'_, '_> {
                     ..
                 }) => Ok(Type::any(span)),
 
+                RExpr::TaggedTpl(e) => e.validate_with(self),
+
                 RExpr::Bin(e) => e.validate_with(self),
                 RExpr::Cond(e) => e.validate_with_args(self, (mode, type_ann)),
                 RExpr::Seq(e) => e.validate_with_args(self, (mode, type_ann)),
@@ -402,8 +404,10 @@ impl Analyzer<'_, '_> {
             }
         })()?;
 
-        if let Some(debugger) = &self.debugger {
-            debugger.dump_type(span, &ty);
+        if !span.is_dummy() {
+            if let Some(debugger) = &self.debugger {
+                debugger.dump_type(span, &ty);
+            }
         }
 
         Ok(ty)

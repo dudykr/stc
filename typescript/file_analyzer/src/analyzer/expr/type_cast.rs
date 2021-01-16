@@ -43,6 +43,10 @@ impl Analyzer<'_, '_> {
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
     ) -> ValidationResult {
+        if e.node_id.is_invalid() {
+            return e.type_ann.validate_with(self);
+        }
+
         // We don't apply type annotation because it can corrupt type checking.
         let orig_ty = e
             .expr
