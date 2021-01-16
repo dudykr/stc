@@ -593,7 +593,7 @@ impl Error {
                 .into(),
 
             Self::AssignOpCannotBeApplied { op, .. } => {
-                "Operator '{}' cannot be applied to types".into()
+                format!("Operator '{}' cannot be applied to types", op).into()
             }
 
             _ => format!("{:#?}", self).into(),
