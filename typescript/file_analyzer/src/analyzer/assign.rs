@@ -511,15 +511,13 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {
                 //
-                match to.normalize() {
+                match rhs {
                     Type::Param(TypeParam {
                         name: ref l_name, ..
                     }) => {
                         if name == l_name {
                             return Ok(());
                         }
-
-                        {}
                     }
 
                     _ => {}
