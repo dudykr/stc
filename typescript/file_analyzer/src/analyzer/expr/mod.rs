@@ -1410,8 +1410,6 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Array(Array { elem_type, .. }) => {
-                let array_ty = self.env.get_global_type(span, &js_word!("Array"))?;
-
                 if self.scope.is_calling() {
                     self.scope
                         .types
@@ -1437,6 +1435,8 @@ impl Analyzer<'_, '_> {
                         _ => {}
                     }
                 }
+
+                let array_ty = self.env.get_global_type(span, &js_word!("Array"))?;
 
                 return self.access_property(span, array_ty, prop, computed, type_mode);
             }
