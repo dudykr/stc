@@ -1,9 +1,36 @@
+ES3For-ofTypeCheck2.ts
+ES3For-ofTypeCheck6.ts
+ES5For-of10.ts
+ES5For-of11.ts
+ES5For-of13.ts
+ES5For-of14.ts
+ES5For-of15.ts
+ES5For-of16.ts
+ES5For-of18.ts
+ES5For-of19.ts
+ES5For-of2.ts
+ES5For-of21.ts
+ES5For-of24.ts
+ES5For-of25.ts
+ES5For-of3.ts
+ES5For-of4.ts
+ES5For-of5.ts
+ES5For-of6.ts
+ES5For-of9.ts
+ES5For-ofTypeCheck1.ts
+ES5For-ofTypeCheck2.ts
+ES5For-ofTypeCheck3.ts
+ES5For-ofTypeCheck4.ts
+ES5For-ofTypeCheck5.ts
+ES5For-ofTypeCheck6.ts
+ES5for-of32.ts
 TypeGuardWithEnumUnion.ts
 additionOperatorWithNullValueAndInvalidOperator.ts
 additionOperatorWithNullValueAndValidOperator.ts
 additionOperatorWithOnlyNullValueOrUndefinedValue.ts
 additionOperatorWithStringAndEveryType.ts
 additionOperatorWithUndefinedValueAndValidOperator.ts
+arithmeticOperator::arithmeticOperatorWithInvalidOperands.ts
 arithmeticOperatorWithAnyAndNumber.ts
 arithmeticOperatorWithEnum.ts
 arithmeticOperatorWithInvalidOperands.ts
@@ -73,11 +100,18 @@ derivedClassOverridesIndexersWithAssignmentCompatibility.ts
 derivedClassOverridesProtectedMembers.ts
 derivedClassOverridesWithoutSubtype.ts
 derivedTypeDoesNotRequireExtendsClause.ts
+doWhileBreakStatements.ts
+doWhileContinueStatements.ts
 elementAccessChain::elementAccessChain.2.ts
 enumClassification.ts
 enumConstantMemberWithStringEmitDeclaration.ts
 enumConstantMemberWithTemplateLiteralsEmitDeclaration.ts
 expressions/commaOperator
+for-inStatementsArray.ts
+forBreakStatements.ts
+forContinueStatements.ts
+forInBreakStatements.ts
+forInContinueStatements.ts
 functionExpressionContextualTyping1.ts
 functionExpressionContextualTyping3.ts
 genericClassExpressionInFunction.ts
@@ -119,6 +153,7 @@ privateNamesAndFields.ts
 privateNamesAndkeyof.ts
 propertyAccessChain::propertyAccessChain.2.ts
 propertyAccessNumericLiterals.ts
+returnStatements.ts
 staticAndNonStaticPropertiesSameName.ts
 staticMemberInitialization.ts
 staticPropertyAndFunctionWithSameName.ts
@@ -131,6 +166,8 @@ superSymbolIndexedAccess2.ts
 test classes::classExpression.ts
 test classes::mixinClassesMembers.ts
 thisInInstanceMemberInitializer.ts
+throwInEnclosingStatements.ts
+tryStatements.ts
 typeArgumentInferenceTransitiveConstraints.ts
 typeGuardEnums.ts
 typeGuardIntersectionTypes.ts
@@ -143,6 +180,7 @@ typeGuardTautologicalConsistiency.ts
 typeGuardTypeOfUndefined.ts
 typeGuardsDefeat.ts
 typeGuardsInClassAccessors.ts
+typeGuardsInClassMethods.ts
 typeGuardsInDoStatement.ts
 typeGuardsInFunction.ts
 typeGuardsInWhileStatement.ts
@@ -151,4 +189,5 @@ typeOfThisInMemberFunctions.ts
 typePredicateASI.ts
 voidOperatorWithEnumType.ts
 voidParamAssignmentCompatibility.ts
-ypeGuardsInClassMethods.ts
+whileBreakStatements.ts
+whileContinueStatements.ts
