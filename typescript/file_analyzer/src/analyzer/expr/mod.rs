@@ -586,6 +586,17 @@ impl Analyzer<'_, '_> {
                     span: *span,
                     sym: sym.clone(),
                 }),
+
+                // The code below is valid typescript.
+                //
+                // interface AbortSignalEventMap {
+                //     "abort": Event;
+                // }
+                RExpr::Lit(RLit::Str(s)) => Ok(Key::Normal {
+                    span: s.span,
+                    sym: s.value.clone(),
+                }),
+
                 RExpr::Lit(RLit::Num(n)) => Ok(Key::Num(n.clone())),
                 RExpr::Lit(RLit::BigInt(n)) => Ok(Key::BigInt(n.clone())),
                 _ => unreachable!("non-computed-key: {:?}", prop),
