@@ -12,7 +12,6 @@ use rnode::VisitWith;
 use stc_ts_ast_rnode::RArrayPat;
 use stc_ts_ast_rnode::RAssignPatProp;
 use stc_ts_ast_rnode::RComputedPropName;
-use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RObjectPat;
 use stc_ts_ast_rnode::RObjectPatProp;
@@ -57,6 +56,8 @@ use stc_ts_ast_rnode::RTsTypeQueryExpr;
 use stc_ts_ast_rnode::RTsTypeRef;
 use stc_ts_ast_rnode::RTsUnionOrIntersectionType;
 use stc_ts_ast_rnode::RTsUnionType;
+use stc_ts_errors::Error;
+use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::rprop_name_to_expr;
 use stc_ts_types::Alias;
 use stc_ts_types::Array;
@@ -70,6 +71,7 @@ use stc_ts_types::IndexedAccessType;
 use stc_ts_types::InferType;
 use stc_ts_types::Interface;
 use stc_ts_types::Intersection;
+use stc_ts_types::Key;
 use stc_ts_types::Mapped;
 use stc_ts_types::MethodSignature;
 use stc_ts_types::Operator;
@@ -342,8 +344,7 @@ impl Analyzer<'_, '_> {
 
         Ok(PropertySignature {
             span: d.span,
-            computed: d.computed,
-            key: d.key.clone(),
+            key,
             optional: d.optional,
             params: d.params.validate_with(self)?,
             readonly: d.readonly,
@@ -835,6 +836,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Handle implicit defaults.
+    #[extra_validator]
     pub(crate) fn default_any_object(&mut self, obj: &RObjectPat) {
         if obj.type_ann.is_some() {
             return;
@@ -847,6 +849,7 @@ impl Analyzer<'_, '_> {
         for props in &obj.props {
             match props {
                 RObjectPatProp::KeyValue(p) => {
+                    let key = p.key.validate_with(self)?;
                     match *p.value {
                         RPat::Array(_) | RPat::Object(_) => {
                             self.default_any_pat(&*p.value);
@@ -866,8 +869,7 @@ impl Analyzer<'_, '_> {
                     members.push(TypeElement::Property(PropertySignature {
                         span: DUMMY_SP,
                         readonly: false,
-                        key: box rprop_name_to_expr(p.key.clone()),
-                        computed: false,
+                        key,
                         optional: false,
                         params: vec![],
                         type_ann: ty,
@@ -875,11 +877,11 @@ impl Analyzer<'_, '_> {
                     }))
                 }
                 RObjectPatProp::Assign(RAssignPatProp { key, .. }) => {
+                    let key = Key::Normal(key.sym.clone());
                     members.push(TypeElement::Property(PropertySignature {
                         span: DUMMY_SP,
                         readonly: false,
-                        key: box RExpr::Ident(key.clone()),
-                        computed: false,
+                        key,
                         optional: false,
                         params: vec![],
                         type_ann: None,
