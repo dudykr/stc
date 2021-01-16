@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -eux
 
+./scripts/sort.sh
 
 # We use visualizer to see actual types while working on conformance.
 # So existence of failing visualization test typically means that we added a new fixture.
