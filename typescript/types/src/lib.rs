@@ -253,7 +253,7 @@ impl PartialEq<JsWord> for Key {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, EqIgnoreSpan, TypeEq, Visit, Spanned)]
 pub struct ComputedKey {
     pub span: Span,
     pub expr: Box<RExpr>,
