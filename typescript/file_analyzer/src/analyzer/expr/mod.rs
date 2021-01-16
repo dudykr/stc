@@ -905,8 +905,6 @@ impl Analyzer<'_, '_> {
                     });
                 }
 
-                let prop_ty = prop.computed().unwrap();
-
                 if let Some(super_class) = self.scope.get_super_class() {
                     let super_class = super_class.clone();
                     let ctx = Ctx {
@@ -920,6 +918,8 @@ impl Analyzer<'_, '_> {
                         return Ok(v);
                     }
                 }
+
+                let prop_ty = prop.computed().unwrap().ty;
 
                 // TODO: Handle string literals like
                 //
@@ -943,36 +943,13 @@ impl Analyzer<'_, '_> {
                                 is_static: true, ..
                             },
                         ) => {
-                            match &member.key {
-                                RPropName::Ident(key) => {
-                                    //
-                                    match prop {
-                                        RExpr::Ident(i) if i.sym == key.sym => {
-                                            return Ok(box Type::Function(ty::Function {
-                                                span: member.span,
-                                                type_params: member.type_params.clone(),
-                                                params: member.params.clone(),
-                                                ret_ty: member.ret_ty.clone(),
-                                            }));
-                                        }
-
-                                        _ => {}
-                                    }
-                                }
-                                RPropName::Str(_) => {}
-                                RPropName::Num(_) => {}
-                                RPropName::BigInt(_) => {}
-
-                                RPropName::Computed(key) => {
-                                    if (*key.expr).type_eq(&*prop) {
-                                        return Ok(box Type::Function(ty::Function {
-                                            span: member.span,
-                                            type_params: member.type_params.clone(),
-                                            params: member.params.clone(),
-                                            ret_ty: member.ret_ty.clone(),
-                                        }));
-                                    }
-                                }
+                            if member.key == prop {
+                                return Ok(box Type::Function(ty::Function {
+                                    span: member.span,
+                                    type_params: member.type_params.clone(),
+                                    params: member.params.clone(),
+                                    ret_ty: member.ret_ty.clone(),
+                                }));
                             }
                         }
 
