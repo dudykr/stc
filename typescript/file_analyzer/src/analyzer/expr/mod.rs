@@ -1227,23 +1227,20 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                let mut prop_ty = if computed {
-                    prop.validate_with_default(self)?
-                } else {
-                    match prop {
-                        RExpr::Ident(i) => box Type::Lit(RTsLitType {
-                            node_id: NodeId::invalid(),
-                            span: i.span,
-                            lit: RTsLit::Str(RStr {
-                                span: i.span,
-                                value: i.sym.clone(),
-                                has_escape: false,
-                                kind: Default::default(),
-                            }),
+                let mut prop_ty = match prop {
+                    Key::Computed(key) => key.ty,
+                    Key::Normal { span, sym } => box Type::Lit(RTsLitType {
+                        node_id: NodeId::invalid(),
+                        span: *span,
+                        lit: RTsLit::Str(RStr {
+                            span: *span,
+                            value: sym.clone(),
+                            has_escape: false,
+                            kind: Default::default(),
                         }),
-                        _ => unreachable!(),
-                    }
+                    }),
                 };
+
                 if is_str_lit_or_union(&prop_ty) {
                     self.prevent_generalize(&mut prop_ty);
                 }
