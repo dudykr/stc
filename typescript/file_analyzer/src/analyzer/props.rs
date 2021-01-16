@@ -121,15 +121,7 @@ impl Analyzer<'_, '_> {
                         Type::EnumVariant(..) => {}
                         _ if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword)
                             || ty.is_unique_symbol() => {}
-                        _ if is_symbol_access => {
-                            errors.push(Error::NonSymbolTypedFieldFromSymbol {
-                                span: node.expr.span(),
-                            })
-                        }
                         _ => match mode {
-                            ComputedPropMode::Class { .. } => {
-                                errors.push(Error::TS1168 { span: node.span })
-                            }
                             ComputedPropMode::Interface => {
                                 errors.push(Error::TS1169 { span: node.span })
                             }

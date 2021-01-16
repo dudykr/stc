@@ -504,10 +504,6 @@ pub enum Error {
         span: Span,
     },
 
-    NonSymbolTypedFieldFromSymbol {
-        span: Span,
-    },
-
     NonOverlappingTypeCast {
         span: Span,
     },
