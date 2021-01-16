@@ -40,6 +40,9 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult<()> {
         debug_assert_ne!(op, op!("="));
 
+        let lhs = self.expand_top_ref(span, Cow::Borrowed(lhs))?;
+        let rhs = self.expand_top_ref(span, Cow::Borrowed(rhs))?;
+
         let lhs = lhs.normalize();
         let rhs = rhs.normalize();
 

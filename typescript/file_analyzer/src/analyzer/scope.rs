@@ -389,6 +389,26 @@ impl Analyzer<'_, '_> {
         Ok(ty)
     }
 
+    pub(super) fn expand_top_ref<'a>(
+        &mut self,
+        span: Span,
+        ty: Cow<'a, Type>,
+    ) -> ValidationResult<Cow<'a, Type>> {
+        if !ty.normalize().is_ref_type() {
+            return Ok(ty);
+        }
+
+        let ctx = Ctx {
+            preserve_ref: false,
+            ignore_expand_prevention_for_top: true,
+            ignore_expand_prevention_for_all: false,
+            ..self.ctx
+        };
+        self.expand_fully(span, box ty.into_owned(), true)
+            .map(|v| *v)
+            .map(Cow::Owned)
+    }
+
     pub(super) fn register_type(&mut self, name: Id, ty: Box<Type>) -> Result<(), Error> {
         if self.ctx.in_global {
             self.env.declare_global_type(name.sym().clone(), ty.clone());
