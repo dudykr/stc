@@ -1571,29 +1571,31 @@ impl Analyzer<'_, '_> {
             }
 
             Type::IndexedAccessType(..) => {
-                // TODO: Verify input type (obj.index_type)
+                let index_type = match prop {
+                    Key::Normal { sym, .. } => {
+                        let mut prop_ty = box Type::Lit(RTsLitType {
+                            node_id: NodeId::invalid(),
+                            span: DUMMY_SP,
+                            lit: RTsLit::Str(RStr {
+                                span: DUMMY_SP,
+                                value: sym.clone(),
+                                has_escape: false,
+                                kind: Default::default(),
+                            }),
+                        });
+                        self.prevent_generalize(&mut prop_ty);
+
+                        prop_ty
+                    }
+                    Key::Computed(c) => c.ty.clone(),
+                    _ => unreachable!(),
+                };
+
                 let ty = box Type::IndexedAccessType(IndexedAccessType {
                     span,
                     obj_type: obj,
                     readonly: false,
-                    index_type: match prop {
-                        RExpr::Ident(i) if !computed => {
-                            let mut prop_ty = box Type::Lit(RTsLitType {
-                                node_id: NodeId::invalid(),
-                                span: DUMMY_SP,
-                                lit: RTsLit::Str(RStr {
-                                    span: DUMMY_SP,
-                                    value: i.sym.clone(),
-                                    has_escape: false,
-                                    kind: Default::default(),
-                                }),
-                            });
-                            self.prevent_generalize(&mut prop_ty);
-
-                            prop_ty
-                        }
-                        _ => prop.validate_with_default(self)?,
-                    },
+                    index_type,
                 });
                 return Ok(ty);
             }
@@ -1916,8 +1918,7 @@ impl Analyzer<'_, '_> {
                 self.access_property(
                     span,
                     obj_ty,
-                    &mut RExpr::Ident(qname.right.clone()),
-                    false,
+                    &Key::Normal(qname.right.sym.clone()),
                     TypeOfMode::RValue,
                 )
             }
