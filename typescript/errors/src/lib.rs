@@ -520,6 +520,8 @@ pub enum Error {
     InvalidOpAssign {
         span: Span,
         op: AssignOp,
+        lhs: Type,
+        rhs: Type,
     },
 
     AssignOpCannotBeApplied {
