@@ -5,6 +5,7 @@ use rnode::VisitMutWith;
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RBlockStmt;
 use stc_ts_ast_rnode::RBool;
+use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RModuleDecl;
 use stc_ts_ast_rnode::RModuleItem;
 use stc_ts_ast_rnode::RStmt;
@@ -103,6 +104,11 @@ impl VisitMut<Span> for Marker {
     fn visit_mut(&mut self, span: &mut Span) {
         span.ctxt = span.ctxt.apply_mark(self.mark);
     }
+}
+
+/// Prevent interop with hygiene.
+impl VisitMut<RIdent> for Marker {
+    fn visit_mut(&mut self, _: &mut RIdent) {}
 }
 
 impl VisitMut<Type> for Marker {
