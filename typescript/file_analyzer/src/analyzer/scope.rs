@@ -1672,8 +1672,9 @@ impl Expander<'_, '_, '_> {
                                 return Ok(None);
                             }
                         }
-                        let is_class = match t.normalize() {
-                            Type::Class(..) => true,
+                        // We should expand alias again.
+                        let is_alias = match t.normalize() {
+                            Type::Alias(..) => true,
                             _ => false,
                         };
 
@@ -1731,7 +1732,7 @@ impl Expander<'_, '_, '_> {
                                         .analyzer
                                         .expand_type_params(&inferred, box ty.foldable())?;
 
-                                    if !is_class {
+                                    if is_alias {
                                         self.dejavu.insert(i.into());
                                         ty = ty.fold_with(self);
                                         self.dejavu.remove(&i.into());
@@ -1758,7 +1759,7 @@ impl Expander<'_, '_, '_> {
 
                                 let mut ty = ty.foldable();
 
-                                if !is_class {
+                                if is_alias {
                                     self.dejavu.insert(i.into());
                                     ty = ty.fold_with(self);
                                     self.dejavu.remove(&i.into());
