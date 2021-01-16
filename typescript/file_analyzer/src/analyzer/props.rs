@@ -214,7 +214,6 @@ impl Analyzer<'_, '_> {
 
         let span = prop.span();
         // TODO: Validate prop key
-        let key = prop_key_to_expr(&prop);
 
         let shorthand_type_ann = match prop {
             RProp::Shorthand(ref i) => {
@@ -227,20 +226,23 @@ impl Analyzer<'_, '_> {
 
         let span = prop.span();
 
-        Ok(match *prop {
-            RProp::Shorthand(..) => PropertySignature {
-                span: prop.span(),
-                key,
-                params: Default::default(),
-                optional: false,
-                readonly: false,
-                computed,
-                type_ann: shorthand_type_ann,
-                type_params: Default::default(),
+        Ok(match prop {
+            RProp::Shorthand(i) => {
+                let key = Key::Normal { span, sym: i.sym };
+                PropertySignature {
+                    span: prop.span(),
+                    key,
+                    params: Default::default(),
+                    optional: false,
+                    readonly: false,
+                    type_ann: shorthand_type_ann,
+                    type_params: Default::default(),
+                }
+                .into()
             }
-            .into(),
 
             RProp::KeyValue(ref kv) => {
+                let key = kv.key.validate_with(self)?;
                 let computed = match kv.key {
                     RPropName::Computed(_) => true,
                     _ => false,
@@ -253,7 +255,6 @@ impl Analyzer<'_, '_> {
                     params: Default::default(),
                     optional: false,
                     readonly: false,
-                    computed,
                     type_ann: Some(ty),
                     type_params: Default::default(),
                 }
@@ -263,6 +264,7 @@ impl Analyzer<'_, '_> {
             RProp::Assign(ref p) => unimplemented!("validate_key(AssignProperty): {:?}", p),
             RProp::Getter(ref p) => p.validate_with(self)?,
             RProp::Setter(ref p) => {
+                let key = p.key.validate_with(self)?;
                 let computed = match p.key {
                     RPropName::Computed(_) => true,
                     _ => false,
@@ -278,7 +280,6 @@ impl Analyzer<'_, '_> {
                             params: vec![param.validate_with(child)?],
                             optional: false,
                             readonly: false,
-                            computed,
                             type_ann: Some(Type::any(parma_span)),
                             type_params: Default::default(),
                         }
@@ -288,6 +289,7 @@ impl Analyzer<'_, '_> {
             }
 
             RProp::Method(ref p) => {
+                let key = p.key.validate_with(self)?;
                 let computed = match p.key {
                     RPropName::Computed(..) => true,
                     _ => false,
@@ -354,7 +356,6 @@ impl Analyzer<'_, '_> {
                             span,
                             readonly: false,
                             key,
-                            computed,
                             optional: false,
                             params,
                             ret_ty,
