@@ -1827,6 +1827,7 @@ impl Expander<'_, '_, '_> {
             }
         }
 
+        print_backtrace();
         Err(Error::NameNotFound {
             name: type_name.clone().into(),
             ctxt,
