@@ -13,7 +13,6 @@ use rnode::Visit;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
 use rnode::VisitWith;
-use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RStr;
 use stc_ts_ast_rnode::RTsEntityName;
@@ -28,6 +27,7 @@ use stc_ts_types::Id;
 use stc_ts_types::IndexSignature;
 use stc_ts_types::IndexedAccessType;
 use stc_ts_types::Intersection;
+use stc_ts_types::Key;
 use stc_ts_types::Mapped;
 use stc_ts_types::Operator;
 use stc_ts_types::OptionalType;
@@ -1272,12 +1272,15 @@ impl Analyzer<'_, '_> {
                             Type::TypeLit(arg) => {
                                 let key_ty = arg.members.iter().filter_map(|element| match element {
                                     TypeElement::Property(p) => match p.key {
-                                        RExpr::Ident(i) => Some(box Type::Lit(RTsLitType {
+                                        Key::Normalt {
+                                            span: i_span,
+                                            sym: i_sym,
+                                        } => Some(box Type::Lit(RTsLitType {
                                             node_id: NodeId::invalid(),
                                             span: param.span,
                                             lit: RTsLit::Str(RStr {
-                                                span: i.span,
-                                                value: i.sym.clone(),
+                                                span: *i_span,
+                                                value: i_sym.clone(),
                                                 has_escape: false,
                                                 kind: Default::default(),
                                             }),
