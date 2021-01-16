@@ -715,7 +715,9 @@ impl Analyzer<'_, '_> {
         }
 
         for el in members.iter() {
-            if prop.is_computed() {
+            if let Key::Computed(prop) = prop {
+                let prop_ty = &prop.ty;
+
                 match el {
                     TypeElement::Index(IndexSignature {
                         ref params,
@@ -758,7 +760,7 @@ impl Analyzer<'_, '_> {
                         let ty = box Type::IndexedAccessType(IndexedAccessType {
                             span,
                             obj_type: box obj.clone(),
-                            index_type: prop_ty,
+                            index_type: prop_ty.clone(),
                             readonly: *readonly,
                         });
 
@@ -792,6 +794,8 @@ impl Analyzer<'_, '_> {
 
             slog::debug!(&self.logger, "access_property");
         }
+
+        let computed = prop.is_computed();
 
         // Recursive method call
         if !computed
