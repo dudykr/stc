@@ -60,7 +60,7 @@ impl Analyzer<'_, '_> {
             if rhs.is_enum_variant() {}
 
             if rhs.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
-                || rhs.is_kwd(TsKeywordTypeKind::TsNumberKeyword)
+                || rhs.is_kwd(TsKeywordTypeKind::TsNullKeyword)
             {
                 return Err(Error::AssignOpCannotBeApplied { span, op });
             }
