@@ -76,10 +76,15 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if lhs.is_type_lit() {
-            if rhs.is_str() {
-                return Ok(());
+        match lhs {
+            Type::TypeLit(lhs) => {
+                if lhs.members.is_empty() {
+                    if rhs.is_str() {
+                        return Ok(());
+                    }
+                }
             }
+            _ => {}
         }
 
         match op {
