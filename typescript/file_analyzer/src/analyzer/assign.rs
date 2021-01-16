@@ -511,7 +511,7 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {
                 //
-                match rhs {
+                match to {
                     Type::Param(TypeParam {
                         name: ref l_name, ..
                     }) => {
