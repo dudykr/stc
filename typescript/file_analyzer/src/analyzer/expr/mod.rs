@@ -1508,7 +1508,7 @@ impl Analyzer<'_, '_> {
                         elem_type: Type::union(types),
                     });
 
-                    return self.access_property(span, obj, prop, computed, type_mode);
+                    return self.access_property(span, obj, prop, type_mode);
                 }
             },
 
@@ -1522,7 +1522,7 @@ impl Analyzer<'_, '_> {
                     match *m {
                         ty::ClassMember::Property(ref p) => {
                             // TODO: normalized string / ident
-                            if (&*p.key).eq_ignore_span(&prop) {
+                            if p.key.type_eq(&prop) {
                                 if let Some(ref ty) = p.value {
                                     return Ok(ty.clone());
                                 }
