@@ -41,6 +41,7 @@ use stc_ts_errors::debug::print_backtrace;
 use stc_ts_errors::Error;
 use stc_ts_types::name::Name;
 use stc_ts_types::Array;
+use stc_ts_types::Key;
 use stc_ts_types::TypeParamInstantiation;
 use stc_ts_types::{
     Conditional, FnParam, Id, IndexedAccessType, Mapped, ModuleId, Operator, QueryExpr, QueryType,
@@ -1323,13 +1324,15 @@ impl Analyzer<'_, '_> {
                                     self.declare_complex_vars(kind, &prop.value, ty)?;
                                 }
                                 RObjectPatProp::Assign(prop) => {
-                                    let mut key_expr = box RExpr::Ident(prop.key.clone());
+                                    let mut key_expr = Key::Normal {
+                                        span: prop.key.span,
+                                        sym: prop.key.sym.clone(),
+                                    };
 
                                     let ty = self.access_property(
                                         span,
                                         ty.clone(),
-                                        &mut key_expr,
-                                        false,
+                                        &key_expr,
                                         TypeOfMode::RValue,
                                     )?;
 

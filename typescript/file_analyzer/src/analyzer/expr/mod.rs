@@ -1918,7 +1918,10 @@ impl Analyzer<'_, '_> {
                 self.access_property(
                     span,
                     obj_ty,
-                    &Key::Normal(qname.right.sym.clone()),
+                    &Key::Normal {
+                        span: qname.right.span,
+                        sym: qname.right.sym.clone(),
+                    },
                     TypeOfMode::RValue,
                 )
             }

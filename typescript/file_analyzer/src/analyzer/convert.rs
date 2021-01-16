@@ -58,8 +58,6 @@ use stc_ts_ast_rnode::RTsUnionOrIntersectionType;
 use stc_ts_ast_rnode::RTsUnionType;
 use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
-use stc_ts_types::rprop_name_to_expr;
-use stc_ts_types::Alias;
 use stc_ts_types::Array;
 use stc_ts_types::CallSignature;
 use stc_ts_types::Conditional;
