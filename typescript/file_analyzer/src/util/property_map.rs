@@ -1,10 +1,5 @@
-use rnode::NodeId;
-use stc_ts_ast_rnode::RComputedPropName;
-use stc_ts_ast_rnode::RExpr;
-use stc_ts_ast_rnode::RPropName;
 use stc_ts_types::Key;
 use swc_common::TypeEq;
-use swc_common::DUMMY_SP;
 
 /// **Note**: this struct ignores span of key.
 #[derive(Debug)]

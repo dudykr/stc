@@ -58,6 +58,16 @@ impl Analyzer<'_, '_> {
                     ty,
                 }))
             }
+            RPropName::Ident(i) => Ok(Key::Normal {
+                span: i.span,
+                sym: i.sym.clone(),
+            }),
+            RPropName::Str(s) => Ok(Key::Normal {
+                span: s.span,
+                sym: s.value.clone(),
+            }),
+            RPropName::Num(v) => Ok(Key::Num(v.clone())),
+            RPropName::BigInt(v) => Ok(Key::BigInt(v.clone())),
         }
     }
 }
@@ -232,7 +242,10 @@ impl Analyzer<'_, '_> {
 
         Ok(match prop {
             RProp::Shorthand(i) => {
-                let key = Key::Normal { span, sym: i.sym };
+                let key = Key::Normal {
+                    span,
+                    sym: i.sym.clone(),
+                };
                 PropertySignature {
                     span: prop.span(),
                     key,

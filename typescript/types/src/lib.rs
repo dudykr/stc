@@ -17,6 +17,7 @@ use rnode::FoldWith;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
 use rnode::VisitWith;
+use stc_ts_ast_rnode::RBigInt;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RNumber;
@@ -243,6 +244,7 @@ pub enum Key {
     Computed(ComputedKey),
     Normal { span: Span, sym: JsWord },
     Num(#[use_eq_ignore_span] RNumber),
+    BigInt(#[use_eq_ignore_span] RBigInt),
     Private(#[use_eq_ignore_span] RPrivateName),
 }
 

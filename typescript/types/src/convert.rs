@@ -754,6 +754,7 @@ impl Key {
             }),
             Key::Private(name) => box RExpr::PrivateName(name),
             Key::Num(n) => box RExpr::Lit(RLit::Num(n)),
+            Key::BigInt(i) => box RExpr::Lit(RLit::BigInt(i)),
         }
     }
 }

@@ -1841,16 +1841,7 @@ impl Analyzer<'_, '_> {
             };
             let obj_ty = self.with_ctx(ctx).expand_fully(span, obj_ty, true)?;
 
-            match self.access_property(span, obj_ty, &prop, type_mode) {
-                Ok(v) => return Ok(v),
-                Err(err) => {
-                    errors.push(err);
-                    return Err(Error::Errors {
-                        span,
-                        errors: errors.into(),
-                    });
-                }
-            }
+            return self.access_property(span, obj_ty, &prop, type_mode);
         }
     }
 
