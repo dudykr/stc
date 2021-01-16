@@ -94,6 +94,11 @@ impl Analyzer<'_, '_> {
                     kind: TsKeywordTypeKind::TsSymbolKeyword,
                     ..
                 }) => {}
+                Type::Operator(Operator {
+                    op: TsTypeOperatorOp::Unique,
+                    ty,
+                    ..
+                }) if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) => {}
                 _ => {
                     //
                     self.storage.report(Error::NonSymbolComputedProp { span });
