@@ -43,7 +43,13 @@ impl Analyzer<'_, '_> {
         let lhs = lhs.normalize();
         let rhs = rhs.normalize();
 
+        // Trivial
         if lhs.is_any() || rhs.is_any() {
+            return Ok(());
+        }
+
+        // Addition to a string converts rhs into stirng.
+        if lhs.is_str() {
             return Ok(());
         }
 
