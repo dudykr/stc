@@ -847,37 +847,14 @@ impl Analyzer<'_, '_> {
                                 Method {
                                     is_static: false, ..
                                 },
-                            ) => match &member.key {
-                                RPropName::Ident(key) => {
-                                    //
-                                    match prop {
-                                        RExpr::Ident(i) if i.sym == key.sym => {
-                                            return Ok(box Type::Function(ty::Function {
-                                                span: member.span,
-                                                type_params: member.type_params.clone(),
-                                                params: member.params.clone(),
-                                                ret_ty: member.ret_ty.clone(),
-                                            }));
-                                        }
-
-                                        _ => {}
-                                    }
-                                }
-                                RPropName::Str(_) => {}
-                                RPropName::Num(_) => {}
-                                RPropName::BigInt(_) => {}
-
-                                RPropName::Computed(key) => {
-                                    if (*key.expr).type_eq(&*prop) {
-                                        return Ok(box Type::Function(ty::Function {
-                                            span: member.span,
-                                            type_params: member.type_params.clone(),
-                                            params: member.params.clone(),
-                                            ret_ty: member.ret_ty.clone(),
-                                        }));
-                                    }
-                                }
-                            },
+                            ) if member.key.type_eq(prop) => {
+                                return Ok(box Type::Function(ty::Function {
+                                    span: member.span,
+                                    type_params: member.type_params.clone(),
+                                    params: member.params.clone(),
+                                    ret_ty: member.ret_ty.clone(),
+                                }));
+                            }
 
                             ty::ClassMember::Property(
                                 member
@@ -886,21 +863,7 @@ impl Analyzer<'_, '_> {
                                     is_static: false, ..
                                 },
                             ) => {
-                                match &*member.key {
-                                    RExpr::Ident(member_key) => match &*prop {
-                                        RExpr::Ident(prop) => {
-                                            if prop.sym == member_key.sym {
-                                                return Ok(member
-                                                    .value
-                                                    .clone()
-                                                    .unwrap_or_else(|| Type::any(span)));
-                                            }
-                                        }
-                                        _ => {}
-                                    },
-                                    _ => {}
-                                }
-                                if (&*member.key).type_eq(&*prop) {
+                                if member.key.type_eq(prop) {
                                     return Ok(member
                                         .value
                                         .clone()
@@ -926,9 +889,7 @@ impl Analyzer<'_, '_> {
                         let super_class =
                             self.with_ctx(ctx).expand_fully(span, super_class, true)?;
 
-                        if let Ok(v) =
-                            self.access_property(span, super_class, prop, computed, type_mode)
-                        {
+                        if let Ok(v) = self.access_property(span, super_class, prop, type_mode) {
                             return Ok(v);
                         }
                     }
@@ -1461,15 +1422,13 @@ impl Analyzer<'_, '_> {
             }
 
             Type::TypeLit(TypeLit { ref members, .. }) => {
-                if let Some(v) = self.access_property_of_type_elements(
-                    span, &obj, prop, computed, type_mode, members,
-                )? {
+                if let Some(v) =
+                    self.access_property_of_type_elements(span, &obj, prop, type_mode, members)?
+                {
                     return Ok(v);
                 }
 
                 if computed {
-                    let prop_ty = Some(prop.validate_with_default(self)?);
-                    dbg!();
                     return Err(Error::NoSuchProperty {
                         span,
                         obj: Some(obj),
