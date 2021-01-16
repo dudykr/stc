@@ -1112,7 +1112,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 let mut prop_ty = match prop {
-                    Key::Computed(key) => key.ty,
+                    Key::Computed(key) => key.ty.clone(),
                     Key::Normal { span, sym } => box Type::Lit(RTsLitType {
                         node_id: NodeId::invalid(),
                         span: *span,
@@ -1122,6 +1122,16 @@ impl Analyzer<'_, '_> {
                             has_escape: false,
                             kind: Default::default(),
                         }),
+                    }),
+                    Key::Num(n) => box Type::Lit(RTsLitType {
+                        node_id: NodeId::invalid(),
+                        span: n.span,
+                        lit: RTsLit::Number(n.clone()),
+                    }),
+                    Key::BigInt(n) => box Type::Lit(RTsLitType {
+                        node_id: NodeId::invalid(),
+                        span: n.span,
+                        lit: RTsLit::BigInt(n.clone()),
                     }),
                 };
 
