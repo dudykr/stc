@@ -332,10 +332,6 @@ impl Analyzer<'_, '_> {
     ///
     ///   - Type alias
     pub(super) fn expand(&mut self, span: Span, ty: Box<Type>) -> ValidationResult {
-        if self.is_builtin {
-            return Ok(ty);
-        }
-
         let mut v = Expander {
             logger: self.logger.clone(),
             span,
@@ -357,10 +353,6 @@ impl Analyzer<'_, '_> {
     ///    assignment, and false if you are going to use it in user-visible
     ///    stuffs (e.g. type annotation for .d.ts file)
     pub(super) fn expand_fully(&mut self, span: Span, ty: Box<Type>, expand_union: bool) -> ValidationResult {
-        if self.is_builtin {
-            return Ok(ty);
-        }
-
         let mut v = Expander {
             logger: self.logger.clone(),
             span,
@@ -428,7 +420,11 @@ impl Analyzer<'_, '_> {
                 _ => false,
             }
         {
-            self.storage.store_private_type(ModuleId::builtin(), name, ty.cheap());
+            let ty = ty.cheap();
+
+            self.storage
+                .store_private_type(ModuleId::builtin(), name.clone(), ty.clone());
+            self.scope.register_type(name, ty);
         } else {
             slog::debug!(self.logger, "register_type({})", name);
             let ty = ty.cheap();
