@@ -424,12 +424,9 @@ impl Fold<Type> for Simplifier<'_> {
                         let span = element.span();
 
                         match element {
-                            TypeElement::Property(p) => match &*p.key {
-                                RExpr::Ident(i) if i.sym == s.value => {
-                                    Some(p.type_ann.unwrap_or_else(|| Type::any(span)))
-                                }
-                                _ => None,
-                            },
+                            TypeElement::Property(p) if p.key == s.value => {
+                                Some(p.type_ann.unwrap_or_else(|| Type::any(span)))
+                            }
                             _ => None,
                         }
                     })
