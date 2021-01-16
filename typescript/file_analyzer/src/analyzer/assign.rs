@@ -30,6 +30,13 @@ use swc_common::TypeEq;
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::*;
 
+/// Context used for `=` assignments.
+#[derive(Clone, Copy)]
+pub(crate) struct AssignOpts {
+    pub span: Span,
+    pub allow_unknown_rhs: bool,
+}
+
 impl Analyzer<'_, '_> {
     pub(crate) fn assign_with_op(
         &mut self,
@@ -113,7 +120,14 @@ impl Analyzer<'_, '_> {
         // self.verify_before_assign("lhs", left);
         // self.verify_before_assign("rhs", right);
 
-        let res = self.assign_inner(left, right, span);
+        let res = self.assign_inner(
+            left,
+            right,
+            AssignOpts {
+                span,
+                allow_unknown_rhs: false,
+            },
+        );
         match res {
             Err(Error::Errors { errors, .. }) if errors.is_empty() => return Ok(()),
             _ => {}
@@ -184,7 +198,9 @@ impl Analyzer<'_, '_> {
         Cow::Borrowed(ty)
     }
 
-    fn assign_inner(&mut self, to: &Type, rhs: &Type, span: Span) -> Result<(), Error> {
+    fn assign_inner(&mut self, to: &Type, rhs: &Type, opts: AssignOpts) -> Result<(), Error> {
+        let span = opts.span;
+
         // debug_assert!(!span.is_dummy(), "\n\t{:?}\n<-\n\t{:?}", to, rhs);
         let to = self.normalize_for_assign(to);
         let rhs = self.normalize_for_assign(rhs);
@@ -235,7 +251,7 @@ impl Analyzer<'_, '_> {
                             span,
                             kind: TsKeywordTypeKind::TsNumberKeyword,
                         }),
-                        span,
+                        opts,
                     );
                 }
 
@@ -246,7 +262,7 @@ impl Analyzer<'_, '_> {
                             span,
                             kind: TsKeywordTypeKind::TsStringKeyword,
                         }),
-                        span,
+                        opts,
                     );
                 }
 
@@ -257,7 +273,7 @@ impl Analyzer<'_, '_> {
                             span,
                             kind: TsKeywordTypeKind::TsNumberKeyword,
                         }),
-                        span,
+                        opts,
                     );
                 }
 
@@ -273,7 +289,7 @@ impl Analyzer<'_, '_> {
                             kind: TsKeywordTypeKind::TsStringKeyword,
                         }),
                     ]),
-                    span,
+                    opts,
                 );
             }};
         }
@@ -418,7 +434,7 @@ impl Analyzer<'_, '_> {
                 let mut errors = Errors::default();
 
                 for ty in &i.types {
-                    match self.assign_inner(&ty, rhs, span) {
+                    match self.assign_inner(&ty, rhs, opts) {
                         Ok(..) => {}
                         Err(err) => errors.push(err),
                     }
@@ -475,7 +491,7 @@ impl Analyzer<'_, '_> {
             Type::Union(Union { ref types, .. }) => {
                 let errors = types
                     .iter()
-                    .filter_map(|rhs| match self.assign_inner(to, rhs, span) {
+                    .filter_map(|rhs| match self.assign_inner(to, rhs, opts) {
                         Ok(()) => None,
                         Err(err) => Some(err),
                     })
@@ -525,7 +541,7 @@ impl Analyzer<'_, '_> {
 
                 match *constraint {
                     Some(ref c) => {
-                        return self.assign_inner(to, c, span);
+                        return self.assign_inner(to, c, opts);
                     }
                     None => match to.normalize() {
                         Type::TypeLit(TypeLit { ref members, .. }) if members.is_empty() => {
@@ -572,20 +588,20 @@ impl Analyzer<'_, '_> {
             Type::Param(TypeParam {
                 constraint: Some(ref c),
                 ..
-            }) => return self.assign_inner(c, rhs, span),
+            }) => return self.assign_inner(c, rhs, opts),
 
             Type::Array(Array { ref elem_type, .. }) => match rhs {
                 Type::Array(Array {
                     elem_type: ref rhs_elem_type,
                     ..
                 }) => {
-                    return self.assign(&elem_type, &rhs_elem_type, span);
+                    return self.assign_inner(&elem_type, &rhs_elem_type, opts);
                 }
 
                 Type::Tuple(Tuple { ref elems, .. }) => {
                     let mut errors = Errors::default();
                     for el in elems {
-                        errors.extend(self.assign_inner(elem_type, &el.ty, span).err());
+                        errors.extend(self.assign_inner(elem_type, &el.ty, opts).err());
                     }
                     if !errors.is_empty() {
                         Err(errors)?;
@@ -600,7 +616,7 @@ impl Analyzer<'_, '_> {
             Type::Union(Union { ref types, .. }) => {
                 let vs = types
                     .iter()
-                    .map(|to| self.assign_inner(&to, rhs, span))
+                    .map(|to| self.assign_inner(&to, rhs, opts))
                     .collect::<Vec<_>>();
                 if vs.iter().any(Result::is_ok) {
                     return Ok(());
@@ -614,7 +630,7 @@ impl Analyzer<'_, '_> {
             Type::Intersection(Intersection { ref types, .. }) => {
                 let vs = types
                     .iter()
-                    .map(|to| self.assign_inner(&to, rhs, span))
+                    .map(|to| self.assign_inner(&to, rhs, opts))
                     .collect::<Vec<_>>();
 
                 // TODO: Multiple error
@@ -810,7 +826,7 @@ impl Analyzer<'_, '_> {
                 ref extends,
                 ..
             }) => {
-                self.assign_to_type_elements(span, to.span(), &body, rhs)?;
+                self.assign_to_type_elements(opts, to.span(), &body, rhs)?;
 
                 // TODO: Handle extends
 
@@ -829,7 +845,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::TypeLit(TypeLit { ref members, .. }) => {
-                self.assign_to_type_elements(span, to.span(), &members, rhs)?;
+                self.assign_to_type_elements(opts, to.span(), &members, rhs)?;
 
                 return Ok(());
             }
@@ -866,7 +882,7 @@ impl Analyzer<'_, '_> {
                         ..
                     }) => {
                         // TODO: Verify type parameters.
-                        self.assign_inner(right_ret_ty, left_ret_ty, span)?;
+                        self.assign_inner(right_ret_ty, left_ret_ty, opts)?;
                         // TODO: Verify parameter counts
 
                         return Ok(());
@@ -902,7 +918,7 @@ impl Analyzer<'_, '_> {
                                     _ => {}
                                 };
 
-                                errors.extend(self.assign_inner(&l.ty, &r.ty, span).err());
+                                errors.extend(self.assign_inner(&l.ty, &r.ty, opts).err());
                             }
                         }
 
@@ -938,7 +954,7 @@ impl Analyzer<'_, '_> {
                 Type::Keyword(..) | Type::TypeLit(..) | Type::Lit(..) => fail!(),
 
                 Type::ClassInstance(ClassInstance { ty: ref r_ty, .. }) => {
-                    return self.assign_inner(l_ty, &r_ty, span)
+                    return self.assign_inner(l_ty, &r_ty, opts)
                 }
                 _ => {}
             },
@@ -1023,11 +1039,12 @@ impl Analyzer<'_, '_> {
     /// ```
     fn assign_to_type_elements(
         &mut self,
-        span: Span,
+        opts: AssignOpts,
         lhs_span: Span,
         lhs: &[TypeElement],
         rhs: &Type,
     ) -> ValidationResult<()> {
+        let span = opts.span;
         // debug_assert!(!span.is_dummy());
         if lhs.is_empty() {
             return Ok(());
@@ -1056,14 +1073,21 @@ impl Analyzer<'_, '_> {
 
             match *rhs.normalize() {
                 Type::Array(Array { ref elem_type, .. }) => {
-                    return self.assign_inner(numeric_keyed_ty, elem_type, span)
+                    return self.assign_inner(numeric_keyed_ty, elem_type, opts)
                 }
 
                 Type::Tuple(Tuple { ref elems, .. }) => {
                     let mut errors = Errors::default();
                     for el in elems {
-                        self.assign_inner(numeric_keyed_ty, &el.ty, el.span())
-                            .store(&mut errors);
+                        self.assign_inner(
+                            numeric_keyed_ty,
+                            &el.ty,
+                            AssignOpts {
+                                span: el.span(),
+                                ..opts
+                            },
+                        )
+                        .store(&mut errors);
                     }
                     return if errors.is_empty() {
                         Ok(())
@@ -1095,7 +1119,7 @@ impl Analyzer<'_, '_> {
 
                     for (i, m) in lhs.into_iter().enumerate() {
                         let res = self.assign_type_elements_to_type_element(
-                            span,
+                            opts,
                             &mut missing_fields,
                             m,
                             $rhs,
@@ -1327,11 +1351,12 @@ impl Analyzer<'_, '_> {
     /// This method assigns each property to corresponding property.
     fn assign_type_elements_to_type_element(
         &mut self,
-        span: Span,
+        opts: AssignOpts,
         missing_fields: &mut Vec<TypeElement>,
         m: &TypeElement,
         rhs_members: &[TypeElement],
     ) -> ValidationResult<()> {
+        let span = opts.span;
         // We need this to show error if not all of rhs_member is matched
 
         if let Some(l_key) = m.key() {
@@ -1344,7 +1369,7 @@ impl Analyzer<'_, '_> {
                                     self.assign_inner(
                                         el.type_ann.as_ref().unwrap_or(&Type::any(span)),
                                         r_el.type_ann.as_ref().unwrap_or(&Type::any(span)),
-                                        span,
+                                        opts,
                                     )?;
                                     return Ok(());
                                 }
