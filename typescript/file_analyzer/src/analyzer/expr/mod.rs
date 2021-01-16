@@ -653,22 +653,18 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         obj: Box<Type>,
-        prop: &RExpr,
-        computed: bool,
+        prop: &Key,
         type_mode: TypeOfMode,
     ) -> ValidationResult {
         #[inline(never)]
-        fn handle_type_elements(
+        fn access_property_of_type_elements(
             a: &mut Analyzer,
             span: Span,
             obj: &Type,
-            prop: &RExpr,
-            computed: bool,
+            prop: &Key,
             type_mode: TypeOfMode,
             members: &[TypeElement],
         ) -> ValidationResult<Option<Box<Type>>> {
-            let prop_ty = a.validate_key(prop, computed)?;
-
             let mut candidates = vec![];
             for el in members.iter() {
                 if let Some(key) = el.key() {
@@ -853,9 +849,9 @@ impl Analyzer<'_, '_> {
 
                 // TODO: Remove clone
                 let members = self.scope.object_lit_members().to_vec();
-                if let Some(mut v) =
-                    handle_type_elements(self, span, &obj, prop, computed, type_mode, &members)?
-                {
+                if let Some(mut v) = access_property_of_type_elements(
+                    self, span, &obj, prop, computed, type_mode, &members,
+                )? {
                     self.marks()
                         .infected_by_this_in_object_literal
                         .apply_to_type(&mut v);
@@ -1449,9 +1445,9 @@ impl Analyzer<'_, '_> {
             Type::Interface(Interface {
                 ref body, extends, ..
             }) => {
-                if let Ok(Some(v)) =
-                    handle_type_elements(self, span, &obj, prop, computed, type_mode, body)
-                {
+                if let Ok(Some(v)) = access_property_of_type_elements(
+                    self, span, &obj, prop, computed, type_mode, body,
+                ) {
                     return Ok(v);
                 }
 
@@ -1492,9 +1488,9 @@ impl Analyzer<'_, '_> {
             }
 
             Type::TypeLit(TypeLit { ref members, .. }) => {
-                if let Some(v) =
-                    handle_type_elements(self, span, &obj, prop, computed, type_mode, members)?
-                {
+                if let Some(v) = access_property_of_type_elements(
+                    self, span, &obj, prop, computed, type_mode, members,
+                )? {
                     return Ok(v);
                 }
 

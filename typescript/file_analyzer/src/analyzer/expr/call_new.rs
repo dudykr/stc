@@ -541,7 +541,6 @@ impl Analyzer<'_, '_> {
                             span: p.span,
                             readonly: p.readonly,
                             key: p.key.clone(),
-                            computed: p.computed,
                             optional: p.optional,
                             // TODO: Maybe we need Option<Vec<T>>.
                             params: Default::default(),
@@ -585,7 +584,7 @@ impl Analyzer<'_, '_> {
         let mut candidates = Vec::with_capacity(4);
 
         for m in members {
-            self.check_type_element_for_call(kind, &mut candidates, m, prop, computed);
+            self.check_type_element_for_call(kind, &mut candidates, m, prop);
         }
 
         {
