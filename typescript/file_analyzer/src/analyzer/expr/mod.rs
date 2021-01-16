@@ -833,7 +833,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                let prop_ty = prop.computed().unwrap().ty;
+                let prop_ty = prop.clone().computed().unwrap().ty;
 
                 // TODO: Handle string literals like
                 //
@@ -1133,6 +1133,9 @@ impl Analyzer<'_, '_> {
                         span: n.span,
                         lit: RTsLit::BigInt(n.clone()),
                     }),
+                    Key::Private(..) => {
+                        unreachable!()
+                    }
                 };
 
                 if is_str_lit_or_union(&prop_ty) {
@@ -1295,7 +1298,7 @@ impl Analyzer<'_, '_> {
                 return Ok(Type::union(tys));
             }
 
-            Type::Tuple(Tuple { ref elems, .. }) => match *prop {
+            Type::Tuple(Tuple { ref elems, .. }) => match prop {
                 Key::Num(n) => {
                     let v = n.value.round() as i64;
                     if v < 0 || elems.len() <= v as usize {
