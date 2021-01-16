@@ -1271,7 +1271,7 @@ impl Analyzer<'_, '_> {
                         match arg {
                             Type::TypeLit(arg) => {
                                 let key_ty = arg.members.iter().filter_map(|element| match element {
-                                    TypeElement::Property(p) => match p.key {
+                                    TypeElement::Property(p) => match &p.key {
                                         Key::Normal {
                                             span: i_span,
                                             sym: i_sym,

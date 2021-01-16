@@ -575,7 +575,6 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                                                 span: method.span,
                                                 readonly: method.readonly,
                                                 key: method.key.clone(),
-                                                computed: method.computed,
                                                 optional: method.optional,
                                                 params: vec![],
                                                 type_ann: m.ty.clone().map(|v| v),

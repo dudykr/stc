@@ -643,10 +643,7 @@ impl Fold<Type> for Simplifier<'_> {
             }) if body.iter().any(|member| match member {
                 ClassMember::Constructor(_) => false,
                 ClassMember::Method(_) => false,
-                ClassMember::Property(p) => match &*p.key {
-                    RExpr::Ident(i) => i.sym == s.value,
-                    _ => false,
-                },
+                ClassMember::Property(p) => p.key == s.value,
                 ClassMember::IndexSignature(_) => false,
             }) =>
             {
@@ -655,10 +652,7 @@ impl Fold<Type> for Simplifier<'_> {
                     .find(|member| match member {
                         ClassMember::Constructor(_) => false,
                         ClassMember::Method(_) => false,
-                        ClassMember::Property(p) => match &*p.key {
-                            RExpr::Ident(i) => i.sym == s.value,
-                            _ => unreachable!(),
-                        },
+                        ClassMember::Property(p) => p.key == s.value,
                         ClassMember::IndexSignature(_) => false,
                     })
                     .unwrap();
