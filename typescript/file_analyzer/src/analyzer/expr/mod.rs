@@ -642,7 +642,7 @@ impl Analyzer<'_, '_> {
                 .map(|ty| ComputedKey {
                     span: prop.span(),
                     ty,
-                    expr: prop.clone(),
+                    expr: box prop.clone(),
                 })
                 .map(Key::Computed)
         } else {
@@ -664,36 +664,7 @@ impl Analyzer<'_, '_> {
         let mut candidates = vec![];
         for el in members.iter() {
             if let Some(key) = el.key() {
-                let is_el_computed = match *el {
-                    TypeElement::Property(ref p) => p.computed,
-                    _ => false,
-                };
-                let is_eq = match prop {
-                    RExpr::Ident(RIdent { sym: ref value, .. }) if !computed => match &*key {
-                        RExpr::Ident(RIdent {
-                            sym: ref r_value, ..
-                        }) => value == r_value,
-
-                        RExpr::Lit(RLit::Str(RStr {
-                            value: ref r_value, ..
-                        })) => value == r_value,
-                        _ => false,
-                    },
-
-                    RExpr::Lit(RLit::Str(RStr { ref value, .. })) if computed => match &*key {
-                        RExpr::Ident(RIdent {
-                            sym: ref r_value, ..
-                        }) => value == r_value,
-
-                        RExpr::Lit(RLit::Str(RStr {
-                            value: ref r_value, ..
-                        })) => value == r_value,
-                        _ => false,
-                    },
-                    _ => false,
-                };
-
-                if is_eq || key.eq_ignore_span(prop) {
+                if key.type_eq(&prop) {
                     match el {
                         TypeElement::Property(ref p) => {
                             if type_mode == TypeOfMode::LValue && p.readonly {
@@ -736,15 +707,15 @@ impl Analyzer<'_, '_> {
             // Handle funciton-like interfaces
             // Example of code handled by this block is `Error.call`
 
-            let obj = a.env.get_global_type(span, &js_word!("Function"))?;
+            let obj = self.env.get_global_type(span, &js_word!("Function"))?;
 
-            if let Ok(v) = a.access_property(span, obj, prop, computed, type_mode) {
+            if let Ok(v) = self.access_property(span, obj, prop, type_mode) {
                 return Ok(Some(v));
             }
         }
 
         for el in members.iter() {
-            if computed {
+            if prop.is_computed() {
                 match el {
                     TypeElement::Index(IndexSignature {
                         ref params,
@@ -828,13 +799,8 @@ impl Analyzer<'_, '_> {
             && (self.scope.is_this_ref_to_object_lit() || self.scope.is_this_ref_to_class())
         {
             if let Some(declaring) = &self.scope.declaring_prop() {
-                match prop {
-                    RExpr::Ident(key) => {
-                        if key.sym == *declaring.sym() {
-                            return Ok(Type::any(span));
-                        }
-                    }
-                    _ => {}
+                if prop == declaring.sym() {
+                    return Ok(Type::any(span));
                 }
             }
         }

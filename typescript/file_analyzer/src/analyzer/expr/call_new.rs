@@ -1688,13 +1688,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                             .access_property(
                                 *span,
                                 obj,
-                                &mut RExpr::Lit(RLit::Str(RStr {
-                                    span: lit_span,
-                                    value: value.clone(),
-                                    has_escape: false,
-                                    kind: Default::default(),
-                                })),
-                                true,
+                                &Key::Normal(value.clone()),
                                 TypeOfMode::RValue,
                             )
                             .report(&mut a.storage)
