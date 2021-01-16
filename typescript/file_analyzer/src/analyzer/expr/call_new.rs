@@ -333,15 +333,13 @@ impl Analyzer<'_, '_> {
                             }
                         }
                         // TODO: Check parent interface
-                        return self.search_members_for_callable_prop(
-                            kind, span, &i.body, prop, computed, args,
-                        );
+                        return self
+                            .search_members_for_callable_prop(kind, span, &i.body, &prop, args);
                     }
 
                     Type::TypeLit(ref t) => {
-                        return self.search_members_for_callable_prop(
-                            kind, span, &t.members, prop, computed, args,
-                        );
+                        return self
+                            .search_members_for_callable_prop(kind, span, &t.members, &prop, args);
                     }
 
                     Type::Class(ty::Class { ref body, .. }) => {
@@ -579,8 +577,7 @@ impl Analyzer<'_, '_> {
         kind: ExtractKind,
         span: Span,
         members: &[TypeElement],
-        prop: &RExpr,
-        computed: bool,
+        prop: &Key,
         args: &[RExprOrSpread],
     ) -> ValidationResult {
         // Candidates of the method call.
