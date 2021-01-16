@@ -1768,10 +1768,6 @@ impl Fold<FnParam> for Expander<'_, '_, '_> {
 
 impl Fold<Type> for Expander<'_, '_, '_> {
     fn fold(&mut self, mut ty: Type) -> Type {
-        if self.analyzer.is_builtin {
-            return ty;
-        }
-
         match ty {
             Type::Keyword(..) | Type::Lit(..) => return ty,
             Type::Arc(..) => {
