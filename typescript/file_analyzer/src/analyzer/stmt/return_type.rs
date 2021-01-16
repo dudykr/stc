@@ -11,7 +11,6 @@ use rnode::FoldWith;
 use rnode::NodeId;
 use rnode::Visit;
 use stc_ts_ast_rnode::RBreakStmt;
-use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RReturnStmt;
 use stc_ts_ast_rnode::RStmt;
@@ -23,6 +22,7 @@ use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_ast_rnode::RYieldExpr;
 use stc_ts_errors::Error;
+use stc_ts_types::Key;
 use stc_ts_types::ModuleId;
 use stc_ts_types::{
     IndexedAccessType, MethodSignature, Operator, PropertySignature, Ref, TypeElement,
@@ -375,18 +375,14 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                                         unimplemented!("Index signature in T[keyof S]")
                                     }
 
-                                    TypeElement::Property(PropertySignature {
-                                        key,
-                                        computed,
-                                        ..
-                                    })
+                                    TypeElement::Property(PropertySignature { key, .. })
                                     | TypeElement::Method(MethodSignature { key, .. }) => {
                                         if key.is_computed() {
                                             unimplemented!("Computed key mixed with T[keyof S]");
                                         }
 
-                                        match &*key {
-                                            RExpr::Ident(i) => {
+                                        match key {
+                                            Key::Normal(i) => {
                                                 let ty = box Type::Lit(RTsLitType {
                                                     node_id: NodeId::invalid(),
                                                     span: i.span,

@@ -917,7 +917,6 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                let prop_ty = prop.validate_with_default(self)?;
                 // TODO: Handle string literals like
                 //
                 // `this['props']`
