@@ -10,7 +10,6 @@ use rnode::FoldWith;
 use rnode::NodeId;
 use rnode::VisitMutWith;
 use slog::Logger;
-use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RNumber;
 use stc_ts_ast_rnode::RStr;
 use stc_ts_ast_rnode::RTsKeywordType;

@@ -1798,7 +1798,7 @@ impl Analyzer<'_, '_> {
             ..
         } = *expr;
 
-        let mut errors = vec![];
+        let mut errors = Errors::default();
         let obj_ty = match *obj {
             RExprOrSuper::Expr(ref obj) => {
                 let obj_ty = match obj.validate_with_default(self) {
@@ -1825,36 +1825,14 @@ impl Analyzer<'_, '_> {
                 }
             }
         };
+        self.storage.report_all(errors);
 
         let prop = self.validate_key(prop, computed)?;
+
         if computed {
             let obj_ty = self.expand_fully(span, obj_ty, true)?;
-            let ty = match self.access_property(span, obj_ty, &prop, type_mode) {
-                Ok(v) => Ok(v),
-                Err(err) => {
-                    errors.push(err);
-
-                    Err(())
-                }
-            };
-            if errors.is_empty() {
-                return Ok(ty.unwrap());
-            } else {
-                // TODO: Remove duplicate: prop
-                match prop.validate_with_default(self) {
-                    Ok(..) => match ty {
-                        Ok(ty) => {
-                            if errors.is_empty() {
-                                return Ok(ty);
-                            } else {
-                                return Err(Error::Errors { span, errors });
-                            }
-                        }
-                        Err(()) => return Err(Error::Errors { span, errors }),
-                    },
-                    Err(err) => errors.push(err),
-                }
-            }
+            let ty = self.access_property(span, obj_ty, &prop, type_mode)?;
+            return Ok(ty);
         } else {
             let ctx = Ctx {
                 preserve_ref: false,
@@ -1867,15 +1845,13 @@ impl Analyzer<'_, '_> {
                 Ok(v) => return Ok(v),
                 Err(err) => {
                     errors.push(err);
-                    return Err(Error::Errors { span, errors });
+                    return Err(Error::Errors {
+                        span,
+                        errors: errors.into(),
+                    });
                 }
             }
         }
-
-        if errors.len() == 1 {
-            return Err(errors.remove(0));
-        }
-        return Err(Error::Errors { span, errors });
     }
 
     fn prefer_tuple(&mut self, type_ann: Option<&Type>) -> bool {

@@ -26,6 +26,7 @@ use stc_ts_ast_rnode::RStr;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
+use stc_ts_types::ComputedKey;
 use stc_ts_types::Key;
 use swc_atoms::js_word;
 use swc_common::Spanned;
@@ -47,9 +48,17 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RPropName) -> ValidationResult<Key> {
         self.record(node);
 
-        node.visit_children_with(self);
+        match node {
+            RPropName::Computed(c) => {
+                let ty = c.expr.validate_with_default(self)?;
 
-        Ok(())
+                Ok(Key::Computed(ComputedKey {
+                    span: c.span,
+                    expr: c.expr.clone(),
+                    ty,
+                }))
+            }
+        }
     }
 }
 
