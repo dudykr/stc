@@ -350,7 +350,7 @@ impl Analyzer<'_, '_> {
                                     ref ret_ty,
                                     ..
                                 }) => {
-                                    if key.type_eq(&*prop) {
+                                    if key.type_eq(&prop) {
                                         return Ok(ret_ty.clone());
                                     }
                                 }
@@ -377,8 +377,7 @@ impl Analyzer<'_, '_> {
                 };
                 let obj_type = self.with_ctx(ctx).expand_fully(span, obj_type, true)?;
 
-                let callee =
-                    self.access_property(span, obj_type, prop, computed, TypeOfMode::RValue)?;
+                let callee = self.access_property(span, obj_type, &prop, TypeOfMode::RValue)?;
                 let callee = self.with_ctx(ctx).expand_fully(span, callee, true)?;
 
                 let type_args = match type_args {
@@ -519,18 +518,18 @@ impl Analyzer<'_, '_> {
         kind: ExtractKind,
         candidates: &mut Vec<MethodSignature>,
         m: &TypeElement,
-        prop: Key,
+        prop: &Key,
     ) {
         match m {
             TypeElement::Method(m) if kind == ExtractKind::Call => {
                 // We are interested only on methods named `prop`
-                if is_key_eq_prop(prop, computed, &m.key) {
+                if prop.type_eq(&m.key) {
                     candidates.push(m.clone());
                 }
             }
 
             TypeElement::Property(p) if kind == ExtractKind::Call => {
-                if is_key_eq_prop(prop, computed, &p.key) {
+                if prop.type_eq(&p.key) {
                     // TODO: Remove useless clone
                     let ty = p.type_ann.as_ref().cloned().unwrap_or(Type::any(m.span()));
 
@@ -555,7 +554,6 @@ impl Analyzer<'_, '_> {
                                 span: f.span,
                                 readonly: p.readonly,
                                 key: p.key.clone(),
-                                computed,
                                 optional: p.optional,
                                 params: f.params,
                                 ret_ty: Some(f.ret_ty),
