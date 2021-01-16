@@ -1107,6 +1107,20 @@ impl Type {
             _ => false,
         }
     }
+
+    pub fn is_num(&self) -> bool {
+        match self.normalize() {
+            Type::Keyword(RTsKeywordType {
+                kind: TsKeywordTypeKind::TsNumberKeyword,
+                ..
+            })
+            | Type::Lit(RTsLitType {
+                lit: RTsLit::Number(..),
+                ..
+            }) => true,
+            _ => false,
+        }
+    }
 }
 
 //impl Type {
