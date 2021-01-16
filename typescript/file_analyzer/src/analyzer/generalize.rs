@@ -597,14 +597,14 @@ impl Fold<Type> for Simplifier<'_> {
                 }),
                 ..
             }) if members.iter().any(|element| match element.key().as_deref() {
-                Some(RExpr::Ident(key)) => key.sym == v.value,
+                Some(key) => *key == v.value,
                 _ => false,
             }) =>
             {
                 let el = members
                     .into_iter()
                     .find(|element| match element.key().as_deref() {
-                        Some(RExpr::Ident(key)) => key.sym == v.value,
+                        Some(key) => *key == v.value,
                         _ => false,
                     })
                     .unwrap();
