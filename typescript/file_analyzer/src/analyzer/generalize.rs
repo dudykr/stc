@@ -11,12 +11,12 @@ use rnode::NodeId;
 use rnode::VisitMutWith;
 use slog::Logger;
 use stc_ts_ast_rnode::RExpr;
-use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RNumber;
 use stc_ts_ast_rnode::RStr;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
+use stc_ts_types::Key;
 use stc_ts_types::{
     Array, Class, ClassMember, IndexedAccessType, Mapped, Operator, PropertySignature, TypeElement, TypeLit, TypeParam,
     Union,
@@ -308,8 +308,10 @@ impl Fold<Type> for Simplifier<'_> {
                             span,
                             // TODO:
                             readonly: false,
-                            key: box RExpr::Ident(RIdent::new(key.value.clone(), key.span)),
-                            computed: false,
+                            key: Key::Normal {
+                                span: key.span,
+                                sym: key.value.clone(),
+                            },
                             optional: false,
                             params: Default::default(),
                             type_ann: ty.clone(),

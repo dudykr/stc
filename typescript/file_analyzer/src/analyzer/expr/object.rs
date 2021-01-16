@@ -5,8 +5,6 @@ use crate::ValidationResult;
 use indexmap::IndexSet;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
-use stc_ts_ast_rnode::RExpr;
-use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RObjectLit;
 use stc_ts_ast_rnode::RPropOrSpread;
 use stc_ts_ast_rnode::RSpreadElement;

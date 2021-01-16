@@ -644,7 +644,7 @@ struct MappedHandler<'a, 'b, 'c, 'd> {
     param_name: &'d Id,
     prop_ty: &'d Type,
 
-    key: &'d RExpr,
+    key: &'d Key,
 }
 
 impl Fold<Type> for MappedHandler<'_, '_, '_, '_> {
