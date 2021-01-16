@@ -681,10 +681,7 @@ impl Fold<Type> for Simplifier<'_> {
                             .find(|member| match member {
                                 ClassMember::Constructor(_) => false,
                                 ClassMember::Method(_) => false,
-                                ClassMember::Property(p) => match &*p.key {
-                                    RExpr::Ident(i) => i.sym == key.value,
-                                    _ => unreachable!(),
-                                },
+                                ClassMember::Property(p) => p.key == key.value,
                                 ClassMember::IndexSignature(_) => false,
                             })
                             .unwrap();
