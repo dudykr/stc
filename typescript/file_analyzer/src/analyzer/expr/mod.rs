@@ -1282,7 +1282,6 @@ impl Analyzer<'_, '_> {
                             span: prop.span(),
                             obj: Some(obj),
                             prop: Some(prop.clone()),
-                            prop_ty: None,
                         });
                     }
                 };
@@ -1300,20 +1299,17 @@ impl Analyzer<'_, '_> {
                         .push(elem_type.clone().cheap());
                 }
 
-                if computed {
-                    match prop.validate_with_default(self) {
-                        Ok(ty) => match ty.normalize() {
-                            Type::Keyword(RTsKeywordType {
-                                kind: TsKeywordTypeKind::TsNumberKeyword,
-                                ..
-                            })
-                            | Type::Lit(RTsLitType {
-                                lit: RTsLit::Number(..),
-                                ..
-                            }) => return Ok(elem_type.clone()),
+                if let Key::Computed(prop) = prop {
+                    match prop.ty.normalize() {
+                        Type::Keyword(RTsKeywordType {
+                            kind: TsKeywordTypeKind::TsNumberKeyword,
+                            ..
+                        })
+                        | Type::Lit(RTsLitType {
+                            lit: RTsLit::Number(..),
+                            ..
+                        }) => return Ok(elem_type.clone()),
 
-                            _ => {}
-                        },
                         _ => {}
                     }
                 }
@@ -1362,22 +1358,12 @@ impl Analyzer<'_, '_> {
                     return Ok(v);
                 }
 
-                if computed {
-                    return Err(Error::NoSuchProperty {
-                        span,
-                        obj: Some(obj),
-                        prop: Some(prop.clone()),
-                        prop_ty,
-                    });
-                } else {
-                    dbg!();
-                    return Err(Error::NoSuchProperty {
-                        span,
-                        obj: Some(obj),
-                        prop: Some(prop.clone()),
-                        prop_ty: None,
-                    });
-                };
+                dbg!();
+                return Err(Error::NoSuchProperty {
+                    span,
+                    obj: Some(obj),
+                    prop: Some(prop.clone()),
+                });
             }
 
             Type::Union(ty::Union { types, .. }) => {
@@ -1466,36 +1452,13 @@ impl Analyzer<'_, '_> {
                         }
 
                         ty::ClassMember::Method(ref m) => {
-                            // TODO: normalized string / ident
-                            match &m.key {
-                                RPropName::Computed(RComputedPropName { expr, .. }) => {
-                                    if (&**expr).eq_ignore_span(&prop) {
-                                        return Ok(box Type::Function(ty::Function {
-                                            span,
-                                            type_params: m.type_params.clone(),
-                                            params: m.params.clone(),
-                                            ret_ty: m.ret_ty.clone(),
-                                        }));
-                                    }
-                                }
-                                // TODO: Merge code
-                                RPropName::Ident(method_key) => match &*prop {
-                                    RExpr::Ident(prop) => {
-                                        if prop.sym == method_key.sym
-                                            && prop.span.ctxt == method_key.span.ctxt
-                                        {
-                                            return Ok(box Type::Function(ty::Function {
-                                                span,
-                                                type_params: m.type_params.clone(),
-                                                params: m.params.clone(),
-                                                ret_ty: m.ret_ty.clone(),
-                                            }));
-                                        }
-                                    }
-                                    _ => {}
-                                },
-
-                                _ => {}
+                            if m.key.type_eq(prop) {
+                                return Ok(box Type::Function(ty::Function {
+                                    span,
+                                    type_params: m.type_params.clone(),
+                                    params: m.params.clone(),
+                                    ret_ty: m.ret_ty.clone(),
+                                }));
                             }
                         }
                         _ => {}
@@ -1514,21 +1477,12 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Module(ty::Module { ref exports, .. }) => {
-                if !computed {
-                    match prop {
-                        RExpr::Ident(ref i) => {
-                            if let Some(item) = exports.vars.get(&i.sym) {
-                                return Ok(item.clone());
-                            }
-                            //                        if let Some(item) =
-                            // exports.types.get(sym) {
-                            //                            return
-                            // Ok(item.clone());
-                            //                        }
-                        }
-                        _ => {}
+                if let Key::Normal { sym, .. } = prop {
+                    if let Some(item) = exports.vars.get(sym) {
+                        return Ok(item.clone());
                     }
                 }
+
                 // No property found
                 return Err(Error::NoSuchPropertyInModule { span });
             }
@@ -1581,8 +1535,8 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Ref(r) => {
-                if computed {
-                    let index_type = prop.validate_with_default(self)?;
+                if let Key::Computed(prop) = prop {
+                    let index_type = prop.ty.clone();
                     // Return something like SimpleDBRecord<Flag>[Flag];
                     return Ok(box Type::IndexedAccessType(IndexedAccessType {
                         span,
