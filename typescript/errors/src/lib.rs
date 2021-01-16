@@ -529,7 +529,7 @@ pub enum Error {
         op: AssignOp,
     },
 
-    NonSymbolComputedProp {
+    NonSymbolComputedPropInFormOfSymbol {
         span: Span,
     },
 }
@@ -581,7 +581,7 @@ impl Error {
 
             Error::NoSuchProperty { .. } => 2339,
             Error::AssignOpCannotBeApplied { .. } => 2365,
-            Error::NonSymbolComputedProp { .. } => 2471,
+            Error::NonSymbolComputedPropInFormOfSymbol { .. } => 2471,
 
             _ => 0,
         }
@@ -603,7 +603,7 @@ impl Error {
                 format!("Operator '{}' cannot be applied to types", op).into()
             }
 
-            Self::NonSymbolComputedProp { .. } => {
+            Self::NonSymbolComputedPropInFormOfSymbol { .. } => {
                 "A computed property name of the form '{TODO}' must be of type 'symbol'.".into()
             }
 

@@ -88,23 +88,26 @@ impl Analyzer<'_, '_> {
             }
         };
 
-        match mode {
-            ComputedPropMode::Interface { .. } => match ty.normalize() {
-                Type::Keyword(RTsKeywordType {
-                    kind: TsKeywordTypeKind::TsSymbolKeyword,
-                    ..
-                }) => {}
-                Type::Operator(Operator {
-                    op: TsTypeOperatorOp::Unique,
-                    ty,
-                    ..
-                }) if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) => {}
-                _ => {
-                    //
-                    self.storage.report(Error::NonSymbolComputedProp { span });
-                }
-            },
-            _ => {}
+        if is_symbol_access {
+            match mode {
+                ComputedPropMode::Object { .. } => match ty.normalize() {
+                    Type::Keyword(RTsKeywordType {
+                        kind: TsKeywordTypeKind::TsSymbolKeyword,
+                        ..
+                    }) => {}
+                    Type::Operator(Operator {
+                        op: TsTypeOperatorOp::Unique,
+                        ty,
+                        ..
+                    }) if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) => {}
+                    _ => {
+                        //
+                        self.storage
+                            .report(Error::NonSymbolComputedPropInFormOfSymbol { span });
+                    }
+                },
+                _ => {}
+            }
         }
 
         match mode {
