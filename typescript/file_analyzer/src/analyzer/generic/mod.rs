@@ -1377,7 +1377,7 @@ impl Analyzer<'_, '_> {
                             Type::TypeLit(arg) => {
                                 let key_ty =
                                     arg.members.iter().filter_map(|element| match element {
-                                        TypeElement::Property(p) => match &*p.key {
+                                        TypeElement::Property(p) => match p.key {
                                             RExpr::Ident(i) => Some(box Type::Lit(RTsLitType {
                                                 node_id: NodeId::invalid(),
                                                 span: param.span,
