@@ -1,4 +1,5 @@
 Symbols/ES5SymbolProperty1.ts
+Symbols/ES5SymbolProperty2.ts
 Symbols/ES5SymbolType1.ts
 ambient/ambientEnumDeclaration1.ts
 ambient/ambientEnumDeclaration2.ts
