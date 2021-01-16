@@ -89,6 +89,20 @@ impl Analyzer<'_, '_> {
         };
 
         match mode {
+            ComputedPropMode::Interface { .. } => match ty.normalize() {
+                Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsSymbolKeyword,
+                    ..
+                }) => {}
+                _ => {
+                    //
+                    self.storage.report(Error::NonSymbolComputedProp { span });
+                }
+            },
+            _ => {}
+        }
+
+        match mode {
             ComputedPropMode::Class { .. } | ComputedPropMode::Interface => {
                 let is_valid_key = is_valid_computed_key(&node.expr);
 
@@ -161,10 +175,7 @@ impl Analyzer<'_, '_> {
             }
         }
         if !errors.is_empty() {
-            Err(Error::Errors {
-                span,
-                errors: errors.into(),
-            })?
+            self.storage.report_all(errors);
         }
 
         Ok(())
