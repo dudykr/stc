@@ -942,14 +942,14 @@ impl Analyzer<'_, '_> {
                         }));
                     }};
                 }
-                match *prop {
+                match prop {
                     RExpr::Ident(RIdent { ref sym, .. }) if !computed => {
                         ret!(sym);
                     }
                     RExpr::Lit(RLit::Str(RStr { value: ref sym, .. })) => {
                         ret!(sym);
                     }
-                    RExpr::Lit(RLit::Num(RNumber { value, .. })) => {
+                    Key::Num(RNumber { value, .. }) => {
                         let idx = value.round() as usize;
                         if e.members.len() > idx {
                             let v = &e.members[idx];
