@@ -373,10 +373,8 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, n: &RGetterProp) -> ValidationResult<TypeElement> {
         self.record(n);
 
-        let computed = match n.key {
-            RPropName::Computed(_) => true,
-            _ => false,
-        };
+        let key = n.key.validate_with(self)?;
+        let computed = key.is_computed();
 
         let type_ann = self
             .with_child(ScopeKind::Method, Default::default(), |child| {
@@ -399,11 +397,10 @@ impl Analyzer<'_, '_> {
 
         Ok(PropertySignature {
             span: n.span(),
-            key: prop_name_to_expr(&n.key),
+            key,
             params: Default::default(),
             optional: false,
             readonly: true,
-            computed,
             type_ann: if computed {
                 type_ann
             } else {
