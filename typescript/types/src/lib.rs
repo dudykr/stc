@@ -20,7 +20,6 @@ use rnode::VisitWith;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RPat;
-use stc_ts_ast_rnode::RPropName;
 use stc_ts_ast_rnode::RStr;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsEnumMemberId;
@@ -32,7 +31,6 @@ use stc_ts_ast_rnode::RTsThisType;
 use stc_ts_ast_rnode::RTsThisTypeOrIdent;
 use stc_visit::Visit;
 use stc_visit::Visitable;
-use std::borrow::Cow;
 use std::{
     fmt::Debug,
     iter::FusedIterator,
@@ -43,7 +41,7 @@ use std::{
         Arc,
     },
 };
-use swc_atoms::{js_word, JsWord};
+use swc_atoms::JsWord;
 use swc_common::EqIgnoreSpan;
 use swc_common::TypeEq;
 use swc_common::{FromVariant, Span, Spanned, DUMMY_SP};
@@ -238,6 +236,19 @@ impl SymbolIdGenerator {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, EqIgnoreSpan, TypeEq, Visit)]
+pub enum Key {
+    Computed(ComputedKey),
+    Normal(JsWord),
+}
+
+#[derive(Debug, Clone, PartialEq, EqIgnoreSpan, TypeEq, Visit)]
+pub struct ComputedKey {
+    pub span: Span,
+    pub expr: Box<RExpr>,
+    pub ty: Box<Type>,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EqIgnoreSpan, TypeEq, Visit)]
 pub struct SymbolId(usize);
 
@@ -361,8 +372,7 @@ pub enum ClassMember {
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Method {
     pub span: Span,
-    #[use_eq_ignore_span]
-    pub key: RPropName,
+    pub key: Key,
     pub is_static: bool,
     pub is_abstract: bool,
     pub is_optional: bool,
@@ -377,10 +387,9 @@ pub struct Method {
 pub struct ClassProperty {
     pub span: Span,
     #[use_eq_ignore_span]
-    pub key: Box<RExpr>,
+    pub key: Key,
     pub value: Option<Box<Type>>,
     pub is_static: bool,
-    pub computed: bool,
     #[use_eq]
     pub accessibility: Option<Accessibility>,
     pub is_abstract: bool,
@@ -486,31 +495,20 @@ pub enum TypeElement {
 
 impl TypeElement {
     /// Returns [Some] iff `self` is non-computed element.
-    pub fn non_computed_key(&self) -> Option<&RIdent> {
-        match self {
-            TypeElement::Property(PropertySignature {
-                key: box RExpr::Ident(key),
-                computed: false,
-                ..
-            }) => Some(key),
-            TypeElement::Method(MethodSignature {
-                key: box RExpr::Ident(key),
-                computed: false,
-                ..
-            }) => Some(key),
-            _ => None,
+    pub fn non_computed_key(&self) -> Option<&JsWord> {
+        let key = self.key()?;
+        match key {
+            Key::Computed(_) => None,
+            Key::Normal(v) => Some(v),
         }
     }
 
-    pub fn key(&self) -> Option<Cow<RExpr>> {
+    pub fn key(&self) -> Option<&Key> {
         match self {
             TypeElement::Call(..) => None,
-            TypeElement::Constructor(..) => Some(Cow::Owned(RExpr::Ident(RIdent::new(
-                js_word!("constructor"),
-                DUMMY_SP,
-            )))),
-            TypeElement::Property(p) => Some(Cow::Borrowed(&p.key)),
-            TypeElement::Method(m) => Some(Cow::Borrowed(&m.key)),
+            TypeElement::Constructor(..) => None,
+            TypeElement::Property(p) => Some(&p.key),
+            TypeElement::Method(m) => Some(&m.key),
             TypeElement::Index(_) => None,
         }
     }
@@ -536,9 +534,7 @@ pub struct ConstructorSignature {
 pub struct PropertySignature {
     pub span: Span,
     pub readonly: bool,
-    #[use_eq_ignore_span]
-    pub key: Box<RExpr>,
-    pub computed: bool,
+    pub key: Key,
     pub optional: bool,
     pub params: Vec<FnParam>,
     pub type_ann: Option<Box<Type>>,
@@ -549,9 +545,7 @@ pub struct PropertySignature {
 pub struct MethodSignature {
     pub span: Span,
     pub readonly: bool,
-    #[use_eq_ignore_span]
-    pub key: Box<RExpr>,
-    pub computed: bool,
+    pub key: Key,
     pub optional: bool,
     pub params: Vec<FnParam>,
     pub ret_ty: Option<Box<Type>>,

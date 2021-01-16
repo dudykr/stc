@@ -25,6 +25,7 @@ use super::TypeParam;
 use super::TypeParamDecl;
 use super::TypeParamInstantiation;
 use super::Union;
+use crate::Key;
 use crate::{OptionalType, RestType, StaticThis, Symbol};
 use rnode::NodeId;
 use stc_ts_ast_rnode::RArrayPat;
@@ -577,10 +578,10 @@ impl From<super::ClassMember> for RTsTypeElement {
                     span: m.span,
                     readonly: false,
                     computed: match &m.key {
-                        RPropName::Computed(_) => true,
+                        Key::Computed(_) => true,
                         _ => false,
                     },
-                    key: box rprop_name_to_expr(m.key),
+                    key: m.key.into_expr(),
                     optional: m.is_optional,
                     params: m.params.into_iter().map(From::from).collect(),
                     type_ann: Some(RTsTypeAnn {
@@ -596,8 +597,8 @@ impl From<super::ClassMember> for RTsTypeElement {
                     node_id: NodeId::invalid(),
                     span: p.span,
                     readonly: p.readonly,
-                    key: p.key,
-                    computed: p.computed,
+                    computed: p.key.is_computed(),
+                    key: p.key.into_expr(),
                     optional: p.is_optional,
                     init: None,
                     params: vec![],
@@ -649,8 +650,8 @@ impl From<TypeElement> for RTsTypeElement {
                 node_id: NodeId::invalid(),
                 span: e.span,
                 readonly: e.readonly,
-                key: e.key,
-                computed: e.computed,
+                computed: e.key.is_computed(),
+                key: e.key.into_expr(),
                 optional: e.optional,
                 init: None,
                 params: e.params.into_iter().map(From::from).collect(),
@@ -661,8 +662,8 @@ impl From<TypeElement> for RTsTypeElement {
                 node_id: NodeId::invalid(),
                 span: e.span,
                 readonly: e.readonly,
-                key: e.key,
-                computed: e.computed,
+                computed: e.key.is_computed(),
+                key: e.key.into_expr(),
                 optional: e.optional,
                 params: e.params.into_iter().map(From::from).collect(),
                 type_ann: e.ret_ty.map(From::from),
@@ -758,5 +759,26 @@ pub fn rprop_name_to_expr(p: RPropName) -> RExpr {
         RPropName::Num(n) => RExpr::Lit(RLit::Num(n)),
         RPropName::BigInt(b) => RExpr::Lit(RLit::BigInt(b)),
         RPropName::Computed(c) => *c.expr,
+    }
+}
+
+impl Key {
+    pub fn is_computed(&self) -> bool {
+        match self {
+            Key::Computed(_) => true,
+            _ => false,
+        }
+    }
+    pub(crate) fn into_expr(self) -> Box<RExpr> {
+        match self {
+            Key::Computed(v) => v.expr,
+            Key::Normal(prop) => box RExpr::Ident(RIdent {
+                node_id: NodeId::invalid(),
+                span: DUMMY_SP,
+                sym: prop,
+                optional: false,
+                type_ann: None,
+            }),
+        }
     }
 }
