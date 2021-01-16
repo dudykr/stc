@@ -1,5 +1,5 @@
 warning: Type
- --> $DIR/tests/visualize/conformance/tuple-1-2.ts:1:13
+ --> $DIR/tests/visualize/tuple-1-2.ts:1:13
   |
 1 | var temp = ["s", "t", "r"];
   |             ^^^
@@ -7,7 +7,7 @@ warning: Type
   = note: "s"
 
 warning: Type
- --> $DIR/tests/visualize/conformance/tuple-1-2.ts:1:18
+ --> $DIR/tests/visualize/tuple-1-2.ts:1:18
   |
 1 | var temp = ["s", "t", "r"];
   |                  ^^^
@@ -15,7 +15,7 @@ warning: Type
   = note: "t"
 
 warning: Type
- --> $DIR/tests/visualize/conformance/tuple-1-2.ts:1:23
+ --> $DIR/tests/visualize/tuple-1-2.ts:1:23
   |
 1 | var temp = ["s", "t", "r"];
   |                       ^^^
@@ -23,7 +23,7 @@ warning: Type
   = note: "r"
 
 warning: Type
- --> $DIR/tests/visualize/conformance/tuple-1-2.ts:1:12
+ --> $DIR/tests/visualize/tuple-1-2.ts:1:12
   |
 1 | var temp = ["s", "t", "r"];
   |            ^^^^^^^^^^^^^^^
@@ -31,7 +31,7 @@ warning: Type
   = note: ["s", "t", "r"]
 
 warning: Type
- --> $DIR/tests/visualize/conformance/tuple-1-2.ts:2:14
+ --> $DIR/tests/visualize/tuple-1-2.ts:2:14
   |
 2 | var temp1 = [1, 2, 3];
   |              ^
@@ -39,7 +39,7 @@ warning: Type
   = note: 1
 
 warning: Type
- --> $DIR/tests/visualize/conformance/tuple-1-2.ts:2:17
+ --> $DIR/tests/visualize/tuple-1-2.ts:2:17
   |
 2 | var temp1 = [1, 2, 3];
   |                 ^
@@ -47,7 +47,7 @@ warning: Type
   = note: 2
 
 warning: Type
- --> $DIR/tests/visualize/conformance/tuple-1-2.ts:2:20
+ --> $DIR/tests/visualize/tuple-1-2.ts:2:20
   |
 2 | var temp1 = [1, 2, 3];
   |                    ^
@@ -55,7 +55,7 @@ warning: Type
   = note: 3
 
 warning: Type
- --> $DIR/tests/visualize/conformance/tuple-1-2.ts:2:13
+ --> $DIR/tests/visualize/tuple-1-2.ts:2:13
   |
 2 | var temp1 = [1, 2, 3];
   |             ^^^^^^^^^
@@ -63,7 +63,7 @@ warning: Type
   = note: [1, 2, 3]
 
 warning: Type
- --> $DIR/tests/visualize/conformance/tuple-1-2.ts:5:23
+ --> $DIR/tests/visualize/tuple-1-2.ts:5:23
   |
 5 | var c2: myArray = [...temp1, ...temp];
   |                       ^^^^^
@@ -71,7 +71,7 @@ warning: Type
   = note: number[]
 
 warning: Type
- --> $DIR/tests/visualize/conformance/tuple-1-2.ts:5:33
+ --> $DIR/tests/visualize/tuple-1-2.ts:5:33
   |
 5 | var c2: myArray = [...temp1, ...temp];
   |                                 ^^^^
@@ -79,7 +79,7 @@ warning: Type
   = note: string[]
 
 warning: Type
- --> $DIR/tests/visualize/conformance/tuple-1-2.ts:5:19
+ --> $DIR/tests/visualize/tuple-1-2.ts:5:19
   |
 5 | var c2: myArray = [...temp1, ...temp];
   |                   ^^^^^^^^^^^^^^^^^^^

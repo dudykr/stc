@@ -1,5 +1,5 @@
 warning: Type
- --> $DIR/tests/visualize/conformance/exprs/object/normalization-1.ts:1:23
+ --> $DIR/tests/visualize/exprs/object/normalization-1.ts:1:23
   |
 1 | export let a1 = [{ a: 0 }, { a: 1, b: "x" }, { a: 2, b: "y", c: true }][0];
   |                       ^
@@ -7,7 +7,7 @@ warning: Type
   = note: 0
 
 warning: Type
- --> $DIR/tests/visualize/conformance/exprs/object/normalization-1.ts:1:18
+ --> $DIR/tests/visualize/exprs/object/normalization-1.ts:1:18
   |
 1 | export let a1 = [{ a: 0 }, { a: 1, b: "x" }, { a: 2, b: "y", c: true }][0];
   |                  ^^^^^^^^
@@ -17,7 +17,7 @@ warning: Type
           }
 
 warning: Type
- --> $DIR/tests/visualize/conformance/exprs/object/normalization-1.ts:1:33
+ --> $DIR/tests/visualize/exprs/object/normalization-1.ts:1:33
   |
 1 | export let a1 = [{ a: 0 }, { a: 1, b: "x" }, { a: 2, b: "y", c: true }][0];
   |                                 ^
@@ -25,7 +25,7 @@ warning: Type
   = note: 1
 
 warning: Type
- --> $DIR/tests/visualize/conformance/exprs/object/normalization-1.ts:1:39
+ --> $DIR/tests/visualize/exprs/object/normalization-1.ts:1:39
   |
 1 | export let a1 = [{ a: 0 }, { a: 1, b: "x" }, { a: 2, b: "y", c: true }][0];
   |                                       ^^^
@@ -33,7 +33,7 @@ warning: Type
   = note: "x"
 
 warning: Type
- --> $DIR/tests/visualize/conformance/exprs/object/normalization-1.ts:1:28
+ --> $DIR/tests/visualize/exprs/object/normalization-1.ts:1:28
   |
 1 | export let a1 = [{ a: 0 }, { a: 1, b: "x" }, { a: 2, b: "y", c: true }][0];
   |                            ^^^^^^^^^^^^^^^^
@@ -44,7 +44,7 @@ warning: Type
           }
 
 warning: Type
- --> $DIR/tests/visualize/conformance/exprs/object/normalization-1.ts:1:51
+ --> $DIR/tests/visualize/exprs/object/normalization-1.ts:1:51
   |
 1 | export let a1 = [{ a: 0 }, { a: 1, b: "x" }, { a: 2, b: "y", c: true }][0];
   |                                                   ^
@@ -52,7 +52,7 @@ warning: Type
   = note: 2
 
 warning: Type
- --> $DIR/tests/visualize/conformance/exprs/object/normalization-1.ts:1:57
+ --> $DIR/tests/visualize/exprs/object/normalization-1.ts:1:57
   |
 1 | export let a1 = [{ a: 0 }, { a: 1, b: "x" }, { a: 2, b: "y", c: true }][0];
   |                                                         ^^^
@@ -60,7 +60,7 @@ warning: Type
   = note: "y"
 
 warning: Type
- --> $DIR/tests/visualize/conformance/exprs/object/normalization-1.ts:1:65
+ --> $DIR/tests/visualize/exprs/object/normalization-1.ts:1:65
   |
 1 | export let a1 = [{ a: 0 }, { a: 1, b: "x" }, { a: 2, b: "y", c: true }][0];
   |                                                                 ^^^^
@@ -68,7 +68,7 @@ warning: Type
   = note: true
 
 warning: Type
- --> $DIR/tests/visualize/conformance/exprs/object/normalization-1.ts:1:46
+ --> $DIR/tests/visualize/exprs/object/normalization-1.ts:1:46
   |
 1 | export let a1 = [{ a: 0 }, { a: 1, b: "x" }, { a: 2, b: "y", c: true }][0];
   |                                              ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -80,7 +80,7 @@ warning: Type
           }
 
 warning: Type
- --> $DIR/tests/visualize/conformance/exprs/object/normalization-1.ts:1:17
+ --> $DIR/tests/visualize/exprs/object/normalization-1.ts:1:17
   |
 1 | export let a1 = [{ a: 0 }, { a: 1, b: "x" }, { a: 2, b: "y", c: true }][0];
   |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -100,7 +100,7 @@ warning: Type
           })[]
 
 warning: Type
- --> $DIR/tests/visualize/conformance/exprs/object/normalization-1.ts:1:73
+ --> $DIR/tests/visualize/exprs/object/normalization-1.ts:1:73
   |
 1 | export let a1 = [{ a: 0 }, { a: 1, b: "x" }, { a: 2, b: "y", c: true }][0];
   |                                                                         ^
@@ -108,7 +108,7 @@ warning: Type
   = note: 0
 
 warning: Type
- --> $DIR/tests/visualize/conformance/exprs/object/normalization-1.ts:1:17
+ --> $DIR/tests/visualize/exprs/object/normalization-1.ts:1:17
   |
 1 | export let a1 = [{ a: 0 }, { a: 1, b: "x" }, { a: 2, b: "y", c: true }][0];
   |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -1,5 +1,5 @@
 warning: Type
- --> $DIR/tests/visualize/conformance/exprs/array/infer-1.ts:2:35
+ --> $DIR/tests/visualize/exprs/array/infer-1.ts:2:35
   |
 2 | export let b1: { x: boolean }[] = foo({ x: true }, { x: false });
   |                                   ^^^
@@ -7,7 +7,7 @@ warning: Type
   = note: <T>(...args: T[]) => T[]
 
 warning: Type
- --> $DIR/tests/visualize/conformance/exprs/array/infer-1.ts:2:44
+ --> $DIR/tests/visualize/exprs/array/infer-1.ts:2:44
   |
 2 | export let b1: { x: boolean }[] = foo({ x: true }, { x: false });
   |                                            ^^^^
@@ -15,7 +15,7 @@ warning: Type
   = note: true
 
 warning: Type
- --> $DIR/tests/visualize/conformance/exprs/array/infer-1.ts:2:39
+ --> $DIR/tests/visualize/exprs/array/infer-1.ts:2:39
   |
 2 | export let b1: { x: boolean }[] = foo({ x: true }, { x: false });
   |                                       ^^^^^^^^^^^
@@ -25,7 +25,7 @@ warning: Type
           }
 
 warning: Type
- --> $DIR/tests/visualize/conformance/exprs/array/infer-1.ts:2:57
+ --> $DIR/tests/visualize/exprs/array/infer-1.ts:2:57
   |
 2 | export let b1: { x: boolean }[] = foo({ x: true }, { x: false });
   |                                                         ^^^^^
@@ -33,7 +33,7 @@ warning: Type
   = note: false
 
 warning: Type
- --> $DIR/tests/visualize/conformance/exprs/array/infer-1.ts:2:52
+ --> $DIR/tests/visualize/exprs/array/infer-1.ts:2:52
   |
 2 | export let b1: { x: boolean }[] = foo({ x: true }, { x: false });
   |                                                    ^^^^^^^^^^^^
@@ -43,7 +43,7 @@ warning: Type
           }
 
 warning: Type
- --> $DIR/tests/visualize/conformance/exprs/array/infer-1.ts:2:35
+ --> $DIR/tests/visualize/exprs/array/infer-1.ts:2:35
   |
 2 | export let b1: { x: boolean }[] = foo({ x: true }, { x: false });
   |                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
