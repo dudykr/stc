@@ -1286,7 +1286,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Tuple(Tuple { ref elems, .. }) => match *prop {
-                RExpr::Lit(RLit::Num(ref n)) => {
+                Key::Num(n) => {
                     let v = n.value.round() as i64;
                     if v < 0 || elems.len() <= v as usize {
                         return Err(Error::TupleIndexError {

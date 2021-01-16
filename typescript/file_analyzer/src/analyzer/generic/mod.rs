@@ -1272,7 +1272,7 @@ impl Analyzer<'_, '_> {
                             Type::TypeLit(arg) => {
                                 let key_ty = arg.members.iter().filter_map(|element| match element {
                                     TypeElement::Property(p) => match p.key {
-                                        Key::Normalt {
+                                        Key::Normal {
                                             span: i_span,
                                             sym: i_sym,
                                         } => Some(box Type::Lit(RTsLitType {
