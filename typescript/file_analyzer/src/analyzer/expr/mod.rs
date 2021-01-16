@@ -647,7 +647,10 @@ impl Analyzer<'_, '_> {
                 .map(Key::Computed)
         } else {
             match prop {
-                RExpr::Ident(RIdent { sym, .. }) => Ok(Key::Normal(sym.clone())),
+                RExpr::Ident(RIdent { span, sym, .. }) => Ok(Key::Normal {
+                    span: *span,
+                    sym: sym.clone(),
+                }),
                 _ => unreachable!(),
             }
         }

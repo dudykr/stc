@@ -1686,7 +1686,10 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                             .access_property(
                                 *span,
                                 obj,
-                                &Key::Normal(value.clone()),
+                                &Key::Normal {
+                                    span: lit_span,
+                                    sym: value.clone(),
+                                },
                                 TypeOfMode::RValue,
                             )
                             .report(&mut a.storage)
