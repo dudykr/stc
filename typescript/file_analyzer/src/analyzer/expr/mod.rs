@@ -960,7 +960,7 @@ impl Analyzer<'_, '_> {
                                 is_static: true, ..
                             },
                         ) => {
-                            if (*property.key).type_eq(&*prop) {
+                            if property.key.type_eq(prop) {
                                 return Ok(property
                                     .value
                                     .clone()
