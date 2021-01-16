@@ -62,6 +62,7 @@ use stc_ts_types::{
 use std::convert::TryFrom;
 use swc_atoms::js_word;
 use swc_common::EqIgnoreSpan;
+use swc_common::SyntaxContext;
 use swc_common::TypeEq;
 use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
@@ -149,6 +150,12 @@ impl Analyzer<'_, '_> {
                 }
 
                 RExpr::Ident(ref i) => {
+                    if i.sym == js_word!("undefined") {
+                        return Ok(box Type::Keyword(RTsKeywordType {
+                            span: i.span.with_ctxt(SyntaxContext::empty()),
+                            kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                        }));
+                    }
                     let ty = self.type_of_var(i, mode, type_args)?;
                     if mode == TypeOfMode::RValue {
                         // `i` is truthy
