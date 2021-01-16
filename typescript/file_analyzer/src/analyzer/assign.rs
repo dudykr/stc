@@ -1468,7 +1468,7 @@ impl Analyzer<'_, '_> {
                     match member {
                         TypeElement::Property(PropertySignature {
                             span,
-                            key: Key::Normal(key),
+                            key: Key::Normal { sym: key, .. },
                             ..
                         }) => {
                             keys.push(Box::new(Type::Lit(RTsLitType {

@@ -237,7 +237,7 @@ impl SymbolIdGenerator {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, EqIgnoreSpan, TypeEq, Visit, Is)]
 pub enum Key {
     Computed(ComputedKey),
     Normal { span: Span, sym: JsWord },

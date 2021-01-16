@@ -877,7 +877,10 @@ impl Analyzer<'_, '_> {
                     }))
                 }
                 RObjectPatProp::Assign(RAssignPatProp { key, .. }) => {
-                    let key = Key::Normal(key.sym.clone());
+                    let key = Key::Normal {
+                        span: key.span,
+                        sym: key.sym.clone(),
+                    };
                     members.push(TypeElement::Property(PropertySignature {
                         span: DUMMY_SP,
                         readonly: false,

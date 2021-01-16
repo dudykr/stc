@@ -1156,7 +1156,10 @@ impl Analyzer<'_, '_> {
                                         stc_ts_types::ClassMember::Property(
                                             stc_ts_types::ClassProperty {
                                                 span: p.span,
-                                                key: Key::Normal(i.sym.clone()),
+                                                key: Key::Normal {
+                                                    span: i.span,
+                                                    sym: i.sym.clone(),
+                                                },
                                                 value: ty,
                                                 is_static: false,
                                                 accessibility: p.accessibility,

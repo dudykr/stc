@@ -763,12 +763,6 @@ pub fn rprop_name_to_expr(p: RPropName) -> RExpr {
 }
 
 impl Key {
-    pub fn is_computed(&self) -> bool {
-        match self {
-            Key::Computed(_) => true,
-            _ => false,
-        }
-    }
     pub(crate) fn into_expr(self) -> Box<RExpr> {
         match self {
             Key::Computed(v) => v.expr,
