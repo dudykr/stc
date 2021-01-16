@@ -659,8 +659,7 @@ impl Analyzer<'_, '_> {
                     }
                 },
                 box Type::Module(module),
-            )
-            .report(&mut self.storage);
+            );
         }
 
         Ok(())

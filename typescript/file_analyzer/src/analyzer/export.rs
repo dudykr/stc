@@ -225,8 +225,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
                 }
-                self.register_type(i.clone(), box fn_ty.clone().into())
-                    .report(&mut self.storage);
+                self.register_type(i.clone(), box fn_ty.clone().into());
                 if let Some(ref i) = f.ident {
                     self.override_var(VarDeclKind::Var, i.into(), box fn_ty.into())
                         .report(&mut self.storage);
@@ -242,7 +241,7 @@ impl Analyzer<'_, '_> {
                     .unwrap_or_else(|| Id::word(js_word!("default")));
 
                 let class_ty = c.class.validate_with(self)?;
-                self.register_type(id.clone(), box Type::Class(class_ty))?;
+                self.register_type(id.clone(), box Type::Class(class_ty));
 
                 self.export(span, Id::word(js_word!("default")), Some(id));
             }

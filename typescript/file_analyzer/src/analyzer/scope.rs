@@ -431,7 +431,7 @@ impl Analyzer<'_, '_> {
             .map(Cow::Owned)
     }
 
-    pub(super) fn register_type(&mut self, name: Id, ty: Box<Type>) -> Result<(), Error> {
+    pub(super) fn register_type(&mut self, name: Id, ty: Box<Type>) {
         if self.ctx.in_global {
             self.env.declare_global_type(name.sym().clone(), ty.clone());
         }
@@ -482,8 +482,6 @@ impl Analyzer<'_, '_> {
 
             self.scope.register_type(name, ty);
         }
-
-        Ok(())
     }
 
     pub fn declare_vars(&mut self, kind: VarDeclKind, pat: &RPat) -> Result<(), Error> {

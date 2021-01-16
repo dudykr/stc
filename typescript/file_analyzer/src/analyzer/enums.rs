@@ -117,8 +117,7 @@ impl Analyzer<'_, '_> {
             .report(&mut self.storage)
             .unwrap_or_else(|| Type::any(span));
 
-        self.register_type(name.clone(), stored_ty.clone())
-            .report(&mut self.storage);
+        self.register_type(name.clone(), stored_ty.clone());
 
         self.declare_var(e.span, VarDeclKind::Let, name.clone(), Some(stored_ty), true, true)
             .report(&mut self.storage);

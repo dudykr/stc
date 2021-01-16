@@ -120,7 +120,7 @@ impl Analyzer<'_, '_> {
                         constraint: None,
                         default: None,
                     }),
-                )?;
+                );
             }
 
             let params = decl.params.validate_with(self)?;
@@ -144,7 +144,7 @@ impl Analyzer<'_, '_> {
             constraint: try_opt!(p.constraint.validate_with(self)),
             default: try_opt!(p.default.validate_with(self)),
         };
-        self.register_type(param.name.clone().into(), box param.clone().into())?;
+        self.register_type(param.name.clone().into(), box param.clone().into());
 
         Ok(param)
     }
@@ -186,7 +186,7 @@ impl Analyzer<'_, '_> {
                 },
             )?
         };
-        self.register_type(d.id.clone().into(), box Type::Alias(alias.clone()))?;
+        self.register_type(d.id.clone().into(), box Type::Alias(alias.clone()));
 
         Ok(alias)
     }
@@ -205,9 +205,7 @@ impl Analyzer<'_, '_> {
             };
             child.prevent_expansion(&mut ty.body);
 
-            child
-                .register_type(d.id.clone().into(), box ty.clone().into())
-                .report(&mut child.storage);
+            child.register_type(d.id.clone().into(), box ty.clone().into());
 
             child.resolve_parent_interfaces(&d.extends);
 
@@ -215,7 +213,7 @@ impl Analyzer<'_, '_> {
         })?;
 
         // TODO: Recover
-        self.register_type(d.id.clone().into(), Type::Interface(ty.clone()).cheap())?;
+        self.register_type(d.id.clone().into(), Type::Interface(ty.clone()).cheap());
 
         Ok(ty)
     }

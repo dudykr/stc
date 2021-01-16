@@ -1229,7 +1229,7 @@ impl Analyzer<'_, '_> {
         )?;
 
         for (i, ty) in types_to_register {
-            self.register_type(i, ty)?;
+            self.register_type(i, ty);
         }
 
         Ok(c)
@@ -1254,7 +1254,7 @@ impl Analyzer<'_, '_> {
         let c = self
             .with_child(ScopeKind::Block, Default::default(), |analyzer| {
                 if let Some(ref i) = c.ident {
-                    analyzer.register_type(i.into(), ty.clone())?;
+                    analyzer.register_type(i.into(), ty.clone());
 
                     match analyzer.declare_var(
                         ty.span(),
@@ -1317,8 +1317,7 @@ impl Analyzer<'_, '_> {
         let old_this = self.scope.this.take();
         // self.scope.this = Some(ty.clone());
 
-        self.register_type(c.ident.clone().into(), ty.clone().into())
-            .report(&mut self.storage);
+        self.register_type(c.ident.clone().into(), ty.clone().into());
 
         match self.declare_var(
             ty.span(),
