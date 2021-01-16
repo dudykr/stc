@@ -19,6 +19,7 @@ use rnode::VisitMutWith;
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RIdent;
+use stc_ts_ast_rnode::RNumber;
 use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RPrivateName;
 use stc_ts_ast_rnode::RStr;
@@ -241,6 +242,7 @@ impl SymbolIdGenerator {
 pub enum Key {
     Computed(ComputedKey),
     Normal { span: Span, sym: JsWord },
+    Num(#[use_eq_ignore_span] RNumber),
     Private(#[use_eq_ignore_span] RPrivateName),
 }
 
@@ -524,9 +526,8 @@ impl TypeElement {
     pub fn non_computed_key(&self) -> Option<&JsWord> {
         let key = self.key()?;
         match key {
-            Key::Computed(_) => None,
             Key::Normal { sym, .. } => Some(sym),
-            Key::Private(_) => None,
+            _ => None,
         }
     }
 

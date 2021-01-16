@@ -753,6 +753,7 @@ impl Key {
                 type_ann: None,
             }),
             Key::Private(name) => box RExpr::PrivateName(name),
+            Key::Num(n) => box RExpr::Lit(RLit::Num(n)),
         }
     }
 }

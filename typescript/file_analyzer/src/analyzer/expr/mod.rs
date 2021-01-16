@@ -1961,7 +1961,6 @@ impl Analyzer<'_, '_> {
         elems.iter().any(|el| match el {
             TypeElement::Property(PropertySignature {
                 key: box RExpr::Lit(RLit::Num(..)),
-                computed: false,
                 ..
             }) => true,
             _ => false,
