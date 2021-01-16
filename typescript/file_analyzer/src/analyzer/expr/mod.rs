@@ -55,6 +55,7 @@ use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_types::name::Name;
 use stc_ts_types::rprop_name_to_expr;
+use stc_ts_types::ComputedKey;
 use stc_ts_types::Key;
 use stc_ts_types::PropertySignature;
 use stc_ts_types::{
@@ -638,15 +639,174 @@ impl Analyzer<'_, '_> {
     pub(crate) fn validate_key(&mut self, prop: &RExpr, computed: bool) -> ValidationResult<Key> {
         if computed {
             prop.validate_with_default(self)
+                .map(|ty| ComputedKey {
+                    span: prop.span(),
+                    ty,
+                    expr: prop.clone(),
+                })
+                .map(Key::Computed)
         } else {
             match prop {
-                RExpr::Ident(RIdent { span, .. }) => Ok(box Type::Keyword(RTsKeywordType {
-                    kind: TsKeywordTypeKind::TsStringKeyword,
-                    span: *span,
-                })),
+                RExpr::Ident(RIdent { sym, .. }) => Ok(Key::Normal(sym.clone())),
                 _ => unreachable!(),
             }
         }
+    }
+
+    fn access_property_of_type_elements(
+        &mut self,
+        span: Span,
+        obj: &Type,
+        prop: &Key,
+        type_mode: TypeOfMode,
+        members: &[TypeElement],
+    ) -> ValidationResult<Option<Box<Type>>> {
+        let mut candidates = vec![];
+        for el in members.iter() {
+            if let Some(key) = el.key() {
+                let is_el_computed = match *el {
+                    TypeElement::Property(ref p) => p.computed,
+                    _ => false,
+                };
+                let is_eq = match prop {
+                    RExpr::Ident(RIdent { sym: ref value, .. }) if !computed => match &*key {
+                        RExpr::Ident(RIdent {
+                            sym: ref r_value, ..
+                        }) => value == r_value,
+
+                        RExpr::Lit(RLit::Str(RStr {
+                            value: ref r_value, ..
+                        })) => value == r_value,
+                        _ => false,
+                    },
+
+                    RExpr::Lit(RLit::Str(RStr { ref value, .. })) if computed => match &*key {
+                        RExpr::Ident(RIdent {
+                            sym: ref r_value, ..
+                        }) => value == r_value,
+
+                        RExpr::Lit(RLit::Str(RStr {
+                            value: ref r_value, ..
+                        })) => value == r_value,
+                        _ => false,
+                    },
+                    _ => false,
+                };
+
+                if is_eq || key.eq_ignore_span(prop) {
+                    match el {
+                        TypeElement::Property(ref p) => {
+                            if type_mode == TypeOfMode::LValue && p.readonly {
+                                return Err(Error::ReadOnly { span });
+                            }
+
+                            if let Some(ref type_ann) = p.type_ann {
+                                candidates.push(type_ann.clone());
+                                continue;
+                            }
+
+                            // TODO: no implicit any?
+                            candidates.push(Type::any(span));
+                            continue;
+                        }
+
+                        TypeElement::Method(ref m) => {
+                            //
+                            candidates.push(box Type::Function(ty::Function {
+                                span,
+                                type_params: m.type_params.clone(),
+                                params: m.params.clone(),
+                                ret_ty: m.ret_ty.clone().unwrap_or_else(|| Type::any(span)),
+                            }));
+                            continue;
+                        }
+
+                        _ => unimplemented!("TypeElement {:?}", el),
+                    }
+                }
+            }
+        }
+
+        let is_callable = members.iter().any(|element| match element {
+            TypeElement::Call(_) => true,
+            _ => false,
+        });
+
+        if is_callable {
+            // Handle funciton-like interfaces
+            // Example of code handled by this block is `Error.call`
+
+            let obj = a.env.get_global_type(span, &js_word!("Function"))?;
+
+            if let Ok(v) = a.access_property(span, obj, prop, computed, type_mode) {
+                return Ok(Some(v));
+            }
+        }
+
+        for el in members.iter() {
+            if computed {
+                match el {
+                    TypeElement::Index(IndexSignature {
+                        ref params,
+                        ref type_ann,
+                        readonly,
+                        ..
+                    }) => {
+                        if params.len() != 1 {
+                            unimplemented!("Index signature with multiple parameters")
+                        }
+
+                        let index_ty = &params[0].ty;
+
+                        // Don't know exact reason, but you can index `{ [x: string]: boolean }`
+                        // with number type.
+                        //
+                        // I guess it's because javascript work in that way.
+                        let indexed = (index_ty.is_kwd(TsKeywordTypeKind::TsStringKeyword)
+                            && prop_ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword))
+                            || index_ty.type_eq(&prop_ty);
+
+                        if indexed {
+                            if let Some(ref type_ann) = type_ann {
+                                return Ok(Some(type_ann.clone()));
+                            }
+
+                            return Ok(Some(Type::any(span)));
+                        }
+
+                        match prop_ty.normalize() {
+                            // TODO: Only string or number
+                            Type::EnumVariant(..) => {
+                                candidates.extend(type_ann.clone());
+                                continue;
+                            }
+
+                            _ => {}
+                        }
+
+                        let ty = box Type::IndexedAccessType(IndexedAccessType {
+                            span,
+                            obj_type: box obj.clone(),
+                            index_type: prop_ty,
+                            readonly: *readonly,
+                        });
+
+                        return Ok(Some(ty));
+                    }
+                    _ => {}
+                }
+            }
+        }
+
+        if candidates.len() == 0 {
+            return Ok(None);
+        }
+
+        if candidates.len() == 1 {
+            return Ok(candidates.pop());
+        }
+
+        Ok(Some(Type::union(candidates)))
     }
 
     pub(super) fn access_property(
@@ -656,163 +816,6 @@ impl Analyzer<'_, '_> {
         prop: &Key,
         type_mode: TypeOfMode,
     ) -> ValidationResult {
-        #[inline(never)]
-        fn access_property_of_type_elements(
-            a: &mut Analyzer,
-            span: Span,
-            obj: &Type,
-            prop: &Key,
-            type_mode: TypeOfMode,
-            members: &[TypeElement],
-        ) -> ValidationResult<Option<Box<Type>>> {
-            let mut candidates = vec![];
-            for el in members.iter() {
-                if let Some(key) = el.key() {
-                    let is_el_computed = match *el {
-                        TypeElement::Property(ref p) => p.computed,
-                        _ => false,
-                    };
-                    let is_eq = match prop {
-                        RExpr::Ident(RIdent { sym: ref value, .. }) if !computed => match &*key {
-                            RExpr::Ident(RIdent {
-                                sym: ref r_value, ..
-                            }) => value == r_value,
-
-                            RExpr::Lit(RLit::Str(RStr {
-                                value: ref r_value, ..
-                            })) => value == r_value,
-                            _ => false,
-                        },
-
-                        RExpr::Lit(RLit::Str(RStr { ref value, .. })) if computed => match &*key {
-                            RExpr::Ident(RIdent {
-                                sym: ref r_value, ..
-                            }) => value == r_value,
-
-                            RExpr::Lit(RLit::Str(RStr {
-                                value: ref r_value, ..
-                            })) => value == r_value,
-                            _ => false,
-                        },
-                        _ => false,
-                    };
-
-                    if is_eq || key.eq_ignore_span(prop) {
-                        match el {
-                            TypeElement::Property(ref p) => {
-                                if type_mode == TypeOfMode::LValue && p.readonly {
-                                    return Err(Error::ReadOnly { span });
-                                }
-
-                                if let Some(ref type_ann) = p.type_ann {
-                                    candidates.push(type_ann.clone());
-                                    continue;
-                                }
-
-                                // TODO: no implicit any?
-                                candidates.push(Type::any(span));
-                                continue;
-                            }
-
-                            TypeElement::Method(ref m) => {
-                                //
-                                candidates.push(box Type::Function(ty::Function {
-                                    span,
-                                    type_params: m.type_params.clone(),
-                                    params: m.params.clone(),
-                                    ret_ty: m.ret_ty.clone().unwrap_or_else(|| Type::any(span)),
-                                }));
-                                continue;
-                            }
-
-                            _ => unimplemented!("TypeElement {:?}", el),
-                        }
-                    }
-                }
-            }
-
-            let is_callable = members.iter().any(|element| match element {
-                TypeElement::Call(_) => true,
-                _ => false,
-            });
-
-            if is_callable {
-                // Handle funciton-like interfaces
-                // Example of code handled by this block is `Error.call`
-
-                let obj = a.env.get_global_type(span, &js_word!("Function"))?;
-
-                if let Ok(v) = a.access_property(span, obj, prop, computed, type_mode) {
-                    return Ok(Some(v));
-                }
-            }
-
-            for el in members.iter() {
-                if computed {
-                    match el {
-                        TypeElement::Index(IndexSignature {
-                            ref params,
-                            ref type_ann,
-                            readonly,
-                            ..
-                        }) => {
-                            if params.len() != 1 {
-                                unimplemented!("Index signature with multiple parameters")
-                            }
-
-                            let index_ty = &params[0].ty;
-
-                            // Don't know exact reason, but you can index `{ [x: string]: boolean }`
-                            // with number type.
-                            //
-                            // I guess it's because javascript work in that way.
-                            let indexed = (index_ty.is_kwd(TsKeywordTypeKind::TsStringKeyword)
-                                && prop_ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword))
-                                || index_ty.type_eq(&prop_ty);
-
-                            if indexed {
-                                if let Some(ref type_ann) = type_ann {
-                                    return Ok(Some(type_ann.clone()));
-                                }
-
-                                return Ok(Some(Type::any(span)));
-                            }
-
-                            match prop_ty.normalize() {
-                                // TODO: Only string or number
-                                Type::EnumVariant(..) => {
-                                    candidates.extend(type_ann.clone());
-                                    continue;
-                                }
-
-                                _ => {}
-                            }
-
-                            let ty = box Type::IndexedAccessType(IndexedAccessType {
-                                span,
-                                obj_type: box obj.clone(),
-                                index_type: prop_ty,
-                                readonly: *readonly,
-                            });
-
-                            return Ok(Some(ty));
-                        }
-                        _ => {}
-                    }
-                }
-            }
-
-            if candidates.len() == 0 {
-                return Ok(None);
-            }
-
-            if candidates.len() == 1 {
-                return Ok(candidates.pop());
-            }
-
-            Ok(Some(Type::union(candidates)))
-        }
-
         if !self.is_builtin {
             debug_assert!(!span.is_dummy());
 

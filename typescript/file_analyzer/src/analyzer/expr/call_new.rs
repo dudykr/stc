@@ -601,7 +601,7 @@ impl Analyzer<'_, '_> {
 
             // TODO: Remove clone
             for m in methods {
-                self.check_type_element_for_call(kind, &mut candidates, m, prop, computed);
+                self.check_type_element_for_call(kind, &mut candidates, m, prop);
             }
         }
 
