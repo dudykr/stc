@@ -1639,6 +1639,8 @@ impl Expander<'_, '_, '_> {
                         };
 
                         match t.normalize() {
+                            Type::Intersection(..) => return Ok(Some(t.into_owned().clone())),
+
                             // Result of type expansion should not be Ref unless really required.
                             Type::Ref(r) => {
                                 let r = r.clone();
