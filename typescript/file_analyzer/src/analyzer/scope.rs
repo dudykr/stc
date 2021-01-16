@@ -12,6 +12,7 @@ use crate::{
     ValidationResult,
 };
 use fxhash::{FxHashMap, FxHashSet};
+use iter::once;
 use once_cell::sync::Lazy;
 use rnode::Fold;
 use rnode::FoldWith;
@@ -38,6 +39,7 @@ use stc_ts_errors::debug::print_backtrace;
 use stc_ts_errors::Error;
 use stc_ts_types::name::Name;
 use stc_ts_types::Array;
+use stc_ts_types::Intersection;
 use stc_ts_types::Key;
 use stc_ts_types::TypeParamInstantiation;
 use stc_ts_types::{
@@ -47,6 +49,7 @@ use stc_ts_types::{
 use stc_ts_utils::OptionExt;
 use stc_ts_utils::PatExt;
 use stc_utils::TryOpt;
+use std::mem::replace;
 use std::{borrow::Cow, collections::hash_map::Entry, fmt::Debug, iter, iter::repeat, slice};
 use swc_atoms::js_word;
 use swc_common::TypeEq;
@@ -268,22 +271,65 @@ impl Scope<'_> {
         match ty.normalize() {
             Type::Param(..) => {
                 // Override type parameter.
-                // As if store type parameter two time, this is required.
 
-                let v = self.types.entry(name).or_default();
-                if let Some(index) = v.iter().position(|v| match &**v {
-                    Type::Param(..) => true,
-                    _ => false,
-                }) {
-                    v.remove(index);
+                match self.types.entry(name) {
+                    Entry::Occupied(mut e) => {
+                        let prev = e.get_mut();
+
+                        if prev.normalize().is_type_param() {
+                            *prev = ty;
+                            return;
+                        } else if prev.normalize().is_intersection_type() {
+                            match prev.normalize_mut() {
+                                Type::Intersection(prev) => {
+                                    if let Some(index) = prev.types.iter().position(|v| match &**v {
+                                        Type::Param(..) => true,
+                                        _ => false,
+                                    }) {
+                                        prev.types.remove(index);
+                                    }
+
+                                    prev.types.push(ty)
+                                }
+                                _ => {
+                                    unreachable!()
+                                }
+                            }
+                        }
+                    }
+                    Entry::Vacant(mut e) => {
+                        e.insert(ty);
+                    }
                 }
-                v.push(ty);
 
                 return;
             }
             _ => {}
         }
-        self.types.entry(name).or_default().push(ty);
+        match self.types.entry(name) {
+            Entry::Occupied(mut e) => {
+                let prev = e.get_mut();
+                if prev.normalize().is_intersection_type() {
+                    match prev.normalize_mut() {
+                        Type::Intersection(prev) => {
+                            prev.types.push(ty);
+                        }
+                        _ => {
+                            unreachable!()
+                        }
+                    }
+                } else {
+                    let prev_ty = replace(prev, Type::any(DUMMY_SP));
+                    *prev = box Type::Intersection(Intersection {
+                        span: DUMMY_SP,
+                        types: vec![prev_ty, ty],
+                    });
+                }
+            }
+            Entry::Vacant(e) => {
+                e.insert(ty);
+            }
+        }
     }
 
     pub fn this(&self) -> Option<Cow<Box<Type>>> {
@@ -1446,13 +1492,11 @@ impl<'a> Scope<'a> {
         }
 
         if let Some(ty) = self.types.get(name) {
-            for ty in &**ty {
-                debug_assert!(ty.is_clone_cheap(), "{:?}", ty);
-            }
+            debug_assert!(ty.is_clone_cheap(), "{:?}", ty);
 
             // println!("({}) find_type({}): Found", self.depth(), name);
 
-            return Some(ItemRef::Multi(ty.iter()));
+            return Some(ItemRef::Single(once(&*ty)));
         }
 
         match self.parent {
