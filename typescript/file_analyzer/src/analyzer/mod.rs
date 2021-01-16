@@ -442,7 +442,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         // Move return types from child to parent
         match kind {
             // These kinds of scope eats return statements
-            ScopeKind::Method | ScopeKind::ArrowFn | ScopeKind::Fn => {}
+            ScopeKind::Module | ScopeKind::Method | ScopeKind::ArrowFn | ScopeKind::Fn => {}
             _ => {
                 self.scope.return_values += child_scope.return_values;
             }
@@ -651,7 +651,7 @@ impl Analyzer<'_, '_> {
             ..self.ctx
         };
         let ty = self.with_ctx(ctx).with_child(
-            ScopeKind::Block,
+            ScopeKind::Module,
             Default::default(),
             |child: &mut Analyzer| {
                 decl.visit_children_with(child);

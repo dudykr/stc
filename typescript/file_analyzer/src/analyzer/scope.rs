@@ -158,6 +158,9 @@ impl Scope<'_> {
     pub fn is_root(&self) -> bool {
         self.parent.is_none()
     }
+    pub fn is_module(&self) -> bool {
+        self.kind == ScopeKind::Module
+    }
 
     /// Returns `true` if we are in call.
     pub fn is_calling(&self) -> bool {
@@ -902,7 +905,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if self.scope.is_root() {
+        if self.scope.is_root() || self.scope.is_module() {
             if let Some(ty) = ty.clone() {
                 self.storage
                     .store_private_var(self.ctx.module_id, name.clone(), ty)
@@ -1473,7 +1476,11 @@ impl<'a> Scope<'a> {
             ScopeKind::ObjectLit => return true,
 
             ScopeKind::Class => return false,
-            ScopeKind::Call | ScopeKind::Method | ScopeKind::Flow | ScopeKind::Block => {}
+            ScopeKind::Call
+            | ScopeKind::Method
+            | ScopeKind::Flow
+            | ScopeKind::Block
+            | ScopeKind::Module => {}
         }
 
         match self.parent {
@@ -1485,6 +1492,8 @@ impl<'a> Scope<'a> {
     /// Returns true if `this` (from javascript) is a reference to a class.
     pub fn is_this_ref_to_class(&self) -> bool {
         match self.kind {
+            ScopeKind::Module => return false,
+
             ScopeKind::Fn | ScopeKind::ArrowFn => return false,
 
             // `this` in object literal resolves to the object literal itself.
@@ -1610,6 +1619,7 @@ pub(crate) enum ScopeKind {
     Flow,
     /// Type parameters are stored in this scope.
     Call,
+    Module,
 }
 
 impl ScopeKind {
