@@ -885,6 +885,8 @@ impl Analyzer<'_, '_> {
         initialized: bool,
         allow_multiple: bool,
     ) -> Result<(), Error> {
+        let ty = ty.map(|ty| ty.cheap());
+
         if self.ctx.in_global {
             if let Some(ty) = ty.clone() {
                 self.env.declare_global_var(name.sym().clone(), ty.clone());
