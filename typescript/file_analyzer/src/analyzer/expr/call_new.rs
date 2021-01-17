@@ -1040,6 +1040,7 @@ impl Analyzer<'_, '_> {
                                 args,
                                 &arg_types,
                                 spread_arg_types,
+                                true,
                             )?;
                             return Ok(ret_ty);
                         }
