@@ -1085,7 +1085,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let (span, type_params, params, ret_ty, type_args, arg_types) = candidates.into_iter().next().unwrap();
+        let (_, type_params, params, ret_ty, type_args, arg_types) = candidates.into_iter().next().unwrap();
 
         return self.get_return_type(
             span,
