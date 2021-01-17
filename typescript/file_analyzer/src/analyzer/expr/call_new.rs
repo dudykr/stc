@@ -755,7 +755,6 @@ impl Analyzer<'_, '_> {
                 args,
                 arg_types,
                 spread_arg_types,
-                true,
             ),
 
             // Type::Constructor(ty::Constructor {
@@ -921,7 +920,6 @@ impl Analyzer<'_, '_> {
             args,
             arg_types,
             spread_arg_types,
-            true,
         );
     }
 
@@ -939,12 +937,11 @@ impl Analyzer<'_, '_> {
             ExtractKind::Call,
             c.type_params.as_ref().map(|v| &*v.params),
             &c.params,
-            c.ret_ty.unwrap_or_else(|| Type::any(span)),
+            c.ret_ty.clone().unwrap_or_else(|| Type::any(span)),
             type_args,
             args,
             arg_types,
             spread_arg_types,
-            true,
         )
     }
 
@@ -1026,7 +1023,6 @@ impl Analyzer<'_, '_> {
                                 args,
                                 &arg_types,
                                 spread_arg_types,
-                                true,
                             )?;
                             return Ok(ret_ty);
                         }
@@ -1085,7 +1081,6 @@ impl Analyzer<'_, '_> {
                     args,
                     arg_types,
                     spread_arg_types,
-                    true,
                 );
             }
         }
@@ -1171,7 +1166,6 @@ impl Analyzer<'_, '_> {
         args: &[RExprOrSpread],
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
-        _patched: bool,
     ) -> ValidationResult {
         let logger = self.logger.clone();
 
