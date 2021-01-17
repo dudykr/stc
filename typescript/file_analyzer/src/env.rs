@@ -253,8 +253,10 @@ impl Env {
         static CACHE: Lazy<DashMap<Vec<Lib>, Arc<BuiltIn>>> = Lazy::new(Default::default);
 
         // TODO: Include `env` in cache
+        let mut libs = libs.to_vec();
+        libs.sort();
 
-        if let Some(v) = CACHE.get(libs) {
+        if let Some(v) = CACHE.get(&libs) {
             let builtin = (*v).clone();
             return Self {
                 stable: STABLE_ENV.clone(),
@@ -265,7 +267,7 @@ impl Env {
                 global_vars: Default::default(),
             };
         }
-        let builtin = BuiltIn::from_ts_libs(&STABLE_ENV, libs);
+        let builtin = BuiltIn::from_ts_libs(&STABLE_ENV, &libs);
         let builtin = Arc::new(builtin);
         CACHE.insert(libs.to_vec(), builtin.clone());
 

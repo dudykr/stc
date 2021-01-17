@@ -26,7 +26,7 @@ pub fn builtin(_: proc_macro::TokenStream) -> proc_macro::TokenStream {
         let dir = Path::new(&dir_str).join("lib");
         let mut tokens = q();
 
-        let files = read_dir(&dir)
+        let mut files = read_dir(&dir)
             .expect("failed to read $CARGO_MANIFEST_DIR/lib")
             .filter_map(|entry| {
                 let entry = entry.expect("failed to read file of directory");
@@ -38,6 +38,7 @@ pub fn builtin(_: proc_macro::TokenStream) -> proc_macro::TokenStream {
                 Some((entry.path(), file_name))
             })
             .collect::<Vec<_>>();
+        files.sort();
 
         let mut names = vec![];
 
