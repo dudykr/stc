@@ -1,12 +1,4 @@
 warning: Type
- --> $DIR/tests/visualize/exprs/array/infer-1.ts:2:35
-  |
-2 | export let b1: { x: boolean }[] = foo({ x: true }, { x: false });
-  |                                   ^^^
-  |
-  = note: <T>(...args: T[]) => T[]
-
-warning: Type
  --> $DIR/tests/visualize/exprs/array/infer-1.ts:2:44
   |
 2 | export let b1: { x: boolean }[] = foo({ x: true }, { x: false });
@@ -41,6 +33,14 @@ warning: Type
   = note: {
               x: false;
           }
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/array/infer-1.ts:2:35
+  |
+2 | export let b1: { x: boolean }[] = foo({ x: true }, { x: false });
+  |                                   ^^^
+  |
+  = note: <T>(...args: T[]) => T[]
 
 warning: Type
  --> $DIR/tests/visualize/exprs/array/infer-1.ts:2:35
