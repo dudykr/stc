@@ -535,6 +535,8 @@ pub enum Error {
 
     ArgCountMismatch {
         span: Span,
+        min: usize,
+        max: Option<usize>,
     },
 }
 

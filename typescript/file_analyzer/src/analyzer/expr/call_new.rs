@@ -1148,7 +1148,11 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
             }
-            return Err(Error::ArgCountMismatch { span });
+            return Err(Error::ArgCountMismatch {
+                span,
+                min: min_param,
+                max: max_param,
+            });
         }
     }
 
