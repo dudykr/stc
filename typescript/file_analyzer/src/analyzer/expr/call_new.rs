@@ -745,6 +745,7 @@ impl Analyzer<'_, '_> {
                 args,
                 arg_types,
                 spread_arg_types,
+                true,
             ),
 
             // Type::Constructor(ty::Constructor {
@@ -842,7 +843,7 @@ impl Analyzer<'_, '_> {
     fn search_members_for_extract(
         &mut self,
         span: Span,
-        ty: &Type,
+        callee_ty: &Type,
         members: &[TypeElement],
         kind: ExtractKind,
         args: &[RExprOrSpread],
@@ -850,7 +851,12 @@ impl Analyzer<'_, '_> {
         spread_arg_types: &[TypeOrSpread],
         type_args: Option<&TypeParamInstantiation>,
     ) -> ValidationResult {
-        let ty_span = ty.span();
+        let callee_span = callee_ty.span();
+
+        let candidate_count = match kind {
+            ExtractKind::Call => {}
+            ExtractKind::New => {}
+        };
 
         for member in members {
             match *member {
@@ -909,11 +915,11 @@ impl Analyzer<'_, '_> {
         match kind {
             ExtractKind::Call => Err(Error::NoCallSignature {
                 span,
-                callee: box ty.clone(),
+                callee: box callee_ty.clone(),
             }),
             ExtractKind::New => Err(Error::NoNewSignature {
                 span,
-                callee: box ty.clone(),
+                callee: box callee_ty.clone(),
             }),
         }
     }
@@ -1091,6 +1097,7 @@ impl Analyzer<'_, '_> {
             args,
             arg_types,
             spread_arg_types,
+            true,
         );
     }
 
@@ -1157,6 +1164,7 @@ impl Analyzer<'_, '_> {
         args: &[RExprOrSpread],
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
+        _patched: bool,
     ) -> ValidationResult {
         let logger = self.logger.clone();
 
