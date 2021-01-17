@@ -50,13 +50,7 @@ impl Analyzer<'_, '_> {
 
         match node {
             RPropName::Computed(c) => {
-                let ty = c.expr.validate_with_default(self)?;
-
-                Ok(Key::Computed(ComputedKey {
-                    span: c.span,
-                    expr: c.expr.clone(),
-                    ty,
-                }))
+                return c.validate_with(self).map(Key::Computed);
             }
             RPropName::Ident(i) => Ok(Key::Normal {
                 span: i.span,
@@ -74,11 +68,11 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &RComputedPropName) {
+    fn validate(&mut self, node: &RComputedPropName) -> ValidationResult<ComputedKey> {
         self.record(node);
+        let span = node.span;
 
         let mode = self.ctx.computed_prop_mode;
-
         let span = node.span;
 
         let is_symbol_access = match *node.expr {
@@ -156,7 +150,7 @@ impl Analyzer<'_, '_> {
             // TODO:
             ComputedPropMode::Interface => errors.is_empty(),
         } {
-            let ty = ty.generalize_lit();
+            let ty = ty.clone().generalize_lit();
             match *ty.normalize() {
                 Type::Keyword(RTsKeywordType {
                     kind: TsKeywordTypeKind::TsAnyKeyword,
@@ -191,7 +185,11 @@ impl Analyzer<'_, '_> {
             self.storage.report_all(errors);
         }
 
-        Ok(())
+        Ok(ComputedKey {
+            span,
+            expr: node.expr.clone(),
+            ty,
+        })
     }
 }
 
