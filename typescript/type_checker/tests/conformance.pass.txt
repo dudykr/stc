@@ -1,3 +1,4 @@
+Symbols/ES5SymbolProperty1.ts
 Symbols/ES5SymbolProperty3.ts
 Symbols/ES5SymbolProperty4.ts
 Symbols/ES5SymbolProperty7.ts
