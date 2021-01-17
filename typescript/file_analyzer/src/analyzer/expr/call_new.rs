@@ -1102,13 +1102,20 @@ impl Analyzer<'_, '_> {
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
     ) {
-        // TODO: Use range for validation instead
         let mut min_param = 0;
         let mut max_param = Some(params.len());
         for param in params {
             match param.pat {
                 RPat::Rest(..) => {
                     max_param = None;
+                }
+                RPat::Ident(RIdent {
+                    sym: js_word!("this"), ..
+                }) => {
+                    if let Some(max) = &mut max_param {
+                        *max -= 1;
+                    }
+                    continue;
                 }
                 _ => {}
             }
