@@ -276,6 +276,8 @@ fn do_test(treat_error_as_bug: bool, file_name: &Path) -> Result<(), StdErr> {
                 None => {}
             }
 
+            libs.sort();
+            dbg!(&libs);
             (libs, rule, ts_config, target)
         })
     })
