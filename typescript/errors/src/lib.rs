@@ -159,6 +159,11 @@ pub enum Error {
         name: Id,
     },
 
+    TypeUsedAsVar {
+        span: Span,
+        name: Id,
+    },
+
     DuplicateName {
         name: Id,
         span: Span,
@@ -577,6 +582,7 @@ impl Error {
             Error::NoSuchProperty { .. } => 2339,
             Error::AssignOpCannotBeApplied { .. } => 2365,
             Error::NonSymbolComputedPropInFormOfSymbol { .. } => 2471,
+            Error::TypeUsedAsVar { .. } => 2585,
 
             _ => 0,
         }

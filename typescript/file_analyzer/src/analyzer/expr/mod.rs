@@ -1697,20 +1697,17 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        slog::error!(
-            self.logger,
-            "({}) Creating ref because we failed to resolve {}",
-            self.scope.depth(),
-            i.sym
-        );
-        // print_backtrace();
-
-        Ok(box Type::Ref(Ref {
-            span,
-            ctxt: self.ctx.module_id,
-            type_name: RTsEntityName::Ident(i.clone()),
-            type_args: None,
-        }))
+        if let Ok(..) = self.find_type(self.ctx.module_id, &i.into()) {
+            Err(Error::TypeUsedAsVar {
+                span,
+                name: i.clone().into(),
+            })
+        } else {
+            Err(Error::NoSuchVar {
+                span,
+                name: i.clone().into(),
+            })
+        }
     }
 
     pub(crate) fn type_of_ts_entity_name(
