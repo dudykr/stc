@@ -1088,6 +1088,7 @@ impl Analyzer<'_, '_> {
                 })
                 .cloned()
             {
+                // TODO: Check if this is correct.
                 return self.get_return_type(
                     span,
                     kind,
@@ -1098,6 +1099,7 @@ impl Analyzer<'_, '_> {
                     args,
                     arg_types,
                     spread_arg_types,
+                    true,
                 );
             }
         }
