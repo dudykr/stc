@@ -187,6 +187,11 @@ impl Analyzer<'_, '_> {
 
         slog::debug!(self.logger, "extract_call_new_expr_member");
 
+        let type_args = match type_args {
+            Some(v) => Some(v.validate_with(self)?),
+            None => None,
+        };
+
         match *callee {
             RExpr::Ident(ref i) if i.sym == js_word!("require") => {
                 let id = args
@@ -295,11 +300,29 @@ impl Analyzer<'_, '_> {
                             }
                         }
                         // TODO: Check parent interface
-                        return self.search_members_for_callable_prop(kind, span, &i.body, &prop, args);
+                        return self.search_members_for_callable_prop(
+                            kind,
+                            span,
+                            &i.body,
+                            &prop,
+                            type_args.as_ref(),
+                            args,
+                            arg_types,
+                            spread_arg_types,
+                        );
                     }
 
                     Type::TypeLit(ref t) => {
-                        return self.search_members_for_callable_prop(kind, span, &t.members, &prop, args);
+                        return self.search_members_for_callable_prop(
+                            kind,
+                            span,
+                            &t.members,
+                            &prop,
+                            type_args.as_ref(),
+                            args,
+                            arg_types,
+                            spread_arg_types,
+                        );
                     }
 
                     Type::Class(ty::Class { ref body, .. }) => {
@@ -519,7 +542,10 @@ impl Analyzer<'_, '_> {
         span: Span,
         members: &[TypeElement],
         prop: &Key,
+        type_args: Option<&TypeParamInstantiation>,
         args: &[RExprOrSpread],
+        arg_types: &[TypeOrSpread],
+        spread_arg_types: &[TypeOrSpread],
     ) -> ValidationResult {
         // Candidates of the method call.
         //
@@ -555,9 +581,15 @@ impl Analyzer<'_, '_> {
                 msg: format!("no method with same name\nMembers: {:?}\nKey: {:?}", members, prop),
             }),
             1 => {
-                let arg_types = self.validate_args(args)?;
                 // TODO:
-                return self.check_method_call(span, &candidates.into_iter().next().unwrap(), args, &arg_types);
+                return self.check_method_call(
+                    span,
+                    &candidates.into_iter().next().unwrap(),
+                    type_args,
+                    args,
+                    &arg_types,
+                    spread_arg_types,
+                );
             }
             _ => {
                 let arg_types = self.validate_args(args)?;
@@ -853,10 +885,14 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult {
         let callee_span = callee_ty.span();
 
-        let candidate_count = match kind {
-            ExtractKind::Call => {}
-            ExtractKind::New => {}
-        };
+        let candidate_count = members
+            .iter()
+            .filter(|member| match member {
+                TypeElement::Call(..) if kind == ExtractKind::Call => true,
+                TypeElement::Constructor(..) if kind == ExtractKind::New => true,
+                _ => false,
+            })
+            .count();
 
         for member in members {
             match *member {
@@ -867,6 +903,7 @@ impl Analyzer<'_, '_> {
                     ..
                 }) if kind == ExtractKind::Call => {
                     //
+
                     match self.get_return_type(
                         span,
                         kind,
@@ -928,22 +965,23 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         c: &MethodSignature,
+        type_args: Option<&TypeParamInstantiation>,
         args: &[RExprOrSpread],
         arg_types: &[TypeOrSpread],
+        spread_arg_types: &[TypeOrSpread],
     ) -> ValidationResult {
-        // Validate arguments
-        for (i, p) in c.params.iter().enumerate() {
-            // TODO: Handle spread
-            // TODO: Validate optional parameters
-            if arg_types.len() > i {
-                let args_ty = &arg_types[i].ty;
-                if let Err(..) = self.assign(&p.ty, &args_ty, arg_types[i].span()) {
-                    continue;
-                }
-            }
-        }
-
-        return Ok(c.ret_ty.clone().unwrap_or_else(|| Type::any(span)));
+        self.get_return_type(
+            span,
+            ExtractKind::Call,
+            c.type_params.as_ref().map(|v| &*v.params),
+            &c.params,
+            c.ret_ty.unwrap_or_else(|| Type::any(span)),
+            type_args,
+            args,
+            arg_types,
+            spread_arg_types,
+            true,
+        )
     }
 
     fn get_best_return_type(
@@ -1108,7 +1146,7 @@ impl Analyzer<'_, '_> {
         args: &[RExprOrSpread],
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
-    ) {
+    ) -> ValidationResult<()> {
         let mut min_param = 0;
         let mut max_param = Some(params.len());
         for param in params {
@@ -1138,21 +1176,23 @@ impl Analyzer<'_, '_> {
         let has_spread = args.iter().any(|arg| arg.spread.is_some());
         if has_spread {
             // TODO
+            Ok(())
         } else {
             if min_param <= args.len() {
                 if let Some(max) = max_param {
                     if args.len() <= max {
-                        return;
+                        return Ok(());
                     }
                 } else {
-                    return;
+                    return Ok(());
                 }
             }
-            self.storage.report(Error::ArgCountMismatch { span })
+            return Err(Error::ArgCountMismatch { span });
         }
     }
 
-    /// Returns the return type of function.
+    /// Returns the return type of function. This method should be called only
+    /// for final step because it emits errors instead of returning them.
     fn get_return_type(
         &mut self,
         span: Span,
@@ -1168,7 +1208,8 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult {
         let logger = self.logger.clone();
 
-        self.validate_arg_count(span, params, args, arg_types, spread_arg_types);
+        self.validate_arg_count(span, params, args, arg_types, spread_arg_types)
+            .report(&mut self.storage);
 
         slog::debug!(
             logger,
