@@ -11,9 +11,7 @@ use swc_ecma_codegen::Node;
 
 #[derive(Clone)]
 pub struct Debugger {
-    #[cfg(debug_assertions)]
     pub cm: Arc<SourceMap>,
-    #[cfg(debug_assertions)]
     pub handler: Arc<Handler>,
 }
 
