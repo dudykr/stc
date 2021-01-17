@@ -1697,7 +1697,15 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if let Ok(..) = self.find_type(self.ctx.module_id, &i.into()) {
+        if let Ok(Some(types)) = self.find_type(self.ctx.module_id, &i.into()) {
+            for ty in types {
+                debug_assert!(ty.is_clone_cheap());
+
+                match ty.normalize() {
+                    Type::Module(..) => return Ok(box ty.clone().into_owned()),
+                    _ => {}
+                }
+            }
             Err(Error::TypeUsedAsVar {
                 span,
                 name: i.clone().into(),
