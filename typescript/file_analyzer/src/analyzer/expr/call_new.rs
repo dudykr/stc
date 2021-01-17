@@ -902,7 +902,9 @@ impl Analyzer<'_, '_> {
                     type_params.as_ref().map(|v| &*v.params),
                     params,
                     type_args,
+                    args,
                     arg_types,
+                    spread_arg_types,
                 )
                 .ok()
                 .unwrap_or(false)
@@ -1008,7 +1010,15 @@ impl Analyzer<'_, '_> {
                     let type_params = f.type_params.as_ref().map(|v| &*v.params);
                     if !has_spread || cnt == 1 {
                         if cnt == 1
-                            || match self.is_exact_call(span, type_params, &f.params, type_args.as_ref(), &arg_types) {
+                            || match self.is_exact_call(
+                                span,
+                                type_params,
+                                &f.params,
+                                type_args.as_ref(),
+                                args,
+                                &arg_types,
+                                spread_arg_types,
+                            ) {
                                 Ok(true) => true,
                                 _ => false,
                             }
@@ -1426,7 +1436,9 @@ impl Analyzer<'_, '_> {
         type_params: Option<&[TypeParam]>,
         params: &[FnParam],
         type_args: Option<&TypeParamInstantiation>,
+        args: &[RExprOrSpread],
         arg_types: &[TypeOrSpread],
+        spread_arg_types: &[TypeOrSpread],
     ) -> ValidationResult<bool> {
         if self.scope.is_call_arg_count_unknown {
             return Ok(false);
@@ -1446,19 +1458,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        // TODO: Handle spread
-
-        let params_min = params.iter().filter(|param| param.required).count();
-        let params_max = params.len();
-
-        if arg_types.len() < params_min || params_max < arg_types.len() {
-            return Err(Error::ParameterCountMismatch {
-                span,
-                min: params_min,
-                max: params_max,
-                actual: arg_types.len(),
-            });
-        }
+        self.validate_arg_count(span, params, args, arg_types, spread_arg_types)?;
 
         let mut exact = true;
 
