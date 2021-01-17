@@ -863,80 +863,66 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult {
         let callee_span = callee_ty.span();
 
-        let candidate_count = members
+        let candidates = members
             .iter()
-            .filter(|member| match member {
-                TypeElement::Call(..) if kind == ExtractKind::Call => true,
-                TypeElement::Constructor(..) if kind == ExtractKind::New => true,
-                _ => false,
-            })
-            .count();
-
-        for member in members {
-            match *member {
+            .filter_map(|member| match member {
                 TypeElement::Call(CallSignature {
-                    ref params,
-                    ref type_params,
-                    ref ret_ty,
-                    ..
-                }) if kind == ExtractKind::Call => {
-                    //
-
-                    match self.get_return_type(
-                        span,
-                        kind,
-                        type_params.as_ref().map(|v| &*v.params),
-                        params,
-                        ret_ty.clone().unwrap_or(Type::any(span)),
-                        type_args,
-                        args,
-                        arg_types,
-                        spread_arg_types,
-                    ) {
-                        Ok(v) => return Ok(v),
-                        Err(..) => {}
-                    };
-                }
-
+                    span,
+                    params,
+                    type_params,
+                    ret_ty,
+                }) if kind == ExtractKind::Call => Some((span, params, type_params, ret_ty)),
                 TypeElement::Constructor(ConstructorSignature {
-                    ref params,
-                    ref type_params,
-                    ref ret_ty,
-                    ..
-                }) if kind == ExtractKind::New => {
-                    match self.get_return_type(
-                        span,
-                        kind,
-                        type_params.as_ref().map(|v| &*v.params),
-                        params,
-                        ret_ty.clone().unwrap_or(Type::any(span)),
-                        type_args,
-                        args,
-                        arg_types,
-                        spread_arg_types,
-                    ) {
-                        Ok(v) => return Ok(v),
-                        Err(..) => {
-                            // TODO: Handle error
-                        }
-                    }
-                }
-                _ => {}
-            }
+                    span,
+                    params,
+                    ret_ty,
+                    type_params,
+                }) if kind == ExtractKind::New => Some((span, params, type_params, ret_ty)),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+
+        if candidates.is_empty() {
+            return match kind {
+                ExtractKind::Call => Err(Error::NoCallSignature {
+                    span,
+                    callee: box callee_ty.clone(),
+                }),
+                ExtractKind::New => Err(Error::NoNewSignature {
+                    span,
+                    callee: box callee_ty.clone(),
+                }),
+            };
         }
 
-        dbg!();
+        let idx = candidates
+            .iter()
+            .position(|(_, params, type_params, _)| {
+                self.is_exact_call(
+                    span,
+                    type_params.as_ref().map(|v| &*v.params),
+                    params,
+                    type_args,
+                    arg_types,
+                )
+                .ok()
+                .unwrap_or(false)
+            })
+            .unwrap_or(0);
+        let (_, params, type_params, ret_ty) = candidates[idx];
 
-        match kind {
-            ExtractKind::Call => Err(Error::NoCallSignature {
-                span,
-                callee: box callee_ty.clone(),
-            }),
-            ExtractKind::New => Err(Error::NoNewSignature {
-                span,
-                callee: box callee_ty.clone(),
-            }),
-        }
+        return self.get_return_type(
+            span,
+            kind,
+            type_params.as_ref().map(|v| &*v.params),
+            params,
+            ret_ty.clone().unwrap_or(Type::any(span)),
+            type_args,
+            args,
+            arg_types,
+            spread_arg_types,
+            true,
+        );
     }
 
     fn check_method_call(
