@@ -7,6 +7,7 @@ use dashmap::DashMap;
 use derivative::Derivative;
 use fxhash::FxHashMap;
 use once_cell::sync::Lazy;
+use once_cell::sync::OnceCell;
 use rnode::NodeIdGenerator;
 use rnode::RNode;
 use rnode::VisitMutWith;
@@ -22,6 +23,7 @@ use stc_ts_builtin_types::Lib;
 use stc_ts_errors::Error;
 use stc_ts_storage::Builtin;
 use stc_ts_types::{Id, ModuleTypeData, Type};
+use std::time::Instant;
 use std::{collections::hash_map::Entry, sync::Arc};
 use swc_atoms::JsWord;
 use swc_common::Spanned;
@@ -66,6 +68,8 @@ impl BuiltIn {
         I: IntoIterator<Item = RModuleItem>,
     {
         slog::info!(env.logger, "Merging builtins");
+
+        let start = Instant::now();
 
         let mut result = Self::default();
         let mut storage = Builtin::default();
@@ -221,6 +225,9 @@ impl BuiltIn {
             ty.make_cheap();
         }
 
+        let dur = Instant::now() - start;
+        eprintln!("[builtin] Took {:?}", dur);
+
         result
     }
 }
@@ -250,26 +257,21 @@ impl Env {
 
     pub fn simple(rule: Rule, target: JscTarget, libs: &[Lib]) -> Self {
         static STABLE_ENV: Lazy<StableEnv> = Lazy::new(Default::default);
-        static CACHE: Lazy<DashMap<Vec<Lib>, Arc<BuiltIn>>> = Lazy::new(Default::default);
+        static CACHE: Lazy<DashMap<Vec<Lib>, OnceCell<Arc<BuiltIn>>>> = Lazy::new(Default::default);
 
         // TODO: Include `env` in cache
         let mut libs = libs.to_vec();
         libs.sort();
+        libs.dedup();
 
-        if let Some(v) = CACHE.get(&libs) {
-            let builtin = (*v).clone();
-            return Self {
-                stable: STABLE_ENV.clone(),
-                rule,
-                target,
-                builtin,
-                global_types: Default::default(),
-                global_vars: Default::default(),
-            };
-        }
-        let builtin = BuiltIn::from_ts_libs(&STABLE_ENV, &libs);
-        let builtin = Arc::new(builtin);
-        CACHE.insert(libs.to_vec(), builtin.clone());
+        CACHE.entry(libs.clone()).or_default();
+        let cell = CACHE.get(&libs).unwrap();
+
+        let builtin = cell.get_or_init(|| {
+            let builtin = BuiltIn::from_ts_libs(&STABLE_ENV, &libs);
+            Arc::new(builtin)
+        });
+        let builtin = (*builtin).clone();
 
         Self {
             stable: STABLE_ENV.clone(),
