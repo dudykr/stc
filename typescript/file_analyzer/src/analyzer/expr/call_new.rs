@@ -188,9 +188,16 @@ impl Analyzer<'_, '_> {
         slog::debug!(self.logger, "extract_call_new_expr_member");
 
         let type_args = match type_args {
-            Some(v) => Some(v.validate_with(self)?),
+            Some(v) => {
+                let mut type_args = v.validate_with(self)?;
+                self.prevent_expansion(&mut type_args);
+                Some(type_args)
+            }
             None => None,
         };
+
+        let arg_types = self.validate_args(args)?;
+        let spread_arg_types = self.spread_args(&arg_types);
 
         match *callee {
             RExpr::Ident(ref i) if i.sym == js_word!("require") => {
@@ -307,8 +314,8 @@ impl Analyzer<'_, '_> {
                             &prop,
                             type_args.as_ref(),
                             args,
-                            arg_types,
-                            spread_arg_types,
+                            &arg_types,
+                            &spread_arg_types,
                         );
                     }
 
@@ -320,8 +327,8 @@ impl Analyzer<'_, '_> {
                             &prop,
                             type_args.as_ref(),
                             args,
-                            arg_types,
-                            spread_arg_types,
+                            &arg_types,
+                            &spread_arg_types,
                         );
                     }
 
@@ -360,20 +367,6 @@ impl Analyzer<'_, '_> {
 
                 let callee = self.access_property(span, obj_type, &prop, TypeOfMode::RValue)?;
                 let callee = self.with_ctx(ctx).expand_fully(span, callee, true)?;
-
-                let type_args = match type_args {
-                    None => None,
-                    Some(v) => {
-                        let mut type_args = v.validate_with(self)?;
-                        // If user specified type in call / new, preserve it.
-                        self.prevent_expansion(&mut type_args);
-
-                        Some(type_args)
-                    }
-                };
-
-                let arg_types = self.validate_args(args)?;
-                let spread_arg_types = self.spread_args(&arg_types);
 
                 self.get_best_return_type(span, callee, kind, type_args, args, &arg_types, &spread_arg_types)
             }
@@ -416,16 +409,6 @@ impl Analyzer<'_, '_> {
                         callee_ty
                     };
 
-                    let type_args: Option<TypeParamInstantiation> = match type_args {
-                        None => None,
-                        Some(type_args) => {
-                            let mut type_args = type_args.validate_with(analyzer)?;
-                            // Preserve types specified by user
-                            analyzer.prevent_expansion(&mut type_args);
-                            Some(type_args)
-                        }
-                    };
-
                     if let Some(type_args) = &type_args {
                         let type_params = match callee_ty.normalize() {
                             Type::Function(f) => f.type_params.as_ref(),
@@ -447,9 +430,6 @@ impl Analyzer<'_, '_> {
                         ..analyzer.ctx
                     };
                     callee_ty = analyzer.with_ctx(ctx).expand_fully(span, callee_ty, false)?;
-
-                    let arg_types = analyzer.validate_args(args)?;
-                    let spread_arg_types = analyzer.spread_args(&arg_types);
 
                     let expanded_ty = analyzer.extract(
                         span,
@@ -592,8 +572,6 @@ impl Analyzer<'_, '_> {
                 );
             }
             _ => {
-                let arg_types = self.validate_args(args)?;
-
                 //
                 for c in candidates {
                     if c.params.len() == args.len() {
@@ -1302,6 +1280,7 @@ impl Analyzer<'_, '_> {
                 new_args.extend(arg_types[params.len()..].iter().cloned());
             }
 
+            // We have to recalculate types.
             let mut new_arg_types;
             let spread_arg_types = if new_args.iter().any(|arg| arg.spread.is_some()) {
                 new_arg_types = vec![];
