@@ -1137,10 +1137,6 @@ impl Analyzer<'_, '_> {
             }
             if param.required {
                 min_param += 1;
-            } else {
-                if let Some(max) = &mut max_param {
-                    *max -= 1;
-                }
             }
         }
 
