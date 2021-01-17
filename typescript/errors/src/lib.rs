@@ -532,6 +532,10 @@ pub enum Error {
     NonSymbolComputedPropInFormOfSymbol {
         span: Span,
     },
+
+    ArgCountMismatch {
+        span: Span,
+    },
 }
 
 impl Error {
@@ -583,6 +587,8 @@ impl Error {
             Error::AssignOpCannotBeApplied { .. } => 2365,
             Error::NonSymbolComputedPropInFormOfSymbol { .. } => 2471,
             Error::TypeUsedAsVar { .. } => 2585,
+
+            Error::ArgCountMismatch { .. } => 2554,
 
             _ => 0,
         }

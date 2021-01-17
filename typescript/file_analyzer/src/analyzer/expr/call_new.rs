@@ -1094,6 +1094,50 @@ impl Analyzer<'_, '_> {
         );
     }
 
+    fn validate_arg_count(
+        &mut self,
+        span: Span,
+        params: &[FnParam],
+        args: &[RExprOrSpread],
+        arg_types: &[TypeOrSpread],
+        spread_arg_types: &[TypeOrSpread],
+    ) {
+        // TODO: Use range for validation instead
+        let mut min_param = 0;
+        let mut max_param = Some(params.len());
+        for param in params {
+            match param.pat {
+                RPat::Rest(..) => {
+                    max_param = None;
+                }
+                _ => {}
+            }
+            if param.required {
+                min_param += 1;
+            } else {
+                if let Some(max) = &mut max_param {
+                    *max -= 1;
+                }
+            }
+        }
+
+        let has_spread = args.iter().any(|arg| arg.spread.is_some());
+        if has_spread {
+            // TODO
+        } else {
+            if min_param <= args.len() {
+                if let Some(max) = max_param {
+                    if args.len() <= max {
+                        return;
+                    }
+                } else {
+                    return;
+                }
+            }
+            self.storage.report(Error::ArgCountMismatch { span })
+        }
+    }
+
     /// Returns the return type of function.
     fn get_return_type(
         &mut self,
@@ -1108,6 +1152,8 @@ impl Analyzer<'_, '_> {
         spread_arg_types: &[TypeOrSpread],
     ) -> ValidationResult {
         let logger = self.logger.clone();
+
+        self.validate_arg_count(span, params, args, arg_types, spread_arg_types);
 
         slog::debug!(
             logger,
