@@ -229,7 +229,7 @@ impl Scope<'_> {
     pub fn copy_hoisted_vars_from(&mut self, from: &mut Scope) {
         match from.kind {
             // We don't copy variable information from nested function.
-            ScopeKind::Method | ScopeKind::Fn | ScopeKind::ArrowFn => return,
+            ScopeKind::Module | ScopeKind::Method | ScopeKind::Fn | ScopeKind::ArrowFn => return,
             _ => {}
         }
 

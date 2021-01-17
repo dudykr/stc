@@ -641,7 +641,7 @@ impl Analyzer<'_, '_> {
             .with_child(ScopeKind::Module, Default::default(), |child: &mut Analyzer| {
                 decl.visit_children_with(child);
 
-                let exports = take(&mut child.storage.take_info(ctxt));
+                let exports = child.storage.take_info(ctxt);
                 if !global {
                     return Ok(Some(child.finalize(ty::Module { span, exports })));
                 }
