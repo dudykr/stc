@@ -302,6 +302,8 @@ impl Checker {
 
     fn analyze_non_circular_module(&self, id: ModuleId, path: Arc<PathBuf>) -> Arc<ModuleTypeData> {
         self.run(|| {
+            let start = Instant::now();
+
             let mut node_id_gen = NodeIdGenerator::default();
             let mut module = self.module_graph.clone_module(id);
             module = module.fold_with(&mut ts_resolver(self.env.shared().marks().top_level_mark()));
@@ -346,6 +348,9 @@ impl Checker {
             let type_info = Arc::new(storage.info.exports);
 
             self.dts_modules.insert(id, module);
+
+            let dur = Instant::now() - start;
+            eprintln!("[Timing] Full analysis of {}: {:?}", path.display(), dur);
 
             type_info
         })
