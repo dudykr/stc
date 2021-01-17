@@ -1097,7 +1097,6 @@ impl Analyzer<'_, '_> {
             args,
             arg_types,
             spread_arg_types,
-            true,
         );
     }
 
