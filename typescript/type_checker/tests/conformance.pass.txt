@@ -977,9 +977,11 @@ parser/ecmascript5/Statements/parserES5ForOfStatement18.ts
 parser/ecmascript5/Statements/parserES5ForOfStatement19.ts
 parser/ecmascript5/Symbols/parserES5SymbolProperty1.ts
 parser/ecmascript5/Symbols/parserES5SymbolProperty2.ts
+parser/ecmascript5/Symbols/parserES5SymbolProperty3.ts
 parser/ecmascript5/Symbols/parserES5SymbolProperty4.ts
 parser/ecmascript5/Symbols/parserES5SymbolProperty5.ts
 parser/ecmascript5/Symbols/parserES5SymbolProperty6.ts
+parser/ecmascript5/Symbols/parserES5SymbolProperty7.ts
 parser/ecmascript5/Symbols/parserES5SymbolProperty8.ts
 parser/ecmascript5/Symbols/parserES5SymbolProperty9.ts
 parser/ecmascript5/TupleTypes/TupleType1.ts
