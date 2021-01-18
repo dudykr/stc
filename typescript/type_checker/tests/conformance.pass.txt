@@ -16,6 +16,7 @@ async/es2017/asyncArrowFunction/arrowFunctionWithParameterNameAsync_es2017.ts
 async/es2017/asyncArrowFunction/asyncArrowFunction1_es2017.ts
 async/es2017/asyncArrowFunction/asyncArrowFunction2_es2017.ts
 async/es2017/asyncArrowFunction/asyncArrowFunction4_es2017.ts
+async/es2017/asyncAwait_es2017.ts
 async/es2017/awaitCallExpression/awaitCallExpression1_es2017.ts
 async/es2017/awaitCallExpression/awaitCallExpression5_es2017.ts
 async/es2017/functionDeclarations/asyncFunctionDeclaration11_es2017.ts
