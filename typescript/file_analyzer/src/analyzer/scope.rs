@@ -912,9 +912,11 @@ impl Analyzer<'_, '_> {
         }
 
         if self.scope.is_root() || self.scope.is_module() {
-            if let Some(ty) = ty.clone() {
-                self.storage.store_private_var(self.ctx.module_id, name.clone(), ty)
-            }
+            self.storage.store_private_var(
+                self.ctx.module_id,
+                name.clone(),
+                ty.clone().unwrap_or_else(|| Type::any(span)),
+            )
         }
 
         match self.scope.vars.entry(name.clone()) {
