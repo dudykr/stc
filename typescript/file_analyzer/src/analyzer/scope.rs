@@ -408,7 +408,11 @@ impl Analyzer<'_, '_> {
     ///    stuffs (e.g. type annotation for .d.ts file)
     pub(super) fn expand_fully(&mut self, span: Span, ty: Box<Type>, expand_union: bool) -> ValidationResult {
         if !self.is_builtin {
-            debug_assert_ne!(span, DUMMY_SP);
+            debug_assert_ne!(
+                span, DUMMY_SP,
+                "expand: {:#?} cannot be expanded because it has empty span",
+                ty
+            );
         }
 
         let mut v = Expander {
