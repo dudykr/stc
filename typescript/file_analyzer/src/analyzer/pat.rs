@@ -90,6 +90,61 @@ impl Analyzer<'_, '_> {
             debug_assert_ne!(p.span(), DUMMY_SP, "A pattern should have a valid span");
         }
 
+        let ty = p
+            .node_id()
+            .map(|node_id| {
+                self.mutations
+                    .as_ref()
+                    .and_then(|m| m.for_pats.get(&node_id))
+                    .and_then(|v| v.ty.clone())
+            })
+            .flatten()
+            .map(Ok)
+            .or_else(|| {
+                match p.get_ty().or_else(|| match p {
+                    RPat::Assign(p) => p.left.get_ty(),
+                    _ => None,
+                }) {
+                    None => None,
+                    Some(ty) => Some(ty.validate_with(self)),
+                }
+            })
+            .map(|res| res.map(|ty| ty.cheap()))
+            .try_opt()?;
+
+        match self.ctx.pat_mode {
+            PatMode::Decl => {
+                match p {
+                    RPat::Ident(RIdent {
+                        sym: js_word!("this"), ..
+                    }) => {
+                        assert!(ty.is_some(), "parameter named `this` should have type");
+                        self.scope.this = ty.clone();
+                    }
+                    _ => {}
+                }
+
+                let mut names = vec![];
+
+                let mut visitor = VarVisitor { names: &mut names };
+
+                p.visit_with(&mut visitor);
+
+                self.scope.declaring.extend(names.clone());
+
+                match self.declare_vars_with_ty(VarDeclKind::Let, p, ty.clone()) {
+                    Ok(()) => {}
+                    Err(err) => {
+                        self.storage.report(err);
+                    }
+                }
+
+                self.scope.remove_declaring(names);
+            }
+
+            PatMode::Assign => {}
+        }
+
         // Mark pattern as optional if default value exists
         match p {
             RPat::Assign(assign_pat) => match &*assign_pat.left {
@@ -148,60 +203,6 @@ impl Analyzer<'_, '_> {
                     m.for_pats.entry(pat_node_id).or_default().ty = Some(ty)
                 }
             }
-        }
-
-        let ty = p
-            .node_id()
-            .map(|node_id| {
-                self.mutations
-                    .as_ref()
-                    .and_then(|m| m.for_pats.get(&node_id))
-                    .and_then(|v| v.ty.clone())
-            })
-            .flatten()
-            .map(Ok)
-            .or_else(|| {
-                match p.get_ty().or_else(|| match p {
-                    RPat::Assign(p) => p.left.get_ty(),
-                    _ => None,
-                }) {
-                    None => None,
-                    Some(ty) => Some(ty.validate_with(self)),
-                }
-            })
-            .try_opt()?;
-
-        match self.ctx.pat_mode {
-            PatMode::Decl => {
-                match p {
-                    RPat::Ident(RIdent {
-                        sym: js_word!("this"), ..
-                    }) => {
-                        assert!(ty.is_some(), "parameter named `this` should have type");
-                        self.scope.this = ty.clone();
-                    }
-                    _ => {}
-                }
-
-                let mut names = vec![];
-
-                let mut visitor = VarVisitor { names: &mut names };
-
-                p.visit_with(&mut visitor);
-
-                self.scope.declaring.extend(names.clone());
-
-                match self.declare_vars_with_ty(VarDeclKind::Let, p, ty.clone()) {
-                    Ok(()) => {}
-                    Err(err) => {
-                        self.storage.report(err);
-                    }
-                }
-
-                self.scope.remove_declaring(names);
-            }
-
-            PatMode::Assign => {}
         }
 
         let ty = ty.unwrap_or_else(|| {
