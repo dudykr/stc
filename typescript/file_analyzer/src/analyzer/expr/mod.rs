@@ -20,7 +20,6 @@ use rnode::VisitWith;
 use stc_ts_ast_rnode::RArrayLit;
 use stc_ts_ast_rnode::RArrowExpr;
 use stc_ts_ast_rnode::RAssignExpr;
-use stc_ts_ast_rnode::RAwaitExpr;
 use stc_ts_ast_rnode::RBlockStmtOrExpr;
 use stc_ts_ast_rnode::RCallExpr;
 use stc_ts_ast_rnode::RClassExpr;
@@ -63,6 +62,7 @@ use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
 use ty::TypeExt;
 
+mod await_expr;
 mod bin;
 mod call_new;
 mod constraint_reducer;
@@ -324,7 +324,7 @@ impl Analyzer<'_, '_> {
                     return Ok(Type::any(span));
                 }
 
-                RExpr::Await(RAwaitExpr { .. }) => unimplemented!("typeof(AwaitExpr)"),
+                RExpr::Await(e) => e.validate_with(self),
 
                 RExpr::Class(RClassExpr {
                     ref ident, ref class, ..
