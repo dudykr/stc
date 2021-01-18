@@ -897,7 +897,7 @@ impl Analyzer<'_, '_> {
         let idx = candidates
             .iter()
             .position(|(_, params, type_params, _)| {
-                self.is_exact_call(
+                self.check_call_args(
                     span,
                     type_params.as_ref().map(|v| &*v.params),
                     params,
@@ -1010,7 +1010,7 @@ impl Analyzer<'_, '_> {
                     let type_params = f.type_params.as_ref().map(|v| &*v.params);
                     if !has_spread || cnt == 1 {
                         if cnt == 1
-                            || match self.is_exact_call(
+                            || match self.check_call_args(
                                 span,
                                 type_params,
                                 &f.params,
@@ -1426,7 +1426,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// This method return [Err] if call is invalid
-    fn is_exact_call(
+    fn check_call_args(
         &mut self,
         span: Span,
         type_params: Option<&[TypeParam]>,
@@ -1435,7 +1435,7 @@ impl Analyzer<'_, '_> {
         args: &[RExprOrSpread],
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
-    ) -> ValidationResult<bool> {
+    ) -> ArgCheckResult {
         if self.scope.is_call_arg_count_unknown {
             return Ok(false);
         }
@@ -1454,7 +1454,12 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        self.validate_arg_count(span, params, args, arg_types, spread_arg_types)?;
+        if self
+            .validate_arg_count(span, params, args, arg_types, spread_arg_types)
+            .is_err()
+        {
+            return ArgCheckResult::NeverMatches;
+        }
 
         let mut exact = true;
 
@@ -1701,4 +1706,26 @@ fn is_key_eq_prop(prop: &RExpr, computed: bool, e: &RExpr) -> bool {
     };
 
     v.sym() == p
+}
+
+#[cfg_attr(test, derive(Debug))]
+#[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
+enum ArgCheckResult {
+    Exact,
+    MayBe,
+    NeverMatches,
+}
+
+/// Ensure that sort work as expected.
+#[test]
+fn test_arg_check_result_order() {
+    let mut v = vec![
+        ArgCheckResult::Exact,
+        ArgCheckResult::MayBe,
+        ArgCheckResult::NeverMatches,
+    ];
+    let expected = v.clone();
+    v.sort();
+
+    assert_eq!(v, expected);
 }
