@@ -740,10 +740,14 @@ impl Analyzer<'_, '_> {
         prop: &Key,
         type_mode: TypeOfMode,
     ) -> ValidationResult {
-        let ty = self.access_property_inner(span, obj, prop, type_mode)?;
-
         if !self.is_builtin {
-            debug_assert_ne!(ty.span(), DUMMY_SP, "access_property returned a type with dummy span");
+            debug_assert_ne!(span, DUMMY_SP, "access_property: called with a dummy span");
+        }
+
+        let mut ty = self.access_property_inner(span, obj, prop, type_mode)?;
+
+        if !self.is_builtin && ty.span().is_dummy() && !span.is_dummy() {
+            ty.reposition(span);
         }
 
         Ok(ty)
