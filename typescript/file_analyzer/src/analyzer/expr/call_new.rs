@@ -1131,8 +1131,6 @@ impl Analyzer<'_, '_> {
         );
 
         if let Some(type_params) = type_params {
-            let analyzer = self;
-
             let mut new_args = vec![];
             for (idx, (arg, param)) in args.into_iter().zip(params.iter()).enumerate() {
                 let arg_ty = &arg_types[idx];
@@ -1145,14 +1143,14 @@ impl Analyzer<'_, '_> {
                 };
 
                 for param in type_params {
-                    slog::info!(analyzer.logger, "({}) Defining {}", analyzer.scope.depth(), param.name);
+                    slog::info!(self.logger, "({}) Defining {}", self.scope.depth(), param.name);
 
-                    analyzer.register_type(param.name.clone(), box Type::Param(param.clone()));
+                    self.register_type(param.name.clone(), box Type::Param(param.clone()));
                 }
 
                 if let Some(type_param_decl) = type_param_decl {
                     for param in &type_param_decl.params {
-                        analyzer.register_type(param.name.clone(), box Type::Param(param.clone()));
+                        self.register_type(param.name.clone(), box Type::Param(param.clone()));
                     }
                 }
 
@@ -1161,18 +1159,18 @@ impl Analyzer<'_, '_> {
 
                     let default_any_ty: Option<_> = try {
                         let node_id = pat.node_id()?;
-                        analyzer.mutations.as_ref()?.for_pats.get(&node_id)?.ty.clone()?
+                        self.mutations.as_ref()?.for_pats.get(&node_id)?.ty.clone()?
                     };
                     if let Some(ty) = default_any_ty {
                         match &*ty {
                             Type::Keyword(RTsKeywordType {
                                 span,
                                 kind: TsKeywordTypeKind::TsAnyKeyword,
-                            }) if analyzer.is_implicitly_typed_span(*span) => {
+                            }) if self.is_implicitly_typed_span(*span) => {
                                 // TODO: Make this eficient
-                                let new_ty = RTsType::from(actual.ty.clone()).validate_with(analyzer)?;
+                                let new_ty = RTsType::from(actual.ty.clone()).validate_with(self)?;
                                 if let Some(node_id) = pat.node_id() {
-                                    if let Some(m) = &mut analyzer.mutations {
+                                    if let Some(m) = &mut self.mutations {
                                         m.for_pats.entry(node_id).or_default().ty = Some(new_ty);
                                     }
                                 }
@@ -1190,20 +1188,20 @@ impl Analyzer<'_, '_> {
                             patch_arg(idx, pat)?;
                         }
 
-                        slog::info!(analyzer.logger, "Inferring type of arrow expr with updated type");
-                        box Type::Function(arrow.validate_with(analyzer)?)
+                        slog::info!(self.logger, "Inferring type of arrow expr with updated type");
+                        box Type::Function(arrow.validate_with(self)?)
                     }
                     RExpr::Fn(fn_expr) => {
                         for (idx, param) in fn_expr.function.params.iter().enumerate() {
                             patch_arg(idx, &param.pat)?;
                         }
 
-                        slog::info!(analyzer.logger, "Inferring type of function expr with updated type");
-                        box Type::Function(fn_expr.function.validate_with(analyzer)?)
+                        slog::info!(self.logger, "Inferring type of function expr with updated type");
+                        box Type::Function(fn_expr.function.validate_with(self)?)
                     }
                     _ => arg_ty.ty.clone(),
                 };
-                print_type(&logger, "mapped", &analyzer.cm, &ty);
+                print_type(&logger, "mapped", &self.cm, &ty);
 
                 let new_arg = TypeOrSpread { ty, ..arg_ty.clone() };
 
@@ -1242,9 +1240,9 @@ impl Analyzer<'_, '_> {
                 &*new_args
             };
 
-            let ret_ty = analyzer.expand(span, ret_ty)?;
+            let ret_ty = self.expand(span, ret_ty)?;
 
-            let inferred = analyzer.infer_arg_types(
+            let inferred = self.infer_arg_types(
                 span,
                 type_args,
                 type_params,
@@ -1253,24 +1251,24 @@ impl Analyzer<'_, '_> {
                 &Type::TypeLit(TypeLit { span, members: vec![] }),
             )?;
 
-            print_type(&logger, "Return", &analyzer.cm, &ret_ty);
-            let mut ty = analyzer.expand_type_params(&inferred, ret_ty)?;
-            print_type(&logger, "Return, expanded", &analyzer.cm, &ty);
+            print_type(&logger, "Return", &self.cm, &ret_ty);
+            let mut ty = self.expand_type_params(&inferred, ret_ty)?;
+            print_type(&logger, "Return, expanded", &self.cm, &ty);
 
-            ty.visit_mut_with(&mut ReturnTypeSimplifier { analyzer });
+            ty.visit_mut_with(&mut ReturnTypeSimplifier { analyzer: self });
 
-            print_type(&logger, "Return, simplified", &analyzer.cm, &ty);
+            print_type(&logger, "Return, simplified", &self.cm, &ty);
 
-            ty = analyzer.simplify(ty);
+            ty = self.simplify(ty);
 
-            print_type(&logger, "Return, simplified again", &analyzer.cm, &ty);
+            print_type(&logger, "Return, simplified again", &self.cm, &ty);
 
-            ty = ty.fold_with(&mut ReturnTypeGeneralizer { analyzer });
+            ty = ty.fold_with(&mut ReturnTypeGeneralizer { analyzer: self });
 
-            print_type(&logger, "Return, generalized", &analyzer.cm, &ty);
+            print_type(&logger, "Return, generalized", &self.cm, &ty);
 
             if kind == ExtractKind::Call {
-                analyzer.add_call_facts(params, &args, &mut ty);
+                self.add_call_facts(params, &args, &mut ty);
             }
 
             ty.reposition(span);
