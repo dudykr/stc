@@ -210,6 +210,9 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RReturnStmt) {
+        debug_assert!(!self.is_builtin, "builtin: return statement is not supported");
+        debug_assert_ne!(node.span, DUMMY_SP, "return statement should have valid span");
+
         let ty = if let Some(res) = node.arg.validate_with_default(self) {
             res?
         } else {
@@ -218,6 +221,7 @@ impl Analyzer<'_, '_> {
                 kind: TsKeywordTypeKind::TsVoidKeyword,
             })
         };
+        debug_assert_ne!(ty.span(), DUMMY_SP);
 
         self.scope.return_values.return_types.push(ty);
 
