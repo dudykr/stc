@@ -229,6 +229,7 @@ impl Analyzer<'_, '_> {
                 RPat::Ident(i) => !i.optional,
                 RPat::Array(arr) => !arr.optional,
                 RPat::Object(obj) => !obj.optional,
+                RPat::Assign(..) => false,
                 _ => true,
             },
             ty,
