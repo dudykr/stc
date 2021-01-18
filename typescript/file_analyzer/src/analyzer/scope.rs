@@ -383,7 +383,11 @@ impl Analyzer<'_, '_> {
     ///   - Type alias
     pub(super) fn expand(&mut self, span: Span, ty: Box<Type>) -> ValidationResult {
         if !self.is_builtin {
-            debug_assert_ne!(span, DUMMY_SP);
+            debug_assert_ne!(
+                span, DUMMY_SP,
+                "expand: {:#?} cannot be expanded because it has empty span",
+                ty
+            );
         }
 
         let mut v = Expander {
