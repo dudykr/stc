@@ -721,7 +721,7 @@ impl Analyzer<'_, '_> {
                     };
                     let param = self
                         .with_ctx(ctx)
-                        .expand_fully(param.span(), box Type::Ref(param.clone()), true)?;
+                        .expand_fully(arg.span(), box Type::Ref(param.clone()), true)?;
                     match *param {
                         Type::Ref(..) => {
                             dbg!();
