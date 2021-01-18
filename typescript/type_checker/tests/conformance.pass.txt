@@ -39,11 +39,13 @@ async/es2017/awaitClassExpression_es2017.ts
 async/es2017/awaitInheritedPromise_es2017.ts
 async/es2017/await_unaryExpression_es2017.ts
 async/es2017/functionDeclarations/asyncFunctionDeclaration11_es2017.ts
+async/es2017/functionDeclarations/asyncFunctionDeclaration13_es2017.ts
 async/es2017/functionDeclarations/asyncFunctionDeclaration14_es2017.ts
 async/es2017/functionDeclarations/asyncFunctionDeclaration1_es2017.ts
 async/es2017/functionDeclarations/asyncFunctionDeclaration2_es2017.ts
 async/es2017/functionDeclarations/asyncFunctionDeclaration4_es2017.ts
 async/es5/asyncArrowFunction/arrowFunctionWithParameterNameAsync_es5.ts
+async/es5/asyncArrowFunction/asyncArrowFunction10_es5.ts
 async/es5/asyncArrowFunction/asyncArrowFunction11_es5.ts
 async/es5/asyncArrowFunction/asyncArrowFunction1_es5.ts
 async/es5/asyncArrowFunction/asyncArrowFunction2_es5.ts
@@ -69,12 +71,14 @@ async/es5/awaitCallExpression/awaitCallExpression8_es5.ts
 async/es5/awaitClassExpression_es5.ts
 async/es5/awaitUnion_es5.ts
 async/es5/functionDeclarations/asyncFunctionDeclaration11_es5.ts
+async/es5/functionDeclarations/asyncFunctionDeclaration13_es5.ts
 async/es5/functionDeclarations/asyncFunctionDeclaration14_es5.ts
 async/es5/functionDeclarations/asyncFunctionDeclaration1_es5.ts
 async/es5/functionDeclarations/asyncFunctionDeclaration2_es5.ts
 async/es5/functionDeclarations/asyncFunctionDeclaration4_es5.ts
 async/es6/asyncAliasReturnType_es6.ts
 async/es6/asyncArrowFunction/arrowFunctionWithParameterNameAsync_es6.ts
+async/es6/asyncArrowFunction/asyncArrowFunction10_es6.ts
 async/es6/asyncArrowFunction/asyncArrowFunction1_es6.ts
 async/es6/asyncArrowFunction/asyncArrowFunction2_es6.ts
 async/es6/asyncArrowFunction/asyncArrowFunction4_es6.ts
@@ -100,6 +104,7 @@ async/es6/awaitClassExpression_es6.ts
 async/es6/awaitUnion_es6.ts
 async/es6/await_unaryExpression_es6.ts
 async/es6/functionDeclarations/asyncFunctionDeclaration11_es6.ts
+async/es6/functionDeclarations/asyncFunctionDeclaration13_es6.ts
 async/es6/functionDeclarations/asyncFunctionDeclaration14_es6.ts
 async/es6/functionDeclarations/asyncFunctionDeclaration1_es6.ts
 async/es6/functionDeclarations/asyncFunctionDeclaration2_es6.ts
@@ -385,6 +390,7 @@ es6/for-ofStatements/for-of57.ts
 es6/for-ofStatements/for-of58.ts
 es6/for-ofStatements/for-of9.ts
 es6/functionDeclarations/FunctionDeclaration11_es6.ts
+es6/functionDeclarations/FunctionDeclaration13_es6.ts
 es6/functionDeclarations/FunctionDeclaration1_es6.ts
 es6/functionDeclarations/FunctionDeclaration2_es6.ts
 es6/functionDeclarations/FunctionDeclaration4_es6.ts
@@ -1204,6 +1210,7 @@ types/objectTypeLiteral/propertySignatures/propertyNameWithoutTypeAnnotation.ts
 types/primitives/boolean/assignFromBooleanInterface.ts
 types/primitives/boolean/validBooleanAssignments.ts
 types/primitives/enum/validEnumAssignments.ts
+types/primitives/null/directReferenceToNull.ts
 types/primitives/number/assignFromNumberInterface.ts
 types/primitives/number/assignFromNumberInterface2.ts
 types/primitives/number/validNumberAssignments.ts
@@ -1211,6 +1218,7 @@ types/primitives/string/assignFromStringInterface.ts
 types/primitives/string/assignFromStringInterface2.ts
 types/primitives/string/validStringAssignments.ts
 types/primitives/stringLiteral/stringLiteralType.ts
+types/primitives/undefined/directReferenceToUndefined.ts
 types/primitives/undefined/validUndefinedValues.ts
 types/primitives/void/validVoidAssignments.ts
 types/primitives/void/validVoidValues.ts
