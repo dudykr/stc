@@ -368,7 +368,15 @@ impl Analyzer<'_, '_> {
                 let callee = self.access_property(span, obj_type, &prop, TypeOfMode::RValue)?;
                 let callee = self.with_ctx(ctx).expand_fully(span, callee, true)?;
 
-                self.get_best_return_type(span, callee, kind, type_args, args, &arg_types, &spread_arg_types)
+                self.get_best_return_type(
+                    span,
+                    callee,
+                    kind,
+                    type_args.as_ref(),
+                    args,
+                    &arg_types,
+                    &spread_arg_types,
+                )
             }
             _ => {
                 let ctx = Ctx {
@@ -771,9 +779,7 @@ impl Analyzer<'_, '_> {
             //     args,
             //     type_args,
             // ),
-            Type::Union(..) => {
-                self.get_best_return_type(span, ty, kind, type_args.cloned(), args, spread_arg_types, arg_types)
-            }
+            Type::Union(..) => self.get_best_return_type(span, ty, kind, type_args, args, spread_arg_types, arg_types),
 
             Type::Interface(ref i) => {
                 // Search for methods
@@ -862,7 +868,7 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult {
         let callee_span = callee_ty.span();
 
-        let candidates = members
+        let mut candidates = members
             .iter()
             .filter_map(|member| match member {
                 TypeElement::Call(CallSignature {
@@ -894,23 +900,19 @@ impl Analyzer<'_, '_> {
             };
         }
 
-        let idx = candidates
-            .iter()
-            .position(|(_, params, type_params, _)| {
-                self.check_call_args(
-                    span,
-                    type_params.as_ref().map(|v| &*v.params),
-                    params,
-                    type_args,
-                    args,
-                    arg_types,
-                    spread_arg_types,
-                )
-                .ok()
-                .unwrap_or(false)
-            })
-            .unwrap_or(0);
-        let (_, params, type_params, ret_ty) = candidates[idx];
+        candidates.sort_by_cached_key(|(_, params, type_params, _)| {
+            self.check_call_args(
+                span,
+                type_params.as_ref().map(|v| &*v.params),
+                params,
+                type_args,
+                args,
+                arg_types,
+                spread_arg_types,
+            )
+        });
+
+        let (_, params, type_params, ret_ty) = candidates.into_iter().next().unwrap();
 
         return self.get_return_type(
             span,
@@ -952,7 +954,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         callee: Box<Type>,
         kind: ExtractKind,
-        type_args: Option<TypeParamInstantiation>,
+        type_args: Option<&TypeParamInstantiation>,
         args: &[RExprOrSpread],
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
@@ -1007,52 +1009,14 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::Function(ref f) => {
-                    let type_params = f.type_params.as_ref().map(|v| &*v.params);
-                    if !has_spread || cnt == 1 {
-                        if cnt == 1
-                            || match self.check_call_args(
-                                span,
-                                type_params,
-                                &f.params,
-                                type_args.as_ref(),
-                                args,
-                                &arg_types,
-                                spread_arg_types,
-                            ) {
-                                Ok(true) => true,
-                                _ => false,
-                            }
-                        {
-                            let ret_ty = self.get_return_type(
-                                span,
-                                kind,
-                                type_params,
-                                &f.params,
-                                f.ret_ty.clone(),
-                                type_args.as_ref(),
-                                args,
-                                &arg_types,
-                                spread_arg_types,
-                            )?;
-                            return Ok(ret_ty);
-                        }
-                    }
-
-                    candidates.push((
-                        span,
-                        f.type_params.as_ref().map(|v| &*v.params),
-                        &f.params,
-                        f.ret_ty.clone(),
-                        type_args.as_ref(),
-                        &arg_types,
-                    ));
+                    candidates.push((f.type_params.as_ref().map(|v| &*v.params), &f.params, f.ret_ty.clone()));
                 }
                 Type::Class(ref cls) if kind == ExtractKind::New => {
                     // TODO: Handle type parameters.
                     return Ok(box Type::ClassInstance(ClassInstance {
                         span,
                         ty: box Type::Class(cls.clone()),
-                        type_args,
+                        type_args: type_args.cloned(),
                     }));
                 }
                 _ => {}
@@ -1069,33 +1033,11 @@ impl Analyzer<'_, '_> {
             });
         }
 
-        if has_spread {
-            if let Some((span, type_params, params, ret_ty, type_args, arg_types)) = candidates
-                .iter()
-                .find(|(_, _, params, _, _, _)| {
-                    params.iter().any(|param| match param.pat {
-                        RPat::Rest(..) => true,
-                        _ => false,
-                    })
-                })
-                .cloned()
-            {
-                // TODO: Check if this is correct.
-                return self.get_return_type(
-                    span,
-                    kind,
-                    type_params,
-                    params,
-                    ret_ty,
-                    type_args,
-                    args,
-                    arg_types,
-                    spread_arg_types,
-                );
-            }
-        }
+        candidates.sort_by_cached_key(|(type_params, params, ret_ty)| {
+            self.check_call_args(span, *type_params, params, type_args, args, arg_types, spread_arg_types)
+        });
 
-        let (_, type_params, params, ret_ty, type_args, arg_types) = candidates.into_iter().next().unwrap();
+        let (type_params, params, ret_ty) = candidates.into_iter().next().unwrap();
 
         return self.get_return_type(
             span,
