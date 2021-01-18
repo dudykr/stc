@@ -12,6 +12,8 @@ use swc_atoms::js_word;
 impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RAwaitExpr) -> ValidationResult {
         let arg_ty = e.arg.validate_with_default(self)?;
+
+        // TODO: Check if the `Promise` is that of global.
         match &*arg_ty {
             Type::Ref(Ref {
                 type_name: RTsEntityName::Ident(i),
