@@ -1131,6 +1131,12 @@ impl Analyzer<'_, '_> {
         );
 
         if let Some(type_params) = type_params {
+            for param in type_params {
+                slog::info!(self.logger, "({}) Defining {}", self.scope.depth(), param.name);
+
+                self.register_type(param.name.clone(), box Type::Param(param.clone()));
+            }
+
             let mut new_args = vec![];
             for (idx, (arg, param)) in args.into_iter().zip(params.iter()).enumerate() {
                 let arg_ty = &arg_types[idx];
@@ -1141,12 +1147,6 @@ impl Analyzer<'_, '_> {
                         continue;
                     }
                 };
-
-                for param in type_params {
-                    slog::info!(self.logger, "({}) Defining {}", self.scope.depth(), param.name);
-
-                    self.register_type(param.name.clone(), box Type::Param(param.clone()));
-                }
 
                 if let Some(type_param_decl) = type_param_decl {
                     for param in &type_param_decl.params {
