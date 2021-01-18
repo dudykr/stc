@@ -1808,7 +1808,7 @@ impl Expander<'_, '_, '_> {
         }
 
         print_backtrace();
-        Err(Error::NameNotFound {
+        Err(Error::TypeNotFound {
             name: type_name.clone().into(),
             ctxt,
             type_args: type_args.clone(),

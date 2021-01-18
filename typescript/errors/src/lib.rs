@@ -210,7 +210,7 @@ pub enum Error {
     },
 
     /// TS2304
-    NameNotFound {
+    TypeNotFound {
         name: Name,
         ctxt: ModuleId,
         type_args: Option<TypeParamInstantiation>,
@@ -589,6 +589,7 @@ impl Error {
             Error::AssignOpCannotBeApplied { .. } => 2365,
             Error::NonSymbolComputedPropInFormOfSymbol { .. } => 2471,
             Error::TypeUsedAsVar { .. } => 2585,
+            Error::TypeNotFound { .. } => 2304,
 
             Error::ArgCountMismatch { .. } => 2554,
 
