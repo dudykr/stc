@@ -6,8 +6,14 @@ Symbols/ES5SymbolProperty5.ts
 Symbols/ES5SymbolProperty6.ts
 Symbols/ES5SymbolProperty7.ts
 Symbols/ES5SymbolType1.ts
+ambient/ambientDeclarations.ts
+ambient/ambientDeclarationsPatterns_tooManyAsterisks.ts
 ambient/ambientEnumDeclaration1.ts
 ambient/ambientEnumDeclaration2.ts
+ambient/ambientExternalModuleInsideNonAmbient.ts
+ambient/ambientExternalModuleInsideNonAmbientExternalModule.ts
+ambient/ambientInsideNonAmbient.ts
+ambient/ambientInsideNonAmbientExternalModule.ts
 ambient/ambientShorthand_declarationEmit.ts
 async/es2017/asyncArrowFunction/arrowFunctionWithParameterNameAsync_es2017.ts
 async/es2017/asyncArrowFunction/asyncArrowFunction1_es2017.ts
