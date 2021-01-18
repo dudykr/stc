@@ -538,6 +538,10 @@ pub enum Error {
         min: usize,
         max: Option<usize>,
     },
+
+    InvalidDeleteOperand {
+        span: Span,
+    },
 }
 
 impl Error {
@@ -594,6 +598,8 @@ impl Error {
             Error::ArgCountMismatch { .. } => 2554,
 
             Error::ReferencedInInit { .. } => 2372,
+
+            Error::InvalidDeleteOperand { .. } => 2703,
 
             _ => 0,
         }
