@@ -221,7 +221,7 @@ impl Analyzer<'_, '_> {
                 kind: TsKeywordTypeKind::TsVoidKeyword,
             })
         };
-        debug_assert_ne!(ty.span(), DUMMY_SP);
+        debug_assert_ne!(ty.span(), DUMMY_SP, "{:?}", ty);
 
         self.scope.return_values.return_types.push(ty);
 
