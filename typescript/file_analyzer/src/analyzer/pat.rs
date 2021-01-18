@@ -112,6 +112,9 @@ impl Analyzer<'_, '_> {
             .map(|res| res.map(|ty| ty.cheap()))
             .try_opt()?;
 
+        // Declaring names
+        let mut names = vec![];
+
         match self.ctx.pat_mode {
             PatMode::Decl => {
                 match p {
@@ -123,8 +126,6 @@ impl Analyzer<'_, '_> {
                     }
                     _ => {}
                 }
-
-                let mut names = vec![];
 
                 let mut visitor = VarVisitor { names: &mut names };
 
@@ -138,8 +139,6 @@ impl Analyzer<'_, '_> {
                         self.storage.report(err);
                     }
                 }
-
-                self.scope.remove_declaring(names);
             }
 
             PatMode::Assign => {}
@@ -168,42 +167,50 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        if let RPat::Assign(assign_pat) = p {
-            // Handle default value
+        let res = (|| -> ValidationResult<()> {
+            if let RPat::Assign(assign_pat) = p {
+                // Handle default value
 
-            let default_value_ty = assign_pat.right.validate_with_default(self)?;
+                let default_value_ty = assign_pat.right.validate_with_default(self)?;
 
-            let ty = assign_pat
-                .left
-                .get_ty()
-                .map(|v| v.validate_with(self))
-                .unwrap_or_else(|| {
-                    let mut ty = default_value_ty.generalize_lit();
+                let ty = assign_pat
+                    .left
+                    .get_ty()
+                    .map(|v| v.validate_with(self))
+                    .unwrap_or_else(|| {
+                        let mut ty = default_value_ty.generalize_lit();
 
-                    match *ty {
-                        Type::Tuple(tuple) => {
-                            let mut types = tuple.elems.into_iter().map(|element| element.ty).collect::<Vec<_>>();
+                        match *ty {
+                            Type::Tuple(tuple) => {
+                                let mut types = tuple.elems.into_iter().map(|element| element.ty).collect::<Vec<_>>();
 
-                            types.dedup_type();
+                                types.dedup_type();
 
-                            ty = box Type::Array(Array {
-                                span: tuple.span,
-                                elem_type: Type::union(types),
-                            });
+                                ty = box Type::Array(Array {
+                                    span: tuple.span,
+                                    elem_type: Type::union(types),
+                                });
+                            }
+                            _ => {}
                         }
-                        _ => {}
+
+                        Ok(ty)
+                    })?;
+
+                // Remove default value.
+                if let Some(pat_node_id) = assign_pat.left.node_id() {
+                    if let Some(m) = &mut self.mutations {
+                        m.for_pats.entry(pat_node_id).or_default().ty = Some(ty)
                     }
-
-                    Ok(ty)
-                })?;
-
-            // Remove default value.
-            if let Some(pat_node_id) = assign_pat.left.node_id() {
-                if let Some(m) = &mut self.mutations {
-                    m.for_pats.entry(pat_node_id).or_default().ty = Some(ty)
                 }
             }
-        }
+
+            Ok(())
+        })();
+
+        self.scope.remove_declaring(names);
+
+        res?;
 
         let ty = ty.unwrap_or_else(|| {
             if self.ctx.in_argument {
