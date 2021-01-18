@@ -382,6 +382,10 @@ impl Analyzer<'_, '_> {
     ///
     ///   - Type alias
     pub(super) fn expand(&mut self, span: Span, ty: Box<Type>) -> ValidationResult {
+        if !is_builtin {
+            debug_assert_ne!(span, DUMMY_SP);
+        }
+
         let mut v = Expander {
             logger: self.logger.clone(),
             span,
@@ -403,6 +407,10 @@ impl Analyzer<'_, '_> {
     ///    assignment, and false if you are going to use it in user-visible
     ///    stuffs (e.g. type annotation for .d.ts file)
     pub(super) fn expand_fully(&mut self, span: Span, ty: Box<Type>, expand_union: bool) -> ValidationResult {
+        if !is_builtin {
+            debug_assert_ne!(span, DUMMY_SP);
+        }
+
         let mut v = Expander {
             logger: self.logger.clone(),
             span,
