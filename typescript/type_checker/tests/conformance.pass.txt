@@ -3,6 +3,7 @@ Symbols/ES5SymbolProperty2.ts
 Symbols/ES5SymbolProperty3.ts
 Symbols/ES5SymbolProperty4.ts
 Symbols/ES5SymbolProperty5.ts
+Symbols/ES5SymbolProperty6.ts
 Symbols/ES5SymbolProperty7.ts
 Symbols/ES5SymbolType1.ts
 ambient/ambientEnumDeclaration1.ts
