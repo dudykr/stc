@@ -15,6 +15,7 @@ use stc_ts_ast_rnode::RNamedExport;
 use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RStmt;
 use stc_ts_ast_rnode::RTsExportAssignment;
+use stc_ts_ast_rnode::RTsModuleName;
 use stc_ts_ast_rnode::RTsTypeAnn;
 use stc_ts_ast_rnode::RVarDecl;
 use stc_ts_ast_rnode::RVarDeclarator;
@@ -183,7 +184,18 @@ impl Analyzer<'_, '_> {
                     .store_private_type(self.ctx.module_id, e.id.clone().into(), ty);
                 self.storage.export_type(span, self.ctx.module_id, e.id.clone().into());
             }
-            RDecl::TsModule(..) => unimplemented!("export module "),
+            RDecl::TsModule(module) => {
+                module.visit_with(self);
+
+                match &module.id {
+                    RTsModuleName::Ident(id) => {
+                        self.storage.export_type(span, self.ctx.module_id, id.clone().into());
+                    }
+                    RTsModuleName::Str(_) => {
+                        unimplemented!("export module with string name")
+                    }
+                }
+            }
             RDecl::TsTypeAlias(ref decl) => {
                 decl.visit_with(self);
                 // export type Foo = 'a' | 'b';
