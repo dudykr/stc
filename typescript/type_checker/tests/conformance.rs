@@ -74,6 +74,10 @@ fn is_ignored(path: &Path) -> bool {
             .collect()
     });
 
+    if let Ok(test) = env::var("TEST") {
+        return path.to_string_lossy().contains(&test);
+    }
+
     !PASS.iter().any(|line| path.to_string_lossy().contains(line))
         || IGNORED.iter().any(|line| path.to_string_lossy().contains(line))
 }
