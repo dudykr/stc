@@ -1367,21 +1367,12 @@ impl Analyzer<'_, '_> {
         self.add_type_fact(&var_name.into(), box new_ty.clone());
     }
 
-    /// This method return [Err] if call is invalid
-    fn check_call_args(
+    pub(crate) fn validate_type_args_count(
         &mut self,
         span: Span,
         type_params: Option<&[TypeParam]>,
-        params: &[FnParam],
         type_args: Option<&TypeParamInstantiation>,
-        args: &[RExprOrSpread],
-        arg_types: &[TypeOrSpread],
-        spread_arg_types: &[TypeOrSpread],
-    ) -> ArgCheckResult {
-        if self.scope.is_call_arg_count_unknown {
-            return Ok(false);
-        }
-
+    ) -> ValidationResult<()> {
         if let Some(type_params) = type_params {
             if let Some(type_args) = type_args {
                 // TODO: Handle defaults of the type parameter (Change to range)
@@ -1396,6 +1387,24 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        Ok(())
+    }
+
+    /// This method return [Err] if call is invalid
+    fn check_call_args(
+        &mut self,
+        span: Span,
+        type_params: Option<&[TypeParam]>,
+        params: &[FnParam],
+        type_args: Option<&TypeParamInstantiation>,
+        args: &[RExprOrSpread],
+        arg_types: &[TypeOrSpread],
+        spread_arg_types: &[TypeOrSpread],
+    ) -> ArgCheckResult {
+        if self.validate_type_args_count(span, type_params, type_args).is_err() {
+            return ArgCheckResult::NeverMatches;
+        }
+
         if self
             .validate_arg_count(span, params, args, arg_types, spread_arg_types)
             .is_err()
@@ -1406,22 +1415,20 @@ impl Analyzer<'_, '_> {
         let mut exact = true;
 
         for (arg, param) in arg_types.iter().zip(params) {
-            match arg.ty.normalize() {
-                Type::Union(..) => match param.ty.normalize() {
-                    Type::Keyword(..) => {
-                        if self.assign(&param.ty, &arg.ty, span).is_ok() {
-                            return Ok(true);
-                        }
-                    }
-                    _ => {}
-                },
-                _ => {}
-            }
+            // match arg.ty.normalize() {
+            //     Type::Union(..) => match param.ty.normalize() {
+            //         Type::Keyword(..) => if self.assign(&param.ty, &arg.ty, span).is_ok()
+            // {},         _ => {}
+            //     },
+            //     _ => {}
+            // }
 
             match param.ty.normalize() {
                 Type::Param(..) => {}
                 _ => {
-                    self.assign(&param.ty, &arg.ty, span)?;
+                    if self.assign(&param.ty, &arg.ty, span).is_err() {
+                        return ArgCheckResult::NeverMatches;
+                    }
                     if self.assign(&arg.ty, &param.ty, span).is_err() {
                         exact = false;
                     }
@@ -1429,7 +1436,11 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        Ok(exact)
+        if self.scope.is_call_arg_count_unknown || !exact {
+            return ArgCheckResult::MayBe;
+        }
+
+        ArgCheckResult::Exact
     }
 
     fn validate_args(&mut self, args: &[RExprOrSpread]) -> Result<Vec<TypeOrSpread>, Error> {
