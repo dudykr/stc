@@ -645,17 +645,15 @@ impl Analyzer<'_, '_> {
                 // Ambient module members are always exported with or without export keyword
                 if decl.declare {
                     for (id, var) in take(&mut exports.private_vars) {
-                        exports
-                            .vars
-                            .insert(id.sym().clone(), var)
-                            .expect_none("TODO: Handle name clash of vars inside ambient modules");
+                        if !exports.vars.contains_key(id.sym()) {
+                            exports.vars.insert(id.sym().clone(), var);
+                        }
                     }
 
                     for (id, ty) in take(&mut exports.private_types) {
-                        exports
-                            .types
-                            .insert(id.sym().clone(), ty)
-                            .expect_none("TODO: Handle name clash of types inside ambient modules");
+                        if !exports.types.contains_key(id.sym()) {
+                            exports.types.insert(id.sym().clone(), ty);
+                        }
                     }
                 }
 
