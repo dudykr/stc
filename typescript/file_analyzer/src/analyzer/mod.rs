@@ -643,23 +643,24 @@ impl Analyzer<'_, '_> {
 
                 let exports = child.storage.take_info(ctxt);
                 if !global {
-                    return Ok(Some(child.finalize(ty::Module { span, exports })));
+                    let ty = child.finalize(ty::Module { span, exports });
+                    let ty = Type::Module(ty).cheap();
+                    return Ok(Some(ty));
                 }
 
                 Ok(None)
             })?;
 
-        if let Some(module) = ty {
-            self.register_type(
-                match decl.id {
-                    RTsModuleName::Ident(ref i) => i.into(),
-                    RTsModuleName::Str(ref s) => {
-                        //TODO
-                        return Ok(());
-                    }
-                },
-                box Type::Module(module),
-            );
+        if let Some(ty) = ty {
+            match decl.id {
+                RTsModuleName::Ident(ref i) => {
+                    self.register_type(i.into(), ty);
+                }
+                RTsModuleName::Str(ref s) => {
+                    //TODO
+                    return Ok(());
+                }
+            }
         }
 
         Ok(())
