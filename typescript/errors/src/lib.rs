@@ -593,6 +593,8 @@ impl Error {
 
             Error::ArgCountMismatch { .. } => 2554,
 
+            Error::ReferencedInInit { .. } => 2372,
+
             _ => 0,
         }
     }
