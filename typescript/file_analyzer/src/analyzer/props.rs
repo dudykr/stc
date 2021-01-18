@@ -86,11 +86,13 @@ impl Analyzer<'_, '_> {
             }) => true,
             _ => false,
         };
+        let mut check_for_symbol_form = true;
 
         let mut errors = Errors::default();
         let ty = match node.expr.validate_with_default(self) {
             Ok(ty) => ty,
             Err(err) => {
+                check_for_symbol_form = false;
                 match err {
                     Error::TS2585 { span } => Err(Error::TS2585 { span })?,
                     _ => {}
@@ -102,7 +104,7 @@ impl Analyzer<'_, '_> {
             }
         };
 
-        if is_symbol_access {
+        if check_for_symbol_form && is_symbol_access {
             match ty.normalize() {
                 Type::Keyword(RTsKeywordType {
                     kind: TsKeywordTypeKind::TsSymbolKeyword,
