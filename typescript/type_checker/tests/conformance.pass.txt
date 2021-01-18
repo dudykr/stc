@@ -44,12 +44,14 @@ async/es2017/functionDeclarations/asyncFunctionDeclaration13_es2017.ts
 async/es2017/functionDeclarations/asyncFunctionDeclaration14_es2017.ts
 async/es2017/functionDeclarations/asyncFunctionDeclaration1_es2017.ts
 async/es2017/functionDeclarations/asyncFunctionDeclaration2_es2017.ts
+async/es2017/functionDeclarations/asyncFunctionDeclaration3_es2017.ts
 async/es2017/functionDeclarations/asyncFunctionDeclaration4_es2017.ts
 async/es5/asyncArrowFunction/arrowFunctionWithParameterNameAsync_es5.ts
 async/es5/asyncArrowFunction/asyncArrowFunction10_es5.ts
 async/es5/asyncArrowFunction/asyncArrowFunction11_es5.ts
 async/es5/asyncArrowFunction/asyncArrowFunction1_es5.ts
 async/es5/asyncArrowFunction/asyncArrowFunction2_es5.ts
+async/es5/asyncArrowFunction/asyncArrowFunction3_es5.ts
 async/es5/asyncArrowFunction/asyncArrowFunction4_es5.ts
 async/es5/asyncArrowFunction/asyncArrowFunctionCapturesThis_es5.ts
 async/es5/asyncArrowFunction/asyncUnParenthesizedArrowFunction_es5.ts
@@ -76,12 +78,14 @@ async/es5/functionDeclarations/asyncFunctionDeclaration13_es5.ts
 async/es5/functionDeclarations/asyncFunctionDeclaration14_es5.ts
 async/es5/functionDeclarations/asyncFunctionDeclaration1_es5.ts
 async/es5/functionDeclarations/asyncFunctionDeclaration2_es5.ts
+async/es5/functionDeclarations/asyncFunctionDeclaration3_es5.ts
 async/es5/functionDeclarations/asyncFunctionDeclaration4_es5.ts
 async/es6/asyncAliasReturnType_es6.ts
 async/es6/asyncArrowFunction/arrowFunctionWithParameterNameAsync_es6.ts
 async/es6/asyncArrowFunction/asyncArrowFunction10_es6.ts
 async/es6/asyncArrowFunction/asyncArrowFunction1_es6.ts
 async/es6/asyncArrowFunction/asyncArrowFunction2_es6.ts
+async/es6/asyncArrowFunction/asyncArrowFunction3_es6.ts
 async/es6/asyncArrowFunction/asyncArrowFunction4_es6.ts
 async/es6/asyncArrowFunction/asyncArrowFunctionCapturesArguments_es6.ts
 async/es6/asyncArrowFunction/asyncArrowFunctionCapturesThis_es6.ts
@@ -109,6 +113,7 @@ async/es6/functionDeclarations/asyncFunctionDeclaration13_es6.ts
 async/es6/functionDeclarations/asyncFunctionDeclaration14_es6.ts
 async/es6/functionDeclarations/asyncFunctionDeclaration1_es6.ts
 async/es6/functionDeclarations/asyncFunctionDeclaration2_es6.ts
+async/es6/functionDeclarations/asyncFunctionDeclaration3_es6.ts
 async/es6/functionDeclarations/asyncFunctionDeclaration4_es6.ts
 classes/classDeclarations/classAbstractKeyword/classAbstractAsIdentifier.ts
 classes/classDeclarations/classAbstractKeyword/classAbstractAssignabilityConstructorFunction.ts
@@ -394,6 +399,7 @@ es6/functionDeclarations/FunctionDeclaration11_es6.ts
 es6/functionDeclarations/FunctionDeclaration13_es6.ts
 es6/functionDeclarations/FunctionDeclaration1_es6.ts
 es6/functionDeclarations/FunctionDeclaration2_es6.ts
+es6/functionDeclarations/FunctionDeclaration3_es6.ts
 es6/functionDeclarations/FunctionDeclaration4_es6.ts
 es6/functionExpressions/FunctionExpression1_es6.ts
 es6/functionExpressions/FunctionExpression2_es6.ts
