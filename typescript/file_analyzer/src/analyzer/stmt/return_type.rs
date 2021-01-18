@@ -65,6 +65,7 @@ impl Analyzer<'_, '_> {
         stmts: &Vec<RStmt>,
     ) -> Result<Option<Box<Type>>, Error> {
         slog::debug!(self.logger, "visit_stmts_for_return()");
+        debug_assert!(!self.is_builtin, "builtin: visit_stmts_for_return should not be called");
 
         // let mut old_ret_tys = self.scope.return_types.take();
 
@@ -95,6 +96,7 @@ impl Analyzer<'_, '_> {
                     .return_types
                     .into_iter()
                     .map(|ty| {
+                        debug_assert_ne!(ty.span(), DUMMY_SP);
                         let ctx = Ctx {
                             preserve_ref: true,
                             ignore_expand_prevention_for_top: false,
