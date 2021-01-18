@@ -564,10 +564,6 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
             RPat::Assign(ref p) => {
-                let ty = match ty {
-                    Some(ty) => ty,
-                    None => p.right.validate_with_default(self)?,
-                };
                 slog::debug!(
                     self.logger,
                     "({}) declare_vars: Assign({:?}), ty = {:?}",
@@ -575,7 +571,7 @@ impl Analyzer<'_, '_> {
                     p.left,
                     ty
                 );
-                self.declare_vars_inner_with_ty(kind, &p.left, export, Some(ty))?;
+                self.declare_vars_inner_with_ty(kind, &p.left, export, ty)?;
 
                 return Ok(());
             }
