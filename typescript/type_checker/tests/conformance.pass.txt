@@ -21,7 +21,7 @@ async/es2017/asyncArrowFunction/asyncArrowFunction4_es2017.ts
 async/es2017/asyncArrowFunction/asyncArrowFunctionCapturesArguments_es2017.ts
 async/es2017/asyncArrowFunction/asyncArrowFunctionCapturesThis_es2017.ts
 async/es2017/asyncArrowFunction/asyncUnParenthesizedArrowFunction_es2017.ts
-async/es2017/asyncAwait_es2017.ts
+async/es2017/asyncAwait_es201asyncArrowFunctionCapturesArguments_es57.ts
 async/es2017/asyncMethodWithSuperConflict_es6.ts
 async/es2017/asyncMethodWithSuper_es2017.ts
 async/es2017/asyncUseStrict_es2017.ts
@@ -58,11 +58,8 @@ async/es5/asyncArrowFunction/asyncArrowFunction1_es5.ts
 async/es5/asyncArrowFunction/asyncArrowFunction2_es5.ts
 async/es5/asyncArrowFunction/asyncArrowFunction3_es5.ts
 async/es5/asyncArrowFunction/asyncArrowFunction4_es5.ts
-async/es5/asyncArrowFunction/asyncArrowFunctionCapturesArguments_es5.ts
 async/es5/asyncArrowFunction/asyncArrowFunctionCapturesThis_es5.ts
 async/es5/asyncArrowFunction/asyncUnParenthesizedArrowFunction_es5.ts
-async/es5/asyncAwaitIsolatedModules_es5.ts
-async/es5/asyncAwaitNestedClasses_es5.ts
 async/es5/asyncAwait_es5.ts
 async/es5/asyncMethodWithSuper_es5.ts
 async/es5/asyncQualifiedReturnType_es5.ts
