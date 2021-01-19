@@ -785,6 +785,7 @@ impl Analyzer<'_, '_> {
         }
 
         let mut ty = self.access_property_inner(span, obj, prop, type_mode)?;
+        ty = self.expand_type_params_using_scope(ty)?;
 
         if !self.is_builtin && ty.span().is_dummy() && !span.is_dummy() {
             ty.reposition(span);
@@ -1260,10 +1261,9 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Array(Array { elem_type, .. }) => {
-                debug_assert!(elem_type.is_clone_cheap());
+                let elem_type = elem_type.clone().cheap();
                 if self.scope.should_store_type_params() {
-                    self.scope
-                        .store_type_param(Id::word("T".into()), elem_type.clone().cheap());
+                    self.scope.store_type_param(Id::word("T".into()), elem_type.clone());
                 }
 
                 if let Key::Computed(prop) = prop {
