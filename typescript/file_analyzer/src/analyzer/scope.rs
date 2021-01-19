@@ -174,6 +174,18 @@ impl Scope<'_> {
         }
     }
 
+    pub fn is_in_call(&self) -> bool {
+        match self.kind {
+            ScopeKind::Call => return true,
+            _ => {}
+        }
+
+        match self.parent {
+            Some(v) => v.is_in_call(),
+            None => false,
+        }
+    }
+
     pub fn store_type_param(&mut self, name: Id, ty: Box<Type>) {
         self.type_params.insert(name, ty);
     }
@@ -1446,7 +1458,12 @@ impl<'a> Scope<'a> {
             ScopeKind::ObjectLit => return true,
 
             ScopeKind::Class => return false,
-            ScopeKind::Call | ScopeKind::Method | ScopeKind::Flow | ScopeKind::Block | ScopeKind::Module => {}
+            ScopeKind::MemberAccess
+            | ScopeKind::Call
+            | ScopeKind::Method
+            | ScopeKind::Flow
+            | ScopeKind::Block
+            | ScopeKind::Module => {}
         }
 
         match self.parent {
@@ -1466,7 +1483,7 @@ impl<'a> Scope<'a> {
             ScopeKind::ObjectLit => return false,
 
             ScopeKind::Class => return true,
-            ScopeKind::Call | ScopeKind::Method | ScopeKind::Flow | ScopeKind::Block => {}
+            ScopeKind::MemberAccess | ScopeKind::Call | ScopeKind::Method | ScopeKind::Flow | ScopeKind::Block => {}
         }
 
         match self.parent {

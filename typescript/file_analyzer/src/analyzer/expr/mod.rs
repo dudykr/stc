@@ -1584,7 +1584,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn type_to_query_if_required(&mut self, span: Span, i: &RIdent, ty: Box<Type>) -> Box<Type> {
-        if self.scope.is_calling() {
+        if self.scope.is_in_call() {
             return ty;
         }
 
