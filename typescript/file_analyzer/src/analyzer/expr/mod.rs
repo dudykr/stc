@@ -372,7 +372,13 @@ impl Analyzer<'_, '_> {
             }
         })()?;
 
-        if !span.is_dummy() {
+        // Exclude literals
+        if !span.is_dummy()
+            & match e {
+                RExpr::Lit(..) => false,
+                _ => true,
+            }
+        {
             if let Some(debugger) = &self.debugger {
                 debugger.dump_type(span, &ty);
             }
@@ -573,6 +579,17 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     pub(crate) fn validate_key(&mut self, prop: &RExpr, computed: bool) -> ValidationResult<Key> {
         if computed {
+            // match prop {
+            //     RExpr::Lit(RLit::Str(s)) => {
+            //         return Ok(Key::Normal {
+            //             span: s.span,
+            //             sym: s.value.clone(),
+            //         })
+            //     }
+            //     RExpr::Lit(RLit::Num(n)) => return Ok(Key::Num(n.clone())),
+            //     _ => {}
+            // }
+
             prop.validate_with_default(self)
                 .map(|ty| ComputedKey {
                     span: prop.span(),

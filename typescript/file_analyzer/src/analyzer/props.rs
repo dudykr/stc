@@ -24,6 +24,8 @@ use stc_ts_ast_rnode::RPropName;
 use stc_ts_ast_rnode::RSetterProp;
 use stc_ts_ast_rnode::RStr;
 use stc_ts_ast_rnode::RTsKeywordType;
+use stc_ts_ast_rnode::RTsLit;
+use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_types::ComputedKey;
@@ -49,9 +51,7 @@ impl Analyzer<'_, '_> {
         self.record(node);
 
         match node {
-            RPropName::Computed(c) => {
-                return c.validate_with(self).map(Key::Computed);
-            }
+            RPropName::Computed(c) => c.validate_with(self),
             RPropName::Ident(i) => Ok(Key::Normal {
                 span: i.span,
                 sym: i.sym.clone(),
@@ -68,7 +68,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &RComputedPropName) -> ValidationResult<ComputedKey> {
+    fn validate(&mut self, node: &RComputedPropName) -> ValidationResult<Key> {
         self.record(node);
         let span = node.span;
 
@@ -89,6 +89,7 @@ impl Analyzer<'_, '_> {
         let mut check_for_symbol_form = true;
 
         let mut errors = Errors::default();
+
         let ty = match node.expr.validate_with_default(self) {
             Ok(ty) => ty,
             Err(err) => {
@@ -187,11 +188,26 @@ impl Analyzer<'_, '_> {
             self.storage.report_all(errors);
         }
 
-        Ok(ComputedKey {
+        // match *ty {
+        //     Type::Lit(RTsLitType {
+        //         lit: RTsLit::Number(n), ..
+        //     }) => return Ok(Key::Num(n)),
+        //     Type::Lit(RTsLitType {
+        //         lit: RTsLit::Str(s), ..
+        //     }) => {
+        //         return Ok(Key::Normal {
+        //             span: s.span,
+        //             sym: s.value,
+        //         })
+        //     }
+        //     _ => {}
+        // }
+
+        Ok(Key::Computed(ComputedKey {
             span,
             expr: node.expr.clone(),
             ty,
-        })
+        }))
     }
 }
 
