@@ -600,6 +600,7 @@ impl Error {
             Error::ReferencedInInit { .. } => 2372,
 
             Error::InvalidDeleteOperand { .. } => 2703,
+            Error::NoSuchVar { .. } => 2304,
 
             _ => 0,
         }
