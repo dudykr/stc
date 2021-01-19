@@ -42,8 +42,8 @@ impl Analyzer<'_, '_> {
     pub(crate) fn assign_with_op(&mut self, span: Span, op: AssignOp, lhs: &Type, rhs: &Type) -> ValidationResult<()> {
         debug_assert_ne!(op, op!("="));
 
-        let l = self.expand_top_ref(span, Cow::Borrowed(lhs))?;
-        let r = self.expand_top_ref(span, Cow::Borrowed(rhs))?;
+        let l = self.expand_top_type(span, Cow::Borrowed(lhs))?;
+        let r = self.expand_top_type(span, Cow::Borrowed(rhs))?;
 
         let lhs = l.normalize();
         let rhs = r.normalize();

@@ -536,7 +536,8 @@ impl Analyzer<'_, '_> {
                         if !self.is_builtin {
                             // Report error if type is not found.
                             if let Some(ty) = &ty {
-                                self.expand_top_ref(v.span, Cow::Borrowed(ty)).report(&mut self.storage);
+                                self.expand_top_type(v.span, Cow::Borrowed(ty))
+                                    .report(&mut self.storage);
                             }
                         }
 
