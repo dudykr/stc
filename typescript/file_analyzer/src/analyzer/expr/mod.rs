@@ -784,8 +784,11 @@ impl Analyzer<'_, '_> {
             debug_assert_ne!(span, DUMMY_SP, "access_property: called with a dummy span");
         }
 
-        let mut ty = self.access_property_inner(span, obj, prop, type_mode)?;
-        ty = self.expand_type_params_using_scope(ty)?;
+        let mut ty = self.with_child(ScopeKind::MemberAccess, Default::default(), |child: &mut Analyzer| {
+            let mut ty = child.access_property_inner(span, obj, prop, type_mode)?;
+            ty = child.expand_type_params_using_scope(ty)?;
+            Ok(ty)
+        })?;
 
         if !self.is_builtin && ty.span().is_dummy() && !span.is_dummy() {
             ty.reposition(span);
