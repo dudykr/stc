@@ -44,7 +44,7 @@ warning: Type
 1 | export const arr = [1, '2', 3, 4, 5].map(v => !!v);
   |                                                 ^
   |
-  = note: T
+  = note: number | string
 
 warning: Type
  --> $DIR/tests/visualize/simple.ts:1:20
