@@ -435,9 +435,11 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn expand_top_type<'a>(&mut self, span: Span, ty: Cow<'a, Type>) -> ValidationResult<Cow<'a, Type>> {
-        if !ty.normalize().is_ref_type() {
+        if !ty.normalize().is_ref_type() && !ty.normalize().is_type_param() {
             return Ok(ty);
         }
+
+        if let Type::Param(p) = ty.normalize() {}
 
         let ctx = Ctx {
             preserve_ref: false,
