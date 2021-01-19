@@ -102,7 +102,6 @@ async/es6/asyncArrowFunction/asyncArrowFunction4_es6.ts
 async/es6/asyncArrowFunction/asyncArrowFunctionCapturesArguments_es6.ts
 async/es6/asyncArrowFunction/asyncArrowFunctionCapturesThis_es6.ts
 async/es6/asyncArrowFunction/asyncUnParenthesizedArrowFunction_es6.ts
-async/es6/asyncAwaitIsolatedModules_es6.ts
 async/es6/asyncAwait_es6.ts
 async/es6/asyncUseStrict_es6.ts
 async/es6/asyncWithVarShadowing_es6.ts
