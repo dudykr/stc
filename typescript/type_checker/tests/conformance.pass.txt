@@ -21,7 +21,7 @@ async/es2017/asyncArrowFunction/asyncArrowFunction4_es2017.ts
 async/es2017/asyncArrowFunction/asyncArrowFunctionCapturesArguments_es2017.ts
 async/es2017/asyncArrowFunction/asyncArrowFunctionCapturesThis_es2017.ts
 async/es2017/asyncArrowFunction/asyncUnParenthesizedArrowFunction_es2017.ts
-async/es2017/asyncAwait_es201asyncArrowFunctionCapturesArguments_es57.ts
+async/es2017/asyncAwait_es2017.ts
 async/es2017/asyncMethodWithSuperConflict_es6.ts
 async/es2017/asyncMethodWithSuper_es2017.ts
 async/es2017/asyncUseStrict_es2017.ts
