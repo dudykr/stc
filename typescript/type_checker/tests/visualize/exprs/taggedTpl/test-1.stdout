@@ -7,14 +7,6 @@ warning: Type
   = note: TemplateStringsArray
 
 warning: Type
- --> $DIR/tests/visualize/exprs/taggedTpl/test-1.ts:6:26
-  |
-6 | export const a = foo`my${'test'}`
-  |                          ^^^^^^
-  |
-  = note: 'test'
-
-warning: Type
  --> $DIR/tests/visualize/exprs/taggedTpl/test-1.ts:6:18
   |
 6 | export const a = foo`my${'test'}`

@@ -23,14 +23,6 @@ warning: Type
   = note: A<B>[]
 
 warning: Type
- --> $DIR/tests/visualize/exprs/array/access-property-1.ts:7:11
-  |
-7 | var z = y[0].x.m; // z should be string
-  |           ^
-  |
-  = note: 0
-
-warning: Type
  --> $DIR/tests/visualize/exprs/array/access-property-1.ts:7:9
   |
 7 | var z = y[0].x.m; // z should be string

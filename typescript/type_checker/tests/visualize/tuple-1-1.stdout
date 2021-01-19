@@ -1,50 +1,10 @@
 warning: Type
- --> $DIR/tests/visualize/tuple-1-1.ts:2:37
-  |
-2 | var temp2: [number[], string[]] = [[1, 2, 3], ["hello", "string"]];
-  |                                     ^
-  |
-  = note: 1
-
-warning: Type
- --> $DIR/tests/visualize/tuple-1-1.ts:2:40
-  |
-2 | var temp2: [number[], string[]] = [[1, 2, 3], ["hello", "string"]];
-  |                                        ^
-  |
-  = note: 2
-
-warning: Type
- --> $DIR/tests/visualize/tuple-1-1.ts:2:43
-  |
-2 | var temp2: [number[], string[]] = [[1, 2, 3], ["hello", "string"]];
-  |                                           ^
-  |
-  = note: 3
-
-warning: Type
  --> $DIR/tests/visualize/tuple-1-1.ts:2:36
   |
 2 | var temp2: [number[], string[]] = [[1, 2, 3], ["hello", "string"]];
   |                                    ^^^^^^^^^
   |
   = note: [1, 2, 3]
-
-warning: Type
- --> $DIR/tests/visualize/tuple-1-1.ts:2:48
-  |
-2 | var temp2: [number[], string[]] = [[1, 2, 3], ["hello", "string"]];
-  |                                                ^^^^^^^
-  |
-  = note: "hello"
-
-warning: Type
- --> $DIR/tests/visualize/tuple-1-1.ts:2:57
-  |
-2 | var temp2: [number[], string[]] = [[1, 2, 3], ["hello", "string"]];
-  |                                                         ^^^^^^^^
-  |
-  = note: "string"
 
 warning: Type
  --> $DIR/tests/visualize/tuple-1-1.ts:2:47

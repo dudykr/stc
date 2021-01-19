@@ -1,20 +1,4 @@
 warning: Type
- --> $DIR/tests/visualize/exprs/object/normalization-2.ts:1:23
-  |
-1 | export let a2 = [{ a: 1, b: 2 }, { a: "abc" }, {}][0];
-  |                       ^
-  |
-  = note: 1
-
-warning: Type
- --> $DIR/tests/visualize/exprs/object/normalization-2.ts:1:29
-  |
-1 | export let a2 = [{ a: 1, b: 2 }, { a: "abc" }, {}][0];
-  |                             ^
-  |
-  = note: 2
-
-warning: Type
  --> $DIR/tests/visualize/exprs/object/normalization-2.ts:1:18
   |
 1 | export let a2 = [{ a: 1, b: 2 }, { a: "abc" }, {}][0];
@@ -24,14 +8,6 @@ warning: Type
               a: 1;
               b: 2;
           }
-
-warning: Type
- --> $DIR/tests/visualize/exprs/object/normalization-2.ts:1:39
-  |
-1 | export let a2 = [{ a: 1, b: 2 }, { a: "abc" }, {}][0];
-  |                                       ^^^^^
-  |
-  = note: "abc"
 
 warning: Type
  --> $DIR/tests/visualize/exprs/object/normalization-2.ts:1:34
@@ -68,14 +44,6 @@ warning: Type
               a?: undefined;
               b?: undefined;
           })[]
-
-warning: Type
- --> $DIR/tests/visualize/exprs/object/normalization-2.ts:1:52
-  |
-1 | export let a2 = [{ a: 1, b: 2 }, { a: "abc" }, {}][0];
-  |                                                    ^
-  |
-  = note: 0
 
 warning: Type
  --> $DIR/tests/visualize/exprs/object/normalization-2.ts:1:17

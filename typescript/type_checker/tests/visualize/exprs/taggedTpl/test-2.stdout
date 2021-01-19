@@ -1,20 +1,4 @@
 warning: Type
- --> $DIR/tests/visualize/exprs/taggedTpl/test-2.ts:4:26
-  |
-4 | export const a = foo`my${'test'}s${'foo'}`
-  |                          ^^^^^^
-  |
-  = note: 'test'
-
-warning: Type
- --> $DIR/tests/visualize/exprs/taggedTpl/test-2.ts:4:36
-  |
-4 | export const a = foo`my${'test'}s${'foo'}`
-  |                                    ^^^^^
-  |
-  = note: 'foo'
-
-warning: Type
  --> $DIR/tests/visualize/exprs/taggedTpl/test-2.ts:4:18
   |
 4 | export const a = foo`my${'test'}s${'foo'}`

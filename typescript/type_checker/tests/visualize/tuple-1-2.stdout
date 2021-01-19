@@ -1,58 +1,10 @@
 warning: Type
- --> $DIR/tests/visualize/tuple-1-2.ts:1:13
-  |
-1 | var temp = ["s", "t", "r"];
-  |             ^^^
-  |
-  = note: "s"
-
-warning: Type
- --> $DIR/tests/visualize/tuple-1-2.ts:1:18
-  |
-1 | var temp = ["s", "t", "r"];
-  |                  ^^^
-  |
-  = note: "t"
-
-warning: Type
- --> $DIR/tests/visualize/tuple-1-2.ts:1:23
-  |
-1 | var temp = ["s", "t", "r"];
-  |                       ^^^
-  |
-  = note: "r"
-
-warning: Type
  --> $DIR/tests/visualize/tuple-1-2.ts:1:12
   |
 1 | var temp = ["s", "t", "r"];
   |            ^^^^^^^^^^^^^^^
   |
   = note: ["s", "t", "r"]
-
-warning: Type
- --> $DIR/tests/visualize/tuple-1-2.ts:2:14
-  |
-2 | var temp1 = [1, 2, 3];
-  |              ^
-  |
-  = note: 1
-
-warning: Type
- --> $DIR/tests/visualize/tuple-1-2.ts:2:17
-  |
-2 | var temp1 = [1, 2, 3];
-  |                 ^
-  |
-  = note: 2
-
-warning: Type
- --> $DIR/tests/visualize/tuple-1-2.ts:2:20
-  |
-2 | var temp1 = [1, 2, 3];
-  |                    ^
-  |
-  = note: 3
 
 warning: Type
  --> $DIR/tests/visualize/tuple-1-2.ts:2:13

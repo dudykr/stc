@@ -1,12 +1,4 @@
 warning: Type
- --> $DIR/tests/visualize/exprs/object/normalization-1.ts:1:23
-  |
-1 | export let a1 = [{ a: 0 }, { a: 1, b: "x" }, { a: 2, b: "y", c: true }][0];
-  |                       ^
-  |
-  = note: 0
-
-warning: Type
  --> $DIR/tests/visualize/exprs/object/normalization-1.ts:1:18
   |
 1 | export let a1 = [{ a: 0 }, { a: 1, b: "x" }, { a: 2, b: "y", c: true }][0];
@@ -15,22 +7,6 @@ warning: Type
   = note: {
               a: 0;
           }
-
-warning: Type
- --> $DIR/tests/visualize/exprs/object/normalization-1.ts:1:33
-  |
-1 | export let a1 = [{ a: 0 }, { a: 1, b: "x" }, { a: 2, b: "y", c: true }][0];
-  |                                 ^
-  |
-  = note: 1
-
-warning: Type
- --> $DIR/tests/visualize/exprs/object/normalization-1.ts:1:39
-  |
-1 | export let a1 = [{ a: 0 }, { a: 1, b: "x" }, { a: 2, b: "y", c: true }][0];
-  |                                       ^^^
-  |
-  = note: "x"
 
 warning: Type
  --> $DIR/tests/visualize/exprs/object/normalization-1.ts:1:28
@@ -42,30 +18,6 @@ warning: Type
               a: 1;
               b: "x";
           }
-
-warning: Type
- --> $DIR/tests/visualize/exprs/object/normalization-1.ts:1:51
-  |
-1 | export let a1 = [{ a: 0 }, { a: 1, b: "x" }, { a: 2, b: "y", c: true }][0];
-  |                                                   ^
-  |
-  = note: 2
-
-warning: Type
- --> $DIR/tests/visualize/exprs/object/normalization-1.ts:1:57
-  |
-1 | export let a1 = [{ a: 0 }, { a: 1, b: "x" }, { a: 2, b: "y", c: true }][0];
-  |                                                         ^^^
-  |
-  = note: "y"
-
-warning: Type
- --> $DIR/tests/visualize/exprs/object/normalization-1.ts:1:65
-  |
-1 | export let a1 = [{ a: 0 }, { a: 1, b: "x" }, { a: 2, b: "y", c: true }][0];
-  |                                                                 ^^^^
-  |
-  = note: true
 
 warning: Type
  --> $DIR/tests/visualize/exprs/object/normalization-1.ts:1:46
@@ -98,14 +50,6 @@ warning: Type
               b: "y";
               c: true;
           })[]
-
-warning: Type
- --> $DIR/tests/visualize/exprs/object/normalization-1.ts:1:73
-  |
-1 | export let a1 = [{ a: 0 }, { a: 1, b: "x" }, { a: 2, b: "y", c: true }][0];
-  |                                                                         ^
-  |
-  = note: 0
 
 warning: Type
  --> $DIR/tests/visualize/exprs/object/normalization-1.ts:1:17
