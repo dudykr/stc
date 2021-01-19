@@ -1260,8 +1260,10 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Array(Array { elem_type, .. }) => {
-                if self.scope.is_calling() {
-                    self.register_type(Id::word("T".into()), elem_type.clone().cheap());
+                debug_assert!(elem_type.is_clone_cheap());
+                if self.scope.should_store_type_params() {
+                    self.scope
+                        .store_type_param(Id::word("T".into()), elem_type.clone().cheap());
                 }
 
                 if let Key::Computed(prop) = prop {

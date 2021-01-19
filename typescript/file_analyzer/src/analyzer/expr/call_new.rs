@@ -299,13 +299,6 @@ impl Analyzer<'_, '_> {
                     }
 
                     Type::Interface(ref i) => {
-                        if self.scope.is_calling() {
-                            if let Some(type_params) = &i.type_params {
-                                for param in &type_params.params {
-                                    self.register_type(param.name.clone(), box Type::Param(param.clone()));
-                                }
-                            }
-                        }
                         // TODO: Check parent interface
                         return self.search_members_for_callable_prop(
                             kind,

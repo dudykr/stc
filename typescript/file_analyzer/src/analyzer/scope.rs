@@ -101,6 +101,8 @@ pub(crate) struct Scope<'a> {
 
     /// Used to handle `...any` in calls.
     pub(super) is_call_arg_count_unknown: bool,
+
+    type_params: FxHashMap<Id, Box<Type>>,
 }
 
 impl Scope<'_> {
@@ -159,17 +161,21 @@ impl Scope<'_> {
         self.kind == ScopeKind::Module
     }
 
-    /// Returns `true` if we are in call.
-    pub fn is_calling(&self) -> bool {
+    /// Returns `true` if a scope exists for storing
+    pub fn should_store_type_params(&self) -> bool {
         match self.kind {
-            ScopeKind::Call => return true,
+            ScopeKind::Call | ScopeKind::MemberAccess => return true,
             _ => {}
         }
 
         match self.parent {
-            Some(v) => v.is_calling(),
+            Some(v) => v.should_store_type_params(),
             None => false,
         }
+    }
+
+    pub fn store_type_param(&mut self, name: Id, ty: Box<Type>) {
+        self.type_params.insert(name, ty);
     }
 
     /// Get members of current class.
@@ -223,6 +229,7 @@ impl Scope<'_> {
             expand_triage_depth: self.expand_triage_depth,
             return_values: self.return_values,
             is_call_arg_count_unknown: self.is_call_arg_count_unknown,
+            type_params: self.type_params,
         }
     }
 
@@ -1496,6 +1503,7 @@ impl<'a> Scope<'a> {
             expand_triage_depth: 0,
             return_values: Default::default(),
             is_call_arg_count_unknown: false,
+            type_params: Default::default(),
         }
     }
 
@@ -1569,6 +1577,7 @@ pub(crate) enum ScopeKind {
     ObjectLit,
     /// If statement, conditional expression, switch case
     Flow,
+    MemberAccess,
     /// Type parameters are stored in this scope.
     Call,
     Module,
