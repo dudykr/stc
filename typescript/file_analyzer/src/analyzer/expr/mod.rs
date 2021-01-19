@@ -736,7 +736,7 @@ impl Analyzer<'_, '_> {
 
                     if indexed {
                         if let Some(ref type_ann) = type_ann {
-                            let ty = self.expand_top_type(span, Cow::Borrowed(type_ann))?;
+                            let ty = self.expand_top_ref(span, Cow::Borrowed(type_ann))?;
                             return Ok(Some(box ty.into_owned()));
                         }
 

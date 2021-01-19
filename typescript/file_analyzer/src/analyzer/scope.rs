@@ -50,6 +50,7 @@ use stc_ts_utils::OptionExt;
 use stc_ts_utils::PatExt;
 use stc_utils::TryOpt;
 use std::mem::replace;
+use std::mem::take;
 use std::{borrow::Cow, collections::hash_map::Entry, fmt::Debug, iter, iter::repeat, slice};
 use swc_atoms::js_word;
 use swc_common::TypeEq;
@@ -453,12 +454,18 @@ impl Analyzer<'_, '_> {
         Ok(ty)
     }
 
-    pub(super) fn expand_top_type<'a>(&mut self, span: Span, ty: Cow<'a, Type>) -> ValidationResult<Cow<'a, Type>> {
-        if !ty.normalize().is_ref_type() && !ty.normalize().is_type_param() {
+    pub(super) fn expand_type_params_using_scope(&mut self, ty: Box<Type>) -> ValidationResult {
+        let type_params = take(&mut self.scope.type_params);
+        let res = self.expand_type_params(&type_params, ty);
+        self.scope.type_params = type_params;
+
+        res
+    }
+
+    pub(super) fn expand_top_ref<'a>(&mut self, span: Span, ty: Cow<'a, Type>) -> ValidationResult<Cow<'a, Type>> {
+        if !ty.normalize().is_ref_type() {
             return Ok(ty);
         }
-
-        if let Type::Param(p) = ty.normalize() {}
 
         let ctx = Ctx {
             preserve_ref: false,
