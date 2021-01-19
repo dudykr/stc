@@ -54,6 +54,7 @@ use stc_ts_types::ComputedKey;
 use stc_ts_types::Key;
 use stc_ts_types::PropertySignature;
 use stc_ts_types::{ClassProperty, Id, Method, ModuleId, Operator, QueryExpr, QueryType, StaticThis, TupleElement};
+use std::borrow::Cow;
 use std::convert::TryFrom;
 use swc_atoms::js_word;
 use swc_common::SyntaxContext;
@@ -579,16 +580,16 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     pub(crate) fn validate_key(&mut self, prop: &RExpr, computed: bool) -> ValidationResult<Key> {
         if computed {
-            // match prop {
-            //     RExpr::Lit(RLit::Str(s)) => {
-            //         return Ok(Key::Normal {
-            //             span: s.span,
-            //             sym: s.value.clone(),
-            //         })
-            //     }
-            //     RExpr::Lit(RLit::Num(n)) => return Ok(Key::Num(n.clone())),
-            //     _ => {}
-            // }
+            match prop {
+                RExpr::Lit(RLit::Str(s)) => {
+                    return Ok(Key::Normal {
+                        span: s.span,
+                        sym: s.value.clone(),
+                    })
+                }
+                RExpr::Lit(RLit::Num(n)) => return Ok(Key::Num(n.clone())),
+                _ => {}
+            }
 
             prop.validate_with_default(self)
                 .map(|ty| ComputedKey {
@@ -683,59 +684,80 @@ impl Analyzer<'_, '_> {
         }
 
         for el in members.iter() {
-            if let Key::Computed(prop) = prop {
-                let prop_ty = &prop.ty;
-
-                match el {
-                    TypeElement::Index(IndexSignature {
-                        ref params,
-                        ref type_ann,
-                        readonly,
-                        ..
-                    }) => {
-                        if params.len() != 1 {
-                            unimplemented!("Index signature with multiple parameters")
-                        }
-
-                        let index_ty = &params[0].ty;
-
-                        // Don't know exact reason, but you can index `{ [x: string]: boolean }`
-                        // with number type.
-                        //
-                        // I guess it's because javascript work in that way.
-                        let indexed = (index_ty.is_kwd(TsKeywordTypeKind::TsStringKeyword)
-                            && prop_ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword))
-                            || index_ty.type_eq(&prop_ty);
-
-                        if indexed {
-                            if let Some(ref type_ann) = type_ann {
-                                return Ok(Some(type_ann.clone()));
-                            }
-
-                            return Ok(Some(Type::any(span)));
-                        }
-
-                        match prop_ty.normalize() {
-                            // TODO: Only string or number
-                            Type::EnumVariant(..) => {
-                                candidates.extend(type_ann.clone());
-                                continue;
-                            }
-
-                            _ => {}
-                        }
-
-                        let ty = box Type::IndexedAccessType(IndexedAccessType {
-                            span,
-                            obj_type: box obj.clone(),
-                            index_type: prop_ty.clone(),
-                            readonly: *readonly,
-                        });
-
-                        return Ok(Some(ty));
+            match el {
+                TypeElement::Index(IndexSignature {
+                    ref params,
+                    ref type_ann,
+                    readonly,
+                    ..
+                }) => {
+                    if params.len() != 1 {
+                        unimplemented!("Index signature with multiple parameters")
                     }
-                    _ => {}
+
+                    let index_ty = &params[0].ty;
+
+                    let prop_ty = match prop {
+                        Key::Computed(prop) => Cow::Borrowed(&*prop.ty),
+                        Key::Normal { span, sym } => Cow::Owned(Type::Lit(RTsLitType {
+                            node_id: NodeId::invalid(),
+                            span: *span,
+                            lit: RTsLit::Str(RStr {
+                                span: *span,
+                                value: sym.clone(),
+                                has_escape: false,
+                                kind: Default::default(),
+                            }),
+                        })),
+                        Key::Num(n) => Cow::Owned(Type::Lit(RTsLitType {
+                            node_id: NodeId::invalid(),
+                            span: n.span,
+                            lit: RTsLit::Number(n.clone()),
+                        })),
+                        Key::BigInt(n) => Cow::Owned(Type::Lit(RTsLitType {
+                            node_id: NodeId::invalid(),
+                            span: n.span,
+                            lit: RTsLit::BigInt(n.clone()),
+                        })),
+                        Key::Private(..) => todo!("access to type elements using private name"),
+                    };
+
+                    // Don't know exact reason, but you can index `{ [x: string]: boolean }`
+                    // with number type.
+                    //
+                    // I guess it's because javascript work in that way.
+                    let indexed = (index_ty.is_kwd(TsKeywordTypeKind::TsStringKeyword)
+                        && prop_ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword))
+                        || self.assign(&index_ty, &prop_ty, span).is_ok();
+
+                    if indexed {
+                        if let Some(ref type_ann) = type_ann {
+                            return Ok(Some(type_ann.clone()));
+                        }
+
+                        return Ok(Some(Type::any(span)));
+                    }
+
+                    match prop_ty.normalize() {
+                        // TODO: Only string or number
+                        Type::EnumVariant(..) => {
+                            candidates.extend(type_ann.clone());
+                            continue;
+                        }
+
+                        _ => {}
+                    }
+
+                    let ty = box Type::IndexedAccessType(IndexedAccessType {
+                        span,
+                        obj_type: box obj.clone(),
+                        index_type: box prop_ty.into_owned(),
+                        readonly: *readonly,
+                    });
+
+                    return Ok(Some(ty));
                 }
+                _ => {}
             }
         }
 
