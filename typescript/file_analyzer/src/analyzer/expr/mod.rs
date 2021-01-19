@@ -683,6 +683,10 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        if candidates.len() == 1 {
+            return Ok(candidates.pop());
+        }
+
         for el in members.iter() {
             match el {
                 TypeElement::Index(IndexSignature {
@@ -763,10 +767,6 @@ impl Analyzer<'_, '_> {
 
         if candidates.len() == 0 {
             return Ok(None);
-        }
-
-        if candidates.len() == 1 {
-            return Ok(candidates.pop());
         }
 
         Ok(Some(Type::union(candidates)))
