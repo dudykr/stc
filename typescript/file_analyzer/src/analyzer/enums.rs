@@ -289,7 +289,53 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    pub(super) fn expand_enum_variant(&self, ty: Type) -> Result<Type, Error> {
+    /// Converts `e` in `o[e]` from the code below to `'a' | 'b'`
+    ///
+    /// ```ts
+    /// enum E {
+    ///     a = 1,
+    ///     b = 2,
+    /// }
+    ///
+    /// const o = { a: 1, b: 2 };
+    /// declare const e: E;
+    /// const a = o[e]
+    /// ```
+    pub(super) fn expand_enum_keys(&mut self, ty: Box<Type>) -> ValidationResult {
+        let e = match ty.normalize() {
+            Type::Enum(e) => e,
+            _ => return Ok(ty),
+        };
+
+        let mut keys = vec![];
+
+        for m in &e.members {
+            match &m.id {
+                RTsEnumMemberId::Ident(v) => keys.push(box Type::Lit(RTsLitType {
+                    node_id: NodeId::invalid(),
+                    span: v.span,
+                    lit: RTsLit::Str(RStr {
+                        span: v.span,
+                        value: v.sym.clone(),
+                        has_escape: false,
+                        kind: Default::default(),
+                    }),
+                })),
+                RTsEnumMemberId::Str(v) => keys.push(box Type::Lit(RTsLitType {
+                    node_id: NodeId::invalid(),
+                    span: v.span,
+                    lit: RTsLit::Str(v.clone()),
+                })),
+            }
+        }
+
+        let mut ty = Type::union(keys);
+        ty.reposition(e.span);
+
+        Ok(ty)
+    }
+
+    pub(super) fn expand_enum_variant(&self, ty: Box<Type>) -> ValidationResult {
         match ty.normalize() {
             Type::EnumVariant(ref v) => {
                 if let Some(types) = self.find_type(v.ctxt, &v.enum_name)? {
@@ -301,7 +347,7 @@ impl Analyzer<'_, '_> {
                             }) {
                                 match *v.val {
                                     RExpr::Lit(RLit::Str(..)) | RExpr::Lit(RLit::Num(..)) => {
-                                        return Ok(Type::Lit(RTsLitType {
+                                        return Ok(box Type::Lit(RTsLitType {
                                             node_id: NodeId::invalid(),
                                             span: v.span,
                                             lit: match *v.val.clone() {

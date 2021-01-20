@@ -592,10 +592,11 @@ impl Analyzer<'_, '_> {
             }
 
             prop.validate_with_default(self)
-                .and_then(|ty| self.expand_enum_variant(*ty))
+                .and_then(|ty| self.expand_enum_keys(ty))
+                .and_then(|ty| self.expand_enum_variant(ty))
                 .map(|ty| ComputedKey {
                     span: prop.span(),
-                    ty: box ty,
+                    ty,
                     expr: box prop.clone(),
                 })
                 .map(Key::Computed)
