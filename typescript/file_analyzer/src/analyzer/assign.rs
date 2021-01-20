@@ -624,7 +624,6 @@ impl Analyzer<'_, '_> {
                     .iter()
                     .map(|to| self.assign_inner(&to, rhs, opts))
                     .collect::<Vec<_>>();
-                dbg!(&results);
                 if results.iter().any(Result::is_ok) {
                     return Ok(());
                 }
