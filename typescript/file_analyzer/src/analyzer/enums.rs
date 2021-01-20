@@ -293,43 +293,41 @@ impl Analyzer<'_, '_> {
     ///
     /// ```ts
     /// enum E {
-    ///     a = 1,
-    ///     b = 2,
+    ///     A = 'a',
+    ///     B = 'b',
     /// }
     ///
     /// const o = { a: 1, b: 2 };
     /// declare const e: E;
     /// const a = o[e]
     /// ```
-    pub(super) fn expand_enum_keys(&mut self, ty: Box<Type>) -> ValidationResult {
+    pub(super) fn expand_enum(&mut self, ty: Box<Type>) -> ValidationResult {
         let e = match ty.normalize() {
             Type::Enum(e) => e,
             _ => return Ok(ty),
         };
 
-        let mut keys = vec![];
+        let mut values = vec![];
 
         for m in &e.members {
-            match &m.id {
-                RTsEnumMemberId::Ident(v) => keys.push(box Type::Lit(RTsLitType {
+            match &*m.val {
+                RExpr::Lit(RLit::Str(lit)) => values.push(box Type::Lit(RTsLitType {
                     node_id: NodeId::invalid(),
-                    span: v.span,
-                    lit: RTsLit::Str(RStr {
-                        span: v.span,
-                        value: v.sym.clone(),
-                        has_escape: false,
-                        kind: Default::default(),
-                    }),
+                    span: m.span,
+                    lit: RTsLit::Str(lit.clone()),
                 })),
-                RTsEnumMemberId::Str(v) => keys.push(box Type::Lit(RTsLitType {
+                RExpr::Lit(RLit::Num(lit)) => values.push(box Type::Lit(RTsLitType {
                     node_id: NodeId::invalid(),
-                    span: v.span,
-                    lit: RTsLit::Str(v.clone()),
+                    span: m.span,
+                    lit: RTsLit::Number(lit.clone()),
                 })),
+                _ => {
+                    todo!("Handle enum with value other than string literal or numeric literals")
+                }
             }
         }
 
-        let mut ty = Type::union(keys);
+        let mut ty = Type::union(values);
         ty.reposition(e.span);
 
         Ok(ty)
