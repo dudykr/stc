@@ -1284,6 +1284,9 @@ impl Analyzer<'_, '_> {
                         _ => {}
                     }
                 }
+                if let Key::Num(n) = prop {
+                    return Ok(elem_type.clone());
+                }
 
                 let array_ty = self.env.get_global_type(span, &js_word!("Array"))?;
 
