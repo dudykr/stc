@@ -1,5 +1,6 @@
 //! Handles new expressions and call expressions.
 use super::super::Analyzer;
+use crate::analyzer::assign::AssignOpts;
 use crate::{
     analyzer::{
         expr::TypeOfMode,
@@ -1425,7 +1426,17 @@ impl Analyzer<'_, '_> {
             match param.ty.normalize() {
                 Type::Param(..) => {}
                 _ => {
-                    if self.assign(&param.ty, &arg.ty, span).is_err() {
+                    if self
+                        .assign_with_opts(
+                            AssignOpts {
+                                span,
+                                allow_unknown_rhs: true,
+                            },
+                            &param.ty,
+                            &arg.ty,
+                        )
+                        .is_err()
+                    {
                         return ArgCheckResult::NeverMatches;
                     }
                     if self.assign(&arg.ty, &param.ty, span).is_err() {
