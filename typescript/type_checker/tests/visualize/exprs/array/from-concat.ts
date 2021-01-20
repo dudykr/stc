@@ -1,3 +1,4 @@
+type A = [];
 
 declare const a: Set<A>;
 declare const b: Set<A>;
