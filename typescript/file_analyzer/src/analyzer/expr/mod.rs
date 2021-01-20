@@ -636,7 +636,7 @@ impl Analyzer<'_, '_> {
         let mut matching_elements = vec![];
         for el in members.iter() {
             if let Some(key) = el.key() {
-                if key.type_eq(&prop) {
+                if self.assign(&prop.ty(), &key.ty(), span).is_ok() {
                     match el {
                         TypeElement::Property(ref p) => {
                             if type_mode == TypeOfMode::LValue && p.readonly {
@@ -704,30 +704,7 @@ impl Analyzer<'_, '_> {
 
                     let index_ty = &params[0].ty;
 
-                    let prop_ty = match prop {
-                        Key::Computed(prop) => Cow::Borrowed(&*prop.ty),
-                        Key::Normal { span, sym } => Cow::Owned(Type::Lit(RTsLitType {
-                            node_id: NodeId::invalid(),
-                            span: *span,
-                            lit: RTsLit::Str(RStr {
-                                span: *span,
-                                value: sym.clone(),
-                                has_escape: false,
-                                kind: Default::default(),
-                            }),
-                        })),
-                        Key::Num(n) => Cow::Owned(Type::Lit(RTsLitType {
-                            node_id: NodeId::invalid(),
-                            span: n.span,
-                            lit: RTsLit::Number(n.clone()),
-                        })),
-                        Key::BigInt(n) => Cow::Owned(Type::Lit(RTsLitType {
-                            node_id: NodeId::invalid(),
-                            span: n.span,
-                            lit: RTsLit::BigInt(n.clone()),
-                        })),
-                        Key::Private(..) => todo!("access to type elements using private name"),
-                    };
+                    let prop_ty = prop.ty();
 
                     // Don't know exact reason, but you can index `{ [x: string]: boolean }`
                     // with number type.

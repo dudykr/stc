@@ -14,6 +14,7 @@ use is_macro::Is;
 use num_bigint::BigInt;
 use num_traits::Zero;
 use rnode::FoldWith;
+use rnode::NodeId;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
 use rnode::VisitWith;
@@ -34,6 +35,7 @@ use stc_ts_ast_rnode::RTsThisType;
 use stc_ts_ast_rnode::RTsThisTypeOrIdent;
 use stc_visit::Visit;
 use stc_visit::Visitable;
+use std::borrow::Cow;
 use std::{
     fmt::Debug,
     iter::FusedIterator,
@@ -246,6 +248,35 @@ pub enum Key {
     Num(#[use_eq_ignore_span] RNumber),
     BigInt(#[use_eq_ignore_span] RBigInt),
     Private(#[use_eq_ignore_span] RPrivateName),
+}
+
+impl Key {
+    pub fn ty(&self) -> Cow<Type> {
+        match self {
+            Key::Computed(prop) => Cow::Borrowed(&*prop.ty),
+            Key::Normal { span, sym } => Cow::Owned(Type::Lit(RTsLitType {
+                node_id: NodeId::invalid(),
+                span: *span,
+                lit: RTsLit::Str(RStr {
+                    span: *span,
+                    value: sym.clone(),
+                    has_escape: false,
+                    kind: Default::default(),
+                }),
+            })),
+            Key::Num(n) => Cow::Owned(Type::Lit(RTsLitType {
+                node_id: NodeId::invalid(),
+                span: n.span,
+                lit: RTsLit::Number(n.clone()),
+            })),
+            Key::BigInt(n) => Cow::Owned(Type::Lit(RTsLitType {
+                node_id: NodeId::invalid(),
+                span: n.span,
+                lit: RTsLit::BigInt(n.clone()),
+            })),
+            Key::Private(..) => todo!("access to type elements using private name"),
+        }
+    }
 }
 
 impl PartialEq<JsWord> for Key {
