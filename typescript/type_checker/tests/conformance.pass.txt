@@ -87,7 +87,6 @@ async/es5/functionDeclarations/asyncFunctionDeclaration2_es5.ts
 async/es5/functionDeclarations/asyncFunctionDeclaration3_es5.ts
 async/es5/functionDeclarations/asyncFunctionDeclaration4_es5.ts
 async/es5/functionDeclarations/asyncFunctionDeclaration8_es5.ts
-async/es5/functionDeclarations/asyncFunctionDeclarationCapturesArguments_es5.ts
 async/es6/asyncAliasReturnType_es6.ts
 async/es6/asyncArrowFunction/arrowFunctionWithParameterNameAsync_es6.ts
 async/es6/asyncArrowFunction/asyncArrowFunction10_es6.ts
@@ -101,7 +100,6 @@ async/es6/asyncArrowFunction/asyncUnParenthesizedArrowFunction_es6.ts
 async/es6/asyncAwait_es6.ts
 async/es6/asyncMethodWithSuper_es6.ts
 async/es6/asyncUseStrict_es6.ts
-async/es6/asyncWithVarShadowing_es6.ts
 async/es6/awaitBinaryExpression/awaitBinaryExpression1_es6.ts
 async/es6/awaitBinaryExpression/awaitBinaryExpression2_es6.ts
 async/es6/awaitBinaryExpression/awaitBinaryExpression3_es6.ts
