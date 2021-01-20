@@ -1358,7 +1358,27 @@ impl Analyzer<'_, '_> {
             Type::Tuple(Tuple { ref elems, .. }) => match prop {
                 Key::Num(n) => {
                     let v = n.value.round() as i64;
-                    if v < 0 || elems.len() <= v as usize {
+
+                    if v < 0 {
+                        return Err(Error::TupleIndexError {
+                            span: n.span(),
+                            index: v,
+                            len: elems.len() as u64,
+                        });
+                    }
+
+                    if v as usize >= elems.len() {
+                        match elems.last() {
+                            Some(elem) => match elem.ty.normalize() {
+                                Type::Rest(rest_ty) => {
+                                    // debug_assert!(rest_ty.ty.is_clone_cheap());
+                                    return Ok(rest_ty.ty.clone());
+                                }
+                                _ => {}
+                            },
+                            _ => {}
+                        }
+
                         return Err(Error::TupleIndexError {
                             span: n.span(),
                             index: v,
