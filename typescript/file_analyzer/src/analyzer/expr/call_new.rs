@@ -272,6 +272,8 @@ impl Analyzer<'_, '_> {
                 // Handle member expression
                 let obj_type = obj.validate_with_default(self)?.generalize_lit();
 
+                let obj_type: Box<Type> = box self.expand_top_ref(span, Cow::Owned(*obj_type))?.into_owned();
+
                 let obj_type = match *obj_type.normalize() {
                     Type::Keyword(RTsKeywordType {
                         kind: TsKeywordTypeKind::TsNumberKeyword,
@@ -351,15 +353,9 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
 
-                let ctx = Ctx {
-                    preserve_ref: false,
-                    ignore_expand_prevention_for_top: true,
-                    ..self.ctx
-                };
-                let obj_type = self.with_ctx(ctx).expand_fully(span, obj_type, true)?;
-
                 let callee = self.access_property(span, obj_type, &prop, TypeOfMode::RValue)?;
-                let callee = self.with_ctx(ctx).expand_fully(span, callee, true)?;
+
+                let callee = box self.expand_top_ref(span, Cow::Owned(*callee))?.into_owned();
 
                 self.get_best_return_type(
                     span,
