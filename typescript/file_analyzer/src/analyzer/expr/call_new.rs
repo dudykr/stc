@@ -1660,8 +1660,7 @@ fn is_key_eq_prop(prop: &RExpr, computed: bool, e: &RExpr) -> bool {
     v.sym() == p
 }
 
-#[cfg_attr(test, derive(Debug))]
-#[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
 enum ArgCheckResult {
     Exact,
     MayBe,
