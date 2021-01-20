@@ -616,16 +616,16 @@ impl Analyzer<'_, '_> {
 
             // let a: string | number = 'string';
             Type::Union(Union { ref types, .. }) => {
-                let vs = types
+                let results = types
                     .iter()
                     .map(|to| self.assign_inner(&to, rhs, opts))
                     .collect::<Vec<_>>();
-                if vs.iter().any(Result::is_ok) {
+                if results.iter().any(Result::is_ok) {
                     return Ok(());
                 }
                 return Err(Error::UnionError {
                     span,
-                    errors: vs.into_iter().map(Result::unwrap_err).collect(),
+                    errors: results.into_iter().map(Result::unwrap_err).collect(),
                 });
             }
 
