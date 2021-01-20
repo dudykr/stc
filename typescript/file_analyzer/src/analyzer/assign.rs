@@ -102,6 +102,7 @@ impl Analyzer<'_, '_> {
         })
     }
 
+    /// TODO: Change argument order. (Span should come first).
     pub(crate) fn assign(&mut self, left: &Type, right: &Type, span: Span) -> ValidationResult<()> {
         if self.is_builtin {
             return Ok(());
