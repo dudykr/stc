@@ -54,6 +54,7 @@ use swc_common::DUMMY_SP;
 use swc_ecma_ast::*;
 
 mod expander;
+mod inference;
 mod remover;
 
 /// Lower value means higher priority and it contains lower value if the
@@ -88,6 +89,7 @@ pub(super) struct InferData {
     defaults: FxHashMap<Id, Box<Type>>,
 }
 
+/// TODO: Move to inference.rs
 impl Analyzer<'_, '_> {
     fn insert_inferred(&mut self, inferred: &mut InferData, name: Id, ty: Box<Type>) -> ValidationResult<()> {
         slog::info!(self.logger, "Inferred {} as {:?}", name, ty);
@@ -510,6 +512,10 @@ impl Analyzer<'_, '_> {
 
                 return Ok(());
             }
+
+            Type::Interface(param) => match arg {
+                Type::Interface(arg) => return self.infer_type_interface_and_interface(inferred, param, arg),
+            },
 
             Type::Infer(param) => {
                 self.insert_inferred(inferred, param.type_param.name.clone(), box arg.clone())?;
