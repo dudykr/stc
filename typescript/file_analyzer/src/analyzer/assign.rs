@@ -104,6 +104,17 @@ impl Analyzer<'_, '_> {
 
     /// TODO: Change argument order. (Span should come first).
     pub(crate) fn assign(&mut self, left: &Type, right: &Type, span: Span) -> ValidationResult<()> {
+        self.assign_with_opts(
+            AssignOpts {
+                span,
+                allow_unknown_rhs: false,
+            },
+            left,
+            right,
+        )
+    }
+
+    pub(crate) fn assign_with_opts(&mut self, opts: AssignOpts, left: &Type, right: &Type) -> ValidationResult<()> {
         if self.is_builtin {
             return Ok(());
         }
@@ -116,14 +127,7 @@ impl Analyzer<'_, '_> {
         // self.verify_before_assign("lhs", left);
         // self.verify_before_assign("rhs", right);
 
-        let res = self.assign_inner(
-            left,
-            right,
-            AssignOpts {
-                span,
-                allow_unknown_rhs: false,
-            },
-        );
+        let res = self.assign_inner(left, right, opts);
         match res {
             Err(Error::Errors { errors, .. }) if errors.is_empty() => return Ok(()),
             _ => {}
@@ -586,7 +590,7 @@ impl Analyzer<'_, '_> {
         }
 
         match to {
-            Type::Mapped(to) => return self.assign_to_mapped(span, to, rhs),
+            Type::Mapped(to) => return self.assign_to_mapped(opts, to, rhs),
             Type::Param(TypeParam {
                 constraint: Some(ref c),
                 ..
@@ -825,7 +829,7 @@ impl Analyzer<'_, '_> {
                     let parent =
                         self.type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr, parent.type_args.clone())?;
 
-                    self.assign(&parent, &rhs, span)?;
+                    self.assign_with_opts(opts, &parent, &rhs)?;
                 }
 
                 return Ok(());
@@ -1444,23 +1448,23 @@ impl Analyzer<'_, '_> {
     ///
     ///
     /// Currently only literals and unions are supported for `keys`.
-    fn assign_keys(&mut self, span: Span, keys: &Type, rhs: &Type) -> ValidationResult<()> {
+    fn assign_keys(&mut self, opts: AssignOpts, keys: &Type, rhs: &Type) -> ValidationResult<()> {
         let keys = keys.normalize();
         let rhs = rhs.normalize();
 
-        let rhs_keys = self.extract_keys(span, &rhs)?;
+        let rhs_keys = self.extract_keys(opts.span, &rhs)?;
 
-        self.assign(&keys, &rhs_keys, span)
+        self.assign_with_opts(opts, &keys, &rhs_keys)
     }
 
     /// Returns `Ok(true)` if assignment was successfult and returns `Ok(false)`
     /// if the method doesn't know the way to handle assignment.
-    fn assign_to_mapped(&mut self, span: Span, to: &Mapped, rhs: &Type) -> ValidationResult<()> {
+    fn assign_to_mapped(&mut self, opts: AssignOpts, to: &Mapped, rhs: &Type) -> ValidationResult<()> {
         let rhs = rhs.normalize();
 
         // Validate keys
         match &to.type_param.constraint {
-            Some(constraint) => self.assign_keys(span, &constraint, rhs)?,
+            Some(constraint) => self.assign_keys(opts, &constraint, rhs)?,
             None => {}
         }
 
@@ -1476,12 +1480,12 @@ impl Analyzer<'_, '_> {
                     match member {
                         TypeElement::Property(prop) => {
                             if let Some(prop_ty) = &prop.type_ann {
-                                self.assign(&ty, &prop_ty, span)?;
+                                self.assign_with_opts(opts, &ty, &prop_ty)?;
                             }
                         }
                         _ => {
                             return Err(Error::Unimplemented {
-                                span,
+                                span: opts.span,
                                 msg: format!("Assignment to mapped type: type element - {:?}", member),
                             })
                         }
@@ -1494,7 +1498,7 @@ impl Analyzer<'_, '_> {
         }
 
         Err(Error::Unimplemented {
-            span,
+            span: opts.span,
             msg: format!("Assignment to mapped type"),
         })
     }
