@@ -592,7 +592,8 @@ impl Analyzer<'_, '_> {
             }
 
             prop.validate_with_default(self)
-                .and_then(|ty| self.expand_enum_keys(ty))
+                .and_then(|ty| self.expand_top_ref(ty.span(), Cow::Owned(*ty)).map(Cow::into_owned))
+                .and_then(|ty| self.expand_enum_keys(box ty))
                 .and_then(|ty| self.expand_enum_variant(ty))
                 .map(|ty| ComputedKey {
                     span: prop.span(),
