@@ -1925,13 +1925,20 @@ impl Analyzer<'_, '_> {
         let prop = self.validate_key(prop, computed)?;
 
         if computed {
-            let obj_ty = self.expand_fully(span, obj_ty, true)?;
+            let ctx = Ctx {
+                preserve_ref: false,
+                ignore_expand_prevention_for_top: true,
+                ignore_expand_prevention_for_all: false,
+                ..self.ctx
+            };
+            let obj_ty = self.with_ctx(ctx).expand_fully(span, obj_ty, true)?;
             let ty = self.access_property(span, obj_ty, &prop, type_mode)?;
             return Ok(ty);
         } else {
             let ctx = Ctx {
                 preserve_ref: false,
                 ignore_expand_prevention_for_top: true,
+                ignore_expand_prevention_for_all: false,
                 ..self.ctx
             };
             let obj_ty = self.with_ctx(ctx).expand_fully(span, obj_ty, true)?;
