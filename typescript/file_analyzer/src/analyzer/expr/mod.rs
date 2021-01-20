@@ -1468,7 +1468,8 @@ impl Analyzer<'_, '_> {
                 // TODO: Verify if multiple type has field
                 let mut new = vec![];
                 for ty in types {
-                    if let Some(v) = self.access_property(span, ty.clone(), prop, type_mode).ok() {
+                    let ty = box self.expand_top_ref(span, Cow::Borrowed(ty))?.into_owned();
+                    if let Some(v) = self.access_property(span, ty, prop, type_mode).ok() {
                         new.push(v);
                     }
                 }
