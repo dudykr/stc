@@ -1346,6 +1346,8 @@ impl Analyzer<'_, '_> {
                                         }
                                     }
 
+                                    return Ok(());
+
                                     // for (i, r) in
                                     // rm.params.iter().enumerate() {
                                     //     if let Some(ref l) = lm.params.get(i)
