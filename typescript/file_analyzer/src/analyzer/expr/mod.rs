@@ -633,7 +633,7 @@ impl Analyzer<'_, '_> {
         type_mode: TypeOfMode,
         members: &[TypeElement],
     ) -> ValidationResult<Option<Box<Type>>> {
-        let mut candidates = vec![];
+        let mut matching_elements = vec![];
         for el in members.iter() {
             if let Some(key) = el.key() {
                 if key.type_eq(&prop) {
@@ -644,18 +644,18 @@ impl Analyzer<'_, '_> {
                             }
 
                             if let Some(ref type_ann) = p.type_ann {
-                                candidates.push(type_ann.clone());
+                                matching_elements.push(type_ann.clone());
                                 continue;
                             }
 
                             // TODO: no implicit any?
-                            candidates.push(Type::any(span));
+                            matching_elements.push(Type::any(span));
                             continue;
                         }
 
                         TypeElement::Method(ref m) => {
                             //
-                            candidates.push(box Type::Function(ty::Function {
+                            matching_elements.push(box Type::Function(ty::Function {
                                 span,
                                 type_params: m.type_params.clone(),
                                 params: m.params.clone(),
@@ -686,8 +686,8 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if candidates.len() == 1 {
-            return Ok(candidates.pop());
+        if matching_elements.len() == 1 {
+            return Ok(matching_elements.pop());
         }
 
         for el in members.iter() {
@@ -749,7 +749,7 @@ impl Analyzer<'_, '_> {
                     match prop_ty.normalize() {
                         // TODO: Only string or number
                         Type::EnumVariant(..) => {
-                            candidates.extend(type_ann.clone());
+                            matching_elements.extend(type_ann.clone());
                             continue;
                         }
 
@@ -769,11 +769,11 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if candidates.len() == 0 {
+        if matching_elements.len() == 0 {
             return Ok(None);
         }
 
-        Ok(Some(Type::union(candidates)))
+        Ok(Some(Type::union(matching_elements)))
     }
 
     pub(super) fn access_property(
