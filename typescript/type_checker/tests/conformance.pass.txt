@@ -207,6 +207,8 @@ enums/enumExportMergingES6.ts
 es2017/useObjectValuesAndEntries1.ts
 es2017/useObjectValuesAndEntries4.ts
 es2017/useSharedArrayBuffer1.ts
+es2017/useSharedArrayBuffer4.ts
+es2017/useSharedArrayBuffer5.ts
 es2018/usePromiseFinally.ts
 es2019/globalThisTypeIndexAccess.ts
 es2020/bigintMissingES2019.ts
@@ -1279,6 +1281,7 @@ types/mapped/mappedTypes3.ts
 types/members/classWithProtectedProperty.ts
 types/members/classWithPublicProperty.ts
 types/members/objectTypeHidingMembersOfObject.ts
+types/members/objectTypePropertyAccess.ts
 types/members/objectTypeWithCallSignatureAppearsToBeFunctionType.ts
 types/members/objectTypeWithCallSignatureHidingMembersOfFunction.ts
 types/namedTypes/classWithOnlyPublicMembersEquivalentToInterface.ts
@@ -1289,11 +1292,13 @@ types/never/neverType.ts
 types/never/neverUnionIntersection.ts
 types/nonPrimitive/assignObjectToNonPrimitive.ts
 types/nonPrimitive/nonPrimitiveAndTypeVariables.ts
+types/nonPrimitive/nonPrimitiveIndexingWithForIn.ts
 types/nonPrimitive/nonPrimitiveRhsSideOfInExpression.ts
 types/objectTypeLiteral/callSignatures/callSignatureWithoutAnnotationsOrBody.ts
 types/objectTypeLiteral/callSignatures/callSignaturesThatDifferOnlyByReturnType.ts
 types/objectTypeLiteral/callSignatures/callSignaturesThatDifferOnlyByReturnType3.ts
 types/objectTypeLiteral/callSignatures/callSignaturesWithOptionalParameters.ts
+types/objectTypeLiteral/callSignatures/callSignaturesWithOptionalParameters2.ts
 types/objectTypeLiteral/callSignatures/identicalCallSignatures.ts
 types/objectTypeLiteral/callSignatures/identicalCallSignatures2.ts
 types/objectTypeLiteral/callSignatures/identicalCallSignatures3.ts
@@ -1307,6 +1312,7 @@ types/objectTypeLiteral/callSignatures/typeParameterUsedAsTypeParameterConstrain
 types/objectTypeLiteral/constructSignatures/constructSignaturesWithOverloadsThatDifferOnlyByReturnType.ts
 types/objectTypeLiteral/objectTypeLiteralSyntax.ts
 types/objectTypeLiteral/propertySignatures/propertyNameWithoutTypeAnnotation.ts
+types/objectTypeLiteral/propertySignatures/stringNamedPropertyAccess.ts
 types/primitives/boolean/assignFromBooleanInterface.ts
 types/primitives/boolean/booleanPropertyAccess.ts
 types/primitives/boolean/validBooleanAssignments.ts
