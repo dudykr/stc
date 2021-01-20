@@ -1,23 +1,23 @@
 warning: Type
- --> $DIR/tests/visualize/exprs/array/from.ts:5:30
+ --> $DIR/tests/visualize/exprs/array/from.ts:6:30
   |
-5 | export const c1 = Array.from(a)
+6 | export const c1 = Array.from(a)
   |                              ^
   |
   = note: Set<A>
 
 warning: Type
- --> $DIR/tests/visualize/exprs/array/from.ts:5:19
+ --> $DIR/tests/visualize/exprs/array/from.ts:6:19
   |
-5 | export const c1 = Array.from(a)
+6 | export const c1 = Array.from(a)
   |                   ^^^^^
   |
   = note: ArrayConstructor
 
 warning: Type
- --> $DIR/tests/visualize/exprs/array/from.ts:5:19
+ --> $DIR/tests/visualize/exprs/array/from.ts:6:19
   |
-5 | export const c1 = Array.from(a)
+6 | export const c1 = Array.from(a)
   |                   ^^^^^^^^^^^^^
   |
   = note: A[]
