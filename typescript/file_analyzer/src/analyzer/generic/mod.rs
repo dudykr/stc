@@ -514,7 +514,8 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Interface(param) => match arg {
-                Type::Interface(arg) => return self.infer_type_interface_and_interface(inferred, param, arg),
+                Type::Interface(arg) => return self.infer_type_using_interface_and_interface(inferred, param, arg),
+                _ => {}
             },
 
             Type::Infer(param) => {
@@ -1607,77 +1608,6 @@ impl Analyzer<'_, '_> {
         print_backtrace();
 
         Ok(false)
-    }
-
-    /// Compare fields.
-    fn infer_type_lit(&mut self, inferred: &mut InferData, param: &TypeLit, arg: &TypeLit) -> ValidationResult<()> {
-        for p in &param.members {
-            for a in &arg.members {
-                //
-
-                match p {
-                    TypeElement::Property(p) => match a {
-                        TypeElement::Property(a) => {
-                            if p.key.type_eq(&a.key) {
-                                if let Some(pt) = &p.type_ann {
-                                    if let Some(at) = &a.type_ann {
-                                        self.infer_type(inferred, pt, at)?;
-                                    } else {
-                                        dbg!((&p, &a));
-                                    }
-                                } else {
-                                    dbg!((&p, &a));
-                                }
-                            }
-                        }
-                        _ => {}
-                    },
-                    TypeElement::Index(param) => match a {
-                        TypeElement::Property(arg) => {
-                            if param.params.len() != 1 {
-                                unimplemented!("handling of IndexSignature with zero / multiple parameters");
-                            }
-
-                            if let Some(p_type_ann) = &param.type_ann {
-                                if let Some(a_type_ann) = &arg.type_ann {
-                                    self.infer_type(inferred, p_type_ann, a_type_ann)?;
-                                }
-                            }
-                        }
-                        TypeElement::Index(arg) => {
-                            if param.params.type_eq(&arg.params) {
-                                if let Some(pt) = &param.type_ann {
-                                    if let Some(at) = &arg.type_ann {
-                                        self.infer_type(inferred, pt, at)?;
-                                    }
-                                } else {
-                                    dbg!((&param, &arg));
-                                }
-                            } else {
-                                dbg!((&param, &arg));
-                            }
-                        }
-                        _ => {}
-                    },
-
-                    TypeElement::Method(p) => match a {
-                        TypeElement::Method(a) => {
-                            if p.key.type_eq(&a.key) {
-                                self.infer_type_of_fn_params(inferred, &p.params, &a.params)?;
-                            }
-                        }
-                        _ => {}
-                    },
-
-                    TypeElement::Constructor(..) => {
-                        // TODO
-                    }
-                    _ => unimplemented!("TypeElement({:#?}) in type literal", p),
-                }
-            }
-        }
-
-        Ok(())
     }
 
     fn infer_tuple(&mut self, inferred: &mut InferData, param: &Tuple, arg: &Tuple) -> ValidationResult<()> {
