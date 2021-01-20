@@ -624,6 +624,7 @@ impl Analyzer<'_, '_> {
                     .iter()
                     .map(|to| self.assign_inner(&to, rhs, opts))
                     .collect::<Vec<_>>();
+                dbg!(&results);
                 if results.iter().any(Result::is_ok) {
                     return Ok(());
                 }
@@ -1378,10 +1379,7 @@ impl Analyzer<'_, '_> {
             match m {
                 // TODO: Check type of the index.
                 TypeElement::Index(..) => {
-                    return Err(Error::Unimplemented {
-                        span,
-                        msg: format!("Assignment to index"),
-                    })
+                    // TODO: Verify
                 }
                 TypeElement::Call(..) => {
                     //
