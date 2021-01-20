@@ -585,9 +585,7 @@ impl Analyzer<'_, '_> {
                 });
 
                 for c in candidates {
-                    if c.params.len() == args.len() {
-                        return self.check_method_call(span, &c, type_args, args, &arg_types, spread_arg_types);
-                    }
+                    return self.check_method_call(span, &c, type_args, args, &arg_types, spread_arg_types);
                 }
 
                 unimplemented!("multiple methods with same name and same number of arguments")
