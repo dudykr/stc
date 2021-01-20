@@ -1020,9 +1020,6 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult<()> {
         let span = opts.span;
         // debug_assert!(!span.is_dummy());
-        if lhs.is_empty() {
-            return Ok(());
-        }
 
         let mut errors = Errors::default();
         let mut missing_fields = vec![];
@@ -1072,12 +1069,7 @@ impl Analyzer<'_, '_> {
                     };
                 }
 
-                _ => {
-                    return Err(Error::Unimplemented {
-                        span,
-                        msg: format!("assign_to_type_elements"),
-                    })
-                }
+                _ => {}
             }
         }
 
@@ -1325,7 +1317,7 @@ impl Analyzer<'_, '_> {
         if let Some(l_key) = m.key() {
             for rm in rhs_members {
                 if let Some(r_key) = rm.key() {
-                    if l_key.eq_ignore_span(&*r_key) {
+                    if l_key.type_eq(&*r_key) {
                         match m {
                             TypeElement::Property(ref el) => match rm {
                                 TypeElement::Property(ref r_el) => {
@@ -1343,12 +1335,11 @@ impl Analyzer<'_, '_> {
                             TypeElement::Method(ref lm) => match rm {
                                 TypeElement::Method(ref rm) => {
                                     //
-                                    if count_required_params(&lm.params) > count_required_params(&rm.params) {
-                                        unimplemented!("assignment: method property in type literal")
-                                    }
 
-                                    if lm.key.eq_ignore_span(&rm.key) {
-                                        return Ok(());
+                                    for lp in &lm.params {
+                                        for rp in &rm.params {
+                                            self.assign_inner(&lp.ty, &rp.ty, opts)?;
+                                        }
                                     }
 
                                     // for (i, r) in
