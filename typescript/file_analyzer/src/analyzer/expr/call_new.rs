@@ -534,6 +534,8 @@ impl Analyzer<'_, '_> {
             self.check_type_element_for_call(kind, &mut candidates, m, prop);
         }
 
+        // TODO: Move this to caller to prevent checking members of `Object` every time
+        // we check parent interface.
         {
             // Handle methods from `interface Object`
             let i = self
