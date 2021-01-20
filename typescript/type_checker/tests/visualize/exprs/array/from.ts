@@ -1,4 +1,5 @@
-type A = [];
+
+export class A { }
 
 declare const a: Set<A>;
 
