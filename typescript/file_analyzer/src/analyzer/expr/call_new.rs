@@ -572,6 +572,18 @@ impl Analyzer<'_, '_> {
             }
             _ => {
                 //
+                candidates.sort_by_cached_key(|method: &MethodSignature| {
+                    self.check_call_args(
+                        span,
+                        method.type_params.as_ref().map(|v| &*v.params),
+                        &method.params,
+                        type_args,
+                        args,
+                        arg_types,
+                        spread_arg_types,
+                    )
+                });
+
                 for c in candidates {
                     if c.params.len() == args.len() {
                         return self.check_method_call(span, &c, type_args, args, &arg_types, spread_arg_types);
