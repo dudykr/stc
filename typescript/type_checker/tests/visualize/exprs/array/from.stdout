@@ -20,5 +20,5 @@ warning: Type
 6 | export const c1 = Array.from(a)
   |                   ^^^^^^^^^^^^^
   |
-  = note: (number | string)[]
+  = note: A[]
 
