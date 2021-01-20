@@ -310,15 +310,20 @@ impl Analyzer<'_, '_> {
                 _ => {}
             },
 
-            Type::Ref(left) => match rhs {
-                Type::Ref(right) => {
-                    // We need this as type may recurse, and thus cannot be handled by expander.
-                    if left.type_name.type_eq(&right.type_name) && left.type_args.type_eq(&right.type_args) {
-                        return Ok(());
+            Type::Ref(left) => {
+                match rhs {
+                    Type::Ref(right) => {
+                        // We need this as type may recurse, and thus cannot be handled by expander.
+                        if left.type_name.type_eq(&right.type_name) && left.type_args.type_eq(&right.type_args) {
+                            return Ok(());
+                        }
                     }
+                    _ => {}
                 }
-                _ => {}
-            },
+
+                let to = self.expand_top_ref(span, Cow::Borrowed(to))?;
+                return self.assign_inner(&to, rhs, opts);
+            }
 
             Type::Keyword(RTsKeywordType {
                 kind: TsKeywordTypeKind::TsNullKeyword,
@@ -457,6 +462,11 @@ impl Analyzer<'_, '_> {
         }
 
         match *rhs {
+            Type::Ref(..) => {
+                let rhs = self.expand_top_ref(span, Cow::Borrowed(rhs))?;
+                return self.assign_inner(to, &rhs, opts);
+            }
+
             Type::Infer(..) => fail!(),
 
             // When strict null check is disabled, we can assign null / undefined to many things.
