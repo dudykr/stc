@@ -25,6 +25,7 @@ use super::TypeParam;
 use super::TypeParamDecl;
 use super::TypeParamInstantiation;
 use super::Union;
+use crate::Id;
 use crate::Key;
 use crate::{OptionalType, RestType, StaticThis, Symbol};
 use rnode::NodeId;
@@ -538,11 +539,11 @@ impl From<Operator> for RTsTypeOperator {
 
 impl From<super::Class> for RTsType {
     fn from(t: super::Class) -> Self {
-        // TODO: Handle generics
-        RTsTypeLit {
+        RTsTypeRef {
             node_id: NodeId::invalid(),
             span: t.span,
-            members: t.body.into_iter().map(From::from).collect(),
+            type_name: RTsEntityName::Ident(t.name.unwrap_or(Id::word("anonymous class".into())).into()),
+            type_params: None,
         }
         .into()
     }
