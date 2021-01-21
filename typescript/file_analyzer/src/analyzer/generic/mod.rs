@@ -772,7 +772,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Mapped(param) => {
-                if self.infer_mapped(inferred, param, arg)? {
+                if self.infer_mapped(span, inferred, param, arg)? {
                     dbg!();
                     return Ok(());
                 }
@@ -878,11 +878,11 @@ impl Analyzer<'_, '_> {
                 match *arg {
                     Type::Ref(..) => {}
                     _ => {
-                        return self.infer_type(inferred, param, &arg);
+                        return self.infer_type(span, inferred, param, &arg);
                     }
                 }
             }
-            Type::Alias(arg) => return self.infer_type(inferred, param, &arg.ty),
+            Type::Alias(arg) => return self.infer_type(span, inferred, param, &arg.ty),
             _ => {}
         }
 
@@ -917,6 +917,7 @@ impl Analyzer<'_, '_> {
 
     fn infer_class(
         &mut self,
+        span: Span,
         inferred: &mut InferData,
         param: &stc_ts_types::Class,
         arg: &stc_ts_types::Class,
@@ -925,7 +926,13 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    fn infer_mapped(&mut self, inferred: &mut InferData, param: &Mapped, arg: &Type) -> ValidationResult<bool> {
+    fn infer_mapped(
+        &mut self,
+        span: Span,
+        inferred: &mut InferData,
+        param: &Mapped,
+        arg: &Type,
+    ) -> ValidationResult<bool> {
         match arg.normalize() {
             Type::Ref(arg) => {
                 let ctx = Ctx {
@@ -940,14 +947,14 @@ impl Analyzer<'_, '_> {
 
                 match arg.normalize() {
                     Type::Ref(..) => return Ok(false),
-                    _ => return self.infer_mapped(inferred, param, &arg),
+                    _ => return self.infer_mapped(span, inferred, param, &arg),
                 }
             }
             Type::Mapped(arg) => {
                 if param.type_param.name == arg.type_param.name {
                     if let Some(param_ty) = &param.ty {
                         if let Some(arg_ty) = &arg.ty {
-                            self.infer_type(inferred, param_ty, arg_ty)?;
+                            self.infer_type(span, inferred, param_ty, arg_ty)?;
                         }
                     }
 
@@ -1085,7 +1092,7 @@ impl Analyzer<'_, '_> {
                                             self.mapped_type_param_name = vec![name.clone()];
 
                                             let mut data = InferData::default();
-                                            self.infer_type(&mut data, &param_ty, arg_prop_ty)?;
+                                            self.infer_type(span, &mut data, &param_ty, arg_prop_ty)?;
                                             let inferred_ty = data.type_params.remove(&name);
 
                                             self.mapped_type_param_name = old;
@@ -1115,7 +1122,7 @@ impl Analyzer<'_, '_> {
                                                     to: param_ty,
                                                 });
 
-                                            self.infer_type(inferred, &mapped_param_ty, arg_prop_ty)?;
+                                            self.infer_type(span, inferred, &mapped_param_ty, arg_prop_ty)?;
                                         }
 
                                         // inferred.type_elements.remove(&name)
@@ -1163,7 +1170,7 @@ impl Analyzer<'_, '_> {
                             self.mapped_type_param_name = vec![name.clone()];
 
                             let mut data = InferData::default();
-                            self.infer_type(&mut data, &param_ty, &arg.elem_type)?;
+                            self.infer_type(span, &mut data, &param_ty, &arg.elem_type)?;
                             let mut inferred_ty = data.type_params.remove(&name);
 
                             self.mapped_type_param_name = old;
@@ -1207,11 +1214,11 @@ impl Analyzer<'_, '_> {
                                         span,
                                         ty: box Type::Array(arr),
                                     }) => {
-                                        self.infer_type(&mut data, &param_ty, &arr.elem_type)?;
+                                        self.infer_type(span, &mut data, &param_ty, &arr.elem_type)?;
                                         Some(*span)
                                     }
                                     _ => {
-                                        self.infer_type(&mut data, &param_ty, &element.ty)?;
+                                        self.infer_type(span, &mut data, &param_ty, &element.ty)?;
                                         None
                                     }
                                 };
