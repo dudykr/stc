@@ -58,17 +58,17 @@ impl Analyzer<'_, '_> {
                         _ => {}
                     },
                     TypeElement::Index(param) => match a {
-                        TypeElement::Property(arg) => {
-                            if param.params.len() != 1 {
-                                unimplemented!("handling of IndexSignature with zero / multiple parameters");
-                            }
+                        // TypeElement::Property(arg) => {
+                        //     if param.params.len() != 1 {
+                        //         unimplemented!("handling of IndexSignature with zero / multiple parameters");
+                        //     }
 
-                            if let Some(p_type_ann) = &param.type_ann {
-                                if let Some(a_type_ann) = &arg.type_ann {
-                                    self.infer_type(inferred, p_type_ann, a_type_ann)?;
-                                }
-                            }
-                        }
+                        //     if let Some(p_type_ann) = &param.type_ann {
+                        //         if let Some(a_type_ann) = &arg.type_ann {
+                        //             self.infer_type(inferred, p_type_ann, a_type_ann)?;
+                        //         }
+                        //     }
+                        // }
                         TypeElement::Index(arg) => {
                             if param.params.type_eq(&arg.params) {
                                 if let Some(pt) = &param.type_ann {
