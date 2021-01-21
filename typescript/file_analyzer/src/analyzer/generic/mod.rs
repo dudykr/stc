@@ -734,7 +734,7 @@ impl Analyzer<'_, '_> {
                     };
                     let param = self
                         .with_ctx(ctx)
-                        .expand_fully(arg.span(), box Type::Ref(param.clone()), true)?;
+                        .expand_fully(span, box Type::Ref(param.clone()), true)?;
                     match *param {
                         Type::Ref(..) => {
                             dbg!();
@@ -874,7 +874,7 @@ impl Analyzer<'_, '_> {
                     ignore_expand_prevention_for_top: true,
                     ..self.ctx
                 };
-                let arg = self.with_ctx(ctx).expand_fully(arg.span(), box arg.clone(), true)?;
+                let arg = self.with_ctx(ctx).expand_fully(span, box arg.clone(), true)?;
                 match *arg {
                     Type::Ref(..) => {}
                     _ => {
