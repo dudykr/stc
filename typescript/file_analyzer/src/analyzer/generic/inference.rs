@@ -4,17 +4,19 @@ use crate::ValidationResult;
 use stc_ts_types::Interface;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
+use swc_common::Span;
 use swc_common::Spanned;
 use swc_common::TypeEq;
 
 impl Analyzer<'_, '_> {
     pub(super) fn infer_type_using_interface_and_interface(
         &mut self,
+        span: Span,
         inferred: &mut InferData,
         param: &Interface,
         arg: &Interface,
     ) -> ValidationResult<()> {
-        self.infer_type_using_type_elements_and_type_elements(inferred, &param.body, &arg.body)?;
+        self.infer_type_using_type_elements_and_type_elements(spam, inferred, &param.body, &arg.body)?;
 
         // TODO: Handle parents.
 
@@ -24,15 +26,17 @@ impl Analyzer<'_, '_> {
     /// Compare fields.
     pub(super) fn infer_type_lit(
         &mut self,
+        span: Span,
         inferred: &mut InferData,
         param: &TypeLit,
         arg: &TypeLit,
     ) -> ValidationResult<()> {
-        self.infer_type_using_type_elements_and_type_elements(inferred, &param.members, &arg.members)
+        self.infer_type_using_type_elements_and_type_elements(spam, inferred, &param.members, &arg.members)
     }
 
     fn infer_type_using_type_elements_and_type_elements(
         &mut self,
+        span: Span,
         inferred: &mut InferData,
         param: &[TypeElement],
         arg: &[TypeElement],

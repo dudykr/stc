@@ -396,7 +396,7 @@ impl Analyzer<'_, '_> {
     ///
     ///
     /// TODO: Optimize
-    fn infer_type(&mut self, inferred: &mut InferData, param: &Type, arg: &Type) -> ValidationResult<()> {
+    fn infer_type(&mut self, span: Span, inferred: &mut InferData, param: &Type, arg: &Type) -> ValidationResult<()> {
         if self.is_builtin {
             return Ok(());
         }
@@ -482,6 +482,8 @@ impl Analyzer<'_, '_> {
                 }
 
                 slog::info!(self.logger, "({}): infer: {} = {:?}", self.scope.depth(), name, arg);
+                print_backtrace();
+
                 match inferred.type_params.entry(name.clone()) {
                     Entry::Occupied(e) => {
                         // Use this for type inference.
