@@ -248,7 +248,7 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
         };
         let span = ty.span();
 
-        slog::debug!(self.logger, "generic_expand: {:?}", &ty);
+        slog::trace!(self.logger, "generic_expand: {:?}", &ty);
         let ty = ty.foldable();
 
         match ty {
