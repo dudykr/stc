@@ -4,6 +4,7 @@ use crate::ValidationResult;
 use stc_ts_types::Interface;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
+use swc_common::Spanned;
 use swc_common::TypeEq;
 
 impl Analyzer<'_, '_> {
@@ -13,6 +14,7 @@ impl Analyzer<'_, '_> {
         param: &Interface,
         arg: &Interface,
     ) -> ValidationResult<()> {
+        dbg!(&param.name, &arg.name);
         self.infer_type_using_type_elements_and_type_elements(inferred, &param.body, &arg.body)?;
 
         // TODO: Handle parents.
@@ -87,8 +89,14 @@ impl Analyzer<'_, '_> {
 
                     TypeElement::Method(p) => match a {
                         TypeElement::Method(a) => {
-                            if p.key.type_eq(&a.key) {
+                            if self.assign(&p.key.ty(), &a.key.ty(), a.key.span()).is_ok() {
                                 self.infer_type_of_fn_params(inferred, &p.params, &a.params)?;
+
+                                if let Some(p_ret) = &p.ret_ty {
+                                    if let Some(a_ret) = &a.ret_ty {
+                                        self.infer_type(inferred, &p_ret, &a_ret)?;
+                                    }
+                                }
                             }
                         }
                         _ => {}
