@@ -368,7 +368,7 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                 return *alias.ty.fold_with(self);
             }
 
-            Type::Interface(mut i) if self.fully => {
+            Type::Interface(mut i) => {
                 i = i.fold_with(self);
 
                 if let Some(..) = &i.type_params {
@@ -378,19 +378,7 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                     );
                 }
 
-                // TODO: Handle super
-                if !i.extends.is_empty() {
-                    slog::error!(
-                        self.logger,
-                        "not yet implemented: expanding interface which has a parent"
-                    );
-                    return Type::Interface(i);
-                }
-
-                return Type::TypeLit(TypeLit {
-                    span: i.span,
-                    members: i.body,
-                });
+                return Type::Interface(i);
             }
             Type::Class(mut c) => {
                 c = c.fold_with(self);
@@ -625,7 +613,6 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
             | Type::Constructor(..)
             | Type::Enum(..)
             | Type::EnumVariant(..)
-            | Type::Interface(..)
             | Type::Namespace(..)
             | Type::Module(..)
             | Type::ClassInstance(..)
