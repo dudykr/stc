@@ -1371,7 +1371,7 @@ impl Analyzer<'_, '_> {
                             let revesed_param_ty = param_ty.clone().fold_with(&mut v);
 
                             if v.did_work {
-                                self.infer_type(inferred, &revesed_param_ty, arg)?;
+                                self.infer_type(span, inferred, &revesed_param_ty, arg)?;
                                 self.mapped_type_param_name = old;
 
                                 return Ok(true);
@@ -1388,7 +1388,7 @@ impl Analyzer<'_, '_> {
                                             TypeElement::Property(p) => {
                                                 //
                                                 if let Some(ref type_ann) = p.type_ann {
-                                                    self.infer_type(inferred, &param_ty, &type_ann)?;
+                                                    self.infer_type(span, inferred, &param_ty, &type_ann)?;
                                                 }
 
                                                 for (id, ty) in &inferred.type_params {
@@ -1502,7 +1502,7 @@ impl Analyzer<'_, '_> {
                                                             );
                                                             //
                                                             if let Some(ref type_ann) = p.type_ann {
-                                                                self.infer_type(inferred, &param_ty, &type_ann)?;
+                                                                self.infer_type(span, inferred, &param_ty, &type_ann)?;
                                                             }
                                                             members.push(TypeElement::Property(PropertySignature {
                                                                 optional,
@@ -1570,7 +1570,7 @@ impl Analyzer<'_, '_> {
                                 .clone()
                                 .fold_with(&mut MappedReverser::default());
 
-                            self.infer_type(inferred, &revesed_param_ty, arg)?;
+                            self.infer_type(span, inferred, &revesed_param_ty, arg)?;
 
                             return Ok(true);
                         }
@@ -1603,7 +1603,7 @@ impl Analyzer<'_, '_> {
                                 let revesed_param_ty = param_ty.clone().fold_with(&mut MappedReverser::default());
                                 print_type(&self.logger, "reversed", &self.cm, &revesed_param_ty);
 
-                                self.infer_type(inferred, &revesed_param_ty, arg)?;
+                                self.infer_type(span, inferred, &revesed_param_ty, arg)?;
 
                                 return Ok(true);
                             }
@@ -1637,7 +1637,7 @@ impl Analyzer<'_, '_> {
             .zip_longest(arg.elems.iter().map(|element| &element.ty))
         {
             match item {
-                EitherOrBoth::Both(param, arg) => self.infer_type(inferred, param, arg)?,
+                EitherOrBoth::Both(param, arg) => self.infer_type(span, inferred, param, arg)?,
                 EitherOrBoth::Left(_) => {}
                 EitherOrBoth::Right(_) => {}
             }
@@ -1653,7 +1653,7 @@ impl Analyzer<'_, '_> {
         param: &FnParam,
         arg: &FnParam,
     ) -> ValidationResult<()> {
-        self.infer_type(inferred, &param.ty, &arg.ty)
+        self.infer_type(span, inferred, &param.ty, &arg.ty)
     }
 
     fn infer_type_of_fn_params(
@@ -1664,7 +1664,7 @@ impl Analyzer<'_, '_> {
         args: &[FnParam],
     ) -> ValidationResult<()> {
         for (param, arg) in params.iter().zip(args) {
-            self.infer_type_of_fn_param(inferred, param, arg)?
+            self.infer_type_of_fn_param(span, inferred, param, arg)?
         }
 
         if params.len() > args.len() {
@@ -1765,7 +1765,7 @@ impl Analyzer<'_, '_> {
         let mut inferred = InferData::default();
 
         if let Some(type_ann) = type_ann {
-            self.infer_type(&mut inferred, &ty, type_ann)?;
+            self.infer_type(span, &mut inferred, &ty, type_ann)?;
             slog::info!(
                 self.logger,
                 "renaming type parameters based on type annotation provided by user\ntype_ann = {:?}",

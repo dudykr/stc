@@ -2111,8 +2111,10 @@ impl Fold<Type> for Expander<'_, '_, '_> {
                                                 _ => {}
                                             };
                                         }
-                                        let type_params =
-                                            self.analyzer.infer_ts_infer_types(&extends_type, &element.ty).ok();
+                                        let type_params = self
+                                            .analyzer
+                                            .infer_ts_infer_types(span, &extends_type, &element.ty)
+                                            .ok();
                                         if let Some(type_params) = type_params {
                                             ty = self.analyzer.expand_type_params(&type_params, ty).unwrap();
                                         }
@@ -2136,7 +2138,7 @@ impl Fold<Type> for Expander<'_, '_, '_> {
                         let ty = if v { true_type } else { false_type };
                         let (_, mut ty) = unwrap_type(&**ty);
 
-                        let type_params = self.analyzer.infer_ts_infer_types(&extends_type, &obj_type).ok();
+                        let type_params = self.analyzer.infer_ts_infer_types(span, &extends_type, &obj_type).ok();
                         if let Some(type_params) = type_params {
                             ty = *self.analyzer.expand_type_params(&type_params, box ty).unwrap();
                         }
@@ -2195,7 +2197,10 @@ impl Fold<Type> for Expander<'_, '_, '_> {
                 ..
             }) => {
                 // We need to handle infer type.
-                let type_params = self.analyzer.infer_ts_infer_types(&extends_type, &check_type).ok();
+                let type_params = self
+                    .analyzer
+                    .infer_ts_infer_types(span, &extends_type, &check_type)
+                    .ok();
 
                 if let Some(type_params) = type_params {
                     true_type = self.analyzer.expand_type_params(&type_params, true_type).unwrap();
