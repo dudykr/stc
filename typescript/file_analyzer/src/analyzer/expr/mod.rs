@@ -1283,7 +1283,7 @@ impl Analyzer<'_, '_> {
                         span,
                         self.ctx.module_id,
                         &super_ty.expr,
-                        super_ty.type_args.clone(),
+                        super_ty.type_args.as_ref(),
                     )?;
 
                     // TODO: Check if multiple interface has same property.
@@ -1792,7 +1792,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         ctxt: ModuleId,
         n: &RTsEntityName,
-        type_args: Option<TypeParamInstantiation>,
+        type_args: Option<&TypeParamInstantiation>,
     ) -> ValidationResult {
         match *n {
             RTsEntityName::Ident(ref i) => {
@@ -1802,7 +1802,7 @@ impl Analyzer<'_, '_> {
                         return Ok(Box::new(Type::Array(Array {
                             span,
                             // TODO: Check length (After implementing error recovery for the parser)
-                            elem_type: type_args.params.into_iter().next().unwrap(),
+                            elem_type: type_args.clone().params.into_iter().next().unwrap(),
                         })));
                     }
                 }
@@ -1859,7 +1859,7 @@ impl Analyzer<'_, '_> {
                     span,
                     ctxt: self.ctx.module_id,
                     type_name: RTsEntityName::Ident(i.clone()),
-                    type_args,
+                    type_args: type_args.cloned(),
                 }))
             }
             RTsEntityName::TsQualifiedName(ref qname) => {
@@ -1980,7 +1980,7 @@ impl Analyzer<'_, '_> {
                         parent.span,
                         self.ctx.module_id,
                         &parent.expr,
-                        parent.type_args.clone(),
+                        parent.type_args.as_ref(),
                     );
 
                     let parent_ty = match parent_ty {

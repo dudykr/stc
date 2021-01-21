@@ -823,7 +823,7 @@ impl Analyzer<'_, '_> {
 
                 for parent in extends {
                     let parent =
-                        self.type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr, parent.type_args.clone())?;
+                        self.type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr, parent.type_args.as_ref())?;
 
                     self.assign_with_opts(opts, &parent, &rhs)?;
                 }

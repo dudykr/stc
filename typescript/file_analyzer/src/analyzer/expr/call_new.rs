@@ -799,12 +799,8 @@ impl Analyzer<'_, '_> {
                     Err(first_err) => {
                         //  Check parent interface
                         for parent in &i.extends {
-                            let parent = self.type_of_ts_entity_name(
-                                span,
-                                self.ctx.module_id,
-                                &parent.expr,
-                                type_args.cloned(),
-                            )?;
+                            let parent =
+                                self.type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr, type_args)?;
 
                             if let Ok(v) =
                                 self.extract(span, parent, kind, args, arg_types, spread_arg_types, type_args)

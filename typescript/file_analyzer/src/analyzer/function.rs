@@ -199,7 +199,7 @@ impl Analyzer<'_, '_> {
     /// If the referred type has default type parameter, we have to include it
     /// in function type of output (.d.ts)
     fn qualify_ref_type_args(&mut self, span: Span, mut ty: Ref) -> ValidationResult<Ref> {
-        let actual_ty = self.type_of_ts_entity_name(span, self.ctx.module_id, &ty.type_name, ty.type_args.clone())?;
+        let actual_ty = self.type_of_ts_entity_name(span, self.ctx.module_id, &ty.type_name, ty.type_args.as_ref())?;
 
         let type_params = match actual_ty.foldable() {
             Type::Alias(Alias {
