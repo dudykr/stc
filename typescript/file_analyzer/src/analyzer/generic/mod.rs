@@ -1211,11 +1211,11 @@ impl Analyzer<'_, '_> {
                                 let mut data = InferData::default();
                                 let rest = match &*element.ty {
                                     Type::Rest(RestType {
-                                        span,
+                                        span: rest_span,
                                         ty: box Type::Array(arr),
                                     }) => {
                                         self.infer_type(span, &mut data, &param_ty, &arr.elem_type)?;
-                                        Some(*span)
+                                        Some(*rest_span)
                                     }
                                     _ => {
                                         self.infer_type(span, &mut data, &param_ty, &element.ty)?;
