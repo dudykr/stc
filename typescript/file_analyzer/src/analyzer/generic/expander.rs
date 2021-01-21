@@ -377,6 +377,7 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                         "An interface has type parameters. It may not be fully expanded."
                     );
                 }
+                i.type_params = None;
 
                 return Type::Interface(i);
             }
