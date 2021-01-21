@@ -713,23 +713,24 @@ impl Analyzer<'_, '_> {
                     }
                     return Ok(());
                 }
-                Type::Param(arg) => match &param.type_name {
-                    RTsEntityName::TsQualifiedName(_) => {}
-                    RTsEntityName::Ident(param) => {
-                        inferred
-                            .type_params
-                            .insert(param.clone().into(), box Type::Param(arg.clone()));
-                        return Ok(());
-                    }
-                },
+                // Type::Param(arg) => match &param.type_name {
+                //     RTsEntityName::TsQualifiedName(_) => {}
+                //     RTsEntityName::Ident(param) => {
+                //         inferred
+                //             .type_params
+                //             .insert(param.clone().into(), box Type::Param(arg.clone()));
+                //         return Ok(());
+                //     }
+                // },
                 _ => {
                     // TODO: Expand children first or add expansion information to inferred.
                     let ctx = Ctx {
                         preserve_ref: false,
                         ignore_expand_prevention_for_top: true,
-                        ignore_expand_prevention_for_all: true,
+                        ignore_expand_prevention_for_all: false,
                         ..self.ctx
                     };
+                    slog::debug!(self.logger, "infer_type: expanding param");
                     let param = self
                         .with_ctx(ctx)
                         .expand_fully(span, box Type::Ref(param.clone()), true)?;
