@@ -206,10 +206,6 @@ impl Analyzer<'_, '_> {
 
         let to = to.normalize();
         let rhs = rhs.normalize();
-        if cfg!(debug_assertions) && span.lo() == swc_common::BytePos(0) {
-            dbg!(span);
-            print_backtrace();
-        }
 
         macro_rules! fail {
             () => {{
