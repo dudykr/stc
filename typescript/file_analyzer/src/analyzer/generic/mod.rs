@@ -518,7 +518,9 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Interface(param) => match arg {
-                Type::Interface(arg) => return self.infer_type_using_interface_and_interface(inferred, param, arg),
+                Type::Interface(arg) => {
+                    return self.infer_type_using_interface_and_interface(span, inferred, param, arg)
+                }
                 _ => {}
             },
 
@@ -539,7 +541,7 @@ impl Analyzer<'_, '_> {
                         }) => {
                             let mut arg = arg.clone();
                             self.prevent_generalize(&mut arg);
-                            return self.infer_type(inferred, &arr.elem_type, &arg);
+                            return self.infer_type(span, inferred, &arr.elem_type, &arg);
                         }
                         _ => {}
                     },
@@ -550,11 +552,11 @@ impl Analyzer<'_, '_> {
                     Type::Array(Array {
                         elem_type: arg_elem_type,
                         ..
-                    }) => return self.infer_type(inferred, &arr.elem_type, &arg_elem_type),
+                    }) => return self.infer_type(span, inferred, &arr.elem_type, &arg_elem_type),
 
                     Type::Tuple(arg) => {
                         let arg = Type::union(arg.elems.iter().map(|element| &element.ty).cloned());
-                        return self.infer_type(inferred, &arr.elem_type, &arg);
+                        return self.infer_type(span, inferred, &arr.elem_type, &arg);
                     }
 
                     _ => {}
@@ -588,8 +590,8 @@ impl Analyzer<'_, '_> {
             // }
             Type::Function(p) => match arg {
                 Type::Function(a) => {
-                    self.infer_type_of_fn_params(inferred, &p.params, &a.params)?;
-                    self.infer_type(inferred, &p.ret_ty, &a.ret_ty)?;
+                    self.infer_type_of_fn_params(span, inferred, &p.params, &a.params)?;
+                    self.infer_type(span, inferred, &p.ret_ty, &a.ret_ty)?;
 
                     if let Some(arg_type_params) = &a.type_params {
                         self.rename_inferred(inferred, arg_type_params)?;
@@ -602,7 +604,7 @@ impl Analyzer<'_, '_> {
             },
 
             Type::TypeLit(param) => match arg {
-                Type::TypeLit(arg) => return self.infer_type_lit(inferred, param, arg),
+                Type::TypeLit(arg) => return self.infer_type_lit(span, inferred, param, arg),
 
                 Type::IndexedAccessType(arg_iat) => {
                     let arg_obj_ty = self
@@ -630,7 +632,7 @@ impl Analyzer<'_, '_> {
                                             if let Some(type_ann) = &p.type_ann {
                                                 // TODO: Change p.ty
 
-                                                self.infer_type(inferred, &type_ann, arg)?;
+                                                self.infer_type(span, inferred, &type_ann, arg)?;
                                             }
 
                                             new_lit.members.push(TypeElement::Property(p));
@@ -660,7 +662,7 @@ impl Analyzer<'_, '_> {
             },
 
             Type::Tuple(param) => match arg {
-                Type::Tuple(arg) => return self.infer_tuple(inferred, param, arg),
+                Type::Tuple(arg) => return self.infer_tuple(span, inferred, param, arg),
                 _ => {
                     dbg!();
                 }
@@ -702,7 +704,7 @@ impl Analyzer<'_, '_> {
                     {
                         match pa {
                             EitherOrBoth::Both(param, arg) => {
-                                self.infer_type(inferred, param, arg)?;
+                                self.infer_type(span, inferred, param, arg)?;
                             }
                             _ => {
                                 unreachable!(
@@ -739,7 +741,7 @@ impl Analyzer<'_, '_> {
 
                             slog::info!(self.logger, "Ref: {:?}", param);
                         }
-                        _ => return self.infer_type(inferred, &param, arg),
+                        _ => return self.infer_type(span, inferred, &param, arg),
                     }
                 }
             },
@@ -755,14 +757,14 @@ impl Analyzer<'_, '_> {
             Type::Union(param) => {
                 //
                 for p in &param.types {
-                    self.infer_type(inferred, p, arg)?;
+                    self.infer_type(span, inferred, p, arg)?;
                 }
 
                 return Ok(());
             }
 
             Type::Alias(param) => {
-                self.infer_type(inferred, &param.ty, arg)?;
+                self.infer_type(span, inferred, &param.ty, arg)?;
                 if let Some(type_params) = &param.type_params {
                     self.rename_inferred(inferred, type_params)?;
                 }
@@ -780,7 +782,7 @@ impl Analyzer<'_, '_> {
                 match arg {
                     Type::IndexedAccessType(arg) => {
                         if param.obj_type.eq_ignore_span(&arg.obj_type) {
-                            self.infer_type(inferred, &param.index_type, &arg.index_type)?;
+                            self.infer_type(span, inferred, &param.index_type, &arg.index_type)?;
                             return Ok(());
                         }
                     }
@@ -824,7 +826,7 @@ impl Analyzer<'_, '_> {
 
             Type::Intersection(param) => {
                 if param.types.len() == 1 {
-                    return self.infer_type(inferred, &param.types[0], arg);
+                    return self.infer_type(span, inferred, &param.types[0], arg);
                 }
             }
 
@@ -833,10 +835,10 @@ impl Analyzer<'_, '_> {
                     for member in &arg_class.body {
                         match member {
                             stc_ts_types::ClassMember::Constructor(constructor) => {
-                                self.infer_type_of_fn_params(inferred, &param.params, &constructor.params)?;
+                                self.infer_type_of_fn_params(span, inferred, &param.params, &constructor.params)?;
 
                                 if let Some(ret_ty) = &constructor.ret_ty {
-                                    return self.infer_type(inferred, &param.type_ann, ret_ty);
+                                    return self.infer_type(span, inferred, &param.type_ann, ret_ty);
                                 }
                             }
                             stc_ts_types::ClassMember::Method(_) => {}
@@ -845,13 +847,13 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    return self.infer_type(inferred, &param.type_ann, arg);
+                    return self.infer_type(span, inferred, &param.type_ann, arg);
                 }
                 _ => {}
             },
 
             Type::Class(param) => match arg {
-                Type::Class(arg) => return self.infer_class(inferred, param, arg),
+                Type::Class(arg) => return self.infer_class(span, inferred, param, arg),
                 _ => {}
             },
 
