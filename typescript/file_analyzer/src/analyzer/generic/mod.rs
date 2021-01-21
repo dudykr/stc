@@ -260,12 +260,13 @@ impl Analyzer<'_, '_> {
 
             if !is_rest {
                 if let Some(arg) = args.get(idx) {
-                    self.infer_type(&mut inferred, &p.ty, &arg.ty)?;
+                    self.infer_type(span, &mut inferred, &p.ty, &arg.ty)?;
                 }
             } else {
                 match p.ty.normalize() {
                     Type::Param(param) => {
                         self.infer_type(
+                            span,
                             &mut inferred,
                             &p.ty,
                             &Type::Tuple(Tuple {
@@ -286,13 +287,13 @@ impl Analyzer<'_, '_> {
                     Type::Array(p_ty) => {
                         // Handle varargs. This result in union of all types.
                         for arg in &args[idx..] {
-                            self.infer_type(&mut inferred, &p_ty.elem_type, &arg.ty)?;
+                            self.infer_type(span, &mut inferred, &p_ty.elem_type, &arg.ty)?;
                         }
                     }
                     _ => {
                         // Handle varargs
                         for arg in &args[idx..] {
-                            self.infer_type(&mut inferred, &p.ty, &arg.ty)?;
+                            self.infer_type(span, &mut inferred, &p.ty, &arg.ty)?;
                         }
                     }
                 }
@@ -384,11 +385,12 @@ impl Analyzer<'_, '_> {
     /// Handles `infer U`.
     pub(super) fn infer_ts_infer_types(
         &mut self,
+        span: Span,
         base: &Type,
         concrete: &Type,
     ) -> ValidationResult<FxHashMap<Id, Box<Type>>> {
         let mut inferred = InferData::default();
-        self.infer_type(&mut inferred, base, concrete)?;
+        self.infer_type(span, &mut inferred, base, concrete)?;
         Ok(inferred.type_params)
     }
 
@@ -424,7 +426,7 @@ impl Analyzer<'_, '_> {
             Type::Union(arg) => {
                 //
                 for a in &arg.types {
-                    self.infer_type(inferred, param, a)?;
+                    self.infer_type(span, inferred, param, a)?;
                 }
 
                 return Ok(());
@@ -1612,7 +1614,13 @@ impl Analyzer<'_, '_> {
         Ok(false)
     }
 
-    fn infer_tuple(&mut self, inferred: &mut InferData, param: &Tuple, arg: &Tuple) -> ValidationResult<()> {
+    fn infer_tuple(
+        &mut self,
+        span: Span,
+        inferred: &mut InferData,
+        param: &Tuple,
+        arg: &Tuple,
+    ) -> ValidationResult<()> {
         for item in param
             .elems
             .iter()
@@ -1631,6 +1639,7 @@ impl Analyzer<'_, '_> {
 
     fn infer_type_of_fn_param(
         &mut self,
+        span: Span,
         inferred: &mut InferData,
         param: &FnParam,
         arg: &FnParam,
@@ -1640,6 +1649,7 @@ impl Analyzer<'_, '_> {
 
     fn infer_type_of_fn_params(
         &mut self,
+        span: Span,
         inferred: &mut InferData,
         params: &[FnParam],
         args: &[FnParam],

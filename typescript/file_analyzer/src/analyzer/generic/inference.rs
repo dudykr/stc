@@ -16,7 +16,7 @@ impl Analyzer<'_, '_> {
         param: &Interface,
         arg: &Interface,
     ) -> ValidationResult<()> {
-        self.infer_type_using_type_elements_and_type_elements(spam, inferred, &param.body, &arg.body)?;
+        self.infer_type_using_type_elements_and_type_elements(span, inferred, &param.body, &arg.body)?;
 
         // TODO: Handle parents.
 
@@ -31,7 +31,7 @@ impl Analyzer<'_, '_> {
         param: &TypeLit,
         arg: &TypeLit,
     ) -> ValidationResult<()> {
-        self.infer_type_using_type_elements_and_type_elements(spam, inferred, &param.members, &arg.members)
+        self.infer_type_using_type_elements_and_type_elements(span, inferred, &param.members, &arg.members)
     }
 
     fn infer_type_using_type_elements_and_type_elements(
@@ -51,7 +51,7 @@ impl Analyzer<'_, '_> {
                             if p.key.type_eq(&a.key) {
                                 if let Some(pt) = &p.type_ann {
                                     if let Some(at) = &a.type_ann {
-                                        self.infer_type(inferred, pt, at)?;
+                                        self.infer_type(span, inferred, pt, at)?;
                                     } else {
                                         dbg!((&p, &a));
                                     }
@@ -78,7 +78,7 @@ impl Analyzer<'_, '_> {
                             if param.params.type_eq(&arg.params) {
                                 if let Some(pt) = &param.type_ann {
                                     if let Some(at) = &arg.type_ann {
-                                        self.infer_type(inferred, pt, at)?;
+                                        self.infer_type(span, inferred, pt, at)?;
                                     }
                                 } else {
                                     dbg!((&param, &arg));
@@ -93,11 +93,11 @@ impl Analyzer<'_, '_> {
                     TypeElement::Method(p) => match a {
                         TypeElement::Method(a) => {
                             if self.assign(&p.key.ty(), &a.key.ty(), a.key.span()).is_ok() {
-                                self.infer_type_of_fn_params(inferred, &p.params, &a.params)?;
+                                self.infer_type_of_fn_params(span, inferred, &p.params, &a.params)?;
 
                                 if let Some(p_ret) = &p.ret_ty {
                                     if let Some(a_ret) = &a.ret_ty {
-                                        self.infer_type(inferred, &p_ret, &a_ret)?;
+                                        self.infer_type(span, inferred, &p_ret, &a_ret)?;
                                     }
                                 }
                             }
