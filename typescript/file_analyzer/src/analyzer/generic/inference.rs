@@ -14,7 +14,6 @@ impl Analyzer<'_, '_> {
         param: &Interface,
         arg: &Interface,
     ) -> ValidationResult<()> {
-        dbg!(&param.name, &arg.name);
         self.infer_type_using_type_elements_and_type_elements(inferred, &param.body, &arg.body)?;
 
         // TODO: Handle parents.
