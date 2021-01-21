@@ -2,6 +2,7 @@ use super::InferData;
 use crate::analyzer::Analyzer;
 use crate::ValidationResult;
 use stc_ts_types::Interface;
+use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
 use swc_common::Span;
@@ -9,7 +10,34 @@ use swc_common::Spanned;
 use swc_common::TypeEq;
 
 impl Analyzer<'_, '_> {
-    pub(super) fn infer_type_using_interface_and_interface(
+    pub(super) fn infer_type_using_interface(
+        &mut self,
+        span: Span,
+        inferred: &mut InferData,
+        param: &Interface,
+        arg: &Type,
+    ) -> ValidationResult<()> {
+        let arg = arg.normalize();
+
+        match arg {
+            Type::Interface(arg) => {
+                self.infer_type_using_interface_and_interface(span, inferred, param, arg)?;
+            }
+            _ => {
+                todo!()
+            }
+        }
+
+        for parent in &param.extends {
+            let parent =
+                self.type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr, parent.type_args.as_ref())?;
+            self.infer_type(span, inferred, &parent, arg)?;
+        }
+
+        Ok(())
+    }
+
+    fn infer_type_using_interface_and_interface(
         &mut self,
         span: Span,
         inferred: &mut InferData,
@@ -17,8 +45,6 @@ impl Analyzer<'_, '_> {
         arg: &Interface,
     ) -> ValidationResult<()> {
         self.infer_type_using_type_elements_and_type_elements(span, inferred, &param.body, &arg.body)?;
-
-        // TODO: Handle parents.
 
         Ok(())
     }
@@ -48,7 +74,7 @@ impl Analyzer<'_, '_> {
                 match p {
                     TypeElement::Property(p) => match a {
                         TypeElement::Property(a) => {
-                            if p.key.type_eq(&a.key) {
+                            if self.assign(&p.key.ty(), &a.key.ty(), a.key.span()).is_ok() {
                                 if let Some(pt) = &p.type_ann {
                                     if let Some(at) = &a.type_ann {
                                         self.infer_type(span, inferred, pt, at)?;

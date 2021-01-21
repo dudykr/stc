@@ -518,9 +518,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Interface(param) => match arg {
-                Type::Interface(arg) => {
-                    return self.infer_type_using_interface_and_interface(span, inferred, param, arg)
-                }
+                Type::Interface(..) => self.infer_type_using_interface(span, inferred, param, arg)?,
                 _ => {}
             },
 
@@ -883,6 +881,22 @@ impl Analyzer<'_, '_> {
                 }
             }
             Type::Alias(arg) => return self.infer_type(span, inferred, param, &arg.ty),
+
+            Type::Interface(arg) => {
+                // Body should be handled by the match expression above.
+
+                for parent in &arg.extends {
+                    let parent =
+                        self.type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr, parent.type_args.as_ref())?;
+                    self.infer_type(span, inferred, &param, &parent)?;
+                }
+
+                // Check to print unimplemented error message
+                match param {
+                    Type::Interface(..) => return Ok(()),
+                    _ => {}
+                }
+            }
             _ => {}
         }
 
