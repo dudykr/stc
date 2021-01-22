@@ -483,7 +483,6 @@ impl Analyzer<'_, '_> {
                 }
 
                 slog::info!(self.logger, "({}): infer: {} = {:?}", self.scope.depth(), name, arg);
-                print_backtrace();
 
                 match inferred.type_params.entry(name.clone()) {
                     Entry::Occupied(e) => {
