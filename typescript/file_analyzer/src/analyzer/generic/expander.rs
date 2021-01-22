@@ -30,7 +30,9 @@ impl Analyzer<'_, '_> {
         if type_params.params.len() != type_args.params.len() {
             todo!(
                 "Expanding type parameters or reporting errors when type parameter count and type argument count \
-                 difffers"
+                 difffers\nParams={:#?}\nArgs: {:#?}",
+                type_params,
+                type_args
             )
         }
         let mut params = FxHashMap::default();
