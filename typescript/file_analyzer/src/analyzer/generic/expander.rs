@@ -383,27 +383,12 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
             // Alias returns other than self.
             Type::Alias(mut alias) => {
                 alias = alias.fold_with(self);
-                //
-                if let Some(..) = &alias.type_params {
-                    // TODO: Handle unresolved type parameter
-                    slog::warn!(
-                        self.logger,
-                        "An type alias has type parameters. It may not be fully expanded."
-                    );
-                }
-                return *alias.ty.fold_with(self);
+
+                return *alias.ty;
             }
 
             Type::Interface(mut i) => {
                 i = i.fold_with(self);
-
-                if let Some(..) = &i.type_params {
-                    slog::error!(
-                        self.logger,
-                        "An interface has type parameters. It may not be fully expanded."
-                    );
-                }
-                i.type_params = None;
 
                 return Type::Interface(i);
             }
