@@ -120,14 +120,17 @@ impl Analyzer<'_, '_> {
                         _ => inferred_return_type,
                     };
 
-                    if let Some(ref declared) = declared_ret_ty {
-                        // Expand before assigning
-                        let declared = child.expand_fully(f.span, declared.clone(), true)?;
-                        let span = inferred_return_type.span();
+                    if let Some(declared) = &declared_ret_ty {
+                        if !f.is_async && !f.is_generator {
+                            // TODO: Use more complex logic for async functions and generator functions.
 
-                        child
-                            .assign(&declared, &inferred_return_type, span)
-                            .report(&mut child.storage);
+                            // Expand before assigning
+                            let span = inferred_return_type.span();
+
+                            child
+                                .assign(&declared, &inferred_return_type, span)
+                                .report(&mut child.storage);
+                        }
                     }
 
                     inferred_return_type
