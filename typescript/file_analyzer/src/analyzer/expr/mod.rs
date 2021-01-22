@@ -50,6 +50,7 @@ use stc_ts_errors::debug::print_backtrace;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_types::name::Name;
+use stc_ts_types::Alias;
 use stc_ts_types::ComputedKey;
 use stc_ts_types::Key;
 use stc_ts_types::PropertySignature;
@@ -1826,6 +1827,35 @@ impl Analyzer<'_, '_> {
                             | Type::Rest(_)
                             | Type::Lit(_) => {
                                 let mut ty = box ty.into_owned().clone();
+                                let mut params = None;
+                                if let Some(type_args) = type_args {
+                                    match ty.normalize() {
+                                        Type::Interface(Interface {
+                                            type_params: Some(type_params),
+                                            ..
+                                        })
+                                        | Type::Alias(Alias {
+                                            type_params: Some(type_params),
+                                            ..
+                                        })
+                                        | Type::Class(stc_ts_types::Class {
+                                            type_params: Some(type_params),
+                                            ..
+                                        }) => {
+                                            params = self
+                                                .instantiate_type_params_using_args(span, type_params, type_args)
+                                                .map(Some)?;
+                                        }
+                                        _ => {
+                                            unimplemented!(
+                                                "Error reporting for type arguments for types without type parameters"
+                                            )
+                                        }
+                                    }
+                                }
+                                if let Some(params) = params {
+                                    ty = self.expand_type_params(&params, ty)?;
+                                }
                                 ty.respan(span);
                                 return Ok(ty);
                             }

@@ -10,14 +10,40 @@ use slog::Logger;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_types::Key;
+use stc_ts_types::TypeParamDecl;
+use stc_ts_types::TypeParamInstantiation;
 use stc_ts_types::{Id, TypeParam};
 use swc_atoms::js_word;
+use swc_common::Span;
 use swc_common::Spanned;
 use swc_common::TypeEq;
 use swc_ecma_ast::*;
 
 /// Generic expander.
 impl Analyzer<'_, '_> {
+    pub(in super::super) fn instantiate_type_params_using_args(
+        &mut self,
+        span: Span,
+        type_params: &TypeParamDecl,
+        type_args: &TypeParamInstantiation,
+    ) -> ValidationResult<FxHashMap<Id, Box<Type>>> {
+        if type_params.params.len() != type_args.params.len() {
+            todo!(
+                "Expanding type parameters or reporting errors when type parameter count and type argument count \
+                 difffers"
+            )
+        }
+        let mut params = FxHashMap::default();
+
+        for (param, arg) in type_params.params.iter().zip(type_args.params.iter()) {
+            // TODO: Change this to assert.
+            let arg = arg.clone().cheap();
+            params.insert(param.name.clone(), arg);
+        }
+
+        Ok(params)
+    }
+
     pub(in super::super) fn expand_type_params(
         &mut self,
         params: &FxHashMap<Id, Box<Type>>,
