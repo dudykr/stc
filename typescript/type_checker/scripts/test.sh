@@ -10,4 +10,5 @@ export RUST_BACKTRACE=1
 git restore -- tests/visualize
 UPDATE=1 cargo test --test visualize
 
-cargo test --test conformance
+cargo test --color always --test conformance \
+  | sed '/test /d'
