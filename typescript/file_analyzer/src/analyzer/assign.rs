@@ -818,8 +818,7 @@ impl Analyzer<'_, '_> {
                 ref body, ref extends, ..
             }) => {
                 // In case of `ReadonlyArray<T> = <T>[]`, checking parent first means
-                // `Array<T> = <T>[]` will be checked first, which
-                // is much faster.
+                // `Array<T> = <T>[]` will be checked first, which is much faster.
                 for parent in extends {
                     let parent =
                         self.type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr, parent.type_args.as_ref())?;
