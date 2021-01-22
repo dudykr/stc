@@ -28,6 +28,12 @@ pub(crate) struct TypeParamAssertFinder {
     found: bool,
 }
 
+impl Visit<TypeParam> for TypeParamAssertFinder {
+    fn visit(&mut self, value: &TypeParam) {
+        self.found = true;
+    }
+}
+
 pub(crate) fn assert_no_type_param<N>(n: &N)
 where
     N: Debug + VisitWith<TypeParamAssertFinder>,
