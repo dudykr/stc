@@ -1848,7 +1848,9 @@ impl Analyzer<'_, '_> {
                                         }
                                         _ => {
                                             unimplemented!(
-                                                "Error reporting for type arguments for types without type parameters"
+                                                "Error reporting for type arguments for types without type \
+                                                 parameters: {:#?}",
+                                                ty
                                             )
                                         }
                                     }
