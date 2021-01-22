@@ -817,16 +817,21 @@ impl Analyzer<'_, '_> {
             Type::Interface(Interface {
                 ref body, ref extends, ..
             }) => {
-                self.assign_to_type_elements(opts, to.span(), &body, rhs)?;
-
-                // TODO: Handle extends
-
+                // In case of `ReadonlyArray<T> = <T>[]`, checking parent first means
+                // `Array<T> = <T>[]` will be checked first, which
+                // is much faster.
                 for parent in extends {
                     let parent =
                         self.type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr, parent.type_args.as_ref())?;
 
-                    self.assign_with_opts(opts, &parent, &rhs)?;
+                    if self.assign_with_opts(opts, &parent, &rhs).is_ok() {
+                        return Ok(());
+                    }
                 }
+
+                self.assign_to_type_elements(opts, to.span(), &body, rhs)?;
+
+                // TODO: Handle extends
 
                 return Ok(());
             }
