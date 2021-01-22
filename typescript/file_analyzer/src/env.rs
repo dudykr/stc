@@ -180,6 +180,12 @@ impl BuiltIn {
 
                             // Merge interface
                             RStmt::Decl(RDecl::TsInterface(ref i)) => {
+                                if i.id.sym == *"Generator" {
+                                    debug_assert!(
+                                        i.type_params.is_some(),
+                                        "builtin: Generator should have type parameter"
+                                    )
+                                }
                                 i.visit_with(&mut analyzer);
                                 let body = i
                                     .clone()
