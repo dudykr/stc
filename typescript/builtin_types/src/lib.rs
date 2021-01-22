@@ -47,10 +47,10 @@ impl Lib {
             Self::Es5 => 1,
             Self::Es2015Core => 2,
             Self::Es2015Collection => 3,
-            Self::Es2015Generator => 4,
-            Self::Es2015Promise => 5,
-            Self::Es2015Symbol => 6,
-            Self::Es2015Iterable => 7,
+            Self::Es2015Symbol => 4,
+            Self::Es2015Iterable => 5,
+            Self::Es2015Generator => 6,
+            Self::Es2015Promise => 7,
             Self::Es2015Proxy => 8,
             Self::Es2015Reflect => 9,
             Self::Es2015SymbolWellknown => 10,
@@ -64,30 +64,36 @@ impl Lib {
             Self::Es2017Typedarrays => 18,
             Self::Es2017 => 19,
             Self::Es2018Asynciterable => 20,
-            Self::Es2018Promise => 21,
-            Self::Es2018Regexp => 22,
-            Self::Es2018Intl => 23,
-            Self::Es2018 => 24,
-            Self::Es2019Array => 25,
-            Self::Es2019Object => 26,
-            Self::Es2019String => 27,
-            Self::Es2019Symbol => 28,
-            Self::Es2019 => 29,
-            Self::Es2020 => 30,
-            Self::Es2020String => 31,
-            Self::Es2020SymbolWellknown => 32,
-            Self::EsnextBigint => 33,
-            Self::EsnextIntl => 34,
-            Self::Esnext => 35,
-
-            Self::Dom => 50,
-            Self::WebworkerImportscripts => 51,
-            Self::Scripthost => 52,
-            Self::DomIterable => 53,
-            Self::DomIterableGenerated => 54,
-            Self::Header => 55,
-            Self::Importes5 => 56,
-            Self::WebworkerGenerated => 57,
+            Self::Es2018Asyncgenerator => 21,
+            Self::Es2018Promise => 22,
+            Self::Es2018Regexp => 23,
+            Self::Es2018Intl => 24,
+            Self::Es2018 => 25,
+            Self::Es2019Array => 26,
+            Self::Es2019Object => 27,
+            Self::Es2019String => 28,
+            Self::Es2019Symbol => 29,
+            Self::Es2019 => 30,
+            Self::Es2020Bigint => 31,
+            Self::Es2020Promise => 32,
+            Self::Es2020Sharedmemory => 33,
+            Self::Es2020String => 34,
+            Self::Es2020SymbolWellknown => 35,
+            Self::Es2020Intl => 36,
+            Self::Es2020 => 37,
+            Self::EsnextIntl => 38,
+            Self::EsnextString => 39,
+            Self::EsnextPromise => 40,
+            Self::EsnextWeakref => 41,
+            Self::Esnext => 42,
+            Self::Dom => 43,
+            Self::WebworkerImportscripts => 44,
+            Self::Scripthost => 45,
+            Self::DomIterable => 46,
+            Self::DomIterableGenerated => 47,
+            Self::Header => 48,
+            Self::WebworkerGenerated => 49,
+            Self::WebworkerIterableGenerated => 50,
 
             Self::Es5Full => 100,
             Self::Es2015Full => 101,
@@ -159,5 +165,14 @@ fn test_deps() {
     let libs = Lib::load("esnext.full");
     let mut sorted = libs.clone();
     sorted.sort();
+
+    if libs != sorted {
+        let msg: String = libs
+            .into_iter()
+            .enumerate()
+            .map(|(idx, lib)| format!("Self::{:?} => {},\n", lib, idx + 1))
+            .collect();
+        panic!("Should be\n{}", msg);
+    }
     assert_eq!(libs, sorted);
 }
