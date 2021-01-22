@@ -330,12 +330,26 @@ impl Analyzer<'_, '_> {
 
                     Type::Class(ty::Class { ref body, .. }) => {
                         for member in body.iter() {
-                            match *member {
+                            match member {
                                 ty::ClassMember::Method(Method {
-                                    ref key, ref ret_ty, ..
+                                    key,
+                                    ret_ty,
+                                    type_params,
+                                    params,
+                                    ..
                                 }) => {
                                     if key.type_eq(&prop) {
-                                        return Ok(ret_ty.clone());
+                                        return self.get_return_type(
+                                            span,
+                                            kind,
+                                            type_params.as_ref().map(|v| &*v.params),
+                                            &params,
+                                            ret_ty.clone(),
+                                            type_args.as_ref(),
+                                            args,
+                                            &arg_types,
+                                            &spread_arg_types,
+                                        );
                                     }
                                 }
                                 _ => {}
