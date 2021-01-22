@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use crate::ty::{Intersection, Type, Union};
 use rnode::Visit;
 use rnode::VisitMut;
@@ -21,6 +23,22 @@ pub(crate) mod graph;
 pub(crate) mod named;
 pub(crate) mod property_map;
 pub(crate) mod type_ext;
+
+pub(crate) struct TypeParamAssertFinder {
+    found: bool,
+}
+
+pub(crate) fn assert_no_type_param<N>(n: &N)
+where
+    N: Debug + VisitWith<TypeParamAssertFinder>,
+{
+    let mut v = TypeParamAssertFinder { found: false };
+    n.visit_with(&mut v);
+    if v.found {
+        panic!("{:#?} should not contain type parameter", n)
+    }
+}
+
 pub(crate) trait ModuleItemOrStmt {
     fn try_into(self) -> Result<RModuleDecl, RStmt>;
 }
