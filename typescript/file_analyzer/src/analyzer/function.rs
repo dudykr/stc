@@ -1,4 +1,5 @@
 use super::Analyzer;
+use crate::analyzer::util::ResultExt;
 use crate::{
     analyzer::{pat::PatMode, Ctx, ScopeKind},
     ty,
@@ -124,7 +125,9 @@ impl Analyzer<'_, '_> {
                         let declared = child.expand_fully(f.span, declared.clone(), true)?;
                         let span = inferred_return_type.span();
 
-                        child.assign(&declared, &inferred_return_type, span)?;
+                        child
+                            .assign(&declared, &inferred_return_type, span)
+                            .report(&mut child.storage);
                     }
 
                     inferred_return_type
