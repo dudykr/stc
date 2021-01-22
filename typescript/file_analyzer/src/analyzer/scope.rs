@@ -1826,7 +1826,21 @@ impl Expander<'_, '_, '_> {
                                 ));
                             }
                             Type::Param(..) | Type::Namespace(..) | Type::Module(..) => {
-                                return Ok(Some(ty.into_owned()))
+                                let ty = box ty.into_owned();
+                                let ty = self
+                                    .analyzer
+                                    .access_property(
+                                        span,
+                                        ty,
+                                        &Key::Normal {
+                                            span,
+                                            sym: right.sym.clone(),
+                                        },
+                                        TypeOfMode::RValue,
+                                    )
+                                    .report(&mut self.analyzer.storage)
+                                    .unwrap_or_else(|| Type::any(span));
+                                return Ok(Some(*ty));
                             }
                             _ => {}
                         }
