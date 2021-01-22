@@ -1,3 +1,4 @@
+use crate::analyzer::util::ResultExt;
 use crate::util::type_ext::TypeVecExt;
 use crate::{
     analyzer::{Analyzer, Ctx},
@@ -105,13 +106,17 @@ impl Analyzer<'_, '_> {
                         };
                         self.with_ctx(ctx).expand_fully(ty.span(), ty, true)
                     })
-                    .collect::<Result<_, _>>()?;
+                    .collect::<Result<_, _>>()
+                    .report(&mut self.storage)
+                    .unwrap_or_default();
 
                 values.yield_types = values
                     .yield_types
                     .into_iter()
                     .map(|ty| self.expand_fully(ty.span(), ty, true))
-                    .collect::<Result<_, _>>()?;
+                    .collect::<Result<_, _>>()
+                    .report(&mut self.storage)
+                    .unwrap_or_default();
             }
         }
 
