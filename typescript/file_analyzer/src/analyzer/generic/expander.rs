@@ -27,20 +27,26 @@ impl Analyzer<'_, '_> {
         type_params: &TypeParamDecl,
         type_args: &TypeParamInstantiation,
     ) -> ValidationResult<FxHashMap<Id, Box<Type>>> {
-        if type_params.params.len() != type_args.params.len() {
-            todo!(
-                "Expanding type parameters or reporting errors when type parameter count and type argument count \
-                 difffers\nParams={:#?}\nArgs: {:#?}",
-                type_params,
-                type_args
-            )
-        }
         let mut params = FxHashMap::default();
 
-        for (param, arg) in type_params.params.iter().zip(type_args.params.iter()) {
-            // TODO: Change this to assert.
-            let arg = arg.clone().cheap();
-            params.insert(param.name.clone(), arg);
+        for (idx, param) in type_params.params.iter().enumerate() {
+            if let Some(arg) = type_args.params.get(idx) {
+                // TODO: Change this to assert.
+                let arg = arg.clone().cheap();
+                params.insert(param.name.clone(), arg);
+            } else {
+                if let Some(default) = &param.default {
+                    let default = default.clone().cheap();
+                    params.insert(param.name.clone(), default.clone());
+                } else {
+                    todo!(
+                        "Reporting errors when type parameter count and type argument count \
+                         difffers\nParams={:#?}\nArgs: {:#?}",
+                        type_params,
+                        type_args
+                    )
+                }
+            }
         }
 
         Ok(params)
