@@ -404,6 +404,7 @@ impl Analyzer<'_, '_> {
             Type::Interface(ref i) if i.name.as_str() == "Object" => return Ok(()),
 
             Type::Module(..) => {
+                dbg!();
                 return Err(Error::InvalidLValue { span: to.span() });
             }
             Type::Enum(ref e) => {
@@ -423,6 +424,7 @@ impl Analyzer<'_, '_> {
                 }
             }
             Type::EnumVariant(ref e) => {
+                dbg!();
                 return Err(Error::InvalidLValue { span: e.span });
             }
 
@@ -808,6 +810,7 @@ impl Analyzer<'_, '_> {
                     fail!()
                 }
                 _ => {
+                    dbg!();
                     return Err(Error::InvalidLValue { span });
                 }
             },

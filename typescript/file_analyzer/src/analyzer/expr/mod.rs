@@ -985,6 +985,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         if e.is_const && type_mode == TypeOfMode::LValue {
+                            dbg!();
                             return Err(Error::InvalidLValue { span: prop.span() });
                         }
 
