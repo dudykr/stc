@@ -871,6 +871,7 @@ impl Analyzer<'_, '_> {
                 let ctx = Ctx {
                     preserve_ref: false,
                     ignore_expand_prevention_for_top: true,
+                    ignore_expand_prevention_for_all: false,
                     ..self.ctx
                 };
                 let arg = self.with_ctx(ctx).expand_fully(span, box arg.clone(), true)?;
