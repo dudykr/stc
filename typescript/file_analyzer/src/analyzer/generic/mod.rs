@@ -15,7 +15,6 @@ use rnode::VisitMutWith;
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RStr;
-use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
