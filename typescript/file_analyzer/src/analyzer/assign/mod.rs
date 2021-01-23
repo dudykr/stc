@@ -1150,6 +1150,15 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
+                Type::Class(rhs) => {
+                    //
+                    for el in lhs {
+                        self.assign_class_members_to_type_element(opts, el, &rhs.body)?;
+                    }
+
+                    return Ok(());
+                }
+
                 _ => {
                     return Err(Error::Unimplemented {
                         span,
@@ -1312,6 +1321,15 @@ impl Analyzer<'_, '_> {
             });
         }
 
+        Ok(())
+    }
+
+    fn assign_class_members_to_type_element(
+        &mut self,
+        opts: AssignOpts,
+        el: &TypeElement,
+        rhs_members: &[stc_ts_types::ClassMember],
+    ) -> ValidationResult<()> {
         Ok(())
     }
 
