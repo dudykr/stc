@@ -1326,15 +1326,6 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    fn assign_class_members_to_type_element(
-        &mut self,
-        opts: AssignOpts,
-        el: &TypeElement,
-        rhs_members: &[stc_ts_types::ClassMember],
-    ) -> ValidationResult<()> {
-        Ok(())
-    }
-
     /// This method assigns each property to corresponding property.
     fn assign_type_elements_to_type_element(
         &mut self,
