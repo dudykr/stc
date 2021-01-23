@@ -11,7 +11,7 @@ impl Analyzer<'_, '_> {
     pub(super) fn assign_to_class(&self, opts: AssignOpts, l: &Class, r: &Type) -> ValidationResult<()> {
         // debug_assert!(!span.is_dummy());
 
-        // Everything is assignable to empty class, including a class with only
+        // Everything is assignable to empty classes, including classes with only
         // constructors.
         let is_empty = l
             .body
