@@ -968,6 +968,10 @@ impl Analyzer<'_, '_> {
     fn assign_to_class(&self, span: Span, l: &ty::Class, r: &Type) -> ValidationResult<()> {
         // debug_assert!(!span.is_dummy());
 
+        if l.body.is_empty() {
+            return Ok(());
+        }
+
         let r = match r {
             Type::Class(r) => r,
             _ => {
