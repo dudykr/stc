@@ -8,7 +8,7 @@ use stc_ts_types::Type;
 use swc_common::EqIgnoreSpan;
 
 impl Analyzer<'_, '_> {
-    pub(super) fn assign_to_class(&self, opts: AssignOpts, l: &Class, r: &Type) -> ValidationResult<()> {
+    pub(super) fn assign_to_class(&mut self, opts: AssignOpts, l: &Class, r: &Type) -> ValidationResult<()> {
         // debug_assert!(!span.is_dummy());
 
         // Everything is assignable to empty classes, including classes with only
@@ -41,10 +41,11 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                Err(Error::Unimplemented {
-                    span: opts.span,
-                    msg: format!("fine-grained class assignment"),
-                })?
+                for lm in &l.body {
+                    self.assign_class_members_to_class_member(opts, lm, &r.body)?;
+                }
+
+                return Ok(());
             }
             _ => {}
         };
@@ -52,6 +53,48 @@ impl Analyzer<'_, '_> {
         Err(Error::Unimplemented {
             span: opts.span,
             msg: format!("Assignment of non-class object to class\n{:#?}", r),
+        })
+    }
+
+    fn assign_class_members_to_class_member(
+        &mut self,
+        opts: AssignOpts,
+        l: &ClassMember,
+        r: &[ClassMember],
+    ) -> ValidationResult<()> {
+        match l {
+            ClassMember::Constructor(_) => {}
+            ClassMember::Method(_) => {}
+            ClassMember::Property(lp) => {
+                for rm in r {
+                    match rm {
+                        ClassMember::Constructor(_) => {}
+                        ClassMember::Method(_) => {}
+                        ClassMember::Property(rp) => {
+                            if self.assign(&lp.key.ty(), &rp.key.ty(), opts.span).is_ok() {
+                                if let Some(lt) = &lp.value {
+                                    if let Some(rt) = &rp.value {
+                                        return self.assign(&lt, &rt, opts.span);
+                                    }
+                                }
+                            }
+                        }
+                        ClassMember::IndexSignature(_) => {}
+                    }
+                }
+
+                if lp.is_optional {
+                    return Ok(());
+                }
+
+                // TODO: Report error
+            }
+            ClassMember::IndexSignature(_) => {}
+        }
+
+        Err(Error::Unimplemented {
+            span: opts.span,
+            msg: format!("fine-grained class assignment"),
         })
     }
 }
