@@ -452,9 +452,9 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Class(ref l) => match rhs.normalize() {
-                Type::ClassInstance(r) => return self.assign_to_class(span, l, &r.ty),
+                Type::ClassInstance(r) => return self.assign_to_class(opts, l, &r.ty),
                 Type::Interface(..) | Type::TypeLit(..) | Type::Lit(..) | Type::Class(..) => {
-                    return self.assign_to_class(span, l, rhs.normalize())
+                    return self.assign_to_class(opts, l, rhs.normalize())
                 }
                 _ => {}
             },
@@ -967,55 +967,6 @@ impl Analyzer<'_, '_> {
         // TODO: Implement full type checker
         slog::error!(self.logger, "unimplemented: assign: \nLeft: {:?}\nRight: {:?}", to, rhs);
         Ok(())
-    }
-
-    fn assign_to_class(&self, span: Span, l: &ty::Class, r: &Type) -> ValidationResult<()> {
-        // debug_assert!(!span.is_dummy());
-
-        if l.body.is_empty() {
-            return Ok(());
-        }
-
-        let r = match r {
-            Type::Class(r) => r,
-            _ => {
-                return Err(Error::Unimplemented {
-                    span,
-                    msg: format!("Assignment of non-class object to class"),
-                })
-            }
-        };
-
-        if l.eq_ignore_span(r) {
-            return Ok(());
-        }
-
-        let mut parent = &r.super_class;
-
-        // class Child extends Parent
-        // let c: Child;
-        // let p: Parent;
-        // `p = c` is valid
-        while let Some(ref p) = parent {
-            match p.normalize() {
-                Type::Class(ref p_cls) => {
-                    if l.eq_ignore_span(p_cls) {
-                        return Ok(());
-                    }
-
-                    parent = &p_cls.super_class;
-                }
-                _ => Err(Error::Unimplemented {
-                    span,
-                    msg: format!("fine-grained class assignment"),
-                })?,
-            }
-        }
-
-        Err(Error::Unimplemented {
-            span,
-            msg: format!("fine-grained class assignment"),
-        })?
     }
 
     /// This method is called when lhs of assignment is interface or type
