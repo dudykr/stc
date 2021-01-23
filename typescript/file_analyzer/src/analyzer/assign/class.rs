@@ -3,6 +3,7 @@ use crate::analyzer::Analyzer;
 use crate::ValidationResult;
 use stc_ts_errors::Error;
 use stc_ts_types::Class;
+use stc_ts_types::ClassMember;
 use stc_ts_types::Type;
 use swc_common::EqIgnoreSpan;
 
@@ -10,7 +11,17 @@ impl Analyzer<'_, '_> {
     pub(super) fn assign_to_class(&self, opts: AssignOpts, l: &Class, r: &Type) -> ValidationResult<()> {
         // debug_assert!(!span.is_dummy());
 
-        if l.body.is_empty() {
+        // Everything is assignable to empty class, including a class with only
+        // constructors.
+        let is_empty = l
+            .body
+            .iter()
+            .find(|member| match member {
+                ClassMember::Constructor(_) => false,
+                _ => true,
+            })
+            .is_none();
+        if is_empty {
             return Ok(());
         }
 
@@ -52,7 +63,7 @@ impl Analyzer<'_, '_> {
 
         Err(Error::Unimplemented {
             span: opts.span,
-            msg: format!("Assignment of non-class object to class"),
+            msg: format!("Assignment of non-class object to class\n{:#?}", r),
         })
     }
 }
