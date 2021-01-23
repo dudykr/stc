@@ -31,25 +31,13 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
-                let mut next = &r.super_class;
-
                 // class Child extends Parent
                 // let c: Child;
                 // let p: Parent;
                 // `p = c` is valid
-                while let Some(parent) = next {
+                if let Some(parent) = &r.super_class {
                     if self.assign_to_class(opts, l, &parent).is_ok() {
                         return Ok(());
-                    }
-
-                    match parent.normalize() {
-                        Type::Class(ref p_cls) => {
-                            next = &p_cls.super_class;
-                        }
-                        _ => Err(Error::Unimplemented {
-                            span: opts.span,
-                            msg: format!("fine-grained class assignment of parents: {:#?}", parent),
-                        })?,
                     }
                 }
 
