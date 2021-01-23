@@ -31,6 +31,8 @@ use swc_common::TypeEq;
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::*;
 
+mod type_el;
+
 /// Context used for `=` assignments.
 #[derive(Clone, Copy)]
 pub(crate) struct AssignOpts {
