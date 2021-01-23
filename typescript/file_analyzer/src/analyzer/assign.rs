@@ -449,9 +449,10 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Class(ref l) => match rhs.normalize() {
-                Type::Interface(..) | Type::TypeLit(..) | Type::Lit(..) => fail!(),
                 Type::ClassInstance(r) => return self.assign_to_class(span, l, &r.ty),
-                Type::Class(..) => return self.assign_to_class(span, l, rhs.normalize()),
+                Type::Interface(..) | Type::TypeLit(..) | Type::Lit(..) | Type::Class(..) => {
+                    return self.assign_to_class(span, l, rhs.normalize())
+                }
                 _ => {}
             },
 
