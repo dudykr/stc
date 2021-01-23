@@ -450,8 +450,8 @@ impl Analyzer<'_, '_> {
 
             Type::Class(ref l) => match rhs.normalize() {
                 Type::Interface(..) | Type::TypeLit(..) | Type::Lit(..) => fail!(),
-                Type::ClassInstance(r) => return self.assign_class(span, l, &r.ty),
-                Type::Class(..) => return self.assign_class(span, l, rhs.normalize()),
+                Type::ClassInstance(r) => return self.assign_to_class(span, l, &r.ty),
+                Type::Class(..) => return self.assign_to_class(span, l, rhs.normalize()),
                 _ => {}
             },
 
@@ -965,7 +965,7 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    fn assign_class(&self, span: Span, l: &ty::Class, r: &Type) -> ValidationResult<()> {
+    fn assign_to_class(&self, span: Span, l: &ty::Class, r: &Type) -> ValidationResult<()> {
         // debug_assert!(!span.is_dummy());
 
         let r = match r {
