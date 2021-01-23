@@ -31,6 +31,7 @@ use swc_common::TypeEq;
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::*;
 
+mod class;
 mod type_el;
 
 /// Context used for `=` assignments.
