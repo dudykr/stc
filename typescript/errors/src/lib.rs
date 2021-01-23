@@ -622,6 +622,8 @@ impl Error {
                 "A computed property name of the form '{TODO}' must be of type 'symbol'.".into()
             }
 
+            Self::Unimplemented { msg, .. } => msg.to_string().into(),
+
             _ => format!("{:#?}", self).into(),
         }
     }
