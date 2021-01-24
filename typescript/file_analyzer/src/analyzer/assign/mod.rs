@@ -438,6 +438,10 @@ impl Analyzer<'_, '_> {
                         // validEnumAssignments.ts insists that this is valid.
                         return Ok(());
                     }
+                    Type::EnumVariant(..) => {
+                        // TODO: Verify enum.
+                        return Ok(());
+                    }
                     _ => {}
                 }
             }
