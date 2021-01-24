@@ -1460,9 +1460,23 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Module(ty::Module { ref exports, .. }) => {
-                if let Key::Normal { sym, .. } = prop {
-                    if let Some(item) = exports.vars.get(sym) {
-                        return Ok(item.clone());
+                match id_ctx {
+                    IdCtx::Type => {
+                        if let Key::Normal { sym, .. } = prop {
+                            if let Some(types) = exports.types.get(sym).cloned() {
+                                if types.len() == 1 {
+                                    return Ok(types.into_iter().next().unwrap());
+                                }
+                                return Ok(box Type::Intersection(Intersection { span, types }));
+                            }
+                        }
+                    }
+                    IdCtx::Var => {
+                        if let Key::Normal { sym, .. } = prop {
+                            if let Some(item) = exports.vars.get(sym) {
+                                return Ok(item.clone());
+                            }
+                        }
                     }
                 }
 
