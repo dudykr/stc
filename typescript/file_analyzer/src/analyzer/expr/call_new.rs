@@ -295,7 +295,7 @@ impl Analyzer<'_, '_> {
                     _ => obj_type,
                 };
 
-                match *obj_type.normalize() {
+                match obj_type.normalize() {
                     Type::Keyword(RTsKeywordType {
                         kind: TsKeywordTypeKind::TsAnyKeyword,
                         ..
@@ -330,7 +330,7 @@ impl Analyzer<'_, '_> {
                         );
                     }
 
-                    Type::Class(ty::Class { ref body, .. }) => {
+                    Type::Class(ty::Class { body, super_class, .. }) => {
                         let mut candidates = vec![];
                         for member in body.iter() {
                             // TODO: Handle properties with callable type.
@@ -477,7 +477,7 @@ impl Analyzer<'_, '_> {
 
                     let expanded_ty = analyzer.extract(
                         span,
-                        callee_ty,
+                        &callee_ty,
                         kind,
                         args,
                         &arg_types,
@@ -697,7 +697,7 @@ impl Analyzer<'_, '_> {
     fn extract(
         &mut self,
         span: Span,
-        ty: Box<Type>,
+        ty: &Type,
         kind: ExtractKind,
         args: &[RExprOrSpread],
         arg_types: &[TypeOrSpread],
@@ -711,8 +711,8 @@ impl Analyzer<'_, '_> {
                     ignore_expand_prevention_for_top: true,
                     ..self.ctx
                 };
-                let ty = self.with_ctx(ctx).expand_fully(span, ty, true)?;
-                return self.extract(span, ty, kind, args, arg_types, spread_arg_types, type_args);
+                let ty = self.with_ctx(ctx).expand_fully(span, box ty.clone(), true)?;
+                return self.extract(span, &ty, kind, args, arg_types, spread_arg_types, type_args);
             }
             _ => {}
         }
@@ -775,8 +775,18 @@ impl Analyzer<'_, '_> {
             () => {{
                 dbg!();
                 match kind {
-                    ExtractKind::Call => return Err(Error::NoCallSignature { span, callee: ty }),
-                    ExtractKind::New => return Err(Error::NoNewSignature { span, callee: ty }),
+                    ExtractKind::Call => {
+                        return Err(Error::NoCallSignature {
+                            span,
+                            callee: box ty.clone(),
+                        })
+                    }
+                    ExtractKind::New => {
+                        return Err(Error::NoNewSignature {
+                            span,
+                            callee: box ty.clone(),
+                        })
+                    }
                 }
             }};
         }
@@ -786,7 +796,7 @@ impl Analyzer<'_, '_> {
                 // TODO: Check if all types has constructor signature
                 return Ok(box Type::ClassInstance(ClassInstance {
                     span,
-                    ty: instantiate_class(self.ctx.module_id, ty),
+                    ty: instantiate_class(self.ctx.module_id, box ty.clone()),
                     type_args: type_args.cloned(),
                 }));
             }
@@ -827,7 +837,9 @@ impl Analyzer<'_, '_> {
             //     args,
             //     type_args,
             // ),
-            Type::Union(..) => self.get_best_return_type(span, ty, kind, type_args, args, spread_arg_types, arg_types),
+            Type::Union(..) => {
+                self.get_best_return_type(span, box ty.clone(), kind, type_args, args, spread_arg_types, arg_types)
+            }
 
             Type::Interface(ref i) => {
                 // Search for methods
@@ -849,7 +861,7 @@ impl Analyzer<'_, '_> {
                                 self.type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr, type_args)?;
 
                             if let Ok(v) =
-                                self.extract(span, parent, kind, args, arg_types, spread_arg_types, type_args)
+                                self.extract(span, &parent, kind, args, arg_types, spread_arg_types, type_args)
                             {
                                 return Ok(v);
                             }
