@@ -396,6 +396,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
+    /// TODO: Use Cow for `obj_type`
     fn call_property(
         &mut self,
         span: Span,
@@ -487,6 +488,21 @@ impl Analyzer<'_, '_> {
                         &arg_types,
                         &spread_arg_types,
                     );
+                }
+
+                if let Some(ty) = super_class {
+                    if let Ok(ret_ty) = self.call_property(
+                        span,
+                        kind,
+                        ty.clone(),
+                        prop,
+                        type_args,
+                        args,
+                        arg_types,
+                        spread_arg_types,
+                    ) {
+                        return Ok(ret_ty);
+                    }
                 }
 
                 return Err(match kind {
