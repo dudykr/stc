@@ -1,6 +1,6 @@
 //! Handles new expressions and call expressions.
 use super::super::Analyzer;
-use super::IdKind;
+use super::IdCtx;
 use crate::analyzer::assign::AssignOpts;
 use crate::{
     analyzer::{
@@ -369,7 +369,7 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
 
-                let callee = self.access_property(span, obj_type, &prop, TypeOfMode::RValue, IdKind::Var)?;
+                let callee = self.access_property(span, obj_type, &prop, TypeOfMode::RValue, IdCtx::Var)?;
 
                 let callee = box self.expand_top_ref(span, Cow::Owned(*callee))?.into_owned();
 
@@ -1588,7 +1588,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                                     sym: value.clone(),
                                 },
                                 TypeOfMode::RValue,
-                                IdKind::Type,
+                                IdCtx::Type,
                             )
                             .report(&mut a.storage)
                         {
