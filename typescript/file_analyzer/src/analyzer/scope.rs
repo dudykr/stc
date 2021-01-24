@@ -1,4 +1,5 @@
 use super::{control_flow::CondFacts, expr::TypeOfMode, stmt::return_type::ReturnValues, Analyzer, Ctx};
+use crate::analyzer::expr::IdCtx;
 use crate::analyzer::ResultExt;
 use crate::{
     loader::ModuleInfo,
@@ -1314,7 +1315,8 @@ impl Analyzer<'_, '_> {
                                 RObjectPatProp::KeyValue(prop) => {
                                     let mut key = prop.key.validate_with(self)?;
 
-                                    let ty = self.access_property(span, ty.clone(), &key, TypeOfMode::RValue)?;
+                                    let ty =
+                                        self.access_property(span, ty.clone(), &key, TypeOfMode::RValue, IdCtx::Var)?;
 
                                     self.declare_complex_vars(kind, &prop.value, ty)?;
                                 }
@@ -1324,7 +1326,8 @@ impl Analyzer<'_, '_> {
                                         sym: prop.key.sym.clone(),
                                     };
 
-                                    let ty = self.access_property(span, ty.clone(), &key, TypeOfMode::RValue)?;
+                                    let ty =
+                                        self.access_property(span, ty.clone(), &key, TypeOfMode::RValue, IdCtx::Var)?;
 
                                     match prop.value {
                                         Some(_) => {
@@ -1837,6 +1840,7 @@ impl Expander<'_, '_, '_> {
                                             sym: right.sym.clone(),
                                         },
                                         TypeOfMode::RValue,
+                                        IdCtx::Type,
                                     )
                                     .report(&mut self.analyzer.storage)
                                     .unwrap_or_else(|| Type::any(span));
