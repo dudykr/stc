@@ -688,7 +688,7 @@ impl Analyzer<'_, '_> {
 
             let obj = self.env.get_global_type(span, &js_word!("Function"))?;
 
-            if let Ok(v) = self.access_property(span, obj, prop, type_mode) {
+            if let Ok(v) = self.access_property(span, obj, prop, type_mode, IdKind::Var) {
                 return Ok(Some(v));
             }
         }
@@ -774,7 +774,7 @@ impl Analyzer<'_, '_> {
 
         // We use child scope to store type parameters.
         let mut ty = self.with_child(ScopeKind::MemberAccess, Default::default(), |child: &mut Analyzer| {
-            let mut ty = child.access_property_inner(span, obj, prop, type_mode)?;
+            let mut ty = child.access_property_inner(span, obj, prop, type_mode, kind)?;
             ty = child.expand_type_params_using_scope(ty)?;
             Ok(ty)
         })?;
@@ -791,6 +791,7 @@ impl Analyzer<'_, '_> {
         obj: Box<Type>,
         prop: &Key,
         type_mode: TypeOfMode,
+        kind: IdKind,
     ) -> ValidationResult {
         if !self.is_builtin {
             debug_assert!(!span.is_dummy());
@@ -800,67 +801,92 @@ impl Analyzer<'_, '_> {
 
         let computed = prop.is_computed();
 
-        // Recursive method call
-        if !computed && obj.is_this() && (self.scope.is_this_ref_to_object_lit() || self.scope.is_this_ref_to_class()) {
-            if let Some(declaring) = &self.scope.declaring_prop() {
-                if prop == declaring.sym() {
-                    return Ok(Type::any(span));
+        if kind == IdKind::Var {
+            // Recursive method call
+            if !computed
+                && obj.is_this()
+                && (self.scope.is_this_ref_to_object_lit() || self.scope.is_this_ref_to_class())
+            {
+                if let Some(declaring) = &self.scope.declaring_prop() {
+                    if prop == declaring.sym() {
+                        return Ok(Type::any(span));
+                    }
                 }
             }
-        }
 
-        match &*obj {
-            Type::This(this) if self.scope.is_this_ref_to_object_lit() => {
-                if let Key::Computed(prop) = prop {
-                    //
-                    match &*prop.expr {
-                        RExpr::Cond(..) => {
-                            return Ok(Type::any(span));
+            match &*obj {
+                Type::This(this) if self.scope.is_this_ref_to_object_lit() => {
+                    if let Key::Computed(prop) = prop {
+                        //
+                        match &*prop.expr {
+                            RExpr::Cond(..) => {
+                                return Ok(Type::any(span));
+                            }
+                            _ => {}
                         }
-                        _ => {}
+                    }
+
+                    // TODO: Remove clone
+                    let members = self.scope.object_lit_members().to_vec();
+                    if let Some(mut v) = self.access_property_of_type_elements(span, &obj, prop, type_mode, &members)? {
+                        self.marks().infected_by_this_in_object_literal.apply_to_type(&mut v);
+                        return Ok(v);
                     }
                 }
 
-                // TODO: Remove clone
-                let members = self.scope.object_lit_members().to_vec();
-                if let Some(mut v) = self.access_property_of_type_elements(span, &obj, prop, type_mode, &members)? {
-                    self.marks().infected_by_this_in_object_literal.apply_to_type(&mut v);
-                    return Ok(v);
-                }
-            }
+                Type::This(this) if self.scope.is_this_ref_to_class() => {
+                    if !computed {
+                        // We are currently declaring a class.
+                        for (_, member) in self.scope.class_members() {
+                            match member {
+                                // No-op, as constructor parameter properties are handled by
+                                // Validate<Class>.
+                                ty::ClassMember::Constructor(_) => {}
 
-            Type::This(this) if self.scope.is_this_ref_to_class() => {
-                if !computed {
-                    // We are currently declaring a class.
-                    for (_, member) in self.scope.class_members() {
-                        match member {
-                            // No-op, as constructor parameter properties are handled by
-                            // Validate<Class>.
-                            ty::ClassMember::Constructor(_) => {}
+                                ty::ClassMember::Method(member @ Method { is_static: false, .. })
+                                    if member.key.type_eq(prop) =>
+                                {
+                                    return Ok(box Type::Function(ty::Function {
+                                        span: member.span,
+                                        type_params: member.type_params.clone(),
+                                        params: member.params.clone(),
+                                        ret_ty: member.ret_ty.clone(),
+                                    }));
+                                }
 
-                            ty::ClassMember::Method(member @ Method { is_static: false, .. })
-                                if member.key.type_eq(prop) =>
-                            {
-                                return Ok(box Type::Function(ty::Function {
-                                    span: member.span,
-                                    type_params: member.type_params.clone(),
-                                    params: member.params.clone(),
-                                    ret_ty: member.ret_ty.clone(),
-                                }));
-                            }
+                                ty::ClassMember::Property(member @ ClassProperty { is_static: false, .. }) => {
+                                    if member.key.type_eq(prop) {
+                                        return Ok(member.value.clone().unwrap_or_else(|| Type::any(span)));
+                                    }
+                                }
 
-                            ty::ClassMember::Property(member @ ClassProperty { is_static: false, .. }) => {
-                                if member.key.type_eq(prop) {
-                                    return Ok(member.value.clone().unwrap_or_else(|| Type::any(span)));
+                                ty::ClassMember::Property(..) | ty::ClassMember::Method(..) => {}
+
+                                ty::ClassMember::IndexSignature(_) => {
+                                    unimplemented!("class -> this.foo where an `IndexSignature` exists")
                                 }
                             }
+                        }
 
-                            ty::ClassMember::Property(..) | ty::ClassMember::Method(..) => {}
+                        if let Some(super_class) = self.scope.get_super_class() {
+                            let super_class = super_class.clone();
+                            let ctx = Ctx {
+                                preserve_ref: false,
+                                ignore_expand_prevention_for_top: true,
+                                ..self.ctx
+                            };
+                            let super_class = self.with_ctx(ctx).expand_fully(span, super_class, true)?;
 
-                            ty::ClassMember::IndexSignature(_) => {
-                                unimplemented!("class -> this.foo where an `IndexSignature` exists")
+                            if let Ok(v) = self.access_property(span, super_class, prop, type_mode, IdKind::Var) {
+                                return Ok(v);
                             }
                         }
+
+                        return Err(Error::NoSuchPropertyInClass {
+                            span,
+                            class_name: self.scope.get_this_class_name(),
+                            prop: prop.clone(),
+                        });
                     }
 
                     if let Some(super_class) = self.scope.get_super_class() {
@@ -877,75 +903,55 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    return Err(Error::NoSuchPropertyInClass {
+                    let prop_ty = prop.clone().computed().unwrap().ty;
+
+                    // TODO: Handle string literals like
+                    //
+                    // `this['props']`
+                    return Ok(box Type::IndexedAccessType(IndexedAccessType {
                         span,
-                        class_name: self.scope.get_this_class_name(),
-                        prop: prop.clone(),
+                        readonly: false,
+                        obj_type: box Type::This(this.clone()),
+                        index_type: prop_ty,
+                    }));
+                }
+
+                Type::StaticThis(StaticThis { span }) => {
+                    // Handle static access to class itself while *decalring* the class.
+                    for (_, member) in self.scope.class_members() {
+                        match member {
+                            stc_ts_types::ClassMember::Method(member @ Method { is_static: true, .. }) => {
+                                if member.key.type_eq(prop) {
+                                    return Ok(box Type::Function(ty::Function {
+                                        span: member.span,
+                                        type_params: member.type_params.clone(),
+                                        params: member.params.clone(),
+                                        ret_ty: member.ret_ty.clone(),
+                                    }));
+                                }
+                            }
+
+                            stc_ts_types::ClassMember::Property(property @ ClassProperty { is_static: true, .. }) => {
+                                if property.key.type_eq(prop) {
+                                    return Ok(property.value.clone().unwrap_or_else(|| Type::any(span.clone())));
+                                }
+                            }
+
+                            _ => {}
+                        }
+                    }
+
+                    dbg!();
+
+                    return Err(Error::NoSuchProperty {
+                        span: *span,
+                        obj: Some(obj.clone()),
+                        prop: Some(prop.clone()),
                     });
                 }
 
-                if let Some(super_class) = self.scope.get_super_class() {
-                    let super_class = super_class.clone();
-                    let ctx = Ctx {
-                        preserve_ref: false,
-                        ignore_expand_prevention_for_top: true,
-                        ..self.ctx
-                    };
-                    let super_class = self.with_ctx(ctx).expand_fully(span, super_class, true)?;
-
-                    if let Ok(v) = self.access_property(span, super_class, prop, type_mode) {
-                        return Ok(v);
-                    }
-                }
-
-                let prop_ty = prop.clone().computed().unwrap().ty;
-
-                // TODO: Handle string literals like
-                //
-                // `this['props']`
-                return Ok(box Type::IndexedAccessType(IndexedAccessType {
-                    span,
-                    readonly: false,
-                    obj_type: box Type::This(this.clone()),
-                    index_type: prop_ty,
-                }));
+                _ => {}
             }
-
-            Type::StaticThis(StaticThis { span }) => {
-                // Handle static access to class itself while *decalring* the class.
-                for (_, member) in self.scope.class_members() {
-                    match member {
-                        stc_ts_types::ClassMember::Method(member @ Method { is_static: true, .. }) => {
-                            if member.key.type_eq(prop) {
-                                return Ok(box Type::Function(ty::Function {
-                                    span: member.span,
-                                    type_params: member.type_params.clone(),
-                                    params: member.params.clone(),
-                                    ret_ty: member.ret_ty.clone(),
-                                }));
-                            }
-                        }
-
-                        stc_ts_types::ClassMember::Property(property @ ClassProperty { is_static: true, .. }) => {
-                            if property.key.type_eq(prop) {
-                                return Ok(property.value.clone().unwrap_or_else(|| Type::any(span.clone())));
-                            }
-                        }
-
-                        _ => {}
-                    }
-                }
-
-                dbg!();
-
-                return Err(Error::NoSuchProperty {
-                    span: *span,
-                    obj: Some(obj.clone()),
-                    prop: Some(prop.clone()),
-                });
-            }
-
-            _ => {}
         }
 
         let ctx = Ctx {

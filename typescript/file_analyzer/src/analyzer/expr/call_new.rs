@@ -1588,6 +1588,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                                     sym: value.clone(),
                                 },
                                 TypeOfMode::RValue,
+                                IdKind::Type,
                             )
                             .report(&mut a.storage)
                         {
