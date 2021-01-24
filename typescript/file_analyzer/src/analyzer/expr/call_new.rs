@@ -46,6 +46,7 @@ use stc_ts_ast_rnode::RTsThisTypeOrIdent;
 use stc_ts_ast_rnode::RTsType;
 use stc_ts_ast_rnode::RTsTypeParamInstantiation;
 use stc_ts_ast_rnode::RTsTypeRef;
+use stc_ts_errors::debug::print_backtrace;
 use stc_ts_errors::debug::print_type;
 use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
@@ -330,7 +331,10 @@ impl Analyzer<'_, '_> {
                     }
 
                     Type::Class(ty::Class { ref body, .. }) => {
+                        let mut candidates = vec![];
                         for member in body.iter() {
+                            // TODO: Handle properties with callable type.
+
                             match member {
                                 ty::ClassMember::Method(Method {
                                     key,
@@ -340,22 +344,49 @@ impl Analyzer<'_, '_> {
                                     ..
                                 }) => {
                                     if key.type_eq(&prop) {
-                                        return self.get_return_type(
-                                            span,
-                                            kind,
-                                            type_params.as_ref().map(|v| &*v.params),
-                                            &params,
-                                            ret_ty.clone(),
-                                            type_args.as_ref(),
-                                            args,
-                                            &arg_types,
-                                            &spread_arg_types,
-                                        );
+                                        candidates.push((type_params, params, ret_ty));
                                     }
                                 }
                                 _ => {}
                             }
                         }
+
+                        candidates.sort_by_cached_key(|(type_params, params, _)| {
+                            self.check_call_args(
+                                span,
+                                type_params.as_ref().map(|v| &*v.params),
+                                params,
+                                type_args.as_ref(),
+                                args,
+                                &arg_types,
+                                &spread_arg_types,
+                            )
+                        });
+
+                        for (type_params, params, ret_ty) in candidates {
+                            return self.get_return_type(
+                                span,
+                                kind,
+                                type_params.as_ref().map(|v| &*v.params),
+                                &params,
+                                ret_ty.clone(),
+                                type_args.as_ref(),
+                                args,
+                                &arg_types,
+                                &spread_arg_types,
+                            );
+                        }
+
+                        return Err(match kind {
+                            ExtractKind::Call => Error::NoCallabelPropertyWithName {
+                                span,
+                                key: box prop.clone(),
+                            },
+                            ExtractKind::New => Error::NoSuchConstructor {
+                                span,
+                                key: box prop.clone(),
+                            },
+                        });
                     }
                     Type::Keyword(RTsKeywordType {
                         kind: TsKeywordTypeKind::TsSymbolKeyword,
@@ -1133,8 +1164,14 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult {
         let logger = self.logger.clone();
 
-        self.validate_arg_count(span, params, args, arg_types, spread_arg_types)
-            .report(&mut self.storage);
+        {
+            let arg_check_res = self.validate_arg_count(span, params, args, arg_types, spread_arg_types);
+            match arg_check_res {
+                Err(..) => print_backtrace(),
+                _ => {}
+            }
+            arg_check_res.report(&mut self.storage);
+        }
 
         slog::debug!(
             logger,

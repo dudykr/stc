@@ -542,6 +542,16 @@ pub enum Error {
     InvalidDeleteOperand {
         span: Span,
     },
+
+    NoCallabelPropertyWithName {
+        span: Span,
+        key: Box<Key>,
+    },
+
+    NoSuchConstructor {
+        span: Span,
+        key: Box<Key>,
+    },
 }
 
 impl Error {
