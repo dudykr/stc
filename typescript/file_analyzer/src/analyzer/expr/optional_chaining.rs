@@ -1,3 +1,4 @@
+use super::IdCtx;
 use super::TypeOfMode;
 use crate::util::RemoveTypes;
 use crate::{
@@ -30,7 +31,7 @@ impl Analyzer<'_, '_> {
                     obj = self.with_ctx(ctx).expand_fully(span, obj, true)?;
                 }
 
-                let ty = self.access_property(span, obj, &prop, TypeOfMode::RValue)?;
+                let ty = self.access_property(span, obj, &prop, TypeOfMode::RValue, IdCtx::Var)?;
 
                 //
 

@@ -1981,7 +1981,7 @@ impl Analyzer<'_, '_> {
                 ..self.ctx
             };
             let obj_ty = self.with_ctx(ctx).expand_fully(span, obj_ty, true)?;
-            let ty = self.access_property(span, obj_ty, &prop, type_mode)?;
+            let ty = self.access_property(span, obj_ty, &prop, type_mode, IdCtx::Var)?;
             return Ok(ty);
         } else {
             let ctx = Ctx {
@@ -1992,7 +1992,7 @@ impl Analyzer<'_, '_> {
             };
             let obj_ty = self.with_ctx(ctx).expand_fully(span, obj_ty, true)?;
 
-            return self.access_property(span, obj_ty, &prop, type_mode);
+            return self.access_property(span, obj_ty, &prop, type_mode, IdCtx::Var);
         }
     }
 
