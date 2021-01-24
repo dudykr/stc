@@ -14,6 +14,7 @@ use rnode::VisitMutWith;
 use rnode::VisitWith;
 use slog::Logger;
 use stc_ts_ast_rnode::RDecl;
+use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RModule;
 use stc_ts_ast_rnode::RModuleItem;
 use stc_ts_ast_rnode::RStmt;
@@ -137,7 +138,7 @@ impl BuiltIn {
                                     m.body.visit_mut_with(&mut analyzer);
                                 }
 
-                                match result.types.entry(id) {
+                                match result.types.entry(id.clone()) {
                                     Entry::Occupied(mut e) => match &mut **e.get_mut() {
                                         Type::Module(module) => {
                                             //
@@ -151,6 +152,7 @@ impl BuiltIn {
                                         e.insert(
                                             box stc_ts_types::Module {
                                                 span: DUMMY_SP,
+                                                name: RTsModuleName::Ident(RIdent::new(id.clone(), DUMMY_SP)),
                                                 exports: ModuleTypeData {
                                                     private_vars: Default::default(),
                                                     vars: data.vars,

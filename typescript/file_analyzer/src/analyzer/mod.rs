@@ -26,6 +26,7 @@ use stc_ts_ast_rnode::RModuleDecl;
 use stc_ts_ast_rnode::RModuleItem;
 use stc_ts_ast_rnode::RScript;
 use stc_ts_ast_rnode::RStmt;
+use stc_ts_ast_rnode::RStr;
 use stc_ts_ast_rnode::RTsImportEqualsDecl;
 use stc_ts_ast_rnode::RTsModuleDecl;
 use stc_ts_ast_rnode::RTsModuleName;
@@ -46,6 +47,7 @@ use std::{
     path::PathBuf,
     sync::Arc,
 };
+use swc_atoms::js_word;
 use swc_atoms::JsWord;
 use swc_common::{SourceMap, Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
@@ -194,8 +196,8 @@ impl Analyzer<'_, '_> {
 //    }
 //}
 
-fn make_module_ty(span: Span, exports: ModuleTypeData) -> ty::Module {
-    ty::Module { span, exports }
+fn make_module_ty(span: Span, name: RTsModuleName, exports: ModuleTypeData) -> ty::Module {
+    ty::Module { span, name, exports }
 }
 
 // TODO:
@@ -232,7 +234,16 @@ impl Analyzer<'_, '_> {
         };
         self.storage.report_all(errors);
 
-        Ok(self.finalize(make_module_ty(span, data)))
+        Ok(self.finalize(make_module_ty(
+            span,
+            RTsModuleName::Str(RStr {
+                span: DUMMY_SP,
+                has_escape: false,
+                kind: Default::default(),
+                value: js_word!(""),
+            }),
+            data,
+        )))
     }
 }
 
@@ -658,7 +669,11 @@ impl Analyzer<'_, '_> {
                 }
 
                 if !global {
-                    let ty = child.finalize(ty::Module { span, exports });
+                    let ty = child.finalize(ty::Module {
+                        name: decl.id.clone(),
+                        span,
+                        exports,
+                    });
                     let ty = Type::Module(ty).cheap();
                     return Ok(Some(ty));
                 }

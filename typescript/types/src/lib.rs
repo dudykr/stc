@@ -30,6 +30,7 @@ use stc_ts_ast_rnode::RTsEnumMemberId;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
+use stc_ts_ast_rnode::RTsModuleName;
 use stc_ts_ast_rnode::RTsNamespaceDecl;
 use stc_ts_ast_rnode::RTsThisType;
 use stc_ts_ast_rnode::RTsThisTypeOrIdent;
@@ -379,6 +380,8 @@ pub struct ImportType {
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Module {
     pub span: Span,
+    #[use_eq_ignore_span]
+    pub name: RTsModuleName,
     pub exports: ModuleTypeData,
 }
 
