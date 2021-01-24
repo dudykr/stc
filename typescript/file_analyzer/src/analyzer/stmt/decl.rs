@@ -241,9 +241,7 @@ impl Analyzer<'_, '_> {
                         value_ty = self.expand(span, value_ty)?;
                         value_ty = self.rename_type_params(span, value_ty, Some(&ty))?;
 
-                        let ty_for_assignment = self.expand_fully(span, ty.clone(), true)?;
-                        let value_ty_for_assignment = self.expand_fully(span, value_ty.clone(), true)?;
-                        match self.assign(&ty_for_assignment, &value_ty_for_assignment, v_span) {
+                        match self.assign(&ty, &value_ty, v_span) {
                             Ok(()) => {
                                 let mut ty = ty;
                                 self.prevent_generalize(&mut ty);
