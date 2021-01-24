@@ -2,12 +2,14 @@ use super::InferData;
 use crate::analyzer::Analyzer;
 use crate::ValidationResult;
 use stc_ts_types::Interface;
+use stc_ts_types::Operator;
 use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
 use swc_common::Span;
 use swc_common::Spanned;
 use swc_common::TypeEq;
+use swc_ecma_ast::TsTypeOperatorOp;
 
 impl Analyzer<'_, '_> {
     pub(super) fn infer_type_using_interface(
@@ -139,6 +141,28 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        Ok(())
+    }
+
+    pub(super) fn infer_type_from_operator(
+        &mut self,
+        span: Span,
+        inferred: &mut InferData,
+        param: &Operator,
+        arg: &Type,
+    ) -> ValidationResult<()> {
+        match param.op {
+            TsTypeOperatorOp::KeyOf => {}
+            TsTypeOperatorOp::Unique => {}
+            TsTypeOperatorOp::ReadOnly => return self.infer_type(span, inferred, &param.ty, arg),
+        }
+
+        slog::error!(
+            self.logger,
+            "infer_type_from_operator_and_tuple: unimplemented\nparam  = {:#?}\narg = {:#?}",
+            param,
+            arg,
+        );
         Ok(())
     }
 }
