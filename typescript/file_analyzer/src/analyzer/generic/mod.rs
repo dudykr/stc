@@ -854,7 +854,15 @@ impl Analyzer<'_, '_> {
                 _ => {}
             },
 
-            Type::Operator(param) => self.infer_type_from_operator(span, inferred, param, arg)?,
+            Type::Operator(param) => {
+                self.infer_type_from_operator(span, inferred, param, arg)?;
+
+                // We need to check parents
+                match arg {
+                    Type::Interface(..) => {}
+                    _ => return Ok(()),
+                }
+            }
 
             _ => {}
         }
@@ -895,7 +903,7 @@ impl Analyzer<'_, '_> {
 
                 // Check to print unimplemented error message
                 match param {
-                    Type::Tuple(..) | Type::Interface(..) => return Ok(()),
+                    Type::Operator(..) | Type::Interface(..) => return Ok(()),
                     _ => {}
                 }
             }
