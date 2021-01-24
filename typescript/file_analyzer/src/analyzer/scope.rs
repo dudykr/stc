@@ -472,6 +472,8 @@ impl Analyzer<'_, '_> {
             preserve_ref: false,
             ignore_expand_prevention_for_top: true,
             ignore_expand_prevention_for_all: false,
+            preserve_params: true,
+            preserve_ret_ty: true,
             ..self.ctx
         };
         self.with_ctx(ctx)
