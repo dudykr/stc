@@ -349,7 +349,14 @@ impl Analyzer<'_, '_> {
                     _ => false,
                 }
             {
-                let ty = self.expand_fully(span, type_param.constraint.clone().unwrap(), false)?;
+                let ctx = Ctx {
+                    preserve_params: true,
+                    preserve_ret_ty: true,
+                    ..self.ctx
+                };
+                let ty = self
+                    .with_ctx(ctx)
+                    .expand_fully(span, type_param.constraint.clone().unwrap(), false)?;
                 if !inferred.type_params.contains_key(&type_param.name) {
                     self.insert_inferred(&mut inferred, type_param.name.clone(), ty)?;
                 }

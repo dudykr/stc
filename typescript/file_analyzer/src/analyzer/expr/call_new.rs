@@ -1253,7 +1253,12 @@ impl Analyzer<'_, '_> {
                 &*new_args
             };
 
-            let ret_ty = self.expand(span, ret_ty)?;
+            let ctx = Ctx {
+                preserve_params: true,
+                preserve_ret_ty: true,
+                ..self.ctx
+            };
+            let ret_ty = self.with_ctx(ctx).expand(span, ret_ty)?;
 
             let inferred = self.infer_arg_types(
                 span,
