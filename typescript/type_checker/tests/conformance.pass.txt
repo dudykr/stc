@@ -1225,6 +1225,7 @@ scanner/ecmascript5/scannerNumericLiteral1.ts
 scanner/ecmascript5/scannerNumericLiteral5.ts
 scanner/ecmascript5/scannerNumericLiteral7.ts
 scanner/ecmascript5/scannerStringLiteralWithContainingNullCharacter1.ts
+statements/VariableStatements/everyTypeWithAnnotationAndInitializer.ts
 statements/breakStatements/doWhileBreakStatements.ts
 statements/breakStatements/forBreakStatements.ts
 statements/breakStatements/forInBreakStatements.ts
@@ -1260,6 +1261,7 @@ statements/for-ofStatements/ES5For-ofTypeCheck4.ts
 statements/for-ofStatements/ES5For-ofTypeCheck5.ts
 statements/for-ofStatements/ES5For-ofTypeCheck6.ts
 statements/for-ofStatements/ES5for-of32.ts
+statements/forStatements/forStatements.ts
 statements/ifDoWhileStatements/ifDoWhileStatements.ts
 statements/returnStatements/returnStatements.ts
 statements/throwStatements/throwInEnclosingStatements.ts
@@ -1293,9 +1295,11 @@ types/members/objectTypeHidingMembersOfObject.ts
 types/members/objectTypePropertyAccess.ts
 types/members/objectTypeWithCallSignatureAppearsToBeFunctionType.ts
 types/members/objectTypeWithCallSignatureHidingMembersOfFunction.ts
+types/members/typesWithOptionalProperty.ts
 types/namedTypes/classWithOnlyPublicMembersEquivalentToInterface.ts
 types/namedTypes/classWithOnlyPublicMembersEquivalentToInterface2.ts
 types/namedTypes/classWithOptionalParameter.ts
+types/namedTypes/genericInstantiationEquivalentToObjectLiteral.ts
 types/namedTypes/optionalMethods.ts
 types/never/neverType.ts
 types/never/neverUnionIntersection.ts
@@ -1325,6 +1329,7 @@ types/objectTypeLiteral/propertySignatures/stringNamedPropertyAccess.ts
 types/primitives/boolean/assignFromBooleanInterface.ts
 types/primitives/boolean/booleanPropertyAccess.ts
 types/primitives/boolean/validBooleanAssignments.ts
+types/primitives/enum/invalidEnumAssignments.ts
 types/primitives/enum/validEnumAssignments.ts
 types/primitives/null/directReferenceToNull.ts
 types/primitives/number/assignFromNumberInterface.ts
@@ -1343,6 +1348,7 @@ types/primitives/void/validVoidValues.ts
 types/rest/genericRestParameters2.ts
 types/rest/objectRest2.ts
 types/specifyingTypes/typeLiterals/arrayLiteral.ts
+types/specifyingTypes/typeLiterals/functionLiteralForOverloads2.ts
 types/specifyingTypes/typeQueries/typeQueryWithReservedWords.ts
 types/specifyingTypes/typeQueries/typeofClass2.ts
 types/specifyingTypes/typeQueries/typeofModuleWithoutExports.ts
@@ -1354,6 +1360,9 @@ types/spread/spreadUnion.ts
 types/stringLiteral/stringLiteralCheckedInIf02.ts
 types/stringLiteral/stringLiteralTypesAndParenthesizedExpressions01.ts
 types/stringLiteral/stringLiteralTypesAndTuples01.ts
+types/stringLiteral/stringLiteralTypesAsTags01.ts
+types/stringLiteral/stringLiteralTypesAsTags02.ts
+types/stringLiteral/stringLiteralTypesAsTags03.ts
 types/stringLiteral/stringLiteralTypesAsTypeParameterConstraint01.ts
 types/stringLiteral/stringLiteralTypesAsTypeParameterConstraint02.ts
 types/stringLiteral/stringLiteralTypesInUnionTypes01.ts
@@ -1384,6 +1393,7 @@ types/tuple/tupleElementTypes1.ts
 types/tuple/tupleElementTypes2.ts
 types/tuple/tupleElementTypes3.ts
 types/tuple/tupleElementTypes4.ts
+types/tuple/typeInferenceWithTupleType.ts
 types/tuple/wideningTuples1.ts
 types/tuple/wideningTuples4.ts
 types/tuple/wideningTuples6.ts
@@ -1485,10 +1495,15 @@ types/typeRelationships/typeAndMemberIdentity/objectTypesIdentityWithGenericCons
 types/typeRelationships/typeAndMemberIdentity/objectTypesIdentityWithGenericConstructSignaturesOptionalParams.ts
 types/typeRelationships/typeAndMemberIdentity/objectTypesIdentityWithGenericConstructSignaturesOptionalParams2.ts
 types/typeRelationships/typeAndMemberIdentity/objectTypesIdentityWithGenericConstructSignaturesOptionalParams3.ts
+types/typeRelationships/typeAndMemberIdentity/objectTypesIdentityWithNumericIndexers1.ts
+types/typeRelationships/typeAndMemberIdentity/objectTypesIdentityWithNumericIndexers2.ts
+types/typeRelationships/typeAndMemberIdentity/objectTypesIdentityWithNumericIndexers3.ts
 types/typeRelationships/typeAndMemberIdentity/objectTypesIdentityWithOptionality.ts
 types/typeRelationships/typeAndMemberIdentity/objectTypesIdentityWithPrivates.ts
 types/typeRelationships/typeAndMemberIdentity/objectTypesIdentityWithPrivates2.ts
 types/typeRelationships/typeAndMemberIdentity/objectTypesIdentityWithPublics.ts
+types/typeRelationships/typeAndMemberIdentity/objectTypesIdentityWithStringIndexers.ts
+types/typeRelationships/typeAndMemberIdentity/objectTypesIdentityWithStringIndexers2.ts
 types/typeRelationships/typeAndMemberIdentity/primtiveTypesAreIdentical.ts
 types/typeRelationships/typeAndMemberIdentity/typeParametersAreIdenticalToThemselves.ts
 types/typeRelationships/typeInference/discriminatedUnionInference.ts
@@ -1512,5 +1527,8 @@ types/typeRelationships/typeInference/unionAndIntersectionInference2.ts
 types/typeRelationships/widenedTypes/initializersWidened.ts
 types/typeRelationships/widenedTypes/objectLiteralWidened.ts
 types/typeRelationships/widenedTypes/strictNullChecksNoWidening.ts
+types/union/contextualTypeWithUnionTypeIndexSignatures.ts
 types/union/unionTypeFromArrayLiteral.ts
+types/uniqueSymbol/uniqueSymbols.ts
+types/uniqueSymbol/uniqueSymbolsDeclarations.ts
 types/uniqueSymbol/uniqueSymbolsDeclarationsErrors.ts
