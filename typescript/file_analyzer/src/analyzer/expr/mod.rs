@@ -74,6 +74,12 @@ mod type_cast;
 mod unary;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum IdKind {
+    Var,
+    Type,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TypeOfMode {
     /// Used for l-values.
     ///
@@ -760,6 +766,7 @@ impl Analyzer<'_, '_> {
         obj: Box<Type>,
         prop: &Key,
         type_mode: TypeOfMode,
+        kind: IdKind,
     ) -> ValidationResult {
         if !self.is_builtin {
             debug_assert_ne!(span, DUMMY_SP, "access_property: called with a dummy span");
