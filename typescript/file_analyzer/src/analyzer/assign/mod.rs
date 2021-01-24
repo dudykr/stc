@@ -6,6 +6,7 @@ use crate::{
 };
 use rnode::NodeId;
 use stc_ts_ast_rnode::RExpr;
+use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RStr;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
@@ -184,6 +185,7 @@ impl Analyzer<'_, '_> {
                 type_args: None,
                 ..
             }) => {
+                // TODO: Check if ref points global.
                 return Cow::Owned(Type::Keyword(RTsKeywordType {
                     span: *span,
                     kind: match type_name.sym {
@@ -192,7 +194,7 @@ impl Analyzer<'_, '_> {
                         js_word!("String") => TsKeywordTypeKind::TsStringKeyword,
                         _ => return Cow::Borrowed(ty),
                     },
-                }))
+                }));
             }
             _ => {}
         }
@@ -297,6 +299,19 @@ impl Analyzer<'_, '_> {
         }
 
         match to {
+            Type::Ref(Ref {
+                type_name:
+                    RTsEntityName::Ident(RIdent {
+                        sym: js_word!("Symbol"),
+                        ..
+                    }),
+                ..
+            }) => {
+                if rhs.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) {
+                    return Ok(());
+                }
+            }
+
             // Str contains `kind`, and it's not handled properly by type_eq.
             Type::Lit(RTsLitType {
                 lit: RTsLit::Str(to), ..
