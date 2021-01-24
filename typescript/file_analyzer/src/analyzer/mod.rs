@@ -370,6 +370,17 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         op(self)
     }
 
+    pub(crate) fn with_scope_for_type_params<F, Ret>(&mut self, op: F) -> Ret
+    where
+        F: for<'aa, 'bb> FnOnce(&mut Analyzer<'aa, 'bb>) -> Ret,
+    {
+        self.with_child(ScopeKind::TypeParams, Default::default(), |a: &mut Analyzer| {
+            // TODO: Optimize this.
+            Ok(op(a))
+        })
+        .unwrap()
+    }
+
     /// TODO: Move return values to parent scope
     pub(crate) fn with_child<F, Ret>(&mut self, kind: ScopeKind, facts: CondFacts, op: F) -> ValidationResult<Ret>
     where

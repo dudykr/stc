@@ -773,9 +773,9 @@ impl Analyzer<'_, '_> {
         }
 
         // We use child scope to store type parameters.
-        let mut ty = self.with_child(ScopeKind::MemberAccess, Default::default(), |child: &mut Analyzer| {
-            let mut ty = child.access_property_inner(span, obj, prop, type_mode, id_ctx)?;
-            ty = child.expand_type_params_using_scope(ty)?;
+        let mut ty = self.with_scope_for_type_params(|analyzer: &mut Analyzer| -> ValidationResult<_> {
+            let mut ty = analyzer.access_property_inner(span, obj, prop, type_mode, id_ctx)?;
+            ty = analyzer.expand_type_params_using_scope(ty)?;
             Ok(ty)
         })?;
 

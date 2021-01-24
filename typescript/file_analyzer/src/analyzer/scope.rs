@@ -166,7 +166,7 @@ impl Scope<'_> {
     /// Returns `true` if a scope exists for storing
     pub fn should_store_type_params(&self) -> bool {
         match self.kind {
-            ScopeKind::Call | ScopeKind::MemberAccess => return true,
+            ScopeKind::Call | ScopeKind::TypeParams => return true,
             _ => {}
         }
 
@@ -1470,7 +1470,7 @@ impl<'a> Scope<'a> {
             ScopeKind::ObjectLit => return true,
 
             ScopeKind::Class => return false,
-            ScopeKind::MemberAccess
+            ScopeKind::TypeParams
             | ScopeKind::Call
             | ScopeKind::Method
             | ScopeKind::Flow
@@ -1495,7 +1495,7 @@ impl<'a> Scope<'a> {
             ScopeKind::ObjectLit => return false,
 
             ScopeKind::Class => return true,
-            ScopeKind::MemberAccess | ScopeKind::Call | ScopeKind::Method | ScopeKind::Flow | ScopeKind::Block => {}
+            ScopeKind::TypeParams | ScopeKind::Call | ScopeKind::Method | ScopeKind::Flow | ScopeKind::Block => {}
         }
 
         match self.parent {
@@ -1606,7 +1606,8 @@ pub(crate) enum ScopeKind {
     ObjectLit,
     /// If statement, conditional expression, switch case
     Flow,
-    MemberAccess,
+    /// Scope to store type parameters.
+    TypeParams,
     /// Type parameters are stored in this scope.
     Call,
     Module,
