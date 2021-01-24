@@ -295,119 +295,11 @@ impl Analyzer<'_, '_> {
                     _ => obj_type,
                 };
 
-                match obj_type.normalize() {
-                    Type::Keyword(RTsKeywordType {
-                        kind: TsKeywordTypeKind::TsAnyKeyword,
-                        ..
-                    }) => {
-                        return Ok(Type::any(span));
-                    }
-
-                    Type::Interface(ref i) => {
-                        // TODO: Check parent interface
-                        return self.search_members_for_callable_prop(
-                            kind,
-                            span,
-                            &i.body,
-                            &prop,
-                            type_args.as_ref(),
-                            args,
-                            &arg_types,
-                            &spread_arg_types,
-                        );
-                    }
-
-                    Type::TypeLit(ref t) => {
-                        return self.search_members_for_callable_prop(
-                            kind,
-                            span,
-                            &t.members,
-                            &prop,
-                            type_args.as_ref(),
-                            args,
-                            &arg_types,
-                            &spread_arg_types,
-                        );
-                    }
-
-                    Type::Class(ty::Class { body, super_class, .. }) => {
-                        let mut candidates = vec![];
-                        for member in body.iter() {
-                            // TODO: Handle properties with callable type.
-
-                            match member {
-                                ty::ClassMember::Method(Method {
-                                    key,
-                                    ret_ty,
-                                    type_params,
-                                    params,
-                                    ..
-                                }) => {
-                                    if key.type_eq(&prop) {
-                                        candidates.push((type_params, params, ret_ty));
-                                    }
-                                }
-                                _ => {}
-                            }
-                        }
-
-                        candidates.sort_by_cached_key(|(type_params, params, _)| {
-                            self.check_call_args(
-                                span,
-                                type_params.as_ref().map(|v| &*v.params),
-                                params,
-                                type_args.as_ref(),
-                                args,
-                                &arg_types,
-                                &spread_arg_types,
-                            )
-                        });
-
-                        for (type_params, params, ret_ty) in candidates {
-                            return self.get_return_type(
-                                span,
-                                kind,
-                                type_params.as_ref().map(|v| &*v.params),
-                                &params,
-                                ret_ty.clone(),
-                                type_args.as_ref(),
-                                args,
-                                &arg_types,
-                                &spread_arg_types,
-                            );
-                        }
-
-                        return Err(match kind {
-                            ExtractKind::Call => Error::NoCallabelPropertyWithName {
-                                span,
-                                key: box prop.clone(),
-                            },
-                            ExtractKind::New => Error::NoSuchConstructor {
-                                span,
-                                key: box prop.clone(),
-                            },
-                        });
-                    }
-                    Type::Keyword(RTsKeywordType {
-                        kind: TsKeywordTypeKind::TsSymbolKeyword,
-                        ..
-                    }) => {
-                        if let Ok(ty) = self.env.get_global_type(span, &js_word!("Symbol")) {
-                            return Ok(ty);
-                        }
-                    }
-
-                    _ => {}
-                }
-
-                let callee = self.access_property(span, obj_type, &prop, TypeOfMode::RValue, IdCtx::Var)?;
-
-                let callee = box self.expand_top_ref(span, Cow::Owned(*callee))?.into_owned();
-
-                self.get_best_return_type(
+                self.call_property(
                     span,
-                    callee,
                     kind,
+                    obj_type,
+                    &prop,
                     type_args.as_ref(),
                     args,
                     &arg_types,
@@ -502,6 +394,129 @@ impl Analyzer<'_, '_> {
                 })
             }
         }
+    }
+
+    fn call_property(
+        &mut self,
+        span: Span,
+        kind: ExtractKind,
+        obj_type: Box<Type>,
+        prop: &Key,
+        type_args: Option<&TypeParamInstantiation>,
+        args: &[RExprOrSpread],
+        arg_types: &[TypeOrSpread],
+        spread_arg_types: &[TypeOrSpread],
+    ) -> ValidationResult {
+        match obj_type.normalize() {
+            Type::Keyword(RTsKeywordType {
+                kind: TsKeywordTypeKind::TsAnyKeyword,
+                ..
+            }) => {
+                return Ok(Type::any(span));
+            }
+
+            Type::Interface(ref i) => {
+                // TODO: Check parent interface
+                return self.search_members_for_callable_prop(
+                    kind,
+                    span,
+                    &i.body,
+                    &prop,
+                    type_args,
+                    args,
+                    &arg_types,
+                    &spread_arg_types,
+                );
+            }
+
+            Type::TypeLit(ref t) => {
+                return self.search_members_for_callable_prop(
+                    kind,
+                    span,
+                    &t.members,
+                    &prop,
+                    type_args,
+                    args,
+                    &arg_types,
+                    &spread_arg_types,
+                );
+            }
+
+            Type::Class(ty::Class { body, super_class, .. }) => {
+                let mut candidates = vec![];
+                for member in body.iter() {
+                    // TODO: Handle properties with callable type.
+
+                    match member {
+                        ty::ClassMember::Method(Method {
+                            key,
+                            ret_ty,
+                            type_params,
+                            params,
+                            ..
+                        }) => {
+                            if key.type_eq(&prop) {
+                                candidates.push((type_params, params, ret_ty));
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+
+                candidates.sort_by_cached_key(|(type_params, params, _)| {
+                    self.check_call_args(
+                        span,
+                        type_params.as_ref().map(|v| &*v.params),
+                        params,
+                        type_args,
+                        args,
+                        arg_types,
+                        spread_arg_types,
+                    )
+                });
+
+                for (type_params, params, ret_ty) in candidates {
+                    return self.get_return_type(
+                        span,
+                        kind,
+                        type_params.as_ref().map(|v| &*v.params),
+                        &params,
+                        ret_ty.clone(),
+                        type_args,
+                        args,
+                        &arg_types,
+                        &spread_arg_types,
+                    );
+                }
+
+                return Err(match kind {
+                    ExtractKind::Call => Error::NoCallabelPropertyWithName {
+                        span,
+                        key: box prop.clone(),
+                    },
+                    ExtractKind::New => Error::NoSuchConstructor {
+                        span,
+                        key: box prop.clone(),
+                    },
+                });
+            }
+            Type::Keyword(RTsKeywordType {
+                kind: TsKeywordTypeKind::TsSymbolKeyword,
+                ..
+            }) => {
+                if let Ok(ty) = self.env.get_global_type(span, &js_word!("Symbol")) {
+                    return Ok(ty);
+                }
+            }
+
+            _ => {}
+        }
+
+        let callee = self.access_property(span, obj_type, &prop, TypeOfMode::RValue, IdCtx::Var)?;
+
+        let callee = box self.expand_top_ref(span, Cow::Owned(*callee))?.into_owned();
+
+        self.get_best_return_type(span, callee, kind, type_args, args, &arg_types, &spread_arg_types)
     }
 
     fn check_type_element_for_call(
