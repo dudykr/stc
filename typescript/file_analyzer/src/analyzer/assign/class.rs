@@ -94,7 +94,7 @@ impl Analyzer<'_, '_> {
 
         Err(Error::Unimplemented {
             span: opts.span,
-            msg: format!("fine-grained class assignment\nleft memeber:{:?}", l),
+            msg: format!("fine-grained class assignment\nleft memeber:{:#?}", l),
         })
     }
 }
