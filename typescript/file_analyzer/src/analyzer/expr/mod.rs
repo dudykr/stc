@@ -1480,6 +1480,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                print_backtrace();
                 // No property found
                 return Err(Error::NoSuchPropertyInModule { span });
             }
