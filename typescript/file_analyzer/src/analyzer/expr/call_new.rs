@@ -1508,45 +1508,53 @@ impl Analyzer<'_, '_> {
             return ArgCheckResult::NeverMatches;
         }
 
-        let mut exact = true;
+        self.with_scope_for_type_params(|analyzer: &mut Analyzer| {
+            if let Some(type_params) = type_params {
+                for param in type_params {
+                    analyzer.register_type(param.name.clone(), box Type::Param(param.clone()));
+                }
+            }
 
-        for (arg, param) in arg_types.iter().zip(params) {
-            // match arg.ty.normalize() {
-            //     Type::Union(..) => match param.ty.normalize() {
-            //         Type::Keyword(..) => if self.assign(&param.ty, &arg.ty, span).is_ok()
-            // {},         _ => {}
-            //     },
-            //     _ => {}
-            // }
+            let mut exact = true;
 
-            match param.ty.normalize() {
-                Type::Param(..) => {}
-                _ => {
-                    if self
-                        .assign_with_opts(
-                            AssignOpts {
-                                span,
-                                allow_unknown_rhs: true,
-                            },
-                            &param.ty,
-                            &arg.ty,
-                        )
-                        .is_err()
-                    {
-                        return ArgCheckResult::NeverMatches;
-                    }
-                    if self.assign(&arg.ty, &param.ty, span).is_err() {
-                        exact = false;
+            for (arg, param) in arg_types.iter().zip(params) {
+                // match arg.ty.normalize() {
+                //     Type::Union(..) => match param.ty.normalize() {
+                //         Type::Keyword(..) => if self.assign(&param.ty, &arg.ty, span).is_ok()
+                // {},         _ => {}
+                //     },
+                //     _ => {}
+                // }
+
+                match param.ty.normalize() {
+                    Type::Param(..) => {}
+                    _ => {
+                        if analyzer
+                            .assign_with_opts(
+                                AssignOpts {
+                                    span,
+                                    allow_unknown_rhs: true,
+                                },
+                                &param.ty,
+                                &arg.ty,
+                            )
+                            .is_err()
+                        {
+                            return ArgCheckResult::NeverMatches;
+                        }
+                        if analyzer.assign(&arg.ty, &param.ty, span).is_err() {
+                            exact = false;
+                        }
                     }
                 }
             }
-        }
 
-        if self.scope.is_call_arg_count_unknown || !exact {
-            return ArgCheckResult::MayBe;
-        }
+            if analyzer.scope.is_call_arg_count_unknown || !exact {
+                return ArgCheckResult::MayBe;
+            }
 
-        ArgCheckResult::Exact
+            ArgCheckResult::Exact
+        })
     }
 
     fn validate_args(&mut self, args: &[RExprOrSpread]) -> Result<Vec<TypeOrSpread>, Error> {
