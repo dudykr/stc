@@ -11,6 +11,8 @@ impl Analyzer<'_, '_> {
     pub(super) fn assign_to_class(&mut self, opts: AssignOpts, l: &Class, r: &Type) -> ValidationResult<()> {
         // debug_assert!(!span.is_dummy());
 
+        let r = r.normalize();
+
         // Everything is assignable to empty classes, including classes with only
         // constructors.
         let is_empty = l
@@ -77,6 +79,8 @@ impl Analyzer<'_, '_> {
                                         return self.assign(&lt, &rt, opts.span);
                                     }
                                 }
+
+                                return Ok(());
                             }
                         }
                         ClassMember::IndexSignature(_) => {}
@@ -94,7 +98,7 @@ impl Analyzer<'_, '_> {
 
         Err(Error::Unimplemented {
             span: opts.span,
-            msg: format!("fine-grained class assignment\nleft memeber:{:#?}", l),
+            msg: format!("fine-grained class assignment to lhs memeber: {:#?}", l),
         })
     }
 }
