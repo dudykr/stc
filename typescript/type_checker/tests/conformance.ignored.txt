@@ -13,4 +13,5 @@ unionAndIntersectionInference1.ts
 unionTypeInference.ts
 stringLiteralTypesOverloadAssignability04.ts
 stringLiteralTypesOverloadAssignability02.ts
+stringLiteralTypesOverloadAssignability03.ts
 stringLiteralTypesOverloadAssignability01.ts
