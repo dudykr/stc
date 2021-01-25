@@ -140,9 +140,10 @@ impl Analyzer<'_, '_> {
         }
 
         res.map_err(|err| match err {
-            Error::AssignFailed { .. } => err,
-            Error::Errors { .. } => err,
-            Error::Unimplemented { .. } => err,
+            Error::AssignFailed { .. }
+            | Error::DebugContext { .. }
+            | Error::Errors { .. }
+            | Error::Unimplemented { .. } => err,
             _ => Error::AssignFailed {
                 span: opts.span,
                 left: box left.clone(),
