@@ -14,3 +14,5 @@ pub trait DebugExt<T>: Into<Result<T, Error>> {
         self.into().map_err(|err: Error| err.context(msg()))
     }
 }
+
+impl<T> DebugExt<T> for Result<T, Error> {}
