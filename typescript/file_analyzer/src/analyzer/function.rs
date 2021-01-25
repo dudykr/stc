@@ -1,3 +1,4 @@
+use super::assign::AssignOpts;
 use super::Analyzer;
 use crate::analyzer::util::ResultExt;
 use crate::{
@@ -127,8 +128,16 @@ impl Analyzer<'_, '_> {
                             // Expand before assigning
                             let span = inferred_return_type.span();
 
+                            // It's okay to return more properties than declared.
                             child
-                                .assign(&declared, &inferred_return_type, span)
+                                .assign_with_opts(
+                                    AssignOpts {
+                                        span,
+                                        allow_unknown_rhs: true,
+                                    },
+                                    &declared,
+                                    &inferred_return_type,
+                                )
                                 .report(&mut child.storage);
                         }
                     }
