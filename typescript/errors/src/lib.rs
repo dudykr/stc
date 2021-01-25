@@ -690,6 +690,19 @@ impl Error {
         for e in vec {
             match e {
                 Error::Errors { errors, .. } => buf.extend(Self::flatten(errors)),
+                Error::DebugContext { inner, context, .. } => {
+                    //
+                    buf.extend(
+                        Self::flatten(vec![*inner])
+                            .into_iter()
+                            .map(Box::new)
+                            .map(|inner| Error::DebugContext {
+                                span: inner.span(),
+                                context: context.clone(),
+                                inner,
+                            }),
+                    )
+                }
                 _ => buf.push(e),
             }
         }
