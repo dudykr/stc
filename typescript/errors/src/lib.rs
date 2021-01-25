@@ -569,6 +569,10 @@ impl Error {
             return self;
         }
 
+        if self.span().is_dummy() {
+            panic!("Error with dummy span found(context: {}): {:#?}", context, self)
+        }
+
         Error::DebugContext {
             span: self.span(),
             context: context.to_string(),
