@@ -40,6 +40,7 @@ impl Errors {
                 }
                 return;
             }
+            Error::DebugContext { .. } => return,
             _ => {}
         }
 
