@@ -120,7 +120,7 @@ impl Analyzer<'_, '_> {
 
                     TypeElement::Method(p) => match a {
                         TypeElement::Method(a) => {
-                            if self.assign(&p.key.ty(), &a.key.ty(), a.key.span()).is_ok() {
+                            if self.assign(&p.key.ty(), &a.key.ty(), span).is_ok() {
                                 self.infer_type_of_fn_params(span, inferred, &p.params, &a.params)?;
 
                                 if let Some(p_ret) = &p.ret_ty {
