@@ -144,7 +144,7 @@ impl Analyzer<'_, '_> {
             Error::Errors { .. } => err,
             Error::Unimplemented { .. } => err,
             _ => Error::AssignFailed {
-                span: err.span(),
+                span: opts.span,
                 left: box left.clone(),
                 right: box right.clone(),
                 cause: vec![err],
