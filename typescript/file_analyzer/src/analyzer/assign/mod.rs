@@ -213,7 +213,7 @@ impl Analyzer<'_, '_> {
     fn assign_without_wrapping(&mut self, to: &Type, rhs: &Type, opts: AssignOpts) -> Result<(), Error> {
         let span = opts.span;
 
-        if span.is_dummy() {
+        if !self.is_builtin && span.is_dummy() {
             panic!("cannot assign with dummy span")
         }
 
