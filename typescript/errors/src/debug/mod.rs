@@ -18,7 +18,7 @@ use swc_ecma_codegen::{text_writer::JsWriter, Emitter};
 pub mod debugger;
 pub mod duplicate;
 
-pub fn print_type(logger: &Logger, name: &str, cm: &Lrc<SourceMap>, t: &Type) {
+fn dump_type_as_string(cm: &Lrc<SourceMap>, t: &Type) -> String {
     let mut buf = vec![];
     {
         let mut emitter = Emitter {
@@ -44,6 +44,16 @@ pub fn print_type(logger: &Logger, name: &str, cm: &Lrc<SourceMap>, t: &Type) {
             .unwrap();
     }
     let s = String::from_utf8_lossy(&buf);
+
+    s.to_string()
+}
+
+pub fn dbg_type(name: &str, cm: &Lrc<SourceMap>, t: &Type) {
+    let s = dump_type_as_string(cm, t);
+    eprintln!("===== ===== ===== Type ({}) ===== ===== =====\n{}", name, s);
+}
+pub fn print_type(logger: &Logger, name: &str, cm: &Lrc<SourceMap>, t: &Type) {
+    let s = dump_type_as_string(cm, t);
     slog::info!(logger, "===== ===== ===== Type ({}) ===== ===== =====\n{}", name, s);
 }
 

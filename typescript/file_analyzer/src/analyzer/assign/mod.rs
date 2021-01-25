@@ -13,8 +13,8 @@ use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_ast_rnode::RTsThisType;
+use stc_ts_errors::debug::dbg_type;
 use stc_ts_errors::debug::print_backtrace;
-use stc_ts_errors::debug::print_type;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_types::Key;
@@ -299,8 +299,8 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        print_type(&self.logger, "lhs", &self.cm, &to);
-        print_type(&self.logger, "rhs", &self.cm, &to);
+        dbg_type("lhs", &self.cm, &to);
+        dbg_type("rhs", &self.cm, &rhs);
 
         match to {
             Type::Ref(Ref {
