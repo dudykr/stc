@@ -868,7 +868,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                self.assign_to_type_elements(opts, to.span(), &body, rhs)
+                self.assign_to_type_elements(opts, span, &body, rhs)
                     .context("tried to assign an interfafce to an interface")?;
 
                 // TODO: Handle extends
@@ -877,7 +877,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::TypeLit(TypeLit { ref members, .. }) => {
-                self.assign_to_type_elements(opts, to.span(), &members, rhs)?;
+                self.assign_to_type_elements(opts, span, &members, rhs)?;
 
                 return Ok(());
             }
