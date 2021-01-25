@@ -37,6 +37,7 @@ use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsQualifiedName;
 use stc_ts_errors::debug::print_backtrace;
+use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_types::name::Name;
 use stc_ts_types::Array;
@@ -724,6 +725,29 @@ impl Analyzer<'_, '_> {
             RPat::Invalid(..) | RPat::Expr(box RExpr::Invalid(..)) => Ok(()),
 
             _ => unimplemented!("declare_vars for patterns other than ident: {:#?}", pat),
+        }
+    }
+
+    pub(super) fn resolve_typeof(&mut self, span: Span, name: &RTsEntityName) -> ValidationResult {
+        match name {
+            RTsEntityName::Ident(i) => self.type_of_var(i, TypeOfMode::RValue, None),
+            RTsEntityName::TsQualifiedName(n) => {
+                let obj = self
+                    .resolve_typeof(span, &n.left)
+                    .context("tried to resolve lhs of typeof")?;
+                let i = &n.right;
+
+                self.access_property(
+                    span,
+                    obj,
+                    &Key::Normal {
+                        span: i.span,
+                        sym: i.sym.clone(),
+                    },
+                    TypeOfMode::RValue,
+                    IdCtx::Var,
+                )
+            }
         }
     }
 

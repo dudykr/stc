@@ -35,6 +35,7 @@ use swc_common::{Span, Spanned};
 use swc_ecma_ast::*;
 
 mod class;
+mod query;
 mod type_el;
 
 /// Context used for `=` assignments.
@@ -497,11 +498,13 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        match *rhs {
+        match rhs {
             Type::Ref(..) => {
                 let rhs = self.expand_top_ref(span, Cow::Borrowed(rhs))?;
                 return self.assign_inner(to, &rhs, opts);
             }
+
+            Type::Query(rhs) => return self.assign_from_query_type(opts, to, &rhs),
 
             Type::Infer(..) => fail!(),
 
