@@ -204,6 +204,18 @@ impl Analyzer<'_, '_> {
     }
 
     fn assign_inner(&mut self, to: &Type, rhs: &Type, opts: AssignOpts) -> Result<(), Error> {
+        self.assign_without_wrapping(to, rhs, opts).map_err(|err| {
+            //
+
+            dbg_type("lhs (assign failed)", &self.cm, &to);
+            dbg_type("rhs (assign failed)", &self.cm, &rhs);
+
+            err
+        })
+    }
+
+    /// Assigns, but does not wrap error with [Error::AssignFailed].
+    fn assign_without_wrapping(&mut self, to: &Type, rhs: &Type, opts: AssignOpts) -> Result<(), Error> {
         let span = opts.span;
 
         // debug_assert!(!span.is_dummy(), "\n\t{:?}\n<-\n\t{:?}", to, rhs);
@@ -298,9 +310,6 @@ impl Analyzer<'_, '_> {
         if to.type_eq(rhs) {
             return Ok(());
         }
-
-        dbg_type("lhs", &self.cm, &to);
-        dbg_type("rhs", &self.cm, &rhs);
 
         match to {
             Type::Ref(Ref {
