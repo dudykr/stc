@@ -207,8 +207,8 @@ impl Analyzer<'_, '_> {
         self.assign_without_wrapping(to, rhs, opts).map_err(|err| {
             //
 
-            dbg_type("lhs (assign failed)", &self.cm, &to);
-            dbg_type("rhs (assign failed)", &self.cm, &rhs);
+            dbg_type("lhs - assign failed", &self.cm, &to);
+            dbg_type("rhs - assign failed", &self.cm, &rhs);
 
             err
         })
