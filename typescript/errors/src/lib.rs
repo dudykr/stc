@@ -564,6 +564,7 @@ pub enum Error {
 }
 
 impl Error {
+    #[track_caller]
     pub fn context(self, context: impl Display) -> Self {
         if !cfg!(debug_assertions) {
             return self;
