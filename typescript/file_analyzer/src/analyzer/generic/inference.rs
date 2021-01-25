@@ -7,7 +7,6 @@ use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
 use swc_common::Span;
-use swc_common::Spanned;
 use swc_common::TypeEq;
 use swc_ecma_ast::TsTypeOperatorOp;
 
