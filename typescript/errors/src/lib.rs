@@ -570,8 +570,13 @@ impl Error {
             return self;
         }
 
-        if self.span().is_dummy() {
-            panic!("Error with dummy span found(context: {}): {:#?}", context, self)
+        match self {
+            Error::Errors { .. } => {}
+            _ => {
+                if self.span().is_dummy() {
+                    panic!("Error with dummy span found(context: {}): {:#?}", context, self)
+                }
+            }
         }
 
         Error::DebugContext {
