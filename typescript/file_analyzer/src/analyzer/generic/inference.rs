@@ -76,7 +76,7 @@ impl Analyzer<'_, '_> {
                 match p {
                     TypeElement::Property(p) => match a {
                         TypeElement::Property(a) => {
-                            if self.assign(&p.key.ty(), &a.key.ty(), a.key.span()).is_ok() {
+                            if self.assign(&p.key.ty(), &a.key.ty(), span).is_ok() {
                                 if let Some(pt) = &p.type_ann {
                                     if let Some(at) = &a.type_ann {
                                         self.infer_type(span, inferred, pt, at)?;
