@@ -11,6 +11,7 @@ use stc_ts_ast_rnode::RTsType;
 use stc_ts_types::Id;
 use stc_ts_types::Ref;
 use stc_ts_types::Type;
+use stc_ts_types::TypeLit;
 use swc_common::{sync::Lrc, SourceMap, DUMMY_SP};
 use swc_ecma_ast::*;
 use swc_ecma_codegen::{text_writer::JsWriter, Emitter};
@@ -51,6 +52,21 @@ fn dump_type_as_string(cm: &Lrc<SourceMap>, t: &Type) -> String {
 pub fn dbg_type(name: &str, cm: &Lrc<SourceMap>, t: &Type) {
     let s = dump_type_as_string(cm, t);
     eprintln!("===== ===== ===== Type ({}) ===== ===== =====\n{}", name, s);
+
+    match t.normalize() {
+        Type::Interface(to) => {
+            let s = dump_type_as_string(
+                cm,
+                &Type::TypeLit(TypeLit {
+                    span: DUMMY_SP,
+                    members: to.body.clone(),
+                }),
+            );
+
+            eprintln!("===== ===== ===== Members ({}) ===== ===== =====\n{}", name, s);
+        }
+        _ => {}
+    }
 }
 pub fn print_type(logger: &Logger, name: &str, cm: &Lrc<SourceMap>, t: &Type) {
     let s = dump_type_as_string(cm, t);
