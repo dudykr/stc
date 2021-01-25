@@ -2,6 +2,7 @@
 #![feature(box_syntax)]
 #![feature(specialization)]
 
+pub use self::result_ext::DebugExt;
 use stc_ts_types::name::Name;
 use stc_ts_types::Id;
 use stc_ts_types::Key;
@@ -10,6 +11,7 @@ use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeParamInstantiation;
 use std::borrow::Cow;
+use std::fmt::Display;
 use std::{ops::RangeInclusive, path::PathBuf};
 use swc_atoms::JsWord;
 use swc_common::errors::DiagnosticId;
@@ -18,6 +20,7 @@ use swc_ecma_ast::AssignOp;
 use swc_ecma_ast::{UnaryOp, UpdateOp};
 
 pub mod debug;
+mod result_ext;
 
 impl Errors {
     /// This is used for debugging (by calling [pacic]).
@@ -552,9 +555,27 @@ pub enum Error {
         span: Span,
         key: Box<Key>,
     },
+
+    DebugContext {
+        span: Span,
+        context: String,
+        inner: Box<Error>,
+    },
 }
 
 impl Error {
+    pub fn context(self, context: impl Display) -> Self {
+        if !cfg!(debug_assertions) {
+            return self;
+        }
+
+        Error::DebugContext {
+            span: self.span(),
+            context: context.to_string(),
+            inner: box self,
+        }
+    }
+
     /// TypeScript error code.
     fn code(&self) -> usize {
         match self {
@@ -612,6 +633,8 @@ impl Error {
             Error::InvalidDeleteOperand { .. } => 2703,
             Error::NoSuchVar { .. } => 2304,
 
+            Error::DebugContext { inner, .. } => inner.code(),
+
             _ => 0,
         }
     }
@@ -633,6 +656,8 @@ impl Error {
             }
 
             Self::Unimplemented { msg, .. } => msg.to_string().into(),
+
+            Self::DebugContext { context, inner, .. } => format!("{}:\n{}", context, inner.msg()).into(),
 
             _ => format!("{:#?}", self).into(),
         }
