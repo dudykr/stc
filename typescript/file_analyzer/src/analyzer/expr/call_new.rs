@@ -1060,7 +1060,7 @@ impl Analyzer<'_, '_> {
         // candidates.
         let mut candidates = vec![];
 
-        for callee in callee.normalize().iter_union() {
+        for callee in callee.normalize().iter_union().flat_map(|ty| ty.iter_union()) {
             // TODO: Check if signature match.
             match callee.normalize() {
                 Type::Intersection(ref i) => {
