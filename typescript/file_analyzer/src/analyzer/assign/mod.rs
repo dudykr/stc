@@ -202,7 +202,7 @@ impl Analyzer<'_, '_> {
         self.assign_without_wrapping(to, rhs, opts).with_context(|| {
             //
             let lhs = dump_type_as_string(&self.cm, &to);
-            let rhs = dump_type_as_string(&self.cm, &to);
+            let rhs = dump_type_as_string(&self.cm, &rhs);
 
             format!("lhs = {}rhs = {}", lhs, rhs)
         })
