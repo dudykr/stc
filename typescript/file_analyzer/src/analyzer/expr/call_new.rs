@@ -421,6 +421,7 @@ impl Analyzer<'_, '_> {
                 return self.search_members_for_callable_prop(
                     kind,
                     span,
+                    &obj_type,
                     &i.body,
                     &prop,
                     type_args,
@@ -434,6 +435,7 @@ impl Analyzer<'_, '_> {
                 return self.search_members_for_callable_prop(
                     kind,
                     span,
+                    &obj_type,
                     &t.members,
                     &prop,
                     type_args,
@@ -595,6 +597,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         kind: ExtractKind,
         span: Span,
+        obj: &Type,
         members: &[TypeElement],
         prop: &Key,
         type_args: Option<&TypeParamInstantiation>,
@@ -633,9 +636,10 @@ impl Analyzer<'_, '_> {
         }
 
         match candidates.len() {
-            0 => Err(Error::Unimplemented {
+            0 => Err(Error::NoSuchProperty {
                 span,
-                msg: format!("no method with same name\nMembers: {:?}\nKey: {:?}", members, prop),
+                obj: Some(box obj.clone()),
+                prop: Some(prop.clone()),
             }),
             1 => {
                 // TODO:
