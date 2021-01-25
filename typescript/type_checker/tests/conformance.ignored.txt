@@ -11,3 +11,4 @@ assignmentCompatWithObjectMembers.ts
 covariantCallbacks.ts
 unionAndIntersectionInference1.ts
 unionTypeInference.ts
+stringLiteralTypesOverloadAssignability04.ts
