@@ -14,6 +14,7 @@ use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_ast_rnode::RTsThisType;
 use stc_ts_errors::debug::dbg_type;
+use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::debug::print_backtrace;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
@@ -199,19 +200,22 @@ impl Analyzer<'_, '_> {
     }
 
     fn assign_inner(&mut self, to: &Type, rhs: &Type, opts: AssignOpts) -> Result<(), Error> {
-        self.assign_without_wrapping(to, rhs, opts).map_err(|err| {
+        self.assign_without_wrapping(to, rhs, opts).with_context(|| {
             //
+            let lhs = dump_type_as_string(&self.cm, &to);
+            let rhs = dump_type_as_string(&self.cm, &to);
 
-            dbg_type("lhs - assign failed", &self.cm, &to);
-            dbg_type("rhs - assign failed", &self.cm, &rhs);
-
-            err
+            format!("lhs = {}rhs = {}", lhs, rhs)
         })
     }
 
     /// Assigns, but does not wrap error with [Error::AssignFailed].
     fn assign_without_wrapping(&mut self, to: &Type, rhs: &Type, opts: AssignOpts) -> Result<(), Error> {
         let span = opts.span;
+
+        if span.is_dummy() {
+            panic!("cannot assign with dummy span")
+        }
 
         // debug_assert!(!span.is_dummy(), "\n\t{:?}\n<-\n\t{:?}", to, rhs);
         let to = self.normalize_for_assign(to);
@@ -1047,7 +1051,7 @@ impl Analyzer<'_, '_> {
                             numeric_keyed_ty,
                             &el.ty,
                             AssignOpts {
-                                span: el.span(),
+                                span: if el.span().is_dummy() { span } else { el.span() },
                                 ..opts
                             },
                         )
@@ -1343,7 +1347,8 @@ impl Analyzer<'_, '_> {
 
                                     for lp in &lm.params {
                                         for rp in &rm.params {
-                                            self.assign_inner(&lp.ty, &rp.ty, opts)?;
+                                            self.assign_inner(&lp.ty, &rp.ty, opts)
+                                                .context("tried to assign a method parameter to a method parameter")?;
                                         }
                                     }
 

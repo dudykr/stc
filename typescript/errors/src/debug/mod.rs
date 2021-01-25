@@ -19,7 +19,7 @@ use swc_ecma_codegen::{text_writer::JsWriter, Emitter};
 pub mod debugger;
 pub mod duplicate;
 
-fn dump_type_as_string(cm: &Lrc<SourceMap>, t: &Type) -> String {
+pub fn dump_type_as_string(cm: &Lrc<SourceMap>, t: &Type) -> String {
     let mut buf = vec![];
     {
         let mut emitter = Emitter {
