@@ -1079,7 +1079,9 @@ impl Analyzer<'_, '_> {
                     }
 
                     for (i, m) in lhs.into_iter().enumerate() {
-                        let res = self.assign_type_elements_to_type_element(opts, &mut missing_fields, m, $rhs);
+                        let res = self
+                            .assign_type_elements_to_type_element(opts, &mut missing_fields, m, $rhs)
+                            .with_context(|| format!("tried to assign to {}th element: {:?}", i, m.key()));
 
                         let success = match res {
                             Ok(()) => true,
