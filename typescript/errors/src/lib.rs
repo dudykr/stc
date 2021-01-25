@@ -572,7 +572,7 @@ impl Error {
         }
 
         match self {
-            Error::Errors { .. } => {}
+            Error::Errors { .. } | Error::DebugContext { .. } => {}
             _ => {
                 if self.span().is_dummy() {
                     panic!("Error with dummy span found(context: {}): {:#?}", context, self)
