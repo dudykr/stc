@@ -15,6 +15,7 @@ use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_ast_rnode::RTsThisType;
 use stc_ts_errors::debug::dbg_type;
 use stc_ts_errors::debug::print_backtrace;
+use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_types::Key;
@@ -867,7 +868,8 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                self.assign_to_type_elements(opts, to.span(), &body, rhs)?;
+                self.assign_to_type_elements(opts, to.span(), &body, rhs)
+                    .context("tried to assign an interfafce to an interface")?;
 
                 // TODO: Handle extends
 
