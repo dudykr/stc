@@ -29,17 +29,41 @@ pub fn dump_type_as_string(cm: &Lrc<SourceMap>, t: &Type) -> String {
             wr: box JsWriter::new(cm.clone(), "\n", &mut buf, None),
         };
 
-        emitter
-            .emit_module(&Module {
+        let mut body = vec![];
+        body.push(ModuleItem::Stmt(Stmt::Expr(ExprStmt {
+            span: DUMMY_SP,
+            expr: box Expr::TsAs(TsAsExpr {
                 span: DUMMY_SP,
-                body: vec![ModuleItem::Stmt(Stmt::Expr(ExprStmt {
+                expr: box Expr::Ident(Ident::new("TYPE".into(), DUMMY_SP)),
+                type_ann: box RTsType::from(t.clone().fold_with(&mut Visualizer)).into_orig(),
+            }),
+        })));
+
+        match t.normalize() {
+            Type::Interface(t) => {
+                body.push(ModuleItem::Stmt(Stmt::Expr(ExprStmt {
                     span: DUMMY_SP,
                     expr: box Expr::TsAs(TsAsExpr {
                         span: DUMMY_SP,
-                        expr: box Expr::Ident(Ident::new("TYPE".into(), DUMMY_SP)),
-                        type_ann: box RTsType::from(t.clone().fold_with(&mut Visualizer)).into_orig(),
+                        expr: box Expr::Ident(Ident::new("Member".into(), DUMMY_SP)),
+                        type_ann: box RTsType::from(
+                            Type::TypeLit(TypeLit {
+                                span: DUMMY_SP,
+                                members: t.body.clone(),
+                            })
+                            .fold_with(&mut Visualizer),
+                        )
+                        .into_orig(),
                     }),
-                }))],
+                })));
+            }
+            _ => {}
+        }
+
+        emitter
+            .emit_module(&Module {
+                span: DUMMY_SP,
+                body,
                 shebang: None,
             })
             .unwrap();
@@ -52,21 +76,6 @@ pub fn dump_type_as_string(cm: &Lrc<SourceMap>, t: &Type) -> String {
 pub fn dbg_type(name: &str, cm: &Lrc<SourceMap>, t: &Type) {
     let s = dump_type_as_string(cm, t);
     eprintln!("===== ===== ===== Type ({}) ===== ===== =====\n{}", name, s);
-
-    match t.normalize() {
-        Type::Interface(to) => {
-            let s = dump_type_as_string(
-                cm,
-                &Type::TypeLit(TypeLit {
-                    span: DUMMY_SP,
-                    members: to.body.clone(),
-                }),
-            );
-
-            eprintln!("===== ===== ===== Members ({}) ===== ===== =====\n{}", name, s);
-        }
-        _ => {}
-    }
 }
 pub fn print_type(logger: &Logger, name: &str, cm: &Lrc<SourceMap>, t: &Type) {
     let s = dump_type_as_string(cm, t);
