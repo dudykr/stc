@@ -458,7 +458,7 @@ impl Analyzer<'_, '_> {
                 return Err(Error::InvalidLValue { span: to.span() });
             }
             Type::Enum(ref e) => {
-                match *rhs.normalize() {
+                match rhs.normalize() {
                     Type::Lit(RTsLitType {
                         lit: RTsLit::Number(..),
                         ..
@@ -470,9 +470,11 @@ impl Analyzer<'_, '_> {
                         // validEnumAssignments.ts insists that this is valid.
                         return Ok(());
                     }
-                    Type::EnumVariant(..) => {
-                        // TODO: Verify enum.
-                        return Ok(());
+                    Type::EnumVariant(rhs) => {
+                        if rhs.enum_name == e.id {
+                            return Ok(());
+                        }
+                        fail!()
                     }
                     _ => {}
                 }
