@@ -1142,6 +1142,10 @@ impl Analyzer<'_, '_> {
                     // TODO: Check parent interface
                 }
 
+                Type::Tuple(..) if lhs.is_empty() => return Ok(()),
+
+                Type::Array(..) if lhs.is_empty() => return Ok(()),
+
                 Type::Array(..) => return Err(Error::InvalidAssignmentOfArray { span }),
 
                 Type::Tuple(rhs) => {
@@ -1170,6 +1174,15 @@ impl Analyzer<'_, '_> {
 
                     return Ok(());
                 }
+
+                Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsNumberKeyword,
+                    ..
+                })
+                | Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsStringKeyword,
+                    ..
+                }) if lhs.is_empty() => return Ok(()),
 
                 _ => {
                     return Err(Error::Unimplemented {
