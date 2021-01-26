@@ -487,7 +487,9 @@ impl Analyzer<'_, '_> {
 
     pub(super) fn register_type(&mut self, name: Id, ty: Box<Type>) {
         if self.ctx.in_global {
-            self.env.declare_global_type(name.sym().clone(), ty.clone());
+            if !ty.normalize().is_type_param() {
+                self.env.declare_global_type(name.sym().clone(), ty.clone());
+            }
         }
 
         if self.is_builtin
@@ -529,7 +531,7 @@ impl Analyzer<'_, '_> {
             slog::debug!(self.logger, "register_type({})", name);
             let ty = ty.cheap();
 
-            if self.scope.is_root() || self.scope.is_module() {
+            if (self.scope.is_root() || self.scope.is_module()) && !ty.normalize().is_type_param() {
                 self.storage
                     .store_private_type(self.ctx.module_id, name.clone(), ty.clone());
             }
