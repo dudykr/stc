@@ -3,6 +3,8 @@ use crate::analyzer::Analyzer;
 use crate::ValidationResult;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_types::Array;
+use stc_ts_types::Class;
+use stc_ts_types::ClassMember;
 use stc_ts_types::Interface;
 use stc_ts_types::Operator;
 use stc_ts_types::Ref;
@@ -211,6 +213,35 @@ impl Analyzer<'_, '_> {
             param,
             arg,
         );
+        Ok(())
+    }
+
+    pub(super) fn infer_class(
+        &mut self,
+        span: Span,
+        inferred: &mut InferData,
+        param: &Class,
+        arg: &Class,
+    ) -> ValidationResult<()> {
+        for pm in &param.body {
+            for am in &arg.body {
+                match (pm, am) {
+                    (ClassMember::Property(p), ClassMember::Property(a)) if p.is_static == a.is_static => {
+                        if self.assign(&p.key.ty(), &a.key.ty(), span).is_ok() {
+                            if let Some(p_ty) = &p.value {
+                                if let Some(a_ty) = &a.value {
+                                    self.infer_type(span, inferred, p_ty, a_ty)?;
+                                }
+                            }
+                        }
+                    }
+
+                    _ => {}
+                }
+            }
+        }
+
+        // TODO: Check for parents.
         Ok(())
     }
 }

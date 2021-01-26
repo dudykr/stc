@@ -948,18 +948,6 @@ impl Analyzer<'_, '_> {
         );
         Ok(())
     }
-
-    fn infer_class(
-        &mut self,
-        span: Span,
-        inferred: &mut InferData,
-        param: &stc_ts_types::Class,
-        arg: &stc_ts_types::Class,
-    ) -> ValidationResult<()> {
-        // TODO: Check for properties
-        Ok(())
-    }
-
     fn infer_mapped(
         &mut self,
         span: Span,
