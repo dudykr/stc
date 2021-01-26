@@ -15,3 +15,4 @@ stringLiteralTypesOverloadAssignability04.ts
 stringLiteralTypesOverloadAssignability02.ts
 stringLiteralTypesOverloadAssignability03.ts
 stringLiteralTypesOverloadAssignability01.ts
+stringLiteralTypesOverloadAssignability05.ts
