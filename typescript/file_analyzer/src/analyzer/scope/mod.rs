@@ -59,6 +59,8 @@ use swc_common::TypeEq;
 use swc_common::{util::move_map::MoveMap, Mark, Span, Spanned, SyntaxContext, DUMMY_SP};
 use swc_ecma_ast::*;
 
+mod type_param;
+
 macro_rules! no_ref {
     ($t:expr) => {{
         match $t {
