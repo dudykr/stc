@@ -3,6 +3,7 @@ use rnode::Visit;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
 use rnode::VisitWith;
+use stc_ts_ast_rnode::RTsTypeParamDecl;
 use stc_ts_types::Id;
 use stc_ts_types::Type;
 use stc_ts_types::TypeLit;
@@ -47,7 +48,10 @@ impl Analyzer<'_, '_> {
     }
 
     fn is_type_param_dead(&mut self, name: &Id) -> bool {
-        self.find_type(self.ctx.module_id, name).is_err()
+        match self.find_type(self.ctx.module_id, name) {
+            Ok(Some(..)) => false,
+            _ => true,
+        }
     }
 }
 
