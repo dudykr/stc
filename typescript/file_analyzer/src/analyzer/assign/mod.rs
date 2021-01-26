@@ -324,6 +324,26 @@ impl Analyzer<'_, '_> {
                 }
             }
 
+            Type::Ref(Ref {
+                type_name: RTsEntityName::Ident(type_name),
+                type_args,
+                ..
+            }) if type_name.sym == *"ReadonlyArray" => match type_args {
+                Some(type_args) => {
+                    if type_args.params.len() == 1 {
+                        match rhs {
+                            Type::Array(Array { elem_type, .. }) => {
+                                return self
+                                    .assign_inner(&type_args.params[0], elem_type, opts)
+                                    .context("tried to assign an array to a readonly array (builtin)");
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+                None => {}
+            },
+
             // Str contains `kind`, and it's not handled properly by type_eq.
             Type::Lit(RTsLitType {
                 lit: RTsLit::Str(to), ..
