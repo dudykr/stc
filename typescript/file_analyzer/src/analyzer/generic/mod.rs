@@ -1832,8 +1832,12 @@ impl Fold<Type> for TypeParamRenamer {
 
         match ty {
             Type::Param(ref param) => {
-                if let Some(ty) = self.inferred.get(&param.name) {
-                    return *ty.clone();
+                if let Some(mapped) = self.inferred.get(&param.name) {
+                    match mapped.normalize() {
+                        Type::Param(..) => return ty,
+                        _ => {}
+                    }
+                    return *mapped.clone();
                 }
             }
             _ => {}
