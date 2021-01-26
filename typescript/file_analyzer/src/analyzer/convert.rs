@@ -113,12 +113,13 @@ impl Analyzer<'_, '_> {
                 let name: Id = param.name.clone().into();
                 self.register_type(
                     name.clone(),
-                    box Type::Param(TypeParam {
+                    Type::Param(TypeParam {
                         span: param.span,
                         name,
                         constraint: None,
                         default: None,
-                    }),
+                    })
+                    .cheap(),
                 );
             }
 
@@ -530,6 +531,7 @@ impl Analyzer<'_, '_> {
                         if contains_infer_type(&ty) || self.contains_infer_type(&*ty) {
                             contains_infer = true;
                         }
+                        // We use type param instead of reference type if possible.
                         match ty.normalize() {
                             Type::Param(..) => return Ok(box ty.into_owned()),
                             _ => {}
