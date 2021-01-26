@@ -40,6 +40,20 @@ impl Analyzer<'_, '_> {
                 },
                 None => {}
             },
+
+            Type::Array(Array { elem_type, .. }) => match arg {
+                Type::Ref(Ref {
+                    type_name: RTsEntityName::Ident(type_name),
+                    type_args,
+                    ..
+                }) if type_name.sym == *"ReadonlyArray" => match type_args {
+                    Some(type_args) => {
+                        return self.infer_type(span, inferred, &elem_type, &type_args.params[0]);
+                    }
+                    None => {}
+                },
+                _ => {}
+            },
             _ => {}
         }
 
