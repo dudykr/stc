@@ -60,6 +60,17 @@ impl Analyzer<'_, '_> {
 
                 for lm in &l.body {
                     let lm = self.make_type_el_from_class_member(lm)?;
+                    let lm = match lm {
+                        Some(v) => v,
+                        None => {
+                            return Err(Error::Unimplemented {
+                                span: opts.span,
+                                msg: format!(
+                                    "Error reporting for assigning an interface to a class with static member"
+                                ),
+                            })
+                        }
+                    };
                     self.assign_type_elements_to_type_element(opts, &mut vec![], &lm, &rhs.body)
                         .context("tried to assign type elements to a class member")?;
                 }
