@@ -3,7 +3,6 @@ use rnode::Visit;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
 use rnode::VisitWith;
-use stc_ts_ast_rnode::RTsTypeParamDecl;
 use stc_ts_types::Id;
 use stc_ts_types::Type;
 use stc_ts_types::TypeLit;
