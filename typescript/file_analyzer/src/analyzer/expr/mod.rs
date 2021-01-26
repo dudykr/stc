@@ -114,8 +114,12 @@ impl Analyzer<'_, '_> {
         self.record(e);
 
         let span = e.span();
+        let need_type_param_handling = match e {
+            RExpr::Call(..) | RExpr::New(..) | RExpr::Member(..) => true,
+            _ => false,
+        };
 
-        let ty = (|| {
+        let mut ty = (|| {
             match e {
                 // super() returns any
                 RExpr::Call(RCallExpr {
@@ -379,6 +383,10 @@ impl Analyzer<'_, '_> {
                 _ => unimplemented!("typeof ({:?})", e),
             }
         })()?;
+
+        if need_type_param_handling {
+            self.replace_invalid_type_params(&mut ty);
+        }
 
         // Exclude literals
         if !span.is_dummy()
