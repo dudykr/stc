@@ -1384,18 +1384,6 @@ impl Analyzer<'_, '_> {
                                     }
 
                                     return Ok(());
-
-                                    // for (i, r) in
-                                    // rm.params.iter().enumerate() {
-                                    //     if let Some(ref l) = lm.params.get(i)
-                                    // {
-                                    //         let l_ty = &l.ty;
-                                    //         let r_ty = &r.ty;
-
-                                    //         self.assign_inner(l_ty, r_ty,
-                                    // span)?;
-                                    //     }
-                                    // }
                                 }
                                 _ => {}
                             },
