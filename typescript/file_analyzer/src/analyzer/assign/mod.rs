@@ -1385,6 +1385,33 @@ impl Analyzer<'_, '_> {
 
                                     return Ok(());
                                 }
+
+                                TypeElement::Property(rp) => {
+                                    // Allow assigning property with callable type to methods.
+                                    if let Some(rp_ty) = &rp.type_ann {
+                                        if let Type::Function(rp_ty) = rp_ty.normalize() {
+                                            if lm.params.len() != rp_ty.params.len() {
+                                                return Err(Error::Unimplemented {
+                                                    span,
+                                                    msg: format!(
+                                                        "lhs.method.params.len() = {}; rhs.property.params.len() = {};",
+                                                        lm.params.len(),
+                                                        rp_ty.params.len()
+                                                    ),
+                                                });
+                                            }
+
+                                            for (lp, rp) in lm.params.iter().zip(rp_ty.params.iter()) {
+                                                self.assign_inner(&lp.ty, &rp.ty, opts).context(
+                                                    "tried to assign a parameter of a property with callable type to \
+                                                     a method parameter",
+                                                )?;
+                                            }
+
+                                            return Ok(());
+                                        }
+                                    }
+                                }
                                 _ => {}
                             },
                             _ => {}
