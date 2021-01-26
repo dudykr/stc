@@ -111,13 +111,6 @@ impl Analyzer<'_, '_> {
             })
             .map(|res| res.map(|ty| ty.cheap()))
             .try_opt()?;
-        let ty = match ty {
-            Some(v) => Some(v),
-            None => match p {
-                RPat::Assign(p) => Some(p.right.validate_with_default(self)?),
-                _ => None,
-            },
-        };
 
         // Declaring names
         let mut names = vec![];
@@ -218,6 +211,14 @@ impl Analyzer<'_, '_> {
         self.scope.remove_declaring(names);
 
         res?;
+
+        let ty = match ty {
+            Some(v) => Some(v),
+            None => match p {
+                RPat::Assign(p) => Some(p.right.validate_with_default(self)?),
+                _ => None,
+            },
+        };
 
         let ty = ty.unwrap_or_else(|| {
             if self.ctx.in_argument {
