@@ -1182,6 +1182,13 @@ impl Analyzer<'_, '_> {
                 | Type::Keyword(RTsKeywordType {
                     kind: TsKeywordTypeKind::TsStringKeyword,
                     ..
+                })
+                | Type::Lit(RTsLitType {
+                    lit: RTsLit::Number(..),
+                    ..
+                })
+                | Type::Lit(RTsLitType {
+                    lit: RTsLit::Str(..), ..
                 }) if lhs.is_empty() => return Ok(()),
 
                 _ => {
