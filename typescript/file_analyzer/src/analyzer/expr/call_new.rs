@@ -50,6 +50,7 @@ use stc_ts_errors::debug::print_backtrace;
 use stc_ts_errors::debug::print_type;
 use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
+use stc_ts_types::ClassProperty;
 use stc_ts_types::Key;
 use stc_ts_types::{Alias, Id, IndexedAccessType, Ref, Symbol, TypeLit, Union};
 use stc_ts_utils::PatExt;
@@ -457,9 +458,16 @@ impl Analyzer<'_, '_> {
                             type_params,
                             params,
                             ..
-                        }) => {
-                            if key.type_eq(&prop) {
-                                candidates.push((type_params, params, ret_ty));
+                        }) if key.type_eq(&prop) => {
+                            candidates.push((type_params, params, ret_ty));
+                        }
+                        ty::ClassMember::Property(ClassProperty { key, value, .. }) if key.type_eq(&prop) => {
+                            // Check for properties with callable type.
+
+                            // TODO: Change error message from no callable
+                            // property to property exists but not callable.
+                            if let Some(ty) = &value {
+                                return self.extract(span, ty, kind, args, arg_types, spread_arg_types, type_args);
                             }
                         }
                         _ => {}
