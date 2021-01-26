@@ -1,6 +1,7 @@
 use super::AssignOpts;
 use crate::analyzer::Analyzer;
 use crate::ValidationResult;
+use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_types::Class;
 use stc_ts_types::ClassMember;
@@ -46,6 +47,24 @@ impl Analyzer<'_, '_> {
                 for lm in &l.body {
                     self.assign_class_members_to_class_member(opts, lm, &r.body)?;
                 }
+
+                return Ok(());
+            }
+            Type::Interface(rhs) => {
+                // It's legal to assign an interface to a class if all class
+                // memebers are public.
+                //
+                // See classWithOnlyPublicMembersEquivalentToInterface.ts
+
+                // TODO: Verify that all class members all public.
+
+                for lm in &l.body {
+                    let lm = self.make_type_el_from_class_member(lm)?;
+                    self.assign_type_elements_to_type_element(opts, &mut vec![], &lm, &rhs.body)
+                        .context("tried to assign type elements to a class member")?;
+                }
+
+                // TODO: Assign parent interfaces
 
                 return Ok(());
             }
