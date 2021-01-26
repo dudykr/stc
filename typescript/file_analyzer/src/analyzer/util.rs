@@ -19,7 +19,7 @@ use swc_common::Spanned;
 use ty::TypeExt;
 
 impl Analyzer<'_, '_> {
-    /// `span` and `calle` is used only for error reporting.
+    /// `span` and `callee` is used only for error reporting.
     fn make_instance_from_type_elements(
         &mut self,
         span: Span,
