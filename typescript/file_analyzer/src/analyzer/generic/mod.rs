@@ -204,7 +204,7 @@ impl Analyzer<'_, '_> {
         type_params: &[TypeParam],
         params: &[FnParam],
         args: &[TypeOrSpread],
-        default_ty: &Type,
+        default_ty: Option<&Type>,
     ) -> ValidationResult<FxHashMap<Id, Box<Type>>> {
         slog::warn!(
             self.logger,
@@ -371,14 +371,16 @@ impl Analyzer<'_, '_> {
                         continue;
                     }
 
-                    slog::error!(
-                        self.logger,
-                        "infer: A type parameter {} defaults to {:?}",
-                        type_param.name,
-                        default_ty
-                    );
+                    if let Some(default_ty) = default_ty {
+                        slog::error!(
+                            self.logger,
+                            "infer: A type parameter {} defaults to {:?}",
+                            type_param.name,
+                            default_ty
+                        );
 
-                    self.insert_inferred(&mut inferred, type_param.name.clone(), box default_ty.clone())?;
+                        self.insert_inferred(&mut inferred, type_param.name.clone(), box default_ty.clone())?;
+                    }
                 }
             }
         }

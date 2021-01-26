@@ -1767,7 +1767,7 @@ impl Expander<'_, '_, '_> {
                                         &type_params.params,
                                         &[],
                                         &[],
-                                        &Type::TypeLit(TypeLit { span, members: vec![] }),
+                                        Some(&Type::TypeLit(TypeLit { span, members: vec![] })),
                                     )?;
                                     inferred.iter_mut().for_each(|(_, ty)| {
                                         self.analyzer.allow_expansion(&mut **ty);

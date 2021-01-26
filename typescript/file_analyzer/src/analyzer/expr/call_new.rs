@@ -52,7 +52,7 @@ use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::ClassProperty;
 use stc_ts_types::Key;
-use stc_ts_types::{Alias, Id, IndexedAccessType, Ref, Symbol, TypeLit, Union};
+use stc_ts_types::{Alias, Id, IndexedAccessType, Ref, Symbol, Union};
 use stc_ts_utils::PatExt;
 use std::borrow::Cow;
 use swc_atoms::js_word;
@@ -782,10 +782,10 @@ impl Analyzer<'_, '_> {
                                 &type_params.params,
                                 &constructor.params,
                                 spread_arg_types,
-                                &Type::Keyword(RTsKeywordType {
+                                Some(&Type::Keyword(RTsKeywordType {
                                     span,
                                     kind: TsKeywordTypeKind::TsUnknownKeyword,
-                                }),
+                                })),
                             )?;
 
                             for (id, ty) in &inferred {
@@ -1352,14 +1352,7 @@ impl Analyzer<'_, '_> {
             };
             let ret_ty = self.with_ctx(ctx).expand(span, ret_ty)?;
 
-            let inferred = self.infer_arg_types(
-                span,
-                type_args,
-                type_params,
-                &params,
-                &spread_arg_types,
-                &Type::TypeLit(TypeLit { span, members: vec![] }),
-            )?;
+            let inferred = self.infer_arg_types(span, type_args, type_params, &params, &spread_arg_types, None)?;
 
             print_type(&logger, "Return", &self.cm, &ret_ty);
             let mut ty = self.expand_type_params(&inferred, ret_ty)?;
