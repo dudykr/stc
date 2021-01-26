@@ -1,8 +1,11 @@
 use super::InferData;
 use crate::analyzer::Analyzer;
 use crate::ValidationResult;
+use stc_ts_ast_rnode::RTsEntityName;
+use stc_ts_types::Array;
 use stc_ts_types::Interface;
 use stc_ts_types::Operator;
+use stc_ts_types::Ref;
 use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
@@ -11,6 +14,38 @@ use swc_common::TypeEq;
 use swc_ecma_ast::TsTypeOperatorOp;
 
 impl Analyzer<'_, '_> {
+    /// Handle some special builtin types
+
+    pub(super) fn infer_builtin(
+        &mut self,
+        span: Span,
+        inferred: &mut InferData,
+        param: &Type,
+        arg: &Type,
+    ) -> ValidationResult<()> {
+        let param = param.normalize();
+        let arg = arg.normalize();
+
+        match param {
+            Type::Ref(Ref {
+                type_name: RTsEntityName::Ident(type_name),
+                type_args,
+                ..
+            }) if type_name.sym == *"ReadonlyArray" => match type_args {
+                Some(type_args) => match arg {
+                    Type::Array(Array { elem_type, .. }) => {
+                        return self.infer_type(span, inferred, &type_args.params[0], elem_type);
+                    }
+                    _ => {}
+                },
+                None => {}
+            },
+            _ => {}
+        }
+
+        Ok(())
+    }
+
     pub(super) fn infer_type_using_interface(
         &mut self,
         span: Span,

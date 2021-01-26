@@ -444,6 +444,8 @@ impl Analyzer<'_, '_> {
         let p = param;
         let a = arg;
 
+        self.infer_builtin(span, inferred, param, arg)?;
+
         match param {
             Type::Param(TypeParam {
                 ref name,
