@@ -698,6 +698,7 @@ impl Analyzer<'_, '_> {
         }
 
         for el in members.iter() {
+            if prop.is_computed() {}
             match el {
                 TypeElement::Index(IndexSignature {
                     ref params,
@@ -740,14 +741,17 @@ impl Analyzer<'_, '_> {
                         _ => {}
                     }
 
-                    let ty = box Type::IndexedAccessType(IndexedAccessType {
-                        span,
-                        obj_type: box obj.clone(),
-                        index_type: box prop_ty.into_owned(),
-                        readonly: *readonly,
-                    });
+                    // This check exists to prefer a specific property over generic index signature.
+                    if prop.is_computed() || matching_elements.is_empty() {
+                        let ty = box Type::IndexedAccessType(IndexedAccessType {
+                            span,
+                            obj_type: box obj.clone(),
+                            index_type: box prop_ty.into_owned(),
+                            readonly: *readonly,
+                        });
 
-                    return Ok(Some(ty));
+                        return Ok(Some(ty));
+                    }
                 }
                 _ => {}
             }
