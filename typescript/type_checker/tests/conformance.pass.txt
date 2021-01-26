@@ -195,6 +195,7 @@ controlFlow/controlFlowIteration.ts
 controlFlow/controlFlowSuperPropertyAccess.ts
 controlFlow/controlFlowTruthiness.ts
 controlFlow/switchWithConstrainedTypeVariable.ts
+controlFlow/typeGuardsTypeParameters.ts
 declarationEmit/classDoesNotDependOnPrivateMember.ts
 declarationEmit/declarationEmitWorkWithInlineComments.ts
 declarationEmit/typePredicates/declarationEmitIdentifierPredicates01.ts
@@ -307,6 +308,8 @@ es6/classDeclaration/superCallBeforeThisAccessing5.ts
 es6/classDeclaration/superCallBeforeThisAccessing8.ts
 es6/classExpressions/classExpressionES61.ts
 es6/classExpressions/classExpressionES62.ts
+es6/classExpressions/typeArgumentInferenceWithClassExpression1.ts
+es6/classExpressions/typeArgumentInferenceWithClassExpression3.ts
 es6/computedProperties/computedPropertyNames10_ES5.ts
 es6/computedProperties/computedPropertyNames10_ES6.ts
 es6/computedProperties/computedPropertyNames13_ES5.ts
@@ -1289,6 +1292,7 @@ types/literal/literalTypesAndTypeAssertions.ts
 types/literal/stringLiteralsAssertionsInEqualityComparisons01.ts
 types/mapped/mappedTypes1.ts
 types/mapped/mappedTypes3.ts
+types/mapped/mappedTypesArraysTuples.ts
 types/members/classWithProtectedProperty.ts
 types/members/classWithPublicProperty.ts
 types/members/objectTypeHidingMembersOfObject.ts
