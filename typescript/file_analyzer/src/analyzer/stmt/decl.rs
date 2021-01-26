@@ -27,6 +27,7 @@ use stc_ts_ast_rnode::RTsTypeAnn;
 use stc_ts_ast_rnode::RTsTypeCastExpr;
 use stc_ts_ast_rnode::RVarDecl;
 use stc_ts_ast_rnode::RVarDeclarator;
+use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_types::QueryExpr;
@@ -241,7 +242,10 @@ impl Analyzer<'_, '_> {
                         value_ty = self.expand(span, value_ty)?;
                         value_ty = self.rename_type_params(span, value_ty, Some(&ty))?;
 
-                        match self.assign(&ty, &value_ty, v_span) {
+                        match self
+                            .assign(&ty, &value_ty, v_span)
+                            .context("tried to assign from var decl")
+                        {
                             Ok(()) => {
                                 let mut ty = ty;
                                 self.prevent_generalize(&mut ty);
