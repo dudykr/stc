@@ -54,7 +54,7 @@ impl Analyzer<'_, '_> {
                 // It's legal to assign an interface to a class if all class
                 // memebers are public.
                 //
-                // See classWithOnlyPublicMembersEquivalentToInterface.ts
+                // See: classWithOnlyPublicMembersEquivalentToInterface.ts
 
                 // TODO: Verify that all class members all public.
 
@@ -63,12 +63,10 @@ impl Analyzer<'_, '_> {
                     let lm = match lm {
                         Some(v) => v,
                         None => {
-                            return Err(Error::Unimplemented {
-                                span: opts.span,
-                                msg: format!(
-                                    "Error reporting for assigning an interface to a class with static member"
-                                ),
-                            })
+                            // Static members does not affect equivalance.
+                            //
+                            // See: classWithOnlyPublicMembersEquivalentToInterface2
+                            continue;
                         }
                     };
                     self.assign_type_elements_to_type_element(opts, &mut vec![], &lm, &rhs.body)
