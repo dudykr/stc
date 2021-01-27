@@ -879,8 +879,6 @@ impl Analyzer<'_, '_> {
             Type::Interface(Interface {
                 ref body, ref extends, ..
             }) => {
-                // In case of `ReadonlyArray<T> = <T>[]`, checking parent first means
-                // `Array<T> = <T>[]` will be checked first, which is much faster.
                 for parent in extends {
                     let parent =
                         self.type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr, parent.type_args.as_ref())?;
@@ -893,7 +891,13 @@ impl Analyzer<'_, '_> {
                 self.assign_to_type_elements(opts, span, &body, rhs)
                     .context("tried to assign an interfafce to an interface")?;
 
-                // TODO: Handle extends
+                // Assignment failed. This check is required to distinguish an empty interface
+                // from an interface with parents.
+                //
+                // TODO: Use errors returned from parent assignment.
+                if !extends.is_empty() {
+                    fail!()
+                }
 
                 return Ok(());
             }
