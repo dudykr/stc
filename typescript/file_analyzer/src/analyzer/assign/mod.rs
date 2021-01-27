@@ -21,7 +21,6 @@ use stc_ts_errors::Errors;
 use stc_ts_types::Key;
 use stc_ts_types::Mapped;
 use stc_ts_types::MethodSignature;
-use stc_ts_types::ModuleId;
 use stc_ts_types::PropertySignature;
 use stc_ts_types::Ref;
 use stc_ts_types::{
