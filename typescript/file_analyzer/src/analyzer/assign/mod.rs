@@ -895,7 +895,7 @@ impl Analyzer<'_, '_> {
                 // from an interface with parents.
                 //
                 // TODO: Use errors returned from parent assignment.
-                if !extends.is_empty() {
+                if body.is_empty() && !extends.is_empty() {
                     fail!()
                 }
 
