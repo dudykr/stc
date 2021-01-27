@@ -310,40 +310,6 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        // Try generalized assignment.
-        match rhs {
-            Type::Lit(RTsLitType {
-                lit: RTsLit::Str(..), ..
-            }) => {
-                if let Ok(()) = self.assign_inner(
-                    to,
-                    &Type::Keyword(RTsKeywordType {
-                        span,
-                        kind: TsKeywordTypeKind::TsStringKeyword,
-                    }),
-                    opts,
-                ) {
-                    return Ok(());
-                }
-            }
-            Type::Lit(RTsLitType {
-                lit: RTsLit::Number(..),
-                ..
-            }) => {
-                if let Ok(()) = self.assign_inner(
-                    to,
-                    &Type::Keyword(RTsKeywordType {
-                        span,
-                        kind: TsKeywordTypeKind::TsNumberKeyword,
-                    }),
-                    opts,
-                ) {
-                    return Ok(());
-                }
-            }
-            _ => {}
-        }
-
         match to {
             Type::Ref(Ref {
                 type_name:
