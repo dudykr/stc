@@ -1335,6 +1335,7 @@ types/primitives/null/directReferenceToNull.ts
 types/primitives/number/assignFromNumberInterface.ts
 types/primitives/number/numberPropertyAccess.ts
 types/primitives/number/validNumberAssignments.ts
+types/primitives/string/assignFromStringInterface.ts
 types/primitives/string/stringPropertyAccess.ts
 types/primitives/string/validStringAssignments.ts
 types/primitives/stringLiteral/stringLiteralType.ts
