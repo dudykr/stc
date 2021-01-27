@@ -455,6 +455,7 @@ es6/restParameters/emitRestParametersFunctionPropertyES6.ts
 es6/restParameters/emitRestParametersMethod.ts
 es6/restParameters/emitRestParametersMethodES6.ts
 es6/shorthandPropertyAssignment/objectLiteralShorthandPropertiesFunctionArgument.ts
+es6/shorthandPropertyAssignment/objectLiteralShorthandPropertiesWithModule.ts
 es6/spread/arrayLiteralSpread.ts
 es6/spread/arrayLiteralSpreadES5iterable.ts
 es6/templates/taggedTemplateStringsPlainCharactersThatArePartsOfEscapes01.ts
