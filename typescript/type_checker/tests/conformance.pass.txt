@@ -1281,10 +1281,8 @@ types/contextualTypes/logicalAnd/contextuallyTypeLogicalAnd01.ts
 types/contextualTypes/methodDeclarations/contextuallyTypedObjectLiteralMethodDeclaration01.ts
 types/contextualTypes/partiallyAnnotatedFunction/partiallyAnnotatedFunctionInferenceWithTypeParameter.ts
 types/contextualTypes/partiallyAnnotatedFunction/partiallyAnnotatedFunctionWitoutTypeParameter.ts
-types/intersection/intersectionTypeEquivalence.ts
 types/intersection/intersectionTypeInference.ts
 types/intersection/intersectionTypeInference2.ts
-types/intersection/intersectionTypeInference3.ts
 types/keyof/keyofAndForIn.ts
 types/keyof/keyofIntersection.ts
 types/literal/literalTypes3.ts
@@ -1292,7 +1290,6 @@ types/literal/literalTypesAndTypeAssertions.ts
 types/literal/stringLiteralsAssertionsInEqualityComparisons01.ts
 types/mapped/mappedTypes1.ts
 types/mapped/mappedTypes3.ts
-types/mapped/mappedTypesArraysTuples.ts
 types/members/classWithProtectedProperty.ts
 types/members/classWithPublicProperty.ts
 types/members/objectTypeHidingMembersOfObject.ts
@@ -1308,7 +1305,6 @@ types/namedTypes/optionalMethods.ts
 types/never/neverType.ts
 types/never/neverUnionIntersection.ts
 types/nonPrimitive/assignObjectToNonPrimitive.ts
-types/nonPrimitive/nonPrimitiveAndTypeVariables.ts
 types/nonPrimitive/nonPrimitiveIndexingWithForIn.ts
 types/nonPrimitive/nonPrimitiveRhsSideOfInExpression.ts
 types/objectTypeLiteral/callSignatures/callSignatureWithoutAnnotationsOrBody.ts
@@ -1337,11 +1333,8 @@ types/primitives/enum/invalidEnumAssignments.ts
 types/primitives/enum/validEnumAssignments.ts
 types/primitives/null/directReferenceToNull.ts
 types/primitives/number/assignFromNumberInterface.ts
-types/primitives/number/assignFromNumberInterface2.ts
 types/primitives/number/numberPropertyAccess.ts
 types/primitives/number/validNumberAssignments.ts
-types/primitives/string/assignFromStringInterface.ts
-types/primitives/string/assignFromStringInterface2.ts
 types/primitives/string/stringPropertyAccess.ts
 types/primitives/string/validStringAssignments.ts
 types/primitives/stringLiteral/stringLiteralType.ts
@@ -1383,7 +1376,6 @@ types/stringLiteral/stringLiteralTypesWithTemplateStrings01.ts
 types/stringLiteral/stringLiteralTypesWithTemplateStrings02.ts
 types/stringLiteral/stringLiteralTypesWithVariousOperators01.ts
 types/thisType/inferThisType.ts
-types/thisType/thisTypeAndConstraints.ts
 types/thisType/thisTypeInBasePropertyAndDerivedContainerOfBase01.ts
 types/thisType/thisTypeInClasses.ts
 types/thisType/thisTypeInFunctions3.ts
@@ -1521,7 +1513,6 @@ types/typeRelationships/typeInference/genericCallWithObjectTypeArgs2.ts
 types/typeRelationships/typeInference/genericCallWithObjectTypeArgsAndConstraints.ts
 types/typeRelationships/typeInference/genericCallWithObjectTypeArgsAndConstraints2.ts
 types/typeRelationships/typeInference/genericCallWithObjectTypeArgsAndIndexers.ts
-types/typeRelationships/typeInference/genericCallWithObjectTypeArgsAndIndexersErrors.ts
 types/typeRelationships/typeInference/genericCallWithObjectTypeArgsAndNumericIndexer.ts
 types/typeRelationships/typeInference/genericCallWithObjectTypeArgsAndStringIndexer.ts
 types/typeRelationships/typeInference/genericClassWithObjectTypeArgsAndConstraints.ts
