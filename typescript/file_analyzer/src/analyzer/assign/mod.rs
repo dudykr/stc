@@ -21,6 +21,7 @@ use stc_ts_errors::Errors;
 use stc_ts_types::Key;
 use stc_ts_types::Mapped;
 use stc_ts_types::MethodSignature;
+use stc_ts_types::ModuleId;
 use stc_ts_types::PropertySignature;
 use stc_ts_types::Ref;
 use stc_ts_types::{
@@ -888,6 +889,33 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                // TODO: Prevent recursion and uncomment the code below.
+                //
+                // // We try assigning as builtin interfaces.
+                // match rhs {
+                //     Type::Keyword(RTsKeywordType {
+                //         kind: TsKeywordTypeKind::TsStringKeyword,
+                //         ..
+                //     })
+                //     | Type::Lit(RTsLitType {
+                //         lit: RTsLit::Str(..), ..
+                //     }) => {
+                //         return self
+                //             .assign_inner(
+                //                 to,
+                //                 &Type::Ref(Ref {
+                //                     span,
+                //                     ctxt: ModuleId::builtin(),
+                //                     type_name:
+                // RTsEntityName::Ident(RIdent::new("String".into(), span)),
+                //                     type_args: None,
+                //                 }),
+                //                 opts,
+                //             )
+                //             .context("tried to assign by converting rhs to builtin inferface
+                // 'String'")     }
+                //     _ => {}
+                // }
                 self.assign_to_type_elements(opts, span, &body, rhs)
                     .context("tried to assign an interfafce to an interface")?;
 
@@ -1018,10 +1046,6 @@ impl Analyzer<'_, '_> {
             },
 
             _ => {}
-        }
-
-        if to.type_eq(&rhs) {
-            return Ok(());
         }
 
         // TODO: Implement full type checker
