@@ -59,6 +59,7 @@ use swc_common::TypeEq;
 use swc_common::{util::move_map::MoveMap, Mark, Span, Spanned, SyntaxContext, DUMMY_SP};
 use swc_ecma_ast::*;
 
+mod this;
 mod type_param;
 
 macro_rules! no_ref {
@@ -87,6 +88,9 @@ pub(crate) struct Scope<'a> {
     pub(super) declaring_prop: Option<Id>,
 
     pub(super) this: Option<Box<Type>>,
+
+    /// Used while validating static class properties. Otherwise [None].
+    ///
     /// Required to handle static properies.
     pub(super) this_class_name: Option<Id>,
     /// Only contains instance members.

@@ -410,97 +410,44 @@ impl Analyzer<'_, '_> {
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
     ) -> ValidationResult {
-        match obj_type.normalize() {
-            Type::Keyword(RTsKeywordType {
-                kind: TsKeywordTypeKind::TsAnyKeyword,
-                ..
-            }) => {
-                return Ok(Type::any(span));
-            }
+        let old_this = self.scope.this.take();
+        self.scope.this = Some(obj_type.clone());
 
-            Type::Ref(..) => {
-                let obj_type = box self
-                    .expand_top_ref(span, Cow::Owned(*obj_type))
-                    .context("tried to expand object to call property of it")?
-                    .into_owned();
-
-                return self.call_property(span, kind, obj_type, prop, type_args, args, arg_types, spread_arg_types);
-            }
-
-            Type::Interface(ref i) => {
-                // TODO: Check parent interface
-                return self.search_members_for_callable_prop(
-                    kind,
-                    span,
-                    &obj_type,
-                    &i.body,
-                    &prop,
-                    type_args,
-                    args,
-                    &arg_types,
-                    &spread_arg_types,
-                );
-            }
-
-            Type::TypeLit(ref t) => {
-                return self.search_members_for_callable_prop(
-                    kind,
-                    span,
-                    &obj_type,
-                    &t.members,
-                    &prop,
-                    type_args,
-                    args,
-                    &arg_types,
-                    &spread_arg_types,
-                );
-            }
-
-            Type::Class(ty::Class { body, super_class, .. }) => {
-                let mut candidates = vec![];
-                for member in body.iter() {
-                    match member {
-                        ty::ClassMember::Method(Method {
-                            key,
-                            ret_ty,
-                            type_params,
-                            params,
-                            ..
-                        }) if key.type_eq(&prop) => {
-                            candidates.push((type_params, params, ret_ty));
-                        }
-                        ty::ClassMember::Property(ClassProperty { key, value, .. }) if key.type_eq(&prop) => {
-                            // Check for properties with callable type.
-
-                            // TODO: Change error message from no callable
-                            // property to property exists but not callable.
-                            if let Some(ty) = &value {
-                                return self.extract(span, ty, kind, args, arg_types, spread_arg_types, type_args);
-                            }
-                        }
-                        _ => {}
-                    }
+        let res = (|| {
+            match obj_type.normalize() {
+                Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsAnyKeyword,
+                    ..
+                }) => {
+                    return Ok(Type::any(span));
                 }
 
-                candidates.sort_by_cached_key(|(type_params, params, _)| {
-                    self.check_call_args(
+                Type::Ref(..) => {
+                    let obj_type = box self
+                        .expand_top_ref(span, Cow::Owned(*obj_type))
+                        .context("tried to expand object to call property of it")?
+                        .into_owned();
+
+                    return self.call_property(
                         span,
-                        type_params.as_ref().map(|v| &*v.params),
-                        params,
+                        kind,
+                        obj_type,
+                        prop,
                         type_args,
                         args,
                         arg_types,
                         spread_arg_types,
-                    )
-                });
+                    );
+                }
 
-                for (type_params, params, ret_ty) in candidates {
-                    return self.get_return_type(
-                        span,
+                Type::Interface(ref i) => {
+                    // TODO: Check parent interface
+                    return self.search_members_for_callable_prop(
                         kind,
-                        type_params.as_ref().map(|v| &*v.params),
-                        &params,
-                        ret_ty.clone(),
+                        span,
+                        &obj_type,
+                        &i.body,
+                        &prop,
                         type_args,
                         args,
                         &arg_types,
@@ -508,49 +455,118 @@ impl Analyzer<'_, '_> {
                     );
                 }
 
-                if let Some(ty) = super_class {
-                    if let Ok(ret_ty) = self.call_property(
-                        span,
+                Type::TypeLit(ref t) => {
+                    return self.search_members_for_callable_prop(
                         kind,
-                        ty.clone(),
-                        prop,
+                        span,
+                        &obj_type,
+                        &t.members,
+                        &prop,
                         type_args,
                         args,
-                        arg_types,
-                        spread_arg_types,
-                    ) {
-                        return Ok(ret_ty);
+                        &arg_types,
+                        &spread_arg_types,
+                    );
+                }
+
+                Type::Class(ty::Class { body, super_class, .. }) => {
+                    let mut candidates = vec![];
+                    for member in body.iter() {
+                        match member {
+                            ty::ClassMember::Method(Method {
+                                key,
+                                ret_ty,
+                                type_params,
+                                params,
+                                ..
+                            }) if key.type_eq(&prop) => {
+                                candidates.push((type_params, params, ret_ty));
+                            }
+                            ty::ClassMember::Property(ClassProperty { key, value, .. }) if key.type_eq(&prop) => {
+                                // Check for properties with callable type.
+
+                                // TODO: Change error message from no callable
+                                // property to property exists but not callable.
+                                if let Some(ty) = &value {
+                                    return self.extract(span, ty, kind, args, arg_types, spread_arg_types, type_args);
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+
+                    candidates.sort_by_cached_key(|(type_params, params, _)| {
+                        self.check_call_args(
+                            span,
+                            type_params.as_ref().map(|v| &*v.params),
+                            params,
+                            type_args,
+                            args,
+                            arg_types,
+                            spread_arg_types,
+                        )
+                    });
+
+                    for (type_params, params, ret_ty) in candidates {
+                        return self.get_return_type(
+                            span,
+                            kind,
+                            type_params.as_ref().map(|v| &*v.params),
+                            &params,
+                            ret_ty.clone(),
+                            type_args,
+                            args,
+                            &arg_types,
+                            &spread_arg_types,
+                        );
+                    }
+
+                    if let Some(ty) = super_class {
+                        if let Ok(ret_ty) = self.call_property(
+                            span,
+                            kind,
+                            ty.clone(),
+                            prop,
+                            type_args,
+                            args,
+                            arg_types,
+                            spread_arg_types,
+                        ) {
+                            return Ok(ret_ty);
+                        }
+                    }
+
+                    return Err(match kind {
+                        ExtractKind::Call => Error::NoCallabelPropertyWithName {
+                            span,
+                            key: box prop.clone(),
+                        },
+                        ExtractKind::New => Error::NoSuchConstructor {
+                            span,
+                            key: box prop.clone(),
+                        },
+                    });
+                }
+                Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsSymbolKeyword,
+                    ..
+                }) => {
+                    if let Ok(ty) = self.env.get_global_type(span, &js_word!("Symbol")) {
+                        return Ok(ty);
                     }
                 }
 
-                return Err(match kind {
-                    ExtractKind::Call => Error::NoCallabelPropertyWithName {
-                        span,
-                        key: box prop.clone(),
-                    },
-                    ExtractKind::New => Error::NoSuchConstructor {
-                        span,
-                        key: box prop.clone(),
-                    },
-                });
-            }
-            Type::Keyword(RTsKeywordType {
-                kind: TsKeywordTypeKind::TsSymbolKeyword,
-                ..
-            }) => {
-                if let Ok(ty) = self.env.get_global_type(span, &js_word!("Symbol")) {
-                    return Ok(ty);
-                }
+                _ => {}
             }
 
-            _ => {}
-        }
+            let callee = self.access_property(span, obj_type, &prop, TypeOfMode::RValue, IdCtx::Var)?;
 
-        let callee = self.access_property(span, obj_type, &prop, TypeOfMode::RValue, IdCtx::Var)?;
+            let callee = box self.expand_top_ref(span, Cow::Owned(*callee))?.into_owned();
 
-        let callee = box self.expand_top_ref(span, Cow::Owned(*callee))?.into_owned();
-
-        self.get_best_return_type(span, callee, kind, type_args, args, &arg_types, &spread_arg_types)
+            self.get_best_return_type(span, callee, kind, type_args, args, &arg_types, &spread_arg_types)
+        })();
+        self.scope.this = old_this;
+        res
     }
 
     fn check_type_element_for_call(
@@ -1226,6 +1242,8 @@ impl Analyzer<'_, '_> {
         spread_arg_types: &[TypeOrSpread],
     ) -> ValidationResult {
         let logger = self.logger.clone();
+
+        self.expand_this(&mut ret_ty);
 
         {
             let arg_check_res = self.validate_arg_count(span, params, args, arg_types, spread_arg_types);
