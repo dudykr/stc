@@ -1,4 +1,4 @@
-use super::IdCtx;
+use super::call_new::ExtractKind;
 use super::TypeOfMode;
 use crate::analyzer::Analyzer;
 use crate::util::type_ext::TypeVecExt;
@@ -13,6 +13,7 @@ use stc_ts_ast_rnode::RExprOrSuper;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RMemberExpr;
 use stc_ts_ast_rnode::RTsKeywordType;
+use stc_ts_errors::DebugExt;
 use stc_ts_types::Array;
 use stc_ts_types::ComputedKey;
 use stc_ts_types::Key;
@@ -88,29 +89,34 @@ impl Analyzer<'_, '_> {
                         }
                         _ => {
                             // TODO: Handle symbols correctly.
-                            let iterator = self.access_property(
-                                span,
-                                element_type,
-                                &Key::Computed(ComputedKey {
-                                    span: *spread,
-                                    expr: box RExpr::Member(RMemberExpr {
-                                        node_id: NodeId::invalid(),
-                                        span: DUMMY_SP,
-                                        obj: RExprOrSuper::Expr(box RExpr::Ident(RIdent::new(
-                                            "Symbol".into(),
-                                            DUMMY_SP,
-                                        ))),
-                                        prop: box RExpr::Ident(RIdent::new("iterator".into(), DUMMY_SP)),
-                                        computed: false,
+                            let iterator = self
+                                .call_property(
+                                    span,
+                                    ExtractKind::Call,
+                                    element_type,
+                                    &Key::Computed(ComputedKey {
+                                        span: *spread,
+                                        expr: box RExpr::Member(RMemberExpr {
+                                            node_id: NodeId::invalid(),
+                                            span: DUMMY_SP,
+                                            obj: RExprOrSuper::Expr(box RExpr::Ident(RIdent::new(
+                                                "Symbol".into(),
+                                                DUMMY_SP,
+                                            ))),
+                                            prop: box RExpr::Ident(RIdent::new("iterator".into(), DUMMY_SP)),
+                                            computed: false,
+                                        }),
+                                        ty: box Type::Keyword(RTsKeywordType {
+                                            span: DUMMY_SP,
+                                            kind: TsKeywordTypeKind::TsSymbolKeyword,
+                                        }),
                                     }),
-                                    ty: box Type::Keyword(RTsKeywordType {
-                                        span: DUMMY_SP,
-                                        kind: TsKeywordTypeKind::TsSymbolKeyword,
-                                    }),
-                                }),
-                                TypeOfMode::RValue,
-                                IdCtx::Var,
-                            )?;
+                                    None,
+                                    &[],
+                                    &[],
+                                    &[],
+                                )
+                                .context("tried to call `Symbol.iterator` property")?;
 
                             unimplemented!("using iterator: {:?}", iterator)
                         }
