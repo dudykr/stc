@@ -107,7 +107,6 @@ pub(crate) struct Scope<'a> {
     /// Used to handle `...any` in calls.
     pub(super) is_call_arg_count_unknown: bool,
 
-    /// TODO: Remove
     pub(super) type_params: FxHashMap<Id, Box<Type>>,
 
     /// If two modules have same name, the latter can reference exported members
