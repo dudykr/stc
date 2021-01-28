@@ -693,7 +693,7 @@ impl Analyzer<'_, '_> {
         });
         let mut errors = Errors::default();
 
-        let res: Result<_, Error> = try {
+        let res: ValidationResult<()> = try {
             if let Some(ref super_ty) = class.super_class {
                 match super_ty.normalize() {
                     Type::Class(sc) => {
@@ -915,7 +915,7 @@ impl Analyzer<'_, '_> {
                                     for p in &cons.params {
                                         match *p {
                                             RParamOrTsParamProp::TsParamProp(..) => {
-                                                child.storage.report(Error::TS2369 { span: p.span() })
+                                                child.storage.report(box Error::TS2369 { span: p.span() })
                                             }
                                             _ => {}
                                         }
@@ -939,7 +939,7 @@ impl Analyzer<'_, '_> {
                                     match constructor_required_param_count {
                                         Some(v) if required_param_count != v => {
                                             for span in constructor_spans.drain(..) {
-                                                child.storage.report(Error::TS2394 { span })
+                                                child.storage.report(box Error::TS2394 { span })
                                             }
                                         }
 
