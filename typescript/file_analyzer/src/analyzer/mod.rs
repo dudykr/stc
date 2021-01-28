@@ -565,7 +565,7 @@ impl Analyzer<'_, '_> {
                     self.export_equals_span = decl.span;
                 }
                 if has_normal_export {
-                    self.storage.report(Error::TS2309 { span: decl.span });
+                    self.storage.report(box Error::TS2309 { span: decl.span });
                 }
 
                 //

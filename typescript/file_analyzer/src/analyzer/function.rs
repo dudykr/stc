@@ -41,7 +41,7 @@ impl Analyzer<'_, '_> {
                         match p.pat {
                             RPat::Ident(RIdent { optional: true, .. }) | RPat::Rest(..) => {}
                             _ => {
-                                child.storage.report(Error::TS1016 { span: p.span() });
+                                child.storage.report(box Error::TS1016 { span: p.span() });
                             }
                         }
                     }
@@ -72,7 +72,7 @@ impl Analyzer<'_, '_> {
             if !child.is_builtin {
                 params = params
                     .into_iter()
-                    .map(|param: FnParam| -> Result<_, Error> {
+                    .map(|param: FnParam| -> ValidationResult<_> {
                         let ty = child.expand(param.span, param.ty)?;
                         Ok(FnParam { ty, ..param })
                     })
