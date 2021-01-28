@@ -648,7 +648,7 @@ impl Analyzer<'_, '_> {
             Ok(ty) => ty,
             Err(err) => {
                 match err {
-                    Error::TS2585 { span } => Err(Error::TS2585 { span })?,
+                    box Error::TS2585 { .. } => Err(err)?,
                     _ => {}
                 }
 
@@ -670,7 +670,7 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {}
             _ if is_symbol_access => {}
-            _ => errors.push(Error::TS1166 { span }),
+            _ => errors.push(box Error::TS1166 { span }),
         }
 
         if !errors.is_empty() {
@@ -729,7 +729,7 @@ impl Analyzer<'_, '_> {
                                 }
                             }
 
-                            errors.push(Error::TS2515 { span: name_span });
+                            errors.push(box Error::TS2515 { span: name_span });
 
                             if sc.is_abstract {
                                 // TODO: Check super class of super class

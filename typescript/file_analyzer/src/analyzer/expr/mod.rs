@@ -1282,7 +1282,7 @@ impl Analyzer<'_, '_> {
 
                 if type_mode != TypeOfMode::LValue {
                     if !errors.is_empty() {
-                        return Err(Error::UnionError { span, errors });
+                        return Err(box Error::UnionError { span, errors });
                     }
                 } else {
                     // In l-value context, it's success if one of types matches it.
@@ -1292,7 +1292,7 @@ impl Analyzer<'_, '_> {
                     });
                     if tys.is_empty() || is_err {
                         assert_ne!(errors.len(), 0);
-                        return Err(Error::UnionError { span, errors });
+                        return Err(box Error::UnionError { span, errors });
                     }
                 }
 
@@ -1305,7 +1305,7 @@ impl Analyzer<'_, '_> {
                     let v = n.value.round() as i64;
 
                     if v < 0 {
-                        return Err(Error::TupleIndexError {
+                        return Err(box Error::TupleIndexError {
                             span: n.span(),
                             index: v,
                             len: elems.len() as u64,
@@ -1324,7 +1324,7 @@ impl Analyzer<'_, '_> {
                             _ => {}
                         }
 
-                        return Err(Error::TupleIndexError {
+                        return Err(box Error::TupleIndexError {
                             span: n.span(),
                             index: v,
                             len: elems.len() as u64,
