@@ -17,7 +17,7 @@ fn size_of_module() {
 
 #[test]
 fn size_of_class() {
-    assert_eq!(size_of::<Class>(), 72);
+    assert_eq!(size_of::<Class>(), 104);
 }
 
 #[test]
@@ -37,17 +37,17 @@ fn size_of_enum() {
 
 #[test]
 fn size_of_enum_variant() {
-    assert_eq!(size_of::<EnumVariant>(), 32);
+    assert_eq!(size_of::<EnumVariant>(), 40);
 }
 
 #[test]
 fn size_of_function() {
-    assert_eq!(size_of::<Function>(), 32);
+    assert_eq!(size_of::<Function>(), 88);
 }
 
 #[test]
 fn size_of_constructor() {
-    assert_eq!(size_of::<Constructor>(), 32);
+    assert_eq!(size_of::<Constructor>(), 88);
 }
 
 #[test]
@@ -82,7 +82,7 @@ fn size_of_symbol() {
 
 #[test]
 fn size_of_freezed() {
-    assert_eq!(size_of::<Freezed>(), 32);
+    assert_eq!(size_of::<Freezed>(), 24);
 }
 
 #[test]
@@ -107,7 +107,7 @@ fn size_of_operator() {
 
 #[test]
 fn size_of_array() {
-    assert_eq!(size_of::<Array>(), 32);
+    assert_eq!(size_of::<Array>(), 24);
 }
 
 #[test]
@@ -117,7 +117,7 @@ fn size_of_tuple() {
 
 #[test]
 fn size_of_conditional() {
-    assert_eq!(size_of::<Tuple>(), 32);
+    assert_eq!(size_of::<Conditional>(), 32);
 }
 
 #[test]
