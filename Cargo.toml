@@ -18,8 +18,8 @@ stc_ts_file_analyzer = {path = "typescript/file_analyzer"}
 stc_ts_type_checker = {path = "./typescript/type_checker"}
 stc_utils = {path = "utils"}
 structopt = "0.3.20"
-swc_common = {version = "0.10.8", features = ["tty-emitter"]}
-swc_ecma_parser = "0.44.0"
+swc_common = { version = "0.10.9", features = ["tty-emitter"] }
+swc_ecma_parser = "0.45.0"
 
 [profile.release]
 codegen-units = 1

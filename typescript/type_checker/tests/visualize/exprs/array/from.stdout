@@ -1,0 +1,24 @@
+warning: Type
+ --> $DIR/tests/visualize/exprs/array/from.ts:6:30
+  |
+6 | export const c1 = Array.from(a)
+  |                              ^
+  |
+  = note: Set<A>
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/array/from.ts:6:19
+  |
+6 | export const c1 = Array.from(a)
+  |                   ^^^^^
+  |
+  = note: ArrayConstructor
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/array/from.ts:6:19
+  |
+6 | export const c1 = Array.from(a)
+  |                   ^^^^^^^^^^^^^
+  |
+  = note: A[]
+

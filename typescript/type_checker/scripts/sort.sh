@@ -1,4 +1,4 @@
 #!/bin/bash
 set -eu
-cat tests/done.txt | awk NF | sort | uniq | awk '{$1=$1};1' | uniq | sort > tests/done_sorted.txt
-mv tests/done_sorted.txt tests/done.txt
+cat tests/conformance.pass.txt | awk NF | sort | uniq | awk '{$1=$1};1' | uniq | sort > tests/conformance_sorted.txt
+mv tests/conformance_sorted.txt tests/conformance.pass.txt

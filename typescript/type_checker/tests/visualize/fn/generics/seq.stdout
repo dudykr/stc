@@ -1,0 +1,32 @@
+warning: Type
+ --> $DIR/tests/visualize/fn/generics/seq.ts:4:23
+  |
+4 |     var result: T1 = (x, y); //error here
+  |                       ^
+  |
+  = note: T1
+
+warning: Type
+ --> $DIR/tests/visualize/fn/generics/seq.ts:4:26
+  |
+4 |     var result: T1 = (x, y); //error here
+  |                          ^
+  |
+  = note: T2
+
+warning: Type
+ --> $DIR/tests/visualize/fn/generics/seq.ts:4:23
+  |
+4 |     var result: T1 = (x, y); //error here
+  |                       ^^^^
+  |
+  = note: T2
+
+warning: Type
+ --> $DIR/tests/visualize/fn/generics/seq.ts:4:22
+  |
+4 |     var result: T1 = (x, y); //error here
+  |                      ^^^^^^
+  |
+  = note: T2
+

@@ -1,12 +1,32 @@
+use crate::analyzer::Analyzer;
 use rnode::Visit;
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RDecl;
 use stc_ts_ast_rnode::RFnDecl;
 use stc_ts_ast_rnode::RIdent;
+use stc_ts_ast_rnode::RModuleItem;
 use stc_ts_ast_rnode::RStmt;
 use stc_ts_ast_rnode::RTsModuleDecl;
+use stc_ts_ast_rnode::RTsNamespaceDecl;
 use stc_ts_errors::Error;
 use stc_ts_storage::Storage;
+
+impl Analyzer<'_, '_> {
+    pub(crate) fn validate_ambient_fns(&mut self, nodes: &[RModuleItem]) {
+        let mut visitor = AmbientFunctionHandler {
+            last_ambient_name: None,
+            errors: &mut self.storage,
+        };
+
+        nodes.visit_with(&mut visitor);
+
+        if visitor.last_ambient_name.is_some() {
+            visitor.errors.report(Error::FnImplMissingOrNotFollowedByDecl {
+                span: visitor.last_ambient_name.unwrap().span,
+            })
+        }
+    }
+}
 
 /// Handles
 ///
@@ -16,9 +36,9 @@ use stc_ts_storage::Storage;
 /// bar();
 /// bar() {}
 /// ```
-pub struct AmbientFunctionHandler<'a, 'b> {
-    pub last_ambient_name: Option<RIdent>,
-    pub errors: &'a mut Storage<'b>,
+struct AmbientFunctionHandler<'a, 'b> {
+    last_ambient_name: Option<RIdent>,
+    errors: &'a mut Storage<'b>,
 }
 
 impl Visit<RStmt> for AmbientFunctionHandler<'_, '_> {
@@ -30,7 +50,8 @@ impl Visit<RStmt> for AmbientFunctionHandler<'_, '_> {
             _ => {
                 // .take() is same as self.last_ambient_name = None
                 if let Some(ref i) = self.last_ambient_name.take() {
-                    self.errors.report(Error::TS2391 { span: i.span });
+                    self.errors
+                        .report(Error::FnImplMissingOrNotFollowedByDecl { span: i.span });
                 }
             }
         }
@@ -55,9 +76,7 @@ impl Visit<RFnDecl> for AmbientFunctionHandler<'_, '_> {
                 if node.ident.sym == name.sym {
                     self.last_ambient_name = None;
                 } else {
-                    self.errors.report(Error::TS2389 {
-                        span: node.ident.span,
-                    });
+                    self.errors.report(Error::TS2389 { span: node.ident.span });
                     self.last_ambient_name = None;
                 }
             }
@@ -65,6 +84,22 @@ impl Visit<RFnDecl> for AmbientFunctionHandler<'_, '_> {
     }
 }
 
+impl Visit<RTsNamespaceDecl> for AmbientFunctionHandler<'_, '_> {
+    fn visit(&mut self, value: &RTsNamespaceDecl) {
+        if value.declare {
+            return;
+        }
+
+        value.visit_children_with(self);
+    }
+}
+
 impl Visit<RTsModuleDecl> for AmbientFunctionHandler<'_, '_> {
-    fn visit(&mut self, _: &RTsModuleDecl) {}
+    fn visit(&mut self, decl: &RTsModuleDecl) {
+        if decl.declare {
+            return;
+        }
+
+        decl.visit_children_with(self);
+    }
 }

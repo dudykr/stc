@@ -94,11 +94,7 @@ impl Drain for TestDrain {
     type Ok = ();
     type Err = slog::Never;
 
-    fn log(
-        &self,
-        record: &slog::Record,
-        _values: &slog::OwnedKVList,
-    ) -> Result<Self::Ok, Self::Err> {
+    fn log(&self, record: &slog::Record, _values: &slog::OwnedKVList) -> Result<Self::Ok, Self::Err> {
         let mut s = String::new();
 
         let level = record.level();
@@ -123,10 +119,7 @@ pub fn get_git_root() -> PathBuf {
             .expect("failed to get root git direcrtory");
 
         assert!(output.status.success());
-        String::from_utf8_lossy(&output.stdout)
-            .trim()
-            .to_string()
-            .into()
+        String::from_utf8_lossy(&output.stdout).trim().to_string().into()
     });
 
     DIR.clone()

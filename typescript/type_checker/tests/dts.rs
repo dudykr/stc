@@ -22,9 +22,7 @@ use std::{
     sync::Arc,
 };
 use swc_common::{input::SourceFileInput, FileName, SyntaxContext};
-use swc_ecma_ast::{
-    Ident, Module, TsIntersectionType, TsKeywordTypeKind, TsLit, TsLitType, TsType, TsUnionType,
-};
+use swc_ecma_ast::{Ident, Module, TsIntersectionType, TsKeywordTypeKind, TsLit, TsLitType, TsType, TsUnionType};
 use swc_ecma_codegen::{text_writer::JsWriter, Emitter};
 use swc_ecma_parser::{lexer::Lexer, JscTarget, Parser, StringInput, Syntax, TsConfig};
 use swc_ecma_utils::drop_span;
@@ -38,11 +36,7 @@ fn fixture(input: PathBuf) {
 
 fn do_test(file_name: &Path) -> Result<(), StdErr> {
     if let Ok(test) = env::var("TEST") {
-        if !file_name
-            .to_string_lossy()
-            .replace("/", "::")
-            .contains(&test)
-        {
+        if !file_name.to_string_lossy().replace("/", "::").contains(&test) {
             return Ok(());
         }
     }
@@ -70,11 +64,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
             log.logger.clone(),
             cm.clone(),
             handler.clone(),
-            Env::simple(
-                Default::default(),
-                JscTarget::Es2020,
-                &Lib::load("es2019.full"),
-            ),
+            Env::simple(Default::default(), JscTarget::Es2020, &Lib::load("es2019.full")),
             TsConfig {
                 tsx: fname.contains("tsx"),
                 decorators: true,
@@ -215,10 +205,10 @@ fn parse_dts(src: &str) -> Module {
 
 fn get_correct_dts(path: &Path) -> (Arc<String>, Module) {
     testing::run_test2(false, |cm, handler| {
-        let dts_file = path.parent().unwrap().join(format!(
-            "{}.d.ts",
-            path.file_stem().unwrap().to_string_lossy()
-        ));
+        let dts_file = path
+            .parent()
+            .unwrap()
+            .join(format!("{}.d.ts", path.file_stem().unwrap().to_string_lossy()));
 
         if !dts_file.exists() {
             let mut c = Command::new(get_git_root().join("node_modules").join(".bin").join("tsc"));
@@ -317,17 +307,13 @@ impl Normalizer {
         }
 
         types.sort_by(|a, b| match (&**a, &**b) {
-            (&TsType::TsKeywordType(ref a), &TsType::TsKeywordType(ref b)) => {
-                kwd_rank(a.kind).cmp(&kwd_rank(b.kind))
-            }
+            (&TsType::TsKeywordType(ref a), &TsType::TsKeywordType(ref b)) => kwd_rank(a.kind).cmp(&kwd_rank(b.kind)),
             (
                 &TsType::TsLitType(TsLitType {
-                    lit: TsLit::Str(ref a),
-                    ..
+                    lit: TsLit::Str(ref a), ..
                 }),
                 &TsType::TsLitType(TsLitType {
-                    lit: TsLit::Str(ref b),
-                    ..
+                    lit: TsLit::Str(ref b), ..
                 }),
             ) => a.value.cmp(&b.value),
 

@@ -27,12 +27,14 @@ use stc_ts_ast_rnode::RTsTypeAnn;
 use stc_ts_ast_rnode::RTsTypeCastExpr;
 use stc_ts_ast_rnode::RVarDecl;
 use stc_ts_ast_rnode::RVarDeclarator;
+use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_types::QueryExpr;
 use stc_ts_types::QueryType;
 use stc_ts_types::{Array, Id, Operator, Symbol};
 use stc_ts_utils::PatExt;
+use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::Spanned;
 use swc_ecma_ast::*;
@@ -58,14 +60,10 @@ impl Analyzer<'_, '_> {
         for decl in &var.decls {
             match &decl.name {
                 RPat::Array(RArrayPat {
-                    span,
-                    elems,
-                    node_id,
-                    ..
+                    span, elems, node_id, ..
                 }) => {
                     if let Some(m) = &self.mutations {
-                        if let Some(box Type::Tuple(tuple)) =
-                            m.for_pats.get(&node_id).map(|m| &m.ty).cloned().flatten()
+                        if let Some(box Type::Tuple(tuple)) = m.for_pats.get(&node_id).map(|m| &m.ty).cloned().flatten()
                         {
                             for (i, elem) in elems.iter().enumerate() {
                                 match elem {
@@ -75,8 +73,7 @@ impl Analyzer<'_, '_> {
                                             let ty = &tuple.elems[i].ty;
                                             if let Some(node_id) = pat.node_id() {
                                                 if let Some(m) = &mut self.mutations {
-                                                    m.for_pats.entry(node_id).or_default().ty =
-                                                        Some(ty.clone());
+                                                    m.for_pats.entry(node_id).or_default().ty = Some(ty.clone());
                                                 }
                                             }
                                         }
@@ -189,11 +186,7 @@ impl Analyzer<'_, '_> {
                     _ => false,
                 };
 
-                let old_this = if creates_new_this {
-                    self.scope.this.take()
-                } else {
-                    None
-                };
+                let old_this = if creates_new_this { self.scope.this.take() } else { None };
 
                 let declared_ty = v.name.get_ty();
                 if declared_ty.is_some() {
@@ -249,10 +242,10 @@ impl Analyzer<'_, '_> {
                         value_ty = self.expand(span, value_ty)?;
                         value_ty = self.rename_type_params(span, value_ty, Some(&ty))?;
 
-                        let ty_for_assignment = self.expand_fully(span, ty.clone(), true)?;
-                        let value_ty_for_assignment =
-                            self.expand_fully(span, value_ty.clone(), true)?;
-                        match self.assign(&ty_for_assignment, &value_ty_for_assignment, v_span) {
+                        match self
+                            .assign(&ty, &value_ty, v_span)
+                            .context("tried to assign from var decl")
+                        {
                             Ok(()) => {
                                 let mut ty = ty;
                                 self.prevent_generalize(&mut ty);
@@ -288,9 +281,7 @@ impl Analyzer<'_, '_> {
                         let mut ty = (|| -> ValidationResult<_> {
                             match value_ty.normalize() {
                                 Type::EnumVariant(ref v) => {
-                                    if let Some(items) =
-                                        self.find_type(self.ctx.module_id, &v.enum_name)?
-                                    {
+                                    if let Some(items) = self.find_type(self.ctx.module_id, &v.enum_name)? {
                                         for ty in items {
                                             if let Type::Enum(ref e) = ty.normalize() {
                                                 return Ok(box Type::Enum(e.clone()));
@@ -300,8 +291,7 @@ impl Analyzer<'_, '_> {
                                 }
                                 Type::TypeLit(..) | Type::Function(..) | Type::Query(..) => {
                                     if let Some(m) = &mut self.mutations {
-                                        m.for_var_decls.entry(v.node_id).or_default().remove_init =
-                                            true;
+                                        m.for_var_decls.entry(v.node_id).or_default().remove_init = true;
                                     }
                                 }
                                 _ => {}
@@ -310,8 +300,7 @@ impl Analyzer<'_, '_> {
                             Ok(value_ty)
                         })()?;
 
-                        let should_generalize_fully =
-                            self.may_generalize(&ty) && !contains_type_param(&ty);
+                        let should_generalize_fully = self.may_generalize(&ty) && !contains_type_param(&ty);
 
                         slog::debug!(self.logger, "var: user did not declare type");
                         let mut ty = self.rename_type_params(span, ty, None)?;
@@ -323,10 +312,7 @@ impl Analyzer<'_, '_> {
                             ty = match ty.normalize() {
                                 Type::Function(f) => {
                                     let ret_ty = f.ret_ty.clone().generalize_lit();
-                                    box Type::Function(stc_ts_types::Function {
-                                        ret_ty,
-                                        ..f.clone()
-                                    })
+                                    box Type::Function(stc_ts_types::Function { ret_ty, ..f.clone() })
                                 }
 
                                 Type::Tuple(tuple)
@@ -335,11 +321,7 @@ impl Analyzer<'_, '_> {
                                         _ => false,
                                     }) =>
                                 {
-                                    let mut types = tuple
-                                        .elems
-                                        .iter()
-                                        .map(|e| e.ty.clone())
-                                        .collect::<Vec<_>>();
+                                    let mut types = tuple.elems.iter().map(|e| e.ty.clone()).collect::<Vec<_>>();
                                     types.dedup_type();
                                     box Type::Array(Array {
                                         span: tuple.span,
@@ -371,8 +353,7 @@ impl Analyzer<'_, '_> {
                                 // Normalize unresolved parameters
                                 let ty = match ty.normalize() {
                                     Type::Param(TypeParam {
-                                        constraint: Some(ty),
-                                        ..
+                                        constraint: Some(ty), ..
                                     }) => ty.clone(),
                                     _ => ty,
                                 };
@@ -402,16 +383,14 @@ impl Analyzer<'_, '_> {
                                     | Type::Symbol(Symbol { span, .. }) => {
                                         match self.ctx.var_kind {
                                             // It's `uniqute symbol` only if it's `Symbol()`
-                                            VarDeclKind::Const if is_symbol_call => {
-                                                box Type::Operator(Operator {
+                                            VarDeclKind::Const if is_symbol_call => box Type::Operator(Operator {
+                                                span: *span,
+                                                op: TsTypeOperatorOp::Unique,
+                                                ty: box Type::Keyword(RTsKeywordType {
                                                     span: *span,
-                                                    op: TsTypeOperatorOp::Unique,
-                                                    ty: box Type::Keyword(RTsKeywordType {
-                                                        span: *span,
-                                                        kind: TsKeywordTypeKind::TsSymbolKeyword,
-                                                    }),
-                                                })
-                                            }
+                                                    kind: TsKeywordTypeKind::TsSymbolKeyword,
+                                                }),
+                                            }),
 
                                             _ => box Type::Keyword(RTsKeywordType {
                                                 span: *span,
@@ -449,12 +428,10 @@ impl Analyzer<'_, '_> {
                                     }
 
                                     // We failed to infer type of the type parameter.
-                                    Type::Param(TypeParam { span, .. }) => {
-                                        box Type::Keyword(RTsKeywordType {
-                                            span: *span,
-                                            kind: TsKeywordTypeKind::TsUnknownKeyword,
-                                        })
-                                    }
+                                    Type::Param(TypeParam { span, .. }) => box Type::Keyword(RTsKeywordType {
+                                        span: *span,
+                                        kind: TsKeywordTypeKind::TsUnknownKeyword,
+                                    }),
 
                                     _ => ty,
                                 };
@@ -468,9 +445,7 @@ impl Analyzer<'_, '_> {
                                         m.for_pats.entry(i.node_id).or_default().ty =
                                             Some(box Type::Query(QueryType {
                                                 span,
-                                                expr: QueryExpr::TsEntityName(
-                                                    RTsEntityName::Ident(alias.clone()),
-                                                ),
+                                                expr: QueryExpr::TsEntityName(RTsEntityName::Ident(alias.clone())),
                                             }));
                                     }
                                 }
@@ -542,8 +517,7 @@ impl Analyzer<'_, '_> {
                             return Ok(());
                         }
 
-                        self.declare_complex_vars(kind, &v.name, ty)
-                            .report(&mut self.storage);
+                        self.declare_complex_vars(kind, &v.name, ty).report(&mut self.storage);
                         remove_declaring!();
                         return Ok(());
                     }
@@ -559,6 +533,13 @@ impl Analyzer<'_, '_> {
                                 self.prevent_expansion(&mut *ty);
                             }
                             _ => {}
+                        }
+
+                        if !self.is_builtin {
+                            // Report error if type is not found.
+                            if let Some(ty) = &ty {
+                                self.expand_top_ref(v.span, Cow::Borrowed(ty)).report(&mut self.storage);
+                            }
                         }
 
                         match self.declare_var(

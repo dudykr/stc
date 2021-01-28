@@ -253,9 +253,7 @@ impl VisitMut<RClassMember> for Dts {
                         span: method.span,
                         key: match &method.key {
                             RPropName::Ident(i) => box RExpr::Ident(i.clone()),
-                            RPropName::Str(s) => {
-                                box RExpr::Ident(RIdent::new(s.value.clone(), s.span))
-                            }
+                            RPropName::Str(s) => box RExpr::Ident(RIdent::new(s.value.clone(), s.span)),
                             RPropName::Num(n) => box RExpr::Lit(RLit::Num(n.clone())),
                             RPropName::Computed(e) => e.expr.clone(),
                             RPropName::BigInt(n) => box RExpr::Lit(RLit::BigInt(n.clone())),
@@ -426,9 +424,7 @@ impl VisitMut<Vec<RModuleItem>> for Dts {
         }
 
         items.retain(|item| match item {
-            RModuleItem::ModuleDecl(RModuleDecl::Import(RImportDecl { specifiers, .. })) => {
-                !specifiers.is_empty()
-            }
+            RModuleItem::ModuleDecl(RModuleDecl::Import(RImportDecl { specifiers, .. })) => !specifiers.is_empty(),
             RModuleItem::Stmt(RStmt::Empty(..)) => false,
             _ => true,
         });
@@ -438,15 +434,9 @@ impl VisitMut<Vec<RModuleItem>> for Dts {
 impl VisitMut<Vec<RImportSpecifier>> for Dts {
     fn visit_mut(&mut self, specifiers: &mut Vec<RImportSpecifier>) {
         specifiers.retain(|specifier| match specifier {
-            RImportSpecifier::Named(specifier) => {
-                self.used_types.contains(&Id::from(&specifier.local))
-            }
-            RImportSpecifier::Default(specifier) => {
-                self.used_types.contains(&Id::from(&specifier.local))
-            }
-            RImportSpecifier::Namespace(specifier) => {
-                self.used_types.contains(&Id::from(&specifier.local))
-            }
+            RImportSpecifier::Named(specifier) => self.used_types.contains(&Id::from(&specifier.local)),
+            RImportSpecifier::Default(specifier) => self.used_types.contains(&Id::from(&specifier.local)),
+            RImportSpecifier::Namespace(specifier) => self.used_types.contains(&Id::from(&specifier.local)),
         });
     }
 }
@@ -561,15 +551,11 @@ impl VisitMut<Vec<RClassMember>> for Dts {
                                             span: Default::default(),
                                             declare: false,
                                             key: box match &p.param {
-                                                RTsParamPropParam::Ident(p) => {
-                                                    RExpr::Ident(p.clone())
-                                                }
+                                                RTsParamPropParam::Ident(p) => RExpr::Ident(p.clone()),
                                                 RTsParamPropParam::Assign(p) => match &p.left {
                                                     //
                                                     box RPat::Ident(i) => RExpr::Ident(i.clone()),
-                                                    _ => unreachable!(
-                                                        "binding pattern in property initializer"
-                                                    ),
+                                                    _ => unreachable!("binding pattern in property initializer"),
                                                 },
                                             },
                                             value: None,

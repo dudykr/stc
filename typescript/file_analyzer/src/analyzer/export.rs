@@ -1,7 +1,5 @@
 use super::{Analyzer, Ctx};
-use crate::{
-    analyzer::util::ResultExt, ty::Type, validator, validator::ValidateWith, ValidationResult,
-};
+use crate::{analyzer::util::ResultExt, ty::Type, validator, validator::ValidateWith, ValidationResult};
 use rnode::NodeId;
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RDecl;
@@ -17,6 +15,7 @@ use stc_ts_ast_rnode::RNamedExport;
 use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RStmt;
 use stc_ts_ast_rnode::RTsExportAssignment;
+use stc_ts_ast_rnode::RTsModuleName;
 use stc_ts_ast_rnode::RTsTypeAnn;
 use stc_ts_ast_rnode::RVarDecl;
 use stc_ts_ast_rnode::RVarDeclarator;
@@ -183,10 +182,20 @@ impl Analyzer<'_, '_> {
 
                 self.storage
                     .store_private_type(self.ctx.module_id, e.id.clone().into(), ty);
-                self.storage
-                    .export_type(span, self.ctx.module_id, e.id.clone().into());
+                self.storage.export_type(span, self.ctx.module_id, e.id.clone().into());
             }
-            RDecl::TsModule(..) => unimplemented!("export module "),
+            RDecl::TsModule(module) => {
+                module.visit_with(self);
+
+                match &module.id {
+                    RTsModuleName::Ident(id) => {
+                        self.storage.export_type(span, self.ctx.module_id, id.clone().into());
+                    }
+                    RTsModuleName::Str(_) => {
+                        unimplemented!("export module with string name")
+                    }
+                }
+            }
             RDecl::TsTypeAlias(ref decl) => {
                 decl.visit_with(self);
                 // export type Foo = 'a' | 'b';
@@ -223,19 +232,12 @@ impl Analyzer<'_, '_> {
                 };
                 if f.function.return_type.is_none() {
                     if let Some(m) = &mut self.mutations {
-                        if m.for_fns
-                            .entry(f.function.node_id)
-                            .or_default()
-                            .ret_ty
-                            .is_none()
-                        {
-                            m.for_fns.entry(f.function.node_id).or_default().ret_ty =
-                                Some(fn_ty.ret_ty.clone());
+                        if m.for_fns.entry(f.function.node_id).or_default().ret_ty.is_none() {
+                            m.for_fns.entry(f.function.node_id).or_default().ret_ty = Some(fn_ty.ret_ty.clone());
                         }
                     }
                 }
-                self.register_type(i.clone(), box fn_ty.clone().into())
-                    .report(&mut self.storage);
+                self.register_type(i.clone(), box fn_ty.clone().into());
                 if let Some(ref i) = f.ident {
                     self.override_var(VarDeclKind::Var, i.into(), box fn_ty.into())
                         .report(&mut self.storage);
@@ -251,7 +253,7 @@ impl Analyzer<'_, '_> {
                     .unwrap_or_else(|| Id::word(js_word!("default")));
 
                 let class_ty = c.class.validate_with(self)?;
-                self.register_type(id.clone(), box Type::Class(class_ty))?;
+                self.register_type(id.clone(), box Type::Class(class_ty));
 
                 self.export(span, Id::word(js_word!("default")), Some(id));
             }
@@ -309,8 +311,7 @@ impl Analyzer<'_, '_> {
             .collect::<Vec<_>>();
 
         for ty in iter {
-            self.storage
-                .store_private_type(self.ctx.module_id, name.clone(), ty);
+            self.storage.store_private_type(self.ctx.module_id, name.clone(), ty);
         }
 
         self.storage.export_type(span, self.ctx.module_id, name);
@@ -351,10 +352,7 @@ impl Analyzer<'_, '_> {
             })));
 
             if let Some(m) = &mut self.mutations {
-                m.for_export_defaults
-                    .entry(item_node_id)
-                    .or_default()
-                    .replace_with =
+                m.for_export_defaults.entry(item_node_id).or_default().replace_with =
                     Some(box RExpr::Ident(RIdent::new("_default".into(), DUMMY_SP)));
             }
 
@@ -402,13 +400,11 @@ impl Analyzer<'_, '_> {
         match self.imports.get(&(ctxt, module_id)) {
             Some(data) => {
                 for (id, ty) in data.vars.iter() {
-                    self.storage
-                        .reexport_var(span, ctxt, id.clone(), ty.clone());
+                    self.storage.reexport_var(span, ctxt, id.clone(), ty.clone());
                 }
                 for (id, types) in data.types.iter() {
                     for ty in types {
-                        self.storage
-                            .reexport_type(span, ctxt, id.clone(), ty.clone());
+                        self.storage.reexport_type(span, ctxt, id.clone(), ty.clone());
                     }
                 }
             }
@@ -493,16 +489,15 @@ impl Analyzer<'_, '_> {
         let mut did_work = false;
 
         if let Some(data) = self.imports.get(&(ctxt, from)) {
-            if let Some(ty) = data.vars.get(&orig) {
+            if let Some(ty) = data.vars.get(orig.sym()) {
                 did_work = true;
-                self.storage
-                    .reexport_var(span, ctxt, id.clone(), ty.clone());
+                self.storage.reexport_var(span, ctxt, id.sym().clone(), ty.clone());
             }
 
-            if let Some(ty) = data.types.get(&orig) {
+            if let Some(ty) = data.types.get(orig.sym()) {
                 did_work = true;
                 let ty = Type::union(ty.clone());
-                self.storage.reexport_type(span, ctxt, id.clone(), ty);
+                self.storage.reexport_type(span, ctxt, id.sym().clone(), ty);
             }
         }
 

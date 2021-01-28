@@ -1,0 +1,120 @@
+warning: Type
+  --> $DIR/tests/visualize/tuple-1.ts:10:27
+   |
+10 | var a0: [any, any, any] = [];                             // Error
+   |                           ^^
+   |
+   = note: []
+
+warning: Type
+  --> $DIR/tests/visualize/tuple-1.ts:11:37
+   |
+11 | var a1: [boolean, string, number] = ["string", 1, true];  // Error
+   |                                     ^^^^^^^^^^^^^^^^^^^
+   |
+   = note: ["string", 1, true]
+
+warning: Type
+  --> $DIR/tests/visualize/tuple-1.ts:17:34
+   |
+17 | var [b1, b2]: [number, number] = [1, 2, "string", true];
+   |                                  ^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: [1, 2, "string", true]
+
+warning: Type
+  --> $DIR/tests/visualize/tuple-1.ts:22:12
+   |
+22 | var temp = ["s", "t", "r"];
+   |            ^^^^^^^^^^^^^^^
+   |
+   = note: ["s", "t", "r"]
+
+warning: Type
+  --> $DIR/tests/visualize/tuple-1.ts:23:13
+   |
+23 | var temp1 = [1, 2, 3];
+   |             ^^^^^^^^^
+   |
+   = note: [1, 2, 3]
+
+warning: Type
+  --> $DIR/tests/visualize/tuple-1.ts:24:36
+   |
+24 | var temp2: [number[], string[]] = [[1, 2, 3], ["hello", "string"]];
+   |                                    ^^^^^^^^^
+   |
+   = note: [1, 2, 3]
+
+warning: Type
+  --> $DIR/tests/visualize/tuple-1.ts:24:47
+   |
+24 | var temp2: [number[], string[]] = [[1, 2, 3], ["hello", "string"]];
+   |                                               ^^^^^^^^^^^^^^^^^^^
+   |
+   = note: ["hello", "string"]
+
+warning: Type
+  --> $DIR/tests/visualize/tuple-1.ts:24:35
+   |
+24 | var temp2: [number[], string[]] = [[1, 2, 3], ["hello", "string"]];
+   |                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: [[1, 2, 3], ["hello", "string"]]
+
+warning: Type
+  --> $DIR/tests/visualize/tuple-1.ts:32:19
+   |
+32 | var c0: tup = [...temp2];                         // Error
+   |                   ^^^^^
+   |
+   = note: [number[], string[]]
+
+warning: Type
+  --> $DIR/tests/visualize/tuple-1.ts:32:15
+   |
+32 | var c0: tup = [...temp2];                         // Error
+   |               ^^^^^^^^^^
+   |
+   = note: [number[], string[]]
+
+warning: Type
+  --> $DIR/tests/visualize/tuple-1.ts:33:40
+   |
+33 | var c1: [number, number, number] = [...temp1];    // Error cannot assign number[] to [number, number, number]
+   |                                        ^^^^^
+   |
+   = note: number[]
+
+warning: Type
+  --> $DIR/tests/visualize/tuple-1.ts:33:36
+   |
+33 | var c1: [number, number, number] = [...temp1];    // Error cannot assign number[] to [number, number, number]
+   |                                    ^^^^^^^^^^
+   |
+   = note: number[]
+
+warning: Type
+  --> $DIR/tests/visualize/tuple-1.ts:34:23
+   |
+34 | var c2: myArray = [...temp1, ...temp];            // Error cannot assign (number|string)[] to number[]
+   |                       ^^^^^
+   |
+   = note: number[]
+
+warning: Type
+  --> $DIR/tests/visualize/tuple-1.ts:34:33
+   |
+34 | var c2: myArray = [...temp1, ...temp];            // Error cannot assign (number|string)[] to number[]
+   |                                 ^^^^
+   |
+   = note: string[]
+
+warning: Type
+  --> $DIR/tests/visualize/tuple-1.ts:34:19
+   |
+34 | var c2: myArray = [...temp1, ...temp];            // Error cannot assign (number|string)[] to number[]
+   |                   ^^^^^^^^^^^^^^^^^^^
+   |
+   = note: (number | string)[]
+

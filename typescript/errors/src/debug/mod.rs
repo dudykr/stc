@@ -11,6 +11,7 @@ use stc_ts_ast_rnode::RTsType;
 use stc_ts_types::Id;
 use stc_ts_types::Ref;
 use stc_ts_types::Type;
+use stc_ts_types::TypeLit;
 use swc_common::{sync::Lrc, SourceMap, DUMMY_SP};
 use swc_ecma_ast::*;
 use swc_ecma_codegen::{text_writer::JsWriter, Emitter};
@@ -18,7 +19,7 @@ use swc_ecma_codegen::{text_writer::JsWriter, Emitter};
 pub mod debugger;
 pub mod duplicate;
 
-pub fn print_type(logger: &Logger, name: &str, cm: &Lrc<SourceMap>, t: &Type) {
+pub fn dump_type_as_string(cm: &Lrc<SourceMap>, t: &Type) -> String {
     let mut buf = vec![];
     {
         let mut emitter = Emitter {
@@ -28,29 +29,57 @@ pub fn print_type(logger: &Logger, name: &str, cm: &Lrc<SourceMap>, t: &Type) {
             wr: box JsWriter::new(cm.clone(), "\n", &mut buf, None),
         };
 
-        emitter
-            .emit_module(&Module {
+        let mut body = vec![];
+        body.push(ModuleItem::Stmt(Stmt::Expr(ExprStmt {
+            span: DUMMY_SP,
+            expr: box Expr::TsAs(TsAsExpr {
                 span: DUMMY_SP,
-                body: vec![ModuleItem::Stmt(Stmt::Expr(ExprStmt {
+                expr: box Expr::Ident(Ident::new("TYPE".into(), DUMMY_SP)),
+                type_ann: box RTsType::from(t.clone().fold_with(&mut Visualizer)).into_orig(),
+            }),
+        })));
+
+        match t.normalize() {
+            Type::Interface(t) => {
+                body.push(ModuleItem::Stmt(Stmt::Expr(ExprStmt {
                     span: DUMMY_SP,
                     expr: box Expr::TsAs(TsAsExpr {
                         span: DUMMY_SP,
-                        expr: box Expr::Ident(Ident::new("TYPE".into(), DUMMY_SP)),
-                        type_ann: box RTsType::from(t.clone().fold_with(&mut Visualizer))
-                            .into_orig(),
+                        expr: box Expr::Ident(Ident::new("Member".into(), DUMMY_SP)),
+                        type_ann: box RTsType::from(
+                            Type::TypeLit(TypeLit {
+                                span: DUMMY_SP,
+                                members: t.body.clone(),
+                            })
+                            .fold_with(&mut Visualizer),
+                        )
+                        .into_orig(),
                     }),
-                }))],
+                })));
+            }
+            _ => {}
+        }
+
+        emitter
+            .emit_module(&Module {
+                span: DUMMY_SP,
+                body,
                 shebang: None,
             })
             .unwrap();
     }
     let s = String::from_utf8_lossy(&buf);
-    slog::info!(
-        logger,
-        "===== ===== ===== Type ({}) ===== ===== =====\n{}",
-        name,
-        s
-    );
+
+    s.to_string()
+}
+
+pub fn dbg_type(name: &str, cm: &Lrc<SourceMap>, t: &Type) {
+    let s = dump_type_as_string(cm, t);
+    eprintln!("===== ===== ===== Type ({}) ===== ===== =====\n{}", name, s);
+}
+pub fn print_type(logger: &Logger, name: &str, cm: &Lrc<SourceMap>, t: &Type) {
+    let s = dump_type_as_string(cm, t);
+    slog::info!(logger, "===== ===== ===== Type ({}) ===== ===== =====\n{}", name, s);
 }
 
 /// Ensures that `ty` does not **contain** [Type::Ref].

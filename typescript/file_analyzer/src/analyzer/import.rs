@@ -26,7 +26,7 @@ use swc_common::Spanned;
 impl Analyzer<'_, '_> {
     pub(super) fn find_imported_var(&self, id: &Id) -> ValidationResult<Option<Box<Type>>> {
         if let Some(ModuleInfo { module_id, data }) = self.imports_by_id.get(&id) {
-            if let Some(dep) = data.vars.get(&id).cloned() {
+            if let Some(dep) = data.vars.get(id.sym()).cloned() {
                 debug_assert!(dep.is_clone_cheap());
 
                 return Ok(Some(dep));
@@ -76,8 +76,7 @@ impl Analyzer<'_, '_> {
 
             match res {
                 Ok(info) => {
-                    self.insert_import_info(ctxt, info)
-                        .report(&mut self.storage);
+                    self.insert_import_info(ctxt, info).report(&mut self.storage);
                 }
                 Err(err) => self.storage.report(err),
             }
@@ -91,18 +90,17 @@ impl Analyzer<'_, '_> {
 
         if let Some(data) = self.imports.get(&(ctxt, target)) {
             for (i, ty) in &data.vars {
-                if orig == *i {
+                if orig.sym() == i {
                     did_work = true;
                     self.storage.store_private_var(ctxt, id.clone(), ty.clone());
                 }
             }
 
             for (i, types) in &data.types {
-                if orig == *i {
+                if orig.sym() == i {
                     for ty in types {
                         did_work = true;
-                        self.storage
-                            .store_private_type(ctxt, id.clone(), ty.clone());
+                        self.storage.store_private_type(ctxt, id.clone(), ty.clone());
                     }
                 }
             }
@@ -127,13 +125,7 @@ impl Analyzer<'_, '_> {
                     //
                     match &named.imported {
                         Some(imported) => {
-                            self.handle_import(
-                                named.span,
-                                ctxt,
-                                target,
-                                Id::from(imported),
-                                Id::from(&named.local),
-                            );
+                            self.handle_import(named.span, ctxt, target, Id::from(imported), Id::from(&named.local));
                         }
                         None => {
                             self.handle_import(

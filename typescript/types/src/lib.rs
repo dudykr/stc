@@ -14,19 +14,23 @@ use is_macro::Is;
 use num_bigint::BigInt;
 use num_traits::Zero;
 use rnode::FoldWith;
+use rnode::NodeId;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
 use rnode::VisitWith;
+use stc_ts_ast_rnode::RBigInt;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RIdent;
+use stc_ts_ast_rnode::RNumber;
 use stc_ts_ast_rnode::RPat;
-use stc_ts_ast_rnode::RPropName;
+use stc_ts_ast_rnode::RPrivateName;
 use stc_ts_ast_rnode::RStr;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsEnumMemberId;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
+use stc_ts_ast_rnode::RTsModuleName;
 use stc_ts_ast_rnode::RTsNamespaceDecl;
 use stc_ts_ast_rnode::RTsThisType;
 use stc_ts_ast_rnode::RTsThisTypeOrIdent;
@@ -43,7 +47,7 @@ use std::{
         Arc,
     },
 };
-use swc_atoms::{js_word, JsWord};
+use swc_atoms::JsWord;
 use swc_common::EqIgnoreSpan;
 use swc_common::TypeEq;
 use swc_common::{FromVariant, Span, Spanned, DUMMY_SP};
@@ -62,10 +66,10 @@ pub mod name;
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct ModuleTypeData {
     pub private_vars: FxHashMap<Id, Box<Type>>,
-    pub vars: FxHashMap<Id, Box<Type>>,
+    pub vars: FxHashMap<JsWord, Box<Type>>,
 
     pub private_types: FxHashMap<Id, Vec<Box<Type>>>,
-    pub types: FxHashMap<Id, Vec<Box<Type>>>,
+    pub types: FxHashMap<JsWord, Vec<Box<Type>>>,
 }
 
 impl Visitable for ModuleTypeData {}
@@ -238,6 +242,75 @@ impl SymbolIdGenerator {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, EqIgnoreSpan, TypeEq, Visit, Is, Spanned)]
+pub enum Key {
+    Computed(ComputedKey),
+    Normal { span: Span, sym: JsWord },
+    Num(#[use_eq_ignore_span] RNumber),
+    BigInt(#[use_eq_ignore_span] RBigInt),
+    Private(#[use_eq_ignore_span] RPrivateName),
+}
+
+impl Key {
+    pub fn ty(&self) -> Cow<Type> {
+        match self {
+            Key::Computed(prop) => Cow::Borrowed(&*prop.ty),
+            Key::Normal { span, sym } => Cow::Owned(Type::Lit(RTsLitType {
+                node_id: NodeId::invalid(),
+                span: *span,
+                lit: RTsLit::Str(RStr {
+                    span: *span,
+                    value: sym.clone(),
+                    has_escape: false,
+                    kind: Default::default(),
+                }),
+            })),
+            Key::Num(n) => Cow::Owned(Type::Lit(RTsLitType {
+                node_id: NodeId::invalid(),
+                span: n.span,
+                lit: RTsLit::Number(n.clone()),
+            })),
+            Key::BigInt(n) => Cow::Owned(Type::Lit(RTsLitType {
+                node_id: NodeId::invalid(),
+                span: n.span,
+                lit: RTsLit::BigInt(n.clone()),
+            })),
+            Key::Private(..) => todo!("access to type elements using private name"),
+        }
+    }
+}
+
+impl PartialEq<JsWord> for Key {
+    fn eq(&self, other: &JsWord) -> bool {
+        match self {
+            Key::Normal { sym, .. } => *sym == *other,
+            _ => false,
+        }
+    }
+}
+
+impl PartialEq<&JsWord> for Key {
+    fn eq(&self, other: &&JsWord) -> bool {
+        *self == **other
+    }
+}
+
+impl PartialEq<str> for Key {
+    fn eq(&self, other: &str) -> bool {
+        match self {
+            Key::Normal { sym, .. } => *sym == *other,
+            _ => false,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, EqIgnoreSpan, TypeEq, Visit, Spanned)]
+pub struct ComputedKey {
+    pub span: Span,
+    pub expr: Box<RExpr>,
+    pub ty: Box<Type>,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EqIgnoreSpan, TypeEq, Visit)]
 pub struct SymbolId(usize);
 
@@ -307,6 +380,8 @@ pub struct ImportType {
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Module {
     pub span: Span,
+    #[use_eq_ignore_span]
+    pub name: RTsModuleName,
     pub exports: ModuleTypeData,
 }
 
@@ -361,8 +436,7 @@ pub enum ClassMember {
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Method {
     pub span: Span,
-    #[use_eq_ignore_span]
-    pub key: RPropName,
+    pub key: Key,
     pub is_static: bool,
     pub is_abstract: bool,
     pub is_optional: bool,
@@ -377,10 +451,9 @@ pub struct Method {
 pub struct ClassProperty {
     pub span: Span,
     #[use_eq_ignore_span]
-    pub key: Box<RExpr>,
+    pub key: Key,
     pub value: Option<Box<Type>>,
     pub is_static: bool,
-    pub computed: bool,
     #[use_eq]
     pub accessibility: Option<Accessibility>,
     pub is_abstract: bool,
@@ -485,15 +558,21 @@ pub enum TypeElement {
 }
 
 impl TypeElement {
-    pub fn key(&self) -> Option<Cow<RExpr>> {
+    /// Returns [Some] iff `self` is an element with a normal key.
+    pub fn non_computed_key(&self) -> Option<&JsWord> {
+        let key = self.key()?;
+        match key {
+            Key::Normal { sym, .. } => Some(sym),
+            _ => None,
+        }
+    }
+
+    pub fn key(&self) -> Option<&Key> {
         match self {
             TypeElement::Call(..) => None,
-            TypeElement::Constructor(..) => Some(Cow::Owned(RExpr::Ident(RIdent::new(
-                js_word!("constructor"),
-                DUMMY_SP,
-            )))),
-            TypeElement::Property(p) => Some(Cow::Borrowed(&p.key)),
-            TypeElement::Method(m) => Some(Cow::Borrowed(&m.key)),
+            TypeElement::Constructor(..) => None,
+            TypeElement::Property(p) => Some(&p.key),
+            TypeElement::Method(m) => Some(&m.key),
             TypeElement::Index(_) => None,
         }
     }
@@ -519,9 +598,7 @@ pub struct ConstructorSignature {
 pub struct PropertySignature {
     pub span: Span,
     pub readonly: bool,
-    #[use_eq_ignore_span]
-    pub key: Box<RExpr>,
-    pub computed: bool,
+    pub key: Key,
     pub optional: bool,
     pub params: Vec<FnParam>,
     pub type_ann: Option<Box<Type>>,
@@ -532,9 +609,7 @@ pub struct PropertySignature {
 pub struct MethodSignature {
     pub span: Span,
     pub readonly: bool,
-    #[use_eq_ignore_span]
-    pub key: Box<RExpr>,
-    pub computed: bool,
+    pub key: Key,
     pub optional: bool,
     pub params: Vec<FnParam>,
     pub ret_ty: Option<Box<Type>>,
@@ -611,6 +686,7 @@ pub struct Constructor {
     pub type_params: Option<TypeParamDecl>,
     pub params: Vec<FnParam>,
     pub type_ann: Box<Type>,
+    pub is_abstract: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
@@ -759,25 +835,13 @@ impl Type {
         }
 
         match self {
-            Type::Arc(..)
-            | Type::Keyword(..)
-            | Type::This(..)
-            | Type::StaticThis(..)
-            | Type::Symbol(..) => true,
+            Type::Arc(..) | Type::Keyword(..) | Type::This(..) | Type::StaticThis(..) | Type::Symbol(..) => true,
 
             Type::Param(TypeParam {
-                constraint,
-                default,
-                ..
+                constraint, default, ..
             }) => {
-                constraint
-                    .as_ref()
-                    .map(|ty| ty.is_clone_cheap())
-                    .unwrap_or(true)
-                    && default
-                        .as_ref()
-                        .map(|ty| ty.is_clone_cheap())
-                        .unwrap_or(true)
+                constraint.as_ref().map(|ty| ty.is_clone_cheap()).unwrap_or(true)
+                    && default.as_ref().map(|ty| ty.is_clone_cheap()).unwrap_or(true)
             }
 
             _ => false,
@@ -1083,7 +1147,20 @@ impl Type {
                 ..
             })
             | Type::Lit(RTsLitType {
-                lit: RTsLit::Str(..),
+                lit: RTsLit::Str(..), ..
+            }) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_num(&self) -> bool {
+        match self.normalize() {
+            Type::Keyword(RTsKeywordType {
+                kind: TsKeywordTypeKind::TsNumberKeyword,
+                ..
+            })
+            | Type::Lit(RTsLitType {
+                lit: RTsLit::Number(..),
                 ..
             }) => true,
             _ => false,

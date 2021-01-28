@@ -12,16 +12,14 @@ use stc_ts_ast_rnode::RStr;
 use stc_ts_errors::Error;
 use stc_ts_storage::Storage;
 use stc_ts_types::TypeElement;
-use stc_ts_types::{
-    ClassInstance, Id, IndexedAccessType, Intersection, ModuleId, QueryExpr, QueryType, Ref, Tuple,
-};
+use stc_ts_types::{ClassInstance, Id, IndexedAccessType, Intersection, ModuleId, QueryExpr, QueryType, Ref, Tuple};
 use std::iter::once;
 use swc_common::Span;
 use swc_common::Spanned;
 use ty::TypeExt;
 
 impl Analyzer<'_, '_> {
-    /// `span` and `calle` is used only for error reporting.
+    /// `span` and `callee` is used only for error reporting.
     fn make_instance_from_type_elements(
         &mut self,
         span: Span,
@@ -73,9 +71,9 @@ impl Analyzer<'_, '_> {
                     ignore_expand_prevention_for_top: true,
                     ..self.ctx
                 };
-                let ty =
-                    self.with_ctx(ctx)
-                        .expand_fully(span, box ty.normalize().clone(), false)?;
+                let ty = self
+                    .with_ctx(ctx)
+                    .expand_fully(span, box ty.normalize().clone(), false)?;
 
                 match ty.normalize() {
                     Type::Ref(..) => return Ok(ty.clone()),
@@ -159,10 +157,7 @@ pub(crate) fn instantiate_class(module_id: ModuleId, ty: Box<Type>) -> Box<Type>
                 .map(|ty| instantiate_class(module_id, ty.clone()))
                 .collect();
 
-            box Type::Intersection(Intersection {
-                span: i.span,
-                types,
-            })
+            box Type::Intersection(Intersection { span: i.span, types })
         }
 
         Type::Query(QueryType {
@@ -194,9 +189,7 @@ impl Fold<stc_ts_types::Function> for Generalizer {
 impl Fold<Type> for Generalizer {
     fn fold(&mut self, mut ty: Type) -> Type {
         match ty {
-            Type::IndexedAccessType(IndexedAccessType { ref index_type, .. })
-                if is_str_lit_or_union(&index_type) =>
-            {
+            Type::IndexedAccessType(IndexedAccessType { ref index_type, .. }) if is_str_lit_or_union(&index_type) => {
                 return ty
             }
             _ => {}
@@ -308,12 +301,10 @@ pub(super) fn is_prop_name_eq(l: &RPropName, r: &RPropName) -> bool {
             let r = $r;
 
             match l {
-                RPropName::Ident(RIdent { ref sym, .. })
-                | RPropName::Str(RStr { value: ref sym, .. }) => match &*r {
-                    RPropName::Ident(RIdent { sym: ref r_sym, .. })
-                    | RPropName::Str(RStr {
-                        value: ref r_sym, ..
-                    }) => return sym == r_sym,
+                RPropName::Ident(RIdent { ref sym, .. }) | RPropName::Str(RStr { value: ref sym, .. }) => match &*r {
+                    RPropName::Ident(RIdent { sym: ref r_sym, .. }) | RPropName::Str(RStr { value: ref r_sym, .. }) => {
+                        return sym == r_sym
+                    }
                     RPropName::Num(n) => return sym == &*n.value.to_string(),
                     _ => return false,
                 },

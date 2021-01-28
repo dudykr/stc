@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use crate::ty::{Intersection, Type, Union};
 use rnode::Visit;
 use rnode::VisitMut;
@@ -5,6 +7,7 @@ use rnode::VisitMutWith;
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RBlockStmt;
 use stc_ts_ast_rnode::RBool;
+use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RModuleDecl;
 use stc_ts_ast_rnode::RModuleItem;
 use stc_ts_ast_rnode::RStmt;
@@ -20,6 +23,28 @@ pub(crate) mod graph;
 pub(crate) mod named;
 pub(crate) mod property_map;
 pub(crate) mod type_ext;
+
+pub(crate) struct TypeParamAssertFinder {
+    found: bool,
+}
+
+impl Visit<TypeParam> for TypeParamAssertFinder {
+    fn visit(&mut self, value: &TypeParam) {
+        self.found = true;
+    }
+}
+
+pub(crate) fn assert_no_type_param<N>(n: &N)
+where
+    N: Debug + VisitWith<TypeParamAssertFinder>,
+{
+    let mut v = TypeParamAssertFinder { found: false };
+    n.visit_with(&mut v);
+    if v.found {
+        panic!("{:#?} should not contain type parameter", n)
+    }
+}
+
 pub(crate) trait ModuleItemOrStmt {
     fn try_into(self) -> Result<RModuleDecl, RStmt>;
 }
@@ -105,6 +130,11 @@ impl VisitMut<Span> for Marker {
     }
 }
 
+/// Prevent interop with hygiene.
+impl VisitMut<RIdent> for Marker {
+    fn visit_mut(&mut self, _: &mut RIdent) {}
+}
+
 impl VisitMut<Type> for Marker {
     fn visit_mut(&mut self, ty: &mut Type) {
         ty.normalize_mut();
@@ -116,8 +146,7 @@ impl VisitMut<Type> for Marker {
 pub(crate) fn is_str_lit_or_union(t: &Type) -> bool {
     match t {
         Type::Lit(RTsLitType {
-            lit: RTsLit::Str(..),
-            ..
+            lit: RTsLit::Str(..), ..
         }) => true,
         Type::Union(Union { ref types, .. }) => types.iter().all(|ty| is_str_lit_or_union(&ty)),
         _ => false,
@@ -127,8 +156,7 @@ pub(crate) fn is_str_lit_or_union(t: &Type) -> bool {
 pub(crate) fn is_str_or_union(t: &Type) -> bool {
     match t {
         Type::Lit(RTsLitType {
-            lit: RTsLit::Str(..),
-            ..
+            lit: RTsLit::Str(..), ..
         }) => true,
         Type::Keyword(RTsKeywordType {
             kind: TsKeywordTypeKind::TsStringKeyword,
@@ -182,10 +210,7 @@ impl RemoveTypes for Type {
                 _ => {}
             },
             Type::Lit(RTsLitType {
-                lit:
-                    RTsLit::Bool(RBool {
-                        value: false, span, ..
-                    }),
+                lit: RTsLit::Bool(RBool { value: false, span, .. }),
                 ..
             }) => return *Type::never(span),
 
@@ -200,10 +225,7 @@ impl RemoveTypes for Type {
     fn remove_truthy(self) -> Type {
         match self {
             Type::Lit(RTsLitType {
-                lit:
-                    RTsLit::Bool(RBool {
-                        value: true, span, ..
-                    }),
+                lit: RTsLit::Bool(RBool { value: true, span, .. }),
                 ..
             }) => return *Type::never(span),
 
@@ -230,11 +252,7 @@ impl RemoveTypes for Intersection {
             return *types.into_iter().next().unwrap();
         }
 
-        Intersection {
-            span: self.span,
-            types,
-        }
-        .into()
+        Intersection { span: self.span, types }.into()
     }
 
     fn remove_truthy(self) -> Type {
@@ -251,11 +269,7 @@ impl RemoveTypes for Intersection {
             return *types.into_iter().next().unwrap();
         }
 
-        Intersection {
-            span: self.span,
-            types,
-        }
-        .into()
+        Intersection { span: self.span, types }.into()
     }
 }
 
@@ -276,11 +290,7 @@ impl RemoveTypes for Union {
             return *types.into_iter().next().unwrap();
         }
 
-        Union {
-            span: self.span,
-            types,
-        }
-        .into()
+        Union { span: self.span, types }.into()
     }
 
     fn remove_truthy(self) -> Type {
@@ -299,11 +309,7 @@ impl RemoveTypes for Union {
             return *types.into_iter().next().unwrap();
         }
 
-        Union {
-            span: self.span,
-            types,
-        }
-        .into()
+        Union { span: self.span, types }.into()
     }
 }
 
