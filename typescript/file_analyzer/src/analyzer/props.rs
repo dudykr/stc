@@ -93,7 +93,7 @@ impl Analyzer<'_, '_> {
             Err(err) => {
                 check_for_symbol_form = false;
                 match err {
-                    box Error::TS2585 { .. } => Err(err)?,
+                    box Error::TS2585 { span } => Err(box Error::TS2585 { span })?,
                     _ => {}
                 }
 
