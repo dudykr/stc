@@ -382,7 +382,7 @@ pub struct Module {
     pub span: Span,
     #[use_eq_ignore_span]
     pub name: RTsModuleName,
-    pub exports: ModuleTypeData,
+    pub exports: Box<ModuleTypeData>,
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
