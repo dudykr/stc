@@ -1,4 +1,5 @@
 #![allow(incomplete_features)]
+#![deny(variant_size_differences)]
 #![feature(box_syntax)]
 #![feature(specialization)]
 
@@ -196,7 +197,7 @@ pub enum Error {
     NoSuchProperty {
         span: Span,
         obj: Option<Box<Type>>,
-        prop: Option<Key>,
+        prop: Option<Box<Key>>,
     },
 
     TooManyTupleElements {
@@ -215,9 +216,9 @@ pub enum Error {
 
     /// TS2304
     TypeNotFound {
-        name: Name,
+        name: Box<Name>,
         ctxt: ModuleId,
-        type_args: Option<TypeParamInstantiation>,
+        type_args: Option<Box<TypeParamInstantiation>>,
         span: Span,
     },
 
@@ -255,7 +256,7 @@ pub enum Error {
 
     ResolvedFailed {
         span: Span,
-        base: PathBuf,
+        base: Box<PathBuf>,
         src: JsWord,
     },
 
@@ -524,8 +525,8 @@ pub enum Error {
     InvalidOpAssign {
         span: Span,
         op: AssignOp,
-        lhs: Type,
-        rhs: Type,
+        lhs: Box<Type>,
+        rhs: Box<Type>,
     },
 
     AssignOpCannotBeApplied {
