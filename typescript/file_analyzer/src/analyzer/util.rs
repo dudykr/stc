@@ -231,10 +231,10 @@ impl Analyzer<'_, '_> {
     //    }
 }
 
-pub trait ResultExt<T>: Into<Result<T, Error>> {
+pub trait ResultExt<T>: Into<Result<T, Box<Error>>> {
     fn store<V>(self, to: &mut V) -> Option<T>
     where
-        V: Extend<Error>,
+        V: Extend<Box<Error>>,
     {
         match self.into() {
             Ok(val) => Some(val),
@@ -256,7 +256,7 @@ pub trait ResultExt<T>: Into<Result<T, Error>> {
     }
 }
 
-impl<T> ResultExt<T> for Result<T, Error> {}
+impl<T> ResultExt<T> for Result<T, Box<Error>> {}
 
 /// Simple utility to check (l, r) and (r, l) with same code.
 #[derive(Debug, Clone, Copy)]

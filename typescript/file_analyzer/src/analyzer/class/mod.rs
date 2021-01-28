@@ -181,7 +181,7 @@ impl Analyzer<'_, '_> {
                 let mut has_optional = false;
                 for p in params.iter() {
                     if has_optional {
-                        child.storage.report(Error::TS1016 { span: p.span() });
+                        child.storage.report(box Error::TS1016 { span: p.span() });
                     }
 
                     match *p {

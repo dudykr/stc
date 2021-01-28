@@ -417,7 +417,7 @@ impl Scope<'_> {
 
 impl Analyzer<'_, '_> {
     /// Overrides a variable. Used for removing lazily-typed stuffs.
-    pub(super) fn override_var(&mut self, kind: VarDeclKind, name: Id, ty: Box<Type>) -> Result<(), Error> {
+    pub(super) fn override_var(&mut self, kind: VarDeclKind, name: Id, ty: Box<Type>) -> ValidationResult<()> {
         self.declare_var(ty.span(), kind, name, Some(ty), true, true)?;
 
         Ok(())
@@ -561,15 +561,20 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    pub fn declare_vars(&mut self, kind: VarDeclKind, pat: &RPat) -> Result<(), Error> {
+    pub fn declare_vars(&mut self, kind: VarDeclKind, pat: &RPat) -> ValidationResult<()> {
         self.declare_vars_inner_with_ty(kind, pat, false, None)
     }
 
-    pub fn declare_vars_with_ty(&mut self, kind: VarDeclKind, pat: &RPat, ty: Option<Box<Type>>) -> Result<(), Error> {
+    pub fn declare_vars_with_ty(
+        &mut self,
+        kind: VarDeclKind,
+        pat: &RPat,
+        ty: Option<Box<Type>>,
+    ) -> ValidationResult<()> {
         self.declare_vars_inner_with_ty(kind, pat, false, ty)
     }
 
-    pub(super) fn declare_vars_inner(&mut self, kind: VarDeclKind, pat: &RPat, export: bool) -> Result<(), Error> {
+    pub(super) fn declare_vars_inner(&mut self, kind: VarDeclKind, pat: &RPat, export: bool) -> ValidationResult<()> {
         self.declare_vars_inner_with_ty(kind, pat, export, None)
     }
 
@@ -583,7 +588,7 @@ impl Analyzer<'_, '_> {
         pat: &RPat,
         export: bool,
         ty: Option<Box<Type>>,
-    ) -> Result<(), Error> {
+    ) -> ValidationResult<()> {
         let span = ty
             .as_ref()
             .map(|v| v.span())
@@ -978,7 +983,7 @@ impl Analyzer<'_, '_> {
         ty: Option<Box<Type>>,
         initialized: bool,
         allow_multiple: bool,
-    ) -> Result<(), Error> {
+    ) -> ValidationResult<()> {
         let ty = ty.map(|ty| ty.cheap());
 
         if self.ctx.in_global {

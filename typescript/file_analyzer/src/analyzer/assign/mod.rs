@@ -872,11 +872,11 @@ impl Analyzer<'_, '_> {
                 }
                 _ => {
                     dbg!();
-                    return Err(Error::InvalidLValue { span });
+                    return Err(box Error::InvalidLValue { span });
                 }
             },
 
-            Type::This(RTsThisType { span }) => return Err(Error::CannotAssingToThis { span: *span }),
+            Type::This(RTsThisType { span }) => return Err(box Error::CannotAssingToThis { span: *span }),
 
             Type::Interface(Interface {
                 ref body, ref extends, ..
@@ -977,7 +977,7 @@ impl Analyzer<'_, '_> {
                         return Ok(());
                     }
 
-                    Type::Lit(..) => return Err(Error::CannotAssignToNonVariable { span }),
+                    Type::Lit(..) => return Err(box Error::CannotAssignToNonVariable { span }),
                     _ => fail!(),
                 }
             }
@@ -998,13 +998,13 @@ impl Analyzer<'_, '_> {
                         let mut errors = Errors::default();
                         for (l, r) in elems.into_iter().zip(rhs_elems) {
                             for el in elems {
-                                let err = match *r.ty.normalize() {
+                                match *r.ty.normalize() {
                                     Type::Keyword(RTsKeywordType {
                                         kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                         ..
                                     }) => continue,
                                     _ => {}
-                                };
+                                }
 
                                 errors.extend(self.assign_inner(&l.ty, &r.ty, opts).err());
                             }
@@ -1117,7 +1117,7 @@ impl Analyzer<'_, '_> {
                     return if errors.is_empty() {
                         Ok(())
                     } else {
-                        Err(Error::Errors {
+                        Err(box Error::Errors {
                             span,
                             errors: errors.into(),
                         })
@@ -1146,7 +1146,7 @@ impl Analyzer<'_, '_> {
 
                         let success = match res {
                             Ok(()) => true,
-                            Err(Error::Errors { ref errors, .. }) if errors.is_empty() => true,
+                            Err(box Error::Errors { ref errors, .. }) if errors.is_empty() => true,
                             Err(err) => {
                                 errors.push(err);
                                 false
@@ -1179,7 +1179,7 @@ impl Analyzer<'_, '_> {
 
                 Type::Array(..) if lhs.is_empty() => return Ok(()),
 
-                Type::Array(..) => return Err(Error::InvalidAssignmentOfArray { span }),
+                Type::Array(..) => return Err(box Error::InvalidAssignmentOfArray { span }),
 
                 Type::Tuple(rhs) => {
                     // Handle { 0: nubmer } = [1]
@@ -1225,7 +1225,7 @@ impl Analyzer<'_, '_> {
                 }) if lhs.is_empty() => return Ok(()),
 
                 _ => {
-                    return Err(Error::Unimplemented {
+                    return Err(box Error::Unimplemented {
                         span,
                         msg: format!("assign_to_type_elements - ??"),
                     })
@@ -1242,11 +1242,11 @@ impl Analyzer<'_, '_> {
                 //      var c { [n: number]: { a: string; b: number; }; } = [{ a:
                 // '', b: 0, c: '' }];
 
-                return Err(Error::Errors {
+                return Err(box Error::Errors {
                     span,
                     errors: unhandled_rhs
                         .into_iter()
-                        .map(|span| Error::UnknownPropertyInObjectLiteralAssignment { span })
+                        .map(|span| box Error::UnknownPropertyInObjectLiteralAssignment { span })
                         .collect(),
                 });
             }
@@ -1286,7 +1286,7 @@ impl Analyzer<'_, '_> {
                                 }
                             }
 
-                            errors.push(Error::ConstructorRequired {
+                            errors.push(box Error::ConstructorRequired {
                                 span,
                                 lhs: lhs_span,
                                 rhs: rhs.span(),
@@ -1331,7 +1331,7 @@ impl Analyzer<'_, '_> {
                                     ty::ClassMember::Property(ref rp) => {
                                         match rp.accessibility {
                                             Some(Accessibility::Private) | Some(Accessibility::Protected) => {
-                                                errors.push(Error::AccessibilityDiffers { span });
+                                                errors.push(box Error::AccessibilityDiffers { span });
                                             }
                                             _ => {}
                                         }
@@ -1366,21 +1366,21 @@ impl Analyzer<'_, '_> {
                 | Type::Keyword(RTsKeywordType {
                     kind: TsKeywordTypeKind::TsVoidKeyword,
                     ..
-                }) => return Err(vec![])?,
+                }) => return Ok(()),
 
                 _ => {}
             }
         }
 
         if !missing_fields.is_empty() {
-            errors.push(Error::MissingFields {
+            errors.push(box Error::MissingFields {
                 span,
                 fields: missing_fields,
             });
         }
 
         if !errors.is_empty() {
-            return Err(Error::Errors {
+            return Err(box Error::Errors {
                 span,
                 errors: errors.into(),
             });
@@ -1423,7 +1423,7 @@ impl Analyzer<'_, '_> {
                                     //
 
                                     if lm.params.len() != rm.params.len() {
-                                        return Err(Error::Unimplemented {
+                                        return Err(box Error::Unimplemented {
                                             span,
                                             msg: format!(
                                                 "lhs.method.params.len() = {}; rhs.method.params.len() = {};",
@@ -1446,7 +1446,7 @@ impl Analyzer<'_, '_> {
                                     if let Some(rp_ty) = &rp.type_ann {
                                         if let Type::Function(rp_ty) = rp_ty.normalize() {
                                             if lm.params.len() != rp_ty.params.len() {
-                                                return Err(Error::Unimplemented {
+                                                return Err(box Error::Unimplemented {
                                                     span,
                                                     msg: format!(
                                                         "lhs.method.params.len() = {}; rhs.property.params.len() = {};",
@@ -1543,7 +1543,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        Err(Error::Unimplemented {
+        Err(box Error::Unimplemented {
             span,
             msg: format!("Extract keys"),
         })
@@ -1590,7 +1590,7 @@ impl Analyzer<'_, '_> {
                             }
                         }
                         _ => {
-                            return Err(Error::Unimplemented {
+                            return Err(box Error::Unimplemented {
                                 span: opts.span,
                                 msg: format!("Assignment to mapped type: type element - {:?}", member),
                             })
@@ -1603,7 +1603,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        Err(Error::Unimplemented {
+        Err(box Error::Unimplemented {
             span: opts.span,
             msg: format!("Assignment to mapped type"),
         })
