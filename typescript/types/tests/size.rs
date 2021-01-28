@@ -27,7 +27,7 @@ fn size_of_type_lit() {
 
 #[test]
 fn size_of_interface() {
-    assert_eq!(size_of::<Interface>(), 32);
+    assert_eq!(size_of::<Interface>(), 120);
 }
 
 #[test]
@@ -97,12 +97,12 @@ fn size_of_alias() {
 
 #[test]
 fn size_of_namespace() {
-    assert_eq!(size_of::<RTsNamespaceDecl>(), 32);
+    assert_eq!(size_of::<RTsNamespaceDecl>(), 96);
 }
 
 #[test]
 fn size_of_operator() {
-    assert_eq!(size_of::<Operator>(), 32);
+    assert_eq!(size_of::<Operator>(), 24);
 }
 
 #[test]
@@ -122,12 +122,12 @@ fn size_of_conditional() {
 
 #[test]
 fn size_of_keyword() {
-    assert_eq!(size_of::<RTsKeywordType>(), 32);
+    assert_eq!(size_of::<RTsKeywordType>(), 16);
 }
 
 #[test]
 fn size_of_lit() {
-    assert_eq!(size_of::<RTsLitType>(), 32);
+    assert_eq!(size_of::<RTsLitType>(), 104);
 }
 
 #[test]
@@ -147,12 +147,12 @@ fn size_of_predicate() {
 
 #[test]
 fn size_of_import() {
-    assert_eq!(size_of::<ImportType>(), 32);
+    assert_eq!(size_of::<ImportType>(), 120);
 }
 
 #[test]
 fn size_of_infer() {
-    assert_eq!(size_of::<InferType>(), 32);
+    assert_eq!(size_of::<InferType>(), 64);
 }
 
 #[test]
