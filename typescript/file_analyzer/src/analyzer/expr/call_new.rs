@@ -48,6 +48,7 @@ use stc_ts_ast_rnode::RTsTypeParamInstantiation;
 use stc_ts_ast_rnode::RTsTypeRef;
 use stc_ts_errors::debug::print_backtrace;
 use stc_ts_errors::debug::print_type;
+use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::ClassProperty;
@@ -417,6 +418,15 @@ impl Analyzer<'_, '_> {
                 return Ok(Type::any(span));
             }
 
+            Type::Ref(..) => {
+                let obj_type = box self
+                    .expand_top_ref(span, Cow::Owned(*obj_type))
+                    .context("tried to expand object to call property of it")?
+                    .into_owned();
+
+                return self.call_property(span, kind, obj_type, prop, type_args, args, arg_types, spread_arg_types);
+            }
+
             Type::Interface(ref i) => {
                 // TODO: Check parent interface
                 return self.search_members_for_callable_prop(
@@ -449,8 +459,6 @@ impl Analyzer<'_, '_> {
             Type::Class(ty::Class { body, super_class, .. }) => {
                 let mut candidates = vec![];
                 for member in body.iter() {
-                    // TODO: Handle properties with callable type.
-
                     match member {
                         ty::ClassMember::Method(Method {
                             key,
