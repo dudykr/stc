@@ -92,11 +92,7 @@ fn handle_item(nodes_to_convert: &[String], item: Item) -> Vec<Item> {
     match item {
         Item::Enum(e) => {
             let enum_name = e.ident.new_ident_with(|s| format!("R{}", s));
-            let info = e
-                .variants
-                .iter()
-                .map(|v| (v, handle_variant(v)))
-                .collect::<Vec<_>>();
+            let info = e.variants.iter().map(|v| (v, handle_variant(v))).collect::<Vec<_>>();
 
             let mut variants = Punctuated::<_, Token![,]>::default();
             let (mut from_orig_arms, mut to_orig_arms) = (vec![], vec![]);
@@ -109,12 +105,8 @@ fn handle_item(nodes_to_convert: &[String], item: Item) -> Vec<Item> {
                     discriminant: None,
                 });
 
-                let (from_orig, to_orig) = handle_enum_variant_fields(
-                    nodes_to_convert,
-                    Some(&e.ident),
-                    &variant.ident,
-                    &variant.fields,
-                );
+                let (from_orig, to_orig) =
+                    handle_enum_variant_fields(nodes_to_convert, Some(&e.ident), &variant.ident, &variant.fields);
                 from_orig_arms.push(from_orig);
                 to_orig_arms.push(to_orig);
             }
@@ -169,10 +161,7 @@ fn handle_item(nodes_to_convert: &[String], item: Item) -> Vec<Item> {
                         impl rnode::RNode for REnum {
                             type Orig = OrigType;
 
-                            fn from_orig(
-                                id_gen: &mut rnode::NodeIdGenerator,
-                                orig: Self::Orig,
-                            ) -> Self {
+                            fn from_orig(id_gen: &mut rnode::NodeIdGenerator, orig: Self::Orig) -> Self {
                                 from_orig_body
                             }
 
@@ -197,12 +186,7 @@ fn handle_item(nodes_to_convert: &[String], item: Item) -> Vec<Item> {
                         .map(|f| {
                             (
                                 f,
-                                handle_field(
-                                    nodes_to_convert,
-                                    &f.attrs,
-                                    f.ident.as_ref().unwrap(),
-                                    &f.ty,
-                                ),
+                                handle_field(nodes_to_convert, &f.attrs, f.ident.as_ref().unwrap(), &f.ty),
                             )
                         })
                         .collect::<Vec<_>>();
@@ -230,9 +214,7 @@ fn handle_item(nodes_to_convert: &[String], item: Item) -> Vec<Item> {
                             attrs: field
                                 .attrs
                                 .iter()
-                                .filter(|attr| {
-                                    !attr.path.is_ident("rc") && !attr.path.is_ident("refcell")
-                                })
+                                .filter(|attr| !attr.path.is_ident("rc") && !attr.path.is_ident("refcell"))
                                 .cloned()
                                 .collect(),
                             vis: field.vis.clone(),
@@ -564,24 +546,14 @@ fn handle_struct_fields(
     }
 
     from_orig_body.push(if skip_node_id {
-        q!(
-            Vars {
-                bindings: &bindings,
-            },
-            {
-                return Self { bindings };
-            }
-        )
+        q!(Vars { bindings: &bindings }, {
+            return Self { bindings };
+        })
         .parse()
     } else {
-        q!(
-            Vars {
-                bindings: &bindings,
-            },
-            {
-                return Self { node_id, bindings };
-            }
-        )
+        q!(Vars { bindings: &bindings }, {
+            return Self { node_id, bindings };
+        })
         .parse()
     });
     to_orig_body.push(
@@ -658,10 +630,7 @@ impl Fold for OptionReplacer<'_> {
             Type::Path(inner_path) => {
                 //
                 if let Some(inner_name) = inner_path.path.get_ident() {
-                    let is_rnode = self
-                        .nodes_to_convert
-                        .iter()
-                        .any(|n| inner_name == &*format!("R{}", n));
+                    let is_rnode = self.nodes_to_convert.iter().any(|n| inner_name == &*format!("R{}", n));
                     if is_rnode {
                         return q!(Vars { inner_name }, (Option<inner_name>)).parse();
                     }
@@ -681,22 +650,14 @@ struct RNodeField {
 }
 
 /// Look for attributes, namely `#[rc]` or `#[refcell]`.
-fn handle_field(
-    nodes_to_convert: &[String],
-    attrs: &[Attribute],
-    match_binding: &Ident,
-    ty: &Type,
-) -> RNodeField {
+fn handle_field(nodes_to_convert: &[String], attrs: &[Attribute], match_binding: &Ident, ty: &Type) -> RNodeField {
     // let rc = attrs.iter().any(|attr| attr.path.is_ident("rc"));
     // let ref_cell = attrs.iter().any(|attr| attr.path.is_ident("refcell"));
     let rc = false;
     let ref_cell = false;
 
     if rc && ref_cell {
-        panic!(
-            "#[rc] and #[ref_cell] cannot be applied to same field because #[rc] implies \
-             Rc<Refell<T>>"
-        )
+        panic!("#[rc] and #[ref_cell] cannot be applied to same field because #[rc] implies Rc<Refell<T>>")
     }
 
     // If type can be converted to RNode, do it.
@@ -884,11 +845,7 @@ fn handle_field(
                     { inner.map(Box::new) }
                 )
                 .parse();
-                info.ty = q!(
-                    Vars { ty: &inner_info.ty },
-                    (std::cell::RefCell<Option<Box<ty>>>)
-                )
-                .parse();
+                info.ty = q!(Vars { ty: &inner_info.ty }, (std::cell::RefCell<Option<Box<ty>>>)).parse();
             } else {
                 info.ty = q!(Vars { ty: &info.ty }, (std::cell::RefCell<ty>)).parse()
             }
@@ -971,10 +928,7 @@ fn handle_field(
         if let Some(ty) = extract_vec(&ty) {
             return RNodeField {
                 from_orig: q!(Vars { match_binding }, {
-                    match_binding
-                        .into_iter()
-                        .map(std::cell::RefCell::new)
-                        .collect()
+                    match_binding.into_iter().map(std::cell::RefCell::new).collect()
                 })
                 .parse(),
                 to_orig: q!(Vars { match_binding }, { match_binding }).parse(),
@@ -1042,11 +996,7 @@ fn prefix_type_name(ty: &Type) -> Type {
 
     match ty {
         Type::Path(p) => {
-            let new_name = p
-                .path
-                .get_ident()
-                .unwrap()
-                .new_ident_with(|s| format!("R{}", s));
+            let new_name = p.path.get_ident().unwrap().new_ident_with(|s| format!("R{}", s));
 
             return q!(Vars { new_name }, (new_name)).parse();
         }

@@ -11,6 +11,7 @@ use std::collections::hash_map::Entry;
 use std::mem::take;
 use std::path::PathBuf;
 use std::sync::Arc;
+use swc_atoms::JsWord;
 use swc_common::iter::IdentifyLast;
 use swc_common::Span;
 use swc_common::DUMMY_SP;
@@ -38,8 +39,8 @@ pub trait TypeStore: Send + Sync {
     fn export_type(&mut self, span: Span, ctxt: ModuleId, id: Id);
     fn export_var(&mut self, span: Span, ctxt: ModuleId, id: Id);
 
-    fn reexport_type(&mut self, span: Span, ctxt: ModuleId, id: Id, ty: Box<Type>);
-    fn reexport_var(&mut self, span: Span, ctxt: ModuleId, id: Id, ty: Box<Type>);
+    fn reexport_type(&mut self, span: Span, ctxt: ModuleId, id: JsWord, ty: Box<Type>);
+    fn reexport_var(&mut self, span: Span, ctxt: ModuleId, id: JsWord, ty: Box<Type>);
 
     fn take_info(&mut self, ctxt: ModuleId) -> ModuleTypeData;
 }
@@ -111,11 +112,11 @@ where
         (**self).take_info(ctxt)
     }
 
-    fn reexport_type(&mut self, span: Span, ctxt: ModuleId, id: Id, ty: Box<Type>) {
+    fn reexport_type(&mut self, span: Span, ctxt: ModuleId, id: JsWord, ty: Box<Type>) {
         (**self).reexport_type(span, ctxt, id, ty)
     }
 
-    fn reexport_var(&mut self, span: Span, ctxt: ModuleId, id: Id, ty: Box<Type>) {
+    fn reexport_var(&mut self, span: Span, ctxt: ModuleId, id: JsWord, ty: Box<Type>) {
         (**self).reexport_var(span, ctxt, id, ty)
     }
 }
@@ -163,12 +164,7 @@ impl TypeStore for Single<'_> {
     fn store_private_type(&mut self, ctxt: ModuleId, id: Id, ty: Box<Type>) {
         debug_assert_eq!(ctxt, self.id);
 
-        self.info
-            .exports
-            .private_types
-            .entry(id)
-            .or_default()
-            .push(ty);
+        self.info.exports.private_types.entry(id).or_default().push(ty);
     }
 
     fn store_private_var(&mut self, ctxt: ModuleId, id: Id, ty: Box<Type>) {
@@ -192,7 +188,7 @@ impl TypeStore for Single<'_> {
         debug_assert_eq!(ctxt, self.id);
 
         match self.info.exports.private_vars.get(&id).cloned() {
-            Some(ty) => match self.info.exports.vars.insert(id, ty) {
+            Some(ty) => match self.info.exports.vars.insert(id.sym().clone(), ty) {
                 Some(..) => {}
                 None => {}
             },
@@ -205,7 +201,7 @@ impl TypeStore for Single<'_> {
 
         match self.info.exports.private_types.get(&id).cloned() {
             Some(ty) => {
-                *self.info.exports.types.entry(id.clone()).or_default() = ty.clone();
+                *self.info.exports.types.entry(id.sym().clone()).or_default() = ty.clone();
             }
             None => self.report(Error::NoSuchVar { span, name: id }),
         }
@@ -240,12 +236,12 @@ impl TypeStore for Single<'_> {
         take(&mut self.info.exports)
     }
 
-    fn reexport_type(&mut self, _span: Span, ctxt: ModuleId, id: Id, ty: Box<Type>) {
+    fn reexport_type(&mut self, _span: Span, ctxt: ModuleId, id: JsWord, ty: Box<Type>) {
         debug_assert_eq!(ctxt, self.id);
         self.info.exports.types.entry(id).or_default().push(ty);
     }
 
-    fn reexport_var(&mut self, _span: Span, ctxt: ModuleId, id: Id, ty: Box<Type>) {
+    fn reexport_var(&mut self, _span: Span, ctxt: ModuleId, id: JsWord, ty: Box<Type>) {
         debug_assert_eq!(ctxt, self.id);
         // TODO: error reporting for duplicate
         self.info.exports.vars.insert(id, ty);
@@ -330,7 +326,7 @@ impl TypeStore for Group<'_> {
         let e = self.info.entry(ctxt).or_default();
         match e.private_vars.get(&id) {
             Some(v) => {
-                e.vars.insert(id, v.clone());
+                e.vars.insert(id.sym().clone(), v.clone());
             }
             None => self.report(Error::NoSuchVar { span, name: id }),
         }
@@ -340,7 +336,7 @@ impl TypeStore for Group<'_> {
         let e = self.info.entry(ctxt).or_default();
         match e.private_types.get(&id) {
             Some(v) => {
-                e.types.insert(id, v.clone());
+                e.types.insert(id.sym().clone(), v.clone());
             }
             None => self.report(Error::NoSuchType { span, name: id }),
         }
@@ -370,17 +366,11 @@ impl TypeStore for Group<'_> {
         self.info.remove(&ctxt).unwrap_or_default()
     }
 
-    fn reexport_type(&mut self, _span: Span, ctxt: ModuleId, id: Id, ty: Box<Type>) {
-        self.info
-            .entry(ctxt)
-            .or_default()
-            .types
-            .entry(id)
-            .or_default()
-            .push(ty);
+    fn reexport_type(&mut self, _span: Span, ctxt: ModuleId, id: JsWord, ty: Box<Type>) {
+        self.info.entry(ctxt).or_default().types.entry(id).or_default().push(ty);
     }
 
-    fn reexport_var(&mut self, _span: Span, ctxt: ModuleId, id: Id, ty: Box<Type>) {
+    fn reexport_var(&mut self, _span: Span, ctxt: ModuleId, id: JsWord, ty: Box<Type>) {
         // TODO: Error reporting for duplicates
         self.info.entry(ctxt).or_default().vars.insert(id, ty);
     }
@@ -411,10 +401,7 @@ impl Mode for Group<'_> {
             }
         }
 
-        unreachable!(
-            "failed to get path by module id({:?}):  {:?}",
-            id, self.files
-        )
+        unreachable!("failed to get path by module id({:?}):  {:?}", id, self.files)
     }
 
     fn subscope(&self) -> Storage {
@@ -429,8 +416,8 @@ impl Mode for Group<'_> {
 
 #[derive(Debug, Default)]
 pub struct Builtin {
-    pub vars: FxHashMap<Id, Box<Type>>,
-    pub types: FxHashMap<Id, Vec<Box<Type>>>,
+    pub vars: FxHashMap<JsWord, Box<Type>>,
+    pub types: FxHashMap<JsWord, Vec<Box<Type>>>,
 }
 
 impl ErrorStore for Builtin {
@@ -454,17 +441,16 @@ impl TypeStore for Builtin {
     fn store_private_type(&mut self, ctxt: ModuleId, id: Id, ty: Box<Type>) {
         debug_assert_eq!(ctxt, ModuleId::builtin());
 
-        self.types.entry(id).or_default().push(ty);
+        self.types.entry(id.sym().clone()).or_default().push(ty);
     }
 
     fn store_private_var(&mut self, ctxt: ModuleId, id: Id, ty: Box<Type>) {
         debug_assert_eq!(ctxt, ModuleId::builtin());
 
-        match self.vars.entry(id) {
+        match self.vars.entry(id.sym().clone()) {
             Entry::Occupied(entry) => {
                 let (id, prev_ty) = entry.remove_entry();
-                self.vars
-                    .insert(id, Type::intersection(DUMMY_SP, vec![prev_ty, ty]));
+                self.vars.insert(id, Type::intersection(DUMMY_SP, vec![prev_ty, ty]));
             }
             Entry::Vacant(entry) => {
                 entry.insert(ty);
@@ -477,21 +463,21 @@ impl TypeStore for Builtin {
     fn export_type(&mut self, _: Span, _: ModuleId, _: Id) {}
 
     fn get_local_type(&self, _ctxt: ModuleId, id: Id) -> Option<Box<Type>> {
-        let types = self.types.get(&id).cloned()?;
+        let types = self.types.get(id.sym()).cloned()?;
         Some(Type::intersection(DUMMY_SP, types))
     }
 
     fn get_local_var(&self, _ctxt: ModuleId, id: Id) -> Option<Box<Type>> {
-        self.vars.get(&id).cloned()
+        self.vars.get(id.sym()).cloned()
     }
 
     fn take_info(&mut self, _ctxt: ModuleId) -> ModuleTypeData {
         unimplemented!("builtin.take_info")
     }
 
-    fn reexport_type(&mut self, _: Span, _: ModuleId, _: Id, _: Box<Type>) {}
+    fn reexport_type(&mut self, _: Span, _: ModuleId, _: JsWord, _: Box<Type>) {}
 
-    fn reexport_var(&mut self, _: Span, _: ModuleId, _: Id, _: Box<Type>) {}
+    fn reexport_var(&mut self, _: Span, _: ModuleId, _: JsWord, _: Box<Type>) {}
 }
 
 impl Mode for Builtin {

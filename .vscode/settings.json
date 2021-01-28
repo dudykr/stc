@@ -34,5 +34,6 @@
   "rust-analyzer.procMacro.enable": true,
   "rust-analyzer.updates.channel": "nightly",
   "rust-analyzer.diagnostics.enable": false,
-  "rust-analyzer.diagnostics.enableExperimental": false
+  "rust-analyzer.diagnostics.enableExperimental": false,
+  "rust-analyzer.lens.methodReferences": true
 }

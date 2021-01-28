@@ -46,20 +46,17 @@ where
 
         let input = {
             let mut buf = String::new();
-            File::open(entry.path())
-                .unwrap()
-                .read_to_string(&mut buf)
-                .unwrap();
+            File::open(entry.path()).unwrap().read_to_string(&mut buf).unwrap();
             buf
         };
 
         let test_name = file_name.replace("/", "::");
         let test_fn = op(entry.path().to_path_buf());
-        let test_fn = match test_fn {
-            Some(v) => v,
-            None => continue,
+        let (test_fn, ignore) = match test_fn {
+            Some(v) => (v, false),
+            None => ((box || {}) as Box<dyn FnOnce() + Send + Sync>, true),
         };
-        let ignore = test_name.starts_with(".") || test_name.contains("::.");
+        let ignore = ignore || test_name.starts_with(".") || test_name.contains("::.");
 
         tests.push(TestDescAndFn {
             desc: TestDesc {
@@ -70,10 +67,7 @@ where
                 allow_fail: false,
             },
             testfn: DynTestFn(box move || {
-                eprintln!(
-                    "\n\n========== Running test {}\nSource:\n{}\n",
-                    file_name, input
-                );
+                eprintln!("\n\n========== Running test {}\nSource:\n{}\n", file_name, input);
 
                 test_fn()
             }),

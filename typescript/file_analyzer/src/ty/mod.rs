@@ -40,14 +40,10 @@ impl Fold<Tuple> for LitGeneralizer {
     fn fold(&mut self, mut tuple: Tuple) -> Tuple {
         tuple = tuple.fold_children_with(self);
 
-        let has_rest = tuple
-            .elems
-            .iter()
-            .map(|element| &element.ty)
-            .any(|ty| match &**ty {
-                Type::Rest(..) => true,
-                _ => false,
-            });
+        let has_rest = tuple.elems.iter().map(|element| &element.ty).any(|ty| match &**ty {
+            Type::Rest(..) => true,
+            _ => false,
+        });
 
         if has_rest {
             // Handle rest
@@ -80,9 +76,7 @@ impl Fold<Tuple> for LitGeneralizer {
 impl Fold<Type> for LitGeneralizer {
     fn fold(&mut self, mut ty: Type) -> Type {
         match &ty {
-            Type::IndexedAccessType(IndexedAccessType { index_type, .. })
-                if is_str_lit_or_union(&index_type) =>
-            {
+            Type::IndexedAccessType(IndexedAccessType { index_type, .. }) if is_str_lit_or_union(&index_type) => {
                 return ty;
             }
             _ => {}

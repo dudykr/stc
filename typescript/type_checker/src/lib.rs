@@ -142,11 +142,7 @@ impl Checker {
     }
 
     /// Analyzes one module.
-    fn analyze_module(
-        &self,
-        starter: Option<Arc<PathBuf>>,
-        path: Arc<PathBuf>,
-    ) -> Arc<ModuleTypeData> {
+    fn analyze_module(&self, starter: Option<Arc<PathBuf>>, path: Arc<PathBuf>) -> Arc<ModuleTypeData> {
         self.run(|| {
             let id = self.module_graph.id(&path);
 
@@ -186,11 +182,7 @@ impl Checker {
                                     .map(|id| {
                                         let path = self.module_graph.path(id);
                                         let stmt_count = self.module_graph.stmt_count_of(id);
-                                        File {
-                                            id,
-                                            path,
-                                            stmt_count,
-                                        }
+                                        File { id, path, stmt_count }
                                     })
                                     .collect(),
                             ),
@@ -204,17 +196,14 @@ impl Checker {
                             .map(|module| {
                                 RModule::from_orig(
                                     &mut node_id_gen,
-                                    module.fold_with(&mut ts_resolver(
-                                        self.env.shared().marks().top_level_mark(),
-                                    )),
+                                    module.fold_with(&mut ts_resolver(self.env.shared().marks().top_level_mark())),
                                 )
                             })
                             .collect::<Vec<_>>();
                         let mut mutations;
                         {
                             let mut a = Analyzer::root(
-                                self.logger
-                                    .new(slog::o!("file" => path.to_string_lossy().to_string())),
+                                self.logger.new(slog::o!("file" => path.to_string_lossy().to_string())),
                                 self.env.clone(),
                                 self.cm.clone(),
                                 box &mut storage,
@@ -269,11 +258,7 @@ impl Checker {
                     }
 
                     let lock = self.module_types.read();
-                    return lock
-                        .get(&id)
-                        .map(|cell| cell.get().cloned())
-                        .flatten()
-                        .unwrap();
+                    return lock.get(&id).map(|cell| cell.get().cloned()).flatten().unwrap();
                 }
             }
             slog::info!(
@@ -317,6 +302,8 @@ impl Checker {
 
     fn analyze_non_circular_module(&self, id: ModuleId, path: Arc<PathBuf>) -> Arc<ModuleTypeData> {
         self.run(|| {
+            let start = Instant::now();
+
             let mut node_id_gen = NodeIdGenerator::default();
             let mut module = self.module_graph.clone_module(id);
             module = module.fold_with(&mut ts_resolver(self.env.shared().marks().top_level_mark()));
@@ -331,8 +318,7 @@ impl Checker {
             let mut mutations;
             {
                 let mut a = Analyzer::root(
-                    self.logger
-                        .new(slog::o!("file" => path.to_string_lossy().to_string())),
+                    self.logger.new(slog::o!("file" => path.to_string_lossy().to_string())),
                     self.env.clone(),
                     self.cm.clone(),
                     box &mut storage,
@@ -352,9 +338,7 @@ impl Checker {
 
             if early_error() {
                 for err in storage.info.errors {
-                    self.handler
-                        .struct_span_err(err.span(), &format!("{:?}", err))
-                        .emit();
+                    self.handler.struct_span_err(err.span(), &format!("{:?}", err)).emit();
                 }
             } else {
                 let mut errors = self.errors.lock();
@@ -364,6 +348,9 @@ impl Checker {
             let type_info = Arc::new(storage.info.exports);
 
             self.dts_modules.insert(id, module);
+
+            let dur = Instant::now() - start;
+            eprintln!("[Timing] Full analysis of {}: {:?}", path.display(), dur);
 
             type_info
         })
@@ -397,35 +384,20 @@ impl Load for Checker {
 
         let data = self.analyze_module(Some(base.clone()), path.clone());
 
-        return Ok(ModuleInfo {
-            module_id: id,
-            data,
-        });
+        return Ok(ModuleInfo { module_id: id, data });
     }
 
-    fn load_non_circular_dep(
-        &self,
-        base: Arc<PathBuf>,
-        import: &DepInfo,
-    ) -> Result<ModuleInfo, Error> {
+    fn load_non_circular_dep(&self, base: Arc<PathBuf>, import: &DepInfo) -> Result<ModuleInfo, Error> {
         let mut _result = ModuleTypeData::default();
 
         // TODO: Use ModuleId for analyze_module
         let path = self.module_graph.resolve(&base, &import.src).unwrap();
-        slog::info!(
-            self.logger,
-            "({}): Loading {}",
-            base.display(),
-            path.display()
-        );
+        slog::info!(self.logger, "({}): Loading {}", base.display(), path.display());
         let id = self.module_graph.id(&path);
 
         let data = self.analyze_module(Some(base.clone()), path.clone());
 
-        return Ok(ModuleInfo {
-            module_id: id,
-            data,
-        });
+        return Ok(ModuleInfo { module_id: id, data });
     }
 
     fn module_id(&self, base: &Arc<PathBuf>, src: &JsWord) -> ModuleId {

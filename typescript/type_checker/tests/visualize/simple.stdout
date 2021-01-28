@@ -1,52 +1,4 @@
 warning: Type
- --> $DIR/tests/visualize/simple.ts:1:21
-  |
-1 | export const arr = [1, '2', 3, 4, 5].map(v => !!v);
-  |                     ^
-  |
-  = note: 1
-
-warning: Type
- --> $DIR/tests/visualize/simple.ts:1:24
-  |
-1 | export const arr = [1, '2', 3, 4, 5].map(v => !!v);
-  |                        ^^^
-  |
-  = note: '2'
-
-warning: Type
- --> $DIR/tests/visualize/simple.ts:1:29
-  |
-1 | export const arr = [1, '2', 3, 4, 5].map(v => !!v);
-  |                             ^
-  |
-  = note: 3
-
-warning: Type
- --> $DIR/tests/visualize/simple.ts:1:32
-  |
-1 | export const arr = [1, '2', 3, 4, 5].map(v => !!v);
-  |                                ^
-  |
-  = note: 4
-
-warning: Type
- --> $DIR/tests/visualize/simple.ts:1:35
-  |
-1 | export const arr = [1, '2', 3, 4, 5].map(v => !!v);
-  |                                   ^
-  |
-  = note: 5
-
-warning: Type
- --> $DIR/tests/visualize/simple.ts:1:20
-  |
-1 | export const arr = [1, '2', 3, 4, 5].map(v => !!v);
-  |                    ^^^^^^^^^^^^^^^^^
-  |
-  = note: [1, '2', 3, 4, 5]
-
-warning: Type
  --> $DIR/tests/visualize/simple.ts:1:49
   |
 1 | export const arr = [1, '2', 3, 4, 5].map(v => !!v);
@@ -79,12 +31,20 @@ warning: Type
   = note: (v: any) => boolean
 
 warning: Type
+ --> $DIR/tests/visualize/simple.ts:1:20
+  |
+1 | export const arr = [1, '2', 3, 4, 5].map(v => !!v);
+  |                    ^^^^^^^^^^^^^^^^^
+  |
+  = note: [1, '2', 3, 4, 5]
+
+warning: Type
  --> $DIR/tests/visualize/simple.ts:1:49
   |
 1 | export const arr = [1, '2', 3, 4, 5].map(v => !!v);
   |                                                 ^
   |
-  = note: T
+  = note: number | string
 
 warning: Type
  --> $DIR/tests/visualize/simple.ts:1:20

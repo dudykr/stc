@@ -1,0 +1,68 @@
+warning: Type
+ --> $DIR/tests/visualize/override/symbol/call.ts:4:6
+  |
+4 |     [Symbol.iterator]() { }
+  |      ^^^^^^
+  |
+  = note: {
+              iterator: symbol;
+          }
+
+warning: Type
+ --> $DIR/tests/visualize/override/symbol/call.ts:4:6
+  |
+4 |     [Symbol.iterator]() { }
+  |      ^^^^^^^^^^^^^^^
+  |
+  = note: symbol
+
+warning: Type
+ --> $DIR/tests/visualize/override/symbol/call.ts:7:9
+  |
+7 | (new C)[Symbol.iterator](0)
+  |         ^^^^^^
+  |
+  = note: {
+              iterator: symbol;
+          }
+
+warning: Type
+ --> $DIR/tests/visualize/override/symbol/call.ts:7:9
+  |
+7 | (new C)[Symbol.iterator](0)
+  |         ^^^^^^^^^^^^^^^
+  |
+  = note: symbol
+
+warning: Type
+ --> $DIR/tests/visualize/override/symbol/call.ts:7:6
+  |
+7 | (new C)[Symbol.iterator](0)
+  |      ^
+  |
+  = note: C
+
+warning: Type
+ --> $DIR/tests/visualize/override/symbol/call.ts:7:2
+  |
+7 | (new C)[Symbol.iterator](0)
+  |  ^^^^^
+  |
+  = note: C
+
+warning: Type
+ --> $DIR/tests/visualize/override/symbol/call.ts:7:1
+  |
+7 | (new C)[Symbol.iterator](0)
+  | ^^^^^^^
+  |
+  = note: C
+
+warning: Type
+ --> $DIR/tests/visualize/override/symbol/call.ts:7:1
+  |
+7 | (new C)[Symbol.iterator](0)
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: void
+

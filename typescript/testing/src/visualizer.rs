@@ -38,9 +38,6 @@ impl Visit<Type> for TypeVisualizer<'_> {
 
         let ty_str = String::from_utf8_lossy(&buf);
 
-        self.handler
-            .struct_span_warn(span, "Type")
-            .note(&ty_str)
-            .emit();
+        self.handler.struct_span_warn(span, "Type").note(&ty_str).emit();
     }
 }

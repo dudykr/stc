@@ -26,14 +26,13 @@ use swc_ecma_ast::*;
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RUnaryExpr) -> ValidationResult {
-        let RUnaryExpr {
-            span, op, ref arg, ..
-        } = *e;
+        let RUnaryExpr { span, op, arg, .. } = e;
+        let span = *span;
 
         if let op!("delete") = op {
             // `delete foo` returns bool
 
-            match **arg {
+            match &**arg {
                 RExpr::Member(ref e) => {
                     self.type_of_member_expr(e, TypeOfMode::LValue)
                         .report(&mut self.storage);
@@ -42,6 +41,10 @@ impl Analyzer<'_, '_> {
                         span,
                         kind: TsKeywordTypeKind::TsBooleanKeyword,
                     }));
+                }
+
+                RExpr::Await(arg) => {
+                    self.storage.report(Error::InvalidDeleteOperand { span: arg.span });
                 }
 
                 _ => {}
@@ -57,7 +60,7 @@ impl Analyzer<'_, '_> {
             });
 
         if let Some(ref arg) = arg {
-            self.validate_unary_expr_inner(span, op, arg);
+            self.validate_unary_expr_inner(span, *op, arg);
         }
 
         match op {
@@ -66,7 +69,7 @@ impl Analyzer<'_, '_> {
                     if arg.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) {
                         self.storage.report(Error::NumericUnaryOpToSymbol {
                             span: arg.span(),
-                            op,
+                            op: *op,
                         })
                     }
                 }
@@ -129,11 +132,7 @@ impl Analyzer<'_, '_> {
                                 span,
                                 lit: RTsLit::Number(RNumber {
                                     span,
-                                    value: if op == op!(unary, "-") {
-                                        -(*value)
-                                    } else {
-                                        *value
-                                    },
+                                    value: if *op == op!(unary, "-") { -(*value) } else { *value },
                                 }),
                             }));
                         }
@@ -196,9 +195,7 @@ impl Analyzer<'_, '_> {
 
         match op {
             op!("typeof") | op!("delete") | op!("void") => match arg.normalize() {
-                Type::EnumVariant(..) if op == op!("delete") => {
-                    errors.push(Error::TS2704 { span: arg.span() })
-                }
+                Type::EnumVariant(..) if op == op!("delete") => errors.push(Error::TS2704 { span: arg.span() }),
 
                 _ => {}
             },
@@ -233,11 +230,7 @@ impl Analyzer<'_, '_> {
 
 fn negate(ty: Box<Type>) -> Box<Type> {
     match *ty {
-        Type::Lit(RTsLitType {
-            ref lit,
-            span,
-            node_id,
-        }) => match *lit {
+        Type::Lit(RTsLitType { ref lit, span, node_id }) => match *lit {
             RTsLit::Bool(ref v) => {
                 return box Type::Lit(RTsLitType {
                     node_id,

@@ -5,7 +5,6 @@ use self::{
     pat::PatMode,
     props::ComputedPropMode,
     scope::Scope,
-    stmt::AmbientFunctionHandler,
     util::ResultExt,
 };
 use crate::{
@@ -22,12 +21,12 @@ use rnode::VisitWith;
 use slog::Logger;
 use stc_ts_ast_rnode::RDecorator;
 use stc_ts_ast_rnode::RExpr;
-use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RModule;
 use stc_ts_ast_rnode::RModuleDecl;
 use stc_ts_ast_rnode::RModuleItem;
 use stc_ts_ast_rnode::RScript;
 use stc_ts_ast_rnode::RStmt;
+use stc_ts_ast_rnode::RStr;
 use stc_ts_ast_rnode::RTsImportEqualsDecl;
 use stc_ts_ast_rnode::RTsModuleDecl;
 use stc_ts_ast_rnode::RTsModuleName;
@@ -48,6 +47,7 @@ use std::{
     path::PathBuf,
     sync::Arc,
 };
+use swc_atoms::js_word;
 use swc_atoms::JsWord;
 use swc_common::{SourceMap, Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
@@ -82,6 +82,7 @@ mod scope;
 mod stmt;
 #[cfg(test)]
 mod tests;
+mod types;
 mod util;
 mod visit_mut;
 
@@ -137,7 +138,6 @@ pub struct Analyzer<'scope, 'b> {
     storage: Storage<'b>,
 
     export_equals_span: Span,
-    in_declare: bool,
 
     imports_by_id: FxHashMap<Id, ModuleInfo>,
 
@@ -197,8 +197,8 @@ impl Analyzer<'_, '_> {
 //    }
 //}
 
-fn make_module_ty(span: Span, exports: ModuleTypeData) -> ty::Module {
-    ty::Module { span, exports }
+fn make_module_ty(span: Span, name: RTsModuleName, exports: ModuleTypeData) -> ty::Module {
+    ty::Module { span, name, exports }
 }
 
 // TODO:
@@ -235,7 +235,16 @@ impl Analyzer<'_, '_> {
         };
         self.storage.report_all(errors);
 
-        Ok(self.finalize(make_module_ty(span, data)))
+        Ok(self.finalize(make_module_ty(
+            span,
+            RTsModuleName::Str(RStr {
+                span: DUMMY_SP,
+                has_escape: false,
+                kind: Default::default(),
+                value: js_word!(""),
+            }),
+            data,
+        )))
     }
 }
 
@@ -274,12 +283,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
 
         Self::new_inner(
             logger.clone(),
-            Env::new(
-                env,
-                Default::default(),
-                JscTarget::Es2020,
-                Default::default(),
-            ),
+            Env::new(env, Default::default(), JscTarget::Es2020, Default::default()),
             Arc::new(SourceMap::default()),
             box storage,
             None,
@@ -325,14 +329,13 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             storage,
             mutations,
             export_equals_span: DUMMY_SP,
-            // builtin types are declared
-            in_declare: is_builtin,
             imports: Default::default(),
             pending_exports: Default::default(),
             prepend_stmts: Default::default(),
             append_stmts: Default::default(),
             scope,
             ctx: Ctx {
+                module_id: ModuleId::builtin(),
                 in_declare: false,
                 in_global: false,
                 in_export_default_expr: false,
@@ -348,7 +351,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 preserve_ret_ty: false,
                 ignore_errors: false,
                 fail_on_extra_fields: false,
-                module_id: ModuleId::builtin(),
             },
             loader,
             is_builtin,
@@ -369,13 +371,19 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         op(self)
     }
 
+    pub(crate) fn with_scope_for_type_params<F, Ret>(&mut self, op: F) -> Ret
+    where
+        F: for<'aa, 'bb> FnOnce(&mut Analyzer<'aa, 'bb>) -> Ret,
+    {
+        self.with_child(ScopeKind::TypeParams, Default::default(), |a: &mut Analyzer| {
+            // TODO: Optimize this.
+            Ok(op(a))
+        })
+        .unwrap()
+    }
+
     /// TODO: Move return values to parent scope
-    pub(crate) fn with_child<F, Ret>(
-        &mut self,
-        kind: ScopeKind,
-        facts: CondFacts,
-        op: F,
-    ) -> ValidationResult<Ret>
+    pub(crate) fn with_child<F, Ret>(&mut self, kind: ScopeKind, facts: CondFacts, op: F) -> ValidationResult<Ret>
     where
         F: for<'aa, 'bb> FnOnce(&mut Analyzer<'aa, 'bb>) -> ValidationResult<Ret>,
     {
@@ -447,7 +455,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         // Move return types from child to parent
         match kind {
             // These kinds of scope eats return statements
-            ScopeKind::Method | ScopeKind::ArrowFn | ScopeKind::Fn => {}
+            ScopeKind::Module | ScopeKind::Method | ScopeKind::ArrowFn | ScopeKind::Fn => {}
             _ => {
                 self.scope.return_values += child_scope.return_values;
             }
@@ -507,11 +515,7 @@ impl Load for NoopLoader {
         false
     }
 
-    fn load_non_circular_dep(
-        &self,
-        base: Arc<PathBuf>,
-        import: &DepInfo,
-    ) -> Result<ModuleInfo, Error> {
+    fn load_non_circular_dep(&self, base: Arc<PathBuf>, import: &DepInfo) -> Result<ModuleInfo, Error> {
         unimplemented!()
     }
 
@@ -580,19 +584,8 @@ impl Analyzer<'_, '_> {
             _ => {}
         });
 
-        if !self.in_declare {
-            let mut visitor = AmbientFunctionHandler {
-                last_ambient_name: None,
-                errors: &mut self.storage,
-            };
-
-            items.visit_with(&mut visitor);
-
-            if visitor.last_ambient_name.is_some() {
-                visitor.errors.report(Error::TS2391 {
-                    span: visitor.last_ambient_name.unwrap().span,
-                })
-            }
+        if !self.ctx.in_declare {
+            self.validate_ambient_fns(&items);
         }
 
         if self.is_builtin {
@@ -610,19 +603,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, items: &Vec<RStmt>) {
-        let mut visitor = AmbientFunctionHandler {
-            last_ambient_name: None,
-            errors: &mut self.storage,
-        };
-
-        items.visit_with(&mut visitor);
-
-        if visitor.last_ambient_name.is_some() {
-            visitor.errors.report(Error::TS2391 {
-                span: visitor.last_ambient_name.unwrap().span,
-            })
-        }
-
         for item in items.iter() {
             item.visit_with(self);
         }
@@ -676,34 +656,60 @@ impl Analyzer<'_, '_> {
 
         let ctx = Ctx {
             in_global: global,
+            in_declare: self.ctx.in_declare || decl.declare,
             ..self.ctx
         };
-        self.with_ctx(ctx).with_child(
-            ScopeKind::Block,
-            Default::default(),
-            |child: &mut Analyzer| {
-                child.ctx.in_declare = decl.declare;
+        let ty = self
+            .with_ctx(ctx)
+            .with_child(ScopeKind::Module, Default::default(), |child: &mut Analyzer| {
+                child.scope.cur_module_name = match &decl.id {
+                    RTsModuleName::Ident(i) => Some(i.into()),
+                    RTsModuleName::Str(_) => None,
+                };
 
                 decl.visit_children_with(child);
 
-                let exports = take(&mut child.storage.take_info(ctxt));
-                if !global {
-                    let module = child.finalize(ty::Module { span, exports });
-                    child
-                        .register_type(
-                            match decl.id {
-                                RTsModuleName::Ident(ref i) => i.into(),
-                                RTsModuleName::Str(ref s) => {
-                                    RIdent::new(s.value.clone(), s.span).into()
-                                }
-                            },
-                            box Type::Module(module),
-                        )
-                        .report(&mut child.storage);
+                let mut exports = child.storage.take_info(ctxt);
+                // Ambient module members are always exported with or without export keyword
+                if decl.declare {
+                    for (id, var) in take(&mut exports.private_vars) {
+                        if !exports.vars.contains_key(id.sym()) {
+                            exports.vars.insert(id.sym().clone(), var);
+                        }
+                    }
+
+                    for (id, ty) in take(&mut exports.private_types) {
+                        if !exports.types.contains_key(id.sym()) {
+                            exports.types.insert(id.sym().clone(), ty);
+                        }
+                    }
                 }
 
-                Ok(())
-            },
-        )
+                if !global {
+                    let ty = child.finalize(ty::Module {
+                        name: decl.id.clone(),
+                        span,
+                        exports,
+                    });
+                    let ty = Type::Module(ty).cheap();
+                    return Ok(Some(ty));
+                }
+
+                Ok(None)
+            })?;
+
+        if let Some(ty) = ty {
+            match decl.id {
+                RTsModuleName::Ident(ref i) => {
+                    self.register_type(i.into(), ty);
+                }
+                RTsModuleName::Str(ref s) => {
+                    //TODO
+                    return Ok(());
+                }
+            }
+        }
+
+        Ok(())
     }
 }

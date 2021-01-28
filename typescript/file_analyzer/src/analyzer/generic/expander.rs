@@ -1,26 +1,57 @@
 use crate::{
     analyzer::{Analyzer, Ctx},
-    ty::{
-        Array, IndexedAccessType, Mapped, Operator, PropertySignature, Ref, Type, TypeElement,
-        TypeLit,
-    },
+    ty::{Array, IndexedAccessType, Mapped, Operator, PropertySignature, Ref, Type, TypeElement, TypeLit},
     ValidationResult,
 };
 use fxhash::{FxHashMap, FxHashSet};
 use rnode::Fold;
 use rnode::FoldWith;
 use slog::Logger;
-use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
+use stc_ts_types::Key;
+use stc_ts_types::TypeParamDecl;
+use stc_ts_types::TypeParamInstantiation;
 use stc_ts_types::{Id, TypeParam};
 use swc_atoms::js_word;
+use swc_common::Span;
 use swc_common::Spanned;
 use swc_common::TypeEq;
 use swc_ecma_ast::*;
 
 /// Generic expander.
 impl Analyzer<'_, '_> {
+    pub(in super::super) fn instantiate_type_params_using_args(
+        &mut self,
+        span: Span,
+        type_params: &TypeParamDecl,
+        type_args: &TypeParamInstantiation,
+    ) -> ValidationResult<FxHashMap<Id, Box<Type>>> {
+        let mut params = FxHashMap::default();
+
+        for (idx, param) in type_params.params.iter().enumerate() {
+            if let Some(arg) = type_args.params.get(idx) {
+                // TODO: Change this to assert.
+                let arg = arg.clone().cheap();
+                params.insert(param.name.clone(), arg);
+            } else {
+                if let Some(default) = &param.default {
+                    let default = default.clone().cheap();
+                    params.insert(param.name.clone(), default.clone());
+                } else {
+                    todo!(
+                        "Reporting errors when type parameter count and type argument count \
+                         difffers\nParams={:#?}\nArgs: {:#?}",
+                        type_params,
+                        type_args
+                    )
+                }
+            }
+        }
+
+        Ok(params)
+    }
+
     pub(in super::super) fn expand_type_params(
         &mut self,
         params: &FxHashMap<Id, Box<Type>>,
@@ -129,11 +160,7 @@ impl Analyzer<'_, '_> {
                 ..
             }) => return Some(false),
             Type::Union(parent) => {
-                for res in parent
-                    .types
-                    .iter()
-                    .map(|parent| self.extends(child, &parent))
-                {
+                for res in parent.types.iter().map(|parent| self.extends(child, &parent)) {
                     if res != Some(true) {
                         return Some(false);
                     }
@@ -203,9 +230,11 @@ impl Analyzer<'_, '_> {
             },
             Type::Tuple(child_tuple) => match parent {
                 Type::Array(parent_array) => {
-                    if child_tuple.elems.iter().all(|child_element| {
-                        self.extends(&child_element.ty, &parent_array.elem_type) == Some(true)
-                    }) {
+                    if child_tuple
+                        .elems
+                        .iter()
+                        .all(|child_element| self.extends(&child_element.ty, &parent_array.elem_type) == Some(true))
+                    {
                         return Some(true);
                     }
                 }
@@ -253,7 +282,7 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
         };
         let span = ty.span();
 
-        slog::debug!(self.logger, "generic_expand: {:?}", &ty);
+        slog::trace!(self.logger, "generic_expand: {:?}", &ty);
         let ty = ty.foldable();
 
         match ty {
@@ -362,40 +391,14 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
             // Alias returns other than self.
             Type::Alias(mut alias) => {
                 alias = alias.fold_with(self);
-                //
-                if let Some(..) = &alias.type_params {
-                    // TODO: Handle unresolved type parameter
-                    slog::warn!(
-                        self.logger,
-                        "An type alias has type parameters. It may not be fully expanded."
-                    );
-                }
-                return *alias.ty.fold_with(self);
+
+                return *alias.ty;
             }
 
-            Type::Interface(mut i) if self.fully => {
+            Type::Interface(mut i) => {
                 i = i.fold_with(self);
 
-                if let Some(..) = &i.type_params {
-                    slog::error!(
-                        self.logger,
-                        "An interface has type parameters. It may not be fully expanded."
-                    );
-                }
-
-                // TODO: Handle super
-                if !i.extends.is_empty() {
-                    slog::error!(
-                        self.logger,
-                        "not yet implemented: expanding interface which has a parent"
-                    );
-                    return Type::Interface(i);
-                }
-
-                return Type::TypeLit(TypeLit {
-                    span: i.span,
-                    members: i.body,
-                });
+                return Type::Interface(i);
             }
             Type::Class(mut c) => {
                 c = c.fold_with(self);
@@ -444,32 +447,25 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
 
                                         for member in &ty.members {
                                             match member {
-                                                TypeElement::Property(p) => members.push(
-                                                    TypeElement::Property(PropertySignature {
-                                                        type_ann: m.ty.clone().fold_with(
-                                                            &mut MappedHandler {
-                                                                analyzer: self.analyzer,
-                                                                key: &p.key,
-                                                                param_name: &param.name,
-                                                                prop_ty: &*p
-                                                                    .type_ann
-                                                                    .clone()
-                                                                    .unwrap_or_else(|| {
-                                                                        Type::any(p.span)
-                                                                    }),
-                                                            },
-                                                        ),
+                                                TypeElement::Property(p) => {
+                                                    members.push(TypeElement::Property(PropertySignature {
+                                                        type_ann: m.ty.clone().fold_with(&mut MappedHandler {
+                                                            analyzer: self.analyzer,
+                                                            key: &p.key,
+                                                            param_name: &param.name,
+                                                            prop_ty: &*p
+                                                                .type_ann
+                                                                .clone()
+                                                                .unwrap_or_else(|| Type::any(p.span)),
+                                                        }),
                                                         ..p.clone()
-                                                    }),
-                                                ),
+                                                    }))
+                                                }
                                                 _ => {}
                                             }
                                         }
 
-                                        return Type::TypeLit(TypeLit {
-                                            span: ty.span,
-                                            members,
-                                        });
+                                        return Type::TypeLit(TypeLit { span: ty.span, members });
                                     }
                                     _ => {}
                                 }
@@ -583,18 +579,15 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                                 for member in members {
                                     match member {
                                         TypeElement::Method(method) => {
-                                            new_members.push(TypeElement::Property(
-                                                PropertySignature {
-                                                    span: method.span,
-                                                    readonly: method.readonly,
-                                                    key: method.key.clone(),
-                                                    computed: method.computed,
-                                                    optional: method.optional,
-                                                    params: vec![],
-                                                    type_ann: m.ty.clone().map(|v| v),
-                                                    type_params: None,
-                                                },
-                                            ));
+                                            new_members.push(TypeElement::Property(PropertySignature {
+                                                span: method.span,
+                                                readonly: method.readonly,
+                                                key: method.key.clone(),
+                                                optional: method.optional,
+                                                params: vec![],
+                                                type_ann: m.ty.clone().map(|v| v),
+                                                type_params: None,
+                                            }));
                                         }
                                         TypeElement::Property(p) => {
                                             let mut p = p.clone();
@@ -640,7 +633,6 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
             | Type::Constructor(..)
             | Type::Enum(..)
             | Type::EnumVariant(..)
-            | Type::Interface(..)
             | Type::Namespace(..)
             | Type::Module(..)
             | Type::ClassInstance(..)
@@ -659,7 +651,7 @@ struct MappedHandler<'a, 'b, 'c, 'd> {
     param_name: &'d Id,
     prop_ty: &'d Type,
 
-    key: &'d RExpr,
+    key: &'d Key,
 }
 
 impl Fold<Type> for MappedHandler<'_, '_, '_, '_> {
@@ -667,8 +659,7 @@ impl Fold<Type> for MappedHandler<'_, '_, '_, '_> {
         match ty.normalize() {
             Type::IndexedAccessType(ty) => match ty.obj_type.normalize() {
                 Type::Param(TypeParam {
-                    name: obj_param_name,
-                    ..
+                    name: obj_param_name, ..
                 }) => match ty.index_type.normalize() {
                     Type::Param(TypeParam {
                         name: index_param_name,
@@ -684,9 +675,7 @@ impl Fold<Type> for MappedHandler<'_, '_, '_, '_> {
                             },
                         ) => match operator.ty.normalize() {
                             Type::Param(constraint_param) => {
-                                if *obj_param_name == constraint_param.name
-                                    && *self.param_name == *obj_param_name
-                                {
+                                if *obj_param_name == constraint_param.name && *self.param_name == *obj_param_name {
                                     return self.prop_ty.clone();
                                 }
                             }

@@ -1,5 +1,7 @@
 //! Handles new expressions and call expressions.
 use super::super::Analyzer;
+use super::IdCtx;
+use crate::analyzer::assign::AssignOpts;
 use crate::{
     analyzer::{
         expr::TypeOfMode,
@@ -9,8 +11,8 @@ use crate::{
     },
     ty,
     ty::{
-        CallSignature, ClassInstance, ConstructorSignature, FnParam, Method, MethodSignature,
-        QueryExpr, QueryType, Type, TypeElement, TypeOrSpread, TypeParam, TypeParamInstantiation,
+        CallSignature, ClassInstance, ConstructorSignature, FnParam, Method, MethodSignature, QueryExpr, QueryType,
+        Type, TypeElement, TypeOrSpread, TypeParam, TypeParamInstantiation,
     },
     util::{is_str_lit_or_union, type_ext::TypeVecExt},
     validator,
@@ -20,6 +22,7 @@ use crate::{
 use fxhash::FxHashMap;
 use rnode::Fold;
 use rnode::FoldWith;
+use rnode::NodeId;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
 use stc_ts_ast_rnode::RCallExpr;
@@ -27,11 +30,14 @@ use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RExprOrSpread;
 use stc_ts_ast_rnode::RExprOrSuper;
 use stc_ts_ast_rnode::RIdent;
+use stc_ts_ast_rnode::RInvalid;
 use stc_ts_ast_rnode::RLit;
 use stc_ts_ast_rnode::RMemberExpr;
 use stc_ts_ast_rnode::RNewExpr;
 use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RStr;
+use stc_ts_ast_rnode::RTaggedTpl;
+use stc_ts_ast_rnode::RTsAsExpr;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
@@ -39,16 +45,20 @@ use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_ast_rnode::RTsThisTypeOrIdent;
 use stc_ts_ast_rnode::RTsType;
 use stc_ts_ast_rnode::RTsTypeParamInstantiation;
+use stc_ts_ast_rnode::RTsTypeRef;
+use stc_ts_errors::debug::print_backtrace;
 use stc_ts_errors::debug::print_type;
+use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
-use stc_ts_types::rprop_name_to_expr;
-use stc_ts_types::{Alias, Id, IndexedAccessType, Ref, Symbol, TypeLit, Union};
+use stc_ts_types::ClassProperty;
+use stc_ts_types::Key;
+use stc_ts_types::{Alias, Id, IndexedAccessType, Ref, Symbol, Union};
 use stc_ts_utils::PatExt;
 use std::borrow::Cow;
 use swc_atoms::js_word;
-use swc_common::EqIgnoreSpan;
 use swc_common::TypeEq;
+use swc_common::DUMMY_SP;
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::*;
 use ty::TypeExt;
@@ -85,20 +95,9 @@ impl Analyzer<'_, '_> {
 
         // TODO: validate children
 
-        self.with_child(
-            ScopeKind::Call,
-            Default::default(),
-            |analyzer: &mut Analyzer| {
-                analyzer.extract_call_new_expr_member(
-                    span,
-                    callee,
-                    type_ann,
-                    ExtractKind::Call,
-                    args,
-                    type_args.as_ref(),
-                )
-            },
-        )
+        self.with_child(ScopeKind::Call, Default::default(), |analyzer: &mut Analyzer| {
+            analyzer.extract_call_new_expr_member(span, callee, type_ann, ExtractKind::Call, args, type_args.as_ref())
+        })
     }
 }
 
@@ -117,25 +116,61 @@ impl Analyzer<'_, '_> {
 
         // TODO: e.visit_children
 
-        self.with_child(
-            ScopeKind::Call,
-            Default::default(),
-            |analyzer: &mut Analyzer| {
-                analyzer.extract_call_new_expr_member(
-                    span,
-                    callee,
-                    type_ann,
-                    ExtractKind::New,
-                    args.as_ref().map(|v| &**v).unwrap_or_else(|| &mut []),
-                    type_args.as_ref(),
-                )
-            },
-        )
+        self.with_child(ScopeKind::Call, Default::default(), |analyzer: &mut Analyzer| {
+            analyzer.extract_call_new_expr_member(
+                span,
+                callee,
+                type_ann,
+                ExtractKind::New,
+                args.as_ref().map(|v| &**v).unwrap_or_else(|| &mut []),
+                type_args.as_ref(),
+            )
+        })
+    }
+}
+
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, e: &RTaggedTpl) -> ValidationResult {
+        let span = e.span;
+
+        let tpl_str_arg = RExprOrSpread {
+            spread: None,
+            expr: box RExpr::TsAs(RTsAsExpr {
+                node_id: NodeId::invalid(),
+                span: DUMMY_SP,
+                expr: box RExpr::Invalid(RInvalid { span }),
+                type_ann: box RTsType::TsTypeRef(RTsTypeRef {
+                    node_id: NodeId::invalid(),
+                    span: DUMMY_SP,
+                    type_name: RTsEntityName::Ident(RIdent::new("TemplateStringsArray".into(), DUMMY_SP)),
+                    type_params: None,
+                }),
+            }),
+        };
+        let mut args = vec![tpl_str_arg];
+
+        args.extend(e.exprs.iter().cloned().map(|expr| RExprOrSpread { spread: None, expr }));
+
+        let res = self.with_child(ScopeKind::Call, Default::default(), |analyzer: &mut Analyzer| {
+            analyzer.extract_call_new_expr_member(
+                span,
+                &e.tag,
+                Default::default(),
+                ExtractKind::Call,
+                args.as_ref(),
+                Default::default(),
+            )
+        });
+
+        // dbg!(&res);
+
+        res
     }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum ExtractKind {
+pub(crate) enum ExtractKind {
     New,
     Call,
 }
@@ -157,6 +192,18 @@ impl Analyzer<'_, '_> {
 
         slog::debug!(self.logger, "extract_call_new_expr_member");
 
+        let type_args = match type_args {
+            Some(v) => {
+                let mut type_args = v.validate_with(self)?;
+                self.prevent_expansion(&mut type_args);
+                Some(type_args)
+            }
+            None => None,
+        };
+
+        let arg_types = self.validate_args(args)?;
+        let spread_arg_types = self.spread_args(&arg_types);
+
         match *callee {
             RExpr::Ident(ref i) if i.sym == js_word!("require") => {
                 let id = args
@@ -164,9 +211,7 @@ impl Analyzer<'_, '_> {
                     .cloned()
                     .map(|arg| match arg {
                         RExprOrSpread { spread: None, expr } => match *expr {
-                            RExpr::Lit(RLit::Str(RStr { span, value, .. })) => {
-                                RIdent::new(value.clone(), span).into()
-                            }
+                            RExpr::Lit(RLit::Str(RStr { span, value, .. })) => RIdent::new(value.clone(), span).into(),
                             _ => unimplemented!("dynamic import: require()"),
                         },
                         _ => unimplemented!("error reporting: spread element in require()"),
@@ -202,10 +247,7 @@ impl Analyzer<'_, '_> {
             }) => {
                 // Symbol uses special type
                 if !args.is_empty() {
-                    unimplemented!(
-                        "Error reporting for calling `Symbol` with arguments is not implemented \
-                         yet"
-                    )
+                    unimplemented!("Error reporting for calling `Symbol` with arguments is not implemented yet")
                 }
 
                 return Ok(box Type::Symbol(Symbol {
@@ -220,32 +262,22 @@ impl Analyzer<'_, '_> {
                 computed,
                 ..
             }) => {
+                let prop = self.validate_key(prop, computed)?;
                 {
                     // Handle toString()
-                    macro_rules! handle {
-                        () => {{
-                            return Ok(box Type::from(RTsKeywordType {
-                                span,
-                                kind: TsKeywordTypeKind::TsStringKeyword,
-                            }));
-                        }};
-                    }
-                    match **prop {
-                        RExpr::Ident(RIdent {
-                            sym: js_word!("toString"),
-                            ..
-                        }) if !computed => handle!(),
-                        RExpr::Lit(RLit::Str(RStr {
-                            value: js_word!("toString"),
-                            ..
-                        })) => handle!(),
 
-                        _ => {}
+                    if prop == js_word!("toString") {
+                        return Ok(box Type::from(RTsKeywordType {
+                            span,
+                            kind: TsKeywordTypeKind::TsStringKeyword,
+                        }));
                     }
                 }
 
                 // Handle member expression
                 let obj_type = obj.validate_with_default(self)?.generalize_lit();
+
+                let obj_type: Box<Type> = box self.expand_top_ref(span, Cow::Owned(*obj_type))?.into_owned();
 
                 let obj_type = match *obj_type.normalize() {
                     Type::Keyword(RTsKeywordType {
@@ -265,96 +297,12 @@ impl Analyzer<'_, '_> {
                     _ => obj_type,
                 };
 
-                match *obj_type.normalize() {
-                    Type::Keyword(RTsKeywordType {
-                        kind: TsKeywordTypeKind::TsAnyKeyword,
-                        ..
-                    }) => {
-                        return Ok(Type::any(span));
-                    }
-
-                    Type::Interface(ref i) => {
-                        if self.scope.is_calling() {
-                            if let Some(type_params) = &i.type_params {
-                                for param in &type_params.params {
-                                    self.scope
-                                        .types
-                                        .entry(param.name.clone())
-                                        .or_default()
-                                        .push(Type::Param(param.clone()).cheap());
-                                }
-                            }
-                        }
-                        // TODO: Check parent interface
-                        return self.search_members_for_callable_prop(
-                            kind, span, &i.body, prop, computed, args,
-                        );
-                    }
-
-                    Type::TypeLit(ref t) => {
-                        return self.search_members_for_callable_prop(
-                            kind, span, &t.members, prop, computed, args,
-                        );
-                    }
-
-                    Type::Class(ty::Class { ref body, .. }) => {
-                        for member in body.iter() {
-                            match *member {
-                                ty::ClassMember::Method(Method {
-                                    ref key,
-                                    ref ret_ty,
-                                    ..
-                                }) => {
-                                    if rprop_name_to_expr(key.clone()).eq_ignore_span(&*prop) {
-                                        return Ok(ret_ty.clone());
-                                    }
-                                }
-                                _ => {}
-                            }
-                        }
-                    }
-                    Type::Keyword(RTsKeywordType {
-                        kind: TsKeywordTypeKind::TsSymbolKeyword,
-                        ..
-                    }) => {
-                        if let Ok(ty) = self.env.get_global_type(span, &js_word!("Symbol")) {
-                            return Ok(ty);
-                        }
-                    }
-
-                    _ => {}
-                }
-
-                let ctx = Ctx {
-                    preserve_ref: false,
-                    ignore_expand_prevention_for_top: true,
-                    ..self.ctx
-                };
-                let obj_type = self.with_ctx(ctx).expand_fully(span, obj_type, true)?;
-
-                let callee =
-                    self.access_property(span, obj_type, prop, computed, TypeOfMode::RValue)?;
-                let callee = self.with_ctx(ctx).expand_fully(span, callee, true)?;
-
-                let type_args = match type_args {
-                    None => None,
-                    Some(v) => {
-                        let mut type_args = v.validate_with(self)?;
-                        // If user specified type in call / new, preserve it.
-                        self.prevent_expansion(&mut type_args);
-
-                        Some(type_args)
-                    }
-                };
-
-                let arg_types = self.validate_args(args)?;
-                let spread_arg_types = self.spread_args(&arg_types);
-
-                self.get_best_return_type(
+                self.call_property(
                     span,
-                    callee,
                     kind,
-                    type_args,
+                    obj_type,
+                    &prop,
+                    type_args.as_ref(),
                     args,
                     &arg_types,
                     &spread_arg_types,
@@ -393,22 +341,10 @@ impl Analyzer<'_, '_> {
                             Type::Keyword(RTsKeywordType {
                                 kind: TsKeywordTypeKind::TsAnyKeyword,
                                 ..
-                            }) if type_args.is_some() => {
-                                analyzer.storage.report(Error::TS2347 { span })
-                            }
+                            }) if type_args.is_some() => analyzer.storage.report(Error::TS2347 { span }),
                             _ => {}
                         }
                         callee_ty
-                    };
-
-                    let type_args: Option<TypeParamInstantiation> = match type_args {
-                        None => None,
-                        Some(type_args) => {
-                            let mut type_args = type_args.validate_with(analyzer)?;
-                            // Preserve types specified by user
-                            analyzer.prevent_expansion(&mut type_args);
-                            Some(type_args)
-                        }
                     };
 
                     if let Some(type_args) = &type_args {
@@ -419,9 +355,7 @@ impl Analyzer<'_, '_> {
                         if let Some(type_param_decl) = type_params {
                             let mut params = FxHashMap::default();
 
-                            for (type_param, ty) in
-                                type_param_decl.params.iter().zip(type_args.params.iter())
-                            {
+                            for (type_param, ty) in type_param_decl.params.iter().zip(type_args.params.iter()) {
                                 params.insert(type_param.name.clone(), ty.clone());
                             }
 
@@ -433,16 +367,11 @@ impl Analyzer<'_, '_> {
                         preserve_params: true,
                         ..analyzer.ctx
                     };
-                    callee_ty = analyzer
-                        .with_ctx(ctx)
-                        .expand_fully(span, callee_ty, false)?;
-
-                    let arg_types = analyzer.validate_args(args)?;
-                    let spread_arg_types = analyzer.spread_args(&arg_types);
+                    callee_ty = analyzer.with_ctx(ctx).expand_fully(span, callee_ty, false)?;
 
                     let expanded_ty = analyzer.extract(
                         span,
-                        callee_ty,
+                        &callee_ty,
                         kind,
                         args,
                         &arg_types,
@@ -469,24 +398,194 @@ impl Analyzer<'_, '_> {
         }
     }
 
+    /// TODO: Use Cow for `obj_type`
+    pub(super) fn call_property(
+        &mut self,
+        span: Span,
+        kind: ExtractKind,
+        obj_type: Box<Type>,
+        prop: &Key,
+        type_args: Option<&TypeParamInstantiation>,
+        args: &[RExprOrSpread],
+        arg_types: &[TypeOrSpread],
+        spread_arg_types: &[TypeOrSpread],
+    ) -> ValidationResult {
+        let old_this = self.scope.this.take();
+        self.scope.this = Some(obj_type.clone());
+
+        let res = (|| {
+            match obj_type.normalize() {
+                Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsAnyKeyword,
+                    ..
+                }) => {
+                    return Ok(Type::any(span));
+                }
+
+                Type::Ref(..) => {
+                    let obj_type = box self
+                        .expand_top_ref(span, Cow::Owned(*obj_type))
+                        .context("tried to expand object to call property of it")?
+                        .into_owned();
+
+                    return self.call_property(
+                        span,
+                        kind,
+                        obj_type,
+                        prop,
+                        type_args,
+                        args,
+                        arg_types,
+                        spread_arg_types,
+                    );
+                }
+
+                Type::Interface(ref i) => {
+                    // TODO: Check parent interface
+                    return self.search_members_for_callable_prop(
+                        kind,
+                        span,
+                        &obj_type,
+                        &i.body,
+                        &prop,
+                        type_args,
+                        args,
+                        &arg_types,
+                        &spread_arg_types,
+                    );
+                }
+
+                Type::TypeLit(ref t) => {
+                    return self.search_members_for_callable_prop(
+                        kind,
+                        span,
+                        &obj_type,
+                        &t.members,
+                        &prop,
+                        type_args,
+                        args,
+                        &arg_types,
+                        &spread_arg_types,
+                    );
+                }
+
+                Type::Class(ty::Class { body, super_class, .. }) => {
+                    let mut candidates = vec![];
+                    for member in body.iter() {
+                        match member {
+                            ty::ClassMember::Method(Method {
+                                key,
+                                ret_ty,
+                                type_params,
+                                params,
+                                ..
+                            }) if key.type_eq(&prop) => {
+                                candidates.push((type_params, params, ret_ty));
+                            }
+                            ty::ClassMember::Property(ClassProperty { key, value, .. }) if key.type_eq(&prop) => {
+                                // Check for properties with callable type.
+
+                                // TODO: Change error message from no callable
+                                // property to property exists but not callable.
+                                if let Some(ty) = &value {
+                                    return self.extract(span, ty, kind, args, arg_types, spread_arg_types, type_args);
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+
+                    candidates.sort_by_cached_key(|(type_params, params, _)| {
+                        self.check_call_args(
+                            span,
+                            type_params.as_ref().map(|v| &*v.params),
+                            params,
+                            type_args,
+                            args,
+                            arg_types,
+                            spread_arg_types,
+                        )
+                    });
+
+                    for (type_params, params, ret_ty) in candidates {
+                        return self.get_return_type(
+                            span,
+                            kind,
+                            type_params.as_ref().map(|v| &*v.params),
+                            &params,
+                            ret_ty.clone(),
+                            type_args,
+                            args,
+                            &arg_types,
+                            &spread_arg_types,
+                        );
+                    }
+
+                    if let Some(ty) = super_class {
+                        if let Ok(ret_ty) = self.call_property(
+                            span,
+                            kind,
+                            ty.clone(),
+                            prop,
+                            type_args,
+                            args,
+                            arg_types,
+                            spread_arg_types,
+                        ) {
+                            return Ok(ret_ty);
+                        }
+                    }
+
+                    return Err(match kind {
+                        ExtractKind::Call => Error::NoCallabelPropertyWithName {
+                            span,
+                            key: box prop.clone(),
+                        },
+                        ExtractKind::New => Error::NoSuchConstructor {
+                            span,
+                            key: box prop.clone(),
+                        },
+                    });
+                }
+                Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsSymbolKeyword,
+                    ..
+                }) => {
+                    if let Ok(ty) = self.env.get_global_type(span, &js_word!("Symbol")) {
+                        return Ok(ty);
+                    }
+                }
+
+                _ => {}
+            }
+
+            let callee = self.access_property(span, obj_type, &prop, TypeOfMode::RValue, IdCtx::Var)?;
+
+            let callee = box self.expand_top_ref(span, Cow::Owned(*callee))?.into_owned();
+
+            self.get_best_return_type(span, callee, kind, type_args, args, &arg_types, &spread_arg_types)
+        })();
+        self.scope.this = old_this;
+        res
+    }
+
     fn check_type_element_for_call(
         &mut self,
         kind: ExtractKind,
         candidates: &mut Vec<MethodSignature>,
         m: &TypeElement,
-        prop: &RExpr,
-        computed: bool,
+        prop: &Key,
     ) {
         match m {
             TypeElement::Method(m) if kind == ExtractKind::Call => {
                 // We are interested only on methods named `prop`
-                if is_key_eq_prop(prop, computed, &m.key) {
+                if prop.type_eq(&m.key) {
                     candidates.push(m.clone());
                 }
             }
 
             TypeElement::Property(p) if kind == ExtractKind::Call => {
-                if is_key_eq_prop(prop, computed, &p.key) {
+                if prop.type_eq(&p.key) {
                     // TODO: Remove useless clone
                     let ty = p.type_ann.as_ref().cloned().unwrap_or(Type::any(m.span()));
 
@@ -498,7 +597,6 @@ impl Analyzer<'_, '_> {
                             span: p.span,
                             readonly: p.readonly,
                             key: p.key.clone(),
-                            computed: p.computed,
                             optional: p.optional,
                             // TODO: Maybe we need Option<Vec<T>>.
                             params: Default::default(),
@@ -511,7 +609,6 @@ impl Analyzer<'_, '_> {
                                 span: f.span,
                                 readonly: p.readonly,
                                 key: p.key.clone(),
-                                computed,
                                 optional: p.optional,
                                 params: f.params,
                                 ret_ty: Some(f.ret_ty),
@@ -532,10 +629,13 @@ impl Analyzer<'_, '_> {
         &mut self,
         kind: ExtractKind,
         span: Span,
+        obj: &Type,
         members: &[TypeElement],
-        prop: &RExpr,
-        computed: bool,
+        prop: &Key,
+        type_args: Option<&TypeParamInstantiation>,
         args: &[RExprOrSpread],
+        arg_types: &[TypeOrSpread],
+        spread_arg_types: &[TypeOrSpread],
     ) -> ValidationResult {
         // Candidates of the method call.
         //
@@ -544,9 +644,11 @@ impl Analyzer<'_, '_> {
         let mut candidates = Vec::with_capacity(4);
 
         for m in members {
-            self.check_type_element_for_call(kind, &mut candidates, m, prop, computed);
+            self.check_type_element_for_call(kind, &mut candidates, m, prop);
         }
 
+        // TODO: Move this to caller to prevent checking members of `Object` every time
+        // we check parent interface.
         {
             // Handle methods from `interface Object`
             let i = self
@@ -561,36 +663,43 @@ impl Analyzer<'_, '_> {
 
             // TODO: Remove clone
             for m in methods {
-                self.check_type_element_for_call(kind, &mut candidates, m, prop, computed);
+                self.check_type_element_for_call(kind, &mut candidates, m, prop);
             }
         }
 
         match candidates.len() {
-            0 => Err(Error::Unimplemented {
+            0 => Err(Error::NoSuchProperty {
                 span,
-                msg: format!(
-                    "no method with same name\nMembers: {:?}\nKey: {:?}",
-                    members, prop
-                ),
+                obj: Some(box obj.clone()),
+                prop: Some(prop.clone()),
             }),
             1 => {
-                let arg_types = self.validate_args(args)?;
                 // TODO:
                 return self.check_method_call(
                     span,
                     &candidates.into_iter().next().unwrap(),
+                    type_args,
                     args,
                     &arg_types,
+                    spread_arg_types,
                 );
             }
             _ => {
-                let arg_types = self.validate_args(args)?;
-
                 //
+                candidates.sort_by_cached_key(|method: &MethodSignature| {
+                    self.check_call_args(
+                        span,
+                        method.type_params.as_ref().map(|v| &*v.params),
+                        &method.params,
+                        type_args,
+                        args,
+                        arg_types,
+                        spread_arg_types,
+                    )
+                });
+
                 for c in candidates {
-                    if c.params.len() == args.len() {
-                        return self.check_method_call(span, &c, args, &arg_types);
-                    }
+                    return self.check_method_call(span, &c, type_args, args, &arg_types, spread_arg_types);
                 }
 
                 unimplemented!("multiple methods with same name and same number of arguments")
@@ -608,18 +717,13 @@ impl Analyzer<'_, '_> {
                 if arg.spread.is_some() {
                     match &*arg.ty {
                         Type::Tuple(arg_ty) => {
-                            new_arg_types.extend(
-                                arg_ty
-                                    .elems
-                                    .iter()
-                                    .map(|element| &element.ty)
-                                    .cloned()
-                                    .map(|ty| TypeOrSpread {
-                                        span: arg.spread.unwrap(),
-                                        spread: None,
-                                        ty,
-                                    }),
-                            );
+                            new_arg_types.extend(arg_ty.elems.iter().map(|element| &element.ty).cloned().map(|ty| {
+                                TypeOrSpread {
+                                    span: arg.spread.unwrap(),
+                                    spread: None,
+                                    ty,
+                                }
+                            }));
                         }
 
                         Type::Keyword(RTsKeywordType {
@@ -644,10 +748,7 @@ impl Analyzer<'_, '_> {
                             });
                         }
 
-                        _ => unimplemented!(
-                            "spread argument with type other than tuple\nType: {:#?}",
-                            arg.ty
-                        ),
+                        _ => unimplemented!("spread argument with type other than tuple\nType: {:#?}", arg.ty),
                     }
                 } else {
                     new_arg_types.push(arg.clone());
@@ -663,7 +764,7 @@ impl Analyzer<'_, '_> {
     fn extract(
         &mut self,
         span: Span,
-        ty: Box<Type>,
+        ty: &Type,
         kind: ExtractKind,
         args: &[RExprOrSpread],
         arg_types: &[TypeOrSpread],
@@ -677,8 +778,8 @@ impl Analyzer<'_, '_> {
                     ignore_expand_prevention_for_top: true,
                     ..self.ctx
                 };
-                let ty = self.with_ctx(ctx).expand_fully(span, ty, true)?;
-                return self.extract(span, ty, kind, args, arg_types, spread_arg_types, type_args);
+                let ty = self.with_ctx(ctx).expand_fully(span, box ty.clone(), true)?;
+                return self.extract(span, &ty, kind, args, arg_types, spread_arg_types, type_args);
             }
             _ => {}
         }
@@ -688,11 +789,7 @@ impl Analyzer<'_, '_> {
                 Type::Class(ref cls) => {
                     if let Some(type_params) = &cls.type_params {
                         for param in &type_params.params {
-                            self.scope
-                                .types
-                                .entry(param.name.clone())
-                                .or_default()
-                                .push(Type::Param(param.clone()).cheap());
+                            self.register_type(param.name.clone(), box Type::Param(param.clone()));
                         }
 
                         // Infer type arguments using constructors.
@@ -709,18 +806,17 @@ impl Analyzer<'_, '_> {
                                 &type_params.params,
                                 &constructor.params,
                                 spread_arg_types,
-                                &Type::Keyword(RTsKeywordType {
+                                Some(&Type::Keyword(RTsKeywordType {
                                     span,
                                     kind: TsKeywordTypeKind::TsUnknownKeyword,
-                                }),
+                                })),
                             )?;
 
                             for (id, ty) in &inferred {
                                 print_type(&self.logger, &format!("{}", id), &self.cm, &ty);
                             }
 
-                            let type_args =
-                                self.instantiate(span, &type_params.params, inferred)?;
+                            let type_args = self.instantiate(span, &type_params.params, inferred)?;
 
                             return Ok(box Type::ClassInstance(ClassInstance {
                                 span,
@@ -746,8 +842,18 @@ impl Analyzer<'_, '_> {
             () => {{
                 dbg!();
                 match kind {
-                    ExtractKind::Call => return Err(Error::NoCallSignature { span, callee: ty }),
-                    ExtractKind::New => return Err(Error::NoNewSignature { span, callee: ty }),
+                    ExtractKind::Call => {
+                        return Err(Error::NoCallSignature {
+                            span,
+                            callee: box ty.clone(),
+                        })
+                    }
+                    ExtractKind::New => {
+                        return Err(Error::NoNewSignature {
+                            span,
+                            callee: box ty.clone(),
+                        })
+                    }
                 }
             }};
         }
@@ -757,7 +863,7 @@ impl Analyzer<'_, '_> {
                 // TODO: Check if all types has constructor signature
                 return Ok(box Type::ClassInstance(ClassInstance {
                     span,
-                    ty: instantiate_class(self.ctx.module_id, ty),
+                    ty: instantiate_class(self.ctx.module_id, box ty.clone()),
                     type_args: type_args.cloned(),
                 }));
             }
@@ -798,15 +904,9 @@ impl Analyzer<'_, '_> {
             //     args,
             //     type_args,
             // ),
-            Type::Union(..) => self.get_best_return_type(
-                span,
-                ty,
-                kind,
-                type_args.cloned(),
-                args,
-                spread_arg_types,
-                arg_types,
-            ),
+            Type::Union(..) => {
+                self.get_best_return_type(span, box ty.clone(), kind, type_args, args, spread_arg_types, arg_types)
+            }
 
             Type::Interface(ref i) => {
                 // Search for methods
@@ -824,22 +924,12 @@ impl Analyzer<'_, '_> {
                     Err(first_err) => {
                         //  Check parent interface
                         for parent in &i.extends {
-                            let parent = self.type_of_ts_entity_name(
-                                span,
-                                self.ctx.module_id,
-                                &parent.expr,
-                                type_args.cloned(),
-                            )?;
+                            let parent =
+                                self.type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr, type_args)?;
 
-                            if let Ok(v) = self.extract(
-                                span,
-                                parent,
-                                kind,
-                                args,
-                                arg_types,
-                                spread_arg_types,
-                                type_args,
-                            ) {
+                            if let Ok(v) =
+                                self.extract(span, &parent, kind, args, arg_types, spread_arg_types, type_args)
+                            {
                                 return Ok(v);
                             }
                         }
@@ -891,7 +981,7 @@ impl Analyzer<'_, '_> {
     fn search_members_for_extract(
         &mut self,
         span: Span,
-        ty: &Type,
+        callee_ty: &Type,
         members: &[TypeElement],
         kind: ExtractKind,
         args: &[RExprOrSpread],
@@ -899,94 +989,87 @@ impl Analyzer<'_, '_> {
         spread_arg_types: &[TypeOrSpread],
         type_args: Option<&TypeParamInstantiation>,
     ) -> ValidationResult {
-        let ty_span = ty.span();
+        let callee_span = callee_ty.span();
 
-        for member in members {
-            match *member {
+        let mut candidates = members
+            .iter()
+            .filter_map(|member| match member {
                 TypeElement::Call(CallSignature {
-                    ref params,
-                    ref type_params,
-                    ref ret_ty,
-                    ..
-                }) if kind == ExtractKind::Call => {
-                    //
-                    match self.get_return_type(
-                        span,
-                        kind,
-                        type_params.as_ref().map(|v| &*v.params),
-                        params,
-                        ret_ty.clone().unwrap_or(Type::any(span)),
-                        type_args,
-                        args,
-                        arg_types,
-                        spread_arg_types,
-                    ) {
-                        Ok(v) => return Ok(v),
-                        Err(..) => {}
-                    };
-                }
-
+                    span,
+                    params,
+                    type_params,
+                    ret_ty,
+                }) if kind == ExtractKind::Call => Some((span, params, type_params, ret_ty)),
                 TypeElement::Constructor(ConstructorSignature {
-                    ref params,
-                    ref type_params,
-                    ref ret_ty,
-                    ..
-                }) if kind == ExtractKind::New => {
-                    match self.get_return_type(
-                        span,
-                        kind,
-                        type_params.as_ref().map(|v| &*v.params),
-                        params,
-                        ret_ty.clone().unwrap_or(Type::any(span)),
-                        type_args,
-                        args,
-                        arg_types,
-                        spread_arg_types,
-                    ) {
-                        Ok(v) => return Ok(v),
-                        Err(..) => {
-                            // TODO: Handle error
-                        }
-                    }
-                }
-                _ => {}
-            }
+                    span,
+                    params,
+                    ret_ty,
+                    type_params,
+                }) if kind == ExtractKind::New => Some((span, params, type_params, ret_ty)),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+
+        if candidates.is_empty() {
+            return match kind {
+                ExtractKind::Call => Err(Error::NoCallSignature {
+                    span,
+                    callee: box callee_ty.clone(),
+                }),
+                ExtractKind::New => Err(Error::NoNewSignature {
+                    span,
+                    callee: box callee_ty.clone(),
+                }),
+            };
         }
 
-        dbg!();
+        candidates.sort_by_cached_key(|(_, params, type_params, _)| {
+            self.check_call_args(
+                span,
+                type_params.as_ref().map(|v| &*v.params),
+                params,
+                type_args,
+                args,
+                arg_types,
+                spread_arg_types,
+            )
+        });
 
-        match kind {
-            ExtractKind::Call => Err(Error::NoCallSignature {
-                span,
-                callee: box ty.clone(),
-            }),
-            ExtractKind::New => Err(Error::NoNewSignature {
-                span,
-                callee: box ty.clone(),
-            }),
-        }
+        let (_, params, type_params, ret_ty) = candidates.into_iter().next().unwrap();
+
+        return self.get_return_type(
+            span,
+            kind,
+            type_params.as_ref().map(|v| &*v.params),
+            params,
+            ret_ty.clone().unwrap_or(Type::any(span)),
+            type_args,
+            args,
+            arg_types,
+            spread_arg_types,
+        );
     }
 
     fn check_method_call(
         &mut self,
         span: Span,
         c: &MethodSignature,
+        type_args: Option<&TypeParamInstantiation>,
         args: &[RExprOrSpread],
         arg_types: &[TypeOrSpread],
+        spread_arg_types: &[TypeOrSpread],
     ) -> ValidationResult {
-        // Validate arguments
-        for (i, p) in c.params.iter().enumerate() {
-            // TODO: Handle spread
-            // TODO: Validate optional parameters
-            if arg_types.len() > i {
-                let args_ty = &arg_types[i].ty;
-                if let Err(..) = self.assign(&p.ty, &args_ty, arg_types[i].span()) {
-                    continue;
-                }
-            }
-        }
-
-        return Ok(c.ret_ty.clone().unwrap_or_else(|| Type::any(span)));
+        self.get_return_type(
+            span,
+            ExtractKind::Call,
+            c.type_params.as_ref().map(|v| &*v.params),
+            &c.params,
+            c.ret_ty.clone().unwrap_or_else(|| Type::any(span)),
+            type_args,
+            args,
+            arg_types,
+            spread_arg_types,
+        )
     }
 
     fn get_best_return_type(
@@ -994,7 +1077,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         callee: Box<Type>,
         kind: ExtractKind,
-        type_args: Option<TypeParamInstantiation>,
+        type_args: Option<&TypeParamInstantiation>,
         args: &[RExprOrSpread],
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
@@ -1013,7 +1096,7 @@ impl Analyzer<'_, '_> {
         // candidates.
         let mut candidates = vec![];
 
-        for callee in callee.normalize().iter_union() {
+        for callee in callee.normalize().iter_union().flat_map(|ty| ty.iter_union()) {
             // TODO: Check if signature match.
             match callee.normalize() {
                 Type::Intersection(ref i) => {
@@ -1049,50 +1132,14 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::Function(ref f) => {
-                    let type_params = f.type_params.as_ref().map(|v| &*v.params);
-                    if !has_spread || cnt == 1 {
-                        if cnt == 1
-                            || match self.is_exact_call(
-                                span,
-                                type_params,
-                                &f.params,
-                                type_args.as_ref(),
-                                &arg_types,
-                            ) {
-                                Ok(true) => true,
-                                _ => false,
-                            }
-                        {
-                            let ret_ty = self.get_return_type(
-                                span,
-                                kind,
-                                type_params,
-                                &f.params,
-                                f.ret_ty.clone(),
-                                type_args.as_ref(),
-                                args,
-                                &arg_types,
-                                spread_arg_types,
-                            )?;
-                            return Ok(ret_ty);
-                        }
-                    }
-
-                    candidates.push((
-                        span,
-                        f.type_params.as_ref().map(|v| &*v.params),
-                        &f.params,
-                        f.ret_ty.clone(),
-                        type_args.as_ref(),
-                        &arg_types,
-                    ));
+                    candidates.push((f.type_params.as_ref().map(|v| &*v.params), &f.params, f.ret_ty.clone()));
                 }
                 Type::Class(ref cls) if kind == ExtractKind::New => {
                     // TODO: Handle type parameters.
                     return Ok(box Type::ClassInstance(ClassInstance {
                         span,
                         ty: box Type::Class(cls.clone()),
-                        type_args,
+                        type_args: type_args.cloned(),
                     }));
                 }
                 _ => {}
@@ -1109,33 +1156,11 @@ impl Analyzer<'_, '_> {
             });
         }
 
-        if has_spread {
-            if let Some((span, type_params, params, ret_ty, type_args, arg_types)) = candidates
-                .iter()
-                .find(|(_, _, params, _, _, _)| {
-                    params.iter().any(|param| match param.pat {
-                        RPat::Rest(..) => true,
-                        _ => false,
-                    })
-                })
-                .cloned()
-            {
-                return self.get_return_type(
-                    span,
-                    kind,
-                    type_params,
-                    params,
-                    ret_ty,
-                    type_args,
-                    args,
-                    arg_types,
-                    spread_arg_types,
-                );
-            }
-        }
+        candidates.sort_by_cached_key(|(type_params, params, ret_ty)| {
+            self.check_call_args(span, *type_params, params, type_args, args, arg_types, spread_arg_types)
+        });
 
-        let (span, type_params, params, ret_ty, type_args, arg_types) =
-            candidates.into_iter().next().unwrap();
+        let (type_params, params, ret_ty) = candidates.into_iter().next().unwrap();
 
         return self.get_return_type(
             span,
@@ -1150,7 +1175,60 @@ impl Analyzer<'_, '_> {
         );
     }
 
-    /// Returns the return type of function.
+    fn validate_arg_count(
+        &mut self,
+        span: Span,
+        params: &[FnParam],
+        args: &[RExprOrSpread],
+        arg_types: &[TypeOrSpread],
+        spread_arg_types: &[TypeOrSpread],
+    ) -> ValidationResult<()> {
+        let mut min_param = 0;
+        let mut max_param = Some(params.len());
+        for param in params {
+            match param.pat {
+                RPat::Rest(..) => {
+                    max_param = None;
+                }
+                RPat::Ident(RIdent {
+                    sym: js_word!("this"), ..
+                }) => {
+                    if let Some(max) = &mut max_param {
+                        *max -= 1;
+                    }
+                    continue;
+                }
+                _ => {}
+            }
+            if param.required {
+                min_param += 1;
+            }
+        }
+
+        let has_spread = args.iter().any(|arg| arg.spread.is_some());
+        if has_spread {
+            // TODO
+            Ok(())
+        } else {
+            if min_param <= args.len() {
+                if let Some(max) = max_param {
+                    if args.len() <= max {
+                        return Ok(());
+                    }
+                } else {
+                    return Ok(());
+                }
+            }
+            return Err(Error::ArgCountMismatch {
+                span,
+                min: min_param,
+                max: max_param,
+            });
+        }
+    }
+
+    /// Returns the return type of function. This method should be called only
+    /// for final step because it emits errors instead of returning them.
     fn get_return_type(
         &mut self,
         span: Span,
@@ -1165,6 +1243,17 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult {
         let logger = self.logger.clone();
 
+        self.expand_this(&mut ret_ty);
+
+        {
+            let arg_check_res = self.validate_arg_count(span, params, args, arg_types, spread_arg_types);
+            match arg_check_res {
+                Err(..) => print_backtrace(),
+                _ => {}
+            }
+            arg_check_res.report(&mut self.storage);
+        }
+
         slog::debug!(
             logger,
             "get_return_type: \ntype_params = {:?}\nret_ty = {:?}",
@@ -1173,7 +1262,11 @@ impl Analyzer<'_, '_> {
         );
 
         if let Some(type_params) = type_params {
-            let analyzer = self;
+            for param in type_params {
+                slog::info!(self.logger, "({}) Defining {}", self.scope.depth(), param.name);
+
+                self.register_type(param.name.clone(), box Type::Param(param.clone()));
+            }
 
             let mut new_args = vec![];
             for (idx, (arg, param)) in args.into_iter().zip(params.iter()).enumerate() {
@@ -1186,30 +1279,9 @@ impl Analyzer<'_, '_> {
                     }
                 };
 
-                for param in type_params {
-                    slog::info!(
-                        analyzer.logger,
-                        "({}) Defining {}",
-                        analyzer.scope.depth(),
-                        param.name
-                    );
-
-                    analyzer
-                        .scope
-                        .types
-                        .entry(param.name.clone())
-                        .or_default()
-                        .push(Type::Param(param.clone()).cheap());
-                }
-
                 if let Some(type_param_decl) = type_param_decl {
                     for param in &type_param_decl.params {
-                        analyzer
-                            .scope
-                            .types
-                            .entry(param.name.clone())
-                            .or_default()
-                            .push(Type::Param(param.clone()).cheap());
+                        self.register_type(param.name.clone(), box Type::Param(param.clone()));
                     }
                 }
 
@@ -1218,25 +1290,18 @@ impl Analyzer<'_, '_> {
 
                     let default_any_ty: Option<_> = try {
                         let node_id = pat.node_id()?;
-                        analyzer
-                            .mutations
-                            .as_ref()?
-                            .for_pats
-                            .get(&node_id)?
-                            .ty
-                            .clone()?
+                        self.mutations.as_ref()?.for_pats.get(&node_id)?.ty.clone()?
                     };
                     if let Some(ty) = default_any_ty {
                         match &*ty {
                             Type::Keyword(RTsKeywordType {
                                 span,
                                 kind: TsKeywordTypeKind::TsAnyKeyword,
-                            }) if analyzer.is_implicitly_typed_span(*span) => {
+                            }) if self.is_implicitly_typed_span(*span) => {
                                 // TODO: Make this eficient
-                                let new_ty =
-                                    RTsType::from(actual.ty.clone()).validate_with(analyzer)?;
+                                let new_ty = RTsType::from(actual.ty.clone()).validate_with(self)?;
                                 if let Some(node_id) = pat.node_id() {
-                                    if let Some(m) = &mut analyzer.mutations {
+                                    if let Some(m) = &mut self.mutations {
                                         m.for_pats.entry(node_id).or_default().ty = Some(new_ty);
                                     }
                                 }
@@ -1254,31 +1319,22 @@ impl Analyzer<'_, '_> {
                             patch_arg(idx, pat)?;
                         }
 
-                        slog::info!(
-                            analyzer.logger,
-                            "Inferring type of arrow expr with updated type"
-                        );
-                        box Type::Function(arrow.validate_with(analyzer)?)
+                        slog::info!(self.logger, "Inferring type of arrow expr with updated type");
+                        box Type::Function(arrow.validate_with(self)?)
                     }
                     RExpr::Fn(fn_expr) => {
                         for (idx, param) in fn_expr.function.params.iter().enumerate() {
                             patch_arg(idx, &param.pat)?;
                         }
 
-                        slog::info!(
-                            analyzer.logger,
-                            "Inferring type of function expr with updated type"
-                        );
-                        box Type::Function(fn_expr.function.validate_with(analyzer)?)
+                        slog::info!(self.logger, "Inferring type of function expr with updated type");
+                        box Type::Function(fn_expr.function.validate_with(self)?)
                     }
                     _ => arg_ty.ty.clone(),
                 };
-                print_type(&logger, "mapped", &analyzer.cm, &ty);
+                print_type(&logger, "mapped", &self.cm, &ty);
 
-                let new_arg = TypeOrSpread {
-                    ty,
-                    ..arg_ty.clone()
-                };
+                let new_arg = TypeOrSpread { ty, ..arg_ty.clone() };
 
                 new_args.push(new_arg);
             }
@@ -1287,6 +1343,7 @@ impl Analyzer<'_, '_> {
                 new_args.extend(arg_types[params.len()..].iter().cloned());
             }
 
+            // We have to recalculate types.
             let mut new_arg_types;
             let spread_arg_types = if new_args.iter().any(|arg| arg.spread.is_some()) {
                 new_arg_types = vec![];
@@ -1294,20 +1351,15 @@ impl Analyzer<'_, '_> {
                     if arg.spread.is_some() {
                         match &*arg.ty {
                             Type::Tuple(arg_ty) => {
-                                new_arg_types.extend(
-                                    arg_ty.elems.iter().map(|element| &element.ty).cloned().map(
-                                        |ty| TypeOrSpread {
-                                            span: arg.spread.unwrap(),
-                                            spread: None,
-                                            ty,
-                                        },
-                                    ),
-                                );
+                                new_arg_types.extend(arg_ty.elems.iter().map(|element| &element.ty).cloned().map(
+                                    |ty| TypeOrSpread {
+                                        span: arg.spread.unwrap(),
+                                        spread: None,
+                                        ty,
+                                    },
+                                ));
                             }
-                            _ => unimplemented!(
-                                "spread argument with type other than tuple\nType: {:#?}",
-                                arg.ty
-                            ),
+                            _ => unimplemented!("spread argument with type other than tuple\nType: {:#?}", arg.ty),
                         }
                     } else {
                         new_arg_types.push(arg.clone());
@@ -1319,38 +1371,33 @@ impl Analyzer<'_, '_> {
                 &*new_args
             };
 
-            let ret_ty = analyzer.expand(span, ret_ty)?;
+            let ctx = Ctx {
+                preserve_params: true,
+                preserve_ret_ty: true,
+                ..self.ctx
+            };
+            let ret_ty = self.with_ctx(ctx).expand(span, ret_ty)?;
 
-            let inferred = analyzer.infer_arg_types(
-                span,
-                type_args,
-                type_params,
-                &params,
-                &spread_arg_types,
-                &Type::TypeLit(TypeLit {
-                    span,
-                    members: vec![],
-                }),
-            )?;
+            let inferred = self.infer_arg_types(span, type_args, type_params, &params, &spread_arg_types, None)?;
 
-            print_type(&logger, "Return", &analyzer.cm, &ret_ty);
-            let mut ty = analyzer.expand_type_params(&inferred, ret_ty)?;
-            print_type(&logger, "Return, expanded", &analyzer.cm, &ty);
+            print_type(&logger, "Return", &self.cm, &ret_ty);
+            let mut ty = self.expand_type_params(&inferred, ret_ty)?;
+            print_type(&logger, "Return, expanded", &self.cm, &ty);
 
-            ty.visit_mut_with(&mut ReturnTypeSimplifier { analyzer });
+            ty.visit_mut_with(&mut ReturnTypeSimplifier { analyzer: self });
 
-            print_type(&logger, "Return, simplified", &analyzer.cm, &ty);
+            print_type(&logger, "Return, simplified", &self.cm, &ty);
 
-            ty = analyzer.simplify(ty);
+            ty = self.simplify(ty);
 
-            print_type(&logger, "Return, simplified again", &analyzer.cm, &ty);
+            print_type(&logger, "Return, simplified again", &self.cm, &ty);
 
-            ty = ty.fold_with(&mut ReturnTypeGeneralizer { analyzer });
+            ty = ty.fold_with(&mut ReturnTypeGeneralizer { analyzer: self });
 
-            print_type(&logger, "Return, generalized", &analyzer.cm, &ty);
+            print_type(&logger, "Return, generalized", &self.cm, &ty);
 
             if kind == ExtractKind::Call {
-                analyzer.add_call_facts(params, &args, &mut ty);
+                self.add_call_facts(params, &args, &mut ty);
             }
 
             ty.reposition(span);
@@ -1395,11 +1442,7 @@ impl Analyzer<'_, '_> {
                                     let arg = &args[idx];
                                     match &*arg.expr {
                                         RExpr::Ident(var_name) => {
-                                            self.store_call_fact_for_var(
-                                                var_name.span,
-                                                var_name.into(),
-                                                &ty,
-                                            );
+                                            self.store_call_fact_for_var(var_name.span, var_name.into(), &ty);
                                         }
                                         _ => {}
                                     }
@@ -1420,11 +1463,7 @@ impl Analyzer<'_, '_> {
             let mut new_types = vec![];
 
             let mut upcasted = false;
-            for ty in previous_types
-                .into_owned()
-                .iter_union()
-                .flat_map(|ty| ty.iter_union())
-            {
+            for ty in previous_types.into_owned().iter_union().flat_map(|ty| ty.iter_union()) {
                 match self.extends(&new_ty, &ty) {
                     Some(true) => {
                         upcasted = true;
@@ -1455,19 +1494,12 @@ impl Analyzer<'_, '_> {
         self.add_type_fact(&var_name.into(), box new_ty.clone());
     }
 
-    /// This method return [Err] if call is invalid
-    fn is_exact_call(
-        &self,
+    pub(crate) fn validate_type_args_count(
+        &mut self,
         span: Span,
         type_params: Option<&[TypeParam]>,
-        params: &[FnParam],
         type_args: Option<&TypeParamInstantiation>,
-        arg_types: &[TypeOrSpread],
-    ) -> ValidationResult<bool> {
-        if self.scope.is_call_arg_count_unknown {
-            return Ok(false);
-        }
-
+    ) -> ValidationResult<()> {
         if let Some(type_params) = type_params {
             if let Some(type_args) = type_args {
                 // TODO: Handle defaults of the type parameter (Change to range)
@@ -1482,47 +1514,78 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        // TODO: Handle spread
+        Ok(())
+    }
 
-        let params_min = params.iter().filter(|param| param.required).count();
-        let params_max = params.len();
-
-        if arg_types.len() < params_min || params_max < arg_types.len() {
-            return Err(Error::ParameterCountMismatch {
-                span,
-                min: params_min,
-                max: params_max,
-                actual: arg_types.len(),
-            });
+    /// This method return [Err] if call is invalid
+    fn check_call_args(
+        &mut self,
+        span: Span,
+        type_params: Option<&[TypeParam]>,
+        params: &[FnParam],
+        type_args: Option<&TypeParamInstantiation>,
+        args: &[RExprOrSpread],
+        arg_types: &[TypeOrSpread],
+        spread_arg_types: &[TypeOrSpread],
+    ) -> ArgCheckResult {
+        if self.validate_type_args_count(span, type_params, type_args).is_err() {
+            return ArgCheckResult::NeverMatches;
         }
 
-        let mut exact = true;
+        if self
+            .validate_arg_count(span, params, args, arg_types, spread_arg_types)
+            .is_err()
+        {
+            return ArgCheckResult::NeverMatches;
+        }
 
-        for (arg, param) in arg_types.iter().zip(params) {
-            match arg.ty.normalize() {
-                Type::Union(..) => match param.ty.normalize() {
-                    Type::Keyword(..) => {
-                        if self.assign(&param.ty, &arg.ty, span).is_ok() {
-                            return Ok(true);
-                        }
-                    }
-                    _ => {}
-                },
-                _ => {}
+        self.with_scope_for_type_params(|analyzer: &mut Analyzer| {
+            if let Some(type_params) = type_params {
+                for param in type_params {
+                    analyzer.register_type(param.name.clone(), box Type::Param(param.clone()));
+                }
             }
 
-            match param.ty.normalize() {
-                Type::Param(..) => {}
-                _ => {
-                    self.assign(&param.ty, &arg.ty, span)?;
-                    if self.assign(&arg.ty, &param.ty, span).is_err() {
-                        exact = false;
+            let mut exact = true;
+
+            for (arg, param) in arg_types.iter().zip(params) {
+                // match arg.ty.normalize() {
+                //     Type::Union(..) => match param.ty.normalize() {
+                //         Type::Keyword(..) => if self.assign(&param.ty, &arg.ty, span).is_ok()
+                // {},         _ => {}
+                //     },
+                //     _ => {}
+                // }
+
+                match param.ty.normalize() {
+                    Type::Param(..) => {}
+                    _ => {
+                        if analyzer
+                            .assign_with_opts(
+                                AssignOpts {
+                                    span,
+                                    allow_unknown_rhs: true,
+                                },
+                                &param.ty,
+                                &arg.ty,
+                            )
+                            .is_err()
+                        {
+                            return ArgCheckResult::NeverMatches;
+                        }
+                        if analyzer.assign(&arg.ty, &param.ty, span).is_err() {
+                            exact = false;
+                        }
                     }
                 }
             }
-        }
 
-        Ok(exact)
+            if analyzer.scope.is_call_arg_count_unknown || !exact {
+                return ArgCheckResult::MayBe;
+            }
+
+            ArgCheckResult::Exact
+        })
     }
 
     fn validate_args(&mut self, args: &[RExprOrSpread]) -> Result<Vec<TypeOrSpread>, Error> {
@@ -1584,9 +1647,7 @@ impl VisitMut<Union> for ReturnTypeSimplifier<'_, '_, '_> {
 
         if should_remove_null_and_undefined {
             union.types.retain(|ty| {
-                if ty.is_kwd(TsKeywordTypeKind::TsNullKeyword)
-                    | ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
-                {
+                if ty.is_kwd(TsKeywordTypeKind::TsNullKeyword) | ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
                     return false;
                 }
 
@@ -1640,22 +1701,18 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                         ..self.analyzer.ctx
                     };
                     let mut a = self.analyzer.with_ctx(ctx);
-                    let obj = a
-                        .expand_fully(*span, obj_ty.clone(), true)
-                        .report(&mut a.storage);
+                    let obj = a.expand_fully(*span, obj_ty.clone(), true).report(&mut a.storage);
                     if let Some(obj) = obj {
                         if let Some(actual_ty) = a
                             .access_property(
                                 *span,
                                 obj,
-                                &mut RExpr::Lit(RLit::Str(RStr {
+                                &Key::Normal {
                                     span: lit_span,
-                                    value: value.clone(),
-                                    has_escape: false,
-                                    kind: Default::default(),
-                                })),
-                                true,
+                                    sym: value.clone(),
+                                },
                                 TypeOfMode::RValue,
+                                IdCtx::Type,
                             )
                             .report(&mut a.storage)
                         {
@@ -1748,4 +1805,25 @@ fn is_key_eq_prop(prop: &RExpr, computed: bool, e: &RExpr) -> bool {
     };
 
     v.sym() == p
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
+enum ArgCheckResult {
+    Exact,
+    MayBe,
+    NeverMatches,
+}
+
+/// Ensure that sort work as expected.
+#[test]
+fn test_arg_check_result_order() {
+    let mut v = vec![
+        ArgCheckResult::Exact,
+        ArgCheckResult::MayBe,
+        ArgCheckResult::NeverMatches,
+    ];
+    let expected = v.clone();
+    v.sort();
+
+    assert_eq!(v, expected);
 }

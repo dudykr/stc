@@ -1,5 +1,4 @@
 use super::props::ComputedPropMode;
-use super::util::ResultExt;
 use super::Analyzer;
 use super::Ctx;
 use super::ScopeKind;
@@ -12,7 +11,6 @@ use rnode::VisitWith;
 use stc_ts_ast_rnode::RArrayPat;
 use stc_ts_ast_rnode::RAssignPatProp;
 use stc_ts_ast_rnode::RComputedPropName;
-use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RObjectPat;
 use stc_ts_ast_rnode::RObjectPatProp;
@@ -57,7 +55,8 @@ use stc_ts_ast_rnode::RTsTypeQueryExpr;
 use stc_ts_ast_rnode::RTsTypeRef;
 use stc_ts_ast_rnode::RTsUnionOrIntersectionType;
 use stc_ts_ast_rnode::RTsUnionType;
-use stc_ts_types::rprop_name_to_expr;
+use stc_ts_errors::Error;
+use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::Alias;
 use stc_ts_types::Array;
 use stc_ts_types::CallSignature;
@@ -70,6 +69,7 @@ use stc_ts_types::IndexedAccessType;
 use stc_ts_types::InferType;
 use stc_ts_types::Interface;
 use stc_ts_types::Intersection;
+use stc_ts_types::Key;
 use stc_ts_types::Mapped;
 use stc_ts_types::MethodSignature;
 use stc_ts_types::Operator;
@@ -113,13 +113,14 @@ impl Analyzer<'_, '_> {
                 let name: Id = param.name.clone().into();
                 self.register_type(
                     name.clone(),
-                    box Type::Param(TypeParam {
+                    Type::Param(TypeParam {
                         span: param.span,
                         name,
                         constraint: None,
                         default: None,
-                    }),
-                )?;
+                    })
+                    .cheap(),
+                );
             }
 
             let params = decl.params.validate_with(self)?;
@@ -143,7 +144,7 @@ impl Analyzer<'_, '_> {
             constraint: try_opt!(p.constraint.validate_with(self)),
             default: try_opt!(p.default.validate_with(self)),
         };
-        self.register_type(param.name.clone().into(), box param.clone().into())?;
+        self.register_type(param.name.clone().into(), box param.clone().into());
 
         Ok(param)
     }
@@ -180,16 +181,12 @@ impl Analyzer<'_, '_> {
                     } else {
                         child.prevent_expansion(&mut ty);
                     }
-                    let alias = Alias {
-                        span,
-                        ty,
-                        type_params,
-                    };
+                    let alias = Alias { span, ty, type_params };
                     Ok(alias)
                 },
             )?
         };
-        self.register_type(d.id.clone().into(), box Type::Alias(alias.clone()))?;
+        self.register_type(d.id.clone().into(), box Type::Alias(alias.clone()));
 
         Ok(alias)
     }
@@ -198,31 +195,25 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, d: &RTsInterfaceDecl) -> ValidationResult<Interface> {
-        let ty: Interface = self.with_child(
-            ScopeKind::Flow,
-            Default::default(),
-            |child| -> ValidationResult<_> {
-                let mut ty = Interface {
-                    span: d.span,
-                    name: d.id.clone().into(),
-                    type_params: try_opt!(d.type_params.validate_with(&mut *child)),
-                    extends: d.extends.validate_with(child)?,
-                    body: d.body.validate_with(child)?,
-                };
-                child.prevent_expansion(&mut ty.body);
+        let ty: Interface = self.with_child(ScopeKind::Flow, Default::default(), |child| -> ValidationResult<_> {
+            let mut ty = Interface {
+                span: d.span,
+                name: d.id.clone().into(),
+                type_params: try_opt!(d.type_params.validate_with(&mut *child)),
+                extends: d.extends.validate_with(child)?,
+                body: d.body.validate_with(child)?,
+            };
+            child.prevent_expansion(&mut ty.body);
 
-                child
-                    .register_type(d.id.clone().into(), box ty.clone().into())
-                    .report(&mut child.storage);
+            child.register_type(d.id.clone().into(), box ty.clone().into());
 
-                child.resolve_parent_interfaces(&d.extends);
+            child.resolve_parent_interfaces(&d.extends);
 
-                Ok(ty)
-            },
-        )?;
+            Ok(ty)
+        })?;
 
         // TODO: Recover
-        self.register_type(d.id.clone().into(), Type::Interface(ty.clone()).cheap())?;
+        self.register_type(d.id.clone().into(), Type::Interface(ty.clone()).cheap());
 
         Ok(ty)
     }
@@ -255,9 +246,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RTsTypeElement) -> ValidationResult<TypeElement> {
         Ok(match e {
             RTsTypeElement::TsCallSignatureDecl(d) => TypeElement::Call(d.validate_with(self)?),
-            RTsTypeElement::TsConstructSignatureDecl(d) => {
-                TypeElement::Constructor(d.validate_with(self)?)
-            }
+            RTsTypeElement::TsConstructSignatureDecl(d) => TypeElement::Constructor(d.validate_with(self)?),
             RTsTypeElement::TsIndexSignature(d) => TypeElement::Index(d.validate_with(self)?),
             RTsTypeElement::TsMethodSignature(d) => TypeElement::Method(d.validate_with(self)?),
             RTsTypeElement::TsPropertySignature(d) => TypeElement::Property(d.validate_with(self)?),
@@ -267,10 +256,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(
-        &mut self,
-        d: &RTsConstructSignatureDecl,
-    ) -> ValidationResult<ConstructorSignature> {
+    fn validate(&mut self, d: &RTsConstructSignatureDecl) -> ValidationResult<ConstructorSignature> {
         Ok(ConstructorSignature {
             span: d.span,
             params: d.params.validate_with(self)?,
@@ -296,6 +282,8 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, d: &RTsMethodSignature) -> ValidationResult<MethodSignature> {
         self.with_child(ScopeKind::Fn, Default::default(), |child: &mut Analyzer| {
+            let key = child.validate_key(&d.key, d.computed)?;
+
             if d.computed {
                 child.validate_computed_prop_key(d.span(), &d.key);
             }
@@ -303,8 +291,7 @@ impl Analyzer<'_, '_> {
             Ok(MethodSignature {
                 span: d.span,
                 readonly: d.readonly,
-                key: d.key.clone(),
-                computed: d.computed,
+                key,
                 optional: d.optional,
                 type_params: try_opt!(d.type_params.validate_with(child)),
                 params: d.params.validate_with(child)?,
@@ -329,6 +316,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, d: &RTsPropertySignature) -> ValidationResult<PropertySignature> {
+        let key = self.validate_key(&d.key, d.computed)?;
         if !self.is_builtin && d.computed {
             RComputedPropName {
                 node_id: NodeId::invalid(),
@@ -340,8 +328,7 @@ impl Analyzer<'_, '_> {
 
         Ok(PropertySignature {
             span: d.span,
-            computed: d.computed,
-            key: d.key.clone(),
+            key,
             optional: d.optional,
             params: d.params.validate_with(self)?,
             readonly: d.readonly,
@@ -376,16 +363,10 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(
-        &mut self,
-        i: &RTsTypeParamInstantiation,
-    ) -> ValidationResult<TypeParamInstantiation> {
+    fn validate(&mut self, i: &RTsTypeParamInstantiation) -> ValidationResult<TypeParamInstantiation> {
         let params = i.params.validate_with(self)?;
 
-        Ok(TypeParamInstantiation {
-            span: i.span,
-            params,
-        })
+        Ok(TypeParamInstantiation { span: i.span, params })
     }
 }
 
@@ -514,6 +495,7 @@ impl Analyzer<'_, '_> {
             type_params,
             params: t.params.validate_with(self)?,
             type_ann: t.type_ann.validate_with(self)?,
+            is_abstract: t.is_abstract,
         })
     }
 }
@@ -549,6 +531,7 @@ impl Analyzer<'_, '_> {
                         if contains_infer_type(&ty) || self.contains_infer_type(&*ty) {
                             contains_infer = true;
                         }
+                        // We use type param instead of reference type if possible.
                         match ty.normalize() {
                             Type::Param(..) => return Ok(box ty.into_owned()),
                             _ => {}
@@ -561,11 +544,7 @@ impl Analyzer<'_, '_> {
         }
 
         if !self.is_builtin {
-            slog::warn!(
-                self.logger,
-                "Crating a ref from TsTypeRef: {:?}",
-                t.type_name
-            );
+            slog::warn!(self.logger, "Crating a ref from TsTypeRef: {:?}", t.type_name);
         }
         let mut span = t.span;
         if contains_infer {
@@ -710,9 +689,9 @@ impl Analyzer<'_, '_> {
             RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsUnionType(u)) => {
                 Type::Union(u.validate_with(self)?)
             }
-            RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsIntersectionType(
-                i,
-            )) => Type::Intersection(i.validate_with(self)?),
+            RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsIntersectionType(i)) => {
+                Type::Intersection(i.validate_with(self)?)
+            }
             RTsType::TsArrayType(arr) => Type::Array(arr.validate_with(self)?),
             RTsType::TsFnOrConstructorType(RTsFnOrConstructorType::TsFnType(f)) => {
                 Type::Function(f.validate_with(self)?)
@@ -785,12 +764,7 @@ impl Analyzer<'_, '_> {
                         Some(RPat::Array(ref arr)) => {
                             self.default_any_array_pat(arr);
                             if let Some(m) = &mut self.mutations {
-                                m.for_pats
-                                    .entry(arr.node_id)
-                                    .or_default()
-                                    .ty
-                                    .take()
-                                    .unwrap()
+                                m.for_pats.entry(arr.node_id).or_default().ty.take().unwrap()
                             } else {
                                 Type::any(DUMMY_SP)
                             }
@@ -799,12 +773,7 @@ impl Analyzer<'_, '_> {
                             self.default_any_object(obj);
 
                             if let Some(m) = &mut self.mutations {
-                                m.for_pats
-                                    .entry(obj.node_id)
-                                    .or_default()
-                                    .ty
-                                    .take()
-                                    .unwrap()
+                                m.for_pats.entry(obj.node_id).or_default().ty.take().unwrap()
                             } else {
                                 Type::any(DUMMY_SP)
                             }
@@ -823,15 +792,12 @@ impl Analyzer<'_, '_> {
                 .collect(),
         });
         if let Some(m) = &mut self.mutations {
-            m.for_pats
-                .entry(arr.node_id)
-                .or_default()
-                .ty
-                .fill_with(|| ty);
+            m.for_pats.entry(arr.node_id).or_default().ty.fill_with(|| ty);
         }
     }
 
     /// Handle implicit defaults.
+    #[extra_validator]
     pub(crate) fn default_any_object(&mut self, obj: &RObjectPat) {
         if obj.type_ann.is_some() {
             return;
@@ -844,6 +810,7 @@ impl Analyzer<'_, '_> {
         for props in &obj.props {
             match props {
                 RObjectPatProp::KeyValue(p) => {
+                    let key = p.key.validate_with(self)?;
                     match *p.value {
                         RPat::Array(_) | RPat::Object(_) => {
                             self.default_any_pat(&*p.value);
@@ -863,8 +830,7 @@ impl Analyzer<'_, '_> {
                     members.push(TypeElement::Property(PropertySignature {
                         span: DUMMY_SP,
                         readonly: false,
-                        key: box rprop_name_to_expr(p.key.clone()),
-                        computed: false,
+                        key,
                         optional: false,
                         params: vec![],
                         type_ann: ty,
@@ -872,11 +838,14 @@ impl Analyzer<'_, '_> {
                     }))
                 }
                 RObjectPatProp::Assign(RAssignPatProp { key, .. }) => {
+                    let key = Key::Normal {
+                        span: key.span,
+                        sym: key.sym.clone(),
+                    };
                     members.push(TypeElement::Property(PropertySignature {
                         span: DUMMY_SP,
                         readonly: false,
-                        key: box RExpr::Ident(key.clone()),
-                        computed: false,
+                        key,
                         optional: false,
                         params: vec![],
                         type_ann: None,

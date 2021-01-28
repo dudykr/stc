@@ -40,9 +40,7 @@ impl Analyzer<'_, '_> {
 
                 RClassMember::TsIndexSignature(_) => {}
 
-                RClassMember::ClassProp(_)
-                | RClassMember::PrivateProp(_)
-                | RClassMember::Empty(_) => {
+                RClassMember::ClassProp(_) | RClassMember::PrivateProp(_) | RClassMember::Empty(_) => {
                     // unreachable!
                     continue;
                 }
@@ -133,9 +131,7 @@ impl Visit<RMemberExpr> for MethodAnalyzer {
                         self.result.depends_on.insert(Key::Id(i.into()));
                     }
                     RExpr::PrivateName(i) => {
-                        self.result
-                            .depends_on
-                            .insert(Key::Private(i.id.clone().into()));
+                        self.result.depends_on.insert(Key::Private(i.id.clone().into()));
                     }
                     _ => {}
                 }

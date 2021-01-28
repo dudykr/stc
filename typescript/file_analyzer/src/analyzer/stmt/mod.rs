@@ -1,4 +1,3 @@
-pub(super) use self::ambient_decl::AmbientFunctionHandler;
 use self::return_type::LoopBreakerFinder;
 use super::Analyzer;
 use crate::{
@@ -104,10 +103,7 @@ impl Analyzer<'_, '_> {
                 value: true,
             }),
         });
-        self.check_for_inifinite_loop(
-            test.as_ref().map(|v| &**v).unwrap_or(&always_true),
-            &node.body,
-        );
+        self.check_for_inifinite_loop(test.as_ref().map(|v| &**v).unwrap_or(&always_true), &node.body);
 
         node.update.visit_with(self);
         node.body.validate_with(self)?;
@@ -145,12 +141,7 @@ impl Analyzer<'_, '_> {
             // Verify parent interface
             let res: Result<_, _> = try {
                 let type_args = try_opt!(parent.type_args.validate_with(self));
-                self.type_of_ts_entity_name(
-                    parent.span,
-                    self.ctx.module_id,
-                    &parent.expr,
-                    type_args,
-                )?;
+                self.type_of_ts_entity_name(parent.span, self.ctx.module_id, &parent.expr, type_args.as_ref())?;
             };
 
             res.report(&mut self.storage);

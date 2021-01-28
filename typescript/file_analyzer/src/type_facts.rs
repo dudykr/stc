@@ -202,9 +202,7 @@ add_bitflags!(
             | NEUndefined
             | Falsy,
         EmptyObjectStrictFacts: TypeFacts::All.bits
-            & !(TypeFacts::EQUndefined.bits
-                | TypeFacts::EQNull.bits
-                | TypeFacts::EQUndefinedOrNull.bits),
+            & !(TypeFacts::EQUndefined.bits | TypeFacts::EQNull.bits | TypeFacts::EQUndefinedOrNull.bits),
         EmptyObjectFacts: All,
     },
 );

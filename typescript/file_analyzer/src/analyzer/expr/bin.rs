@@ -68,31 +68,27 @@ impl Analyzer<'_, '_> {
         };
 
         let rhs = self
-            .with_child(
-                ScopeKind::Flow,
-                facts,
-                |child: &mut Analyzer| -> ValidationResult<_> {
-                    let ty = right.validate_with_default(child).and_then(|mut ty| {
-                        if ty.is_ref_type() {
-                            let ctx = Ctx {
-                                preserve_ref: false,
-                                ignore_expand_prevention_for_top: true,
-                                ..child.ctx
-                            };
-                            ty = child.with_ctx(ctx).expand_fully(span, ty, true)?;
-                        }
+            .with_child(ScopeKind::Flow, facts, |child: &mut Analyzer| -> ValidationResult<_> {
+                let ty = right.validate_with_default(child).and_then(|mut ty| {
+                    if ty.is_ref_type() {
+                        let ctx = Ctx {
+                            preserve_ref: false,
+                            ignore_expand_prevention_for_top: true,
+                            ..child.ctx
+                        };
+                        ty = child.with_ctx(ctx).expand_fully(span, ty, true)?;
+                    }
 
-                        let span = ty.span();
-                        ty.respan(right.span().with_ctxt(span.ctxt));
+                    let span = ty.span();
+                    ty.respan(right.span().with_ctxt(span.ctxt));
 
-                        Ok(ty)
-                    })?;
+                    Ok(ty)
+                })?;
 
-                    let rhs_true_facts = child.cur_facts.true_facts.take();
+                let rhs_true_facts = child.cur_facts.true_facts.take();
 
-                    Ok((ty, rhs_true_facts))
-                },
-            )
+                Ok((ty, rhs_true_facts))
+            })
             .store(&mut errors);
 
         let (rt, rhs_facts) = match rhs {
@@ -104,12 +100,7 @@ impl Analyzer<'_, '_> {
             self.cur_facts.true_facts += rhs_facts;
         }
 
-        self.validate_bin_inner(
-            span,
-            op,
-            lt.as_ref().map(|v| &**v),
-            rt.as_ref().map(|v| &**v),
-        );
+        self.validate_bin_inner(span, op, lt.as_ref().map(|v| &**v), rt.as_ref().map(|v| &**v));
 
         let (lt, rt): (Box<Type>, Box<Type>) = match (lt, rt) {
             (Some(l), Some(r)) => (l, r),
@@ -141,15 +132,9 @@ impl Analyzer<'_, '_> {
                                 RExpr::Lit(RLit::Str(RStr { ref value, .. })) => Some((
                                     name,
                                     if is_eq {
-                                        (
-                                            TypeFacts::typeof_eq(&*value),
-                                            TypeFacts::typeof_neq(&*value),
-                                        )
+                                        (TypeFacts::typeof_eq(&*value), TypeFacts::typeof_neq(&*value))
                                     } else {
-                                        (
-                                            TypeFacts::typeof_neq(&*value),
-                                            TypeFacts::typeof_eq(&*value),
-                                        )
+                                        (TypeFacts::typeof_neq(&*value), TypeFacts::typeof_eq(&*value))
                                     },
                                 )),
                                 _ => None,
@@ -280,8 +265,7 @@ impl Analyzer<'_, '_> {
                         ..
                     })
                     | Type::Lit(RTsLitType {
-                        lit: RTsLit::Str(..),
-                        ..
+                        lit: RTsLit::Str(..), ..
                     }) => Some(()),
 
                     _ => None,
@@ -309,8 +293,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 if c.any(|(_, ty)| {
-                    ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
-                        || ty.is_kwd(TsKeywordTypeKind::TsNullKeyword)
+                    ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) || ty.is_kwd(TsKeywordTypeKind::TsNullKeyword)
                 }) {
                     return Err(Error::TS2365 { span });
                 }
@@ -527,13 +510,7 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
-    fn validate_bin_inner(
-        &mut self,
-        span: Span,
-        op: BinaryOp,
-        lt: Option<&Type>,
-        rt: Option<&Type>,
-    ) {
+    fn validate_bin_inner(&mut self, span: Span, op: BinaryOp, lt: Option<&Type>, rt: Option<&Type>) {
         let ls = lt.span();
         let rs = rt.span();
 
@@ -546,10 +523,7 @@ impl Analyzer<'_, '_> {
                     let rt = rt.unwrap();
 
                     let has_overlap = lt.eq_ignore_span(&rt) || {
-                        let c = Comparator {
-                            left: &lt,
-                            right: &rt,
-                        };
+                        let c = Comparator { left: &lt, right: &rt };
 
                         // Check if type overlaps.
                         c.take_if_any_matches(|l, r| {
@@ -659,8 +633,7 @@ impl Analyzer<'_, '_> {
                                 ..
                             })
                             | Type::Lit(RTsLitType {
-                                lit: RTsLit::Bool(..),
-                                ..
+                                lit: RTsLit::Bool(..), ..
                             }) => true,
                             _ => false,
                         }
@@ -670,8 +643,7 @@ impl Analyzer<'_, '_> {
                                 ..
                             })
                             | Type::Lit(RTsLitType {
-                                lit: RTsLit::Bool(..),
-                                ..
+                                lit: RTsLit::Bool(..), ..
                             }) => true,
                             _ => false,
                         }
@@ -712,8 +684,7 @@ impl Analyzer<'_, '_> {
                             ..
                         })
                         | Type::Lit(RTsLitType {
-                            lit: RTsLit::Str(..),
-                            ..
+                            lit: RTsLit::Str(..), ..
                         })
                         | Type::Enum(..)
                         | Type::EnumVariant(..)

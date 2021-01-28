@@ -26,6 +26,8 @@ use stc_ts_ast_rnode::RStr;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
+use stc_ts_types::ComputedKey;
+use stc_ts_types::Key;
 use swc_atoms::js_word;
 use swc_common::Spanned;
 use swc_ecma_ast::*;
@@ -43,22 +45,32 @@ pub(super) enum ComputedPropMode {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &RPropName) {
+    fn validate(&mut self, node: &RPropName) -> ValidationResult<Key> {
         self.record(node);
 
-        node.visit_children_with(self);
-
-        Ok(())
+        match node {
+            RPropName::Computed(c) => c.validate_with(self),
+            RPropName::Ident(i) => Ok(Key::Normal {
+                span: i.span,
+                sym: i.sym.clone(),
+            }),
+            RPropName::Str(s) => Ok(Key::Normal {
+                span: s.span,
+                sym: s.value.clone(),
+            }),
+            RPropName::Num(v) => Ok(Key::Num(v.clone())),
+            RPropName::BigInt(v) => Ok(Key::BigInt(v.clone())),
+        }
     }
 }
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &RComputedPropName) {
+    fn validate(&mut self, node: &RComputedPropName) -> ValidationResult<Key> {
         self.record(node);
+        let span = node.span;
 
         let mode = self.ctx.computed_prop_mode;
-
         let span = node.span;
 
         let is_symbol_access = match *node.expr {
@@ -72,11 +84,14 @@ impl Analyzer<'_, '_> {
             }) => true,
             _ => false,
         };
+        let mut check_for_symbol_form = true;
 
         let mut errors = Errors::default();
+
         let ty = match node.expr.validate_with_default(self) {
             Ok(ty) => ty,
             Err(err) => {
+                check_for_symbol_form = false;
                 match err {
                     Error::TS2585 { span } => Err(Error::TS2585 { span })?,
                     _ => {}
@@ -87,6 +102,24 @@ impl Analyzer<'_, '_> {
                 Type::unknown(span)
             }
         };
+
+        if check_for_symbol_form && is_symbol_access {
+            match ty.normalize() {
+                Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsSymbolKeyword,
+                    ..
+                }) => {}
+                Type::Operator(Operator {
+                    op: TsTypeOperatorOp::Unique,
+                    ty,
+                    ..
+                }) if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) => {}
+                _ => {
+                    //
+                    self.storage.report(Error::NonSymbolComputedPropInFormOfSymbol { span });
+                }
+            }
+        }
 
         match mode {
             ComputedPropMode::Class { .. } | ComputedPropMode::Interface => {
@@ -100,20 +133,9 @@ impl Analyzer<'_, '_> {
                         _ if is_valid_key => {}
                         Type::Lit(..) => {}
                         Type::EnumVariant(..) => {}
-                        _ if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword)
-                            || ty.is_unique_symbol() => {}
-                        _ if is_symbol_access => {
-                            errors.push(Error::NonSymbolTypedFieldFromSymbol {
-                                span: node.expr.span(),
-                            })
-                        }
+                        _ if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) || ty.is_unique_symbol() => {}
                         _ => match mode {
-                            ComputedPropMode::Class { .. } => {
-                                errors.push(Error::TS1168 { span: node.span })
-                            }
-                            ComputedPropMode::Interface => {
-                                errors.push(Error::TS1169 { span: node.span })
-                            }
+                            ComputedPropMode::Interface => errors.push(Error::TS1169 { span: node.span }),
                             _ => {}
                         },
                     }
@@ -129,7 +151,7 @@ impl Analyzer<'_, '_> {
             // TODO:
             ComputedPropMode::Interface => errors.is_empty(),
         } {
-            let ty = ty.generalize_lit();
+            let ty = ty.clone().generalize_lit();
             match *ty.normalize() {
                 Type::Keyword(RTsKeywordType {
                     kind: TsKeywordTypeKind::TsAnyKeyword,
@@ -161,13 +183,29 @@ impl Analyzer<'_, '_> {
             }
         }
         if !errors.is_empty() {
-            Err(Error::Errors {
-                span,
-                errors: errors.into(),
-            })?
+            self.storage.report_all(errors);
         }
 
-        Ok(())
+        // match *ty {
+        //     Type::Lit(RTsLitType {
+        //         lit: RTsLit::Number(n), ..
+        //     }) => return Ok(Key::Num(n)),
+        //     Type::Lit(RTsLitType {
+        //         lit: RTsLit::Str(s), ..
+        //     }) => {
+        //         return Ok(Key::Normal {
+        //             span: s.span,
+        //             sym: s.value,
+        //         })
+        //     }
+        //     _ => {}
+        // }
+
+        Ok(Key::Computed(ComputedKey {
+            span,
+            expr: node.expr.clone(),
+            ty,
+        }))
     }
 }
 
@@ -192,8 +230,12 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate_prop_inner(&mut self, prop: &RProp) -> ValidationResult<TypeElement> {
         let computed = match prop {
-            RProp::KeyValue(ref kv) => match kv.key {
-                RPropName::Computed(_) => true,
+            RProp::KeyValue(ref kv) => match &kv.key {
+                RPropName::Computed(c) => {
+                    c.visit_with(self);
+
+                    true
+                }
                 _ => false,
             },
             _ => false,
@@ -201,33 +243,37 @@ impl Analyzer<'_, '_> {
 
         let span = prop.span();
         // TODO: Validate prop key
-        let key = prop_key_to_expr(&prop);
 
         let shorthand_type_ann = match prop {
             RProp::Shorthand(ref i) => {
                 // TODO: Check if RValue is correct
-                self.type_of_var(&i, TypeOfMode::RValue, None)
-                    .report(&mut self.storage)
+                self.type_of_var(&i, TypeOfMode::RValue, None).report(&mut self.storage)
             }
             _ => None,
         };
 
         let span = prop.span();
 
-        Ok(match *prop {
-            RProp::Shorthand(..) => PropertySignature {
-                span: prop.span(),
-                key,
-                params: Default::default(),
-                optional: false,
-                readonly: false,
-                computed,
-                type_ann: shorthand_type_ann,
-                type_params: Default::default(),
+        Ok(match prop {
+            RProp::Shorthand(i) => {
+                let key = Key::Normal {
+                    span,
+                    sym: i.sym.clone(),
+                };
+                PropertySignature {
+                    span: prop.span(),
+                    key,
+                    params: Default::default(),
+                    optional: false,
+                    readonly: false,
+                    type_ann: shorthand_type_ann,
+                    type_params: Default::default(),
+                }
+                .into()
             }
-            .into(),
 
             RProp::KeyValue(ref kv) => {
+                let key = kv.key.validate_with(self)?;
                 let computed = match kv.key {
                     RPropName::Computed(_) => true,
                     _ => false,
@@ -240,16 +286,16 @@ impl Analyzer<'_, '_> {
                     params: Default::default(),
                     optional: false,
                     readonly: false,
-                    computed,
                     type_ann: Some(ty),
                     type_params: Default::default(),
                 }
                 .into()
             }
 
-            RProp::Assign(ref p) => unimplemented!("type_of_prop(AssignProperty): {:?}", p),
+            RProp::Assign(ref p) => unimplemented!("validate_key(AssignProperty): {:?}", p),
             RProp::Getter(ref p) => p.validate_with(self)?,
             RProp::Setter(ref p) => {
+                let key = p.key.validate_with(self)?;
                 let computed = match p.key {
                     RPropName::Computed(_) => true,
                     _ => false,
@@ -265,7 +311,6 @@ impl Analyzer<'_, '_> {
                             params: vec![param.validate_with(child)?],
                             optional: false,
                             readonly: false,
-                            computed,
                             type_ann: Some(Type::any(parma_span)),
                             type_params: Default::default(),
                         }
@@ -275,6 +320,7 @@ impl Analyzer<'_, '_> {
             }
 
             RProp::Method(ref p) => {
+                let key = p.key.validate_with(self)?;
                 let computed = match p.key {
                     RPropName::Computed(..) => true,
                     _ => false,
@@ -341,7 +387,6 @@ impl Analyzer<'_, '_> {
                             span,
                             readonly: false,
                             key,
-                            computed,
                             optional: false,
                             params,
                             ret_ty,
@@ -360,10 +405,8 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, n: &RGetterProp) -> ValidationResult<TypeElement> {
         self.record(n);
 
-        let computed = match n.key {
-            RPropName::Computed(_) => true,
-            _ => false,
-        };
+        let key = n.key.validate_with(self)?;
+        let computed = key.is_computed();
 
         let type_ann = self
             .with_child(ScopeKind::Method, Default::default(), |child| {
@@ -386,16 +429,11 @@ impl Analyzer<'_, '_> {
 
         Ok(PropertySignature {
             span: n.span(),
-            key: prop_name_to_expr(&n.key),
+            key,
             params: Default::default(),
             optional: false,
             readonly: true,
-            computed,
-            type_ann: if computed {
-                type_ann
-            } else {
-                Some(Type::any(n.span))
-            },
+            type_ann: if computed { type_ann } else { Some(Type::any(n.span)) },
             type_params: Default::default(),
         }
         .into())

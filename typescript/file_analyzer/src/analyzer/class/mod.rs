@@ -55,6 +55,7 @@ use stc_ts_types::ConstructorSignature;
 use stc_ts_types::FnParam;
 use stc_ts_types::Id;
 use stc_ts_types::Intersection;
+use stc_ts_types::Key;
 use stc_ts_types::Method;
 use stc_ts_types::Operator;
 use stc_ts_types::QueryExpr;
@@ -69,6 +70,7 @@ use swc_atoms::js_word;
 use swc_common::EqIgnoreSpan;
 use swc_common::Span;
 use swc_common::Spanned;
+use swc_common::TypeEq;
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::*;
 use swc_ecma_utils::private_ident;
@@ -85,9 +87,7 @@ impl Analyzer<'_, '_> {
         value: &Option<Box<RExpr>>,
     ) -> ValidationResult<Option<Box<Type>>> {
         let ty = try_opt!(type_ann.validate_with(self));
-        let value_ty =
-            try_opt!(value
-                .validate_with_args(self, (TypeOfMode::RValue, None, ty.as_ref().map(|v| &**v))));
+        let value_ty = try_opt!(value.validate_with_args(self, (TypeOfMode::RValue, None, ty.as_ref().map(|v| &**v))));
 
         Ok(ty.or_else(|| value_ty).map(|ty| match *ty {
             Type::Symbol(..) if readonly && is_static => box Type::Operator(Operator {
@@ -113,13 +113,7 @@ impl Analyzer<'_, '_> {
             self.validate_computed_prop_key(p.span, &p.key);
         }
 
-        let value = self.validate_type_of_class_property(
-            p.span,
-            p.readonly,
-            p.is_static,
-            &p.type_ann,
-            &p.value,
-        )?;
+        let value = self.validate_type_of_class_property(p.span, p.readonly, p.is_static, &p.type_ann, &p.value)?;
         match p.accessibility {
             Some(Accessibility::Private) => {}
             _ => {
@@ -132,12 +126,13 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        let key = self.validate_key(&p.key, p.computed)?;
+
         Ok(ClassProperty {
             span: p.span,
-            key: p.key.clone(),
+            key,
             value,
             is_static: p.is_static,
-            computed: p.computed,
             accessibility: p.accessibility,
             is_abstract: p.is_abstract,
             is_optional: p.is_optional,
@@ -152,20 +147,15 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, p: &RPrivateProp) -> ValidationResult<ClassProperty> {
         self.record(p);
 
-        let value = self.validate_type_of_class_property(
-            p.span,
-            p.readonly,
-            p.is_static,
-            &p.type_ann,
-            &p.value,
-        )?;
+        let key = Key::Private(p.key.clone());
+
+        let value = self.validate_type_of_class_property(p.span, p.readonly, p.is_static, &p.type_ann, &p.value)?;
 
         Ok(ClassProperty {
             span: p.span,
-            key: box RExpr::PrivateName(p.key.clone()),
+            key,
             value,
             is_static: p.is_static,
-            computed: p.computed,
             accessibility: p.accessibility,
             is_abstract: p.is_abstract,
             is_optional: p.is_optional,
@@ -182,108 +172,98 @@ impl Analyzer<'_, '_> {
 
         let c_span = c.span();
 
-        self.with_child(
-            ScopeKind::Method,
-            Default::default(),
-            |child: &mut Analyzer| {
-                let RConstructor { ref params, .. } = *c;
+        self.with_child(ScopeKind::Method, Default::default(), |child: &mut Analyzer| {
+            let RConstructor { ref params, .. } = *c;
 
-                {
-                    // Validate params
-                    // TODO: Move this to parser
-                    let mut has_optional = false;
-                    for p in params.iter() {
-                        if has_optional {
-                            child.storage.report(Error::TS1016 { span: p.span() });
-                        }
+            {
+                // Validate params
+                // TODO: Move this to parser
+                let mut has_optional = false;
+                for p in params.iter() {
+                    if has_optional {
+                        child.storage.report(Error::TS1016 { span: p.span() });
+                    }
 
-                        match *p {
-                            RParamOrTsParamProp::Param(RParam {
-                                pat: RPat::Ident(RIdent { optional, .. }),
-                                ..
-                            }) => {
-                                if optional {
-                                    has_optional = true;
-                                }
+                    match *p {
+                        RParamOrTsParamProp::Param(RParam {
+                            pat: RPat::Ident(RIdent { optional, .. }),
+                            ..
+                        }) => {
+                            if optional {
+                                has_optional = true;
                             }
-                            _ => {}
                         }
+                        _ => {}
                     }
                 }
+            }
 
-                let mut ps = Vec::with_capacity(params.len());
-                for param in params.iter() {
-                    let mut names = vec![];
+            let mut ps = Vec::with_capacity(params.len());
+            for param in params.iter() {
+                let mut names = vec![];
 
-                    let mut visitor = VarVisitor { names: &mut names };
+                let mut visitor = VarVisitor { names: &mut names };
 
-                    param.visit_with(&mut visitor);
+                param.visit_with(&mut visitor);
 
-                    child.scope.declaring.extend(names.clone());
+                child.scope.declaring.extend(names.clone());
 
-                    let mut p = match &param {
-                        RParamOrTsParamProp::TsParamProp(RTsParamProp {
-                            param: RTsParamPropParam::Ident(i),
-                            ..
-                        }) => RTsFnParam::Ident(i.clone()),
-                        RParamOrTsParamProp::TsParamProp(RTsParamProp {
-                            param: RTsParamPropParam::Assign(RAssignPat { left: box pat, .. }),
-                            ..
-                        })
-                        | RParamOrTsParamProp::Param(RParam { pat, .. }) => from_pat(pat.clone()),
-                    };
-                    let p: FnParam = p.validate_with(child)?;
+                let mut p = match &param {
+                    RParamOrTsParamProp::TsParamProp(RTsParamProp {
+                        param: RTsParamPropParam::Ident(i),
+                        ..
+                    }) => RTsFnParam::Ident(i.clone()),
+                    RParamOrTsParamProp::TsParamProp(RTsParamProp {
+                        param: RTsParamPropParam::Assign(RAssignPat { left: box pat, .. }),
+                        ..
+                    })
+                    | RParamOrTsParamProp::Param(RParam { pat, .. }) => from_pat(pat.clone()),
+                };
+                let p: FnParam = p.validate_with(child)?;
 
-                    match param {
-                        RParamOrTsParamProp::Param(RParam { ref pat, .. }) => {
-                            match child.declare_vars_with_ty(
-                                VarDeclKind::Let,
-                                pat,
-                                Some(p.ty.clone()),
-                            ) {
-                                Ok(()) => {}
-                                Err(err) => {
-                                    child.storage.report(err);
-                                }
+                match param {
+                    RParamOrTsParamProp::Param(RParam { ref pat, .. }) => {
+                        match child.declare_vars_with_ty(VarDeclKind::Let, pat, Some(p.ty.clone())) {
+                            Ok(()) => {}
+                            Err(err) => {
+                                child.storage.report(err);
                             }
                         }
-                        RParamOrTsParamProp::TsParamProp(ref param) => match param.param {
-                            RTsParamPropParam::Ident(ref i)
-                            | RTsParamPropParam::Assign(RAssignPat {
-                                left: box RPat::Ident(ref i),
-                                ..
-                            }) => {
-                                match child.declare_var(
-                                    i.span,
-                                    VarDeclKind::Let,
-                                    i.clone().into(),
-                                    Some(p.ty.clone()),
-                                    true,
-                                    false,
-                                ) {
-                                    Ok(()) => {}
-                                    Err(err) => {
-                                        child.storage.report(err);
-                                    }
-                                }
+                    }
+                    RParamOrTsParamProp::TsParamProp(ref param) => match param.param {
+                        RTsParamPropParam::Ident(ref i)
+                        | RTsParamPropParam::Assign(RAssignPat {
+                            left: box RPat::Ident(ref i),
+                            ..
+                        }) => match child.declare_var(
+                            i.span,
+                            VarDeclKind::Let,
+                            i.clone().into(),
+                            Some(p.ty.clone()),
+                            true,
+                            false,
+                        ) {
+                            Ok(()) => {}
+                            Err(err) => {
+                                child.storage.report(err);
                             }
-                            _ => unreachable!(),
                         },
-                    }
-
-                    ps.push(p);
-
-                    child.scope.remove_declaring(names);
+                        _ => unreachable!(),
+                    },
                 }
 
-                Ok(ConstructorSignature {
-                    span: c.span,
-                    params: ps,
-                    ret_ty: None,
-                    type_params: None,
-                })
-            },
-        )
+                ps.push(p);
+
+                child.scope.remove_declaring(names);
+            }
+
+            Ok(ConstructorSignature {
+                span: c.span,
+                params: ps,
+                ret_ty: None,
+                type_params: None,
+            })
+        })
     }
 }
 
@@ -357,6 +337,8 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, c: &RClassMethod) -> ValidationResult<Method> {
         self.record(c);
 
+        let key = c.key.validate_with(self)?;
+
         let c_span = c.span();
         let key_span = c.key.span();
 
@@ -393,9 +375,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 let type_params = try_opt!(c.function.type_params.validate_with(child));
-                if (c.kind == MethodKind::Getter || c.kind == MethodKind::Setter)
-                    && type_params.is_some()
-                {
+                if (c.kind == MethodKind::Getter || c.kind == MethodKind::Setter) && type_params.is_some() {
                     child.storage.report(Error::TS1094 { span: key_span })
                 }
 
@@ -418,14 +398,16 @@ impl Analyzer<'_, '_> {
                 let is_async = c.function.is_async;
                 let is_generator = c.function.is_generator;
 
-                let inferred_ret_ty =
-                    match c.function.body.as_ref().map(|bs| {
-                        child.visit_stmts_for_return(span, is_async, is_generator, &bs.stmts)
-                    }) {
-                        Some(Ok(ty)) => ty,
-                        Some(err) => err?,
-                        None => None,
-                    };
+                let inferred_ret_ty = match c
+                    .function
+                    .body
+                    .as_ref()
+                    .map(|bs| child.visit_stmts_for_return(span, is_async, is_generator, &bs.stmts))
+                {
+                    Some(Ok(ty)) => ty,
+                    Some(err) => err?,
+                    None => None,
+                };
 
                 Ok((params, type_params, declared_ret_ty, inferred_ret_ty))
             },
@@ -468,7 +450,7 @@ impl Analyzer<'_, '_> {
 
         Ok(Method {
             span: c_span,
-            key: c.key.clone(),
+            key,
             is_static: c.is_static,
             is_abstract: c.is_abstract,
             is_optional: c.is_optional,
@@ -482,18 +464,13 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(
-        &mut self,
-        m: &RClassMember,
-    ) -> ValidationResult<Option<stc_ts_types::ClassMember>> {
+    fn validate(&mut self, m: &RClassMember) -> ValidationResult<Option<stc_ts_types::ClassMember>> {
         Ok(match m {
             RClassMember::PrivateMethod(m) => Some(m.validate_with(self).map(From::from)?),
             RClassMember::PrivateProp(m) => Some(m.validate_with(self).map(From::from)?),
             RClassMember::Empty(..) => None,
 
-            RClassMember::Constructor(v) => Some(stc_ts_types::ClassMember::Constructor(
-                v.validate_with(self)?,
-            )),
+            RClassMember::Constructor(v) => Some(stc_ts_types::ClassMember::Constructor(v.validate_with(self)?)),
             RClassMember::Method(method) => {
                 let v = method.validate_with(self)?;
 
@@ -506,12 +483,10 @@ impl Analyzer<'_, '_> {
 
                 Some(stc_ts_types::ClassMember::Method(v))
             }
-            RClassMember::ClassProp(v) => {
-                Some(stc_ts_types::ClassMember::Property(v.validate_with(self)?))
+            RClassMember::ClassProp(v) => Some(stc_ts_types::ClassMember::Property(v.validate_with(self)?)),
+            RClassMember::TsIndexSignature(v) => {
+                Some(stc_ts_types::ClassMember::IndexSignature(v.validate_with(self)?))
             }
-            RClassMember::TsIndexSignature(v) => Some(stc_ts_types::ClassMember::IndexSignature(
-                v.validate_with(self)?,
-            )),
         })
     }
 }
@@ -577,7 +552,7 @@ impl Analyzer<'_, '_> {
                             && !is_prop_name_eq_include_computed(&name.unwrap(), &m.key)
                         {
                             for span in replace(&mut spans, vec![]) {
-                                errors.push(Error::TS2391 { span });
+                                errors.push(Error::FnImplMissingOrNotFollowedByDecl { span });
                             }
                         }
 
@@ -590,34 +565,27 @@ impl Analyzer<'_, '_> {
                             spans.push(m.key.span());
                         }
                     } else {
-                        if name.is_none()
-                            || is_prop_name_eq_include_computed(&name.unwrap(), &m.key)
-                        {
+                        if name.is_none() || is_prop_name_eq_include_computed(&name.unwrap(), &m.key) {
                             // TODO: Verify parameters
 
                             if name.is_some() {
                                 if let Some(mutations) = &mut self.mutations {
-                                    mutations
-                                        .for_class_members
-                                        .entry(m.node_id)
-                                        .or_default()
-                                        .remove = true;
+                                    mutations.for_class_members.entry(m.node_id).or_default().remove = true;
                                 }
                             }
 
                             spans.clear();
                             name = None;
                         } else {
-                            let constructor_name =
-                                RPropName::Ident(RIdent::new(js_word!("constructor"), DUMMY_SP));
+                            let constructor_name = RPropName::Ident(RIdent::new(js_word!("constructor"), DUMMY_SP));
 
                             if is_prop_name_eq_include_computed(&name.unwrap(), &constructor_name) {
                                 for span in replace(&mut spans, vec![]) {
-                                    errors.push(Error::TS2391 { span });
+                                    errors.push(Error::FnImplMissingOrNotFollowedByDecl { span });
                                 }
                             } else if is_prop_name_eq_include_computed(&m.key, &constructor_name) {
                                 for span in replace(&mut spans, vec![]) {
-                                    errors.push(Error::TS2389 { span });
+                                    errors.push(Error::FnImplMissingOrNotFollowedByDecl { span });
                                 }
                             } else {
                                 spans = vec![];
@@ -638,21 +606,14 @@ impl Analyzer<'_, '_> {
 
             match *m {
                 RClassMember::Constructor(ref m) => check!(m, m.body),
-                RClassMember::Method(
-                    ref
-                    m
-                    @
-                    RClassMethod {
-                        is_abstract: false, ..
-                    },
-                ) => check!(m, m.function.body),
+                RClassMember::Method(ref m @ RClassMethod { is_abstract: false, .. }) => check!(m, m.function.body),
                 _ => {}
             }
         }
 
         // Class definition ended with `foo();`
         for span in replace(&mut spans, vec![]) {
-            errors.push(Error::TS2391 { span });
+            errors.push(Error::FnImplMissingOrNotFollowedByDecl { span });
         }
 
         self.storage.report_all(errors);
@@ -749,7 +710,7 @@ impl Analyzer<'_, '_> {
                                     for m in &class.body {
                                         match m {
                                             stc_ts_types::ClassMember::Method(ref m) => {
-                                                if !is_prop_name_eq(&m.key, &sm.key) {
+                                                if !&m.key.type_eq(&sm.key) {
                                                     continue;
                                                 }
 
@@ -829,24 +790,19 @@ impl Analyzer<'_, '_> {
                                 RExpr::Ident(..) => false,
                                 _ => true,
                             };
-                            let super_ty = expr.validate_with_args(
-                                child,
-                                (TypeOfMode::RValue, super_type_params.as_ref(), None),
-                            )?;
+                            let super_ty =
+                                expr.validate_with_args(child, (TypeOfMode::RValue, super_type_params.as_ref(), None))?;
 
                             match super_ty.normalize() {
                                 // We should handle mixin
                                 Type::Intersection(i) if need_base_class => {
                                     let mut has_class_in_super = false;
-                                    let class_name =
-                                        name.clone().unwrap_or_else(|| Id::word("__class".into()));
-                                    let new_ty: RIdent =
-                                        private_ident!(format!("{}_base", class_name.as_str()))
-                                            .into_rnode(&mut NodeIdGenerator::invalid());
+                                    let class_name = name.clone().unwrap_or_else(|| Id::word("__class".into()));
+                                    let new_ty: RIdent = private_ident!(format!("{}_base", class_name.as_str()))
+                                        .into_rnode(&mut NodeIdGenerator::invalid());
 
                                     // We should add it at same level as class
-                                    types_to_register
-                                        .push((new_ty.clone().into(), super_ty.clone()));
+                                    types_to_register.push((new_ty.clone().into(), super_ty.clone()));
 
                                     let super_ty = box Type::Intersection(Intersection {
                                         types: i
@@ -863,9 +819,7 @@ impl Analyzer<'_, '_> {
                                                             .map(|id| {
                                                                 box Type::Query(QueryType {
                                                                     span: c.span,
-                                                                    expr: QueryExpr::TsEntityName(
-                                                                        id.clone().into(),
-                                                                    ),
+                                                                    expr: QueryExpr::TsEntityName(id.clone().into()),
                                                                 })
                                                             })
                                                             .expect("Super class should be named");
@@ -880,32 +834,31 @@ impl Analyzer<'_, '_> {
                                     });
 
                                     if has_class_in_super {
-                                        child.prepend_stmts.push(RStmt::Decl(RDecl::Var(
-                                            RVarDecl {
+                                        child.prepend_stmts.push(RStmt::Decl(RDecl::Var(RVarDecl {
+                                            node_id: NodeId::invalid(),
+                                            span: DUMMY_SP,
+                                            kind: VarDeclKind::Const,
+                                            declare: false,
+                                            decls: vec![RVarDeclarator {
                                                 node_id: NodeId::invalid(),
-                                                span: DUMMY_SP,
-                                                kind: VarDeclKind::Const,
-                                                declare: false,
-                                                decls: vec![RVarDeclarator {
+                                                span: i.span,
+                                                name: RPat::Ident(RIdent {
                                                     node_id: NodeId::invalid(),
-                                                    span: i.span,
-                                                    name: RPat::Ident(RIdent {
+                                                    type_ann: Some(RTsTypeAnn {
                                                         node_id: NodeId::invalid(),
-                                                        type_ann: Some(RTsTypeAnn {
-                                                            node_id: NodeId::invalid(),
-                                                            span: DUMMY_SP,
-                                                            type_ann: box super_ty.into(),
-                                                        }),
-                                                        ..new_ty.clone()
+                                                        span: DUMMY_SP,
+                                                        type_ann: box super_ty.into(),
                                                     }),
-                                                    init: None,
-                                                    definite: false,
-                                                }],
-                                            },
-                                        )));
+                                                    ..new_ty.clone()
+                                                }),
+                                                init: None,
+                                                definite: false,
+                                            }],
+                                        })));
                                     } else {
-                                        child.prepend_stmts.push(RStmt::Decl(RDecl::TsTypeAlias(
-                                            RTsTypeAliasDecl {
+                                        child
+                                            .prepend_stmts
+                                            .push(RStmt::Decl(RDecl::TsTypeAlias(RTsTypeAliasDecl {
                                                 node_id: NodeId::invalid(),
                                                 span: DUMMY_SP,
                                                 declare: false,
@@ -913,8 +866,7 @@ impl Analyzer<'_, '_> {
                                                 // TODO: Handle type parameters
                                                 type_params: None,
                                                 type_ann: box super_ty.into(),
-                                            },
-                                        )));
+                                            })));
                                     }
 
                                     if let Some(m) = &mut child.mutations {
@@ -947,9 +899,7 @@ impl Analyzer<'_, '_> {
 
                 child.check_ambient_methods(c, false)?;
 
-                child.scope.super_class = super_class
-                    .clone()
-                    .map(|ty| instantiate_class(child.ctx.module_id, ty));
+                child.scope.super_class = super_class.clone().map(|ty| instantiate_class(child.ctx.module_id, ty));
                 {
                     // Validate constructors
                     let mut constructor_spans = vec![];
@@ -962,9 +912,9 @@ impl Analyzer<'_, '_> {
                                 if cons.body.is_none() {
                                     for p in &cons.params {
                                         match *p {
-                                            RParamOrTsParamProp::TsParamProp(..) => child
-                                                .storage
-                                                .report(Error::TS2369 { span: p.span() }),
+                                            RParamOrTsParamProp::TsParamProp(..) => {
+                                                child.storage.report(Error::TS2369 { span: p.span() })
+                                            }
                                             _ => {}
                                         }
                                     }
@@ -991,10 +941,7 @@ impl Analyzer<'_, '_> {
                                             }
                                         }
 
-                                        None => {
-                                            constructor_required_param_count =
-                                                Some(required_param_count)
-                                        }
+                                        None => constructor_required_param_count = Some(required_param_count),
                                         _ => {}
                                     }
                                 }
@@ -1016,10 +963,7 @@ impl Analyzer<'_, '_> {
                                     Type::EnumVariant(e) => {
                                         //
                                         if let Some(m) = &mut child.mutations {
-                                            m.for_class_members
-                                                .entry(method.node_id)
-                                                .or_default()
-                                                .remove = true;
+                                            m.for_class_members.entry(method.node_id).or_default().remove = true;
                                         }
                                     }
                                     _ => {}
@@ -1040,12 +984,8 @@ impl Analyzer<'_, '_> {
                     // Handle static properties
                     for (index, member) in c.body.iter().enumerate() {
                         match member {
-                            RClassMember::ClassProp(RClassProp {
-                                is_static: true, ..
-                            })
-                            | RClassMember::PrivateProp(RPrivateProp {
-                                is_static: true, ..
-                            }) => {
+                            RClassMember::ClassProp(RClassProp { is_static: true, .. })
+                            | RClassMember::PrivateProp(RPrivateProp { is_static: true, .. }) => {
                                 let m = member.validate_with(child)?;
                                 if let Some(member) = m {
                                     let member = member.fold_with(&mut LitGeneralizer);
@@ -1057,15 +997,10 @@ impl Analyzer<'_, '_> {
                     }
 
                     // Handle ts parameter properties
-                    for (index, constructor) in
-                        c.body
-                            .iter()
-                            .enumerate()
-                            .filter_map(|(i, member)| match member {
-                                RClassMember::Constructor(c) => Some((i, c)),
-                                _ => None,
-                            })
-                    {
+                    for (index, constructor) in c.body.iter().enumerate().filter_map(|(i, member)| match member {
+                        RClassMember::Constructor(c) => Some((i, c)),
+                        _ => None,
+                    }) {
                         for param in &constructor.params {
                             match param {
                                 RParamOrTsParamProp::TsParamProp(p) => {
@@ -1081,30 +1016,27 @@ impl Analyzer<'_, '_> {
                                             })
                                             | RTsParamPropParam::Ident(key) => key.clone(),
                                             _ => unreachable!(
-                                                "TypeScript parameter property with pattern other \
-                                                 than an identifier"
+                                                "TypeScript parameter property with pattern other than an identifier"
                                             ),
                                         };
                                         key.type_ann = None;
                                         let key = box RExpr::Ident(key);
-                                        additional_members.push(RClassMember::ClassProp(
-                                            RClassProp {
-                                                node_id: NodeId::invalid(),
-                                                span: p.span,
-                                                key,
-                                                value: None,
-                                                is_static: false,
-                                                computed: false,
-                                                accessibility: Some(Accessibility::Private),
-                                                is_abstract: false,
-                                                is_optional,
-                                                readonly: p.readonly,
-                                                definite: false,
-                                                type_ann: None,
-                                                decorators: Default::default(),
-                                                declare: false,
-                                            },
-                                        ));
+                                        additional_members.push(RClassMember::ClassProp(RClassProp {
+                                            node_id: NodeId::invalid(),
+                                            span: p.span,
+                                            key,
+                                            value: None,
+                                            is_static: false,
+                                            computed: false,
+                                            accessibility: Some(Accessibility::Private),
+                                            is_abstract: false,
+                                            is_optional,
+                                            readonly: p.readonly,
+                                            definite: false,
+                                            type_ann: None,
+                                            decorators: Default::default(),
+                                            declare: false,
+                                        }));
                                     }
 
                                     let (i, ty) = match &p.param {
@@ -1120,31 +1052,20 @@ impl Analyzer<'_, '_> {
                                             right,
                                             ..
                                         }) => {
-                                            let mut ty =
-                                                type_ann.clone().or_else(|| i.type_ann.clone());
+                                            let mut ty = type_ann.clone().or_else(|| i.type_ann.clone());
                                             let mut ty = try_opt!(ty.validate_with(child));
                                             if ty.is_none() {
-                                                ty = Some(
-                                                    right
-                                                        .validate_with_default(child)?
-                                                        .generalize_lit(),
-                                                );
+                                                ty = Some(right.validate_with_default(child)?.generalize_lit());
                                             }
                                             (i, ty)
                                         }
                                         _ => unreachable!(),
                                     };
 
-                                    let key = box RExpr::Ident(RIdent {
-                                        optional: false,
-                                        ..i.clone()
-                                    });
-
                                     if let Some(ty) = &ty {
                                         if i.type_ann.is_none() {
                                             if let Some(m) = &mut child.mutations {
-                                                m.for_pats.entry(i.node_id).or_default().ty =
-                                                    Some(ty.clone());
+                                                m.for_pats.entry(i.node_id).or_default().ty = Some(ty.clone());
                                             }
                                         }
                                     }
@@ -1152,20 +1073,20 @@ impl Analyzer<'_, '_> {
 
                                     child.scope.this_class_members.push((
                                         index,
-                                        stc_ts_types::ClassMember::Property(
-                                            stc_ts_types::ClassProperty {
-                                                span: p.span,
-                                                key,
-                                                value: ty,
-                                                is_static: false,
-                                                computed: false,
-                                                accessibility: p.accessibility,
-                                                is_abstract: false,
-                                                is_optional: false,
-                                                readonly: p.readonly,
-                                                definite: false,
+                                        stc_ts_types::ClassMember::Property(stc_ts_types::ClassProperty {
+                                            span: p.span,
+                                            key: Key::Normal {
+                                                span: i.span,
+                                                sym: i.sym.clone(),
                                             },
-                                        ),
+                                            value: ty,
+                                            is_static: false,
+                                            accessibility: p.accessibility,
+                                            is_abstract: false,
+                                            is_optional: false,
+                                            readonly: p.readonly,
+                                            definite: false,
+                                        }),
                                     ));
                                 }
                                 RParamOrTsParamProp::Param(..) => {}
@@ -1176,12 +1097,8 @@ impl Analyzer<'_, '_> {
                     // Handle properties
                     for (index, member) in c.body.iter().enumerate() {
                         match member {
-                            RClassMember::ClassProp(RClassProp {
-                                is_static: false, ..
-                            })
-                            | RClassMember::PrivateProp(RPrivateProp {
-                                is_static: false, ..
-                            }) => {
+                            RClassMember::ClassProp(RClassProp { is_static: false, .. })
+                            | RClassMember::PrivateProp(RPrivateProp { is_static: false, .. }) => {
                                 //
                                 let class_member = member.validate_with(child)?;
                                 if let Some(member) = class_member {
@@ -1209,13 +1126,7 @@ impl Analyzer<'_, '_> {
                         .body
                         .iter()
                         .enumerate()
-                        .filter(|(index, _)| {
-                            child
-                                .scope
-                                .this_class_members
-                                .iter()
-                                .all(|(idx, _)| *idx != *index)
-                        })
+                        .filter(|(index, _)| child.scope.this_class_members.iter().all(|(idx, _)| *idx != *index))
                         .map(|v| v.0)
                         .collect::<Vec<_>>();
 
@@ -1267,14 +1178,11 @@ impl Analyzer<'_, '_> {
                                                 param.ty = new_ty.clone();
                                                 match orig {
                                                     RClassMember::Method(ref method) => {
-                                                        let node_id =
-                                                            method.function.params[0].pat.node_id();
+                                                        let node_id = method.function.params[0].pat.node_id();
                                                         if let Some(node_id) = node_id {
                                                             if let Some(m) = &mut child.mutations {
-                                                                m.for_pats
-                                                                    .entry(node_id)
-                                                                    .or_default()
-                                                                    .ty = Some(new_ty.clone())
+                                                                m.for_pats.entry(node_id).or_default().ty =
+                                                                    Some(new_ty.clone())
                                                             }
                                                         }
                                                     }
@@ -1321,7 +1229,7 @@ impl Analyzer<'_, '_> {
         )?;
 
         for (i, ty) in types_to_register {
-            self.register_type(i, ty)?;
+            self.register_type(i, ty);
         }
 
         Ok(c)
@@ -1346,7 +1254,7 @@ impl Analyzer<'_, '_> {
         let c = self
             .with_child(ScopeKind::Block, Default::default(), |analyzer| {
                 if let Some(ref i) = c.ident {
-                    analyzer.register_type(i.into(), ty.clone())?;
+                    analyzer.register_type(i.into(), ty.clone());
 
                     match analyzer.declare_var(
                         ty.span(),
@@ -1409,8 +1317,7 @@ impl Analyzer<'_, '_> {
         let old_this = self.scope.this.take();
         // self.scope.this = Some(ty.clone());
 
-        self.register_type(c.ident.clone().into(), ty.clone().into())
-            .report(&mut self.storage);
+        self.register_type(c.ident.clone().into(), ty.clone().into());
 
         match self.declare_var(
             ty.span(),

@@ -72,8 +72,7 @@ impl Analyzer<'_, '_> {
             + HasNodeId,
     {
         let (order, skip) = self.reorder_stmts(&stmts);
-        let mut type_decls =
-            FxHashMap::<Id, Vec<usize>>::with_capacity_and_hasher(order.len(), Default::default());
+        let mut type_decls = FxHashMap::<Id, Vec<usize>>::with_capacity_and_hasher(order.len(), Default::default());
 
         if self.scope.is_root() {
             // We should track type declarations.
@@ -235,10 +234,7 @@ impl Analyzer<'_, '_> {
                                 let ids: Vec<Id> = find_ids_in_pat(&var.name);
                                 for id in ids {
                                     declared_by
-                                        .entry(TypedId {
-                                            id,
-                                            kind: IdKind::VAR,
-                                        })
+                                        .entry(TypedId { id, kind: IdKind::VAR })
                                         .or_default()
                                         .push(idx);
                                 }
@@ -316,10 +312,7 @@ impl Analyzer<'_, '_> {
             let mut did_work = false;
             // Add nodes which does not have any dependencies.
             for i in 0..len {
-                if skip.contains(&i)
-                    || orders.contains(&i)
-                    || unresolved_circular_imports.contains(&i)
-                {
+                if skip.contains(&i) || orders.contains(&i) || unresolved_circular_imports.contains(&i) {
                     continue;
                 }
 

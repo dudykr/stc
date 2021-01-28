@@ -21,7 +21,6 @@ use stc_ts_ast_rnode::RBinExpr;
 use stc_ts_ast_rnode::RCondExpr;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RIfStmt;
-use stc_ts_ast_rnode::RMemberExpr;
 use stc_ts_ast_rnode::RObjectPatProp;
 use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RPatOrExpr;
@@ -246,14 +245,10 @@ impl Analyzer<'_, '_> {
         let false_facts = self.cur_facts.false_facts.take();
 
         let ends_with_ret = stmt.cons.ends_with_ret();
-        self.with_child(ScopeKind::Flow, true_facts, |child| {
-            stmt.cons.validate_with(child)
-        })?;
+        self.with_child(ScopeKind::Flow, true_facts, |child| stmt.cons.validate_with(child))?;
 
         if let Some(alt) = &stmt.alt {
-            self.with_child(ScopeKind::Flow, false_facts.clone(), |child| {
-                alt.validate_with(child)
-            })?;
+            self.with_child(ScopeKind::Flow, false_facts.clone(), |child| alt.validate_with(child))?;
         }
 
         if ends_with_ret {
@@ -269,19 +264,14 @@ impl Analyzer<'_, '_> {
     /// `SafeSubscriber` or downgrade the type, like converting `Subscriber` |
     /// `SafeSubscriber` into `SafeSubscriber`. This behavior is controlled by
     /// the mark applied while handling type facts related to call.
-    fn adjust_ternary_type(
-        &mut self,
-        span: Span,
-        mut types: Vec<Box<Type>>,
-    ) -> ValidationResult<Vec<Box<Type>>> {
+    fn adjust_ternary_type(&mut self, span: Span, mut types: Vec<Box<Type>>) -> ValidationResult<Vec<Box<Type>>> {
         types.iter_mut().for_each(|ty| {
             // Tuple -> Array
             match ty.normalize_mut() {
                 Type::Tuple(tuple) => {
                     let span = tuple.span;
 
-                    let mut elem_types: Vec<_> =
-                        tuple.elems.take().into_iter().map(|elem| elem.ty).collect();
+                    let mut elem_types: Vec<_> = tuple.elems.take().into_iter().map(|elem| elem.ty).collect();
                     elem_types.dedup_type();
                     let elem_type = Type::union(elem_types);
                     *ty = box Type::Array(Array { span, elem_type });
@@ -294,13 +284,7 @@ impl Analyzer<'_, '_> {
             .iter()
             .flat_map(|ty| ty.iter_union())
             .flat_map(|ty| ty.iter_union())
-            .any(|ty| {
-                self.env
-                    .shared()
-                    .marks()
-                    .prevent_converting_to_children
-                    .is_marked(&ty)
-            });
+            .any(|ty| self.env.shared().marks().prevent_converting_to_children.is_marked(&ty));
 
         if should_preserve {
             return self.remove_child_types(span, types);
@@ -309,11 +293,7 @@ impl Analyzer<'_, '_> {
         self.downcast_types(span, types)
     }
 
-    fn downcast_types(
-        &mut self,
-        span: Span,
-        types: Vec<Box<Type>>,
-    ) -> ValidationResult<Vec<Box<Type>>> {
+    fn downcast_types(&mut self, span: Span, types: Vec<Box<Type>>) -> ValidationResult<Vec<Box<Type>>> {
         fn need_work(ty: &Type) -> bool {
             match ty.normalize() {
                 Type::Lit(..)
@@ -356,11 +336,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Remove `SafeSubscriber` from `Subscriber` | `SafeSubscriber`.
-    fn remove_child_types(
-        &mut self,
-        span: Span,
-        types: Vec<Box<Type>>,
-    ) -> ValidationResult<Vec<Box<Type>>> {
+    fn remove_child_types(&mut self, span: Span, types: Vec<Box<Type>>) -> ValidationResult<Vec<Box<Type>>> {
         let mut new = vec![];
 
         'outer: for (ai, ty) in types
@@ -407,9 +383,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, stmt: &RSwitchStmt) -> ValidationResult<()> {
         self.record(stmt);
 
-        let discriminant_ty = self
-            .check_switch_discriminant(stmt)
-            .report(&mut self.storage);
+        let discriminant_ty = self.check_switch_discriminant(stmt).report(&mut self.storage);
 
         let mut false_facts = CondFacts::default();
         let mut true_facts = CondFacts::default();
@@ -425,11 +399,7 @@ impl Analyzer<'_, '_> {
                 break;
             }
 
-            let span = case
-                .test
-                .as_ref()
-                .map(|v| v.span())
-                .unwrap_or_else(|| stmt_span);
+            let span = case.test.as_ref().map(|v| v.span()).unwrap_or_else(|| stmt_span);
 
             let RSwitchCase { cons, .. } = case;
             let last = i == len - 1;
@@ -479,24 +449,33 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
-    pub(super) fn try_assign(&mut self, span: Span, lhs: &RPatOrExpr, ty: &Type) {
+    pub(super) fn try_assign(&mut self, span: Span, op: AssignOp, lhs: &RPatOrExpr, ty: &Type) {
         let res: Result<(), Error> = try {
             match *lhs {
                 RPatOrExpr::Expr(ref expr) | RPatOrExpr::Pat(box RPat::Expr(ref expr)) => {
                     let lhs_ty = expr.validate_with_args(self, (TypeOfMode::LValue, None, None))?;
                     let lhs_ty = self.expand(span, lhs_ty)?;
 
-                    self.assign(&lhs_ty, &ty, span)?;
-
-                    match **expr {
-                        // TODO: Validate
-                        RExpr::Member(RMemberExpr { .. }) => return,
-                        _ => unimplemented!("assign: {:?} = {:?}", expr, ty),
+                    if op == op!("=") {
+                        self.assign(&lhs_ty, &ty, span)?;
+                    } else {
+                        self.assign_with_op(span, op, &lhs_ty, &ty)?;
                     }
                 }
 
                 RPatOrExpr::Pat(ref pat) => {
-                    self.try_assign_pat(span, pat, ty)?;
+                    if op == op!("=") {
+                        self.try_assign_pat(span, pat, ty)?;
+                    } else {
+                        // TODO
+                        match &**pat {
+                            RPat::Ident(left) => {
+                                let lhs = self.type_of_var(left, TypeOfMode::LValue, None)?;
+                                self.assign_with_op(span, op, &lhs, &ty)?;
+                            }
+                            _ => Err(Error::InvalidOperatorForLhs { span, op })?,
+                        }
+                    }
                 }
             }
         };
@@ -529,8 +508,7 @@ impl Analyzer<'_, '_> {
                         let var_ty = ty;
 
                         if var_info.ty.is_none()
-                            || (!var_info.ty.as_ref().unwrap().is_any()
-                                && !var_info.ty.as_ref().unwrap().is_unknown())
+                            || (!var_info.ty.as_ref().unwrap().is_any() && !var_info.ty.as_ref().unwrap().is_unknown())
                         {
                             //                            var_info.ty =
                             // Some(var_ty);
@@ -538,13 +516,9 @@ impl Analyzer<'_, '_> {
                         return Ok(());
                     } else {
                         let var_info = if let Some(var_info) = self.scope.search_parent(&i.into()) {
-                            let ty = if var_info.ty.is_some()
-                                && var_info.ty.as_ref().unwrap().is_any()
-                            {
+                            let ty = if var_info.ty.is_some() && var_info.ty.as_ref().unwrap().is_any() {
                                 Some(Type::any(var_info.ty.as_ref().unwrap().span()))
-                            } else if var_info.ty.is_some()
-                                && var_info.ty.as_ref().unwrap().is_unknown()
-                            {
+                            } else if var_info.ty.is_some() && var_info.ty.as_ref().unwrap().is_unknown() {
                                 // Type narrowing
                                 Some(Box::new(ty.clone()))
                             } else {
@@ -571,9 +545,7 @@ impl Analyzer<'_, '_> {
                                 }
                             }
 
-                            return if self.ctx.allow_ref_declaring
-                                && self.scope.declaring.contains(&i.into())
-                            {
+                            return if self.ctx.allow_ref_declaring && self.scope.declaring.contains(&i.into()) {
                                 Ok(())
                             } else {
                                 // undefined symbol
@@ -587,12 +559,7 @@ impl Analyzer<'_, '_> {
                         // Variable is defined on parent scope.
                         //
                         // We copy varinfo with enhanced type.
-                        println!(
-                            "({}) vars.insert({}, {:?})",
-                            self.scope.depth(),
-                            i.sym,
-                            var_info
-                        );
+                        println!("({}) vars.insert({}, {:?})", self.scope.depth(), i.sym, var_info);
                         self.scope.insert_var(i.into(), var_info);
 
                         return Ok(());
@@ -615,11 +582,7 @@ impl Analyzer<'_, '_> {
                                 }
                             }
 
-                            _ => unimplemented!(
-                                "assignment with array pattern\nPat: {:?}\nType: {:?}",
-                                lhs,
-                                ty
-                            ),
+                            _ => unimplemented!("assignment with array pattern\nPat: {:?}\nType: {:?}", lhs, ty),
                         }
                     }
                 }
@@ -636,8 +599,7 @@ impl Analyzer<'_, '_> {
                                 RObjectPatProp::Assign(a) => {
                                     if a.key.type_ann.is_none() {
                                         if let Some(m) = &mut self.mutations {
-                                            m.for_pats.entry(a.key.node_id).or_default().ty =
-                                                Some(Type::any(span));
+                                            m.for_pats.entry(a.key.node_id).or_default().ty = Some(Type::any(span));
                                         }
                                     }
                                     continue;
@@ -645,8 +607,7 @@ impl Analyzer<'_, '_> {
                                 RObjectPatProp::Rest(r) => {
                                     if r.type_ann.is_none() {
                                         if let Some(m) = &mut self.mutations {
-                                            m.for_pats.entry(r.node_id).or_default().ty =
-                                                Some(Type::any(span));
+                                            m.for_pats.entry(r.node_id).or_default().ty = Some(Type::any(span));
                                         }
                                     }
                                     continue;
@@ -675,11 +636,7 @@ impl Analyzer<'_, '_> {
                                 }
                             }
                         }
-                        _ => unimplemented!(
-                            "assignment with object pattern\nPat: {:?}\nType: {:?}",
-                            lhs,
-                            ty
-                        ),
+                        _ => unimplemented!("assignment with object pattern\nPat: {:?}\nType: {:?}", lhs, ty),
                     }
                 }
 
@@ -689,11 +646,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        unimplemented!(
-            "assignment with complex pattern\nPat: {:?}\nType: {:?}",
-            lhs,
-            ty
-        )
+        unimplemented!("assignment with complex pattern\nPat: {:?}\nType: {:?}", lhs, ty)
     }
 
     pub(super) fn add_type_fact(&mut self, sym: &Id, ty: Box<Type>) {
@@ -712,12 +665,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(
-        &mut self,
-        e: &RCondExpr,
-        mode: TypeOfMode,
-        type_ann: Option<&Type>,
-    ) -> ValidationResult {
+    fn validate(&mut self, e: &RCondExpr, mode: TypeOfMode, type_ann: Option<&Type>) -> ValidationResult {
         self.record(e);
 
         let RCondExpr {

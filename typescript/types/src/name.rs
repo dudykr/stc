@@ -114,9 +114,7 @@ impl TryFrom<&'_ RExpr> for Name {
 impl From<&'_ RTsThisTypeOrIdent> for Name {
     fn from(ty: &RTsThisTypeOrIdent) -> Self {
         match *ty {
-            RTsThisTypeOrIdent::TsThisType(..) => {
-                Name::from(RIdent::new(js_word!("this"), DUMMY_SP))
-            }
+            RTsThisTypeOrIdent::TsThisType(..) => Name::from(RIdent::new(js_word!("this"), DUMMY_SP)),
             RTsThisTypeOrIdent::Ident(ref i) => Name::from(i),
         }
     }

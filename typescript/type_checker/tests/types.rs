@@ -71,12 +71,8 @@ fn is_ignored(path: &Path) -> bool {
             .collect()
     });
 
-    !PASS
-        .iter()
-        .any(|line| path.to_string_lossy().contains(line))
-        || IGNORED
-            .iter()
-            .any(|line| path.to_string_lossy().contains(line))
+    !PASS.iter().any(|line| path.to_string_lossy().contains(line))
+        || IGNORED.iter().any(|line| path.to_string_lossy().contains(line))
 }
 
 #[test]
@@ -293,9 +289,7 @@ fn do_test(path: &Path) -> Result<(), StdErr> {
         return Ok(());
     }
 
-    visualized
-        .compare_to_file(path.with_extension("stdout"))
-        .unwrap();
+    visualized.compare_to_file(path.with_extension("stdout")).unwrap();
 
     Ok(())
 }

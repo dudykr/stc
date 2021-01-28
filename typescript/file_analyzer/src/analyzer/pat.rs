@@ -90,6 +90,60 @@ impl Analyzer<'_, '_> {
             debug_assert_ne!(p.span(), DUMMY_SP, "A pattern should have a valid span");
         }
 
+        let ty = p
+            .node_id()
+            .map(|node_id| {
+                self.mutations
+                    .as_ref()
+                    .and_then(|m| m.for_pats.get(&node_id))
+                    .and_then(|v| v.ty.clone())
+            })
+            .flatten()
+            .map(Ok)
+            .or_else(|| {
+                match p.get_ty().or_else(|| match p {
+                    RPat::Assign(p) => p.left.get_ty(),
+                    _ => None,
+                }) {
+                    None => None,
+                    Some(ty) => Some(ty.validate_with(self)),
+                }
+            })
+            .map(|res| res.map(|ty| ty.cheap()))
+            .try_opt()?;
+
+        // Declaring names
+        let mut names = vec![];
+
+        match self.ctx.pat_mode {
+            PatMode::Decl => {
+                match p {
+                    RPat::Ident(RIdent {
+                        sym: js_word!("this"), ..
+                    }) => {
+                        assert!(ty.is_some(), "parameter named `this` should have type");
+                        self.scope.this = ty.clone();
+                    }
+                    _ => {}
+                }
+
+                let mut visitor = VarVisitor { names: &mut names };
+
+                p.visit_with(&mut visitor);
+
+                self.scope.declaring.extend(names.clone());
+
+                match self.declare_vars_with_ty(VarDeclKind::Let, p, ty.clone()) {
+                    Ok(()) => {}
+                    Err(err) => {
+                        self.storage.report(err);
+                    }
+                }
+            }
+
+            PatMode::Assign => {}
+        }
+
         // Mark pattern as optional if default value exists
         match p {
             RPat::Assign(assign_pat) => match &*assign_pat.left {
@@ -113,101 +167,58 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        if let RPat::Assign(assign_pat) = p {
-            // Handle default value
+        let res = (|| -> ValidationResult<()> {
+            if let RPat::Assign(assign_pat) = p {
+                // Handle default value
 
-            let default_value_ty = assign_pat.right.validate_with_default(self)?;
+                let default_value_ty = assign_pat.right.validate_with_default(self)?;
 
-            let ty = assign_pat
-                .left
-                .get_ty()
-                .map(|v| v.validate_with(self))
-                .unwrap_or_else(|| {
-                    let mut ty = default_value_ty.generalize_lit();
+                let ty = assign_pat
+                    .left
+                    .get_ty()
+                    .map(|v| v.validate_with(self))
+                    .unwrap_or_else(|| {
+                        let mut ty = default_value_ty.generalize_lit();
 
-                    match *ty {
-                        Type::Tuple(tuple) => {
-                            let mut types = tuple
-                                .elems
-                                .into_iter()
-                                .map(|element| element.ty)
-                                .collect::<Vec<_>>();
+                        match *ty {
+                            Type::Tuple(tuple) => {
+                                let mut types = tuple.elems.into_iter().map(|element| element.ty).collect::<Vec<_>>();
 
-                            types.dedup_type();
+                                types.dedup_type();
 
-                            ty = box Type::Array(Array {
-                                span: tuple.span,
-                                elem_type: Type::union(types),
-                            });
+                                ty = box Type::Array(Array {
+                                    span: tuple.span,
+                                    elem_type: Type::union(types),
+                                });
+                            }
+                            _ => {}
                         }
-                        _ => {}
+
+                        Ok(ty)
+                    })?;
+
+                // Remove default value.
+                if let Some(pat_node_id) = assign_pat.left.node_id() {
+                    if let Some(m) = &mut self.mutations {
+                        m.for_pats.entry(pat_node_id).or_default().ty = Some(ty)
                     }
-
-                    Ok(ty)
-                })?;
-
-            // Remove default value.
-            if let Some(pat_node_id) = assign_pat.left.node_id() {
-                if let Some(m) = &mut self.mutations {
-                    m.for_pats.entry(pat_node_id).or_default().ty = Some(ty)
                 }
             }
-        }
 
-        let ty = p
-            .node_id()
-            .map(|node_id| {
-                self.mutations
-                    .as_ref()
-                    .and_then(|m| m.for_pats.get(&node_id))
-                    .and_then(|v| v.ty.clone())
-            })
-            .flatten()
-            .map(Ok)
-            .or_else(|| {
-                match p.get_ty().or_else(|| match p {
-                    RPat::Assign(p) => p.left.get_ty(),
-                    _ => None,
-                }) {
-                    None => None,
-                    Some(ty) => Some(ty.validate_with(self)),
-                }
-            })
-            .try_opt()?;
+            Ok(())
+        })();
 
-        match self.ctx.pat_mode {
-            PatMode::Decl => {
-                match p {
-                    RPat::Ident(RIdent {
-                        sym: js_word!("this"),
-                        ..
-                    }) => {
-                        assert!(ty.is_some(), "parameter named `this` should have type");
-                        self.scope.this = ty.clone();
-                    }
-                    _ => {}
-                }
+        self.scope.remove_declaring(names);
 
-                let mut names = vec![];
+        res?;
 
-                let mut visitor = VarVisitor { names: &mut names };
-
-                p.visit_with(&mut visitor);
-
-                self.scope.declaring.extend(names.clone());
-
-                match self.declare_vars_with_ty(VarDeclKind::Let, p, ty.clone()) {
-                    Ok(()) => {}
-                    Err(err) => {
-                        self.storage.report(err);
-                    }
-                }
-
-                self.scope.remove_declaring(names);
-            }
-
-            PatMode::Assign => {}
-        }
+        let ty = match ty {
+            Some(v) => Some(v),
+            None => match p {
+                RPat::Assign(p) => Some(p.right.validate_with_default(self)?),
+                _ => None,
+            },
+        };
 
         let ty = ty.unwrap_or_else(|| {
             if self.ctx.in_argument {
@@ -234,6 +245,8 @@ impl Analyzer<'_, '_> {
                 RPat::Ident(i) => !i.optional,
                 RPat::Array(arr) => !arr.optional,
                 RPat::Object(obj) => !obj.optional,
+                RPat::Assign(..) => false,
+                RPat::Rest(..) => false,
                 _ => true,
             },
             ty,
@@ -302,16 +315,10 @@ impl Analyzer<'_, '_> {
                                     //
                                     for lp in &left.props {
                                         match lp {
-                                            RObjectPatProp::KeyValue(RKeyValuePatProp {
-                                                key: ref pk,
-                                                ..
-                                            }) => {
+                                            RObjectPatProp::KeyValue(RKeyValuePatProp { key: ref pk, .. }) => {
                                                 //
                                                 match **prop {
-                                                    RProp::KeyValue(RKeyValueProp {
-                                                        ref key,
-                                                        ..
-                                                    }) => {
+                                                    RProp::KeyValue(RKeyValueProp { ref key, .. }) => {
                                                         if pk.type_eq(key) {
                                                             continue 'l;
                                                         }

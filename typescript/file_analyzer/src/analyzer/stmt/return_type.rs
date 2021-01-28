@@ -1,3 +1,4 @@
+use crate::analyzer::util::ResultExt;
 use crate::util::type_ext::TypeVecExt;
 use crate::{
     analyzer::{Analyzer, Ctx},
@@ -11,7 +12,6 @@ use rnode::FoldWith;
 use rnode::NodeId;
 use rnode::Visit;
 use stc_ts_ast_rnode::RBreakStmt;
-use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RReturnStmt;
 use stc_ts_ast_rnode::RStmt;
@@ -23,10 +23,10 @@ use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_ast_rnode::RYieldExpr;
 use stc_ts_errors::Error;
+use stc_ts_types::Key;
 use stc_ts_types::ModuleId;
 use stc_ts_types::{
-    IndexedAccessType, MethodSignature, Operator, PropertySignature, Ref, TypeElement,
-    TypeParamInstantiation,
+    IndexedAccessType, MethodSignature, Operator, PropertySignature, Ref, TypeElement, TypeParamInstantiation,
 };
 use std::{mem::take, ops::AddAssign};
 use swc_common::TypeEq;
@@ -66,6 +66,7 @@ impl Analyzer<'_, '_> {
         stmts: &Vec<RStmt>,
     ) -> Result<Option<Box<Type>>, Error> {
         slog::debug!(self.logger, "visit_stmts_for_return()");
+        debug_assert!(!self.is_builtin, "builtin: visit_stmts_for_return should not be called");
 
         // let mut old_ret_tys = self.scope.return_types.take();
 
@@ -96,6 +97,7 @@ impl Analyzer<'_, '_> {
                     .return_types
                     .into_iter()
                     .map(|ty| {
+                        debug_assert_ne!(ty.span(), DUMMY_SP);
                         let ctx = Ctx {
                             preserve_ref: true,
                             ignore_expand_prevention_for_top: false,
@@ -104,13 +106,17 @@ impl Analyzer<'_, '_> {
                         };
                         self.with_ctx(ctx).expand_fully(ty.span(), ty, true)
                     })
-                    .collect::<Result<_, _>>()?;
+                    .collect::<Result<_, _>>()
+                    .report(&mut self.storage)
+                    .unwrap_or_default();
 
                 values.yield_types = values
                     .yield_types
                     .into_iter()
                     .map(|ty| self.expand_fully(ty.span(), ty, true))
-                    .collect::<Result<_, _>>()?;
+                    .collect::<Result<_, _>>()
+                    .report(&mut self.storage)
+                    .unwrap_or_default();
             }
         }
 
@@ -209,6 +215,9 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RReturnStmt) {
+        debug_assert!(!self.is_builtin, "builtin: return statement is not supported");
+        debug_assert_ne!(node.span, DUMMY_SP, "return statement should have valid span");
+
         let ty = if let Some(res) = node.arg.validate_with_default(self) {
             res?
         } else {
@@ -217,6 +226,7 @@ impl Analyzer<'_, '_> {
                 kind: TsKeywordTypeKind::TsVoidKeyword,
             })
         };
+        debug_assert_ne!(ty.span(), DUMMY_SP, "{:?}", ty);
 
         self.scope.return_values.return_types.push(ty);
 
@@ -326,7 +336,7 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                                         unimplemented!("Constructor signature in S[keyof S]")
                                     }
                                     TypeElement::Property(p) => {
-                                        if p.computed {
+                                        if p.key.is_computed() {
                                             unimplemented!("Computed key mixed with S[keyof S]")
                                         }
 
@@ -375,35 +385,26 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                                         unimplemented!("Index signature in T[keyof S]")
                                     }
 
-                                    TypeElement::Property(PropertySignature {
-                                        key,
-                                        computed,
-                                        ..
-                                    })
-                                    | TypeElement::Method(MethodSignature {
-                                        key, computed, ..
-                                    }) => {
-                                        if computed {
+                                    TypeElement::Property(PropertySignature { key, .. })
+                                    | TypeElement::Method(MethodSignature { key, .. }) => {
+                                        if key.is_computed() {
                                             unimplemented!("Computed key mixed with T[keyof S]");
                                         }
 
-                                        match &*key {
-                                            RExpr::Ident(i) => {
+                                        match key {
+                                            Key::Normal { span: i_span, sym: key } => {
                                                 let ty = box Type::Lit(RTsLitType {
                                                     node_id: NodeId::invalid(),
-                                                    span: i.span,
+                                                    span: i_span,
                                                     lit: RTsLit::Str(RStr {
-                                                        span: i.span,
-                                                        value: i.sym.clone(),
+                                                        span: i_span,
+                                                        value: key.clone(),
                                                         has_escape: false,
                                                         kind: Default::default(),
                                                     }),
                                                 });
 
-                                                if types
-                                                    .iter()
-                                                    .all(|previous| !previous.type_eq(&ty))
-                                                {
+                                                if types.iter().all(|previous| !previous.type_eq(&ty)) {
                                                     types.push(ty);
                                                 }
                                             }

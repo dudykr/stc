@@ -145,9 +145,7 @@ impl PatExt for RPat {
             | RPat::Assign(RAssignPat { ref type_ann, .. })
             | RPat::Ident(RIdent { ref type_ann, .. })
             | RPat::Object(RObjectPat { ref type_ann, .. })
-            | RPat::Rest(RRestPat { ref type_ann, .. }) => {
-                type_ann.as_ref().map(|ty| &*ty.type_ann)
-            }
+            | RPat::Rest(RRestPat { ref type_ann, .. }) => type_ann.as_ref().map(|ty| &*ty.type_ann),
 
             RPat::Invalid(..) | RPat::Expr(box RExpr::Invalid(..)) => {
                 //Some(RTsType::TsKeywordType(RTsKeywordType {
@@ -163,21 +161,11 @@ impl PatExt for RPat {
 
     fn get_mut_ty(&mut self) -> Option<&mut RTsType> {
         match *self {
-            RPat::Array(RArrayPat {
-                ref mut type_ann, ..
-            })
-            | RPat::Assign(RAssignPat {
-                ref mut type_ann, ..
-            })
-            | RPat::Ident(RIdent {
-                ref mut type_ann, ..
-            })
-            | RPat::Object(RObjectPat {
-                ref mut type_ann, ..
-            })
-            | RPat::Rest(RRestPat {
-                ref mut type_ann, ..
-            }) => type_ann.as_mut().map(|ty| &mut *ty.type_ann),
+            RPat::Array(RArrayPat { ref mut type_ann, .. })
+            | RPat::Assign(RAssignPat { ref mut type_ann, .. })
+            | RPat::Ident(RIdent { ref mut type_ann, .. })
+            | RPat::Object(RObjectPat { ref mut type_ann, .. })
+            | RPat::Rest(RRestPat { ref mut type_ann, .. }) => type_ann.as_mut().map(|ty| &mut *ty.type_ann),
 
             RPat::Invalid(..) | RPat::Expr(box RExpr::Invalid(..)) => None,
 
@@ -187,21 +175,11 @@ impl PatExt for RPat {
 
     fn set_ty(&mut self, ty: Option<Box<RTsType>>) {
         match *self {
-            RPat::Array(RArrayPat {
-                ref mut type_ann, ..
-            })
-            | RPat::Assign(RAssignPat {
-                ref mut type_ann, ..
-            })
-            | RPat::Ident(RIdent {
-                ref mut type_ann, ..
-            })
-            | RPat::Object(RObjectPat {
-                ref mut type_ann, ..
-            })
-            | RPat::Rest(RRestPat {
-                ref mut type_ann, ..
-            }) => {
+            RPat::Array(RArrayPat { ref mut type_ann, .. })
+            | RPat::Assign(RAssignPat { ref mut type_ann, .. })
+            | RPat::Ident(RIdent { ref mut type_ann, .. })
+            | RPat::Object(RObjectPat { ref mut type_ann, .. })
+            | RPat::Rest(RRestPat { ref mut type_ann, .. }) => {
                 *type_ann = ty.map(|type_ann| RTsTypeAnn {
                     node_id: NodeId::invalid(),
                     span: type_ann.span(),

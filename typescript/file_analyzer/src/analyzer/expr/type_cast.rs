@@ -1,15 +1,17 @@
 use super::{super::Analyzer, TypeOfMode};
-use crate::{
-    analyzer::util::instantiate_class, ty::Type, validator, validator::ValidateWith,
-    ValidationResult,
-};
+use crate::analyzer::util::ResultExt;
+use crate::{analyzer::util::instantiate_class, ty::Type, validator, validator::ValidateWith, ValidationResult};
 use stc_ts_ast_rnode::RTsAsExpr;
+use stc_ts_ast_rnode::RTsKeywordType;
+use stc_ts_ast_rnode::RTsLit;
+use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_ast_rnode::RTsType;
 use stc_ts_ast_rnode::RTsTypeAssertion;
 use stc_ts_errors::Error;
 use stc_ts_types::TypeParamInstantiation;
 use swc_common::TypeEq;
 use swc_common::{Span, Spanned};
+use swc_ecma_ast::TsKeywordTypeKind;
 
 #[validator]
 impl Analyzer<'_, '_> {
@@ -21,9 +23,7 @@ impl Analyzer<'_, '_> {
         type_ann: Option<&Type>,
     ) -> ValidationResult {
         // We don't apply type annotation because it can corrupt type checking.
-        let orig_ty = e
-            .expr
-            .validate_with_args(self, (mode, type_args, type_ann))?;
+        let orig_ty = e.expr.validate_with_args(self, (mode, type_args, type_ann))?;
 
         self.validate_type_cast(e.span, orig_ty, &e.type_ann)
     }
@@ -38,10 +38,12 @@ impl Analyzer<'_, '_> {
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
     ) -> ValidationResult {
+        if e.node_id.is_invalid() {
+            return e.type_ann.validate_with(self);
+        }
+
         // We don't apply type annotation because it can corrupt type checking.
-        let orig_ty = e
-            .expr
-            .validate_with_args(self, (mode, type_args, type_ann))?;
+        let orig_ty = e.expr.validate_with_args(self, (mode, type_args, type_ann))?;
 
         self.validate_type_cast(e.span, orig_ty, &e.type_ann)
     }
@@ -61,12 +63,7 @@ impl Analyzer<'_, '_> {
     /// ```
     ///
     /// results in error.
-    fn validate_type_cast(
-        &mut self,
-        span: Span,
-        orig_ty: Box<Type>,
-        to: &RTsType,
-    ) -> ValidationResult {
+    fn validate_type_cast(&mut self, span: Span, orig_ty: Box<Type>, to: &RTsType) -> ValidationResult {
         let orig_ty = self.expand_fully(span, orig_ty, true)?;
 
         let casted_ty = to.validate_with(self)?;
@@ -76,20 +73,16 @@ impl Analyzer<'_, '_> {
 
         self.prevent_expansion(&mut casted_ty);
 
-        self.validate_type_cast_inner(span, &orig_ty, &casted_ty)?;
+        self.validate_type_cast_inner(span, &orig_ty, &casted_ty)
+            .report(&mut self.storage);
 
         Ok(casted_ty)
     }
 
-    fn validate_type_cast_inner(
-        &self,
-        span: Span,
-        orig_ty: &Type,
-        casted_ty: &Type,
-    ) -> ValidationResult<()> {
-        match *orig_ty.normalize() {
+    fn validate_type_cast_inner(&mut self, span: Span, orig: &Type, casted: &Type) -> ValidationResult<()> {
+        match orig {
             Type::Union(ref rt) => {
-                let castable = rt.types.iter().any(|v| casted_ty.type_eq(v));
+                let castable = rt.types.iter().any(|v| casted.type_eq(v));
 
                 if castable {
                     return Ok(());
@@ -99,10 +92,10 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        match *casted_ty.normalize() {
+        match casted {
             Type::Tuple(ref lt) => {
                 //
-                match *orig_ty.normalize() {
+                match *orig.normalize() {
                     Type::Tuple(ref rt) => {
                         //
                         if lt.elems.len() != rt.elems.len() {
@@ -122,11 +115,7 @@ impl Analyzer<'_, '_> {
                             // }
                             let right_element = &rt.elems[i];
 
-                            let res = self.validate_type_cast_inner(
-                                span,
-                                &right_element.ty,
-                                &left_element.ty,
-                            );
+                            let res = self.validate_type_cast_inner(span, &right_element.ty, &left_element.ty);
 
                             if res.is_err() {
                                 all_castable = false;
@@ -145,7 +134,7 @@ impl Analyzer<'_, '_> {
 
             Type::Array(ref lt) => {
                 //
-                match orig_ty {
+                match orig {
                     Type::Tuple(ref rt) => {
                         if rt.elems[0].ty.type_eq(&lt.elem_type) {
                             return Ok(());
@@ -163,17 +152,95 @@ impl Analyzer<'_, '_> {
 
         // self.assign(&casted_ty, &orig_ty, span)?;
 
-        match casted_ty {
+        match casted {
             Type::Tuple(ref rt) => {
                 //
-                match orig_ty {
+                match orig {
                     Type::Tuple(ref lt) => {}
                     _ => {}
+                }
+            }
+
+            _ => {}
+        }
+
+        if self.has_overlap(&orig, &casted)? {
+            return Ok(());
+        }
+
+        Err(Error::NonOverlappingTypeCast { span })
+    }
+
+    pub(crate) fn has_overlap(&mut self, l: &Type, r: &Type) -> ValidationResult<bool> {
+        let l = l.normalize();
+        let r = r.normalize();
+
+        if l.type_eq(r) {
+            return Ok(true);
+        }
+
+        Ok(self.check_for_overlap(l, r)? || self.check_for_overlap(r, l)?)
+    }
+
+    fn check_for_overlap(&mut self, l: &Type, r: &Type) -> ValidationResult<bool> {
+        // Overlaps with all types.
+        if l.is_any() || l.is_kwd(TsKeywordTypeKind::TsNullKeyword) || l.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
+            return Ok(true);
+        }
+
+        match l {
+            Type::Union(l) => {
+                for l in &l.types {
+                    if self.has_overlap(l, r)? {
+                        return Ok(true);
+                    }
                 }
             }
             _ => {}
         }
 
-        Ok(())
+        match (l, r) {
+            (
+                Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsNumberKeyword,
+                    ..
+                }),
+                Type::Lit(RTsLitType {
+                    lit: RTsLit::Number(..),
+                    ..
+                }),
+            ) => return Ok(true),
+            (
+                Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsStringKeyword,
+                    ..
+                }),
+                Type::Lit(RTsLitType {
+                    lit: RTsLit::Str(..), ..
+                }),
+            ) => return Ok(true),
+            (
+                Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsBooleanKeyword,
+                    ..
+                }),
+                Type::Lit(RTsLitType {
+                    lit: RTsLit::Bool(..), ..
+                }),
+            ) => return Ok(true),
+            (
+                Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsBigIntKeyword,
+                    ..
+                }),
+                Type::Lit(RTsLitType {
+                    lit: RTsLit::BigInt(..),
+                    ..
+                }),
+            ) => return Ok(true),
+            _ => {}
+        }
+
+        Ok(false)
     }
 }

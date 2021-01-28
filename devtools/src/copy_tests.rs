@@ -46,8 +46,7 @@ pub struct CopyTests {
 impl CopyTests {
     fn should_include_cheap(&self, path: &Path) -> Result<bool, Error> {
         let cm = Arc::new(SourceMap::default());
-        let _handler =
-            Handler::with_tty_emitter(ColorConfig::Always, true, false, Some(cm.clone()));
+        let _handler = Handler::with_tty_emitter(ColorConfig::Always, true, false, Some(cm.clone()));
 
         let fm = cm.load_file(path)?;
 
@@ -66,9 +65,7 @@ impl CopyTests {
         );
         let mut parser = Parser::new_from(lexer);
         let program = catch_unwind(AssertUnwindSafe(|| {
-            parser
-                .parse_program()
-                .map_err(|_| Error::msg("failed to parse"))
+            parser.parse_program().map_err(|_| Error::msg("failed to parse"))
         }))
         .map_err(|_| Error::msg("panic while parsing"))?;
 
@@ -108,10 +105,7 @@ impl CopyTests {
                 continue;
             }
 
-            if !self
-                .should_include_cheap(entry.path())
-                .unwrap_or_else(|_| false)
-            {
+            if !self.should_include_cheap(entry.path()).unwrap_or_else(|_| false) {
                 continue;
             }
 

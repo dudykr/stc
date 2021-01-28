@@ -7,15 +7,16 @@ use dashmap::DashMap;
 use derivative::Derivative;
 use fxhash::FxHashMap;
 use once_cell::sync::Lazy;
+use once_cell::sync::OnceCell;
 use rnode::NodeIdGenerator;
 use rnode::RNode;
 use rnode::VisitMutWith;
+use rnode::VisitWith;
 use slog::Logger;
 use stc_ts_ast_rnode::RDecl;
-use stc_ts_ast_rnode::RFnDecl;
+use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RModule;
 use stc_ts_ast_rnode::RModuleItem;
-use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RStmt;
 use stc_ts_ast_rnode::RTsModuleName;
 use stc_ts_ast_rnode::RVarDecl;
@@ -23,6 +24,7 @@ use stc_ts_builtin_types::Lib;
 use stc_ts_errors::Error;
 use stc_ts_storage::Builtin;
 use stc_ts_types::{Id, ModuleTypeData, Type};
+use std::time::Instant;
 use std::{collections::hash_map::Entry, sync::Arc};
 use swc_atoms::JsWord;
 use swc_common::Spanned;
@@ -68,175 +70,159 @@ impl BuiltIn {
     {
         slog::info!(env.logger, "Merging builtins");
 
+        let start = Instant::now();
+
         let mut result = Self::default();
         let mut storage = Builtin::default();
-        let mut analyzer = Analyzer::for_builtin(env.clone(), &mut storage);
+        {
+            let mut analyzer = Analyzer::for_builtin(env.clone(), &mut storage);
 
-        for mut item in items {
-            match item {
-                RModuleItem::ModuleDecl(ref md) => unreachable!("ModuleDecl: {:#?}", md),
-                RModuleItem::Stmt(ref mut stmt) => match *stmt {
-                    RStmt::Decl(RDecl::Var(RVarDecl { ref decls, .. })) => {
-                        assert_eq!(decls.len(), 1);
-                        let decl = decls.iter().next().unwrap();
-                        let name = match decl.name {
-                            RPat::Ident(ref i) => i,
-                            _ => unreachable!(),
-                        };
-                        result.vars.insert(
-                            name.sym.clone(),
-                            name.type_ann
-                                .clone()
-                                .validate_with(&mut analyzer)
-                                .map(|res| {
-                                    res.expect("builtin: failed to parse type of a variable")
-                                })
-                                .expect("builtin: all variables should have a type"),
-                        );
-                    }
-
-                    RStmt::Decl(RDecl::Fn(RFnDecl {
-                        ref ident,
-                        ref function,
-                        ..
-                    })) => {
-                        result.vars.insert(
-                            ident.sym.clone(),
-                            box function
-                                .clone()
-                                .validate_with(&mut analyzer)
-                                .expect("builtin: failed to parse function")
-                                .into(),
-                        );
-                    }
-
-                    RStmt::Decl(RDecl::Class(ref c)) => {
-                        debug_assert_eq!(result.types.get(&c.ident.sym.clone()), None);
-
-                        // builtin libraries does not contain a class which extends
-                        // other class.
-                        debug_assert_eq!(c.class.super_class, None);
-                        debug_assert_eq!(c.class.implements, vec![]);
-                        let ty = analyzer
-                            .with_child(
-                                ScopeKind::Flow,
-                                Default::default(),
-                                |analyzer: &mut Analyzer| {
-                                    Ok(Type::Class(stc_ts_types::Class {
-                                        span: c.class.span,
-                                        name: Some(c.ident.clone().into()),
-                                        is_abstract: c.class.is_abstract,
-                                        body: c
-                                            .class
-                                            .body
-                                            .clone()
-                                            .validate_with(analyzer)
-                                            .unwrap()
-                                            .into_iter()
-                                            .filter_map(|v| v)
-                                            .collect(),
-                                        super_class: None,
-                                        // implements: vec![],
-                                        type_params: c
-                                            .class
-                                            .type_params
-                                            .clone()
-                                            .validate_with(analyzer)
-                                            .map(|opt| {
-                                                opt.expect(
-                                                    "builtin: failed to parse type parmas of a \
-                                                     class",
-                                                )
-                                            }),
-                                    }))
-                                },
-                            )
-                            .unwrap();
-
-                        result.types.insert(c.ident.sym.clone(), box ty);
-                    }
-
-                    RStmt::Decl(RDecl::TsModule(ref mut m)) => {
-                        let id = match m.id {
-                            RTsModuleName::Ident(ref i) => i.sym.clone(),
-                            _ => unreachable!(),
-                        };
-
-                        let mut data = Builtin::default();
-                        {
-                            let mut analyzer = Analyzer::for_builtin(env.clone(), &mut data);
-
-                            m.body.visit_mut_with(&mut analyzer);
-                        }
-
-                        match result.types.entry(id) {
-                            Entry::Occupied(mut e) => match &mut **e.get_mut() {
-                                Type::Module(module) => {
-                                    //
-                                    module.exports.types.extend(data.types);
-                                    module.exports.vars.extend(data.vars);
-                                }
-
-                                ref e => unimplemented!("Merging module with {:?}", e),
-                            },
-                            Entry::Vacant(e) => {
-                                e.insert(
-                                    box stc_ts_types::Module {
-                                        span: DUMMY_SP,
-                                        exports: ModuleTypeData {
-                                            private_vars: Default::default(),
-                                            vars: data.vars,
-                                            private_types: Default::default(),
-                                            types: data.types,
-                                        },
-                                    }
-                                    .into(),
-                                );
+            for mut item in items {
+                match item {
+                    RModuleItem::ModuleDecl(ref md) => unreachable!("ModuleDecl: {:#?}", md),
+                    RModuleItem::Stmt(ref mut stmt) => {
+                        match *stmt {
+                            RStmt::Decl(RDecl::Var(RVarDecl { ref decls, .. })) => {
+                                assert_eq!(decls.len(), 1);
+                                stmt.visit_with(&mut analyzer);
                             }
-                        }
-                    }
 
-                    RStmt::Decl(RDecl::TsTypeAlias(ref a)) => {
-                        debug_assert_eq!(result.types.get(&a.id.sym.clone()), None);
+                            RStmt::Decl(RDecl::Fn(..)) => {
+                                stmt.visit_with(&mut analyzer);
+                            }
 
-                        let ty = a
-                            .clone()
-                            .validate_with(&mut analyzer)
-                            .map(Type::from)
-                            .expect("builtin: failed to process type alias");
+                            RStmt::Decl(RDecl::Class(ref c)) => {
+                                debug_assert_eq!(result.types.get(&c.ident.sym.clone()), None);
 
-                        result.types.insert(a.id.sym.clone(), box ty);
-                    }
+                                // builtin libraries does not contain a class which extends
+                                // other class.
+                                debug_assert_eq!(c.class.super_class, None);
+                                debug_assert_eq!(c.class.implements, vec![]);
+                                let ty = analyzer
+                                    .with_child(ScopeKind::Flow, Default::default(), |analyzer: &mut Analyzer| {
+                                        Ok(Type::Class(stc_ts_types::Class {
+                                            span: c.class.span,
+                                            name: Some(c.ident.clone().into()),
+                                            is_abstract: c.class.is_abstract,
+                                            body: c
+                                                .class
+                                                .body
+                                                .clone()
+                                                .validate_with(analyzer)
+                                                .unwrap()
+                                                .into_iter()
+                                                .filter_map(|v| v)
+                                                .collect(),
+                                            super_class: None,
+                                            // implements: vec![],
+                                            type_params: c.class.type_params.clone().validate_with(analyzer).map(
+                                                |opt| opt.expect("builtin: failed to parse type parmas of a class"),
+                                            ),
+                                        }))
+                                    })
+                                    .unwrap();
 
-                    // Merge interface
-                    RStmt::Decl(RDecl::TsInterface(ref i)) => {
-                        let body = i
-                            .clone()
-                            .validate_with(&mut analyzer)
-                            .expect("builtin: failed to parse interface body");
+                                result.types.insert(c.ident.sym.clone(), box ty);
+                            }
 
-                        match result.types.entry(i.id.sym.clone()) {
-                            Entry::Occupied(mut e) => match &mut **e.get_mut() {
-                                Type::Interface(ref mut v) => {
-                                    v.body.extend(body.body);
+                            RStmt::Decl(RDecl::TsModule(ref mut m)) => {
+                                let id = match m.id {
+                                    RTsModuleName::Ident(ref i) => i.sym.clone(),
+                                    _ => unreachable!(),
+                                };
+
+                                let mut data = Builtin::default();
+                                {
+                                    let mut analyzer = Analyzer::for_builtin(env.clone(), &mut data);
+
+                                    m.body.visit_mut_with(&mut analyzer);
                                 }
-                                _ => unreachable!("cannot merge interface with other type"),
-                            },
-                            Entry::Vacant(e) => {
-                                let ty = box i
+
+                                match result.types.entry(id.clone()) {
+                                    Entry::Occupied(mut e) => match &mut **e.get_mut() {
+                                        Type::Module(module) => {
+                                            //
+                                            module.exports.types.extend(data.types);
+                                            module.exports.vars.extend(data.vars);
+                                        }
+
+                                        ref e => unimplemented!("Merging module with {:?}", e),
+                                    },
+                                    Entry::Vacant(e) => {
+                                        e.insert(
+                                            box stc_ts_types::Module {
+                                                span: DUMMY_SP,
+                                                name: RTsModuleName::Ident(RIdent::new(id.clone(), DUMMY_SP)),
+                                                exports: ModuleTypeData {
+                                                    private_vars: Default::default(),
+                                                    vars: data.vars,
+                                                    private_types: Default::default(),
+                                                    types: data.types,
+                                                },
+                                            }
+                                            .into(),
+                                        );
+                                    }
+                                }
+                            }
+
+                            RStmt::Decl(RDecl::TsTypeAlias(ref a)) => {
+                                a.visit_with(&mut analyzer);
+
+                                debug_assert_eq!(result.types.get(&a.id.sym.clone()), None);
+
+                                let ty = a
                                     .clone()
                                     .validate_with(&mut analyzer)
-                                    .expect("builtin: failed to parse interface")
-                                    .into();
+                                    .map(Type::from)
+                                    .expect("builtin: failed to process type alias");
 
-                                e.insert(ty);
+                                result.types.insert(a.id.sym.clone(), box ty);
                             }
+
+                            // Merge interface
+                            RStmt::Decl(RDecl::TsInterface(ref i)) => {
+                                if i.id.sym == *"Generator" {
+                                    debug_assert!(
+                                        i.type_params.is_some(),
+                                        "builtin: Generator should have type parameter"
+                                    )
+                                }
+                                i.visit_with(&mut analyzer);
+                                let body = i
+                                    .clone()
+                                    .validate_with(&mut analyzer)
+                                    .expect("builtin: failed to parse interface body");
+
+                                match result.types.entry(i.id.sym.clone()) {
+                                    Entry::Occupied(mut e) => match &mut **e.get_mut() {
+                                        Type::Interface(ref mut v) => {
+                                            v.body.extend(body.body);
+                                        }
+                                        _ => unreachable!("cannot merge interface with other type"),
+                                    },
+                                    Entry::Vacant(e) => {
+                                        let ty = box i
+                                            .clone()
+                                            .validate_with(&mut analyzer)
+                                            .expect("builtin: failed to parse interface")
+                                            .into();
+
+                                        e.insert(ty);
+                                    }
+                                }
+                            }
+
+                            _ => panic!("{:#?}", item),
                         }
                     }
-
-                    _ => panic!("{:#?}", item),
-                },
+                }
             }
+        }
+
+        for (id, ty) in storage.vars {
+            //
+            result.vars.insert(id, ty).unwrap_none();
         }
 
         for (_, ty) in result.types.iter_mut() {
@@ -246,6 +232,9 @@ impl BuiltIn {
         for (_, ty) in result.vars.iter_mut() {
             ty.make_cheap();
         }
+
+        let dur = Instant::now() - start;
+        eprintln!("[builtin] Took {:?}", dur);
 
         result
     }
@@ -276,24 +265,21 @@ impl Env {
 
     pub fn simple(rule: Rule, target: JscTarget, libs: &[Lib]) -> Self {
         static STABLE_ENV: Lazy<StableEnv> = Lazy::new(Default::default);
-        static CACHE: Lazy<DashMap<Vec<Lib>, Arc<BuiltIn>>> = Lazy::new(Default::default);
+        static CACHE: Lazy<DashMap<Vec<Lib>, OnceCell<Arc<BuiltIn>>>> = Lazy::new(Default::default);
 
         // TODO: Include `env` in cache
+        let mut libs = libs.to_vec();
+        libs.sort();
+        libs.dedup();
 
-        if let Some(v) = CACHE.get(libs) {
-            let builtin = (*v).clone();
-            return Self {
-                stable: STABLE_ENV.clone(),
-                rule,
-                target,
-                builtin,
-                global_types: Default::default(),
-                global_vars: Default::default(),
-            };
-        }
-        let builtin = BuiltIn::from_ts_libs(&STABLE_ENV, libs);
-        let builtin = Arc::new(builtin);
-        CACHE.insert(libs.to_vec(), builtin.clone());
+        CACHE.entry(libs.clone()).or_default();
+        let cell = CACHE.get(&libs).unwrap();
+
+        let builtin = cell.get_or_init(|| {
+            let builtin = BuiltIn::from_ts_libs(&STABLE_ENV, &libs);
+            Arc::new(builtin)
+        });
+        let builtin = (*builtin).clone();
 
         Self {
             stable: STABLE_ENV.clone(),
@@ -328,10 +314,8 @@ impl Env {
     pub(crate) fn declare_global_type(&mut self, name: JsWord, ty: Box<Type>) {
         match self.get_global_type(ty.span(), &name) {
             Ok(prev_ty) => {
-                self.global_types.insert(
-                    name,
-                    Type::intersection(DUMMY_SP, vec![prev_ty, ty]).cheap(),
-                );
+                self.global_types
+                    .insert(name, Type::intersection(DUMMY_SP, vec![prev_ty, ty]).cheap());
             }
             Err(_) => {
                 self.global_types.insert(name, ty);
@@ -388,11 +372,7 @@ pub struct StableEnv {
 impl StableEnv {
     pub fn new(logger: Logger, globals: Arc<Globals>) -> Self {
         let marks = Marks::new(&globals);
-        Self {
-            logger,
-            globals,
-            marks,
-        }
+        Self { logger, globals, marks }
     }
 
     /// Note: The return marks should not be modified as it will not has any

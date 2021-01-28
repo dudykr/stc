@@ -1,0 +1,73 @@
+warning: Type
+ --> $DIR/tests/visualize/exprs/object/normalization-1.ts:1:18
+  |
+1 | export let a1 = [{ a: 0 }, { a: 1, b: "x" }, { a: 2, b: "y", c: true }][0];
+  |                  ^^^^^^^^
+  |
+  = note: {
+              a: 0;
+          }
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/object/normalization-1.ts:1:28
+  |
+1 | export let a1 = [{ a: 0 }, { a: 1, b: "x" }, { a: 2, b: "y", c: true }][0];
+  |                            ^^^^^^^^^^^^^^^^
+  |
+  = note: {
+              a: 1;
+              b: "x";
+          }
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/object/normalization-1.ts:1:46
+  |
+1 | export let a1 = [{ a: 0 }, { a: 1, b: "x" }, { a: 2, b: "y", c: true }][0];
+  |                                              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: {
+              a: 2;
+              b: "y";
+              c: true;
+          }
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/object/normalization-1.ts:1:17
+  |
+1 | export let a1 = [{ a: 0 }, { a: 1, b: "x" }, { a: 2, b: "y", c: true }][0];
+  |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: ({
+              a: 0;
+              b?: undefined;
+              c?: undefined;
+          } | {
+              a: 1;
+              b: "x";
+              c?: undefined;
+          } | {
+              a: 2;
+              b: "y";
+              c: true;
+          })[]
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/object/normalization-1.ts:1:17
+  |
+1 | export let a1 = [{ a: 0 }, { a: 1, b: "x" }, { a: 2, b: "y", c: true }][0];
+  |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: {
+              a: number;
+              b?: undefined;
+              c?: undefined;
+          } | {
+              a: number;
+              b: string;
+              c?: undefined;
+          } | {
+              a: number;
+              b: string;
+              c: boolean;
+          }
+

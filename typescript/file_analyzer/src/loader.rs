@@ -33,11 +33,7 @@ pub trait Load: 'static + Send + Sync {
     ) -> Result<ModuleInfo, Error>;
 
     /// Note: This method is called in parallel.
-    fn load_non_circular_dep(
-        &self,
-        base: Arc<PathBuf>,
-        import: &DepInfo,
-    ) -> Result<ModuleInfo, Error>;
+    fn load_non_circular_dep(&self, base: Arc<PathBuf>, import: &DepInfo) -> Result<ModuleInfo, Error>;
 }
 
 impl<T> Load for Arc<T>
@@ -48,11 +44,7 @@ where
         (**self).is_in_same_circular_group(base, src)
     }
 
-    fn load_non_circular_dep(
-        &self,
-        base: Arc<PathBuf>,
-        import: &DepInfo,
-    ) -> Result<ModuleInfo, Error> {
+    fn load_non_circular_dep(&self, base: Arc<PathBuf>, import: &DepInfo) -> Result<ModuleInfo, Error> {
         (**self).load_non_circular_dep(base, import)
     }
 
@@ -87,11 +79,7 @@ where
         (**self).load_circular_dep(base, partial, import)
     }
 
-    fn load_non_circular_dep(
-        &self,
-        base: Arc<PathBuf>,
-        import: &DepInfo,
-    ) -> Result<ModuleInfo, Error> {
+    fn load_non_circular_dep(&self, base: Arc<PathBuf>, import: &DepInfo) -> Result<ModuleInfo, Error> {
         (**self).load_non_circular_dep(base, import)
     }
 

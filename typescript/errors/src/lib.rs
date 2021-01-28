@@ -2,19 +2,25 @@
 #![feature(box_syntax)]
 #![feature(specialization)]
 
-use stc_ts_ast_rnode::RExpr;
+pub use self::result_ext::DebugExt;
 use stc_ts_types::name::Name;
 use stc_ts_types::Id;
+use stc_ts_types::Key;
 use stc_ts_types::ModuleId;
 use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeParamInstantiation;
+use std::borrow::Cow;
+use std::fmt::Display;
 use std::{ops::RangeInclusive, path::PathBuf};
 use swc_atoms::JsWord;
+use swc_common::errors::DiagnosticId;
 use swc_common::{errors::Handler, Span, Spanned, DUMMY_SP};
+use swc_ecma_ast::AssignOp;
 use swc_ecma_ast::{UnaryOp, UpdateOp};
 
 pub mod debug;
+mod result_ext;
 
 impl Errors {
     /// This is used for debugging (by calling [pacic]).
@@ -34,6 +40,7 @@ impl Errors {
                 }
                 return;
             }
+            Error::DebugContext { .. } => return,
             _ => {}
         }
 
@@ -62,7 +69,7 @@ pub enum Error {
     NoSuchPropertyInClass {
         span: Span,
         class_name: Option<Id>,
-        prop: RExpr,
+        prop: Key,
     },
 
     TypeParameterCountMismatch {
@@ -156,6 +163,11 @@ pub enum Error {
         name: Id,
     },
 
+    TypeUsedAsVar {
+        span: Span,
+        name: Id,
+    },
+
     DuplicateName {
         name: Id,
         span: Span,
@@ -184,8 +196,7 @@ pub enum Error {
     NoSuchProperty {
         span: Span,
         obj: Option<Box<Type>>,
-        prop: Option<RExpr>,
-        prop_ty: Option<Box<Type>>,
+        prop: Option<Key>,
     },
 
     TooManyTupleElements {
@@ -203,7 +214,7 @@ pub enum Error {
     },
 
     /// TS2304
-    NameNotFound {
+    TypeNotFound {
         name: Name,
         ctxt: ModuleId,
         type_args: Option<TypeParamInstantiation>,
@@ -259,6 +270,10 @@ pub enum Error {
         left: Box<Type>,
         right: Box<Type>,
         cause: Vec<Error>,
+    },
+
+    InvalidAssignmentOfArray {
+        span: Span,
     },
 
     /// a or b or c
@@ -417,7 +432,7 @@ pub enum Error {
         span: Span,
     },
 
-    TS2391 {
+    FnImplMissingOrNotFollowedByDecl {
         span: Span,
     },
 
@@ -497,47 +512,175 @@ pub enum Error {
         span: Span,
     },
 
-    NonSymbolTypedFieldFromSymbol {
+    NonOverlappingTypeCast {
         span: Span,
+    },
+
+    InvalidOperatorForLhs {
+        span: Span,
+        op: AssignOp,
+    },
+
+    InvalidOpAssign {
+        span: Span,
+        op: AssignOp,
+        lhs: Type,
+        rhs: Type,
+    },
+
+    AssignOpCannotBeApplied {
+        span: Span,
+        op: AssignOp,
+    },
+
+    NonSymbolComputedPropInFormOfSymbol {
+        span: Span,
+    },
+
+    ArgCountMismatch {
+        span: Span,
+        min: usize,
+        max: Option<usize>,
+    },
+
+    InvalidDeleteOperand {
+        span: Span,
+    },
+
+    NoCallabelPropertyWithName {
+        span: Span,
+        key: Box<Key>,
+    },
+
+    NoSuchConstructor {
+        span: Span,
+        key: Box<Key>,
+    },
+
+    DebugContext {
+        span: Span,
+        context: String,
+        inner: Box<Error>,
     },
 }
 
 impl Error {
+    #[track_caller]
+    pub fn context(self, context: impl Display) -> Self {
+        if !cfg!(debug_assertions) {
+            return self;
+        }
+
+        match self {
+            Error::Errors { .. } | Error::DebugContext { .. } => {}
+            _ => {
+                if self.span().is_dummy() {
+                    panic!("Error with dummy span found(context: {}): {:#?}", context, self)
+                }
+            }
+        }
+
+        Error::DebugContext {
+            span: self.span(),
+            context: context.to_string(),
+            inner: box self,
+        }
+    }
+
+    /// TypeScript error code.
+    fn code(&self) -> usize {
+        match self {
+            Error::TS1016 { .. } => 1016,
+            Error::TS1063 { .. } => 1063,
+            Error::TS1094 { .. } => 1094,
+            Error::TS1095 { .. } => 1095,
+            Error::TS1168 { .. } => 1168,
+            Error::TS1169 { .. } => 1169,
+            Error::TS1183 { .. } => 1183,
+            Error::TS1318 { .. } => 1318,
+            Error::TS1319 { .. } => 1319,
+            Error::TS2309 { .. } => 2309,
+            Error::TS2347 { .. } => 2347,
+            Error::TS2360 { .. } => 2360,
+            Error::TS2361 { .. } => 2361,
+            Error::TS2362 { .. } => 2362,
+            Error::TS2363 { .. } => 2363,
+            Error::TS2365 { .. } => 2365,
+            Error::TS2370 { .. } => 2370,
+            Error::TS2394 { .. } => 2394,
+            Error::TS1166 { .. } => 1166,
+            Error::TS1345 { .. } => 1345,
+            Error::TS2353 { .. } => 2353,
+            Error::FnImplMissingOrNotFollowedByDecl { .. } => 2391,
+            Error::TS2464 { .. } => 2464,
+            Error::TS2356 { .. } => 2356,
+            Error::TS2369 { .. } => 2369,
+            Error::TS2389 { .. } => 2389,
+            Error::TS2447 { .. } => 2447,
+            Error::TS2515 { .. } => 2515,
+            Error::TS2531 { .. } => 2531,
+            Error::TS2532 { .. } => 2532,
+            Error::TS2567 { .. } => 2567,
+            Error::TS2585 { .. } => 2585,
+            Error::TS2704 { .. } => 2704,
+
+            Error::AssignFailed { .. }
+            | Error::InvalidAssignmentOfArray { .. }
+            | Error::UnknownPropertyInObjectLiteralAssignment { .. }
+            | Error::InvalidOpAssign { .. } => 2322,
+
+            Error::NonOverlappingTypeCast { .. } => 2352,
+
+            Error::NoSuchProperty { .. } => 2339,
+            Error::AssignOpCannotBeApplied { .. } => 2365,
+            Error::NonSymbolComputedPropInFormOfSymbol { .. } => 2471,
+            Error::TypeUsedAsVar { .. } => 2585,
+            Error::TypeNotFound { .. } => 2304,
+
+            Error::ArgCountMismatch { .. } => 2554,
+
+            Error::ReferencedInInit { .. } => 2372,
+
+            Error::InvalidDeleteOperand { .. } => 2703,
+            Error::NoSuchVar { .. } => 2304,
+
+            Error::DebugContext { inner, .. } => inner.code(),
+
+            _ => 0,
+        }
+    }
+
+    fn msg(&self) -> Cow<'static, str> {
+        match self {
+            Self::FnImplMissingOrNotFollowedByDecl { .. } => {
+                "Function implementation is missing or not immediately following the declaration".into()
+            }
+            Self::NonOverlappingTypeCast { .. } => "Conversion of type may be a mistake because neither type \
+                                                    sufficiently overlaps with the other. If this was intentional, \
+                                                    convert the expression to 'unknown' first."
+                .into(),
+
+            Self::AssignOpCannotBeApplied { op, .. } => format!("Operator '{}' cannot be applied to types", op).into(),
+
+            Self::NonSymbolComputedPropInFormOfSymbol { .. } => {
+                "A computed property name of the form '{TODO}' must be of type 'symbol'.".into()
+            }
+
+            Self::Unimplemented { msg, .. } => format!("unimplemented: {}", msg).into(),
+
+            Self::DebugContext { context, inner, .. } => format!("{}:\n{}", context, inner.msg()).into(),
+
+            _ => format!("{:#?}", self).into(),
+        }
+    }
+
     #[cold]
     pub fn emit(self, h: &Handler) {
         let span = self.span();
 
-        let mut err = match self {
-            Error::Unimplemented { ref msg, .. } => {
-                h.struct_err(&format!("unimplemented\n{}", msg))
-            }
-            //            Error::TS2378 { .. } => h.struct_err("A 'get' accessor must return a
-            // value"),            Error::TS1094 { .. } => h.struct_err("An accessor
-            // cannot have type parameters"),            Error::TS1166 { .. } =>
-            // h.struct_err(                "A computed property name in a class
-            // property declaration must refer to an \                 expression whose
-            // type is a literal type or a 'unique symbol' type.",            ),
-            //            Error::TS1183 { .. } => {
-            //                h.struct_err("An implementation cannot be declared in ambient
-            // contexts")            }
-            //            Error::TS1318 { .. } => {
-            //                h.struct_err("An abstract accessor cannot have an implementation")
-            //            }
-            //            Error::TS1095 { .. } => {
-            //                h.struct_err("A 'set' accessor cannot have a return type annotation")
-            //            }
-            //            Error::TS2567 { .. } => h.struct_err(
-            //                "Enum declarations can only merge with namespace or other enum
-            // declarations",            ),
-            _ => h.struct_err(&format!("{:#?}", self)),
-        };
-        err.set_span(span);
+        let mut err = h.struct_span_err_with_code(span, &self.msg(), DiagnosticId::Error(format!("TS{}", self.code())));
 
-        //        err.code(DiagnosticId::Error(String::from(match self {
-        //            _ => "",
-        //        })));
-
-        err.set_span(span).emit();
+        err.emit();
     }
 
     #[cold]
@@ -547,6 +690,19 @@ impl Error {
         for e in vec {
             match e {
                 Error::Errors { errors, .. } => buf.extend(Self::flatten(errors)),
+                Error::DebugContext { inner, context, .. } => {
+                    //
+                    buf.extend(
+                        Self::flatten(vec![*inner])
+                            .into_iter()
+                            .map(Box::new)
+                            .map(|inner| Error::DebugContext {
+                                span: inner.span(),
+                                context: context.clone(),
+                                inner,
+                            }),
+                    )
+                }
                 _ => buf.push(e),
             }
         }
@@ -558,10 +714,7 @@ impl Error {
 impl From<Vec<Error>> for Error {
     #[inline]
     fn from(errors: Vec<Error>) -> Self {
-        Error::Errors {
-            span: DUMMY_SP,
-            errors,
-        }
+        Error::Errors { span: DUMMY_SP, errors }
     }
 }
 

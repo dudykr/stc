@@ -39,12 +39,8 @@ impl TsTestCase {
         file_name: &Path,
         comments: Option<&dyn Comments>,
     ) -> Result<Self, Error> {
-        let s = read_to_string(&file_name).with_context(|| {
-            format!(
-                "failed to parse typescript test file at `{}`",
-                file_name.display()
-            )
-        })?;
+        let s = read_to_string(&file_name)
+            .with_context(|| format!("failed to parse typescript test file at `{}`", file_name.display()))?;
         let mut code = String::new();
         let mut type_data = vec![];
 
@@ -54,10 +50,7 @@ impl TsTestCase {
                 let idx = match idx {
                     Some(idx) => idx,
                     None => {
-                        bail!(
-                            "failed to find the separator of expression and type from `{}`",
-                            line
-                        )
+                        bail!("failed to find the separator of expression and type from `{}`", line)
                     }
                 };
 
