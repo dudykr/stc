@@ -671,7 +671,7 @@ impl Analyzer<'_, '_> {
             0 => Err(Error::NoSuchProperty {
                 span,
                 obj: Some(box obj.clone()),
-                prop: Some(prop.clone()),
+                prop: Some(box prop.clone()),
             }),
             1 => {
                 // TODO:

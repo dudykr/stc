@@ -876,7 +876,7 @@ impl Analyzer<'_, '_> {
                     return Err(Error::NoSuchProperty {
                         span: *span,
                         obj: Some(obj.clone()),
-                        prop: Some(prop.clone()),
+                        prop: Some(box prop.clone()),
                     });
                 }
 
@@ -1180,7 +1180,7 @@ impl Analyzer<'_, '_> {
                         return Err(Error::NoSuchProperty {
                             span: prop.span(),
                             obj: Some(obj),
-                            prop: Some(prop.clone()),
+                            prop: Some(box prop.clone()),
                         });
                     }
                 };
@@ -1242,7 +1242,7 @@ impl Analyzer<'_, '_> {
                 return Err(Error::NoSuchProperty {
                     span,
                     obj: Some(obj),
-                    prop: Some(prop.clone()),
+                    prop: Some(box prop.clone()),
                 });
             }
 
@@ -1255,7 +1255,7 @@ impl Analyzer<'_, '_> {
                 return Err(Error::NoSuchProperty {
                     span,
                     obj: Some(obj),
-                    prop: Some(prop.clone()),
+                    prop: Some(box prop.clone()),
                 });
             }
 

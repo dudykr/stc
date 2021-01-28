@@ -104,8 +104,8 @@ impl Analyzer<'_, '_> {
         Err(Error::InvalidOpAssign {
             span,
             op,
-            lhs: l.into_owned().clone(),
-            rhs: r.into_owned().clone(),
+            lhs: box l.into_owned().clone(),
+            rhs: box r.into_owned().clone(),
         })
     }
 

@@ -1911,9 +1911,9 @@ impl Expander<'_, '_, '_> {
 
         print_backtrace();
         Err(Error::TypeNotFound {
-            name: type_name.clone().into(),
+            name: box type_name.clone().into(),
             ctxt,
-            type_args: type_args.clone(),
+            type_args: type_args.clone().map(Box::new),
             span,
         })
     }
