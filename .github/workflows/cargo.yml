@@ -94,6 +94,14 @@ jobs:
         with:
           LIBCLANG_PATH: 'C:\\Program Files\\LLVM\\bin'
 
+      - name: Cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo
+
       # Ensure that all components all compilable.
       - name: Run cargo check for all targets
         run: cargo check --color always -p ${{ matrix.crate }} --all-targets
