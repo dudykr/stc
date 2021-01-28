@@ -104,7 +104,7 @@ impl Analyzer<'_, '_> {
 
         let (lt, rt): (Box<Type>, Box<Type>) = match (lt, rt) {
             (Some(l), Some(r)) => (l, r),
-            _ => return Err(Error::Errors { span, errors }),
+            _ => return Err(box Error::Errors { span, errors }),
         };
 
         // Handle control-flow based typing
@@ -205,7 +205,7 @@ impl Analyzer<'_, '_> {
                         kind: TsKeywordTypeKind::TsUnknownKeyword,
                         ..
                     }) => {
-                        return Err(Error::Unknown { span });
+                        return Err(box Error::Unknown { span });
                     }
                     _ => {}
                 }
