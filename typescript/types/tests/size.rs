@@ -132,7 +132,7 @@ fn size_of_lit() {
 
 #[test]
 fn size_of_ref() {
-    assert_eq!(size_of::<Ref>(), 32);
+    assert_eq!(size_of::<Ref>(), 96);
 }
 
 #[test]
@@ -142,12 +142,12 @@ fn size_of_indexed_access_type() {
 
 #[test]
 fn size_of_predicate() {
-    assert_eq!(size_of::<Predicate>(), 32);
+    assert_eq!(size_of::<Predicate>(), 96);
 }
 
 #[test]
 fn size_of_import() {
-    assert_eq!(size_of::<Predicate>(), 32);
+    assert_eq!(size_of::<ImportType>(), 32);
 }
 
 #[test]
@@ -157,7 +157,7 @@ fn size_of_infer() {
 
 #[test]
 fn size_of_query() {
-    assert_eq!(size_of::<QueryType>(), 32);
+    assert_eq!(size_of::<QueryType>(), 24);
 }
 
 #[test]
