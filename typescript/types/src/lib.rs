@@ -359,7 +359,7 @@ pub struct InferType {
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct QueryType {
     pub span: Span,
-    pub expr: QueryExpr,
+    pub expr: Box<QueryExpr>,
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit)]

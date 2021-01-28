@@ -173,7 +173,7 @@ impl From<QueryType> for RTsType {
         RTsType::TsTypeQuery(RTsTypeQuery {
             node_id: NodeId::invalid(),
             span: t.span,
-            expr_name: t.expr.into(),
+            expr_name: (*t.expr).into(),
         })
     }
 }
