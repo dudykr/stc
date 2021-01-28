@@ -32,7 +32,7 @@ fn size_of_interface() {
 
 #[test]
 fn size_of_enum() {
-    assert_eq!(size_of::<Enum>(), 32);
+    assert_eq!(size_of::<Enum>(), 104);
 }
 
 #[test]
@@ -92,7 +92,7 @@ fn size_of_class_instance() {
 
 #[test]
 fn size_of_alias() {
-    assert_eq!(size_of::<Alias>(), 32);
+    assert_eq!(size_of::<Alias>(), 64);
 }
 
 #[test]
@@ -117,7 +117,7 @@ fn size_of_tuple() {
 
 #[test]
 fn size_of_conditional() {
-    assert_eq!(size_of::<Conditional>(), 32);
+    assert_eq!(size_of::<Conditional>(), 48);
 }
 
 #[test]
