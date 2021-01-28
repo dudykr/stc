@@ -112,7 +112,7 @@ fn size_of_array() {
 
 #[test]
 fn size_of_tuple() {
-    assert_eq!(size_of::<Tuple>(), 32);
+    assert_eq!(size_of::<Tuple>(), 40);
 }
 
 #[test]
@@ -162,10 +162,10 @@ fn size_of_query() {
 
 #[test]
 fn size_of_this() {
-    assert_eq!(size_of::<RTsThisType>(), 32);
+    assert_eq!(size_of::<RTsThisType>(), 12);
 }
 
 #[test]
 fn size_of_static_this() {
-    assert_eq!(size_of::<StaticThis>(), 32);
+    assert_eq!(size_of::<StaticThis>(), 12);
 }
