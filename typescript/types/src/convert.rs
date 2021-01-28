@@ -194,7 +194,7 @@ impl From<ImportType> for RTsImportType {
             span: t.span,
             arg: t.arg,
             qualifier: t.qualifier,
-            type_args: t.type_params.map(From::from),
+            type_args: t.type_params.map(|v| *v).map(From::from),
         }
     }
 }
@@ -216,7 +216,7 @@ impl From<ImportType> for RTsType {
             span: t.span,
             arg: t.arg,
             qualifier: t.qualifier,
-            type_args: t.type_params.map(From::from),
+            type_args: t.type_params.map(|v| *v).map(From::from),
         })
     }
 }
@@ -260,7 +260,7 @@ impl From<Ref> for RTsType {
             node_id: NodeId::invalid(),
             span: t.span,
             type_name: t.type_name,
-            type_params: t.type_args.map(From::from),
+            type_params: t.type_args.map(|v| *v).map(From::from),
         })
     }
 }
