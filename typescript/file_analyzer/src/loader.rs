@@ -1,4 +1,5 @@
 use crate::DepInfo;
+use crate::ValidationResult;
 use stc_ts_errors::Error;
 use stc_ts_types::{ModuleId, ModuleTypeData};
 use std::{path::PathBuf, sync::Arc};
@@ -30,10 +31,10 @@ pub trait Load: 'static + Send + Sync {
         base: Arc<PathBuf>,
         partial: &ModuleTypeData,
         import: &DepInfo,
-    ) -> Result<ModuleInfo, Error>;
+    ) -> ValidationResult<ModuleInfo>;
 
     /// Note: This method is called in parallel.
-    fn load_non_circular_dep(&self, base: Arc<PathBuf>, import: &DepInfo) -> Result<ModuleInfo, Error>;
+    fn load_non_circular_dep(&self, base: Arc<PathBuf>, import: &DepInfo) -> ValidationResult<ModuleInfo>;
 }
 
 impl<T> Load for Arc<T>
@@ -44,7 +45,7 @@ where
         (**self).is_in_same_circular_group(base, src)
     }
 
-    fn load_non_circular_dep(&self, base: Arc<PathBuf>, import: &DepInfo) -> Result<ModuleInfo, Error> {
+    fn load_non_circular_dep(&self, base: Arc<PathBuf>, import: &DepInfo) -> ValidationResult<ModuleInfo> {
         (**self).load_non_circular_dep(base, import)
     }
 
@@ -53,7 +54,7 @@ where
         base: Arc<PathBuf>,
         partial: &ModuleTypeData,
         import: &DepInfo,
-    ) -> Result<ModuleInfo, Error> {
+    ) -> ValidationResult<ModuleInfo> {
         (**self).load_circular_dep(base, partial, import)
     }
 
@@ -75,11 +76,11 @@ where
         base: Arc<PathBuf>,
         partial: &ModuleTypeData,
         import: &DepInfo,
-    ) -> Result<ModuleInfo, Error> {
+    ) -> ValidationResult<ModuleInfo> {
         (**self).load_circular_dep(base, partial, import)
     }
 
-    fn load_non_circular_dep(&self, base: Arc<PathBuf>, import: &DepInfo) -> Result<ModuleInfo, Error> {
+    fn load_non_circular_dep(&self, base: Arc<PathBuf>, import: &DepInfo) -> ValidationResult<ModuleInfo> {
         (**self).load_non_circular_dep(base, import)
     }
 

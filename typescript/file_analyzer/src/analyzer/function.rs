@@ -163,7 +163,7 @@ impl Analyzer<'_, '_> {
                                 kind: TsKeywordTypeKind::TsNeverKeyword,
                                 ..
                             }) => {}
-                            _ => errors.push(Error::ReturnRequired { span }),
+                            _ => errors.push(box Error::ReturnRequired { span }),
                         }
                     }
 
@@ -251,7 +251,7 @@ impl Analyzer<'_, '_> {
                 if let Some(default) = default {
                     args.params.push(default);
                 } else {
-                    self.storage.report(Error::ImplicitAny { span });
+                    self.storage.report(box Error::ImplicitAny { span });
                     args.params.push(Type::any(span));
                 }
             }
