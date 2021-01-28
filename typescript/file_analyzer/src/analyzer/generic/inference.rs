@@ -82,7 +82,7 @@ impl Analyzer<'_, '_> {
 
         for parent in &param.extends {
             let parent =
-                self.type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr, parent.type_args.as_ref())?;
+                self.type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr, parent.type_args.as_deref())?;
             self.infer_type(span, inferred, &parent, arg)?;
         }
 

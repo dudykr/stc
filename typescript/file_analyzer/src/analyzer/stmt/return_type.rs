@@ -166,7 +166,7 @@ impl Analyzer<'_, '_> {
                 } else {
                     RTsEntityName::Ident(RIdent::new("Generator".into(), DUMMY_SP))
                 },
-                type_args: Some(TypeParamInstantiation {
+                type_args: Some(box TypeParamInstantiation {
                     span,
                     params: vec![
                         yield_ty,
@@ -191,7 +191,7 @@ impl Analyzer<'_, '_> {
                 span,
                 ctxt: ModuleId::builtin(),
                 type_name: RTsEntityName::Ident(RIdent::new("Promise".into(), DUMMY_SP)),
-                type_args: Some(TypeParamInstantiation {
+                type_args: Some(box TypeParamInstantiation {
                     span,
                     params: vec![ret_ty],
                 }),

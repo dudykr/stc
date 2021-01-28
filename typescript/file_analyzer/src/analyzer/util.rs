@@ -162,7 +162,7 @@ pub(crate) fn instantiate_class(module_id: ModuleId, ty: Box<Type>) -> Box<Type>
 
         Type::Query(QueryType {
             span,
-            expr: QueryExpr::TsEntityName(ref type_name),
+            expr: box QueryExpr::TsEntityName(ref type_name),
         }) => box Type::Ref(Ref {
             span,
             ctxt: module_id,

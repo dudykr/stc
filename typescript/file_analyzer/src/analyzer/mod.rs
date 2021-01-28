@@ -693,7 +693,7 @@ impl Analyzer<'_, '_> {
                     let ty = child.finalize(ty::Module {
                         name: decl.id.clone(),
                         span,
-                        exports,
+                        exports: box exports,
                     });
                     let ty = Type::Module(ty).cheap();
                     return Ok(Some(ty));

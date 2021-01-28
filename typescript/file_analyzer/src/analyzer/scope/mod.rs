@@ -665,7 +665,7 @@ impl Analyzer<'_, '_> {
                                 span: *span,
                                 ctxt,
                                 type_name: RTsEntityName::Ident(RIdent::new("Iterable".into(), DUMMY_SP)),
-                                type_args: Some(TypeParamInstantiation {
+                                type_args: Some(box TypeParamInstantiation {
                                     span: *span,
                                     params: vec![box Type::Keyword(RTsKeywordType {
                                         span: DUMMY_SP,
@@ -1789,7 +1789,7 @@ impl Expander<'_, '_, '_> {
                                     slog::info!(self.logger, "expand: expanding type parameters");
                                     let mut inferred = self.analyzer.infer_arg_types(
                                         self.span,
-                                        type_args.as_ref(),
+                                        type_args.as_deref(),
                                         &type_params.params,
                                         &[],
                                         &[],
@@ -1913,7 +1913,7 @@ impl Expander<'_, '_, '_> {
         Err(Error::TypeNotFound {
             name: box type_name.clone().into(),
             ctxt,
-            type_args: type_args.clone().map(Box::new),
+            type_args: type_args.clone(),
             span,
         })
     }
@@ -2015,7 +2015,7 @@ impl Fold<Type> for Expander<'_, '_, '_> {
                         match cond_ty.check_type.normalize_mut() {
                             Type::Query(QueryType {
                                 span,
-                                expr: QueryExpr::TsEntityName(RTsEntityName::Ident(name)),
+                                expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(name)),
                                 ..
                             }) => {
                                 let id = (&*name).into();

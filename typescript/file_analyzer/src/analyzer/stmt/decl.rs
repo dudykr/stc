@@ -445,7 +445,7 @@ impl Analyzer<'_, '_> {
                                         m.for_pats.entry(i.node_id).or_default().ty =
                                             Some(box Type::Query(QueryType {
                                                 span,
-                                                expr: QueryExpr::TsEntityName(RTsEntityName::Ident(alias.clone())),
+                                                expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(alias.clone())),
                                             }));
                                     }
                                 }
