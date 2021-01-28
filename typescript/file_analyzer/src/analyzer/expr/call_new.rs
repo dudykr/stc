@@ -341,7 +341,7 @@ impl Analyzer<'_, '_> {
                             Type::Keyword(RTsKeywordType {
                                 kind: TsKeywordTypeKind::TsAnyKeyword,
                                 ..
-                            }) if type_args.is_some() => analyzer.storage.report(Error::TS2347 { span }),
+                            }) if type_args.is_some() => analyzer.storage.report(box Error::TS2347 { span }),
                             _ => {}
                         }
                         callee_ty
@@ -537,11 +537,11 @@ impl Analyzer<'_, '_> {
                     }
 
                     return Err(match kind {
-                        ExtractKind::Call => Error::NoCallabelPropertyWithName {
+                        ExtractKind::Call => box Error::NoCallabelPropertyWithName {
                             span,
                             key: box prop.clone(),
                         },
-                        ExtractKind::New => Error::NoSuchConstructor {
+                        ExtractKind::New => box Error::NoSuchConstructor {
                             span,
                             key: box prop.clone(),
                         },
@@ -668,7 +668,7 @@ impl Analyzer<'_, '_> {
         }
 
         match candidates.len() {
-            0 => Err(Error::NoSuchProperty {
+            0 => Err(box Error::NoSuchProperty {
                 span,
                 obj: Some(box obj.clone()),
                 prop: Some(box prop.clone()),
