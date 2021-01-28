@@ -118,7 +118,28 @@ impl Analyzer<'_, '_> {
                                 )
                                 .context("tried to call `Symbol.iterator` property")?;
 
-                            unimplemented!("using iterator: {:?}", iterator)
+                            let elem_type = self
+                                .call_property(
+                                    span,
+                                    ExtractKind::Call,
+                                    iterator,
+                                    &Key::Normal {
+                                        span,
+                                        sym: "next".into(),
+                                    },
+                                    None,
+                                    &[],
+                                    &[],
+                                    &[],
+                                )
+                                .context("tried calling `next()` to get element type of iterator")?;
+
+                            can_be_tuple = false;
+                            elements.push(TupleElement {
+                                span,
+                                label: None,
+                                ty: elem_type,
+                            });
                         }
                     }
                     continue;
