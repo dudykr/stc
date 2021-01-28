@@ -1344,10 +1344,10 @@ impl Analyzer<'_, '_> {
                                 RObjectPatProp::Rest(RRestPat { ref arg, .. }) => arg.span(),
                                 _ => p.span(),
                             };
-                            return Err(Error::Unknown { span });
+                            return Err(box Error::Unknown { span });
                         }
 
-                        return Err(Error::Unknown { span });
+                        return Err(box Error::Unknown { span });
                     }
 
                     Type::Ref(..) => {
@@ -1915,7 +1915,7 @@ impl Expander<'_, '_, '_> {
         }
 
         print_backtrace();
-        Err(Error::TypeNotFound {
+        Err(box Error::TypeNotFound {
             name: box type_name.clone().into(),
             ctxt,
             type_args: type_args.clone(),
