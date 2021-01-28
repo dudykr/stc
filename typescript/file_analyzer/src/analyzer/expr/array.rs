@@ -1,18 +1,27 @@
+use super::IdCtx;
 use super::TypeOfMode;
 use crate::analyzer::Analyzer;
 use crate::util::type_ext::TypeVecExt;
 use crate::validator;
 use crate::validator::ValidateWith;
 use crate::ValidationResult;
+use rnode::NodeId;
 use stc_ts_ast_rnode::RArrayLit;
+use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RExprOrSpread;
+use stc_ts_ast_rnode::RExprOrSuper;
+use stc_ts_ast_rnode::RIdent;
+use stc_ts_ast_rnode::RMemberExpr;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_types::Array;
+use stc_ts_types::ComputedKey;
+use stc_ts_types::Key;
 use stc_ts_types::Tuple;
 use stc_ts_types::TupleElement;
 use stc_ts_types::Type;
 use stc_ts_types::TypeParamInstantiation;
 use swc_common::Spanned;
+use swc_common::DUMMY_SP;
 use swc_ecma_ast::TsKeywordTypeKind;
 
 #[validator]
@@ -44,7 +53,10 @@ impl Analyzer<'_, '_> {
                     }
                     ty
                 }
-                Some(RExprOrSpread { spread: Some(..), expr }) => {
+                Some(RExprOrSpread {
+                    spread: Some(spread),
+                    expr,
+                }) => {
                     let element_type = expr.validate_with_default(self)?;
                     let element_type = box element_type.foldable();
 
@@ -75,7 +87,32 @@ impl Analyzer<'_, '_> {
                             });
                         }
                         _ => {
-                            unimplemented!("type of array spread: {:?}", element_type)
+                            // TODO: Handle symbols correctly.
+                            let iterator = self.access_property(
+                                span,
+                                element_type,
+                                &Key::Computed(ComputedKey {
+                                    span: *spread,
+                                    expr: box RExpr::Member(RMemberExpr {
+                                        node_id: NodeId::invalid(),
+                                        span: DUMMY_SP,
+                                        obj: RExprOrSuper::Expr(box RExpr::Ident(RIdent::new(
+                                            "Symbol".into(),
+                                            DUMMY_SP,
+                                        ))),
+                                        prop: box RExpr::Ident(RIdent::new("iterator".into(), DUMMY_SP)),
+                                        computed: false,
+                                    }),
+                                    ty: box Type::Keyword(RTsKeywordType {
+                                        span: DUMMY_SP,
+                                        kind: TsKeywordTypeKind::TsSymbolKeyword,
+                                    }),
+                                }),
+                                TypeOfMode::RValue,
+                                IdCtx::Var,
+                            )?;
+
+                            unimplemented!("using iterator: {:?}", iterator)
                         }
                     }
                     continue;
