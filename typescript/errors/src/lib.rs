@@ -725,6 +725,13 @@ impl From<Errors> for Error {
     }
 }
 
+impl From<Errors> for Box<Error> {
+    #[inline]
+    fn from(errors: Errors) -> Self {
+        box errors.into()
+    }
+}
+
 /// A utility type to track
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct Errors(Vec<Box<Error>>);
