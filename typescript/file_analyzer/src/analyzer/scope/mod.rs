@@ -1127,7 +1127,7 @@ impl Analyzer<'_, '_> {
                         ..
                     }) => {
                         if tuple_elements.len() < elems.len() {
-                            return Err(Error::TooManyTupleElements { span });
+                            return Err(box Error::TooManyTupleElements { span });
                         }
 
                         for (elem, tuple_element) in elems.into_iter().zip(tuple_elements) {
@@ -1171,12 +1171,12 @@ impl Analyzer<'_, '_> {
                                     buf.push(elem_types);
                                 }
                                 _ => {
-                                    errors.push(Error::NotTuple { span: ty.span() });
+                                    errors.push(box Error::NotTuple { span: ty.span() });
                                 }
                             }
                         }
                         if !errors.is_empty() {
-                            return Err(Error::UnionError { span, errors });
+                            return Err(box Error::UnionError { span, errors });
                         }
 
                         for (elem, tuple_elements) in
@@ -1287,7 +1287,7 @@ impl Analyzer<'_, '_> {
 
                     dbg!();
 
-                    return Err(Error::NoSuchProperty {
+                    return Err(box Error::NoSuchProperty {
                         span,
                         obj: None,
                         prop: None,

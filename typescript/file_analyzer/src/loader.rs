@@ -1,6 +1,5 @@
 use crate::DepInfo;
 use crate::ValidationResult;
-use stc_ts_errors::Error;
 use stc_ts_types::{ModuleId, ModuleTypeData};
 use std::{path::PathBuf, sync::Arc};
 use swc_atoms::JsWord;
