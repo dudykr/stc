@@ -819,7 +819,9 @@ impl Analyzer<'_, '_> {
                                                             .map(|id| {
                                                                 box Type::Query(QueryType {
                                                                     span: c.span,
-                                                                    expr: QueryExpr::TsEntityName(id.clone().into()),
+                                                                    expr: box QueryExpr::TsEntityName(
+                                                                        id.clone().into(),
+                                                                    ),
                                                                 })
                                                             })
                                                             .expect("Super class should be named");

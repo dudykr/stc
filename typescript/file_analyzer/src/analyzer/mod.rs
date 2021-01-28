@@ -198,7 +198,11 @@ impl Analyzer<'_, '_> {
 //}
 
 fn make_module_ty(span: Span, name: RTsModuleName, exports: ModuleTypeData) -> ty::Module {
-    ty::Module { span, name, exports }
+    ty::Module {
+        span,
+        name,
+        exports: box exports,
+    }
 }
 
 // TODO:

@@ -1228,7 +1228,7 @@ impl Analyzer<'_, '_> {
                         span,
                         self.ctx.module_id,
                         &super_ty.expr,
-                        super_ty.type_args.as_ref(),
+                        super_ty.type_args.as_deref(),
                     )?;
 
                     // TODO: Check if multiple interface has same property.
@@ -1531,7 +1531,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Query(QueryType {
-                expr: QueryExpr::TsEntityName(name),
+                expr: box QueryExpr::TsEntityName(name),
                 ..
             }) => {
                 let obj = self.type_of_ts_entity_name(span, self.ctx.module_id, name, None)?;
@@ -1567,7 +1567,7 @@ impl Analyzer<'_, '_> {
                     // We should return typeof function name
                     return box Type::Query(QueryType {
                         span,
-                        expr: QueryExpr::TsEntityName(RTsEntityName::Ident(i.clone())),
+                        expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(i.clone())),
                     });
                 }
                 return ty;
@@ -1873,7 +1873,7 @@ impl Analyzer<'_, '_> {
                     span,
                     ctxt: self.ctx.module_id,
                     type_name: RTsEntityName::Ident(i.clone()),
-                    type_args: type_args.cloned(),
+                    type_args: type_args.cloned().map(Box::new),
                 }))
             }
             RTsEntityName::TsQualifiedName(ref qname) => {
@@ -1995,7 +1995,7 @@ impl Analyzer<'_, '_> {
                         parent.span,
                         self.ctx.module_id,
                         &parent.expr,
-                        parent.type_args.as_ref(),
+                        parent.type_args.as_deref(),
                     );
 
                     let parent_ty = match parent_ty {

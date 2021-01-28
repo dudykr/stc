@@ -821,7 +821,7 @@ impl Analyzer<'_, '_> {
                             return Ok(box Type::ClassInstance(ClassInstance {
                                 span,
                                 ty: box Type::Class(cls.clone()),
-                                type_args: Some(type_args),
+                                type_args: Some(box type_args),
                             }));
                         }
                     }
@@ -829,7 +829,7 @@ impl Analyzer<'_, '_> {
                     return Ok(box Type::ClassInstance(ClassInstance {
                         span,
                         ty: box Type::Class(cls.clone()),
-                        type_args: type_args.cloned(),
+                        type_args: type_args.cloned().map(Box::new),
                     }));
                 }
 
@@ -864,7 +864,7 @@ impl Analyzer<'_, '_> {
                 return Ok(box Type::ClassInstance(ClassInstance {
                     span,
                     ty: instantiate_class(self.ctx.module_id, box ty.clone()),
-                    type_args: type_args.cloned(),
+                    type_args: type_args.cloned().map(Box::new),
                 }));
             }
 
@@ -956,13 +956,13 @@ impl Analyzer<'_, '_> {
                 return Ok(box ClassInstance {
                     span,
                     ty: box Type::Class(cls.clone()),
-                    type_args: type_args.cloned(),
+                    type_args: type_args.cloned().map(Box::new),
                 }
                 .into());
             }
 
             Type::Query(QueryType {
-                expr: QueryExpr::TsEntityName(RTsEntityName::Ident(RIdent { ref sym, .. })),
+                expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(RIdent { ref sym, .. })),
                 ..
             }) => {
                 //if self.scope.find_declaring_fn(sym) {
@@ -1139,7 +1139,7 @@ impl Analyzer<'_, '_> {
                     return Ok(box Type::ClassInstance(ClassInstance {
                         span,
                         ty: box Type::Class(cls.clone()),
-                        type_args: type_args.cloned(),
+                        type_args: type_args.cloned().map(Box::new),
                     }));
                 }
                 _ => {}
@@ -1759,7 +1759,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                                                 span: *span,
                                                 ctxt: *ctxt,
                                                 type_name: RTsEntityName::Ident(i.clone()),
-                                                type_args: Some(TypeParamInstantiation {
+                                                type_args: Some(box TypeParamInstantiation {
                                                     span: type_args.span,
                                                     params: vec![ty.clone()],
                                                 }),

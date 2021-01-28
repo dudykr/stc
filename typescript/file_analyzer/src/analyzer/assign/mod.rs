@@ -880,8 +880,12 @@ impl Analyzer<'_, '_> {
                 ref body, ref extends, ..
             }) => {
                 for parent in extends {
-                    let parent =
-                        self.type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr, parent.type_args.as_ref())?;
+                    let parent = self.type_of_ts_entity_name(
+                        span,
+                        self.ctx.module_id,
+                        &parent.expr,
+                        parent.type_args.as_deref(),
+                    )?;
 
                     if self.assign_with_opts(opts, &parent, &rhs).is_ok() {
                         return Ok(());
