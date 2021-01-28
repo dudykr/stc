@@ -64,6 +64,7 @@ use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
 use ty::TypeExt;
 
+mod array;
 mod await_expr;
 mod bin;
 mod call_new;
@@ -219,7 +220,9 @@ impl Analyzer<'_, '_> {
                                             ty: element_type.clone(),
                                         });
                                     }
-                                    _ => unimplemented!("type of array spread: {:?}", element_type),
+                                    _ => {
+                                        unimplemented!("type of array spread: {:?}", element_type)
+                                    }
                                 }
                                 continue;
                             }
