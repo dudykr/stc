@@ -81,7 +81,7 @@ impl Analyzer<'_, '_> {
                 || rhs.is_kwd(TsKeywordTypeKind::TsNullKeyword)
                 || rhs.is_kwd(TsKeywordTypeKind::TsVoidKeyword)
             {
-                return Err(Error::AssignOpCannotBeApplied { span, op });
+                return Err(box Error::AssignOpCannotBeApplied { span, op });
             }
         }
 
@@ -101,7 +101,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        Err(Error::InvalidOpAssign {
+        Err(box Error::InvalidOpAssign {
             span,
             op,
             lhs: box l.into_owned().clone(),
@@ -136,16 +136,16 @@ impl Analyzer<'_, '_> {
 
         let res = self.assign_inner(left, right, opts);
         match res {
-            Err(Error::Errors { errors, .. }) if errors.is_empty() => return Ok(()),
+            Err(box Error::Errors { errors, .. }) if errors.is_empty() => return Ok(()),
             _ => {}
         }
 
-        res.map_err(|err| match err {
+        res.map_err(|err| match *err {
             Error::AssignFailed { .. }
             | Error::DebugContext { .. }
             | Error::Errors { .. }
             | Error::Unimplemented { .. } => err,
-            _ => Error::AssignFailed {
+            _ => box Error::AssignFailed {
                 span: opts.span,
                 left: box left.clone(),
                 right: box right.clone(),
@@ -199,7 +199,7 @@ impl Analyzer<'_, '_> {
         Cow::Borrowed(ty)
     }
 
-    fn assign_inner(&mut self, to: &Type, rhs: &Type, opts: AssignOpts) -> Result<(), Error> {
+    fn assign_inner(&mut self, to: &Type, rhs: &Type, opts: AssignOpts) -> ValidationResult<()> {
         self.assign_without_wrapping(to, rhs, opts).with_context(|| {
             //
             let lhs = dump_type_as_string(&self.cm, &to);
@@ -210,7 +210,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Assigns, but does not wrap error with [Error::AssignFailed].
-    fn assign_without_wrapping(&mut self, to: &Type, rhs: &Type, opts: AssignOpts) -> Result<(), Error> {
+    fn assign_without_wrapping(&mut self, to: &Type, rhs: &Type, opts: AssignOpts) -> ValidationResult<()> {
         let span = opts.span;
 
         if !self.is_builtin && span.is_dummy() {
@@ -226,7 +226,7 @@ impl Analyzer<'_, '_> {
 
         macro_rules! fail {
             () => {{
-                return Err(Error::AssignFailed {
+                return Err(box Error::AssignFailed {
                     span,
                     left: box to.clone(),
                     right: box rhs.clone(),
@@ -418,7 +418,7 @@ impl Analyzer<'_, '_> {
                     Type::Keyword(k) if k.kind == *kwd => match *rhs {
                         Type::Interface(ref i) => {
                             if i.name.as_str() == *interface {
-                                return Err(Error::AssignedWrapperToPrimitive { span });
+                                return Err(box Error::AssignedWrapperToPrimitive { span });
                             }
                         }
                         _ => {}
@@ -455,7 +455,7 @@ impl Analyzer<'_, '_> {
 
             Type::Module(..) => {
                 dbg!();
-                return Err(Error::InvalidLValue { span: to.span() });
+                return Err(box Error::InvalidLValue { span: to.span() });
             }
             Type::Enum(ref e) => {
                 match rhs.normalize() {
@@ -481,7 +481,7 @@ impl Analyzer<'_, '_> {
             }
             Type::EnumVariant(ref e) => {
                 dbg!();
-                return Err(Error::InvalidLValue { span: e.span });
+                return Err(box Error::InvalidLValue { span: e.span });
             }
 
             Type::Intersection(ref i) => {
@@ -498,7 +498,7 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
-                return Err(Error::Errors {
+                return Err(box Error::Errors {
                     span,
                     errors: errors.into(),
                 });
@@ -561,7 +561,7 @@ impl Analyzer<'_, '_> {
                 if errors.is_empty() {
                     return Ok(());
                 }
-                return Err(Error::Errors { span, errors });
+                return Err(box Error::Errors { span, errors });
             }
 
             Type::Keyword(RTsKeywordType {
@@ -684,7 +684,7 @@ impl Analyzer<'_, '_> {
                 if results.iter().any(Result::is_ok) {
                     return Ok(());
                 }
-                return Err(Error::UnionError {
+                return Err(box Error::UnionError {
                     span,
                     errors: results.into_iter().map(Result::unwrap_err).collect(),
                 });
@@ -699,7 +699,7 @@ impl Analyzer<'_, '_> {
                 // TODO: Multiple error
                 for v in vs {
                     if let Err(error) = v {
-                        return Err(Error::IntersectionError { span, error: box error });
+                        return Err(box Error::IntersectionError { span, error });
                     }
                 }
 
@@ -820,7 +820,9 @@ impl Analyzer<'_, '_> {
                             | Type::Interface(..)
                             | Type::Module(..)
                             | Type::EnumVariant(..) => fail!(),
-                            Type::Function(..) => return Err(Error::CannotAssignToNonVariable { span: rhs.span() }),
+                            Type::Function(..) => {
+                                return Err(box Error::CannotAssignToNonVariable { span: rhs.span() })
+                            }
                             _ => {}
                         }
                     }
@@ -852,7 +854,7 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
 
-                return Err(Error::AssignFailed {
+                return Err(box Error::AssignFailed {
                     span,
                     left: box Type::Enum(e.clone()),
                     right: box rhs.clone(),

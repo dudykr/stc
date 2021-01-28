@@ -116,7 +116,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        Err(Error::NoNewSignature {
+        Err(box Error::NoNewSignature {
             span,
             callee: box ty.clone(),
         })
