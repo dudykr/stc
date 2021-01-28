@@ -1239,7 +1239,7 @@ impl Analyzer<'_, '_> {
 
                 // TODO: Check parent interfaces
 
-                return Err(Error::NoSuchProperty {
+                return Err(box Error::NoSuchProperty {
                     span,
                     obj: Some(obj),
                     prop: Some(box prop.clone()),
@@ -1287,7 +1287,7 @@ impl Analyzer<'_, '_> {
                 } else {
                     // In l-value context, it's success if one of types matches it.
                     let is_err = errors.iter().any(|err| match *err {
-                        Error::ReadOnly { .. } => true,
+                        box Error::ReadOnly { .. } => true,
                         _ => false,
                     });
                     if tys.is_empty() || is_err {
@@ -1412,7 +1412,7 @@ impl Analyzer<'_, '_> {
 
                 print_backtrace();
                 // No property found
-                return Err(Error::NoSuchPropertyInModule { span });
+                return Err(box Error::NoSuchPropertyInModule { span });
             }
 
             Type::This(..) => {

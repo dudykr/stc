@@ -843,13 +843,13 @@ impl Analyzer<'_, '_> {
                 dbg!();
                 match kind {
                     ExtractKind::Call => {
-                        return Err(Error::NoCallSignature {
+                        return Err(box Error::NoCallSignature {
                             span,
                             callee: box ty.clone(),
                         })
                     }
                     ExtractKind::New => {
-                        return Err(Error::NoNewSignature {
+                        return Err(box Error::NoNewSignature {
                             span,
                             callee: box ty.clone(),
                         })
@@ -876,7 +876,7 @@ impl Analyzer<'_, '_> {
             Type::Keyword(RTsKeywordType {
                 kind: TsKeywordTypeKind::TsUnknownKeyword,
                 ..
-            }) => return Err(Error::Unknown { span }),
+            }) => return Err(box Error::Unknown { span }),
 
             Type::Function(ref f) if kind == ExtractKind::Call => self.get_return_type(
                 span,
@@ -1012,11 +1012,11 @@ impl Analyzer<'_, '_> {
 
         if candidates.is_empty() {
             return match kind {
-                ExtractKind::Call => Err(Error::NoCallSignature {
+                ExtractKind::Call => Err(box Error::NoCallSignature {
                     span,
                     callee: box callee_ty.clone(),
                 }),
-                ExtractKind::New => Err(Error::NoNewSignature {
+                ExtractKind::New => Err(box Error::NoNewSignature {
                     span,
                     callee: box callee_ty.clone(),
                 }),
@@ -1150,9 +1150,9 @@ impl Analyzer<'_, '_> {
             dbg!();
 
             return Err(if kind == ExtractKind::Call {
-                Error::NoCallSignature { span, callee }
+                box Error::NoCallSignature { span, callee }
             } else {
-                Error::NoNewSignature { span, callee }
+                box Error::NoNewSignature { span, callee }
             });
         }
 
@@ -1219,7 +1219,7 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
             }
-            return Err(Error::ArgCountMismatch {
+            return Err(box Error::ArgCountMismatch {
                 span,
                 min: min_param,
                 max: max_param,
@@ -1504,7 +1504,7 @@ impl Analyzer<'_, '_> {
             if let Some(type_args) = type_args {
                 // TODO: Handle defaults of the type parameter (Change to range)
                 if type_params.len() != type_args.params.len() {
-                    return Err(Error::TypeParameterCountMismatch {
+                    return Err(box Error::TypeParameterCountMismatch {
                         span,
                         max: type_params.len(),
                         min: type_params.len(),
