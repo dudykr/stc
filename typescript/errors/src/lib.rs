@@ -567,9 +567,9 @@ pub enum Error {
 
 impl Error {
     #[track_caller]
-    pub fn context(self, context: impl Display) -> Self {
+    pub fn context(self, context: impl Display) -> Box<Self> {
         if !cfg!(debug_assertions) {
-            return self;
+            return box self;
         }
 
         match self {
@@ -581,7 +581,7 @@ impl Error {
             }
         }
 
-        Error::DebugContext {
+        box Error::DebugContext {
             span: self.span(),
             context: context.to_string(),
             inner: box self,
