@@ -17,14 +17,12 @@ use crate::{
 };
 use rnode::NodeId;
 use rnode::VisitWith;
-use stc_ts_ast_rnode::RArrayLit;
 use stc_ts_ast_rnode::RArrowExpr;
 use stc_ts_ast_rnode::RAssignExpr;
 use stc_ts_ast_rnode::RBlockStmtOrExpr;
 use stc_ts_ast_rnode::RCallExpr;
 use stc_ts_ast_rnode::RClassExpr;
 use stc_ts_ast_rnode::RExpr;
-use stc_ts_ast_rnode::RExprOrSpread;
 use stc_ts_ast_rnode::RExprOrSuper;
 use stc_ts_ast_rnode::RFnExpr;
 use stc_ts_ast_rnode::RIdent;
@@ -54,7 +52,7 @@ use stc_ts_types::Alias;
 use stc_ts_types::ComputedKey;
 use stc_ts_types::Key;
 use stc_ts_types::PropertySignature;
-use stc_ts_types::{ClassProperty, Id, Method, ModuleId, Operator, QueryExpr, QueryType, StaticThis, TupleElement};
+use stc_ts_types::{ClassProperty, Id, Method, ModuleId, Operator, QueryExpr, QueryType, StaticThis};
 use std::borrow::Cow;
 use std::convert::TryFrom;
 use swc_atoms::js_word;
@@ -172,90 +170,7 @@ impl Analyzer<'_, '_> {
                     Ok(ty)
                 }
 
-                RExpr::Array(RArrayLit { ref elems, .. }) => {
-                    let prefer_tuple = self.prefer_tuple(type_ann);
-                    let mut can_be_tuple = true;
-                    let mut elements = Vec::with_capacity(elems.len());
-
-                    for elem in elems.iter() {
-                        let span = elem.span();
-                        let ty = match elem {
-                            Some(RExprOrSpread { spread: None, ref expr }) => {
-                                let ty = expr.validate_with_default(self)?;
-                                match &*ty {
-                                    Type::TypeLit(..) => {
-                                        can_be_tuple = false;
-                                    }
-                                    _ => {}
-                                }
-                                ty
-                            }
-                            Some(RExprOrSpread { spread: Some(..), expr }) => {
-                                let element_type = expr.validate_with_default(self)?;
-                                let element_type = box element_type.foldable();
-
-                                match *element_type {
-                                    Type::Array(array) => {
-                                        can_be_tuple = false;
-                                        elements.push(TupleElement {
-                                            span,
-                                            label: None,
-                                            ty: array.elem_type,
-                                        });
-                                    }
-                                    Type::Tuple(tuple) => {
-                                        if !prefer_tuple {
-                                            can_be_tuple = false;
-                                        }
-                                        elements.extend(tuple.elems);
-                                    }
-                                    Type::Keyword(RTsKeywordType {
-                                        kind: TsKeywordTypeKind::TsAnyKeyword,
-                                        ..
-                                    }) => {
-                                        can_be_tuple = false;
-                                        elements.push(TupleElement {
-                                            span,
-                                            label: None,
-                                            ty: element_type.clone(),
-                                        });
-                                    }
-                                    _ => {
-                                        unimplemented!("type of array spread: {:?}", element_type)
-                                    }
-                                }
-                                continue;
-                            }
-                            None => {
-                                let ty = Type::undefined(span);
-                                ty
-                            }
-                        };
-                        elements.push(TupleElement { span, label: None, ty });
-                    }
-
-                    if self.ctx.in_export_default_expr && elements.is_empty() {
-                        return Ok(box Type::Array(Array {
-                            span,
-                            elem_type: Type::any(span),
-                        }));
-                    }
-
-                    if !can_be_tuple {
-                        let mut types: Vec<_> = elements.into_iter().map(|element| element.ty).collect();
-                        types.dedup_type();
-
-                        let mut ty = box Type::Array(Array {
-                            span,
-                            elem_type: Type::union(types),
-                        });
-                        self.normalize_union_of_objects(&mut ty);
-
-                        return Ok(ty);
-                    }
-
-                    return Ok(box Type::Tuple(Tuple { span, elems: elements }));
-                }
+                RExpr::Array(arr) => return arr.validate_with_args(self, (mode, type_args, type_ann)),
 
                 RExpr::Lit(RLit::Bool(v)) => {
                     return Ok(box Type::Lit(RTsLitType {
