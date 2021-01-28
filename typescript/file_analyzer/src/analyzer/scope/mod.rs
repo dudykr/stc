@@ -107,7 +107,15 @@ pub(crate) struct Scope<'a> {
     /// Used to handle `...any` in calls.
     pub(super) is_call_arg_count_unknown: bool,
 
+    /// TODO: Remove
     pub(super) type_params: FxHashMap<Id, Box<Type>>,
+
+    /// If two modules have same name, the latter can reference exported members
+    /// from other modules.
+    ///
+    /// It means we need a way to know which module we are in, and this field is
+    /// used to store module name.
+    pub(super) cur_module_name: Option<Id>,
 }
 
 impl Scope<'_> {
@@ -247,7 +255,17 @@ impl Scope<'_> {
             return_values: self.return_values,
             is_call_arg_count_unknown: self.is_call_arg_count_unknown,
             type_params: self.type_params,
+            cur_module_name: self.cur_module_name,
         }
+    }
+
+    pub fn current_module_name(&self) -> Option<Id> {
+        match &self.cur_module_name {
+            Some(v) => return Some(v.clone()),
+            _ => {}
+        }
+
+        self.parent?.current_module_name()
     }
 
     pub fn copy_hoisted_vars_from(&mut self, from: &mut Scope) {
@@ -1561,6 +1579,7 @@ impl<'a> Scope<'a> {
             return_values: Default::default(),
             is_call_arg_count_unknown: false,
             type_params: Default::default(),
+            cur_module_name: None,
         }
     }
 

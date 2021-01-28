@@ -1721,6 +1721,28 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult {
         slog::info!(self.logger, "({}) type_of_raw_var({})", self.scope.depth(), Id::from(i));
 
+        // See documentation on Analyzer.cur_module_name to understand what we are doing
+        // here.
+        if let Some(cur_module) = self.scope.current_module_name() {
+            let ty = self.find_type(self.ctx.module_id, &cur_module)?;
+            if let Some(ty) = ty {
+                for ty in ty {
+                    match ty.normalize() {
+                        Type::Module(module) => {
+                            dbg!(&module);
+
+                            //
+                            if let Some(var_ty) = module.exports.vars.get(&i.sym).cloned() {
+                                dbg!(&var_ty);
+                                return Ok(var_ty);
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+            }
+        }
+
         let span = i.span();
 
         if let Some(ref cls_name) = self.scope.this_class_name {

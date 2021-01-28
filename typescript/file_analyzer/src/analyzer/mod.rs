@@ -335,6 +335,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             append_stmts: Default::default(),
             scope,
             ctx: Ctx {
+                module_id: ModuleId::builtin(),
                 in_declare: false,
                 in_global: false,
                 in_export_default_expr: false,
@@ -350,7 +351,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 preserve_ret_ty: false,
                 ignore_errors: false,
                 fail_on_extra_fields: false,
-                module_id: ModuleId::builtin(),
             },
             loader,
             is_builtin,
@@ -662,6 +662,11 @@ impl Analyzer<'_, '_> {
         let ty = self
             .with_ctx(ctx)
             .with_child(ScopeKind::Module, Default::default(), |child: &mut Analyzer| {
+                child.scope.cur_module_name = match &decl.id {
+                    RTsModuleName::Ident(i) => Some(i.into()),
+                    RTsModuleName::Str(_) => None,
+                };
+
                 decl.visit_children_with(child);
 
                 let mut exports = child.storage.take_info(ctxt);
