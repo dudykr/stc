@@ -53,6 +53,10 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    CannotAssignAbstractConstructorToNonApstractConstructor {
+        span: Span,
+    },
+
     ImportFailed {
         span: Span,
         orig: Id,
@@ -644,6 +648,7 @@ impl Error {
 
             Error::InvalidDeleteOperand { .. } => 2703,
             Error::NoSuchVar { .. } => 2304,
+            Error::CannotAssignAbstractConstructorToNonApstractConstructor { .. } => 2322,
 
             Error::DebugContext { inner, .. } => inner.code(),
 
