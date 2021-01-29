@@ -450,7 +450,7 @@ impl Analyzer<'_, '_> {
 
 impl Analyzer<'_, '_> {
     pub(super) fn try_assign(&mut self, span: Span, op: AssignOp, lhs: &RPatOrExpr, ty: &Type) {
-        let res: Result<(), Error> = try {
+        let res: ValidationResult<()> = try {
             match *lhs {
                 RPatOrExpr::Expr(ref expr) | RPatOrExpr::Pat(box RPat::Expr(ref expr)) => {
                     let lhs_ty = expr.validate_with_args(self, (TypeOfMode::LValue, None, None))?;
@@ -486,7 +486,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn try_assign_pat(&mut self, span: Span, lhs: &RPat, ty: &Type) -> Result<(), Error> {
+    fn try_assign_pat(&mut self, span: Span, lhs: &RPat, ty: &Type) -> ValidationResult<()> {
         // Update variable's type
         match *lhs {
             RPat::Ident(ref i) => {
@@ -535,7 +535,7 @@ impl Analyzer<'_, '_> {
                                 for ty in types {
                                     match &*ty {
                                         Type::Module(..) => {
-                                            return Err(Error::NotVariable {
+                                            return Err(box Error::NotVariable {
                                                 span: i.span,
                                                 left: lhs.span(),
                                             });
@@ -549,7 +549,7 @@ impl Analyzer<'_, '_> {
                                 Ok(())
                             } else {
                                 // undefined symbol
-                                Err(Error::UndefinedSymbol {
+                                Err(box Error::UndefinedSymbol {
                                     sym: i.into(),
                                     span: i.span,
                                 })
@@ -693,7 +693,7 @@ impl Analyzer<'_, '_> {
                     return if self.ctx.allow_ref_declaring {
                         Ok(Type::any(span))
                     } else {
-                        Err(Error::ReferencedInInit { span })
+                        Err(box Error::ReferencedInInit { span })
                     };
                 }
             }

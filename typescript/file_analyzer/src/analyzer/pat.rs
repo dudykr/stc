@@ -330,7 +330,7 @@ impl Analyzer<'_, '_> {
                                         }
                                     }
 
-                                    self.storage.report(Error::TS2353 { span: prop.span() })
+                                    self.storage.report(box Error::TS2353 { span: prop.span() })
                                 }
                                 _ => {}
                             }

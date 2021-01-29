@@ -24,6 +24,7 @@ use stc_ts_file_analyzer::loader::ModuleInfo;
 use stc_ts_file_analyzer::validator::ValidateWith;
 use stc_ts_file_analyzer::DepInfo;
 use stc_ts_file_analyzer::ModuleTypeData;
+use stc_ts_file_analyzer::ValidationResult;
 use stc_ts_module_loader::resolver::node::NodeResolver;
 use stc_ts_module_loader::ModuleGraph;
 use stc_ts_storage::ErrorStore;
@@ -62,7 +63,7 @@ pub struct Checker {
     /// Modules which are being processed or analyzed.
     started: Arc<DashSet<ModuleId>>,
 
-    errors: Mutex<Vec<Error>>,
+    errors: Mutex<Vec<Box<Error>>>,
 
     env: Env,
 
@@ -137,7 +138,7 @@ impl Checker {
         })
     }
 
-    pub fn take_errors(&mut self) -> Vec<Error> {
+    pub fn take_errors(&mut self) -> Vec<Box<Error>> {
         take(self.errors.get_mut())
     }
 
@@ -377,7 +378,7 @@ impl Load for Checker {
         base: Arc<PathBuf>,
         _partial: &ModuleTypeData,
         import: &DepInfo,
-    ) -> Result<ModuleInfo, Error> {
+    ) -> ValidationResult<ModuleInfo> {
         let _base_id = self.module_graph.id(&base);
         let path = self.module_graph.resolve(&base, &import.src).unwrap();
         let id = self.module_graph.id(&path);
@@ -387,7 +388,7 @@ impl Load for Checker {
         return Ok(ModuleInfo { module_id: id, data });
     }
 
-    fn load_non_circular_dep(&self, base: Arc<PathBuf>, import: &DepInfo) -> Result<ModuleInfo, Error> {
+    fn load_non_circular_dep(&self, base: Arc<PathBuf>, import: &DepInfo) -> ValidationResult<ModuleInfo> {
         let mut _result = ModuleTypeData::default();
 
         // TODO: Use ModuleId for analyze_module

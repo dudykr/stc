@@ -44,7 +44,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 RExpr::Await(arg) => {
-                    self.storage.report(Error::InvalidDeleteOperand { span: arg.span });
+                    self.storage.report(box Error::InvalidDeleteOperand { span: arg.span });
                 }
 
                 _ => {}
@@ -67,7 +67,7 @@ impl Analyzer<'_, '_> {
             op!(unary, "+") | op!(unary, "-") | op!("~") => {
                 if let Some(arg) = &arg {
                     if arg.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) {
-                        self.storage.report(Error::NumericUnaryOpToSymbol {
+                        self.storage.report(box Error::NumericUnaryOpToSymbol {
                             span: arg.span(),
                             op: *op,
                         })
@@ -159,7 +159,7 @@ impl Analyzer<'_, '_> {
             Some(box Type::Keyword(RTsKeywordType {
                 kind: TsKeywordTypeKind::TsUnknownKeyword,
                 ..
-            })) => return Err(Error::Unknown { span: arg.span() }),
+            })) => return Err(box Error::Unknown { span: arg.span() }),
             _ => {}
         }
 
@@ -195,7 +195,7 @@ impl Analyzer<'_, '_> {
 
         match op {
             op!("typeof") | op!("delete") | op!("void") => match arg.normalize() {
-                Type::EnumVariant(..) if op == op!("delete") => errors.push(Error::TS2704 { span: arg.span() }),
+                Type::EnumVariant(..) if op == op!("delete") => errors.push(box Error::TS2704 { span: arg.span() }),
 
                 _ => {}
             },
@@ -209,12 +209,12 @@ impl Analyzer<'_, '_> {
                 Type::Keyword(RTsKeywordType {
                     kind: TsKeywordTypeKind::TsNullKeyword,
                     ..
-                }) => errors.push(Error::TS2531 { span: arg.span() }),
+                }) => errors.push(box Error::TS2531 { span: arg.span() }),
 
                 Type::Keyword(RTsKeywordType {
                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
                     ..
-                }) => errors.push(Error::TS2532 { span: arg.span() }),
+                }) => errors.push(box Error::TS2532 { span: arg.span() }),
 
                 _ => {
                     //

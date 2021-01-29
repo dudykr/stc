@@ -356,7 +356,7 @@ impl Analyzer<'_, '_> {
         Ok(TsExpr {
             span: e.span,
             expr: e.expr.clone(),
-            type_args: try_opt!(e.type_args.validate_with(self)),
+            type_args: try_opt!(e.type_args.validate_with(self)).map(Box::new),
         })
     }
 }
@@ -512,7 +512,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsTypeRef) -> ValidationResult {
         self.record(t);
 
-        let type_args = try_opt!(t.type_params.validate_with(self));
+        let type_args = try_opt!(t.type_params.validate_with(self)).map(Box::new);
         let mut contains_infer = false;
 
         match t.type_name {
@@ -582,7 +582,7 @@ impl Analyzer<'_, '_> {
             span: t.span,
             arg: t.arg.clone(),
             qualifier: t.qualifier.clone(),
-            type_params: try_opt!(t.type_args.validate_with(self)),
+            type_params: try_opt!(t.type_args.validate_with(self)).map(Box::new),
         })
     }
 }
@@ -632,7 +632,7 @@ impl Analyzer<'_, '_> {
 
         Ok(QueryType {
             span: t.span,
-            expr: t.expr_name.validate_with(self)?,
+            expr: box t.expr_name.validate_with(self)?,
         })
     }
 }

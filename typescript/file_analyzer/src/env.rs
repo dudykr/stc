@@ -139,7 +139,7 @@ impl BuiltIn {
                                 }
 
                                 match result.types.entry(id.clone()) {
-                                    Entry::Occupied(mut e) => match &mut **e.get_mut() {
+                                    Entry::Occupied(mut e) => match e.get_mut().normalize_mut() {
                                         Type::Module(module) => {
                                             //
                                             module.exports.types.extend(data.types);
@@ -150,17 +150,17 @@ impl BuiltIn {
                                     },
                                     Entry::Vacant(e) => {
                                         e.insert(
-                                            box stc_ts_types::Module {
+                                            Type::Module(stc_ts_types::Module {
                                                 span: DUMMY_SP,
                                                 name: RTsModuleName::Ident(RIdent::new(id.clone(), DUMMY_SP)),
-                                                exports: ModuleTypeData {
+                                                exports: box ModuleTypeData {
                                                     private_vars: Default::default(),
                                                     vars: data.vars,
                                                     private_types: Default::default(),
                                                     types: data.types,
                                                 },
-                                            }
-                                            .into(),
+                                            })
+                                            .cheap(),
                                         );
                                     }
                                 }

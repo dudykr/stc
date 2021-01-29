@@ -5,11 +5,11 @@ use crate::loader::ModuleInfo;
 use crate::tests::GLOBALS;
 use crate::tests::MARKS;
 use crate::DepInfo;
+use crate::ValidationResult;
 use once_cell::sync::Lazy;
 use rnode::NodeIdGenerator;
 use stc_testing::logger;
 use stc_ts_builtin_types::Lib;
-use stc_ts_errors::Error;
 use stc_ts_storage::Single;
 use stc_ts_types::ModuleId;
 use stc_ts_types::ModuleTypeData;
@@ -96,11 +96,11 @@ impl Tester<'_, '_> {
 struct Loader {}
 
 impl Load for Loader {
-    fn is_in_same_circular_group(&self, base: &Arc<PathBuf>, src: &JsWord) -> bool {
+    fn module_id(&self, base: &Arc<PathBuf>, src: &JsWord) -> ModuleId {
         unimplemented!()
     }
 
-    fn load_non_circular_dep(&self, base: Arc<PathBuf>, import: &DepInfo) -> Result<ModuleInfo, Error> {
+    fn is_in_same_circular_group(&self, base: &Arc<PathBuf>, src: &JsWord) -> bool {
         unimplemented!()
     }
 
@@ -109,11 +109,11 @@ impl Load for Loader {
         base: Arc<PathBuf>,
         partial: &ModuleTypeData,
         import: &DepInfo,
-    ) -> Result<ModuleInfo, Error> {
+    ) -> ValidationResult<ModuleInfo> {
         unimplemented!()
     }
 
-    fn module_id(&self, base: &Arc<PathBuf>, src: &JsWord) -> ModuleId {
+    fn load_non_circular_dep(&self, base: Arc<PathBuf>, import: &DepInfo) -> ValidationResult<ModuleInfo> {
         unimplemented!()
     }
 }

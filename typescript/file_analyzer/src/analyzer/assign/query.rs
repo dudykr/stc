@@ -15,7 +15,7 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult<()> {
         let to = to.normalize();
 
-        match &rhs.expr {
+        match &*rhs.expr {
             QueryExpr::TsEntityName(e) => {
                 let rhs = self
                     .resolve_typeof(opts.span, e)

@@ -445,7 +445,7 @@ impl Analyzer<'_, '_> {
                                         m.for_pats.entry(i.node_id).or_default().ty =
                                             Some(box Type::Query(QueryType {
                                                 span,
-                                                expr: QueryExpr::TsEntityName(RTsEntityName::Ident(alias.clone())),
+                                                expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(alias.clone())),
                                             }));
                                     }
                                 }
@@ -496,12 +496,12 @@ impl Analyzer<'_, '_> {
                                         match v.name {
                                             RPat::Ident(ref i) => {
                                                 let span = i.span;
-                                                type_errors.push(Error::ImplicitAny { span });
+                                                type_errors.push(box Error::ImplicitAny { span });
                                                 break;
                                             }
                                             RPat::Array(RArrayPat { ref elems, .. }) => {
                                                 let span = elems[i].span();
-                                                type_errors.push(Error::ImplicitAny { span });
+                                                type_errors.push(box Error::ImplicitAny { span });
                                             }
                                             _ => {}
                                         }

@@ -104,7 +104,7 @@ impl Analyzer<'_, '_> {
 
         let (lt, rt): (Box<Type>, Box<Type>) = match (lt, rt) {
             (Some(l), Some(r)) => (l, r),
-            _ => return Err(Error::Errors { span, errors }),
+            _ => return Err(box Error::Errors { span, errors }),
         };
 
         // Handle control-flow based typing
@@ -205,7 +205,7 @@ impl Analyzer<'_, '_> {
                         kind: TsKeywordTypeKind::TsUnknownKeyword,
                         ..
                     }) => {
-                        return Err(Error::Unknown { span });
+                        return Err(box Error::Unknown { span });
                     }
                     _ => {}
                 }
@@ -229,7 +229,7 @@ impl Analyzer<'_, '_> {
 
                     _ => None,
                 }) {
-                    return Err(Error::Unknown { span });
+                    return Err(box Error::Unknown { span });
                 }
 
                 match *lt {
@@ -295,7 +295,7 @@ impl Analyzer<'_, '_> {
                 if c.any(|(_, ty)| {
                     ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) || ty.is_kwd(TsKeywordTypeKind::TsNullKeyword)
                 }) {
-                    return Err(Error::TS2365 { span });
+                    return Err(box Error::TS2365 { span });
                 }
 
                 // Rule:
@@ -313,7 +313,7 @@ impl Analyzer<'_, '_> {
 
                     _ => false,
                 }) {
-                    return Err(Error::TS2365 { span });
+                    return Err(box Error::TS2365 { span });
                 }
 
                 if let Some(()) = c.take_if_any_matches(|(_, lt), (_, rt)| match lt.normalize() {
@@ -383,7 +383,7 @@ impl Analyzer<'_, '_> {
                     Type::This(..) | Type::Param(..) | Type::Ref(..) => false,
                     _ => true,
                 } {
-                    self.storage.report(Error::InvalidLhsInInstanceOf {
+                    self.storage.report(box Error::InvalidLhsInInstanceOf {
                         ty: lt.clone(),
                         span: left.span(),
                     })
@@ -397,7 +397,7 @@ impl Analyzer<'_, '_> {
                     ty if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) => true,
                     _ => false,
                 } {
-                    self.storage.report(Error::InvalidRhsInInstanceOf {
+                    self.storage.report(box Error::InvalidRhsInInstanceOf {
                         span: right.span(),
                         ty: rt.clone(),
                     })
@@ -559,7 +559,7 @@ impl Analyzer<'_, '_> {
                     };
 
                     if !has_overlap {
-                        errors.push(Error::NoOverlap {
+                        errors.push(box Error::NoOverlap {
                             span,
                             value: op != op!("==="),
                             left: ls,
@@ -579,7 +579,7 @@ impl Analyzer<'_, '_> {
                         Type::Keyword(RTsKeywordType {
                             kind: TsKeywordTypeKind::TsVoidKeyword,
                             ..
-                        }) => errors.push(Error::TS1345 { span }),
+                        }) => errors.push(box Error::TS1345 { span }),
                         _ => {}
                     }
                 }
@@ -620,9 +620,9 @@ impl Analyzer<'_, '_> {
                         | Type::EnumVariant(..) => {}
 
                         _ => errors.push(if is_left {
-                            Error::TS2362 { span: ty.span() }
+                            box Error::TS2362 { span: ty.span() }
                         } else {
-                            Error::TS2363 { span: ty.span() }
+                            box Error::TS2363 { span: ty.span() }
                         }),
                     };
 
@@ -648,7 +648,7 @@ impl Analyzer<'_, '_> {
                             _ => false,
                         }
                     {
-                        errors.push(Error::TS2447 { span });
+                        errors.push(box Error::TS2447 { span });
                     } else {
                         check(&lt, true);
                         check(&rt, false);
@@ -694,7 +694,7 @@ impl Analyzer<'_, '_> {
                             ..
                         }) => {}
 
-                        _ => errors.push(Error::TS2360 { span: ls }),
+                        _ => errors.push(box Error::TS2360 { span: ls }),
                     }
                 }
 
@@ -723,7 +723,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     if !is_ok(&rt.unwrap()) {
-                        errors.push(Error::TS2361 { span: rs })
+                        errors.push(box Error::TS2361 { span: rs })
                     }
                 }
             }

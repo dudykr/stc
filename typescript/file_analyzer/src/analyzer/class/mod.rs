@@ -181,7 +181,7 @@ impl Analyzer<'_, '_> {
                 let mut has_optional = false;
                 for p in params.iter() {
                     if has_optional {
-                        child.storage.report(Error::TS1016 { span: p.span() });
+                        child.storage.report(box Error::TS1016 { span: p.span() });
                     }
 
                     match *p {
@@ -350,7 +350,7 @@ impl Analyzer<'_, '_> {
                     // It's error if abstract method has a body
 
                     if c.is_abstract && c.function.body.is_some() {
-                        child.storage.report(Error::TS1318 { span: key_span });
+                        child.storage.report(box Error::TS1318 { span: key_span });
                     }
                 }
 
@@ -360,7 +360,7 @@ impl Analyzer<'_, '_> {
                     let mut has_optional = false;
                     for p in &c.function.params {
                         if has_optional {
-                            child.storage.report(Error::TS1016 { span: p.span() });
+                            child.storage.report(box Error::TS1016 { span: p.span() });
                         }
 
                         match p.pat {
@@ -376,7 +376,7 @@ impl Analyzer<'_, '_> {
 
                 let type_params = try_opt!(c.function.type_params.validate_with(child));
                 if (c.kind == MethodKind::Getter || c.kind == MethodKind::Setter) && type_params.is_some() {
-                    child.storage.report(Error::TS1094 { span: key_span })
+                    child.storage.report(box Error::TS1094 { span: key_span })
                 }
 
                 let params = c.function.params.validate_with(child)?;
@@ -389,7 +389,7 @@ impl Analyzer<'_, '_> {
                 // }
 
                 if c.kind == MethodKind::Setter && c.function.return_type.is_some() {
-                    child.storage.report(Error::TS1095 { span: key_span })
+                    child.storage.report(box Error::TS1095 { span: key_span })
                 }
 
                 let declared_ret_ty = try_opt!(c.function.return_type.validate_with(child));
@@ -418,7 +418,7 @@ impl Analyzer<'_, '_> {
 
             // getter property must have return statements.
             if let None = inferred_ret_ty {
-                self.storage.report(Error::TS2378 { span: key_span });
+                self.storage.report(box Error::TS2378 { span: key_span });
             }
         }
 
@@ -552,7 +552,7 @@ impl Analyzer<'_, '_> {
                             && !is_prop_name_eq_include_computed(&name.unwrap(), &m.key)
                         {
                             for span in replace(&mut spans, vec![]) {
-                                errors.push(Error::FnImplMissingOrNotFollowedByDecl { span });
+                                errors.push(box Error::FnImplMissingOrNotFollowedByDecl { span });
                             }
                         }
 
@@ -581,16 +581,16 @@ impl Analyzer<'_, '_> {
 
                             if is_prop_name_eq_include_computed(&name.unwrap(), &constructor_name) {
                                 for span in replace(&mut spans, vec![]) {
-                                    errors.push(Error::FnImplMissingOrNotFollowedByDecl { span });
+                                    errors.push(box Error::FnImplMissingOrNotFollowedByDecl { span });
                                 }
                             } else if is_prop_name_eq_include_computed(&m.key, &constructor_name) {
                                 for span in replace(&mut spans, vec![]) {
-                                    errors.push(Error::FnImplMissingOrNotFollowedByDecl { span });
+                                    errors.push(box Error::FnImplMissingOrNotFollowedByDecl { span });
                                 }
                             } else {
                                 spans = vec![];
 
-                                errors.push(Error::TS2389 { span: m.key.span() });
+                                errors.push(box Error::TS2389 { span: m.key.span() });
                             }
 
                             name = None;
@@ -613,7 +613,7 @@ impl Analyzer<'_, '_> {
 
         // Class definition ended with `foo();`
         for span in replace(&mut spans, vec![]) {
-            errors.push(Error::FnImplMissingOrNotFollowedByDecl { span });
+            errors.push(box Error::FnImplMissingOrNotFollowedByDecl { span });
         }
 
         self.storage.report_all(errors);
@@ -648,7 +648,7 @@ impl Analyzer<'_, '_> {
             Ok(ty) => ty,
             Err(err) => {
                 match err {
-                    Error::TS2585 { span } => Err(Error::TS2585 { span })?,
+                    box Error::TS2585 { span } => Err(box Error::TS2585 { span })?,
                     _ => {}
                 }
 
@@ -670,7 +670,7 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {}
             _ if is_symbol_access => {}
-            _ => errors.push(Error::TS1166 { span }),
+            _ => errors.push(box Error::TS1166 { span }),
         }
 
         if !errors.is_empty() {
@@ -693,7 +693,7 @@ impl Analyzer<'_, '_> {
         });
         let mut errors = Errors::default();
 
-        let res: Result<_, Error> = try {
+        let res: ValidationResult<()> = try {
             if let Some(ref super_ty) = class.super_class {
                 match super_ty.normalize() {
                     Type::Class(sc) => {
@@ -729,7 +729,7 @@ impl Analyzer<'_, '_> {
                                 }
                             }
 
-                            errors.push(Error::TS2515 { span: name_span });
+                            errors.push(box Error::TS2515 { span: name_span });
 
                             if sc.is_abstract {
                                 // TODO: Check super class of super class
@@ -819,7 +819,9 @@ impl Analyzer<'_, '_> {
                                                             .map(|id| {
                                                                 box Type::Query(QueryType {
                                                                     span: c.span,
-                                                                    expr: QueryExpr::TsEntityName(id.clone().into()),
+                                                                    expr: box QueryExpr::TsEntityName(
+                                                                        id.clone().into(),
+                                                                    ),
                                                                 })
                                                             })
                                                             .expect("Super class should be named");
@@ -913,7 +915,7 @@ impl Analyzer<'_, '_> {
                                     for p in &cons.params {
                                         match *p {
                                             RParamOrTsParamProp::TsParamProp(..) => {
-                                                child.storage.report(Error::TS2369 { span: p.span() })
+                                                child.storage.report(box Error::TS2369 { span: p.span() })
                                             }
                                             _ => {}
                                         }
@@ -937,7 +939,7 @@ impl Analyzer<'_, '_> {
                                     match constructor_required_param_count {
                                         Some(v) if required_param_count != v => {
                                             for span in constructor_spans.drain(..) {
-                                                child.storage.report(Error::TS2394 { span })
+                                                child.storage.report(box Error::TS2394 { span })
                                             }
                                         }
 
