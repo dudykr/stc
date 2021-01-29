@@ -80,7 +80,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         };
 
-        Err(Error::Unimplemented {
+        Err(box Error::Unimplemented {
             span: opts.span,
             msg: format!("Assignment of non-class object to class\n{:#?}", r),
         })
@@ -124,7 +124,7 @@ impl Analyzer<'_, '_> {
             ClassMember::IndexSignature(_) => {}
         }
 
-        Err(Error::Unimplemented {
+        Err(box Error::Unimplemented {
             span: opts.span,
             msg: format!("fine-grained class assignment to lhs memeber: {:#?}", l),
         })

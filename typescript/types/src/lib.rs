@@ -347,7 +347,7 @@ pub struct Ref {
     pub ctxt: ModuleId,
     #[use_eq_ignore_span]
     pub type_name: RTsEntityName,
-    pub type_args: Option<TypeParamInstantiation>,
+    pub type_args: Option<Box<TypeParamInstantiation>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
@@ -359,7 +359,7 @@ pub struct InferType {
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct QueryType {
     pub span: Span,
-    pub expr: QueryExpr,
+    pub expr: Box<QueryExpr>,
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit)]
@@ -374,7 +374,7 @@ pub struct ImportType {
     pub arg: RStr,
     #[use_eq_ignore_span]
     pub qualifier: Option<RTsEntityName>,
-    pub type_params: Option<TypeParamInstantiation>,
+    pub type_params: Option<Box<TypeParamInstantiation>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
@@ -382,7 +382,7 @@ pub struct Module {
     pub span: Span,
     #[use_eq_ignore_span]
     pub name: RTsModuleName,
-    pub exports: ModuleTypeData,
+    pub exports: Box<ModuleTypeData>,
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
@@ -421,7 +421,7 @@ pub struct Class {
 pub struct ClassInstance {
     pub span: Span,
     pub ty: Box<Type>,
-    pub type_args: Option<TypeParamInstantiation>,
+    pub type_args: Option<Box<TypeParamInstantiation>>,
     // pub implements: Vec<Box<Type>>,
 }
 
@@ -539,7 +539,7 @@ pub struct TsExpr {
     pub span: Span,
     #[use_eq_ignore_span]
     pub expr: RTsEntityName,
-    pub type_args: Option<TypeParamInstantiation>,
+    pub type_args: Option<Box<TypeParamInstantiation>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]

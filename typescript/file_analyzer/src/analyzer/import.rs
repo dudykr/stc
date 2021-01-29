@@ -107,7 +107,7 @@ impl Analyzer<'_, '_> {
         }
 
         if !did_work {
-            self.storage.report(Error::ImportFailed { span, orig, id });
+            self.storage.report(box Error::ImportFailed { span, orig, id });
         }
     }
 }

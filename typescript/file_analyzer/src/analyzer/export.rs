@@ -120,7 +120,7 @@ impl Analyzer<'_, '_> {
                     //
                     // export = React
                     // declare namespace React {}
-                    Error::UndefinedSymbol { .. } => {
+                    box Error::UndefinedSymbol { .. } => {
                         self.pending_exports
                             .push(((Id::word(js_word!("default")), expr.span()), expr.clone()));
                         return;
@@ -408,7 +408,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
             }
-            None => self.storage.report(Error::ExportAllFailed { span }),
+            None => self.storage.report(box Error::ExportAllFailed { span }),
         }
 
         Ok(())
@@ -502,7 +502,7 @@ impl Analyzer<'_, '_> {
         }
 
         if !did_work {
-            self.storage.report(Error::ExportFailed { span, orig, id })
+            self.storage.report(box Error::ExportFailed { span, orig, id })
         }
     }
 }

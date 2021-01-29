@@ -198,7 +198,11 @@ impl Analyzer<'_, '_> {
 //}
 
 fn make_module_ty(span: Span, name: RTsModuleName, exports: ModuleTypeData) -> ty::Module {
-    ty::Module { span, name, exports }
+    ty::Module {
+        span,
+        name,
+        exports: box exports,
+    }
 }
 
 // TODO:
@@ -515,7 +519,7 @@ impl Load for NoopLoader {
         false
     }
 
-    fn load_non_circular_dep(&self, base: Arc<PathBuf>, import: &DepInfo) -> Result<ModuleInfo, Error> {
+    fn load_non_circular_dep(&self, base: Arc<PathBuf>, import: &DepInfo) -> ValidationResult<ModuleInfo> {
         unimplemented!()
     }
 
@@ -524,7 +528,7 @@ impl Load for NoopLoader {
         base: Arc<PathBuf>,
         partial: &ModuleTypeData,
         import: &DepInfo,
-    ) -> Result<ModuleInfo, Error> {
+    ) -> ValidationResult<ModuleInfo> {
         unimplemented!()
     }
 
@@ -561,7 +565,7 @@ impl Analyzer<'_, '_> {
                     self.export_equals_span = decl.span;
                 }
                 if has_normal_export {
-                    self.storage.report(Error::TS2309 { span: decl.span });
+                    self.storage.report(box Error::TS2309 { span: decl.span });
                 }
 
                 //
@@ -574,7 +578,7 @@ impl Analyzer<'_, '_> {
                 | RModuleDecl::TsNamespaceExport(..) => {
                     has_normal_export = true;
                     if !self.export_equals_span.is_dummy() {
-                        self.storage.report(Error::TS2309 {
+                        self.storage.report(box Error::TS2309 {
                             span: self.export_equals_span,
                         });
                     }
@@ -689,7 +693,7 @@ impl Analyzer<'_, '_> {
                     let ty = child.finalize(ty::Module {
                         name: decl.id.clone(),
                         span,
-                        exports,
+                        exports: box exports,
                     });
                     let ty = Type::Module(ty).cheap();
                     return Ok(Some(ty));

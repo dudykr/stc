@@ -341,7 +341,7 @@ impl Analyzer<'_, '_> {
                             Type::Keyword(RTsKeywordType {
                                 kind: TsKeywordTypeKind::TsAnyKeyword,
                                 ..
-                            }) if type_args.is_some() => analyzer.storage.report(Error::TS2347 { span }),
+                            }) if type_args.is_some() => analyzer.storage.report(box Error::TS2347 { span }),
                             _ => {}
                         }
                         callee_ty
@@ -537,11 +537,11 @@ impl Analyzer<'_, '_> {
                     }
 
                     return Err(match kind {
-                        ExtractKind::Call => Error::NoCallabelPropertyWithName {
+                        ExtractKind::Call => box Error::NoCallabelPropertyWithName {
                             span,
                             key: box prop.clone(),
                         },
-                        ExtractKind::New => Error::NoSuchConstructor {
+                        ExtractKind::New => box Error::NoSuchConstructor {
                             span,
                             key: box prop.clone(),
                         },
@@ -668,10 +668,10 @@ impl Analyzer<'_, '_> {
         }
 
         match candidates.len() {
-            0 => Err(Error::NoSuchProperty {
+            0 => Err(box Error::NoSuchProperty {
                 span,
                 obj: Some(box obj.clone()),
-                prop: Some(prop.clone()),
+                prop: Some(box prop.clone()),
             }),
             1 => {
                 // TODO:
@@ -821,7 +821,7 @@ impl Analyzer<'_, '_> {
                             return Ok(box Type::ClassInstance(ClassInstance {
                                 span,
                                 ty: box Type::Class(cls.clone()),
-                                type_args: Some(type_args),
+                                type_args: Some(box type_args),
                             }));
                         }
                     }
@@ -829,7 +829,7 @@ impl Analyzer<'_, '_> {
                     return Ok(box Type::ClassInstance(ClassInstance {
                         span,
                         ty: box Type::Class(cls.clone()),
-                        type_args: type_args.cloned(),
+                        type_args: type_args.cloned().map(Box::new),
                     }));
                 }
 
@@ -843,13 +843,13 @@ impl Analyzer<'_, '_> {
                 dbg!();
                 match kind {
                     ExtractKind::Call => {
-                        return Err(Error::NoCallSignature {
+                        return Err(box Error::NoCallSignature {
                             span,
                             callee: box ty.clone(),
                         })
                     }
                     ExtractKind::New => {
-                        return Err(Error::NoNewSignature {
+                        return Err(box Error::NoNewSignature {
                             span,
                             callee: box ty.clone(),
                         })
@@ -864,7 +864,7 @@ impl Analyzer<'_, '_> {
                 return Ok(box Type::ClassInstance(ClassInstance {
                     span,
                     ty: instantiate_class(self.ctx.module_id, box ty.clone()),
-                    type_args: type_args.cloned(),
+                    type_args: type_args.cloned().map(Box::new),
                 }));
             }
 
@@ -876,7 +876,7 @@ impl Analyzer<'_, '_> {
             Type::Keyword(RTsKeywordType {
                 kind: TsKeywordTypeKind::TsUnknownKeyword,
                 ..
-            }) => return Err(Error::Unknown { span }),
+            }) => return Err(box Error::Unknown { span }),
 
             Type::Function(ref f) if kind == ExtractKind::Call => self.get_return_type(
                 span,
@@ -956,13 +956,13 @@ impl Analyzer<'_, '_> {
                 return Ok(box ClassInstance {
                     span,
                     ty: box Type::Class(cls.clone()),
-                    type_args: type_args.cloned(),
+                    type_args: type_args.cloned().map(Box::new),
                 }
                 .into());
             }
 
             Type::Query(QueryType {
-                expr: QueryExpr::TsEntityName(RTsEntityName::Ident(RIdent { ref sym, .. })),
+                expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(RIdent { ref sym, .. })),
                 ..
             }) => {
                 //if self.scope.find_declaring_fn(sym) {
@@ -1012,11 +1012,11 @@ impl Analyzer<'_, '_> {
 
         if candidates.is_empty() {
             return match kind {
-                ExtractKind::Call => Err(Error::NoCallSignature {
+                ExtractKind::Call => Err(box Error::NoCallSignature {
                     span,
                     callee: box callee_ty.clone(),
                 }),
-                ExtractKind::New => Err(Error::NoNewSignature {
+                ExtractKind::New => Err(box Error::NoNewSignature {
                     span,
                     callee: box callee_ty.clone(),
                 }),
@@ -1139,7 +1139,7 @@ impl Analyzer<'_, '_> {
                     return Ok(box Type::ClassInstance(ClassInstance {
                         span,
                         ty: box Type::Class(cls.clone()),
-                        type_args: type_args.cloned(),
+                        type_args: type_args.cloned().map(Box::new),
                     }));
                 }
                 _ => {}
@@ -1150,9 +1150,9 @@ impl Analyzer<'_, '_> {
             dbg!();
 
             return Err(if kind == ExtractKind::Call {
-                Error::NoCallSignature { span, callee }
+                box Error::NoCallSignature { span, callee }
             } else {
-                Error::NoNewSignature { span, callee }
+                box Error::NoNewSignature { span, callee }
             });
         }
 
@@ -1219,7 +1219,7 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
             }
-            return Err(Error::ArgCountMismatch {
+            return Err(box Error::ArgCountMismatch {
                 span,
                 min: min_param,
                 max: max_param,
@@ -1504,7 +1504,7 @@ impl Analyzer<'_, '_> {
             if let Some(type_args) = type_args {
                 // TODO: Handle defaults of the type parameter (Change to range)
                 if type_params.len() != type_args.params.len() {
-                    return Err(Error::TypeParameterCountMismatch {
+                    return Err(box Error::TypeParameterCountMismatch {
                         span,
                         max: type_params.len(),
                         min: type_params.len(),
@@ -1759,7 +1759,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                                                 span: *span,
                                                 ctxt: *ctxt,
                                                 type_name: RTsEntityName::Ident(i.clone()),
-                                                type_args: Some(TypeParamInstantiation {
+                                                type_args: Some(box TypeParamInstantiation {
                                                     span: type_args.span,
                                                     params: vec![ty.clone()],
                                                 }),

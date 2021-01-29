@@ -41,7 +41,7 @@ impl Analyzer<'_, '_> {
                         match p.pat {
                             RPat::Ident(RIdent { optional: true, .. }) | RPat::Rest(..) => {}
                             _ => {
-                                child.storage.report(Error::TS1016 { span: p.span() });
+                                child.storage.report(box Error::TS1016 { span: p.span() });
                             }
                         }
                     }
@@ -72,7 +72,7 @@ impl Analyzer<'_, '_> {
             if !child.is_builtin {
                 params = params
                     .into_iter()
-                    .map(|param: FnParam| -> Result<_, Error> {
+                    .map(|param: FnParam| -> ValidationResult<_> {
                         let ty = child.expand(param.span, param.ty)?;
                         Ok(FnParam { ty, ..param })
                     })
@@ -163,7 +163,7 @@ impl Analyzer<'_, '_> {
                                 kind: TsKeywordTypeKind::TsNeverKeyword,
                                 ..
                             }) => {}
-                            _ => errors.push(Error::ReturnRequired { span }),
+                            _ => errors.push(box Error::ReturnRequired { span }),
                         }
                     }
 
@@ -214,7 +214,8 @@ impl Analyzer<'_, '_> {
     /// If the referred type has default type parameter, we have to include it
     /// in function type of output (.d.ts)
     fn qualify_ref_type_args(&mut self, span: Span, mut ty: Ref) -> ValidationResult<Ref> {
-        let actual_ty = self.type_of_ts_entity_name(span, self.ctx.module_id, &ty.type_name, ty.type_args.as_ref())?;
+        let actual_ty =
+            self.type_of_ts_entity_name(span, self.ctx.module_id, &ty.type_name, ty.type_args.as_deref())?;
 
         let type_params = match actual_ty.foldable() {
             Type::Alias(Alias {
@@ -250,7 +251,7 @@ impl Analyzer<'_, '_> {
                 if let Some(default) = default {
                     args.params.push(default);
                 } else {
-                    self.storage.report(Error::ImplicitAny { span });
+                    self.storage.report(box Error::ImplicitAny { span });
                     args.params.push(Type::any(span));
                 }
             }

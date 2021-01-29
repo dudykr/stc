@@ -1,4 +1,5 @@
 #![allow(incomplete_features)]
+#![deny(variant_size_differences)]
 #![feature(box_syntax)]
 #![feature(specialization)]
 
@@ -146,7 +147,7 @@ pub enum Error {
 
     Errors {
         span: Span,
-        errors: Vec<Error>,
+        errors: Vec<Box<Error>>,
     },
 
     RedeclaredVarWithDifferentType {
@@ -196,7 +197,7 @@ pub enum Error {
     NoSuchProperty {
         span: Span,
         obj: Option<Box<Type>>,
-        prop: Option<Key>,
+        prop: Option<Box<Key>>,
     },
 
     TooManyTupleElements {
@@ -215,9 +216,9 @@ pub enum Error {
 
     /// TS2304
     TypeNotFound {
-        name: Name,
+        name: Box<Name>,
         ctxt: ModuleId,
-        type_args: Option<TypeParamInstantiation>,
+        type_args: Option<Box<TypeParamInstantiation>>,
         span: Span,
     },
 
@@ -255,7 +256,7 @@ pub enum Error {
 
     ResolvedFailed {
         span: Span,
-        base: PathBuf,
+        base: Box<PathBuf>,
         src: JsWord,
     },
 
@@ -269,7 +270,7 @@ pub enum Error {
         span: Span,
         left: Box<Type>,
         right: Box<Type>,
-        cause: Vec<Error>,
+        cause: Vec<Box<Error>>,
     },
 
     InvalidAssignmentOfArray {
@@ -279,7 +280,7 @@ pub enum Error {
     /// a or b or c
     UnionError {
         span: Span,
-        errors: Vec<Error>,
+        errors: Vec<Box<Error>>,
     },
 
     IntersectionError {
@@ -524,8 +525,8 @@ pub enum Error {
     InvalidOpAssign {
         span: Span,
         op: AssignOp,
-        lhs: Type,
-        rhs: Type,
+        lhs: Box<Type>,
+        rhs: Box<Type>,
     },
 
     AssignOpCannotBeApplied {
@@ -566,9 +567,9 @@ pub enum Error {
 
 impl Error {
     #[track_caller]
-    pub fn context(self, context: impl Display) -> Self {
+    pub fn context(self, context: impl Display) -> Box<Self> {
         if !cfg!(debug_assertions) {
-            return self;
+            return box self;
         }
 
         match self {
@@ -580,7 +581,7 @@ impl Error {
             }
         }
 
-        Error::DebugContext {
+        box Error::DebugContext {
             span: self.span(),
             context: context.to_string(),
             inner: box self,
@@ -684,19 +685,18 @@ impl Error {
     }
 
     #[cold]
-    pub fn flatten(vec: Vec<Error>) -> Vec<Error> {
+    pub fn flatten(vec: Vec<Box<Error>>) -> Vec<Box<Error>> {
         let mut buf = Vec::with_capacity(vec.len());
 
         for e in vec {
-            match e {
+            match *e {
                 Error::Errors { errors, .. } => buf.extend(Self::flatten(errors)),
                 Error::DebugContext { inner, context, .. } => {
                     //
                     buf.extend(
-                        Self::flatten(vec![*inner])
+                        Self::flatten(vec![inner])
                             .into_iter()
-                            .map(Box::new)
-                            .map(|inner| Error::DebugContext {
+                            .map(|inner| box Error::DebugContext {
                                 span: inner.span(),
                                 context: context.clone(),
                                 inner,
@@ -711,9 +711,9 @@ impl Error {
     }
 }
 
-impl From<Vec<Error>> for Error {
+impl From<Vec<Box<Error>>> for Error {
     #[inline]
-    fn from(errors: Vec<Error>) -> Self {
+    fn from(errors: Vec<Box<Error>>) -> Self {
         Error::Errors { span: DUMMY_SP, errors }
     }
 }
@@ -725,11 +725,18 @@ impl From<Errors> for Error {
     }
 }
 
+impl From<Errors> for Box<Error> {
+    #[inline]
+    fn from(errors: Errors) -> Self {
+        box errors.into()
+    }
+}
+
 /// A utility type to track
 #[derive(Debug, Clone, Default, PartialEq)]
-pub struct Errors(Vec<Error>);
+pub struct Errors(Vec<Box<Error>>);
 
-impl From<Errors> for Vec<Error> {
+impl From<Errors> for Vec<Box<Error>> {
     #[inline]
     fn from(e: Errors) -> Self {
         e.0
@@ -737,8 +744,8 @@ impl From<Errors> for Vec<Error> {
 }
 
 impl IntoIterator for Errors {
-    type Item = Error;
-    type IntoIter = <Vec<Error> as IntoIterator>::IntoIter;
+    type Item = Box<Error>;
+    type IntoIter = <Vec<Box<Error>> as IntoIterator>::IntoIter;
 
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
@@ -758,7 +765,7 @@ impl Errors {
     }
 
     #[inline]
-    pub fn push(&mut self, err: Error) {
+    pub fn push(&mut self, err: Box<Error>) {
         self.validate(&err);
 
         self.0.push(err);
@@ -770,7 +777,7 @@ impl Errors {
     }
 
     #[inline]
-    pub fn append(&mut self, other: &mut Vec<Error>) {
+    pub fn append(&mut self, other: &mut Vec<Box<Error>>) {
         for err in &*other {
             self.validate(err)
         }
@@ -784,9 +791,9 @@ impl Errors {
     }
 }
 
-impl Extend<Error> for Errors {
+impl Extend<Box<Error>> for Errors {
     #[inline]
-    fn extend<T: IntoIterator<Item = Error>>(&mut self, iter: T) {
+    fn extend<T: IntoIterator<Item = Box<Error>>>(&mut self, iter: T) {
         if cfg!(debug_assertions) {
             for err in iter {
                 self.push(err)

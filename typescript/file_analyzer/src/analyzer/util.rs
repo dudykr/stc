@@ -37,7 +37,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        Err(Error::NoNewSignature {
+        Err(box Error::NoNewSignature {
             span,
             callee: box callee.clone(),
         })
@@ -116,7 +116,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        Err(Error::NoNewSignature {
+        Err(box Error::NoNewSignature {
             span,
             callee: box ty.clone(),
         })
@@ -162,7 +162,7 @@ pub(crate) fn instantiate_class(module_id: ModuleId, ty: Box<Type>) -> Box<Type>
 
         Type::Query(QueryType {
             span,
-            expr: QueryExpr::TsEntityName(ref type_name),
+            expr: box QueryExpr::TsEntityName(ref type_name),
         }) => box Type::Ref(Ref {
             span,
             ctxt: module_id,
@@ -231,10 +231,10 @@ impl Analyzer<'_, '_> {
     //    }
 }
 
-pub trait ResultExt<T>: Into<Result<T, Error>> {
+pub trait ResultExt<T>: Into<Result<T, Box<Error>>> {
     fn store<V>(self, to: &mut V) -> Option<T>
     where
-        V: Extend<Error>,
+        V: Extend<Box<Error>>,
     {
         match self.into() {
             Ok(val) => Some(val),
@@ -256,7 +256,7 @@ pub trait ResultExt<T>: Into<Result<T, Error>> {
     }
 }
 
-impl<T> ResultExt<T> for Result<T, Error> {}
+impl<T> ResultExt<T> for Result<T, Box<Error>> {}
 
 /// Simple utility to check (l, r) and (r, l) with same code.
 #[derive(Debug, Clone, Copy)]

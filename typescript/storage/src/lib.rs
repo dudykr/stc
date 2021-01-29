@@ -25,7 +25,7 @@ pub struct Info {
 pub type Storage<'b> = Box<dyn 'b + Mode>;
 
 pub trait ErrorStore {
-    fn report(&mut self, err: Error);
+    fn report(&mut self, err: Box<Error>);
     fn report_all(&mut self, err: Errors);
     fn take_errors(&mut self) -> Errors;
 }
@@ -67,7 +67,7 @@ impl<'a, T> ErrorStore for &'a mut T
 where
     T: ErrorStore,
 {
-    fn report(&mut self, err: Error) {
+    fn report(&mut self, err: Box<Error>) {
         (**self).report(err);
     }
 
@@ -147,7 +147,7 @@ pub struct Single<'a> {
 }
 
 impl ErrorStore for Single<'_> {
-    fn report(&mut self, err: Error) {
+    fn report(&mut self, err: Box<Error>) {
         self.info.errors.push(err);
     }
 
@@ -192,7 +192,7 @@ impl TypeStore for Single<'_> {
                 Some(..) => {}
                 None => {}
             },
-            None => self.report(Error::NoSuchVar { span, name: id }),
+            None => self.report(box Error::NoSuchVar { span, name: id }),
         }
     }
 
@@ -203,7 +203,7 @@ impl TypeStore for Single<'_> {
             Some(ty) => {
                 *self.info.exports.types.entry(id.sym().clone()).or_default() = ty.clone();
             }
-            None => self.report(Error::NoSuchVar { span, name: id }),
+            None => self.report(box Error::NoSuchVar { span, name: id }),
         }
     }
 
@@ -284,7 +284,7 @@ pub struct Group<'a> {
 }
 
 impl ErrorStore for Group<'_> {
-    fn report(&mut self, err: Error) {
+    fn report(&mut self, err: Box<Error>) {
         self.errors.push(err);
     }
 
@@ -328,7 +328,7 @@ impl TypeStore for Group<'_> {
             Some(v) => {
                 e.vars.insert(id.sym().clone(), v.clone());
             }
-            None => self.report(Error::NoSuchVar { span, name: id }),
+            None => self.report(box Error::NoSuchVar { span, name: id }),
         }
     }
 
@@ -338,7 +338,7 @@ impl TypeStore for Group<'_> {
             Some(v) => {
                 e.types.insert(id.sym().clone(), v.clone());
             }
-            None => self.report(Error::NoSuchType { span, name: id }),
+            None => self.report(box Error::NoSuchType { span, name: id }),
         }
     }
 
@@ -421,7 +421,7 @@ pub struct Builtin {
 }
 
 impl ErrorStore for Builtin {
-    fn report(&mut self, err: Error) {
+    fn report(&mut self, err: Box<Error>) {
         unreachable!("builtin error: {:?}", err);
     }
 

@@ -417,7 +417,7 @@ impl Scope<'_> {
 
 impl Analyzer<'_, '_> {
     /// Overrides a variable. Used for removing lazily-typed stuffs.
-    pub(super) fn override_var(&mut self, kind: VarDeclKind, name: Id, ty: Box<Type>) -> Result<(), Error> {
+    pub(super) fn override_var(&mut self, kind: VarDeclKind, name: Id, ty: Box<Type>) -> ValidationResult<()> {
         self.declare_var(ty.span(), kind, name, Some(ty), true, true)?;
 
         Ok(())
@@ -561,15 +561,20 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    pub fn declare_vars(&mut self, kind: VarDeclKind, pat: &RPat) -> Result<(), Error> {
+    pub fn declare_vars(&mut self, kind: VarDeclKind, pat: &RPat) -> ValidationResult<()> {
         self.declare_vars_inner_with_ty(kind, pat, false, None)
     }
 
-    pub fn declare_vars_with_ty(&mut self, kind: VarDeclKind, pat: &RPat, ty: Option<Box<Type>>) -> Result<(), Error> {
+    pub fn declare_vars_with_ty(
+        &mut self,
+        kind: VarDeclKind,
+        pat: &RPat,
+        ty: Option<Box<Type>>,
+    ) -> ValidationResult<()> {
         self.declare_vars_inner_with_ty(kind, pat, false, ty)
     }
 
-    pub(super) fn declare_vars_inner(&mut self, kind: VarDeclKind, pat: &RPat, export: bool) -> Result<(), Error> {
+    pub(super) fn declare_vars_inner(&mut self, kind: VarDeclKind, pat: &RPat, export: bool) -> ValidationResult<()> {
         self.declare_vars_inner_with_ty(kind, pat, export, None)
     }
 
@@ -583,7 +588,7 @@ impl Analyzer<'_, '_> {
         pat: &RPat,
         export: bool,
         ty: Option<Box<Type>>,
-    ) -> Result<(), Error> {
+    ) -> ValidationResult<()> {
         let span = ty
             .as_ref()
             .map(|v| v.span())
@@ -665,7 +670,7 @@ impl Analyzer<'_, '_> {
                                 span: *span,
                                 ctxt,
                                 type_name: RTsEntityName::Ident(RIdent::new("Iterable".into(), DUMMY_SP)),
-                                type_args: Some(TypeParamInstantiation {
+                                type_args: Some(box TypeParamInstantiation {
                                     span: *span,
                                     params: vec![box Type::Keyword(RTsKeywordType {
                                         span: DUMMY_SP,
@@ -978,7 +983,7 @@ impl Analyzer<'_, '_> {
         ty: Option<Box<Type>>,
         initialized: bool,
         allow_multiple: bool,
-    ) -> Result<(), Error> {
+    ) -> ValidationResult<()> {
         let ty = ty.map(|ty| ty.cheap());
 
         if self.ctx.in_global {
@@ -1122,7 +1127,7 @@ impl Analyzer<'_, '_> {
                         ..
                     }) => {
                         if tuple_elements.len() < elems.len() {
-                            return Err(Error::TooManyTupleElements { span });
+                            return Err(box Error::TooManyTupleElements { span });
                         }
 
                         for (elem, tuple_element) in elems.into_iter().zip(tuple_elements) {
@@ -1166,12 +1171,12 @@ impl Analyzer<'_, '_> {
                                     buf.push(elem_types);
                                 }
                                 _ => {
-                                    errors.push(Error::NotTuple { span: ty.span() });
+                                    errors.push(box Error::NotTuple { span: ty.span() });
                                 }
                             }
                         }
                         if !errors.is_empty() {
-                            return Err(Error::UnionError { span, errors });
+                            return Err(box Error::UnionError { span, errors });
                         }
 
                         for (elem, tuple_elements) in
@@ -1282,7 +1287,7 @@ impl Analyzer<'_, '_> {
 
                     dbg!();
 
-                    return Err(Error::NoSuchProperty {
+                    return Err(box Error::NoSuchProperty {
                         span,
                         obj: None,
                         prop: None,
@@ -1339,10 +1344,10 @@ impl Analyzer<'_, '_> {
                                 RObjectPatProp::Rest(RRestPat { ref arg, .. }) => arg.span(),
                                 _ => p.span(),
                             };
-                            return Err(Error::Unknown { span });
+                            return Err(box Error::Unknown { span });
                         }
 
-                        return Err(Error::Unknown { span });
+                        return Err(box Error::Unknown { span });
                     }
 
                     Type::Ref(..) => {
@@ -1789,7 +1794,7 @@ impl Expander<'_, '_, '_> {
                                     slog::info!(self.logger, "expand: expanding type parameters");
                                     let mut inferred = self.analyzer.infer_arg_types(
                                         self.span,
-                                        type_args.as_ref(),
+                                        type_args.as_deref(),
                                         &type_params.params,
                                         &[],
                                         &[],
@@ -1910,8 +1915,8 @@ impl Expander<'_, '_, '_> {
         }
 
         print_backtrace();
-        Err(Error::TypeNotFound {
-            name: type_name.clone().into(),
+        Err(box Error::TypeNotFound {
+            name: box type_name.clone().into(),
             ctxt,
             type_args: type_args.clone(),
             span,
@@ -2015,7 +2020,7 @@ impl Fold<Type> for Expander<'_, '_, '_> {
                         match cond_ty.check_type.normalize_mut() {
                             Type::Query(QueryType {
                                 span,
-                                expr: QueryExpr::TsEntityName(RTsEntityName::Ident(name)),
+                                expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(name)),
                                 ..
                             }) => {
                                 let id = (&*name).into();
