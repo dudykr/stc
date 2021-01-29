@@ -139,7 +139,7 @@ impl BuiltIn {
                                 }
 
                                 match result.types.entry(id.clone()) {
-                                    Entry::Occupied(mut e) => match &mut **e.get_mut() {
+                                    Entry::Occupied(mut e) => match e.get_mut().normalize_mut() {
                                         Type::Module(module) => {
                                             //
                                             module.exports.types.extend(data.types);
