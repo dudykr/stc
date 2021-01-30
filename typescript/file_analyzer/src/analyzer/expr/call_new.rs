@@ -1422,7 +1422,16 @@ impl Analyzer<'_, '_> {
     }
 
     fn validate_arg_types(&mut self, params: &[FnParam], spread_arg_types: &[TypeOrSpread]) {
-        for pair in params.iter().zip_longest(spread_arg_types) {
+        for pair in params
+            .iter()
+            .filter(|param| match param.pat {
+                RPat::Ident(RIdent {
+                    sym: js_word!("this"), ..
+                }) => false,
+                _ => true,
+            })
+            .zip_longest(spread_arg_types)
+        {
             match pair {
                 EitherOrBoth::Both(param, arg) => {
                     if let Err(err) = self.assign(&param.ty, &arg.ty, arg.span()) {
