@@ -453,7 +453,16 @@ impl Analyzer<'_, '_> {
             // Everything is assignable to Object
             Type::Interface(ref i) if i.name.as_str() == "Object" => return Ok(()),
 
-            Type::Module(..) => {
+            Type::Module(to) => {
+                match rhs {
+                    // TODO: Use unique id for module type.
+                    Type::Module(rhs) => {
+                        if to.name.eq_ignore_span(rhs.name) {
+                            return Ok(());
+                        }
+                    }
+                    _ => {}
+                }
                 dbg!();
                 return Err(box Error::InvalidLValue { span: to.span() });
             }
