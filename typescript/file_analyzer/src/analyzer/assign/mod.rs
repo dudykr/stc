@@ -432,7 +432,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match *to {
+        match to {
             // let a: any = 'foo'
             Type::Keyword(RTsKeywordType {
                 kind: TsKeywordTypeKind::TsAnyKeyword,
