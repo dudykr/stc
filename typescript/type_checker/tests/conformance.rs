@@ -180,6 +180,14 @@ fn do_test(treat_error_as_bug: bool, file_name: &Path) -> Result<(), StdErr> {
             })?;
             let module = make_test(&comments, module);
 
+            for line in fm.src.lines() {
+                if line.is_empty() {
+                    err_shift_n += 1;
+                } else {
+                    break;
+                }
+            }
+
             if !module.body.is_empty() {
                 first_smtt_line = cm.lookup_line(module.body[0].span().lo).unwrap().line;
             }
