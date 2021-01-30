@@ -34,6 +34,10 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
+                if !l.is_abstract && r.is_abstract {
+                    return Err(box Error::CannotAssignAbstractConstructorToNonAbstractConstructor { span: opts.span });
+                }
+
                 // class Child extends Parent
                 // let c: Child;
                 // let p: Parent;
