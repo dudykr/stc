@@ -144,7 +144,7 @@ impl Analyzer<'_, '_> {
                 expr: box RExpr::TsAs(RTsAsExpr {
                     node_id: NodeId::invalid(),
                     span,
-                    expr: box RExpr::Invalid(RInvalid { span }),
+                    expr: box RExpr::Invalid(RInvalid { span: DUMMY_SP }),
                     type_ann: box RTsType::TsTypeRef(RTsTypeRef {
                         node_id: NodeId::invalid(),
                         span,
