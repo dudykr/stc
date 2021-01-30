@@ -20,6 +20,8 @@ use crate::{
     ValidationResult,
 };
 use fxhash::FxHashMap;
+use itertools::EitherOrBoth;
+use itertools::Itertools;
 use rnode::Fold;
 use rnode::FoldWith;
 use rnode::NodeId;
@@ -1369,6 +1371,8 @@ impl Analyzer<'_, '_> {
                 &*new_args
             };
 
+            self.validate_arg_types(params, &spread_arg_types);
+
             let ctx = Ctx {
                 preserve_params: true,
                 preserve_ret_ty: true,
@@ -1403,13 +1407,27 @@ impl Analyzer<'_, '_> {
             return Ok(ty);
         }
 
-        let mut ret_ty = ret_ty.clone();
+        self.validate_arg_types(params, &spread_arg_types);
+
         ret_ty.reposition(span);
         ret_ty.visit_mut_with(&mut ReturnTypeSimplifier { analyzer: self });
         if kind == ExtractKind::Call {
             self.add_call_facts(params, &args, &mut ret_ty);
         }
         return Ok(ret_ty);
+    }
+
+    fn validate_arg_types(&mut self, params: &[FnParam], spread_arg_types: &[TypeOrSpread]) {
+        for pair in params.iter().zip_longest(spread_arg_types) {
+            match pair {
+                EitherOrBoth::Both(param, arg) => {
+                    if let Err(err) = self.assign(&param.ty, &arg.ty, arg.span()) {
+                        self.storage.report(box Error::WrongArgType { span: arg.span() })
+                    }
+                }
+                _ => {}
+            }
+        }
     }
 
     /// Note:

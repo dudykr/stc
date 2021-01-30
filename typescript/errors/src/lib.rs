@@ -61,6 +61,11 @@ pub enum Error {
         span: Span,
     },
 
+    WrongArgType {
+        /// Span of argument.
+        span: Span,
+    },
+
     ImportFailed {
         span: Span,
         orig: Id,
