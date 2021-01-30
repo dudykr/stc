@@ -791,6 +791,11 @@ impl Analyzer<'_, '_> {
         match kind {
             ExtractKind::New => match ty.normalize() {
                 Type::Class(ref cls) => {
+                    if cls.is_abstract {
+                        self.storage
+                            .report(box Error::CannotCreateInstanceOfAbstractClass { span })
+                    }
+
                     if let Some(type_params) = &cls.type_params {
                         for param in &type_params.params {
                             self.register_type(param.name.clone(), box Type::Param(param.clone()));

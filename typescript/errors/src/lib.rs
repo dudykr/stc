@@ -57,6 +57,10 @@ pub enum Error {
         span: Span,
     },
 
+    CannotCreateInstanceOfAbstractClass {
+        span: Span,
+    },
+
     ImportFailed {
         span: Span,
         orig: Id,
@@ -649,6 +653,8 @@ impl Error {
             Error::InvalidDeleteOperand { .. } => 2703,
             Error::NoSuchVar { .. } => 2304,
             Error::CannotAssignAbstractConstructorToNonAbstractConstructor { .. } => 2322,
+
+            Error::CannotCreateInstanceOfAbstractClass { .. } => 2511,
 
             Error::DebugContext { inner, .. } => inner.code(),
 
