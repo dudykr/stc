@@ -99,7 +99,17 @@ impl Analyzer<'_, '_> {
         r: &[ClassMember],
     ) -> ValidationResult<()> {
         match l {
-            ClassMember::Constructor(_) => {}
+            ClassMember::Constructor(lc) => {
+                for rm in r {
+                    match rm {
+                        ClassMember::Constructor(rc) => {
+                            // TODO: Validate parameters and etc..
+                            return Ok(());
+                        }
+                        _ => {}
+                    }
+                }
+            }
             ClassMember::Method(_) => {}
             ClassMember::Property(lp) => {
                 for rm in r {
