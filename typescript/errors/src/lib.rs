@@ -4,6 +4,7 @@
 #![feature(specialization)]
 
 pub use self::result_ext::DebugExt;
+use fmt::Formatter;
 use stc_ts_types::name::Name;
 use stc_ts_types::Id;
 use stc_ts_types::Key;
@@ -12,6 +13,8 @@ use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeParamInstantiation;
 use std::borrow::Cow;
+use std::fmt;
+use std::fmt::Debug;
 use std::fmt::Display;
 use std::{ops::RangeInclusive, path::PathBuf};
 use swc_atoms::JsWord;
@@ -573,11 +576,24 @@ pub enum Error {
         key: Box<Key>,
     },
 
-    DebugContext {
-        span: Span,
-        context: String,
-        inner: Box<Error>,
-    },
+    DebugContext(DebugContext),
+}
+
+#[derive(Clone, PartialEq, Spanned)]
+pub struct DebugContext {
+    pub span: Span,
+    pub context: String,
+    pub inner: Box<Error>,
+}
+
+impl Debug for DebugContext {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        writeln!(f, "context: {}", self.context)?;
+
+        Debug::fmt(&self.inner, f)?;
+
+        Ok(())
+    }
 }
 
 impl Error {
@@ -596,11 +612,11 @@ impl Error {
             }
         }
 
-        box Error::DebugContext {
+        box Error::DebugContext(DebugContext {
             span: self.span(),
             context: context.to_string(),
             inner: box self,
-        }
+        })
     }
 
     /// TypeScript error code.
@@ -664,7 +680,7 @@ impl Error {
             Error::CannotCreateInstanceOfAbstractClass { .. } => 2511,
             Error::WrongArgType { .. } => 2345,
 
-            Error::DebugContext { inner, .. } => inner.code(),
+            Error::DebugContext(c) => c.inner.code(),
 
             _ => 0,
         }
@@ -688,8 +704,6 @@ impl Error {
 
             Self::Unimplemented { msg, .. } => format!("unimplemented: {}", msg).into(),
 
-            Self::DebugContext { context, inner, .. } => format!("{}:\n{}", context, inner.msg()).into(),
-
             _ => format!("{:#?}", self).into(),
         }
     }
@@ -710,17 +724,15 @@ impl Error {
         for e in vec {
             match *e {
                 Error::Errors { errors, .. } => buf.extend(Self::flatten(errors)),
-                Error::DebugContext { inner, context, .. } => {
+                Error::DebugContext(DebugContext { inner, context, .. }) => {
                     //
-                    buf.extend(
-                        Self::flatten(vec![inner])
-                            .into_iter()
-                            .map(|inner| box Error::DebugContext {
-                                span: inner.span(),
-                                context: context.clone(),
-                                inner,
-                            }),
-                    )
+                    buf.extend(Self::flatten(vec![inner]).into_iter().map(|inner| {
+                        box Error::DebugContext(DebugContext {
+                            span: inner.span(),
+                            context: context.clone(),
+                            inner,
+                        })
+                    }))
                 }
                 _ => buf.push(e),
             }
