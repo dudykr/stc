@@ -24,7 +24,7 @@ impl Analyzer<'_, '_> {
                 _ => true,
             })
             .is_none();
-        if is_empty {
+        if !l.is_abstract && is_empty {
             return Ok(());
         }
 
