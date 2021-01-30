@@ -588,9 +588,19 @@ pub struct DebugContext {
 
 impl Debug for DebugContext {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        writeln!(f, "context: {}", self.context)?;
+        let mut next = Some(self);
 
-        Debug::fmt(&self.inner, f)?;
+        while let Some(cur) = next.take() {
+            writeln!(f, "context: {}", cur.context)?;
+
+            match &*self.inner {
+                Error::DebugContext(c) => next = Some(c),
+                _ => {
+                    Debug::fmt(&self.inner, f)?;
+                    break;
+                }
+            }
+        }
 
         Ok(())
     }
