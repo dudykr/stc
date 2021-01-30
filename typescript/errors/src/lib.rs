@@ -64,6 +64,8 @@ pub enum Error {
     WrongArgType {
         /// Span of argument.
         span: Span,
+
+        inner: Box<Error>,
     },
 
     ImportFailed {
