@@ -59,6 +59,7 @@ use stc_ts_types::{Alias, Id, IndexedAccessType, Ref, Symbol, Union};
 use stc_ts_utils::PatExt;
 use std::borrow::Cow;
 use swc_atoms::js_word;
+use swc_common::SyntaxContext;
 use swc_common::TypeEq;
 use swc_common::DUMMY_SP;
 use swc_common::{Span, Spanned};
@@ -136,19 +137,22 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RTaggedTpl) -> ValidationResult {
         let span = e.span;
 
-        let tpl_str_arg = RExprOrSpread {
-            spread: None,
-            expr: box RExpr::TsAs(RTsAsExpr {
-                node_id: NodeId::invalid(),
-                span: DUMMY_SP,
-                expr: box RExpr::Invalid(RInvalid { span }),
-                type_ann: box RTsType::TsTypeRef(RTsTypeRef {
+        let tpl_str_arg = {
+            let span = span.with_ctxt(SyntaxContext::empty());
+            RExprOrSpread {
+                spread: None,
+                expr: box RExpr::TsAs(RTsAsExpr {
                     node_id: NodeId::invalid(),
-                    span: DUMMY_SP,
-                    type_name: RTsEntityName::Ident(RIdent::new("TemplateStringsArray".into(), DUMMY_SP)),
-                    type_params: None,
+                    span,
+                    expr: box RExpr::Invalid(RInvalid { span }),
+                    type_ann: box RTsType::TsTypeRef(RTsTypeRef {
+                        node_id: NodeId::invalid(),
+                        span,
+                        type_name: RTsEntityName::Ident(RIdent::new("TemplateStringsArray".into(), span)),
+                        type_params: None,
+                    }),
                 }),
-            }),
+            }
         };
         let mut args = vec![tpl_str_arg];
 
