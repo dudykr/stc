@@ -593,10 +593,10 @@ impl Debug for DebugContext {
         while let Some(cur) = next.take() {
             writeln!(f, "context: {}", cur.context)?;
 
-            match &*self.inner {
+            match &*cur.inner {
                 Error::DebugContext(c) => next = Some(c),
                 _ => {
-                    Debug::fmt(&self.inner, f)?;
+                    Debug::fmt(&cur.inner, f)?;
                     break;
                 }
             }
