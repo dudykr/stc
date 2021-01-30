@@ -1202,6 +1202,10 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::Class(rhs) => {
+                    // TODO: Check if constructor exists.
+                    if rhs.is_abstract {
+                        return Err(box Error::CannotAssignAbstractConstructorToNonAbstractConstructor { span });
+                    }
                     //
                     for el in lhs {
                         self.assign_class_members_to_type_element(opts, el, &rhs.body)?;
