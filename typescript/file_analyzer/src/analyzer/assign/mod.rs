@@ -517,6 +517,8 @@ impl Analyzer<'_, '_> {
                 _ => fail!(),
             },
 
+            Type::Query(ref to) => return self.assign_to_query_type(opts, to, &rhs),
+
             _ => {}
         }
 
