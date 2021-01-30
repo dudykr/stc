@@ -659,10 +659,9 @@ impl Error {
 
             Error::InvalidDeleteOperand { .. } => 2703,
             Error::NoSuchVar { .. } => 2304,
+
             Error::CannotAssignAbstractConstructorToNonAbstractConstructor { .. } => 2322,
-
             Error::CannotCreateInstanceOfAbstractClass { .. } => 2511,
-
             Error::WrongArgType { .. } => 2345,
 
             Error::DebugContext { inner, .. } => inner.code(),
