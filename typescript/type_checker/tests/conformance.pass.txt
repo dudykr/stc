@@ -1351,6 +1351,7 @@ types/primitives/string/stringPropertyAccess.ts
 types/primitives/string/validStringAssignments.ts
 types/primitives/stringLiteral/stringLiteralType.ts
 types/primitives/undefined/directReferenceToUndefined.ts
+types/primitives/undefined/invalidUndefinedValues.ts
 types/primitives/undefined/validUndefinedAssignments.ts
 types/primitives/undefined/validUndefinedValues.ts
 types/primitives/void/validVoidAssignments.ts
