@@ -663,6 +663,8 @@ impl Error {
 
             Error::CannotCreateInstanceOfAbstractClass { .. } => 2511,
 
+            Error::WrongArgType { .. } => 2345,
+
             Error::DebugContext { inner, .. } => inner.code(),
 
             _ => 0,
