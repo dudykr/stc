@@ -773,14 +773,18 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult {
         match ty.normalize() {
             Type::Ref(..) => {
-                let ctx = Ctx {
-                    preserve_ref: false,
-                    ignore_expand_prevention_for_top: true,
-                    ..self.ctx
-                };
-                let ty = self.with_ctx(ctx).expand_fully(span, box ty.clone(), true)?;
+                let ty = self.expand_top_ref(span, Cow::Borrowed(ty))?;
                 return self.extract(span, &ty, kind, args, arg_types, spread_arg_types, type_args);
             }
+
+            Type::Query(QueryType {
+                expr: box QueryExpr::TsEntityName(name),
+                ..
+            }) => {
+                let ty = self.resolve_typeof(span, name)?;
+                return self.extract(span, &ty, kind, args, arg_types, spread_arg_types, type_args);
+            }
+
             _ => {}
         }
 
@@ -959,17 +963,6 @@ impl Analyzer<'_, '_> {
                     type_args: type_args.cloned().map(Box::new),
                 }
                 .into());
-            }
-
-            Type::Query(QueryType {
-                expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(RIdent { ref sym, .. })),
-                ..
-            }) => {
-                //if self.scope.find_declaring_fn(sym) {
-                //    return Ok(Type::any(span));
-                //}
-
-                ret_err!();
             }
 
             _ => ret_err!(),
