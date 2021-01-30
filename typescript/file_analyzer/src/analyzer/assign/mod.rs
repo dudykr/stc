@@ -513,7 +513,7 @@ impl Analyzer<'_, '_> {
                 });
             }
 
-            Type::Class(ref l) => match rhs.normalize() {
+            Type::Class(l) => match rhs.normalize() {
                 Type::ClassInstance(r) => return self.assign_to_class(opts, l, &r.ty),
                 Type::Interface(..) | Type::TypeLit(..) | Type::Lit(..) | Type::Class(..) => {
                     return self.assign_to_class(opts, l, rhs.normalize())
