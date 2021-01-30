@@ -457,7 +457,7 @@ impl Analyzer<'_, '_> {
                 match rhs {
                     // TODO: Use unique id for module type.
                     Type::Module(rhs) => {
-                        if to.name.eq_ignore_span(rhs.name) {
+                        if to.name.eq_ignore_span(&rhs.name) {
                             return Ok(());
                         }
                     }
