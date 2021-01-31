@@ -528,6 +528,7 @@ impl Analyzer<'_, '_> {
 
             Type::Interface(param) => match arg {
                 Type::Interface(..) => self.infer_type_using_interface(span, inferred, param, arg)?,
+                Type::TypeLit(..) => return self.infer_type_using_interface(span, inferred, param, arg),
                 _ => {}
             },
 

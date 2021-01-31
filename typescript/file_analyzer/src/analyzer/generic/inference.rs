@@ -75,6 +75,9 @@ impl Analyzer<'_, '_> {
             Type::Interface(arg) => {
                 self.infer_type_using_interface_and_interface(span, inferred, param, arg)?;
             }
+            Type::TypeLit(arg) => {
+                self.infer_type_using_type_elements_and_type_elements(span, inferred, &param.body, &arg.members)?;
+            }
             _ => {
                 todo!()
             }
