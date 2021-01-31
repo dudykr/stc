@@ -577,6 +577,7 @@ impl Analyzer<'_, '_> {
 
     fn check_type_element_for_call(
         &mut self,
+        span: Span,
         kind: ExtractKind,
         candidates: &mut Vec<MethodSignature>,
         m: &TypeElement,
@@ -585,13 +586,13 @@ impl Analyzer<'_, '_> {
         match m {
             TypeElement::Method(m) if kind == ExtractKind::Call => {
                 // We are interested only on methods named `prop`
-                if prop.type_eq(&m.key) {
+                if let Ok(()) = self.assign(&m.key.ty(), &prop.ty(), span) {
                     candidates.push(m.clone());
                 }
             }
 
             TypeElement::Property(p) if kind == ExtractKind::Call => {
-                if prop.type_eq(&p.key) {
+                if let Ok(()) = self.assign(&p.key.ty(), &prop.ty(), span) {
                     // TODO: Remove useless clone
                     let ty = p.type_ann.as_ref().cloned().unwrap_or(Type::any(m.span()));
 
@@ -650,7 +651,7 @@ impl Analyzer<'_, '_> {
         let mut candidates = Vec::with_capacity(4);
 
         for m in members {
-            self.check_type_element_for_call(kind, &mut candidates, m, prop);
+            self.check_type_element_for_call(span, kind, &mut candidates, m, prop);
         }
 
         // TODO: Move this to caller to prevent checking members of `Object` every time
@@ -669,7 +670,7 @@ impl Analyzer<'_, '_> {
 
             // TODO: Remove clone
             for m in methods {
-                self.check_type_element_for_call(kind, &mut candidates, m, prop);
+                self.check_type_element_for_call(span, kind, &mut candidates, m, prop);
             }
         }
 
