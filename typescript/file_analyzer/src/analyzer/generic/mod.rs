@@ -612,7 +612,7 @@ impl Analyzer<'_, '_> {
             },
 
             Type::TypeLit(param) => match arg {
-                Type::TypeLit(arg) => return self.infer_type_using_type_lit(span, inferred, param, arg),
+                Type::TypeLit(arg) => return self.infer_type_using_type_lit_and_type_lit(span, inferred, param, arg),
 
                 Type::IndexedAccessType(arg_iat) => {
                     let arg_obj_ty = self

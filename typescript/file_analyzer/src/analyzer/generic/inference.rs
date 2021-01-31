@@ -105,7 +105,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Compare fields.
-    pub(super) fn infer_type_using_type_lit(
+    pub(super) fn infer_type_using_type_lit_and_type_lit(
         &mut self,
         span: Span,
         inferred: &mut InferData,
