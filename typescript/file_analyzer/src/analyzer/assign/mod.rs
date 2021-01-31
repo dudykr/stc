@@ -217,6 +217,11 @@ impl Analyzer<'_, '_> {
             panic!("cannot assign with dummy span")
         }
 
+        // It's valid to assign any to everything.
+        if rhs.is_any() {
+            return Ok(());
+        }
+
         // debug_assert!(!span.is_dummy(), "\n\t{:?}\n<-\n\t{:?}", to, rhs);
         let to = self.normalize_for_assign(to);
         let rhs = self.normalize_for_assign(rhs);
