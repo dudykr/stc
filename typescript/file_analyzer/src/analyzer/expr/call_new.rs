@@ -1446,7 +1446,18 @@ impl Analyzer<'_, '_> {
         {
             match pair {
                 EitherOrBoth::Both(param, arg) => {
-                    // TODO: We should change type if the parameter is a rest parameter.
+                    match &param.pat {
+                        RPat::Rest(..) => match &*param.ty {
+                            Type::Array(arr) => {
+                                // We should change type if the parameter is a rest parameter.
+                                if let Ok(()) = self.assign(&arr.elem_type, &arg.ty, arg.span()) {
+                                    continue;
+                                }
+                            }
+                            _ => {}
+                        },
+                        _ => {}
+                    }
 
                     if let Err(err) = self.assign(&param.ty, &arg.ty, arg.span()) {
                         self.storage.report(box Error::WrongArgType {
