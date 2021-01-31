@@ -5,7 +5,9 @@ use rnode::FoldWith;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
+use stc_ts_types::IndexedAccessType;
 use stc_ts_types::Union;
+use swc_common::Span;
 use swc_common::Spanned;
 use swc_ecma_ast::TsKeywordTypeKind;
 
@@ -115,9 +117,45 @@ impl Fold<Type> for TypeFactsHandler {
         match ty {
             Type::Union(ref u) if u.types.is_empty() => return *Type::never(u.span),
             Type::Intersection(ref i) if i.types.iter().any(|ty| ty.is_never()) => return *Type::never(i.span),
+
+            Type::Keyword(..) => {}
+
+            Type::IndexedAccessType(IndexedAccessType { span, .. }) => {
+                // Treat as any and apply type facts.
+                let simple = facts_to_union(span, self.facts);
+                if !simple.is_never() {
+                    return *simple;
+                }
+            }
             _ => {}
         }
 
         ty
     }
+}
+
+fn facts_to_union(span: Span, facts: TypeFacts) -> Box<Type> {
+    let mut types = vec![];
+    if facts.contains(TypeFacts::TypeofEQString) {
+        types.push(box Type::Keyword(RTsKeywordType {
+            span,
+            kind: TsKeywordTypeKind::TsStringKeyword,
+        }));
+    }
+
+    if facts.contains(TypeFacts::TypeofEQNumber) {
+        types.push(box Type::Keyword(RTsKeywordType {
+            span,
+            kind: TsKeywordTypeKind::TsNumberKeyword,
+        }));
+    }
+
+    if facts.contains(TypeFacts::TypeofEQBoolean) {
+        types.push(box Type::Keyword(RTsKeywordType {
+            span,
+            kind: TsKeywordTypeKind::TsBooleanKeyword,
+        }));
+    }
+
+    Type::union(types)
 }
