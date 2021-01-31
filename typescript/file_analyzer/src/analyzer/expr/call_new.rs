@@ -1375,8 +1375,6 @@ impl Analyzer<'_, '_> {
                 &*new_args
             };
 
-            self.validate_arg_types(params, &spread_arg_types);
-
             let ctx = Ctx {
                 preserve_params: true,
                 preserve_ret_ty: true,
@@ -1385,6 +1383,20 @@ impl Analyzer<'_, '_> {
             let ret_ty = self.with_ctx(ctx).expand(span, ret_ty)?;
 
             let inferred = self.infer_arg_types(span, type_args, type_params, &params, &spread_arg_types, None)?;
+
+            let expanded_arg_types = spread_arg_types
+                .clone()
+                .into_iter()
+                .map(|v| -> ValidationResult<_> {
+                    Ok(TypeOrSpread {
+                        span: v.span,
+                        spread: v.spread,
+                        ty: self.expand_type_params(&inferred, v.ty.clone())?,
+                    })
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+
+            self.validate_arg_types(params, &expanded_arg_types);
 
             print_type(&logger, "Return", &self.cm, &ret_ty);
             let mut ty = self.expand_type_params(&inferred, ret_ty)?;
