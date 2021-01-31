@@ -176,7 +176,7 @@ impl Analyzer<'_, '_> {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum ExtractKind {
+pub(super) enum ExtractKind {
     New,
     Call,
 }
@@ -405,7 +405,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO: Use Cow for `obj_type`
-    pub(crate) fn call_property(
+    pub(super) fn call_property(
         &mut self,
         span: Span,
         kind: ExtractKind,
