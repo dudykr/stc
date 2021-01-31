@@ -463,6 +463,7 @@ es6/shorthandPropertyAssignment/objectLiteralShorthandPropertiesWithModuleES6.ts
 es6/spread/arrayLiteralSpread.ts
 es6/spread/arrayLiteralSpreadES5iterable.ts
 es6/spread/iteratorSpreadInArray.ts
+es6/spread/iteratorSpreadInArray11.ts
 es6/spread/iteratorSpreadInArray2.ts
 es6/spread/iteratorSpreadInArray3.ts
 es6/spread/iteratorSpreadInArray4.ts
@@ -694,6 +695,7 @@ es6/yieldExpressions/YieldExpression1_es6.ts
 es6/yieldExpressions/YieldExpression3_es6.ts
 es6/yieldExpressions/YieldExpression4_es6.ts
 es6/yieldExpressions/YieldExpression9_es6.ts
+es6/yieldExpressions/YieldStarExpression4_es6.ts
 es6/yieldExpressions/generatorInAmbientContext5.ts
 es6/yieldExpressions/generatorInAmbientContext6.ts
 es6/yieldExpressions/generatorNoImplicitReturns.ts
@@ -708,7 +710,13 @@ es6/yieldExpressions/generatorTypeCheck14.ts
 es6/yieldExpressions/generatorTypeCheck15.ts
 es6/yieldExpressions/generatorTypeCheck16.ts
 es6/yieldExpressions/generatorTypeCheck17.ts
+es6/yieldExpressions/generatorTypeCheck19.ts
 es6/yieldExpressions/generatorTypeCheck2.ts
+es6/yieldExpressions/generatorTypeCheck22.ts
+es6/yieldExpressions/generatorTypeCheck23.ts
+es6/yieldExpressions/generatorTypeCheck24.ts
+es6/yieldExpressions/generatorTypeCheck26.ts
+es6/yieldExpressions/generatorTypeCheck27.ts
 es6/yieldExpressions/generatorTypeCheck28.ts
 es6/yieldExpressions/generatorTypeCheck29.ts
 es6/yieldExpressions/generatorTypeCheck3.ts
@@ -732,6 +740,8 @@ es6/yieldExpressions/generatorTypeCheck5.ts
 es6/yieldExpressions/generatorTypeCheck50.ts
 es6/yieldExpressions/generatorTypeCheck51.ts
 es6/yieldExpressions/generatorTypeCheck52.ts
+es6/yieldExpressions/generatorTypeCheck53.ts
+es6/yieldExpressions/generatorTypeCheck54.ts
 es6/yieldExpressions/generatorTypeCheck55.ts
 es6/yieldExpressions/generatorTypeCheck56.ts
 es6/yieldExpressions/generatorTypeCheck60.ts
