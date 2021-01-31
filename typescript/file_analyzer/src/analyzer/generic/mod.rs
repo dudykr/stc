@@ -18,6 +18,7 @@ use stc_ts_ast_rnode::RStr;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
+use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::debug::print_backtrace;
 use stc_ts_errors::debug::print_type;
 use stc_ts_types::Array;
@@ -947,9 +948,9 @@ impl Analyzer<'_, '_> {
 
         slog::error!(
             self.logger,
-            "infer_arg_type: unimplemented\nparam  = {:#?}\narg = {:#?}",
-            param,
-            arg,
+            "infer_arg_type: unimplemented\nparam  = {}\narg = {}",
+            dump_type_as_string(&self.cm, param),
+            dump_type_as_string(&self.cm, arg),
         );
         Ok(())
     }
