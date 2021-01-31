@@ -1446,6 +1446,8 @@ impl Analyzer<'_, '_> {
         {
             match pair {
                 EitherOrBoth::Both(param, arg) => {
+                    // TODO: We should change type if the parameter is a rest parameter.
+
                     if let Err(err) = self.assign(&param.ty, &arg.ty, arg.span()) {
                         self.storage.report(box Error::WrongArgType {
                             span: arg.span(),
