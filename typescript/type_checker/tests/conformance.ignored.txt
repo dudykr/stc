@@ -25,3 +25,4 @@ computedPropertyNames29_ES5.ts
 computedPropertyNames29_ES6.ts
 fixSignatureCaching.ts
 thisTypeInFunctions2.ts
+keyofInferenceLowerPriorityThanReturn.ts

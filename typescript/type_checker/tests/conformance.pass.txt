@@ -177,6 +177,7 @@ classes/members/privateNames/privateNamesAndkeyof.ts
 classes/mixinClassesMembers.ts
 classes/propertyMemberDeclarations/instanceMemberWithComputedPropertyName.ts
 classes/propertyMemberDeclarations/memberAccessorDeclarations/accessorWithES5.ts
+classes/propertyMemberDeclarations/memberFunctionDeclarations/derivedTypeAccessesHiddenBaseCallViaSuperPropertyAccess.ts
 classes/propertyMemberDeclarations/memberFunctionDeclarations/memberFunctionsWithPublicOverloads.ts
 classes/propertyMemberDeclarations/memberFunctionDeclarations/typeOfThisInMemberFunctions.ts
 classes/propertyMemberDeclarations/overrideInterfaceProperty.ts
@@ -407,6 +408,10 @@ es6/destructuring/emptyObjectBindingPatternParameter03.ts
 es6/destructuring/iterableArrayPattern11.ts
 es6/destructuring/iterableArrayPattern12.ts
 es6/destructuring/iterableArrayPattern14.ts
+es6/destructuring/iterableArrayPattern17.ts
+es6/destructuring/iterableArrayPattern18.ts
+es6/destructuring/iterableArrayPattern19.ts
+es6/destructuring/iterableArrayPattern26.ts
 es6/destructuring/iterableArrayPattern9.ts
 es6/destructuring/objectBindingPatternKeywordIdentifiers05.ts
 es6/destructuring/objectBindingPatternKeywordIdentifiers06.ts
@@ -461,6 +466,7 @@ es6/restParameters/emitRestParametersFunctionPropertyES6.ts
 es6/restParameters/emitRestParametersMethod.ts
 es6/restParameters/emitRestParametersMethodES6.ts
 es6/shorthandPropertyAssignment/objectLiteralShorthandPropertiesFunctionArgument.ts
+es6/shorthandPropertyAssignment/objectLiteralShorthandPropertiesFunctionArgument2.ts
 es6/shorthandPropertyAssignment/objectLiteralShorthandPropertiesWithModule.ts
 es6/shorthandPropertyAssignment/objectLiteralShorthandPropertiesWithModuleES6.ts
 es6/spread/arrayLiteralSpread.ts
@@ -827,6 +833,7 @@ expressions/contextualTyping/superCallParameterContextualTyping3.ts
 expressions/elementAccess/letIdentifierInElementAccess01.ts
 expressions/elementAccess/stringEnumInElementAccess01.ts
 expressions/functionCalls/grammarAmbiguities.ts
+expressions/functionCalls/typeArgumentInferenceErrors.ts
 expressions/functionCalls/typeArgumentInferenceTransitiveConstraints.ts
 expressions/functions/contextuallyTypedFunctionExpressionsAndReturnAnnotations.ts
 expressions/functions/typeOfThisInFunctionExpression.ts
@@ -1110,6 +1117,7 @@ parser/ecmascript5/RegressionTests/parser509546.ts
 parser/ecmascript5/RegressionTests/parser509546_1.ts
 parser/ecmascript5/RegressionTests/parser509546_2.ts
 parser/ecmascript5/RegressionTests/parser509677.ts
+parser/ecmascript5/RegressionTests/parser536727.ts
 parser/ecmascript5/RegressionTests/parser579071.ts
 parser/ecmascript5/RegressionTests/parser596700.ts
 parser/ecmascript5/RegressionTests/parser630933.ts
@@ -1354,6 +1362,7 @@ types/primitives/number/numberPropertyAccess.ts
 types/primitives/number/validNumberAssignments.ts
 types/primitives/string/assignFromStringInterface.ts
 types/primitives/string/stringPropertyAccess.ts
+types/primitives/string/stringPropertyAccessWithError.ts
 types/primitives/string/validStringAssignments.ts
 types/primitives/stringLiteral/stringLiteralType.ts
 types/primitives/undefined/directReferenceToUndefined.ts
@@ -1467,6 +1476,7 @@ types/typeRelationships/subtypesAndSuperTypes/subtypesOfTypeParameterWithConstra
 types/typeRelationships/subtypesAndSuperTypes/subtypesOfTypeParameterWithConstraints3.ts
 types/typeRelationships/subtypesAndSuperTypes/subtypingWithCallSignatures2.ts
 types/typeRelationships/subtypesAndSuperTypes/subtypingWithCallSignatures4.ts
+types/typeRelationships/subtypesAndSuperTypes/subtypingWithCallSignaturesA.ts
 types/typeRelationships/subtypesAndSuperTypes/subtypingWithConstructSignatures2.ts
 types/typeRelationships/subtypesAndSuperTypes/subtypingWithConstructSignatures4.ts
 types/typeRelationships/subtypesAndSuperTypes/subtypingWithConstructSignatures5.ts
@@ -1524,6 +1534,7 @@ types/typeRelationships/typeAndMemberIdentity/typeParametersAreIdenticalToThemse
 types/typeRelationships/typeInference/discriminatedUnionInference.ts
 types/typeRelationships/typeInference/genericCallTypeArgumentInference.ts
 types/typeRelationships/typeInference/genericCallWithArrayLiteralArgs.ts
+types/typeRelationships/typeInference/genericCallWithConstraintsTypeArgumentInference2.ts
 types/typeRelationships/typeInference/genericCallWithFunctionTypedArguments3.ts
 types/typeRelationships/typeInference/genericCallWithFunctionTypedArguments4.ts
 types/typeRelationships/typeInference/genericCallWithGenericSignatureArguments.ts
