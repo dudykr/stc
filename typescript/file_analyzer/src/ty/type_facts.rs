@@ -3,6 +3,8 @@ use crate::type_facts::TypeFacts;
 use rnode::Fold;
 use rnode::FoldWith;
 use stc_ts_ast_rnode::RTsKeywordType;
+use stc_ts_ast_rnode::RTsLit;
+use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_types::Union;
 use swc_common::Spanned;
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -82,6 +84,19 @@ impl Fold<Union> for TypeFactsHandler {
             u.types.retain(|ty| match ty.normalize() {
                 Type::Function(..) => false,
                 _ => true,
+            });
+        }
+
+        if self.facts.contains(TypeFacts::TypeofEQString) {
+            u.types.retain(|ty| match ty.normalize() {
+                Type::Lit(RTsLitType {
+                    lit: RTsLit::Str(..), ..
+                })
+                | Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsStringKeyword,
+                    ..
+                }) => true,
+                _ => false,
             });
         }
 
