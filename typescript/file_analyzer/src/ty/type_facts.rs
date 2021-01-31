@@ -87,17 +87,19 @@ impl Fold<Union> for TypeFactsHandler {
             });
         }
 
-        if self.facts.contains(TypeFacts::TypeofEQString) {
-            u.types.retain(|ty| match ty.normalize() {
-                Type::Lit(RTsLitType {
-                    lit: RTsLit::Str(..), ..
-                })
-                | Type::Keyword(RTsKeywordType {
-                    kind: TsKeywordTypeKind::TsStringKeyword,
-                    ..
-                }) => true,
-                _ => false,
-            });
+        if self.facts != TypeFacts::None {
+            if self.facts.contains(TypeFacts::TypeofEQString) {
+                u.types.retain(|ty| match ty.normalize() {
+                    Type::Lit(RTsLitType {
+                        lit: RTsLit::Str(..), ..
+                    })
+                    | Type::Keyword(RTsKeywordType {
+                        kind: TsKeywordTypeKind::TsStringKeyword,
+                        ..
+                    }) => true,
+                    _ => false,
+                });
+            }
         }
 
         u
