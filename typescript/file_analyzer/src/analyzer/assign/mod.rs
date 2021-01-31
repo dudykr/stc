@@ -1155,6 +1155,8 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
+                    // TODO: Index signature can eat multiple rhs.
+
                     for (i, m) in lhs.into_iter().enumerate() {
                         let res = self
                             .assign_type_elements_to_type_element(opts, &mut missing_fields, m, $rhs)
