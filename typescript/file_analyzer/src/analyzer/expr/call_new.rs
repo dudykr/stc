@@ -405,7 +405,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO: Use Cow for `obj_type`
-    pub(super) fn call_property(
+    pub(crate) fn call_property(
         &mut self,
         span: Span,
         kind: ExtractKind,

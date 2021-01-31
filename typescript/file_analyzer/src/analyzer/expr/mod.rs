@@ -1,3 +1,4 @@
+pub(crate) use self::call_new::ExtractKind;
 use super::{marks::MarkExt, Analyzer};
 use crate::analyzer::util::ResultExt;
 use crate::util::type_ext::TypeVecExt;
