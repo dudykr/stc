@@ -183,7 +183,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     pub(crate) fn convert_to_iterator<'a>(&mut self, span: Span, ty: Cow<'a, Type>) -> ValidationResult<Cow<'a, Type>> {
         match ty.normalize() {
-            Type::Array(..) => return Ok(ty),
+            Type::Array(..) | Type::Tuple(..) => return Ok(ty),
             _ => {}
         }
 
