@@ -1,0 +1,90 @@
+warning: Type
+ --> $DIR/tests/visualize/fn/generator/infer.ts:5:11
+  |
+5 |         *[Symbol.iterator]() {
+  |           ^^^^^^
+  |
+  = note: SymbolConstructor
+
+warning: Type
+ --> $DIR/tests/visualize/fn/generator/infer.ts:5:11
+  |
+5 |         *[Symbol.iterator]() {
+  |           ^^^^^^^^^^^^^^^
+  |
+  = note: symbol
+
+warning: Type
+ --> $DIR/tests/visualize/fn/generator/infer.ts:6:34
+  |
+6 |             yield (x: string) => x.length
+  |                                  ^
+  |
+  = note: string
+
+warning: Type
+ --> $DIR/tests/visualize/fn/generator/infer.ts:6:34
+  |
+6 |             yield (x: string) => x.length
+  |                                  ^^^^^^^^
+  |
+  = note: number
+
+warning: Type
+ --> $DIR/tests/visualize/fn/generator/infer.ts:6:19
+  |
+6 |             yield (x: string) => x.length
+  |                   ^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: (x: string) => number
+
+warning: Type
+ --> $DIR/tests/visualize/fn/generator/infer.ts:6:13
+  |
+6 |             yield (x: string) => x.length
+  |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: any
+
+warning: Type
+ --> $DIR/tests/visualize/fn/generator/infer.ts:4:12
+  |
+4 |       yield* {
+  |  ____________^
+5 | |         *[Symbol.iterator]() {
+6 | |             yield (x: string) => x.length
+7 | |         }
+8 | |     }
+  | |_____^
+  |
+  = note: {
+              [Symbol.iterator](): Generator<(x: string) => number, void, unknown>;
+          }
+
+warning: Type
+ --> $DIR/tests/visualize/fn/generator/infer.ts:4:5
+  |
+4 | /     yield* {
+5 | |         *[Symbol.iterator]() {
+6 | |             yield (x: string) => x.length
+7 | |         }
+8 | |     }
+  | |_____^
+  |
+  = note: any
+
+warning: Type
+ --> $DIR/tests/visualize/fn/generator/infer.ts:3:20
+  |
+3 |   export const gen = function* () {
+  |  ____________________^
+4 | |     yield* {
+5 | |         *[Symbol.iterator]() {
+6 | |             yield (x: string) => x.length
+7 | |         }
+8 | |     }
+9 | | };
+  | |_^
+  |
+  = note: () => Generator<Generator, void, unknown>
+
