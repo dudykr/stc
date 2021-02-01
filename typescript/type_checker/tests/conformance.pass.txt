@@ -207,6 +207,7 @@ declarationEmit/typePredicates/declarationEmitIdentifierPredicates01.ts
 declarationEmit/typePredicates/declarationEmitIdentifierPredicatesWithPrivateName01.ts
 decorators/1.0lib-noErrors.ts
 emitter/es2019/noCatchBinding/emitter.noCatchBinding.es2019.ts
+enums/enumBasics.ts
 enums/enumClassification.ts
 enums/enumConstantMemberWithStringEmitDeclaration.ts
 enums/enumConstantMemberWithTemplateLiteralsEmitDeclaration.ts
