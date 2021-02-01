@@ -1385,19 +1385,17 @@ impl Analyzer<'_, '_> {
 
             let inferred = self.infer_arg_types(span, type_args, type_params, &params, &spread_arg_types, None)?;
 
-            let expanded_arg_types = spread_arg_types
-                .clone()
+            let expanded_param_types = params
                 .into_iter()
+                .cloned()
                 .map(|v| -> ValidationResult<_> {
-                    Ok(TypeOrSpread {
-                        span: v.span,
-                        spread: v.spread,
-                        ty: self.expand_type_params(&inferred, v.ty.clone())?,
-                    })
+                    let ty = self.expand_type_params(&inferred, v.ty)?;
+
+                    Ok(FnParam { ty, ..v })
                 })
                 .collect::<Result<Vec<_>, _>>()?;
 
-            self.validate_arg_types(params, &expanded_arg_types);
+            self.validate_arg_types(&expanded_param_types, &spread_arg_types);
 
             print_type(&logger, "Return", &self.cm, &ret_ty);
             let mut ty = self.expand_type_params(&inferred, ret_ty)?;
