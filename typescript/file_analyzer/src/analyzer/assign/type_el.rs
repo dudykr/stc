@@ -367,7 +367,7 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult<()> {
         // TODO: Index signature can eat multiple rhs.
 
-        for (i, m) in lhs.into_iter().enumerate() {
+        for (i, m) in lhs.into_iter().enumerate().filter(|(_, m)| m.key().is_some()) {
             let res = self
                 .assign_type_elements_to_type_element(opts, missing_fields, m, rhs)
                 .with_context(|| format!("tried to assign to {}th element: {:?}", i, m.key()));
@@ -382,6 +382,26 @@ impl Analyzer<'_, '_> {
                     unhandled_rhs.remove(pos);
                 } else {
                     // panic!("it should be removable")
+                }
+            }
+        }
+
+        // Index signature can eat multiple rhs.
+        for (i, m) in lhs.iter().enumerate().filter(|(_, m)| m.key().is_none()) {
+            for r in rhs {
+                let res = self
+                    .assign_type_elements_to_type_element(opts, missing_fields, m, &[r.clone()])
+                    .with_context(|| format!("tried to assign to {}th element (not a key-based)", i));
+
+                let success = match res {
+                    Ok(()) => true,
+                    Err(box Error::Errors { ref errors, .. }) if errors.is_empty() => true,
+                    Err(err) => false,
+                };
+                if success && rhs.len() > i {
+                    if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rhs[i].span()) {
+                        unhandled_rhs.remove(pos);
+                    }
                 }
             }
         }
