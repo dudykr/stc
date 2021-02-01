@@ -140,6 +140,7 @@ impl Analyzer<'_, '_> {
                                     dbg!((&p, &a));
                                 }
                             }
+                            continue;
                         }
                         _ => {}
                     },
@@ -167,6 +168,7 @@ impl Analyzer<'_, '_> {
                             } else {
                                 dbg!((&param, &arg));
                             }
+                            continue;
                         }
                         _ => {}
                     },
@@ -182,15 +184,21 @@ impl Analyzer<'_, '_> {
                                     }
                                 }
                             }
+
+                            continue;
                         }
                         _ => {}
                     },
 
-                    TypeElement::Constructor(..) => {
-                        // TODO
-                    }
-                    _ => unimplemented!("TypeElement({:#?}) in type literal", p),
+                    _ => {}
                 }
+
+                slog::error!(
+                    self.logger,
+                    "unimplemented: type infernce: type element:\nParam = {:#?}\nArg = {:#?}",
+                    p,
+                    a
+                );
             }
         }
 
