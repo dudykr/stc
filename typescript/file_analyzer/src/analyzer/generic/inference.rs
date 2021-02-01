@@ -170,6 +170,24 @@ impl Analyzer<'_, '_> {
                             }
                             continue;
                         }
+
+                        TypeElement::Property(arg) => {
+                            assert_eq!(
+                                param.params.len(),
+                                1,
+                                "Index signature should have exactly one parameter"
+                            );
+
+                            if let Ok(()) = self.assign(&param.params[0].ty, &arg.key.ty(), span) {
+                                if let Some(p_ty) = &param.type_ann {
+                                    if let Some(arg_ty) = &arg.type_ann {
+                                        self.infer_type(span, inferred, &p_ty, &arg_ty)?;
+                                    }
+                                }
+                            }
+
+                            continue;
+                        }
                         _ => {}
                     },
 
