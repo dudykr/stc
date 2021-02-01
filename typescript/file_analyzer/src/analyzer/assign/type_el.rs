@@ -387,19 +387,20 @@ impl Analyzer<'_, '_> {
         }
 
         // Index signature can eat multiple rhs.
-        for (i, m) in lhs.iter().enumerate().filter(|(_, m)| m.key().is_none()) {
+        for m in lhs.iter().filter(|m| m.key().is_none()) {
             for r in rhs {
                 let res = self
                     .assign_type_elements_to_type_element(opts, missing_fields, m, &[r.clone()])
-                    .with_context(|| format!("tried to assign to {}th element (not a key-based)", i));
+                    .with_context(|| format!("tried to assign to an element (not a key-based)"));
 
                 let success = match res {
                     Ok(()) => true,
                     Err(box Error::Errors { ref errors, .. }) if errors.is_empty() => true,
-                    Err(err) => false,
+                    Err(..) => false,
                 };
-                if success && rhs.len() > i {
-                    if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rhs[i].span()) {
+
+                if success {
+                    if let Some(pos) = unhandled_rhs.iter().position(|span| *span == r.span()) {
                         unhandled_rhs.remove(pos);
                     }
                 }
