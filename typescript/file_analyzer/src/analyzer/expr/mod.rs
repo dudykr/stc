@@ -973,10 +973,16 @@ impl Analyzer<'_, '_> {
                         if e.is_const {
                             return Err(box Error::ConstEnumNonIndexAccess { span: prop.span() });
                         }
-                        return Err(box Error::Unimplemented {
-                            span,
-                            msg: format!("access_property\nProp: {:?}", prop),
-                        });
+
+                        // TODO: Validate type of enum
+
+                        // enumBasics.ts says
+                        //
+                        // Reverse mapping of enum returns string name of property
+                        return Ok(box Type::Keyword(RTsKeywordType {
+                            span: prop.span(),
+                            kind: TsKeywordTypeKind::TsStringKeyword,
+                        }));
                     }
                 }
             }
