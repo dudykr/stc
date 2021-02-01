@@ -20,6 +20,7 @@ use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_errors::Error;
 use stc_ts_types::Id;
+use stc_ts_types::TypeLit;
 use swc_atoms::JsWord;
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::*;
@@ -280,6 +281,25 @@ fn compute(
 }
 
 impl Analyzer<'_, '_> {
+    /// `enumBasics.ts` says
+    ///
+    /// > Enum object type is anonymous with properties of the enum type and
+    /// numeric indexer.
+    ///
+    /// and following is valid.
+    ///
+    /// ```ts
+    /// var e = E1;
+    /// var e: {
+    ///     readonly A: E1.A;
+    ///     readonly B: E1.B;
+    ///     readonly C: E1.C;
+    ///     readonly [n: number]: string;
+    /// };
+    /// var e: typeof E1;
+    /// ```
+    pub(super) fn enum_to_type_lit(&mut self, e: &Enum) -> ValidationResult<TypeLit> {}
+
     // Check for constant enum in rvalue.
     pub(super) fn check_rvalue(&mut self, rhs_ty: &Type) {
         match *rhs_ty.normalize() {
