@@ -100,50 +100,44 @@ impl Analyzer<'_, '_> {
         {
             let mut unhandled_rhs = vec![];
 
-            macro_rules! handle_type_elements {
-                ($rhs:expr) => {{
-                    for r in $rhs {
+            match rhs.normalize() {
+                Type::TypeLit(TypeLit {
+                    members: rhs_members, ..
+                }) => {
+                    for r in rhs_members {
                         if !opts.allow_unknown_rhs {
                             unhandled_rhs.push(r.span());
                         }
                     }
 
-                    // TODO: Index signature can eat multiple rhs.
-
-                    for (i, m) in lhs.into_iter().enumerate() {
-                        let res = self
-                            .assign_type_elements_to_type_element(opts, &mut missing_fields, m, $rhs)
-                            .with_context(|| format!("tried to assign to {}th element: {:?}", i, m.key()));
-
-                        let success = match res {
-                            Ok(()) => true,
-                            Err(box Error::Errors { ref errors, .. }) if errors.is_empty() => true,
-                            Err(err) => {
-                                errors.push(err);
-                                false
-                            }
-                        };
-                        if success && $rhs.len() > i {
-                            if let Some(pos) = unhandled_rhs.iter().position(|span| *span == $rhs[i].span()) {
-                                unhandled_rhs.remove(pos);
-                            } else {
-                                // panic!("it should be removable")
-                            }
-                        }
-                    }
-                }};
-            }
-
-            match rhs.normalize() {
-                Type::TypeLit(TypeLit {
-                    members: rhs_members, ..
-                }) => {
-                    handle_type_elements!(&*rhs_members);
+                    self.handle_assignment_of_type_elements_to_type_elements(
+                        opts,
+                        &mut missing_fields,
+                        &mut unhandled_rhs,
+                        lhs,
+                        rhs_members,
+                    )
+                    .context("tried assignment of a type literal to a type literals")
+                    .store(&mut errors);
                 }
 
                 Type::Interface(Interface { body, .. }) => {
-                    handle_type_elements!(&*body);
+                    for r in body {
+                        if !opts.allow_unknown_rhs {
+                            unhandled_rhs.push(r.span());
+                        }
+                    }
                     // TODO: Check parent interface
+
+                    self.handle_assignment_of_type_elements_to_type_elements(
+                        opts,
+                        &mut missing_fields,
+                        &mut unhandled_rhs,
+                        lhs,
+                        body,
+                    )
+                    .context("tried assignment of an interface to a type literal")
+                    .store(&mut errors);
                 }
 
                 Type::Tuple(..) if lhs.is_empty() => return Ok(()),
@@ -359,6 +353,37 @@ impl Analyzer<'_, '_> {
                 span,
                 errors: errors.into(),
             });
+        }
+
+        Ok(())
+    }
+    fn handle_assignment_of_type_elements_to_type_elements(
+        &mut self,
+        opts: AssignOpts,
+        missing_fields: &mut Vec<TypeElement>,
+        unhandled_rhs: &mut Vec<Span>,
+        lhs: &[TypeElement],
+        rhs: &[TypeElement],
+    ) -> ValidationResult<()> {
+        // TODO: Index signature can eat multiple rhs.
+
+        for (i, m) in lhs.into_iter().enumerate() {
+            let res = self
+                .assign_type_elements_to_type_element(opts, missing_fields, m, rhs)
+                .with_context(|| format!("tried to assign to {}th element: {:?}", i, m.key()));
+
+            let success = match res {
+                Ok(()) => true,
+                Err(box Error::Errors { ref errors, .. }) if errors.is_empty() => true,
+                Err(err) => return Err(err),
+            };
+            if success && rhs.len() > i {
+                if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rhs[i].span()) {
+                    unhandled_rhs.remove(pos);
+                } else {
+                    // panic!("it should be removable")
+                }
+            }
         }
 
         Ok(())
