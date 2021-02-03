@@ -209,6 +209,7 @@ decorators/1.0lib-noErrors.ts
 emitter/es2019/noCatchBinding/emitter.noCatchBinding.es2019.ts
 enums/enumBasics.ts
 enums/enumClassification.ts
+enums/enumConstantMemberWithString.ts
 enums/enumConstantMemberWithStringEmitDeclaration.ts
 enums/enumConstantMemberWithTemplateLiteralsEmitDeclaration.ts
 enums/enumExportMergingES6.ts
