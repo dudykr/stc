@@ -200,10 +200,10 @@ impl Analyzer<'_, '_> {
     fn assign_inner(&mut self, to: &Type, rhs: &Type, opts: AssignOpts) -> ValidationResult<()> {
         self.assign_without_wrapping(to, rhs, opts).with_context(|| {
             //
-            let lhs = dump_type_as_string(&self.cm, &to);
-            let rhs = dump_type_as_string(&self.cm, &rhs);
+            let l = dump_type_as_string(&self.cm, &to);
+            let r = dump_type_as_string(&self.cm, &rhs);
 
-            format!("lhs = {}rhs = {}", lhs, rhs)
+            format!("lhs = {}rhs = {}\n{:?}", l, r, rhs)
         })
     }
 
@@ -950,9 +950,9 @@ impl Analyzer<'_, '_> {
             }
 
             Type::TypeLit(TypeLit { ref members, .. }) => {
-                self.assign_to_type_elements(opts, span, &members, rhs)?;
-
-                return Ok(());
+                return self
+                    .assign_to_type_elements(opts, span, &members, rhs)
+                    .context("tried to assign a type to type elements");
             }
 
             Type::Lit(RTsLitType { ref lit, .. }) => match *rhs {
