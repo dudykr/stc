@@ -56,6 +56,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    NoSuchEnumVariant {
+        span: Span,
+        name: JsWord,
+    },
+
     CannotAssignAbstractConstructorToNonAbstractConstructor {
         span: Span,
     },

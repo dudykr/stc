@@ -37,6 +37,7 @@ use stc_ts_ast_rnode::RSeqExpr;
 use stc_ts_ast_rnode::RStr;
 use stc_ts_ast_rnode::RThisExpr;
 use stc_ts_ast_rnode::RTsEntityName;
+use stc_ts_ast_rnode::RTsEnumMemberId;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
@@ -899,6 +900,17 @@ impl Analyzer<'_, '_> {
 
                 match prop {
                     Key::Normal { sym, .. } => {
+                        let has_such_member = e.members.iter().any(|m| match &m.id {
+                            RTsEnumMemberId::Ident(i) => i.sym == *sym,
+                            RTsEnumMemberId::Str(s) => s.value == *sym,
+                        });
+                        if !has_such_member {
+                            return Err(box Error::NoSuchEnumVariant {
+                                span,
+                                name: sym.clone(),
+                            });
+                        }
+
                         // Computed values are not permitted in an enum with string valued members.
                         if e.is_const && type_mode == TypeOfMode::RValue {
                             // for m in &e.members {
