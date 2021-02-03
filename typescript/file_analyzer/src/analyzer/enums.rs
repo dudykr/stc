@@ -13,19 +13,24 @@ use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RLit;
 use stc_ts_ast_rnode::RNumber;
+use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RStr;
 use stc_ts_ast_rnode::RTsEnumDecl;
 use stc_ts_ast_rnode::RTsEnumMemberId;
+use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_errors::Error;
 use stc_ts_types::EnumVariant;
+use stc_ts_types::FnParam;
 use stc_ts_types::Id;
+use stc_ts_types::IndexSignature;
 use stc_ts_types::Key;
 use stc_ts_types::PropertySignature;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
 use swc_atoms::JsWord;
+use swc_common::DUMMY_SP;
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::*;
 
@@ -329,6 +334,26 @@ impl Analyzer<'_, '_> {
                     name: key.sym,
                 })),
             }))
+        }
+        {
+            let param = FnParam {
+                span: DUMMY_SP,
+                pat: RPat::Ident(RIdent::new("n".into(), DUMMY_SP)),
+                required: true,
+                ty: box Type::Keyword(RTsKeywordType {
+                    span: DUMMY_SP,
+                    kind: TsKeywordTypeKind::TsNumberKeyword,
+                }),
+            };
+            members.push(TypeElement::Index(IndexSignature {
+                span: e.span,
+                readonly: false,
+                params: vec![param],
+                type_ann: Some(box Type::Keyword(RTsKeywordType {
+                    span: DUMMY_SP,
+                    kind: TsKeywordTypeKind::TsStringKeyword,
+                })),
+            }));
         }
 
         Ok(TypeLit { span: e.span, members })
