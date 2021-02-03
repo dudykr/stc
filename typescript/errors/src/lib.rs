@@ -60,6 +60,10 @@ pub enum Error {
         span: Span,
     },
 
+    InvalidUseOfConstEnum {
+        span: Span,
+    },
+
     ComputedMemberInEnumWithStrMember {
         span: Span,
     },
@@ -704,6 +708,8 @@ impl Error {
             Error::ConstEnumUsedAsVar { .. } => 2475,
 
             Error::ConstEnumNonIndexAccess { .. } => 2476,
+
+            Error::InvalidUseOfConstEnum { .. } => 2475,
 
             Error::DebugContext(c) => c.inner.code(),
 
