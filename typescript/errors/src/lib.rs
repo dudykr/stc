@@ -699,6 +699,12 @@ impl Error {
             Error::TupleIndexError { .. } => 2493,
             Error::InvalidLValue { .. } => 2540,
 
+            Error::TS2378 { .. } => 2378,
+
+            Error::ConstEnumUsedAsVar { .. } => 2475,
+
+            Error::ConstEnumNonIndexAccess { .. } => 2476,
+
             Error::DebugContext(c) => c.inner.code(),
 
             _ => 0,
