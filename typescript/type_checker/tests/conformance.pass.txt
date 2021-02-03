@@ -330,6 +330,8 @@ es6/computedProperties/computedPropertyNames25_ES5.ts
 es6/computedProperties/computedPropertyNames25_ES6.ts
 es6/computedProperties/computedPropertyNames28_ES5.ts
 es6/computedProperties/computedPropertyNames28_ES6.ts
+es6/computedProperties/computedPropertyNames2_ES5.ts
+es6/computedProperties/computedPropertyNames2_ES6.ts
 es6/computedProperties/computedPropertyNames31_ES5.ts
 es6/computedProperties/computedPropertyNames31_ES6.ts
 es6/computedProperties/computedPropertyNames33_ES5.ts
@@ -962,7 +964,9 @@ internalModules/moduleDeclarations/asiPreventsParsingAsNamespace04.ts
 jsdoc/jsdocTwoLineTypedef.ts
 jsdoc/seeTag1.ts
 jsdoc/seeTag2.ts
+parser/ecmascript5/Accessors/parserAccessors1.ts
 parser/ecmascript5/Accessors/parserAccessors2.ts
+parser/ecmascript5/Accessors/parserAccessors3.ts
 parser/ecmascript5/Accessors/parserAccessors4.ts
 parser/ecmascript5/ArrayLiteralExpressions/parserArrayLiteralExpression1.ts
 parser/ecmascript5/ArrayLiteralExpressions/parserArrayLiteralExpression10.ts
@@ -999,6 +1003,7 @@ parser/ecmascript5/ClassDeclarations/parserClassDeclaration9.ts
 parser/ecmascript5/ClassDeclarations/parserClassDeclarationIndexSignature1.ts
 parser/ecmascript5/ComputedPropertyNames/parserES5ComputedPropertyName2.ts
 parser/ecmascript5/ComputedPropertyNames/parserES5ComputedPropertyName3.ts
+parser/ecmascript5/ComputedPropertyNames/parserES5ComputedPropertyName4.ts
 parser/ecmascript5/ConstructorDeclarations/parserConstructorDeclaration1.ts
 parser/ecmascript5/ConstructorDeclarations/parserConstructorDeclaration5.ts
 parser/ecmascript5/EnumDeclarations/parserEnum1.ts
@@ -1062,6 +1067,10 @@ parser/ecmascript5/IndexMemberDeclarations/parserIndexMemberDeclaration3.ts
 parser/ecmascript5/IndexMemberDeclarations/parserIndexMemberDeclaration4.ts
 parser/ecmascript5/InterfaceDeclarations/parserInterfaceDeclaration5.ts
 parser/ecmascript5/InterfaceDeclarations/parserInterfaceDeclaration7.ts
+parser/ecmascript5/MemberAccessorDeclarations/parserMemberAccessor1.ts
+parser/ecmascript5/MemberAccessorDeclarations/parserMemberAccessorDeclaration1.ts
+parser/ecmascript5/MemberAccessorDeclarations/parserMemberAccessorDeclaration2.ts
+parser/ecmascript5/MemberAccessorDeclarations/parserMemberAccessorDeclaration3.ts
 parser/ecmascript5/MemberAccessorDeclarations/parserMemberAccessorDeclaration4.ts
 parser/ecmascript5/MemberAccessorDeclarations/parserMemberAccessorDeclaration5.ts
 parser/ecmascript5/MemberAccessorDeclarations/parserMemberAccessorDeclaration6.ts
@@ -1211,6 +1220,7 @@ parser/ecmascript6/ComputedPropertyNames/parserComputedPropertyName2.ts
 parser/ecmascript6/ComputedPropertyNames/parserComputedPropertyName24.ts
 parser/ecmascript6/ComputedPropertyNames/parserComputedPropertyName3.ts
 parser/ecmascript6/ComputedPropertyNames/parserComputedPropertyName37.ts
+parser/ecmascript6/ComputedPropertyNames/parserComputedPropertyName4.ts
 parser/ecmascript6/ComputedPropertyNames/parserComputedPropertyName40.ts
 parser/ecmascript6/ComputedPropertyNames/parserComputedPropertyName41.ts
 parser/ecmascript6/ComputedPropertyNames/parserComputedPropertyName6.ts
@@ -1401,10 +1411,12 @@ types/thisType/thisTypeInInterfaces.ts
 types/thisType/thisTypeInTuples.ts
 types/thisType/thisTypeInTypePredicate.ts
 types/thisType/thisTypeSyntacticContext.ts
+types/tuple/indexerWithTuple.ts
 types/tuple/tupleElementTypes1.ts
 types/tuple/tupleElementTypes2.ts
 types/tuple/tupleElementTypes3.ts
 types/tuple/tupleElementTypes4.ts
+types/tuple/tupleLengthCheck.ts
 types/tuple/typeInferenceWithTupleType.ts
 types/tuple/wideningTuples1.ts
 types/tuple/wideningTuples4.ts
@@ -1453,6 +1465,8 @@ types/typeRelationships/assignmentCompatibility/typeParameterAssignability.ts
 types/typeRelationships/assignmentCompatibility/undefinedAssignableToEveryType.ts
 types/typeRelationships/bestCommonType/arrayLiteralWithMultipleBestCommonTypes.ts
 types/typeRelationships/bestCommonType/bestCommonTypeOfConditionalExpressions2.ts
+types/typeRelationships/bestCommonType/bestCommonTypeOfTuple.ts
+types/typeRelationships/bestCommonType/bestCommonTypeOfTuple2.ts
 types/typeRelationships/bestCommonType/functionWithMultipleReturnStatements.ts
 types/typeRelationships/bestCommonType/functionWithMultipleReturnStatements2.ts
 types/typeRelationships/subtypesAndSuperTypes/nullIsSubtypeOfEverythingButUndefined.ts
