@@ -193,6 +193,13 @@ impl Analyzer<'_, '_> {
                     lit: RTsLit::Str(..), ..
                 }) if lhs.is_empty() => return Ok(()),
 
+                Type::Enum(r) => {
+                    let rhs = self.enum_to_type_lit(r).map(Type::TypeLit)?;
+                    return self
+                        .assign_to_type_elements(opts, lhs_span, lhs, &rhs)
+                        .context("tried to assign an enum to type elements");
+                }
+
                 _ => {
                     return Err(box Error::Unimplemented {
                         span,
