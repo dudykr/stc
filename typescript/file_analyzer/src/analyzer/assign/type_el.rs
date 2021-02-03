@@ -203,7 +203,7 @@ impl Analyzer<'_, '_> {
                 _ => {
                     return Err(box Error::Unimplemented {
                         span,
-                        msg: format!("assign_to_type_elements - ??"),
+                        msg: format!("assign_to_type_elements - {:#?}", rhs),
                     })
                 }
             }
