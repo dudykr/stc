@@ -203,7 +203,7 @@ impl Analyzer<'_, '_> {
             let l = dump_type_as_string(&self.cm, &to);
             let r = dump_type_as_string(&self.cm, &rhs);
 
-            format!("lhs = {}rhs = {}\n{:?}", l, r, rhs)
+            format!("lhs = {}rhs = {}", l, r)
         })
     }
 
