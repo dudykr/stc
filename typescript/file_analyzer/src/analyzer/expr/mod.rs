@@ -1606,7 +1606,28 @@ impl Analyzer<'_, '_> {
         let name = i.into();
 
         let mut modules = vec![];
-        if self.ctx.allow_module_var {
+        let mut ty = self.type_of_raw_var(i, type_mode, type_args)?;
+        let mut need_intersection = true;
+
+        match ty.normalize() {
+            Type::Module(..) => {
+                need_intersection = false;
+            }
+            Type::Intersection(i) => {
+                for ty in &i.types {
+                    match ty.normalize() {
+                        Type::Module(..) => {
+                            need_intersection = false;
+                            break;
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            _ => {}
+        }
+
+        if self.ctx.allow_module_var && need_intersection {
             if let Some(types) = self.find_type(self.ctx.module_id, &id)? {
                 for ty in types {
                     debug_assert!(ty.is_clone_cheap());
@@ -1628,8 +1649,6 @@ impl Analyzer<'_, '_> {
                 }
             }
         }
-
-        let mut ty = self.type_of_raw_var(i, type_mode, type_args)?;
 
         let type_facts = self.scope.get_type_facts(&name)
             | self
