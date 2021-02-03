@@ -1609,6 +1609,8 @@ impl Analyzer<'_, '_> {
         let mut ty = self.type_of_raw_var(i, type_mode, type_args)?;
         let mut need_intersection = true;
 
+        // TODO: Change return type of type_of_raw_var to Option and inject module from
+        // here.
         match ty.normalize() {
             Type::Module(..) => {
                 need_intersection = false;
