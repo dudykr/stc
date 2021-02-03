@@ -381,7 +381,7 @@ impl Analyzer<'_, '_> {
     fn validate_member_of_str_enum(&mut self, m: &RTsEnumMember) {
         fn type_of_expr(e: &RExpr) -> Option<swc_ecma_utils::Type> {
             Some(match e {
-                RExpr::Lit(RLit::Str(..)) => swc_ecma_utils::Type::Str,
+                RExpr::Tpl(..) | RExpr::Lit(RLit::Str(..)) => swc_ecma_utils::Type::Str,
                 RExpr::Lit(RLit::Num(..)) => swc_ecma_utils::Type::Num,
                 RExpr::Bin(RBinExpr {
                     op: op!(bin, "+"),
@@ -391,7 +391,7 @@ impl Analyzer<'_, '_> {
                 }) => {
                     let lt = type_of_expr(&left)?;
                     let rt = type_of_expr(&right)?;
-                    if lt == rt {
+                    if lt == rt && lt == swc_ecma_utils::Type::Str {
                         return Some(lt);
                     }
 
@@ -402,6 +402,7 @@ impl Analyzer<'_, '_> {
         }
 
         match m.init.as_deref() {
+            Some(RExpr::Ident(..)) => {}
             Some(e) => {
                 if type_of_expr(&e).is_none() {
                     self.storage
