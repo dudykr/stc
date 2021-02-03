@@ -196,7 +196,15 @@ impl Analyzer<'_, '_> {
                 Type::Enum(r) => {
                     let rhs = self.enum_to_type_lit(r).map(Type::TypeLit)?;
                     return self
-                        .assign_to_type_elements(opts, lhs_span, lhs, &rhs)
+                        .assign_to_type_elements(
+                            AssignOpts {
+                                allow_unknown_rhs: true,
+                                ..opts
+                            },
+                            lhs_span,
+                            lhs,
+                            &rhs,
+                        )
                         .context("tried to assign an enum to type elements");
                 }
 
