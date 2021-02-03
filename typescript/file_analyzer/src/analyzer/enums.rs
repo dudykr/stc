@@ -369,10 +369,10 @@ impl Analyzer<'_, '_> {
     }
 
     // Check for constant enum in rvalue.
-    pub(super) fn check_rvalue(&mut self, rhs_ty: &Type) {
+    pub(super) fn check_rvalue(&mut self, span: Span, rhs_ty: &Type) {
         match *rhs_ty.normalize() {
             Type::Enum(ref e) if e.is_const => {
-                self.storage.report(box Error::ConstEnumUsedAsVar { span: e.span() });
+                self.storage.report(box Error::InvalidUseOfConstEnum { span });
             }
             _ => {}
         }

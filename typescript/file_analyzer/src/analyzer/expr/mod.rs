@@ -366,7 +366,7 @@ impl Analyzer<'_, '_> {
 
             let rhs_ty = match e.right.validate_with_args(analyzer, (mode, None, type_ann)) {
                 Ok(rhs_ty) => {
-                    analyzer.check_rvalue(&rhs_ty);
+                    analyzer.check_rvalue(span, &rhs_ty);
 
                     Ok(rhs_ty)
                 }

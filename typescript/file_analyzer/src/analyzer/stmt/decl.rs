@@ -235,7 +235,7 @@ impl Analyzer<'_, '_> {
                             }
                         };
                         let ty = self.expand(span, ty)?;
-                        self.check_rvalue(&ty);
+                        self.check_rvalue(span, &ty);
 
                         self.scope.this = Some(box ty.clone().remove_falsy());
                         let mut value_ty = get_value_ty!(Some(&ty));
@@ -465,7 +465,7 @@ impl Analyzer<'_, '_> {
                                 ty = self.expand(span, ty)?;
                             }
                         }
-                        self.check_rvalue(&ty);
+                        self.check_rvalue(span, &ty);
 
                         let mut type_errors = Errors::default();
 

@@ -253,11 +253,6 @@ pub enum Error {
         span: Span,
     },
 
-    /// TS2475
-    ConstEnumUsedAsVar {
-        span: Span,
-    },
-
     /// TS2476
     ConstEnumNonIndexAccess {
         span: Span,
@@ -704,8 +699,6 @@ impl Error {
             Error::InvalidLValue { .. } => 2540,
 
             Error::TS2378 { .. } => 2378,
-
-            Error::ConstEnumUsedAsVar { .. } => 2475,
 
             Error::ConstEnumNonIndexAccess { .. } => 2476,
 
