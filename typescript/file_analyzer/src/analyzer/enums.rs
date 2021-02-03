@@ -19,7 +19,11 @@ use stc_ts_ast_rnode::RTsEnumMemberId;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_errors::Error;
+use stc_ts_types::EnumVariant;
 use stc_ts_types::Id;
+use stc_ts_types::Key;
+use stc_ts_types::PropertySignature;
+use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
 use swc_atoms::JsWord;
 use swc_common::{Span, Spanned};
@@ -298,7 +302,37 @@ impl Analyzer<'_, '_> {
     /// };
     /// var e: typeof E1;
     /// ```
-    pub(super) fn enum_to_type_lit(&mut self, e: &Enum) -> ValidationResult<TypeLit> {}
+    pub(super) fn enum_to_type_lit(&mut self, e: &Enum) -> ValidationResult<TypeLit> {
+        let mut members = vec![];
+
+        for m in &e.members {
+            let key = match &m.id {
+                RTsEnumMemberId::Ident(i) => i.clone(),
+                RTsEnumMemberId::Str(s) => RIdent::new(s.value.clone(), s.span),
+            };
+
+            members.push(TypeElement::Property(PropertySignature {
+                span: m.span,
+                key: Key::Normal {
+                    span: key.span,
+                    sym: key.sym.clone(),
+                },
+                optional: false,
+                params: Default::default(),
+                readonly: true,
+                type_params: Default::default(),
+                type_ann: Some(box Type::EnumVariant(EnumVariant {
+                    span: m.span,
+                    // TODO: Store context in `Enum`
+                    ctxt: self.ctx.module_id,
+                    enum_name: e.id.clone().into(),
+                    name: key.sym,
+                })),
+            }))
+        }
+
+        Ok(TypeLit { span: e.span, members })
+    }
 
     // Check for constant enum in rvalue.
     pub(super) fn check_rvalue(&mut self, rhs_ty: &Type) {
