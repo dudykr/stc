@@ -60,6 +60,10 @@ pub enum Error {
         span: Span,
     },
 
+    ComputedMemberInEnumWithStrMember {
+        span: Span,
+    },
+
     CannotCreateInstanceOfAbstractClass {
         span: Span,
     },
@@ -689,6 +693,8 @@ impl Error {
             Error::CannotAssignAbstractConstructorToNonAbstractConstructor { .. } => 2322,
             Error::CannotCreateInstanceOfAbstractClass { .. } => 2511,
             Error::WrongArgType { .. } => 2345,
+
+            Error::ComputedMemberInEnumWithStrMember { .. } => 2553,
 
             Error::DebugContext(c) => c.inner.code(),
 

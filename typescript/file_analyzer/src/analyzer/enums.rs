@@ -16,6 +16,7 @@ use stc_ts_ast_rnode::RNumber;
 use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RStr;
 use stc_ts_ast_rnode::RTsEnumDecl;
+use stc_ts_ast_rnode::RTsEnumMember;
 use stc_ts_ast_rnode::RTsEnumMemberId;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
@@ -100,16 +101,24 @@ impl Analyzer<'_, '_> {
                 })
                 .collect::<Result<Vec<_>, _>>()?;
 
+            let has_str = members.iter().any(|m| match *m.val {
+                RExpr::Lit(RLit::Str(..)) => true,
+                _ => false,
+            });
+
+            if has_str {
+                for m in &e.members {
+                    self.validate_member_of_str_enum(m);
+                }
+            }
+
             Enum {
                 span: e.span,
                 has_num: members.iter().any(|m| match *m.val {
                     RExpr::Lit(RLit::Num(..)) => true,
                     _ => false,
                 }),
-                has_str: members.iter().any(|m| match *m.val {
-                    RExpr::Lit(RLit::Str(..)) => true,
-                    _ => false,
-                }),
+                has_str,
                 declare: e.declare,
                 is_const: e.is_const,
                 id: e.id.clone(),
@@ -364,6 +373,40 @@ impl Analyzer<'_, '_> {
         match *rhs_ty.normalize() {
             Type::Enum(ref e) if e.is_const => {
                 self.storage.report(box Error::ConstEnumUsedAsVar { span: e.span() });
+            }
+            _ => {}
+        }
+    }
+
+    fn validate_member_of_str_enum(&mut self, m: &RTsEnumMember) {
+        fn type_of_expr(e: &RExpr) -> Option<swc_ecma_utils::Type> {
+            Some(match e {
+                RExpr::Lit(RLit::Str(..)) => swc_ecma_utils::Type::Str,
+                RExpr::Lit(RLit::Num(..)) => swc_ecma_utils::Type::Num,
+                RExpr::Bin(RBinExpr {
+                    op: op!(bin, "+"),
+                    left,
+                    right,
+                    ..
+                }) => {
+                    let lt = type_of_expr(&left)?;
+                    let rt = type_of_expr(&right)?;
+                    if lt == rt {
+                        return Some(lt);
+                    }
+
+                    return None;
+                }
+                _ => return None,
+            })
+        }
+
+        match m.init.as_deref() {
+            Some(e) => {
+                if type_of_expr(&e).is_none() {
+                    self.storage
+                        .report(box Error::ComputedMemberInEnumWithStrMember { span: m.span })
+                }
             }
             _ => {}
         }
