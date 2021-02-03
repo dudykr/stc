@@ -696,6 +696,9 @@ impl Error {
 
             Error::ComputedMemberInEnumWithStrMember { .. } => 2553,
 
+            Error::TupleIndexError { .. } => 2493,
+            Error::InvalidLValue { .. } => 2540,
+
             Error::DebugContext(c) => c.inner.code(),
 
             _ => 0,
