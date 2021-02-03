@@ -1928,9 +1928,13 @@ impl Analyzer<'_, '_> {
         } = *expr;
 
         let mut errors = Errors::default();
+        let ctx = Ctx {
+            allow_module_var: true,
+            ..self.ctx
+        };
         let obj_ty = match *obj {
             RExprOrSuper::Expr(ref obj) => {
-                let obj_ty = match obj.validate_with_default(self) {
+                let obj_ty = match obj.validate_with_default(&mut *self.with_ctx(ctx)) {
                     Ok(ty) => ty,
                     Err(err) => {
                         // Recover error if possible.
