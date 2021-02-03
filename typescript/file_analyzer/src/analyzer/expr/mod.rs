@@ -1613,6 +1613,16 @@ impl Analyzer<'_, '_> {
 
                     match ty.normalize() {
                         Type::Module(..) => modules.push(box ty.clone().into_owned()),
+                        Type::Intersection(intersection) => {
+                            for ty in &intersection.types {
+                                debug_assert!(ty.is_clone_cheap());
+
+                                match ty.normalize() {
+                                    Type::Module(..) => modules.push(ty.clone()),
+                                    _ => {}
+                                }
+                            }
+                        }
                         _ => {}
                     }
                 }
