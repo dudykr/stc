@@ -1663,6 +1663,7 @@ impl Analyzer<'_, '_> {
                 span: i.span,
                 types: modules,
             });
+            ty.make_cheap();
         }
 
         slog::debug!(self.logger, "{:?} = Type: {:?}", id, ty);
