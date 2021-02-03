@@ -1602,16 +1602,31 @@ impl Analyzer<'_, '_> {
         type_args: Option<&TypeParamInstantiation>,
     ) -> ValidationResult {
         let span = i.span();
-        let id = i.into();
+        let id: Id = i.into();
+        let name = i.into();
+
+        let mut modules = vec![];
+        if self.ctx.allow_module_var {
+            if let Some(types) = self.find_type(self.ctx.module_id, &id)? {
+                for ty in types {
+                    debug_assert!(ty.is_clone_cheap());
+
+                    match ty.normalize() {
+                        Type::Module(..) => modules.push(box ty.clone().into_owned()),
+                        _ => {}
+                    }
+                }
+            }
+        }
 
         let mut ty = self.type_of_raw_var(i, type_mode, type_args)?;
 
-        let type_facts = self.scope.get_type_facts(&id)
+        let type_facts = self.scope.get_type_facts(&name)
             | self
                 .cur_facts
                 .true_facts
                 .facts
-                .get(&id)
+                .get(&name)
                 .copied()
                 .unwrap_or(TypeFacts::None);
 
@@ -1635,11 +1650,19 @@ impl Analyzer<'_, '_> {
             let mut s = Some(&self.scope);
 
             while let Some(scope) = s {
-                exclude_types(&mut ty, scope.facts.excludes.get(&id));
+                exclude_types(&mut ty, scope.facts.excludes.get(&name));
                 s = scope.parent();
             }
 
-            exclude_types(&mut ty, self.cur_facts.true_facts.excludes.get(&id));
+            exclude_types(&mut ty, self.cur_facts.true_facts.excludes.get(&name));
+        }
+
+        if !modules.is_empty() {
+            modules.push(ty);
+            ty = box Type::Intersection(Intersection {
+                span: i.span,
+                types: modules,
+            });
         }
 
         slog::debug!(self.logger, "{:?} = Type: {:?}", id, ty);
