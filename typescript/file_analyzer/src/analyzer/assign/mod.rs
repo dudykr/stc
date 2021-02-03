@@ -631,7 +631,12 @@ impl Analyzer<'_, '_> {
                 fail!()
             }
 
-            Type::Enum(ref e) => handle_enum_in_rhs!(e),
+            Type::Enum(ref e) => match to {
+                Type::Interface(..) | Type::TypeLit(..) => {}
+                _ => {
+                    handle_enum_in_rhs!(e)
+                }
+            },
 
             Type::EnumVariant(EnumVariant {
                 ref ctxt,
@@ -641,7 +646,12 @@ impl Analyzer<'_, '_> {
                 if let Some(types) = self.find_type(*ctxt, enum_name)? {
                     for ty in types {
                         if let Type::Enum(ref e) = ty.normalize() {
-                            handle_enum_in_rhs!(e);
+                            match to {
+                                Type::Interface(..) | Type::TypeLit(..) => {}
+                                _ => {
+                                    handle_enum_in_rhs!(e)
+                                }
+                            }
                         }
                     }
                 }
