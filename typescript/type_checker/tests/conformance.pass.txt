@@ -187,6 +187,7 @@ classes/propertyMemberDeclarations/thisInInstanceMemberInitializer.ts
 constEnums/constEnum1.ts
 constEnums/constEnum3.ts
 constEnums/constEnum4.ts
+constEnums/constEnumPropertyAccess2.ts
 controlFlow/constLocalsInFunctionExpressions.ts
 controlFlow/controlFlowBinaryAndExpression.ts
 controlFlow/controlFlowBinaryOrExpression.ts
