@@ -139,8 +139,7 @@ impl Analyzer<'_, '_> {
         }
 
         res.map_err(|err| match *err {
-            Error::InvalidUseOfConstEnum { .. }
-            | Error::AssignFailed { .. }
+            Error::AssignFailed { .. }
             | Error::DebugContext { .. }
             | Error::Errors { .. }
             | Error::Unimplemented { .. } => err,
