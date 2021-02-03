@@ -508,7 +508,24 @@ impl Analyzer<'_, '_> {
                             return Ok(());
                         }
 
-                        self.declare_complex_vars(kind, &v.name, ty).report(&mut self.storage);
+                        let var_ty = (|| -> ValidationResult<_> {
+                            match &*ty {
+                                Type::EnumVariant(ref v) => {
+                                    if let Some(items) = self.find_type(self.ctx.module_id, &v.enum_name)? {
+                                        for ty in items {
+                                            if let Type::Enum(ref e) = ty.normalize() {
+                                                return Ok(box Type::Enum(e.clone()));
+                                            }
+                                        }
+                                    }
+                                    unreachable!("Failed to found enum named `{}`", v.enum_name)
+                                }
+                                _ => Ok(ty),
+                            }
+                        })()?;
+
+                        self.declare_complex_vars(kind, &v.name, var_ty)
+                            .report(&mut self.storage);
                         remove_declaring!();
                         return Ok(());
                     }
