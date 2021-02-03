@@ -706,11 +706,11 @@ impl Analyzer<'_, '_> {
             })?;
 
         if let Some(ty) = ty {
-            match decl.id {
-                RTsModuleName::Ident(ref i) => {
+            match &decl.id {
+                RTsModuleName::Ident(i) => {
                     self.register_type(i.into(), ty);
                 }
-                RTsModuleName::Str(ref s) => {
+                RTsModuleName::Str(s) => {
                     //TODO
                     return Ok(());
                 }
