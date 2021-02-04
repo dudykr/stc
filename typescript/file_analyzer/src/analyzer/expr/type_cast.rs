@@ -241,6 +241,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
+        // TODO: This is wrong
         if from.is_type_lit() && to.is_type_lit() {
             return Ok(true);
         }
