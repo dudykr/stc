@@ -384,7 +384,7 @@ impl Analyzer<'_, '_> {
             op!("<=") | op!("<") | op!(">=") | op!(">") => {
                 no_unknown!();
 
-                let mut check = |ty: &Type| match ty.normalize() {
+                let mut check_for_invalid_operand = |ty: &Type| match ty.normalize() {
                     Type::Keyword(RTsKeywordType {
                         span,
                         kind: TsKeywordTypeKind::TsUndefinedKeyword,
@@ -403,8 +403,8 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 };
 
-                check(&lt);
-                check(&rt);
+                check_for_invalid_operand(&lt);
+                check_for_invalid_operand(&rt);
 
                 return Ok(box Type::Keyword(RTsKeywordType {
                     span,
