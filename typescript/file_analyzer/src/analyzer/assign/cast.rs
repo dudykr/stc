@@ -2,6 +2,7 @@ use crate::analyzer::Analyzer;
 use stc_ts_types::Type;
 use std::borrow::Cow;
 use swc_common::Span;
+use swc_ecma_ast::TsKeywordTypeKind;
 
 impl Analyzer<'_, '_> {
     /// Returns true if the type can be casted to number if it's in the rvalue
@@ -10,6 +11,12 @@ impl Analyzer<'_, '_> {
         let ty = ty.normalize();
 
         if ty.is_num() {
+            return true;
+        }
+
+        // TODO: Maybe make this check optional, but only if tsc reports error for
+        // number + bigint
+        if ty.is_kwd(TsKeywordTypeKind::TsBigIntKeyword) {
             return true;
         }
 
