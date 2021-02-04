@@ -232,31 +232,11 @@ impl Analyzer<'_, '_> {
                     return Err(box Error::Unknown { span });
                 }
 
-                match *lt {
-                    Type::Keyword(RTsKeywordType {
+                if lt.is_num() && rt.is_num() {
+                    return Ok(box Type::Keyword(RTsKeywordType {
+                        span,
                         kind: TsKeywordTypeKind::TsNumberKeyword,
-                        ..
-                    })
-                    | Type::Lit(RTsLitType {
-                        lit: RTsLit::Number(..),
-                        ..
-                    }) => match *rt {
-                        Type::Keyword(RTsKeywordType {
-                            kind: TsKeywordTypeKind::TsNumberKeyword,
-                            ..
-                        })
-                        | Type::Lit(RTsLitType {
-                            lit: RTsLit::Number(..),
-                            ..
-                        }) => {
-                            return Ok(box Type::Keyword(RTsKeywordType {
-                                span,
-                                kind: TsKeywordTypeKind::TsNumberKeyword,
-                            }));
-                        }
-                        _ => {}
-                    },
-                    _ => {}
+                    }));
                 }
 
                 if let Some(()) = c.take_if_any_matches(|(_, lt), (_, _)| match **lt {
