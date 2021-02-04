@@ -167,7 +167,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        if self.has_overlap(span, &orig, &casted)? {
+        if self.castable(span, &orig, &casted)? {
             return Ok(());
         }
 
@@ -182,10 +182,14 @@ impl Analyzer<'_, '_> {
             return Ok(true);
         }
 
-        Ok(self.check_for_overlap(span, l, r)? || self.check_for_overlap(span, r, l)?)
+        Ok(self.castable(span, l, r)? || self.castable(span, r, l)?)
     }
+    /// # Parameters
+    ///
+    /// - `l`: from
+    /// - `r`: to
 
-    fn check_for_overlap(&mut self, span: Span, l: &Type, r: &Type) -> ValidationResult<bool> {
+    pub(crate) fn castable(&mut self, span: Span, l: &Type, r: &Type) -> ValidationResult<bool> {
         let l = l.normalize();
         let r = r.normalize();
 
@@ -202,11 +206,11 @@ impl Analyzer<'_, '_> {
         match (l, r) {
             (Type::Ref(_), _) => {
                 let l = self.expand_top_ref(span, Cow::Borrowed(l))?;
-                return self.check_for_overlap(span, &l, r);
+                return self.castable(span, &l, r);
             }
             (_, Type::Ref(_)) => {
                 let r = self.expand_top_ref(span, Cow::Borrowed(r))?;
-                return self.check_for_overlap(span, l, &r);
+                return self.castable(span, l, &r);
             }
 
             (Type::TypeLit(lt), Type::TypeLit(rt)) => {
