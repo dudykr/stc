@@ -21,6 +21,7 @@ use swc_atoms::JsWord;
 use swc_common::errors::DiagnosticId;
 use swc_common::{errors::Handler, Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::AssignOp;
+use swc_ecma_ast::BinaryOp;
 use swc_ecma_ast::{UnaryOp, UpdateOp};
 
 pub mod debug;
@@ -56,6 +57,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    InvalidBinaryOp {
+        span: Span,
+        op: BinaryOp,
+    },
+
     NoSuchEnumVariant {
         span: Span,
         name: JsWord,

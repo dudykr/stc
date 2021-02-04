@@ -341,8 +341,11 @@ impl Analyzer<'_, '_> {
                         kind: TsKeywordTypeKind::TsStringKeyword,
                     }));
                 }
+                // At this point rhs cannot be string.
+                //
+                // Known numeric operations are all handled above
 
-                unimplemented!("type_of_bin(+)\nLeft: {:#?}\nRight: {:#?}", lt, rt)
+                return Err(box Error::InvalidBinaryOp { span, op });
             }
             op!("*") | op!("/") => {
                 no_unknown!();
