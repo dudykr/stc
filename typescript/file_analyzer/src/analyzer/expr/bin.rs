@@ -544,7 +544,11 @@ impl Analyzer<'_, '_> {
                                         if self.assign(&lt, &rt, span).is_ok() || self.assign(&rt, &lt, span).is_ok() {
                                             continue;
                                         }
+                                    } else {
+                                        continue;
                                     }
+                                } else {
+                                    continue;
                                 }
                                 //
                                 self.storage.report(box Error::CannotCompareWithOp { span, op });
