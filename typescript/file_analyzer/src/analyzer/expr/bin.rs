@@ -306,6 +306,13 @@ impl Analyzer<'_, '_> {
                 //
                 // Known numeric operations are all handled above
 
+                if self.can_be_casted_to_number_in_rhs(&lt) && self.can_be_casted_to_number_in_rhs(&rt) {
+                    return Ok(box Type::Keyword(RTsKeywordType {
+                        span,
+                        kind: TsKeywordTypeKind::TsNumberKeyword,
+                    }));
+                }
+
                 return Err(box Error::InvalidBinaryOp { span, op });
             }
             op!("*") | op!("/") => {
