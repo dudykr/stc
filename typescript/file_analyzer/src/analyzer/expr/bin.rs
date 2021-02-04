@@ -532,32 +532,23 @@ impl Analyzer<'_, '_> {
                     return self.validate_relative_comparison_operands(span, op, l, &r);
                 }
             }
-            (Type::TypeLit(l), Type::TypeLit(r)) => {
+            (Type::TypeLit(lt), Type::TypeLit(rt)) => {
                 // It's an error if type of the parameter of index signature is same but type
                 // annotation is different.
-                for lm in &l.members {
-                    for rm in &r.members {
+                for lm in &lt.members {
+                    for rm in &rt.members {
                         match (lm, rm) {
-                            (TypeElement::Index(lm), TypeElement::Index(rm)) => {
-                                if lm.params.type_eq(&rm.params) {
-                                    if let Some(lt) = &lm.type_ann {
-                                        if let Some(rt) = &rm.type_ann {
-                                            if let Ok(()) = self.assign(&lt, &rt, span) {
-                                                continue;
-                                            }
-                                            if let Ok(()) = self.assign(&rt, &lt, span) {
-                                                continue;
-                                            }
-                                        } else {
+                            (TypeElement::Index(lm), TypeElement::Index(rm)) if lm.params.type_eq(&rm.params) => {
+                                if let Some(lt) = &lm.type_ann {
+                                    if let Some(rt) = &rm.type_ann {
+                                        if self.assign(&lt, &rt, span).is_ok() || self.assign(&rt, &lt, span).is_ok() {
                                             continue;
                                         }
-                                    } else {
-                                        continue;
                                     }
-                                    //
-                                    self.storage.report(box Error::CannotCompareWithOp { span, op });
-                                    return;
                                 }
+                                //
+                                self.storage.report(box Error::CannotCompareWithOp { span, op });
+                                return;
                             }
                             _ => {}
                         }
