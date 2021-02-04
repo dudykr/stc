@@ -410,7 +410,6 @@ impl Analyzer<'_, '_> {
                 check_for_invalid_operand(&rt);
 
                 self.validate_comparison_operands(span, op, &lt, &rt);
-                self.validate_comparison_operands(span, op, &rt, &lt);
 
                 return Ok(box Type::Keyword(RTsKeywordType {
                     span,
@@ -541,11 +540,23 @@ impl Analyzer<'_, '_> {
                         match (lm, rm) {
                             (TypeElement::Index(lm), TypeElement::Index(rm)) => {
                                 if lm.params.type_eq(&rm.params) {
-                                    if !lm.type_ann.type_eq(&rm.type_ann) {
-                                        //
-                                        self.storage.report(box Error::CannotCompareWithOp { span, op });
-                                        return;
+                                    if let Some(lt) = &lm.type_ann {
+                                        if let Some(rt) = &rm.type_ann {
+                                            if let Ok(()) = self.assign(&lt, &rt, span) {
+                                                continue;
+                                            }
+                                            if let Ok(()) = self.assign(&rt, &lt, span) {
+                                                continue;
+                                            }
+                                        } else {
+                                            continue;
+                                        }
+                                    } else {
+                                        continue;
                                     }
+                                    //
+                                    self.storage.report(box Error::CannotCompareWithOp { span, op });
+                                    return;
                                 }
                             }
                             _ => {}
