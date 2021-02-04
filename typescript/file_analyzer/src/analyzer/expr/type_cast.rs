@@ -8,6 +8,7 @@ use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_ast_rnode::RTsType;
 use stc_ts_ast_rnode::RTsTypeAssertion;
 use stc_ts_errors::Error;
+use stc_ts_types::TypeElement;
 use stc_ts_types::TypeParamInstantiation;
 use swc_common::TypeEq;
 use swc_common::{Span, Spanned};
@@ -194,6 +195,32 @@ impl Analyzer<'_, '_> {
         // TODO: More check
         if l.is_function() && r.is_function() {
             return Ok(false);
+        }
+
+        match (l, r) {
+            (Type::TypeLit(lt), Type::TypeLit(rt)) => {
+                // It's an error if type of the parameter of index signature is same but type
+                // annotation is different.
+                for lm in &lt.members {
+                    for rm in &rt.members {
+                        match (lm, rm) {
+                            (TypeElement::Index(lm), TypeElement::Index(rm)) if lm.params.type_eq(&rm.params) => {
+                                if let Some(lt) = &lm.type_ann {
+                                    if let Some(rt) = &rm.type_ann {
+                                        if self.assign(&lt, &rt, span).is_err() && self.assign(&rt, &lt, span).is_err()
+                                        {
+                                            return Ok(false);
+                                        }
+                                    }
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+            }
+
+            _ => {}
         }
 
         if l.is_type_lit() && r.is_type_lit() {
