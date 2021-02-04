@@ -32,6 +32,7 @@ use swc_common::TypeEq;
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::*;
 
+mod cast;
 mod class;
 mod query;
 mod type_el;
@@ -59,6 +60,23 @@ impl Analyzer<'_, '_> {
             }
             if rhs.is_kwd(TsKeywordTypeKind::TsNullKeyword) {
                 return Err(box Error::ObjectIsPossiblyNull { span: rhs.span() });
+            }
+
+            let r_castable = self.can_be_casted_to_number_in_rhs(&rhs);
+            if r_castable {
+                if l.is_num() {
+                    return Ok(());
+                }
+
+                match lhs {
+                    Type::Enum(l) => {
+                        //
+                        if !l.has_str {
+                            return Ok(());
+                        }
+                    }
+                    _ => {}
+                }
             }
         }
 
