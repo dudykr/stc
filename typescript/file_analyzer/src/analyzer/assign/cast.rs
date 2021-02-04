@@ -15,7 +15,7 @@ impl Analyzer<'_, '_> {
 
         match ty {
             Type::Ref(..) => {
-                if let Some(expanded) = self.expand_top_ref(span, Cow::Borrowed(ty)).ok().map(Cow::into_owned) {
+                if let Some(expanded) = self.expand_top_ref(span, Cow::Borrowed(ty)).ok() {
                     return self.can_be_casted_to_number_in_rhs(span, &expanded);
                 }
 
