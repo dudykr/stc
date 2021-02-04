@@ -578,23 +578,6 @@ impl Analyzer<'_, '_> {
         let mut errors = Errors::default();
 
         match op {
-            op!("===") | op!("!==") => {
-                if lt.is_some() && rt.is_some() {
-                    let lt = lt.unwrap();
-                    let rt = rt.unwrap();
-
-                    let has_overlap = self.has_overlap(span, lt, rt).report(&mut self.storage).unwrap_or(true);
-
-                    if !has_overlap {
-                        errors.push(box Error::NoOverlap {
-                            span,
-                            value: op != op!("==="),
-                            left: ls,
-                            right: rs,
-                        })
-                    }
-                }
-            }
             op!(bin, "+") => {
                 // Validation is performed in type_of_bin_expr because
                 // validation of types is required to compute type of the
