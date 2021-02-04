@@ -737,6 +737,18 @@ impl Error {
 
             Error::CannotCompareWithOp { .. } => 2365,
 
+            Error::CannotAssignToNonVariable { .. } => 2539,
+
+            Error::AssignedWrapperToPrimitive { .. } => 2322,
+
+            Error::AccessibilityDiffers { .. } => 2322,
+
+            Error::InvalidInitInConstEnum { .. } => 2474,
+
+            Error::InvalidTupleCast { .. } => 2352,
+
+            Error::NoOverlap { .. } => 2367,
+
             _ => 0,
         }
     }
