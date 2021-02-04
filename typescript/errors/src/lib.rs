@@ -57,6 +57,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    CannotCompareWithOp {
+        span: Span,
+        op: BinaryOp,
+    },
+
     InvalidBinaryOp {
         span: Span,
         op: BinaryOp,
@@ -729,6 +734,8 @@ impl Error {
             Error::ObjectIsPossiblyUndefined { .. } => 2532,
 
             Error::InvalidBinaryOp { .. } => 2365,
+
+            Error::CannotCompareWithOp { .. } => 2365,
 
             _ => 0,
         }

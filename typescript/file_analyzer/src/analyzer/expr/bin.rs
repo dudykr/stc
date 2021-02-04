@@ -21,7 +21,10 @@ use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_ast_rnode::RUnaryExpr;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
+use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::name::Name;
+use stc_ts_types::TypeElement;
+use std::borrow::Cow;
 use std::convert::TryFrom;
 use swc_common::TypeEq;
 use swc_common::{Span, Spanned};
@@ -406,6 +409,9 @@ impl Analyzer<'_, '_> {
                 check_for_invalid_operand(&lt);
                 check_for_invalid_operand(&rt);
 
+                self.validate_comparison_operands(span, op, &lt, &rt);
+                self.validate_comparison_operands(span, op, &rt, &lt);
+
                 return Ok(box Type::Keyword(RTsKeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
@@ -511,6 +517,45 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
+    #[extra_validator]
+    fn validate_comparison_operands(&mut self, span: Span, op: BinaryOp, l: &Type, r: &Type) {
+        let l = l.normalize();
+        let r = r.normalize();
+
+        match (l, r) {
+            (Type::Ref(..), _) => {
+                if let Ok(l) = self.expand_top_ref(l.span(), Cow::Borrowed(l)) {
+                    return self.validate_comparison_operands(span, op, &l, r);
+                }
+            }
+            (l, Type::Ref(..)) => {
+                if let Ok(r) = self.expand_top_ref(r.span(), Cow::Borrowed(r)) {
+                    return self.validate_comparison_operands(span, op, l, &r);
+                }
+            }
+            (Type::TypeLit(l), Type::TypeLit(r)) => {
+                // It's an error if type of the parameter of index signature is same but type
+                // annotation is different.
+                for lm in &l.members {
+                    for rm in &r.members {
+                        match (lm, rm) {
+                            (TypeElement::Index(lm), TypeElement::Index(rm)) => {
+                                if lm.params.type_eq(&rm.params) {
+                                    if !lm.type_ann.type_eq(&rm.type_ann) {
+                                        //
+                                        self.storage.report(box Error::CannotCompareWithOp { span, op });
+                                        return;
+                                    }
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
     fn validate_bin_inner(&mut self, span: Span, op: BinaryOp, lt: Option<&Type>, rt: Option<&Type>) {
         let ls = lt.span();
         let rs = rt.span();
