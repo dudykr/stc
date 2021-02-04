@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use super::{super::Analyzer, TypeOfMode};
 use crate::analyzer::util::ResultExt;
 use crate::{analyzer::util::instantiate_class, ty::Type, validator, validator::ValidateWith, ValidationResult};
@@ -198,6 +200,15 @@ impl Analyzer<'_, '_> {
         }
 
         match (l, r) {
+            (Type::Ref(_), _) => {
+                let l = self.expand_top_ref(span, Cow::Borrowed(l))?;
+                return self.check_for_overlap(span, &l, r);
+            }
+            (_, Type::Ref(_)) => {
+                let r = self.expand_top_ref(span, Cow::Borrowed(r))?;
+                return self.check_for_overlap(span, l, &r);
+            }
+
             (Type::TypeLit(lt), Type::TypeLit(rt)) => {
                 // It's an error if type of the parameter of index signature is same but type
                 // annotation is different.
