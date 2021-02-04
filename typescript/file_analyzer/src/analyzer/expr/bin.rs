@@ -572,46 +572,36 @@ impl Analyzer<'_, '_> {
                     let lt = lt.unwrap();
                     let rt = rt.unwrap();
 
-                    let mut check = |ty: &Type, is_left| match ty.normalize() {
-                        Type::Keyword(RTsKeywordType {
-                            kind: TsKeywordTypeKind::TsAnyKeyword,
-                            ..
-                        })
-                        | Type::Keyword(RTsKeywordType {
-                            kind: TsKeywordTypeKind::TsNumberKeyword,
-                            ..
-                        })
-                        | Type::Keyword(RTsKeywordType {
-                            kind: TsKeywordTypeKind::TsBigIntKeyword,
-                            ..
-                        })
-                        | Type::Lit(RTsLitType {
-                            lit: RTsLit::Number(..),
-                            ..
-                        })
-                        | Type::Enum(..)
-                        | Type::EnumVariant(..) => {}
-
-                        Type::Keyword(RTsKeywordType {
-                            span,
-                            kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                        }) => {
-                            self.storage
-                                .report(box Error::ObjectIsPossiblyUndefined { span: *span });
+                    let mut check = |ty: &Type, is_left| {
+                        if ty.is_any() {
+                            return;
+                        }
+                        if self.can_be_casted_to_number_in_rhs(ty.span(), &ty) {
+                            return;
                         }
 
-                        Type::Keyword(RTsKeywordType {
-                            span,
-                            kind: TsKeywordTypeKind::TsNullKeyword,
-                        }) => {
-                            self.storage.report(box Error::ObjectIsPossiblyNull { span: *span });
-                        }
+                        match ty.normalize() {
+                            Type::Keyword(RTsKeywordType {
+                                span,
+                                kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                            }) => {
+                                self.storage
+                                    .report(box Error::ObjectIsPossiblyUndefined { span: *span });
+                            }
 
-                        _ => errors.push(if is_left {
-                            box Error::TS2362 { span: ty.span() }
-                        } else {
-                            box Error::TS2363 { span: ty.span() }
-                        }),
+                            Type::Keyword(RTsKeywordType {
+                                span,
+                                kind: TsKeywordTypeKind::TsNullKeyword,
+                            }) => {
+                                self.storage.report(box Error::ObjectIsPossiblyNull { span: *span });
+                            }
+
+                            _ => errors.push(if is_left {
+                                box Error::TS2362 { span: ty.span() }
+                            } else {
+                                box Error::TS2363 { span: ty.span() }
+                            }),
+                        }
                     };
 
                     if (op == op!("&") || op == op!("^") || op == op!("|"))
