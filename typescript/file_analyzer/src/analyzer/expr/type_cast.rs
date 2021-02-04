@@ -230,11 +230,6 @@ impl Analyzer<'_, '_> {
         if l.is_class() && r.is_class() {
             return Ok(true);
         }
-
-        if let Ok(()) = self.assign(l, r, span) {
-            return Ok(true);
-        }
-
         match l {
             Type::Union(l) => {
                 for l in &l.types {
@@ -243,7 +238,18 @@ impl Analyzer<'_, '_> {
                     }
                 }
             }
+            Type::Intersection(l) => {
+                for l in &l.types {
+                    if self.has_overlap(span, l, r)? {
+                        return Ok(true);
+                    }
+                }
+            }
             _ => {}
+        }
+
+        if let Ok(()) = self.assign(l, r, span) {
+            return Ok(true);
         }
 
         match (l, r) {
