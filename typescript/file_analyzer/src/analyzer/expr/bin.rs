@@ -382,9 +382,38 @@ impl Analyzer<'_, '_> {
                 }));
             }
 
-            op!("<=") | op!("<") | op!(">=") | op!(">") | op!("in") => {
+            op!("<=") | op!("<") | op!(">=") | op!(">") => {
                 no_unknown!();
 
+                let mut check = |ty: &Type| match ty.normalize() {
+                    Type::Keyword(RTsKeywordType {
+                        span,
+                        kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                    }) => {
+                        self.storage
+                            .report(box Error::ObjectIsPossiblyUndefined { span: *span });
+                    }
+
+                    Type::Keyword(RTsKeywordType {
+                        span,
+                        kind: TsKeywordTypeKind::TsNullKeyword,
+                    }) => {
+                        self.storage.report(box Error::ObjectIsPossiblyNull { span: *span });
+                    }
+
+                    _ => {}
+                };
+
+                check(&lt);
+                check(&rt);
+
+                return Ok(box Type::Keyword(RTsKeywordType {
+                    span,
+                    kind: TsKeywordTypeKind::TsBooleanKeyword,
+                }));
+            }
+
+            op!("in") => {
                 return Ok(box Type::Keyword(RTsKeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
