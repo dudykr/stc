@@ -189,28 +189,31 @@ impl Analyzer<'_, '_> {
     /// - `l`: from
     /// - `r`: to
 
-    pub(crate) fn castable(&mut self, span: Span, l: &Type, r: &Type) -> ValidationResult<bool> {
-        let l = l.normalize();
-        let r = r.normalize();
+    pub(crate) fn castable(&mut self, span: Span, from: &Type, to: &Type) -> ValidationResult<bool> {
+        let from = from.normalize();
+        let to = to.normalize();
 
         // Overlaps with all types.
-        if l.is_any() || l.is_kwd(TsKeywordTypeKind::TsNullKeyword) || l.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
+        if from.is_any()
+            || from.is_kwd(TsKeywordTypeKind::TsNullKeyword)
+            || from.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
+        {
             return Ok(true);
         }
 
         // TODO: More check
-        if l.is_function() && r.is_function() {
+        if from.is_function() && to.is_function() {
             return Ok(false);
         }
 
-        match (l, r) {
+        match (from, to) {
             (Type::Ref(_), _) => {
-                let l = self.expand_top_ref(span, Cow::Borrowed(l))?;
-                return self.castable(span, &l, r);
+                let from = self.expand_top_ref(span, Cow::Borrowed(from))?;
+                return self.castable(span, &from, to);
             }
             (_, Type::Ref(_)) => {
-                let r = self.expand_top_ref(span, Cow::Borrowed(r))?;
-                return self.castable(span, l, &r);
+                let to = self.expand_top_ref(span, Cow::Borrowed(to))?;
+                return self.castable(span, from, &to);
             }
 
             (Type::TypeLit(lt), Type::TypeLit(rt)) => {
@@ -238,24 +241,17 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        if l.is_type_lit() && r.is_type_lit() {
+        if from.is_type_lit() && to.is_type_lit() {
             return Ok(true);
         }
 
-        if l.is_class() && r.is_class() {
+        if from.is_class() && to.is_class() {
             return Ok(true);
         }
-        match l {
+        match from {
             Type::Union(l) => {
                 for l in &l.types {
-                    if self.has_overlap(span, l, r)? {
-                        return Ok(true);
-                    }
-                }
-            }
-            Type::Intersection(l) => {
-                for l in &l.types {
-                    if self.has_overlap(span, l, r)? {
+                    if self.castable(span, l, to)? {
                         return Ok(true);
                     }
                 }
@@ -263,11 +259,22 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        if let Ok(()) = self.assign(r, l, span) {
+        match to {
+            Type::Intersection(to) => {
+                for to in &to.types {
+                    if self.castable(span, from, &to)? {
+                        return Ok(true);
+                    }
+                }
+            }
+            _ => {}
+        }
+
+        if let Ok(()) = self.assign(to, from, span) {
             return Ok(true);
         }
 
-        match (l, r) {
+        match (from, to) {
             (
                 Type::Keyword(RTsKeywordType {
                     kind: TsKeywordTypeKind::TsNumberKeyword,
