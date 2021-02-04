@@ -263,7 +263,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        if let Ok(()) = self.assign(l, r, span) {
+        if let Ok(()) = self.assign(r, l, span) {
             return Ok(true);
         }
 
