@@ -61,6 +61,14 @@ pub enum Error {
         name: JsWord,
     },
 
+    ObjectIsPossiblyNull {
+        span: Span,
+    },
+
+    ObjectIsPossiblyUndefined {
+        span: Span,
+    },
+
     CannotAssignAbstractConstructorToNonAbstractConstructor {
         span: Span,
     },
@@ -710,6 +718,9 @@ impl Error {
             Error::InvalidUseOfConstEnum { .. } => 2475,
 
             Error::DebugContext(c) => c.inner.code(),
+
+            Error::ObjectIsPossiblyNull { .. } => 2531,
+            Error::ObjectIsPossiblyUndefined { .. } => 2532,
 
             _ => 0,
         }

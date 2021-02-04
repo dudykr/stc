@@ -53,6 +53,15 @@ impl Analyzer<'_, '_> {
         let lhs = l.normalize();
         let rhs = r.normalize();
 
+        if op == op!("*=") {
+            if rhs.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
+                return Err(box Error::ObjectIsPossiblyUndefined { span: rhs.span() });
+            }
+            if rhs.is_kwd(TsKeywordTypeKind::TsNullKeyword) {
+                return Err(box Error::ObjectIsPossiblyNull { span: rhs.span() });
+            }
+        }
+
         // Trivial
         if lhs.is_any() || rhs.is_any() {
             return Ok(());
