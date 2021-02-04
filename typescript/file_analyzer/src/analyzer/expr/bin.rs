@@ -316,25 +316,6 @@ impl Analyzer<'_, '_> {
                     return Err(box Error::TS2365 { span });
                 }
 
-                if let Some(()) = c.take_if_any_matches(|(_, lt), (_, rt)| match lt.normalize() {
-                    Type::Keyword(RTsKeywordType {
-                        kind: TsKeywordTypeKind::TsBooleanKeyword,
-                        ..
-                    }) => match rt.normalize() {
-                        Type::Keyword(RTsKeywordType {
-                            kind: TsKeywordTypeKind::TsNumberKeyword,
-                            ..
-                        }) => Some(()),
-                        _ => None,
-                    },
-                    _ => None,
-                }) {
-                    return Ok(box Type::Keyword(RTsKeywordType {
-                        span,
-                        kind: TsKeywordTypeKind::TsBooleanKeyword,
-                    }));
-                }
-
                 if is_str_or_union(&lt) || is_str_or_union(&rt) {
                     return Ok(box Type::Keyword(RTsKeywordType {
                         span,
