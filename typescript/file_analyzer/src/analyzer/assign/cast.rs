@@ -21,6 +21,10 @@ impl Analyzer<'_, '_> {
 
                 false
             }
+            Type::EnumVariant(e) => {
+                // TODO: Check if value is string
+                true
+            }
             Type::Enum(e) => !e.has_str,
             Type::Union(ty) => ty.types.iter().all(|ty| self.can_be_casted_to_number_in_rhs(span, &ty)),
             _ => false,
