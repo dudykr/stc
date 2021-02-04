@@ -409,7 +409,7 @@ impl Analyzer<'_, '_> {
                 check_for_invalid_operand(&lt);
                 check_for_invalid_operand(&rt);
 
-                self.validate_comparison_operands(span, op, &lt, &rt);
+                self.validate_relative_comparison_operands(span, op, &lt, &rt);
 
                 return Ok(box Type::Keyword(RTsKeywordType {
                     span,
@@ -517,19 +517,19 @@ impl Analyzer<'_, '_> {
 
 impl Analyzer<'_, '_> {
     #[extra_validator]
-    fn validate_comparison_operands(&mut self, span: Span, op: BinaryOp, l: &Type, r: &Type) {
+    fn validate_relative_comparison_operands(&mut self, span: Span, op: BinaryOp, l: &Type, r: &Type) {
         let l = l.normalize();
         let r = r.normalize();
 
         match (l, r) {
             (Type::Ref(..), _) => {
                 if let Ok(l) = self.expand_top_ref(l.span(), Cow::Borrowed(l)) {
-                    return self.validate_comparison_operands(span, op, &l, r);
+                    return self.validate_relative_comparison_operands(span, op, &l, r);
                 }
             }
             (l, Type::Ref(..)) => {
                 if let Ok(r) = self.expand_top_ref(r.span(), Cow::Borrowed(r)) {
-                    return self.validate_comparison_operands(span, op, l, &r);
+                    return self.validate_relative_comparison_operands(span, op, l, &r);
                 }
             }
             (Type::TypeLit(l), Type::TypeLit(r)) => {
