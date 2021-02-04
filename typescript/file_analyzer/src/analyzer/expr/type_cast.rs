@@ -196,6 +196,10 @@ impl Analyzer<'_, '_> {
             return Ok(false);
         }
 
+        if l.is_type_lit() && r.is_type_lit() {
+            return Ok(true);
+        }
+
         if l.is_class() && r.is_class() {
             return Ok(true);
         }
