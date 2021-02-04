@@ -164,14 +164,14 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        if self.has_overlap(&orig, &casted)? {
+        if self.has_overlap(span, &orig, &casted)? {
             return Ok(());
         }
 
         Err(box Error::NonOverlappingTypeCast { span })
     }
 
-    pub(crate) fn has_overlap(&mut self, l: &Type, r: &Type) -> ValidationResult<bool> {
+    pub(crate) fn has_overlap(&mut self, span: Span, l: &Type, r: &Type) -> ValidationResult<bool> {
         let l = l.normalize();
         let r = r.normalize();
 
@@ -179,19 +179,35 @@ impl Analyzer<'_, '_> {
             return Ok(true);
         }
 
-        Ok(self.check_for_overlap(l, r)? || self.check_for_overlap(r, l)?)
+        Ok(self.check_for_overlap(span, l, r)? || self.check_for_overlap(span, r, l)?)
     }
 
-    fn check_for_overlap(&mut self, l: &Type, r: &Type) -> ValidationResult<bool> {
+    fn check_for_overlap(&mut self, span: Span, l: &Type, r: &Type) -> ValidationResult<bool> {
+        let l = l.normalize();
+        let r = r.normalize();
+
         // Overlaps with all types.
         if l.is_any() || l.is_kwd(TsKeywordTypeKind::TsNullKeyword) || l.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
+            return Ok(true);
+        }
+
+        // TODO: More check
+        if l.is_function() && r.is_function() {
+            return Ok(false);
+        }
+
+        if l.is_class() && r.is_class() {
+            return Ok(true);
+        }
+
+        if let Ok(()) = self.assign(l, r, span) {
             return Ok(true);
         }
 
         match l {
             Type::Union(l) => {
                 for l in &l.types {
-                    if self.has_overlap(l, r)? {
+                    if self.has_overlap(span, l, r)? {
                         return Ok(true);
                     }
                 }

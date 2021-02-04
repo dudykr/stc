@@ -523,7 +523,7 @@ impl Analyzer<'_, '_> {
                     let lt = lt.unwrap();
                     let rt = rt.unwrap();
 
-                    let has_overlap = self.has_overlap(lt, rt).report(&mut self.storage).unwrap_or(true);
+                    let has_overlap = self.has_overlap(span, lt, rt).report(&mut self.storage).unwrap_or(true);
 
                     if !has_overlap {
                         errors.push(box Error::NoOverlap {

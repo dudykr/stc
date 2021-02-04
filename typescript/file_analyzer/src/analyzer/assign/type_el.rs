@@ -538,7 +538,7 @@ impl Analyzer<'_, '_> {
 
                     missing_fields.push(m.clone());
                 }
-                _ => unreachable!(),
+                _ => {}
             }
         }
 
