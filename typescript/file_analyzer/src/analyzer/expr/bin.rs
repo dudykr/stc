@@ -572,7 +572,7 @@ impl Analyzer<'_, '_> {
                     let lt = lt.unwrap();
                     let rt = rt.unwrap();
 
-                    let mut check = |ty: &Type, is_left| match ty {
+                    let mut check = |ty: &Type, is_left| match ty.normalize() {
                         Type::Keyword(RTsKeywordType {
                             kind: TsKeywordTypeKind::TsAnyKeyword,
                             ..
@@ -591,6 +591,21 @@ impl Analyzer<'_, '_> {
                         })
                         | Type::Enum(..)
                         | Type::EnumVariant(..) => {}
+
+                        Type::Keyword(RTsKeywordType {
+                            span,
+                            kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                        }) => {
+                            self.storage
+                                .report(box Error::ObjectIsPossiblyUndefined { span: *span });
+                        }
+
+                        Type::Keyword(RTsKeywordType {
+                            span,
+                            kind: TsKeywordTypeKind::TsNullKeyword,
+                        }) => {
+                            self.storage.report(box Error::ObjectIsPossiblyNull { span: *span });
+                        }
 
                         _ => errors.push(if is_left {
                             box Error::TS2362 { span: ty.span() }
