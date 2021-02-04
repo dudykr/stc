@@ -62,7 +62,7 @@ impl Analyzer<'_, '_> {
                 return Err(box Error::ObjectIsPossiblyNull { span: rhs.span() });
             }
 
-            let r_castable = self.can_be_casted_to_number_in_rhs(&rhs);
+            let r_castable = self.can_be_casted_to_number_in_rhs(rhs.span(), &rhs);
             if r_castable {
                 if l.is_num() {
                     return Ok(());
