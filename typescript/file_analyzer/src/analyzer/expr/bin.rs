@@ -159,6 +159,15 @@ impl Analyzer<'_, '_> {
                     right: (&**right, &rt),
                 };
 
+                if !self.has_overlap(span, &lt, &rt)? {
+                    self.storage.report(box Error::NoOverlap {
+                        span,
+                        value: true,
+                        left: lt.span(),
+                        right: rt.span(),
+                    })
+                }
+
                 match c.take_if_any_matches(|(l, l_ty), (_, r_ty)| match **l_ty {
                     Type::Keyword(RTsKeywordType {
                         kind: TsKeywordTypeKind::TsUnknownKeyword,
