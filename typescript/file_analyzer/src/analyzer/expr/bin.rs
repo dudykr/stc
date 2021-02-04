@@ -23,7 +23,6 @@ use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_types::name::Name;
 use std::convert::TryFrom;
-use swc_common::EqIgnoreSpan;
 use swc_common::TypeEq;
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::*;
@@ -524,41 +523,7 @@ impl Analyzer<'_, '_> {
                     let lt = lt.unwrap();
                     let rt = rt.unwrap();
 
-                    let has_overlap = lt.eq_ignore_span(&rt) || {
-                        let c = Comparator { left: &lt, right: &rt };
-
-                        // Check if type overlaps.
-                        c.take_if_any_matches(|l, r| {
-                            // Returns Some(()) if r may be assignable to l
-                            match l {
-                                Type::Lit(ref l_lit) => {
-                                    // "foo" === "bar" is always false.
-                                    match r {
-                                        Type::Lit(ref r_lit) => {
-                                            if l_lit.eq_ignore_span(&*r_lit) {
-                                                Some(())
-                                            } else {
-                                                None
-                                            }
-                                        }
-                                        _ => Some(()),
-                                    }
-                                }
-                                Type::Union(ref u) => {
-                                    // Check if u contains r
-                                    for ty in &u.types {
-                                        if (**ty).eq_ignore_span(r) {
-                                            return Some(());
-                                        }
-                                    }
-
-                                    Some(())
-                                }
-                                _ => None,
-                            }
-                        })
-                        .is_some()
-                    };
+                    let has_overlap = self.has_overlap(lt, rt).report(&mut self.storage).unwrap_or(true);
 
                     if !has_overlap {
                         errors.push(box Error::NoOverlap {
