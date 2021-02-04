@@ -728,6 +728,8 @@ impl Error {
             Error::ObjectIsPossiblyNull { .. } => 2531,
             Error::ObjectIsPossiblyUndefined { .. } => 2532,
 
+            Error::InvalidBinaryOp { .. } => 2365,
+
             _ => 0,
         }
     }
