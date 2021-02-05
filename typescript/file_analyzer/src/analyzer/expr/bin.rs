@@ -2,6 +2,7 @@ use super::super::{
     util::{Comparator, ResultExt},
     Analyzer,
 };
+use crate::analyzer::assign::AssignOpts;
 use crate::{
     analyzer::{Ctx, ScopeKind},
     ty::{Operator, Type, TypeExt},
@@ -616,6 +617,12 @@ impl Analyzer<'_, '_> {
                         }
                     }
                 }
+
+                (Type::TypeLit(lt), Type::TypeLit(rt)) => {
+                    if let Ok(Some(v)) = self.can_compare_type_elements_relatively(span, &lt.members, &rt.members) {
+                        return Some(v);
+                    }
+                }
                 _ => {}
             }
 
@@ -625,6 +632,54 @@ impl Analyzer<'_, '_> {
         }
 
         self.has_overlap(span, &l, &r)
+    }
+
+    /// Returns Ok(Some(v)) if this method has a special rule to handle type
+    /// elements.
+    fn can_compare_type_elements_relatively(
+        &mut self,
+        span: Span,
+        l: &[TypeElement],
+        r: &[TypeElement],
+    ) -> ValidationResult<Option<bool>> {
+        for lm in l {
+            for rm in r {
+                match (lm, rm) {
+                    (TypeElement::Method(lm), TypeElement::Method(rm)) => {
+                        if let Ok(()) = self.assign(&lm.key.ty(), &rm.key.ty(), span) {
+                            let params_res = self.assign_params(
+                                AssignOpts {
+                                    span,
+                                    allow_unknown_rhs: false,
+                                },
+                                &lm.params,
+                                &rm.params,
+                            );
+
+                            if params_res.is_ok() {
+                                return Ok(Some(false));
+                            }
+
+                            let ret_ty_res = match (lm.ret_ty.as_deref(), rm.ret_ty.as_deref()) {
+                                (Some(lt), Some(rt)) => self.assign_with_opts(
+                                    AssignOpts {
+                                        span,
+                                        allow_unknown_rhs: true,
+                                    },
+                                    &lt,
+                                    &rt,
+                                ),
+                                _ => Ok(()),
+                            };
+                        }
+                    }
+
+                    _ => {}
+                }
+            }
+        }
+
+        Ok(None)
     }
 
     fn is_valid_lhs_of_instanceof(&mut self, span: Span, ty: &Type) -> bool {
