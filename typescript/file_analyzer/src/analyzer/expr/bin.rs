@@ -607,28 +607,28 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            // Basically we depend on assign's behavior, but there's are some corner cases
-            // where it's not enough.
-            match (l, r) {
-                (Type::Class(l), Type::Class(r)) => {
-                    if l.super_class.is_none() && r.super_class.is_none() {
-                        if l.body.is_empty() || r.body.is_empty() {
-                            return Some(false);
-                        }
-                    }
-                }
-
-                (Type::TypeLit(lt), Type::TypeLit(rt)) => {
-                    if let Ok(Some(v)) = self.can_compare_type_elements_relatively(span, &lt.members, &rt.members) {
-                        return Some(v);
-                    }
-                }
-                _ => {}
-            }
-
             None
         }) {
             return Ok(v);
+        }
+
+        // Basically we depend on assign's behavior, but there's are some corner cases
+        // where it's not enough.
+        match (l, r) {
+            (Type::Class(l), Type::Class(r)) => {
+                if l.super_class.is_none() && r.super_class.is_none() {
+                    if l.body.is_empty() || r.body.is_empty() {
+                        return Ok(false);
+                    }
+                }
+            }
+
+            (Type::TypeLit(lt), Type::TypeLit(rt)) => {
+                if let Ok(Some(v)) = self.can_compare_type_elements_relatively(span, &lt.members, &rt.members) {
+                    return Ok(v);
+                }
+            }
+            _ => {}
         }
 
         self.has_overlap(span, &l, &r)
@@ -683,6 +683,12 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
             }
+        }
+
+        let lk = self.kinds_of_type_elements(l);
+        let rk = self.kinds_of_type_elements(r);
+        if lk != rk {
+            return Ok(Some(false));
         }
 
         Ok(None)
