@@ -153,7 +153,7 @@ fn do_test(treat_error_as_bug: bool, file_name: &Path) -> Result<(), StdErr> {
     let fname = file_name.display().to_string();
     let mut expected_errors = load_expected_errors(&file_name).unwrap();
     let mut err_shift_n = 0;
-    let mut first_smtt_line = 0;
+    let mut first_stmt_line = 0;
 
     let (libs, rule, ts_config, target) = ::testing::run_test(treat_error_as_bug, |cm, handler| {
         let fm = cm.load_file(file_name).expect("failed to read file");
@@ -189,7 +189,7 @@ fn do_test(treat_error_as_bug: bool, file_name: &Path) -> Result<(), StdErr> {
             }
 
             if !module.body.is_empty() {
-                first_smtt_line = cm.lookup_line(module.body[0].span().lo).unwrap().line;
+                first_stmt_line = cm.lookup_line(module.body[0].span().lo).unwrap().line;
             }
 
             let mut libs = vec![Lib::Es5];
@@ -299,7 +299,7 @@ fn do_test(treat_error_as_bug: bool, file_name: &Path) -> Result<(), StdErr> {
     .ok()
     .unwrap_or_default();
 
-    err_shift_n = err_shift_n.min(first_smtt_line);
+    err_shift_n = err_shift_n.min(first_stmt_line);
 
     dbg!(err_shift_n);
 
