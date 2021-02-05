@@ -559,13 +559,30 @@ impl Analyzer<'_, '_> {
             _ => {
                 let l = l.clone().generalize_lit();
                 let r = r.clone().generalize_lit();
-                if self.has_overlap(span, &l, &r)? {
+                if self.can_compare_relatively(span, &l, &r)? {
                     return;
                 }
 
                 self.storage.report(box Error::CannotCompareWithOp { span, op });
             }
         }
+    }
+
+    fn can_compare_relatively(&mut self, span: Span, l: &Type, r: &Type) -> ValidationResult<bool> {
+        let l = l.normalize();
+        let r = r.normalize();
+
+        if l.type_eq(r) {
+            return Ok(true);
+        }
+
+        // Different type params cannot be compared relatively, although they can
+        // overlap with other types.
+        if l.is_type_param() || r.is_type_param() {
+            return Ok(false);
+        }
+
+        self.has_overlap(span, &l, &r)
     }
 
     fn is_valid_lhs_of_instanceof(&mut self, span: Span, ty: &Type) -> bool {
