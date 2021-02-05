@@ -57,6 +57,7 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+
     CannotCompareWithOp {
         span: Span,
         op: BinaryOp,

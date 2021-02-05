@@ -32,6 +32,7 @@ use swc_common::TypeEq;
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::*;
 
+mod builtin;
 mod cast;
 mod class;
 mod query;
@@ -340,6 +341,10 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
+        if let Some(res) = self.assign_to_builtins(opts, &to, &rhs) {
+            return res;
+        }
+
         match to {
             Type::Ref(Ref {
                 type_name:
@@ -353,26 +358,6 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
             }
-
-            Type::Ref(Ref {
-                type_name: RTsEntityName::Ident(type_name),
-                type_args,
-                ..
-            }) if type_name.sym == *"ReadonlyArray" => match type_args {
-                Some(type_args) => {
-                    if type_args.params.len() == 1 {
-                        match rhs {
-                            Type::Array(Array { elem_type, .. }) => {
-                                return self
-                                    .assign_inner(&type_args.params[0], elem_type, opts)
-                                    .context("tried to assign an array to a readonly array (builtin)");
-                            }
-                            _ => {}
-                        }
-                    }
-                }
-                None => {}
-            },
 
             // Str contains `kind`, and it's not handled properly by type_eq.
             Type::Lit(RTsLitType {
