@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use super::{super::Analyzer, TypeOfMode};
 use crate::analyzer::util::ResultExt;
 use crate::{analyzer::util::instantiate_class, ty::Type, validator, validator::ValidateWith, ValidationResult};
@@ -12,6 +10,7 @@ use stc_ts_ast_rnode::RTsTypeAssertion;
 use stc_ts_errors::Error;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeParamInstantiation;
+use std::borrow::Cow;
 use swc_common::TypeEq;
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -201,6 +200,48 @@ impl Analyzer<'_, '_> {
             return Ok(true);
         }
 
+        match (from, to) {
+            (
+                Type::Lit(RTsLitType {
+                    lit: RTsLit::Number(..),
+                    ..
+                }),
+                Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsNumberKeyword,
+                    ..
+                }),
+            ) => return Ok(true),
+            (
+                Type::Lit(RTsLitType {
+                    lit: RTsLit::Str(..), ..
+                }),
+                Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsStringKeyword,
+                    ..
+                }),
+            ) => return Ok(true),
+            (
+                Type::Lit(RTsLitType {
+                    lit: RTsLit::Bool(..), ..
+                }),
+                Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsBooleanKeyword,
+                    ..
+                }),
+            ) => return Ok(true),
+            (
+                Type::Lit(RTsLitType {
+                    lit: RTsLit::BigInt(..),
+                    ..
+                }),
+                Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsBigIntKeyword,
+                    ..
+                }),
+            ) => return Ok(true),
+            _ => {}
+        }
+
         // TODO: More check
         if from.is_function() && to.is_function() {
             return Ok(false);
@@ -258,6 +299,14 @@ impl Analyzer<'_, '_> {
         }
 
         match to {
+            Type::Union(to) => {
+                for to in &to.types {
+                    if self.castable(span, from, &to)? {
+                        return Ok(true);
+                    }
+                }
+            }
+
             Type::Intersection(to) => {
                 for to in &to.types {
                     if self.castable(span, from, &to)? {
@@ -268,50 +317,12 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        if let Ok(()) = self.assign(to, from, span) {
+        // class A {}
+        // class B extends A {}
+        //
+        // We can cast A to B, thus from = A, to = B.
+        if let Ok(()) = self.assign(from, to, span) {
             return Ok(true);
-        }
-
-        match (from, to) {
-            (
-                Type::Keyword(RTsKeywordType {
-                    kind: TsKeywordTypeKind::TsNumberKeyword,
-                    ..
-                }),
-                Type::Lit(RTsLitType {
-                    lit: RTsLit::Number(..),
-                    ..
-                }),
-            ) => return Ok(true),
-            (
-                Type::Keyword(RTsKeywordType {
-                    kind: TsKeywordTypeKind::TsStringKeyword,
-                    ..
-                }),
-                Type::Lit(RTsLitType {
-                    lit: RTsLit::Str(..), ..
-                }),
-            ) => return Ok(true),
-            (
-                Type::Keyword(RTsKeywordType {
-                    kind: TsKeywordTypeKind::TsBooleanKeyword,
-                    ..
-                }),
-                Type::Lit(RTsLitType {
-                    lit: RTsLit::Bool(..), ..
-                }),
-            ) => return Ok(true),
-            (
-                Type::Keyword(RTsKeywordType {
-                    kind: TsKeywordTypeKind::TsBigIntKeyword,
-                    ..
-                }),
-                Type::Lit(RTsLitType {
-                    lit: RTsLit::BigInt(..),
-                    ..
-                }),
-            ) => return Ok(true),
-            _ => {}
         }
 
         Ok(false)
