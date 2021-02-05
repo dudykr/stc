@@ -1,5 +1,4 @@
 use super::{marks::MarkExt, Analyzer};
-use crate::analyzer::util::ResultExt;
 use crate::util::type_ext::TypeVecExt;
 use crate::util::RemoveTypes;
 use crate::{
@@ -44,7 +43,6 @@ use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_ast_rnode::RTsNonNullExpr;
 use stc_ts_ast_rnode::RTsThisType;
 use stc_ts_ast_rnode::RUnaryExpr;
-use stc_ts_ast_rnode::RUpdateExpr;
 use stc_ts_errors::debug::print_backtrace;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
@@ -72,6 +70,7 @@ mod object;
 mod optional_chaining;
 mod type_cast;
 mod unary;
+mod update;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum IdCtx {
@@ -406,44 +405,6 @@ impl Analyzer<'_, '_> {
 
             Ok(rhs_ty)
         })
-    }
-}
-
-#[validator]
-impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RUpdateExpr) -> ValidationResult {
-        let span = e.span;
-
-        let ty = e
-            .arg
-            .validate_with_args(self, (TypeOfMode::LValue, None, None))
-            .and_then(|ty| match *ty.normalize() {
-                Type::Keyword(RTsKeywordType {
-                    kind: TsKeywordTypeKind::TsStringKeyword,
-                    ..
-                })
-                | Type::Lit(RTsLitType {
-                    lit: RTsLit::Str(..), ..
-                })
-                | Type::Array(..) => Err(box Error::TS2356 { span: e.arg.span() }),
-
-                _ => Ok(ty),
-            })
-            .report(&mut self.storage);
-
-        if let Some(ty) = ty {
-            if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) {
-                self.storage.report(box Error::UpdateOpToSymbol {
-                    span: e.arg.span(),
-                    op: e.op,
-                })
-            }
-        }
-
-        Ok(box Type::Keyword(RTsKeywordType {
-            kind: TsKeywordTypeKind::TsNumberKeyword,
-            span,
-        }))
     }
 }
 
