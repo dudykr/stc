@@ -765,6 +765,8 @@ impl Error {
 
             Error::UpdateOpToSymbol { .. } => 2469,
 
+            Error::UselessSeqExpr { .. } => 2695,
+
             _ => 0,
         }
     }
