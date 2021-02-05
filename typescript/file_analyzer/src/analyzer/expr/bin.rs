@@ -717,6 +717,20 @@ impl Analyzer<'_, '_> {
                             ..
                         }) => {}
 
+                        Type::Keyword(RTsKeywordType {
+                            kind: TsKeywordTypeKind::TsNullKeyword,
+                            ..
+                        }) => {
+                            self.storage.report(box Error::ObjectIsPossiblyNull { span });
+                        }
+
+                        Type::Keyword(RTsKeywordType {
+                            kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                            ..
+                        }) => {
+                            self.storage.report(box Error::ObjectIsPossiblyUndefined { span });
+                        }
+
                         _ => errors.push(box Error::TS2360 { span: ls }),
                     }
                 }
@@ -745,8 +759,26 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    if !is_ok(&rt.unwrap()) {
-                        errors.push(box Error::TS2361 { span: rs })
+                    match rt.unwrap().normalize() {
+                        Type::Keyword(RTsKeywordType {
+                            kind: TsKeywordTypeKind::TsNullKeyword,
+                            ..
+                        }) => {
+                            self.storage.report(box Error::ObjectIsPossiblyNull { span });
+                        }
+
+                        Type::Keyword(RTsKeywordType {
+                            kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                            ..
+                        }) => {
+                            self.storage.report(box Error::ObjectIsPossiblyUndefined { span });
+                        }
+
+                        _ => {
+                            if !is_ok(&rt.unwrap()) {
+                                errors.push(box Error::TS2361 { span: rs })
+                            }
+                        }
                     }
                 }
             }
