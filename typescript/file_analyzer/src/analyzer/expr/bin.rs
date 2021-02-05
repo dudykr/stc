@@ -581,8 +581,8 @@ impl Analyzer<'_, '_> {
 
         match ty {
             ty if ty.is_any() || ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword) => true,
-            Type::Lit(..)
-            | Type::TypeLit(..)
+
+            Type::TypeLit(..)
             | Type::Interface(..)
             | Type::Class(..)
             | Type::This(..)
