@@ -16,6 +16,7 @@ use stc_ts_types::{ClassInstance, Id, IndexedAccessType, Intersection, ModuleId,
 use std::iter::once;
 use swc_common::Span;
 use swc_common::Spanned;
+use swc_ecma_ast::TsKeywordTypeKind;
 use ty::TypeExt;
 
 impl Analyzer<'_, '_> {
@@ -68,6 +69,10 @@ impl Analyzer<'_, '_> {
         let ty = ty.normalize();
 
         if ty.is_any() {
+            return Ok(box ty.clone());
+        }
+
+        if ty.is_kwd(TsKeywordTypeKind::TsNullKeyword) || ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
             return Ok(box ty.clone());
         }
 
