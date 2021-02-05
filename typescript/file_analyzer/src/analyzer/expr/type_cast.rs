@@ -246,9 +246,6 @@ impl Analyzer<'_, '_> {
             return Ok(true);
         }
 
-        if from.is_class() && to.is_class() {
-            return Ok(true);
-        }
         match from {
             Type::Union(l) => {
                 for l in &l.types {
