@@ -110,7 +110,29 @@ impl Analyzer<'_, '_> {
                     }
                 }
             }
-            ClassMember::Method(_) => {}
+            ClassMember::Method(lm) => {
+                for rmember in r {
+                    match rmember {
+                        ClassMember::Constructor(_) => {}
+                        ClassMember::Method(rm) => {
+                            //
+                            if self.assign(&lm.key.ty(), &rm.key.ty(), opts.span).is_ok() {
+                                // TODO: Parameters.
+                                self.assign_with_opts(opts, &lm.ret_ty, &rm.ret_ty)
+                                    .context("tried to assign return type of a class method")?;
+
+                                return Ok(());
+                            }
+                        }
+                        ClassMember::Property(_) => {}
+                        ClassMember::IndexSignature(_) => {}
+                    }
+                }
+
+                if lm.is_optional {
+                    return Ok(());
+                }
+            }
             ClassMember::Property(lp) => {
                 for rm in r {
                     match rm {
