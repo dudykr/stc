@@ -590,6 +590,9 @@ impl Analyzer<'_, '_> {
                     || r.is_kwd(TsKeywordTypeKind::TsNumberKeyword)
                     || r.is_kwd(TsKeywordTypeKind::TsStringKeyword)
                     || r.is_kwd(TsKeywordTypeKind::TsVoidKeyword)
+                    || r.is_enum_type()
+                    || r.is_tuple()
+                    || r.is_array()
                 {
                     return Some(false);
                 }
