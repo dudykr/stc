@@ -683,41 +683,6 @@ impl Analyzer<'_, '_> {
                 if lt.is_some() {
                     match lt.unwrap().normalize() {
                         Type::Keyword(RTsKeywordType {
-                            kind: TsKeywordTypeKind::TsAnyKeyword,
-                            ..
-                        })
-                        | Type::Keyword(RTsKeywordType {
-                            kind: TsKeywordTypeKind::TsStringKeyword,
-                            ..
-                        })
-                        | Type::Keyword(RTsKeywordType {
-                            kind: TsKeywordTypeKind::TsNumberKeyword,
-                            ..
-                        })
-                        | Type::Keyword(RTsKeywordType {
-                            kind: TsKeywordTypeKind::TsBigIntKeyword,
-                            ..
-                        })
-                        | Type::Keyword(RTsKeywordType {
-                            kind: TsKeywordTypeKind::TsSymbolKeyword,
-                            ..
-                        })
-                        | Type::Lit(RTsLitType {
-                            lit: RTsLit::Number(..),
-                            ..
-                        })
-                        | Type::Lit(RTsLitType {
-                            lit: RTsLit::Str(..), ..
-                        })
-                        | Type::Enum(..)
-                        | Type::EnumVariant(..)
-                        | Type::Param(..)
-                        | Type::Operator(Operator {
-                            op: TsTypeOperatorOp::KeyOf,
-                            ..
-                        }) => {}
-
-                        Type::Keyword(RTsKeywordType {
                             kind: TsKeywordTypeKind::TsNullKeyword,
                             ..
                         }) => {
@@ -731,7 +696,11 @@ impl Analyzer<'_, '_> {
                             self.storage.report(box Error::ObjectIsPossiblyUndefined { span });
                         }
 
-                        _ => errors.push(box Error::TS2360 { span: ls }),
+                        ty => {
+                            if !self.is_valid_lhs_of_in(&ty) {
+                                errors.push(box Error::TS2360 { span: ls });
+                            }
+                        }
                     }
                 }
 
@@ -764,6 +733,59 @@ impl Analyzer<'_, '_> {
         }
 
         self.storage.report_all(errors);
+    }
+
+    fn is_valid_lhs_of_in(&mut self, ty: &Type) -> bool {
+        let ty = ty.normalize();
+
+        match ty {
+            Type::Ref(..) => {
+                if let Ok(ty) = self.expand_top_ref(ty.span(), Cow::Borrowed(ty)) {
+                    return self.is_valid_lhs_of_in(&ty);
+                }
+
+                true
+            }
+
+            Type::Keyword(RTsKeywordType {
+                kind: TsKeywordTypeKind::TsAnyKeyword,
+                ..
+            })
+            | Type::Keyword(RTsKeywordType {
+                kind: TsKeywordTypeKind::TsStringKeyword,
+                ..
+            })
+            | Type::Keyword(RTsKeywordType {
+                kind: TsKeywordTypeKind::TsNumberKeyword,
+                ..
+            })
+            | Type::Keyword(RTsKeywordType {
+                kind: TsKeywordTypeKind::TsBigIntKeyword,
+                ..
+            })
+            | Type::Keyword(RTsKeywordType {
+                kind: TsKeywordTypeKind::TsSymbolKeyword,
+                ..
+            })
+            | Type::Lit(RTsLitType {
+                lit: RTsLit::Number(..),
+                ..
+            })
+            | Type::Lit(RTsLitType {
+                lit: RTsLit::Str(..), ..
+            })
+            | Type::Enum(..)
+            | Type::EnumVariant(..)
+            | Type::Param(..)
+            | Type::Operator(Operator {
+                op: TsTypeOperatorOp::KeyOf,
+                ..
+            }) => true,
+
+            Type::Union(ref u) => u.types.iter().all(|ty| self.is_valid_lhs_of_in(&ty)),
+
+            _ => false,
+        }
     }
 
     fn is_valid_rhs_of_in(&mut self, ty: &Type) -> bool {
