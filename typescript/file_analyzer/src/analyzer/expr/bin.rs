@@ -606,6 +606,19 @@ impl Analyzer<'_, '_> {
                 }
             }
 
+            // Basically we depend on assign's behavior, but there's are some corner cases
+            // where it's not enough.
+            match (l, r) {
+                (Type::Class(l), Type::Class(r)) => {
+                    if l.super_class.is_none() && r.super_class.is_none() {
+                        if l.body.is_empty() && r.body.is_empty() {
+                            return Some(false);
+                        }
+                    }
+                }
+                _ => {}
+            }
+
             None
         }) {
             return Ok(v);
