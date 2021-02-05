@@ -2,6 +2,8 @@ use super::AssignOpts;
 use crate::analyzer::util::ResultExt;
 use crate::analyzer::Analyzer;
 use crate::ValidationResult;
+use stc_ts_ast_rnode::RIdent;
+use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
@@ -15,6 +17,7 @@ use stc_ts_types::ClassMember;
 use stc_ts_types::Interface;
 use stc_ts_types::MethodSignature;
 use stc_ts_types::PropertySignature;
+use stc_ts_types::Ref;
 use stc_ts_types::Tuple;
 use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
@@ -101,6 +104,22 @@ impl Analyzer<'_, '_> {
             let mut unhandled_rhs = vec![];
 
             match rhs.normalize() {
+                Type::Ref(Ref {
+                    type_name:
+                        RTsEntityName::Ident(RIdent {
+                            sym: js_word!("Function"),
+                            ..
+                        }),
+                    ..
+                }) => {
+                    if lhs.iter().any(|el| match el {
+                        TypeElement::Call(..) => true,
+                        _ => false,
+                    }) {
+                        return Ok(());
+                    }
+                }
+
                 Type::TypeLit(TypeLit {
                     members: rhs_members, ..
                 }) => {
