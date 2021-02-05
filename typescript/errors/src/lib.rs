@@ -782,6 +782,8 @@ impl Error {
 
             Error::UselessSeqExpr { .. } => 2695,
 
+            Error::EnumCannotBeLValue { .. } => 2540,
+
             _ => 0,
         }
     }
