@@ -57,6 +57,9 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    InvalidUpdateArg {
+        span: Span,
+    },
     PrivatePropertyIsDifferent {
         span: Span,
     },
@@ -744,6 +747,8 @@ impl Error {
             Error::InvalidBinaryOp { .. } => 2365,
 
             Error::CannotCompareWithOp { .. } => 2365,
+
+            Error::InvalidUpdateArg { .. } => 2356,
 
             Error::CannotAssignToNonVariable { .. } => 2539,
 

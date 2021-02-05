@@ -4,6 +4,7 @@ use crate::analyzer::Analyzer;
 use crate::validator;
 use crate::validator::ValidateWith;
 use crate::ValidationResult;
+use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
@@ -17,6 +18,13 @@ use swc_ecma_ast::TsKeywordTypeKind;
 impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RUpdateExpr) -> ValidationResult {
         let span = e.span;
+
+        match &*e.arg {
+            RExpr::Lit(..) => {
+                self.storage.report(box Error::InvalidUpdateArg { span });
+            }
+            _ => {}
+        }
 
         let ty = e
             .arg

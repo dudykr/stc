@@ -47,7 +47,9 @@ impl Analyzer<'_, '_> {
                     self.storage.report(box Error::InvalidDeleteOperand { span: arg.span });
                 }
 
-                _ => {}
+                _ => {
+                    self.storage.report(box Error::InvalidDeleteOperand { span });
+                }
             }
         }
 
