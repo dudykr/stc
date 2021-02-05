@@ -193,7 +193,7 @@ impl Analyzer<'_, '_> {
                 match **left {
                     RExpr::Ident(ref i) => {
                         //
-                        let ty = self.make_instance_or_report(span, &rt);
+                        let ty = self.validate_rhs_of_instanceof(span, rt.clone());
 
                         self.cur_facts.true_facts.vars.insert(Name::from(i), ty);
                     }
@@ -579,6 +579,16 @@ impl Analyzer<'_, '_> {
             }
         }
     }
+
+    fn validate_rhs_of_instanceof(&mut self, span: Span, ty: Box<Type>) -> Box<Type> {
+        // TODO: We should assign this to builtin interface `Function`.
+        if ty.normalize().is_type_lit() || ty.normalize().is_interface() {
+            return ty;
+        }
+
+        self.make_instance_or_report(span, &ty)
+    }
+
     fn validate_bin_inner(&mut self, span: Span, op: BinaryOp, lt: Option<&Type>, rt: Option<&Type>) {
         let ls = lt.span();
         let rs = rt.span();
