@@ -54,7 +54,7 @@ impl Analyzer<'_, '_> {
         }
 
         let arg: Option<Box<Type>> = arg
-            .validate_with_args(self, (TypeOfMode::LValue, None, None))
+            .validate_with_args(self, (TypeOfMode::RValue, None, None))
             .report(&mut self.storage)
             .map(|mut ty| {
                 ty.respan(arg.span());
