@@ -35,6 +35,7 @@ use swc_ecma_ast::*;
 mod builtin;
 mod cast;
 mod class;
+mod function;
 mod query;
 mod type_el;
 

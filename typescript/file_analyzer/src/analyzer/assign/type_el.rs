@@ -477,21 +477,7 @@ impl Analyzer<'_, '_> {
                                 TypeElement::Method(ref rm) => {
                                     //
 
-                                    if lm.params.len() != rm.params.len() {
-                                        return Err(box Error::Unimplemented {
-                                            span,
-                                            msg: format!(
-                                                "lhs.method.params.len() = {}; rhs.method.params.len() = {};",
-                                                lm.params.len(),
-                                                rm.params.len()
-                                            ),
-                                        });
-                                    }
-
-                                    for (lp, rp) in lm.params.iter().zip(rm.params.iter()) {
-                                        self.assign_inner(&lp.ty, &rp.ty, opts)
-                                            .context("tried to assign a method parameter to a method parameter")?;
-                                    }
+                                    self.assign_params(opts, &lm.params, &rm.params)?;
 
                                     return Ok(());
                                 }
