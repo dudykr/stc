@@ -57,6 +57,10 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    EnumCannotBeLValue {
+        span: Span,
+    },
+
     InvalidUpdateArg {
         span: Span,
     },

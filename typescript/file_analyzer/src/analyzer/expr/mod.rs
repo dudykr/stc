@@ -900,9 +900,8 @@ impl Analyzer<'_, '_> {
                             // prop.span() });
                         }
 
-                        if e.is_const && type_mode == TypeOfMode::LValue {
-                            dbg!();
-                            return Err(box Error::InvalidLValue { span: prop.span() });
+                        if type_mode == TypeOfMode::LValue {
+                            return Err(box Error::EnumCannotBeLValue { span: prop.span() });
                         }
 
                         debug_assert_ne!(span, prop.span());
