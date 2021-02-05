@@ -749,6 +749,14 @@ impl Error {
 
             Error::NoOverlap { .. } => 2367,
 
+            Error::InvalidLhsInInstanceOf { .. } => 2358,
+
+            Error::InvalidRhsInInstanceOf { .. } => 2359,
+
+            Error::NumericUnaryOpToSymbol { .. } => 2469,
+
+            Error::UpdateOpToSymbol { .. } => 2469,
+
             _ => 0,
         }
     }
