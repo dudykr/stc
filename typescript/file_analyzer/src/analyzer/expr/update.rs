@@ -21,7 +21,7 @@ impl Analyzer<'_, '_> {
         let ty = e
             .arg
             .validate_with_args(self, (TypeOfMode::LValue, None, None))
-            .and_then(|ty| match *ty.normalize() {
+            .and_then(|ty| match ty.normalize() {
                 Type::Keyword(RTsKeywordType {
                     kind: TsKeywordTypeKind::TsStringKeyword,
                     ..
@@ -29,6 +29,7 @@ impl Analyzer<'_, '_> {
                 | Type::Lit(RTsLitType {
                     lit: RTsLit::Str(..), ..
                 })
+                | Type::TypeLit(..)
                 | Type::Array(..) => Err(box Error::TS2356 { span: e.arg.span() }),
 
                 _ => Ok(ty),
