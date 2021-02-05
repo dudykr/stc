@@ -247,6 +247,12 @@ impl Analyzer<'_, '_> {
             return Ok(false);
         }
 
+        if from.is_num() {
+            if self.can_be_casted_to_number_in_rhs(span, &to) {
+                return Ok(true);
+            }
+        }
+
         match (from, to) {
             (Type::Ref(_), _) => {
                 let from = self.expand_top_ref(span, Cow::Borrowed(from))?;
