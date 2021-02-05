@@ -57,6 +57,13 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    PrivatePropertyIsDifferent {
+        span: Span,
+    },
+
+    PrivateMethodIsDifferent {
+        span: Span,
+    },
 
     CannotCompareWithOp {
         span: Span,
