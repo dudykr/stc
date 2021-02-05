@@ -49,6 +49,10 @@ impl Analyzer<'_, '_> {
     ///
     /// TODO: Use Cow
     pub(super) fn make_instance_or_report(&mut self, span: Span, ty: &Type) -> Box<Type> {
+        if span.is_dummy() {
+            panic!("Cannot make an instance with dummy span")
+        }
+
         let res = self.make_instance(span, ty);
         match res {
             Ok(ty) => ty,
