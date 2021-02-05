@@ -13,8 +13,10 @@ use crate::{
 };
 use stc_ts_ast_rnode::RBinExpr;
 use stc_ts_ast_rnode::RExpr;
+use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RLit;
 use stc_ts_ast_rnode::RStr;
+use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
@@ -23,9 +25,12 @@ use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::name::Name;
+use stc_ts_types::ModuleId;
+use stc_ts_types::Ref;
 use stc_ts_types::TypeElement;
 use std::borrow::Cow;
 use std::convert::TryFrom;
+use swc_common::SyntaxContext;
 use swc_common::TypeEq;
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::*;
@@ -600,9 +605,6 @@ impl Analyzer<'_, '_> {
     fn validate_rhs_of_instanceof(&mut self, span: Span, ty: Box<Type>) -> Box<Type> {
         // TODO: We should assign this to builtin interface `Function`.
         match ty.normalize() {
-            // Ok
-            Type::TypeLit(..) | Type::Interface(..) => {}
-
             // Error
             Type::Keyword(RTsKeywordType {
                 kind: TsKeywordTypeKind::TsStringKeyword,
@@ -623,6 +625,28 @@ impl Analyzer<'_, '_> {
             | Type::Lit(..) => {
                 self.storage
                     .report(box Error::InvalidRhsInInstanceOf { span, ty: ty.clone() });
+            }
+
+            // Conditionally error.
+            //
+            // Ok if it's assignable to `Function`.
+            Type::TypeLit(..) | Type::Interface(..) | Type::Class(..) => {
+                if let Err(..) = self.assign(
+                    &Type::Ref(Ref {
+                        span,
+                        ctxt: ModuleId::builtin(),
+                        type_name: RTsEntityName::Ident(RIdent::new(
+                            "Function".into(),
+                            span.with_ctxt(SyntaxContext::empty()),
+                        )),
+                        type_args: None,
+                    }),
+                    &ty,
+                    span,
+                ) {
+                    self.storage
+                        .report(box Error::InvalidRhsInInstanceOf { span, ty: ty.clone() });
+                }
             }
 
             _ => return self.make_instance_or_report(span, &ty),
