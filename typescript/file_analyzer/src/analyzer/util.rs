@@ -64,6 +64,10 @@ impl Analyzer<'_, '_> {
         let span = ty.span();
         let ty = ty.normalize();
 
+        if ty.is_any() {
+            return Ok(box ty.clone());
+        }
+
         match ty {
             Type::Ref(..) => {
                 let ctx = Ctx {
