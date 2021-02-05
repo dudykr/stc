@@ -736,29 +736,6 @@ impl Analyzer<'_, '_> {
                 }
 
                 if rt.is_some() {
-                    fn is_ok(ty: &Type) -> bool {
-                        if ty.is_any() {
-                            return true;
-                        }
-
-                        match ty.normalize() {
-                            Type::TypeLit(..)
-                            | Type::Param(..)
-                            | Type::Mapped(..)
-                            | Type::Array(..)
-                            | Type::Tuple(..)
-                            | Type::IndexedAccessType(..)
-                            | Type::Interface(..)
-                            | Type::Keyword(RTsKeywordType {
-                                kind: TsKeywordTypeKind::TsObjectKeyword,
-                                ..
-                            }) => true,
-                            Type::Union(ref u) => u.types.iter().all(|ty| is_ok(&ty)),
-
-                            _ => false,
-                        }
-                    }
-
                     match rt.unwrap().normalize() {
                         Type::Keyword(RTsKeywordType {
                             kind: TsKeywordTypeKind::TsNullKeyword,
@@ -775,7 +752,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         _ => {
-                            if !is_ok(&rt.unwrap()) {
+                            if !self.is_valid_rhs_of_in(&rt.unwrap()) {
                                 errors.push(box Error::TS2361 { span: rs })
                             }
                         }
@@ -787,5 +764,36 @@ impl Analyzer<'_, '_> {
         }
 
         self.storage.report_all(errors);
+    }
+
+    fn is_valid_rhs_of_in(&mut self, ty: &Type) -> bool {
+        if ty.is_any() {
+            return true;
+        }
+
+        match ty.normalize() {
+            Type::Ref(..) => {
+                if let Ok(ty) = self.expand_top_ref(ty.span(), Cow::Borrowed(ty)) {
+                    return self.is_valid_rhs_of_in(&ty);
+                }
+
+                true
+            }
+
+            Type::TypeLit(..)
+            | Type::Param(..)
+            | Type::Mapped(..)
+            | Type::Array(..)
+            | Type::Tuple(..)
+            | Type::IndexedAccessType(..)
+            | Type::Interface(..)
+            | Type::Keyword(RTsKeywordType {
+                kind: TsKeywordTypeKind::TsObjectKeyword,
+                ..
+            }) => true,
+            Type::Union(ref u) => u.types.iter().all(|ty| self.is_valid_rhs_of_in(&ty)),
+
+            _ => false,
+        }
     }
 }
