@@ -362,11 +362,7 @@ impl Analyzer<'_, '_> {
             }
 
             op!("instanceof") => {
-                if match lt.normalize() {
-                    ty if ty.is_any() || ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword) => false,
-                    Type::This(..) | Type::Param(..) | Type::Ref(..) => false,
-                    _ => true,
-                } {
+                if !self.is_valid_lhs_of_instanceof(span, &lt) {
                     self.storage.report(box Error::InvalidLhsInInstanceOf {
                         ty: lt.clone(),
                         span: left.span(),
@@ -577,6 +573,19 @@ impl Analyzer<'_, '_> {
 
                 self.storage.report(box Error::CannotCompareWithOp { span, op });
             }
+        }
+    }
+
+    fn is_valid_lhs_of_instanceof(&mut self, span: Span, ty: &Type) -> bool {
+        let ty = ty.normalize();
+
+        match ty {
+            ty if ty.is_any() || ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword) => true,
+            Type::This(..) | Type::Param(..) | Type::Ref(..) => true,
+
+            Type::Union(ty) => ty.types.iter().any(|ty| self.is_valid_lhs_of_instanceof(span, ty)),
+
+            _ => false,
         }
     }
 
