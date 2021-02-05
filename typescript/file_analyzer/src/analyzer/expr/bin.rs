@@ -557,16 +557,16 @@ impl Analyzer<'_, '_> {
                     }
                 }
             }
-            _ => {
-                let l = l.clone().generalize_lit();
-                let r = r.clone().generalize_lit();
-                if self.can_compare_relatively(span, &l, &r)? {
-                    return;
-                }
-
-                self.storage.report(box Error::CannotCompareWithOp { span, op });
-            }
+            _ => {}
         }
+
+        let l = l.clone().generalize_lit();
+        let r = r.clone().generalize_lit();
+        if self.can_compare_relatively(span, &l, &r)? {
+            return;
+        }
+
+        self.storage.report(box Error::CannotCompareWithOp { span, op });
     }
 
     fn can_compare_relatively(&mut self, span: Span, l: &Type, r: &Type) -> ValidationResult<bool> {
@@ -647,6 +647,12 @@ impl Analyzer<'_, '_> {
                 match (lm, rm) {
                     (TypeElement::Method(lm), TypeElement::Method(rm)) => {
                         if let Ok(()) = self.assign(&lm.key.ty(), &rm.key.ty(), span) {
+                            if lm.type_params.as_ref().map(|v| v.params.len()).unwrap_or(0)
+                                != rm.type_params.as_ref().map(|v| v.params.len()).unwrap_or(0)
+                            {
+                                return Ok(Some(true));
+                            }
+
                             let params_res = self.assign_params(
                                 AssignOpts {
                                     span,
@@ -656,8 +662,8 @@ impl Analyzer<'_, '_> {
                                 &rm.params,
                             );
 
-                            if params_res.is_ok() {
-                                return Ok(Some(false));
+                            if params_res.is_err() {
+                                return Ok(Some(true));
                             }
 
                             let ret_ty_res = match (lm.ret_ty.as_deref(), rm.ret_ty.as_deref()) {
