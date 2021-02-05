@@ -25,6 +25,15 @@ impl Analyzer<'_, '_> {
                     }),
                 ..
             }) => match r {
+                Type::Ref(Ref {
+                    type_name:
+                        RTsEntityName::Ident(RIdent {
+                            sym: js_word!("Function"),
+                            ..
+                        }),
+                    ..
+                }) => return Some(Ok(())),
+
                 Type::TypeLit(rt) => {
                     if rt.members.iter().any(|r| match r {
                         TypeElement::Call(..) | TypeElement::Constructor(..) => true,
@@ -47,6 +56,14 @@ impl Analyzer<'_, '_> {
                     }
 
                     for parent in &ri.extends {
+                        match parent.expr {
+                            RTsEntityName::Ident(RIdent {
+                                sym: js_word!("Function"),
+                                ..
+                            }) => return Some(Ok(())),
+                            _ => {}
+                        }
+
                         let parent = self.type_of_ts_entity_name(
                             opts.span,
                             self.ctx.module_id,
