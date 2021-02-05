@@ -93,8 +93,6 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Interface(interface) => {
-                let span = interface.span;
-
                 let res = self.make_instance_from_type_elements(span, ty, &interface.body);
                 let err = match res {
                     Ok(v) => return Ok(v),
