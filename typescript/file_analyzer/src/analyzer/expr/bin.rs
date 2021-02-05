@@ -616,6 +616,10 @@ impl Analyzer<'_, '_> {
                 kind: TsKeywordTypeKind::TsBooleanKeyword,
                 ..
             })
+            | Type::Keyword(RTsKeywordType {
+                kind: TsKeywordTypeKind::TsVoidKeyword,
+                ..
+            })
             | Type::Lit(..) => {
                 self.storage
                     .report(box Error::InvalidRhsInInstanceOf { span, ty: ty.clone() });
