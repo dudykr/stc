@@ -568,7 +568,15 @@ impl Analyzer<'_, '_> {
                     }
                 }
             }
-            _ => {}
+            _ => {
+                let l = l.clone().generalize_lit();
+                let r = r.clone().generalize_lit();
+                if self.has_overlap(span, &l, &r)? {
+                    return;
+                }
+
+                self.storage.report(box Error::CannotCompareWithOp { span, op });
+            }
         }
     }
     fn validate_bin_inner(&mut self, span: Span, op: BinaryOp, lt: Option<&Type>, rt: Option<&Type>) {
