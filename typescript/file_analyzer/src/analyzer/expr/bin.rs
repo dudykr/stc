@@ -596,6 +596,14 @@ impl Analyzer<'_, '_> {
                 {
                     return Some(false);
                 }
+
+                if let Type::TypeLit(r) = r {
+                    if r.members.is_empty() {
+                        return Some(true);
+                    }
+
+                    return Some(false);
+                }
             }
 
             None
