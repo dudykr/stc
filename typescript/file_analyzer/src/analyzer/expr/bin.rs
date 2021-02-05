@@ -576,10 +576,28 @@ impl Analyzer<'_, '_> {
             return Ok(true);
         }
 
-        // Different type params cannot be compared relatively, although they can
-        // overlap with other types.
-        if l.is_type_param() && r.is_type_param() {
-            return Ok(false);
+        let c = Comparator { left: l, right: r };
+
+        if let Some(v) = c.take_if_any_matches(|l, r| {
+            if l.is_type_param() {
+                // Different type params cannot be compared relatively, although they can
+                // overlap with other types.
+                if r.is_type_param() {
+                    return Some(false);
+                }
+
+                if r.is_kwd(TsKeywordTypeKind::TsBooleanKeyword)
+                    || r.is_kwd(TsKeywordTypeKind::TsNumberKeyword)
+                    || r.is_kwd(TsKeywordTypeKind::TsStringKeyword)
+                    || r.is_kwd(TsKeywordTypeKind::TsVoidKeyword)
+                {
+                    return Some(false);
+                }
+            }
+
+            None
+        }) {
+            return Ok(v);
         }
 
         self.has_overlap(span, &l, &r)
