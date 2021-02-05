@@ -522,6 +522,8 @@ es6/templates/templateStringInInOperator.ts
 es6/templates/templateStringInInOperatorES6.ts
 es6/templates/templateStringInIndexExpression.ts
 es6/templates/templateStringInIndexExpressionES6.ts
+es6/templates/templateStringInInstanceOf.ts
+es6/templates/templateStringInInstanceOfES6.ts
 es6/templates/templateStringInModulo.ts
 es6/templates/templateStringInModuloES6.ts
 es6/templates/templateStringInMultiplication.ts
