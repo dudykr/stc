@@ -581,7 +581,13 @@ impl Analyzer<'_, '_> {
 
         match ty {
             ty if ty.is_any() || ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword) => true,
-            Type::Interface(..) | Type::Class(..) | Type::This(..) | Type::Param(..) | Type::Ref(..) => true,
+            Type::Lit(..)
+            | Type::TypeLit(..)
+            | Type::Interface(..)
+            | Type::Class(..)
+            | Type::This(..)
+            | Type::Param(..)
+            | Type::Ref(..) => true,
 
             Type::Union(ty) => ty.types.iter().any(|ty| self.is_valid_lhs_of_instanceof(span, ty)),
 
