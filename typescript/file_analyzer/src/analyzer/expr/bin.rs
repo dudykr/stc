@@ -578,7 +578,7 @@ impl Analyzer<'_, '_> {
 
         // Different type params cannot be compared relatively, although they can
         // overlap with other types.
-        if l.is_type_param() || r.is_type_param() {
+        if l.is_type_param() && r.is_type_param() {
             return Ok(false);
         }
 
