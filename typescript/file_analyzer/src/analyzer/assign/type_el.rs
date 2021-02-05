@@ -113,7 +113,7 @@ impl Analyzer<'_, '_> {
                     ..
                 }) => {
                     if lhs.iter().any(|el| match el {
-                        TypeElement::Call(..) => true,
+                        TypeElement::Call(..) | TypeElement::Constructor(..) => true,
                         _ => false,
                     }) {
                         return Ok(());
