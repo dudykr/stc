@@ -595,13 +595,36 @@ impl Analyzer<'_, '_> {
         }
     }
 
+    /// The right operand to be of type Any or a subtype of the 'Function'
+    /// interface type.
     fn validate_rhs_of_instanceof(&mut self, span: Span, ty: Box<Type>) -> Box<Type> {
         // TODO: We should assign this to builtin interface `Function`.
-        if ty.normalize().is_type_lit() || ty.normalize().is_interface() {
-            return ty;
+        match ty.normalize() {
+            // Ok
+            Type::TypeLit(..) | Type::Interface(..) => {}
+
+            // Error
+            Type::Keyword(RTsKeywordType {
+                kind: TsKeywordTypeKind::TsStringKeyword,
+                ..
+            })
+            | Type::Keyword(RTsKeywordType {
+                kind: TsKeywordTypeKind::TsNumberKeyword,
+                ..
+            })
+            | Type::Keyword(RTsKeywordType {
+                kind: TsKeywordTypeKind::TsBooleanKeyword,
+                ..
+            })
+            | Type::Lit(..) => {
+                self.storage
+                    .report(box Error::InvalidRhsInInstanceOf { span, ty: ty.clone() });
+            }
+
+            _ => return self.make_instance_or_report(span, &ty),
         }
 
-        self.make_instance_or_report(span, &ty)
+        ty
     }
 
     fn validate_bin_inner(&mut self, span: Span, op: BinaryOp, lt: Option<&Type>, rt: Option<&Type>) {
