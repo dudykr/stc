@@ -590,6 +590,10 @@ impl Analyzer<'_, '_> {
     /// The right operand to be of type Any or a subtype of the 'Function'
     /// interface type.
     fn validate_rhs_of_instanceof(&mut self, span: Span, ty: Box<Type>) -> Box<Type> {
+        if ty.is_any() {
+            return ty;
+        }
+
         // TODO: We should assign this to builtin interface `Function`.
         match ty.normalize() {
             // Error
@@ -628,10 +632,13 @@ impl Analyzer<'_, '_> {
                     .report(box Error::InvalidRhsInInstanceOf { span, ty: ty.clone() });
             }
 
+            // Ok
+            Type::Class(..) => {}
+
             // Conditionally error.
             //
             // Ok if it's assignable to `Function`.
-            Type::TypeLit(..) | Type::Interface(..) | Type::Class(..) => {
+            Type::TypeLit(..) | Type::Interface(..) => {
                 if let Err(..) = self.assign(
                     &Type::Ref(Ref {
                         span,
