@@ -48,6 +48,10 @@ impl Analyzer<'_, '_> {
                     }));
                 }
                 Type::Interface(ri) => {
+                    if *ri.name.sym() == js_word!("Function") {
+                        return Some(Ok(()));
+                    }
+
                     if ri.body.iter().any(|r| match r {
                         TypeElement::Call(..) | TypeElement::Constructor(..) => true,
                         _ => false,
