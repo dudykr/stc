@@ -61,9 +61,14 @@ pub enum Error {
         span: Span,
     },
 
-    InvalidUpdateArg {
+    ExprInvalidForUpdateArg {
         span: Span,
     },
+
+    TypeInvalidForUpdateArg {
+        span: Span,
+    },
+
     PrivatePropertyIsDifferent {
         span: Span,
     },
@@ -752,7 +757,8 @@ impl Error {
 
             Error::CannotCompareWithOp { .. } => 2365,
 
-            Error::InvalidUpdateArg { .. } => 2356,
+            Error::TypeInvalidForUpdateArg { .. } => 2356,
+            Error::ExprInvalidForUpdateArg { .. } => 2357,
 
             Error::CannotAssignToNonVariable { .. } => 2539,
 

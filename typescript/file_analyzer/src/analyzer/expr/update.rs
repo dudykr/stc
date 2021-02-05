@@ -5,6 +5,7 @@ use crate::validator;
 use crate::validator::ValidateWith;
 use crate::ValidationResult;
 use stc_ts_ast_rnode::RExpr;
+use stc_ts_ast_rnode::RLit;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
@@ -18,13 +19,6 @@ use swc_ecma_ast::TsKeywordTypeKind;
 impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RUpdateExpr) -> ValidationResult {
         let span = e.span;
-
-        match &*e.arg {
-            RExpr::Lit(..) => {
-                self.storage.report(box Error::InvalidUpdateArg { span });
-            }
-            _ => {}
-        }
 
         let ty = e
             .arg
@@ -45,7 +39,24 @@ impl Analyzer<'_, '_> {
                     lit: RTsLit::Bool(..), ..
                 })
                 | Type::TypeLit(..)
-                | Type::Array(..) => Err(box Error::TS2356 { span: e.arg.span() }),
+                | Type::Array(..) => Err(box Error::TypeInvalidForUpdateArg { span: e.arg.span() }),
+
+                Type::Lit(RTsLitType {
+                    lit: RTsLit::Number(..),
+                    ..
+                })
+                | Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsNumberKeyword,
+                    ..
+                }) => {
+                    match &*e.arg {
+                        RExpr::Lit(RLit::Num(..)) | RExpr::Call(..) | RExpr::Paren(..) | RExpr::Bin(..) => {
+                            self.storage.report(box Error::ExprInvalidForUpdateArg { span });
+                        }
+                        _ => {}
+                    }
+                    return Ok(ty);
+                }
 
                 _ => Ok(ty),
             })
