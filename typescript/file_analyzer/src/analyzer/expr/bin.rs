@@ -30,6 +30,7 @@ use stc_ts_types::Ref;
 use stc_ts_types::TypeElement;
 use std::borrow::Cow;
 use std::convert::TryFrom;
+use swc_atoms::js_word;
 use swc_common::SyntaxContext;
 use swc_common::TypeEq;
 use swc_common::{Span, Spanned};
@@ -374,20 +375,6 @@ impl Analyzer<'_, '_> {
                     })
                 }
 
-                // The right-hand side of an 'instanceof' expression must be of type 'any' or of
-                // a type assignable to the 'Function' interface type.ts(2359)
-                if match rt.normalize() {
-                    Type::Param(..) | Type::Infer(..) => true,
-                    ty if ty.is_any() => false,
-                    ty if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) => true,
-                    _ => false,
-                } {
-                    self.storage.report(box Error::InvalidRhsInInstanceOf {
-                        span: right.span(),
-                        ty: rt.clone(),
-                    })
-                }
-
                 return Ok(box Type::Keyword(RTsKeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
@@ -622,7 +609,21 @@ impl Analyzer<'_, '_> {
                 kind: TsKeywordTypeKind::TsVoidKeyword,
                 ..
             })
-            | Type::Lit(..) => {
+            | Type::Lit(..)
+            | Type::ClassInstance(..)
+            | Type::Ref(Ref {
+                type_name:
+                    RTsEntityName::Ident(RIdent {
+                        sym: js_word!("Object"),
+                        ..
+                    }),
+                ..
+            }) => {
+                self.storage
+                    .report(box Error::InvalidRhsInInstanceOf { span, ty: ty.clone() });
+            }
+
+            Type::TypeLit(e) if e.members.is_empty() => {
                 self.storage
                     .report(box Error::InvalidRhsInInstanceOf { span, ty: ty.clone() });
             }
