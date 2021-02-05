@@ -196,6 +196,8 @@ fn do_test(treat_error_as_bug: bool, file_name: &Path) -> Result<(), StdErr> {
             let mut rule = Rule::default();
             let ts_config = TsConfig::default();
 
+            let mut had_comment = false;
+
             let span = module.span;
             let cmts = comments.leading.get(&span.lo());
             match cmts {
@@ -203,8 +205,13 @@ fn do_test(treat_error_as_bug: bool, file_name: &Path) -> Result<(), StdErr> {
                     for cmt in cmts.iter() {
                         let s = cmt.text.trim();
                         if !s.starts_with("@") {
+                            if had_comment {
+                                err_shift_n = cm.lookup_char_pos(cmt.span.hi).line - 1;
+                                break;
+                            }
                             continue;
                         }
+                        had_comment = true;
                         err_shift_n = cm.lookup_char_pos(cmt.span.hi + BytePos(1)).line;
                         let s = &s[1..]; // '@'
 
