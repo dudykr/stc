@@ -26,8 +26,15 @@ impl Analyzer<'_, '_> {
                     kind: TsKeywordTypeKind::TsStringKeyword,
                     ..
                 })
+                | Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsBooleanKeyword,
+                    ..
+                })
                 | Type::Lit(RTsLitType {
                     lit: RTsLit::Str(..), ..
+                })
+                | Type::Lit(RTsLitType {
+                    lit: RTsLit::Bool(..), ..
                 })
                 | Type::TypeLit(..)
                 | Type::Array(..) => Err(box Error::TS2356 { span: e.arg.span() }),
