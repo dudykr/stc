@@ -27,7 +27,7 @@ impl Analyzer<'_, '_> {
             }) => match r {
                 Type::TypeLit(rt) => {
                     if rt.members.iter().any(|r| match r {
-                        TypeElement::Call(..) => true,
+                        TypeElement::Call(..) | TypeElement::Constructor(..) => true,
                         _ => false,
                     }) {
                         return Some(Ok(()));
@@ -40,7 +40,7 @@ impl Analyzer<'_, '_> {
                 }
                 Type::Interface(ri) => {
                     if ri.body.iter().any(|r| match r {
-                        TypeElement::Call(..) => true,
+                        TypeElement::Call(..) | TypeElement::Constructor(..) => true,
                         _ => false,
                     }) {
                         return Some(Ok(()));
