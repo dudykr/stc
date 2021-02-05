@@ -193,7 +193,7 @@ impl Analyzer<'_, '_> {
                 match **left {
                     RExpr::Ident(ref i) => {
                         //
-                        let ty = self.make_instance_or_report(&rt);
+                        let ty = self.make_instance_or_report(span, &rt);
 
                         self.cur_facts.true_facts.vars.insert(Name::from(i), ty);
                     }

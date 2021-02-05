@@ -48,8 +48,8 @@ impl Analyzer<'_, '_> {
     ///
     ///
     /// TODO: Use Cow
-    pub(super) fn make_instance_or_report(&mut self, ty: &Type) -> Box<Type> {
-        let res = self.make_instance(ty);
+    pub(super) fn make_instance_or_report(&mut self, span: Span, ty: &Type) -> Box<Type> {
+        let res = self.make_instance(span, ty);
         match res {
             Ok(ty) => ty,
             Err(err) => {
@@ -60,8 +60,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO: Use Cow
-    pub(super) fn make_instance(&mut self, ty: &Type) -> ValidationResult {
-        let span = ty.span();
+    pub(super) fn make_instance(&mut self, span: Span, ty: &Type) -> ValidationResult {
         let ty = ty.normalize();
 
         if ty.is_any() {
@@ -81,7 +80,7 @@ impl Analyzer<'_, '_> {
 
                 match ty.normalize() {
                     Type::Ref(..) => return Ok(ty.clone()),
-                    _ => return self.make_instance(&ty),
+                    _ => return self.make_instance(span, &ty),
                 }
             }
 
@@ -101,7 +100,7 @@ impl Analyzer<'_, '_> {
                 for parent in &interface.extends {
                     let ctxt = self.ctx.module_id;
                     let parent_ty = self.type_of_ts_entity_name(span, ctxt, &parent.expr, None)?;
-                    if let Ok(ty) = self.make_instance(&parent_ty) {
+                    if let Ok(ty) = self.make_instance(span, &parent_ty) {
                         return Ok(ty);
                     }
                 }
