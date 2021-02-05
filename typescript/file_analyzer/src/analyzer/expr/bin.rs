@@ -611,7 +611,7 @@ impl Analyzer<'_, '_> {
             match (l, r) {
                 (Type::Class(l), Type::Class(r)) => {
                     if l.super_class.is_none() && r.super_class.is_none() {
-                        if l.body.is_empty() && r.body.is_empty() {
+                        if l.body.is_empty() || r.body.is_empty() {
                             return Some(false);
                         }
                     }
