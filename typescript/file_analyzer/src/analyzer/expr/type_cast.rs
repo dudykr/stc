@@ -269,16 +269,20 @@ impl Analyzer<'_, '_> {
                 for lm in &lt.members {
                     for rm in &rt.members {
                         match (lm, rm) {
-                            (TypeElement::Index(lm), TypeElement::Index(rm)) if lm.params.type_eq(&rm.params) => {
-                                if let Some(lt) = &lm.type_ann {
-                                    if let Some(rt) = &rm.type_ann {
-                                        if self.assign(&lt, &rt, span).is_err() && self.assign(&rt, &lt, span).is_err()
-                                        {
-                                            return Ok(false);
+                            (TypeElement::Index(lm), TypeElement::Index(rm)) => {
+                                if lm.params.type_eq(&rm.params) {
+                                    if let Some(lt) = &lm.type_ann {
+                                        if let Some(rt) = &rm.type_ann {
+                                            if self.assign(&lt, &rt, span).is_err()
+                                                && self.assign(&rt, &lt, span).is_err()
+                                            {
+                                                return Ok(false);
+                                            }
                                         }
                                     }
                                 }
                             }
+
                             _ => {}
                         }
                     }
