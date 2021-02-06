@@ -998,17 +998,24 @@ impl Analyzer<'_, '_> {
             },
 
             Type::Function(ty::Function {
-                ret_ty: ref left_ret_ty,
+                params: l_params,
+                ret_ty: left_ret_ty,
                 ..
             }) => {
                 // var fnr2: () => any = fnReturn2();
-                match *rhs {
+                match rhs {
                     Type::Function(ty::Function {
-                        ret_ty: ref right_ret_ty,
+                        params: r_params,
+                        ret_ty: right_ret_ty,
                         ..
                     }) => {
+                        self.assign_params(opts, &l_params, &r_params)
+                            .context("tried to return parameters of a function to parameters of another function")?;
+
                         // TODO: Verify type parameters.
-                        self.assign_inner(right_ret_ty, left_ret_ty, opts)?;
+                        self.assign_inner(left_ret_ty, right_ret_ty, opts).context(
+                            "tried to return the return type of a function to the return type of another function",
+                        )?;
                         // TODO: Verify parameter counts
 
                         return Ok(());
