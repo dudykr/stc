@@ -133,7 +133,7 @@ impl Analyzer<'_, '_> {
             ty = ty.fold_with(&mut KeyInliner { analyzer: self });
             // Always generalize for now
             // TODO: Fix this
-            if values.should_generalize || is_async || is_generator || true {
+            if values.should_generalize || is_async || is_generator {
                 ty = ty.generalize_lit();
             }
 
