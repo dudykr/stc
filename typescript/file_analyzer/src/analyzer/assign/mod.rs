@@ -579,6 +579,21 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
             }
+
+            Type::Intersection(Intersection { types, .. }) => {
+                let errors = types
+                    .iter()
+                    .map(|rhs| self.assign_inner(to, rhs, opts))
+                    .collect::<Vec<_>>();
+                if errors.iter().any(Result::is_ok) {
+                    return Ok(());
+                }
+                return Err(box Error::Errors {
+                    span,
+                    errors: errors.into_iter().map(Result::unwrap_err).collect(),
+                });
+            }
+
             Type::Union(Union { ref types, .. }) => {
                 let errors = types
                     .iter()
