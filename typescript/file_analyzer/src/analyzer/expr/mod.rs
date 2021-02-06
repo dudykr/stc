@@ -2128,7 +2128,11 @@ impl Analyzer<'_, '_> {
                 match f.body {
                     RBlockStmtOrExpr::Expr(ref e) => Some({
                         let ty = e.validate_with_default(child)?;
-                        ty.generalize_lit()
+                        if child.may_generalize(&ty) {
+                            ty.generalize_lit()
+                        } else {
+                            ty
+                        }
                     }),
                     RBlockStmtOrExpr::BlockStmt(ref s) => {
                         child.visit_stmts_for_return(f.span, f.is_async, f.is_generator, &s.stmts)?
