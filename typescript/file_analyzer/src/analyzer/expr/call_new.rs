@@ -1530,7 +1530,7 @@ impl Analyzer<'_, '_> {
 
             let mut upcasted = false;
             for ty in previous_types.into_owned().iter_union().flat_map(|ty| ty.iter_union()) {
-                match self.extends(&new_ty, &ty) {
+                match self.extends(span, &new_ty, &ty) {
                     Some(true) => {
                         upcasted = true;
                         new_types.push(box ty.clone());
