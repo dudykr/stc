@@ -1273,6 +1273,8 @@ impl Analyzer<'_, '_> {
                 self.register_type(param.name.clone(), box Type::Param(param.clone()));
             }
 
+            let inferred = self.infer_arg_types(span, type_args, type_params, &params, &spread_arg_types, None)?;
+
             let mut new_args = vec![];
             for (idx, (arg, param)) in args.into_iter().zip(params.iter()).enumerate() {
                 let arg_ty = &arg_types[idx];
@@ -1297,12 +1299,15 @@ impl Analyzer<'_, '_> {
                         let node_id = pat.node_id()?;
                         self.mutations.as_ref()?.for_pats.get(&node_id)?.ty.clone()?
                     };
+
                     if let Some(ty) = default_any_ty {
                         match &*ty {
                             Type::Keyword(RTsKeywordType {
                                 span,
                                 kind: TsKeywordTypeKind::TsAnyKeyword,
                             }) if self.is_implicitly_typed_span(*span) => {
+                                // We need to expand type parameters.
+
                                 // TODO: Make this eficient
                                 let new_ty = RTsType::from(actual.ty.clone()).validate_with(self)?;
                                 if let Some(node_id) = pat.node_id() {
@@ -1382,8 +1387,6 @@ impl Analyzer<'_, '_> {
                 ..self.ctx
             };
             let ret_ty = self.with_ctx(ctx).expand(span, ret_ty)?;
-
-            let inferred = self.infer_arg_types(span, type_args, type_params, &params, &spread_arg_types, None)?;
 
             let expanded_param_types = params
                 .into_iter()
