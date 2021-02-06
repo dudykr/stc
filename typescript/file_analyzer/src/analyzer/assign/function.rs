@@ -58,7 +58,7 @@ impl Analyzer<'_, '_> {
                             .params
                             .iter()
                             .zip(rt.params.iter())
-                            .map(|(l, r)| (l.name.clone(), Type::Param(r.clone()).cheap()))
+                            .map(|(l, r)| (r.name.clone(), Type::Param(l.clone()).cheap()))
                             .collect::<FxHashMap<_, _>>();
                         let r = self
                             .expand_type_params(&map, box r.clone())
