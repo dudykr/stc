@@ -36,7 +36,7 @@ impl Analyzer<'_, '_> {
 
                 // TODO: Verify type parameters.
                 self.assign_inner(&l.ret_ty, right_ret_ty, opts)
-                    .context("tried to return the return type of a function to the return type of another function")?;
+                    .context("tried to assign the return type of a function to the return type of another function")?;
                 // TODO: Verify parameter counts
 
                 return Ok(());
