@@ -1458,7 +1458,17 @@ impl Analyzer<'_, '_> {
                         _ => {}
                     }
 
-                    if let Err(err) = self.assign(&param.ty, &arg.ty, arg.span()) {
+                    if arg.spread.is_some() {
+                        match &*arg.ty {
+                            Type::Array(arg) => {
+                                // We should change type if the parameter is a rest parameter.
+                                if let Ok(()) = self.assign(&param, &arg.elem_type, arg.span()) {
+                                    continue;
+                                }
+                            }
+                            _ => {}
+                        }
+                    } else if let Err(err) = self.assign(&param.ty, &arg.ty, arg.span()) {
                         self.storage.report(box Error::WrongArgType {
                             span: arg.span(),
                             inner: err,
