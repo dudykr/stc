@@ -27,3 +27,4 @@ fixSignatureCaching.ts
 thisTypeInFunctions2.ts
 keyofInferenceLowerPriorityThanReturn.ts
 arrayLiteralInference.ts
+recursiveIntersectionTypes.ts
