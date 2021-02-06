@@ -196,6 +196,8 @@ impl Analyzer<'_, '_> {
                     }
                     _ => {}
                 }
+
+                // TODO: Make a cond fact for comparisons with literal.
             }
 
             op!("instanceof") => {
