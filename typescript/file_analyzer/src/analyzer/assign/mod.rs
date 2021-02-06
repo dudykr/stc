@@ -997,34 +997,10 @@ impl Analyzer<'_, '_> {
                 _ => fail!(),
             },
 
-            Type::Function(ty::Function {
-                params: l_params,
-                ret_ty: left_ret_ty,
-                ..
-            }) => {
-                // var fnr2: () => any = fnReturn2();
-                match rhs {
-                    Type::Function(ty::Function {
-                        params: r_params,
-                        ret_ty: right_ret_ty,
-                        ..
-                    }) => {
-                        self.assign_params(opts, &l_params, &r_params)
-                            .context("tried to parameters of a function to parameters of another function")?;
-
-                        // TODO: Verify type parameters.
-                        self.assign_inner(left_ret_ty, right_ret_ty, opts).context(
-                            "tried to return the return type of a function to the return type of another function",
-                        )?;
-                        // TODO: Verify parameter counts
-
-                        return Ok(());
-                    }
-
-                    Type::Lit(..) => return Err(box Error::CannotAssignToNonVariable { span }),
-                    _ => fail!(),
-                }
-            }
+            Type::Function(l) => match rhs {
+                Type::Function(..) | Type::Lit(..) => return self.assign_to_function(opts, l, rhs),
+                _ => {}
+            },
 
             Type::Tuple(Tuple { ref elems, .. }) => {
                 //
