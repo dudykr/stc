@@ -192,7 +192,7 @@ fn do_test(treat_error_as_bug: bool, file_name: &Path) -> Result<(), StdErr> {
                 first_stmt_line = cm.lookup_line(module.body[0].span().lo).unwrap().line;
             }
 
-            let mut libs = vec![Lib::Es5];
+            let mut libs = vec![Lib::Es5, Lib::Dom];
             let mut rule = Rule::default();
             let ts_config = TsConfig::default();
 
