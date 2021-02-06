@@ -90,6 +90,8 @@ mod visit_mut;
 pub(crate) struct Ctx {
     module_id: ModuleId,
 
+    allow_module_var: bool,
+
     in_declare: bool,
     in_global: bool,
     in_export_default_expr: bool,
@@ -340,6 +342,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             scope,
             ctx: Ctx {
                 module_id: ModuleId::builtin(),
+                allow_module_var: false,
                 in_declare: false,
                 in_global: false,
                 in_export_default_expr: false,
@@ -703,11 +706,11 @@ impl Analyzer<'_, '_> {
             })?;
 
         if let Some(ty) = ty {
-            match decl.id {
-                RTsModuleName::Ident(ref i) => {
+            match &decl.id {
+                RTsModuleName::Ident(i) => {
                     self.register_type(i.into(), ty);
                 }
-                RTsModuleName::Str(ref s) => {
+                RTsModuleName::Str(s) => {
                     //TODO
                     return Ok(());
                 }

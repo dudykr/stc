@@ -20,6 +20,8 @@ use crate::{
     ValidationResult,
 };
 use fxhash::FxHashMap;
+use itertools::EitherOrBoth;
+use itertools::Itertools;
 use rnode::Fold;
 use rnode::FoldWith;
 use rnode::NodeId;
@@ -57,6 +59,7 @@ use stc_ts_types::{Alias, Id, IndexedAccessType, Ref, Symbol, Union};
 use stc_ts_utils::PatExt;
 use std::borrow::Cow;
 use swc_atoms::js_word;
+use swc_common::SyntaxContext;
 use swc_common::TypeEq;
 use swc_common::DUMMY_SP;
 use swc_common::{Span, Spanned};
@@ -134,19 +137,22 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RTaggedTpl) -> ValidationResult {
         let span = e.span;
 
-        let tpl_str_arg = RExprOrSpread {
-            spread: None,
-            expr: box RExpr::TsAs(RTsAsExpr {
-                node_id: NodeId::invalid(),
-                span: DUMMY_SP,
-                expr: box RExpr::Invalid(RInvalid { span }),
-                type_ann: box RTsType::TsTypeRef(RTsTypeRef {
+        let tpl_str_arg = {
+            let span = span.with_ctxt(SyntaxContext::empty());
+            RExprOrSpread {
+                spread: None,
+                expr: box RExpr::TsAs(RTsAsExpr {
                     node_id: NodeId::invalid(),
-                    span: DUMMY_SP,
-                    type_name: RTsEntityName::Ident(RIdent::new("TemplateStringsArray".into(), DUMMY_SP)),
-                    type_params: None,
+                    span,
+                    expr: box RExpr::Invalid(RInvalid { span: DUMMY_SP }),
+                    type_ann: box RTsType::TsTypeRef(RTsTypeRef {
+                        node_id: NodeId::invalid(),
+                        span,
+                        type_name: RTsEntityName::Ident(RIdent::new("TemplateStringsArray".into(), span)),
+                        type_params: None,
+                    }),
                 }),
-            }),
+            }
         };
         let mut args = vec![tpl_str_arg];
 
@@ -170,7 +176,7 @@ impl Analyzer<'_, '_> {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum ExtractKind {
+pub(super) enum ExtractKind {
     New,
     Call,
 }
@@ -571,6 +577,7 @@ impl Analyzer<'_, '_> {
 
     fn check_type_element_for_call(
         &mut self,
+        span: Span,
         kind: ExtractKind,
         candidates: &mut Vec<MethodSignature>,
         m: &TypeElement,
@@ -579,13 +586,13 @@ impl Analyzer<'_, '_> {
         match m {
             TypeElement::Method(m) if kind == ExtractKind::Call => {
                 // We are interested only on methods named `prop`
-                if prop.type_eq(&m.key) {
+                if let Ok(()) = self.assign(&m.key.ty(), &prop.ty(), span) {
                     candidates.push(m.clone());
                 }
             }
 
             TypeElement::Property(p) if kind == ExtractKind::Call => {
-                if prop.type_eq(&p.key) {
+                if let Ok(()) = self.assign(&p.key.ty(), &prop.ty(), span) {
                     // TODO: Remove useless clone
                     let ty = p.type_ann.as_ref().cloned().unwrap_or(Type::any(m.span()));
 
@@ -644,7 +651,7 @@ impl Analyzer<'_, '_> {
         let mut candidates = Vec::with_capacity(4);
 
         for m in members {
-            self.check_type_element_for_call(kind, &mut candidates, m, prop);
+            self.check_type_element_for_call(span, kind, &mut candidates, m, prop);
         }
 
         // TODO: Move this to caller to prevent checking members of `Object` every time
@@ -663,7 +670,7 @@ impl Analyzer<'_, '_> {
 
             // TODO: Remove clone
             for m in methods {
-                self.check_type_element_for_call(kind, &mut candidates, m, prop);
+                self.check_type_element_for_call(span, kind, &mut candidates, m, prop);
             }
         }
 
@@ -773,20 +780,29 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult {
         match ty.normalize() {
             Type::Ref(..) => {
-                let ctx = Ctx {
-                    preserve_ref: false,
-                    ignore_expand_prevention_for_top: true,
-                    ..self.ctx
-                };
-                let ty = self.with_ctx(ctx).expand_fully(span, box ty.clone(), true)?;
+                let ty = self.expand_top_ref(span, Cow::Borrowed(ty))?;
                 return self.extract(span, &ty, kind, args, arg_types, spread_arg_types, type_args);
             }
+
+            Type::Query(QueryType {
+                expr: box QueryExpr::TsEntityName(name),
+                ..
+            }) => {
+                let ty = self.resolve_typeof(span, name)?;
+                return self.extract(span, &ty, kind, args, arg_types, spread_arg_types, type_args);
+            }
+
             _ => {}
         }
 
         match kind {
             ExtractKind::New => match ty.normalize() {
                 Type::Class(ref cls) => {
+                    if cls.is_abstract {
+                        self.storage
+                            .report(box Error::CannotCreateInstanceOfAbstractClass { span })
+                    }
+
                     if let Some(type_params) = &cls.type_params {
                         for param in &type_params.params {
                             self.register_type(param.name.clone(), box Type::Param(param.clone()));
@@ -959,17 +975,6 @@ impl Analyzer<'_, '_> {
                     type_args: type_args.cloned().map(Box::new),
                 }
                 .into());
-            }
-
-            Type::Query(QueryType {
-                expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(RIdent { ref sym, .. })),
-                ..
-            }) => {
-                //if self.scope.find_declaring_fn(sym) {
-                //    return Ok(Type::any(span));
-                //}
-
-                ret_err!();
             }
 
             _ => ret_err!(),
@@ -1380,6 +1385,18 @@ impl Analyzer<'_, '_> {
 
             let inferred = self.infer_arg_types(span, type_args, type_params, &params, &spread_arg_types, None)?;
 
+            let expanded_param_types = params
+                .into_iter()
+                .cloned()
+                .map(|v| -> ValidationResult<_> {
+                    let ty = self.expand_type_params(&inferred, v.ty)?;
+
+                    Ok(FnParam { ty, ..v })
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+
+            self.validate_arg_types(&expanded_param_types, &spread_arg_types);
+
             print_type(&logger, "Return", &self.cm, &ret_ty);
             let mut ty = self.expand_type_params(&inferred, ret_ty)?;
             print_type(&logger, "Return, expanded", &self.cm, &ty);
@@ -1405,13 +1422,52 @@ impl Analyzer<'_, '_> {
             return Ok(ty);
         }
 
-        let mut ret_ty = ret_ty.clone();
+        self.validate_arg_types(params, &spread_arg_types);
+
         ret_ty.reposition(span);
         ret_ty.visit_mut_with(&mut ReturnTypeSimplifier { analyzer: self });
         if kind == ExtractKind::Call {
             self.add_call_facts(params, &args, &mut ret_ty);
         }
         return Ok(ret_ty);
+    }
+
+    fn validate_arg_types(&mut self, params: &[FnParam], spread_arg_types: &[TypeOrSpread]) {
+        for pair in params
+            .iter()
+            .filter(|param| match param.pat {
+                RPat::Ident(RIdent {
+                    sym: js_word!("this"), ..
+                }) => false,
+                _ => true,
+            })
+            .zip_longest(spread_arg_types)
+        {
+            match pair {
+                EitherOrBoth::Both(param, arg) => {
+                    match &param.pat {
+                        RPat::Rest(..) => match &*param.ty {
+                            Type::Array(arr) => {
+                                // We should change type if the parameter is a rest parameter.
+                                if let Ok(()) = self.assign(&arr.elem_type, &arg.ty, arg.span()) {
+                                    continue;
+                                }
+                            }
+                            _ => {}
+                        },
+                        _ => {}
+                    }
+
+                    if let Err(err) = self.assign(&param.ty, &arg.ty, arg.span()) {
+                        self.storage.report(box Error::WrongArgType {
+                            span: arg.span(),
+                            inner: err,
+                        })
+                    }
+                }
+                _ => {}
+            }
+        }
     }
 
     /// Note:

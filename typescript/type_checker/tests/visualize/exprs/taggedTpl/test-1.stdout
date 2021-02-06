@@ -10,15 +10,15 @@ warning: Type
  --> $DIR/tests/visualize/exprs/taggedTpl/test-1.ts:6:18
   |
 6 | export const a = foo`my${'test'}`
-  |                  ^^^
+  |                  ^^^^^^^^^^^^^^^^
   |
-  = note: (a: TemplateStringsArray, b: string) => TemplateStringsArray
+  = note: TemplateStringsArray
 
 warning: Type
  --> $DIR/tests/visualize/exprs/taggedTpl/test-1.ts:6:18
   |
 6 | export const a = foo`my${'test'}`
-  |                  ^^^^^^^^^^^^^^^^
+  |                  ^^^
   |
-  = note: TemplateStringsArray
+  = note: (a: TemplateStringsArray, b: string) => TemplateStringsArray
 

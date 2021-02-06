@@ -4,6 +4,7 @@
 #![feature(specialization)]
 
 pub use self::result_ext::DebugExt;
+use fmt::Formatter;
 use stc_ts_types::name::Name;
 use stc_ts_types::Id;
 use stc_ts_types::Key;
@@ -12,12 +13,15 @@ use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeParamInstantiation;
 use std::borrow::Cow;
+use std::fmt;
+use std::fmt::Debug;
 use std::fmt::Display;
 use std::{ops::RangeInclusive, path::PathBuf};
 use swc_atoms::JsWord;
 use swc_common::errors::DiagnosticId;
 use swc_common::{errors::Handler, Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::AssignOp;
+use swc_ecma_ast::BinaryOp;
 use swc_ecma_ast::{UnaryOp, UpdateOp};
 
 pub mod debug;
@@ -53,6 +57,72 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    EnumCannotBeLValue {
+        span: Span,
+    },
+
+    ExprInvalidForUpdateArg {
+        span: Span,
+    },
+
+    TypeInvalidForUpdateArg {
+        span: Span,
+    },
+
+    PrivatePropertyIsDifferent {
+        span: Span,
+    },
+
+    PrivateMethodIsDifferent {
+        span: Span,
+    },
+
+    CannotCompareWithOp {
+        span: Span,
+        op: BinaryOp,
+    },
+
+    InvalidBinaryOp {
+        span: Span,
+        op: BinaryOp,
+    },
+
+    NoSuchEnumVariant {
+        span: Span,
+        name: JsWord,
+    },
+
+    ObjectIsPossiblyNull {
+        span: Span,
+    },
+
+    ObjectIsPossiblyUndefined {
+        span: Span,
+    },
+
+    CannotAssignAbstractConstructorToNonAbstractConstructor {
+        span: Span,
+    },
+
+    InvalidUseOfConstEnum {
+        span: Span,
+    },
+
+    ComputedMemberInEnumWithStrMember {
+        span: Span,
+    },
+
+    CannotCreateInstanceOfAbstractClass {
+        span: Span,
+    },
+
+    WrongArgType {
+        /// Span of argument.
+        span: Span,
+
+        inner: Box<Error>,
+    },
+
     ImportFailed {
         span: Span,
         orig: Id,
@@ -224,11 +294,6 @@ pub enum Error {
 
     /// TS2378
     TS2378 {
-        span: Span,
-    },
-
-    /// TS2475
-    ConstEnumUsedAsVar {
         span: Span,
     },
 
@@ -558,11 +623,34 @@ pub enum Error {
         key: Box<Key>,
     },
 
-    DebugContext {
-        span: Span,
-        context: String,
-        inner: Box<Error>,
-    },
+    DebugContext(DebugContext),
+}
+
+#[derive(Clone, PartialEq, Spanned)]
+pub struct DebugContext {
+    pub span: Span,
+    pub context: String,
+    pub inner: Box<Error>,
+}
+
+impl Debug for DebugContext {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let mut next = Some(self);
+
+        while let Some(cur) = next.take() {
+            writeln!(f, "context: {}", cur.context)?;
+
+            match &*cur.inner {
+                Error::DebugContext(c) => next = Some(c),
+                _ => {
+                    Debug::fmt(&cur.inner, f)?;
+                    break;
+                }
+            }
+        }
+
+        Ok(())
+    }
 }
 
 impl Error {
@@ -581,11 +669,11 @@ impl Error {
             }
         }
 
-        box Error::DebugContext {
+        box Error::DebugContext(DebugContext {
             span: self.span(),
             context: context.to_string(),
             inner: box self,
-        }
+        })
     }
 
     /// TypeScript error code.
@@ -645,7 +733,58 @@ impl Error {
             Error::InvalidDeleteOperand { .. } => 2703,
             Error::NoSuchVar { .. } => 2304,
 
-            Error::DebugContext { inner, .. } => inner.code(),
+            Error::CannotAssignAbstractConstructorToNonAbstractConstructor { .. } => 2322,
+            Error::CannotCreateInstanceOfAbstractClass { .. } => 2511,
+            Error::WrongArgType { .. } => 2345,
+
+            Error::ComputedMemberInEnumWithStrMember { .. } => 2553,
+
+            Error::TupleIndexError { .. } => 2493,
+            Error::InvalidLValue { .. } => 2540,
+
+            Error::TS2378 { .. } => 2378,
+
+            Error::ConstEnumNonIndexAccess { .. } => 2476,
+
+            Error::InvalidUseOfConstEnum { .. } => 2475,
+
+            Error::DebugContext(c) => c.inner.code(),
+
+            Error::ObjectIsPossiblyNull { .. } => 2531,
+            Error::ObjectIsPossiblyUndefined { .. } => 2532,
+
+            Error::InvalidBinaryOp { .. } => 2365,
+
+            Error::CannotCompareWithOp { .. } => 2365,
+
+            Error::TypeInvalidForUpdateArg { .. } => 2356,
+            Error::ExprInvalidForUpdateArg { .. } => 2357,
+
+            Error::CannotAssignToNonVariable { .. } => 2539,
+
+            Error::AssignedWrapperToPrimitive { .. } => 2322,
+
+            Error::AccessibilityDiffers { .. } => 2322,
+
+            Error::InvalidInitInConstEnum { .. } => 2474,
+
+            Error::InvalidTupleCast { .. } => 2352,
+
+            Error::NoOverlap { .. } => 2367,
+
+            Error::InvalidLhsInInstanceOf { .. } => 2358,
+
+            Error::InvalidRhsInInstanceOf { .. } => 2359,
+
+            Error::NumericUnaryOpToSymbol { .. } => 2469,
+
+            Error::UpdateOpToSymbol { .. } => 2469,
+
+            Error::UselessSeqExpr { .. } => 2695,
+
+            Error::EnumCannotBeLValue { .. } => 2540,
+
+            Error::NoSuchEnumVariant { .. } => 2339,
 
             _ => 0,
         }
@@ -669,8 +808,6 @@ impl Error {
 
             Self::Unimplemented { msg, .. } => format!("unimplemented: {}", msg).into(),
 
-            Self::DebugContext { context, inner, .. } => format!("{}:\n{}", context, inner.msg()).into(),
-
             _ => format!("{:#?}", self).into(),
         }
     }
@@ -691,17 +828,15 @@ impl Error {
         for e in vec {
             match *e {
                 Error::Errors { errors, .. } => buf.extend(Self::flatten(errors)),
-                Error::DebugContext { inner, context, .. } => {
+                Error::DebugContext(DebugContext { inner, context, .. }) => {
                     //
-                    buf.extend(
-                        Self::flatten(vec![inner])
-                            .into_iter()
-                            .map(|inner| box Error::DebugContext {
-                                span: inner.span(),
-                                context: context.clone(),
-                                inner,
-                            }),
-                    )
+                    buf.extend(Self::flatten(vec![inner]).into_iter().map(|inner| {
+                        box Error::DebugContext(DebugContext {
+                            span: inner.span(),
+                            context: context.clone(),
+                            inner,
+                        })
+                    }))
                 }
                 _ => buf.push(e),
             }

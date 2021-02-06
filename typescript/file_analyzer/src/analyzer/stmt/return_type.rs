@@ -22,12 +22,14 @@ use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_ast_rnode::RYieldExpr;
+use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_types::Key;
 use stc_ts_types::ModuleId;
 use stc_ts_types::{
     IndexedAccessType, MethodSignature, Operator, PropertySignature, Ref, TypeElement, TypeParamInstantiation,
 };
+use std::borrow::Cow;
 use std::{mem::take, ops::AddAssign};
 use swc_common::TypeEq;
 use swc_common::{Span, Spanned, DUMMY_SP};
@@ -238,7 +240,19 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RYieldExpr) -> ValidationResult {
         if let Some(res) = e.arg.validate_with_default(self) {
-            self.scope.return_values.yield_types.push(res?);
+            let ty = res?;
+
+            if e.delegate {
+                // TODO: Use correct symbol. (need proper symbol handling)
+                let item_ty = box self
+                    .convert_to_iterator(e.span, Cow::Owned(*ty))
+                    .context("tried to convert argument as an interator for delegating yield")?
+                    .into_owned();
+
+                self.scope.return_values.yield_types.push(item_ty);
+            } else {
+                self.scope.return_values.yield_types.push(ty);
+            }
         } else {
             self.scope
                 .return_values

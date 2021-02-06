@@ -451,6 +451,7 @@ impl Analyzer<'_, '_> {
         Ok(Method {
             span: c_span,
             key,
+            accessibility: c.accessibility,
             is_static: c.is_static,
             is_abstract: c.is_abstract,
             is_optional: c.is_optional,

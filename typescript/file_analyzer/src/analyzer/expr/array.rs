@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use super::call_new::ExtractKind;
 use super::TypeOfMode;
 use crate::analyzer::Analyzer;
@@ -21,7 +23,9 @@ use stc_ts_types::Tuple;
 use stc_ts_types::TupleElement;
 use stc_ts_types::Type;
 use stc_ts_types::TypeParamInstantiation;
+use swc_common::Span;
 use swc_common::Spanned;
+use swc_common::SyntaxContext;
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::TsKeywordTypeKind;
 
@@ -176,4 +180,42 @@ impl Analyzer<'_, '_> {
     }
 }
 
-impl Analyzer<'_, '_> {}
+impl Analyzer<'_, '_> {
+    pub(crate) fn convert_to_iterator<'a>(&mut self, span: Span, ty: Cow<'a, Type>) -> ValidationResult<Cow<'a, Type>> {
+        match ty.normalize() {
+            Type::Array(..) | Type::Tuple(..) => return Ok(ty),
+            _ => {}
+        }
+
+        let ty = self
+            .call_property(
+                span,
+                ExtractKind::Call,
+                box ty.into_owned(),
+                &Key::Computed(ComputedKey {
+                    span,
+                    expr: box RExpr::Member(RMemberExpr {
+                        node_id: NodeId::invalid(),
+                        span,
+                        obj: RExprOrSuper::Expr(box RExpr::Ident(RIdent::new(
+                            "Symbol".into(),
+                            span.with_ctxt(SyntaxContext::empty()),
+                        ))),
+                        computed: false,
+                        prop: box RExpr::Ident(RIdent::new("iterator".into(), span.with_ctxt(SyntaxContext::empty()))),
+                    }),
+                    ty: box Type::Keyword(RTsKeywordType {
+                        span,
+                        kind: TsKeywordTypeKind::TsSymbolKeyword,
+                    }),
+                }),
+                None,
+                &[],
+                &[],
+                &[],
+            )
+            .context("tried to call `[Symbol.iterator]()` to convert a type to interator")?;
+
+        Ok(Cow::Owned(*ty))
+    }
+}

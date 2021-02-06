@@ -6,6 +6,21 @@ use stc_ts_types::PropertySignature;
 use stc_ts_types::TypeElement;
 
 impl Analyzer<'_, '_> {
+    pub(crate) fn kinds_of_type_elements(&mut self, els: &[TypeElement]) -> Vec<u8> {
+        let mut v = els
+            .iter()
+            .map(|v| match v {
+                TypeElement::Call(_) => 1,
+                TypeElement::Constructor(_) => 2,
+                TypeElement::Property(_) => 3,
+                TypeElement::Method(_) => 4,
+                TypeElement::Index(_) => 5,
+            })
+            .collect::<Vec<_>>();
+        v.sort();
+        v
+    }
+
     /// Utility method to convert a class member to a type element.
     ///
     /// This method is used while inferring types and while assigning type

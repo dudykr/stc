@@ -18,6 +18,7 @@ use stc_ts_ast_rnode::RStr;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
+use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::debug::print_backtrace;
 use stc_ts_errors::debug::print_type;
 use stc_ts_types::Array;
@@ -528,6 +529,7 @@ impl Analyzer<'_, '_> {
 
             Type::Interface(param) => match arg {
                 Type::Interface(..) => self.infer_type_using_interface(span, inferred, param, arg)?,
+                Type::TypeLit(..) => return self.infer_type_using_interface(span, inferred, param, arg),
                 _ => {}
             },
 
@@ -611,7 +613,7 @@ impl Analyzer<'_, '_> {
             },
 
             Type::TypeLit(param) => match arg {
-                Type::TypeLit(arg) => return self.infer_type_lit(span, inferred, param, arg),
+                Type::TypeLit(arg) => return self.infer_type_using_type_lit_and_type_lit(span, inferred, param, arg),
 
                 Type::IndexedAccessType(arg_iat) => {
                     let arg_obj_ty = self
@@ -946,9 +948,9 @@ impl Analyzer<'_, '_> {
 
         slog::error!(
             self.logger,
-            "infer_arg_type: unimplemented\nparam  = {:#?}\narg = {:#?}",
-            param,
-            arg,
+            "infer_arg_type: unimplemented\nparam  = {}\narg = {}",
+            dump_type_as_string(&self.cm, param),
+            dump_type_as_string(&self.cm, arg),
         );
         Ok(())
     }

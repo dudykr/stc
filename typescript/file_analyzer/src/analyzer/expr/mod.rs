@@ -1,5 +1,4 @@
 use super::{marks::MarkExt, Analyzer};
-use crate::analyzer::util::ResultExt;
 use crate::util::type_ext::TypeVecExt;
 use crate::util::RemoveTypes;
 use crate::{
@@ -37,13 +36,13 @@ use stc_ts_ast_rnode::RSeqExpr;
 use stc_ts_ast_rnode::RStr;
 use stc_ts_ast_rnode::RThisExpr;
 use stc_ts_ast_rnode::RTsEntityName;
+use stc_ts_ast_rnode::RTsEnumMemberId;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_ast_rnode::RTsNonNullExpr;
 use stc_ts_ast_rnode::RTsThisType;
 use stc_ts_ast_rnode::RUnaryExpr;
-use stc_ts_ast_rnode::RUpdateExpr;
 use stc_ts_errors::debug::print_backtrace;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
@@ -71,6 +70,7 @@ mod object;
 mod optional_chaining;
 mod type_cast;
 mod unary;
+mod update;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum IdCtx {
@@ -366,7 +366,7 @@ impl Analyzer<'_, '_> {
 
             let rhs_ty = match e.right.validate_with_args(analyzer, (mode, None, type_ann)) {
                 Ok(rhs_ty) => {
-                    analyzer.check_rvalue(&rhs_ty);
+                    analyzer.check_rvalue(span, &rhs_ty);
 
                     Ok(rhs_ty)
                 }
@@ -405,44 +405,6 @@ impl Analyzer<'_, '_> {
 
             Ok(rhs_ty)
         })
-    }
-}
-
-#[validator]
-impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RUpdateExpr) -> ValidationResult {
-        let span = e.span;
-
-        let ty = e
-            .arg
-            .validate_with_args(self, (TypeOfMode::LValue, None, None))
-            .and_then(|ty| match *ty.normalize() {
-                Type::Keyword(RTsKeywordType {
-                    kind: TsKeywordTypeKind::TsStringKeyword,
-                    ..
-                })
-                | Type::Lit(RTsLitType {
-                    lit: RTsLit::Str(..), ..
-                })
-                | Type::Array(..) => Err(box Error::TS2356 { span: e.arg.span() }),
-
-                _ => Ok(ty),
-            })
-            .report(&mut self.storage);
-
-        if let Some(ty) = ty {
-            if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) {
-                self.storage.report(box Error::UpdateOpToSymbol {
-                    span: e.arg.span(),
-                    op: e.op,
-                })
-            }
-        }
-
-        Ok(box Type::Keyword(RTsKeywordType {
-            kind: TsKeywordTypeKind::TsNumberKeyword,
-            span,
-        }))
     }
 }
 
@@ -899,6 +861,17 @@ impl Analyzer<'_, '_> {
 
                 match prop {
                     Key::Normal { sym, .. } => {
+                        let has_such_member = e.members.iter().any(|m| match &m.id {
+                            RTsEnumMemberId::Ident(i) => i.sym == *sym,
+                            RTsEnumMemberId::Str(s) => s.value == *sym,
+                        });
+                        if !has_such_member {
+                            return Err(box Error::NoSuchEnumVariant {
+                                span,
+                                name: sym.clone(),
+                            });
+                        }
+
                         // Computed values are not permitted in an enum with string valued members.
                         if e.is_const && type_mode == TypeOfMode::RValue {
                             // for m in &e.members {
@@ -927,9 +900,8 @@ impl Analyzer<'_, '_> {
                             // prop.span() });
                         }
 
-                        if e.is_const && type_mode == TypeOfMode::LValue {
-                            dbg!();
-                            return Err(box Error::InvalidLValue { span: prop.span() });
+                        if type_mode == TypeOfMode::LValue {
+                            return Err(box Error::EnumCannotBeLValue { span: prop.span() });
                         }
 
                         debug_assert_ne!(span, prop.span());
@@ -973,10 +945,16 @@ impl Analyzer<'_, '_> {
                         if e.is_const {
                             return Err(box Error::ConstEnumNonIndexAccess { span: prop.span() });
                         }
-                        return Err(box Error::Unimplemented {
-                            span,
-                            msg: format!("access_property\nProp: {:?}", prop),
-                        });
+
+                        // TODO: Validate type of enum
+
+                        // enumBasics.ts says
+                        //
+                        // Reverse mapping of enum returns string name of property
+                        return Ok(box Type::Keyword(RTsKeywordType {
+                            span: prop.span(),
+                            kind: TsKeywordTypeKind::TsStringKeyword,
+                        }));
                     }
                 }
             }
@@ -1584,16 +1562,62 @@ impl Analyzer<'_, '_> {
         type_args: Option<&TypeParamInstantiation>,
     ) -> ValidationResult {
         let span = i.span();
-        let id = i.into();
+        let id: Id = i.into();
+        let name = i.into();
 
+        let mut modules = vec![];
         let mut ty = self.type_of_raw_var(i, type_mode, type_args)?;
+        let mut need_intersection = true;
 
-        let type_facts = self.scope.get_type_facts(&id)
+        // TODO: Change return type of type_of_raw_var to Option and inject module from
+        // here.
+        match ty.normalize() {
+            Type::Module(..) => {
+                need_intersection = false;
+            }
+            Type::Intersection(i) => {
+                for ty in &i.types {
+                    match ty.normalize() {
+                        Type::Module(..) => {
+                            need_intersection = false;
+                            break;
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            _ => {}
+        }
+
+        if self.ctx.allow_module_var && need_intersection {
+            if let Some(types) = self.find_type(self.ctx.module_id, &id)? {
+                for ty in types {
+                    debug_assert!(ty.is_clone_cheap());
+
+                    match ty.normalize() {
+                        Type::Module(..) => modules.push(box ty.clone().into_owned()),
+                        Type::Intersection(intersection) => {
+                            for ty in &intersection.types {
+                                debug_assert!(ty.is_clone_cheap());
+
+                                match ty.normalize() {
+                                    Type::Module(..) => modules.push(ty.clone()),
+                                    _ => {}
+                                }
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+            }
+        }
+
+        let type_facts = self.scope.get_type_facts(&name)
             | self
                 .cur_facts
                 .true_facts
                 .facts
-                .get(&id)
+                .get(&name)
                 .copied()
                 .unwrap_or(TypeFacts::None);
 
@@ -1617,11 +1641,20 @@ impl Analyzer<'_, '_> {
             let mut s = Some(&self.scope);
 
             while let Some(scope) = s {
-                exclude_types(&mut ty, scope.facts.excludes.get(&id));
+                exclude_types(&mut ty, scope.facts.excludes.get(&name));
                 s = scope.parent();
             }
 
-            exclude_types(&mut ty, self.cur_facts.true_facts.excludes.get(&id));
+            exclude_types(&mut ty, self.cur_facts.true_facts.excludes.get(&name));
+        }
+
+        if !modules.is_empty() {
+            modules.push(ty);
+            ty = box Type::Intersection(Intersection {
+                span: i.span,
+                types: modules,
+            });
+            ty.make_cheap();
         }
 
         slog::debug!(self.logger, "{:?} = Type: {:?}", id, ty);
@@ -1910,9 +1943,13 @@ impl Analyzer<'_, '_> {
         } = *expr;
 
         let mut errors = Errors::default();
+        let ctx = Ctx {
+            allow_module_var: true,
+            ..self.ctx
+        };
         let obj_ty = match *obj {
             RExprOrSuper::Expr(ref obj) => {
-                let obj_ty = match obj.validate_with_default(self) {
+                let obj_ty = match obj.validate_with_default(&mut *self.with_ctx(ctx)) {
                     Ok(ty) => ty,
                     Err(err) => {
                         // Recover error if possible.

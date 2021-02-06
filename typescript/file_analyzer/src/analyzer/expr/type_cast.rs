@@ -8,7 +8,9 @@ use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_ast_rnode::RTsType;
 use stc_ts_ast_rnode::RTsTypeAssertion;
 use stc_ts_errors::Error;
+use stc_ts_types::TypeElement;
 use stc_ts_types::TypeParamInstantiation;
+use std::borrow::Cow;
 use swc_common::TypeEq;
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -164,14 +166,14 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        if self.has_overlap(&orig, &casted)? {
+        if self.castable(span, &orig, &casted)? {
             return Ok(());
         }
 
         Err(box Error::NonOverlappingTypeCast { span })
     }
 
-    pub(crate) fn has_overlap(&mut self, l: &Type, r: &Type) -> ValidationResult<bool> {
+    pub(crate) fn has_overlap(&mut self, span: Span, l: &Type, r: &Type) -> ValidationResult<bool> {
         let l = l.normalize();
         let r = r.normalize();
 
@@ -179,19 +181,126 @@ impl Analyzer<'_, '_> {
             return Ok(true);
         }
 
-        Ok(self.check_for_overlap(l, r)? || self.check_for_overlap(r, l)?)
+        Ok(self.castable(span, l, r)? || self.castable(span, r, l)?)
     }
+    /// # Parameters
+    ///
+    /// - `l`: from
+    /// - `r`: to
 
-    fn check_for_overlap(&mut self, l: &Type, r: &Type) -> ValidationResult<bool> {
+    pub(crate) fn castable(&mut self, span: Span, from: &Type, to: &Type) -> ValidationResult<bool> {
+        let from = from.normalize();
+        let to = to.normalize();
+
         // Overlaps with all types.
-        if l.is_any() || l.is_kwd(TsKeywordTypeKind::TsNullKeyword) || l.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
+        if from.is_any()
+            || from.is_kwd(TsKeywordTypeKind::TsNullKeyword)
+            || from.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
+        {
             return Ok(true);
         }
 
-        match l {
+        match (from, to) {
+            (
+                Type::Lit(RTsLitType {
+                    lit: RTsLit::Number(..),
+                    ..
+                }),
+                Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsNumberKeyword,
+                    ..
+                }),
+            ) => return Ok(true),
+            (
+                Type::Lit(RTsLitType {
+                    lit: RTsLit::Str(..), ..
+                }),
+                Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsStringKeyword,
+                    ..
+                }),
+            ) => return Ok(true),
+            (
+                Type::Lit(RTsLitType {
+                    lit: RTsLit::Bool(..), ..
+                }),
+                Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsBooleanKeyword,
+                    ..
+                }),
+            ) => return Ok(true),
+            (
+                Type::Lit(RTsLitType {
+                    lit: RTsLit::BigInt(..),
+                    ..
+                }),
+                Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsBigIntKeyword,
+                    ..
+                }),
+            ) => return Ok(true),
+            _ => {}
+        }
+
+        // TODO: More check
+        if from.is_function() && to.is_function() {
+            return Ok(false);
+        }
+
+        if from.is_num() {
+            if self.can_be_casted_to_number_in_rhs(span, &to) {
+                return Ok(true);
+            }
+        }
+
+        match (from, to) {
+            (Type::Ref(_), _) => {
+                let from = self.expand_top_ref(span, Cow::Borrowed(from))?;
+                return self.castable(span, &from, to);
+            }
+            (_, Type::Ref(_)) => {
+                let to = self.expand_top_ref(span, Cow::Borrowed(to))?;
+                return self.castable(span, from, &to);
+            }
+
+            (Type::TypeLit(lt), Type::TypeLit(rt)) => {
+                // It's an error if type of the parameter of index signature is same but type
+                // annotation is different.
+                for lm in &lt.members {
+                    for rm in &rt.members {
+                        match (lm, rm) {
+                            (TypeElement::Index(lm), TypeElement::Index(rm)) => {
+                                if lm.params.type_eq(&rm.params) {
+                                    if let Some(lt) = &lm.type_ann {
+                                        if let Some(rt) = &rm.type_ann {
+                                            if self.assign(&lt, &rt, span).is_err()
+                                                && self.assign(&rt, &lt, span).is_err()
+                                            {
+                                                return Ok(false);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            _ => {}
+                        }
+                    }
+                }
+            }
+
+            _ => {}
+        }
+
+        // TODO: This is wrong
+        if from.is_type_lit() && to.is_type_lit() {
+            return Ok(true);
+        }
+
+        match from {
             Type::Union(l) => {
                 for l in &l.types {
-                    if self.has_overlap(l, r)? {
+                    if self.castable(span, l, to)? {
                         return Ok(true);
                     }
                 }
@@ -199,46 +308,31 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        match (l, r) {
-            (
-                Type::Keyword(RTsKeywordType {
-                    kind: TsKeywordTypeKind::TsNumberKeyword,
-                    ..
-                }),
-                Type::Lit(RTsLitType {
-                    lit: RTsLit::Number(..),
-                    ..
-                }),
-            ) => return Ok(true),
-            (
-                Type::Keyword(RTsKeywordType {
-                    kind: TsKeywordTypeKind::TsStringKeyword,
-                    ..
-                }),
-                Type::Lit(RTsLitType {
-                    lit: RTsLit::Str(..), ..
-                }),
-            ) => return Ok(true),
-            (
-                Type::Keyword(RTsKeywordType {
-                    kind: TsKeywordTypeKind::TsBooleanKeyword,
-                    ..
-                }),
-                Type::Lit(RTsLitType {
-                    lit: RTsLit::Bool(..), ..
-                }),
-            ) => return Ok(true),
-            (
-                Type::Keyword(RTsKeywordType {
-                    kind: TsKeywordTypeKind::TsBigIntKeyword,
-                    ..
-                }),
-                Type::Lit(RTsLitType {
-                    lit: RTsLit::BigInt(..),
-                    ..
-                }),
-            ) => return Ok(true),
+        match to {
+            Type::Union(to) => {
+                for to in &to.types {
+                    if self.castable(span, from, &to)? {
+                        return Ok(true);
+                    }
+                }
+            }
+
+            Type::Intersection(to) => {
+                for to in &to.types {
+                    if self.castable(span, from, &to)? {
+                        return Ok(true);
+                    }
+                }
+            }
             _ => {}
+        }
+
+        // class A {}
+        // class B extends A {}
+        //
+        // We can cast A to B, thus from = A, to = B.
+        if let Ok(()) = self.assign(from, to, span) {
+            return Ok(true);
         }
 
         Ok(false)
