@@ -30,10 +30,31 @@ impl Analyzer<'_, '_> {
         match r {
             // var fnr2: () => any = fnReturn2();
             Type::Function(Function {
+                type_params: r_type_params,
                 params: r_params,
-                ret_ty: right_ret_ty,
+                ret_ty: r_ret_ty,
                 ..
             }) => {
+                {
+                    let lc = l.type_params.as_ref().map(|v| v.params.len()).unwrap_or(0);
+                    let rc = r_type_params.as_ref().map(|v| v.params.len()).unwrap_or(0);
+                    // TODO: Exclude type parameters with default.
+                    if lc != rc {
+                        return Err(box Error::TypeParameterCountMismatch {
+                            span,
+                            min: lc,
+                            max: lc,
+                            actual: rc,
+                        });
+                    }
+                }
+                match (&l.type_params, r_type_params) {
+                    (Some(l), Some(r)) => {
+                        //
+                    }
+                    _ => {}
+                }
+
                 // () => void
                 //
                 // is assignable to
@@ -47,7 +68,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 // TODO: Verify type parameters.
-                self.assign_inner(&l.ret_ty, right_ret_ty, opts)
+                self.assign_inner(&l.ret_ty, r_ret_ty, opts)
                     .context("tried to assign the return type of a function to the return type of another function")?;
 
                 return Ok(());
