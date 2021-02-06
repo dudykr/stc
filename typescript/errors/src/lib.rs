@@ -626,6 +626,32 @@ pub enum Error {
     DebugContext(DebugContext),
 }
 
+impl Error {
+    pub fn map<F>(self, op: F) -> Self
+    where
+        F: FnOnce(Self) -> Self,
+    {
+        match self {
+            Error::DebugContext(c) => {
+                let c = c.map(op);
+                Error::DebugContext(c)
+            }
+            _ => op(self),
+        }
+    }
+}
+
+impl DebugContext {
+    fn map<F>(self, op: F) -> Self
+    where
+        F: FnOnce(Error) -> Error,
+    {
+        let inner = box self.inner.map(op);
+
+        Self { inner, ..self }
+    }
+}
+
 #[derive(Clone, PartialEq, Spanned)]
 pub struct DebugContext {
     pub span: Span,
