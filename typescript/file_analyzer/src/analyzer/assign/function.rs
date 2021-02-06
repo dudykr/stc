@@ -34,9 +34,18 @@ impl Analyzer<'_, '_> {
                 ret_ty: right_ret_ty,
                 ..
             }) => {
-                if self.assign_params(opts, &r_params, &l.params).is_err() {
-                    self.assign_params(opts, &l.params, &r_params)
-                        .context("tried to parameters of a function to parameters of another function")?;
+                // () => void
+                //
+                // is assignable to
+                //
+                // (t: unknown, t1: unknown) => void
+                //
+                // So we check for length first.
+                if r_params.len() != 0 {
+                    if self.assign_params(opts, &r_params, &l.params).is_err() {
+                        self.assign_params(opts, &l.params, &r_params)
+                            .context("tried to parameters of a function to parameters of another function")?;
+                    }
                 }
 
                 // TODO: Verify type parameters.
