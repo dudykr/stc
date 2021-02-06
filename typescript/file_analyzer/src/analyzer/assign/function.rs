@@ -10,7 +10,7 @@ use stc_ts_types::Type;
 impl Analyzer<'_, '_> {
     /// ```ts
     /// class Base {}
-    // class Derived extends Base {
+    /// class Derived extends Base {
     ///
     /// }
     ///
