@@ -417,10 +417,15 @@ impl Analyzer<'_, '_> {
                         left: stmt.discriminant.clone(),
                         right: test.clone(),
                     });
-                    match binary_test_expr.validate_with_default(self) {
+                    let ctx = Ctx {
+                        in_cond: true,
+                        ..self.ctx
+                    };
+                    let mut a = self.with_ctx(ctx);
+                    match binary_test_expr.validate_with_default(&mut *a) {
                         Ok(..) => {}
                         Err(err) => {
-                            self.storage.report(err);
+                            a.storage.report(err);
                             errored = true;
                             continue;
                         }
