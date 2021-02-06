@@ -372,7 +372,8 @@ impl Analyzer<'_, '_> {
         for case in &s.cases {
             if let Some(test) = &case.test {
                 let case_ty = test.validate_with_default(self)?;
-                self.assign(&discriminant_ty, &case_ty, test.span())?
+                self.assign(&discriminant_ty, &case_ty, test.span())
+                    .report(&mut self.storage);
             }
         }
 
