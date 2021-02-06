@@ -1,6 +1,7 @@
 use super::AssignOpts;
 use crate::analyzer::Analyzer;
 use crate::ValidationResult;
+use fxhash::FxHashMap;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RPat;
 use stc_ts_errors::DebugExt;
@@ -48,12 +49,25 @@ impl Analyzer<'_, '_> {
                         });
                     }
                 }
-                match (&l.type_params, r_type_params) {
-                    (Some(l), Some(r)) => {
+
+                let new_r;
+                let (r_params, r_ret_ty) = match (&l.type_params, r_type_params) {
+                    (Some(lt), Some(rt)) => {
                         //
+                        let map = lt
+                            .params
+                            .iter()
+                            .zip(rt.params.iter())
+                            .map(|(l, r)| (l.name.clone(), Type::Param(r.clone()).cheap()))
+                            .collect::<FxHashMap<_, _>>();
+                        let r = self
+                            .expand_type_params(&map, box r.clone())
+                            .context("tried to expand type parameters as a step of function assignemnt")?;
+                        new_r = r.function().unwrap();
+                        (&new_r.params, &new_r.ret_ty)
                     }
-                    _ => {}
-                }
+                    _ => (r_params, r_ret_ty),
+                };
 
                 // () => void
                 //
