@@ -64,7 +64,7 @@ impl Analyzer<'_, '_> {
                 // So we check for length first.
                 if r_params.len() != 0 {
                     self.assign_params(opts, &l.params, &r_params)
-                        .context("tried to parameters of a function to parameters of another function")?;
+                        .context("tried to assign parameters of a function to parameters of another function")?;
                 }
 
                 // TODO: Verify type parameters.
