@@ -705,7 +705,16 @@ impl Analyzer<'_, '_> {
             Type::Param(TypeParam {
                 constraint: Some(ref c),
                 ..
-            }) => return self.assign_inner(c, rhs, opts),
+            }) => {
+                return self.assign_inner(
+                    c,
+                    rhs,
+                    AssignOpts {
+                        allow_assignment_to_param: true,
+                        ..opts
+                    },
+                )
+            }
 
             Type::Param(..) if !opts.allow_assignment_to_param => {
                 // We handled equality above.
