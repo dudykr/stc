@@ -34,13 +34,14 @@ impl Analyzer<'_, '_> {
                 ret_ty: right_ret_ty,
                 ..
             }) => {
-                self.assign_params(opts, &r_params, &l.params)
-                    .context("tried to parameters of a function to parameters of another function")?;
+                if self.assign_params(opts, &r_params, &l.params).is_err() {
+                    self.assign_params(opts, &l.params, &r_params)
+                        .context("tried to parameters of a function to parameters of another function")?;
+                }
 
                 // TODO: Verify type parameters.
                 self.assign_inner(&l.ret_ty, right_ret_ty, opts)
                     .context("tried to assign the return type of a function to the return type of another function")?;
-                // TODO: Verify parameter counts
 
                 return Ok(());
             }
