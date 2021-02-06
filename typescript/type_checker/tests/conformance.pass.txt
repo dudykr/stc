@@ -1302,6 +1302,7 @@ parser/ecmascript5/VariableDeclarations/parserVariableDeclaration4.d.ts
 parser/ecmascript5/VariableDeclarations/parserVariableDeclaration7.ts
 parser/ecmascript5/VariableDeclarations/parserVariableDeclaration9.ts
 parser/ecmascript5/parserAdditiveExpression1.ts
+parser/ecmascript5/parserArgumentList1.ts
 parser/ecmascript5/parserDebuggerStatement1.ts
 parser/ecmascript5/parserDebuggerStatement2.ts
 parser/ecmascript5/parserEmptyFile1.ts
@@ -1380,6 +1381,7 @@ statements/continueStatements/whileContinueStatements.ts
 statements/for-inStatements/for-inStatementsArray.ts
 statements/for-ofStatements/ES3For-ofTypeCheck2.ts
 statements/for-ofStatements/ES3For-ofTypeCheck6.ts
+statements/for-ofStatements/ES5For-of1.ts
 statements/for-ofStatements/ES5For-of10.ts
 statements/for-ofStatements/ES5For-of11.ts
 statements/for-ofStatements/ES5For-of13.ts
@@ -1390,9 +1392,12 @@ statements/for-ofStatements/ES5For-of18.ts
 statements/for-ofStatements/ES5For-of19.ts
 statements/for-ofStatements/ES5For-of2.ts
 statements/for-ofStatements/ES5For-of21.ts
+statements/for-ofStatements/ES5For-of22.ts
+statements/for-ofStatements/ES5For-of23.ts
 statements/for-ofStatements/ES5For-of24.ts
 statements/for-ofStatements/ES5For-of25.ts
 statements/for-ofStatements/ES5For-of3.ts
+statements/for-ofStatements/ES5For-of33.ts
 statements/for-ofStatements/ES5For-of4.ts
 statements/for-ofStatements/ES5For-of5.ts
 statements/for-ofStatements/ES5For-of6.ts
@@ -1568,6 +1573,7 @@ types/typeRelationships/assignmentCompatibility/anyAssignableToEveryType2.ts
 types/typeRelationships/assignmentCompatibility/assignmentCompatBetweenTupleAndArray.ts
 types/typeRelationships/assignmentCompatibility/assignmentCompatWithGenericCallSignatures.ts
 types/typeRelationships/assignmentCompatibility/assignmentCompatWithGenericCallSignatures3.ts
+types/typeRelationships/assignmentCompatibility/assignmentCompatWithGenericCallSignatures4.ts
 types/typeRelationships/assignmentCompatibility/assignmentCompatWithObjectMembers3.ts
 types/typeRelationships/assignmentCompatibility/assignmentCompatWithWithGenericConstructSignatures.ts
 types/typeRelationships/assignmentCompatibility/callSignatureAssignabilityInInheritance2.ts
