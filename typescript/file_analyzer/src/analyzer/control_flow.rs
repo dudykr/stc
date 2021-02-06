@@ -1,4 +1,5 @@
 use super::util::ResultExt;
+use super::Ctx;
 use super::{
     expr::TypeOfMode,
     marks::MarkExt,
@@ -689,7 +690,13 @@ impl Analyzer<'_, '_> {
             ..
         } = *e;
 
-        test.validate_with_default(self)?;
+        {
+            let ctx = Ctx {
+                in_cond: true,
+                ..self.ctx
+            };
+            test.validate_with_default(&mut *self.with_ctx(ctx))?;
+        }
         let true_facts = self.cur_facts.true_facts.take();
         let false_facts = self.cur_facts.false_facts.take();
         let cons = self.with_child(ScopeKind::Flow, true_facts, |child| {

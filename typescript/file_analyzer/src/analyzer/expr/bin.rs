@@ -164,8 +164,8 @@ impl Analyzer<'_, '_> {
 
                 // Try narrowing type
                 let c = Comparator {
-                    left: (&**left, &lt),
-                    right: (&**right, &rt),
+                    left: (&**left, lt.normalize()),
+                    right: (&**right, rt.normalize()),
                 };
 
                 if !self.has_overlap(span, &lt, &rt)? {
@@ -177,7 +177,7 @@ impl Analyzer<'_, '_> {
                     })
                 }
 
-                match c.take_if_any_matches(|(l, l_ty), (_, r_ty)| match **l_ty {
+                match c.take_if_any_matches(|(l, l_ty), (_, r_ty)| match *l_ty {
                     Type::Keyword(RTsKeywordType {
                         kind: TsKeywordTypeKind::TsUnknownKeyword,
                         ..
@@ -189,15 +189,29 @@ impl Analyzer<'_, '_> {
                 }) {
                     Some((Ok(name), ty)) => {
                         if is_eq {
-                            self.add_deep_type_fact(name.clone(), ty.clone(), false);
+                            self.add_deep_type_fact(name.clone(), box ty.clone(), false);
                         } else {
-                            self.add_deep_type_fact(name.clone(), ty.clone(), true);
+                            self.add_deep_type_fact(name.clone(), box ty.clone(), true);
                         }
                     }
                     _ => {}
                 }
 
-                // TODO: Make a cond fact for comparisons with literal.
+                match c.take_if_any_matches(|(l, _), (_, r_ty)| match (l, r_ty) {
+                    (RExpr::Ident(l), Type::Lit(..)) => Some((l, r_ty)),
+                    _ => return None,
+                }) {
+                    Some((l, r)) => {
+                        if self.ctx.in_cond && is_eq {
+                            let mut r = r.clone();
+                            self.prevent_generalize(&mut r);
+                            self.cur_facts.true_facts.vars.insert(l.into(), box r);
+                        } else {
+                            // TODO: Remove from union
+                        }
+                    }
+                    _ => {}
+                }
             }
 
             op!("instanceof") => {
