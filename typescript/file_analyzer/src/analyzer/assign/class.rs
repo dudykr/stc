@@ -6,6 +6,7 @@ use stc_ts_errors::Error;
 use stc_ts_types::Class;
 use stc_ts_types::ClassMember;
 use stc_ts_types::Type;
+use std::borrow::Cow;
 use swc_common::EqIgnoreSpan;
 use swc_ecma_ast::Accessibility;
 
@@ -16,6 +17,11 @@ impl Analyzer<'_, '_> {
         let r = r.normalize();
 
         match r {
+            Type::Ref(..) => {
+                let r = self.expand_top_ref(opts.span, Cow::Borrowed(r))?;
+                return self.assign_to_class(opts, l, &r);
+            }
+
             Type::Class(r) => {
                 if l.eq_ignore_span(r) {
                     return Ok(());
