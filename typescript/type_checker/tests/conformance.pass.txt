@@ -320,6 +320,7 @@ es6/classDeclaration/superCallBeforeThisAccessing8.ts
 es6/classExpressions/classExpressionES61.ts
 es6/classExpressions/classExpressionES62.ts
 es6/classExpressions/typeArgumentInferenceWithClassExpression1.ts
+es6/classExpressions/typeArgumentInferenceWithClassExpression2.ts
 es6/classExpressions/typeArgumentInferenceWithClassExpression3.ts
 es6/computedProperties/computedPropertyNames10_ES5.ts
 es6/computedProperties/computedPropertyNames10_ES6.ts
