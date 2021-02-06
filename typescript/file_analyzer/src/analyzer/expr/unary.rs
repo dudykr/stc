@@ -33,15 +33,7 @@ impl Analyzer<'_, '_> {
             // `delete foo` returns bool
 
             match &**arg {
-                RExpr::Member(ref e) => {
-                    self.type_of_member_expr(e, TypeOfMode::LValue)
-                        .report(&mut self.storage);
-
-                    return Ok(box Type::Keyword(RTsKeywordType {
-                        span,
-                        kind: TsKeywordTypeKind::TsBooleanKeyword,
-                    }));
-                }
+                RExpr::Member(..) => {}
 
                 RExpr::Await(arg) => {
                     self.storage.report(box Error::InvalidDeleteOperand { span: arg.span });
