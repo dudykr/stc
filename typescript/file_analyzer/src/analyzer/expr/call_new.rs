@@ -1275,8 +1275,18 @@ impl Analyzer<'_, '_> {
 
             let inferred = self.infer_arg_types(span, type_args, type_params, &params, &spread_arg_types, None)?;
 
+            let expanded_param_types = params
+                .into_iter()
+                .cloned()
+                .map(|v| -> ValidationResult<_> {
+                    let ty = self.expand_type_params(&inferred, v.ty)?;
+
+                    Ok(FnParam { ty, ..v })
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+
             let mut new_args = vec![];
-            for (idx, (arg, param)) in args.into_iter().zip(params.iter()).enumerate() {
+            for (idx, (arg, param)) in args.into_iter().zip(expanded_param_types.iter()).enumerate() {
                 let arg_ty = &arg_types[idx];
                 let (type_param_decl, actual_params) = match &*param.ty {
                     Type::Function(f) => (&f.type_params, &f.params),
@@ -1387,16 +1397,6 @@ impl Analyzer<'_, '_> {
                 ..self.ctx
             };
             let ret_ty = self.with_ctx(ctx).expand(span, ret_ty)?;
-
-            let expanded_param_types = params
-                .into_iter()
-                .cloned()
-                .map(|v| -> ValidationResult<_> {
-                    let ty = self.expand_type_params(&inferred, v.ty)?;
-
-                    Ok(FnParam { ty, ..v })
-                })
-                .collect::<Result<Vec<_>, _>>()?;
 
             self.validate_arg_types(&expanded_param_types, &spread_arg_types);
 
