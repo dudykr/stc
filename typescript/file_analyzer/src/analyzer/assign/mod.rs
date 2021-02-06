@@ -1010,7 +1010,7 @@ impl Analyzer<'_, '_> {
                         ..
                     }) => {
                         self.assign_params(opts, &l_params, &r_params)
-                            .context("tried to return parameters of a function to parameters of another function")?;
+                            .context("tried to parameters of a function to parameters of another function")?;
 
                         // TODO: Verify type parameters.
                         self.assign_inner(left_ret_ty, right_ret_ty, opts).context(
