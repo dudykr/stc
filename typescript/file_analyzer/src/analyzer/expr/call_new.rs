@@ -1462,7 +1462,7 @@ impl Analyzer<'_, '_> {
                         match &*arg.ty {
                             Type::Array(arg) => {
                                 // We should change type if the parameter is a rest parameter.
-                                if let Ok(()) = self.assign(&param, &arg.elem_type, arg.span()) {
+                                if let Ok(()) = self.assign(&param.ty, &arg.elem_type, arg.span()) {
                                     continue;
                                 }
                             }
