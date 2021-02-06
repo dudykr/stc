@@ -216,12 +216,10 @@ enums/enumConstantMemberWithStringEmitDeclaration.ts
 enums/enumConstantMemberWithTemplateLiterals.ts
 enums/enumConstantMemberWithTemplateLiteralsEmitDeclaration.ts
 enums/enumExportMergingES6.ts
-es2017/useObjectValuesAndEntries1.ts
 es2017/useObjectValuesAndEntries4.ts
 es2017/useSharedArrayBuffer1.ts
 es2017/useSharedArrayBuffer4.ts
 es2017/useSharedArrayBuffer5.ts
-es2018/usePromiseFinally.ts
 es2019/globalThisTypeIndexAccess.ts
 es2020/bigintMissingES2019.ts
 es2020/bigintMissingESNext.ts
@@ -754,7 +752,6 @@ es6/yieldExpressions/generatorTypeCheck41.ts
 es6/yieldExpressions/generatorTypeCheck42.ts
 es6/yieldExpressions/generatorTypeCheck43.ts
 es6/yieldExpressions/generatorTypeCheck44.ts
-es6/yieldExpressions/generatorTypeCheck45.ts
 es6/yieldExpressions/generatorTypeCheck47.ts
 es6/yieldExpressions/generatorTypeCheck49.ts
 es6/yieldExpressions/generatorTypeCheck5.ts
@@ -876,7 +873,6 @@ expressions/conditonalOperator/conditionalOperatorConditoinIsAnyType.ts
 expressions/conditonalOperator/conditionalOperatorConditoinIsStringType.ts
 expressions/conditonalOperator/conditionalOperatorWithIdenticalBCT.ts
 expressions/contextualTyping/arrayLiteralExpressionContextualTyping.ts
-expressions/contextualTyping/functionExpressionContextualTyping1.ts
 expressions/contextualTyping/functionExpressionContextualTyping3.ts
 expressions/contextualTyping/iterableContextualTyping1.ts
 expressions/contextualTyping/superCallParameterContextualTyping1.ts
@@ -884,16 +880,9 @@ expressions/contextualTyping/superCallParameterContextualTyping3.ts
 expressions/elementAccess/letIdentifierInElementAccess01.ts
 expressions/elementAccess/stringEnumInElementAccess01.ts
 expressions/functionCalls/grammarAmbiguities.ts
-expressions/functionCalls/newWithSpread.ts
 expressions/functionCalls/typeArgumentInferenceErrors.ts
 expressions/functionCalls/typeArgumentInferenceTransitiveConstraints.ts
-expressions/functions/arrowFunctionContexts.ts
-expressions/functions/arrowFunctionExpressions.ts
-expressions/functions/contextuallyTypedFunctionExpressionsAndReturnAnnotations.ts
-expressions/functions/contextuallyTypedIife.ts
-expressions/functions/contextuallyTypedIifeStrict.ts
 expressions/functions/typeOfThisInFunctionExpression.ts
-expressions/functions/voidParamAssignmentCompatibility.ts
 expressions/nullishCoalescingOperator/nullishCoalescingOperator1.ts
 expressions/nullishCoalescingOperator/nullishCoalescingOperator10.ts
 expressions/nullishCoalescingOperator/nullishCoalescingOperator12.ts
@@ -1017,7 +1006,6 @@ interfaces/declarationMerging/mergedInterfacesWithMultipleBases2.ts
 interfaces/declarationMerging/mergedInterfacesWithMultipleBases3.ts
 interfaces/declarationMerging/twoInterfacesDifferentRootModule.ts
 interfaces/declarationMerging/twoInterfacesDifferentRootModule2.ts
-interfaces/declarationMerging/twoMergedInterfacesWithDifferingOverloads.ts
 interfaces/interfaceDeclarations/asiPreventsParsingAsInterface01.ts
 interfaces/interfaceDeclarations/asiPreventsParsingAsInterface02.ts
 interfaces/interfaceDeclarations/asiPreventsParsingAsInterface03.ts
@@ -1217,7 +1205,6 @@ parser/ecmascript5/RegressionTests/parser509546.ts
 parser/ecmascript5/RegressionTests/parser509546_1.ts
 parser/ecmascript5/RegressionTests/parser509546_2.ts
 parser/ecmascript5/RegressionTests/parser509677.ts
-parser/ecmascript5/RegressionTests/parser536727.ts
 parser/ecmascript5/RegressionTests/parser579071.ts
 parser/ecmascript5/RegressionTests/parser596700.ts
 parser/ecmascript5/RegressionTests/parser630933.ts
@@ -1411,12 +1398,10 @@ types/conditional/variance.ts
 types/contextualTypes/commaOperator/contextuallyTypeCommaOperator01.ts
 types/contextualTypes/logicalAnd/contextuallyTypeLogicalAnd01.ts
 types/contextualTypes/methodDeclarations/contextuallyTypedObjectLiteralMethodDeclaration01.ts
-types/contextualTypes/partiallyAnnotatedFunction/partiallyAnnotatedFunctionInferenceWithTypeParameter.ts
 types/contextualTypes/partiallyAnnotatedFunction/partiallyAnnotatedFunctionWitoutTypeParameter.ts
 types/intersection/intersectionTypeEquivalence.ts
 types/keyof/keyofAndForIn.ts
 types/keyof/keyofIntersection.ts
-types/literal/literalTypes3.ts
 types/literal/literalTypesAndTypeAssertions.ts
 types/literal/stringLiteralsAssertionsInEqualityComparisons01.ts
 types/literal/stringLiteralsWithEqualityChecks01.ts
@@ -1436,7 +1421,6 @@ types/members/typesWithSpecializedConstructSignatures.ts
 types/namedTypes/classWithOnlyPublicMembersEquivalentToInterface.ts
 types/namedTypes/classWithOnlyPublicMembersEquivalentToInterface2.ts
 types/namedTypes/classWithOptionalParameter.ts
-types/namedTypes/genericInstantiationEquivalentToObjectLiteral.ts
 types/namedTypes/optionalMethods.ts
 types/never/neverUnionIntersection.ts
 types/nonPrimitive/assignObjectToNonPrimitive.ts
@@ -1501,7 +1485,6 @@ types/stringLiteral/stringLiteralTypeAssertion01.ts
 types/stringLiteral/stringLiteralTypesAndParenthesizedExpressions01.ts
 types/stringLiteral/stringLiteralTypesAndTuples01.ts
 types/stringLiteral/stringLiteralTypesAsTypeParameterConstraint01.ts
-types/stringLiteral/stringLiteralTypesAsTypeParameterConstraint02.ts
 types/stringLiteral/stringLiteralTypesInUnionTypes01.ts
 types/stringLiteral/stringLiteralTypesInUnionTypes02.ts
 types/stringLiteral/stringLiteralTypesInUnionTypes03.ts
@@ -1559,9 +1542,7 @@ types/typeParameters/typeParameterLists/typeParametersAvailableInNestedScope2.ts
 types/typeRelationships/assignmentCompatibility/anyAssignableToEveryType.ts
 types/typeRelationships/assignmentCompatibility/anyAssignableToEveryType2.ts
 types/typeRelationships/assignmentCompatibility/assignmentCompatBetweenTupleAndArray.ts
-types/typeRelationships/assignmentCompatibility/assignmentCompatWithGenericCallSignatures.ts
 types/typeRelationships/assignmentCompatibility/assignmentCompatWithGenericCallSignatures3.ts
-types/typeRelationships/assignmentCompatibility/assignmentCompatWithGenericCallSignatures4.ts
 types/typeRelationships/assignmentCompatibility/assignmentCompatWithObjectMembers3.ts
 types/typeRelationships/assignmentCompatibility/assignmentCompatWithWithGenericConstructSignatures.ts
 types/typeRelationships/assignmentCompatibility/callSignatureAssignabilityInInheritance2.ts
