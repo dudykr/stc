@@ -373,6 +373,18 @@ impl Analyzer<'_, '_> {
             if let Some(test) = &case.test {
                 let case_ty = test.validate_with_default(self)?;
                 self.assign(&discriminant_ty, &case_ty, test.span())
+                    .context("tried to assign the discriminant of switch to the test of a case")
+                    .map_err(|err| {
+                        box err.map(|err| match err {
+                            Error::InvalidLValue { span } => Error::AssignFailed {
+                                span: test.span(),
+                                left: case_ty.clone(),
+                                right: discriminant_ty.clone(),
+                                cause: vec![],
+                            },
+                            _ => err,
+                        })
+                    })
                     .report(&mut self.storage);
             }
         }
