@@ -784,6 +784,8 @@ impl Error {
 
             Error::EnumCannotBeLValue { .. } => 2540,
 
+            Error::NoSuchEnumVariant { .. } => 2339,
+
             _ => 0,
         }
     }
