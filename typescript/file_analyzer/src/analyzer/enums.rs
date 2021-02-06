@@ -13,14 +13,25 @@ use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RLit;
 use stc_ts_ast_rnode::RNumber;
+use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RStr;
 use stc_ts_ast_rnode::RTsEnumDecl;
+use stc_ts_ast_rnode::RTsEnumMember;
 use stc_ts_ast_rnode::RTsEnumMemberId;
+use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_errors::Error;
+use stc_ts_types::EnumVariant;
+use stc_ts_types::FnParam;
 use stc_ts_types::Id;
+use stc_ts_types::IndexSignature;
+use stc_ts_types::Key;
+use stc_ts_types::PropertySignature;
+use stc_ts_types::TypeElement;
+use stc_ts_types::TypeLit;
 use swc_atoms::JsWord;
+use swc_common::DUMMY_SP;
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::*;
 
@@ -90,16 +101,24 @@ impl Analyzer<'_, '_> {
                 })
                 .collect::<Result<Vec<_>, _>>()?;
 
+            let has_str = members.iter().any(|m| match *m.val {
+                RExpr::Lit(RLit::Str(..)) => true,
+                _ => false,
+            });
+
+            if has_str {
+                for m in &e.members {
+                    self.validate_member_of_str_enum(m);
+                }
+            }
+
             Enum {
                 span: e.span,
                 has_num: members.iter().any(|m| match *m.val {
                     RExpr::Lit(RLit::Num(..)) => true,
                     _ => false,
                 }),
-                has_str: members.iter().any(|m| match *m.val {
-                    RExpr::Lit(RLit::Str(..)) => true,
-                    _ => false,
-                }),
+                has_str,
                 declare: e.declare,
                 is_const: e.is_const,
                 id: e.id.clone(),
@@ -280,11 +299,115 @@ fn compute(
 }
 
 impl Analyzer<'_, '_> {
+    /// `enumBasics.ts` says
+    ///
+    /// > Enum object type is anonymous with properties of the enum type and
+    /// numeric indexer.
+    ///
+    /// and following is valid.
+    ///
+    /// ```ts
+    /// var e = E1;
+    /// var e: {
+    ///     readonly A: E1.A;
+    ///     readonly B: E1.B;
+    ///     readonly C: E1.C;
+    ///     readonly [n: number]: string;
+    /// };
+    /// var e: typeof E1;
+    /// ```
+    pub(super) fn enum_to_type_lit(&mut self, e: &Enum) -> ValidationResult<TypeLit> {
+        let mut members = vec![];
+
+        for m in &e.members {
+            let key = match &m.id {
+                RTsEnumMemberId::Ident(i) => i.clone(),
+                RTsEnumMemberId::Str(s) => RIdent::new(s.value.clone(), s.span),
+            };
+
+            members.push(TypeElement::Property(PropertySignature {
+                span: m.span,
+                key: Key::Normal {
+                    span: key.span,
+                    sym: key.sym.clone(),
+                },
+                optional: false,
+                params: Default::default(),
+                readonly: true,
+                type_params: Default::default(),
+                type_ann: Some(box Type::EnumVariant(EnumVariant {
+                    span: m.span,
+                    // TODO: Store context in `Enum`
+                    ctxt: self.ctx.module_id,
+                    enum_name: e.id.clone().into(),
+                    name: key.sym,
+                })),
+            }))
+        }
+        {
+            let param = FnParam {
+                span: DUMMY_SP,
+                pat: RPat::Ident(RIdent::new("n".into(), DUMMY_SP)),
+                required: true,
+                ty: box Type::Keyword(RTsKeywordType {
+                    span: DUMMY_SP,
+                    kind: TsKeywordTypeKind::TsNumberKeyword,
+                }),
+            };
+            members.push(TypeElement::Index(IndexSignature {
+                span: e.span,
+                readonly: false,
+                params: vec![param],
+                type_ann: Some(box Type::Keyword(RTsKeywordType {
+                    span: DUMMY_SP,
+                    kind: TsKeywordTypeKind::TsStringKeyword,
+                })),
+            }));
+        }
+
+        Ok(TypeLit { span: e.span, members })
+    }
+
     // Check for constant enum in rvalue.
-    pub(super) fn check_rvalue(&mut self, rhs_ty: &Type) {
+    pub(super) fn check_rvalue(&mut self, span: Span, rhs_ty: &Type) {
         match *rhs_ty.normalize() {
             Type::Enum(ref e) if e.is_const => {
-                self.storage.report(box Error::ConstEnumUsedAsVar { span: e.span() });
+                self.storage.report(box Error::InvalidUseOfConstEnum { span });
+            }
+            _ => {}
+        }
+    }
+
+    fn validate_member_of_str_enum(&mut self, m: &RTsEnumMember) {
+        fn type_of_expr(e: &RExpr) -> Option<swc_ecma_utils::Type> {
+            Some(match e {
+                RExpr::Tpl(..) | RExpr::Lit(RLit::Str(..)) => swc_ecma_utils::Type::Str,
+                RExpr::Lit(RLit::Num(..)) => swc_ecma_utils::Type::Num,
+                RExpr::Bin(RBinExpr {
+                    op: op!(bin, "+"),
+                    left,
+                    right,
+                    ..
+                }) => {
+                    let lt = type_of_expr(&left)?;
+                    let rt = type_of_expr(&right)?;
+                    if lt == rt && lt == swc_ecma_utils::Type::Str {
+                        return Some(lt);
+                    }
+
+                    return None;
+                }
+                _ => return None,
+            })
+        }
+
+        match m.init.as_deref() {
+            Some(RExpr::Ident(..)) => {}
+            Some(e) => {
+                if type_of_expr(&e).is_none() {
+                    self.storage
+                        .report(box Error::ComputedMemberInEnumWithStrMember { span: m.span })
+                }
             }
             _ => {}
         }

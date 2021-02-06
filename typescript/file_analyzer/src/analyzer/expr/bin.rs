@@ -2,6 +2,7 @@ use super::super::{
     util::{Comparator, ResultExt},
     Analyzer,
 };
+use crate::analyzer::assign::AssignOpts;
 use crate::{
     analyzer::{Ctx, ScopeKind},
     ty::{Operator, Type, TypeExt},
@@ -13,17 +14,25 @@ use crate::{
 };
 use stc_ts_ast_rnode::RBinExpr;
 use stc_ts_ast_rnode::RExpr;
+use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RLit;
 use stc_ts_ast_rnode::RStr;
+use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_ast_rnode::RUnaryExpr;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
+use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::name::Name;
+use stc_ts_types::ModuleId;
+use stc_ts_types::Ref;
+use stc_ts_types::TypeElement;
+use std::borrow::Cow;
 use std::convert::TryFrom;
-use swc_common::EqIgnoreSpan;
+use swc_atoms::js_word;
+use swc_common::SyntaxContext;
 use swc_common::TypeEq;
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::*;
@@ -157,6 +166,15 @@ impl Analyzer<'_, '_> {
                     right: (&**right, &rt),
                 };
 
+                if !self.has_overlap(span, &lt, &rt)? {
+                    self.storage.report(box Error::NoOverlap {
+                        span,
+                        value: true,
+                        left: lt.span(),
+                        right: rt.span(),
+                    })
+                }
+
                 match c.take_if_any_matches(|(l, l_ty), (_, r_ty)| match **l_ty {
                     Type::Keyword(RTsKeywordType {
                         kind: TsKeywordTypeKind::TsUnknownKeyword,
@@ -182,7 +200,7 @@ impl Analyzer<'_, '_> {
                 match **left {
                     RExpr::Ident(ref i) => {
                         //
-                        let ty = self.make_instance_or_report(&rt);
+                        let ty = self.validate_rhs_of_instanceof(span, rt.clone());
 
                         self.cur_facts.true_facts.vars.insert(Name::from(i), ty);
                     }
@@ -232,31 +250,11 @@ impl Analyzer<'_, '_> {
                     return Err(box Error::Unknown { span });
                 }
 
-                match *lt {
-                    Type::Keyword(RTsKeywordType {
+                if lt.is_num() && rt.is_num() {
+                    return Ok(box Type::Keyword(RTsKeywordType {
+                        span,
                         kind: TsKeywordTypeKind::TsNumberKeyword,
-                        ..
-                    })
-                    | Type::Lit(RTsLitType {
-                        lit: RTsLit::Number(..),
-                        ..
-                    }) => match *rt {
-                        Type::Keyword(RTsKeywordType {
-                            kind: TsKeywordTypeKind::TsNumberKeyword,
-                            ..
-                        })
-                        | Type::Lit(RTsLitType {
-                            lit: RTsLit::Number(..),
-                            ..
-                        }) => {
-                            return Ok(box Type::Keyword(RTsKeywordType {
-                                span,
-                                kind: TsKeywordTypeKind::TsStringKeyword,
-                            }));
-                        }
-                        _ => {}
-                    },
-                    _ => {}
+                    }));
                 }
 
                 if let Some(()) = c.take_if_any_matches(|(_, lt), (_, _)| match **lt {
@@ -316,33 +314,26 @@ impl Analyzer<'_, '_> {
                     return Err(box Error::TS2365 { span });
                 }
 
-                if let Some(()) = c.take_if_any_matches(|(_, lt), (_, rt)| match lt.normalize() {
-                    Type::Keyword(RTsKeywordType {
-                        kind: TsKeywordTypeKind::TsBooleanKeyword,
-                        ..
-                    }) => match rt.normalize() {
-                        Type::Keyword(RTsKeywordType {
-                            kind: TsKeywordTypeKind::TsNumberKeyword,
-                            ..
-                        }) => Some(()),
-                        _ => None,
-                    },
-                    _ => None,
-                }) {
-                    return Ok(box Type::Keyword(RTsKeywordType {
-                        span,
-                        kind: TsKeywordTypeKind::TsBooleanKeyword,
-                    }));
-                }
-
                 if is_str_or_union(&lt) || is_str_or_union(&rt) {
                     return Ok(box Type::Keyword(RTsKeywordType {
                         span,
                         kind: TsKeywordTypeKind::TsStringKeyword,
                     }));
                 }
+                // At this point rhs cannot be string.
+                //
+                // Known numeric operations are all handled above
 
-                unimplemented!("type_of_bin(+)\nLeft: {:#?}\nRight: {:#?}", lt, rt)
+                if self.can_be_casted_to_number_in_rhs(lt.span(), &lt)
+                    && self.can_be_casted_to_number_in_rhs(rt.span(), &rt)
+                {
+                    return Ok(box Type::Keyword(RTsKeywordType {
+                        span,
+                        kind: TsKeywordTypeKind::TsNumberKeyword,
+                    }));
+                }
+
+                return Err(box Error::InvalidBinaryOp { span, op });
             }
             op!("*") | op!("/") => {
                 no_unknown!();
@@ -378,28 +369,10 @@ impl Analyzer<'_, '_> {
             }
 
             op!("instanceof") => {
-                if match lt.normalize() {
-                    ty if ty.is_any() || ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword) => false,
-                    Type::This(..) | Type::Param(..) | Type::Ref(..) => false,
-                    _ => true,
-                } {
+                if !self.is_valid_lhs_of_instanceof(span, &lt) {
                     self.storage.report(box Error::InvalidLhsInInstanceOf {
                         ty: lt.clone(),
                         span: left.span(),
-                    })
-                }
-
-                // The right-hand side of an 'instanceof' expression must be of type 'any' or of
-                // a type assignable to the 'Function' interface type.ts(2359)
-                if match rt.normalize() {
-                    Type::Param(..) | Type::Infer(..) => true,
-                    ty if ty.is_any() => false,
-                    ty if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) => true,
-                    _ => false,
-                } {
-                    self.storage.report(box Error::InvalidRhsInInstanceOf {
-                        span: right.span(),
-                        ty: rt.clone(),
                     })
                 }
 
@@ -409,9 +382,40 @@ impl Analyzer<'_, '_> {
                 }));
             }
 
-            op!("<=") | op!("<") | op!(">=") | op!(">") | op!("in") => {
+            op!("<=") | op!("<") | op!(">=") | op!(">") => {
                 no_unknown!();
 
+                let mut check_for_invalid_operand = |ty: &Type| match ty.normalize() {
+                    Type::Keyword(RTsKeywordType {
+                        span,
+                        kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                    }) => {
+                        self.storage
+                            .report(box Error::ObjectIsPossiblyUndefined { span: *span });
+                    }
+
+                    Type::Keyword(RTsKeywordType {
+                        span,
+                        kind: TsKeywordTypeKind::TsNullKeyword,
+                    }) => {
+                        self.storage.report(box Error::ObjectIsPossiblyNull { span: *span });
+                    }
+
+                    _ => {}
+                };
+
+                check_for_invalid_operand(&lt);
+                check_for_invalid_operand(&rt);
+
+                self.validate_relative_comparison_operands(span, op, &lt, &rt);
+
+                return Ok(box Type::Keyword(RTsKeywordType {
+                    span,
+                    kind: TsKeywordTypeKind::TsBooleanKeyword,
+                }));
+            }
+
+            op!("in") => {
                 return Ok(box Type::Keyword(RTsKeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
@@ -510,6 +514,281 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
+    #[extra_validator]
+    fn validate_relative_comparison_operands(&mut self, span: Span, op: BinaryOp, l: &Type, r: &Type) {
+        let l = l.normalize();
+        let r = r.normalize();
+
+        match (l, r) {
+            (Type::Ref(..), _) => {
+                if let Ok(l) = self.expand_top_ref(l.span(), Cow::Borrowed(l)) {
+                    return self.validate_relative_comparison_operands(span, op, &l, r);
+                }
+            }
+            (l, Type::Ref(..)) => {
+                if let Ok(r) = self.expand_top_ref(r.span(), Cow::Borrowed(r)) {
+                    return self.validate_relative_comparison_operands(span, op, l, &r);
+                }
+            }
+            (Type::TypeLit(lt), Type::TypeLit(rt)) => {
+                // It's an error if type of the parameter of index signature is same but type
+                // annotation is different.
+                for lm in &lt.members {
+                    for rm in &rt.members {
+                        match (lm, rm) {
+                            (TypeElement::Index(lm), TypeElement::Index(rm)) if lm.params.type_eq(&rm.params) => {
+                                if let Some(lt) = &lm.type_ann {
+                                    if let Some(rt) = &rm.type_ann {
+                                        if self.assign(&lt, &rt, span).is_ok() || self.assign(&rt, &lt, span).is_ok() {
+                                            continue;
+                                        }
+                                    } else {
+                                        continue;
+                                    }
+                                } else {
+                                    continue;
+                                }
+                                //
+                                self.storage.report(box Error::CannotCompareWithOp { span, op });
+                                return;
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+            }
+            _ => {}
+        }
+
+        let l = l.clone().generalize_lit();
+        let r = r.clone().generalize_lit();
+        if self.can_compare_relatively(span, &l, &r)? {
+            return;
+        }
+
+        self.storage.report(box Error::CannotCompareWithOp { span, op });
+    }
+
+    fn can_compare_relatively(&mut self, span: Span, l: &Type, r: &Type) -> ValidationResult<bool> {
+        let l = l.normalize();
+        let r = r.normalize();
+
+        if l.type_eq(r) {
+            return Ok(true);
+        }
+
+        let c = Comparator { left: l, right: r };
+
+        if let Some(v) = c.take_if_any_matches(|l, r| {
+            if l.is_type_param() {
+                // Different type params cannot be compared relatively, although they can
+                // overlap with other types.
+                if r.is_type_param() {
+                    return Some(false);
+                }
+
+                if r.is_kwd(TsKeywordTypeKind::TsBooleanKeyword)
+                    || r.is_kwd(TsKeywordTypeKind::TsNumberKeyword)
+                    || r.is_kwd(TsKeywordTypeKind::TsStringKeyword)
+                    || r.is_kwd(TsKeywordTypeKind::TsVoidKeyword)
+                    || r.is_enum_type()
+                    || r.is_tuple()
+                    || r.is_array()
+                {
+                    return Some(false);
+                }
+
+                if let Type::TypeLit(r) = r {
+                    if r.members.is_empty() {
+                        return Some(true);
+                    }
+
+                    return Some(false);
+                }
+            }
+
+            None
+        }) {
+            return Ok(v);
+        }
+
+        // Basically we depend on assign's behavior, but there's are some corner cases
+        // where it's not enough.
+        match (l, r) {
+            (Type::Class(l), Type::Class(r)) => {
+                if l.super_class.is_none() && r.super_class.is_none() {
+                    if l.body.is_empty() || r.body.is_empty() {
+                        return Ok(false);
+                    }
+                }
+            }
+
+            (Type::TypeLit(lt), Type::TypeLit(rt)) => {
+                if let Ok(Some(v)) = self.can_compare_type_elements_relatively(span, &lt.members, &rt.members) {
+                    return Ok(v);
+                }
+            }
+            _ => {}
+        }
+
+        self.has_overlap(span, &l, &r)
+    }
+
+    /// Returns Ok(Some(v)) if this method has a special rule to handle type
+    /// elements.
+    fn can_compare_type_elements_relatively(
+        &mut self,
+        span: Span,
+        l: &[TypeElement],
+        r: &[TypeElement],
+    ) -> ValidationResult<Option<bool>> {
+        for lm in l {
+            for rm in r {
+                match (lm, rm) {
+                    (TypeElement::Method(lm), TypeElement::Method(rm)) => {
+                        if let Ok(()) = self.assign(&lm.key.ty(), &rm.key.ty(), span) {
+                            if lm.type_params.as_ref().map(|v| v.params.len()).unwrap_or(0)
+                                != rm.type_params.as_ref().map(|v| v.params.len()).unwrap_or(0)
+                            {
+                                return Ok(Some(true));
+                            }
+
+                            let params_res = self.assign_params(
+                                AssignOpts {
+                                    span,
+                                    allow_unknown_rhs: false,
+                                },
+                                &lm.params,
+                                &rm.params,
+                            );
+
+                            if params_res.is_err() {
+                                return Ok(Some(true));
+                            }
+
+                            let ret_ty_res = match (lm.ret_ty.as_deref(), rm.ret_ty.as_deref()) {
+                                (Some(lt), Some(rt)) => self.assign_with_opts(
+                                    AssignOpts {
+                                        span,
+                                        allow_unknown_rhs: true,
+                                    },
+                                    &lt,
+                                    &rt,
+                                ),
+                                _ => Ok(()),
+                            };
+                        }
+                    }
+
+                    _ => {}
+                }
+            }
+        }
+
+        let lk = self.kinds_of_type_elements(l);
+        let rk = self.kinds_of_type_elements(r);
+        if lk != rk {
+            return Ok(Some(false));
+        }
+
+        Ok(None)
+    }
+
+    fn is_valid_lhs_of_instanceof(&mut self, span: Span, ty: &Type) -> bool {
+        let ty = ty.normalize();
+
+        match ty {
+            ty if ty.is_any() || ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword) => true,
+
+            Type::TypeLit(..)
+            | Type::Interface(..)
+            | Type::Class(..)
+            | Type::This(..)
+            | Type::Param(..)
+            | Type::Ref(..) => true,
+
+            Type::Union(ty) => ty.types.iter().any(|ty| self.is_valid_lhs_of_instanceof(span, ty)),
+
+            _ => false,
+        }
+    }
+
+    /// The right operand to be of type Any or a subtype of the 'Function'
+    /// interface type.
+    fn validate_rhs_of_instanceof(&mut self, span: Span, ty: Box<Type>) -> Box<Type> {
+        if ty.is_any() {
+            return ty;
+        }
+
+        // TODO: We should assign this to builtin interface `Function`.
+        match ty.normalize() {
+            // Error
+            Type::Keyword(RTsKeywordType {
+                kind: TsKeywordTypeKind::TsStringKeyword,
+                ..
+            })
+            | Type::Keyword(RTsKeywordType {
+                kind: TsKeywordTypeKind::TsNumberKeyword,
+                ..
+            })
+            | Type::Keyword(RTsKeywordType {
+                kind: TsKeywordTypeKind::TsBooleanKeyword,
+                ..
+            })
+            | Type::Keyword(RTsKeywordType {
+                kind: TsKeywordTypeKind::TsVoidKeyword,
+                ..
+            })
+            | Type::Lit(..)
+            | Type::ClassInstance(..)
+            | Type::Ref(Ref {
+                type_name:
+                    RTsEntityName::Ident(RIdent {
+                        sym: js_word!("Object"),
+                        ..
+                    }),
+                ..
+            }) => {
+                self.storage
+                    .report(box Error::InvalidRhsInInstanceOf { span, ty: ty.clone() });
+            }
+
+            Type::TypeLit(e) if e.members.is_empty() => {
+                self.storage
+                    .report(box Error::InvalidRhsInInstanceOf { span, ty: ty.clone() });
+            }
+
+            // Ok
+            Type::Class(..) => {}
+
+            // Conditionally error.
+            //
+            // Ok if it's assignable to `Function`.
+            Type::TypeLit(..) | Type::Interface(..) => {
+                if let Err(..) = self.assign(
+                    &Type::Ref(Ref {
+                        span,
+                        ctxt: ModuleId::builtin(),
+                        type_name: RTsEntityName::Ident(RIdent::new(
+                            "Function".into(),
+                            span.with_ctxt(SyntaxContext::empty()),
+                        )),
+                        type_args: None,
+                    }),
+                    &ty,
+                    span,
+                ) {
+                    self.storage
+                        .report(box Error::InvalidRhsInInstanceOf { span, ty: ty.clone() });
+                }
+            }
+
+            _ => return self.make_instance_or_report(span, &ty),
+        }
+
+        ty
+    }
+
     fn validate_bin_inner(&mut self, span: Span, op: BinaryOp, lt: Option<&Type>, rt: Option<&Type>) {
         let ls = lt.span();
         let rs = rt.span();
@@ -517,57 +796,6 @@ impl Analyzer<'_, '_> {
         let mut errors = Errors::default();
 
         match op {
-            op!("===") | op!("!==") => {
-                if lt.is_some() && rt.is_some() {
-                    let lt = lt.unwrap();
-                    let rt = rt.unwrap();
-
-                    let has_overlap = lt.eq_ignore_span(&rt) || {
-                        let c = Comparator { left: &lt, right: &rt };
-
-                        // Check if type overlaps.
-                        c.take_if_any_matches(|l, r| {
-                            // Returns Some(()) if r may be assignable to l
-                            match l {
-                                Type::Lit(ref l_lit) => {
-                                    // "foo" === "bar" is always false.
-                                    match r {
-                                        Type::Lit(ref r_lit) => {
-                                            if l_lit.eq_ignore_span(&*r_lit) {
-                                                Some(())
-                                            } else {
-                                                None
-                                            }
-                                        }
-                                        _ => Some(()),
-                                    }
-                                }
-                                Type::Union(ref u) => {
-                                    // Check if u contains r
-                                    for ty in &u.types {
-                                        if (**ty).eq_ignore_span(r) {
-                                            return Some(());
-                                        }
-                                    }
-
-                                    Some(())
-                                }
-                                _ => None,
-                            }
-                        })
-                        .is_some()
-                    };
-
-                    if !has_overlap {
-                        errors.push(box Error::NoOverlap {
-                            span,
-                            value: op != op!("==="),
-                            left: ls,
-                            right: rs,
-                        })
-                    }
-                }
-            }
             op!(bin, "+") => {
                 // Validation is performed in type_of_bin_expr because
                 // validation of types is required to compute type of the
@@ -599,31 +827,36 @@ impl Analyzer<'_, '_> {
                     let lt = lt.unwrap();
                     let rt = rt.unwrap();
 
-                    let mut check = |ty: &Type, is_left| match ty {
-                        Type::Keyword(RTsKeywordType {
-                            kind: TsKeywordTypeKind::TsAnyKeyword,
-                            ..
-                        })
-                        | Type::Keyword(RTsKeywordType {
-                            kind: TsKeywordTypeKind::TsNumberKeyword,
-                            ..
-                        })
-                        | Type::Keyword(RTsKeywordType {
-                            kind: TsKeywordTypeKind::TsBigIntKeyword,
-                            ..
-                        })
-                        | Type::Lit(RTsLitType {
-                            lit: RTsLit::Number(..),
-                            ..
-                        })
-                        | Type::Enum(..)
-                        | Type::EnumVariant(..) => {}
+                    let mut check = |ty: &Type, is_left| {
+                        if ty.is_any() {
+                            return;
+                        }
+                        if self.can_be_casted_to_number_in_rhs(ty.span(), &ty) {
+                            return;
+                        }
 
-                        _ => errors.push(if is_left {
-                            box Error::TS2362 { span: ty.span() }
-                        } else {
-                            box Error::TS2363 { span: ty.span() }
-                        }),
+                        match ty.normalize() {
+                            Type::Keyword(RTsKeywordType {
+                                span,
+                                kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                            }) => {
+                                self.storage
+                                    .report(box Error::ObjectIsPossiblyUndefined { span: *span });
+                            }
+
+                            Type::Keyword(RTsKeywordType {
+                                span,
+                                kind: TsKeywordTypeKind::TsNullKeyword,
+                            }) => {
+                                self.storage.report(box Error::ObjectIsPossiblyNull { span: *span });
+                            }
+
+                            _ => errors.push(if is_left {
+                                box Error::TS2362 { span: ty.span() }
+                            } else {
+                                box Error::TS2363 { span: ty.span() }
+                            }),
+                        }
                     };
 
                     if (op == op!("&") || op == op!("^") || op == op!("|"))
@@ -660,70 +893,48 @@ impl Analyzer<'_, '_> {
                 if lt.is_some() {
                     match lt.unwrap().normalize() {
                         Type::Keyword(RTsKeywordType {
-                            kind: TsKeywordTypeKind::TsAnyKeyword,
+                            kind: TsKeywordTypeKind::TsNullKeyword,
                             ..
-                        })
-                        | Type::Keyword(RTsKeywordType {
-                            kind: TsKeywordTypeKind::TsStringKeyword,
-                            ..
-                        })
-                        | Type::Keyword(RTsKeywordType {
-                            kind: TsKeywordTypeKind::TsNumberKeyword,
-                            ..
-                        })
-                        | Type::Keyword(RTsKeywordType {
-                            kind: TsKeywordTypeKind::TsBigIntKeyword,
-                            ..
-                        })
-                        | Type::Keyword(RTsKeywordType {
-                            kind: TsKeywordTypeKind::TsSymbolKeyword,
-                            ..
-                        })
-                        | Type::Lit(RTsLitType {
-                            lit: RTsLit::Number(..),
-                            ..
-                        })
-                        | Type::Lit(RTsLitType {
-                            lit: RTsLit::Str(..), ..
-                        })
-                        | Type::Enum(..)
-                        | Type::EnumVariant(..)
-                        | Type::Param(..)
-                        | Type::Operator(Operator {
-                            op: TsTypeOperatorOp::KeyOf,
-                            ..
-                        }) => {}
+                        }) => {
+                            self.storage.report(box Error::ObjectIsPossiblyNull { span });
+                        }
 
-                        _ => errors.push(box Error::TS2360 { span: ls }),
+                        Type::Keyword(RTsKeywordType {
+                            kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                            ..
+                        }) => {
+                            self.storage.report(box Error::ObjectIsPossiblyUndefined { span });
+                        }
+
+                        ty => {
+                            if !self.is_valid_lhs_of_in(&ty) {
+                                errors.push(box Error::TS2360 { span: ls });
+                            }
+                        }
                     }
                 }
 
                 if rt.is_some() {
-                    fn is_ok(ty: &Type) -> bool {
-                        if ty.is_any() {
-                            return true;
+                    match rt.unwrap().normalize() {
+                        Type::Keyword(RTsKeywordType {
+                            kind: TsKeywordTypeKind::TsNullKeyword,
+                            ..
+                        }) => {
+                            self.storage.report(box Error::ObjectIsPossiblyNull { span });
                         }
 
-                        match ty.normalize() {
-                            Type::TypeLit(..)
-                            | Type::Param(..)
-                            | Type::Mapped(..)
-                            | Type::Array(..)
-                            | Type::Tuple(..)
-                            | Type::IndexedAccessType(..)
-                            | Type::Interface(..)
-                            | Type::Keyword(RTsKeywordType {
-                                kind: TsKeywordTypeKind::TsObjectKeyword,
-                                ..
-                            }) => true,
-                            Type::Union(ref u) => u.types.iter().all(|ty| is_ok(&ty)),
-
-                            _ => false,
+                        Type::Keyword(RTsKeywordType {
+                            kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                            ..
+                        }) => {
+                            self.storage.report(box Error::ObjectIsPossiblyUndefined { span });
                         }
-                    }
 
-                    if !is_ok(&rt.unwrap()) {
-                        errors.push(box Error::TS2361 { span: rs })
+                        _ => {
+                            if !self.is_valid_rhs_of_in(&rt.unwrap()) {
+                                errors.push(box Error::TS2361 { span: rs })
+                            }
+                        }
                     }
                 }
             }
@@ -732,5 +943,89 @@ impl Analyzer<'_, '_> {
         }
 
         self.storage.report_all(errors);
+    }
+
+    fn is_valid_lhs_of_in(&mut self, ty: &Type) -> bool {
+        let ty = ty.normalize();
+
+        match ty {
+            Type::Ref(..) => {
+                if let Ok(ty) = self.expand_top_ref(ty.span(), Cow::Borrowed(ty)) {
+                    return self.is_valid_lhs_of_in(&ty);
+                }
+
+                true
+            }
+
+            Type::Keyword(RTsKeywordType {
+                kind: TsKeywordTypeKind::TsAnyKeyword,
+                ..
+            })
+            | Type::Keyword(RTsKeywordType {
+                kind: TsKeywordTypeKind::TsStringKeyword,
+                ..
+            })
+            | Type::Keyword(RTsKeywordType {
+                kind: TsKeywordTypeKind::TsNumberKeyword,
+                ..
+            })
+            | Type::Keyword(RTsKeywordType {
+                kind: TsKeywordTypeKind::TsBigIntKeyword,
+                ..
+            })
+            | Type::Keyword(RTsKeywordType {
+                kind: TsKeywordTypeKind::TsSymbolKeyword,
+                ..
+            })
+            | Type::Lit(RTsLitType {
+                lit: RTsLit::Number(..),
+                ..
+            })
+            | Type::Lit(RTsLitType {
+                lit: RTsLit::Str(..), ..
+            })
+            | Type::Enum(..)
+            | Type::EnumVariant(..)
+            | Type::Param(..)
+            | Type::Operator(Operator {
+                op: TsTypeOperatorOp::KeyOf,
+                ..
+            }) => true,
+
+            Type::Union(ref u) => u.types.iter().all(|ty| self.is_valid_lhs_of_in(&ty)),
+
+            _ => false,
+        }
+    }
+
+    fn is_valid_rhs_of_in(&mut self, ty: &Type) -> bool {
+        if ty.is_any() {
+            return true;
+        }
+
+        match ty.normalize() {
+            Type::Ref(..) => {
+                if let Ok(ty) = self.expand_top_ref(ty.span(), Cow::Borrowed(ty)) {
+                    return self.is_valid_rhs_of_in(&ty);
+                }
+
+                true
+            }
+
+            Type::TypeLit(..)
+            | Type::Param(..)
+            | Type::Mapped(..)
+            | Type::Array(..)
+            | Type::Tuple(..)
+            | Type::IndexedAccessType(..)
+            | Type::Interface(..)
+            | Type::Keyword(RTsKeywordType {
+                kind: TsKeywordTypeKind::TsObjectKeyword,
+                ..
+            }) => true,
+            Type::Union(ref u) => u.types.iter().all(|ty| self.is_valid_rhs_of_in(&ty)),
+
+            _ => false,
+        }
     }
 }

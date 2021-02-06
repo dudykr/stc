@@ -153,7 +153,7 @@ fn do_test(treat_error_as_bug: bool, file_name: &Path) -> Result<(), StdErr> {
     let fname = file_name.display().to_string();
     let mut expected_errors = load_expected_errors(&file_name).unwrap();
     let mut err_shift_n = 0;
-    let mut first_smtt_line = 0;
+    let mut first_stmt_line = 0;
 
     let (libs, rule, ts_config, target) = ::testing::run_test(treat_error_as_bug, |cm, handler| {
         let fm = cm.load_file(file_name).expect("failed to read file");
@@ -180,13 +180,23 @@ fn do_test(treat_error_as_bug: bool, file_name: &Path) -> Result<(), StdErr> {
             })?;
             let module = make_test(&comments, module);
 
+            for line in fm.src.lines() {
+                if line.is_empty() {
+                    err_shift_n += 1;
+                } else {
+                    break;
+                }
+            }
+
             if !module.body.is_empty() {
-                first_smtt_line = cm.lookup_line(module.body[0].span().lo).unwrap().line;
+                first_stmt_line = cm.lookup_line(module.body[0].span().lo).unwrap().line;
             }
 
             let mut libs = vec![Lib::Es5];
             let mut rule = Rule::default();
             let ts_config = TsConfig::default();
+
+            let mut had_comment = false;
 
             let span = module.span;
             let cmts = comments.leading.get(&span.lo());
@@ -195,8 +205,13 @@ fn do_test(treat_error_as_bug: bool, file_name: &Path) -> Result<(), StdErr> {
                     for cmt in cmts.iter() {
                         let s = cmt.text.trim();
                         if !s.starts_with("@") {
+                            if had_comment {
+                                err_shift_n = cm.lookup_char_pos(cmt.span.hi).line - 1;
+                                break;
+                            }
                             continue;
                         }
+                        had_comment = true;
                         err_shift_n = cm.lookup_char_pos(cmt.span.hi + BytePos(1)).line;
                         let s = &s[1..]; // '@'
 
@@ -291,7 +306,7 @@ fn do_test(treat_error_as_bug: bool, file_name: &Path) -> Result<(), StdErr> {
     .ok()
     .unwrap_or_default();
 
-    err_shift_n = err_shift_n.min(first_smtt_line);
+    err_shift_n = err_shift_n.min(first_stmt_line);
 
     dbg!(err_shift_n);
 

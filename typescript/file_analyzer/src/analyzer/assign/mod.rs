@@ -1,6 +1,5 @@
 use super::Analyzer;
 use crate::{
-    analyzer::util::ResultExt,
     ty::{self, TypeExt},
     ValidationResult,
 };
@@ -20,7 +19,6 @@ use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_types::Key;
 use stc_ts_types::Mapped;
-use stc_ts_types::MethodSignature;
 use stc_ts_types::PropertySignature;
 use stc_ts_types::Ref;
 use stc_ts_types::{
@@ -34,7 +32,10 @@ use swc_common::TypeEq;
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::*;
 
+mod builtin;
+mod cast;
 mod class;
+mod function;
 mod query;
 mod type_el;
 
@@ -54,6 +55,32 @@ impl Analyzer<'_, '_> {
 
         let lhs = l.normalize();
         let rhs = r.normalize();
+
+        if op == op!("*=") {
+            if rhs.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
+                return Err(box Error::ObjectIsPossiblyUndefined { span: rhs.span() });
+            }
+            if rhs.is_kwd(TsKeywordTypeKind::TsNullKeyword) {
+                return Err(box Error::ObjectIsPossiblyNull { span: rhs.span() });
+            }
+
+            let r_castable = self.can_be_casted_to_number_in_rhs(rhs.span(), &rhs);
+            if r_castable {
+                if l.is_num() {
+                    return Ok(());
+                }
+
+                match lhs {
+                    Type::Enum(l) => {
+                        //
+                        if !l.has_str {
+                            return Ok(());
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
 
         // Trivial
         if lhs.is_any() || rhs.is_any() {
@@ -202,10 +229,10 @@ impl Analyzer<'_, '_> {
     fn assign_inner(&mut self, to: &Type, rhs: &Type, opts: AssignOpts) -> ValidationResult<()> {
         self.assign_without_wrapping(to, rhs, opts).with_context(|| {
             //
-            let lhs = dump_type_as_string(&self.cm, &to);
-            let rhs = dump_type_as_string(&self.cm, &rhs);
+            let l = dump_type_as_string(&self.cm, &to);
+            let r = dump_type_as_string(&self.cm, &rhs);
 
-            format!("lhs = {}rhs = {}", lhs, rhs)
+            format!("lhs = {}rhs = {}", l, r)
         })
     }
 
@@ -215,6 +242,11 @@ impl Analyzer<'_, '_> {
 
         if !self.is_builtin && span.is_dummy() {
             panic!("cannot assign with dummy span")
+        }
+
+        // It's valid to assign any to everything.
+        if rhs.is_any() {
+            return Ok(());
         }
 
         // debug_assert!(!span.is_dummy(), "\n\t{:?}\n<-\n\t{:?}", to, rhs);
@@ -310,6 +342,10 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
+        if let Some(res) = self.assign_to_builtins(opts, &to, &rhs) {
+            return res;
+        }
+
         match to {
             Type::Ref(Ref {
                 type_name:
@@ -323,26 +359,6 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
             }
-
-            Type::Ref(Ref {
-                type_name: RTsEntityName::Ident(type_name),
-                type_args,
-                ..
-            }) if type_name.sym == *"ReadonlyArray" => match type_args {
-                Some(type_args) => {
-                    if type_args.params.len() == 1 {
-                        match rhs {
-                            Type::Array(Array { elem_type, .. }) => {
-                                return self
-                                    .assign_inner(&type_args.params[0], elem_type, opts)
-                                    .context("tried to assign an array to a readonly array (builtin)");
-                            }
-                            _ => {}
-                        }
-                    }
-                }
-                None => {}
-            },
 
             // Str contains `kind`, and it's not handled properly by type_eq.
             Type::Lit(RTsLitType {
@@ -432,7 +448,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match *to {
+        match to {
             // let a: any = 'foo'
             Type::Keyword(RTsKeywordType {
                 kind: TsKeywordTypeKind::TsAnyKeyword,
@@ -453,7 +469,16 @@ impl Analyzer<'_, '_> {
             // Everything is assignable to Object
             Type::Interface(ref i) if i.name.as_str() == "Object" => return Ok(()),
 
-            Type::Module(..) => {
+            Type::Module(to) => {
+                match rhs {
+                    // TODO: Use unique id for module type.
+                    Type::Module(rhs) => {
+                        if to.name.eq_ignore_span(&rhs.name) {
+                            return Ok(());
+                        }
+                    }
+                    _ => {}
+                }
                 dbg!();
                 return Err(box Error::InvalidLValue { span: to.span() });
             }
@@ -504,7 +529,7 @@ impl Analyzer<'_, '_> {
                 });
             }
 
-            Type::Class(ref l) => match rhs.normalize() {
+            Type::Class(l) => match rhs.normalize() {
                 Type::ClassInstance(r) => return self.assign_to_class(opts, l, &r.ty),
                 Type::Interface(..) | Type::TypeLit(..) | Type::Lit(..) | Type::Class(..) => {
                     return self.assign_to_class(opts, l, rhs.normalize())
@@ -516,6 +541,8 @@ impl Analyzer<'_, '_> {
                 Type::Lit(rhs) if lhs.eq_ignore_span(&rhs) => return Ok(()),
                 _ => fail!(),
             },
+
+            Type::Query(ref to) => return self.assign_to_query_type(opts, to, &rhs),
 
             _ => {}
         }
@@ -617,7 +644,12 @@ impl Analyzer<'_, '_> {
                 fail!()
             }
 
-            Type::Enum(ref e) => handle_enum_in_rhs!(e),
+            Type::Enum(ref e) => match to {
+                Type::Interface(..) | Type::TypeLit(..) => {}
+                _ => {
+                    handle_enum_in_rhs!(e)
+                }
+            },
 
             Type::EnumVariant(EnumVariant {
                 ref ctxt,
@@ -627,7 +659,12 @@ impl Analyzer<'_, '_> {
                 if let Some(types) = self.find_type(*ctxt, enum_name)? {
                     for ty in types {
                         if let Type::Enum(ref e) = ty.normalize() {
-                            handle_enum_in_rhs!(e);
+                            match to {
+                                Type::Interface(..) | Type::TypeLit(..) => {}
+                                _ => {
+                                    handle_enum_in_rhs!(e)
+                                }
+                            }
                         }
                     }
                 }
@@ -936,9 +973,9 @@ impl Analyzer<'_, '_> {
             }
 
             Type::TypeLit(TypeLit { ref members, .. }) => {
-                self.assign_to_type_elements(opts, span, &members, rhs)?;
-
-                return Ok(());
+                return self
+                    .assign_to_type_elements(opts, span, &members, rhs)
+                    .context("tried to assign a type to type elements");
             }
 
             Type::Lit(RTsLitType { ref lit, .. }) => match *rhs {
@@ -1055,457 +1092,6 @@ impl Analyzer<'_, '_> {
 
         // TODO: Implement full type checker
         slog::error!(self.logger, "unimplemented: assign: \nLeft: {:?}\nRight: {:?}", to, rhs);
-        Ok(())
-    }
-
-    /// This method is called when lhs of assignment is interface or type
-    /// literal.
-    ///
-    /// ```js
-    /// interface A {}
-    /// let a: A = foo;
-    /// let b: { key: string } = foo;
-    /// ```
-    fn assign_to_type_elements(
-        &mut self,
-        opts: AssignOpts,
-        lhs_span: Span,
-        lhs: &[TypeElement],
-        rhs: &Type,
-    ) -> ValidationResult<()> {
-        let span = opts.span;
-        // debug_assert!(!span.is_dummy());
-
-        let mut errors = Errors::default();
-        let mut missing_fields = vec![];
-
-        let numeric_keyed_ty = lhs
-            .iter()
-            .filter_map(|e| match e {
-                TypeElement::Index(ref i)
-                    if i.params.len() == 1 && i.params[0].ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword) =>
-                {
-                    Some(i.type_ann.as_ref())
-                }
-
-                _ => None,
-            })
-            .next();
-
-        if let Some(numeric_keyed_ty) = numeric_keyed_ty {
-            let any = box Type::any(span);
-            let numeric_keyed_ty = numeric_keyed_ty.unwrap_or(&any);
-
-            match *rhs.normalize() {
-                Type::Array(Array { ref elem_type, .. }) => {
-                    return self.assign_inner(numeric_keyed_ty, elem_type, opts)
-                }
-
-                Type::Tuple(Tuple { ref elems, .. }) => {
-                    let mut errors = Errors::default();
-                    for el in elems {
-                        self.assign_inner(
-                            numeric_keyed_ty,
-                            &el.ty,
-                            AssignOpts {
-                                span: if el.span().is_dummy() { span } else { el.span() },
-                                ..opts
-                            },
-                        )
-                        .store(&mut errors);
-                    }
-                    return if errors.is_empty() {
-                        Ok(())
-                    } else {
-                        Err(box Error::Errors {
-                            span,
-                            errors: errors.into(),
-                        })
-                    };
-                }
-
-                _ => {}
-            }
-        }
-
-        {
-            let mut unhandled_rhs = vec![];
-
-            macro_rules! handle_type_elements {
-                ($rhs:expr) => {{
-                    for r in $rhs {
-                        if !opts.allow_unknown_rhs {
-                            unhandled_rhs.push(r.span());
-                        }
-                    }
-
-                    for (i, m) in lhs.into_iter().enumerate() {
-                        let res = self
-                            .assign_type_elements_to_type_element(opts, &mut missing_fields, m, $rhs)
-                            .with_context(|| format!("tried to assign to {}th element: {:?}", i, m.key()));
-
-                        let success = match res {
-                            Ok(()) => true,
-                            Err(box Error::Errors { ref errors, .. }) if errors.is_empty() => true,
-                            Err(err) => {
-                                errors.push(err);
-                                false
-                            }
-                        };
-                        if success && $rhs.len() > i {
-                            if let Some(pos) = unhandled_rhs.iter().position(|span| *span == $rhs[i].span()) {
-                                unhandled_rhs.remove(pos);
-                            } else {
-                                // panic!("it should be removable")
-                            }
-                        }
-                    }
-                }};
-            }
-
-            match rhs.normalize() {
-                Type::TypeLit(TypeLit {
-                    members: rhs_members, ..
-                }) => {
-                    handle_type_elements!(&*rhs_members);
-                }
-
-                Type::Interface(Interface { body, .. }) => {
-                    handle_type_elements!(&*body);
-                    // TODO: Check parent interface
-                }
-
-                Type::Tuple(..) if lhs.is_empty() => return Ok(()),
-
-                Type::Array(..) if lhs.is_empty() => return Ok(()),
-
-                Type::Array(..) => return Err(box Error::InvalidAssignmentOfArray { span }),
-
-                Type::Tuple(rhs) => {
-                    // Handle { 0: nubmer } = [1]
-                    let rhs_len = rhs.elems.len();
-
-                    // TODO: Check for literal properties
-
-                    // for el in lhs {
-                    //     match el {
-                    //         TypeElement::Property(l_el) => {
-                    //             match l
-                    //         }
-                    //         _ => {}
-                    //     }
-                    // }
-
-                    return Ok(());
-                }
-
-                Type::Class(rhs) => {
-                    //
-                    for el in lhs {
-                        self.assign_class_members_to_type_element(opts, el, &rhs.body)?;
-                    }
-
-                    return Ok(());
-                }
-
-                Type::Keyword(RTsKeywordType {
-                    kind: TsKeywordTypeKind::TsNumberKeyword,
-                    ..
-                })
-                | Type::Keyword(RTsKeywordType {
-                    kind: TsKeywordTypeKind::TsStringKeyword,
-                    ..
-                })
-                | Type::Lit(RTsLitType {
-                    lit: RTsLit::Number(..),
-                    ..
-                })
-                | Type::Lit(RTsLitType {
-                    lit: RTsLit::Str(..), ..
-                }) if lhs.is_empty() => return Ok(()),
-
-                _ => {
-                    return Err(box Error::Unimplemented {
-                        span,
-                        msg: format!("assign_to_type_elements - ??"),
-                    })
-                }
-            }
-
-            if !errors.is_empty() {
-                return Err(errors)?;
-            }
-
-            if !unhandled_rhs.is_empty() {
-                // The code below is invalid as c is not defined in type.
-                //
-                //      var c { [n: number]: { a: string; b: number; }; } = [{ a:
-                // '', b: 0, c: '' }];
-
-                return Err(box Error::Errors {
-                    span,
-                    errors: unhandled_rhs
-                        .into_iter()
-                        .map(|span| box Error::UnknownPropertyInObjectLiteralAssignment { span })
-                        .collect(),
-                });
-            }
-        }
-
-        'l: for m in lhs {
-            // Handle `toString()`
-            match m {
-                TypeElement::Method(ref m) => {
-                    if m.key == js_word!("toString") {
-                        continue;
-                    }
-                }
-                _ => {}
-            }
-
-            // Handle optional
-            match m {
-                TypeElement::Method(ref m) if m.optional => continue,
-                TypeElement::Property(ref m) if m.optional => continue,
-                _ => {}
-            }
-
-            match *rhs.normalize() {
-                // Check class itself
-                Type::Class(ty::Class { ref body, .. }) => {
-                    match m {
-                        TypeElement::Call(_) => {
-                            unimplemented!("ssign: interface {{ () => ret; }} = class Foo {{}}",)
-                        }
-                        TypeElement::Constructor(_) => {
-                            // TODO: Check # of parameters
-                            for rm in body {
-                                match rm {
-                                    ty::ClassMember::Constructor(..) => continue 'l,
-                                    _ => {}
-                                }
-                            }
-
-                            errors.push(box Error::ConstructorRequired {
-                                span,
-                                lhs: lhs_span,
-                                rhs: rhs.span(),
-                            });
-                        }
-                        TypeElement::Property(p) => {
-                            //
-
-                            for rm in body {
-                                match rm {
-                                    ty::ClassMember::Constructor(..) => continue 'l,
-                                    _ => {}
-                                }
-                            }
-                        }
-                        TypeElement::Method(_) => {
-                            unimplemented!("assign: interface {{ method() => ret; }} = class Foo {{}}")
-                        }
-                        TypeElement::Index(_) => {
-                            unimplemented!("assign: interface {{ [key: string]: Type; }} = class Foo {{}}")
-                        }
-                    }
-
-                    // TODO: missing fields
-                }
-
-                // Check class members
-                Type::ClassInstance(ClassInstance {
-                    ty: box Type::Class(ty::Class { ref body, .. }),
-                    ..
-                }) => {
-                    match m {
-                        TypeElement::Call(_) => {
-                            unimplemented!("assign: interface {{ () => ret; }} = new Foo()")
-                        }
-                        TypeElement::Constructor(_) => {
-                            unimplemented!("assign: interface {{ new () => ret; }} = new Foo()")
-                        }
-                        TypeElement::Property(ref lp) => {
-                            for rm in body {
-                                match rm {
-                                    ty::ClassMember::Property(ref rp) => {
-                                        match rp.accessibility {
-                                            Some(Accessibility::Private) | Some(Accessibility::Protected) => {
-                                                errors.push(box Error::AccessibilityDiffers { span });
-                                            }
-                                            _ => {}
-                                        }
-
-                                        if lp.key.type_eq(&rp.key) {
-                                            continue 'l;
-                                        }
-                                    }
-                                    _ => {}
-                                }
-                            }
-
-                            unimplemented!("assign: interface {{ prop: string; }} = new Foo()")
-                        }
-                        TypeElement::Method(_) => {
-                            unimplemented!("assign: interface {{ method() => ret; }} = new Foo()")
-                        }
-                        TypeElement::Index(_) => {
-                            unimplemented!("assign: interface {{ [key: string]: Type; }} = new Foo()")
-                        }
-                    }
-                    // TOOD: missing fields
-                }
-
-                Type::Tuple(..)
-                | Type::Array(..)
-                | Type::Lit(..)
-                | Type::Keyword(RTsKeywordType {
-                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                    ..
-                })
-                | Type::Keyword(RTsKeywordType {
-                    kind: TsKeywordTypeKind::TsVoidKeyword,
-                    ..
-                }) => return Ok(()),
-
-                _ => {}
-            }
-        }
-
-        if !missing_fields.is_empty() {
-            errors.push(box Error::MissingFields {
-                span,
-                fields: missing_fields,
-            });
-        }
-
-        if !errors.is_empty() {
-            return Err(box Error::Errors {
-                span,
-                errors: errors.into(),
-            });
-        }
-
-        Ok(())
-    }
-
-    /// This method assigns each property to corresponding property.
-    fn assign_type_elements_to_type_element(
-        &mut self,
-        opts: AssignOpts,
-        missing_fields: &mut Vec<TypeElement>,
-        m: &TypeElement,
-        rhs_members: &[TypeElement],
-    ) -> ValidationResult<()> {
-        let span = opts.span;
-        // We need this to show error if not all of rhs_member is matched
-
-        if let Some(l_key) = m.key() {
-            for rm in rhs_members {
-                if let Some(r_key) = rm.key() {
-                    if l_key.type_eq(&*r_key) {
-                        match m {
-                            TypeElement::Property(ref el) => match rm {
-                                TypeElement::Property(ref r_el) => {
-                                    self.assign_inner(
-                                        el.type_ann.as_ref().unwrap_or(&Type::any(span)),
-                                        r_el.type_ann.as_ref().unwrap_or(&Type::any(span)),
-                                        opts,
-                                    )?;
-                                    return Ok(());
-                                }
-                                _ => {}
-                            },
-
-                            // `foo(a: string) is assignable to foo(a: any)`
-                            TypeElement::Method(ref lm) => match rm {
-                                TypeElement::Method(ref rm) => {
-                                    //
-
-                                    if lm.params.len() != rm.params.len() {
-                                        return Err(box Error::Unimplemented {
-                                            span,
-                                            msg: format!(
-                                                "lhs.method.params.len() = {}; rhs.method.params.len() = {};",
-                                                lm.params.len(),
-                                                rm.params.len()
-                                            ),
-                                        });
-                                    }
-
-                                    for (lp, rp) in lm.params.iter().zip(rm.params.iter()) {
-                                        self.assign_inner(&lp.ty, &rp.ty, opts)
-                                            .context("tried to assign a method parameter to a method parameter")?;
-                                    }
-
-                                    return Ok(());
-                                }
-
-                                TypeElement::Property(rp) => {
-                                    // Allow assigning property with callable type to methods.
-                                    if let Some(rp_ty) = &rp.type_ann {
-                                        if let Type::Function(rp_ty) = rp_ty.normalize() {
-                                            if lm.params.len() != rp_ty.params.len() {
-                                                return Err(box Error::Unimplemented {
-                                                    span,
-                                                    msg: format!(
-                                                        "lhs.method.params.len() = {}; rhs.property.params.len() = {};",
-                                                        lm.params.len(),
-                                                        rp_ty.params.len()
-                                                    ),
-                                                });
-                                            }
-
-                                            for (lp, rp) in lm.params.iter().zip(rp_ty.params.iter()) {
-                                                self.assign_inner(&lp.ty, &rp.ty, opts).context(
-                                                    "tried to assign a parameter of a property with callable type to \
-                                                     a method parameter",
-                                                )?;
-                                            }
-
-                                            return Ok(());
-                                        }
-                                    }
-                                }
-                                _ => {}
-                            },
-                            _ => {}
-                        }
-                    }
-                }
-            }
-
-            match m {
-                TypeElement::Property(PropertySignature { optional: true, .. })
-                | TypeElement::Method(MethodSignature { optional: true, .. }) => {}
-                _ => {
-                    // No property with `key` found.
-                    missing_fields.push(m.clone());
-                }
-            }
-        } else {
-            match m {
-                // TODO: Check type of the index.
-                TypeElement::Index(..) => {
-                    // TODO: Verify
-                }
-                TypeElement::Call(..) => {
-                    //
-                    for rm in rhs_members {
-                        match rm {
-                            // TODO: Check type of parameters
-                            // TODO: Check return type
-                            TypeElement::Call(..) => return Ok(()),
-                            _ => {}
-                        }
-                    }
-
-                    missing_fields.push(m.clone());
-                }
-                _ => unreachable!(),
-            }
-        }
-
         Ok(())
     }
 

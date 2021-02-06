@@ -75,6 +75,9 @@ impl Analyzer<'_, '_> {
             Type::Interface(arg) => {
                 self.infer_type_using_interface_and_interface(span, inferred, param, arg)?;
             }
+            Type::TypeLit(arg) => {
+                self.infer_type_using_type_elements_and_type_elements(span, inferred, &param.body, &arg.members)?;
+            }
             _ => {
                 todo!()
             }
@@ -102,7 +105,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Compare fields.
-    pub(super) fn infer_type_lit(
+    pub(super) fn infer_type_using_type_lit_and_type_lit(
         &mut self,
         span: Span,
         inferred: &mut InferData,
@@ -137,6 +140,7 @@ impl Analyzer<'_, '_> {
                                     dbg!((&p, &a));
                                 }
                             }
+                            continue;
                         }
                         _ => {}
                     },
@@ -164,6 +168,25 @@ impl Analyzer<'_, '_> {
                             } else {
                                 dbg!((&param, &arg));
                             }
+                            continue;
+                        }
+
+                        TypeElement::Property(arg) => {
+                            assert_eq!(
+                                param.params.len(),
+                                1,
+                                "Index signature should have exactly one parameter"
+                            );
+
+                            if let Ok(()) = self.assign(&param.params[0].ty, &arg.key.ty(), span) {
+                                if let Some(p_ty) = &param.type_ann {
+                                    if let Some(arg_ty) = &arg.type_ann {
+                                        self.infer_type(span, inferred, &p_ty, &arg_ty)?;
+                                    }
+                                }
+                            }
+
+                            continue;
                         }
                         _ => {}
                     },
@@ -179,15 +202,21 @@ impl Analyzer<'_, '_> {
                                     }
                                 }
                             }
+
+                            continue;
                         }
                         _ => {}
                     },
 
-                    TypeElement::Constructor(..) => {
-                        // TODO
-                    }
-                    _ => unimplemented!("TypeElement({:#?}) in type literal", p),
+                    _ => {}
                 }
+
+                slog::error!(
+                    self.logger,
+                    "unimplemented: type infernce: type element:\nParam = {:#?}\nArg = {:#?}",
+                    p,
+                    a
+                );
             }
         }
 

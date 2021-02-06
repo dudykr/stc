@@ -27,6 +27,7 @@ use stc_ts_ast_rnode::RPatOrExpr;
 use stc_ts_ast_rnode::RSwitchCase;
 use stc_ts_ast_rnode::RSwitchStmt;
 use stc_ts_ast_rnode::RTsKeywordType;
+use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_types::name::Name;
 use stc_ts_types::Array;
@@ -488,10 +489,22 @@ impl Analyzer<'_, '_> {
 
     fn try_assign_pat(&mut self, span: Span, lhs: &RPat, ty: &Type) -> ValidationResult<()> {
         // Update variable's type
-        match *lhs {
-            RPat::Ident(ref i) => {
-                println!("Symbol: {}", i.sym);
+        match lhs {
+            // We emitted some parsing errors.
+            RPat::Invalid(..) => return Ok(()),
 
+            RPat::Assign(assign) => {
+                self.try_assign_pat(span, &assign.left, ty)?;
+
+                // TODO: Use type annotation?
+                let default_value_type = assign
+                    .right
+                    .validate_with_default(self)
+                    .context("tried to validate type of default expression in an assginment pattern")?;
+                return self.try_assign_pat(span, &assign.left, &default_value_type);
+            }
+
+            RPat::Ident(i) => {
                 if let Some(ref var_info) = self.scope.get_var(&i.into()) {
                     if let Some(ref var_ty) = var_info.ty {
                         let var_ty = var_ty.clone();

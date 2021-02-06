@@ -235,7 +235,7 @@ impl Analyzer<'_, '_> {
                             }
                         };
                         let ty = self.expand(span, ty)?;
-                        self.check_rvalue(&ty);
+                        self.check_rvalue(span, &ty);
 
                         self.scope.this = Some(box ty.clone().remove_falsy());
                         let mut value_ty = get_value_ty!(Some(&ty));
@@ -280,15 +280,6 @@ impl Analyzer<'_, '_> {
                         // infer type from value.
                         let mut ty = (|| -> ValidationResult<_> {
                             match value_ty.normalize() {
-                                Type::EnumVariant(ref v) => {
-                                    if let Some(items) = self.find_type(self.ctx.module_id, &v.enum_name)? {
-                                        for ty in items {
-                                            if let Type::Enum(ref e) = ty.normalize() {
-                                                return Ok(box Type::Enum(e.clone()));
-                                            }
-                                        }
-                                    }
-                                }
                                 Type::TypeLit(..) | Type::Function(..) | Type::Query(..) => {
                                     if let Some(m) = &mut self.mutations {
                                         m.for_var_decls.entry(v.node_id).or_default().remove_init = true;
@@ -465,7 +456,7 @@ impl Analyzer<'_, '_> {
                                 ty = self.expand(span, ty)?;
                             }
                         }
-                        self.check_rvalue(&ty);
+                        self.check_rvalue(span, &ty);
 
                         let mut type_errors = Errors::default();
 
@@ -517,7 +508,24 @@ impl Analyzer<'_, '_> {
                             return Ok(());
                         }
 
-                        self.declare_complex_vars(kind, &v.name, ty).report(&mut self.storage);
+                        let var_ty = (|| -> ValidationResult<_> {
+                            match &*ty {
+                                Type::EnumVariant(ref v) => {
+                                    if let Some(items) = self.find_type(self.ctx.module_id, &v.enum_name)? {
+                                        for ty in items {
+                                            if let Type::Enum(ref e) = ty.normalize() {
+                                                return Ok(box Type::Enum(e.clone()));
+                                            }
+                                        }
+                                    }
+                                    unreachable!("Failed to found enum named `{}`", v.enum_name)
+                                }
+                                _ => Ok(ty),
+                            }
+                        })()?;
+
+                        self.declare_complex_vars(kind, &v.name, var_ty)
+                            .report(&mut self.storage);
                         remove_declaring!();
                         return Ok(());
                     }

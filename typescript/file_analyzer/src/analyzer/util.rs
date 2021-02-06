@@ -16,6 +16,7 @@ use stc_ts_types::{ClassInstance, Id, IndexedAccessType, Intersection, ModuleId,
 use std::iter::once;
 use swc_common::Span;
 use swc_common::Spanned;
+use swc_ecma_ast::TsKeywordTypeKind;
 use ty::TypeExt;
 
 impl Analyzer<'_, '_> {
@@ -48,8 +49,12 @@ impl Analyzer<'_, '_> {
     ///
     ///
     /// TODO: Use Cow
-    pub(super) fn make_instance_or_report(&mut self, ty: &Type) -> Box<Type> {
-        let res = self.make_instance(ty);
+    pub(super) fn make_instance_or_report(&mut self, span: Span, ty: &Type) -> Box<Type> {
+        if span.is_dummy() {
+            panic!("Cannot make an instance with dummy span")
+        }
+
+        let res = self.make_instance(span, ty);
         match res {
             Ok(ty) => ty,
             Err(err) => {
@@ -60,9 +65,16 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO: Use Cow
-    pub(super) fn make_instance(&mut self, ty: &Type) -> ValidationResult {
-        let span = ty.span();
+    pub(super) fn make_instance(&mut self, span: Span, ty: &Type) -> ValidationResult {
         let ty = ty.normalize();
+
+        if ty.is_any() {
+            return Ok(box ty.clone());
+        }
+
+        if ty.is_kwd(TsKeywordTypeKind::TsNullKeyword) || ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
+            return Ok(box ty.clone());
+        }
 
         match ty {
             Type::Ref(..) => {
@@ -77,7 +89,7 @@ impl Analyzer<'_, '_> {
 
                 match ty.normalize() {
                     Type::Ref(..) => return Ok(ty.clone()),
-                    _ => return self.make_instance(&ty),
+                    _ => return self.make_instance(span, &ty),
                 }
             }
 
@@ -86,8 +98,6 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Interface(interface) => {
-                let span = interface.span;
-
                 let res = self.make_instance_from_type_elements(span, ty, &interface.body);
                 let err = match res {
                     Ok(v) => return Ok(v),
@@ -97,7 +107,7 @@ impl Analyzer<'_, '_> {
                 for parent in &interface.extends {
                     let ctxt = self.ctx.module_id;
                     let parent_ty = self.type_of_ts_entity_name(span, ctxt, &parent.expr, None)?;
-                    if let Ok(ty) = self.make_instance(&parent_ty) {
+                    if let Ok(ty) = self.make_instance(span, &parent_ty) {
                         return Ok(ty);
                     }
                 }

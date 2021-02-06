@@ -436,6 +436,8 @@ pub enum ClassMember {
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Method {
     pub span: Span,
+    #[use_eq]
+    pub accessibility: Option<Accessibility>,
     pub key: Key,
     pub is_static: bool,
     pub is_abstract: bool,
