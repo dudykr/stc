@@ -755,7 +755,7 @@ impl Analyzer<'_, '_> {
                 if results.iter().any(Result::is_ok) {
                     return Ok(());
                 }
-                return Err(box Error::UnionError {
+                return Err(box Error::Errors {
                     span,
                     errors: results.into_iter().map(Result::unwrap_err).collect(),
                 });
