@@ -513,6 +513,8 @@ es6/templates/templateStringInArrowFunction.ts
 es6/templates/templateStringInArrowFunctionES6.ts
 es6/templates/templateStringInConditional.ts
 es6/templates/templateStringInConditionalES6.ts
+es6/templates/templateStringInDeleteExpression.ts
+es6/templates/templateStringInDeleteExpressionES6.ts
 es6/templates/templateStringInDivision.ts
 es6/templates/templateStringInEqualityChecks.ts
 es6/templates/templateStringInEqualityChecksES6.ts
@@ -922,6 +924,7 @@ expressions/typeGuards/typeGuardsInDoStatement.ts
 expressions/typeGuards/typeGuardsInForStatement.ts
 expressions/typeGuards/typeGuardsInFunction.ts
 expressions/typeGuards/typeGuardsInWhileStatement.ts
+expressions/typeGuards/typeGuardsObjectMethods.ts
 expressions/typeGuards/typePredicateASI.ts
 expressions/unaryOperators/bitwiseNotOperator/bitwiseNotOperatorWithAnyOtherType.ts
 expressions/unaryOperators/bitwiseNotOperator/bitwiseNotOperatorWithBooleanType.ts
@@ -1118,6 +1121,7 @@ parser/ecmascript5/ExportAssignments/parserExportAssignment7.ts
 parser/ecmascript5/ExportAssignments/parserExportAssignment8.ts
 parser/ecmascript5/Expressions/parserInvocationOfMemberAccessOffOfObjectCreationExpression1.ts
 parser/ecmascript5/Expressions/parserObjectCreation2.ts
+parser/ecmascript5/Expressions/parserUnaryExpression4.ts
 parser/ecmascript5/Expressions/parserUnaryExpression6.ts
 parser/ecmascript5/FunctionDeclarations/parserFunctionDeclaration1.d.ts
 parser/ecmascript5/FunctionDeclarations/parserFunctionDeclaration3.ts
@@ -1254,6 +1258,7 @@ parser/ecmascript5/Statements/parserForStatement2.ts
 parser/ecmascript5/Statements/parserIfStatement2.ts
 parser/ecmascript5/StrictMode/parserStrictMode1.ts
 parser/ecmascript5/StrictMode/parserStrictMode15-negative.ts
+parser/ecmascript5/StrictMode/parserStrictMode16.ts
 parser/ecmascript5/StrictMode/parserStrictMode6-negative.ts
 parser/ecmascript5/Symbols/parserES5SymbolProperty1.ts
 parser/ecmascript5/Symbols/parserES5SymbolProperty2.ts
