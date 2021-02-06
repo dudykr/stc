@@ -13,8 +13,10 @@ use rnode::Visit;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
 use rnode::VisitWith;
+use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RStr;
+use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
@@ -29,9 +31,11 @@ use stc_ts_types::IndexedAccessType;
 use stc_ts_types::Intersection;
 use stc_ts_types::Key;
 use stc_ts_types::Mapped;
+use stc_ts_types::ModuleId;
 use stc_ts_types::Operator;
 use stc_ts_types::OptionalType;
 use stc_ts_types::PropertySignature;
+use stc_ts_types::Ref;
 use stc_ts_types::RestType;
 use stc_ts_types::Tuple;
 use stc_ts_types::TupleElement;
@@ -885,6 +889,23 @@ impl Analyzer<'_, '_> {
         match arg {
             // Handled by generic expander, so let's return it as-is.
             Type::Mapped(..) => {}
+
+            Type::Array(arr) => {
+                let mut params = vec![];
+                params.push(arr.elem_type.clone());
+                return self.infer_type(
+                    span,
+                    inferred,
+                    param,
+                    &Type::Ref(Ref {
+                        span,
+                        ctxt: ModuleId::builtin(),
+                        type_name: RTsEntityName::Ident(RIdent::new("Array".into(), DUMMY_SP)),
+                        type_args: Some(box TypeParamInstantiation { span, params }),
+                    }),
+                );
+            }
+
             Type::Keyword(RTsKeywordType {
                 kind: TsKeywordTypeKind::TsAnyKeyword,
                 ..
@@ -895,6 +916,7 @@ impl Analyzer<'_, '_> {
                     preserve_ref: false,
                     ignore_expand_prevention_for_top: true,
                     ignore_expand_prevention_for_all: false,
+                    preserve_params: true,
                     ..self.ctx
                 };
                 let arg = self.with_ctx(ctx).expand_fully(span, box arg.clone(), true)?;
