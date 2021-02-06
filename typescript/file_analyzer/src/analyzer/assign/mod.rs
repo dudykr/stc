@@ -690,6 +690,11 @@ impl Analyzer<'_, '_> {
                 ..
             }) => return self.assign_inner(c, rhs, opts),
 
+            Type::Param(..) => {
+                // We handled equality above.
+                fail!()
+            }
+
             Type::Array(Array { ref elem_type, .. }) => match rhs {
                 Type::Array(Array {
                     elem_type: ref rhs_elem_type,
