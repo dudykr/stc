@@ -111,7 +111,7 @@ impl Analyzer<'_, '_> {
             self.cur_facts.true_facts += rhs_facts;
         }
 
-        self.validate_bin_inner(span, op, lt.as_ref().map(|v| &**v), rt.as_ref().map(|v| &**v));
+        self.validate_bin_inner(span, op, lt.as_deref(), rt.as_deref());
 
         let (lt, rt): (Box<Type>, Box<Type>) = match (lt, rt) {
             (Some(l), Some(r)) => (l, r),
