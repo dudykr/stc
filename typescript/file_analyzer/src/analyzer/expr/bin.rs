@@ -2,6 +2,7 @@ use super::super::{
     util::{Comparator, ResultExt},
     Analyzer,
 };
+use super::TypeOfMode;
 use crate::analyzer::assign::AssignOpts;
 use crate::{
     analyzer::{Ctx, ScopeKind},
@@ -26,6 +27,7 @@ use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::name::Name;
+use stc_ts_types::Intersection;
 use stc_ts_types::ModuleId;
 use stc_ts_types::Ref;
 use stc_ts_types::TypeElement;
@@ -202,7 +204,24 @@ impl Analyzer<'_, '_> {
                         //
                         let ty = self.validate_rhs_of_instanceof(span, rt.clone());
 
-                        self.cur_facts.true_facts.vars.insert(Name::from(i), ty);
+                        // typeGuardsTypeParameters.ts says
+                        //
+                        // Type guards involving type parameters produce intersection types
+                        let orig_ty = self.type_of_var(i, TypeOfMode::RValue, None)?;
+
+                        // TODO(kdy1): Maybe we need to check for intersection or union
+                        if orig_ty.is_type_param() {
+                            self.cur_facts.true_facts.vars.insert(
+                                Name::from(i),
+                                Type::Intersection(Intersection {
+                                    span,
+                                    types: vec![orig_ty, ty],
+                                })
+                                .cheap(),
+                            );
+                        } else {
+                            self.cur_facts.true_facts.vars.insert(Name::from(i), ty);
+                        }
                     }
 
                     _ => {}
