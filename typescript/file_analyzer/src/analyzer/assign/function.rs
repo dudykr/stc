@@ -36,20 +36,6 @@ impl Analyzer<'_, '_> {
                 ret_ty: r_ret_ty,
                 ..
             }) => {
-                {
-                    let lc = l.type_params.as_ref().map(|v| v.params.len()).unwrap_or(0);
-                    let rc = r_type_params.as_ref().map(|v| v.params.len()).unwrap_or(0);
-                    // TODO: Exclude type parameters with default.
-                    if lc != rc {
-                        return Err(box Error::TypeParameterCountMismatch {
-                            span,
-                            min: lc,
-                            max: lc,
-                            actual: rc,
-                        });
-                    }
-                }
-
                 let new_r;
                 let (r_params, r_ret_ty) = match (&l.type_params, r_type_params) {
                     (Some(lt), Some(rt)) => {
