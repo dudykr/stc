@@ -786,7 +786,6 @@ es7/exponentiationOperator/emitExponentiationOperatorInTemplateString3ES6.ts
 es7/exponentiationOperator/exponentiationOperatorWithAnyAndNumber.ts
 es7/exponentiationOperator/exponentiationOperatorWithEnum.ts
 es7/exponentiationOperator/exponentiationOperatorWithEnumUnion.ts
-expressions/arrayLiterals/arrayLiteralInference.ts
 expressions/arrayLiterals/arrayLiterals.ts
 expressions/arrayLiterals/arrayLiterals2ES5.ts
 expressions/arrayLiterals/arrayLiterals2ES6.ts
