@@ -1,11 +1,14 @@
 use super::AssignOpts;
 use crate::analyzer::Analyzer;
 use crate::ValidationResult;
+use stc_ts_ast_rnode::RIdent;
+use stc_ts_ast_rnode::RPat;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_types::FnParam;
 use stc_ts_types::Function;
 use stc_ts_types::Type;
+use swc_atoms::js_word;
 
 impl Analyzer<'_, '_> {
     /// ```ts
@@ -51,15 +54,27 @@ impl Analyzer<'_, '_> {
 
     pub(crate) fn assign_params(&mut self, opts: AssignOpts, l: &[FnParam], r: &[FnParam]) -> ValidationResult<()> {
         let span = opts.span;
+        let li = l.iter().filter(|p| match p.pat {
+            RPat::Ident(RIdent {
+                sym: js_word!("this"), ..
+            }) => false,
+            _ => true,
+        });
+        let ri = r.iter().filter(|p| match p.pat {
+            RPat::Ident(RIdent {
+                sym: js_word!("this"), ..
+            }) => false,
+            _ => true,
+        });
 
-        if l.len() != r.len() {
+        if li.clone().count() != ri.clone().count() {
             return Err(box Error::Unimplemented {
                 span,
                 msg: format!("l.params.len() = {}; r.params.len() = {};", l.len(), r.len()),
             });
         }
 
-        for (lp, rp) in l.iter().zip(r.iter()) {
+        for (lp, rp) in li.zip(ri) {
             self.assign_inner(&lp.ty, &rp.ty, opts)
                 .context("tried to assign a method parameter to a method parameter")?;
         }
