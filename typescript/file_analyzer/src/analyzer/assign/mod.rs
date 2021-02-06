@@ -44,6 +44,7 @@ mod type_el;
 pub(crate) struct AssignOpts {
     pub span: Span,
     pub allow_unknown_rhs: bool,
+    pub allow_assignment_to_param: bool,
 }
 
 impl Analyzer<'_, '_> {
@@ -142,6 +143,7 @@ impl Analyzer<'_, '_> {
             AssignOpts {
                 span,
                 allow_unknown_rhs: false,
+                allow_assignment_to_param: false,
             },
             left,
             right,
@@ -690,8 +692,11 @@ impl Analyzer<'_, '_> {
                 ..
             }) => return self.assign_inner(c, rhs, opts),
 
-            Type::Param(..) => {
+            Type::Param(..) if !opts.allow_assignment_to_param => {
                 // We handled equality above.
+                //
+                // This is optional so we can change behavior while selecting method to call.
+                // While selecting method, we may need to assign to a type parameter.
                 fail!()
             }
 

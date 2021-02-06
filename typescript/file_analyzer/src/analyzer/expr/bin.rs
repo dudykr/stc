@@ -657,6 +657,7 @@ impl Analyzer<'_, '_> {
                                 AssignOpts {
                                     span,
                                     allow_unknown_rhs: false,
+                                    allow_assignment_to_param: false,
                                 },
                                 &lm.params,
                                 &rm.params,
@@ -671,6 +672,7 @@ impl Analyzer<'_, '_> {
                                     AssignOpts {
                                         span,
                                         allow_unknown_rhs: true,
+                                        allow_assignment_to_param: false,
                                     },
                                     &lt,
                                     &rt,

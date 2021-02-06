@@ -1621,6 +1621,7 @@ impl Analyzer<'_, '_> {
                                 AssignOpts {
                                     span,
                                     allow_unknown_rhs: true,
+                                    allow_assignment_to_param: true,
                                 },
                                 &param.ty,
                                 &arg.ty,
