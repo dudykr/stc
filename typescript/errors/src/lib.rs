@@ -57,6 +57,10 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    DestructuringAssignInAmbientContext {
+        span: Span,
+    },
+
     OptionalBindingPatternInImplSignature {
         span: Span,
     },

@@ -711,9 +711,19 @@ impl Analyzer<'_, '_> {
                     }
                 }
                 for prop in props {
-                    match *prop {
+                    match prop {
+                        RObjectPatProp::Assign(RAssignPatProp {
+                            span, key, value: None, ..
+                        }) => {
+                            if self.ctx.in_declare {
+                                self.storage
+                                    .report(box Error::DestructuringAssignInAmbientContext { span });
+                            }
+
+                            unimplemented!("pattern in object pattern")
+                        }
                         RObjectPatProp::KeyValue(RKeyValuePatProp { .. }) => {
-                            unimplemented!("ket value pattern in object pattern")
+                            unimplemented!("key-value pattern in object pattern")
                         }
                         RObjectPatProp::Assign(RAssignPatProp { .. }) => {
                             unimplemented!("assign pattern in object pattern")
