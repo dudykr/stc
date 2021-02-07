@@ -300,6 +300,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         if should_generalize_fully {
+                            self.normalize_tuples(&mut ty);
                             ty = match ty.normalize() {
                                 Type::Function(f) => {
                                     let ret_ty = f.ret_ty.clone().generalize_lit();

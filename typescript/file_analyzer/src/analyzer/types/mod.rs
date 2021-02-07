@@ -1,11 +1,22 @@
 use super::Analyzer;
+use crate::util::type_ext::TypeVecExt;
 use crate::ValidationResult;
+use rnode::VisitMut;
+use rnode::VisitMutWith;
+use stc_ts_types::Array;
 use stc_ts_types::ClassMember;
 use stc_ts_types::MethodSignature;
 use stc_ts_types::PropertySignature;
+use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
+use stc_ts_utils::MapWithMut;
+use swc_common::Spanned;
 
 impl Analyzer<'_, '_> {
+    pub(crate) fn normalize_tuples(&mut self, ty: &mut Type) {
+        ty.visit_mut_with(&mut TupleNormalizer);
+    }
+
     pub(crate) fn kinds_of_type_elements(&mut self, els: &[TypeElement]) -> Vec<u8> {
         let mut v = els
             .iter()
@@ -60,5 +71,35 @@ impl Analyzer<'_, '_> {
             }
             ClassMember::IndexSignature(i) => TypeElement::Index(i.clone()),
         }))
+    }
+}
+
+struct TupleNormalizer;
+
+impl VisitMut<Type> for TupleNormalizer {
+    fn visit_mut(&mut self, ty: &mut Type) {
+        ty.visit_mut_children_with(self);
+
+        match ty.normalize() {
+            Type::Tuple(..) => {
+                let span = ty.span();
+                let mut types = ty
+                    .take()
+                    .foldable()
+                    .tuple()
+                    .unwrap()
+                    .elems
+                    .into_iter()
+                    .map(|elem| elem.ty)
+                    .collect::<Vec<_>>();
+                types.dedup_type();
+
+                *ty = Type::Array(Array {
+                    span,
+                    elem_type: Type::union(types),
+                });
+            }
+            _ => {}
+        }
     }
 }
