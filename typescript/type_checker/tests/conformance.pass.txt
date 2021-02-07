@@ -384,6 +384,7 @@ es6/defaultParameters/emitDefaultParametersFunctionPropertyES6.ts
 es6/defaultParameters/emitDefaultParametersMethod.ts
 es6/defaultParameters/emitDefaultParametersMethodES6.ts
 es6/destructuring/arrayAssignmentPatternWithAny.ts
+es6/destructuring/destructuringCatch.ts
 es6/destructuring/destructuringInFunctionType.ts
 es6/destructuring/destructuringObjectBindingPatternAndAssignment5.ts
 es6/destructuring/destructuringReassignsRightHandSide.ts
@@ -999,6 +1000,7 @@ externalModules/esnext/exnextmodulekindExportClassNameWithObject.ts
 externalModules/exportAmbientClassNameWithObject.ts
 functions/functionOverloadCompatibilityWithVoid02.ts
 functions/functionOverloadCompatibilityWithVoid03.ts
+functions/functionWithUseStrictAndSimpleParameterList.ts
 generators/generatorImplicitAny.ts
 generators/generatorReturnTypeIndirectReferenceToGlobalType.ts
 generators/generatorReturnTypeInference.ts
