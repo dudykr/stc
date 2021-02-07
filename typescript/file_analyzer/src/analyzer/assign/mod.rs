@@ -169,17 +169,19 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        res.map_err(|err| match *err {
-            Error::AssignFailed { .. }
-            | Error::DebugContext { .. }
-            | Error::Errors { .. }
-            | Error::Unimplemented { .. } => err,
-            _ => box Error::AssignFailed {
-                span: opts.span,
-                left: box left.clone(),
-                right: box right.clone(),
-                cause: vec![err],
-            },
+        res.map_err(|err| {
+            box err.convert(|err| match err {
+                Error::AssignFailed { .. }
+                | Error::Errors { .. }
+                | Error::Unimplemented { .. }
+                | Error::TupleAssignError { .. } => err,
+                _ => Error::AssignFailed {
+                    span: opts.span,
+                    left: box left.clone(),
+                    right: box right.clone(),
+                    cause: vec![box err],
+                },
+            })
         })
     }
 
@@ -737,12 +739,12 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::Tuple(Tuple { ref elems, .. }) => {
-                    let mut errors = Errors::default();
+                    let mut errors = vec![];
                     for el in elems {
                         errors.extend(self.assign_inner(elem_type, &el.ty, opts).err());
                     }
                     if !errors.is_empty() {
-                        Err(errors)?;
+                        Err(box Error::TupleAssignError { span, errors })?;
                     }
 
                     return Ok(());

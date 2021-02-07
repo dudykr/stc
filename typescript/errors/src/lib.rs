@@ -227,6 +227,11 @@ pub enum Error {
         span: Span,
     },
 
+    TupleAssignError {
+        span: Span,
+        errors: Vec<Box<Error>>,
+    },
+
     Errors {
         span: Span,
         errors: Vec<Box<Error>>,
@@ -754,7 +759,8 @@ impl Error {
             Error::AssignFailed { .. }
             | Error::InvalidAssignmentOfArray { .. }
             | Error::UnknownPropertyInObjectLiteralAssignment { .. }
-            | Error::InvalidOpAssign { .. } => 2322,
+            | Error::InvalidOpAssign { .. }
+            | Error::TupleAssignError { .. } => 2322,
 
             Error::NonOverlappingTypeCast { .. } => 2352,
 
