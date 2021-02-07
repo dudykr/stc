@@ -51,6 +51,8 @@ impl Analyzer<'_, '_> {
             ..
         } = *e;
 
+        self.check_for_mixed_nullish_coalescing(e);
+
         let mut errors = vec![];
 
         let lt = left
@@ -1069,4 +1071,7 @@ impl Analyzer<'_, '_> {
             _ => false,
         }
     }
+
+    #[extra_validator]
+    fn check_for_mixed_nullish_coalescing(&mut self, e: &RExpr) {}
 }
