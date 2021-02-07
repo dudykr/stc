@@ -1073,5 +1073,32 @@ impl Analyzer<'_, '_> {
     }
 
     #[extra_validator]
-    fn check_for_mixed_nullish_coalescing(&mut self, e: &RExpr) {}
+    fn check_for_mixed_nullish_coalescing(&mut self, e: &RBinExpr) {
+        fn search(span: Span, op: BinaryOp, operand: &RExpr) -> ValidationResult<()> {
+            if op == op!("??") {
+                match operand {
+                    RExpr::Bin(bin) => {
+                        if bin.op == op!("||") || bin.op == op!("&&") {
+                            return Err(box Error::NullishCoalescingMixedWithLogicalWithoutParen { span });
+                        }
+                    }
+                    _ => {}
+                }
+            } else if op == op!("||") || op == op!("&&") {
+                match operand {
+                    RExpr::Bin(bin) => {
+                        if bin.op == op!("??") {
+                            return Err(box Error::NullishCoalescingMixedWithLogicalWithoutParen { span });
+                        }
+                    }
+                    _ => {}
+                }
+            }
+
+            Ok(())
+        }
+
+        search(e.span, e.op, &e.left)?;
+        search(e.span, e.op, &e.right)?;
+    }
 }
