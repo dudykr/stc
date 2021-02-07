@@ -8,7 +8,6 @@ use stc_ts_ast_rnode::RArrayPat;
 use stc_ts_ast_rnode::RAssignPatProp;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RIdent;
-use stc_ts_ast_rnode::RKeyValuePatProp;
 use stc_ts_ast_rnode::RNumber;
 use stc_ts_ast_rnode::RObjectPat;
 use stc_ts_ast_rnode::RObjectPatProp;
@@ -16,6 +15,7 @@ use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RRestPat;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
+use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_types::Id;
 use stc_ts_types::Key;
@@ -156,7 +156,8 @@ impl Analyzer<'_, '_> {
                                         TypeOfMode::RValue,
                                         IdCtx::Var,
                                     )
-                                    .map(Some)?,
+                                    .map(Some)
+                                    .context("tried to access property to declare variables using an array pattern")?,
                                 None => None,
                             };
 
@@ -203,8 +204,20 @@ impl Analyzer<'_, '_> {
                         }) => {
                             unimplemented!("pattern in object pattern")
                         }
-                        RObjectPatProp::KeyValue(RKeyValuePatProp { .. }) => {
-                            unimplemented!("key-value pattern in object pattern")
+                        RObjectPatProp::KeyValue(p) => {
+                            let span = p.span();
+                            let key = p.key.validate_with(self)?;
+
+                            let prop_ty = match &ty {
+                                Some(ty) => self
+                                    .access_property(span, ty.clone(), &key, TypeOfMode::RValue, IdCtx::Var)
+                                    .map(Some)
+                                    .context("tried to access property to declare variables using an object pattern")?,
+                                None => None,
+                            };
+
+                            self.declare_vars_inner_with_ty(kind, &p.value, export, prop_ty)
+                                .context("tried to declare a variable from key-value property in an object pattern")?;
                         }
                         RObjectPatProp::Assign(RAssignPatProp { .. }) => {
                             unimplemented!("assign pattern in object pattern")
