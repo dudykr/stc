@@ -1004,6 +1004,7 @@ generators/generatorImplicitAny.ts
 generators/generatorReturnTypeIndirectReferenceToGlobalType.ts
 generators/generatorReturnTypeInference.ts
 generators/restParameterInDownlevelGenerator.ts
+inferFromBindingPattern.ts
 interfaces/declarationMerging/genericAndNonGenericInterfaceWithTheSameName2.ts
 interfaces/declarationMerging/mergeThreeInterfaces.ts
 interfaces/declarationMerging/mergeTwoInterfaces.ts
@@ -1422,6 +1423,7 @@ types/literal/stringLiteralsWithEqualityChecks04.ts
 types/literal/stringLiteralsWithSwitchStatements01.ts
 types/literal/stringLiteralsWithSwitchStatements02.ts
 types/literal/stringLiteralsWithSwitchStatements04.ts
+types/localTypes/localTypes1.ts
 types/mapped/mappedTypes1.ts
 types/members/classWithProtectedProperty.ts
 types/members/classWithPublicProperty.ts
