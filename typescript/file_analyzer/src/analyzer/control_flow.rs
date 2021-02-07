@@ -372,9 +372,10 @@ impl Analyzer<'_, '_> {
         for case in &s.cases {
             if let Some(test) = &case.test {
                 let case_ty = test.validate_with_default(self)?;
-                self.assign(&discriminant_ty, &case_ty, test.span())
-                    .context("tried to assign the discriminant of switch to the test of a case")
-                    .report(&mut self.storage);
+                // self.assign(&discriminant_ty, &case_ty, test.span())
+                //     .context("tried to assign the discriminant of switch to
+                // the test of a case")     .report(&mut
+                // self.storage);
             }
         }
 
