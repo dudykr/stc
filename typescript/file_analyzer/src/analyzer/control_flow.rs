@@ -667,7 +667,7 @@ impl Analyzer<'_, '_> {
             }
 
             RPat::Rest(rest) => {
-                //
+                // TODO: Check if this is correct. (in object rest context)
                 let ty = Type::Array(Array {
                     span,
                     elem_type: box ty.clone(),
