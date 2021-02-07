@@ -169,12 +169,16 @@ impl Analyzer<'_, '_> {
                 };
 
                 if !self.has_overlap(span, &lt, &rt)? {
-                    self.storage.report(box Error::NoOverlap {
-                        span,
-                        value: true,
-                        left: lt.span(),
-                        right: rt.span(),
-                    })
+                    if self.ctx.in_switch_case_test {
+                        self.storage.report(box Error::SwitchCaseTestNotCompatible { span })
+                    } else {
+                        self.storage.report(box Error::NoOverlap {
+                            span,
+                            value: true,
+                            left: lt.span(),
+                            right: rt.span(),
+                        })
+                    }
                 }
 
                 match c.take_if_any_matches(|(l, l_ty), (_, r_ty)| match *l_ty {

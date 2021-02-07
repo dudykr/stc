@@ -57,6 +57,10 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    SwitchCaseTestNotCompatible {
+        span: Span,
+    },
+
     EnumCannotBeLValue {
         span: Span,
     },
@@ -627,13 +631,13 @@ pub enum Error {
 }
 
 impl Error {
-    pub fn map<F>(self, op: F) -> Self
+    pub fn convert<F>(self, op: F) -> Self
     where
         F: FnOnce(Self) -> Self,
     {
         match self {
             Error::DebugContext(c) => {
-                let c = c.map(op);
+                let c = c.convert(op);
                 Error::DebugContext(c)
             }
             _ => op(self),
@@ -642,11 +646,11 @@ impl Error {
 }
 
 impl DebugContext {
-    fn map<F>(self, op: F) -> Self
+    fn convert<F>(self, op: F) -> Self
     where
         F: FnOnce(Error) -> Error,
     {
-        let inner = box self.inner.map(op);
+        let inner = box self.inner.convert(op);
 
         Self { inner, ..self }
     }
@@ -811,6 +815,8 @@ impl Error {
             Error::EnumCannotBeLValue { .. } => 2540,
 
             Error::NoSuchEnumVariant { .. } => 2339,
+
+            Error::SwitchCaseTestNotCompatible { .. } => 2678,
 
             _ => 0,
         }
