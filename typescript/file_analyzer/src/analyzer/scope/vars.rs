@@ -1,3 +1,5 @@
+use crate::analyzer::expr::IdCtx;
+use crate::analyzer::expr::TypeOfMode;
 use crate::analyzer::Analyzer;
 use crate::ty::TypeExt;
 use crate::validator::ValidateWith;
@@ -7,6 +9,7 @@ use stc_ts_ast_rnode::RAssignPatProp;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RKeyValuePatProp;
+use stc_ts_ast_rnode::RNumber;
 use stc_ts_ast_rnode::RObjectPat;
 use stc_ts_ast_rnode::RObjectPatProp;
 use stc_ts_ast_rnode::RPat;
@@ -15,6 +18,7 @@ use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_errors::Error;
 use stc_ts_types::Id;
+use stc_ts_types::Key;
 use stc_ts_types::Ref;
 use stc_ts_types::Type;
 use stc_ts_types::TypeLit;
@@ -103,7 +107,7 @@ impl Analyzer<'_, '_> {
                 // TODO: Handle type annotation
 
                 if type_ann.is_none() {
-                    if let Some(ty) = ty {
+                    if let Some(ty) = ty.clone() {
                         if let Some(m) = &mut self.mutations {
                             m.for_pats.entry(*node_id).or_default().optional = Some(true);
                             m.for_pats
@@ -137,18 +141,26 @@ impl Analyzer<'_, '_> {
                 }
 
                 // TODO: Store type.
-                for elem in elems.iter() {
-                    match *elem {
-                        Some(ref elem) => {
-                            let elem_ty = match ty {
-                                Some(ty) => {
-
-                                    //
-                                }
+                for (idx, elem) in elems.iter().enumerate() {
+                    match elem {
+                        Some(elem) => {
+                            let elem_ty = match &ty {
+                                Some(ty) => self
+                                    .access_property(
+                                        elem.span(),
+                                        ty.clone(),
+                                        &Key::Num(RNumber {
+                                            span: elem.span(),
+                                            value: idx as f64,
+                                        }),
+                                        TypeOfMode::RValue,
+                                        IdCtx::Var,
+                                    )
+                                    .map(Some)?,
                                 None => None,
                             };
 
-                            self.declare_vars_inner_with_ty(kind, elem, export)?;
+                            self.declare_vars_inner_with_ty(kind, elem, export, elem_ty)?;
                         }
                         // Skip
                         None => {}
@@ -179,10 +191,6 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                match ty.normalize() {
-                    Type::TypeLit(ty) => {}
-                    _ => {}
-                }
                 for prop in props {
                     match prop {
                         RObjectPatProp::Assign(RAssignPatProp {
