@@ -1469,10 +1469,14 @@ impl Analyzer<'_, '_> {
                             _ => {}
                         }
                     } else if let Err(err) = self.assign(&param.ty, &arg.ty, arg.span()) {
-                        self.storage.report(box Error::WrongArgType {
-                            span: arg.span(),
-                            inner: err,
-                        })
+                        let err = err.convert(|err| match err {
+                            Error::TupleAssignError { span, errors } => Error::Errors { span, errors },
+                            _ => Error::WrongArgType {
+                                span: arg.span(),
+                                inner: box err,
+                            },
+                        });
+                        self.storage.report(box err);
                     }
                 }
                 _ => {}
