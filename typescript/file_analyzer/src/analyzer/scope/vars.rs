@@ -202,7 +202,27 @@ impl Analyzer<'_, '_> {
                         RObjectPatProp::Assign(RAssignPatProp {
                             span, key, value: None, ..
                         }) => {
-                            unimplemented!("pattern in object pattern")
+                            let span = *span;
+
+                            let prop_ty = match &ty {
+                                Some(ty) => self
+                                    .access_property(
+                                        span,
+                                        ty.clone(),
+                                        &Key::Normal {
+                                            span: key.span,
+                                            sym: key.sym.clone(),
+                                        },
+                                        TypeOfMode::RValue,
+                                        IdCtx::Var,
+                                    )
+                                    .map(Some)
+                                    .context("tried to access property to declare variables using an object pattern")?,
+                                None => None,
+                            };
+
+                            self.declare_vars_inner_with_ty(kind, &RPat::Ident(key.clone()), export, prop_ty)
+                                .context("tried to declare a variable from a simple property in an object pattern")?;
                         }
                         RObjectPatProp::KeyValue(p) => {
                             let span = p.span();
