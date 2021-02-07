@@ -1026,6 +1026,11 @@ impl Analyzer<'_, '_> {
 
                     fail!()
                 }
+
+                Type::Ref(..) => {
+                    // We use reference handler below.
+                }
+
                 // TODO: allow
                 // let a: true | false = bool
                 _ => fail!(),
