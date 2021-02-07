@@ -252,7 +252,6 @@ es6/Symbols/symbolProperty23.ts
 es6/Symbols/symbolProperty26.ts
 es6/Symbols/symbolProperty27.ts
 es6/Symbols/symbolProperty28.ts
-es6/Symbols/symbolProperty3.ts
 es6/Symbols/symbolProperty37.ts
 es6/Symbols/symbolProperty38.ts
 es6/Symbols/symbolProperty40.ts
@@ -384,7 +383,6 @@ es6/defaultParameters/emitDefaultParametersFunctionProperty.ts
 es6/defaultParameters/emitDefaultParametersFunctionPropertyES6.ts
 es6/defaultParameters/emitDefaultParametersMethod.ts
 es6/defaultParameters/emitDefaultParametersMethodES6.ts
-es6/destructuring
 es6/destructuring/arrayAssignmentPatternWithAny.ts
 es6/destructuring/destructuringInFunctionType.ts
 es6/destructuring/destructuringObjectBindingPatternAndAssignment5.ts
@@ -1399,7 +1397,6 @@ statements/for-ofStatements/ES5for-of32.ts
 statements/forStatements/forStatements.ts
 statements/ifDoWhileStatements/ifDoWhileStatements.ts
 statements/returnStatements/returnStatements.ts
-statements/switchStatements/switchStatements.ts
 statements/throwStatements/throwInEnclosingStatements.ts
 statements/tryStatements/tryStatements.ts
 types/any/anyAsConstructor.ts
