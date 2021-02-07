@@ -33,6 +33,7 @@ use stc_ts_errors::Error;
 use stc_ts_types::name::Name;
 use stc_ts_types::Array;
 use stc_ts_types::Id;
+use stc_ts_utils::find_ids_in_pat;
 use stc_ts_utils::MapWithMut;
 use std::borrow::Cow;
 use std::{
@@ -518,13 +519,21 @@ impl Analyzer<'_, '_> {
             RPat::Invalid(..) => return Ok(()),
 
             RPat::Assign(assign) => {
+                let ids: Vec<Id> = find_ids_in_pat(&assign.left);
+
                 self.try_assign_pat(span, &assign.left, ty)?;
 
+                let prev_len = self.scope.declaring.len();
+                self.scope.declaring.extend(ids);
+
                 // TODO: Use type annotation?
-                let default_value_type = assign
+                let res = assign
                     .right
                     .validate_with_default(self)
-                    .context("tried to validate type of default expression in an assginment pattern")?;
+                    .context("tried to validate type of default expression in an assginment pattern");
+
+                self.scope.declaring.drain(prev_len..);
+                let default_value_type = res?;
                 return self.try_assign_pat(span, &assign.left, &default_value_type);
             }
 
