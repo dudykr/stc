@@ -20,6 +20,10 @@ use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
+use stc_ts_types::CallSignature;
+use stc_ts_types::Function;
+use stc_ts_types::TypeElement;
+use stc_ts_types::TypeLit;
 use stc_ts_types::{Alias, Interface, Ref};
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::*;
@@ -210,6 +214,21 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
+    pub(crate) fn fn_to_type_lit(&mut self, f: &Function) -> ValidationResult<TypeLit> {
+        Ok(TypeLit {
+            span: f.span,
+            members: vec![self.fn_to_type_element(f)?],
+        })
+    }
+
+    pub(crate) fn fn_to_type_element(&mut self, f: &Function) -> ValidationResult<TypeElement> {
+        Ok(TypeElement::Call(CallSignature {
+            span: f.span,
+            params: f.params.clone(),
+            type_params: f.type_params.clone(),
+            ret_ty: Some(f.ret_ty.clone()),
+        }))
+    }
     /// Fill type arguments using default value.
     ///
     /// If the referred type has default type parameter, we have to include it

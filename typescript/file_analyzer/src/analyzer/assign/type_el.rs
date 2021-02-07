@@ -227,6 +227,17 @@ impl Analyzer<'_, '_> {
                         .context("tried to assign an enum to type elements");
                 }
 
+                Type::Function(rhs) => {
+                    let rhs = self
+                        .fn_to_type_lit(rhs)
+                        .map(Type::TypeLit)
+                        .context("tried to convert a function to a type literal for asssignment")?;
+
+                    return self
+                        .assign_to_type_elements(opts, lhs_span, lhs, &rhs)
+                        .context("tried to assign a function to type elements");
+                }
+
                 _ => {
                     return Err(box Error::Unimplemented {
                         span,
