@@ -76,6 +76,22 @@ impl Analyzer<'_, '_> {
 
                 return Ok(());
             }
+
+            Type::TypeLit(rhs) => {
+                for lm in &l.body {
+                    let lm = self.make_type_el_from_class_member(lm)?;
+                    let lm = match lm {
+                        Some(v) => v,
+                        None => {
+                            continue;
+                        }
+                    };
+                    self.assign_type_elements_to_type_element(opts, &mut vec![], &lm, &rhs.members)
+                        .context("tried to assign type elements to a class member")?;
+                }
+
+                return Ok(());
+            }
             _ => {}
         };
 
