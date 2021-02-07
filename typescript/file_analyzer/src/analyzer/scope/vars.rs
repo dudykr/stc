@@ -1,5 +1,6 @@
 use crate::analyzer::expr::IdCtx;
 use crate::analyzer::expr::TypeOfMode;
+use crate::analyzer::util::ResultExt;
 use crate::analyzer::Analyzer;
 use crate::ty::TypeExt;
 use crate::validator::ValidateWith;
@@ -199,9 +200,7 @@ impl Analyzer<'_, '_> {
 
                 for prop in props {
                     match prop {
-                        RObjectPatProp::Assign(RAssignPatProp {
-                            span, key, value: None, ..
-                        }) => {
+                        RObjectPatProp::Assign(RAssignPatProp { span, key, value, .. }) => {
                             let span = *span;
 
                             let prop_ty = match &ty {
@@ -221,9 +220,27 @@ impl Analyzer<'_, '_> {
                                 None => None,
                             };
 
-                            self.declare_vars_inner_with_ty(kind, &RPat::Ident(key.clone()), export, prop_ty)
-                                .context("tried to declare a variable from a simple property in an object pattern")?;
+                            match value {
+                                Some(value) => {
+                                    // TODO: Assign this
+                                    let _type_of_default_value =
+                                        value.validate_with_default(self).report(&mut self.storage);
+
+                                    self.declare_vars_inner_with_ty(kind, &RPat::Ident(key.clone()), export, prop_ty)
+                                        .context(
+                                            "tried to declare a variable from an assignment property in an object \
+                                             pattern",
+                                        )?;
+                                }
+                                None => {
+                                    self.declare_vars_inner_with_ty(kind, &RPat::Ident(key.clone()), export, prop_ty)
+                                        .context(
+                                            "tried to declare a variable from a simple property in an object pattern",
+                                        )?;
+                                }
+                            }
                         }
+
                         RObjectPatProp::KeyValue(p) => {
                             let span = p.span();
                             let key = p.key.validate_with(self)?;
@@ -239,9 +256,7 @@ impl Analyzer<'_, '_> {
                             self.declare_vars_inner_with_ty(kind, &p.value, export, prop_ty)
                                 .context("tried to declare a variable from key-value property in an object pattern")?;
                         }
-                        RObjectPatProp::Assign(RAssignPatProp { .. }) => {
-                            unimplemented!("assign pattern in object pattern")
-                        }
+
                         RObjectPatProp::Rest(RRestPat { .. }) => {
                             unimplemented!("rest pattern in object pattern")
                         }
