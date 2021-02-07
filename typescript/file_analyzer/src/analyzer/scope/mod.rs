@@ -1107,6 +1107,17 @@ impl Analyzer<'_, '_> {
     pub fn declare_complex_vars(&mut self, kind: VarDeclKind, pat: &RPat, ty: Box<Type>) -> ValidationResult<()> {
         let span = pat.span();
 
+        match ty.normalize() {
+            Type::Ref(..) => {
+                let ty = self
+                    .expand_top_ref(ty.span(), Cow::Borrowed(&ty))
+                    .context("tried to expand reference to declare a complex variable")?;
+
+                return self.declare_complex_vars(kind, pat, box ty.into_owned());
+            }
+            _ => {}
+        }
+
         match pat {
             RPat::Assign(p) => return self.declare_complex_vars(kind, &p.left, ty),
 
