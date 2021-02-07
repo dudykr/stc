@@ -34,6 +34,7 @@ use stc_ts_types::name::Name;
 use stc_ts_types::Array;
 use stc_ts_types::Id;
 use stc_ts_utils::MapWithMut;
+use std::borrow::Cow;
 use std::{
     collections::hash_map::Entry,
     hash::Hash,
@@ -498,6 +499,19 @@ impl Analyzer<'_, '_> {
     }
 
     fn try_assign_pat(&mut self, span: Span, lhs: &RPat, ty: &Type) -> ValidationResult<()> {
+        match ty {
+            Type::Ref(..) => {
+                let ty = self
+                    .expand_top_ref(span, Cow::Borrowed(ty))
+                    .context("tried to expand reference to assign it to a pattern")?;
+
+                return self
+                    .try_assign_pat(span, lhs, &ty)
+                    .context("tried to assign expanded type to a pattern");
+            }
+            _ => {}
+        }
+
         // Update variable's type
         match lhs {
             // We emitted some parsing errors.
@@ -638,8 +652,6 @@ impl Analyzer<'_, '_> {
                             };
                             self.try_assign_pat(span, lhs, &Type::any(ty.span()))?;
                         }
-
-                        Type::Ref(..) => {}
 
                         Type::TypeLit(TypeLit { span, ref members }) => {
                             // Iterate over members, and assign if key matches.
