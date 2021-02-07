@@ -736,20 +736,6 @@ impl Analyzer<'_, '_> {
             alt.validate_with_args(child, (mode, None, type_ann))
         })?;
 
-        match **test {
-            RExpr::Ident(ref i) => {
-                // Check `declaring` before checking variables.
-                if self.scope.declaring.contains(&i.into()) {
-                    return if self.ctx.allow_ref_declaring {
-                        Ok(Type::any(span))
-                    } else {
-                        Err(box Error::ReferencedInInit { span })
-                    };
-                }
-            }
-            _ => {}
-        }
-
         if cons.type_eq(&alt) {
             return Ok(cons);
         }
