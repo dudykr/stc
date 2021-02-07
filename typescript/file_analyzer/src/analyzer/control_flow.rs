@@ -422,6 +422,7 @@ impl Analyzer<'_, '_> {
                     });
                     let ctx = Ctx {
                         in_cond: true,
+                        in_switch_case_test: true,
                         ..self.ctx
                     };
                     let mut a = self.with_ctx(ctx);
