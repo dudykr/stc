@@ -57,6 +57,10 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    OptionalBindingPatternInImplSignature {
+        span: Span,
+    },
+
     NullishCoalescingMixedWithLogicalWithoutParen {
         span: Span,
     },
@@ -823,6 +827,8 @@ impl Error {
             Error::SwitchCaseTestNotCompatible { .. } => 2678,
 
             Error::NullishCoalescingMixedWithLogicalWithoutParen { .. } => 5076,
+
+            Error::OptionalBindingPatternInImplSignature { .. } => 2463,
 
             _ => 0,
         }
