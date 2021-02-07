@@ -542,7 +542,8 @@ impl Analyzer<'_, '_> {
             Type::Lit(ref lhs) => match rhs.normalize() {
                 Type::Lit(rhs) if lhs.eq_ignore_span(&rhs) => return Ok(()),
                 Type::Ref(..) => {
-                    // We should expand ref.
+                    // We should expand ref. We expand it with the match
+                    // expression below.
                 }
                 _ => fail!(),
             },
