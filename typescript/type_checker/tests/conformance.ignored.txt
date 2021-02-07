@@ -28,3 +28,4 @@ thisTypeInFunctions2.ts
 keyofInferenceLowerPriorityThanReturn.ts
 arrayLiteralInference.ts
 recursiveIntersectionTypes.ts
+typeRelationships.ts
