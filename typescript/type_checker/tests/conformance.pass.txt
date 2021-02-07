@@ -422,8 +422,11 @@ es6/destructuring/iterableArrayPattern17.ts
 es6/destructuring/iterableArrayPattern18.ts
 es6/destructuring/iterableArrayPattern19.ts
 es6/destructuring/iterableArrayPattern9.ts
+es6/destructuring/nonIterableRestElement1.ts
+es6/destructuring/nonIterableRestElement2.ts
 es6/destructuring/objectBindingPatternKeywordIdentifiers05.ts
 es6/destructuring/objectBindingPatternKeywordIdentifiers06.ts
+es6/destructuring/restElementWithBindingPattern.ts
 es6/for-ofStatements/for-of1.ts
 es6/for-ofStatements/for-of13.ts
 es6/for-ofStatements/for-of18.ts
@@ -1473,6 +1476,8 @@ types/primitives/undefined/directReferenceToUndefined.ts
 types/primitives/undefined/invalidUndefinedValues.ts
 types/primitives/undefined/validUndefinedAssignments.ts
 types/primitives/undefined/validUndefinedValues.ts
+types/primitives/void/invalidAssignmentsToVoid.ts
+types/primitives/void/invalidVoidValues.ts
 types/primitives/void/validVoidAssignments.ts
 types/primitives/void/validVoidValues.ts
 types/rest/genericRestParameters2.ts
