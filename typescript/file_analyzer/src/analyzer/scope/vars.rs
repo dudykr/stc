@@ -176,6 +176,11 @@ impl Analyzer<'_, '_> {
                 node_id,
                 ..
             }) => {
+                if self.ctx.in_declare {
+                    self.storage
+                        .report(box Error::DestructuringAssignInAmbientContext { span });
+                }
+
                 let ty = match ty {
                     None => try_opt!(type_ann.as_ref().map(|v| v.type_ann.validate_with(self))),
                     Some(ty) => Some(ty),
@@ -196,11 +201,6 @@ impl Analyzer<'_, '_> {
                         RObjectPatProp::Assign(RAssignPatProp {
                             span, key, value: None, ..
                         }) => {
-                            if self.ctx.in_declare {
-                                self.storage
-                                    .report(box Error::DestructuringAssignInAmbientContext { span: *span });
-                            }
-
                             unimplemented!("pattern in object pattern")
                         }
                         RObjectPatProp::KeyValue(RKeyValuePatProp { .. }) => {
