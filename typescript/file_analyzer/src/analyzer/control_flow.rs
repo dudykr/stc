@@ -666,6 +666,15 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
 
+            RPat::Rest(rest) => {
+                //
+                let ty = Type::Array(Array {
+                    span,
+                    elem_type: box ty.clone(),
+                });
+                return self.try_assign_pat(span, &rest.arg, &ty);
+            }
+
             _ => {}
         }
 
