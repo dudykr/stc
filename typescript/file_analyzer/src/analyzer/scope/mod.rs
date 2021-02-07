@@ -1413,6 +1413,11 @@ impl Analyzer<'_, '_> {
                 }
             }
 
+            RPat::Rest(pat) => {
+                let ty = box Type::Array(Array { span, elem_type: ty });
+                return self.declare_complex_vars(kind, &pat.arg, ty);
+            }
+
             _ => unimplemented!("declare_complex_vars({:#?}, {:#?})", pat, ty),
         }
     }
