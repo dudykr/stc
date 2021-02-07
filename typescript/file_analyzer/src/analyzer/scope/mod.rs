@@ -717,7 +717,7 @@ impl Analyzer<'_, '_> {
                         }) => {
                             if self.ctx.in_declare {
                                 self.storage
-                                    .report(box Error::DestructuringAssignInAmbientContext { span });
+                                    .report(box Error::DestructuringAssignInAmbientContext { span: *span });
                             }
 
                             unimplemented!("pattern in object pattern")
