@@ -1017,7 +1017,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            Type::Enum(..) | Type::Intersection(..) | Type::Class(..) | Type::Interface(..) => {
+            Type::Enum(..) | Type::Alias(..) | Type::Intersection(..) | Type::Class(..) | Type::Interface(..) => {
                 let arg = self
                     .type_to_type_lit(arg)
                     .context("tried to convert a type into a type literal to infer mapped type")?

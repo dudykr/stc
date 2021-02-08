@@ -78,7 +78,12 @@ impl Analyzer<'_, '_> {
                 Cow::Owned(TypeLit { span: t.span, members })
             }
 
-            _ => return Ok(None),
+            Type::Alias(ty) => return self.type_to_type_lit(&ty.ty),
+
+            _ => {
+                slog::error!(self.logger, "unimplemented: type_to_type_lit: {:?}", ty);
+                return Ok(None);
+            }
         }))
     }
     pub(crate) fn normalize_tuples(&mut self, ty: &mut Type) {
