@@ -648,6 +648,10 @@ pub enum Error {
         key: Box<Key>,
     },
 
+    MustHaveSymbolIteratorThatReturnsIterator {
+        span: Span,
+    },
+
     NoSuchConstructor {
         span: Span,
         key: Box<Key>,
@@ -853,6 +857,8 @@ impl Error {
             Error::GeneratorCannotHaveVoidAsReturnType { .. } => 2505,
 
             Error::MissingFields { .. } => 2741,
+
+            Error::MustHaveSymbolIteratorThatReturnsIterator { .. } => 2488,
 
             _ => 0,
         }
