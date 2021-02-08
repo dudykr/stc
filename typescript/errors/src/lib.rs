@@ -852,6 +852,8 @@ impl Error {
 
             Error::GeneratorCannotHaveVoidAsReturnType { .. } => 2505,
 
+            Error::MissingFields { .. } => 2741,
+
             _ => 0,
         }
     }
