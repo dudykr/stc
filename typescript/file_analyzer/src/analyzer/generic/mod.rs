@@ -48,6 +48,7 @@ use stc_ts_types::TypeParamDecl;
 use stc_ts_types::TypeParamInstantiation;
 use stc_ts_types::Union;
 use stc_ts_utils::MapWithMut;
+use std::borrow::Cow;
 use std::collections::hash_map::Entry;
 use std::mem::take;
 use swc_common::EqIgnoreSpan;
@@ -990,6 +991,7 @@ impl Analyzer<'_, '_> {
                 let ctx = Ctx {
                     preserve_ref: false,
                     ignore_expand_prevention_for_top: true,
+                    preserve_params: true,
                     ..self.ctx
                 };
 
@@ -1011,6 +1013,13 @@ impl Analyzer<'_, '_> {
                     }
 
                     return Ok(true);
+                }
+            }
+
+            Type::Enum(..) | Type::Intersection(..) | Type::Class(..) | Type::Interface(..) => {
+                let arg = self.type_to_type_lit(arg)?.map(Cow::into_owned).map(Type::TypeLit);
+                if let Some(arg) = arg {
+                    return self.infer_mapped(span, inferred, param, &arg);
                 }
             }
             _ => {}
