@@ -202,6 +202,8 @@ impl Analyzer<'_, '_> {
                             if let Some(pt) = &p.type_ann {
                                 if let Some(at) = &a.type_ann {
                                     self.infer_type(span, inferred, pt, at)?;
+                                } else {
+                                    dbg!((&p, &a));
                                 }
                             } else {
                                 dbg!((&p, &a));
