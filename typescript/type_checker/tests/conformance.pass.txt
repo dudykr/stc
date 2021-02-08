@@ -773,6 +773,7 @@ es6/yieldExpressions/generatorTypeCheck54.ts
 es6/yieldExpressions/generatorTypeCheck55.ts
 es6/yieldExpressions/generatorTypeCheck56.ts
 es6/yieldExpressions/generatorTypeCheck60.ts
+es6/yieldExpressions/generatorTypeCheck9.ts
 es7/exponentiationOperator/compoundExponentiationAssignmentLHSIsReference.ts
 es7/exponentiationOperator/emitCompoundExponentiationAssignmentWithIndexingOnLHS1.ts
 es7/exponentiationOperator/emitCompoundExponentiationAssignmentWithIndexingOnLHS2.ts
