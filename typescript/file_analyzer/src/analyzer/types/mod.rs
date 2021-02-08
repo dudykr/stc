@@ -3,8 +3,10 @@ use crate::util::type_ext::TypeVecExt;
 use crate::ValidationResult;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
+use stc_ts_errors::DebugExt;
 use stc_ts_types::Array;
 use stc_ts_types::ClassMember;
+use stc_ts_types::ConstructorSignature;
 use stc_ts_types::MethodSignature;
 use stc_ts_types::PropertySignature;
 use stc_ts_types::Type;
@@ -79,6 +81,31 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Alias(ty) => return self.type_to_type_lit(&ty.ty),
+
+            Type::Constructor(ty) => {
+                let el = TypeElement::Constructor(ConstructorSignature {
+                    span: ty.span,
+                    params: ty.params.clone(),
+                    ret_ty: Some(ty.type_ann.clone()),
+                    type_params: ty.type_params.clone(),
+                });
+
+                Cow::Owned(TypeLit {
+                    span: ty.span,
+                    members: vec![el],
+                })
+            }
+
+            Type::Function(ty) => {
+                let el = self
+                    .fn_to_type_element(ty)
+                    .context("tried to convert function to type element to create type literal")?;
+
+                Cow::Owned(TypeLit {
+                    span: ty.span,
+                    members: vec![el],
+                })
+            }
 
             _ => {
                 slog::error!(self.logger, "unimplemented: type_to_type_lit: {:?}", ty);
