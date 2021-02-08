@@ -983,6 +983,9 @@ impl Analyzer<'_, '_> {
             Type::Interface(Interface {
                 ref body, ref extends, ..
             }) => {
+                self.assign_to_type_elements(opts, span, &body, rhs)
+                    .context("tried to assign a type to an interface")?;
+
                 let mut errors = vec![];
                 for parent in extends {
                     let parent = self.type_of_ts_entity_name(
@@ -1027,8 +1030,6 @@ impl Analyzer<'_, '_> {
                 // 'String'")     }
                 //     _ => {}
                 // }
-                self.assign_to_type_elements(opts, span, &body, rhs)
-                    .context("tried to assign an interfafce to an interface")?;
 
                 // Assignment failed. This check is required to distinguish an empty interface
                 // from an interface with parents.
