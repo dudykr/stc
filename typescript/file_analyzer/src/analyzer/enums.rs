@@ -381,7 +381,14 @@ impl Analyzer<'_, '_> {
     fn validate_member_of_str_enum(&mut self, m: &RTsEnumMember) {
         fn type_of_expr(e: &RExpr) -> Option<swc_ecma_utils::Type> {
             Some(match e {
-                RExpr::Tpl(..) | RExpr::Lit(RLit::Str(..)) => swc_ecma_utils::Type::Str,
+                RExpr::Lit(RLit::Str(..)) => swc_ecma_utils::Type::Str,
+                RExpr::Tpl(t) => {
+                    if t.exprs.is_empty() {
+                        swc_ecma_utils::Type::Str
+                    } else {
+                        return None;
+                    }
+                }
                 RExpr::Lit(RLit::Num(..)) => swc_ecma_utils::Type::Num,
                 RExpr::Bin(RBinExpr {
                     op: op!(bin, "+"),

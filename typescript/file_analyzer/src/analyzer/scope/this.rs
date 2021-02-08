@@ -3,9 +3,47 @@ use rnode::Visit;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
 use rnode::VisitWith;
+use stc_ts_types::ClassMember;
+use stc_ts_types::ClassProperty;
+use stc_ts_types::Id;
+use stc_ts_types::Key;
+use stc_ts_types::Method;
 use stc_ts_types::Type;
 
 impl Analyzer<'_, '_> {
+    pub(crate) fn this_has_property_named(&mut self, p: &Id) -> bool {
+        if self.scope.is_this_ref_to_object_lit() || self.scope.is_this_ref_to_class() {
+            if let Some(declaring) = &self.scope.declaring_prop() {
+                if *p.sym() == *declaring.sym() {
+                    return true;
+                }
+            }
+        }
+
+        if self.scope.is_this_ref_to_class() {
+            for (_, m) in self.scope.class_members() {
+                match m {
+                    ClassMember::Method(Method {
+                        key, is_static: false, ..
+                    })
+                    | ClassMember::Property(ClassProperty {
+                        key, is_static: false, ..
+                    }) => match key {
+                        Key::Normal { sym, .. } => {
+                            if *p.sym() == *sym {
+                                return true;
+                            }
+                        }
+                        _ => {}
+                    },
+                    _ => {}
+                }
+            }
+        }
+
+        false
+    }
+
     pub(crate) fn expand_this(&mut self, ty: &mut Type) {
         let this_ty = self.scope.this();
 

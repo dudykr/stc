@@ -10,11 +10,13 @@ use crate::{
     ValidationResult,
 };
 use rnode::VisitWith;
+use stc_ts_ast_rnode::RArrayPat;
 use stc_ts_ast_rnode::RAssignPat;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RKeyValuePatProp;
 use stc_ts_ast_rnode::RKeyValueProp;
+use stc_ts_ast_rnode::RObjectPat;
 use stc_ts_ast_rnode::RObjectPatProp;
 use stc_ts_ast_rnode::RParam;
 use stc_ts_ast_rnode::RPat;
@@ -88,6 +90,20 @@ impl Analyzer<'_, '_> {
         self.record(p);
         if !self.is_builtin {
             debug_assert_ne!(p.span(), DUMMY_SP, "A pattern should have a valid span");
+        }
+
+        if !self.ctx.in_declare {
+            match p {
+                RPat::Array(RArrayPat {
+                    span, optional: true, ..
+                })
+                | RPat::Object(RObjectPat {
+                    span, optional: true, ..
+                }) => self
+                    .storage
+                    .report(box Error::OptionalBindingPatternInImplSignature { span: *span }),
+                _ => {}
+            }
         }
 
         let ty = p

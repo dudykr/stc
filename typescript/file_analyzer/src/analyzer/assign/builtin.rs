@@ -13,10 +13,41 @@ use swc_atoms::js_word;
 
 impl Analyzer<'_, '_> {
     pub(super) fn assign_to_builtins(&mut self, opts: AssignOpts, l: &Type, r: &Type) -> Option<ValidationResult<()>> {
+        let span = opts.span;
         let l = l.normalize();
         let r = r.normalize();
 
         match l {
+            Type::Ref(Ref {
+                type_name: RTsEntityName::Ident(RIdent { sym, .. }),
+                ..
+            }) if *sym == *"ThisType" => return Some(Ok(())),
+
+            Type::Ref(Ref {
+                type_name:
+                    RTsEntityName::Ident(RIdent {
+                        sym: js_word!("Array"), ..
+                    }),
+                type_args: Some(type_args),
+                ..
+            }) if type_args.params.len() == 1 => match r {
+                Type::Array(r) => {
+                    return Some(self.assign_inner(&type_args.params[0], &r.elem_type, opts));
+                }
+                Type::Tuple(r) => {
+                    let mut errors = vec![];
+                    for el in &r.elems {
+                        errors.extend(self.assign_inner(&type_args.params[0], &el.ty, opts).err());
+                    }
+                    if !errors.is_empty() {
+                        return Some(Err(box Error::TupleAssignError { span, errors }));
+                    }
+
+                    return Some(Ok(()));
+                }
+                _ => {}
+            },
+
             Type::Ref(Ref {
                 type_name:
                     RTsEntityName::Ident(RIdent {

@@ -343,11 +343,18 @@ impl Analyzer<'_, '_> {
 
                     let mut callee_ty = {
                         let callee_ty = callee.validate_with_default(analyzer)?;
-                        match *callee_ty.normalize() {
+                        match callee_ty.normalize() {
                             Type::Keyword(RTsKeywordType {
                                 kind: TsKeywordTypeKind::TsAnyKeyword,
                                 ..
-                            }) if type_args.is_some() => analyzer.storage.report(box Error::TS2347 { span }),
+                            }) if type_args.is_some() => {
+                                // If it's implicit any, we should postpone this check.
+                                if !analyzer.is_implicitly_typed(&callee_ty) {
+                                    analyzer
+                                        .storage
+                                        .report(box Error::AnyTypeUsedAsCalleeWithTypeArgs { span })
+                                }
+                            }
                             _ => {}
                         }
                         callee_ty
@@ -1273,8 +1280,20 @@ impl Analyzer<'_, '_> {
                 self.register_type(param.name.clone(), box Type::Param(param.clone()));
             }
 
+            let inferred = self.infer_arg_types(span, type_args, type_params, &params, &spread_arg_types, None)?;
+
+            let expanded_param_types = params
+                .into_iter()
+                .cloned()
+                .map(|v| -> ValidationResult<_> {
+                    let ty = self.expand_type_params(&inferred, v.ty)?;
+
+                    Ok(FnParam { ty, ..v })
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+
             let mut new_args = vec![];
-            for (idx, (arg, param)) in args.into_iter().zip(params.iter()).enumerate() {
+            for (idx, (arg, param)) in args.into_iter().zip(expanded_param_types.iter()).enumerate() {
                 let arg_ty = &arg_types[idx];
                 let (type_param_decl, actual_params) = match &*param.ty {
                     Type::Function(f) => (&f.type_params, &f.params),
@@ -1297,13 +1316,13 @@ impl Analyzer<'_, '_> {
                         let node_id = pat.node_id()?;
                         self.mutations.as_ref()?.for_pats.get(&node_id)?.ty.clone()?
                     };
+
                     if let Some(ty) = default_any_ty {
                         match &*ty {
                             Type::Keyword(RTsKeywordType {
                                 span,
                                 kind: TsKeywordTypeKind::TsAnyKeyword,
                             }) if self.is_implicitly_typed_span(*span) => {
-                                // TODO: Make this eficient
                                 let new_ty = RTsType::from(actual.ty.clone()).validate_with(self)?;
                                 if let Some(node_id) = pat.node_id() {
                                     if let Some(m) = &mut self.mutations {
@@ -1383,18 +1402,6 @@ impl Analyzer<'_, '_> {
             };
             let ret_ty = self.with_ctx(ctx).expand(span, ret_ty)?;
 
-            let inferred = self.infer_arg_types(span, type_args, type_params, &params, &spread_arg_types, None)?;
-
-            let expanded_param_types = params
-                .into_iter()
-                .cloned()
-                .map(|v| -> ValidationResult<_> {
-                    let ty = self.expand_type_params(&inferred, v.ty)?;
-
-                    Ok(FnParam { ty, ..v })
-                })
-                .collect::<Result<Vec<_>, _>>()?;
-
             self.validate_arg_types(&expanded_param_types, &spread_arg_types);
 
             print_type(&logger, "Return", &self.cm, &ret_ty);
@@ -1458,11 +1465,40 @@ impl Analyzer<'_, '_> {
                         _ => {}
                     }
 
-                    if let Err(err) = self.assign(&param.ty, &arg.ty, arg.span()) {
-                        self.storage.report(box Error::WrongArgType {
-                            span: arg.span(),
-                            inner: err,
-                        })
+                    if arg.spread.is_some() {
+                        match &*arg.ty {
+                            Type::Array(arg) => {
+                                // We should change type if the parameter is a rest parameter.
+                                if let Ok(()) = self.assign(&param.ty, &arg.elem_type, arg.span()) {
+                                    continue;
+                                }
+                            }
+                            _ => {}
+                        }
+                    } else {
+                        let mut allow_unknown_rhs = match arg.ty.normalize() {
+                            Type::TypeLit(..) => false,
+                            _ => true,
+                        };
+                        if let Err(err) = self.assign_with_opts(
+                            AssignOpts {
+                                span: arg.span(),
+                                allow_unknown_rhs,
+                                allow_assignment_to_param: false,
+                                allow_unknown_type: false,
+                            },
+                            &param.ty,
+                            &arg.ty,
+                        ) {
+                            let err = err.convert(|err| match err {
+                                Error::TupleAssignError { span, errors } => Error::Errors { span, errors },
+                                _ => Error::WrongArgType {
+                                    span: arg.span(),
+                                    inner: box err,
+                                },
+                            });
+                            self.storage.report(box err);
+                        }
                     }
                 }
                 _ => {}
@@ -1520,7 +1556,7 @@ impl Analyzer<'_, '_> {
 
             let mut upcasted = false;
             for ty in previous_types.into_owned().iter_union().flat_map(|ty| ty.iter_union()) {
-                match self.extends(&new_ty, &ty) {
+                match self.extends(span, &new_ty, &ty) {
                     Some(true) => {
                         upcasted = true;
                         new_types.push(box ty.clone());
@@ -1621,6 +1657,8 @@ impl Analyzer<'_, '_> {
                                 AssignOpts {
                                     span,
                                     allow_unknown_rhs: true,
+                                    allow_assignment_to_param: true,
+                                    allow_unknown_type: false,
                                 },
                                 &param.ty,
                                 &arg.ty,

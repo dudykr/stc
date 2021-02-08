@@ -95,7 +95,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Returns `Some(true)` if `child` extends `parent`.
-    pub(in crate::analyzer) fn extends(&mut self, child: &Type, parent: &Type) -> Option<bool> {
+    pub(in crate::analyzer) fn extends(&mut self, span: Span, child: &Type, parent: &Type) -> Option<bool> {
         let child = child.normalize();
         let parent = parent.normalize();
 
@@ -123,7 +123,7 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
 
-                return self.extends(&child, parent);
+                return self.extends(span, &child, parent);
             }
 
             _ => {}
@@ -149,7 +149,7 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
 
-                return self.extends(child, &parent);
+                return self.extends(span, child, &parent);
             }
             _ => {}
         }
@@ -160,7 +160,7 @@ impl Analyzer<'_, '_> {
                 ..
             }) => return Some(false),
             Type::Union(parent) => {
-                for res in parent.types.iter().map(|parent| self.extends(child, &parent)) {
+                for res in parent.types.iter().map(|parent| self.extends(span, child, &parent)) {
                     if res != Some(true) {
                         return Some(false);
                     }
@@ -219,7 +219,7 @@ impl Analyzer<'_, '_> {
                         Type::Class(parent) => {
                             // Check for grand parent
                             if let Some(grand_parent) = &parent.super_class {
-                                if let Some(false) = self.extends(child, grand_parent) {
+                                if let Some(false) = self.extends(span, child, grand_parent) {
                                     return Some(false);
                                 }
                             }
@@ -230,11 +230,9 @@ impl Analyzer<'_, '_> {
             },
             Type::Tuple(child_tuple) => match parent {
                 Type::Array(parent_array) => {
-                    if child_tuple
-                        .elems
-                        .iter()
-                        .all(|child_element| self.extends(&child_element.ty, &parent_array.elem_type) == Some(true))
-                    {
+                    if child_tuple.elems.iter().all(|child_element| {
+                        self.extends(span, &child_element.ty, &parent_array.elem_type) == Some(true)
+                    }) {
                         return Some(true);
                     }
                 }
@@ -246,7 +244,6 @@ impl Analyzer<'_, '_> {
             },
             _ => {}
         }
-        let span = child.span();
         // dbg!(child, parent);
 
         {

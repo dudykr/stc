@@ -20,9 +20,14 @@ use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
+use stc_ts_types::CallSignature;
+use stc_ts_types::Function;
+use stc_ts_types::TypeElement;
+use stc_ts_types::TypeLit;
 use stc_ts_types::{Alias, Interface, Ref};
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::*;
+use ty::TypeExt;
 
 #[validator]
 impl Analyzer<'_, '_> {
@@ -116,29 +121,37 @@ impl Analyzer<'_, '_> {
 
             let inferred_return_type = match inferred_return_type {
                 Some(Some(inferred_return_type)) => {
-                    let inferred_return_type = match *inferred_return_type {
+                    let mut inferred_return_type = match *inferred_return_type {
                         Type::Ref(ty) => box Type::Ref(child.qualify_ref_type_args(span, ty)?),
                         _ => inferred_return_type,
                     };
 
                     if let Some(declared) = &declared_ret_ty {
-                        if !f.is_async && !f.is_generator {
-                            // TODO: Use more complex logic for async functions and generator functions.
+                        // Expand before assigning
+                        let span = inferred_return_type.span();
 
-                            // Expand before assigning
-                            let span = inferred_return_type.span();
-
+                        if f.is_generator && declared.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
+                            child
+                                .storage
+                                .report(box Error::GeneratorCannotHaveVoidAsReturnType { span: declared.span() })
+                        } else {
                             // It's okay to return more properties than declared.
                             child
                                 .assign_with_opts(
                                     AssignOpts {
                                         span,
                                         allow_unknown_rhs: true,
+                                        allow_assignment_to_param: false,
+                                        allow_unknown_type: false,
                                     },
                                     &declared,
                                     &inferred_return_type,
                                 )
                                 .report(&mut child.storage);
+                        }
+                    } else {
+                        if child.may_generalize(&inferred_return_type) {
+                            inferred_return_type = inferred_return_type.generalize_lit();
                         }
                     }
 
@@ -209,6 +222,21 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
+    pub(crate) fn fn_to_type_lit(&mut self, f: &Function) -> ValidationResult<TypeLit> {
+        Ok(TypeLit {
+            span: f.span,
+            members: vec![self.fn_to_type_element(f)?],
+        })
+    }
+
+    pub(crate) fn fn_to_type_element(&mut self, f: &Function) -> ValidationResult<TypeElement> {
+        Ok(TypeElement::Call(CallSignature {
+            span: f.span,
+            params: f.params.clone(),
+            type_params: f.type_params.clone(),
+            ret_ty: Some(f.ret_ty.clone()),
+        }))
+    }
     /// Fill type arguments using default value.
     ///
     /// If the referred type has default type parameter, we have to include it

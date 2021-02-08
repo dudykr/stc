@@ -13,14 +13,17 @@ use rnode::Visit;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
 use rnode::VisitWith;
+use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RStr;
+use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::debug::print_backtrace;
 use stc_ts_errors::debug::print_type;
+use stc_ts_errors::DebugExt;
 use stc_ts_types::Array;
 use stc_ts_types::FnParam;
 use stc_ts_types::Id;
@@ -29,9 +32,11 @@ use stc_ts_types::IndexedAccessType;
 use stc_ts_types::Intersection;
 use stc_ts_types::Key;
 use stc_ts_types::Mapped;
+use stc_ts_types::ModuleId;
 use stc_ts_types::Operator;
 use stc_ts_types::OptionalType;
 use stc_ts_types::PropertySignature;
+use stc_ts_types::Ref;
 use stc_ts_types::RestType;
 use stc_ts_types::Tuple;
 use stc_ts_types::TupleElement;
@@ -44,6 +49,7 @@ use stc_ts_types::TypeParamDecl;
 use stc_ts_types::TypeParamInstantiation;
 use stc_ts_types::Union;
 use stc_ts_utils::MapWithMut;
+use std::borrow::Cow;
 use std::collections::hash_map::Entry;
 use std::mem::take;
 use swc_common::EqIgnoreSpan;
@@ -386,6 +392,8 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        self.prevent_generalization_of_inferred_types(type_params, &mut inferred);
+
         slog::warn!(self.logger, "infer_arg_types is finished");
 
         Ok(inferred.type_params)
@@ -430,6 +438,17 @@ impl Analyzer<'_, '_> {
             }
             _ => param,
         };
+
+        match param {
+            Type::Intersection(param) => {
+                for param in &param.types {
+                    self.infer_type(span, inferred, param, arg)?;
+                }
+
+                return Ok(());
+            }
+            _ => {}
+        }
 
         match arg {
             Type::Union(arg) => {
@@ -883,6 +902,23 @@ impl Analyzer<'_, '_> {
         match arg {
             // Handled by generic expander, so let's return it as-is.
             Type::Mapped(..) => {}
+
+            Type::Array(arr) => {
+                let mut params = vec![];
+                params.push(arr.elem_type.clone());
+                return self.infer_type(
+                    span,
+                    inferred,
+                    param,
+                    &Type::Ref(Ref {
+                        span,
+                        ctxt: ModuleId::builtin(),
+                        type_name: RTsEntityName::Ident(RIdent::new("Array".into(), DUMMY_SP)),
+                        type_args: Some(box TypeParamInstantiation { span, params }),
+                    }),
+                );
+            }
+
             Type::Keyword(RTsKeywordType {
                 kind: TsKeywordTypeKind::TsAnyKeyword,
                 ..
@@ -893,6 +929,7 @@ impl Analyzer<'_, '_> {
                     preserve_ref: false,
                     ignore_expand_prevention_for_top: true,
                     ignore_expand_prevention_for_all: false,
+                    preserve_params: true,
                     ..self.ctx
                 };
                 let arg = self.with_ctx(ctx).expand_fully(span, box arg.clone(), true)?;
@@ -966,6 +1003,7 @@ impl Analyzer<'_, '_> {
                 let ctx = Ctx {
                     preserve_ref: false,
                     ignore_expand_prevention_for_top: true,
+                    preserve_params: true,
                     ..self.ctx
                 };
 
@@ -987,6 +1025,17 @@ impl Analyzer<'_, '_> {
                     }
 
                     return Ok(true);
+                }
+            }
+
+            Type::Enum(..) | Type::Alias(..) | Type::Intersection(..) | Type::Class(..) | Type::Interface(..) => {
+                let arg = self
+                    .type_to_type_lit(arg)
+                    .context("tried to convert a type into a type literal to infer mapped type")?
+                    .map(Cow::into_owned)
+                    .map(Type::TypeLit);
+                if let Some(arg) = arg {
+                    return self.infer_mapped(span, inferred, param, &arg);
                 }
             }
             _ => {}

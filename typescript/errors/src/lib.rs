@@ -57,6 +57,31 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    GeneratorCannotHaveVoidAsReturnType {
+        span: Span,
+    },
+
+    NoSuchVarButThisHasSuchProperty {
+        span: Span,
+        name: Id,
+    },
+
+    DestructuringAssignInAmbientContext {
+        span: Span,
+    },
+
+    OptionalBindingPatternInImplSignature {
+        span: Span,
+    },
+
+    NullishCoalescingMixedWithLogicalWithoutParen {
+        span: Span,
+    },
+
+    SwitchCaseTestNotCompatible {
+        span: Span,
+    },
+
     EnumCannotBeLValue {
         span: Span,
     },
@@ -213,6 +238,11 @@ pub enum Error {
 
     ImplicitAny {
         span: Span,
+    },
+
+    TupleAssignError {
+        span: Span,
+        errors: Vec<Box<Error>>,
     },
 
     Errors {
@@ -454,7 +484,7 @@ pub enum Error {
         span: Span,
     },
 
-    TS2347 {
+    AnyTypeUsedAsCalleeWithTypeArgs {
         span: Span,
     },
 
@@ -618,12 +648,42 @@ pub enum Error {
         key: Box<Key>,
     },
 
+    MustHaveSymbolIteratorThatReturnsIterator {
+        span: Span,
+    },
+
     NoSuchConstructor {
         span: Span,
         key: Box<Key>,
     },
 
     DebugContext(DebugContext),
+}
+
+impl Error {
+    pub fn convert<F>(self, op: F) -> Self
+    where
+        F: FnOnce(Self) -> Self,
+    {
+        match self {
+            Error::DebugContext(c) => {
+                let c = c.convert(op);
+                Error::DebugContext(c)
+            }
+            _ => op(self),
+        }
+    }
+}
+
+impl DebugContext {
+    fn convert<F>(self, op: F) -> Self
+    where
+        F: FnOnce(Error) -> Error,
+    {
+        let inner = box self.inner.convert(op);
+
+        Self { inner, ..self }
+    }
 }
 
 #[derive(Clone, PartialEq, Spanned)]
@@ -689,7 +749,7 @@ impl Error {
             Error::TS1318 { .. } => 1318,
             Error::TS1319 { .. } => 1319,
             Error::TS2309 { .. } => 2309,
-            Error::TS2347 { .. } => 2347,
+            Error::AnyTypeUsedAsCalleeWithTypeArgs { .. } => 2347,
             Error::TS2360 { .. } => 2360,
             Error::TS2361 { .. } => 2361,
             Error::TS2362 { .. } => 2362,
@@ -716,7 +776,8 @@ impl Error {
             Error::AssignFailed { .. }
             | Error::InvalidAssignmentOfArray { .. }
             | Error::UnknownPropertyInObjectLiteralAssignment { .. }
-            | Error::InvalidOpAssign { .. } => 2322,
+            | Error::InvalidOpAssign { .. }
+            | Error::TupleAssignError { .. } => 2322,
 
             Error::NonOverlappingTypeCast { .. } => 2352,
 
@@ -732,6 +793,7 @@ impl Error {
 
             Error::InvalidDeleteOperand { .. } => 2703,
             Error::NoSuchVar { .. } => 2304,
+            Error::NoSuchVarButThisHasSuchProperty { .. } => 2663,
 
             Error::CannotAssignAbstractConstructorToNonAbstractConstructor { .. } => 2322,
             Error::CannotCreateInstanceOfAbstractClass { .. } => 2511,
@@ -785,6 +847,18 @@ impl Error {
             Error::EnumCannotBeLValue { .. } => 2540,
 
             Error::NoSuchEnumVariant { .. } => 2339,
+
+            Error::SwitchCaseTestNotCompatible { .. } => 2678,
+
+            Error::NullishCoalescingMixedWithLogicalWithoutParen { .. } => 5076,
+
+            Error::OptionalBindingPatternInImplSignature { .. } => 2463,
+
+            Error::GeneratorCannotHaveVoidAsReturnType { .. } => 2505,
+
+            Error::MissingFields { .. } => 2741,
+
+            Error::MustHaveSymbolIteratorThatReturnsIterator { .. } => 2488,
 
             _ => 0,
         }

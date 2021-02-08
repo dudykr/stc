@@ -92,6 +92,10 @@ pub(crate) struct Ctx {
 
     allow_module_var: bool,
 
+    /// `true` for condition of conditional expression or of an if statement.
+    in_cond: bool,
+    in_switch_case_test: bool,
+
     in_declare: bool,
     in_global: bool,
     in_export_default_expr: bool,
@@ -343,6 +347,8 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             ctx: Ctx {
                 module_id: ModuleId::builtin(),
                 allow_module_var: false,
+                in_switch_case_test: false,
+                in_cond: false,
                 in_declare: false,
                 in_global: false,
                 in_export_default_expr: false,

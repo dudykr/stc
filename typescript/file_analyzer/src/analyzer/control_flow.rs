@@ -1,4 +1,5 @@
 use super::util::ResultExt;
+use super::Ctx;
 use super::{
     expr::TypeOfMode,
     marks::MarkExt,
@@ -32,7 +33,9 @@ use stc_ts_errors::Error;
 use stc_ts_types::name::Name;
 use stc_ts_types::Array;
 use stc_ts_types::Id;
+use stc_ts_utils::find_ids_in_pat;
 use stc_ts_utils::MapWithMut;
+use std::borrow::Cow;
 use std::{
     collections::hash_map::Entry,
     hash::Hash,
@@ -320,7 +323,7 @@ impl Analyzer<'_, '_> {
                         break;
                     }
 
-                    match self.extends(&b, ty) {
+                    match self.extends(span, &b, ty) {
                         Some(true) => {
                             // Remove ty.
                             continue 'outer;
@@ -351,7 +354,7 @@ impl Analyzer<'_, '_> {
                     continue;
                 }
 
-                match self.extends(&ty, b) {
+                match self.extends(span, &ty, b) {
                     Some(true) => {
                         // Remove ty.
                         continue 'outer;
@@ -371,7 +374,10 @@ impl Analyzer<'_, '_> {
         for case in &s.cases {
             if let Some(test) = &case.test {
                 let case_ty = test.validate_with_default(self)?;
-                self.assign(&discriminant_ty, &case_ty, test.span())?
+                // self.assign(&discriminant_ty, &case_ty, test.span())
+                //     .context("tried to assign the discriminant of switch to
+                // the test of a case")     .report(&mut
+                // self.storage);
             }
         }
 
@@ -416,10 +422,16 @@ impl Analyzer<'_, '_> {
                         left: stmt.discriminant.clone(),
                         right: test.clone(),
                     });
-                    match binary_test_expr.validate_with_default(self) {
+                    let ctx = Ctx {
+                        in_cond: true,
+                        in_switch_case_test: true,
+                        ..self.ctx
+                    };
+                    let mut a = self.with_ctx(ctx);
+                    match binary_test_expr.validate_with_default(&mut *a) {
                         Ok(..) => {}
                         Err(err) => {
-                            self.storage.report(err);
+                            a.storage.report(err);
                             errored = true;
                             continue;
                         }
@@ -488,19 +500,40 @@ impl Analyzer<'_, '_> {
     }
 
     fn try_assign_pat(&mut self, span: Span, lhs: &RPat, ty: &Type) -> ValidationResult<()> {
+        match ty {
+            Type::Ref(..) => {
+                let ty = self
+                    .expand_top_ref(span, Cow::Borrowed(ty))
+                    .context("tried to expand reference to assign it to a pattern")?;
+
+                return self
+                    .try_assign_pat(span, lhs, &ty)
+                    .context("tried to assign expanded type to a pattern");
+            }
+            _ => {}
+        }
+
         // Update variable's type
         match lhs {
             // We emitted some parsing errors.
             RPat::Invalid(..) => return Ok(()),
 
             RPat::Assign(assign) => {
+                let ids: Vec<Id> = find_ids_in_pat(&assign.left);
+
                 self.try_assign_pat(span, &assign.left, ty)?;
 
+                let prev_len = self.scope.declaring.len();
+                self.scope.declaring.extend(ids);
+
                 // TODO: Use type annotation?
-                let default_value_type = assign
+                let res = assign
                     .right
                     .validate_with_default(self)
-                    .context("tried to validate type of default expression in an assginment pattern")?;
+                    .context("tried to validate type of default expression in an assginment pattern");
+
+                self.scope.declaring.drain(prev_len..);
+                let default_value_type = res?;
                 return self.try_assign_pat(span, &assign.left, &default_value_type);
             }
 
@@ -629,8 +662,6 @@ impl Analyzer<'_, '_> {
                             self.try_assign_pat(span, lhs, &Type::any(ty.span()))?;
                         }
 
-                        Type::Ref(..) => {}
-
                         Type::TypeLit(TypeLit { span, ref members }) => {
                             // Iterate over members, and assign if key matches.
                             for member in members {
@@ -654,6 +685,15 @@ impl Analyzer<'_, '_> {
                 }
 
                 return Ok(());
+            }
+
+            RPat::Rest(rest) => {
+                // TODO: Check if this is correct. (in object rest context)
+                let ty = Type::Array(Array {
+                    span,
+                    elem_type: box ty.clone(),
+                });
+                return self.try_assign_pat(span, &rest.arg, &ty);
             }
 
             _ => {}
@@ -689,7 +729,13 @@ impl Analyzer<'_, '_> {
             ..
         } = *e;
 
-        test.validate_with_default(self)?;
+        {
+            let ctx = Ctx {
+                in_cond: true,
+                ..self.ctx
+            };
+            test.validate_with_default(&mut *self.with_ctx(ctx))?;
+        }
         let true_facts = self.cur_facts.true_facts.take();
         let false_facts = self.cur_facts.false_facts.take();
         let cons = self.with_child(ScopeKind::Flow, true_facts, |child| {
@@ -698,20 +744,6 @@ impl Analyzer<'_, '_> {
         let alt = self.with_child(ScopeKind::Flow, false_facts, |child| {
             alt.validate_with_args(child, (mode, None, type_ann))
         })?;
-
-        match **test {
-            RExpr::Ident(ref i) => {
-                // Check `declaring` before checking variables.
-                if self.scope.declaring.contains(&i.into()) {
-                    return if self.ctx.allow_ref_declaring {
-                        Ok(Type::any(span))
-                    } else {
-                        Err(box Error::ReferencedInInit { span })
-                    };
-                }
-            }
-            _ => {}
-        }
 
         if cons.type_eq(&alt) {
             return Ok(cons);

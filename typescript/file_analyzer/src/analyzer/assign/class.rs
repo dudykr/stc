@@ -6,6 +6,7 @@ use stc_ts_errors::Error;
 use stc_ts_types::Class;
 use stc_ts_types::ClassMember;
 use stc_ts_types::Type;
+use std::borrow::Cow;
 use swc_common::EqIgnoreSpan;
 use swc_ecma_ast::Accessibility;
 
@@ -16,6 +17,11 @@ impl Analyzer<'_, '_> {
         let r = r.normalize();
 
         match r {
+            Type::Ref(..) => {
+                let r = self.expand_top_ref(opts.span, Cow::Borrowed(r))?;
+                return self.assign_to_class(opts, l, &r);
+            }
+
             Type::Class(r) => {
                 if l.eq_ignore_span(r) {
                     return Ok(());
@@ -67,6 +73,22 @@ impl Analyzer<'_, '_> {
                 }
 
                 // TODO: Assign parent interfaces
+
+                return Ok(());
+            }
+
+            Type::TypeLit(rhs) => {
+                for lm in &l.body {
+                    let lm = self.make_type_el_from_class_member(lm)?;
+                    let lm = match lm {
+                        Some(v) => v,
+                        None => {
+                            continue;
+                        }
+                    };
+                    self.assign_type_elements_to_type_element(opts, &mut vec![], &lm, &rhs.members)
+                        .context("tried to assign type elements to a class member")?;
+                }
 
                 return Ok(());
             }
