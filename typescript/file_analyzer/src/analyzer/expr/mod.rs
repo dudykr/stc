@@ -1760,8 +1760,12 @@ impl Analyzer<'_, '_> {
 
         if let Some(ty) = self.find_var_type(&i.into()) {
             slog::debug!(self.logger, "find_var_type returned a type");
+            let mut span = span;
             let mut ty = ty.into_owned();
             if self.scope.kind().allows_respanning() {
+                if self.is_implicitly_typed(&ty) {
+                    span.ctxt = span.ctxt.apply_mark(self.marks().implicit_type_mark);
+                }
                 ty.respan(span);
             }
             slog::debug!(self.logger, "{:?}", ty);
