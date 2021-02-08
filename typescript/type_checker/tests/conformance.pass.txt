@@ -221,6 +221,7 @@ es2017/useObjectValuesAndEntries4.ts
 es2017/useSharedArrayBuffer1.ts
 es2017/useSharedArrayBuffer4.ts
 es2017/useSharedArrayBuffer5.ts
+es2018/usePromiseFinally.ts
 es2019/globalThisTypeIndexAccess.ts
 es2020/bigintMissingES2019.ts
 es2020/bigintMissingES2020.ts
@@ -884,7 +885,9 @@ expressions/conditonalOperator/conditionalOperatorWithIdenticalBCT.ts
 expressions/contextualTyping/arrayLiteralExpressionContextualTyping.ts
 expressions/contextualTyping/functionExpressionContextualTyping3.ts
 expressions/contextualTyping/iterableContextualTyping1.ts
+expressions/contextualTyping/parenthesizedContexualTyping1.ts
 expressions/contextualTyping/parenthesizedContexualTyping2.ts
+expressions/contextualTyping/parenthesizedContexualTyping3.ts
 expressions/contextualTyping/superCallParameterContextualTyping1.ts
 expressions/contextualTyping/superCallParameterContextualTyping3.ts
 expressions/contextualTyping/taggedTemplateContextualTyping2.ts
