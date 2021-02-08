@@ -1475,23 +1475,29 @@ impl Analyzer<'_, '_> {
                             }
                             _ => {}
                         }
-                    } else if let Err(err) = self.assign_with_opts(
-                        AssignOpts {
-                            span: arg.span(),
-                            allow_unknown_rhs: true,
-                            allow_assignment_to_param: false,
-                        },
-                        &param.ty,
-                        &arg.ty,
-                    ) {
-                        let err = err.convert(|err| match err {
-                            Error::TupleAssignError { span, errors } => Error::Errors { span, errors },
-                            _ => Error::WrongArgType {
+                    } else {
+                        let mut allow_unknown_rhs = match arg.ty.normalize() {
+                            Type::TypeLit(..) => false,
+                            _ => true,
+                        };
+                        if let Err(err) = self.assign_with_opts(
+                            AssignOpts {
                                 span: arg.span(),
-                                inner: box err,
+                                allow_unknown_rhs,
+                                allow_assignment_to_param: false,
                             },
-                        });
-                        self.storage.report(box err);
+                            &param.ty,
+                            &arg.ty,
+                        ) {
+                            let err = err.convert(|err| match err {
+                                Error::TupleAssignError { span, errors } => Error::Errors { span, errors },
+                                _ => Error::WrongArgType {
+                                    span: arg.span(),
+                                    inner: box err,
+                                },
+                            });
+                            self.storage.report(box err);
+                        }
                     }
                 }
                 _ => {}
