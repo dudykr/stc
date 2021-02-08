@@ -214,6 +214,19 @@ impl Analyzer<'_, '_> {
 
                         continue;
                     }
+
+                    (TypeElement::Constructor(p), TypeElement::Constructor(a)) => {
+                        self.infer_type_of_fn_params(span, inferred, &p.params, &a.params)?;
+
+                        if let Some(p_ret) = &p.ret_ty {
+                            if let Some(a_ret) = &a.ret_ty {
+                                self.infer_type(span, inferred, &p_ret, &a_ret)?;
+                            }
+                        }
+
+                        continue;
+                    }
+
                     _ => {}
                 }
 
