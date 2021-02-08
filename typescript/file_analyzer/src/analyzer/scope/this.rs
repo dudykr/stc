@@ -12,6 +12,14 @@ use stc_ts_types::Type;
 
 impl Analyzer<'_, '_> {
     pub(crate) fn this_has_property_named(&mut self, p: &Id) -> bool {
+        if self.scope.is_this_ref_to_object_lit() || self.scope.is_this_ref_to_class() {
+            if let Some(declaring) = &self.scope.declaring_prop() {
+                if *p.sym() == *declaring.sym() {
+                    return true;
+                }
+            }
+        }
+
         if self.scope.is_this_ref_to_class() {
             for (_, m) in self.scope.class_members() {
                 match m {
