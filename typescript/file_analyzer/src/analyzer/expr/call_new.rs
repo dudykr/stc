@@ -1174,7 +1174,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::Function(ref f) => {
-                    candidates.push((f.type_params.as_ref().map(|v| &*v.params), &f.params, f.ret_ty.clone()));
+                    candidates.push((f.type_params.as_ref().map(|v| &*v.params), &f.params, Some(&f.ret_ty)));
                 }
 
                 Type::Class(ref cls) if kind == ExtractKind::New => {
@@ -1199,6 +1199,41 @@ impl Analyzer<'_, '_> {
                     types.dedup_type();
                     return Ok(Type::union(types));
                 }
+
+                Type::Interface(..) => {
+                    let callee = self
+                        .type_to_type_lit(span, callee)?
+                        .map(Cow::into_owned)
+                        .map(Type::TypeLit);
+                    if let Some(callee) = callee {
+                        return self.get_best_return_type(
+                            span,
+                            box callee,
+                            kind,
+                            type_args,
+                            args,
+                            arg_types,
+                            spread_arg_types,
+                        );
+                    }
+                }
+
+                Type::TypeLit(ty) => {
+                    // Search for callable properties.
+                    for member in &ty.members {
+                        match member {
+                            TypeElement::Call(m) => {
+                                candidates.push((
+                                    m.type_params.as_ref().map(|v| &*v.params),
+                                    &m.params,
+                                    m.ret_ty.as_ref(),
+                                ));
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+
                 _ => {}
             }
         }
@@ -1224,7 +1259,7 @@ impl Analyzer<'_, '_> {
             kind,
             type_params,
             params,
-            ret_ty,
+            ret_ty.cloned().unwrap_or_else(|| Type::any(span)),
             type_args,
             args,
             arg_types,
