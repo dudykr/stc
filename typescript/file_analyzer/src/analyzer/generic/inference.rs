@@ -1,5 +1,6 @@
 use super::InferData;
 use crate::analyzer::Analyzer;
+use crate::analyzer::Ctx;
 use crate::util::is_str_lit_or_union;
 use crate::ValidationResult;
 use fxhash::FxHashMap;
@@ -30,7 +31,13 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult<FxHashMap<Id, Box<Type>>> {
         let mut inferred = InferData::default();
 
-        self.infer_type(span, &mut inferred, &param, &arg)
+        let ctx = Ctx {
+            should_use_default_for_type_inference: true,
+            ..self.ctx
+        };
+
+        self.with_ctx(ctx)
+            .infer_type(span, &mut inferred, &param, &arg)
             .context("tried to infer type using two type")?;
 
         Ok(inferred.type_params)
