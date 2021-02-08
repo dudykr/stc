@@ -9,10 +9,39 @@ use stc_ts_types::MethodSignature;
 use stc_ts_types::PropertySignature;
 use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
+use stc_ts_types::TypeLit;
 use stc_ts_utils::MapWithMut;
+use std::borrow::Cow;
 use swc_common::Spanned;
 
 impl Analyzer<'_, '_> {
+    pub(crate) fn type_to_type_lit<'a>(&mut self, ty: &'a Type) -> ValidationResult<Option<Cow<'a, TypeLit>>> {
+        let ty = ty.normalize();
+
+        Ok(Some(match ty {
+            Type::TypeLit(t) => Cow::Borrowed(t),
+            Type::Enum(e) => self.enum_to_type_lit(e).map(Cow::Owned)?,
+            Type::Class(c) => {
+                let mut els = vec![];
+                if let Some(s) = &c.super_class {
+                    let super_els = self.type_to_type_lit(s)?;
+                    els.extend(super_els.map(|ty| ty.into_owned().members).into_iter().flatten());
+                }
+
+                // TODO: Override
+
+                for member in &c.body {
+                    els.extend(self.make_type_el_from_class_member(member)?);
+                }
+
+                Cow::Owned(TypeLit {
+                    span: c.span,
+                    members: els,
+                })
+            }
+            _ => return Ok(None),
+        }))
+    }
     pub(crate) fn normalize_tuples(&mut self, ty: &mut Type) {
         ty.visit_mut_with(&mut TupleNormalizer);
     }
