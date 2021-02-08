@@ -439,6 +439,17 @@ impl Analyzer<'_, '_> {
             _ => param,
         };
 
+        match param {
+            Type::Intersection(param) => {
+                for param in &param.types {
+                    self.infer_type(span, inferred, param, arg)?;
+                }
+
+                return Ok(());
+            }
+            _ => {}
+        }
+
         match arg {
             Type::Union(arg) => {
                 //
