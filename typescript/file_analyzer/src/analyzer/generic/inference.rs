@@ -156,88 +156,64 @@ impl Analyzer<'_, '_> {
             for a in arg {
                 //
 
-                match p {
-                    TypeElement::Property(p) => match a {
-                        TypeElement::Property(a) => {
-                            if self.assign(&p.key.ty(), &a.key.ty(), span).is_ok() {
-                                if let Some(pt) = &p.type_ann {
-                                    if let Some(at) = &a.type_ann {
-                                        self.infer_type(span, inferred, pt, at)?;
-                                    } else {
-                                        dbg!((&p, &a));
-                                    }
+                match (p, a) {
+                    (TypeElement::Property(p), TypeElement::Property(a)) => {
+                        if self.assign(&p.key.ty(), &a.key.ty(), span).is_ok() {
+                            if let Some(pt) = &p.type_ann {
+                                if let Some(at) = &a.type_ann {
+                                    self.infer_type(span, inferred, pt, at)?;
                                 } else {
                                     dbg!((&p, &a));
                                 }
+                            } else {
+                                dbg!((&p, &a));
                             }
-                            continue;
                         }
-                        _ => {}
-                    },
-                    TypeElement::Index(param) => match a {
-                        // TypeElement::Property(arg) => {
-                        //     if param.params.len() != 1 {
-                        //         unimplemented!("handling of IndexSignature with zero / multiple parameters");
-                        //     }
+                        continue;
+                    }
 
-                        //     if let Some(p_type_ann) = &param.type_ann {
-                        //         if let Some(a_type_ann) = &arg.type_ann {
-                        //             self.infer_type(inferred, p_type_ann, a_type_ann)?;
-                        //         }
-                        //     }
-                        // }
-                        TypeElement::Index(arg) => {
-                            if param.params.type_eq(&arg.params) {
-                                if let Some(pt) = &param.type_ann {
-                                    if let Some(at) = &arg.type_ann {
-                                        self.infer_type(span, inferred, pt, at)?;
-                                    }
-                                } else {
-                                    dbg!((&param, &arg));
+                    (TypeElement::Index(p), TypeElement::Index(a)) => {
+                        if p.params.type_eq(&a.params) {
+                            if let Some(pt) = &p.type_ann {
+                                if let Some(at) = &a.type_ann {
+                                    self.infer_type(span, inferred, pt, at)?;
                                 }
                             } else {
-                                dbg!((&param, &arg));
+                                dbg!((&p, &a));
                             }
-                            continue;
+                        } else {
+                            dbg!((&p, &a));
                         }
+                        continue;
+                    }
 
-                        TypeElement::Property(arg) => {
-                            assert_eq!(
-                                param.params.len(),
-                                1,
-                                "Index signature should have exactly one parameter"
-                            );
+                    (TypeElement::Index(p), TypeElement::Property(a)) => {
+                        assert_eq!(p.params.len(), 1, "Index signature should have exactly one parameter");
 
-                            if let Ok(()) = self.assign(&param.params[0].ty, &arg.key.ty(), span) {
-                                if let Some(p_ty) = &param.type_ann {
-                                    if let Some(arg_ty) = &arg.type_ann {
-                                        self.infer_type(span, inferred, &p_ty, &arg_ty)?;
-                                    }
+                        if let Ok(()) = self.assign(&p.params[0].ty, &a.key.ty(), span) {
+                            if let Some(p_ty) = &p.type_ann {
+                                if let Some(arg_ty) = &a.type_ann {
+                                    self.infer_type(span, inferred, &p_ty, &arg_ty)?;
                                 }
                             }
-
-                            continue;
                         }
-                        _ => {}
-                    },
 
-                    TypeElement::Method(p) => match a {
-                        TypeElement::Method(a) => {
-                            if self.assign(&p.key.ty(), &a.key.ty(), span).is_ok() {
-                                self.infer_type_of_fn_params(span, inferred, &p.params, &a.params)?;
+                        continue;
+                    }
 
-                                if let Some(p_ret) = &p.ret_ty {
-                                    if let Some(a_ret) = &a.ret_ty {
-                                        self.infer_type(span, inferred, &p_ret, &a_ret)?;
-                                    }
+                    (TypeElement::Method(p), TypeElement::Method(a)) => {
+                        if self.assign(&p.key.ty(), &a.key.ty(), span).is_ok() {
+                            self.infer_type_of_fn_params(span, inferred, &p.params, &a.params)?;
+
+                            if let Some(p_ret) = &p.ret_ty {
+                                if let Some(a_ret) = &a.ret_ty {
+                                    self.infer_type(span, inferred, &p_ret, &a_ret)?;
                                 }
                             }
-
-                            continue;
                         }
-                        _ => {}
-                    },
 
+                        continue;
+                    }
                     _ => {}
                 }
 
