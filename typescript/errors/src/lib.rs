@@ -57,6 +57,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    NoSuchVarButThisHasSuchProperty {
+        span: Span,
+        name: Id,
+    },
+
     DestructuringAssignInAmbientContext {
         span: Span,
     },
@@ -780,6 +785,7 @@ impl Error {
 
             Error::InvalidDeleteOperand { .. } => 2703,
             Error::NoSuchVar { .. } => 2304,
+            Error::NoSuchVarButThisHasSuchProperty { .. } => 2663,
 
             Error::CannotAssignAbstractConstructorToNonAbstractConstructor { .. } => 2322,
             Error::CannotCreateInstanceOfAbstractClass { .. } => 2511,

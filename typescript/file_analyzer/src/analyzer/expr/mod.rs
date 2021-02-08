@@ -1800,10 +1800,17 @@ impl Analyzer<'_, '_> {
                 name: i.clone().into(),
             })
         } else {
-            Err(box Error::NoSuchVar {
-                span,
-                name: i.clone().into(),
-            })
+            if self.this_has_property_named(&i.clone().into()) {
+                Err(box Error::NoSuchVarButThisHasSuchProperty {
+                    span,
+                    name: i.clone().into(),
+                })
+            } else {
+                Err(box Error::NoSuchVar {
+                    span,
+                    name: i.clone().into(),
+                })
+            }
         }
     }
 
