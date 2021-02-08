@@ -1213,8 +1213,6 @@ parser/ecmascript5/ObjectTypes/parserObjectType2.ts
 parser/ecmascript5/ObjectTypes/parserObjectType3.ts
 parser/ecmascript5/ObjectTypes/parserObjectType4.ts
 parser/ecmascript5/ParameterLists/parserParameterList12.ts
-parser/ecmascript5/ParameterLists/parserParameterList7.ts
-parser/ecmascript5/ParameterLists/parserParameterList8.ts
 parser/ecmascript5/PropertyAssignments/parserFunctionPropertyAssignment1.ts
 parser/ecmascript5/PropertyAssignments/parserFunctionPropertyAssignment2.ts
 parser/ecmascript5/PropertyAssignments/parserFunctionPropertyAssignment3.ts
@@ -1680,7 +1678,6 @@ types/typeRelationships/typeAndMemberIdentity/objectTypesIdentityWithStringIndex
 types/typeRelationships/typeAndMemberIdentity/objectTypesIdentityWithStringIndexers2.ts
 types/typeRelationships/typeAndMemberIdentity/primtiveTypesAreIdentical.ts
 types/typeRelationships/typeAndMemberIdentity/typeParametersAreIdenticalToThemselves.ts
-types/typeRelationships/typeInference/
 types/typeRelationships/typeInference/discriminatedUnionInference.ts
 types/typeRelationships/typeInference/genericCallTypeArgumentInference.ts
 types/typeRelationships/typeInference/genericCallWithArrayLiteralArgs.ts
