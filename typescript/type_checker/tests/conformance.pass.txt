@@ -759,6 +759,8 @@ es6/yieldExpressions/generatorTypeCheck41.ts
 es6/yieldExpressions/generatorTypeCheck42.ts
 es6/yieldExpressions/generatorTypeCheck43.ts
 es6/yieldExpressions/generatorTypeCheck44.ts
+es6/yieldExpressions/generatorTypeCheck45.ts
+es6/yieldExpressions/generatorTypeCheck46.ts
 es6/yieldExpressions/generatorTypeCheck47.ts
 es6/yieldExpressions/generatorTypeCheck49.ts
 es6/yieldExpressions/generatorTypeCheck5.ts
@@ -920,6 +922,7 @@ expressions/superPropertyAccess/superSymbolIndexedAccess6.ts
 expressions/typeGuards/TypeGuardWithArrayUnion.ts
 expressions/typeGuards/TypeGuardWithEnumUnion.ts
 expressions/typeGuards/typeGuardEnums.ts
+expressions/typeGuards/typeGuardIntersectionTypes.ts
 expressions/typeGuards/typeGuardNesting.ts
 expressions/typeGuards/typeGuardOfFormFunctionEquality.ts
 expressions/typeGuards/typeGuardOfFormTypeOfBoolean.ts
@@ -1319,6 +1322,7 @@ parser/ecmascript5/parserSyntaxWalker.generated.ts
 parser/ecmascript5/parserUnicode2.ts
 parser/ecmascript5/parserUnicode3.ts
 parser/ecmascript5/parserUnicodeWhitespaceCharacter1.ts
+parser/ecmascript5/parserUsingConstructorAsIdentifier.ts
 parser/ecmascript5/parserVoidExpression1.ts
 parser/ecmascript5/parservoidInQualifiedName0.ts
 parser/ecmascript6/ComputedPropertyNames/parserComputedPropertyName12.ts
@@ -1520,6 +1524,9 @@ types/stringLiteral/stringLiteralMatchedInSwitch01.ts
 types/stringLiteral/stringLiteralTypeAssertion01.ts
 types/stringLiteral/stringLiteralTypesAndParenthesizedExpressions01.ts
 types/stringLiteral/stringLiteralTypesAndTuples01.ts
+types/stringLiteral/stringLiteralTypesAsTags01.ts
+types/stringLiteral/stringLiteralTypesAsTags02.ts
+types/stringLiteral/stringLiteralTypesAsTags03.ts
 types/stringLiteral/stringLiteralTypesAsTypeParameterConstraint01.ts
 types/stringLiteral/stringLiteralTypesInUnionTypes01.ts
 types/stringLiteral/stringLiteralTypesInUnionTypes02.ts
