@@ -109,17 +109,33 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        match inferred.type_params.entry(name.clone()) {
-            Entry::Occupied(e) => {
-                // Use this for type inference.
-                let (name, param_ty) = e.remove_entry();
+        if self.ctx.should_use_default_for_type_inference {
+            match inferred.defaults.entry(name.clone()) {
+                Entry::Occupied(e) => {
+                    // Use this for type inference.
+                    let (name, param_ty) = e.remove_entry();
 
-                inferred
-                    .type_params
-                    .insert(name, Type::union(vec![param_ty.clone(), ty]).cheap());
+                    inferred
+                        .defaults
+                        .insert(name, Type::union(vec![param_ty.clone(), ty]).cheap());
+                }
+                Entry::Vacant(e) => {
+                    e.insert(ty.cheap());
+                }
             }
-            Entry::Vacant(e) => {
-                e.insert(ty.cheap());
+        } else {
+            match inferred.type_params.entry(name.clone()) {
+                Entry::Occupied(e) => {
+                    // Use this for type inference.
+                    let (name, param_ty) = e.remove_entry();
+
+                    inferred
+                        .type_params
+                        .insert(name, Type::union(vec![param_ty.clone(), ty]).cheap());
+                }
+                Entry::Vacant(e) => {
+                    e.insert(ty.cheap());
+                }
             }
         }
 
@@ -790,7 +806,11 @@ impl Analyzer<'_, '_> {
             Type::Union(param) => {
                 //
                 for p in &param.types {
-                    self.infer_type(span, inferred, p, arg)?;
+                    let ctx = Ctx {
+                        should_use_default_for_type_inference: true,
+                        ..self.ctx
+                    };
+                    self.with_ctx(ctx).infer_type(span, inferred, p, arg)?;
                 }
 
                 return Ok(());
