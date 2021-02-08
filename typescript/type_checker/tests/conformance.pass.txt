@@ -1511,6 +1511,7 @@ types/primitives/void/validVoidValues.ts
 types/rest/genericRestParameters2.ts
 types/rest/objectRest2.ts
 types/specifyingTypes/typeLiterals/arrayLiteral.ts
+types/specifyingTypes/typeLiterals/arrayOfFunctionTypes3.ts
 types/specifyingTypes/typeLiterals/functionLiteral.ts
 types/specifyingTypes/typeLiterals/functionLiteralForOverloads.ts
 types/specifyingTypes/typeLiterals/functionLiteralForOverloads2.ts
@@ -1706,6 +1707,7 @@ types/union/contextualTypeWithUnionTypeCallSignatures.ts
 types/union/contextualTypeWithUnionTypeIndexSignatures.ts
 types/union/unionTypeCallSignatures2.ts
 types/union/unionTypeFromArrayLiteral.ts
+types/union/unionTypeReduction.ts
 types/uniqueSymbol/uniqueSymbols.ts
 types/uniqueSymbol/uniqueSymbolsDeclarations.ts
 types/uniqueSymbol/uniqueSymbolsDeclarationsErrors.ts
