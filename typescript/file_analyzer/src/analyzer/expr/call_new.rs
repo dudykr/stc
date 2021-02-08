@@ -1187,6 +1187,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::Union(ty) => {
+                    // TODO: We should select best one based on the arugment type and count.
                     let mut types = ty
                         .types
                         .iter()
