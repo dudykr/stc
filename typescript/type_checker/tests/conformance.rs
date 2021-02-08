@@ -123,6 +123,12 @@ fn conformance() {
                 if err.code.starts_with("TS1") && err.code.len() == 6 {
                     return None;
                 }
+
+                // These are actually parser test.
+                match &*err.code {
+                    "TS2369" => return None,
+                    _ => {}
+                }
             }
         }
 
