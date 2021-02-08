@@ -901,7 +901,9 @@ impl Error {
 
         for e in vec {
             match *e {
-                Error::Errors { errors, .. } => buf.extend(Self::flatten(errors)),
+                Error::Errors { errors, .. } | Error::TupleAssignError { errors, .. } => {
+                    buf.extend(Self::flatten(errors))
+                }
                 Error::DebugContext(DebugContext { inner, context, .. }) => {
                     //
                     buf.extend(Self::flatten(vec![inner]).into_iter().map(|inner| {
