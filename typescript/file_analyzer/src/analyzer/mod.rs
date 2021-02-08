@@ -132,7 +132,7 @@ pub(crate) struct Ctx {
     /// If true, assignemt from `{ a: string }` to `{}` will fail.
     fail_on_extra_fields: bool,
 
-    should_use_default_for_type_inference: bool,
+    skip_union_while_inferencing: bool,
 }
 
 /// Note: All methods named `validate_*` return [Err] iff it's not recoverable.
@@ -368,7 +368,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 preserve_ret_ty: false,
                 ignore_errors: false,
                 fail_on_extra_fields: false,
-                should_use_default_for_type_inference: false,
+                skip_union_while_inferencing: false,
             },
             loader,
             is_builtin,

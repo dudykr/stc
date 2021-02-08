@@ -109,33 +109,17 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        if self.ctx.should_use_default_for_type_inference {
-            match inferred.defaults.entry(name.clone()) {
-                Entry::Occupied(e) => {
-                    // Use this for type inference.
-                    let (name, param_ty) = e.remove_entry();
+        match inferred.type_params.entry(name.clone()) {
+            Entry::Occupied(e) => {
+                // Use this for type inference.
+                let (name, param_ty) = e.remove_entry();
 
-                    inferred
-                        .defaults
-                        .insert(name, Type::union(vec![param_ty.clone(), ty]).cheap());
-                }
-                Entry::Vacant(e) => {
-                    e.insert(ty.cheap());
-                }
+                inferred
+                    .type_params
+                    .insert(name, Type::union(vec![param_ty.clone(), ty]).cheap());
             }
-        } else {
-            match inferred.type_params.entry(name.clone()) {
-                Entry::Occupied(e) => {
-                    // Use this for type inference.
-                    let (name, param_ty) = e.remove_entry();
-
-                    inferred
-                        .type_params
-                        .insert(name, Type::union(vec![param_ty.clone(), ty]).cheap());
-                }
-                Entry::Vacant(e) => {
-                    e.insert(ty.cheap());
-                }
+            Entry::Vacant(e) => {
+                e.insert(ty.cheap());
             }
         }
 
@@ -456,6 +440,15 @@ impl Analyzer<'_, '_> {
         };
 
         match param {
+            Type::Union(param) if !self.ctx.skip_union_while_inferencing => {
+                //
+                for p in &param.types {
+                    self.infer_type(span, inferred, p, arg)?;
+                }
+
+                return Ok(());
+            }
+
             Type::Intersection(param) => {
                 for param in &param.types {
                     self.infer_type(span, inferred, param, arg)?;
@@ -801,20 +794,6 @@ impl Analyzer<'_, '_> {
                     dbg!();
                 }
             },
-
-            // TODO: implement
-            Type::Union(param) => {
-                //
-                for p in &param.types {
-                    let ctx = Ctx {
-                        should_use_default_for_type_inference: true,
-                        ..self.ctx
-                    };
-                    self.with_ctx(ctx).infer_type(span, inferred, p, arg)?;
-                }
-
-                return Ok(());
-            }
 
             Type::Alias(param) => {
                 self.infer_type(span, inferred, &param.ty, arg)?;

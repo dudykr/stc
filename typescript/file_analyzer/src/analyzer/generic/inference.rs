@@ -32,7 +32,7 @@ impl Analyzer<'_, '_> {
         let mut inferred = InferData::default();
 
         let ctx = Ctx {
-            should_use_default_for_type_inference: true,
+            skip_union_while_inferencing: true,
             ..self.ctx
         };
 
