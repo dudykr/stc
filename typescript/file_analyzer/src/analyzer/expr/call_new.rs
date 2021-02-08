@@ -347,7 +347,14 @@ impl Analyzer<'_, '_> {
                             Type::Keyword(RTsKeywordType {
                                 kind: TsKeywordTypeKind::TsAnyKeyword,
                                 ..
-                            }) if type_args.is_some() => analyzer.storage.report(box Error::TS2347 { span }),
+                            }) if type_args.is_some() => {
+                                // If it's implicit any, we should postpone this check.
+                                if !analyzer.is_implicitly_typed(&callee_ty) {
+                                    analyzer
+                                        .storage
+                                        .report(box Error::AnyTypeUsedAsCalleeWithTypeArgs { span })
+                                }
+                            }
                             _ => {}
                         }
                         callee_ty

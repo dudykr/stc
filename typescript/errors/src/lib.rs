@@ -475,7 +475,7 @@ pub enum Error {
         span: Span,
     },
 
-    TS2347 {
+    AnyTypeUsedAsCalleeWithTypeArgs {
         span: Span,
     },
 
@@ -736,7 +736,7 @@ impl Error {
             Error::TS1318 { .. } => 1318,
             Error::TS1319 { .. } => 1319,
             Error::TS2309 { .. } => 2309,
-            Error::TS2347 { .. } => 2347,
+            Error::AnyTypeUsedAsCalleeWithTypeArgs { .. } => 2347,
             Error::TS2360 { .. } => 2360,
             Error::TS2361 { .. } => 2361,
             Error::TS2362 { .. } => 2362,
