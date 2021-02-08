@@ -742,6 +742,7 @@ es6/yieldExpressions/generatorTypeCheck16.ts
 es6/yieldExpressions/generatorTypeCheck17.ts
 es6/yieldExpressions/generatorTypeCheck19.ts
 es6/yieldExpressions/generatorTypeCheck2.ts
+es6/yieldExpressions/generatorTypeCheck21.ts
 es6/yieldExpressions/generatorTypeCheck22.ts
 es6/yieldExpressions/generatorTypeCheck23.ts
 es6/yieldExpressions/generatorTypeCheck24.ts
