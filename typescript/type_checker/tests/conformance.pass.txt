@@ -387,7 +387,6 @@ es6/defaultParameters/emitDefaultParametersFunctionProperty.ts
 es6/defaultParameters/emitDefaultParametersFunctionPropertyES6.ts
 es6/defaultParameters/emitDefaultParametersMethod.ts
 es6/defaultParameters/emitDefaultParametersMethodES6.ts
-es6/destructuring/
 es6/destructuring/arrayAssignmentPatternWithAny.ts
 es6/destructuring/destructuringCatch.ts
 es6/destructuring/destructuringInFunctionType.ts
