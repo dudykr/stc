@@ -343,7 +343,7 @@ impl Analyzer<'_, '_> {
 
                     let mut callee_ty = {
                         let callee_ty = callee.validate_with_default(analyzer)?;
-                        match *callee_ty.normalize() {
+                        match callee_ty.normalize() {
                             Type::Keyword(RTsKeywordType {
                                 kind: TsKeywordTypeKind::TsAnyKeyword,
                                 ..
