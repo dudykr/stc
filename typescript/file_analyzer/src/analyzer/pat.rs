@@ -92,7 +92,7 @@ impl Analyzer<'_, '_> {
             debug_assert_ne!(p.span(), DUMMY_SP, "A pattern should have a valid span");
         }
 
-        if !self.ctx.in_declare {
+        if !self.ctx.in_declare && !self.ctx.in_fn_without_body {
             match p {
                 RPat::Array(RArrayPat {
                     span, optional: true, ..
