@@ -57,6 +57,10 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    GeneratorCannotHaveVoidAsReturnType {
+        span: Span,
+    },
+
     NoSuchVarButThisHasSuchProperty {
         span: Span,
         name: Id,
@@ -845,6 +849,8 @@ impl Error {
             Error::NullishCoalescingMixedWithLogicalWithoutParen { .. } => 5076,
 
             Error::OptionalBindingPatternInImplSignature { .. } => 2463,
+
+            Error::GeneratorCannotHaveVoidAsReturnType { .. } => 2505,
 
             _ => 0,
         }

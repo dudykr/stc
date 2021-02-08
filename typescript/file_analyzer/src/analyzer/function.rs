@@ -130,19 +130,25 @@ impl Analyzer<'_, '_> {
                         // Expand before assigning
                         let span = inferred_return_type.span();
 
-                        // It's okay to return more properties than declared.
-                        child
-                            .assign_with_opts(
-                                AssignOpts {
-                                    span,
-                                    allow_unknown_rhs: true,
-                                    allow_assignment_to_param: false,
-                                    allow_unknown_type: false,
-                                },
-                                &declared,
-                                &inferred_return_type,
-                            )
-                            .report(&mut child.storage);
+                        if f.is_generator && declared.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
+                            child
+                                .storage
+                                .report(box Error::GeneratorCannotHaveVoidAsReturnType { span: declared.span() })
+                        } else {
+                            // It's okay to return more properties than declared.
+                            child
+                                .assign_with_opts(
+                                    AssignOpts {
+                                        span,
+                                        allow_unknown_rhs: true,
+                                        allow_assignment_to_param: false,
+                                        allow_unknown_type: false,
+                                    },
+                                    &declared,
+                                    &inferred_return_type,
+                                )
+                                .report(&mut child.storage);
+                        }
                     } else {
                         if child.may_generalize(&inferred_return_type) {
                             inferred_return_type = inferred_return_type.generalize_lit();
