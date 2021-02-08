@@ -1,5 +1,6 @@
 use super::InferData;
 use crate::analyzer::Analyzer;
+use crate::util::is_str_lit_or_union;
 use crate::ValidationResult;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_types::Array;
@@ -11,6 +12,7 @@ use stc_ts_types::Ref;
 use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
+use stc_ts_types::TypeParam;
 use swc_common::Span;
 use swc_common::TypeEq;
 use swc_ecma_ast::TsTypeOperatorOp;
@@ -272,5 +274,29 @@ impl Analyzer<'_, '_> {
 
         // TODO: Check for parents.
         Ok(())
+    }
+
+    /// Prevent generalizations if a type parameter extends literal.
+    pub(super) fn prevent_generalization_of_inferred_types(
+        &mut self,
+        type_params: &[TypeParam],
+        inferred: &mut InferData,
+    ) {
+        for type_param in type_params {
+            match type_param.constraint.as_deref() {
+                Some(Type::Lit(..)) => {}
+
+                Some(ty) => {
+                    if !is_str_lit_or_union(ty) {
+                        continue;
+                    }
+                }
+                _ => continue,
+            }
+
+            if let Some(ty) = inferred.type_params.get_mut(&type_param.name) {
+                self.prevent_generalize(ty);
+            }
+        }
     }
 }

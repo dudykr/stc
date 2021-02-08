@@ -192,7 +192,7 @@ fn do_test(treat_error_as_bug: bool, file_name: &Path) -> Result<(), StdErr> {
                 first_stmt_line = cm.lookup_line(module.body[0].span().lo).unwrap().line;
             }
 
-            let mut libs = vec![Lib::Es5];
+            let mut libs = vec![Lib::Es5, Lib::Dom];
             let mut rule = Rule::default();
             let ts_config = TsConfig::default();
 
@@ -226,7 +226,8 @@ fn do_test(treat_error_as_bug: bool, file_name: &Path) -> Result<(), StdErr> {
                                 "es2017" => JscTarget::Es2017,
                                 "es2018" => JscTarget::Es2018,
                                 "es2019" => JscTarget::Es2019,
-                                "esnext" => JscTarget::Es2019,
+                                "es2020" => JscTarget::Es2020,
+                                "esnext" => JscTarget::Es2020,
                                 _ => unimplemented!("target: {:?}", s),
                             };
                             libs = match target {

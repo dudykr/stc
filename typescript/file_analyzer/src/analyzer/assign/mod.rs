@@ -44,6 +44,23 @@ mod type_el;
 pub(crate) struct AssignOpts {
     pub span: Span,
     pub allow_unknown_rhs: bool,
+    /// Allow assigning `unknown` type to other types. This should be `true` for
+    /// parameters because the following is valid.
+    ///
+    ///
+    /// ```ts
+    ///   declare var a: {
+    ///     (a:[2]): void
+    ///   }
+    ///
+    ///   declare var b: {
+    ///     (a:[unknown]): void
+    ///   }
+    ///
+    ///   a = b;
+    /// ```
+    pub allow_unknown_type: bool,
+    pub allow_assignment_to_param: bool,
 }
 
 impl Analyzer<'_, '_> {
@@ -142,6 +159,8 @@ impl Analyzer<'_, '_> {
             AssignOpts {
                 span,
                 allow_unknown_rhs: false,
+                allow_assignment_to_param: false,
+                allow_unknown_type: false,
             },
             left,
             right,
@@ -167,17 +186,19 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        res.map_err(|err| match *err {
-            Error::AssignFailed { .. }
-            | Error::DebugContext { .. }
-            | Error::Errors { .. }
-            | Error::Unimplemented { .. } => err,
-            _ => box Error::AssignFailed {
-                span: opts.span,
-                left: box left.clone(),
-                right: box right.clone(),
-                cause: vec![err],
-            },
+        res.map_err(|err| {
+            box err.convert(|err| match err {
+                Error::AssignFailed { .. }
+                | Error::Errors { .. }
+                | Error::Unimplemented { .. }
+                | Error::TupleAssignError { .. } => err,
+                _ => Error::AssignFailed {
+                    span: opts.span,
+                    left: box left.clone(),
+                    right: box right.clone(),
+                    cause: vec![box err],
+                },
+            })
         })
     }
 
@@ -246,6 +267,10 @@ impl Analyzer<'_, '_> {
 
         // It's valid to assign any to everything.
         if rhs.is_any() {
+            return Ok(());
+        }
+
+        if opts.allow_unknown_type && rhs.is_unknown() {
             return Ok(());
         }
 
@@ -344,6 +369,10 @@ impl Analyzer<'_, '_> {
 
         if let Some(res) = self.assign_to_builtins(opts, &to, &rhs) {
             return res;
+        }
+
+        if rhs.is_kwd(TsKeywordTypeKind::TsNeverKeyword) {
+            return Ok(());
         }
 
         match to {
@@ -531,7 +560,7 @@ impl Analyzer<'_, '_> {
 
             Type::Class(l) => match rhs.normalize() {
                 Type::ClassInstance(r) => return self.assign_to_class(opts, l, &r.ty),
-                Type::Interface(..) | Type::TypeLit(..) | Type::Lit(..) | Type::Class(..) => {
+                Type::Interface(..) | Type::Ref(..) | Type::TypeLit(..) | Type::Lit(..) | Type::Class(..) => {
                     return self.assign_to_class(opts, l, rhs.normalize())
                 }
                 _ => {}
@@ -539,6 +568,10 @@ impl Analyzer<'_, '_> {
 
             Type::Lit(ref lhs) => match rhs.normalize() {
                 Type::Lit(rhs) if lhs.eq_ignore_span(&rhs) => return Ok(()),
+                Type::Ref(..) => {
+                    // We should expand ref. We expand it with the match
+                    // expression below.
+                }
                 _ => fail!(),
             },
 
@@ -577,6 +610,21 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
             }
+
+            Type::Intersection(Intersection { types, .. }) => {
+                let errors = types
+                    .iter()
+                    .map(|rhs| self.assign_inner(to, rhs, opts))
+                    .collect::<Vec<_>>();
+                if errors.iter().any(Result::is_ok) {
+                    return Ok(());
+                }
+                return Err(box Error::Errors {
+                    span,
+                    errors: errors.into_iter().map(Result::unwrap_err).collect(),
+                });
+            }
+
             Type::Union(Union { ref types, .. }) => {
                 let errors = types
                     .iter()
@@ -688,7 +736,24 @@ impl Analyzer<'_, '_> {
             Type::Param(TypeParam {
                 constraint: Some(ref c),
                 ..
-            }) => return self.assign_inner(c, rhs, opts),
+            }) => {
+                return self.assign_inner(
+                    c,
+                    rhs,
+                    AssignOpts {
+                        allow_assignment_to_param: true,
+                        ..opts
+                    },
+                )
+            }
+
+            Type::Param(..) if !opts.allow_assignment_to_param => {
+                // We handled equality above.
+                //
+                // This is optional so we can change behavior while selecting method to call.
+                // While selecting method, we may need to assign to a type parameter.
+                fail!()
+            }
 
             Type::Array(Array { ref elem_type, .. }) => match rhs {
                 Type::Array(Array {
@@ -699,12 +764,12 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::Tuple(Tuple { ref elems, .. }) => {
-                    let mut errors = Errors::default();
+                    let mut errors = vec![];
                     for el in elems {
                         errors.extend(self.assign_inner(elem_type, &el.ty, opts).err());
                     }
                     if !errors.is_empty() {
-                        Err(errors)?;
+                        Err(box Error::TupleAssignError { span, errors })?;
                     }
 
                     return Ok(());
@@ -721,7 +786,7 @@ impl Analyzer<'_, '_> {
                 if results.iter().any(Result::is_ok) {
                     return Ok(());
                 }
-                return Err(box Error::UnionError {
+                return Err(box Error::Errors {
                     span,
                     errors: results.into_iter().map(Result::unwrap_err).collect(),
                 });
@@ -918,6 +983,10 @@ impl Analyzer<'_, '_> {
             Type::Interface(Interface {
                 ref body, ref extends, ..
             }) => {
+                self.assign_to_type_elements(opts, span, &body, rhs)
+                    .context("tried to assign a type to an interface")?;
+
+                let mut errors = vec![];
                 for parent in extends {
                     let parent = self.type_of_ts_entity_name(
                         span,
@@ -926,9 +995,12 @@ impl Analyzer<'_, '_> {
                         parent.type_args.as_deref(),
                     )?;
 
-                    if self.assign_with_opts(opts, &parent, &rhs).is_ok() {
+                    let res = self.assign_with_opts(opts, &parent, &rhs);
+                    if res.is_ok() {
                         return Ok(());
                     }
+
+                    errors.extend(res.err());
                 }
 
                 // TODO: Prevent recursion and uncomment the code below.
@@ -958,15 +1030,18 @@ impl Analyzer<'_, '_> {
                 // 'String'")     }
                 //     _ => {}
                 // }
-                self.assign_to_type_elements(opts, span, &body, rhs)
-                    .context("tried to assign an interfafce to an interface")?;
 
                 // Assignment failed. This check is required to distinguish an empty interface
                 // from an interface with parents.
                 //
                 // TODO: Use errors returned from parent assignment.
                 if body.is_empty() && !extends.is_empty() {
-                    fail!()
+                    return Err(box Error::AssignFailed {
+                        span,
+                        left: box to.clone(),
+                        right: box rhs.clone(),
+                        cause: errors,
+                    });
                 }
 
                 return Ok(());
@@ -992,32 +1067,20 @@ impl Analyzer<'_, '_> {
 
                     fail!()
                 }
+
+                Type::Ref(..) => {
+                    // We use reference handler below.
+                }
+
                 // TODO: allow
                 // let a: true | false = bool
                 _ => fail!(),
             },
 
-            Type::Function(ty::Function {
-                ret_ty: ref left_ret_ty,
-                ..
-            }) => {
-                // var fnr2: () => any = fnReturn2();
-                match *rhs {
-                    Type::Function(ty::Function {
-                        ret_ty: ref right_ret_ty,
-                        ..
-                    }) => {
-                        // TODO: Verify type parameters.
-                        self.assign_inner(right_ret_ty, left_ret_ty, opts)?;
-                        // TODO: Verify parameter counts
-
-                        return Ok(());
-                    }
-
-                    Type::Lit(..) => return Err(box Error::CannotAssignToNonVariable { span }),
-                    _ => fail!(),
-                }
-            }
+            Type::Function(l) => match rhs {
+                Type::Function(..) | Type::Lit(..) => return self.assign_to_function(opts, l, rhs),
+                _ => {}
+            },
 
             Type::Tuple(Tuple { ref elems, .. }) => {
                 //

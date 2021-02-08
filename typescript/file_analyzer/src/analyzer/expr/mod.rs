@@ -1760,8 +1760,12 @@ impl Analyzer<'_, '_> {
 
         if let Some(ty) = self.find_var_type(&i.into()) {
             slog::debug!(self.logger, "find_var_type returned a type");
+            let mut span = span;
             let mut ty = ty.into_owned();
             if self.scope.kind().allows_respanning() {
+                if self.is_implicitly_typed(&ty) {
+                    span.ctxt = span.ctxt.apply_mark(self.marks().implicit_type_mark);
+                }
                 ty.respan(span);
             }
             slog::debug!(self.logger, "{:?}", ty);
@@ -1796,10 +1800,17 @@ impl Analyzer<'_, '_> {
                 name: i.clone().into(),
             })
         } else {
-            Err(box Error::NoSuchVar {
-                span,
-                name: i.clone().into(),
-            })
+            if self.this_has_property_named(&i.clone().into()) {
+                Err(box Error::NoSuchVarButThisHasSuchProperty {
+                    span,
+                    name: i.clone().into(),
+                })
+            } else {
+                Err(box Error::NoSuchVar {
+                    span,
+                    name: i.clone().into(),
+                })
+            }
         }
     }
 
@@ -2128,7 +2139,11 @@ impl Analyzer<'_, '_> {
                 match f.body {
                     RBlockStmtOrExpr::Expr(ref e) => Some({
                         let ty = e.validate_with_default(child)?;
-                        ty.generalize_lit()
+                        if child.may_generalize(&ty) {
+                            ty.generalize_lit()
+                        } else {
+                            ty
+                        }
                     }),
                     RBlockStmtOrExpr::BlockStmt(ref s) => {
                         child.visit_stmts_for_return(f.span, f.is_async, f.is_generator, &s.stmts)?

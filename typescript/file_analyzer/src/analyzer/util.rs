@@ -198,8 +198,8 @@ impl Fold<stc_ts_types::Function> for Generalizer {
 
 impl Fold<Type> for Generalizer {
     fn fold(&mut self, mut ty: Type) -> Type {
-        match ty {
-            Type::IndexedAccessType(IndexedAccessType { ref index_type, .. }) if is_str_lit_or_union(&index_type) => {
+        match ty.normalize() {
+            Type::IndexedAccessType(IndexedAccessType { index_type, .. }) if is_str_lit_or_union(&index_type) => {
                 return ty
             }
             _ => {}

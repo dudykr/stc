@@ -26,3 +26,6 @@ computedPropertyNames29_ES6.ts
 fixSignatureCaching.ts
 thisTypeInFunctions2.ts
 keyofInferenceLowerPriorityThanReturn.ts
+arrayLiteralInference.ts
+recursiveIntersectionTypes.ts
+typeRelationships.ts

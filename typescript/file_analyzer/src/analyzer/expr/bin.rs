@@ -2,6 +2,7 @@ use super::super::{
     util::{Comparator, ResultExt},
     Analyzer,
 };
+use super::TypeOfMode;
 use crate::analyzer::assign::AssignOpts;
 use crate::{
     analyzer::{Ctx, ScopeKind},
@@ -26,6 +27,7 @@ use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::name::Name;
+use stc_ts_types::Intersection;
 use stc_ts_types::ModuleId;
 use stc_ts_types::Ref;
 use stc_ts_types::TypeElement;
@@ -48,6 +50,8 @@ impl Analyzer<'_, '_> {
             ref right,
             ..
         } = *e;
+
+        self.check_for_mixed_nullish_coalescing(e);
 
         let mut errors = vec![];
 
@@ -109,7 +113,7 @@ impl Analyzer<'_, '_> {
             self.cur_facts.true_facts += rhs_facts;
         }
 
-        self.validate_bin_inner(span, op, lt.as_ref().map(|v| &**v), rt.as_ref().map(|v| &**v));
+        self.validate_bin_inner(span, op, lt.as_deref(), rt.as_deref());
 
         let (lt, rt): (Box<Type>, Box<Type>) = match (lt, rt) {
             (Some(l), Some(r)) => (l, r),
@@ -162,20 +166,24 @@ impl Analyzer<'_, '_> {
 
                 // Try narrowing type
                 let c = Comparator {
-                    left: (&**left, &lt),
-                    right: (&**right, &rt),
+                    left: (&**left, lt.normalize()),
+                    right: (&**right, rt.normalize()),
                 };
 
                 if !self.has_overlap(span, &lt, &rt)? {
-                    self.storage.report(box Error::NoOverlap {
-                        span,
-                        value: true,
-                        left: lt.span(),
-                        right: rt.span(),
-                    })
+                    if self.ctx.in_switch_case_test {
+                        self.storage.report(box Error::SwitchCaseTestNotCompatible { span })
+                    } else {
+                        self.storage.report(box Error::NoOverlap {
+                            span,
+                            value: true,
+                            left: lt.span(),
+                            right: rt.span(),
+                        })
+                    }
                 }
 
-                match c.take_if_any_matches(|(l, l_ty), (_, r_ty)| match **l_ty {
+                match c.take_if_any_matches(|(l, l_ty), (_, r_ty)| match *l_ty {
                     Type::Keyword(RTsKeywordType {
                         kind: TsKeywordTypeKind::TsUnknownKeyword,
                         ..
@@ -187,9 +195,25 @@ impl Analyzer<'_, '_> {
                 }) {
                     Some((Ok(name), ty)) => {
                         if is_eq {
-                            self.add_deep_type_fact(name.clone(), ty.clone(), false);
+                            self.add_deep_type_fact(name.clone(), box ty.clone(), false);
                         } else {
-                            self.add_deep_type_fact(name.clone(), ty.clone(), true);
+                            self.add_deep_type_fact(name.clone(), box ty.clone(), true);
+                        }
+                    }
+                    _ => {}
+                }
+
+                match c.take_if_any_matches(|(l, _), (_, r_ty)| match (l, r_ty) {
+                    (RExpr::Ident(l), Type::Lit(..)) => Some((l, r_ty)),
+                    _ => return None,
+                }) {
+                    Some((l, r)) => {
+                        if self.ctx.in_cond && is_eq {
+                            let mut r = r.clone();
+                            self.prevent_generalize(&mut r);
+                            self.cur_facts.true_facts.vars.insert(l.into(), box r);
+                        } else {
+                            // TODO: Remove from union
                         }
                     }
                     _ => {}
@@ -202,7 +226,24 @@ impl Analyzer<'_, '_> {
                         //
                         let ty = self.validate_rhs_of_instanceof(span, rt.clone());
 
-                        self.cur_facts.true_facts.vars.insert(Name::from(i), ty);
+                        // typeGuardsTypeParameters.ts says
+                        //
+                        // Type guards involving type parameters produce intersection types
+                        let orig_ty = self.type_of_var(i, TypeOfMode::RValue, None)?;
+
+                        // TODO(kdy1): Maybe we need to check for intersection or union
+                        if orig_ty.is_type_param() {
+                            self.cur_facts.true_facts.vars.insert(
+                                Name::from(i),
+                                Type::Intersection(Intersection {
+                                    span,
+                                    types: vec![orig_ty, ty],
+                                })
+                                .cheap(),
+                            );
+                        } else {
+                            self.cur_facts.true_facts.vars.insert(Name::from(i), ty);
+                        }
                     }
 
                     _ => {}
@@ -657,6 +698,8 @@ impl Analyzer<'_, '_> {
                                 AssignOpts {
                                     span,
                                     allow_unknown_rhs: false,
+                                    allow_assignment_to_param: false,
+                                    allow_unknown_type: false,
                                 },
                                 &lm.params,
                                 &rm.params,
@@ -671,6 +714,8 @@ impl Analyzer<'_, '_> {
                                     AssignOpts {
                                         span,
                                         allow_unknown_rhs: true,
+                                        allow_assignment_to_param: false,
+                                        allow_unknown_type: false,
                                     },
                                     &lt,
                                     &rt,
@@ -1027,5 +1072,35 @@ impl Analyzer<'_, '_> {
 
             _ => false,
         }
+    }
+
+    #[extra_validator]
+    fn check_for_mixed_nullish_coalescing(&mut self, e: &RBinExpr) {
+        fn search(span: Span, op: BinaryOp, operand: &RExpr) -> ValidationResult<()> {
+            if op == op!("??") {
+                match operand {
+                    RExpr::Bin(bin) => {
+                        if bin.op == op!("||") || bin.op == op!("&&") {
+                            return Err(box Error::NullishCoalescingMixedWithLogicalWithoutParen { span });
+                        }
+                    }
+                    _ => {}
+                }
+            } else if op == op!("||") || op == op!("&&") {
+                match operand {
+                    RExpr::Bin(bin) => {
+                        if bin.op == op!("??") {
+                            return Err(box Error::NullishCoalescingMixedWithLogicalWithoutParen { span });
+                        }
+                    }
+                    _ => {}
+                }
+            }
+
+            Ok(())
+        }
+
+        search(e.span, e.op, &e.left)?;
+        search(e.span, e.op, &e.right)?;
     }
 }

@@ -131,9 +131,7 @@ impl Analyzer<'_, '_> {
         let mut actual = Vec::with_capacity(values.return_types.len());
         for mut ty in values.return_types {
             ty = ty.fold_with(&mut KeyInliner { analyzer: self });
-            // Always generalize for now
-            // TODO: Fix this
-            if values.should_generalize || is_async || is_generator || true {
+            if values.should_generalize {
                 ty = ty.generalize_lit();
             }
 
@@ -143,7 +141,6 @@ impl Analyzer<'_, '_> {
         if is_generator {
             let mut types = Vec::with_capacity(values.yield_types.len());
             for ty in values.yield_types {
-                let ty = ty.generalize_lit();
                 let ty = self.simplify(ty);
                 types.push(ty);
             }

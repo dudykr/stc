@@ -1,0 +1,50 @@
+warning: Type
+ --> $DIR/tests/visualize/exprs/object/normalization-3.ts:1:14
+  |
+1 | var o = { x: ["string", 1], y: { c: true, d: "world", e: 3 } };
+  |              ^^^^^^^^^^^^^
+  |
+  = note: ["string", 1]
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/object/normalization-3.ts:1:32
+  |
+1 | var o = { x: ["string", 1], y: { c: true, d: "world", e: 3 } };
+  |                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: {
+              c: true;
+              d: "world";
+              e: 3;
+          }
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/object/normalization-3.ts:1:9
+  |
+1 | var o = { x: ["string", 1], y: { c: true, d: "world", e: 3 } };
+  |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: {
+              x: ["string", 1];
+              y: {
+                  c: true;
+                  d: "world";
+                  e: 3;
+              };
+          }
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/object/normalization-3.ts:3:1
+  |
+3 | o;
+  | ^
+  |
+  = note: {
+              x: (string | number)[];
+              y: {
+                  c: boolean;
+                  d: string;
+                  e: number;
+              };
+          }
+

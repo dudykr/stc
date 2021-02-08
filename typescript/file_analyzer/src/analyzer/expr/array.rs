@@ -16,6 +16,7 @@ use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RMemberExpr;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_errors::DebugExt;
+use stc_ts_errors::Error;
 use stc_ts_types::Array;
 use stc_ts_types::ComputedKey;
 use stc_ts_types::Key;
@@ -214,7 +215,15 @@ impl Analyzer<'_, '_> {
                 &[],
                 &[],
             )
-            .context("tried to call `[Symbol.iterator]()` to convert a type to interator")?;
+            .map_err(|err| {
+                box err.convert(|err| match err {
+                    Error::NoCallabelPropertyWithName { span, .. } => {
+                        Error::MustHaveSymbolIteratorThatReturnsIterator { span }
+                    }
+                    _ => err,
+                })
+            })
+            .context("tried to call `[Symbol.iterator]()` to convert a type to an iterator")?;
 
         Ok(Cow::Owned(*ty))
     }

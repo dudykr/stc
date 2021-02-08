@@ -346,6 +346,11 @@ impl Analyzer<'_, '_> {
             ScopeKind::Method,
             Default::default(),
             |child: &mut Analyzer| -> ValidationResult<_> {
+                child.scope.declaring_prop = match &key {
+                    Key::Normal { sym, .. } => Some(Id::word(sym.clone())),
+                    _ => None,
+                };
+
                 {
                     // It's error if abstract method has a body
 
