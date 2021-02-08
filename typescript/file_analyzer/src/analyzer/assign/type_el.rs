@@ -141,8 +141,8 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::Interface(Interface { body, .. }) => {
-                    for r in body {
-                        if !opts.allow_unknown_rhs {
+                    if !opts.allow_unknown_rhs {
+                        for r in body {
                             unhandled_rhs.push(r.span());
                         }
                     }
