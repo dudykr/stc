@@ -128,6 +128,7 @@ impl Analyzer<'_, '_> {
         let p = param.normalize();
         let a = arg.normalize();
         match (p, a) {
+            (Type::Constructor(..), Type::Class(..)) | (Type::Function(..), Type::Function(..)) => return Ok(false),
             (Type::Constructor(..), _) | (Type::Function(..), _) => {
                 let p = self.type_to_type_lit(p)?;
                 let a = self.type_to_type_lit(a)?;
