@@ -27,7 +27,34 @@ impl Analyzer<'_, '_> {
             }
 
             Type::TypeLit(t) => Cow::Borrowed(t),
+
+            Type::Interface(t) => {
+                let mut els = vec![];
+
+                for parent in &t.extends {
+                    let parent = self.type_of_ts_entity_name(
+                        parent.span(),
+                        self.ctx.module_id,
+                        &parent.expr,
+                        parent.type_args.as_deref(),
+                    )?;
+
+                    let super_els = self.type_to_type_lit(&parent)?;
+
+                    els.extend(super_els.into_iter().map(Cow::into_owned).flat_map(|v| v.members))
+                }
+
+                // TODO: Override
+                els.extend(t.body.clone());
+
+                Cow::Owned(TypeLit {
+                    span: t.span,
+                    members: els,
+                })
+            }
+
             Type::Enum(e) => self.enum_to_type_lit(e).map(Cow::Owned)?,
+
             Type::Class(c) => {
                 let mut els = vec![];
                 if let Some(s) = &c.super_class {
