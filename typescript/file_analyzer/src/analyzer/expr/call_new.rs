@@ -1129,10 +1129,10 @@ impl Analyzer<'_, '_> {
             // TODO: Check if signature match.
             match callee.normalize() {
                 Type::Ref(..) => {
-                    let callee = self.expand_top_ref(span, callee)?;
+                    let callee = self.expand_top_ref(span, Cow::Borrowed(callee))?.into_owned();
                     return self.get_best_return_type(
                         span,
-                        &callee,
+                        box callee,
                         kind,
                         type_args,
                         args,
