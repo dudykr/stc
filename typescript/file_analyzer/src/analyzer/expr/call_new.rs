@@ -1475,7 +1475,15 @@ impl Analyzer<'_, '_> {
                             }
                             _ => {}
                         }
-                    } else if let Err(err) = self.assign(&param.ty, &arg.ty, arg.span()) {
+                    } else if let Err(err) = self.assign_with_opts(
+                        AssignOpts {
+                            span: arg.span(),
+                            allow_unknown_rhs: true,
+                            allow_assignment_to_param: false,
+                        },
+                        &param.ty,
+                        &arg.ty,
+                    ) {
                         let err = err.convert(|err| match err {
                             Error::TupleAssignError { span, errors } => Error::Errors { span, errors },
                             _ => Error::WrongArgType {
