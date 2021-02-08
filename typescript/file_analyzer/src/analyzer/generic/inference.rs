@@ -206,8 +206,6 @@ impl Analyzer<'_, '_> {
                             } else {
                                 dbg!((&p, &a));
                             }
-                        } else {
-                            dbg!((&p, &a));
                         }
                         continue;
                     }
