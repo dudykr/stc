@@ -264,6 +264,7 @@ es6/Symbols/symbolProperty49.ts
 es6/Symbols/symbolProperty5.ts
 es6/Symbols/symbolProperty50.ts
 es6/Symbols/symbolProperty51.ts
+es6/Symbols/symbolProperty52.ts
 es6/Symbols/symbolProperty55.ts
 es6/Symbols/symbolProperty6.ts
 es6/Symbols/symbolProperty60.ts
@@ -775,6 +776,7 @@ es6/yieldExpressions/generatorTypeCheck54.ts
 es6/yieldExpressions/generatorTypeCheck55.ts
 es6/yieldExpressions/generatorTypeCheck56.ts
 es6/yieldExpressions/generatorTypeCheck60.ts
+es6/yieldExpressions/generatorTypeCheck7.ts
 es6/yieldExpressions/generatorTypeCheck9.ts
 es7/exponentiationOperator/compoundExponentiationAssignmentLHSIsReference.ts
 es7/exponentiationOperator/emitCompoundExponentiationAssignmentWithIndexingOnLHS1.ts
