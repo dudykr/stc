@@ -111,15 +111,19 @@ impl Analyzer<'_, '_> {
 
         match inferred.type_params.entry(name.clone()) {
             Entry::Occupied(e) => {
+                if e.get().iter_union().any(|prev| prev.type_eq(&ty)) {
+                    return Ok(());
+                }
+
                 // Use this for type inference.
                 let (name, param_ty) = e.remove_entry();
 
                 inferred
                     .type_params
-                    .insert(name, Type::union(vec![param_ty.clone(), ty]).cheap());
+                    .insert(name, Type::union(vec![param_ty.clone(), ty]));
             }
             Entry::Vacant(e) => {
-                e.insert(ty.cheap());
+                e.insert(ty);
             }
         }
 
@@ -530,6 +534,10 @@ impl Analyzer<'_, '_> {
 
                 match inferred.type_params.entry(name.clone()) {
                     Entry::Occupied(e) => {
+                        if e.get().iter_union().any(|prev| prev.type_eq(&arg)) {
+                            return Ok(());
+                        }
+
                         // Use this for type inference.
                         let (name, param_ty) = e.remove_entry();
 
