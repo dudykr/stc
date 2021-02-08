@@ -159,6 +159,7 @@ classes/constructorDeclarations/classConstructorParametersAccessibility3.ts
 classes/constructorDeclarations/constructorParameters/constructorImplementationWithDefaultValues.ts
 classes/constructorDeclarations/constructorParameters/declarationEmitReadonly.ts
 classes/constructorDeclarations/constructorWithExpressionLessReturn.ts
+classes/members/accessibility/protectedClassPropertyAccessibleWithinSubclass.ts
 classes/members/classTypes/indexersInClassType.ts
 classes/members/constructorFunctionTypes/classWithNoConstructorOrBaseClass.ts
 classes/members/inheritanceAndOverriding/derivedClassOverridesIndexersWithAssignmentCompatibility.ts
@@ -717,6 +718,7 @@ es6/variableDeclarations/VariableDeclaration8_es6.ts
 es6/variableDeclarations/VariableDeclaration9_es6.ts
 es6/yieldExpressions/
 es6/yieldExpressions/YieldExpression10_es6.ts
+es6/yieldExpressions/YieldExpression11_es6.ts
 es6/yieldExpressions/YieldExpression13_es6.ts
 es6/yieldExpressions/YieldExpression1_es6.ts
 es6/yieldExpressions/YieldExpression3_es6.ts
