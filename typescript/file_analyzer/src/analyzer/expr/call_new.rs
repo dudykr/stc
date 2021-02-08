@@ -1128,6 +1128,19 @@ impl Analyzer<'_, '_> {
         for callee in callee.normalize().iter_union().flat_map(|ty| ty.iter_union()) {
             // TODO: Check if signature match.
             match callee.normalize() {
+                Type::Ref(..) => {
+                    let callee = self.expand_top_ref(span, callee)?;
+                    return self.get_best_return_type(
+                        span,
+                        &callee,
+                        kind,
+                        type_args,
+                        args,
+                        arg_types,
+                        spread_arg_types,
+                    );
+                }
+
                 Type::Intersection(ref i) => {
                     let types = i
                         .types
