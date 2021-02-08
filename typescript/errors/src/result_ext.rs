@@ -1,6 +1,13 @@
 use crate::Error;
 
 pub trait DebugExt<T>: Into<Result<T, Box<Error>>> {
+    fn convert_err<F>(self, op: F) -> Result<T, Box<Error>>
+    where
+        F: FnOnce(Error) -> Error,
+    {
+        self.into().map_err(|err| box op(*err))
+    }
+
     #[inline]
     #[track_caller]
     fn context(self, msg: &str) -> Result<T, Box<Error>> {

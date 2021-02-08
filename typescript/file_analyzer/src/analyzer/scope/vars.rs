@@ -216,6 +216,12 @@ impl Analyzer<'_, '_> {
                                         IdCtx::Var,
                                     )
                                     .map(Some)
+                                    .convert_err(|err| match err {
+                                        Error::NoSuchProperty { span, .. } if value.is_none() => {
+                                            Error::NoSuchPropertyWhileDeclWithBidningPat { span }
+                                        }
+                                        _ => err,
+                                    })
                                     .context("tried to access property to declare variables using an object pattern")?,
                                 None => None,
                             };

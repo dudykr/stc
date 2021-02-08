@@ -294,6 +294,10 @@ pub enum Error {
         span: Span,
     },
 
+    NoSuchPropertyWhileDeclWithBidningPat {
+        span: Span,
+    },
+
     NoSuchProperty {
         span: Span,
         obj: Option<Box<Type>>,
@@ -859,6 +863,8 @@ impl Error {
             Error::MissingFields { .. } => 2741,
 
             Error::MustHaveSymbolIteratorThatReturnsIterator { .. } => 2488,
+
+            Error::NoSuchPropertyWhileDeclWithBidningPat { .. } => 2525,
 
             _ => 0,
         }
