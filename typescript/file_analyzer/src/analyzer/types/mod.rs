@@ -19,6 +19,13 @@ impl Analyzer<'_, '_> {
         let ty = ty.normalize();
 
         Ok(Some(match ty {
+            Type::Ref(..) => {
+                let ty = self.expand_top_ref(ty.span(), Cow::Borrowed(ty))?;
+                return self
+                    .type_to_type_lit(&ty)
+                    .map(|o| o.map(Cow::into_owned).map(Cow::Owned));
+            }
+
             Type::TypeLit(t) => Cow::Borrowed(t),
             Type::Enum(e) => self.enum_to_type_lit(e).map(Cow::Owned)?,
             Type::Class(c) => {
