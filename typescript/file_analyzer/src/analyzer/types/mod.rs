@@ -14,17 +14,26 @@ use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
 use stc_ts_utils::MapWithMut;
 use std::borrow::Cow;
+use swc_common::Span;
 use swc_common::Spanned;
 
 impl Analyzer<'_, '_> {
-    pub(crate) fn type_to_type_lit<'a>(&mut self, ty: &'a Type) -> ValidationResult<Option<Cow<'a, TypeLit>>> {
+    /// Note: `span` is only used while expanding type (to prevent panic) in the
+    /// case of [Type::Ref].
+    pub(crate) fn type_to_type_lit<'a>(
+        &mut self,
+        span: Span,
+        ty: &'a Type,
+    ) -> ValidationResult<Option<Cow<'a, TypeLit>>> {
+        debug_assert!(!span.is_dummy(), "type_to_type_lit: `span` should not be dummy");
+
         let ty = ty.normalize();
 
         Ok(Some(match ty {
             Type::Ref(..) => {
-                let ty = self.expand_top_ref(ty.span(), Cow::Borrowed(ty))?;
+                let ty = self.expand_top_ref(span, Cow::Borrowed(ty))?;
                 return self
-                    .type_to_type_lit(&ty)
+                    .type_to_type_lit(span, &ty)
                     .map(|o| o.map(Cow::into_owned).map(Cow::Owned));
             }
 
@@ -41,7 +50,7 @@ impl Analyzer<'_, '_> {
                         parent.type_args.as_deref(),
                     )?;
 
-                    let super_els = self.type_to_type_lit(&parent)?;
+                    let super_els = self.type_to_type_lit(span, &parent)?;
 
                     members.extend(super_els.into_iter().map(Cow::into_owned).flat_map(|v| v.members))
                 }
@@ -56,8 +65,8 @@ impl Analyzer<'_, '_> {
 
             Type::Class(c) => {
                 let mut members = vec![];
-                if let Some(s) = &c.super_class {
-                    let super_els = self.type_to_type_lit(s)?;
+                if let Some(super_class) = &c.super_class {
+                    let super_els = self.type_to_type_lit(span, super_class)?;
                     members.extend(super_els.map(|ty| ty.into_owned().members).into_iter().flatten());
                 }
 
@@ -73,14 +82,14 @@ impl Analyzer<'_, '_> {
             Type::Intersection(t) => {
                 let mut members = vec![];
                 for ty in &t.types {
-                    let opt = self.type_to_type_lit(ty)?;
+                    let opt = self.type_to_type_lit(span, ty)?;
                     members.extend(opt.into_iter().map(Cow::into_owned).flat_map(|v| v.members));
                 }
 
                 Cow::Owned(TypeLit { span: t.span, members })
             }
 
-            Type::Alias(ty) => return self.type_to_type_lit(&ty.ty),
+            Type::Alias(ty) => return self.type_to_type_lit(span, &ty.ty),
 
             Type::Constructor(ty) => {
                 let el = TypeElement::Constructor(ConstructorSignature {
