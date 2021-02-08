@@ -1163,6 +1163,7 @@ impl Analyzer<'_, '_> {
                 Type::Function(ref f) => {
                     candidates.push((f.type_params.as_ref().map(|v| &*v.params), &f.params, f.ret_ty.clone()));
                 }
+
                 Type::Class(ref cls) if kind == ExtractKind::New => {
                     // TODO: Handle type parameters.
                     return Ok(box Type::ClassInstance(ClassInstance {
@@ -1170,6 +1171,20 @@ impl Analyzer<'_, '_> {
                         ty: box Type::Class(cls.clone()),
                         type_args: type_args.cloned().map(Box::new),
                     }));
+                }
+
+                Type::Union(ty) => {
+                    let mut types = ty
+                        .types
+                        .iter()
+                        .cloned()
+                        .map(|callee| {
+                            self.get_best_return_type(span, callee, kind, type_args, args, arg_types, spread_arg_types)
+                        })
+                        .collect::<Result<Vec<_>, _>>()?;
+
+                    types.dedup_type();
+                    return Ok(Type::union(types));
                 }
                 _ => {}
             }
