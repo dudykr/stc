@@ -104,8 +104,15 @@ impl Analyzer<'_, '_> {
         }
 
         for (lp, rp) in li.zip(ri) {
-            self.assign_inner(&lp.ty, &rp.ty, opts)
-                .context("tried to assign a method parameter to a method parameter")?;
+            self.assign_inner(
+                &lp.ty,
+                &rp.ty,
+                AssignOpts {
+                    allow_unknown_type: true,
+                    ..opts
+                },
+            )
+            .context("tried to assign a method parameter to a method parameter")?;
         }
 
         Ok(())

@@ -44,6 +44,22 @@ mod type_el;
 pub(crate) struct AssignOpts {
     pub span: Span,
     pub allow_unknown_rhs: bool,
+    /// Allow assigning `unknown` type to other types. This should be `true` for
+    /// parameters because the following is valid.
+    ///
+    ///
+    /// ```ts
+    ///   declare var a: {
+    ///     (a:[2]): void
+    ///   }
+    ///
+    ///   declare var b: {
+    ///     (a:[unknown]): void
+    ///   }
+    ///
+    ///   a = b;
+    /// ```
+    pub allow_unknown_type: bool,
     pub allow_assignment_to_param: bool,
 }
 
@@ -144,6 +160,7 @@ impl Analyzer<'_, '_> {
                 span,
                 allow_unknown_rhs: false,
                 allow_assignment_to_param: false,
+                allow_unknown_type: false,
             },
             left,
             right,
@@ -250,6 +267,10 @@ impl Analyzer<'_, '_> {
 
         // It's valid to assign any to everything.
         if rhs.is_any() {
+            return Ok(());
+        }
+
+        if opts.allow_unknown_type && rhs.is_unknown() {
             return Ok(());
         }
 

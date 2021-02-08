@@ -137,6 +137,7 @@ impl Analyzer<'_, '_> {
                                     span,
                                     allow_unknown_rhs: true,
                                     allow_assignment_to_param: false,
+                                    allow_unknown_type: false,
                                 },
                                 &declared,
                                 &inferred_return_type,
