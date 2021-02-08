@@ -856,6 +856,20 @@ impl Analyzer<'_, '_> {
                     }));
                 }
 
+                Type::Constructor(c) => {
+                    return self.get_return_type(
+                        span,
+                        kind,
+                        c.type_params.as_ref().map(|v| &*v.params),
+                        &c.params,
+                        c.type_ann.clone(),
+                        type_args,
+                        args,
+                        arg_types,
+                        spread_arg_types,
+                    )
+                }
+
                 _ => {}
             },
             _ => {}
