@@ -23,6 +23,7 @@ use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::debug::print_backtrace;
 use stc_ts_errors::debug::print_type;
+use stc_ts_errors::DebugExt;
 use stc_ts_types::Array;
 use stc_ts_types::FnParam;
 use stc_ts_types::Id;
@@ -1017,7 +1018,11 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Enum(..) | Type::Intersection(..) | Type::Class(..) | Type::Interface(..) => {
-                let arg = self.type_to_type_lit(arg)?.map(Cow::into_owned).map(Type::TypeLit);
+                let arg = self
+                    .type_to_type_lit(arg)
+                    .context("tried to convert a type into a type literal to infer mapped type")?
+                    .map(Cow::into_owned)
+                    .map(Type::TypeLit);
                 if let Some(arg) = arg {
                     return self.infer_mapped(span, inferred, param, &arg);
                 }

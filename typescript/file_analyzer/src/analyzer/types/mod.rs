@@ -29,7 +29,7 @@ impl Analyzer<'_, '_> {
             Type::TypeLit(t) => Cow::Borrowed(t),
 
             Type::Interface(t) => {
-                let mut els = vec![];
+                let mut members = vec![];
 
                 for parent in &t.extends {
                     let parent = self.type_of_ts_entity_name(
@@ -41,38 +41,43 @@ impl Analyzer<'_, '_> {
 
                     let super_els = self.type_to_type_lit(&parent)?;
 
-                    els.extend(super_els.into_iter().map(Cow::into_owned).flat_map(|v| v.members))
+                    members.extend(super_els.into_iter().map(Cow::into_owned).flat_map(|v| v.members))
                 }
 
                 // TODO: Override
-                els.extend(t.body.clone());
+                members.extend(t.body.clone());
 
-                Cow::Owned(TypeLit {
-                    span: t.span,
-                    members: els,
-                })
+                Cow::Owned(TypeLit { span: t.span, members })
             }
 
             Type::Enum(e) => self.enum_to_type_lit(e).map(Cow::Owned)?,
 
             Type::Class(c) => {
-                let mut els = vec![];
+                let mut members = vec![];
                 if let Some(s) = &c.super_class {
                     let super_els = self.type_to_type_lit(s)?;
-                    els.extend(super_els.map(|ty| ty.into_owned().members).into_iter().flatten());
+                    members.extend(super_els.map(|ty| ty.into_owned().members).into_iter().flatten());
                 }
 
                 // TODO: Override
 
                 for member in &c.body {
-                    els.extend(self.make_type_el_from_class_member(member)?);
+                    members.extend(self.make_type_el_from_class_member(member)?);
                 }
 
-                Cow::Owned(TypeLit {
-                    span: c.span,
-                    members: els,
-                })
+                Cow::Owned(TypeLit { span: c.span, members })
             }
+
+            Type::Intersection(t) => {
+                let mut members = vec![];
+                for ty in &t.types {
+                    let opt = self.type_to_type_lit(ty)?;
+                    members.extend(opt.into_iter().map(Cow::into_owned).flat_map(|v| v.members));
+                }
+
+                Cow::Owned(TypeLit { span: t.span, members })
+            }
+
             _ => return Ok(None),
         }))
     }
