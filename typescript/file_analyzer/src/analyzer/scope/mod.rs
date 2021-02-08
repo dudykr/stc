@@ -1173,9 +1173,12 @@ impl Analyzer<'_, '_> {
                                 RObjectPatProp::Rest(RRestPat { ref arg, .. }) => arg.span(),
                                 _ => p.span(),
                             };
+                            debug_assert!(!span.is_dummy());
+
                             return Err(box Error::Unknown { span });
                         }
 
+                        debug_assert!(!span.is_dummy());
                         return Err(box Error::Unknown { span });
                     }
 

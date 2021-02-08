@@ -913,7 +913,10 @@ impl Analyzer<'_, '_> {
             Type::Keyword(RTsKeywordType {
                 kind: TsKeywordTypeKind::TsUnknownKeyword,
                 ..
-            }) => return Err(box Error::Unknown { span }),
+            }) => {
+                debug_assert!(!span.is_dummy());
+                return Err(box Error::Unknown { span });
+            }
 
             Type::Function(ref f) if kind == ExtractKind::Call => self.get_return_type(
                 span,

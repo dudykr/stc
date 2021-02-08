@@ -1143,7 +1143,10 @@ impl Analyzer<'_, '_> {
             Type::Keyword(RTsKeywordType {
                 kind: TsKeywordTypeKind::TsUnknownKeyword,
                 ..
-            }) => return Err(box Error::Unknown { span: obj.span() }),
+            }) => {
+                debug_assert!(!span.is_dummy());
+                return Err(box Error::Unknown { span });
+            }
 
             Type::Keyword(RTsKeywordType { kind, .. }) if !self.is_builtin => {
                 let word = match kind {
