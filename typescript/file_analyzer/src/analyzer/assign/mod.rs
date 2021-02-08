@@ -1077,8 +1077,8 @@ impl Analyzer<'_, '_> {
                 _ => fail!(),
             },
 
-            Type::Function(l) => match rhs {
-                Type::Function(..) | Type::Lit(..) => return self.assign_to_function(opts, l, rhs),
+            Type::Function(lf) => match rhs {
+                Type::Function(..) | Type::Lit(..) => return self.assign_to_function(opts, to, lf, rhs),
                 _ => {}
             },
 

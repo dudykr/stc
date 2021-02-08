@@ -2,10 +2,13 @@ use super::InferData;
 use crate::analyzer::Analyzer;
 use crate::util::is_str_lit_or_union;
 use crate::ValidationResult;
+use fxhash::FxHashMap;
 use stc_ts_ast_rnode::RTsEntityName;
+use stc_ts_errors::DebugExt;
 use stc_ts_types::Array;
 use stc_ts_types::Class;
 use stc_ts_types::ClassMember;
+use stc_ts_types::Id;
 use stc_ts_types::Interface;
 use stc_ts_types::Operator;
 use stc_ts_types::Ref;
@@ -18,6 +21,21 @@ use swc_common::TypeEq;
 use swc_ecma_ast::TsTypeOperatorOp;
 
 impl Analyzer<'_, '_> {
+    pub(crate) fn infer_type_with_types(
+        &mut self,
+        span: Span,
+        type_params: &[TypeParam],
+        param: &Type,
+        arg: &Type,
+    ) -> ValidationResult<FxHashMap<Id, Box<Type>>> {
+        let mut inferred = InferData::default();
+
+        self.infer_type(span, &mut inferred, &param, &arg)
+            .context("tried to infer type using two type")?;
+
+        Ok(inferred.type_params)
+    }
+
     /// Handle some special builtin types
 
     pub(super) fn infer_builtin(
