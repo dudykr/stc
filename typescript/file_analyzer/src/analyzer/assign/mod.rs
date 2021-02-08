@@ -962,6 +962,7 @@ impl Analyzer<'_, '_> {
             Type::Interface(Interface {
                 ref body, ref extends, ..
             }) => {
+                let mut errors = vec![];
                 for parent in extends {
                     let parent = self.type_of_ts_entity_name(
                         span,
@@ -970,9 +971,12 @@ impl Analyzer<'_, '_> {
                         parent.type_args.as_deref(),
                     )?;
 
-                    if self.assign_with_opts(opts, &parent, &rhs).is_ok() {
+                    let res = self.assign_with_opts(opts, &parent, &rhs);
+                    if res.is_ok() {
                         return Ok(());
                     }
+
+                    errors.extend(res.err());
                 }
 
                 // TODO: Prevent recursion and uncomment the code below.
@@ -1010,7 +1014,12 @@ impl Analyzer<'_, '_> {
                 //
                 // TODO: Use errors returned from parent assignment.
                 if body.is_empty() && !extends.is_empty() {
-                    fail!()
+                    return Err(box Error::AssignFailed {
+                        span,
+                        left: box to.clone(),
+                        right: box rhs.clone(),
+                        cause: errors,
+                    });
                 }
 
                 return Ok(());
