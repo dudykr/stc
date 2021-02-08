@@ -27,6 +27,7 @@ use stc_ts_types::TypeLit;
 use stc_ts_types::{Alias, Interface, Ref};
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::*;
+use ty::TypeExt;
 
 #[validator]
 impl Analyzer<'_, '_> {
@@ -120,7 +121,7 @@ impl Analyzer<'_, '_> {
 
             let inferred_return_type = match inferred_return_type {
                 Some(Some(inferred_return_type)) => {
-                    let inferred_return_type = match *inferred_return_type {
+                    let mut inferred_return_type = match *inferred_return_type {
                         Type::Ref(ty) => box Type::Ref(child.qualify_ref_type_args(span, ty)?),
                         _ => inferred_return_type,
                     };
@@ -141,6 +142,10 @@ impl Analyzer<'_, '_> {
                                 &inferred_return_type,
                             )
                             .report(&mut child.storage);
+                    } else {
+                        if child.may_generalize(&inferred_return_type) {
+                            inferred_return_type = inferred_return_type.generalize_lit();
+                        }
                     }
 
                     inferred_return_type
