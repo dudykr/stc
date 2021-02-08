@@ -3,10 +3,13 @@ use crate::util::type_ext::TypeVecExt;
 use crate::ValidationResult;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
+use stc_ts_ast_rnode::RNumber;
+use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_errors::DebugExt;
 use stc_ts_types::Array;
 use stc_ts_types::ClassMember;
 use stc_ts_types::ConstructorSignature;
+use stc_ts_types::Key;
 use stc_ts_types::MethodSignature;
 use stc_ts_types::PropertySignature;
 use stc_ts_types::Type;
@@ -16,6 +19,8 @@ use stc_ts_utils::MapWithMut;
 use std::borrow::Cow;
 use swc_common::Span;
 use swc_common::Spanned;
+use swc_common::SyntaxContext;
+use swc_ecma_ast::TsKeywordTypeKind;
 
 impl Analyzer<'_, '_> {
     /// Note: `span` is only used while expanding type (to prevent panic) in the
@@ -114,6 +119,44 @@ impl Analyzer<'_, '_> {
                     span: ty.span,
                     members: vec![el],
                 })
+            }
+
+            Type::Tuple(ty) => {
+                let mut members = vec![];
+
+                for (idx, e) in ty.elems.iter().enumerate() {
+                    members.push(TypeElement::Property(PropertySignature {
+                        span: e.span,
+                        key: Key::Num(RNumber {
+                            span: e.span,
+                            value: idx as f64,
+                        }),
+                        readonly: false,
+                        optional: false,
+                        params: Default::default(),
+                        type_params: Default::default(),
+                        type_ann: Some(e.ty.clone()),
+                    }));
+                }
+
+                // length
+                members.push(TypeElement::Property(PropertySignature {
+                    span: ty.span,
+                    key: Key::Normal {
+                        span: ty.span.with_ctxt(SyntaxContext::empty()),
+                        sym: "length".into(),
+                    },
+                    readonly: true,
+                    optional: false,
+                    params: Default::default(),
+                    type_params: Default::default(),
+                    type_ann: Some(box Type::Keyword(RTsKeywordType {
+                        span: ty.span,
+                        kind: TsKeywordTypeKind::TsNumberKeyword,
+                    })),
+                }));
+
+                Cow::Owned(TypeLit { span: ty.span, members })
             }
 
             _ => {
