@@ -19,6 +19,11 @@ impl Analyzer<'_, '_> {
 
         match l {
             Type::Ref(Ref {
+                type_name: RTsEntityName::Ident(RIdent { sym, .. }),
+                ..
+            }) if *sym == *"ThisType" => return Some(Ok(())),
+
+            Type::Ref(Ref {
                 type_name:
                     RTsEntityName::Ident(RIdent {
                         sym: js_word!("Array"), ..
