@@ -468,6 +468,10 @@ impl Analyzer<'_, '_> {
 
         self.infer_builtin(span, inferred, param, arg)?;
 
+        if self.infer_type_by_converting_to_type_lit(span, inferred, param, arg)? {
+            return Ok(());
+        }
+
         match param {
             Type::Param(TypeParam {
                 ref name,
@@ -850,12 +854,6 @@ impl Analyzer<'_, '_> {
                         return Ok(());
                     }
                     _ => {}
-                }
-            }
-
-            Type::Intersection(param) => {
-                if param.types.len() == 1 {
-                    return self.infer_type(span, inferred, &param.types[0], arg);
                 }
             }
 

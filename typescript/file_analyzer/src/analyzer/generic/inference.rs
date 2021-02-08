@@ -117,6 +117,33 @@ impl Analyzer<'_, '_> {
         self.infer_type_using_type_elements_and_type_elements(span, inferred, &param.members, &arg.members)
     }
 
+    /// Returns `Ok(true)` if this method know how to infer types.
+    pub(super) fn infer_type_by_converting_to_type_lit(
+        &mut self,
+        span: Span,
+        inferred: &mut InferData,
+        param: &Type,
+        arg: &Type,
+    ) -> ValidationResult<bool> {
+        let p = param.normalize();
+        let a = arg.normalize();
+        match (p, a) {
+            (Type::Constructor(..), _) | (Type::Function(..), _) => {
+                let p = self.type_to_type_lit(p)?;
+                let a = self.type_to_type_lit(a)?;
+                if let Some(p) = p {
+                    if let Some(a) = a {
+                        self.infer_type_using_type_elements_and_type_elements(span, inferred, &p.members, &a.members)?;
+                        return Ok(true);
+                    }
+                }
+            }
+            _ => {}
+        }
+
+        Ok(false)
+    }
+
     fn infer_type_using_type_elements_and_type_elements(
         &mut self,
         span: Span,
