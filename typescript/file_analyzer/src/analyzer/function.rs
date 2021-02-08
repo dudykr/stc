@@ -126,25 +126,21 @@ impl Analyzer<'_, '_> {
                     };
 
                     if let Some(declared) = &declared_ret_ty {
-                        if !f.is_async && !f.is_generator {
-                            // TODO: Use more complex logic for async functions and generator functions.
+                        // Expand before assigning
+                        let span = inferred_return_type.span();
 
-                            // Expand before assigning
-                            let span = inferred_return_type.span();
-
-                            // It's okay to return more properties than declared.
-                            child
-                                .assign_with_opts(
-                                    AssignOpts {
-                                        span,
-                                        allow_unknown_rhs: true,
-                                        allow_assignment_to_param: false,
-                                    },
-                                    &declared,
-                                    &inferred_return_type,
-                                )
-                                .report(&mut child.storage);
-                        }
+                        // It's okay to return more properties than declared.
+                        child
+                            .assign_with_opts(
+                                AssignOpts {
+                                    span,
+                                    allow_unknown_rhs: true,
+                                    allow_assignment_to_param: false,
+                                },
+                                &declared,
+                                &inferred_return_type,
+                            )
+                            .report(&mut child.storage);
                     }
 
                     inferred_return_type
