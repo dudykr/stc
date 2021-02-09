@@ -1210,6 +1210,14 @@ impl Analyzer<'_, '_> {
                                 m.ret_ty.as_deref().map(Cow::Borrowed),
                             ));
                         }
+
+                        TypeElement::Constructor(m) if kind == ExtractKind::New => {
+                            candidates.push((
+                                m.type_params.as_ref().map(|v| &*v.params).map(Cow::Borrowed),
+                                Cow::Borrowed(&*m.params),
+                                m.ret_ty.as_deref().map(Cow::Borrowed),
+                            ));
+                        }
                         _ => {}
                     }
                 }
