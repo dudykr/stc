@@ -92,6 +92,27 @@ impl Analyzer<'_, '_> {
 
                 return Ok(());
             }
+
+            Type::Intersection(rhs) => {
+                let rhs = self
+                    .type_to_type_lit(opts.span, r)
+                    .context("tried to convert a type to type literal to assign it to a class")?;
+                if let Some(rhs) = rhs.as_deref() {
+                    for lm in &l.body {
+                        let lm = self.make_type_el_from_class_member(lm)?;
+                        let lm = match lm {
+                            Some(v) => v,
+                            None => {
+                                continue;
+                            }
+                        };
+                        self.assign_type_elements_to_type_element(opts, &mut vec![], &lm, &rhs.members)
+                            .context("tried to assign type elements to a class member")?;
+                    }
+
+                    return Ok(());
+                }
+            }
             _ => {}
         };
 
