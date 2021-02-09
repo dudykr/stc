@@ -939,6 +939,7 @@ expressions/superPropertyAccess/superSymbolIndexedAccess1.ts
 expressions/superPropertyAccess/superSymbolIndexedAccess2.ts
 expressions/superPropertyAccess/superSymbolIndexedAccess5.ts
 expressions/superPropertyAccess/superSymbolIndexedAccess6.ts
+expressions/typeGuards/
 expressions/typeGuards/TypeGuardWithArrayUnion.ts
 expressions/typeGuards/TypeGuardWithEnumUnion.ts
 expressions/typeGuards/typeGuardEnums.ts
