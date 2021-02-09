@@ -1765,6 +1765,9 @@ impl Analyzer<'_, '_> {
                 if self.is_implicitly_typed(&ty) {
                     span.ctxt = span.ctxt.apply_mark(self.marks().implicit_type_mark);
                 }
+                if !self.may_generalize(&ty) {
+                    span = self.prevent_generalize_span(span);
+                }
                 ty.respan(span);
             }
             slog::debug!(self.logger, "{:?}", ty);
