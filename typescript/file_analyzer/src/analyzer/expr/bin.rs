@@ -215,7 +215,7 @@ impl Analyzer<'_, '_> {
                         } else if !is_eq {
                             // Remove from union
                             let mut r = box r.clone();
-                            self.cur_facts.true_facts.excludes.insert(l.into(), r);
+                            self.cur_facts.true_facts.excludes.entry(l.into()).or_default().push(r);
                         }
                     }
                     _ => {}
