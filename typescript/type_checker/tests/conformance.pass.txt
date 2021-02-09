@@ -944,6 +944,7 @@ expressions/typeGuards/TypeGuardWithEnumUnion.ts
 expressions/typeGuards/nullOrUndefinedTypeGuardIsOrderIndependent.ts
 expressions/typeGuards/typeGuardEnums.ts
 expressions/typeGuards/typeGuardIntersectionTypes.ts
+expressions/typeGuards/typeGuardNarrowsToLiteralType.ts
 expressions/typeGuards/typeGuardNesting.ts
 expressions/typeGuards/typeGuardOfFormFunctionEquality.ts
 expressions/typeGuards/typeGuardOfFormTypeOfBoolean.ts
