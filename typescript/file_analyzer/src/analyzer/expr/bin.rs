@@ -899,6 +899,13 @@ impl Analyzer<'_, '_> {
                 }
             }
 
+            Type::Ref(..) => {
+                // Report error and return ref type back.
+                self.make_instance_or_report(span, &ty);
+
+                ty
+            }
+
             _ => return self.make_instance_or_report(span, &ty),
         }
 
