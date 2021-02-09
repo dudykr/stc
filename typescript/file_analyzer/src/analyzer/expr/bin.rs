@@ -264,6 +264,7 @@ impl Analyzer<'_, '_> {
                         kind: TsKeywordTypeKind::TsUnknownKeyword,
                         ..
                     }) => {
+                        debug_assert!(!span.is_dummy());
                         return Err(box Error::Unknown { span });
                     }
                     _ => {}
@@ -288,6 +289,7 @@ impl Analyzer<'_, '_> {
 
                     _ => None,
                 }) {
+                    debug_assert!(!span.is_dummy());
                     return Err(box Error::Unknown { span });
                 }
 

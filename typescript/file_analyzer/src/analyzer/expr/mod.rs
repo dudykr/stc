@@ -849,6 +849,8 @@ impl Analyzer<'_, '_> {
         let ctx = Ctx {
             preserve_ref: false,
             ignore_expand_prevention_for_top: true,
+            ignore_expand_prevention_for_all: false,
+            preserve_params: true,
             ..self.ctx
         };
         let obj = self.with_ctx(ctx).expand(span, obj)?.generalize_lit();
@@ -1143,7 +1145,10 @@ impl Analyzer<'_, '_> {
             Type::Keyword(RTsKeywordType {
                 kind: TsKeywordTypeKind::TsUnknownKeyword,
                 ..
-            }) => return Err(box Error::Unknown { span: obj.span() }),
+            }) => {
+                debug_assert!(!span.is_dummy());
+                return Err(box Error::Unknown { span });
+            }
 
             Type::Keyword(RTsKeywordType { kind, .. }) if !self.is_builtin => {
                 let word = match kind {
@@ -1244,25 +1249,15 @@ impl Analyzer<'_, '_> {
                 let mut errors = Vec::with_capacity(types.len());
 
                 for ty in types {
-                    let ty = ty.clone();
-                    let ctx = Ctx {
-                        preserve_ref: false,
-                        ignore_expand_prevention_for_top: true,
-                        ..self.ctx
-                    };
-                    let ty = self.with_ctx(ctx).expand_fully(span, ty, true)?;
+                    let ty = box self.expand_top_ref(span, Cow::Borrowed(ty))?.into_owned();
 
-                    match self.access_property(span, ty.clone(), prop, type_mode, id_ctx) {
+                    match self.access_property(span, ty, prop, type_mode, id_ctx) {
                         Ok(ty) => tys.push(ty),
                         Err(err) => errors.push(err),
                     }
                 }
 
-                if type_mode != TypeOfMode::LValue {
-                    if !errors.is_empty() {
-                        return Err(box Error::UnionError { span, errors });
-                    }
-                } else {
+                if type_mode == TypeOfMode::LValue {
                     // In l-value context, it's success if one of types matches it.
                     let is_err = errors.iter().any(|err| match *err {
                         box Error::ReadOnly { .. } => true,
@@ -1271,6 +1266,10 @@ impl Analyzer<'_, '_> {
                     if tys.is_empty() || is_err {
                         assert_ne!(errors.len(), 0);
                         return Err(box Error::UnionError { span, errors });
+                    }
+                } else {
+                    if !errors.is_empty() {
+                        return Ok(Type::any(span));
                     }
                 }
 

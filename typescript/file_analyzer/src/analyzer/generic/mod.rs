@@ -111,15 +111,19 @@ impl Analyzer<'_, '_> {
 
         match inferred.type_params.entry(name.clone()) {
             Entry::Occupied(e) => {
+                if e.get().iter_union().any(|prev| prev.type_eq(&ty)) {
+                    return Ok(());
+                }
+
                 // Use this for type inference.
                 let (name, param_ty) = e.remove_entry();
 
                 inferred
                     .type_params
-                    .insert(name, Type::union(vec![param_ty.clone(), ty]).cheap());
+                    .insert(name, Type::union(vec![param_ty.clone(), ty]));
             }
             Entry::Vacant(e) => {
-                e.insert(ty.cheap());
+                e.insert(ty);
             }
         }
 
@@ -440,6 +444,15 @@ impl Analyzer<'_, '_> {
         };
 
         match param {
+            Type::Union(param) if !self.ctx.skip_union_while_inferencing => {
+                //
+                for p in &param.types {
+                    self.infer_type(span, inferred, p, arg)?;
+                }
+
+                return Ok(());
+            }
+
             Type::Intersection(param) => {
                 for param in &param.types {
                     self.infer_type(span, inferred, param, arg)?;
@@ -467,6 +480,10 @@ impl Analyzer<'_, '_> {
         let a = arg;
 
         self.infer_builtin(span, inferred, param, arg)?;
+
+        if self.infer_type_by_converting_to_type_lit(span, inferred, param, arg)? {
+            return Ok(());
+        }
 
         match param {
             Type::Param(TypeParam {
@@ -517,6 +534,10 @@ impl Analyzer<'_, '_> {
 
                 match inferred.type_params.entry(name.clone()) {
                     Entry::Occupied(e) => {
+                        if e.get().iter_union().any(|prev| prev.type_eq(&arg)) {
+                            return Ok(());
+                        }
+
                         // Use this for type inference.
                         let (name, param_ty) = e.remove_entry();
 
@@ -782,16 +803,6 @@ impl Analyzer<'_, '_> {
                 }
             },
 
-            // TODO: implement
-            Type::Union(param) => {
-                //
-                for p in &param.types {
-                    self.infer_type(span, inferred, p, arg)?;
-                }
-
-                return Ok(());
-            }
-
             Type::Alias(param) => {
                 self.infer_type(span, inferred, &param.ty, arg)?;
                 if let Some(type_params) = &param.type_params {
@@ -850,12 +861,6 @@ impl Analyzer<'_, '_> {
                         return Ok(());
                     }
                     _ => {}
-                }
-            }
-
-            Type::Intersection(param) => {
-                if param.types.len() == 1 {
-                    return self.infer_type(span, inferred, &param.types[0], arg);
                 }
             }
 
@@ -1028,9 +1033,14 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            Type::Enum(..) | Type::Alias(..) | Type::Intersection(..) | Type::Class(..) | Type::Interface(..) => {
+            Type::Tuple(..)
+            | Type::Enum(..)
+            | Type::Alias(..)
+            | Type::Intersection(..)
+            | Type::Class(..)
+            | Type::Interface(..) => {
                 let arg = self
-                    .type_to_type_lit(arg)
+                    .type_to_type_lit(span, arg)
                     .context("tried to convert a type into a type literal to infer mapped type")?
                     .map(Cow::into_owned)
                     .map(Type::TypeLit);

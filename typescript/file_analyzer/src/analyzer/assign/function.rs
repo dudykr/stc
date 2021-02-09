@@ -24,7 +24,13 @@ impl Analyzer<'_, '_> {
     /// a = b;
     /// b = a; // error
     /// ```
-    pub(super) fn assign_to_function(&mut self, opts: AssignOpts, l: &Function, r: &Type) -> ValidationResult<()> {
+    pub(super) fn assign_to_function(
+        &mut self,
+        opts: AssignOpts,
+        lt: &Type,
+        l: &Function,
+        r: &Type,
+    ) -> ValidationResult<()> {
         let span = opts.span;
         let r = r.normalize();
 
@@ -52,6 +58,17 @@ impl Analyzer<'_, '_> {
                         new_r = r.function().unwrap();
                         (&new_r.params, &new_r.ret_ty)
                     }
+
+                    // Assigning `(a: 1) => string` to `<Z>(a: Z) => string` is valid.
+                    (None, Some(rt)) => {
+                        let map = self.infer_type_with_types(span, &*rt.params, r, lt)?;
+                        let r = self
+                            .expand_type_params(&map, box r.clone())
+                            .context("tried to expand type parameters of rhs as a step of function assignemnt")?;
+                        new_r = r.function().unwrap();
+                        (&new_r.params, &new_r.ret_ty)
+                    }
+
                     _ => (r_params, r_ret_ty),
                 };
 
@@ -96,11 +113,9 @@ impl Analyzer<'_, '_> {
             _ => true,
         });
 
-        if li.clone().count() != ri.clone().count() {
-            return Err(box Error::Unimplemented {
-                span,
-                msg: format!("l.params.len() = {}; r.params.len() = {};", l.len(), r.len()),
-            });
+        // TODO: Consider optional parameters.
+        if li.clone().count() < ri.clone().count() {
+            return Err(box Error::SimpleAssignFailed { span });
         }
 
         for (lp, rp) in li.zip(ri) {

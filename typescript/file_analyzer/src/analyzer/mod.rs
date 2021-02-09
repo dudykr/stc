@@ -97,6 +97,7 @@ pub(crate) struct Ctx {
     in_switch_case_test: bool,
 
     in_declare: bool,
+    in_fn_without_body: bool,
     in_global: bool,
     in_export_default_expr: bool,
 
@@ -130,6 +131,8 @@ pub(crate) struct Ctx {
 
     /// If true, assignemt from `{ a: string }` to `{}` will fail.
     fail_on_extra_fields: bool,
+
+    skip_union_while_inferencing: bool,
 }
 
 /// Note: All methods named `validate_*` return [Err] iff it's not recoverable.
@@ -347,9 +350,10 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             ctx: Ctx {
                 module_id: ModuleId::builtin(),
                 allow_module_var: false,
-                in_switch_case_test: false,
                 in_cond: false,
+                in_switch_case_test: false,
                 in_declare: false,
+                in_fn_without_body: false,
                 in_global: false,
                 in_export_default_expr: false,
                 var_kind: VarDeclKind::Var,
@@ -364,6 +368,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 preserve_ret_ty: false,
                 ignore_errors: false,
                 fail_on_extra_fields: false,
+                skip_union_while_inferencing: false,
             },
             loader,
             is_builtin,

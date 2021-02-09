@@ -3,8 +3,13 @@ use crate::util::type_ext::TypeVecExt;
 use crate::ValidationResult;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
+use stc_ts_ast_rnode::RNumber;
+use stc_ts_ast_rnode::RTsKeywordType;
+use stc_ts_errors::DebugExt;
 use stc_ts_types::Array;
 use stc_ts_types::ClassMember;
+use stc_ts_types::ConstructorSignature;
+use stc_ts_types::Key;
 use stc_ts_types::MethodSignature;
 use stc_ts_types::PropertySignature;
 use stc_ts_types::Type;
@@ -12,17 +17,52 @@ use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
 use stc_ts_utils::MapWithMut;
 use std::borrow::Cow;
+use swc_common::Span;
 use swc_common::Spanned;
+use swc_common::SyntaxContext;
+use swc_ecma_ast::TsKeywordTypeKind;
 
 impl Analyzer<'_, '_> {
-    pub(crate) fn type_to_type_lit<'a>(&mut self, ty: &'a Type) -> ValidationResult<Option<Cow<'a, TypeLit>>> {
+    pub(crate) fn collect_class_members(&mut self, ty: &Type) -> ValidationResult<Option<Vec<ClassMember>>> {
+        let ty = ty.normalize();
+        match ty {
+            Type::Class(c) => match &c.super_class {
+                Some(sc) => {
+                    let mut members = c.body.clone();
+                    // TODO: Override
+
+                    if let Some(super_members) = self.collect_class_members(&sc)? {
+                        members.extend(super_members)
+                    }
+
+                    return Ok(Some(members));
+                }
+                None => {
+                    return Ok(Some(c.body.clone()));
+                }
+            },
+            _ => {
+                slog::error!(self.logger, "unimplemented: collect_class_members: {:?}", ty);
+                return Ok(None);
+            }
+        }
+    }
+    /// Note: `span` is only used while expanding type (to prevent panic) in the
+    /// case of [Type::Ref].
+    pub(crate) fn type_to_type_lit<'a>(
+        &mut self,
+        span: Span,
+        ty: &'a Type,
+    ) -> ValidationResult<Option<Cow<'a, TypeLit>>> {
+        debug_assert!(!span.is_dummy(), "type_to_type_lit: `span` should not be dummy");
+
         let ty = ty.normalize();
 
         Ok(Some(match ty {
             Type::Ref(..) => {
-                let ty = self.expand_top_ref(ty.span(), Cow::Borrowed(ty))?;
+                let ty = self.expand_top_ref(span, Cow::Borrowed(ty))?;
                 return self
-                    .type_to_type_lit(&ty)
+                    .type_to_type_lit(span, &ty)
                     .map(|o| o.map(Cow::into_owned).map(Cow::Owned));
             }
 
@@ -39,7 +79,7 @@ impl Analyzer<'_, '_> {
                         parent.type_args.as_deref(),
                     )?;
 
-                    let super_els = self.type_to_type_lit(&parent)?;
+                    let super_els = self.type_to_type_lit(span, &parent)?;
 
                     members.extend(super_els.into_iter().map(Cow::into_owned).flat_map(|v| v.members))
                 }
@@ -54,8 +94,8 @@ impl Analyzer<'_, '_> {
 
             Type::Class(c) => {
                 let mut members = vec![];
-                if let Some(s) = &c.super_class {
-                    let super_els = self.type_to_type_lit(s)?;
+                if let Some(super_class) = &c.super_class {
+                    let super_els = self.type_to_type_lit(span, super_class)?;
                     members.extend(super_els.map(|ty| ty.into_owned().members).into_iter().flatten());
                 }
 
@@ -71,14 +111,77 @@ impl Analyzer<'_, '_> {
             Type::Intersection(t) => {
                 let mut members = vec![];
                 for ty in &t.types {
-                    let opt = self.type_to_type_lit(ty)?;
+                    let opt = self.type_to_type_lit(span, ty)?;
                     members.extend(opt.into_iter().map(Cow::into_owned).flat_map(|v| v.members));
                 }
 
                 Cow::Owned(TypeLit { span: t.span, members })
             }
 
-            Type::Alias(ty) => return self.type_to_type_lit(&ty.ty),
+            Type::Alias(ty) => return self.type_to_type_lit(span, &ty.ty),
+
+            Type::Constructor(ty) => {
+                let el = TypeElement::Constructor(ConstructorSignature {
+                    span: ty.span,
+                    params: ty.params.clone(),
+                    ret_ty: Some(ty.type_ann.clone()),
+                    type_params: ty.type_params.clone(),
+                });
+
+                Cow::Owned(TypeLit {
+                    span: ty.span,
+                    members: vec![el],
+                })
+            }
+
+            Type::Function(ty) => {
+                let el = self
+                    .fn_to_type_element(ty)
+                    .context("tried to convert function to type element to create type literal")?;
+
+                Cow::Owned(TypeLit {
+                    span: ty.span,
+                    members: vec![el],
+                })
+            }
+
+            Type::Tuple(ty) => {
+                let mut members = vec![];
+
+                for (idx, e) in ty.elems.iter().enumerate() {
+                    members.push(TypeElement::Property(PropertySignature {
+                        span: e.span,
+                        key: Key::Num(RNumber {
+                            span: e.span,
+                            value: idx as f64,
+                        }),
+                        readonly: false,
+                        optional: false,
+                        params: Default::default(),
+                        type_params: Default::default(),
+                        type_ann: Some(e.ty.clone()),
+                    }));
+                }
+
+                // length
+                members.push(TypeElement::Property(PropertySignature {
+                    span: ty.span,
+                    key: Key::Normal {
+                        span: ty.span.with_ctxt(SyntaxContext::empty()),
+                        sym: "length".into(),
+                    },
+                    readonly: true,
+                    optional: false,
+                    params: Default::default(),
+                    type_params: Default::default(),
+                    type_ann: Some(box Type::Keyword(RTsKeywordType {
+                        span: ty.span,
+                        kind: TsKeywordTypeKind::TsNumberKeyword,
+                    })),
+                }));
+
+                Cow::Owned(TypeLit { span: ty.span, members })
+            }
 
             _ => {
                 slog::error!(self.logger, "unimplemented: type_to_type_lit: {:?}", ty);

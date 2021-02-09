@@ -215,8 +215,14 @@ impl Analyzer<'_, '_> {
                                         TypeOfMode::RValue,
                                         IdCtx::Var,
                                     )
-                                    .map(Some)
-                                    .context("tried to access property to declare variables using an object pattern")?,
+                                    .convert_err(|err| match err {
+                                        Error::NoSuchProperty { span, .. } if value.is_none() => {
+                                            Error::NoSuchPropertyWhileDeclWithBidningPat { span }
+                                        }
+                                        _ => err,
+                                    })
+                                    .context("tried to access property to declare variables using an object pattern")
+                                    .report(&mut self.storage),
                                 None => None,
                             };
 
