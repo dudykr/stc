@@ -129,8 +129,6 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            Type::Lit(..) => return Err(box Error::SimpleAssignFailed { span: opts.span }),
-
             _ => {}
         };
 
@@ -146,6 +144,11 @@ impl Analyzer<'_, '_> {
             .is_none();
         if !l.is_abstract && is_empty {
             return Ok(());
+        }
+
+        match r {
+            Type::Lit(..) => return Err(box Error::SimpleAssignFailed { span: opts.span }),
+            _ => {}
         }
 
         Err(box Error::Unimplemented {
