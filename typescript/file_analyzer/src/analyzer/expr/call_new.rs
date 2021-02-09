@@ -1101,6 +1101,110 @@ impl Analyzer<'_, '_> {
         )
     }
 
+    fn extract_callee_candidates<'a>(
+        &self,
+        span: Span,
+        kind: ExtractKind,
+        callee: &'a Type,
+    ) -> ValidationResult<Vec<(Option<Cow<'a, [TypeParam]>>, Cow<'a, [FnParam]>, Option<Cow<'a, Type>>)>> {
+        let callee = callee.normalize();
+
+        // TODO: Check if signature match.
+        match callee {
+            Type::Ref(..) => {
+                let callee = self.expand_top_ref(span, Cow::Borrowed(callee))?.into_owned();
+                return self.extract_callee_candidates(span, kind, &callee);
+            }
+
+            Type::Intersection(ref i) => {
+                let types = i
+                    .types
+                    .iter()
+                    .map(|callee| self.extract_callee_candidates(span, kind, callee))
+                    .collect::<Result<Vec<_>, _>>()?;
+
+                let mut ok = true;
+                if types.len() >= 1 {
+                    for ty in &types[1..] {
+                        if !types[0].type_eq(&ty) {
+                            ok = false;
+                            break;
+                        }
+                    }
+
+                    if ok {
+                        return Ok(types.into_iter().next().unwrap());
+                    }
+                }
+            }
+
+            Type::Function(ref f) => {
+                let candidate = (
+                    f.type_params.as_ref().map(|v| &*v.params).map(Cow::Borrowed),
+                    Cow::Borrowed(&*f.params),
+                    Some(Cow::Borrowed(&f.ret_ty)),
+                );
+                return Ok(vec![candidate]);
+            }
+
+            Type::Class(ref cls) if kind == ExtractKind::New => {
+                // TODO: Handle type parameters.
+                return Ok(box Type::ClassInstance(ClassInstance {
+                    span,
+                    ty: box Type::Class(cls.clone()),
+                    type_args: type_args.cloned().map(Box::new),
+                }));
+            }
+
+            // Type::Union(ty) => {
+            //     // TODO: We should select best one based on the arugment type and count.
+            //     let mut types = ty
+            //         .types
+            //         .iter()
+            //         .cloned()
+            //         .map(|callee| {
+            //             self.get_best_return_type(span, callee, kind, type_args, args, arg_types,
+            // spread_arg_types)         })
+            //         .collect::<Result<Vec<_>, _>>()?;
+
+            //     types.dedup_type();
+            //     return Ok(Type::union(types));
+            // }
+            Type::Interface(..) => {
+                let callee = self
+                    .type_to_type_lit(span, callee)?
+                    .map(Cow::into_owned)
+                    .map(Type::TypeLit);
+                if let Some(callee) = callee {
+                    return self.extract_callee_candidates(span, kind, &callee);
+                }
+            }
+
+            Type::TypeLit(ty) => {
+                let mut candidates = vec![];
+                // Search for callable properties.
+                for member in &ty.members {
+                    match member {
+                        TypeElement::Call(m) if kind == ExtractKind::Call => {
+                            candidates.push((
+                                m.type_params.as_ref().map(|v| &*v.params).map(Cow::Borrowed),
+                                Cow::Borrowed(&*m.params),
+                                m.ret_ty.as_deref().map(Cow::Borrowed),
+                            ));
+                        }
+                        _ => {}
+                    }
+                }
+
+                return Ok(candidates);
+            }
+
+            _ => {}
+        }
+
+        Ok(vec![])
+    }
+
     fn get_best_return_type(
         &mut self,
         span: Span,
@@ -1123,120 +1227,7 @@ impl Analyzer<'_, '_> {
         // TODO: Calculate return type only if selected
         // This can be done by storing type params, return type, params in the
         // candidates.
-        let mut candidates = vec![];
-
-        for callee in callee.normalize().iter_union().flat_map(|ty| ty.iter_union()) {
-            // TODO: Check if signature match.
-            match callee.normalize() {
-                Type::Ref(..) => {
-                    let callee = self.expand_top_ref(span, Cow::Borrowed(callee))?.into_owned();
-                    return self.get_best_return_type(
-                        span,
-                        box callee,
-                        kind,
-                        type_args,
-                        args,
-                        arg_types,
-                        spread_arg_types,
-                    );
-                }
-
-                Type::Intersection(ref i) => {
-                    let types = i
-                        .types
-                        .iter()
-                        .map(|callee| {
-                            self.get_best_return_type(
-                                span,
-                                callee.clone(),
-                                kind,
-                                type_args.clone(),
-                                args,
-                                arg_types,
-                                spread_arg_types,
-                            )
-                        })
-                        .collect::<Result<Vec<_>, _>>()?;
-
-                    let mut ok = true;
-                    if types.len() >= 1 {
-                        for ty in &types[1..] {
-                            if !types[0].type_eq(&ty) {
-                                ok = false;
-                                break;
-                            }
-                        }
-
-                        if ok {
-                            return Ok(types.into_iter().next().unwrap());
-                        }
-                    }
-                }
-
-                Type::Function(ref f) => {
-                    candidates.push((f.type_params.as_ref().map(|v| &*v.params), &f.params, Some(&f.ret_ty)));
-                }
-
-                Type::Class(ref cls) if kind == ExtractKind::New => {
-                    // TODO: Handle type parameters.
-                    return Ok(box Type::ClassInstance(ClassInstance {
-                        span,
-                        ty: box Type::Class(cls.clone()),
-                        type_args: type_args.cloned().map(Box::new),
-                    }));
-                }
-
-                // Type::Union(ty) => {
-                //     // TODO: We should select best one based on the arugment type and count.
-                //     let mut types = ty
-                //         .types
-                //         .iter()
-                //         .cloned()
-                //         .map(|callee| {
-                //             self.get_best_return_type(span, callee, kind, type_args, args, arg_types,
-                // spread_arg_types)         })
-                //         .collect::<Result<Vec<_>, _>>()?;
-
-                //     types.dedup_type();
-                //     return Ok(Type::union(types));
-                // }
-                Type::Interface(..) => {
-                    let callee = self
-                        .type_to_type_lit(span, callee)?
-                        .map(Cow::into_owned)
-                        .map(Type::TypeLit);
-                    if let Some(callee) = callee {
-                        return self.get_best_return_type(
-                            span,
-                            box callee,
-                            kind,
-                            type_args,
-                            args,
-                            arg_types,
-                            spread_arg_types,
-                        );
-                    }
-                }
-
-                Type::TypeLit(ty) => {
-                    // Search for callable properties.
-                    for member in &ty.members {
-                        match member {
-                            TypeElement::Call(m) => {
-                                candidates.push((
-                                    m.type_params.as_ref().map(|v| &*v.params),
-                                    &m.params,
-                                    m.ret_ty.as_ref(),
-                                ));
-                            }
-                            _ => {}
-                        }
-                    }
-                }
-
-                _ => {}
-            }
-        }
+        let mut candidates = self.extract_callee_candidates(span, kind, &callee)?;
 
         if candidates.is_empty() {
             dbg!();
@@ -1249,7 +1240,15 @@ impl Analyzer<'_, '_> {
         }
 
         candidates.sort_by_cached_key(|(type_params, params, ret_ty)| {
-            self.check_call_args(span, *type_params, params, type_args, args, arg_types, spread_arg_types)
+            self.check_call_args(
+                span,
+                type_params.as_deref(),
+                &params,
+                type_args,
+                args,
+                arg_types,
+                spread_arg_types,
+            )
         });
 
         let (type_params, params, ret_ty) = candidates.into_iter().next().unwrap();
@@ -1257,9 +1256,12 @@ impl Analyzer<'_, '_> {
         return self.get_return_type(
             span,
             kind,
-            type_params,
-            params,
-            ret_ty.cloned().unwrap_or_else(|| Type::any(span)),
+            type_params.as_deref(),
+            &params,
+            ret_ty
+                .map(Cow::into_owned)
+                .map(Box::new)
+                .unwrap_or_else(|| Type::any(span)),
             type_args,
             args,
             arg_types,
