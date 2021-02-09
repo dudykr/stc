@@ -243,7 +243,13 @@ impl BitOr for CondFacts {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, stmt: &RIfStmt) -> ValidationResult<()> {
-        let _test = stmt.test.validate_with_default(self)?;
+        {
+            let ctx = Ctx {
+                in_cond: true,
+                ..self.ctx
+            };
+            let _test = stmt.test.validate_with_default(&mut *self.with_ctx(ctx))?;
+        }
 
         let true_facts = self.cur_facts.true_facts.take();
         let false_facts = self.cur_facts.false_facts.take();
