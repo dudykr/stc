@@ -875,6 +875,8 @@ impl Error {
 
             Error::Unknown { .. } => 2571,
 
+            Error::ReturnRequired { .. } => 2355,
+
             _ => 0,
         }
     }
