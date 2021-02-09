@@ -1257,11 +1257,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                if type_mode != TypeOfMode::LValue {
-                    if !errors.is_empty() {
-                        return Err(box Error::UnionError { span, errors });
-                    }
-                } else {
+                if type_mode == TypeOfMode::LValue {
                     // In l-value context, it's success if one of types matches it.
                     let is_err = errors.iter().any(|err| match *err {
                         box Error::ReadOnly { .. } => true,
@@ -1269,6 +1265,10 @@ impl Analyzer<'_, '_> {
                     });
                     if tys.is_empty() || is_err {
                         assert_ne!(errors.len(), 0);
+                        return Err(box Error::UnionError { span, errors });
+                    }
+                } else {
+                    if !errors.is_empty() {
                         return Err(box Error::UnionError { span, errors });
                     }
                 }
