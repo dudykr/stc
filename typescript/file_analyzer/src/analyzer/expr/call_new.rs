@@ -1671,36 +1671,41 @@ impl Analyzer<'_, '_> {
 
     #[extra_validator]
     fn store_call_fact_for_var(&mut self, span: Span, var_name: Id, new_ty: &Type) {
-        if let Some(previous_types) = self.find_var_type(&var_name.clone().into()) {
-            let mut new_types = vec![];
+        match new_ty {
+            Type::Keyword(..) | Type::Lit(..) => {}
+            _ => {
+                if let Some(previous_types) = self.find_var_type(&var_name.clone().into()) {
+                    let mut new_types = vec![];
 
-            let mut upcasted = false;
-            for ty in previous_types.into_owned().iter_union().flat_map(|ty| ty.iter_union()) {
-                match self.extends(span, &new_ty, &ty) {
-                    Some(true) => {
-                        upcasted = true;
-                        new_types.push(box ty.clone());
+                    let mut upcasted = false;
+                    for ty in previous_types.into_owned().iter_union().flat_map(|ty| ty.iter_union()) {
+                        match self.extends(span, &new_ty, &ty) {
+                            Some(true) => {
+                                upcasted = true;
+                                new_types.push(box ty.clone());
+                            }
+                            _ => {}
+                        }
                     }
-                    _ => {}
+
+                    // TODO: Use super class instread of
+                    if !upcasted {
+                        new_types.push(box new_ty.clone());
+                    }
+
+                    new_types.dedup_type();
+                    let mut new_ty = Type::union(new_types);
+                    if upcasted {
+                        self.env
+                            .shared()
+                            .marks()
+                            .prevent_converting_to_children
+                            .apply_to_type(&mut new_ty);
+                    }
+                    self.add_type_fact(&var_name.into(), new_ty);
+                    return;
                 }
             }
-
-            // TODO: Use super class instread of
-            if !upcasted {
-                new_types.push(box new_ty.clone());
-            }
-
-            new_types.dedup_type();
-            let mut new_ty = Type::union(new_types);
-            if upcasted {
-                self.env
-                    .shared()
-                    .marks()
-                    .prevent_converting_to_children
-                    .apply_to_type(&mut new_ty);
-            }
-            self.add_type_fact(&var_name.into(), new_ty);
-            return;
         }
 
         self.add_type_fact(&var_name.into(), box new_ty.clone());
