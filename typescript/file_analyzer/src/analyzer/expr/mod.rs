@@ -383,6 +383,9 @@ impl Analyzer<'_, '_> {
                 Err(()) => Type::any(span),
             };
 
+            let rhs_ty = analyzer.expand_fully(span, rhs_ty.clone(), true)?;
+            analyzer.try_assign(span, e.op, &e.left, &rhs_ty);
+
             match &e.left {
                 RPatOrExpr::Pat(box RPat::Ident(i)) => {
                     // TODO: Implemennt this
@@ -395,9 +398,6 @@ impl Analyzer<'_, '_> {
                 }
                 _ => e.left.visit_with(analyzer),
             }
-
-            let rhs_ty = analyzer.expand_fully(span, rhs_ty.clone(), true)?;
-            analyzer.try_assign(span, e.op, &e.left, &rhs_ty);
 
             if let Some(span) = any_span {
                 return Ok(Type::any(span));
