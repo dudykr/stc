@@ -1102,7 +1102,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn extract_callee_candidates<'a>(
-        &self,
+        &mut self,
         span: Span,
         kind: ExtractKind,
         callee: &'a Type,
@@ -1113,7 +1113,17 @@ impl Analyzer<'_, '_> {
         match callee {
             Type::Ref(..) => {
                 let callee = self.expand_top_ref(span, Cow::Borrowed(callee))?.into_owned();
-                return self.extract_callee_candidates(span, kind, &callee);
+                return Ok(self
+                    .extract_callee_candidates(span, kind, &callee)?
+                    .into_iter()
+                    .map(|(tp, ps, re)| {
+                        (
+                            tp.map(Cow::into_owned).map(Cow::Owned),
+                            Cow::Owned(ps.into_owned()),
+                            re.map(Cow::into_owned).map(Cow::Owned),
+                        )
+                    })
+                    .collect());
             }
 
             Type::Intersection(ref i) => {
