@@ -873,6 +873,8 @@ impl Error {
 
             Error::NoNewSignature { .. } => 2555,
 
+            Error::Unknown { .. } => 2571,
+
             _ => 0,
         }
     }
