@@ -1186,21 +1186,20 @@ impl Analyzer<'_, '_> {
                     }));
                 }
 
-                Type::Union(ty) => {
-                    // TODO: We should select best one based on the arugment type and count.
-                    let mut types = ty
-                        .types
-                        .iter()
-                        .cloned()
-                        .map(|callee| {
-                            self.get_best_return_type(span, callee, kind, type_args, args, arg_types, spread_arg_types)
-                        })
-                        .collect::<Result<Vec<_>, _>>()?;
+                // Type::Union(ty) => {
+                //     // TODO: We should select best one based on the arugment type and count.
+                //     let mut types = ty
+                //         .types
+                //         .iter()
+                //         .cloned()
+                //         .map(|callee| {
+                //             self.get_best_return_type(span, callee, kind, type_args, args, arg_types,
+                // spread_arg_types)         })
+                //         .collect::<Result<Vec<_>, _>>()?;
 
-                    types.dedup_type();
-                    return Ok(Type::union(types));
-                }
-
+                //     types.dedup_type();
+                //     return Ok(Type::union(types));
+                // }
                 Type::Interface(..) => {
                     let callee = self
                         .type_to_type_lit(span, callee)?
