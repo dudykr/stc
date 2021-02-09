@@ -1117,43 +1117,22 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Intersection(ref i) => {
-                let types = i
+                let candidates = i
                     .types
                     .iter()
                     .map(|callee| self.extract_callee_candidates(span, kind, callee))
                     .collect::<Result<Vec<_>, _>>()?;
 
-                let mut ok = true;
-                if types.len() >= 1 {
-                    for ty in &types[1..] {
-                        if !types[0].type_eq(&ty) {
-                            ok = false;
-                            break;
-                        }
-                    }
-
-                    if ok {
-                        return Ok(types.into_iter().next().unwrap());
-                    }
-                }
+                return Ok(candidates.into_iter().flatten().collect());
             }
 
             Type::Function(ref f) => {
                 let candidate = (
                     f.type_params.as_ref().map(|v| &*v.params).map(Cow::Borrowed),
                     Cow::Borrowed(&*f.params),
-                    Some(Cow::Borrowed(&f.ret_ty)),
+                    Some(Cow::Borrowed(&*f.ret_ty)),
                 );
                 return Ok(vec![candidate]);
-            }
-
-            Type::Class(ref cls) if kind == ExtractKind::New => {
-                // TODO: Handle type parameters.
-                return Ok(box Type::ClassInstance(ClassInstance {
-                    span,
-                    ty: box Type::Class(cls.clone()),
-                    type_args: type_args.cloned().map(Box::new),
-                }));
             }
 
             // Type::Union(ty) => {
@@ -1231,6 +1210,18 @@ impl Analyzer<'_, '_> {
 
         if candidates.is_empty() {
             dbg!();
+
+            match callee.normalize() {
+                Type::Class(cls) if kind == ExtractKind::New => {
+                    // TODO: Handle type parameters.
+                    return Ok(box Type::ClassInstance(ClassInstance {
+                        span,
+                        ty: box Type::Class(cls.clone()),
+                        type_args: type_args.cloned().map(Box::new),
+                    }));
+                }
+                _ => {}
+            }
 
             return Err(if kind == ExtractKind::Call {
                 box Error::NoCallSignature { span, callee }
