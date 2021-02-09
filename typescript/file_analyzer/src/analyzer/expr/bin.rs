@@ -204,6 +204,20 @@ impl Analyzer<'_, '_> {
                 }
 
                 match c.take_if_any_matches(|(l, _), (_, r_ty)| match (l, r_ty) {
+                    (
+                        RExpr::Ident(RIdent {
+                            sym: js_word!("undefined"),
+                            ..
+                        }),
+                        _,
+                    )
+                    | (
+                        RExpr::Ident(RIdent {
+                            sym: js_word!("null"), ..
+                        }),
+                        _,
+                    ) => None,
+
                     (RExpr::Ident(l), r) => Some((l, r_ty)),
                     _ => return None,
                 }) {
