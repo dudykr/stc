@@ -261,6 +261,18 @@ impl Analyzer<'_, '_> {
                     lit: RTsLit::Bool(..), ..
                 }) => return Err(box Error::SimpleAssignFailed { span }),
 
+                // TODO: Strict mode
+                Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsNullKeyword,
+                    ..
+                }) => return Ok(()),
+
+                // TODO: Strict mode
+                Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                    ..
+                }) => return Ok(()),
+
                 _ => {
                     return Err(box Error::Unimplemented {
                         span,
