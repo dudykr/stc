@@ -113,11 +113,9 @@ impl Analyzer<'_, '_> {
             _ => true,
         });
 
-        if li.clone().count() != ri.clone().count() {
-            return Err(box Error::Unimplemented {
-                span,
-                msg: format!("l.params.len() = {}; r.params.len() = {};", l.len(), r.len()),
-            });
+        // TODO: Consider optional parameters.
+        if li.clone().count() < ri.clone().count() {
+            return Err(box Error::SimpleAssignFailed { span });
         }
 
         for (lp, rp) in li.zip(ri) {
