@@ -1,6 +1,6 @@
 // @declaration: true
 
-type T = number | "foo" | "bar";
+export type T = number | "foo" | "bar";
 
 var x: "foo" | "bar" | number;
 var y: T = undefined;
