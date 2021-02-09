@@ -202,6 +202,8 @@ impl Analyzer<'_, '_> {
                 if lm.is_optional {
                     return Ok(());
                 }
+
+                return Err(box Error::SimpleAssignFailed { span });
             }
             ClassMember::Property(lp) => {
                 if lp.accessibility == Some(Accessibility::Private) {
@@ -235,7 +237,7 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
-                // TODO: Report error
+                return Err(box Error::SimpleAssignFailed { span });
             }
             ClassMember::IndexSignature(_) => {}
         }
