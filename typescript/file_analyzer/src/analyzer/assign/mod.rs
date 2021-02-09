@@ -769,7 +769,7 @@ impl Analyzer<'_, '_> {
                         errors.extend(self.assign_inner(elem_type, &el.ty, opts).err());
                     }
                     if !errors.is_empty() {
-                        Err(box Error::TupleAssignError { span, errors })?;
+                        Err(box Error::Errors { span, errors })?;
                     }
 
                     return Ok(());
@@ -1077,8 +1077,8 @@ impl Analyzer<'_, '_> {
                 _ => fail!(),
             },
 
-            Type::Function(l) => match rhs {
-                Type::Function(..) | Type::Lit(..) => return self.assign_to_function(opts, l, rhs),
+            Type::Function(lf) => match rhs {
+                Type::Function(..) | Type::Lit(..) => return self.assign_to_function(opts, to, lf, rhs),
                 _ => {}
             },
 
@@ -1095,7 +1095,7 @@ impl Analyzer<'_, '_> {
                             fail!();
                         }
 
-                        let mut errors = Errors::default();
+                        let mut errors = vec![];
                         for (l, r) in elems.into_iter().zip(rhs_elems) {
                             for el in elems {
                                 match *r.ty.normalize() {
@@ -1111,7 +1111,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         if !errors.is_empty() {
-                            Err(errors)?;
+                            return Err(box Error::TupleAssignError { span, errors });
                         }
 
                         return Ok(());

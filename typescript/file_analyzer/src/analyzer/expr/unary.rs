@@ -153,7 +153,10 @@ impl Analyzer<'_, '_> {
             Some(box Type::Keyword(RTsKeywordType {
                 kind: TsKeywordTypeKind::TsUnknownKeyword,
                 ..
-            })) => return Err(box Error::Unknown { span: arg.span() }),
+            })) => {
+                debug_assert!(!arg.span().is_dummy());
+                return Err(box Error::Unknown { span: arg.span() });
+            }
             _ => {}
         }
 

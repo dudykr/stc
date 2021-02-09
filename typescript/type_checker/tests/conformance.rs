@@ -101,7 +101,7 @@ fn conformance() {
         let fm = cm.load_file(&path).unwrap();
 
         // Postpone multi-file tests.
-        if fm.src.to_lowercase().contains("@filename") {
+        if fm.src.to_lowercase().contains("@filename") || fm.src.contains("<reference path") {
             return None;
         }
 
@@ -122,6 +122,12 @@ fn conformance() {
             for err in errors {
                 if err.code.starts_with("TS1") && err.code.len() == 6 {
                     return None;
+                }
+
+                // These are actually parser test.
+                match &*err.code {
+                    "TS2369" => return None,
+                    _ => {}
                 }
             }
         }

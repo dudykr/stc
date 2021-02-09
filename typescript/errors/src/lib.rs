@@ -294,6 +294,10 @@ pub enum Error {
         span: Span,
     },
 
+    NoSuchPropertyWhileDeclWithBidningPat {
+        span: Span,
+    },
+
     NoSuchProperty {
         span: Span,
         obj: Option<Box<Type>>,
@@ -366,6 +370,10 @@ pub enum Error {
         left: Box<Type>,
         right: Box<Type>,
         cause: Vec<Box<Error>>,
+    },
+
+    SimpleAssignFailed {
+        span: Span,
     },
 
     InvalidAssignmentOfArray {
@@ -774,6 +782,7 @@ impl Error {
             Error::TS2704 { .. } => 2704,
 
             Error::AssignFailed { .. }
+            | Error::SimpleAssignFailed { .. }
             | Error::InvalidAssignmentOfArray { .. }
             | Error::UnknownPropertyInObjectLiteralAssignment { .. }
             | Error::InvalidOpAssign { .. }
@@ -860,6 +869,14 @@ impl Error {
 
             Error::MustHaveSymbolIteratorThatReturnsIterator { .. } => 2488,
 
+            Error::NoSuchPropertyWhileDeclWithBidningPat { .. } => 2525,
+
+            Error::NoNewSignature { .. } => 2555,
+
+            Error::Unknown { .. } => 2571,
+
+            Error::ReturnRequired { .. } => 2355,
+
             _ => 0,
         }
     }
@@ -901,7 +918,9 @@ impl Error {
 
         for e in vec {
             match *e {
-                Error::Errors { errors, .. } => buf.extend(Self::flatten(errors)),
+                Error::Errors { errors, .. } | Error::TupleAssignError { errors, .. } => {
+                    buf.extend(Self::flatten(errors))
+                }
                 Error::DebugContext(DebugContext { inner, context, .. }) => {
                     //
                     buf.extend(Self::flatten(vec![inner]).into_iter().map(|inner| {

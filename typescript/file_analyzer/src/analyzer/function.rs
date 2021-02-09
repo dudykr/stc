@@ -68,6 +68,7 @@ impl Analyzer<'_, '_> {
             let mut params = {
                 let ctx = Ctx {
                     pat_mode: PatMode::Decl,
+                    in_fn_without_body: f.body.is_none(),
                     allow_ref_declaring: false,
                     ..child.ctx
                 };

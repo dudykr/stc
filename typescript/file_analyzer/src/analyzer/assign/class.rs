@@ -22,29 +22,44 @@ impl Analyzer<'_, '_> {
                 return self.assign_to_class(opts, l, &r);
             }
 
-            Type::Class(r) => {
-                if l.eq_ignore_span(r) {
+            Type::Class(rc) => {
+                if l.eq_ignore_span(rc) {
                     return Ok(());
                 }
 
-                if !l.is_abstract && r.is_abstract {
+                if !l.is_abstract && rc.is_abstract {
                     return Err(box Error::CannotAssignAbstractConstructorToNonAbstractConstructor { span: opts.span });
                 }
 
-                if !r.is_abstract {
+                if !rc.is_abstract {
                     // class Child extends Parent
                     // let c: Child;
                     // let p: Parent;
                     // `p = c` is valid
-                    if let Some(parent) = &r.super_class {
+                    if let Some(parent) = &rc.super_class {
                         if self.assign_to_class(opts, l, &parent).is_ok() {
                             return Ok(());
                         }
                     }
                 }
 
+                let new_body;
+                let r_body = if rc.super_class.is_some() {
+                    if let Some(members) = self.collect_class_members(r)? {
+                        new_body = members;
+                        &*new_body
+                    } else {
+                        return Err(box Error::Unimplemented {
+                            span: opts.span,
+                            msg: format!("Failed to collect class members"),
+                        });
+                    }
+                } else {
+                    &*rc.body
+                };
+
                 for lm in &l.body {
-                    self.assign_class_members_to_class_member(opts, lm, &r.body)?;
+                    self.assign_class_members_to_class_member(opts, lm, &rc.body)?;
                 }
 
                 return Ok(());
@@ -92,6 +107,28 @@ impl Analyzer<'_, '_> {
 
                 return Ok(());
             }
+
+            Type::Intersection(rhs) => {
+                let rhs = self
+                    .type_to_type_lit(opts.span, r)
+                    .context("tried to convert a type to type literal to assign it to a class")?;
+                if let Some(rhs) = rhs.as_deref() {
+                    for lm in &l.body {
+                        let lm = self.make_type_el_from_class_member(lm)?;
+                        let lm = match lm {
+                            Some(v) => v,
+                            None => {
+                                continue;
+                            }
+                        };
+                        self.assign_type_elements_to_type_element(opts, &mut vec![], &lm, &rhs.members)
+                            .context("tried to assign type elements to a class member")?;
+                    }
+
+                    return Ok(());
+                }
+            }
+
             _ => {}
         };
 
@@ -107,6 +144,11 @@ impl Analyzer<'_, '_> {
             .is_none();
         if !l.is_abstract && is_empty {
             return Ok(());
+        }
+
+        match r {
+            Type::Lit(..) => return Err(box Error::SimpleAssignFailed { span: opts.span }),
+            _ => {}
         }
 
         Err(box Error::Unimplemented {
@@ -166,6 +208,8 @@ impl Analyzer<'_, '_> {
                 if lm.is_optional {
                     return Ok(());
                 }
+
+                return Err(box Error::SimpleAssignFailed { span });
             }
             ClassMember::Property(lp) => {
                 if lp.accessibility == Some(Accessibility::Private) {
@@ -184,7 +228,7 @@ impl Analyzer<'_, '_> {
 
                                 if let Some(lt) = &lp.value {
                                     if let Some(rt) = &rp.value {
-                                        return self.assign(&lt, &rt, opts.span);
+                                        return self.assign_inner(&lt, &rt, opts);
                                     }
                                 }
 
@@ -199,7 +243,7 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
-                // TODO: Report error
+                return Err(box Error::SimpleAssignFailed { span });
             }
             ClassMember::IndexSignature(_) => {}
         }

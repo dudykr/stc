@@ -22,6 +22,7 @@ use stc_ts_types::Tuple;
 use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
+use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::Span;
 use swc_common::Spanned;
@@ -227,16 +228,53 @@ impl Analyzer<'_, '_> {
                         .context("tried to assign an enum to type elements");
                 }
 
-                Type::Function(rhs) => {
+                Type::Function(..) | Type::Constructor(..) => {
                     let rhs = self
-                        .fn_to_type_lit(rhs)
+                        .type_to_type_lit(span, rhs)
+                        .context("tried to convert a function to a type literal for asssignment")?
+                        .map(Cow::into_owned)
                         .map(Type::TypeLit)
-                        .context("tried to convert a function to a type literal for asssignment")?;
+                        .unwrap();
 
                     return self
                         .assign_to_type_elements(opts, lhs_span, lhs, &rhs)
-                        .context("tried to assign a function to type elements");
+                        .context("tried to assign the converted type to type elements");
                 }
+
+                Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsStringKeyword,
+                    ..
+                })
+                | Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsNumberKeyword,
+                    ..
+                })
+                | Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsBooleanKeyword,
+                    ..
+                })
+                | Type::Lit(RTsLitType {
+                    lit: RTsLit::Number(..),
+                    ..
+                })
+                | Type::Lit(RTsLitType {
+                    lit: RTsLit::Str(..), ..
+                })
+                | Type::Lit(RTsLitType {
+                    lit: RTsLit::Bool(..), ..
+                }) => return Err(box Error::SimpleAssignFailed { span }),
+
+                // TODO: Strict mode
+                Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsNullKeyword,
+                    ..
+                }) => return Ok(()),
+
+                // TODO: Strict mode
+                Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                    ..
+                }) => return Ok(()),
 
                 _ => {
                     return Err(box Error::Unimplemented {
@@ -490,6 +528,8 @@ impl Analyzer<'_, '_> {
 
                                     self.assign_params(opts, &lm.params, &rm.params)?;
 
+                                    // TODO: Return type
+
                                     return Ok(());
                                 }
 
@@ -497,23 +537,12 @@ impl Analyzer<'_, '_> {
                                     // Allow assigning property with callable type to methods.
                                     if let Some(rp_ty) = &rp.type_ann {
                                         if let Type::Function(rp_ty) = rp_ty.normalize() {
-                                            if lm.params.len() != rp_ty.params.len() {
-                                                return Err(box Error::Unimplemented {
-                                                    span,
-                                                    msg: format!(
-                                                        "lhs.method.params.len() = {}; rhs.property.params.len() = {};",
-                                                        lm.params.len(),
-                                                        rp_ty.params.len()
-                                                    ),
-                                                });
-                                            }
+                                            self.assign_params(opts, &lm.params, &rp_ty.params).context(
+                                                "tried to assign parameters of a property with callable type to a \
+                                                 method parameters",
+                                            )?;
 
-                                            for (lp, rp) in lm.params.iter().zip(rp_ty.params.iter()) {
-                                                self.assign_inner(&lp.ty, &rp.ty, opts).context(
-                                                    "tried to assign a parameter of a property with callable type to \
-                                                     a method parameter",
-                                                )?;
-                                            }
+                                            // TODO: Return type
 
                                             return Ok(());
                                         }
