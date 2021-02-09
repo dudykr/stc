@@ -1165,7 +1165,17 @@ impl Analyzer<'_, '_> {
                     .map(Cow::into_owned)
                     .map(Type::TypeLit);
                 if let Some(callee) = callee {
-                    return self.extract_callee_candidates(span, kind, &callee);
+                    return Ok(self
+                        .extract_callee_candidates(span, kind, &callee)?
+                        .into_iter()
+                        .map(|(tp, ps, re)| {
+                            (
+                                tp.map(Cow::into_owned).map(Cow::Owned),
+                                Cow::Owned(ps.into_owned()),
+                                re.map(Cow::into_owned).map(Cow::Owned),
+                            )
+                        })
+                        .collect());
                 }
             }
 
