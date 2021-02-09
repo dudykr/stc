@@ -204,14 +204,14 @@ impl Analyzer<'_, '_> {
                 }
 
                 match c.take_if_any_matches(|(l, _), (_, r_ty)| match (l, r_ty) {
-                    (RExpr::Ident(l), Type::Lit(..)) => Some((l, r_ty)),
+                    (RExpr::Ident(l), r) => Some((l, r_ty)),
                     _ => return None,
                 }) {
                     Some((l, r)) => {
-                        if self.ctx.in_cond && is_eq {
-                            let mut r = r.clone();
+                        if self.ctx.in_cond && op == op!("===") {
+                            let mut r = box r.clone();
                             self.prevent_generalize(&mut r);
-                            self.cur_facts.true_facts.vars.insert(l.into(), box r);
+                            self.cur_facts.true_facts.vars.insert(l.into(), r);
                         } else {
                             // TODO: Remove from union
                         }
