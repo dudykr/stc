@@ -74,7 +74,7 @@ impl Analyzer<'_, '_> {
                 ty = self.with_ctx(ctx).expand_fully(span, ty, true)?;
             }
             let span = ty.span();
-            ty.respan(left.span().with_ctxt(span.ctxt));
+            ty.reposition(left.span());
 
             Ok(ty)
         })
@@ -102,7 +102,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     let span = ty.span();
-                    ty.respan(right.span().with_ctxt(span.ctxt));
+                    ty.reposition(right.span());
 
                     Ok(ty)
                 })?;
