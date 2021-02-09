@@ -866,6 +866,8 @@ impl Error {
 
             Error::NoSuchPropertyWhileDeclWithBidningPat { .. } => 2525,
 
+            Error::NoNewSignature { .. } => 2555,
+
             _ => 0,
         }
     }
