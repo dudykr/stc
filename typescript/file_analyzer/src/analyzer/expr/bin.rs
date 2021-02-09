@@ -278,23 +278,16 @@ impl Analyzer<'_, '_> {
                         // `can't narrow type from 'any' to 'Object'`
                         // `can't narrow type from 'any' to 'Function'
                         let cannot_narrow = orig_ty.is_any()
-                            && match ty.normalize() {
-                                Type::Ref(Ref {
-                                    type_name:
-                                        RTsEntityName::Ident(RIdent {
-                                            sym: js_word!("Object"),
-                                            ..
-                                        }),
+                            && match &**right {
+                                RExpr::Ident(RIdent {
+                                    sym: js_word!("Object"),
                                     ..
                                 })
-                                | Type::Ref(Ref {
-                                    type_name:
-                                        RTsEntityName::Ident(RIdent {
-                                            sym: js_word!("Function"),
-                                            ..
-                                        }),
+                                | RExpr::Ident(RIdent {
+                                    sym: js_word!("Function"),
                                     ..
                                 }) => true,
+
                                 _ => false,
                             };
 
