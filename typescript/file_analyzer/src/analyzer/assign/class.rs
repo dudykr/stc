@@ -128,6 +128,9 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
             }
+
+            Type::Lit(..) => return Err(box Error::SimpleAssignFailed { span: opts.span }),
+
             _ => {}
         };
 
