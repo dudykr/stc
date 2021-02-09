@@ -1136,7 +1136,16 @@ impl Analyzer<'_, '_> {
                 return Ok(candidates.into_iter().flatten().collect());
             }
 
-            Type::Function(ref f) => {
+            Type::Constructor(c) if kind == ExtractKind::New => {
+                let candidate = (
+                    c.type_params.as_ref().map(|v| &*v.params).map(Cow::Borrowed),
+                    Cow::Borrowed(&*c.params),
+                    Some(Cow::Borrowed(&*c.type_ann)),
+                );
+                return Ok(vec![candidate]);
+            }
+
+            Type::Function(f) if kind == ExtractKind::Call => {
                 let candidate = (
                     f.type_params.as_ref().map(|v| &*v.params).map(Cow::Borrowed),
                     Cow::Borrowed(&*f.params),
