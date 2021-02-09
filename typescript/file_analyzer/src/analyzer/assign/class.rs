@@ -205,7 +205,7 @@ impl Analyzer<'_, '_> {
 
                                 if let Some(lt) = &lp.value {
                                     if let Some(rt) = &rp.value {
-                                        return self.assign(&lt, &rt, opts.span);
+                                        return self.assign_inner(&lt, &rt, opts);
                                     }
                                 }
 
