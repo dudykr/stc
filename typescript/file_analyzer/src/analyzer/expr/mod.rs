@@ -1269,7 +1269,7 @@ impl Analyzer<'_, '_> {
                     }
                 } else {
                     if !errors.is_empty() {
-                        return Err(box Error::UnionError { span, errors });
+                        return Ok(Type::any(span));
                     }
                 }
 
