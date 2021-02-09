@@ -238,6 +238,29 @@ impl Analyzer<'_, '_> {
                         .context("tried to assign a function to type elements");
                 }
 
+                Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsStringKeyword,
+                    ..
+                })
+                | Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsNumberKeyword,
+                    ..
+                })
+                | Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsBooleanKeyword,
+                    ..
+                })
+                | Type::Lit(RTsLitType {
+                    lit: RTsLit::Number(..),
+                    ..
+                })
+                | Type::Lit(RTsLitType {
+                    lit: RTsLit::Str(..), ..
+                })
+                | Type::Lit(RTsLitType {
+                    lit: RTsLit::Bool(..), ..
+                }) => return Err(box Error::SimpleAssignFailed { span }),
+
                 _ => {
                     return Err(box Error::Unimplemented {
                         span,
