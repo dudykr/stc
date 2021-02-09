@@ -1159,6 +1159,16 @@ impl Analyzer<'_, '_> {
             //     types.dedup_type();
             //     return Ok(Type::union(types));
             // }
+            Type::Union(ref u) => {
+                let candidates = u
+                    .types
+                    .iter()
+                    .map(|callee| self.extract_callee_candidates(span, kind, callee))
+                    .collect::<Result<Vec<_>, _>>()?;
+
+                return Ok(candidates.into_iter().flatten().collect());
+            }
+
             Type::Interface(..) => {
                 let callee = self
                     .type_to_type_lit(span, callee)?
