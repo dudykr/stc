@@ -55,23 +55,30 @@ impl Analyzer<'_, '_> {
 
         let mut errors = vec![];
 
-        let lt = left
-            .validate_with_default(self)
-            .and_then(|mut ty| {
-                if ty.is_ref_type() {
-                    let ctx = Ctx {
-                        preserve_ref: false,
-                        ignore_expand_prevention_for_top: true,
-                        ..self.ctx
-                    };
-                    ty = self.with_ctx(ctx).expand_fully(span, ty, true)?;
-                }
-                let span = ty.span();
-                ty.respan(left.span().with_ctxt(span.ctxt));
+        let ctx = Ctx {
+            should_store_truthy_for_access: false,
+            ..self.ctx
+        };
 
-                Ok(ty)
-            })
-            .store(&mut errors);
+        let lt = {
+            let mut a = self.with_ctx(ctx);
+            left.validate_with_default(&mut *a)
+        }
+        .and_then(|mut ty| {
+            if ty.is_ref_type() {
+                let ctx = Ctx {
+                    preserve_ref: false,
+                    ignore_expand_prevention_for_top: true,
+                    ..self.ctx
+                };
+                ty = self.with_ctx(ctx).expand_fully(span, ty, true)?;
+            }
+            let span = ty.span();
+            ty.respan(left.span().with_ctxt(span.ctxt));
+
+            Ok(ty)
+        })
+        .store(&mut errors);
 
         let facts = if op == op!("&&") {
             // We need a new virtual scope.
@@ -82,6 +89,8 @@ impl Analyzer<'_, '_> {
 
         let rhs = self
             .with_child(ScopeKind::Flow, facts, |child: &mut Analyzer| -> ValidationResult<_> {
+                child.ctx.should_store_truthy_for_access = false;
+
                 let ty = right.validate_with_default(child).and_then(|mut ty| {
                     if ty.is_ref_type() {
                         let ctx = Ctx {

@@ -246,6 +246,7 @@ impl Analyzer<'_, '_> {
         {
             let ctx = Ctx {
                 in_cond: true,
+                should_store_truthy_for_access: true,
                 ..self.ctx
             };
             let _test = stmt.test.validate_with_default(&mut *self.with_ctx(ctx))?;
@@ -431,6 +432,7 @@ impl Analyzer<'_, '_> {
                     let ctx = Ctx {
                         in_cond: true,
                         in_switch_case_test: true,
+                        should_store_truthy_for_access: true,
                         ..self.ctx
                     };
                     let mut a = self.with_ctx(ctx);
@@ -738,6 +740,7 @@ impl Analyzer<'_, '_> {
         {
             let ctx = Ctx {
                 in_cond: true,
+                should_store_truthy_for_access: true,
                 ..self.ctx
             };
             test.validate_with_default(&mut *self.with_ctx(ctx))?;

@@ -161,7 +161,7 @@ impl Analyzer<'_, '_> {
                         }));
                     }
                     let ty = self.type_of_var(i, mode, type_args)?;
-                    if mode == TypeOfMode::RValue {
+                    if self.ctx.should_store_truthy_for_access && mode == TypeOfMode::RValue {
                         // `i` is truthy
                         self.cur_facts.true_facts.facts.insert(i.into(), TypeFacts::Truthy);
                         self.cur_facts.false_facts.facts.insert(i.into(), TypeFacts::Falsy);
@@ -1953,13 +1953,14 @@ impl Analyzer<'_, '_> {
         } = *expr;
 
         let mut errors = Errors::default();
-        let ctx = Ctx {
+        let obj_ctx = Ctx {
             allow_module_var: true,
+            should_store_truthy_for_access: true,
             ..self.ctx
         };
         let obj_ty = match *obj {
             RExprOrSuper::Expr(ref obj) => {
-                let obj_ty = match obj.validate_with_default(&mut *self.with_ctx(ctx)) {
+                let obj_ty = match obj.validate_with_default(&mut *self.with_ctx(obj_ctx)) {
                     Ok(ty) => ty,
                     Err(err) => {
                         // Recover error if possible.
