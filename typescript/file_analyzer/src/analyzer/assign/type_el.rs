@@ -525,6 +525,8 @@ impl Analyzer<'_, '_> {
 
                                     self.assign_params(opts, &lm.params, &rm.params)?;
 
+                                    // TODO: Return type
+
                                     return Ok(());
                                 }
 
@@ -532,23 +534,12 @@ impl Analyzer<'_, '_> {
                                     // Allow assigning property with callable type to methods.
                                     if let Some(rp_ty) = &rp.type_ann {
                                         if let Type::Function(rp_ty) = rp_ty.normalize() {
-                                            if lm.params.len() != rp_ty.params.len() {
-                                                return Err(box Error::Unimplemented {
-                                                    span,
-                                                    msg: format!(
-                                                        "lhs.method.params.len() = {}; rhs.property.params.len() = {};",
-                                                        lm.params.len(),
-                                                        rp_ty.params.len()
-                                                    ),
-                                                });
-                                            }
+                                            self.assign_params(opts, &lm.params, &rp_ty.params).context(
+                                                "tried to assign parameters of a property with callable type to a \
+                                                 method parameters",
+                                            )?;
 
-                                            for (lp, rp) in lm.params.iter().zip(rp_ty.params.iter()) {
-                                                self.assign_inner(&lp.ty, &rp.ty, opts).context(
-                                                    "tried to assign a parameter of a property with callable type to \
-                                                     a method parameter",
-                                                )?;
-                                            }
+                                            // TODO: Return type
 
                                             return Ok(());
                                         }
