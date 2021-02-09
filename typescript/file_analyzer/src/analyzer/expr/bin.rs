@@ -212,7 +212,7 @@ impl Analyzer<'_, '_> {
                             let mut r = box r.clone();
                             self.prevent_generalize(&mut r);
                             self.cur_facts.true_facts.vars.insert(l.into(), r);
-                        } else if !is_eq {
+                        } else if self.ctx.in_cond && !is_eq {
                             // Remove from union
                             let mut r = box r.clone();
                             self.cur_facts.true_facts.excludes.entry(l.into()).or_default().push(r);
