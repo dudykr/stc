@@ -223,26 +223,55 @@ impl Analyzer<'_, '_> {
             op!("instanceof") => {
                 match **left {
                     RExpr::Ident(ref i) => {
-                        //
-                        let ty = self.validate_rhs_of_instanceof(span, rt.clone());
-
                         // typeGuardsTypeParameters.ts says
                         //
                         // Type guards involving type parameters produce intersection types
                         let orig_ty = self.type_of_var(i, TypeOfMode::RValue, None)?;
 
-                        // TODO(kdy1): Maybe we need to check for intersection or union
-                        if orig_ty.is_type_param() {
-                            self.cur_facts.true_facts.vars.insert(
-                                Name::from(i),
-                                Type::Intersection(Intersection {
-                                    span,
-                                    types: vec![orig_ty, ty],
+                        //
+                        let ty = self.validate_rhs_of_instanceof(span, rt.clone());
+
+                        // typeGuardsWithInstanceOfByConstructorSignature.ts
+                        //
+                        // says
+                        //
+                        // `can't narrow type from 'any' to 'Object'`
+                        // `can't narrow type from 'any' to 'Function'
+                        let cannot_narrow = orig_ty.is_any()
+                            && match ty.normalize() {
+                                Type::Ref(Ref {
+                                    type_name:
+                                        RTsEntityName::Ident(RIdent {
+                                            sym: js_word!("Object"),
+                                            ..
+                                        }),
+                                    ..
                                 })
-                                .cheap(),
-                            );
-                        } else {
-                            self.cur_facts.true_facts.vars.insert(Name::from(i), ty);
+                                | Type::Ref(Ref {
+                                    type_name:
+                                        RTsEntityName::Ident(RIdent {
+                                            sym: js_word!("Function"),
+                                            ..
+                                        }),
+                                    ..
+                                }) => true,
+                                _ => false,
+                            };
+
+                        if !cannot_narrow {
+                            // TODO(kdy1): Maybe we need to check for intersection or union
+                            if orig_ty.is_type_param() {
+                                self.cur_facts.true_facts.vars.insert(
+                                    Name::from(i),
+                                    Type::Intersection(Intersection {
+                                        span,
+                                        types: vec![orig_ty, ty],
+                                    })
+                                    .cheap(),
+                                );
+                            } else {
+                                self.cur_facts.true_facts.vars.insert(Name::from(i), ty);
+                            }
                         }
                     }
 
