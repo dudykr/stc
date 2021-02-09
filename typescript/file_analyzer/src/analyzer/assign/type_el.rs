@@ -22,6 +22,7 @@ use stc_ts_types::Tuple;
 use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
+use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::Span;
 use swc_common::Spanned;
@@ -227,15 +228,17 @@ impl Analyzer<'_, '_> {
                         .context("tried to assign an enum to type elements");
                 }
 
-                Type::Function(rhs) => {
+                Type::Function(..) | Type::Constructor(..) => {
                     let rhs = self
-                        .fn_to_type_lit(rhs)
+                        .type_to_type_lit(span, rhs)
+                        .context("tried to convert a function to a type literal for asssignment")?
+                        .map(Cow::into_owned)
                         .map(Type::TypeLit)
-                        .context("tried to convert a function to a type literal for asssignment")?;
+                        .unwrap();
 
                     return self
                         .assign_to_type_elements(opts, lhs_span, lhs, &rhs)
-                        .context("tried to assign a function to type elements");
+                        .context("tried to assign the converted type to type elements");
                 }
 
                 Type::Keyword(RTsKeywordType {
