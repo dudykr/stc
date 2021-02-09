@@ -23,6 +23,30 @@ use swc_common::SyntaxContext;
 use swc_ecma_ast::TsKeywordTypeKind;
 
 impl Analyzer<'_, '_> {
+    pub(crate) fn collect_class_members(&mut self, ty: &Type) -> ValidationResult<Option<Vec<ClassMember>>> {
+        let ty = ty.normalize();
+        match ty {
+            Type::Class(c) => match &c.super_class {
+                Some(sc) => {
+                    let mut members = c.body.clone();
+                    // TODO: Override
+
+                    if let Some(super_members) = self.collect_class_members(&sc)? {
+                        members.extend(super_members)
+                    }
+
+                    return Ok(Some(members));
+                }
+                None => {
+                    return Ok(Some(c.body.clone()));
+                }
+            },
+            _ => {
+                slog::error!(self.logger, "unimplemented: collect_class_members: {:?}", ty);
+                return Ok(None);
+            }
+        }
+    }
     /// Note: `span` is only used while expanding type (to prevent panic) in the
     /// case of [Type::Ref].
     pub(crate) fn type_to_type_lit<'a>(

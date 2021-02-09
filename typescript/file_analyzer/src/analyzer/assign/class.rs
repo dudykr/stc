@@ -22,29 +22,44 @@ impl Analyzer<'_, '_> {
                 return self.assign_to_class(opts, l, &r);
             }
 
-            Type::Class(r) => {
-                if l.eq_ignore_span(r) {
+            Type::Class(rc) => {
+                if l.eq_ignore_span(rc) {
                     return Ok(());
                 }
 
-                if !l.is_abstract && r.is_abstract {
+                if !l.is_abstract && rc.is_abstract {
                     return Err(box Error::CannotAssignAbstractConstructorToNonAbstractConstructor { span: opts.span });
                 }
 
-                if !r.is_abstract {
+                if !rc.is_abstract {
                     // class Child extends Parent
                     // let c: Child;
                     // let p: Parent;
                     // `p = c` is valid
-                    if let Some(parent) = &r.super_class {
+                    if let Some(parent) = &rc.super_class {
                         if self.assign_to_class(opts, l, &parent).is_ok() {
                             return Ok(());
                         }
                     }
                 }
 
+                let new_body;
+                let r_body = if rc.super_class.is_some() {
+                    if let Some(members) = self.collect_class_members(r)? {
+                        new_body = members;
+                        &*new_body
+                    } else {
+                        return Err(box Error::Unimplemented {
+                            span: opts.span,
+                            msg: format!("Failed to collect class members"),
+                        });
+                    }
+                } else {
+                    &*rc.body
+                };
+
                 for lm in &l.body {
-                    self.assign_class_members_to_class_member(opts, lm, &r.body)?;
+                    self.assign_class_members_to_class_member(opts, lm, &rc.body)?;
                 }
 
                 return Ok(());
