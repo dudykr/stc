@@ -132,7 +132,7 @@ warning: Type
 21 | y = x;
    |     ^
    |
-   = note: "foo" | "bar" | number
+   = note: number | "foo" | "bar"
 
 warning: Type
   --> $DIR/tests/visualize/controlFlow/ifStmt/simple-1.ts:21:1
@@ -140,5 +140,5 @@ warning: Type
 21 | y = x;
    | ^^^^^
    |
-   = note: "foo" | "bar" | number
+   = note: number | "foo" | "bar"
 
