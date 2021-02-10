@@ -626,7 +626,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     /// We have to check for inheritnace.
     ///
-    /// ```
+    /// ```ts
     /// class C1 {
     ///     p1: string;
     /// }
