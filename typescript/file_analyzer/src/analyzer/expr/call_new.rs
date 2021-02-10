@@ -1680,6 +1680,12 @@ impl Analyzer<'_, '_> {
                         return self.narrow_with_predicate(span, &orig_ty, new_ty);
                     }
                     _ => {
+                        if let Some(v) = self.extends(span, orig_ty, &new_ty) {
+                            if v {
+                                return Ok(box orig_ty.clone());
+                            }
+                        }
+
                         return Ok(new_ty);
                     }
                 }
