@@ -63,7 +63,7 @@ impl Analyzer<'_, '_> {
                         .with_context(|| {
                             format!(
                                 "tried to assign class members to {}th class member\n{:#?}\n{:#?}",
-                                i, lm, &r
+                                i, lm, r_body
                             )
                         })?;
                 }
