@@ -961,7 +961,6 @@ expressions/typeGuards/typeGuardOfFormTypeOfPrimitiveSubtype.ts
 expressions/typeGuards/typeGuardOfFormTypeOfString.ts
 expressions/typeGuards/typeGuardTautologicalConsistiency.ts
 expressions/typeGuards/typeGuardTypeOfUndefined.ts
-expressions/typeGuards/typeGuardsDefeat.ts
 expressions/typeGuards/typeGuardsInClassAccessors.ts
 expressions/typeGuards/typeGuardsInClassMethods.ts
 expressions/typeGuards/typeGuardsInConditionalExpression.ts
@@ -970,7 +969,6 @@ expressions/typeGuards/typeGuardsInExternalModule.ts
 expressions/typeGuards/typeGuardsInForStatement.ts
 expressions/typeGuards/typeGuardsInFunction.ts
 expressions/typeGuards/typeGuardsInGlobal.ts
-expressions/typeGuards/typeGuardsInIfStatement.ts
 expressions/typeGuards/typeGuardsInRightOperandOfAndAndOperator.ts
 expressions/typeGuards/typeGuardsInWhileStatement.ts
 expressions/typeGuards/typeGuardsObjectMethods.ts
