@@ -39,7 +39,7 @@ impl Fold<RTsKeywordType> for TypeFactsHandler {
 
         if ty.kind != TsKeywordTypeKind::TsAnyKeyword {
             for (neq, kwd) in keyword_types {
-                if self.facts.contains(*neq) {
+                if self.facts.contains(*neq) && *kwd == ty.kind {
                     return RTsKeywordType {
                         span: ty.span,
                         kind: TsKeywordTypeKind::TsNeverKeyword,
