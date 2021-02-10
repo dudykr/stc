@@ -36,7 +36,7 @@ warning: Type
 10 |     var b = x; // number | boolean | string
    |             ^
    |
-   = note: 10
+   = note: number | boolean
 
 warning: Type
   --> $DIR/tests/visualize/controlFlow/ifStmt/assign-1.ts:11:5
@@ -44,5 +44,5 @@ warning: Type
 11 |     b
    |     ^
    |
-   = note: number
+   = note: number | boolean
 
