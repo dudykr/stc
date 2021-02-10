@@ -555,18 +555,15 @@ impl Analyzer<'_, '_> {
                 }
 
                 if let Some(var_info) = self.scope.get_var_mut(&i.into()) {
-                    var_info.actual_ty = Some(ty.clone().generalize_lit());
+                    var_info.actual_ty = Some(box ty.clone());
                     return Ok(());
                 }
 
                 let var_info = if let Some(var_info) = self.scope.search_parent(&i.into()) {
                     let actual_ty = if var_info.ty.is_some() && var_info.ty.as_ref().unwrap().is_any() {
-                        Some(Type::any(var_info.ty.as_ref().unwrap().span()))
-                    } else if var_info.ty.is_some() && var_info.ty.as_ref().unwrap().is_unknown() {
-                        // Type narrowing
-                        Some(box ty.clone())
+                        return Ok(());
                     } else {
-                        Some(ty.clone().generalize_lit())
+                        Some(box ty.clone())
                     };
 
                     VarInfo {
