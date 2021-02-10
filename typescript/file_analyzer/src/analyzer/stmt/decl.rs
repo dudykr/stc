@@ -295,8 +295,15 @@ impl Analyzer<'_, '_> {
 
                         slog::debug!(self.logger, "var: user did not declare type");
                         let mut ty = self.rename_type_params(span, ty, None)?;
-                        if self.may_generalize(&ty) {
-                            ty = ty.fold_with(&mut Generalizer::default());
+                        if !(self.ctx.var_kind == VarDeclKind::Const && ty.is_lit()) {
+                            if self.may_generalize(&ty) {
+                                // Vars behave differently based on the context.
+                                if self.ctx.in_argument {
+                                    ty = ty.fold_with(&mut Generalizer::default());
+                                } else {
+                                    ty = ty.generalize_lit();
+                                }
+                            }
                         }
 
                         if should_generalize_fully {
