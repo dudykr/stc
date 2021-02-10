@@ -663,6 +663,8 @@ impl Analyzer<'_, '_> {
                     .map(|orig_ty| self.narrow_with_instanceof(span, ty.clone(), orig_ty))
                     .collect::<Result<Vec<_>, _>>()?;
 
+                new_types.retain(|ty| !ty.is_never());
+
                 new_types.dedup_type();
 
                 return Ok(box Type::Union(Union {
@@ -674,8 +676,12 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        if let Some(true) = self.extends(span, orig_ty, &ty) {
-            return Ok(box orig_ty.clone());
+        if let Some(v) = self.extends(span, orig_ty, &ty) {
+            if v {
+                return Ok(box orig_ty.clone());
+            } else {
+                return Ok(Type::never(span));
+            }
         }
 
         Ok(ty)
