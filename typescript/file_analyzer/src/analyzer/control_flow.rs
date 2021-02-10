@@ -546,76 +546,68 @@ impl Analyzer<'_, '_> {
             }
 
             RPat::Ident(i) => {
-                if let Some(ref var_info) = self.scope.get_var(&i.into()) {
-                    if let Some(ref var_ty) = var_info.ty {
-                        let var_ty = var_ty.clone();
-                        // let foo: string;
-                        // let foo = 'value';
-                        let var_ty = self.expand_fully(span, var_ty, true)?;
+                // Verify using immutable references.
+                if let Some(var_info) = self.scope.get_var(&i.into()) {
+                    if let Some(var_ty) = var_info.ty.clone() {
                         self.assign(&var_ty, ty, i.span)?;
-                        return Ok(());
                     }
                 }
 
                 if let Some(var_info) = self.scope.get_var_mut(&i.into()) {
-                    let var_ty = ty;
-
-                    if var_info.ty.is_none()
-                        || (!var_info.ty.as_ref().unwrap().is_any() && !var_info.ty.as_ref().unwrap().is_unknown())
-                    {
-                        //                            var_info.ty =
-                        // Some(var_ty);
+                    if let Some(var_ty) = &mut var_info.ty {
+                        *var_ty = box ty.clone();
                     }
-                    return Ok(());
-                } else {
-                    let var_info = if let Some(var_info) = self.scope.search_parent(&i.into()) {
-                        let ty = if var_info.ty.is_some() && var_info.ty.as_ref().unwrap().is_any() {
-                            Some(Type::any(var_info.ty.as_ref().unwrap().span()))
-                        } else if var_info.ty.is_some() && var_info.ty.as_ref().unwrap().is_unknown() {
-                            // Type narrowing
-                            Some(Box::new(ty.clone()))
-                        } else {
-                            return Ok(());
-                        };
-
-                        VarInfo {
-                            ty,
-                            copied: true,
-                            ..var_info.clone()
-                        }
-                    } else {
-                        if let Some(types) = self.find_type(self.ctx.module_id, &i.into())? {
-                            for ty in types {
-                                match &*ty {
-                                    Type::Module(..) => {
-                                        return Err(box Error::NotVariable {
-                                            span: i.span,
-                                            left: lhs.span(),
-                                        });
-                                    }
-                                    _ => {}
-                                }
-                            }
-                        }
-
-                        return if self.ctx.allow_ref_declaring && self.scope.declaring.contains(&i.into()) {
-                            Ok(())
-                        } else {
-                            // undefined symbol
-                            Err(box Error::UndefinedSymbol {
-                                sym: i.into(),
-                                span: i.span,
-                            })
-                        };
-                    };
-
-                    // Variable is defined on parent scope.
-                    //
-                    // We copy varinfo with enhanced type.
-                    self.scope.insert_var(i.into(), var_info);
 
                     return Ok(());
                 }
+
+                let var_info = if let Some(var_info) = self.scope.search_parent(&i.into()) {
+                    let ty = if var_info.ty.is_some() && var_info.ty.as_ref().unwrap().is_any() {
+                        Some(Type::any(var_info.ty.as_ref().unwrap().span()))
+                    } else if var_info.ty.is_some() && var_info.ty.as_ref().unwrap().is_unknown() {
+                        // Type narrowing
+                        Some(Box::new(ty.clone()))
+                    } else {
+                        return Ok(());
+                    };
+
+                    VarInfo {
+                        ty,
+                        copied: true,
+                        ..var_info.clone()
+                    }
+                } else {
+                    if let Some(types) = self.find_type(self.ctx.module_id, &i.into())? {
+                        for ty in types {
+                            match &*ty {
+                                Type::Module(..) => {
+                                    return Err(box Error::NotVariable {
+                                        span: i.span,
+                                        left: lhs.span(),
+                                    });
+                                }
+                                _ => {}
+                            }
+                        }
+                    }
+
+                    return if self.ctx.allow_ref_declaring && self.scope.declaring.contains(&i.into()) {
+                        Ok(())
+                    } else {
+                        // undefined symbol
+                        Err(box Error::UndefinedSymbol {
+                            sym: i.into(),
+                            span: i.span,
+                        })
+                    };
+                };
+
+                // Variable is defined on parent scope.
+                //
+                // We copy varinfo with enhanced type.
+                self.scope.insert_var(i.into(), var_info);
+
+                return Ok(());
             }
 
             RPat::Array(ref arr) => {
