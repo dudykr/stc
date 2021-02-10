@@ -59,7 +59,8 @@ impl Analyzer<'_, '_> {
                 };
 
                 for lm in &l.body {
-                    self.assign_class_members_to_class_member(opts, lm, &rc.body)?;
+                    self.assign_class_members_to_class_member(opts, lm, &rc.body)
+                        .context("tried to assign class members to a class member")?;
                 }
 
                 return Ok(());
