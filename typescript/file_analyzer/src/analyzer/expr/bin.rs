@@ -23,6 +23,7 @@ use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_ast_rnode::RUnaryExpr;
+use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_file_analyzer_macros::extra_validator;
@@ -293,8 +294,8 @@ impl Analyzer<'_, '_> {
 
                         if !cannot_narrow {
                             let ty = self
-                                .narrow_with_instanceof(span, &orig_ty)
-                                .context("tried to narrow type with instanceof");
+                                .narrow_with_instanceof(span, ty, &orig_ty)
+                                .context("tried to narrow type with instanceof")?;
 
                             // TODO(kdy1): Maybe we need to check for intersection or union
                             if orig_ty.is_type_param() {
