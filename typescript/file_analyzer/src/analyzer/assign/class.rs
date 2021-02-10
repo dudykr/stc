@@ -59,8 +59,13 @@ impl Analyzer<'_, '_> {
                 };
 
                 for (i, lm) in l.body.iter().enumerate() {
-                    self.assign_class_members_to_class_member(opts, lm, &rc.body)
-                        .with_context(|| format!("tried to assign class members to {}th class member\n{:#?}", i, lm))?;
+                    self.assign_class_members_to_class_member(opts, lm, r_body)
+                        .with_context(|| {
+                            format!(
+                                "tried to assign class members to {}th class member\n{:#?}\n{:#?}",
+                                i, lm, &r
+                            )
+                        })?;
                 }
 
                 return Ok(());
