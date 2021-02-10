@@ -292,6 +292,10 @@ impl Analyzer<'_, '_> {
                             };
 
                         if !cannot_narrow {
+                            let ty = self
+                                .narrow_with_instanceof(span, &orig_ty)
+                                .context("tried to narrow type with instanceof");
+
                             // TODO(kdy1): Maybe we need to check for intersection or union
                             if orig_ty.is_type_param() {
                                 self.cur_facts.true_facts.vars.insert(
@@ -619,6 +623,29 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
+    /// We have to check for inheritnace.
+    ///
+    /// ```
+    /// class C1 {
+    ///     p1: string;
+    /// }
+    /// class C2 {
+    ///     p2: number;
+    /// }
+    /// class D1 extends C1 {
+    ///     p3: number;
+    /// }
+    /// var ctor2: C2 | D1;
+    ///
+    /// var r2: D1 | C2 = ctor2 instanceof C1 && ctor2; // C2 | D1
+    /// ```
+    ///
+    /// in this case, we cannot store ctor2 as C1 because it would result in an
+    /// error.
+    fn narrow_with_instanceof(&mut self, span: Span, ty: Box<Type>, orig_ty: &Type) -> ValidationResult {
+        Ok(ty)
+    }
+
     #[extra_validator]
     fn validate_relative_comparison_operands(&mut self, span: Span, op: BinaryOp, l: &Type, r: &Type) {
         let l = l.normalize();
