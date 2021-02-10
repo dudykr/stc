@@ -1671,7 +1671,7 @@ impl Analyzer<'_, '_> {
 
     #[extra_validator]
     fn store_call_fact_for_var(&mut self, span: Span, var_name: Id, new_ty: &Type) {
-        match new_ty {
+        match new_ty.normalize() {
             Type::Keyword(..) | Type::Lit(..) => {}
             _ => {
                 if let Some(previous_types) = self.find_var_type(&var_name.clone().into()) {
