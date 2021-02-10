@@ -1673,6 +1673,17 @@ impl Analyzer<'_, '_> {
         match new_ty.normalize() {
             Type::Keyword(..) | Type::Lit(..) => {}
             _ => {
+                match orig_ty.normalize() {
+                    Type::Union(..) | Type::Interface(..) => {}
+                    Type::Ref(..) => {
+                        let orig_ty = self.expand_top_ref(span, Cow::Borrowed(orig_ty))?;
+                        return self.narrow_with_predicate(span, &orig_ty, new_ty);
+                    }
+                    _ => {
+                        return Ok(new_ty);
+                    }
+                }
+
                 let mut new_types = vec![];
 
                 let mut upcasted = false;
