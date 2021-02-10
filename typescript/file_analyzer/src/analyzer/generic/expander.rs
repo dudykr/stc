@@ -170,7 +170,7 @@ impl Analyzer<'_, '_> {
                 return Some(true);
             }
 
-            Type::Interface(Interface { name, .. }) if *name.sym() == *"ArrayConsturctor" => match child {
+            Type::Interface(Interface { name, .. }) if *name.sym() == *"ArrayConstructor" => match child {
                 Type::Array(..) | Type::Tuple(..) => {
                     return Some(true);
                 }
@@ -253,7 +253,7 @@ impl Analyzer<'_, '_> {
             },
             _ => {}
         }
-        // dbg!(child, parent);
+        dbg!(child, parent);
 
         {
             let ctx = Ctx {
