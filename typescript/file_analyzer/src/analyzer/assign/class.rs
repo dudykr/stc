@@ -58,9 +58,9 @@ impl Analyzer<'_, '_> {
                     &*rc.body
                 };
 
-                for lm in &l.body {
+                for (i, lm) in l.body.iter().enumerate() {
                     self.assign_class_members_to_class_member(opts, lm, &rc.body)
-                        .context("tried to assign class members to a class member")?;
+                        .with_context(|| format!("tried to assign class members to {}th class member\n{:#?}", i, lm))?;
                 }
 
                 return Ok(());
