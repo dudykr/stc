@@ -650,6 +650,11 @@ impl Analyzer<'_, '_> {
         let orig_ty = orig_ty.normalize();
 
         match orig_ty {
+            Type::Ref(..) => {
+                let orig_ty = self.expand_top_ref(span, Cow::Borrowed(orig_ty))?;
+                return self.narrow_with_instanceof(span, ty, &orig_ty);
+            }
+
             Type::Union(orig) => {
                 let new_types = orig
                     .types
