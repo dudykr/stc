@@ -32,6 +32,7 @@ use stc_ts_types::Intersection;
 use stc_ts_types::ModuleId;
 use stc_ts_types::Ref;
 use stc_ts_types::TypeElement;
+use stc_ts_types::Union;
 use std::borrow::Cow;
 use std::convert::TryFrom;
 use swc_atoms::js_word;
@@ -643,7 +644,32 @@ impl Analyzer<'_, '_> {
     ///
     /// in this case, we cannot store ctor2 as C1 because it would result in an
     /// error.
+    ///
+    /// TODO: Use Cow
     fn narrow_with_instanceof(&mut self, span: Span, ty: Box<Type>, orig_ty: &Type) -> ValidationResult {
+        let orig_ty = orig_ty.normalize();
+
+        match orig_ty {
+            Type::Union(orig) => {
+                let new_types = orig
+                    .types
+                    .iter()
+                    .map(|orig_ty| self.narrow_with_instanceof(span, ty.clone(), orig_ty))
+                    .collect::<Result<Vec<_>, _>>()?;
+
+                return Ok(box Type::Union(Union {
+                    span: orig.span,
+                    types: new_types,
+                }));
+            }
+
+            _ => {}
+        }
+
+        if let Some(true) = self.extends(span, orig_ty, &ty) {
+            return Ok(box orig_ty.clone());
+        }
+
         Ok(ty)
     }
 
