@@ -6,7 +6,6 @@ use super::{
     scope::{ScopeKind, VarInfo},
     Analyzer,
 };
-use crate::ty::TypeExt;
 use crate::util::type_ext::TypeVecExt;
 use crate::{
     ty::{Tuple, Type, TypeElement, TypeLit},
