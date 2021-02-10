@@ -6,6 +6,7 @@ use super::{
     scope::{ScopeKind, VarInfo},
     Analyzer,
 };
+use crate::ty::TypeExt;
 use crate::util::type_ext::TypeVecExt;
 use crate::{
     ty::{Tuple, Type, TypeElement, TypeLit},
@@ -555,7 +556,9 @@ impl Analyzer<'_, '_> {
 
                 if let Some(var_info) = self.scope.get_var_mut(&i.into()) {
                     if let Some(var_ty) = &mut var_info.ty {
-                        *var_ty = box ty.clone();
+                        // TODO: Update `actual` type.
+                        // Actual type is used for references and declared type is used for assignments.
+                        return Ok(());
                     }
 
                     return Ok(());
@@ -566,7 +569,12 @@ impl Analyzer<'_, '_> {
                         Some(Type::any(var_info.ty.as_ref().unwrap().span()))
                     } else if var_info.ty.is_some() && var_info.ty.as_ref().unwrap().is_unknown() {
                         // Type narrowing
-                        Some(Box::new(ty.clone()))
+                        Some(box ty.clone())
+                    } else if let Some(prev) = var_info.ty.as_deref().map(|v| v.normalize()) {
+                        // TODO: Update `actual` type.
+                        // Actual type is used for references and declared type is used for assignments.
+
+                        return Ok(());
                     } else {
                         return Ok(());
                     };
