@@ -680,7 +680,12 @@ impl Analyzer<'_, '_> {
             if v {
                 return Ok(box orig_ty.clone());
             } else {
-                return Ok(Type::never(span));
+                if !self
+                    .has_overlap(span, orig_ty, &ty)
+                    .context("tried to check if overlap exists to calculate the type created by instanceof")?
+                {
+                    return Ok(Type::never(span));
+                }
             }
         }
 
