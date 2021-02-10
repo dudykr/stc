@@ -958,6 +958,7 @@ expressions/typeGuards/typeGuardTypeOfUndefined.ts
 expressions/typeGuards/typeGuardsDefeat.ts
 expressions/typeGuards/typeGuardsInClassAccessors.ts
 expressions/typeGuards/typeGuardsInClassMethods.ts
+expressions/typeGuards/typeGuardsInConditionalExpression.ts
 expressions/typeGuards/typeGuardsInDoStatement.ts
 expressions/typeGuards/typeGuardsInExternalModule.ts
 expressions/typeGuards/typeGuardsInForStatement.ts
