@@ -4,6 +4,7 @@ use super::super::{
 };
 use super::TypeOfMode;
 use crate::analyzer::assign::AssignOpts;
+use crate::util::type_ext::TypeVecExt;
 use crate::{
     analyzer::{Ctx, ScopeKind},
     ty::{Operator, Type, TypeExt},
@@ -656,11 +657,13 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Union(orig) => {
-                let new_types = orig
+                let mut new_types = orig
                     .types
                     .iter()
                     .map(|orig_ty| self.narrow_with_instanceof(span, ty.clone(), orig_ty))
                     .collect::<Result<Vec<_>, _>>()?;
+
+                new_types.dedup_type();
 
                 return Ok(box Type::Union(Union {
                     span: orig.span,
