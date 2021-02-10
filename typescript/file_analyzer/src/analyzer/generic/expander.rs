@@ -253,7 +253,7 @@ impl Analyzer<'_, '_> {
             },
             _ => {}
         }
-        dbg!(child, parent);
+        // dbg!(child, parent);
 
         {
             let ctx = Ctx {
