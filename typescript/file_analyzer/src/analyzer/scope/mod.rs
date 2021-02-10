@@ -627,7 +627,7 @@ impl Analyzer<'_, '_> {
         None
     }
 
-    pub(super) fn find_var_type(&self, name: &Id) -> Option<Cow<Box<Type>>> {
+    pub(super) fn find_var_type(&self, name: &Id, mode: TypeOfMode) -> Option<Cow<Box<Type>>> {
         if let Some(v) = self.cur_facts.true_facts.vars.get(&Name::from(name)) {
             return Some(Cow::Borrowed(v));
         }
@@ -670,9 +670,15 @@ impl Analyzer<'_, '_> {
 
             let name = Name::from(name);
 
-            let mut ty = match var.ty {
-                Some(ref ty) => ty.clone(),
-                _ => return None,
+            let mut ty = match mode {
+                TypeOfMode::LValue => match &var.ty {
+                    Some(ty) => ty.clone(),
+                    _ => return None,
+                },
+                TypeOfMode::RValue => match &var.actual_ty {
+                    Some(ty) => ty.clone(),
+                    _ => return None,
+                },
             };
 
             if let Some(ref excludes) = self.scope.facts.excludes.get(&name) {
@@ -1872,7 +1878,7 @@ impl Fold<Type> for Expander<'_, '_, '_> {
                                 let id = (&*name).into();
                                 let ctxt = self.analyzer.ctx.module_id;
                                 //
-                                if let Some(ty) = self.analyzer.find_var_type(&id) {
+                                if let Some(ty) = self.analyzer.find_var_type(&id, TypeOfMode::RValue) {
                                     *cond_ty.check_type = *ty.into_owned();
                                 } else {
                                     slog::error!(self.analyzer.logger, "Failed to find variable named {:?}", id);

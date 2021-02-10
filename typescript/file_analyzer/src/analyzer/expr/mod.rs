@@ -1679,11 +1679,8 @@ impl Analyzer<'_, '_> {
                 for ty in ty {
                     match ty.normalize() {
                         Type::Module(module) => {
-                            dbg!(&module);
-
                             //
                             if let Some(var_ty) = module.exports.vars.get(&i.sym).cloned() {
-                                dbg!(&var_ty);
                                 return Ok(var_ty);
                             }
                         }
@@ -1740,9 +1737,20 @@ impl Analyzer<'_, '_> {
 
         if let Some(v) = self.scope.vars.get(&i.into()) {
             slog::debug!(self.logger, "found var with name");
-            if let Some(ty) = &v.ty {
-                slog::debug!(self.logger, "Type of var: {:?}", ty);
-                return Ok(ty.clone());
+            match type_mode {
+                TypeOfMode::LValue => {
+                    if let Some(ty) = &v.ty {
+                        slog::debug!(self.logger, "Type of var: {:?}", ty);
+                        return Ok(ty.clone());
+                    }
+                }
+
+                TypeOfMode::RValue => {
+                    if let Some(ty) = &v.actual_ty {
+                        slog::debug!(self.logger, "Type of var: {:?}", ty);
+                        return Ok(ty.clone());
+                    }
+                }
             }
         }
 
@@ -1757,7 +1765,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if let Some(ty) = self.find_var_type(&i.into()) {
+        if let Some(ty) = self.find_var_type(&i.into(), type_mode) {
             slog::debug!(self.logger, "find_var_type returned a type");
             let mut span = span;
             let mut ty = ty.into_owned();

@@ -1729,7 +1729,10 @@ impl Analyzer<'_, '_> {
         match new_ty.normalize() {
             Type::Keyword(..) | Type::Lit(..) => {}
             _ => {
-                if let Some(previous_types) = self.find_var_type(&var_name.clone().into()).map(Cow::into_owned) {
+                if let Some(previous_types) = self
+                    .find_var_type(&var_name.clone().into(), TypeOfMode::RValue)
+                    .map(Cow::into_owned)
+                {
                     let new_ty = self.narrow_with_predicate(span, &previous_types, box new_ty.clone())?;
 
                     self.add_type_fact(&var_name.into(), new_ty);
