@@ -555,32 +555,22 @@ impl Analyzer<'_, '_> {
                 }
 
                 if let Some(var_info) = self.scope.get_var_mut(&i.into()) {
-                    if let Some(var_ty) = &mut var_info.ty {
-                        // TODO: Update `actual` type.
-                        // Actual type is used for references and declared type is used for assignments.
-                        return Ok(());
-                    }
-
+                    var_info.actual_ty = Some(ty.clone().generalize_lit());
                     return Ok(());
                 }
 
                 let var_info = if let Some(var_info) = self.scope.search_parent(&i.into()) {
-                    let ty = if var_info.ty.is_some() && var_info.ty.as_ref().unwrap().is_any() {
+                    let actual_ty = if var_info.ty.is_some() && var_info.ty.as_ref().unwrap().is_any() {
                         Some(Type::any(var_info.ty.as_ref().unwrap().span()))
                     } else if var_info.ty.is_some() && var_info.ty.as_ref().unwrap().is_unknown() {
                         // Type narrowing
                         Some(box ty.clone())
-                    } else if let Some(prev) = var_info.ty.as_deref().map(|v| v.normalize()) {
-                        // TODO: Update `actual` type.
-                        // Actual type is used for references and declared type is used for assignments.
-
-                        return Ok(());
                     } else {
-                        return Ok(());
+                        Some(ty.clone().generalize_lit())
                     };
 
                     VarInfo {
-                        ty,
+                        actual_ty,
                         copied: true,
                         ..var_info.clone()
                     }

@@ -603,6 +603,7 @@ impl Analyzer<'_, '_> {
     pub(super) fn find_var(&self, name: &Id) -> Option<&VarInfo> {
         static ANY_VAR: Lazy<VarInfo> = Lazy::new(|| VarInfo {
             ty: Some(Type::any(DUMMY_SP)),
+            actual_ty: Some(Type::any(DUMMY_SP)),
             kind: VarDeclKind::Const,
             initialized: true,
             copied: false,
@@ -783,12 +784,13 @@ impl Analyzer<'_, '_> {
         F: FnOnce(&mut VarInfo) -> ValidationResult<Ret>,
     {
         let var = self.find_var(&name);
-        let ty = var.map(|var| var.ty.clone()).flatten();
+        let ty = var.and_then(|var| var.ty.clone());
 
         op(self.scope.vars.entry(name).or_insert_with(|| VarInfo {
             kind: VarDeclKind::Let,
             initialized: true,
-            ty,
+            ty: ty.clone(),
+            actual_ty: ty,
             copied: true,
         }))
     }
@@ -899,7 +901,8 @@ impl Analyzer<'_, '_> {
 
                 let info = VarInfo {
                     kind,
-                    ty,
+                    ty: ty.clone(),
+                    actual_ty: ty,
                     initialized,
                     copied: false,
                 };
@@ -1340,7 +1343,13 @@ impl Analyzer<'_, '_> {
 pub(crate) struct VarInfo {
     pub kind: VarDeclKind,
     pub initialized: bool,
+
+    /// Declared type.
     pub ty: Option<Box<Type>>,
+
+    /// Stored type.
+    pub actual_ty: Option<Box<Type>>,
+
     /// Copied from parent scope. If this is true, it's not a variable
     /// declaration.
     pub copied: bool,
