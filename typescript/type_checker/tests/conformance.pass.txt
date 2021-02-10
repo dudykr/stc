@@ -970,6 +970,7 @@ expressions/typeGuards/typeGuardsInExternalModule.ts
 expressions/typeGuards/typeGuardsInForStatement.ts
 expressions/typeGuards/typeGuardsInFunction.ts
 expressions/typeGuards/typeGuardsInGlobal.ts
+expressions/typeGuards/typeGuardsInIfStatement.ts
 expressions/typeGuards/typeGuardsInRightOperandOfAndAndOperator.ts
 expressions/typeGuards/typeGuardsInWhileStatement.ts
 expressions/typeGuards/typeGuardsObjectMethods.ts
