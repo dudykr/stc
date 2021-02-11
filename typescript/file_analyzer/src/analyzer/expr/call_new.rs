@@ -1621,6 +1621,11 @@ impl Analyzer<'_, '_> {
                         }
                     }
                 }
+
+                EitherOrBoth::Right(arg) => {
+                    self.storage.report(box Error::TooManyArg { span: arg.span() });
+                }
+
                 _ => {}
             }
         }
