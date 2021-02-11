@@ -4,6 +4,7 @@ use super::super::{
 };
 use super::TypeOfMode;
 use crate::analyzer::assign::AssignOpts;
+use crate::util::type_ext::TypeVecExt;
 use crate::{
     analyzer::{Ctx, ScopeKind},
     ty::{Operator, Type, TypeExt},
@@ -23,6 +24,7 @@ use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_ast_rnode::RUnaryExpr;
+use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_file_analyzer_macros::extra_validator;
@@ -31,6 +33,7 @@ use stc_ts_types::Intersection;
 use stc_ts_types::ModuleId;
 use stc_ts_types::Ref;
 use stc_ts_types::TypeElement;
+use stc_ts_types::Union;
 use std::borrow::Cow;
 use std::convert::TryFrom;
 use swc_atoms::js_word;
@@ -55,23 +58,30 @@ impl Analyzer<'_, '_> {
 
         let mut errors = vec![];
 
-        let lt = left
-            .validate_with_default(self)
-            .and_then(|mut ty| {
-                if ty.is_ref_type() {
-                    let ctx = Ctx {
-                        preserve_ref: false,
-                        ignore_expand_prevention_for_top: true,
-                        ..self.ctx
-                    };
-                    ty = self.with_ctx(ctx).expand_fully(span, ty, true)?;
-                }
-                let span = ty.span();
-                ty.respan(left.span().with_ctxt(span.ctxt));
+        let ctx = Ctx {
+            should_store_truthy_for_access: false,
+            ..self.ctx
+        };
 
-                Ok(ty)
-            })
-            .store(&mut errors);
+        let lt = {
+            let mut a = self.with_ctx(ctx);
+            left.validate_with_default(&mut *a)
+        }
+        .and_then(|mut ty| {
+            if ty.is_ref_type() {
+                let ctx = Ctx {
+                    preserve_ref: false,
+                    ignore_expand_prevention_for_top: true,
+                    ..self.ctx
+                };
+                ty = self.with_ctx(ctx).expand_fully(span, ty, true)?;
+            }
+            let span = ty.span();
+            ty.reposition(left.span());
+
+            Ok(ty)
+        })
+        .store(&mut errors);
 
         let facts = if op == op!("&&") {
             // We need a new virtual scope.
@@ -82,6 +92,8 @@ impl Analyzer<'_, '_> {
 
         let rhs = self
             .with_child(ScopeKind::Flow, facts, |child: &mut Analyzer| -> ValidationResult<_> {
+                child.ctx.should_store_truthy_for_access = false;
+
                 let ty = right.validate_with_default(child).and_then(|mut ty| {
                     if ty.is_ref_type() {
                         let ctx = Ctx {
@@ -93,7 +105,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     let span = ty.span();
-                    ty.respan(right.span().with_ctxt(span.ctxt));
+                    ty.reposition(right.span());
 
                     Ok(ty)
                 })?;
@@ -204,16 +216,47 @@ impl Analyzer<'_, '_> {
                 }
 
                 match c.take_if_any_matches(|(l, _), (_, r_ty)| match (l, r_ty) {
-                    (RExpr::Ident(l), Type::Lit(..)) => Some((l, r_ty)),
+                    (
+                        RExpr::Ident(RIdent {
+                            sym: js_word!("undefined"),
+                            ..
+                        }),
+                        _,
+                    )
+                    | (
+                        RExpr::Ident(RIdent {
+                            sym: js_word!("null"), ..
+                        }),
+                        _,
+                    ) => None,
+
+                    (RExpr::Ident(l), r) => Some((l, r_ty)),
                     _ => return None,
                 }) {
                     Some((l, r)) => {
-                        if self.ctx.in_cond && is_eq {
-                            let mut r = r.clone();
+                        if self.ctx.in_cond && op == op!("===") {
+                            let mut r = box r.clone();
+                            self.cur_facts
+                                .false_facts
+                                .excludes
+                                .entry(l.into())
+                                .or_default()
+                                .push(r.clone());
+
                             self.prevent_generalize(&mut r);
-                            self.cur_facts.true_facts.vars.insert(l.into(), box r);
-                        } else {
-                            // TODO: Remove from union
+                            self.cur_facts.true_facts.vars.insert(l.into(), r);
+                        } else if self.ctx.in_cond && !is_eq {
+                            // Remove from union
+                            let mut r = box r.clone();
+                            self.cur_facts
+                                .true_facts
+                                .excludes
+                                .entry(l.into())
+                                .or_default()
+                                .push(r.clone());
+
+                            self.prevent_generalize(&mut r);
+                            self.cur_facts.false_facts.vars.insert(l.into(), r);
                         }
                     }
                     _ => {}
@@ -223,26 +266,52 @@ impl Analyzer<'_, '_> {
             op!("instanceof") => {
                 match **left {
                     RExpr::Ident(ref i) => {
-                        //
-                        let ty = self.validate_rhs_of_instanceof(span, rt.clone());
-
                         // typeGuardsTypeParameters.ts says
                         //
                         // Type guards involving type parameters produce intersection types
                         let orig_ty = self.type_of_var(i, TypeOfMode::RValue, None)?;
 
-                        // TODO(kdy1): Maybe we need to check for intersection or union
-                        if orig_ty.is_type_param() {
-                            self.cur_facts.true_facts.vars.insert(
-                                Name::from(i),
-                                Type::Intersection(Intersection {
-                                    span,
-                                    types: vec![orig_ty, ty],
+                        //
+                        let ty = self.validate_rhs_of_instanceof(span, rt.clone());
+
+                        // typeGuardsWithInstanceOfByConstructorSignature.ts
+                        //
+                        // says
+                        //
+                        // `can't narrow type from 'any' to 'Object'`
+                        // `can't narrow type from 'any' to 'Function'
+                        let cannot_narrow = orig_ty.is_any()
+                            && match &**right {
+                                RExpr::Ident(RIdent {
+                                    sym: js_word!("Object"),
+                                    ..
                                 })
-                                .cheap(),
-                            );
-                        } else {
-                            self.cur_facts.true_facts.vars.insert(Name::from(i), ty);
+                                | RExpr::Ident(RIdent {
+                                    sym: js_word!("Function"),
+                                    ..
+                                }) => true,
+
+                                _ => false,
+                            };
+
+                        if !cannot_narrow {
+                            let ty = self
+                                .narrow_with_instanceof(span, ty, &orig_ty)
+                                .context("tried to narrow type with instanceof")?;
+
+                            // TODO(kdy1): Maybe we need to check for intersection or union
+                            if orig_ty.is_type_param() {
+                                self.cur_facts.true_facts.vars.insert(
+                                    Name::from(i),
+                                    Type::Intersection(Intersection {
+                                        span,
+                                        types: vec![orig_ty, ty],
+                                    })
+                                    .cheap(),
+                                );
+                            } else {
+                                self.cur_facts.true_facts.vars.insert(Name::from(i), ty);
+                            }
                         }
                     }
 
@@ -557,6 +626,72 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
+    /// We have to check for inheritnace.
+    ///
+    /// ```ts
+    /// class C1 {
+    ///     p1: string;
+    /// }
+    /// class C2 {
+    ///     p2: number;
+    /// }
+    /// class D1 extends C1 {
+    ///     p3: number;
+    /// }
+    /// var ctor2: C2 | D1;
+    ///
+    /// var r2: D1 | C2 = ctor2 instanceof C1 && ctor2; // C2 | D1
+    /// ```
+    ///
+    /// in this case, we cannot store ctor2 as C1 because it would result in an
+    /// error.
+    ///
+    /// TODO: Use Cow
+    fn narrow_with_instanceof(&mut self, span: Span, ty: Box<Type>, orig_ty: &Type) -> ValidationResult {
+        let orig_ty = orig_ty.normalize();
+
+        match orig_ty {
+            Type::Ref(..) => {
+                let orig_ty = self.expand_top_ref(span, Cow::Borrowed(orig_ty))?;
+                return self.narrow_with_instanceof(span, ty, &orig_ty);
+            }
+
+            Type::Union(orig) => {
+                let mut new_types = orig
+                    .types
+                    .iter()
+                    .map(|orig_ty| self.narrow_with_instanceof(span, ty.clone(), orig_ty))
+                    .collect::<Result<Vec<_>, _>>()?;
+
+                new_types.retain(|ty| !ty.is_never());
+
+                new_types.dedup_type();
+
+                return Ok(box Type::Union(Union {
+                    span: orig.span,
+                    types: new_types,
+                }));
+            }
+
+            _ => {}
+        }
+
+        if let Some(v) = self.extends(span, orig_ty, &ty) {
+            if v {
+                return Ok(box orig_ty.clone());
+            } else {
+                if !self
+                    .has_overlap(span, orig_ty, &ty)
+                    .context("tried to check if overlap exists to calculate the type created by instanceof")?
+                {
+                    return Ok(Type::never(span));
+                }
+            }
+        }
+
+        Ok(ty)
+    }
+
     #[extra_validator]
     fn validate_relative_comparison_operands(&mut self, span: Span, op: BinaryOp, l: &Type, r: &Type) {
         let l = l.normalize();
@@ -828,6 +963,11 @@ impl Analyzer<'_, '_> {
                     self.storage
                         .report(box Error::InvalidRhsInInstanceOf { span, ty: ty.clone() });
                 }
+            }
+
+            Type::Ref(..) => {
+                // Report error and return ref type back.
+                self.make_instance_or_report(span, &ty);
             }
 
             _ => return self.make_instance_or_report(span, &ty),

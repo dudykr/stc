@@ -9,6 +9,7 @@ use rnode::FoldWith;
 use slog::Logger;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
+use stc_ts_types::Interface;
 use stc_ts_types::Key;
 use stc_ts_types::TypeParamDecl;
 use stc_ts_types::TypeParamInstantiation;
@@ -168,6 +169,14 @@ impl Analyzer<'_, '_> {
 
                 return Some(true);
             }
+
+            Type::Interface(Interface { name, .. }) if *name.sym() == *"ArrayConstructor" => match child {
+                Type::Array(..) | Type::Tuple(..) => {
+                    return Some(true);
+                }
+                _ => {}
+            },
+
             _ => {}
         }
 

@@ -755,14 +755,12 @@ impl Analyzer<'_, '_> {
 
                         Type::Array(arr) => {
                             self.scope.is_call_arg_count_unknown = true;
-                            new_arg_types.push(TypeOrSpread {
-                                span: arr.span,
-                                spread: None,
-                                ty: arr.elem_type.clone(),
-                            });
+                            new_arg_types.push(arg.clone());
                         }
 
-                        _ => unimplemented!("spread argument with type other than tuple\nType: {:#?}", arg.ty),
+                        _ => {
+                            unimplemented!("spread_args: type other than tuple or \nType: {:#?}", arg.ty)
+                        }
                     }
                 } else {
                     new_arg_types.push(arg.clone());
@@ -1503,7 +1501,9 @@ impl Analyzer<'_, '_> {
                                     },
                                 ));
                             }
-                            _ => unimplemented!("spread argument with type other than tuple\nType: {:#?}", arg.ty),
+                            _ => {
+                                new_arg_types.push(arg.clone());
+                            }
                         }
                     } else {
                         new_arg_types.push(arg.clone());
@@ -1560,6 +1560,36 @@ impl Analyzer<'_, '_> {
     }
 
     fn validate_arg_types(&mut self, params: &[FnParam], spread_arg_types: &[TypeOrSpread]) {
+        let rest_idx = {
+            let mut rest_idx = None;
+            let mut shift = 0;
+
+            for (idx, param) in params.iter().enumerate() {
+                match param.pat {
+                    RPat::Rest(..) => {
+                        rest_idx = Some(idx - shift);
+                    }
+                    _ => {
+                        if !param.required {
+                            shift += 1;
+                        }
+                    }
+                }
+            }
+
+            rest_idx
+        };
+
+        for (idx, arg) in spread_arg_types.iter().enumerate() {
+            if arg.spread.is_some() {
+                if let Some(rest_idx) = rest_idx {
+                    if idx < rest_idx {
+                        self.storage.report(box Error::TooEarlySpread { span: arg.span() })
+                    }
+                }
+            }
+        }
+
         for pair in params
             .iter()
             .filter(|param| match param.pat {
@@ -1621,6 +1651,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
                 }
+
                 _ => {}
             }
         }
@@ -1669,38 +1700,76 @@ impl Analyzer<'_, '_> {
         }
     }
 
+    fn narrow_with_predicate(&mut self, span: Span, orig_ty: &Type, new_ty: Box<Type>) -> ValidationResult {
+        match new_ty.normalize() {
+            Type::Keyword(..) | Type::Lit(..) => {}
+            _ => {
+                match orig_ty.normalize() {
+                    Type::Union(..) | Type::Interface(..) => {}
+                    Type::Ref(..) => {
+                        let orig_ty = self.expand_top_ref(span, Cow::Borrowed(orig_ty))?;
+                        return self.narrow_with_predicate(span, &orig_ty, new_ty);
+                    }
+                    _ => {
+                        if let Some(v) = self.extends(span, orig_ty, &new_ty) {
+                            if v {
+                                return Ok(box orig_ty.clone());
+                            }
+                        }
+
+                        return Ok(new_ty);
+                    }
+                }
+
+                let mut new_types = vec![];
+
+                let mut upcasted = false;
+                for ty in orig_ty.iter_union().flat_map(|ty| ty.iter_union()) {
+                    match self.extends(span, &new_ty, &ty) {
+                        Some(true) => {
+                            upcasted = true;
+                            new_types.push(box ty.clone());
+                        }
+                        _ => {}
+                    }
+                }
+
+                // TODO: Use super class instread of
+                if !upcasted {
+                    new_types.push(new_ty.clone());
+                }
+
+                new_types.dedup_type();
+                let mut new_ty = Type::union(new_types);
+                if upcasted {
+                    self.env
+                        .shared()
+                        .marks()
+                        .prevent_converting_to_children
+                        .apply_to_type(&mut new_ty);
+                }
+                return Ok(new_ty);
+            }
+        }
+
+        Ok(new_ty)
+    }
+
     #[extra_validator]
     fn store_call_fact_for_var(&mut self, span: Span, var_name: Id, new_ty: &Type) {
-        if let Some(previous_types) = self.find_var_type(&var_name.clone().into()) {
-            let mut new_types = vec![];
+        match new_ty.normalize() {
+            Type::Keyword(..) | Type::Lit(..) => {}
+            _ => {
+                if let Some(previous_types) = self
+                    .find_var_type(&var_name.clone().into(), TypeOfMode::RValue)
+                    .map(Cow::into_owned)
+                {
+                    let new_ty = self.narrow_with_predicate(span, &previous_types, box new_ty.clone())?;
 
-            let mut upcasted = false;
-            for ty in previous_types.into_owned().iter_union().flat_map(|ty| ty.iter_union()) {
-                match self.extends(span, &new_ty, &ty) {
-                    Some(true) => {
-                        upcasted = true;
-                        new_types.push(box ty.clone());
-                    }
-                    _ => {}
+                    self.add_type_fact(&var_name.into(), new_ty);
+                    return;
                 }
             }
-
-            // TODO: Use super class instread of
-            if !upcasted {
-                new_types.push(box new_ty.clone());
-            }
-
-            new_types.dedup_type();
-            let mut new_ty = Type::union(new_types);
-            if upcasted {
-                self.env
-                    .shared()
-                    .marks()
-                    .prevent_converting_to_children
-                    .apply_to_type(&mut new_ty);
-            }
-            self.add_type_fact(&var_name.into(), new_ty);
-            return;
         }
 
         self.add_type_fact(&var_name.into(), box new_ty.clone());

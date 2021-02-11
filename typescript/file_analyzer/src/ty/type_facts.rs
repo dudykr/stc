@@ -37,14 +37,17 @@ impl Fold<RTsKeywordType> for TypeFactsHandler {
             (TypeFacts::TypeofNESymbol, TsKeywordTypeKind::TsSymbolKeyword),
         ];
 
-        for (neq, kwd) in keyword_types {
-            if self.facts.contains(*neq) {
-                return RTsKeywordType {
-                    span: ty.span,
-                    kind: TsKeywordTypeKind::TsNeverKeyword,
-                };
+        if ty.kind != TsKeywordTypeKind::TsAnyKeyword {
+            for (neq, kwd) in keyword_types {
+                if self.facts.contains(*neq) && *kwd == ty.kind {
+                    return RTsKeywordType {
+                        span: ty.span,
+                        kind: TsKeywordTypeKind::TsNeverKeyword,
+                    };
+                }
             }
         }
+
         {
             let keyword_types = &[
                 (TypeFacts::TypeofEQString, TsKeywordTypeKind::TsStringKeyword),

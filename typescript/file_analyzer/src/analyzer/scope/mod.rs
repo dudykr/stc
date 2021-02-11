@@ -603,6 +603,7 @@ impl Analyzer<'_, '_> {
     pub(super) fn find_var(&self, name: &Id) -> Option<&VarInfo> {
         static ANY_VAR: Lazy<VarInfo> = Lazy::new(|| VarInfo {
             ty: Some(Type::any(DUMMY_SP)),
+            actual_ty: Some(Type::any(DUMMY_SP)),
             kind: VarDeclKind::Const,
             initialized: true,
             copied: false,
@@ -626,7 +627,7 @@ impl Analyzer<'_, '_> {
         None
     }
 
-    pub(super) fn find_var_type(&self, name: &Id) -> Option<Cow<Box<Type>>> {
+    pub(super) fn find_var_type(&self, name: &Id, mode: TypeOfMode) -> Option<Cow<Box<Type>>> {
         if let Some(v) = self.cur_facts.true_facts.vars.get(&Name::from(name)) {
             return Some(Cow::Borrowed(v));
         }
@@ -669,9 +670,15 @@ impl Analyzer<'_, '_> {
 
             let name = Name::from(name);
 
-            let mut ty = match var.ty {
-                Some(ref ty) => ty.clone(),
-                _ => return None,
+            let mut ty = match mode {
+                TypeOfMode::LValue => match &var.ty {
+                    Some(ty) => ty.clone(),
+                    _ => return None,
+                },
+                TypeOfMode::RValue => match &var.actual_ty {
+                    Some(ty) => ty.clone(),
+                    _ => return None,
+                },
             };
 
             if let Some(ref excludes) = self.scope.facts.excludes.get(&name) {
@@ -783,12 +790,13 @@ impl Analyzer<'_, '_> {
         F: FnOnce(&mut VarInfo) -> ValidationResult<Ret>,
     {
         let var = self.find_var(&name);
-        let ty = var.map(|var| var.ty.clone()).flatten();
+        let ty = var.and_then(|var| var.ty.clone());
 
         op(self.scope.vars.entry(name).or_insert_with(|| VarInfo {
             kind: VarDeclKind::Let,
             initialized: true,
-            ty,
+            ty: ty.clone(),
+            actual_ty: ty,
             copied: true,
         }))
     }
@@ -899,7 +907,8 @@ impl Analyzer<'_, '_> {
 
                 let info = VarInfo {
                     kind,
-                    ty,
+                    ty: ty.clone(),
+                    actual_ty: ty,
                     initialized,
                     copied: false,
                 };
@@ -1340,7 +1349,13 @@ impl Analyzer<'_, '_> {
 pub(crate) struct VarInfo {
     pub kind: VarDeclKind,
     pub initialized: bool,
+
+    /// Declared type.
     pub ty: Option<Box<Type>>,
+
+    /// Stored type.
+    pub actual_ty: Option<Box<Type>>,
+
     /// Copied from parent scope. If this is true, it's not a variable
     /// declaration.
     pub copied: bool,
@@ -1863,7 +1878,7 @@ impl Fold<Type> for Expander<'_, '_, '_> {
                                 let id = (&*name).into();
                                 let ctxt = self.analyzer.ctx.module_id;
                                 //
-                                if let Some(ty) = self.analyzer.find_var_type(&id) {
+                                if let Some(ty) = self.analyzer.find_var_type(&id, TypeOfMode::RValue) {
                                     *cond_ty.check_type = *ty.into_owned();
                                 } else {
                                     slog::error!(self.analyzer.logger, "Failed to find variable named {:?}", id);

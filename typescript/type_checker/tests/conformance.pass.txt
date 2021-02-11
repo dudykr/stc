@@ -305,6 +305,8 @@ es6/arrowFunction/emitArrowFunctionWhenUsingArguments13.ts
 es6/arrowFunction/emitArrowFunctionWhenUsingArguments13_ES6.ts
 es6/arrowFunction/emitArrowFunctionWhenUsingArguments14_ES6.ts
 es6/arrowFunction/emitArrowFunctionWhenUsingArguments15_ES6.ts
+es6/arrowFunction/emitArrowFunctionWhenUsingArguments16_ES6.ts
+es6/arrowFunction/emitArrowFunctionWhenUsingArguments17_ES6.ts
 es6/arrowFunction/emitArrowFunctionWhenUsingArguments18_ES6.ts
 es6/arrowFunction/emitArrowFunctionWhenUsingArguments19_ES6.ts
 es6/arrowFunction/emitArrowFunctionsAsIs.ts
@@ -501,7 +503,6 @@ es6/spread/iteratorSpreadInArray2.ts
 es6/spread/iteratorSpreadInArray3.ts
 es6/spread/iteratorSpreadInArray4.ts
 es6/spread/iteratorSpreadInArray9.ts
-es6/spread/iteratorSpreadInCall12.ts
 es6/templates/taggedTemplateStringsPlainCharactersThatArePartsOfEscapes01.ts
 es6/templates/taggedTemplateStringsPlainCharactersThatArePartsOfEscapes01_ES6.ts
 es6/templates/taggedTemplateStringsPlainCharactersThatArePartsOfEscapes02.ts
@@ -941,10 +942,17 @@ expressions/superPropertyAccess/superSymbolIndexedAccess5.ts
 expressions/superPropertyAccess/superSymbolIndexedAccess6.ts
 expressions/typeGuards/TypeGuardWithArrayUnion.ts
 expressions/typeGuards/TypeGuardWithEnumUnion.ts
+expressions/typeGuards/nullOrUndefinedTypeGuardIsOrderIndependent.ts
 expressions/typeGuards/typeGuardEnums.ts
+expressions/typeGuards/typeGuardFunction.ts
+expressions/typeGuards/typeGuardFunctionGenerics.ts
 expressions/typeGuards/typeGuardIntersectionTypes.ts
+expressions/typeGuards/typeGuardNarrowsPrimitiveIntersection.ts
+expressions/typeGuards/typeGuardNarrowsToLiteralType.ts
+expressions/typeGuards/typeGuardNarrowsToLiteralTypeUnion.ts
 expressions/typeGuards/typeGuardNesting.ts
 expressions/typeGuards/typeGuardOfFormFunctionEquality.ts
+expressions/typeGuards/typeGuardOfFormInstanceOf.ts
 expressions/typeGuards/typeGuardOfFormTypeOfBoolean.ts
 expressions/typeGuards/typeGuardOfFormTypeOfIsOrderIndependent.ts
 expressions/typeGuards/typeGuardOfFormTypeOfNumber.ts
@@ -952,9 +960,9 @@ expressions/typeGuards/typeGuardOfFormTypeOfPrimitiveSubtype.ts
 expressions/typeGuards/typeGuardOfFormTypeOfString.ts
 expressions/typeGuards/typeGuardTautologicalConsistiency.ts
 expressions/typeGuards/typeGuardTypeOfUndefined.ts
-expressions/typeGuards/typeGuardsDefeat.ts
 expressions/typeGuards/typeGuardsInClassAccessors.ts
 expressions/typeGuards/typeGuardsInClassMethods.ts
+expressions/typeGuards/typeGuardsInConditionalExpression.ts
 expressions/typeGuards/typeGuardsInDoStatement.ts
 expressions/typeGuards/typeGuardsInExternalModule.ts
 expressions/typeGuards/typeGuardsInForStatement.ts
@@ -964,6 +972,7 @@ expressions/typeGuards/typeGuardsInRightOperandOfAndAndOperator.ts
 expressions/typeGuards/typeGuardsInWhileStatement.ts
 expressions/typeGuards/typeGuardsObjectMethods.ts
 expressions/typeGuards/typeGuardsOnClassProperty.ts
+expressions/typeGuards/typeGuardsWithAny.ts
 expressions/typeGuards/typePredicateASI.ts
 expressions/unaryOperators/bitwiseNotOperator/bitwiseNotOperatorWithAnyOtherType.ts
 expressions/unaryOperators/bitwiseNotOperator/bitwiseNotOperatorWithBooleanType.ts

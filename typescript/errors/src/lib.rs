@@ -647,6 +647,10 @@ pub enum Error {
         max: Option<usize>,
     },
 
+    TooEarlySpread {
+        span: Span,
+    },
+
     InvalidDeleteOperand {
         span: Span,
     },
@@ -797,6 +801,7 @@ impl Error {
             Error::TypeNotFound { .. } => 2304,
 
             Error::ArgCountMismatch { .. } => 2554,
+            Error::TooEarlySpread { .. } => 2556,
 
             Error::ReferencedInInit { .. } => 2372,
 
