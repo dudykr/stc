@@ -1560,6 +1560,27 @@ impl Analyzer<'_, '_> {
     }
 
     fn validate_arg_types(&mut self, params: &[FnParam], spread_arg_types: &[TypeOrSpread]) {
+        let mut rest_idx = None;
+
+        for (idx, param) in params.iter().enumerate() {
+            match param.pat {
+                RPat::Rest(..) => {
+                    rest_idx = Some(idx);
+                }
+                _ => {}
+            }
+        }
+
+        for (idx, arg) in spread_arg_types.iter().enumerate() {
+            if let Some(rest_idx) = rest_idx {
+                if arg.spread.is_some() {
+                    if idx < rest_idx {
+                        self.storage.report(box Error::TooEarlySpread { span: arg.span() })
+                    }
+                }
+            }
+        }
+
         for pair in params
             .iter()
             .filter(|param| match param.pat {
@@ -1620,10 +1641,6 @@ impl Analyzer<'_, '_> {
                             self.storage.report(box err);
                         }
                     }
-                }
-
-                EitherOrBoth::Right(arg) => {
-                    self.storage.report(box Error::TooManyArg { span: arg.span() });
                 }
 
                 _ => {}
