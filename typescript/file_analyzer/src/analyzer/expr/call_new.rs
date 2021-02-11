@@ -1560,16 +1560,25 @@ impl Analyzer<'_, '_> {
     }
 
     fn validate_arg_types(&mut self, params: &[FnParam], spread_arg_types: &[TypeOrSpread]) {
-        let mut rest_idx = None;
+        let rest_idx = {
+            let mut rest_idx = None;
+            let mut shift = 0;
 
-        for (idx, param) in params.iter().enumerate() {
-            match param.pat {
-                RPat::Rest(..) => {
-                    rest_idx = Some(idx);
+            for (idx, param) in params.iter().enumerate() {
+                match param.pat {
+                    RPat::Rest(..) => {
+                        rest_idx = Some(idx - shift);
+                    }
+                    _ => {
+                        if !param.required {
+                            shift += 1;
+                        }
+                    }
                 }
-                _ => {}
             }
-        }
+
+            rest_idx
+        };
 
         for (idx, arg) in spread_arg_types.iter().enumerate() {
             if arg.spread.is_some() {
