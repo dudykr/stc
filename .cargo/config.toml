@@ -6,7 +6,7 @@ rustflags = [
   "-Z",
   "thinlto=no",
   "-C",
-  "target-feature=+sse2",
+  "target-feature=+sse2,+aes",
 ]
 
 [net]
@@ -29,7 +29,7 @@ rustflags = [
   "-Z",
   "thinlto=no",
   "-C",
-  "target-feature=+sse2", # "-Clink-arg=-fuse-ld=lld",  # "-Zshare-generics=y",
+  "target-feature=+sse2,+aes", # "-Clink-arg=-fuse-ld=lld",  # "-Zshare-generics=y",
 ]
 
 # NOTE: you must manually install https://github.com/michaeleisel/zld on mac. you can easily do this with the "brew" package manager:
@@ -41,7 +41,7 @@ rustflags = [
   "-Z",
   "thinlto=no",
   "-C",
-  "target-feature=+sse2",
+  "target-feature=+sse2,+aes",
   "-C",
   "link-arg=-fuse-ld=/usr/local/bin/zld",
   "-Zshare-generics=y",
@@ -56,7 +56,7 @@ rustflags = [
   "-Z",
   "thinlto=no",
   "-C",
-  "target-feature=+sse2",
+  "target-feature=+sse2,+aes",
   "-Zshare-generics=y",
 ]
 
