@@ -19,6 +19,7 @@ use stc_testing::logger;
 use stc_ts_builtin_types::Lib;
 use stc_ts_file_analyzer::env::Env;
 use stc_ts_file_analyzer::Rule;
+use stc_ts_module_loader::resolver::node::NodeResolver;
 use stc_ts_type_checker::Checker;
 use std::collections::HashSet;
 use std::env;
@@ -340,6 +341,7 @@ fn do_test(treat_error_as_bug: bool, file_name: &Path) -> Result<(), StdErr> {
                     ..ts_config
                 },
                 None,
+                Arc::new(NodeResolver),
             );
 
             checker.check(Arc::new(file_name.into()));

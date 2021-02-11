@@ -14,6 +14,7 @@ use serde::Deserialize;
 use stc_testing::logger;
 use stc_ts_builtin_types::Lib;
 use stc_ts_file_analyzer::env::Env;
+use stc_ts_module_loader::resolver::node::NodeResolver;
 use stc_ts_type_checker::Checker;
 use std::{env, path::Path, sync::Arc};
 use swc_ecma_parser::{JscTarget, TsConfig};
@@ -62,6 +63,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
                 ..ts_config
             },
             None,
+            Arc::new(NodeResolver),
         );
         checker.check(Arc::new(file_name.into()));
         let errors = ::stc_ts_errors::Error::flatten(checker.take_errors());
