@@ -102,7 +102,7 @@ fn conformance() {
         let fm = cm.load_file(&path).unwrap();
 
         // Postpone multi-file tests.
-        if fm.src.contains("<reference path") {
+        if fm.src.to_lowercase().contains("@filename") || fm.src.contains("<reference path") {
             return None;
         }
 
