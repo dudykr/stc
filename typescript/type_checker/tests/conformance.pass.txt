@@ -503,7 +503,6 @@ es6/spread/iteratorSpreadInArray2.ts
 es6/spread/iteratorSpreadInArray3.ts
 es6/spread/iteratorSpreadInArray4.ts
 es6/spread/iteratorSpreadInArray9.ts
-es6/spread/iteratorSpreadInCall12.ts
 es6/templates/taggedTemplateStringsPlainCharactersThatArePartsOfEscapes01.ts
 es6/templates/taggedTemplateStringsPlainCharactersThatArePartsOfEscapes01_ES6.ts
 es6/templates/taggedTemplateStringsPlainCharactersThatArePartsOfEscapes02.ts
@@ -910,7 +909,6 @@ expressions/contextualTyping/superCallParameterContextualTyping3.ts
 expressions/contextualTyping/taggedTemplateContextualTyping2.ts
 expressions/elementAccess/letIdentifierInElementAccess01.ts
 expressions/elementAccess/stringEnumInElementAccess01.ts
-expressions/functionCalls/callWithSpread2.ts
 expressions/functionCalls/grammarAmbiguities.ts
 expressions/functionCalls/typeArgumentInferenceErrors.ts
 expressions/functionCalls/typeArgumentInferenceTransitiveConstraints.ts
