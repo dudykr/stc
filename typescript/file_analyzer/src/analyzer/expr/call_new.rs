@@ -1410,6 +1410,10 @@ impl Analyzer<'_, '_> {
                 })
                 .collect::<Result<Vec<_>, _>>()?;
 
+            let ctx = Ctx {
+                in_argument: true,
+                ..self.ctx
+            };
             let mut new_args = vec![];
             for (idx, (arg, param)) in args.into_iter().zip(expanded_param_types.iter()).enumerate() {
                 let arg_ty = &arg_types[idx];
@@ -1462,7 +1466,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         slog::info!(self.logger, "Inferring type of arrow expr with updated type");
-                        box Type::Function(arrow.validate_with(self)?)
+                        box Type::Function(arrow.validate_with(&mut *self.with_ctx(ctx))?)
                     }
                     RExpr::Fn(fn_expr) => {
                         for (idx, param) in fn_expr.function.params.iter().enumerate() {
@@ -1470,7 +1474,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         slog::info!(self.logger, "Inferring type of function expr with updated type");
-                        box Type::Function(fn_expr.function.validate_with(self)?)
+                        box Type::Function(fn_expr.function.validate_with(&mut *self.with_ctx(ctx))?)
                     }
                     _ => arg_ty.ty.clone(),
                 };
