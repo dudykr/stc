@@ -94,6 +94,7 @@ pub(crate) struct Ctx {
 
     /// `true` for condition of conditional expression or of an if statement.
     in_cond: bool,
+    should_store_truthy_for_access: bool,
     in_switch_case_test: bool,
 
     in_declare: bool,
@@ -351,6 +352,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 module_id: ModuleId::builtin(),
                 allow_module_var: false,
                 in_cond: false,
+                should_store_truthy_for_access: false,
                 in_switch_case_test: false,
                 in_declare: false,
                 in_fn_without_body: false,

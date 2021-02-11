@@ -161,7 +161,7 @@ impl Analyzer<'_, '_> {
                         }));
                     }
                     let ty = self.type_of_var(i, mode, type_args)?;
-                    if mode == TypeOfMode::RValue {
+                    if self.ctx.should_store_truthy_for_access && mode == TypeOfMode::RValue {
                         // `i` is truthy
                         self.cur_facts.true_facts.facts.insert(i.into(), TypeFacts::Truthy);
                         self.cur_facts.false_facts.facts.insert(i.into(), TypeFacts::Falsy);
@@ -383,6 +383,9 @@ impl Analyzer<'_, '_> {
                 Err(()) => Type::any(span),
             };
 
+            let rhs_ty = analyzer.expand_fully(span, rhs_ty.clone(), true)?;
+            analyzer.try_assign(span, e.op, &e.left, &rhs_ty);
+
             match &e.left {
                 RPatOrExpr::Pat(box RPat::Ident(i)) => {
                     // TODO: Implemennt this
@@ -395,9 +398,6 @@ impl Analyzer<'_, '_> {
                 }
                 _ => e.left.visit_with(analyzer),
             }
-
-            let rhs_ty = analyzer.expand_fully(span, rhs_ty.clone(), true)?;
-            analyzer.try_assign(span, e.op, &e.left, &rhs_ty);
 
             if let Some(span) = any_span {
                 return Ok(Type::any(span));
@@ -1679,11 +1679,8 @@ impl Analyzer<'_, '_> {
                 for ty in ty {
                     match ty.normalize() {
                         Type::Module(module) => {
-                            dbg!(&module);
-
                             //
                             if let Some(var_ty) = module.exports.vars.get(&i.sym).cloned() {
-                                dbg!(&var_ty);
                                 return Ok(var_ty);
                             }
                         }
@@ -1740,9 +1737,20 @@ impl Analyzer<'_, '_> {
 
         if let Some(v) = self.scope.vars.get(&i.into()) {
             slog::debug!(self.logger, "found var with name");
-            if let Some(ty) = &v.ty {
-                slog::debug!(self.logger, "Type of var: {:?}", ty);
-                return Ok(ty.clone());
+            match type_mode {
+                TypeOfMode::LValue => {
+                    if let Some(ty) = &v.ty {
+                        slog::debug!(self.logger, "Type of var: {:?}", ty);
+                        return Ok(ty.clone());
+                    }
+                }
+
+                TypeOfMode::RValue => {
+                    if let Some(ty) = &v.actual_ty {
+                        slog::debug!(self.logger, "Type of var: {:?}", ty);
+                        return Ok(ty.clone());
+                    }
+                }
             }
         }
 
@@ -1757,13 +1765,16 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if let Some(ty) = self.find_var_type(&i.into()) {
+        if let Some(ty) = self.find_var_type(&i.into(), type_mode) {
             slog::debug!(self.logger, "find_var_type returned a type");
             let mut span = span;
             let mut ty = ty.into_owned();
             if self.scope.kind().allows_respanning() {
                 if self.is_implicitly_typed(&ty) {
                     span.ctxt = span.ctxt.apply_mark(self.marks().implicit_type_mark);
+                }
+                if !self.may_generalize(&ty) {
+                    span = self.prevent_generalize_span(span);
                 }
                 ty.respan(span);
             }
@@ -1953,13 +1964,14 @@ impl Analyzer<'_, '_> {
         } = *expr;
 
         let mut errors = Errors::default();
-        let ctx = Ctx {
+        let obj_ctx = Ctx {
             allow_module_var: true,
+            should_store_truthy_for_access: true,
             ..self.ctx
         };
         let obj_ty = match *obj {
             RExprOrSuper::Expr(ref obj) => {
-                let obj_ty = match obj.validate_with_default(&mut *self.with_ctx(ctx)) {
+                let obj_ty = match obj.validate_with_default(&mut *self.with_ctx(obj_ctx)) {
                     Ok(ty) => ty,
                     Err(err) => {
                         // Recover error if possible.

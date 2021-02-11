@@ -30,19 +30,23 @@ impl Analyzer<'_, '_> {
                     }),
                 type_args: Some(type_args),
                 ..
-            }) if type_args.params.len() == 1 => match r {
+            }) => match r {
                 Type::Array(r) => {
-                    return Some(self.assign_inner(&type_args.params[0], &r.elem_type, opts));
+                    if type_args.params.len() == 1 {
+                        return Some(self.assign_inner(&type_args.params[0], &r.elem_type, opts));
+                    }
+                    return Some(Ok(()));
                 }
                 Type::Tuple(r) => {
-                    let mut errors = vec![];
-                    for el in &r.elems {
-                        errors.extend(self.assign_inner(&type_args.params[0], &el.ty, opts).err());
+                    if type_args.params.len() == 1 {
+                        let mut errors = vec![];
+                        for el in &r.elems {
+                            errors.extend(self.assign_inner(&type_args.params[0], &el.ty, opts).err());
+                        }
+                        if !errors.is_empty() {
+                            return Some(Err(box Error::TupleAssignError { span, errors }));
+                        }
                     }
-                    if !errors.is_empty() {
-                        return Some(Err(box Error::TupleAssignError { span, errors }));
-                    }
-
                     return Some(Ok(()));
                 }
                 _ => {}

@@ -1,0 +1,48 @@
+warning: Type
+ --> $DIR/tests/visualize/types/predicate/type-guard-2.ts:5:17
+  |
+5 | class C extends A {
+  |                 ^
+  |
+  = note: A
+
+warning: Type
+  --> $DIR/tests/visualize/types/predicate/type-guard-2.ts:12:9
+   |
+12 | if (isA(subType)) {
+   |         ^^^^^^^
+   |
+   = note: C
+
+warning: Type
+  --> $DIR/tests/visualize/types/predicate/type-guard-2.ts:12:5
+   |
+12 | if (isA(subType)) {
+   |     ^^^
+   |
+   = note: (p1: any) => p1 is A
+
+warning: Type
+  --> $DIR/tests/visualize/types/predicate/type-guard-2.ts:12:5
+   |
+12 | if (isA(subType)) {
+   |     ^^^^^^^^^^^^
+   |
+   = note: p1 is A
+
+warning: Type
+  --> $DIR/tests/visualize/types/predicate/type-guard-2.ts:13:5
+   |
+13 |     subType.propC;
+   |     ^^^^^^^
+   |
+   = note: C
+
+warning: Type
+  --> $DIR/tests/visualize/types/predicate/type-guard-2.ts:13:5
+   |
+13 |     subType.propC;
+   |     ^^^^^^^^^^^^^
+   |
+   = note: number
+
