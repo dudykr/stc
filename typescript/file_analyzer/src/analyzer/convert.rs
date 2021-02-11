@@ -734,6 +734,10 @@ impl Analyzer<'_, '_> {
             return;
         }
 
+        if !self.ctx.in_argument && self.env.rule().no_implicit_any {
+            self.storage.report(box Error::ImplicitAny { span: i.span });
+        }
+
         let implicit_type_mark = self.marks().implicit_type_mark;
 
         if let Some(m) = &mut self.mutations {
