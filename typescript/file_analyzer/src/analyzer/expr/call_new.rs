@@ -755,14 +755,12 @@ impl Analyzer<'_, '_> {
 
                         Type::Array(arr) => {
                             self.scope.is_call_arg_count_unknown = true;
-                            new_arg_types.push(TypeOrSpread {
-                                span: arr.span,
-                                spread: None,
-                                ty: arr.elem_type.clone(),
-                            });
+                            new_arg_types.push(arg.clone());
                         }
 
-                        _ => unimplemented!("spread argument with type other than tuple\nType: {:#?}", arg.ty),
+                        _ => {
+                            unimplemented!("spread_args: type other than tuple or \nType: {:#?}", arg.ty)
+                        }
                     }
                 } else {
                     new_arg_types.push(arg.clone());
@@ -1503,7 +1501,9 @@ impl Analyzer<'_, '_> {
                                     },
                                 ));
                             }
-                            _ => unimplemented!("spread argument with type other than tuple\nType: {:#?}", arg.ty),
+                            _ => {
+                                new_arg_types.push(arg.clone());
+                            }
                         }
                     } else {
                         new_arg_types.push(arg.clone());
@@ -1572,8 +1572,8 @@ impl Analyzer<'_, '_> {
         }
 
         for (idx, arg) in spread_arg_types.iter().enumerate() {
-            if let Some(rest_idx) = rest_idx {
-                if arg.spread.is_some() {
+            if arg.spread.is_some() {
+                if let Some(rest_idx) = rest_idx {
                     if idx < rest_idx {
                         self.storage.report(box Error::TooEarlySpread { span: arg.span() })
                     }
