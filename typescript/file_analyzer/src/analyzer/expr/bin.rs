@@ -735,6 +735,11 @@ impl Analyzer<'_, '_> {
                 }));
             }
 
+            Type::Interface(..) => match ty.normalize() {
+                Type::Interface(..) => return Ok(ty),
+                _ => {}
+            },
+
             _ => {}
         }
 
