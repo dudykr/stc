@@ -92,11 +92,17 @@ impl Analyzer<'_, '_> {
         })
         .store(&mut errors);
 
+        let mut lhs_true_facts = if op == op!("||") {
+            self.cur_facts.true_facts.take()
+        } else {
+            Default::default()
+        };
+
         let facts = if op == op!("&&") {
             // We need a new virtual scope.
             self.cur_facts.true_facts.take()
         } else if op == op!("||") {
-            self.cur_facts.false_facts.take()
+            self.cur_facts.false_facts.clone()
         } else {
             Default::default()
         };
@@ -150,6 +156,8 @@ impl Analyzer<'_, '_> {
             Some(v) => (Some(v.0), v.1),
             None => (None, Default::default()),
         };
+
+        self.cur_facts.true_facts += lhs_true_facts;
 
         if op == op!("||") {
             self.cur_facts.true_facts += rhs_facts;
