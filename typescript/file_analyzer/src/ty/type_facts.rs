@@ -123,6 +123,8 @@ impl Fold<Union> for TypeFactsHandler {
                         ..
                     }) if !self.facts.contains(TypeFacts::TypeofEQNumber) => false,
 
+                    Type::Param(..) => false,
+
                     _ => true,
                 });
             }
