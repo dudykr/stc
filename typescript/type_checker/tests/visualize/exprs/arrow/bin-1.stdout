@@ -108,5 +108,5 @@ warning: Type
 4 | let gg = f ?? (abc => { void abc.toLowerCase() })
   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   |
-  = note: (x: string) => void | (abc: string) => void
+  = note: (x: string) => void
 
