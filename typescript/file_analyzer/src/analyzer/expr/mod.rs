@@ -1455,7 +1455,7 @@ impl Analyzer<'_, '_> {
                         ..
                     })) => {}
 
-                    Some(index @ Type::Keyword(..)) => {
+                    Some(index @ Type::Keyword(..)) | Some(index @ Type::Param(..)) => {
                         // {
                         //     [P in string]: number;
                         // };
