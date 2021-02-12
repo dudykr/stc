@@ -54,6 +54,8 @@ impl Analyzer<'_, '_> {
             ..
         } = *e;
 
+        let prev_facts = self.cur_facts.clone();
+
         self.check_for_mixed_nullish_coalescing(e);
 
         let mut errors = vec![];
@@ -92,13 +94,7 @@ impl Analyzer<'_, '_> {
         })
         .store(&mut errors);
 
-        let mut lhs_true_facts = if op == op!("||") {
-            self.cur_facts.true_facts.take()
-        } else {
-            Default::default()
-        };
-
-        let facts = if op == op!("&&") {
+        let true_facts_for_rhs = if op == op!("&&") {
             // We need a new virtual scope.
             self.cur_facts.true_facts.take()
         } else if op == op!("||") {
@@ -107,63 +103,64 @@ impl Analyzer<'_, '_> {
             Default::default()
         };
 
-        let rhs = self
-            .with_child(ScopeKind::Flow, facts, |child: &mut Analyzer| -> ValidationResult<_> {
-                child.ctx.should_store_truthy_for_access = false;
-
-                let truthy_lt;
-                let child_ctxt = (
-                    TypeOfMode::RValue,
-                    None,
-                    match op {
-                        op!("??") | op!("&&") | op!("||") => match type_ann {
-                            Some(ty) => Some(ty),
-                            _ => match op {
-                                op!("||") | op!("??") => {
-                                    truthy_lt = lt.clone().map(|ty| ty.apply_type_facts(TypeFacts::Truthy));
-                                    truthy_lt.as_deref()
-                                }
-                                _ => lt.as_deref(),
-                            },
-                        },
-                        _ => None,
-                    },
-                );
-
-                let ty = right.validate_with_args(child, child_ctxt).and_then(|mut ty| {
-                    if ty.is_ref_type() {
-                        let ctx = Ctx {
-                            preserve_ref: false,
-                            ignore_expand_prevention_for_top: true,
-                            ..child.ctx
-                        };
-                        ty = child.with_ctx(ctx).expand_fully(span, ty, true)?;
-                    }
-
-                    let span = ty.span();
-                    ty.reposition(right.span());
-
-                    Ok(ty)
-                })?;
-
-                let rhs_true_facts = child.cur_facts.true_facts.take();
-
-                Ok((ty, rhs_true_facts))
-            })
-            .store(&mut errors);
-
-        let (rt, rhs_facts) = match rhs {
-            Some(v) => (Some(v.0), v.1),
-            None => (None, Default::default()),
+        let mut lhs_facts = if op == op!("||") {
+            self.cur_facts.take()
+        } else {
+            Default::default()
         };
 
-        self.cur_facts.true_facts += lhs_true_facts;
+        self.cur_facts = prev_facts;
 
-        if op == op!("||") {
-            self.cur_facts.true_facts += rhs_facts;
-        }
+        let rhs = self
+            .with_child(
+                ScopeKind::Flow,
+                true_facts_for_rhs,
+                |child: &mut Analyzer| -> ValidationResult<_> {
+                    child.ctx.should_store_truthy_for_access = false;
 
-        self.validate_bin_inner(span, op, lt.as_deref(), rt.as_deref());
+                    let truthy_lt;
+                    let child_ctxt = (
+                        TypeOfMode::RValue,
+                        None,
+                        match op {
+                            op!("??") | op!("&&") | op!("||") => match type_ann {
+                                Some(ty) => Some(ty),
+                                _ => match op {
+                                    op!("||") | op!("??") => {
+                                        truthy_lt = lt.clone().map(|ty| ty.apply_type_facts(TypeFacts::Truthy));
+                                        truthy_lt.as_deref()
+                                    }
+                                    _ => lt.as_deref(),
+                                },
+                            },
+                            _ => None,
+                        },
+                    );
+
+                    let ty = right.validate_with_args(child, child_ctxt).and_then(|mut ty| {
+                        if ty.is_ref_type() {
+                            let ctx = Ctx {
+                                preserve_ref: false,
+                                ignore_expand_prevention_for_top: true,
+                                ..child.ctx
+                            };
+                            ty = child.with_ctx(ctx).expand_fully(span, ty, true)?;
+                        }
+
+                        let span = ty.span();
+                        ty.reposition(right.span());
+
+                        Ok(ty)
+                    })?;
+
+                    Ok(ty)
+                },
+            )
+            .store(&mut errors);
+
+        let rt = rhs;
+
+        self.cur_facts += lhs_facts;
 
         let (lt, rt): (Box<Type>, Box<Type>) = match (lt, rt) {
             (Some(l), Some(r)) => (l, r),
