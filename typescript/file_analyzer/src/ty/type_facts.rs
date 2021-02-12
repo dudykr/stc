@@ -134,6 +134,8 @@ impl Fold<Union> for TypeFactsHandler {
 
 impl Fold<Type> for TypeFactsHandler {
     fn fold(&mut self, mut ty: Type) -> Type {
+        // TODO: Don't do anything if type fact is none.
+
         ty = ty.foldable();
         ty = ty.fold_children_with(self);
         let span = ty.span();
