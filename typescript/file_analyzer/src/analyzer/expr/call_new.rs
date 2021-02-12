@@ -1466,7 +1466,8 @@ impl Analyzer<'_, '_> {
                         }
 
                         slog::info!(self.logger, "Inferring type of arrow expr with updated type");
-                        box Type::Function(arrow.validate_with(&mut *self.with_ctx(ctx))?)
+                        // It's okay to use default as we have patched parameters.
+                        box Type::Function(arrow.validate_with_default(&mut *self.with_ctx(ctx))?)
                     }
                     RExpr::Fn(fn_expr) => {
                         for (idx, param) in fn_expr.function.params.iter().enumerate() {

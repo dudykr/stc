@@ -264,7 +264,7 @@ impl Analyzer<'_, '_> {
                     return Ok(box class.validate_with(self)?.into());
                 }
 
-                RExpr::Arrow(ref e) => return Ok(box e.validate_with(self)?.into()),
+                RExpr::Arrow(ref e) => return Ok(box e.validate_with_args(self, type_ann)?.into()),
 
                 RExpr::Fn(RFnExpr { ref function, .. }) => {
                     return Ok(box function.validate_with(self)?.into());
@@ -2118,7 +2118,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, f: &RArrowExpr) -> ValidationResult<ty::Function> {
+    fn validate(&mut self, f: &RArrowExpr, type_ann: Option<&Type>) -> ValidationResult<ty::Function> {
         self.record(f);
 
         self.with_child(ScopeKind::ArrowFn, Default::default(), |child: &mut Analyzer| {
