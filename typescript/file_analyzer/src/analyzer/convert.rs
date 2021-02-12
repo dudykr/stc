@@ -744,7 +744,6 @@ impl Analyzer<'_, '_> {
             if !self.ctx.in_argument
                 && !(self.ctx.in_return_arg && self.ctx.in_fn_with_return_type)
                 && !self.ctx.in_assign_rhs
-                && !self.ctx.in_default_bin
             {
                 self.storage.report(box Error::ImplicitAny { span: i.span });
             }
