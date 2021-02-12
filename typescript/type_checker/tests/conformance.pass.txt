@@ -960,6 +960,7 @@ expressions/typeGuards/typeGuardOfFormTypeOfIsOrderIndependent.ts
 expressions/typeGuards/typeGuardOfFormTypeOfNumber.ts
 expressions/typeGuards/typeGuardOfFormTypeOfPrimitiveSubtype.ts
 expressions/typeGuards/typeGuardOfFormTypeOfString.ts
+expressions/typeGuards/typeGuardRedundancy.ts
 expressions/typeGuards/typeGuardTautologicalConsistiency.ts
 expressions/typeGuards/typeGuardTypeOfUndefined.ts
 expressions/typeGuards/typeGuardsInClassAccessors.ts
