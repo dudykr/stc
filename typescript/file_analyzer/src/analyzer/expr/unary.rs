@@ -49,7 +49,7 @@ impl Analyzer<'_, '_> {
             .validate_with_args(self, (TypeOfMode::RValue, None, None))
             .report(&mut self.storage)
             .map(|mut ty| {
-                ty.respan(arg.span());
+                ty.reposition(arg.span());
                 ty
             });
 
