@@ -589,6 +589,10 @@ impl Analyzer<'_, '_> {
                             return Ok(lt);
                         }
 
+                        if lt.type_eq(&rt) {
+                            return Ok(lt);
+                        }
+
                         if is_str_lit_or_union(&lt) && is_str_lit_or_union(&rt) {
                             return Ok(Type::union(vec![lt, rt]));
                         }
