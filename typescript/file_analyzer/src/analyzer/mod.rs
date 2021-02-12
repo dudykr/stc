@@ -110,6 +110,8 @@ pub(crate) struct Ctx {
     in_fn_with_return_type: bool,
     in_return_arg: bool,
     in_assign_rhs: bool,
+    /// `true` for rhs of `??` or `||`.
+    in_default_bin: bool,
 
     preserve_ref: bool,
 
@@ -370,6 +372,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 in_fn_with_return_type: false,
                 in_return_arg: false,
                 in_assign_rhs: false,
+                in_default_bin: false,
                 preserve_ref: false,
                 ignore_expand_prevention_for_top: false,
                 ignore_expand_prevention_for_all: false,

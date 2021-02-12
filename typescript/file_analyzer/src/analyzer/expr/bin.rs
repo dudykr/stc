@@ -93,6 +93,12 @@ impl Analyzer<'_, '_> {
         let rhs = self
             .with_child(ScopeKind::Flow, facts, |child: &mut Analyzer| -> ValidationResult<_> {
                 child.ctx.should_store_truthy_for_access = false;
+                match op {
+                    op!("??") | op!("||") => {
+                        child.ctx.in_default_bin = true;
+                    }
+                    _ => {}
+                }
 
                 let ty = right.validate_with_default(child).and_then(|mut ty| {
                     if ty.is_ref_type() {
