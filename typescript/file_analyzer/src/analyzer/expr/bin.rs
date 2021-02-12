@@ -95,6 +95,8 @@ impl Analyzer<'_, '_> {
         let facts = if op == op!("&&") {
             // We need a new virtual scope.
             self.cur_facts.true_facts.take()
+        } else if op == op!("||") {
+            self.cur_facts.false_facts.take()
         } else {
             Default::default()
         };
