@@ -44,6 +44,7 @@ use stc_ts_ast_rnode::RTsNonNullExpr;
 use stc_ts_ast_rnode::RTsThisType;
 use stc_ts_ast_rnode::RUnaryExpr;
 use stc_ts_errors::debug::print_backtrace;
+use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_types::name::Name;
@@ -349,17 +350,24 @@ impl Analyzer<'_, '_> {
         self.with_ctx(ctx).with(|analyzer: &mut Analyzer| {
             let span = e.span();
 
-            let any_span = match e.left {
+            let ty_of_left;
+            let (any_span, type_ann) = match e.left {
                 RPatOrExpr::Pat(box RPat::Ident(ref i)) | RPatOrExpr::Expr(box RExpr::Ident(ref i)) => {
                     // Type is any if self.declaring contains ident
-                    if analyzer.scope.declaring.contains(&i.into()) {
+                    let any_span = if analyzer.scope.declaring.contains(&i.into()) {
                         Some(span)
                     } else {
                         None
-                    }
+                    };
+
+                    ty_of_left = analyzer
+                        .type_of_var(i, TypeOfMode::LValue, None)
+                        .context("tried to get type of lhs of an assignment")?;
+
+                    (any_span, Some(&*ty_of_left))
                 }
 
-                _ => None,
+                _ => (None, type_ann),
             };
 
             let mut errors = Errors::default();
