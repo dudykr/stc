@@ -129,7 +129,14 @@ impl<'a> TryFrom<&'a RMemberExpr> for Name {
         }
 
         match &e.obj {
-            RExprOrSuper::Expr(box RExpr::Ident(i)) => Ok(Name::from(i)),
+            RExprOrSuper::Expr(box RExpr::Ident(i)) => {
+                let mut name = Name::from(i);
+                name.0.push(match &*e.prop {
+                    RExpr::Ident(i) => i.clone().into(),
+                    _ => return Err(()),
+                });
+                Ok(name)
+            }
             RExprOrSuper::Expr(box RExpr::Member(member)) => {
                 let mut obj: Name = member.try_into()?;
                 obj.0.push(match &*e.prop {
