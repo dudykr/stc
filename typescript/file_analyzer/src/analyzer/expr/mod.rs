@@ -128,7 +128,7 @@ impl Analyzer<'_, '_> {
 
                 RExpr::TaggedTpl(e) => e.validate_with(self),
 
-                RExpr::Bin(e) => e.validate_with(self),
+                RExpr::Bin(e) => e.validate_with_args(self, type_ann),
                 RExpr::Cond(e) => e.validate_with_args(self, (mode, type_ann)),
                 RExpr::Seq(e) => e.validate_with_args(self, (mode, type_ann)),
                 RExpr::Update(e) => e.validate_with(self),

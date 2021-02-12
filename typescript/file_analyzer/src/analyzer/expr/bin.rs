@@ -45,7 +45,7 @@ use swc_ecma_utils::Value::Known;
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RBinExpr) -> ValidationResult {
+    fn validate(&mut self, e: &RBinExpr, type_ann: Option<&Type>) -> ValidationResult {
         let RBinExpr {
             span,
             op,
