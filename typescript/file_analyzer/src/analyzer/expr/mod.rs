@@ -1451,7 +1451,11 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
 
-                return Ok(m.ty.as_ref().cloned().unwrap_or_else(|| Type::any(span)));
+                let obj = self
+                    .expand_mapped(span, m)
+                    .context("tried to expand a mapped type to access property")?;
+
+                return self.access_property_inner(span, obj, prop, type_mode, id_ctx);
             }
 
             Type::Ref(r) => {

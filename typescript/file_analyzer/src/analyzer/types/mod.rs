@@ -22,6 +22,8 @@ use swc_common::Spanned;
 use swc_common::SyntaxContext;
 use swc_ecma_ast::TsKeywordTypeKind;
 
+mod mapped;
+
 impl Analyzer<'_, '_> {
     pub(crate) fn collect_class_members(&mut self, ty: &Type) -> ValidationResult<Option<Vec<ClassMember>>> {
         let ty = ty.normalize();
