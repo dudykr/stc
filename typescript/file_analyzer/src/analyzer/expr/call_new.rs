@@ -1124,12 +1124,13 @@ impl Analyzer<'_, '_> {
                     .collect());
             }
 
-            Type::Intersection(ref i) => {
+            Type::Intersection(i) => {
                 let candidates = i
                     .types
                     .iter()
                     .map(|callee| self.extract_callee_candidates(span, kind, callee))
-                    .collect::<Result<Vec<_>, _>>()?;
+                    .filter_map(Result::ok)
+                    .collect::<Vec<_>>();
 
                 return Ok(candidates.into_iter().flatten().collect());
             }
