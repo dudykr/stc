@@ -1438,8 +1438,8 @@ impl Analyzer<'_, '_> {
                 // If type of prop is equal to the type of index signature, it's
                 // index access.
 
-                match constraint {
-                    Some(box Type::Operator(Operator {
+                match constraint.as_deref().map(Type::normalize) {
+                    Some(Type::Operator(Operator {
                         op: TsTypeOperatorOp::KeyOf,
                         ty: box Type::Array(..),
                         ..
@@ -1448,6 +1448,21 @@ impl Analyzer<'_, '_> {
                             return self.access_property(span, obj, prop, type_mode, id_ctx);
                         }
                     }
+
+                    Some(Type::Operator(Operator {
+                        op: TsTypeOperatorOp::KeyOf,
+                        ..
+                    })) => {}
+
+                    Some(index) => {
+                        // {
+                        //     [P in string]: number;
+                        // };
+                        if let Ok(()) = self.assign(&index, &prop.ty(), span) {
+                            return Ok(m.ty.clone().unwrap_or_else(|| Type::any(span)));
+                        }
+                    }
+
                     _ => {}
                 }
 
