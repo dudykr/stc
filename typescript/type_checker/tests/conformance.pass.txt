@@ -976,6 +976,7 @@ expressions/typeGuards/typeGuardsInWhileStatement.ts
 expressions/typeGuards/typeGuardsObjectMethods.ts
 expressions/typeGuards/typeGuardsOnClassProperty.ts
 expressions/typeGuards/typeGuardsWithAny.ts
+expressions/typeGuards/typeGuardsWithInstanceOf.ts
 expressions/typeGuards/typePredicateASI.ts
 expressions/unaryOperators/bitwiseNotOperator/bitwiseNotOperatorWithAnyOtherType.ts
 expressions/unaryOperators/bitwiseNotOperator/bitwiseNotOperatorWithBooleanType.ts
