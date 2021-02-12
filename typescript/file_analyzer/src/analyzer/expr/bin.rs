@@ -35,6 +35,7 @@ use stc_ts_types::Ref;
 use stc_ts_types::TypeElement;
 use stc_ts_types::Union;
 use std::borrow::Cow;
+use std::collections::hash_map::Entry;
 use std::convert::TryFrom;
 use swc_atoms::js_word;
 use swc_common::SyntaxContext;
@@ -160,7 +161,20 @@ impl Analyzer<'_, '_> {
 
         let rt = rhs;
 
-        self.cur_facts += lhs_facts;
+        if op == op!("||") {
+            for (k, type_fact) in lhs_facts.true_facts.facts.drain() {
+                match self.cur_facts.true_facts.facts.entry(k) {
+                    // (typeof a === 'string' || typeof a === 'number')
+                    Entry::Occupied(mut e) => {
+                        *e.get_mut() |= type_fact;
+                    }
+                    // (typeof a === 'string' || a !== foo)
+                    Entry::Vacant(..) => {}
+                }
+            }
+
+            self.cur_facts += lhs_facts;
+        }
 
         let (lt, rt): (Box<Type>, Box<Type>) = match (lt, rt) {
             (Some(l), Some(r)) => (l, r),
