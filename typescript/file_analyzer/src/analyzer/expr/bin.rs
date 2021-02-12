@@ -348,7 +348,8 @@ impl Analyzer<'_, '_> {
                         if !cannot_narrow {
                             let ty = self
                                 .narrow_with_instanceof(span, ty, &orig_ty)
-                                .context("tried to narrow type with instanceof")?;
+                                .context("tried to narrow type with instanceof")?
+                                .cheap();
 
                             // TODO(kdy1): Maybe we need to check for intersection or union
                             if orig_ty.is_type_param() {
@@ -361,7 +362,13 @@ impl Analyzer<'_, '_> {
                                     .cheap(),
                                 );
                             } else {
-                                self.cur_facts.true_facts.vars.insert(Name::from(i), ty);
+                                self.cur_facts.true_facts.vars.insert(Name::from(i), ty.clone());
+                                self.cur_facts
+                                    .false_facts
+                                    .excludes
+                                    .entry(Name::from(i))
+                                    .or_default()
+                                    .push(ty);
                             }
                         }
                     }
