@@ -6,12 +6,16 @@ use crate::ty::TypeExt;
 use crate::validator;
 use crate::validator::ValidateWith;
 use crate::ValidationResult;
+use itertools::EitherOrBoth;
+use itertools::Itertools;
 use stc_ts_ast_rnode::RArrowExpr;
 use stc_ts_ast_rnode::RBlockStmtOrExpr;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_types::ClassInstance;
 use stc_ts_types::Function;
 use stc_ts_types::Type;
+use stc_ts_utils::OptionExt;
+use stc_ts_utils::PatExt;
 use swc_common::Spanned;
 use swc_ecma_ast::TsKeywordTypeKind;
 
@@ -29,6 +33,29 @@ impl Analyzer<'_, '_> {
                     allow_ref_declaring: false,
                     ..child.ctx
                 };
+
+                match type_ann {
+                    Some(Type::Function(ty)) => {
+                        for p in f.params.iter().zip_longest(ty.params.iter()) {
+                            match p {
+                                EitherOrBoth::Both(param, ty) => {
+                                    // Store type infomations, so the pattern validator can use correct type.
+                                    if let Some(pat_node_id) = param.node_id() {
+                                        if let Some(m) = &mut child.mutations {
+                                            m.for_pats
+                                                .entry(pat_node_id)
+                                                .or_default()
+                                                .ty
+                                                .fill_with(|| ty.ty.clone());
+                                        }
+                                    }
+                                }
+                                _ => {}
+                            }
+                        }
+                    }
+                    _ => {}
+                }
 
                 for p in &f.params {
                     child.default_any_pat(p);
