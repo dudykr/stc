@@ -210,6 +210,7 @@ controlFlow/controlFlowSuperPropertyAccess.ts
 controlFlow/controlFlowTruthiness.ts
 controlFlow/controlFlowWithTemplateLiterals.ts
 controlFlow/switchWithConstrainedTypeVariable.ts
+controlFlow/typeGuardsAsAssertions.ts
 controlFlow/typeGuardsNestedAssignments.ts
 controlFlow/typeGuardsTypeParameters.ts
 declarationEmit/classDoesNotDependOnPrivateMember.ts
@@ -971,6 +972,7 @@ expressions/typeGuards/typeGuardsInForStatement.ts
 expressions/typeGuards/typeGuardsInFunction.ts
 expressions/typeGuards/typeGuardsInGlobal.ts
 expressions/typeGuards/typeGuardsInRightOperandOfAndAndOperator.ts
+expressions/typeGuards/typeGuardsInRightOperandOfOrOrOperator.ts
 expressions/typeGuards/typeGuardsInWhileStatement.ts
 expressions/typeGuards/typeGuardsObjectMethods.ts
 expressions/typeGuards/typeGuardsOnClassProperty.ts
@@ -1467,6 +1469,7 @@ types/intersection/intersectionTypeEquivalence.ts
 types/keyof/keyofAndForIn.ts
 types/keyof/keyofIntersection.ts
 types/literal/literalTypes1.ts
+types/literal/literalTypes3.ts
 types/literal/literalTypesAndTypeAssertions.ts
 types/literal/numericLiteralTypes1.ts
 types/literal/numericLiteralTypes2.ts
