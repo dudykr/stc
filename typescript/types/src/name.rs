@@ -103,8 +103,9 @@ impl TryFrom<&'_ RExpr> for Name {
     type Error = ();
 
     fn try_from(e: &RExpr) -> Result<Self, Self::Error> {
-        match *e {
-            RExpr::Ident(ref i) => Ok(i.into()),
+        match e {
+            RExpr::Ident(i) => Ok(i.into()),
+            RExpr::Member(m) => m.try_into(),
             // TODO
             _ => Err(()),
         }
