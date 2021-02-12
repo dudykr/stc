@@ -109,6 +109,7 @@ pub(crate) struct Ctx {
     in_argument: bool,
     in_fn_with_return_type: bool,
     in_return_arg: bool,
+    in_assign_rhs: bool,
 
     preserve_ref: bool,
 
@@ -353,8 +354,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             scope,
             ctx: Ctx {
                 module_id: ModuleId::builtin(),
-                in_fn_with_return_type: false,
-                in_return_arg: false,
                 allow_module_var: false,
                 in_cond: false,
                 should_store_truthy_for_access: false,
@@ -368,6 +367,9 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 computed_prop_mode: ComputedPropMode::Object,
                 allow_ref_declaring: false,
                 in_argument: false,
+                in_fn_with_return_type: false,
+                in_return_arg: false,
+                in_assign_rhs: false,
                 preserve_ref: false,
                 ignore_expand_prevention_for_top: false,
                 ignore_expand_prevention_for_all: false,

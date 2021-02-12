@@ -736,7 +736,10 @@ impl Analyzer<'_, '_> {
         }
 
         if self.env.rule().no_implicit_any {
-            if !self.ctx.in_argument && !(self.ctx.in_return_arg && self.ctx.in_fn_with_return_type) {
+            if !self.ctx.in_argument
+                && !(self.ctx.in_return_arg && self.ctx.in_fn_with_return_type)
+                && !(self.ctx.in_assign_rhs)
+            {
                 print_backtrace();
                 self.storage.report(box Error::ImplicitAny { span: i.span });
             }

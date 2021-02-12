@@ -364,7 +364,14 @@ impl Analyzer<'_, '_> {
 
             let mut errors = Errors::default();
 
-            let rhs_ty = match e.right.validate_with_args(analyzer, (mode, None, type_ann)) {
+            let rhs_ty = match {
+                let ctx = Ctx {
+                    in_assign_rhs: true,
+                    ..analyzer.ctx
+                };
+                let mut analyzer = analyzer.with_ctx(ctx);
+                e.right.validate_with_args(&mut *analyzer, (mode, None, type_ann))
+            } {
                 Ok(rhs_ty) => {
                     analyzer.check_rvalue(span, &rhs_ty);
 
