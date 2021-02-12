@@ -107,6 +107,9 @@ pub(crate) struct Ctx {
     computed_prop_mode: ComputedPropMode,
     allow_ref_declaring: bool,
     in_argument: bool,
+    in_fn_with_return_type: bool,
+    in_return_arg: bool,
+
     preserve_ref: bool,
 
     /// Used before calling `access_property`, which does not accept `Ref` as an
@@ -350,6 +353,8 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             scope,
             ctx: Ctx {
                 module_id: ModuleId::builtin(),
+                in_fn_with_return_type: false,
+                in_return_arg: false,
                 allow_module_var: false,
                 in_cond: false,
                 should_store_truthy_for_access: false,

@@ -55,6 +55,7 @@ use stc_ts_ast_rnode::RTsTypeQueryExpr;
 use stc_ts_ast_rnode::RTsTypeRef;
 use stc_ts_ast_rnode::RTsUnionOrIntersectionType;
 use stc_ts_ast_rnode::RTsUnionType;
+use stc_ts_errors::debug::print_backtrace;
 use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::Alias;
@@ -734,10 +735,12 @@ impl Analyzer<'_, '_> {
             return;
         }
 
-        if !self.ctx.in_argument && self.env.rule().no_implicit_any {
-            self.storage.report(box Error::ImplicitAny { span: i.span });
+        if self.env.rule().no_implicit_any {
+            if !self.ctx.in_argument && !(self.ctx.in_return_arg && self.ctx.in_fn_with_return_type) {
+                print_backtrace();
+                self.storage.report(box Error::ImplicitAny { span: i.span });
+            }
         }
-
         let implicit_type_mark = self.marks().implicit_type_mark;
 
         if let Some(m) = &mut self.mutations {
