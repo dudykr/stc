@@ -93,7 +93,10 @@ impl Fold<Union> for TypeFactsHandler {
         }
 
         if self.facts != TypeFacts::None {
-            if self.facts.contains(TypeFacts::TypeofEQString) {
+            if self.facts.contains(TypeFacts::TypeofEQString)
+                || self.facts.contains(TypeFacts::TypeofEQBoolean)
+                || self.facts.contains(TypeFacts::TypeofEQNumber)
+            {
                 u.types.retain(|ty| match ty.normalize() {
                     Type::Lit(RTsLitType {
                         lit: RTsLit::Str(..), ..
@@ -101,8 +104,26 @@ impl Fold<Union> for TypeFactsHandler {
                     | Type::Keyword(RTsKeywordType {
                         kind: TsKeywordTypeKind::TsStringKeyword,
                         ..
-                    }) => true,
-                    _ => false,
+                    }) if !self.facts.contains(TypeFacts::TypeofEQString) => false,
+
+                    Type::Lit(RTsLitType {
+                        lit: RTsLit::Bool(..), ..
+                    })
+                    | Type::Keyword(RTsKeywordType {
+                        kind: TsKeywordTypeKind::TsBooleanKeyword,
+                        ..
+                    }) if !self.facts.contains(TypeFacts::TypeofEQBoolean) => false,
+
+                    Type::Lit(RTsLitType {
+                        lit: RTsLit::Number(..),
+                        ..
+                    })
+                    | Type::Keyword(RTsKeywordType {
+                        kind: TsKeywordTypeKind::TsNumberKeyword,
+                        ..
+                    }) if !self.facts.contains(TypeFacts::TypeofEQNumber) => false,
+
+                    _ => true,
                 });
             }
         }
