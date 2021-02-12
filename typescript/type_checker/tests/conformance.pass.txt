@@ -952,6 +952,7 @@ expressions/typeGuards/typeGuardNarrowsPrimitiveIntersection.ts
 expressions/typeGuards/typeGuardNarrowsToLiteralType.ts
 expressions/typeGuards/typeGuardNarrowsToLiteralTypeUnion.ts
 expressions/typeGuards/typeGuardNesting.ts
+expressions/typeGuards/typeGuardOfFormExpr1OrExpr2.ts
 expressions/typeGuards/typeGuardOfFormFunctionEquality.ts
 expressions/typeGuards/typeGuardOfFormInstanceOf.ts
 expressions/typeGuards/typeGuardOfFormTypeOfBoolean.ts
