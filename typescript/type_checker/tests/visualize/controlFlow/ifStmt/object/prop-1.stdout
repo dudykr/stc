@@ -63,3 +63,19 @@ warning: Type
   |
   = note: string
 
+warning: Type
+ --> $DIR/tests/visualize/controlFlow/ifStmt/object/prop-1.ts:7:36
+  |
+7 | if (typeof o.prop1 === "string" && o.prop1.toLowerCase()) { }
+  |                                    ^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: string
+
+warning: Type
+ --> $DIR/tests/visualize/controlFlow/ifStmt/object/prop-1.ts:7:5
+  |
+7 | if (typeof o.prop1 === "string" && o.prop1.toLowerCase()) { }
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: string
+
