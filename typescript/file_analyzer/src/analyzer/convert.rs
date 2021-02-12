@@ -55,7 +55,6 @@ use stc_ts_ast_rnode::RTsTypeQueryExpr;
 use stc_ts_ast_rnode::RTsTypeRef;
 use stc_ts_ast_rnode::RTsUnionOrIntersectionType;
 use stc_ts_ast_rnode::RTsUnionType;
-use stc_ts_errors::debug::print_backtrace;
 use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::Alias;
