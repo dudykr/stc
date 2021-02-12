@@ -435,6 +435,42 @@ impl Analyzer<'_, '_> {
                     return Ok(Type::any(span));
                 }
 
+                Type::Intersection(obj) => {
+                    let types = obj
+                        .types
+                        .iter()
+                        .map(|obj| {
+                            self.call_property(
+                                span,
+                                kind,
+                                obj.clone(),
+                                prop,
+                                type_args,
+                                args,
+                                arg_types,
+                                spread_arg_types,
+                            )
+                        })
+                        .filter_map(Result::ok)
+                        .collect_vec();
+
+                    if types.is_empty() {
+                        if kind == ExtractKind::Call {
+                            return Err(box Error::NoCallabelPropertyWithName {
+                                span,
+                                key: box prop.clone(),
+                            });
+                        } else {
+                            return Err(box Error::NoSuchConstructor {
+                                span,
+                                key: box prop.clone(),
+                            });
+                        }
+                    }
+
+                    return Ok(Type::union(types));
+                }
+
                 Type::Ref(..) => {
                     let obj_type = box self
                         .expand_top_ref(span, Cow::Owned(*obj_type))
@@ -1265,6 +1301,7 @@ impl Analyzer<'_, '_> {
             }
 
             return Err(if kind == ExtractKind::Call {
+                print_backtrace();
                 box Error::NoCallSignature { span, callee }
             } else {
                 box Error::NoNewSignature { span, callee }
