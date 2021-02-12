@@ -36,7 +36,7 @@ warning: Type
 5 | if (typeof strOrNumOrBool === "string" || numOrBool !== strOrNumOrBool) {
   |                                                         ^^^^^^^^^^^^^^
   |
-  = note: boolean | string
+  = note: number | boolean
 
 warning: Type
  --> $DIR/tests/visualize/controlFlow/ifStmt/typoeof-1.ts:5:43
