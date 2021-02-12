@@ -210,7 +210,6 @@ controlFlow/controlFlowSuperPropertyAccess.ts
 controlFlow/controlFlowTruthiness.ts
 controlFlow/controlFlowWithTemplateLiterals.ts
 controlFlow/switchWithConstrainedTypeVariable.ts
-controlFlow/typeGuardsAsAssertions.ts
 controlFlow/typeGuardsNestedAssignments.ts
 controlFlow/typeGuardsTypeParameters.ts
 declarationEmit/classDoesNotDependOnPrivateMember.ts
