@@ -944,6 +944,8 @@ impl Analyzer<'_, '_> {
             | Type::Param(..)
             | Type::Ref(..) => true,
 
+            Type::Intersection(ty) => ty.types.iter().all(|ty| self.is_valid_lhs_of_instanceof(span, ty)),
+
             Type::Union(ty) => ty.types.iter().any(|ty| self.is_valid_lhs_of_instanceof(span, ty)),
 
             _ => false,
