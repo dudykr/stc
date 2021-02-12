@@ -370,12 +370,7 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                 }
 
                 if let Some(ty) = self.params.get(&param.name) {
-                    slog::info!(
-                        self.logger,
-                        "generic_expand: Type parameter: {} => {:?}",
-                        param.name,
-                        ty
-                    );
+                    slog::info!(self.logger, "generic_expand: Expanding type parameter `{}`", param.name);
 
                     // If it's not self-referential, we fold it again.
 
