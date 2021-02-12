@@ -211,6 +211,10 @@ where
 
 impl AddAssign for CondFacts {
     fn add_assign(&mut self, rhs: Self) {
+        for (k, v) in rhs.facts {
+            *self.facts.entry(k).or_insert(TypeFacts::None) |= v;
+        }
+
         self.types.extend(rhs.types);
         self.vars.extend(rhs.vars);
         self.excludes.extend(rhs.excludes);
