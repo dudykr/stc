@@ -1241,18 +1241,13 @@ impl Analyzer<'_, '_> {
         spread_arg_types: &[TypeOrSpread],
     ) -> ValidationResult {
         let has_spread = arg_types.len() != spread_arg_types.len();
-        let cnt = callee.normalize().iter_union().count();
-
-        if callee.is_any() {
-            return Ok(Type::any(span));
-        }
-
-        slog::info!(self.logger, "get_best_return_type: {} candidates", cnt);
 
         // TODO: Calculate return type only if selected
         // This can be done by storing type params, return type, params in the
         // candidates.
         let mut candidates = self.extract_callee_candidates(span, kind, &callee)?;
+
+        slog::info!(self.logger, "get_best_return_type: {} candidates", candidates.len());
 
         if candidates.is_empty() {
             dbg!();
