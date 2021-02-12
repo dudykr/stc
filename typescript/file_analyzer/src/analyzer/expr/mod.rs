@@ -53,6 +53,7 @@ use stc_ts_types::PropertySignature;
 use stc_ts_types::{ClassProperty, Id, Method, ModuleId, Operator, QueryExpr, QueryType, StaticThis};
 use std::borrow::Cow;
 use std::convert::TryFrom;
+use std::convert::TryInto;
 use swc_atoms::js_word;
 use swc_common::SyntaxContext;
 use swc_common::TypeEq;
@@ -1595,7 +1596,7 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult {
         let span = i.span();
         let id: Id = i.into();
-        let name = i.into();
+        let name: Name = i.into();
 
         let mut modules = vec![];
         let mut ty = self.type_of_raw_var(i, type_mode, type_args)?;
@@ -1644,41 +1645,11 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let type_facts = self.scope.get_type_facts(&name)
-            | self
-                .cur_facts
-                .true_facts
-                .facts
-                .get(&name)
-                .copied()
-                .unwrap_or(TypeFacts::None);
-
-        ty = ty.apply_type_facts(type_facts);
+        ty = self.apply_type_facts(&name, ty);
 
         ty = self.type_to_query_if_required(span, i, ty);
 
-        {
-            fn exclude_types(ty: &mut Type, excludes: Option<&Vec<Box<Type>>>) {
-                let excludes = match excludes {
-                    Some(v) => v,
-                    None => return,
-                };
-                let ty = ty.normalize_mut();
-
-                for excluded in excludes {
-                    exclude_type(ty, &excluded);
-                }
-            }
-
-            let mut s = Some(&self.scope);
-
-            while let Some(scope) = s {
-                exclude_types(&mut ty, scope.facts.excludes.get(&name));
-                s = scope.parent();
-            }
-
-            exclude_types(&mut ty, self.cur_facts.true_facts.excludes.get(&name));
-        }
+        self.exclude_types_using_fact(&name, &mut ty);
 
         if !modules.is_empty() {
             modules.push(ty);
@@ -2051,7 +2022,19 @@ impl Analyzer<'_, '_> {
             };
             let obj_ty = self.with_ctx(ctx).expand_fully(span, obj_ty, true)?;
 
-            return self.access_property(span, obj_ty, &prop, type_mode, IdCtx::Var);
+            let mut ty = self
+                .access_property(span, obj_ty, &prop, type_mode, IdCtx::Var)
+                .context(
+                    "tried to access property of an object to calculate type of a non-computed member expression",
+                )?;
+
+            let name: Option<Name> = expr.try_into().ok();
+            if let Some(name) = name {
+                ty = self.apply_type_facts(&name, ty);
+
+                self.exclude_types_using_fact(&name, &mut ty);
+            }
+            Ok(ty)
         }
     }
 
@@ -2131,27 +2114,5 @@ impl Analyzer<'_, '_> {
             TypeElement::Property(PropertySignature { key: Key::Num(..), .. }) => true,
             _ => false,
         })
-    }
-}
-
-/// Exclude `excluded` from `ty`
-fn exclude_type(ty: &mut Type, excluded: &Type) {
-    match excluded {
-        Type::Union(excluded) => {
-            //
-            for excluded in &excluded.types {
-                exclude_type(ty, &excluded)
-            }
-
-            return;
-        }
-        _ => {}
-    }
-
-    match &mut *ty {
-        Type::Union(ty) => {
-            ty.types.retain(|element| !excluded.type_eq(element));
-        }
-        _ => {}
     }
 }
