@@ -63,7 +63,7 @@ impl Analyzer<'_, '_> {
             ..self.ctx
         };
 
-        let child_args = (
+        let child_ctxt = (
             TypeOfMode::RValue,
             None,
             match op {
@@ -74,7 +74,7 @@ impl Analyzer<'_, '_> {
 
         let lt = {
             let mut a = self.with_ctx(ctx);
-            left.validate_with_args(&mut *a, child_args)
+            left.validate_with_args(&mut *a, child_ctxt)
         }
         .and_then(|mut ty| {
             if ty.is_ref_type() {
@@ -103,7 +103,7 @@ impl Analyzer<'_, '_> {
             .with_child(ScopeKind::Flow, facts, |child: &mut Analyzer| -> ValidationResult<_> {
                 child.ctx.should_store_truthy_for_access = false;
 
-                let ty = right.validate_with_args(child, child_args).and_then(|mut ty| {
+                let ty = right.validate_with_args(child, child_ctxt).and_then(|mut ty| {
                     if ty.is_ref_type() {
                         let ctx = Ctx {
                             preserve_ref: false,
