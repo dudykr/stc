@@ -102,11 +102,22 @@ impl Analyzer<'_, '_> {
         let rhs = self
             .with_child(ScopeKind::Flow, facts, |child: &mut Analyzer| -> ValidationResult<_> {
                 child.ctx.should_store_truthy_for_access = false;
+
+                let truthy_lt;
                 let child_ctxt = (
                     TypeOfMode::RValue,
                     None,
                     match op {
-                        op!("??") | op!("&&") | op!("||") => type_ann.or_else(|| lt.as_deref()),
+                        op!("??") | op!("&&") | op!("||") => match type_ann {
+                            Some(ty) => Some(ty),
+                            _ => match op {
+                                op!("||") | op!("??") => {
+                                    truthy_lt = lt.clone().map(|ty| ty.apply_type_facts(TypeFacts::Truthy));
+                                    truthy_lt.as_deref()
+                                }
+                                _ => lt.as_deref(),
+                            },
+                        },
                         _ => None,
                     },
                 );
