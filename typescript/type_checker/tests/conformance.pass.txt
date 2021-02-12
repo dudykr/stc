@@ -1466,7 +1466,6 @@ types/contextualTypes/methodDeclarations/contextuallyTypedObjectLiteralMethodDec
 types/contextualTypes/partiallyAnnotatedFunction/partiallyAnnotatedFunctionInferenceWithTypeParameter.ts
 types/contextualTypes/partiallyAnnotatedFunction/partiallyAnnotatedFunctionWitoutTypeParameter.ts
 types/intersection/intersectionTypeEquivalence.ts
-types/keyof/keyofAndForIn.ts
 types/keyof/keyofIntersection.ts
 types/literal/literalTypes1.ts
 types/literal/literalTypes3.ts
