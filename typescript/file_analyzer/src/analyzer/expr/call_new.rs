@@ -1691,6 +1691,8 @@ impl Analyzer<'_, '_> {
 
                 print_type(&logger, "Return, generalized", &self.cm, &ty);
 
+                self.add_required_type_params(&mut ty);
+
                 if kind == ExtractKind::Call {
                     self.add_call_facts(params, &args, &mut ty);
                 }
@@ -1705,9 +1707,12 @@ impl Analyzer<'_, '_> {
 
         ret_ty.reposition(span);
         ret_ty.visit_mut_with(&mut ReturnTypeSimplifier { analyzer: self });
+        self.add_required_type_params(&mut ret_ty);
+
         if kind == ExtractKind::Call {
             self.add_call_facts(params, &args, &mut ret_ty);
         }
+
         return Ok(ret_ty);
     }
 
