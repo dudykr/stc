@@ -102,6 +102,14 @@ impl Analyzer<'_, '_> {
         let rhs = self
             .with_child(ScopeKind::Flow, facts, |child: &mut Analyzer| -> ValidationResult<_> {
                 child.ctx.should_store_truthy_for_access = false;
+                let child_ctxt = (
+                    TypeOfMode::RValue,
+                    None,
+                    match op {
+                        op!("??") | op!("&&") | op!("||") => type_ann.or_else(|| lt.as_deref()),
+                        _ => None,
+                    },
+                );
 
                 let ty = right.validate_with_args(child, child_ctxt).and_then(|mut ty| {
                     if ty.is_ref_type() {
