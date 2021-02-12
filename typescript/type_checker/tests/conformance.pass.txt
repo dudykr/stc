@@ -1310,6 +1310,7 @@ parser/ecmascript5/Statements/parserIfStatement2.ts
 parser/ecmascript5/StrictMode/parserStrictMode1.ts
 parser/ecmascript5/StrictMode/parserStrictMode15-negative.ts
 parser/ecmascript5/StrictMode/parserStrictMode16.ts
+parser/ecmascript5/StrictMode/parserStrictMode3-negative.ts
 parser/ecmascript5/StrictMode/parserStrictMode6-negative.ts
 parser/ecmascript5/Symbols/parserES5SymbolProperty1.ts
 parser/ecmascript5/Symbols/parserES5SymbolProperty2.ts
@@ -1454,6 +1455,7 @@ types/any/assignEveryTypeToAny.ts
 types/conditional/inferTypes2.ts
 types/conditional/variance.ts
 types/contextualTypes/commaOperator/contextuallyTypeCommaOperator01.ts
+types/contextualTypes/commaOperator/contextuallyTypeCommaOperator02.ts
 types/contextualTypes/logicalAnd/contextuallyTypeLogicalAnd01.ts
 types/contextualTypes/logicalAnd/contextuallyTypeLogicalAnd02.ts
 types/contextualTypes/methodDeclarations/contextuallyTypedObjectLiteralMethodDeclaration01.ts
