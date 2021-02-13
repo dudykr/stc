@@ -103,8 +103,9 @@ impl TryFrom<&'_ RExpr> for Name {
     type Error = ();
 
     fn try_from(e: &RExpr) -> Result<Self, Self::Error> {
-        match *e {
-            RExpr::Ident(ref i) => Ok(i.into()),
+        match e {
+            RExpr::Ident(i) => Ok(i.into()),
+            RExpr::Member(m) => m.try_into(),
             // TODO
             _ => Err(()),
         }
@@ -129,7 +130,14 @@ impl<'a> TryFrom<&'a RMemberExpr> for Name {
         }
 
         match &e.obj {
-            RExprOrSuper::Expr(box RExpr::Ident(i)) => Ok(Name::from(i)),
+            RExprOrSuper::Expr(box RExpr::Ident(i)) => {
+                let mut name = Name::from(i);
+                name.0.push(match &*e.prop {
+                    RExpr::Ident(i) => i.clone().into(),
+                    _ => return Err(()),
+                });
+                Ok(name)
+            }
             RExprOrSuper::Expr(box RExpr::Member(member)) => {
                 let mut obj: Name = member.try_into()?;
                 obj.0.push(match &*e.prop {

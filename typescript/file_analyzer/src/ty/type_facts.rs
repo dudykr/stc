@@ -93,7 +93,10 @@ impl Fold<Union> for TypeFactsHandler {
         }
 
         if self.facts != TypeFacts::None {
-            if self.facts.contains(TypeFacts::TypeofEQString) {
+            if self.facts.contains(TypeFacts::TypeofEQString)
+                || self.facts.contains(TypeFacts::TypeofEQBoolean)
+                || self.facts.contains(TypeFacts::TypeofEQNumber)
+            {
                 u.types.retain(|ty| match ty.normalize() {
                     Type::Lit(RTsLitType {
                         lit: RTsLit::Str(..), ..
@@ -101,8 +104,28 @@ impl Fold<Union> for TypeFactsHandler {
                     | Type::Keyword(RTsKeywordType {
                         kind: TsKeywordTypeKind::TsStringKeyword,
                         ..
-                    }) => true,
-                    _ => false,
+                    }) if !self.facts.contains(TypeFacts::TypeofEQString) => false,
+
+                    Type::Lit(RTsLitType {
+                        lit: RTsLit::Bool(..), ..
+                    })
+                    | Type::Keyword(RTsKeywordType {
+                        kind: TsKeywordTypeKind::TsBooleanKeyword,
+                        ..
+                    }) if !self.facts.contains(TypeFacts::TypeofEQBoolean) => false,
+
+                    Type::Lit(RTsLitType {
+                        lit: RTsLit::Number(..),
+                        ..
+                    })
+                    | Type::Keyword(RTsKeywordType {
+                        kind: TsKeywordTypeKind::TsNumberKeyword,
+                        ..
+                    }) if !self.facts.contains(TypeFacts::TypeofEQNumber) => false,
+
+                    Type::Param(..) => false,
+
+                    _ => true,
                 });
             }
         }
@@ -113,12 +136,15 @@ impl Fold<Union> for TypeFactsHandler {
 
 impl Fold<Type> for TypeFactsHandler {
     fn fold(&mut self, mut ty: Type) -> Type {
+        // TODO: Don't do anything if type fact is none.
+
         ty = ty.foldable();
         ty = ty.fold_children_with(self);
         let span = ty.span();
 
         match ty {
             Type::Union(ref u) if u.types.is_empty() => return *Type::never(u.span),
+            Type::Union(u) if u.types.len() == 1 => return *u.types.into_iter().next().unwrap(),
             Type::Intersection(ref i) if i.types.iter().any(|ty| ty.is_never()) => return *Type::never(i.span),
 
             Type::Keyword(..) => {}

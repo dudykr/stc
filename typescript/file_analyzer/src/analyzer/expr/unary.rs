@@ -1,4 +1,5 @@
 use super::super::Analyzer;
+use crate::analyzer::ScopeKind;
 use crate::{
     analyzer::{expr::TypeOfMode, util::ResultExt},
     ty::Type,
@@ -45,13 +46,37 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let arg: Option<Box<Type>> = arg
-            .validate_with_args(self, (TypeOfMode::RValue, None, None))
-            .report(&mut self.storage)
-            .map(|mut ty| {
-                ty.respan(arg.span());
-                ty
-            });
+        // TODO: Check for `self.ctx.in_cond` to improve performance.
+        let arg: Option<Box<Type>> = match op {
+            op!("!") => {
+                let orig_facts = self.cur_facts.take();
+                let arg_ty = self
+                    .with_child(
+                        ScopeKind::Flow,
+                        orig_facts.true_facts.clone(),
+                        |child: &mut Analyzer| arg.validate_with_args(child, (TypeOfMode::RValue, None, None)),
+                    )
+                    .report(&mut self.storage)
+                    .map(|mut ty| {
+                        ty.reposition(arg.span());
+                        ty
+                    });
+                let new_facts = self.cur_facts.take();
+                self.cur_facts = orig_facts;
+
+                self.cur_facts.true_facts += new_facts.false_facts;
+                self.cur_facts.false_facts += new_facts.true_facts;
+
+                arg_ty
+            }
+            _ => arg
+                .validate_with_args(self, (TypeOfMode::RValue, None, None))
+                .report(&mut self.storage)
+                .map(|mut ty| {
+                    ty.reposition(arg.span());
+                    ty
+                }),
+        };
 
         if let Some(ref arg) = arg {
             self.validate_unary_expr_inner(span, *op, arg);

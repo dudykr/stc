@@ -217,7 +217,14 @@ impl Analyzer<'_, '_> {
         debug_assert!(!self.is_builtin, "builtin: return statement is not supported");
         debug_assert_ne!(node.span, DUMMY_SP, "return statement should have valid span");
 
-        let ty = if let Some(res) = node.arg.validate_with_default(self) {
+        let ty = if let Some(res) = {
+            let ctx = Ctx {
+                in_return_arg: true,
+                ..self.ctx
+            };
+            let mut a = self.with_ctx(ctx);
+            node.arg.validate_with_default(&mut *a)
+        } {
             res?
         } else {
             box Type::Keyword(RTsKeywordType {

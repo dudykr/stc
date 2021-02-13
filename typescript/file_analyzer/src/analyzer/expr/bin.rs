@@ -35,6 +35,7 @@ use stc_ts_types::Ref;
 use stc_ts_types::TypeElement;
 use stc_ts_types::Union;
 use std::borrow::Cow;
+use std::collections::hash_map::Entry;
 use std::convert::TryFrom;
 use swc_atoms::js_word;
 use swc_common::SyntaxContext;
@@ -45,7 +46,7 @@ use swc_ecma_utils::Value::Known;
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RBinExpr) -> ValidationResult {
+    fn validate(&mut self, e: &RBinExpr, type_ann: Option<&Type>) -> ValidationResult {
         let RBinExpr {
             span,
             op,
@@ -53,6 +54,8 @@ impl Analyzer<'_, '_> {
             ref right,
             ..
         } = *e;
+
+        let prev_facts = self.cur_facts.clone();
 
         self.check_for_mixed_nullish_coalescing(e);
 
@@ -63,9 +66,18 @@ impl Analyzer<'_, '_> {
             ..self.ctx
         };
 
+        let child_ctxt = (
+            TypeOfMode::RValue,
+            None,
+            match op {
+                op!("??") | op!("&&") | op!("||") => type_ann,
+                _ => None,
+            },
+        );
+
         let lt = {
             let mut a = self.with_ctx(ctx);
-            left.validate_with_default(&mut *a)
+            left.validate_with_args(&mut *a, child_ctxt)
         }
         .and_then(|mut ty| {
             if ty.is_ref_type() {
@@ -83,49 +95,88 @@ impl Analyzer<'_, '_> {
         })
         .store(&mut errors);
 
-        let facts = if op == op!("&&") {
+        let true_facts_for_rhs = if op == op!("&&") {
             // We need a new virtual scope.
             self.cur_facts.true_facts.take()
+        } else if op == op!("||") {
+            self.cur_facts.false_facts.clone()
         } else {
             Default::default()
         };
 
-        let rhs = self
-            .with_child(ScopeKind::Flow, facts, |child: &mut Analyzer| -> ValidationResult<_> {
-                child.ctx.should_store_truthy_for_access = false;
-
-                let ty = right.validate_with_default(child).and_then(|mut ty| {
-                    if ty.is_ref_type() {
-                        let ctx = Ctx {
-                            preserve_ref: false,
-                            ignore_expand_prevention_for_top: true,
-                            ..child.ctx
-                        };
-                        ty = child.with_ctx(ctx).expand_fully(span, ty, true)?;
-                    }
-
-                    let span = ty.span();
-                    ty.reposition(right.span());
-
-                    Ok(ty)
-                })?;
-
-                let rhs_true_facts = child.cur_facts.true_facts.take();
-
-                Ok((ty, rhs_true_facts))
-            })
-            .store(&mut errors);
-
-        let (rt, rhs_facts) = match rhs {
-            Some(v) => (Some(v.0), v.1),
-            None => (None, Default::default()),
+        let mut lhs_facts = if op == op!("||") {
+            self.cur_facts.take()
+        } else {
+            Default::default()
         };
 
-        if op == op!("||") {
-            self.cur_facts.true_facts += rhs_facts;
-        }
+        self.cur_facts = prev_facts;
+
+        let rhs = self
+            .with_child(
+                ScopeKind::Flow,
+                true_facts_for_rhs,
+                |child: &mut Analyzer| -> ValidationResult<_> {
+                    child.ctx.should_store_truthy_for_access = false;
+
+                    let truthy_lt;
+                    let child_ctxt = (
+                        TypeOfMode::RValue,
+                        None,
+                        match op {
+                            op!("??") | op!("&&") | op!("||") => match type_ann {
+                                Some(ty) => Some(ty),
+                                _ => match op {
+                                    op!("||") | op!("??") => {
+                                        truthy_lt = lt.clone().map(|ty| ty.apply_type_facts(TypeFacts::Truthy));
+                                        truthy_lt.as_deref()
+                                    }
+                                    _ => lt.as_deref(),
+                                },
+                            },
+                            _ => None,
+                        },
+                    );
+
+                    let ty = right.validate_with_args(child, child_ctxt).and_then(|mut ty| {
+                        if ty.is_ref_type() {
+                            let ctx = Ctx {
+                                preserve_ref: false,
+                                ignore_expand_prevention_for_top: true,
+                                ..child.ctx
+                            };
+                            ty = child.with_ctx(ctx).expand_fully(span, ty, true)?;
+                        }
+
+                        let span = ty.span();
+                        ty.reposition(right.span());
+
+                        Ok(ty)
+                    })?;
+
+                    Ok(ty)
+                },
+            )
+            .store(&mut errors);
+
+        let rt = rhs;
 
         self.validate_bin_inner(span, op, lt.as_deref(), rt.as_deref());
+
+        if op == op!("||") {
+            for (k, type_fact) in lhs_facts.true_facts.facts.drain() {
+                match self.cur_facts.true_facts.facts.entry(k) {
+                    // (typeof a === 'string' || typeof a === 'number')
+                    Entry::Occupied(mut e) => {
+                        *e.get_mut() |= type_fact;
+                    }
+                    // (typeof a === 'string' || a !== foo)
+                    Entry::Vacant(..) => {}
+                }
+            }
+
+            self.cur_facts += lhs_facts;
+        }
 
         let (lt, rt): (Box<Type>, Box<Type>) = match (lt, rt) {
             (Some(l), Some(r)) => (l, r),
@@ -297,7 +348,8 @@ impl Analyzer<'_, '_> {
                         if !cannot_narrow {
                             let ty = self
                                 .narrow_with_instanceof(span, ty, &orig_ty)
-                                .context("tried to narrow type with instanceof")?;
+                                .context("tried to narrow type with instanceof")?
+                                .cheap();
 
                             // TODO(kdy1): Maybe we need to check for intersection or union
                             if orig_ty.is_type_param() {
@@ -310,7 +362,13 @@ impl Analyzer<'_, '_> {
                                     .cheap(),
                                 );
                             } else {
-                                self.cur_facts.true_facts.vars.insert(Name::from(i), ty);
+                                self.cur_facts.true_facts.vars.insert(Name::from(i), ty.clone());
+                                self.cur_facts
+                                    .false_facts
+                                    .excludes
+                                    .entry(Name::from(i))
+                                    .or_default()
+                                    .push(ty);
                             }
                         }
                     }
@@ -561,6 +619,10 @@ impl Analyzer<'_, '_> {
                             return Ok(lt);
                         }
 
+                        if lt.type_eq(&rt) {
+                            return Ok(lt);
+                        }
+
                         if is_str_lit_or_union(&lt) && is_str_lit_or_union(&rt) {
                             return Ok(Type::union(vec![lt, rt]));
                         }
@@ -672,6 +734,11 @@ impl Analyzer<'_, '_> {
                     types: new_types,
                 }));
             }
+
+            Type::Interface(..) => match ty.normalize() {
+                Type::Interface(..) => return Ok(ty),
+                _ => {}
+            },
 
             _ => {}
         }
@@ -888,6 +955,8 @@ impl Analyzer<'_, '_> {
             | Type::This(..)
             | Type::Param(..)
             | Type::Ref(..) => true,
+
+            Type::Intersection(ty) => ty.types.iter().all(|ty| self.is_valid_lhs_of_instanceof(span, ty)),
 
             Type::Union(ty) => ty.types.iter().any(|ty| self.is_valid_lhs_of_instanceof(span, ty)),
 

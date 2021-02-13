@@ -1,0 +1,81 @@
+warning: Type
+ --> $DIR/tests/visualize/controlFlow/ifStmt/object/prop-1.ts:3:5
+  |
+3 |   } = {
+  |  _____^
+4 | |     prop1: "string",
+5 | | }
+  | |_^
+  |
+  = note: {
+              prop1: "string";
+          }
+
+warning: Type
+ --> $DIR/tests/visualize/controlFlow/ifStmt/object/prop-1.ts:7:12
+  |
+7 | if (typeof o.prop1 === "string" && o.prop1.toLowerCase()) { }
+  |            ^
+  |
+  = note: {
+              prop1: number | string;
+          }
+
+warning: Type
+ --> $DIR/tests/visualize/controlFlow/ifStmt/object/prop-1.ts:7:12
+  |
+7 | if (typeof o.prop1 === "string" && o.prop1.toLowerCase()) { }
+  |            ^^^^^^^
+  |
+  = note: number | string
+
+warning: Type
+ --> $DIR/tests/visualize/controlFlow/ifStmt/object/prop-1.ts:7:5
+  |
+7 | if (typeof o.prop1 === "string" && o.prop1.toLowerCase()) { }
+  |     ^^^^^^^^^^^^^^
+  |
+  = note: string
+
+warning: Type
+ --> $DIR/tests/visualize/controlFlow/ifStmt/object/prop-1.ts:7:5
+  |
+7 | if (typeof o.prop1 === "string" && o.prop1.toLowerCase()) { }
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: boolean
+
+warning: Type
+ --> $DIR/tests/visualize/controlFlow/ifStmt/object/prop-1.ts:7:36
+  |
+7 | if (typeof o.prop1 === "string" && o.prop1.toLowerCase()) { }
+  |                                    ^
+  |
+  = note: {
+              prop1: number | string;
+          }
+
+warning: Type
+ --> $DIR/tests/visualize/controlFlow/ifStmt/object/prop-1.ts:7:36
+  |
+7 | if (typeof o.prop1 === "string" && o.prop1.toLowerCase()) { }
+  |                                    ^^^^^^^
+  |
+  = note: string
+
+warning: Type
+ --> $DIR/tests/visualize/controlFlow/ifStmt/object/prop-1.ts:7:36
+  |
+7 | if (typeof o.prop1 === "string" && o.prop1.toLowerCase()) { }
+  |                                    ^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: string
+
+warning: Type
+ --> $DIR/tests/visualize/controlFlow/ifStmt/object/prop-1.ts:7:5
+  |
+7 | if (typeof o.prop1 === "string" && o.prop1.toLowerCase()) { }
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: string
+

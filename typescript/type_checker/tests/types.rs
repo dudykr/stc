@@ -17,6 +17,7 @@ use stc_ts_builtin_types::Lib;
 use stc_ts_errors::debug::debugger::Debugger;
 use stc_ts_file_analyzer::env::Env;
 use stc_ts_file_analyzer::Rule;
+use stc_ts_module_loader::resolver::node::NodeResolver;
 use stc_ts_testing::tsc::TsTestCase;
 use stc_ts_type_checker::Checker;
 use std::collections::HashSet;
@@ -243,6 +244,7 @@ fn do_test(path: &Path) -> Result<(), StdErr> {
                     cm: cm.clone(),
                     handler: type_info_handler.clone(),
                 }),
+                Arc::new(NodeResolver),
             );
 
             checker.check(Arc::new(path.into()));

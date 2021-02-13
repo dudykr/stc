@@ -35,6 +35,8 @@ impl Analyzer<'_, '_> {
         self.record(f);
 
         self.with_child(ScopeKind::Fn, Default::default(), |child: &mut Analyzer| {
+            child.ctx.in_fn_with_return_type = f.return_type.is_some();
+
             let mut errors = Errors::default();
 
             {

@@ -11,6 +11,7 @@ use stc_testing::get_git_root;
 use stc_testing::logger;
 use stc_ts_builtin_types::Lib;
 use stc_ts_file_analyzer::env::Env;
+use stc_ts_module_loader::resolver::node::NodeResolver;
 use stc_ts_type_checker::Checker;
 use std::fs::read_to_string;
 use std::{
@@ -71,6 +72,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
                 ..Default::default()
             },
             None,
+            Arc::new(NodeResolver),
         );
 
         let id = checker.check(Arc::new(file_name.clone().into()));

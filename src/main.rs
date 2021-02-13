@@ -4,6 +4,7 @@ use slog::Logger;
 use stc_ts_builtin_types::Lib;
 use stc_ts_file_analyzer::env::Env;
 use stc_ts_file_analyzer::Rule;
+use stc_ts_module_loader::resolver::node::NodeResolver;
 use stc_ts_type_checker::Checker;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -51,6 +52,7 @@ fn main() -> Result<(), Error> {
         Env::simple(Rule::default(), JscTarget::Es2020, &Lib::load("es2020.full")),
         TsConfig { ..Default::default() },
         None,
+        Arc::new(NodeResolver),
     );
 
     if cli_options.declaration {
