@@ -491,6 +491,10 @@ impl Analyzer<'_, '_> {
                 ref constraint,
                 ..
             }) => {
+                if let Some(prev) = inferred.type_params.get(name).cloned() {
+                    self.infer_type(span, inferred, &prev, arg)?;
+                }
+
                 slog::trace!(self.logger, "infer_type: type parameter: {} = {:?}", name, constraint);
 
                 if constraint.is_some() && is_literals(&constraint.as_ref().unwrap()) {
