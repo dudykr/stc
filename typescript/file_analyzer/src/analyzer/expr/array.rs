@@ -219,6 +219,7 @@ impl Analyzer<'_, '_> {
                 &[],
                 &[],
                 &[],
+                None,
             )
             .map_err(|err| {
                 box err.convert(|err| match err {
