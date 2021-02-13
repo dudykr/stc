@@ -1392,6 +1392,31 @@ impl Analyzer<'_, '_> {
 
     /// Returns the return type of function. This method should be called only
     /// for final step because it emits errors instead of returning them.
+    ///
+    /// ## Note
+    ///
+    /// We should evaluate two time because of code like below.
+    ///
+    ///
+    /// ```ts
+    /// declare function getType<T>(arr: T[]): string;
+    /// declare function getType(obj: { foo(n: number): number[] }): string;
+    ///
+    /// getType({
+    ///    foo: wrap((a) => [a.toExponential()]),
+    /// })
+    /// ```
+    ///
+    /// In this example,
+    ///
+    ///  - we can't calculate the type of `a.toExponential()` because we don't
+    ///    know the type of `a`
+    ///  - we can't use type annotation because of `wrap`
+    ///  - we can't determine the function to call before validating arguments
+    ///  - we can't use type annotation of the function because we cannot
+    ///    determine the function to call because of `wrap`
+    ///
+    /// To fix this problem, we evaluate calls twice.
     fn get_return_type(
         &mut self,
         span: Span,
