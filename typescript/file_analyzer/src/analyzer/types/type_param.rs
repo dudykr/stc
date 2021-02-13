@@ -1,5 +1,7 @@
 use crate::analyzer::Analyzer;
+use fxhash::FxBuildHasher;
 use fxhash::FxHashSet;
+use indexmap::IndexSet;
 use itertools::Itertools;
 use rnode::Visit;
 use rnode::VisitWith;
@@ -52,7 +54,7 @@ impl Analyzer<'_, '_> {
 
 #[derive(Default)]
 struct TypeParamUsageFinder {
-    used: FxHashSet<Id>,
+    used: IndexSet<Id, FxBuildHasher>,
 }
 
 impl Visit<Type> for TypeParamUsageFinder {
