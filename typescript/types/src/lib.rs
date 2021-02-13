@@ -127,7 +127,7 @@ pub enum Type {
     #[is(name = "ref_type")]
     Ref(Ref),
     TypeLit(TypeLit),
-    Keyword(RTsKeywordType),
+    Keyword(Keyword),
     Conditional(Conditional),
     Tuple(Tuple),
     Array(Array),
@@ -318,6 +318,14 @@ pub struct SymbolId(usize);
 pub struct Symbol {
     pub span: Span,
     pub id: SymbolId,
+}
+
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+pub struct Keyword {
+    pub span: Span,
+    pub type_id: NodeId,
+    #[not_spanned]
+    pub kind: TsKeywordTypeKind,
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
