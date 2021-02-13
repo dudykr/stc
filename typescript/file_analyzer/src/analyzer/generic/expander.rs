@@ -316,10 +316,6 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
 
                 slog::info!(self.logger, "Ref: {}", Id::from(i));
 
-                if let Some(ty) = self.params.get(&i.into()) {
-                    return *ty.clone();
-                }
-
                 return ty.fold_children_with(self);
             }
 
