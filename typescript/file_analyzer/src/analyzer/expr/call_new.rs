@@ -172,9 +172,9 @@ impl Analyzer<'_, '_> {
                 span,
                 ReevalMode::NoReeval,
                 &e.tag,
-                Default::default(),
                 ExtractKind::Call,
                 args.as_ref(),
+                Default::default(),
                 Default::default(),
             )
         });
@@ -324,6 +324,7 @@ impl Analyzer<'_, '_> {
                     args,
                     &arg_types,
                     &spread_arg_types,
+                    type_ann,
                 )
             }
             _ => {
