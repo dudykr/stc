@@ -16,6 +16,12 @@ impl Analyzer<'_, '_> {
         ty.visit_with(&mut finder);
 
         if finder.used.is_empty() {
+            match ty {
+                Type::Function(f) => {
+                    f.type_params = None;
+                }
+                _ => {}
+            }
             return;
         }
 
