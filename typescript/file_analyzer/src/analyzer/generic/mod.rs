@@ -109,6 +109,27 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
+        if ty.is_any() && self.is_implicitly_typed(&ty) {
+            if inferred.type_params.contains_key(&name.clone()) {
+                return Ok(());
+            }
+
+            match inferred.defaults.entry(name.clone()) {
+                Entry::Occupied(..) => {}
+                Entry::Vacant(e) => {
+                    e.insert(box Type::Param(TypeParam {
+                        span: ty.span(),
+                        name: name.clone(),
+                        constraint: None,
+                        default: None,
+                    }));
+                }
+            }
+
+            //
+            return Ok(());
+        }
+
         match inferred.type_params.entry(name.clone()) {
             Entry::Occupied(e) => {
                 if e.get().iter_union().any(|prev| prev.type_eq(&ty)) {
