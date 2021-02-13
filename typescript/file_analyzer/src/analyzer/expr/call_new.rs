@@ -1401,6 +1401,7 @@ impl Analyzer<'_, '_> {
     /// ```ts
     /// declare function getType<T>(arr: T[]): string;
     /// declare function getType(obj: { foo(n: number): number[] }): string;
+    /// declare function wrap<A, B>(f: (a: A) => B): (a: A) => B;
     ///
     /// getType({
     ///    foo: wrap((a) => [a.toExponential()]),
@@ -1417,6 +1418,20 @@ impl Analyzer<'_, '_> {
     ///    determine the function to call because of `wrap`
     ///
     /// To fix this problem, we evaluate calls twice.
+    ///
+    /// If then, the logic becomes simple.
+    ///
+    ///  1. We set type of `a` to `any`.
+    ///  2. Type of `a.toExponential()` is `any`.
+    ///  3. Type of the arrow function is `(a: any) => [any]`.
+    ///  4. Type of the property `foo` is `<A, B>(a: A) => B` where A = `any`
+    /// and B = `[any]`.
+    ///  5. We select appropriate function to call.
+    ///  6. Type of `a` is now number.
+    ///  7. Type of `a.toExponential()` is `number`.
+    ///  8. Type of the arrow function is `(a: number) => [number]`.
+    ///  9. Type of the property `foo` is `<A, B>(a: A) => B` where A = `number`
+    /// and B = `[number]`.
     fn get_return_type(
         &mut self,
         span: Span,
