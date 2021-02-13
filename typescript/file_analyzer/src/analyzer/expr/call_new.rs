@@ -204,6 +204,7 @@ impl Analyzer<'_, '_> {
         kind: ExtractKind,
         args: &[RExprOrSpread],
         type_args: Option<&RTsTypeParamInstantiation>,
+        type_ann: Option<&Type>,
     ) -> ValidationResult {
         debug_assert_eq!(self.scope.kind(), ScopeKind::Call);
 
@@ -441,6 +442,7 @@ impl Analyzer<'_, '_> {
         args: &[RExprOrSpread],
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
+        type_ann: Option<&Type>,
     ) -> ValidationResult {
         let old_this = self.scope.this.take();
         self.scope.this = Some(obj_type.clone());
@@ -721,6 +723,7 @@ impl Analyzer<'_, '_> {
         args: &[RExprOrSpread],
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
+        type_ann: Option<&Type>,
     ) -> ValidationResult {
         // Candidates of the method call.
         //
@@ -855,6 +858,7 @@ impl Analyzer<'_, '_> {
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
         type_args: Option<&TypeParamInstantiation>,
+        type_ann: Option<&Type>,
     ) -> ValidationResult {
         match ty.normalize() {
             Type::Ref(..) => {
@@ -1100,6 +1104,7 @@ impl Analyzer<'_, '_> {
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
         type_args: Option<&TypeParamInstantiation>,
+        type_ann: Option<&Type>,
     ) -> ValidationResult {
         let callee_span = callee_ty.span();
 
