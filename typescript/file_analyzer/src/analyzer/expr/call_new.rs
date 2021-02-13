@@ -404,6 +404,7 @@ impl Analyzer<'_, '_> {
                         &arg_types,
                         &spread_arg_types,
                         type_args.as_ref(),
+                        type_ann,
                     )?;
                     match *expanded_ty {
                         Type::ClassInstance(ClassInstance {
@@ -471,6 +472,7 @@ impl Analyzer<'_, '_> {
                                 args,
                                 arg_types,
                                 spread_arg_types,
+                                type_ann,
                             )
                         })
                         .filter_map(Result::ok)
@@ -509,6 +511,7 @@ impl Analyzer<'_, '_> {
                         args,
                         arg_types,
                         spread_arg_types,
+                        type_ann,
                     );
                 }
 
@@ -525,6 +528,7 @@ impl Analyzer<'_, '_> {
                         args,
                         &arg_types,
                         &spread_arg_types,
+                        type_ann,
                     );
                 }
 
@@ -540,6 +544,7 @@ impl Analyzer<'_, '_> {
                         args,
                         &arg_types,
                         &spread_arg_types,
+                        type_ann,
                     );
                 }
 
@@ -571,6 +576,7 @@ impl Analyzer<'_, '_> {
                                         arg_types,
                                         spread_arg_types,
                                         type_args,
+                                        type_ann,
                                     );
                                 }
                             }
@@ -602,6 +608,7 @@ impl Analyzer<'_, '_> {
                             args,
                             &arg_types,
                             &spread_arg_types,
+                            type_ann,
                         );
                     }
 
@@ -616,6 +623,7 @@ impl Analyzer<'_, '_> {
                             args,
                             arg_types,
                             spread_arg_types,
+                            type_ann,
                         ) {
                             return Ok(ret_ty);
                         }
@@ -863,7 +871,17 @@ impl Analyzer<'_, '_> {
         match ty.normalize() {
             Type::Ref(..) => {
                 let ty = self.expand_top_ref(span, Cow::Borrowed(ty))?;
-                return self.extract(span, expr, &ty, kind, args, arg_types, spread_arg_types, type_args);
+                return self.extract(
+                    span,
+                    expr,
+                    &ty,
+                    kind,
+                    args,
+                    arg_types,
+                    spread_arg_types,
+                    type_args,
+                    type_ann,
+                );
             }
 
             Type::Query(QueryType {
@@ -871,7 +889,17 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {
                 let ty = self.resolve_typeof(span, name)?;
-                return self.extract(span, expr, &ty, kind, args, arg_types, spread_arg_types, type_args);
+                return self.extract(
+                    span,
+                    expr,
+                    &ty,
+                    kind,
+                    args,
+                    arg_types,
+                    spread_arg_types,
+                    type_args,
+                    type_ann,
+                );
             }
 
             _ => {}
