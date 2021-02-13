@@ -656,7 +656,17 @@ impl Analyzer<'_, '_> {
 
             let callee = box self.expand_top_ref(span, Cow::Owned(*callee))?.into_owned();
 
-            self.get_best_return_type(span, expr, callee, kind, type_args, args, &arg_types, &spread_arg_types)
+            self.get_best_return_type(
+                span,
+                expr,
+                callee,
+                kind,
+                type_args,
+                args,
+                &arg_types,
+                &spread_arg_types,
+                type_ann,
+            )
         })();
         self.scope.this = old_this;
         res
@@ -779,6 +789,7 @@ impl Analyzer<'_, '_> {
                     args,
                     &arg_types,
                     spread_arg_types,
+                    type_ann,
                 );
             }
             _ => {
@@ -796,7 +807,16 @@ impl Analyzer<'_, '_> {
                 });
 
                 for c in candidates {
-                    return self.check_method_call(span, expr, &c, type_args, args, &arg_types, spread_arg_types);
+                    return self.check_method_call(
+                        span,
+                        expr,
+                        &c,
+                        type_args,
+                        args,
+                        &arg_types,
+                        spread_arg_types,
+                        type_ann,
+                    );
                 }
 
                 unimplemented!("multiple methods with same name and same number of arguments")
@@ -971,6 +991,7 @@ impl Analyzer<'_, '_> {
                         args,
                         arg_types,
                         spread_arg_types,
+                        type_ann,
                     )
                 }
 
@@ -1033,6 +1054,7 @@ impl Analyzer<'_, '_> {
                 args,
                 arg_types,
                 spread_arg_types,
+                type_ann,
             ),
 
             // Type::Constructor(ty::Constructor {
@@ -1056,8 +1078,9 @@ impl Analyzer<'_, '_> {
                 kind,
                 type_args,
                 args,
-                spread_arg_types,
                 arg_types,
+                spread_arg_types,
+                type_ann,
             ),
 
             Type::Interface(ref i) => {
@@ -1072,6 +1095,7 @@ impl Analyzer<'_, '_> {
                     arg_types,
                     spread_arg_types,
                     type_args,
+                    type_ann,
                 ) {
                     Ok(ty) => return Ok(ty.clone()),
                     Err(first_err) => {
@@ -1080,9 +1104,17 @@ impl Analyzer<'_, '_> {
                             let parent =
                                 self.type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr, type_args)?;
 
-                            if let Ok(v) =
-                                self.extract(span, expr, &parent, kind, args, arg_types, spread_arg_types, type_args)
-                            {
+                            if let Ok(v) = self.extract(
+                                span,
+                                expr,
+                                &parent,
+                                kind,
+                                args,
+                                arg_types,
+                                spread_arg_types,
+                                type_args,
+                                type_ann,
+                            ) {
                                 return Ok(v);
                             }
                         }
@@ -1102,6 +1134,7 @@ impl Analyzer<'_, '_> {
                     arg_types,
                     spread_arg_types,
                     type_args,
+                    type_ann,
                 );
             }
 
@@ -1205,6 +1238,7 @@ impl Analyzer<'_, '_> {
         args: &[RExprOrSpread],
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
+        type_ann: Option<&Type>,
     ) -> ValidationResult {
         self.get_return_type(
             span,
@@ -1217,6 +1251,7 @@ impl Analyzer<'_, '_> {
             args,
             arg_types,
             spread_arg_types,
+            type_ann,
         )
     }
 
@@ -1361,6 +1396,7 @@ impl Analyzer<'_, '_> {
         args: &[RExprOrSpread],
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
+        type_ann: Option<&Type>,
     ) -> ValidationResult {
         let has_spread = arg_types.len() != spread_arg_types.len();
 
