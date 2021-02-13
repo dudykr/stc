@@ -1573,7 +1573,13 @@ impl Analyzer<'_, '_> {
                                 span,
                                 kind: TsKeywordTypeKind::TsAnyKeyword,
                             }) if self.is_implicitly_typed_span(*span) => {
-                                let new_ty = RTsType::from(actual.ty.clone()).validate_with(self)?;
+                                // let new_ty = RTsType::from(actual.ty.clone()).validate_with(self)?;
+                                // if let Some(node_id) = pat.node_id() {
+                                //     if let Some(m) = &mut self.mutations {
+                                //         m.for_pats.entry(node_id).or_default().ty = Some(new_ty);
+                                //     }
+                                // }
+                                let new_ty = actual.ty.clone();
                                 if let Some(node_id) = pat.node_id() {
                                     if let Some(m) = &mut self.mutations {
                                         m.for_pats.entry(node_id).or_default().ty = Some(new_ty);
