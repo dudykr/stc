@@ -42,7 +42,6 @@ use stc_ts_ast_rnode::RTsNonNullExpr;
 use stc_ts_ast_rnode::RTsThisType;
 use stc_ts_ast_rnode::RUnaryExpr;
 use stc_ts_errors::debug::print_backtrace;
-use stc_ts_errors::debug::print_type;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;

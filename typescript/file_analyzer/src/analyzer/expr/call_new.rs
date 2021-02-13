@@ -1226,6 +1226,7 @@ impl Analyzer<'_, '_> {
             args,
             arg_types,
             spread_arg_types,
+            type_ann,
         );
     }
 
@@ -1458,6 +1459,7 @@ impl Analyzer<'_, '_> {
             args,
             arg_types,
             spread_arg_types,
+            type_ann,
         );
     }
 
