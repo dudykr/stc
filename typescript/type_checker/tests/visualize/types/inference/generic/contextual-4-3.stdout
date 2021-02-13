@@ -20,5 +20,5 @@ warning: Type
 8 | export const f40: <A, B>(b: B, a: A) => [A, B] = flip(zip);
   |                                                  ^^^^^^^^^
   |
-  = note: <A, B>(y: B, x: A) => [A, B]
+  = note: <B, A>(y: B, x: A) => [A, B]
 
