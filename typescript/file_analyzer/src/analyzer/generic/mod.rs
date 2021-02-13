@@ -522,14 +522,28 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
 
-                let mut arg = box arg.clone();
                 if arg.is_any() && self.is_implicitly_typed(&arg) {
                     if inferred.type_params.contains_key(&name.clone()) {
                         return Ok(());
                     }
-                    arg = Type::unknown(arg.span());
+
+                    match inferred.defaults.entry(name.clone()) {
+                        Entry::Occupied(..) => {}
+                        Entry::Vacant(e) => {
+                            e.insert(box Type::Param(TypeParam {
+                                span: arg.span(),
+                                name: name.clone(),
+                                constraint: None,
+                                default: None,
+                            }));
+                        }
+                    }
+
+                    //
+                    return Ok(());
                 }
 
+                let arg = box arg.clone();
                 slog::info!(self.logger, "({}): infer: {} = {:?}", self.scope.depth(), name, arg);
 
                 match inferred.type_params.entry(name.clone()) {
