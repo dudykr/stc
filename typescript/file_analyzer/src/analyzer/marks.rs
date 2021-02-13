@@ -1,3 +1,4 @@
+use crate::util::contains_mark;
 use stc_ts_types::Type;
 use swc_common::Globals;
 use swc_common::Mark;
@@ -85,6 +86,10 @@ pub(crate) trait MarkExt: Copy + Into<Mark> {
                 return true;
             }
         }
+    }
+
+    fn contained_in_type(self, ty: &Type) -> bool {
+        contains_mark(&ty, self.into())
     }
 }
 
