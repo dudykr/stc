@@ -42,6 +42,7 @@ use stc_ts_ast_rnode::RTsNonNullExpr;
 use stc_ts_ast_rnode::RTsThisType;
 use stc_ts_ast_rnode::RUnaryExpr;
 use stc_ts_errors::debug::print_backtrace;
+use stc_ts_errors::debug::print_type;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
@@ -115,7 +116,9 @@ impl Analyzer<'_, '_> {
 
         let span = e.span();
         let need_type_param_handling = match e {
-            RExpr::Call(..) | RExpr::New(..) | RExpr::Member(..) => true,
+            RExpr::Member(..) => true,
+            RExpr::Call(..) | RExpr::New(..) if self.ctx.in_argument => false,
+            RExpr::Call(..) | RExpr::New(..) => true,
             _ => false,
         };
 
