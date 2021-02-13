@@ -1498,6 +1498,7 @@ impl Analyzer<'_, '_> {
         args: &[RExprOrSpread],
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
+        type_ann: Option<&Type>,
     ) -> ValidationResult {
         let logger = self.logger.clone();
 
