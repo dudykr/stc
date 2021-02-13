@@ -506,6 +506,16 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
+        match arg {
+            Type::Param(arg) => {
+                if !param.normalize().is_type_param() {
+                    self.insert_inferred(inferred, arg.name.clone(), box param.clone())?;
+                    return Ok(());
+                }
+            }
+            _ => {}
+        }
+
         match param {
             Type::Param(TypeParam {
                 ref name,
