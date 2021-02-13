@@ -1,5 +1,5 @@
 warning: Type
- --> $DIR/tests/visualize/types/interface/generic/contextual-1-2.ts:3:49
+ --> $DIR/tests/visualize/types/inference/generic/contextual-1-2.ts:3:49
   |
 3 | export const f03: <A>(x: A) => A[] = wrap(x => [x]);
   |                                                 ^
@@ -7,7 +7,7 @@ warning: Type
   = note: any
 
 warning: Type
- --> $DIR/tests/visualize/types/interface/generic/contextual-1-2.ts:3:48
+ --> $DIR/tests/visualize/types/inference/generic/contextual-1-2.ts:3:48
   |
 3 | export const f03: <A>(x: A) => A[] = wrap(x => [x]);
   |                                                ^^^
@@ -15,7 +15,7 @@ warning: Type
   = note: [any]
 
 warning: Type
- --> $DIR/tests/visualize/types/interface/generic/contextual-1-2.ts:3:43
+ --> $DIR/tests/visualize/types/inference/generic/contextual-1-2.ts:3:43
   |
 3 | export const f03: <A>(x: A) => A[] = wrap(x => [x]);
   |                                           ^^^^^^^^
@@ -23,7 +23,7 @@ warning: Type
   = note: (x: any) => [any]
 
 warning: Type
- --> $DIR/tests/visualize/types/interface/generic/contextual-1-2.ts:3:38
+ --> $DIR/tests/visualize/types/inference/generic/contextual-1-2.ts:3:38
   |
 3 | export const f03: <A>(x: A) => A[] = wrap(x => [x]);
   |                                      ^^^^
@@ -31,7 +31,7 @@ warning: Type
   = note: <A, B>(f: (a: A) => B) => (a: A) => B
 
 warning: Type
- --> $DIR/tests/visualize/types/interface/generic/contextual-1-2.ts:3:49
+ --> $DIR/tests/visualize/types/inference/generic/contextual-1-2.ts:3:49
   |
 3 | export const f03: <A>(x: A) => A[] = wrap(x => [x]);
   |                                                 ^
@@ -39,7 +39,7 @@ warning: Type
   = note: A
 
 warning: Type
- --> $DIR/tests/visualize/types/interface/generic/contextual-1-2.ts:3:48
+ --> $DIR/tests/visualize/types/inference/generic/contextual-1-2.ts:3:48
   |
 3 | export const f03: <A>(x: A) => A[] = wrap(x => [x]);
   |                                                ^^^
@@ -47,7 +47,7 @@ warning: Type
   = note: [A]
 
 warning: Type
- --> $DIR/tests/visualize/types/interface/generic/contextual-1-2.ts:3:43
+ --> $DIR/tests/visualize/types/inference/generic/contextual-1-2.ts:3:43
   |
 3 | export const f03: <A>(x: A) => A[] = wrap(x => [x]);
   |                                           ^^^^^^^^
@@ -55,7 +55,7 @@ warning: Type
   = note: (x: A) => [A]
 
 warning: Type
- --> $DIR/tests/visualize/types/interface/generic/contextual-1-2.ts:3:38
+ --> $DIR/tests/visualize/types/inference/generic/contextual-1-2.ts:3:38
   |
 3 | export const f03: <A>(x: A) => A[] = wrap(x => [x]);
   |                                      ^^^^^^^^^^^^^^
