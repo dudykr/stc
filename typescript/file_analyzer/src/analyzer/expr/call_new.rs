@@ -103,10 +103,10 @@ impl Analyzer<'_, '_> {
                 span,
                 ReevalMode::Call(e),
                 callee,
-                type_ann,
                 ExtractKind::Call,
                 args,
                 type_args.as_ref(),
+                type_ann,
             )
         })
     }
@@ -132,10 +132,10 @@ impl Analyzer<'_, '_> {
                 span,
                 ReevalMode::New(e),
                 callee,
-                type_ann,
                 ExtractKind::New,
                 args.as_ref().map(|v| &**v).unwrap_or_else(|| &mut []),
                 type_args.as_ref(),
+                type_ann,
             )
         })
     }
@@ -200,7 +200,6 @@ impl Analyzer<'_, '_> {
         span: Span,
         expr: ReevalMode,
         callee: &RExpr,
-        type_ann: Option<&Type>,
         kind: ExtractKind,
         args: &[RExprOrSpread],
         type_args: Option<&RTsTypeParamInstantiation>,

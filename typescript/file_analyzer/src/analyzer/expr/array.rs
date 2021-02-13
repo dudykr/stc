@@ -121,6 +121,7 @@ impl Analyzer<'_, '_> {
                                     &[],
                                     &[],
                                     &[],
+                                    None,
                                 )
                                 .context("tried to call `Symbol.iterator` property")?;
 
@@ -138,6 +139,7 @@ impl Analyzer<'_, '_> {
                                     &[],
                                     &[],
                                     &[],
+                                    None,
                                 )
                                 .context("tried calling `next()` to get element type of iterator")?;
 
