@@ -25,7 +25,7 @@ use stc_ts_file_analyzer::validator::ValidateWith;
 use stc_ts_file_analyzer::DepInfo;
 use stc_ts_file_analyzer::ModuleTypeData;
 use stc_ts_file_analyzer::ValidationResult;
-use stc_ts_module_loader::resolver::node::NodeResolver;
+use stc_ts_module_loader::resolver::Resolve;
 use stc_ts_module_loader::ModuleGraph;
 use stc_ts_storage::ErrorStore;
 use stc_ts_storage::File;
@@ -58,7 +58,7 @@ pub struct Checker {
     /// Informatnion required to generate `.d.ts` files.
     dts_modules: Arc<DashMap<ModuleId, RModule>>,
 
-    module_graph: Arc<ModuleGraph<StcComments, NodeResolver>>,
+    module_graph: Arc<ModuleGraph<StcComments, Arc<dyn Resolve>>>,
 
     /// Modules which are being processed or analyzed.
     started: Arc<DashSet<ModuleId>>,
@@ -78,6 +78,7 @@ impl Checker {
         env: Env,
         parser_config: TsConfig,
         debugger: Option<Debugger>,
+        resolver: Arc<dyn Resolve>,
     ) -> Self {
         Checker {
             logger,
@@ -89,7 +90,7 @@ impl Checker {
             module_graph: Arc::new(ModuleGraph::new(
                 cm,
                 Some(Default::default()),
-                NodeResolver,
+                resolver,
                 parser_config,
                 env.target(),
             )),

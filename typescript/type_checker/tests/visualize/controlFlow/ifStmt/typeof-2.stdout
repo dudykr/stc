@@ -1,0 +1,88 @@
+warning: Type
+ --> $DIR/tests/visualize/controlFlow/ifStmt/typeof-2.ts:6:12
+  |
+6 | if (typeof strOrNumOrBool === "string" || typeof strOrNumOrBool === "number") {
+  |            ^^^^^^^^^^^^^^
+  |
+  = note: string | number | boolean
+
+warning: Type
+ --> $DIR/tests/visualize/controlFlow/ifStmt/typeof-2.ts:6:5
+  |
+6 | if (typeof strOrNumOrBool === "string" || typeof strOrNumOrBool === "number") {
+  |     ^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: string
+
+warning: Type
+ --> $DIR/tests/visualize/controlFlow/ifStmt/typeof-2.ts:6:5
+  |
+6 | if (typeof strOrNumOrBool === "string" || typeof strOrNumOrBool === "number") {
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: boolean
+
+warning: Type
+ --> $DIR/tests/visualize/controlFlow/ifStmt/typeof-2.ts:6:50
+  |
+6 | if (typeof strOrNumOrBool === "string" || typeof strOrNumOrBool === "number") {
+  |                                                  ^^^^^^^^^^^^^^
+  |
+  = note: number | boolean
+
+warning: Type
+ --> $DIR/tests/visualize/controlFlow/ifStmt/typeof-2.ts:6:43
+  |
+6 | if (typeof strOrNumOrBool === "string" || typeof strOrNumOrBool === "number") {
+  |                                           ^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: string
+
+warning: Type
+ --> $DIR/tests/visualize/controlFlow/ifStmt/typeof-2.ts:6:43
+  |
+6 | if (typeof strOrNumOrBool === "string" || typeof strOrNumOrBool === "number") {
+  |                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: boolean
+
+warning: Type
+ --> $DIR/tests/visualize/controlFlow/ifStmt/typeof-2.ts:6:5
+  |
+6 | if (typeof strOrNumOrBool === "string" || typeof strOrNumOrBool === "number") {
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: boolean
+
+warning: Type
+ --> $DIR/tests/visualize/controlFlow/ifStmt/typeof-2.ts:7:16
+  |
+7 |     strOrNum = strOrNumOrBool; // string | number
+  |                ^^^^^^^^^^^^^^
+  |
+  = note: string | number
+
+warning: Type
+ --> $DIR/tests/visualize/controlFlow/ifStmt/typeof-2.ts:7:5
+  |
+7 |     strOrNum = strOrNumOrBool; // string | number
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: string | number
+
+warning: Type
+  --> $DIR/tests/visualize/controlFlow/ifStmt/typeof-2.ts:10:12
+   |
+10 |     bool = strOrNumOrBool; // boolean
+   |            ^^^^^^^^^^^^^^
+   |
+   = note: boolean
+
+warning: Type
+  --> $DIR/tests/visualize/controlFlow/ifStmt/typeof-2.ts:10:5
+   |
+10 |     bool = strOrNumOrBool; // boolean
+   |     ^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: boolean
+

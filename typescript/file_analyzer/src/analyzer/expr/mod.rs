@@ -2,7 +2,7 @@ use super::{marks::MarkExt, Analyzer};
 use crate::util::type_ext::TypeVecExt;
 use crate::util::RemoveTypes;
 use crate::{
-    analyzer::{pat::PatMode, Ctx, ScopeKind},
+    analyzer::{pat::PatMode, Ctx},
     ty,
     ty::{
         Array, ClassInstance, EnumVariant, IndexSignature, IndexedAccessType, Interface, Intersection, Ref, Tuple,
@@ -16,9 +16,7 @@ use crate::{
 };
 use rnode::NodeId;
 use rnode::VisitWith;
-use stc_ts_ast_rnode::RArrowExpr;
 use stc_ts_ast_rnode::RAssignExpr;
-use stc_ts_ast_rnode::RBlockStmtOrExpr;
 use stc_ts_ast_rnode::RCallExpr;
 use stc_ts_ast_rnode::RClassExpr;
 use stc_ts_ast_rnode::RExpr;
@@ -44,6 +42,7 @@ use stc_ts_ast_rnode::RTsNonNullExpr;
 use stc_ts_ast_rnode::RTsThisType;
 use stc_ts_ast_rnode::RUnaryExpr;
 use stc_ts_errors::debug::print_backtrace;
+use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_types::name::Name;
@@ -54,6 +53,7 @@ use stc_ts_types::PropertySignature;
 use stc_ts_types::{ClassProperty, Id, Method, ModuleId, Operator, QueryExpr, QueryType, StaticThis};
 use std::borrow::Cow;
 use std::convert::TryFrom;
+use std::convert::TryInto;
 use swc_atoms::js_word;
 use swc_common::SyntaxContext;
 use swc_common::TypeEq;
@@ -66,6 +66,7 @@ mod await_expr;
 mod bin;
 mod call_new;
 mod constraint_reducer;
+mod function;
 mod object;
 mod optional_chaining;
 mod type_cast;
@@ -128,7 +129,7 @@ impl Analyzer<'_, '_> {
 
                 RExpr::TaggedTpl(e) => e.validate_with(self),
 
-                RExpr::Bin(e) => e.validate_with(self),
+                RExpr::Bin(e) => e.validate_with_args(self, type_ann),
                 RExpr::Cond(e) => e.validate_with_args(self, (mode, type_ann)),
                 RExpr::Seq(e) => e.validate_with_args(self, (mode, type_ann)),
                 RExpr::Update(e) => e.validate_with(self),
@@ -263,7 +264,7 @@ impl Analyzer<'_, '_> {
                     return Ok(box class.validate_with(self)?.into());
                 }
 
-                RExpr::Arrow(ref e) => return Ok(box e.validate_with(self)?.into()),
+                RExpr::Arrow(ref e) => return Ok(box e.validate_with_args(self, type_ann)?.into()),
 
                 RExpr::Fn(RFnExpr { ref function, .. }) => {
                     return Ok(box function.validate_with(self)?.into());
@@ -349,22 +350,36 @@ impl Analyzer<'_, '_> {
         self.with_ctx(ctx).with(|analyzer: &mut Analyzer| {
             let span = e.span();
 
-            let any_span = match e.left {
+            let ty_of_left;
+            let (any_span, type_ann) = match e.left {
                 RPatOrExpr::Pat(box RPat::Ident(ref i)) | RPatOrExpr::Expr(box RExpr::Ident(ref i)) => {
                     // Type is any if self.declaring contains ident
-                    if analyzer.scope.declaring.contains(&i.into()) {
+                    let any_span = if analyzer.scope.declaring.contains(&i.into()) {
                         Some(span)
                     } else {
                         None
-                    }
+                    };
+
+                    ty_of_left = analyzer
+                        .type_of_var(i, TypeOfMode::LValue, None)
+                        .context("tried to get type of lhs of an assignment")?;
+
+                    (any_span, Some(&*ty_of_left))
                 }
 
-                _ => None,
+                _ => (None, type_ann),
             };
 
             let mut errors = Errors::default();
 
-            let rhs_ty = match e.right.validate_with_args(analyzer, (mode, None, type_ann)) {
+            let rhs_ty = match {
+                let ctx = Ctx {
+                    in_assign_rhs: true,
+                    ..analyzer.ctx
+                };
+                let mut analyzer = analyzer.with_ctx(ctx);
+                e.right.validate_with_args(&mut *analyzer, (mode, None, type_ann))
+            } {
                 Ok(rhs_ty) => {
                     analyzer.check_rvalue(span, &rhs_ty);
 
@@ -1424,8 +1439,8 @@ impl Analyzer<'_, '_> {
                 // If type of prop is equal to the type of index signature, it's
                 // index access.
 
-                match constraint {
-                    Some(box Type::Operator(Operator {
+                match constraint.as_deref().map(Type::normalize) {
+                    Some(Type::Operator(Operator {
                         op: TsTypeOperatorOp::KeyOf,
                         ty: box Type::Array(..),
                         ..
@@ -1434,10 +1449,29 @@ impl Analyzer<'_, '_> {
                             return self.access_property(span, obj, prop, type_mode, id_ctx);
                         }
                     }
+
+                    Some(Type::Operator(Operator {
+                        op: TsTypeOperatorOp::KeyOf,
+                        ..
+                    })) => {}
+
+                    Some(index @ Type::Keyword(..)) | Some(index @ Type::Param(..)) => {
+                        // {
+                        //     [P in string]: number;
+                        // };
+                        if let Ok(()) = self.assign(&index, &prop.ty(), span) {
+                            return Ok(m.ty.clone().unwrap_or_else(|| Type::any(span)));
+                        }
+                    }
+
                     _ => {}
                 }
 
-                return Ok(m.ty.as_ref().cloned().unwrap_or_else(|| Type::any(span)));
+                let obj = self
+                    .expand_mapped(span, m)
+                    .context("tried to expand a mapped type to access property")?;
+
+                return self.access_property_inner(span, obj, prop, type_mode, id_ctx);
             }
 
             Type::Ref(r) => {
@@ -1562,7 +1596,7 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult {
         let span = i.span();
         let id: Id = i.into();
-        let name = i.into();
+        let name: Name = i.into();
 
         let mut modules = vec![];
         let mut ty = self.type_of_raw_var(i, type_mode, type_args)?;
@@ -1611,41 +1645,11 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let type_facts = self.scope.get_type_facts(&name)
-            | self
-                .cur_facts
-                .true_facts
-                .facts
-                .get(&name)
-                .copied()
-                .unwrap_or(TypeFacts::None);
-
-        ty = ty.apply_type_facts(type_facts);
+        ty = self.apply_type_facts(&name, ty);
 
         ty = self.type_to_query_if_required(span, i, ty);
 
-        {
-            fn exclude_types(ty: &mut Type, excludes: Option<&Vec<Box<Type>>>) {
-                let excludes = match excludes {
-                    Some(v) => v,
-                    None => return,
-                };
-                let ty = ty.normalize_mut();
-
-                for excluded in excludes {
-                    exclude_type(ty, &excluded);
-                }
-            }
-
-            let mut s = Some(&self.scope);
-
-            while let Some(scope) = s {
-                exclude_types(&mut ty, scope.facts.excludes.get(&name));
-                s = scope.parent();
-            }
-
-            exclude_types(&mut ty, self.cur_facts.true_facts.excludes.get(&name));
-        }
+        self.exclude_types_using_fact(&name, &mut ty);
 
         if !modules.is_empty() {
             modules.push(ty);
@@ -2018,7 +2022,19 @@ impl Analyzer<'_, '_> {
             };
             let obj_ty = self.with_ctx(ctx).expand_fully(span, obj_ty, true)?;
 
-            return self.access_property(span, obj_ty, &prop, type_mode, IdCtx::Var);
+            let mut ty = self
+                .access_property(span, obj_ty, &prop, type_mode, IdCtx::Var)
+                .context(
+                    "tried to access property of an object to calculate type of a non-computed member expression",
+                )?;
+
+            let name: Option<Name> = expr.try_into().ok();
+            if let Some(name) = name {
+                ty = self.apply_type_facts(&name, ty);
+
+                self.exclude_types_using_fact(&name, &mut ty);
+            }
+            Ok(ty)
         }
     }
 
@@ -2098,123 +2114,5 @@ impl Analyzer<'_, '_> {
             TypeElement::Property(PropertySignature { key: Key::Num(..), .. }) => true,
             _ => false,
         })
-    }
-}
-
-#[validator]
-impl Analyzer<'_, '_> {
-    fn validate(&mut self, f: &RArrowExpr) -> ValidationResult<ty::Function> {
-        self.record(f);
-
-        self.with_child(ScopeKind::ArrowFn, Default::default(), |child: &mut Analyzer| {
-            let type_params = try_opt!(f.type_params.validate_with(child));
-
-            let params = {
-                let ctx = Ctx {
-                    pat_mode: PatMode::Decl,
-                    allow_ref_declaring: false,
-                    ..child.ctx
-                };
-
-                for p in &f.params {
-                    child.default_any_pat(p);
-                }
-
-                f.params.validate_with(&mut *child.with_ctx(ctx))?
-            };
-
-            let declared_ret_ty = match f.return_type.validate_with(child) {
-                Some(Ok(ty)) => Some(ty),
-                Some(Err(err)) => {
-                    child.storage.report(err);
-                    Some(Type::any(f.span))
-                }
-                None => None,
-            };
-            let declared_ret_ty = match declared_ret_ty {
-                Some(ty) => {
-                    let span = ty.span();
-                    Some(match *ty {
-                        Type::Class(cls) => box Type::ClassInstance(ClassInstance {
-                            span,
-                            ty: box Type::Class(cls),
-                            type_args: None,
-                        }),
-                        _ => ty,
-                    })
-                }
-                None => None,
-            };
-
-            let inferred_return_type = {
-                match f.body {
-                    RBlockStmtOrExpr::Expr(ref e) => Some({
-                        let ty = e.validate_with_default(child)?;
-                        if child.may_generalize(&ty) {
-                            ty.generalize_lit()
-                        } else {
-                            ty
-                        }
-                    }),
-                    RBlockStmtOrExpr::BlockStmt(ref s) => {
-                        child.visit_stmts_for_return(f.span, f.is_async, f.is_generator, &s.stmts)?
-                    }
-                }
-            };
-
-            // Remove void from inferred return type.
-            let inferred_return_type = inferred_return_type.map(|mut ty| {
-                match &mut *ty {
-                    Type::Union(ty) => {
-                        ty.types.retain(|ty| match &**ty {
-                            Type::Keyword(RTsKeywordType {
-                                kind: TsKeywordTypeKind::TsVoidKeyword,
-                                ..
-                            }) => false,
-                            _ => true,
-                        });
-                    }
-                    _ => {}
-                }
-
-                ty
-            });
-
-            if let Some(ref declared) = declared_ret_ty {
-                let span = inferred_return_type.span();
-                if let Some(ref inferred) = inferred_return_type {
-                    child.assign(declared, inferred, span)?;
-                }
-            }
-
-            Ok(ty::Function {
-                span: f.span,
-                params,
-                type_params,
-                ret_ty: declared_ret_ty.unwrap_or_else(|| inferred_return_type.unwrap_or_else(|| Type::void(f.span))),
-            })
-        })
-    }
-}
-
-/// Exclude `excluded` from `ty`
-fn exclude_type(ty: &mut Type, excluded: &Type) {
-    match excluded {
-        Type::Union(excluded) => {
-            //
-            for excluded in &excluded.types {
-                exclude_type(ty, &excluded)
-            }
-
-            return;
-        }
-        _ => {}
-    }
-
-    match &mut *ty {
-        Type::Union(ty) => {
-            ty.types.retain(|element| !excluded.type_eq(element));
-        }
-        _ => {}
     }
 }

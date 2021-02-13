@@ -98,7 +98,7 @@ impl CondFacts {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub(super) struct Facts {
     pub true_facts: CondFacts,
     pub false_facts: CondFacts,
@@ -108,6 +108,13 @@ impl Facts {
     pub fn clear(&mut self) {
         self.true_facts.clear();
         self.false_facts.clear();
+    }
+
+    pub fn take(&mut self) -> Self {
+        Self {
+            true_facts: self.true_facts.take(),
+            false_facts: self.false_facts.take(),
+        }
     }
 }
 
@@ -211,6 +218,10 @@ where
 
 impl AddAssign for CondFacts {
     fn add_assign(&mut self, rhs: Self) {
+        for (k, v) in rhs.facts {
+            *self.facts.entry(k).or_insert(TypeFacts::None) |= v;
+        }
+
         self.types.extend(rhs.types);
         self.vars.extend(rhs.vars);
         self.excludes.extend(rhs.excludes);

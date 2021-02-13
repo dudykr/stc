@@ -435,6 +435,42 @@ impl Analyzer<'_, '_> {
                     return Ok(Type::any(span));
                 }
 
+                Type::Intersection(obj) => {
+                    let types = obj
+                        .types
+                        .iter()
+                        .map(|obj| {
+                            self.call_property(
+                                span,
+                                kind,
+                                obj.clone(),
+                                prop,
+                                type_args,
+                                args,
+                                arg_types,
+                                spread_arg_types,
+                            )
+                        })
+                        .filter_map(Result::ok)
+                        .collect_vec();
+
+                    if types.is_empty() {
+                        if kind == ExtractKind::Call {
+                            return Err(box Error::NoCallabelPropertyWithName {
+                                span,
+                                key: box prop.clone(),
+                            });
+                        } else {
+                            return Err(box Error::NoSuchConstructor {
+                                span,
+                                key: box prop.clone(),
+                            });
+                        }
+                    }
+
+                    return Ok(Type::union(types));
+                }
+
                 Type::Ref(..) => {
                     let obj_type = box self
                         .expand_top_ref(span, Cow::Owned(*obj_type))
@@ -1124,12 +1160,13 @@ impl Analyzer<'_, '_> {
                     .collect());
             }
 
-            Type::Intersection(ref i) => {
+            Type::Intersection(i) => {
                 let candidates = i
                     .types
                     .iter()
                     .map(|callee| self.extract_callee_candidates(span, kind, callee))
-                    .collect::<Result<Vec<_>, _>>()?;
+                    .filter_map(Result::ok)
+                    .collect::<Vec<_>>();
 
                 return Ok(candidates.into_iter().flatten().collect());
             }
@@ -1240,18 +1277,13 @@ impl Analyzer<'_, '_> {
         spread_arg_types: &[TypeOrSpread],
     ) -> ValidationResult {
         let has_spread = arg_types.len() != spread_arg_types.len();
-        let cnt = callee.normalize().iter_union().count();
-
-        if callee.is_any() {
-            return Ok(Type::any(span));
-        }
-
-        slog::info!(self.logger, "get_best_return_type: {} candidates", cnt);
 
         // TODO: Calculate return type only if selected
         // This can be done by storing type params, return type, params in the
         // candidates.
         let mut candidates = self.extract_callee_candidates(span, kind, &callee)?;
+
+        slog::info!(self.logger, "get_best_return_type: {} candidates", candidates.len());
 
         if candidates.is_empty() {
             dbg!();
@@ -1269,6 +1301,7 @@ impl Analyzer<'_, '_> {
             }
 
             return Err(if kind == ExtractKind::Call {
+                print_backtrace();
                 box Error::NoCallSignature { span, callee }
             } else {
                 box Error::NoNewSignature { span, callee }
@@ -1410,6 +1443,10 @@ impl Analyzer<'_, '_> {
                 })
                 .collect::<Result<Vec<_>, _>>()?;
 
+            let ctx = Ctx {
+                in_argument: true,
+                ..self.ctx
+            };
             let mut new_args = vec![];
             for (idx, (arg, param)) in args.into_iter().zip(expanded_param_types.iter()).enumerate() {
                 let arg_ty = &arg_types[idx];
@@ -1462,7 +1499,8 @@ impl Analyzer<'_, '_> {
                         }
 
                         slog::info!(self.logger, "Inferring type of arrow expr with updated type");
-                        box Type::Function(arrow.validate_with(self)?)
+                        // It's okay to use default as we have patched parameters.
+                        box Type::Function(arrow.validate_with_default(&mut *self.with_ctx(ctx))?)
                     }
                     RExpr::Fn(fn_expr) => {
                         for (idx, param) in fn_expr.function.params.iter().enumerate() {
@@ -1470,7 +1508,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         slog::info!(self.logger, "Inferring type of function expr with updated type");
-                        box Type::Function(fn_expr.function.validate_with(self)?)
+                        box Type::Function(fn_expr.function.validate_with(&mut *self.with_ctx(ctx))?)
                     }
                     _ => arg_ty.ty.clone(),
                 };

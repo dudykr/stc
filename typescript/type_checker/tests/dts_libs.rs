@@ -7,6 +7,7 @@ use stc_testing::get_git_root;
 use stc_testing::term_logger;
 use stc_ts_builtin_types::Lib;
 use stc_ts_file_analyzer::env::Env;
+use stc_ts_module_loader::resolver::node::NodeResolver;
 use stc_ts_type_checker::Checker;
 use std::{
     fs::read_to_string,
@@ -109,6 +110,7 @@ fn test_project(_name: &str, dir: &Path, entries: Vec<PathBuf>) {
             Env::simple(Default::default(), JscTarget::Es2020, &Lib::load("es2020.full")),
             TsConfig { ..Default::default() },
             None,
+            Arc::new(NodeResolver),
         );
 
         for main in entries {

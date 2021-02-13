@@ -734,6 +734,20 @@ impl Analyzer<'_, '_> {
             return;
         }
 
+        if let Some(m) = &mut self.mutations {
+            if m.for_pats.entry(i.node_id).or_default().ty.is_some() {
+                return;
+            }
+        }
+
+        if self.env.rule().no_implicit_any {
+            if !self.ctx.in_argument
+                && !(self.ctx.in_return_arg && self.ctx.in_fn_with_return_type)
+                && !self.ctx.in_assign_rhs
+            {
+                self.storage.report(box Error::ImplicitAny { span: i.span });
+            }
+        }
         let implicit_type_mark = self.marks().implicit_type_mark;
 
         if let Some(m) = &mut self.mutations {

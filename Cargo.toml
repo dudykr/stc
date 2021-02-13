@@ -15,6 +15,7 @@ languageserver-types = "0.54.0"
 slog = {version = "2", features = ["release_max_level_off"]}
 stc_ts_builtin_types = {path = "./typescript/builtin_types"}
 stc_ts_file_analyzer = {path = "typescript/file_analyzer"}
+stc_ts_module_loader = { path = "./typescript/module_loader" }
 stc_ts_type_checker = {path = "./typescript/type_checker"}
 stc_utils = {path = "utils"}
 structopt = "0.3.20"

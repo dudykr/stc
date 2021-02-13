@@ -1,4 +1,6 @@
 use super::Analyzer;
+use crate::ty::TypeExt;
+use crate::type_facts::TypeFacts;
 use crate::util::type_ext::TypeVecExt;
 use crate::ValidationResult;
 use rnode::VisitMut;
@@ -6,6 +8,7 @@ use rnode::VisitMutWith;
 use stc_ts_ast_rnode::RNumber;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_errors::DebugExt;
+use stc_ts_types::name::Name;
 use stc_ts_types::Array;
 use stc_ts_types::ClassMember;
 use stc_ts_types::ConstructorSignature;
@@ -20,9 +23,36 @@ use std::borrow::Cow;
 use swc_common::Span;
 use swc_common::Spanned;
 use swc_common::SyntaxContext;
+use swc_common::TypeEq;
 use swc_ecma_ast::TsKeywordTypeKind;
 
+mod mapped;
+
 impl Analyzer<'_, '_> {
+    pub(crate) fn exclude_types_using_fact(&self, name: &Name, ty: &mut Type) {
+        let mut s = Some(&self.scope);
+
+        while let Some(scope) = s {
+            exclude_types(ty, scope.facts.excludes.get(&name));
+            s = scope.parent();
+        }
+
+        exclude_types(ty, self.cur_facts.true_facts.excludes.get(&name));
+    }
+
+    pub(crate) fn apply_type_facts(&self, name: &Name, ty: Box<Type>) -> Box<Type> {
+        let type_facts = self.scope.get_type_facts(&name)
+            | self
+                .cur_facts
+                .true_facts
+                .facts
+                .get(&name)
+                .copied()
+                .unwrap_or(TypeFacts::None);
+
+        ty.apply_type_facts(type_facts)
+    }
+
     pub(crate) fn collect_class_members(&mut self, ty: &Type) -> ValidationResult<Option<Vec<ClassMember>>> {
         let ty = ty.normalize();
         match ty {
@@ -277,5 +307,39 @@ impl VisitMut<Type> for TupleNormalizer {
             }
             _ => {}
         }
+    }
+}
+
+/// Exclude `excluded` from `ty`
+fn exclude_type(ty: &mut Type, excluded: &Type) {
+    match excluded {
+        Type::Union(excluded) => {
+            //
+            for excluded in &excluded.types {
+                exclude_type(ty, &excluded)
+            }
+
+            return;
+        }
+        _ => {}
+    }
+
+    match &mut *ty {
+        Type::Union(ty) => {
+            ty.types.retain(|element| !excluded.type_eq(element));
+        }
+        _ => {}
+    }
+}
+
+fn exclude_types(ty: &mut Type, excludes: Option<&Vec<Box<Type>>>) {
+    let excludes = match excludes {
+        Some(v) => v,
+        None => return,
+    };
+    let ty = ty.normalize_mut();
+
+    for excluded in excludes {
+        exclude_type(ty, &excluded);
     }
 }
