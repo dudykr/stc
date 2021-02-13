@@ -1,6 +1,5 @@
 use crate::analyzer::Analyzer;
 use fxhash::FxBuildHasher;
-use fxhash::FxHashSet;
 use indexmap::IndexSet;
 use itertools::Itertools;
 use rnode::Visit;
