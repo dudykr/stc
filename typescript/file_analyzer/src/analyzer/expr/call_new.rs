@@ -1519,188 +1519,186 @@ impl Analyzer<'_, '_> {
             ret_ty
         );
 
-        if !self.ctx.reevaluating_call_or_new {
-            if let Some(type_params) = type_params {
-                for param in type_params {
-                    slog::info!(self.logger, "({}) Defining {}", self.scope.depth(), param.name);
+        if let Some(type_params) = type_params {
+            for param in type_params {
+                slog::info!(self.logger, "({}) Defining {}", self.scope.depth(), param.name);
 
-                    self.register_type(param.name.clone(), box Type::Param(param.clone()));
-                }
-
-                let inferred = self.infer_arg_types(span, type_args, type_params, &params, &spread_arg_types, None)?;
-
-                let expanded_param_types = params
-                    .into_iter()
-                    .cloned()
-                    .map(|v| -> ValidationResult<_> {
-                        let ty = self.expand_type_params(&inferred, v.ty)?;
-
-                        Ok(FnParam { ty, ..v })
-                    })
-                    .collect::<Result<Vec<_>, _>>()?;
-
-                let ctx = Ctx {
-                    in_argument: true,
-                    ..self.ctx
-                };
-                let mut new_args = vec![];
-                for (idx, (arg, param)) in args.into_iter().zip(expanded_param_types.iter()).enumerate() {
-                    let arg_ty = &arg_types[idx];
-                    let (type_param_decl, actual_params) = match &*param.ty {
-                        Type::Function(f) => (&f.type_params, &f.params),
-                        _ => {
-                            new_args.push(arg_ty.clone());
-                            continue;
-                        }
-                    };
-
-                    if let Some(type_param_decl) = type_param_decl {
-                        for param in &type_param_decl.params {
-                            self.register_type(param.name.clone(), box Type::Param(param.clone()));
-                        }
-                    }
-
-                    let mut patch_arg = |idx: usize, pat: &RPat| -> ValidationResult<()> {
-                        let actual = &actual_params[idx];
-
-                        let default_any_ty: Option<_> = try {
-                            let node_id = pat.node_id()?;
-                            self.mutations.as_ref()?.for_pats.get(&node_id)?.ty.clone()?
-                        };
-
-                        if let Some(ty) = default_any_ty {
-                            match &*ty {
-                                Type::Keyword(RTsKeywordType {
-                                    span,
-                                    kind: TsKeywordTypeKind::TsAnyKeyword,
-                                }) if self.is_implicitly_typed_span(*span) => {
-                                    let new_ty = RTsType::from(actual.ty.clone()).validate_with(self)?;
-                                    if let Some(node_id) = pat.node_id() {
-                                        if let Some(m) = &mut self.mutations {
-                                            m.for_pats.entry(node_id).or_default().ty = Some(new_ty);
-                                        }
-                                    }
-                                    return Ok(());
-                                }
-                                _ => {}
-                            }
-                        }
-                        Ok(())
-                    };
-
-                    let ty = match &*arg.expr {
-                        RExpr::Arrow(arrow) => {
-                            for (idx, pat) in arrow.params.iter().enumerate() {
-                                patch_arg(idx, pat)?;
-                            }
-
-                            slog::info!(self.logger, "Inferring type of arrow expr with updated type");
-                            // It's okay to use default as we have patched parameters.
-                            box Type::Function(arrow.validate_with_default(&mut *self.with_ctx(ctx))?)
-                        }
-                        RExpr::Fn(fn_expr) => {
-                            for (idx, param) in fn_expr.function.params.iter().enumerate() {
-                                patch_arg(idx, &param.pat)?;
-                            }
-
-                            slog::info!(self.logger, "Inferring type of function expr with updated type");
-                            box Type::Function(fn_expr.function.validate_with(&mut *self.with_ctx(ctx))?)
-                        }
-                        _ => arg_ty.ty.clone(),
-                    };
-                    print_type(&logger, "mapped", &self.cm, &ty);
-
-                    let new_arg = TypeOrSpread { ty, ..arg_ty.clone() };
-
-                    new_args.push(new_arg);
-                }
-
-                {
-                    let ctx = Ctx {
-                        reevaluating_call_or_new: true,
-                        ..self.ctx
-                    };
-                    match expr {
-                        ReevalMode::Call(e) => {
-                            return e.validate_with_default(&mut *self.with_ctx(ctx));
-                        }
-                        ReevalMode::New(e) => {
-                            return e.validate_with_default(&mut *self.with_ctx(ctx));
-                        }
-                        _ => {}
-                    }
-                }
-
-                // if arg.len() > param.len(), we need to add all args
-                if arg_types.len() > params.len() {
-                    new_args.extend(arg_types[params.len()..].iter().cloned());
-                }
-
-                // We have to recalculate types.
-                let mut new_arg_types;
-                let spread_arg_types = if new_args.iter().any(|arg| arg.spread.is_some()) {
-                    new_arg_types = vec![];
-                    for arg in &new_args {
-                        if arg.spread.is_some() {
-                            match &*arg.ty {
-                                Type::Tuple(arg_ty) => {
-                                    new_arg_types.extend(arg_ty.elems.iter().map(|element| &element.ty).cloned().map(
-                                        |ty| TypeOrSpread {
-                                            span: arg.spread.unwrap(),
-                                            spread: None,
-                                            ty,
-                                        },
-                                    ));
-                                }
-                                _ => {
-                                    new_arg_types.push(arg.clone());
-                                }
-                            }
-                        } else {
-                            new_arg_types.push(arg.clone());
-                        }
-                    }
-
-                    &*new_arg_types
-                } else {
-                    &*new_args
-                };
-
-                let ctx = Ctx {
-                    preserve_params: true,
-                    preserve_ret_ty: true,
-                    ..self.ctx
-                };
-                let ret_ty = self.with_ctx(ctx).expand(span, ret_ty)?;
-
-                self.validate_arg_types(&expanded_param_types, &spread_arg_types);
-
-                print_type(&logger, "Return", &self.cm, &ret_ty);
-                let mut ty = self.expand_type_params(&inferred, ret_ty)?;
-                print_type(&logger, "Return, expanded", &self.cm, &ty);
-
-                ty.visit_mut_with(&mut ReturnTypeSimplifier { analyzer: self });
-
-                print_type(&logger, "Return, simplified", &self.cm, &ty);
-
-                ty = self.simplify(ty);
-
-                print_type(&logger, "Return, simplified again", &self.cm, &ty);
-
-                ty = ty.fold_with(&mut ReturnTypeGeneralizer { analyzer: self });
-
-                print_type(&logger, "Return, generalized", &self.cm, &ty);
-
-                self.add_required_type_params(&mut ty);
-
-                if kind == ExtractKind::Call {
-                    self.add_call_facts(params, &args, &mut ty);
-                }
-
-                ty.reposition(span);
-
-                return Ok(ty);
+                self.register_type(param.name.clone(), box Type::Param(param.clone()));
             }
+
+            let inferred = self.infer_arg_types(span, type_args, type_params, &params, &spread_arg_types, None)?;
+
+            let expanded_param_types = params
+                .into_iter()
+                .cloned()
+                .map(|v| -> ValidationResult<_> {
+                    let ty = self.expand_type_params(&inferred, v.ty)?;
+
+                    Ok(FnParam { ty, ..v })
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+
+            let ctx = Ctx {
+                in_argument: true,
+                ..self.ctx
+            };
+            let mut new_args = vec![];
+            for (idx, (arg, param)) in args.into_iter().zip(expanded_param_types.iter()).enumerate() {
+                let arg_ty = &arg_types[idx];
+                let (type_param_decl, actual_params) = match &*param.ty {
+                    Type::Function(f) => (&f.type_params, &f.params),
+                    _ => {
+                        new_args.push(arg_ty.clone());
+                        continue;
+                    }
+                };
+
+                if let Some(type_param_decl) = type_param_decl {
+                    for param in &type_param_decl.params {
+                        self.register_type(param.name.clone(), box Type::Param(param.clone()));
+                    }
+                }
+
+                let mut patch_arg = |idx: usize, pat: &RPat| -> ValidationResult<()> {
+                    let actual = &actual_params[idx];
+
+                    let default_any_ty: Option<_> = try {
+                        let node_id = pat.node_id()?;
+                        self.mutations.as_ref()?.for_pats.get(&node_id)?.ty.clone()?
+                    };
+
+                    if let Some(ty) = default_any_ty {
+                        match &*ty {
+                            Type::Keyword(RTsKeywordType {
+                                span,
+                                kind: TsKeywordTypeKind::TsAnyKeyword,
+                            }) if self.is_implicitly_typed_span(*span) => {
+                                let new_ty = RTsType::from(actual.ty.clone()).validate_with(self)?;
+                                if let Some(node_id) = pat.node_id() {
+                                    if let Some(m) = &mut self.mutations {
+                                        m.for_pats.entry(node_id).or_default().ty = Some(new_ty);
+                                    }
+                                }
+                                return Ok(());
+                            }
+                            _ => {}
+                        }
+                    }
+                    Ok(())
+                };
+
+                let ty = match &*arg.expr {
+                    RExpr::Arrow(arrow) => {
+                        for (idx, pat) in arrow.params.iter().enumerate() {
+                            patch_arg(idx, pat)?;
+                        }
+
+                        slog::info!(self.logger, "Inferring type of arrow expr with updated type");
+                        // It's okay to use default as we have patched parameters.
+                        box Type::Function(arrow.validate_with_default(&mut *self.with_ctx(ctx))?)
+                    }
+                    RExpr::Fn(fn_expr) => {
+                        for (idx, param) in fn_expr.function.params.iter().enumerate() {
+                            patch_arg(idx, &param.pat)?;
+                        }
+
+                        slog::info!(self.logger, "Inferring type of function expr with updated type");
+                        box Type::Function(fn_expr.function.validate_with(&mut *self.with_ctx(ctx))?)
+                    }
+                    _ => arg_ty.ty.clone(),
+                };
+                print_type(&logger, "mapped", &self.cm, &ty);
+
+                let new_arg = TypeOrSpread { ty, ..arg_ty.clone() };
+
+                new_args.push(new_arg);
+            }
+
+            if !self.ctx.reevaluating_call_or_new {
+                let ctx = Ctx {
+                    reevaluating_call_or_new: true,
+                    ..self.ctx
+                };
+                match expr {
+                    ReevalMode::Call(e) => {
+                        return e.validate_with_default(&mut *self.with_ctx(ctx));
+                    }
+                    ReevalMode::New(e) => {
+                        return e.validate_with_default(&mut *self.with_ctx(ctx));
+                    }
+                    _ => {}
+                }
+            }
+
+            // if arg.len() > param.len(), we need to add all args
+            if arg_types.len() > params.len() {
+                new_args.extend(arg_types[params.len()..].iter().cloned());
+            }
+
+            // We have to recalculate types.
+            let mut new_arg_types;
+            let spread_arg_types = if new_args.iter().any(|arg| arg.spread.is_some()) {
+                new_arg_types = vec![];
+                for arg in &new_args {
+                    if arg.spread.is_some() {
+                        match &*arg.ty {
+                            Type::Tuple(arg_ty) => {
+                                new_arg_types.extend(arg_ty.elems.iter().map(|element| &element.ty).cloned().map(
+                                    |ty| TypeOrSpread {
+                                        span: arg.spread.unwrap(),
+                                        spread: None,
+                                        ty,
+                                    },
+                                ));
+                            }
+                            _ => {
+                                new_arg_types.push(arg.clone());
+                            }
+                        }
+                    } else {
+                        new_arg_types.push(arg.clone());
+                    }
+                }
+
+                &*new_arg_types
+            } else {
+                &*new_args
+            };
+
+            let ctx = Ctx {
+                preserve_params: true,
+                preserve_ret_ty: true,
+                ..self.ctx
+            };
+            let ret_ty = self.with_ctx(ctx).expand(span, ret_ty)?;
+
+            self.validate_arg_types(&expanded_param_types, &spread_arg_types);
+
+            print_type(&logger, "Return", &self.cm, &ret_ty);
+            let mut ty = self.expand_type_params(&inferred, ret_ty)?;
+            print_type(&logger, "Return, expanded", &self.cm, &ty);
+
+            ty.visit_mut_with(&mut ReturnTypeSimplifier { analyzer: self });
+
+            print_type(&logger, "Return, simplified", &self.cm, &ty);
+
+            ty = self.simplify(ty);
+
+            print_type(&logger, "Return, simplified again", &self.cm, &ty);
+
+            ty = ty.fold_with(&mut ReturnTypeGeneralizer { analyzer: self });
+
+            print_type(&logger, "Return, generalized", &self.cm, &ty);
+
+            self.add_required_type_params(&mut ty);
+
+            if kind == ExtractKind::Call {
+                self.add_call_facts(params, &args, &mut ty);
+            }
+
+            ty.reposition(span);
+
+            return Ok(ty);
         }
 
         self.validate_arg_types(params, &spread_arg_types);
