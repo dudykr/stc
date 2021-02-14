@@ -55,6 +55,13 @@ impl ObjectUnionNormalizer {
             .collect()
     }
 
+    fn normalize_call_signatures(&self, ty: &mut Type) {
+        match ty {
+            Type::Union(u) => u,
+            _ => return,
+        }
+    }
+
     fn normalize_keys(&self, u: &mut Union) {
         let keys = self.find_keys(&u.types);
 
@@ -93,6 +100,14 @@ impl ObjectUnionNormalizer {
                 _ => {}
             }
         }
+    }
+}
+
+impl VisitMut<Type> for ObjectUnionNormalizer {
+    fn visit_mut(&mut self, ty: &mut Type) {
+        ty.visit_mut_children_with(self);
+
+        self.normalize_call_signatures(ty);
     }
 }
 
