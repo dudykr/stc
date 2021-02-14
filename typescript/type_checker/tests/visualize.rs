@@ -1,4 +1,5 @@
 //! Visual testing for dts.
+#![cfg(debug_assertions)]
 #![allow(incomplete_features)]
 #![feature(box_syntax)]
 #![feature(specialization)]
