@@ -1892,9 +1892,9 @@ impl Analyzer<'_, '_> {
             return Ok(ty);
         }
 
-        let mut inferred = InferData::default();
-
         if let Some(type_ann) = type_ann {
+            let mut inferred = InferData::default();
+
             self.infer_type(span, &mut inferred, &ty, type_ann)?;
             slog::info!(
                 self.logger,
