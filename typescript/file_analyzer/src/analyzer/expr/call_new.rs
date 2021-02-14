@@ -1598,6 +1598,29 @@ impl Analyzer<'_, '_> {
                 self.register_type(param.name.clone(), box Type::Param(param.clone()));
             }
 
+            let inferred_from_return_type = match type_ann {
+                Some(type_ann) => self
+                    .infer_type_with_types(span, type_params, &ret_ty, type_ann)
+                    .map(Some)?,
+                None => None,
+            };
+
+            let expanded_params;
+            let params = if let Some(map) = &inferred_from_return_type {
+                expanded_params = params
+                    .into_iter()
+                    .cloned()
+                    .map(|v| -> ValidationResult<_> {
+                        let ty = self.expand_type_params(&map, v.ty)?;
+
+                        Ok(FnParam { ty, ..v })
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+                &expanded_params
+            } else {
+                params
+            };
+
             let inferred = self.infer_arg_types(span, type_args, type_params, &params, &spread_arg_types, None)?;
 
             let expanded_param_types = params
