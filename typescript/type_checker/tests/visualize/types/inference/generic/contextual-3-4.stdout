@@ -83,7 +83,7 @@ warning: Type
    |                                                                ^^^^^^^^^
    |
    = note: {
-               value: T;
+               value: A;
            }
 
 warning: Type
@@ -93,7 +93,7 @@ warning: Type
    |                                                               ^^^^^^^^^^^
    |
    = note: {
-               value: T;
+               value: A;
            }
 
 warning: Type
@@ -102,8 +102,8 @@ warning: Type
 10 | export const f23: <A>(a: A[]) => Box<A>[] = arrayMap(value => ({ value }));
    |                                                      ^^^^^^^^^^^^^^^^^^^^
    |
-   = note: (value: T) => {
-               value: T;
+   = note: (value: A) => {
+               value: A;
            }
 
 warning: Type
@@ -112,7 +112,7 @@ warning: Type
 10 | export const f23: <A>(a: A[]) => Box<A>[] = arrayMap(value => ({ value }));
    |                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    |
-   = note: <T>(a: T[]) => {
-               value: T;
+   = note: <A>(a: A[]) => {
+               value: A;
            }[]
 

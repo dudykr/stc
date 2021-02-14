@@ -76,15 +76,7 @@ warning: Type
 12 | export const f10: <T>(x: T) => Box<T[]> = compose(a => list(a), b => box(b));
    |                                                             ^
    |
-   = note: A
-
-warning: Type
-  --> $DIR/tests/visualize/types/inference/generic/contextual-2-1.ts:12:56
-   |
-12 | export const f10: <T>(x: T) => Box<T[]> = compose(a => list(a), b => box(b));
-   |                                                        ^^^^^^^
-   |
-   = note: A[]
+   = note: T
 
 warning: Type
   --> $DIR/tests/visualize/types/inference/generic/contextual-2-1.ts:12:74
@@ -108,7 +100,7 @@ warning: Type
 12 | export const f10: <T>(x: T) => Box<T[]> = compose(a => list(a), b => box(b));
    |                                                   ^^^^^^^^^^^^
    |
-   = note: (a: A) => A[]
+   = note: (a: T) => T[]
 
 warning: Type
   --> $DIR/tests/visualize/types/inference/generic/contextual-2-1.ts:12:65

@@ -76,7 +76,7 @@ warning: Type
 10 | export const f21: <A>(a: A[]) => A[][] = arrayMap(x => [x]);
    |                                                         ^
    |
-   = note: T
+   = note: A
 
 warning: Type
   --> $DIR/tests/visualize/types/inference/generic/contextual-3-2.ts:10:56
@@ -84,7 +84,7 @@ warning: Type
 10 | export const f21: <A>(a: A[]) => A[][] = arrayMap(x => [x]);
    |                                                        ^^^
    |
-   = note: [T]
+   = note: [A]
 
 warning: Type
   --> $DIR/tests/visualize/types/inference/generic/contextual-3-2.ts:10:51
@@ -92,7 +92,7 @@ warning: Type
 10 | export const f21: <A>(a: A[]) => A[][] = arrayMap(x => [x]);
    |                                                   ^^^^^^^^
    |
-   = note: (x: T) => [T]
+   = note: (x: A) => [A]
 
 warning: Type
   --> $DIR/tests/visualize/types/inference/generic/contextual-3-2.ts:10:42
@@ -100,5 +100,5 @@ warning: Type
 10 | export const f21: <A>(a: A[]) => A[][] = arrayMap(x => [x]);
    |                                          ^^^^^^^^^^^^^^^^^^
    |
-   = note: <T>(a: T[]) => [T][]
+   = note: <A>(a: A[]) => [A][]
 
