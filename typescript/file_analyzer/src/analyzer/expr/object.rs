@@ -54,16 +54,8 @@ impl ObjectUnionNormalizer {
             .filter_map(|member| member.non_computed_key().cloned())
             .collect()
     }
-}
 
-impl VisitMut<Union> for ObjectUnionNormalizer {
-    fn visit_mut(&mut self, u: &mut Union) {
-        u.visit_mut_children_with(self);
-
-        // If an union does not contains object literals, skip it.
-        if u.types.iter().all(|ty| !ty.normalize().is_type_lit()) {
-            return;
-        }
+    fn normalize_keys(&self, u: &mut Union) {
         let keys = self.find_keys(&u.types);
 
         // Add properties.
@@ -101,6 +93,19 @@ impl VisitMut<Union> for ObjectUnionNormalizer {
                 _ => {}
             }
         }
+    }
+}
+
+impl VisitMut<Union> for ObjectUnionNormalizer {
+    fn visit_mut(&mut self, u: &mut Union) {
+        u.visit_mut_children_with(self);
+
+        // If an union does not contains object literals, skip it.
+        if u.types.iter().all(|ty| !ty.normalize().is_type_lit()) {
+            return;
+        }
+
+        self.normalize_keys(u);
     }
 }
 
