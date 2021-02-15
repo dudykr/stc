@@ -778,10 +778,6 @@ impl Type {
 
         tys.retain(|ty| !ty.is_never());
 
-        if tys.iter().any(|ty| ty.is_any()) {
-            return Type::any(span);
-        }
-
         match tys.len() {
             0 => Type::never(span),
             1 => tys.into_iter().next().unwrap(),
