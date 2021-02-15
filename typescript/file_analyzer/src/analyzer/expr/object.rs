@@ -1,5 +1,6 @@
 use crate::analyzer::Analyzer;
 use crate::analyzer::ScopeKind;
+use crate::util::type_ext::TypeVecExt;
 use crate::validator::ValidateWith;
 use crate::ValidationResult;
 use fxhash::FxHashMap;
@@ -134,6 +135,7 @@ impl ObjectUnionNormalizer {
 
                             types.push(param.ty);
                         }
+                        types.dedup_type();
 
                         let ty = Type::intersection(DUMMY_SP, types);
                         FnParam {
