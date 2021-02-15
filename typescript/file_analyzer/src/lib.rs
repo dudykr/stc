@@ -1,3 +1,7 @@
+//! Main analyzer.
+//!
+//! Codes splitted over multiple crates to reduce compile time.
+
 #![allow(incomplete_features)]
 #![allow(unused_variables)] // temporary
 #![allow(unused_mut)] // temporary
