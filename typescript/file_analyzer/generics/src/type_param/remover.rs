@@ -22,7 +22,7 @@ use swc_common::util::move_map::MoveMap;
 /// const arrayMap: <A, B>(f: (x: A) => B) => (a: A[]) => B[];
 /// ```
 #[derive(Debug)]
-pub(super) struct TypeParamRemover<'a> {
+pub struct TypeParamRemover<'a> {
     scope: Scope<'a>,
 }
 

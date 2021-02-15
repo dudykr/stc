@@ -1,4 +1,3 @@
-use self::remover::TypeParamRemover;
 use super::Analyzer;
 use super::Ctx;
 use crate::util::RemoveTypes;
@@ -24,6 +23,7 @@ use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::debug::print_backtrace;
 use stc_ts_errors::debug::print_type;
 use stc_ts_errors::DebugExt;
+use stc_ts_generics::type_param::remover::TypeParamRemover;
 use stc_ts_types::Array;
 use stc_ts_types::FnParam;
 use stc_ts_types::Id;
@@ -61,7 +61,6 @@ use swc_ecma_ast::*;
 
 mod expander;
 mod inference;
-mod remover;
 
 /// Lower value means higher priority and it contains lower value if the
 /// type parameter and the type argument are simpler.
