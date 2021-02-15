@@ -3,19 +3,25 @@ use crate::analyzer::ScopeKind;
 use crate::validator::ValidateWith;
 use crate::ValidationResult;
 use indexmap::IndexSet;
+use itertools::Itertools;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
+use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RObjectLit;
+use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RPropOrSpread;
 use stc_ts_ast_rnode::RSpreadElement;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_file_analyzer_macros::validator;
+use stc_ts_types::CallSignature;
+use stc_ts_types::FnParam;
 use stc_ts_types::Key;
 use stc_ts_types::PropertySignature;
 use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
 use stc_ts_types::Union;
+use std::iter::repeat;
 use swc_atoms::JsWord;
 use swc_common::DUMMY_SP;
 
@@ -56,10 +62,106 @@ impl ObjectUnionNormalizer {
     }
 
     fn normalize_call_signatures(&self, ty: &mut Type) {
-        match ty {
+        let u = match ty {
             Type::Union(u) => u,
             _ => return,
+        };
+
+        let mut new_params = vec![];
+        let mut new_return_types = vec![];
+        let mut extra_members = vec![];
+        //
+        for (i, ty) in u.types.iter().enumerate() {
+            match &**ty {
+                Type::TypeLit(ty) => {
+                    for m in &ty.members {
+                        //
+                        match m {
+                            TypeElement::Call(CallSignature { params, ret_ty, .. }) => {
+                                // Parameters are intersectioned, and return
+                                // types are unioned.
+
+                                for (i, param) in params.iter().enumerate() {
+                                    if new_params.len() <= i {
+                                        new_params.extend(repeat(vec![]).take(i + 1 - new_params.len()));
+                                    }
+
+                                    new_params[i].push(param.clone());
+                                }
+
+                                new_return_types.extend(ret_ty.clone());
+                            }
+                            _ => {
+                                if extra_members.len() <= i {
+                                    extra_members.extend(repeat(vec![]).take(i + 1 - extra_members.len()));
+                                }
+
+                                extra_members[i].push(m.clone())
+                            }
+                        }
+                    }
+                }
+                _ => {}
+            }
         }
+
+        if new_params.is_empty() {
+            return;
+        }
+
+        let mut members = vec![];
+
+        // TODO: Handle multiple call signatures
+        members.push(TypeElement::Call(CallSignature {
+            span: DUMMY_SP,
+            ret_ty: Some(Type::union(new_return_types)),
+            // TODO
+            type_params: None,
+            params: new_params
+                .into_iter()
+                .map(|params| {
+                    let mut pat = None;
+                    let mut types = vec![];
+                    for param in params {
+                        if pat.is_none() {
+                            pat = Some(param.pat);
+                        }
+
+                        types.push(param.ty);
+                    }
+
+                    let ty = Type::intersection(DUMMY_SP, types);
+                    FnParam {
+                        span: DUMMY_SP,
+                        // TODO
+                        required: true,
+                        // TODO
+                        pat: pat.unwrap_or_else(|| RPat::Ident(RIdent::new("a".into(), DUMMY_SP))),
+                        ty,
+                    }
+                })
+                .collect_vec(),
+        }));
+
+        let new_lit = TypeLit { span: u.span, members };
+
+        if extra_members.is_empty() {
+            *ty = Type::TypeLit(new_lit);
+            return;
+        }
+
+        let mut new_types = extra_members
+            .into_iter()
+            .map(|extra_members| {
+                let mut new_lit = new_lit.clone();
+                new_lit.members.extend(extra_members);
+                new_lit
+            })
+            .map(Type::TypeLit)
+            .map(Box::new)
+            .collect_vec();
+
+        u.types = new_types;
     }
 
     fn normalize_keys(&self, u: &mut Union) {
