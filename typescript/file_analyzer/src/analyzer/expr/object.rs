@@ -63,6 +63,7 @@ impl ObjectUnionNormalizer {
             .collect()
     }
 
+    /// TODO: Add type parameters.
     fn normalize_call_signatures(&self, ty: &mut Type) {
         let u = match ty {
             Type::Union(u) => u,
