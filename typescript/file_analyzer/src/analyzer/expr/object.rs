@@ -45,9 +45,11 @@ impl Analyzer<'_, '_> {
     }
 }
 
-struct ObjectUnionNormalizer;
+struct ObjectUnionNormalizer<'a, 'b, 'c> {
+    anaylzer: &'a mut Analyzer<'b, 'c>,
+}
 
-impl ObjectUnionNormalizer {
+impl ObjectUnionNormalizer<'_, '_, '_> {
     /// We need to know shape of normalized type literal.
     ///
     /// We use indexset to remove duplicate while preserving order.
@@ -214,7 +216,7 @@ impl ObjectUnionNormalizer {
     }
 }
 
-impl VisitMut<Type> for ObjectUnionNormalizer {
+impl VisitMut<Type> for ObjectUnionNormalizer<'_, '_, '_> {
     fn visit_mut(&mut self, ty: &mut Type) {
         ty.visit_mut_children_with(self);
 
@@ -222,7 +224,7 @@ impl VisitMut<Type> for ObjectUnionNormalizer {
     }
 }
 
-impl VisitMut<Union> for ObjectUnionNormalizer {
+impl VisitMut<Union> for ObjectUnionNormalizer<'_, '_, '_> {
     fn visit_mut(&mut self, u: &mut Union) {
         u.visit_mut_children_with(self);
 
@@ -245,7 +247,7 @@ impl Analyzer<'_, '_> {
     /// Type of `a` in the code above is `{ a: number, b?: undefined } | {
     /// a:number, b: string }`.
     pub(super) fn normalize_union_of_objects(&mut self, ty: &mut Type) {
-        ty.visit_mut_with(&mut ObjectUnionNormalizer);
+        ty.visit_mut_with(&mut ObjectUnionNormalizer { anaylzer: self });
     }
 
     fn append_prop_or_spread_to_type(&mut self, to: Box<Type>, prop: &RPropOrSpread) -> ValidationResult {
