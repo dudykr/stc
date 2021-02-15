@@ -2,6 +2,7 @@ use crate::analyzer::Analyzer;
 use crate::analyzer::ScopeKind;
 use crate::validator::ValidateWith;
 use crate::ValidationResult;
+use fxhash::FxHashMap;
 use indexmap::IndexSet;
 use itertools::Itertools;
 use rnode::VisitMut;
@@ -67,36 +68,37 @@ impl ObjectUnionNormalizer {
             _ => return,
         };
 
-        let mut new_params = vec![];
-        let mut new_return_types = vec![];
+        let mut new_params = FxHashMap::<_, Vec<_>>::default();
+        let mut new_return_types = FxHashMap::<_, Vec<_>>::default();
         let mut extra_members = vec![];
         //
-        for (i, ty) in u.types.iter().enumerate() {
+        for (type_idx, ty) in u.types.iter().enumerate() {
             match &**ty {
                 Type::TypeLit(ty) => {
-                    for m in &ty.members {
+                    for (i, m) in ty.members.iter().enumerate() {
                         //
                         match m {
                             TypeElement::Call(CallSignature { params, ret_ty, .. }) => {
                                 // Parameters are intersectioned, and return
                                 // types are unioned.
 
-                                for (i, param) in params.iter().enumerate() {
-                                    if new_params.len() <= i {
-                                        new_params.extend(repeat(vec![]).take(i + 1 - new_params.len()));
+                                for (idx, param) in params.iter().enumerate() {
+                                    let new_params = new_params.entry(i).or_default();
+                                    if new_params.len() <= idx {
+                                        new_params.extend(repeat(vec![]).take(idx + 1 - new_params.len()));
                                     }
 
-                                    new_params[i].push(param.clone());
+                                    new_params[idx].push(param.clone());
                                 }
 
-                                new_return_types.extend(ret_ty.clone());
+                                new_return_types.entry(i).or_default().extend(ret_ty.clone());
                             }
                             _ => {
-                                if extra_members.len() <= i {
-                                    extra_members.extend(repeat(vec![]).take(i + 1 - extra_members.len()));
+                                if extra_members.len() <= type_idx {
+                                    extra_members.extend(repeat(vec![]).take(type_idx + 1 - extra_members.len()));
                                 }
 
-                                extra_members[i].push(m.clone())
+                                extra_members[type_idx].push(m.clone())
                             }
                         }
                     }
@@ -112,36 +114,40 @@ impl ObjectUnionNormalizer {
         let mut members = vec![];
 
         // TODO: Handle multiple call signatures
-        members.push(TypeElement::Call(CallSignature {
-            span: DUMMY_SP,
-            ret_ty: Some(Type::union(new_return_types)),
-            // TODO
-            type_params: None,
-            params: new_params
-                .into_iter()
-                .map(|params| {
-                    let mut pat = None;
-                    let mut types = vec![];
-                    for param in params {
-                        if pat.is_none() {
-                            pat = Some(param.pat);
+        for (i, new_params) in new_params {
+            let mut return_types = new_return_types.remove(&i).unwrap_or_default();
+
+            members.push(TypeElement::Call(CallSignature {
+                span: DUMMY_SP,
+                ret_ty: Some(Type::union(return_types)),
+                // TODO
+                type_params: None,
+                params: new_params
+                    .into_iter()
+                    .map(|params| {
+                        let mut pat = None;
+                        let mut types = vec![];
+                        for param in params {
+                            if pat.is_none() {
+                                pat = Some(param.pat);
+                            }
+
+                            types.push(param.ty);
                         }
 
-                        types.push(param.ty);
-                    }
-
-                    let ty = Type::intersection(DUMMY_SP, types);
-                    FnParam {
-                        span: DUMMY_SP,
-                        // TODO
-                        required: true,
-                        // TODO
-                        pat: pat.unwrap_or_else(|| RPat::Ident(RIdent::new("a".into(), DUMMY_SP))),
-                        ty,
-                    }
-                })
-                .collect_vec(),
-        }));
+                        let ty = Type::intersection(DUMMY_SP, types);
+                        FnParam {
+                            span: DUMMY_SP,
+                            // TODO
+                            required: true,
+                            // TODO
+                            pat: pat.unwrap_or_else(|| RPat::Ident(RIdent::new("a".into(), DUMMY_SP))),
+                            ty,
+                        }
+                    })
+                    .collect_vec(),
+            }));
+        }
 
         let new_lit = TypeLit { span: u.span, members };
 
