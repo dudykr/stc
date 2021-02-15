@@ -117,6 +117,7 @@ impl ObjectUnionNormalizer {
         // TODO: Handle multiple call signatures
         for (i, new_params) in new_params {
             let mut return_types = new_return_types.remove(&i).unwrap_or_default();
+            return_types.dedup_type();
 
             members.push(TypeElement::Call(CallSignature {
                 span: DUMMY_SP,
