@@ -1,11 +1,13 @@
 use fxhash::FxHashSet;
 use rnode::Fold;
 use rnode::FoldWith;
+use stc_ts_types::CallSignature;
+use stc_ts_types::ConstructorSignature;
 use stc_ts_types::Function;
 use stc_ts_types::Id;
+use stc_ts_types::MethodSignature;
 use stc_ts_types::TypeParam;
 use stc_ts_types::TypeParamDecl;
-use stc_ts_types::Union;
 use swc_common::util::move_map::MoveMap;
 
 /// Removes conflicting type parameters from children.
@@ -34,11 +36,20 @@ impl TypeParamRemover<'static> {
     }
 }
 
-impl Fold<Union> for TypeParamRemover<'_> {
-    fn fold(&mut self, ty: Union) -> Union {
-        ty
-    }
+macro_rules! noop {
+    ($T:ident) => {
+        impl Fold<$T> for TypeParamRemover<'_> {
+            #[inline]
+            fn fold(&mut self, node: $T) -> $T {
+                node
+            }
+        }
+    };
 }
+
+noop!(CallSignature);
+noop!(ConstructorSignature);
+noop!(MethodSignature);
 
 impl Fold<Option<TypeParamDecl>> for TypeParamRemover<'_> {
     fn fold(&mut self, node: Option<TypeParamDecl>) -> Option<TypeParamDecl> {
