@@ -1521,6 +1521,18 @@ impl Analyzer<'_, '_> {
                 _ => {}
             }
             if param.required {
+                if let Ok(()) = self.assign(
+                    &param.ty,
+                    &Type::Keyword(RTsKeywordType {
+                        span,
+                        kind: TsKeywordTypeKind::TsVoidKeyword,
+                    }),
+                    span,
+                ) {
+                    // Reduce min_params if the type of parameter accepts void.
+                    continue;
+                }
+
                 min_param += 1;
             }
         }
