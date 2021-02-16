@@ -10,6 +10,9 @@ use stc_ts_types::TypeParamDecl;
 #[derive(Debug)]
 pub struct TypeParamReplacer {
     pub inferred: FxHashMap<Id, Box<Type>>,
+    /// `true` means we should replace type parameters with other type
+    /// parameter.
+    pub include_type_params: bool,
 }
 
 impl Fold<Type> for TypeParamReplacer {
@@ -20,7 +23,7 @@ impl Fold<Type> for TypeParamReplacer {
             Type::Param(ref param) => {
                 if let Some(mapped) = self.inferred.get(&param.name) {
                     match mapped.normalize() {
-                        Type::Param(..) => return ty,
+                        Type::Param(..) if !self.include_type_params => return ty,
                         _ => {}
                     }
                     return *mapped.clone();

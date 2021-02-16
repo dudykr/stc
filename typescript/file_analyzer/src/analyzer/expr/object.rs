@@ -6,6 +6,7 @@ use crate::ValidationResult;
 use fxhash::FxHashMap;
 use indexmap::IndexSet;
 use itertools::Itertools;
+use rnode::FoldWith;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
 use stc_ts_ast_rnode::RIdent;
@@ -15,6 +16,7 @@ use stc_ts_ast_rnode::RPropOrSpread;
 use stc_ts_ast_rnode::RSpreadElement;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_file_analyzer_macros::validator;
+use stc_ts_generics::type_param::replacer::TypeParamReplacer;
 use stc_ts_types::CallSignature;
 use stc_ts_types::FnParam;
 use stc_ts_types::Key;
@@ -22,6 +24,7 @@ use stc_ts_types::PropertySignature;
 use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
+use stc_ts_types::TypeParamDecl;
 use stc_ts_types::Union;
 use std::iter::repeat;
 use swc_atoms::JsWord;
@@ -72,6 +75,7 @@ impl ObjectUnionNormalizer<'_, '_, '_> {
             _ => return,
         };
 
+        let mut new_type_params = FxHashMap::<_, TypeParamDecl>::default();
         let mut new_params = FxHashMap::<_, Vec<_>>::default();
         let mut new_return_types = FxHashMap::<_, Vec<_>>::default();
         let mut extra_members = vec![];
@@ -82,17 +86,46 @@ impl ObjectUnionNormalizer<'_, '_, '_> {
                     for (i, m) in ty.members.iter().enumerate() {
                         //
                         match m {
-                            TypeElement::Call(CallSignature { params, ret_ty, .. }) => {
+                            TypeElement::Call(CallSignature {
+                                type_params,
+                                params,
+                                ret_ty,
+                                ..
+                            }) => {
+                                let mut params = params.clone();
+
+                                if let Some(type_params) = type_params {
+                                    if let Some(prev) = new_type_params.get(&i) {
+                                        // We replace new type params woth previous type param.
+                                        let mut inferred = prev
+                                            .params
+                                            .iter()
+                                            .cloned()
+                                            .map(Type::Param)
+                                            .map(Box::new)
+                                            .zip(type_params.params.iter())
+                                            .map(|(prev, new)| (new.name.clone(), prev))
+                                            .collect();
+
+                                        params = params.fold_with(&mut TypeParamReplacer {
+                                            inferred,
+                                            include_type_params: true,
+                                        });
+                                    } else {
+                                        new_type_params.entry(i).or_insert_with(|| type_params.clone());
+                                    }
+                                }
+
                                 // Parameters are intersectioned, and return
                                 // types are unioned.
 
-                                for (idx, param) in params.iter().enumerate() {
+                                for (idx, param) in params.into_iter().enumerate() {
                                     let new_params = new_params.entry(i).or_default();
                                     if new_params.len() <= idx {
                                         new_params.extend(repeat(vec![]).take(idx + 1 - new_params.len()));
                                     }
 
-                                    new_params[idx].push(param.clone());
+                                    new_params[idx].push(param);
                                 }
 
                                 new_return_types.entry(i).or_default().extend(ret_ty.clone());
@@ -120,12 +153,12 @@ impl ObjectUnionNormalizer<'_, '_, '_> {
         for (i, new_params) in new_params {
             let mut return_types = new_return_types.remove(&i).unwrap_or_default();
             return_types.dedup_type();
+            let type_params = new_type_params.remove(&i);
 
             members.push(TypeElement::Call(CallSignature {
                 span: DUMMY_SP,
                 ret_ty: Some(Type::union(return_types)),
-                // TODO
-                type_params: None,
+                type_params,
                 params: new_params
                     .into_iter()
                     .map(|params| {

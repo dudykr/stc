@@ -1904,6 +1904,7 @@ impl Analyzer<'_, '_> {
             );
             return Ok(box ty.foldable().fold_with(&mut TypeParamReplacer {
                 inferred: inferred.type_params,
+                include_type_params: false,
             }));
         }
 
