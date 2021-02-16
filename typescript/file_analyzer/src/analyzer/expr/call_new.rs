@@ -1057,6 +1057,21 @@ impl Analyzer<'_, '_> {
                 type_ann,
             ),
 
+            // new fn()
+            Type::Function(f) => self.get_return_type(
+                span,
+                kind,
+                expr,
+                f.type_params.as_ref().map(|v| &*v.params),
+                &f.params,
+                Type::any(span),
+                type_args,
+                args,
+                arg_types,
+                spread_arg_types,
+                type_ann,
+            ),
+
             // Type::Constructor(ty::Constructor {
             //     ref params,
             //     ref type_params,
