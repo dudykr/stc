@@ -22,9 +22,9 @@ use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::debug::print_backtrace;
 use stc_ts_errors::debug::print_type;
 use stc_ts_errors::DebugExt;
+use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
 use stc_ts_generics::type_param::remover::TypeParamRemover;
-use stc_ts_generics::type_param::replacer::TypeParamReplacer;
-use stc_ts_generics::type_param::replacer::TypeParamUsageFinder;
+use stc_ts_generics::type_param::renamer::TypeParamRenamer;
 use stc_ts_types::Array;
 use stc_ts_types::FnParam;
 use stc_ts_types::Id;
@@ -1913,9 +1913,9 @@ impl Analyzer<'_, '_> {
                 "renaming type parameters based on type annotation provided by user\ntype_ann = {:?}",
                 type_ann
             );
-            return Ok(box ty.foldable().fold_with(&mut TypeParamReplacer {
+            return Ok(box ty.foldable().fold_with(&mut TypeParamRenamer {
                 inferred: inferred.type_params,
-                include_type_params: false,
+                declared: Default::default(),
             }));
         }
 
