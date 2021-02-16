@@ -191,7 +191,8 @@ impl Analyzer<'_, '_> {
                 Error::AssignFailed { .. }
                 | Error::Errors { .. }
                 | Error::Unimplemented { .. }
-                | Error::TupleAssignError { .. } => err,
+                | Error::TupleAssignError { .. }
+                | Error::ObjectAssignFailed { .. } => err,
                 _ => Error::AssignFailed {
                     span: opts.span,
                     left: box left.clone(),

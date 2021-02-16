@@ -49,7 +49,7 @@ impl Analyzer<'_, '_> {
         let span = opts.span;
         // debug_assert!(!span.is_dummy());
 
-        let mut errors = Errors::default();
+        let mut errors = vec![];
         let mut missing_fields = vec![];
 
         let numeric_keyed_ty = lhs
@@ -285,7 +285,7 @@ impl Analyzer<'_, '_> {
             }
 
             if !errors.is_empty() {
-                return Err(errors)?;
+                return Err(box Error::ObjectAssignFailed { span, errors })?;
             }
 
             if !unhandled_rhs.is_empty() {

@@ -1898,6 +1898,7 @@ impl Analyzer<'_, '_> {
                         ) {
                             let err = err.convert(|err| match err {
                                 Error::TupleAssignError { span, errors } => Error::Errors { span, errors },
+                                Error::ObjectAssignFailed { span, errors } => Error::Errors { span, errors },
                                 _ => Error::WrongArgType {
                                     span: arg.span(),
                                     inner: box err,
