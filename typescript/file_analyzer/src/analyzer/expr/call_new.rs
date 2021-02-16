@@ -1072,6 +1072,23 @@ impl Analyzer<'_, '_> {
                 type_ann,
             ),
 
+            Type::Param(TypeParam {
+                constraint: Some(constraint),
+                ..
+            }) => {
+                return self.extract(
+                    span,
+                    expr,
+                    constraint,
+                    kind,
+                    args,
+                    arg_types,
+                    spread_arg_types,
+                    type_args,
+                    type_ann,
+                )
+            }
+
             // Type::Constructor(ty::Constructor {
             //     ref params,
             //     ref type_params,
