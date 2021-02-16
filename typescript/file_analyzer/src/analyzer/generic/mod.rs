@@ -522,6 +522,7 @@ impl Analyzer<'_, '_> {
                 ref constraint,
                 ..
             }) => {
+                let constraint = constraint.as_ref().map(|ty| ty.normalize());
                 if let Some(prev) = inferred.type_params.get(name).cloned() {
                     self.infer_type(span, inferred, &prev, arg)?;
                 }
@@ -536,7 +537,7 @@ impl Analyzer<'_, '_> {
                         constraint
                     );
                     if let Some(orig) = inferred.type_params.get(&name) {
-                        if !orig.eq_ignore_span(&constraint.as_ref().unwrap()) {
+                        if !(**orig).eq_ignore_span(&constraint.as_ref().unwrap()) {
                             print_backtrace();
                             panic!(
                                 "Cannot override T in `T extends <literal>`\nOrig: {:?}\nConstraints: {:?}",
@@ -546,6 +547,16 @@ impl Analyzer<'_, '_> {
                     }
 
                     return Ok(());
+                }
+
+                if let Some(constraint) = constraint {
+                    if constraint.is_str() || constraint.is_num() {
+                        match arg.normalize() {
+                            // We use `default`
+                            Type::TypeLit(..) | Type::Interface(..) | Type::Class(..) => return Ok(()),
+                            _ => {}
+                        }
+                    }
                 }
 
                 match arg {
