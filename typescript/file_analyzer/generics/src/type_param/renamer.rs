@@ -4,6 +4,7 @@ use rnode::Fold;
 use rnode::FoldWith;
 use stc_ts_types::Function;
 use stc_ts_types::Id;
+use stc_ts_types::MethodSignature;
 use stc_ts_types::Type;
 use stc_ts_types::TypeParamDecl;
 
@@ -14,13 +15,39 @@ pub struct TypeParamRenamer {
     /// replaced.
     ///
     /// This is filled by visitor itself.
-    pub declared: FxHashSet<Id>,
+    pub declared: Option<FxHashSet<Id>>,
 }
 
 impl Fold<TypeParamDecl> for TypeParamRenamer {
     fn fold(&mut self, decl: TypeParamDecl) -> TypeParamDecl {
-        self.declared.extend(decl.params.iter().map(|v| v.name.clone()));
+        if self.declared.is_none() {
+            self.declared = Some(Default::default())
+        }
+
+        self.declared
+            .as_mut()
+            .unwrap()
+            .extend(decl.params.iter().map(|v| v.name.clone()));
         decl.fold_children_with(self)
+    }
+}
+
+impl Fold<MethodSignature> for TypeParamRenamer {
+    fn fold(&mut self, m: MethodSignature) -> MethodSignature {
+        let key = m.key.fold_with(self);
+        let type_params = m.type_params.fold_with(self);
+        let params = m.params.fold_with(self);
+        let ret_ty = m.ret_ty.fold_with(self);
+
+        MethodSignature {
+            span: m.span,
+            readonly: m.readonly,
+            key,
+            optional: m.optional,
+            params,
+            ret_ty,
+            type_params,
+        }
     }
 }
 
@@ -45,8 +72,10 @@ impl Fold<Type> for TypeParamRenamer {
 
         match ty {
             Type::Param(ref param) => {
-                if !self.declared.contains(&param.name) {
-                    return ty;
+                if let Some(declared) = &self.declared {
+                    if !declared.contains(&param.name) {
+                        return ty;
+                    }
                 }
 
                 if let Some(mapped) = self.inferred.get(&param.name) {
