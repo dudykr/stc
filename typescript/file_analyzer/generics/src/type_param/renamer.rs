@@ -79,6 +79,9 @@ impl Fold<Type> for TypeParamRenamer {
                 }
 
                 if let Some(mapped) = self.inferred.get(&param.name) {
+                    if self.declared.is_none() && mapped.is_type_param() {
+                        return ty;
+                    }
                     return *mapped.clone();
                 }
             }
