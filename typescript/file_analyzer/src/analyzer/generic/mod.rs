@@ -1252,11 +1252,12 @@ impl Analyzer<'_, '_> {
                                 TypeElement::Index(i) => {
                                     let type_ann = if let Some(arg_prop_ty) = &i.type_ann {
                                         if let Some(param_ty) = &param.ty {
-                                            let mapped_param_ty =
-                                                arg_prop_ty.clone().foldable().fold_with(&mut TypeParamReplacer {
+                                            let mapped_param_ty = arg_prop_ty.clone().foldable().fold_with(
+                                                &mut SingleTypeParamReplacer {
                                                     name: &name,
                                                     to: param_ty,
-                                                });
+                                                },
+                                            );
 
                                             self.infer_type(span, inferred, &mapped_param_ty, arg_prop_ty)?;
                                         }
@@ -1932,12 +1933,12 @@ pub(super) fn is_literals(ty: &Type) -> bool {
     }
 }
 
-struct TypeParamReplacer<'a> {
+struct SingleTypeParamReplacer<'a> {
     name: &'a Id,
     to: &'a Type,
 }
 
-impl Fold<Type> for TypeParamReplacer<'_> {
+impl Fold<Type> for SingleTypeParamReplacer<'_> {
     fn fold(&mut self, mut ty: Type) -> Type {
         ty = ty.fold_children_with(self);
 
