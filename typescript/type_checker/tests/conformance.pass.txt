@@ -806,7 +806,6 @@ es7/exponentiationOperator/emitExponentiationOperatorInTemplateString3ES6.ts
 es7/exponentiationOperator/exponentiationOperatorWithAnyAndNumber.ts
 es7/exponentiationOperator/exponentiationOperatorWithEnum.ts
 es7/exponentiationOperator/exponentiationOperatorWithEnumUnion.ts
-expressions/
 expressions/arrayLiterals/arrayLiterals.ts
 expressions/arrayLiterals/arrayLiterals2ES5.ts
 expressions/arrayLiterals/arrayLiterals2ES6.ts
@@ -926,6 +925,7 @@ expressions/nullishCoalescingOperator/nullishCoalescingOperator8.ts
 expressions/nullishCoalescingOperator/nullishCoalescingOperator9.ts
 expressions/nullishCoalescingOperator/nullishCoalescingOperator_es2020.ts
 expressions/nullishCoalescingOperator/nullishCoalescingOperator_not_strict.ts
+expressions/objectLiterals
 expressions/optionalChaining/callChain/callChain.3.ts
 expressions/optionalChaining/callChain/superMethodCall.ts
 expressions/optionalChaining/callChain/thisMethodCall.ts
