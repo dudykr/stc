@@ -23,7 +23,7 @@ use stc_ts_errors::debug::print_backtrace;
 use stc_ts_errors::debug::print_type;
 use stc_ts_errors::DebugExt;
 use stc_ts_generics::type_param::remover::TypeParamRemover;
-use stc_ts_generics::type_param::renamer::TypeParamRenamer;
+use stc_ts_generics::type_param::renamer::TypeParamReplacer;
 use stc_ts_generics::type_param::renamer::TypeParamUsageFinder;
 use stc_ts_types::Array;
 use stc_ts_types::FnParam;
@@ -1902,7 +1902,7 @@ impl Analyzer<'_, '_> {
                 "renaming type parameters based on type annotation provided by user\ntype_ann = {:?}",
                 type_ann
             );
-            return Ok(box ty.foldable().fold_with(&mut TypeParamRenamer {
+            return Ok(box ty.foldable().fold_with(&mut TypeParamReplacer {
                 inferred: inferred.type_params,
             }));
         }

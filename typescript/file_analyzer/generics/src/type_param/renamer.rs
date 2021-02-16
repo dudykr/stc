@@ -8,11 +8,11 @@ use stc_ts_types::TypeParam;
 use stc_ts_types::TypeParamDecl;
 
 #[derive(Debug)]
-pub struct TypeParamRenamer {
+pub struct TypeParamReplacer {
     pub inferred: FxHashMap<Id, Box<Type>>,
 }
 
-impl Fold<Type> for TypeParamRenamer {
+impl Fold<Type> for TypeParamReplacer {
     fn fold(&mut self, mut ty: Type) -> Type {
         ty = ty.fold_children_with(self);
 
