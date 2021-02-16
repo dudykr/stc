@@ -1691,6 +1691,9 @@ impl Analyzer<'_, '_> {
                 }
 
                 let mut patch_arg = |idx: usize, pat: &RPat| -> ValidationResult<()> {
+                    if actual_params.len() <= idx {
+                        return Ok(());
+                    }
                     let actual = &actual_params[idx];
 
                     let default_any_ty: Option<_> = try {
