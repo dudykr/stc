@@ -27,6 +27,7 @@ use swc_common::TypeEq;
 use swc_ecma_ast::TsKeywordTypeKind;
 
 mod mapped;
+mod type_param;
 
 impl Analyzer<'_, '_> {
     pub(crate) fn exclude_types_using_fact(&self, name: &Name, ty: &mut Type) {

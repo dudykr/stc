@@ -99,7 +99,15 @@ impl Analyzer<'_, '_> {
         // TODO: validate children
 
         self.with_child(ScopeKind::Call, Default::default(), |analyzer: &mut Analyzer| {
-            analyzer.extract_call_new_expr_member(span, callee, type_ann, ExtractKind::Call, args, type_args.as_ref())
+            analyzer.extract_call_new_expr_member(
+                span,
+                ReevalMode::Call(e),
+                callee,
+                ExtractKind::Call,
+                args,
+                type_args.as_ref(),
+                type_ann,
+            )
         })
     }
 }
@@ -122,11 +130,12 @@ impl Analyzer<'_, '_> {
         self.with_child(ScopeKind::Call, Default::default(), |analyzer: &mut Analyzer| {
             analyzer.extract_call_new_expr_member(
                 span,
+                ReevalMode::New(e),
                 callee,
-                type_ann,
                 ExtractKind::New,
                 args.as_ref().map(|v| &**v).unwrap_or_else(|| &mut []),
                 type_args.as_ref(),
+                type_ann,
             )
         })
     }
@@ -161,10 +170,11 @@ impl Analyzer<'_, '_> {
         let res = self.with_child(ScopeKind::Call, Default::default(), |analyzer: &mut Analyzer| {
             analyzer.extract_call_new_expr_member(
                 span,
+                ReevalMode::NoReeval,
                 &e.tag,
-                Default::default(),
                 ExtractKind::Call,
                 args.as_ref(),
+                Default::default(),
                 Default::default(),
             )
         });
@@ -188,11 +198,12 @@ impl Analyzer<'_, '_> {
     fn extract_call_new_expr_member(
         &mut self,
         span: Span,
+        expr: ReevalMode,
         callee: &RExpr,
-        type_ann: Option<&Type>,
         kind: ExtractKind,
         args: &[RExprOrSpread],
         type_args: Option<&RTsTypeParamInstantiation>,
+        type_ann: Option<&Type>,
     ) -> ValidationResult {
         debug_assert_eq!(self.scope.kind(), ScopeKind::Call);
 
@@ -306,12 +317,14 @@ impl Analyzer<'_, '_> {
                 self.call_property(
                     span,
                     kind,
+                    expr,
                     obj_type,
                     &prop,
                     type_args.as_ref(),
                     args,
                     &arg_types,
                     &spread_arg_types,
+                    type_ann,
                 )
             }
             _ => {
@@ -384,12 +397,14 @@ impl Analyzer<'_, '_> {
 
                     let expanded_ty = analyzer.extract(
                         span,
+                        expr,
                         &callee_ty,
                         kind,
                         args,
                         &arg_types,
                         &spread_arg_types,
                         type_args.as_ref(),
+                        type_ann,
                     )?;
                     match *expanded_ty {
                         Type::ClassInstance(ClassInstance {
@@ -412,16 +427,23 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO: Use Cow for `obj_type`
+    ///
+    /// ## Parameters
+    ///
+    ///  - `expr`: Can be default if argument does not include an arrow
+    ///    expression nor a function expression.
     pub(super) fn call_property(
         &mut self,
         span: Span,
         kind: ExtractKind,
+        expr: ReevalMode,
         obj_type: Box<Type>,
         prop: &Key,
         type_args: Option<&TypeParamInstantiation>,
         args: &[RExprOrSpread],
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
+        type_ann: Option<&Type>,
     ) -> ValidationResult {
         let old_this = self.scope.this.take();
         self.scope.this = Some(obj_type.clone());
@@ -443,12 +465,14 @@ impl Analyzer<'_, '_> {
                             self.call_property(
                                 span,
                                 kind,
+                                expr,
                                 obj.clone(),
                                 prop,
                                 type_args,
                                 args,
                                 arg_types,
                                 spread_arg_types,
+                                type_ann,
                             )
                         })
                         .filter_map(Result::ok)
@@ -480,12 +504,14 @@ impl Analyzer<'_, '_> {
                     return self.call_property(
                         span,
                         kind,
+                        expr,
                         obj_type,
                         prop,
                         type_args,
                         args,
                         arg_types,
                         spread_arg_types,
+                        type_ann,
                     );
                 }
 
@@ -493,6 +519,7 @@ impl Analyzer<'_, '_> {
                     // TODO: Check parent interface
                     return self.search_members_for_callable_prop(
                         kind,
+                        expr,
                         span,
                         &obj_type,
                         &i.body,
@@ -501,12 +528,14 @@ impl Analyzer<'_, '_> {
                         args,
                         &arg_types,
                         &spread_arg_types,
+                        type_ann,
                     );
                 }
 
                 Type::TypeLit(ref t) => {
                     return self.search_members_for_callable_prop(
                         kind,
+                        expr,
                         span,
                         &obj_type,
                         &t.members,
@@ -515,6 +544,7 @@ impl Analyzer<'_, '_> {
                         args,
                         &arg_types,
                         &spread_arg_types,
+                        type_ann,
                     );
                 }
 
@@ -537,7 +567,17 @@ impl Analyzer<'_, '_> {
                                 // TODO: Change error message from no callable
                                 // property to property exists but not callable.
                                 if let Some(ty) = &value {
-                                    return self.extract(span, ty, kind, args, arg_types, spread_arg_types, type_args);
+                                    return self.extract(
+                                        span,
+                                        expr,
+                                        ty,
+                                        kind,
+                                        args,
+                                        arg_types,
+                                        spread_arg_types,
+                                        type_args,
+                                        type_ann,
+                                    );
                                 }
                             }
                             _ => {}
@@ -560,6 +600,7 @@ impl Analyzer<'_, '_> {
                         return self.get_return_type(
                             span,
                             kind,
+                            expr,
                             type_params.as_ref().map(|v| &*v.params),
                             &params,
                             ret_ty.clone(),
@@ -567,6 +608,7 @@ impl Analyzer<'_, '_> {
                             args,
                             &arg_types,
                             &spread_arg_types,
+                            type_ann,
                         );
                     }
 
@@ -574,12 +616,14 @@ impl Analyzer<'_, '_> {
                         if let Ok(ret_ty) = self.call_property(
                             span,
                             kind,
+                            expr,
                             ty.clone(),
                             prop,
                             type_args,
                             args,
                             arg_types,
                             spread_arg_types,
+                            type_ann,
                         ) {
                             return Ok(ret_ty);
                         }
@@ -612,7 +656,17 @@ impl Analyzer<'_, '_> {
 
             let callee = box self.expand_top_ref(span, Cow::Owned(*callee))?.into_owned();
 
-            self.get_best_return_type(span, callee, kind, type_args, args, &arg_types, &spread_arg_types)
+            self.get_best_return_type(
+                span,
+                expr,
+                callee,
+                kind,
+                type_args,
+                args,
+                &arg_types,
+                &spread_arg_types,
+                type_ann,
+            )
         })();
         self.scope.this = old_this;
         res
@@ -678,6 +732,7 @@ impl Analyzer<'_, '_> {
     fn search_members_for_callable_prop(
         &mut self,
         kind: ExtractKind,
+        expr: ReevalMode,
         span: Span,
         obj: &Type,
         members: &[TypeElement],
@@ -686,6 +741,7 @@ impl Analyzer<'_, '_> {
         args: &[RExprOrSpread],
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
+        type_ann: Option<&Type>,
     ) -> ValidationResult {
         // Candidates of the method call.
         //
@@ -727,11 +783,13 @@ impl Analyzer<'_, '_> {
                 // TODO:
                 return self.check_method_call(
                     span,
+                    expr,
                     &candidates.into_iter().next().unwrap(),
                     type_args,
                     args,
                     &arg_types,
                     spread_arg_types,
+                    type_ann,
                 );
             }
             _ => {
@@ -749,7 +807,16 @@ impl Analyzer<'_, '_> {
                 });
 
                 for c in candidates {
-                    return self.check_method_call(span, &c, type_args, args, &arg_types, spread_arg_types);
+                    return self.check_method_call(
+                        span,
+                        expr,
+                        &c,
+                        type_args,
+                        args,
+                        &arg_types,
+                        spread_arg_types,
+                        type_ann,
+                    );
                 }
 
                 unimplemented!("multiple methods with same name and same number of arguments")
@@ -812,17 +879,29 @@ impl Analyzer<'_, '_> {
     fn extract(
         &mut self,
         span: Span,
+        expr: ReevalMode,
         ty: &Type,
         kind: ExtractKind,
         args: &[RExprOrSpread],
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
         type_args: Option<&TypeParamInstantiation>,
+        type_ann: Option<&Type>,
     ) -> ValidationResult {
         match ty.normalize() {
             Type::Ref(..) => {
                 let ty = self.expand_top_ref(span, Cow::Borrowed(ty))?;
-                return self.extract(span, &ty, kind, args, arg_types, spread_arg_types, type_args);
+                return self.extract(
+                    span,
+                    expr,
+                    &ty,
+                    kind,
+                    args,
+                    arg_types,
+                    spread_arg_types,
+                    type_args,
+                    type_ann,
+                );
             }
 
             Type::Query(QueryType {
@@ -830,7 +909,17 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {
                 let ty = self.resolve_typeof(span, name)?;
-                return self.extract(span, &ty, kind, args, arg_types, spread_arg_types, type_args);
+                return self.extract(
+                    span,
+                    expr,
+                    &ty,
+                    kind,
+                    args,
+                    arg_types,
+                    spread_arg_types,
+                    type_args,
+                    type_ann,
+                );
             }
 
             _ => {}
@@ -894,6 +983,7 @@ impl Analyzer<'_, '_> {
                     return self.get_return_type(
                         span,
                         kind,
+                        expr,
                         c.type_params.as_ref().map(|v| &*v.params),
                         &c.params,
                         c.type_ann.clone(),
@@ -901,6 +991,7 @@ impl Analyzer<'_, '_> {
                         args,
                         arg_types,
                         spread_arg_types,
+                        type_ann,
                     )
                 }
 
@@ -955,6 +1046,7 @@ impl Analyzer<'_, '_> {
             Type::Function(ref f) if kind == ExtractKind::Call => self.get_return_type(
                 span,
                 kind,
+                expr,
                 f.type_params.as_ref().map(|v| &*v.params),
                 &f.params,
                 f.ret_ty.clone(),
@@ -962,6 +1054,7 @@ impl Analyzer<'_, '_> {
                 args,
                 arg_types,
                 spread_arg_types,
+                type_ann,
             ),
 
             // Type::Constructor(ty::Constructor {
@@ -978,14 +1071,23 @@ impl Analyzer<'_, '_> {
             //     args,
             //     type_args,
             // ),
-            Type::Union(..) => {
-                self.get_best_return_type(span, box ty.clone(), kind, type_args, args, spread_arg_types, arg_types)
-            }
+            Type::Union(..) => self.get_best_return_type(
+                span,
+                expr,
+                box ty.clone(),
+                kind,
+                type_args,
+                args,
+                arg_types,
+                spread_arg_types,
+                type_ann,
+            ),
 
             Type::Interface(ref i) => {
                 // Search for methods
                 match self.search_members_for_extract(
                     span,
+                    expr,
                     &ty,
                     &i.body,
                     kind,
@@ -993,6 +1095,7 @@ impl Analyzer<'_, '_> {
                     arg_types,
                     spread_arg_types,
                     type_args,
+                    type_ann,
                 ) {
                     Ok(ty) => return Ok(ty.clone()),
                     Err(first_err) => {
@@ -1001,9 +1104,17 @@ impl Analyzer<'_, '_> {
                             let parent =
                                 self.type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr, type_args)?;
 
-                            if let Ok(v) =
-                                self.extract(span, &parent, kind, args, arg_types, spread_arg_types, type_args)
-                            {
+                            if let Ok(v) = self.extract(
+                                span,
+                                expr,
+                                &parent,
+                                kind,
+                                args,
+                                arg_types,
+                                spread_arg_types,
+                                type_args,
+                                type_ann,
+                            ) {
                                 return Ok(v);
                             }
                         }
@@ -1015,6 +1126,7 @@ impl Analyzer<'_, '_> {
             Type::TypeLit(ref l) => {
                 return self.search_members_for_extract(
                     span,
+                    expr,
                     &ty,
                     &l.members,
                     kind,
@@ -1022,6 +1134,7 @@ impl Analyzer<'_, '_> {
                     arg_types,
                     spread_arg_types,
                     type_args,
+                    type_ann,
                 );
             }
 
@@ -1044,6 +1157,7 @@ impl Analyzer<'_, '_> {
     fn search_members_for_extract(
         &mut self,
         span: Span,
+        expr: ReevalMode,
         callee_ty: &Type,
         members: &[TypeElement],
         kind: ExtractKind,
@@ -1051,6 +1165,7 @@ impl Analyzer<'_, '_> {
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
         type_args: Option<&TypeParamInstantiation>,
+        type_ann: Option<&Type>,
     ) -> ValidationResult {
         let callee_span = callee_ty.span();
 
@@ -1103,6 +1218,7 @@ impl Analyzer<'_, '_> {
         return self.get_return_type(
             span,
             kind,
+            expr,
             type_params.as_ref().map(|v| &*v.params),
             params,
             ret_ty.clone().unwrap_or(Type::any(span)),
@@ -1110,21 +1226,25 @@ impl Analyzer<'_, '_> {
             args,
             arg_types,
             spread_arg_types,
+            type_ann,
         );
     }
 
     fn check_method_call(
         &mut self,
         span: Span,
+        expr: ReevalMode,
         c: &MethodSignature,
         type_args: Option<&TypeParamInstantiation>,
         args: &[RExprOrSpread],
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
+        type_ann: Option<&Type>,
     ) -> ValidationResult {
         self.get_return_type(
             span,
             ExtractKind::Call,
+            expr,
             c.type_params.as_ref().map(|v| &*v.params),
             &c.params,
             c.ret_ty.clone().unwrap_or_else(|| Type::any(span)),
@@ -1132,6 +1252,7 @@ impl Analyzer<'_, '_> {
             args,
             arg_types,
             spread_arg_types,
+            type_ann,
         )
     }
 
@@ -1269,12 +1390,14 @@ impl Analyzer<'_, '_> {
     fn get_best_return_type(
         &mut self,
         span: Span,
+        expr: ReevalMode,
         callee: Box<Type>,
         kind: ExtractKind,
         type_args: Option<&TypeParamInstantiation>,
         args: &[RExprOrSpread],
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
+        type_ann: Option<&Type>,
     ) -> ValidationResult {
         let has_spread = arg_types.len() != spread_arg_types.len();
 
@@ -1325,6 +1448,7 @@ impl Analyzer<'_, '_> {
         return self.get_return_type(
             span,
             kind,
+            expr,
             type_params.as_deref(),
             &params,
             ret_ty
@@ -1335,6 +1459,7 @@ impl Analyzer<'_, '_> {
             args,
             arg_types,
             spread_arg_types,
+            type_ann,
         );
     }
 
@@ -1392,10 +1517,51 @@ impl Analyzer<'_, '_> {
 
     /// Returns the return type of function. This method should be called only
     /// for final step because it emits errors instead of returning them.
+    ///
+    /// ## Note
+    ///
+    /// We should evaluate two time because of code like below.
+    ///
+    ///
+    /// ```ts
+    /// declare function getType<T>(arr: T[]): string;
+    /// declare function getType(obj: { foo(n: number): number[] }): string;
+    /// declare function wrap<A, B>(f: (a: A) => B): (a: A) => B;
+    ///
+    /// getType({
+    ///    foo: wrap((a) => [a.toExponential()]),
+    /// })
+    /// ```
+    ///
+    /// In this example,
+    ///
+    ///  - we can't calculate the type of `a.toExponential()` because we don't
+    ///    know the type of `a`
+    ///  - we can't use type annotation because of `wrap`
+    ///  - we can't determine the function to call before validating arguments
+    ///  - we can't use type annotation of the function because we cannot
+    ///    determine the function to call because of `wrap`
+    ///
+    /// To fix this problem, we evaluate calls twice.
+    ///
+    /// If then, the logic becomes simple.
+    ///
+    ///  1. We set type of `a` to `any`.
+    ///  2. Type of `a.toExponential()` is `any`.
+    ///  3. Type of the arrow function is `(a: any) => [any]`.
+    ///  4. Type of the property `foo` is `<A, B>(a: A) => B` where A = `any`
+    /// and B = `[any]`.
+    ///  5. We select appropriate function to call.
+    ///  6. Type of `a` is now number.
+    ///  7. Type of `a.toExponential()` is `number`.
+    ///  8. Type of the arrow function is `(a: number) => [number]`.
+    ///  9. Type of the property `foo` is `<A, B>(a: A) => B` where A = `number`
+    /// and B = `[number]`.
     fn get_return_type(
         &mut self,
         span: Span,
         kind: ExtractKind,
+        expr: ReevalMode,
         type_params: Option<&[TypeParam]>,
         params: &[FnParam],
         mut ret_ty: Box<Type>,
@@ -1403,6 +1569,7 @@ impl Analyzer<'_, '_> {
         args: &[RExprOrSpread],
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
+        type_ann: Option<&Type>,
     ) -> ValidationResult {
         let logger = self.logger.clone();
 
@@ -1430,6 +1597,29 @@ impl Analyzer<'_, '_> {
 
                 self.register_type(param.name.clone(), box Type::Param(param.clone()));
             }
+
+            let inferred_from_return_type = match type_ann {
+                Some(type_ann) => self
+                    .infer_type_with_types(span, type_params, &ret_ty, type_ann)
+                    .map(Some)?,
+                None => None,
+            };
+
+            let expanded_params;
+            let params = if let Some(map) = &inferred_from_return_type {
+                expanded_params = params
+                    .into_iter()
+                    .cloned()
+                    .map(|v| -> ValidationResult<_> {
+                        let ty = self.expand_type_params(&map, v.ty)?;
+
+                        Ok(FnParam { ty, ..v })
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+                &expanded_params
+            } else {
+                params
+            };
 
             let inferred = self.infer_arg_types(span, type_args, type_params, &params, &spread_arg_types, None)?;
 
@@ -1478,7 +1668,13 @@ impl Analyzer<'_, '_> {
                                 span,
                                 kind: TsKeywordTypeKind::TsAnyKeyword,
                             }) if self.is_implicitly_typed_span(*span) => {
-                                let new_ty = RTsType::from(actual.ty.clone()).validate_with(self)?;
+                                // let new_ty = RTsType::from(actual.ty.clone()).validate_with(self)?;
+                                // if let Some(node_id) = pat.node_id() {
+                                //     if let Some(m) = &mut self.mutations {
+                                //         m.for_pats.entry(node_id).or_default().ty = Some(new_ty);
+                                //     }
+                                // }
+                                let new_ty = actual.ty.clone();
                                 if let Some(node_id) = pat.node_id() {
                                     if let Some(m) = &mut self.mutations {
                                         m.for_pats.entry(node_id).or_default().ty = Some(new_ty);
@@ -1518,6 +1714,23 @@ impl Analyzer<'_, '_> {
 
                 new_args.push(new_arg);
             }
+
+            if !self.ctx.reevaluating_call_or_new {
+                let ctx = Ctx {
+                    reevaluating_call_or_new: true,
+                    ..self.ctx
+                };
+                match expr {
+                    ReevalMode::Call(e) => {
+                        return e.validate_with_default(&mut *self.with_ctx(ctx));
+                    }
+                    ReevalMode::New(e) => {
+                        return e.validate_with_default(&mut *self.with_ctx(ctx));
+                    }
+                    _ => {}
+                }
+            }
+
             // if arg.len() > param.len(), we need to add all args
             if arg_types.len() > params.len() {
                 new_args.extend(arg_types[params.len()..].iter().cloned());
@@ -1578,6 +1791,8 @@ impl Analyzer<'_, '_> {
 
             print_type(&logger, "Return, generalized", &self.cm, &ty);
 
+            self.add_required_type_params(&mut ty);
+
             if kind == ExtractKind::Call {
                 self.add_call_facts(params, &args, &mut ty);
             }
@@ -1591,9 +1806,12 @@ impl Analyzer<'_, '_> {
 
         ret_ty.reposition(span);
         ret_ty.visit_mut_with(&mut ReturnTypeSimplifier { analyzer: self });
+        self.add_required_type_params(&mut ret_ty);
+
         if kind == ExtractKind::Call {
             self.add_call_facts(params, &args, &mut ret_ty);
         }
+
         return Ok(ret_ty);
     }
 
@@ -1680,6 +1898,7 @@ impl Analyzer<'_, '_> {
                         ) {
                             let err = err.convert(|err| match err {
                                 Error::TupleAssignError { span, errors } => Error::Errors { span, errors },
+                                Error::ObjectAssignFailed { span, errors } => Error::Errors { span, errors },
                                 _ => Error::WrongArgType {
                                     span: arg.span(),
                                     inner: box err,
@@ -1930,6 +2149,20 @@ impl Analyzer<'_, '_> {
 
             Ok(args)
         })
+    }
+}
+
+/// Used for reevaluation.
+#[derive(Clone, Copy)]
+pub(crate) enum ReevalMode<'a> {
+    Call(&'a RCallExpr),
+    New(&'a RNewExpr),
+    NoReeval,
+}
+
+impl Default for ReevalMode<'_> {
+    fn default() -> Self {
+        Self::NoReeval
     }
 }
 

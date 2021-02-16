@@ -1,4 +1,5 @@
 use crate::analyzer::Analyzer;
+use fxhash::FxHashSet;
 use rnode::Visit;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
@@ -41,7 +42,10 @@ impl Analyzer<'_, '_> {
     /// This method is called at the end of each call and each `T` is converted
     /// to `{}` even though span hygiene differs.
     pub(crate) fn replace_invalid_type_params(&mut self, ty: &mut Type) {
-        let mut v = TypeParamEscapeHandler { analyzer: self };
+        let mut v = TypeParamEscapeHandler {
+            analyzer: self,
+            declared: Default::default(),
+        };
 
         ty.visit_mut_with(&mut v);
     }
@@ -56,6 +60,7 @@ impl Analyzer<'_, '_> {
 
 struct TypeParamEscapeVisitor<'a, 'b, 'c> {
     analyzer: &'a mut Analyzer<'b, 'c>,
+    declared: &'a FxHashSet<Id>,
     should_work: bool,
 }
 
@@ -63,6 +68,10 @@ impl Visit<Type> for TypeParamEscapeVisitor<'_, '_, '_> {
     fn visit(&mut self, ty: &Type) {
         match ty {
             Type::Param(ty) => {
+                if self.declared.contains(&ty.name) {
+                    return;
+                }
+
                 if self.analyzer.is_type_param_dead(&ty.name) {
                     self.should_work = true;
                     return;
@@ -77,14 +86,28 @@ impl Visit<Type> for TypeParamEscapeVisitor<'_, '_, '_> {
 
 struct TypeParamEscapeHandler<'a, 'b, 'c> {
     analyzer: &'a mut Analyzer<'b, 'c>,
+
+    /// Type parameters declared by the type we are visiting.
+    declared: FxHashSet<Id>,
 }
 
 impl VisitMut<Type> for TypeParamEscapeHandler<'_, '_, '_> {
     fn visit_mut(&mut self, ty: &mut Type) {
+        match ty.normalize() {
+            Type::Function(ty) => {
+                if let Some(type_params) = &ty.type_params {
+                    self.declared
+                        .extend(type_params.params.iter().map(|param| param.name.clone()));
+                }
+            }
+            _ => {}
+        }
+
         {
             // Fast path
             let mut v = TypeParamEscapeVisitor {
                 analyzer: self.analyzer,
+                declared: &self.declared,
                 should_work: false,
             };
             ty.visit_with(&mut v);

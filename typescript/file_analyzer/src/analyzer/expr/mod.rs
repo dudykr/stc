@@ -115,7 +115,9 @@ impl Analyzer<'_, '_> {
 
         let span = e.span();
         let need_type_param_handling = match e {
-            RExpr::Call(..) | RExpr::New(..) | RExpr::Member(..) => true,
+            RExpr::Member(..) => true,
+            RExpr::Call(..) | RExpr::New(..) if self.ctx.in_argument => false,
+            RExpr::Call(..) | RExpr::New(..) => true,
             _ => false,
         };
 

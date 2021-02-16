@@ -1,4 +1,3 @@
-use self::remover::TypeParamRemover;
 use super::Analyzer;
 use super::Ctx;
 use crate::util::RemoveTypes;
@@ -9,7 +8,6 @@ use itertools::Itertools;
 use rnode::Fold;
 use rnode::FoldWith;
 use rnode::NodeId;
-use rnode::Visit;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
 use rnode::VisitWith;
@@ -24,6 +22,9 @@ use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::debug::print_backtrace;
 use stc_ts_errors::debug::print_type;
 use stc_ts_errors::DebugExt;
+use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
+use stc_ts_generics::type_param::remover::TypeParamRemover;
+use stc_ts_generics::type_param::renamer::TypeParamRenamer;
 use stc_ts_types::Array;
 use stc_ts_types::FnParam;
 use stc_ts_types::Id;
@@ -61,7 +62,6 @@ use swc_ecma_ast::*;
 
 mod expander;
 mod inference;
-mod remover;
 
 /// Lower value means higher priority and it contains lower value if the
 /// type parameter and the type argument are simpler.
@@ -107,6 +107,27 @@ impl Analyzer<'_, '_> {
                 }
             }
             _ => {}
+        }
+
+        if ty.is_any() && self.is_implicitly_typed(&ty) {
+            if inferred.type_params.contains_key(&name.clone()) {
+                return Ok(());
+            }
+
+            match inferred.defaults.entry(name.clone()) {
+                Entry::Occupied(..) => {}
+                Entry::Vacant(e) => {
+                    e.insert(box Type::Param(TypeParam {
+                        span: ty.span(),
+                        name: name.clone(),
+                        constraint: None,
+                        default: None,
+                    }));
+                }
+            }
+
+            //
+            return Ok(());
         }
 
         match inferred.type_params.entry(name.clone()) {
@@ -485,12 +506,27 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
+        match arg {
+            Type::Param(arg) => {
+                if !param.normalize().is_type_param() {
+                    self.insert_inferred(inferred, arg.name.clone(), box param.clone())?;
+                    return Ok(());
+                }
+            }
+            _ => {}
+        }
+
         match param {
             Type::Param(TypeParam {
                 ref name,
                 ref constraint,
                 ..
             }) => {
+                let constraint = constraint.as_ref().map(|ty| ty.normalize());
+                if let Some(prev) = inferred.type_params.get(name).cloned() {
+                    self.infer_type(span, inferred, &prev, arg)?;
+                }
+
                 slog::trace!(self.logger, "infer_type: type parameter: {} = {:?}", name, constraint);
 
                 if constraint.is_some() && is_literals(&constraint.as_ref().unwrap()) {
@@ -501,7 +537,7 @@ impl Analyzer<'_, '_> {
                         constraint
                     );
                     if let Some(orig) = inferred.type_params.get(&name) {
-                        if !orig.eq_ignore_span(&constraint.as_ref().unwrap()) {
+                        if !(**orig).eq_ignore_span(&constraint.as_ref().unwrap()) {
                             print_backtrace();
                             panic!(
                                 "Cannot override T in `T extends <literal>`\nOrig: {:?}\nConstraints: {:?}",
@@ -513,6 +549,16 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
+                if let Some(constraint) = constraint {
+                    if constraint.is_str() || constraint.is_num() {
+                        match arg.normalize() {
+                            // We use `default`
+                            Type::TypeLit(..) | Type::Interface(..) | Type::Class(..) => return Ok(()),
+                            _ => {}
+                        }
+                    }
+                }
+
                 match arg {
                     Type::Param(arg) => {
                         if *name == arg.name {
@@ -522,14 +568,28 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
 
-                let mut arg = box arg.clone();
                 if arg.is_any() && self.is_implicitly_typed(&arg) {
                     if inferred.type_params.contains_key(&name.clone()) {
                         return Ok(());
                     }
-                    arg = Type::unknown(arg.span());
+
+                    match inferred.defaults.entry(name.clone()) {
+                        Entry::Occupied(..) => {}
+                        Entry::Vacant(e) => {
+                            e.insert(box Type::Param(TypeParam {
+                                span: arg.span(),
+                                name: name.clone(),
+                                constraint: None,
+                                default: None,
+                            }));
+                        }
+                    }
+
+                    //
+                    return Ok(());
                 }
 
+                let arg = box arg.clone();
                 slog::info!(self.logger, "({}): infer: {} = {:?}", self.scope.depth(), name, arg);
 
                 match inferred.type_params.entry(name.clone()) {
@@ -1203,11 +1263,12 @@ impl Analyzer<'_, '_> {
                                 TypeElement::Index(i) => {
                                     let type_ann = if let Some(arg_prop_ty) = &i.type_ann {
                                         if let Some(param_ty) = &param.ty {
-                                            let mapped_param_ty =
-                                                arg_prop_ty.clone().foldable().fold_with(&mut TypeParamReplacer {
+                                            let mapped_param_ty = arg_prop_ty.clone().foldable().fold_with(
+                                                &mut SingleTypeParamReplacer {
                                                     name: &name,
                                                     to: param_ty,
-                                                });
+                                                },
+                                            );
 
                                             self.infer_type(span, inferred, &mapped_param_ty, arg_prop_ty)?;
                                         }
@@ -1843,9 +1904,9 @@ impl Analyzer<'_, '_> {
             return Ok(ty);
         }
 
-        let mut inferred = InferData::default();
-
         if let Some(type_ann) = type_ann {
+            let mut inferred = InferData::default();
+
             self.infer_type(span, &mut inferred, &ty, type_ann)?;
             slog::info!(
                 self.logger,
@@ -1854,6 +1915,7 @@ impl Analyzer<'_, '_> {
             );
             return Ok(box ty.foldable().fold_with(&mut TypeParamRenamer {
                 inferred: inferred.type_params,
+                declared: Default::default(),
             }));
         }
 
@@ -1874,57 +1936,6 @@ impl Analyzer<'_, '_> {
     }
 }
 
-#[derive(Debug)]
-struct TypeParamRenamer {
-    inferred: FxHashMap<Id, Box<Type>>,
-}
-
-impl Fold<Type> for TypeParamRenamer {
-    fn fold(&mut self, mut ty: Type) -> Type {
-        ty = ty.fold_children_with(self);
-
-        match ty {
-            Type::Param(ref param) => {
-                if let Some(mapped) = self.inferred.get(&param.name) {
-                    match mapped.normalize() {
-                        Type::Param(..) => return ty,
-                        _ => {}
-                    }
-                    return *mapped.clone();
-                }
-            }
-            _ => {}
-        }
-
-        ty
-    }
-}
-
-#[derive(Debug, Default)]
-struct TypeParamUsageFinder {
-    params: Vec<TypeParam>,
-}
-
-/// Noop as declaration is not usage.
-impl Visit<TypeParamDecl> for TypeParamUsageFinder {
-    #[inline]
-    fn visit(&mut self, _: &TypeParamDecl) {}
-}
-
-impl Visit<TypeParam> for TypeParamUsageFinder {
-    fn visit(&mut self, node: &TypeParam) {
-        for p in &self.params {
-            if node.name == p.name {
-                return;
-            }
-        }
-
-        // slog::info!(self.logger, "Found type parameter({})", node.name);
-
-        self.params.push(node.clone());
-    }
-}
-
 /// This method returns true for types like `'foo'` and `'foo' | 'bar'`.
 pub(super) fn is_literals(ty: &Type) -> bool {
     match ty.normalize() {
@@ -1934,12 +1945,12 @@ pub(super) fn is_literals(ty: &Type) -> bool {
     }
 }
 
-struct TypeParamReplacer<'a> {
+struct SingleTypeParamReplacer<'a> {
     name: &'a Id,
     to: &'a Type,
 }
 
-impl Fold<Type> for TypeParamReplacer<'_> {
+impl Fold<Type> for SingleTypeParamReplacer<'_> {
     fn fold(&mut self, mut ty: Type) -> Type {
         ty = ty.fold_children_with(self);
 

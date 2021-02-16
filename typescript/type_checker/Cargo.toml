@@ -27,10 +27,10 @@ stc_ts_utils = {path = "../utils"}
 stc_utils = {path = "../../utils"}
 swc_atoms = "0.2.5"
 swc_common = { version = "0.10.9", features = ["concurrent", "tty-emitter"] }
-swc_ecma_ast = "0.37.3"
-swc_ecma_parser = "0.45.0"
-swc_ecma_transforms = "0.33.7"
-swc_ecma_visit = "0.23.3"
+swc_ecma_ast = "0.38.0"
+swc_ecma_parser = "0.47.1"
+swc_ecma_transforms = "0.35.0"
+swc_ecma_visit = "0.24.0"
 
 [dev-dependencies]
 anyhow = "1.0.37"
@@ -39,8 +39,8 @@ serde = {version = "1.0.118", features = ["derive"]}
 serde_json = "1.0.61"
 stc_testing = {path = "../../testing"}
 stc_ts_testing = { path = "../testing" }
-swc_ecma_codegen = "0.43.6"
-swc_ecma_utils = "0.27.3"
+swc_ecma_codegen = "0.45.1"
+swc_ecma_utils = "0.28.0"
 testing = "0.10.2"
 testing_macros = "0.1.1"
 walkdir = "2.3.1"

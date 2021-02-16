@@ -316,10 +316,6 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
 
                 slog::info!(self.logger, "Ref: {}", Id::from(i));
 
-                if let Some(ty) = self.params.get(&i.into()) {
-                    return *ty.clone();
-                }
-
                 return ty.fold_children_with(self);
             }
 
@@ -370,12 +366,7 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                 }
 
                 if let Some(ty) = self.params.get(&param.name) {
-                    slog::info!(
-                        self.logger,
-                        "generic_expand: Type parameter: {} => {:?}",
-                        param.name,
-                        ty
-                    );
+                    slog::info!(self.logger, "generic_expand: Expanding type parameter `{}`", param.name);
 
                     // If it's not self-referential, we fold it again.
 

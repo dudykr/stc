@@ -1,0 +1,24 @@
+warning: Type
+ --> $DIR/tests/visualize/types/inference/generic/contextual-1-1.ts:5:43
+  |
+5 | export const f02: <A>(x: A) => A[] = wrap(list);
+  |                                           ^^^^
+  |
+  = note: <T>(a: T) => T[]
+
+warning: Type
+ --> $DIR/tests/visualize/types/inference/generic/contextual-1-1.ts:5:38
+  |
+5 | export const f02: <A>(x: A) => A[] = wrap(list);
+  |                                      ^^^^
+  |
+  = note: <A, B>(f: (a: A) => B) => (a: A) => B
+
+warning: Type
+ --> $DIR/tests/visualize/types/inference/generic/contextual-1-1.ts:5:38
+  |
+5 | export const f02: <A>(x: A) => A[] = wrap(list);
+  |                                      ^^^^^^^^^^
+  |
+  = note: <T>(a: T) => T[]
+
