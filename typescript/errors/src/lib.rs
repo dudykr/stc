@@ -646,13 +646,23 @@ pub enum Error {
         span: Span,
     },
 
-    ArgCountMismatch {
+    ExpectedNArgsButGotM {
         span: Span,
         min: usize,
         max: Option<usize>,
     },
 
-    TooEarlySpread {
+    ExpectedAtLeastNArgsButGotM {
+        span: Span,
+        min: usize,
+    },
+
+    ExpectedAtLeastNArgsButGotMOrMore {
+        span: Span,
+        min: usize,
+    },
+
+    ExpectedNArgsButGotMOrMore {
         span: Span,
     },
 
@@ -806,8 +816,10 @@ impl Error {
             Error::TypeUsedAsVar { .. } => 2585,
             Error::TypeNotFound { .. } => 2304,
 
-            Error::ArgCountMismatch { .. } => 2554,
-            Error::TooEarlySpread { .. } => 2556,
+            Error::ExpectedNArgsButGotM { .. } => 2554,
+            Error::ExpectedAtLeastNArgsButGotM { .. } => 2555,
+            Error::ExpectedNArgsButGotMOrMore { .. } => 2556,
+            Error::ExpectedAtLeastNArgsButGotMOrMore { .. } => 2557,
 
             Error::ReferencedInInit { .. } => 2372,
 

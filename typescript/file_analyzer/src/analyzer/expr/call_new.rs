@@ -1539,7 +1539,11 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
             }
-            return Err(box Error::ArgCountMismatch {
+
+            if max_param.is_none() {
+                return Err(box Error::ExpectedAtLeastNArgsButGotM { span, min: min_param });
+            }
+            return Err(box Error::ExpectedNArgsButGotM {
                 span,
                 min: min_param,
                 max: max_param,
@@ -1872,7 +1876,10 @@ impl Analyzer<'_, '_> {
             if arg.spread.is_some() {
                 if let Some(rest_idx) = rest_idx {
                     if idx < rest_idx {
-                        self.storage.report(box Error::TooEarlySpread { span: arg.span() })
+                        self.storage.report(box Error::ExpectedAtLeastNArgsButGotMOrMore {
+                            span: arg.span(),
+                            min: rest_idx - 1,
+                        })
                     }
                 }
             }
