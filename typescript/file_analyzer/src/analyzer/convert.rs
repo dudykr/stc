@@ -257,10 +257,11 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, d: &RTsConstructSignatureDecl) -> ValidationResult<ConstructorSignature> {
+        let type_params = try_opt!(d.type_params.validate_with(self));
         Ok(ConstructorSignature {
             span: d.span,
             params: d.params.validate_with(self)?,
-            type_params: try_opt!(d.type_params.validate_with(self)),
+            type_params,
             ret_ty: try_opt!(d.type_ann.validate_with(self)),
         })
     }
@@ -269,10 +270,12 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, d: &RTsCallSignatureDecl) -> ValidationResult<CallSignature> {
+        let type_params = try_opt!(d.type_params.validate_with(self));
+
         Ok(CallSignature {
             span: d.span,
             params: d.params.validate_with(self)?,
-            type_params: try_opt!(d.type_params.validate_with(self)),
+            type_params,
             ret_ty: try_opt!(d.type_ann.validate_with(self)),
         })
     }
@@ -282,6 +285,8 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, d: &RTsMethodSignature) -> ValidationResult<MethodSignature> {
         self.with_child(ScopeKind::Fn, Default::default(), |child: &mut Analyzer| {
+            let type_params = try_opt!(d.type_params.validate_with(child));
+
             let key = child.validate_key(&d.key, d.computed)?;
 
             if d.computed {
@@ -293,7 +298,7 @@ impl Analyzer<'_, '_> {
                 readonly: d.readonly,
                 key,
                 optional: d.optional,
-                type_params: try_opt!(d.type_params.validate_with(child)),
+                type_params,
                 params: d.params.validate_with(child)?,
                 ret_ty: try_opt!(d.type_ann.validate_with(child)),
             })
@@ -316,6 +321,8 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, d: &RTsPropertySignature) -> ValidationResult<PropertySignature> {
+        let type_params = try_opt!(d.type_params.validate_with(self));
+
         let key = self.validate_key(&d.key, d.computed)?;
         if !self.is_builtin && d.computed {
             RComputedPropName {
@@ -345,7 +352,7 @@ impl Analyzer<'_, '_> {
                     None => Some(Type::any(d.span)),
                 }
             },
-            type_params: try_opt!(d.type_params.validate_with(self)),
+            type_params,
         })
     }
 }

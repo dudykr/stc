@@ -1,0 +1,85 @@
+warning: Type
+ --> $DIR/tests/visualize/exprs/object/method/normalization-2.ts:5:11
+  |
+5 | var z2 = [a2, b2, c2];
+  |           ^^
+  |
+  = note: {
+              <T>(x: T) : number;
+              (x: string) : string;
+          }
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/object/method/normalization-2.ts:5:15
+  |
+5 | var z2 = [a2, b2, c2];
+  |               ^^
+  |
+  = note: {
+              <T>(x: T) : number;
+              (x: string) : string;
+          }
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/object/method/normalization-2.ts:5:19
+  |
+5 | var z2 = [a2, b2, c2];
+  |                   ^^
+  |
+  = note: {
+              (x: number) : number;
+              <T>(x: T) : any;
+          }
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/object/method/normalization-2.ts:5:10
+  |
+5 | var z2 = [a2, b2, c2];
+  |          ^^^^^^^^^^^^
+  |
+  = note: {
+              <T>(x: T & number) : number;
+              <T>(x: string & T) : string | any;
+          }[]
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/object/method/normalization-2.ts:6:10
+  |
+6 | var r6 = z2[0];
+  |          ^^
+  |
+  = note: {
+              <T>(x: T & number) : number;
+              <T>(x: string & T) : string | any;
+          }[]
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/object/method/normalization-2.ts:6:10
+  |
+6 | var r6 = z2[0];
+  |          ^^^^^
+  |
+  = note: {
+              <T>(x: T & number) : number;
+              <T>(x: string & T) : string | any;
+          }
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/object/method/normalization-2.ts:7:17
+  |
+7 | export var r7 = r6(''); // any not string
+  |                 ^^
+  |
+  = note: {
+              <T>(x: T & number) : number;
+              <T>(x: string & T) : string | any;
+          }
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/object/method/normalization-2.ts:7:17
+  |
+7 | export var r7 = r6(''); // any not string
+  |                 ^^^^^^
+  |
+  = note: string | any
+

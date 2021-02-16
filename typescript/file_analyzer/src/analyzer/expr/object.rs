@@ -1,21 +1,32 @@
 use crate::analyzer::Analyzer;
 use crate::analyzer::ScopeKind;
+use crate::util::type_ext::TypeVecExt;
 use crate::validator::ValidateWith;
 use crate::ValidationResult;
+use fxhash::FxHashMap;
 use indexmap::IndexSet;
+use itertools::Itertools;
+use rnode::FoldWith;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
+use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RObjectLit;
+use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RPropOrSpread;
 use stc_ts_ast_rnode::RSpreadElement;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_file_analyzer_macros::validator;
+use stc_ts_generics::type_param::replacer::TypeParamReplacer;
+use stc_ts_types::CallSignature;
+use stc_ts_types::FnParam;
 use stc_ts_types::Key;
 use stc_ts_types::PropertySignature;
 use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
+use stc_ts_types::TypeParamDecl;
 use stc_ts_types::Union;
+use std::iter::repeat;
 use swc_atoms::JsWord;
 use swc_common::DUMMY_SP;
 
@@ -37,9 +48,11 @@ impl Analyzer<'_, '_> {
     }
 }
 
-struct ObjectUnionNormalizer;
+struct ObjectUnionNormalizer<'a, 'b, 'c> {
+    anaylzer: &'a mut Analyzer<'b, 'c>,
+}
 
-impl ObjectUnionNormalizer {
+impl ObjectUnionNormalizer<'_, '_, '_> {
     /// We need to know shape of normalized type literal.
     ///
     /// We use indexset to remove duplicate while preserving order.
@@ -54,16 +67,148 @@ impl ObjectUnionNormalizer {
             .filter_map(|member| member.non_computed_key().cloned())
             .collect()
     }
-}
 
-impl VisitMut<Union> for ObjectUnionNormalizer {
-    fn visit_mut(&mut self, u: &mut Union) {
-        u.visit_mut_children_with(self);
+    /// TODO: Add type parameters.
+    fn normalize_call_signatures(&self, ty: &mut Type) {
+        let u = match ty {
+            Type::Union(u) => u,
+            _ => return,
+        };
 
-        // If an union does not contains object literals, skip it.
-        if u.types.iter().all(|ty| !ty.normalize().is_type_lit()) {
+        let mut new_type_params = FxHashMap::<_, TypeParamDecl>::default();
+        let mut new_params = FxHashMap::<_, Vec<_>>::default();
+        let mut new_return_types = FxHashMap::<_, Vec<_>>::default();
+        let mut extra_members = vec![];
+        //
+        for (type_idx, ty) in u.types.iter().enumerate() {
+            match &**ty {
+                Type::TypeLit(ty) => {
+                    for (i, m) in ty.members.iter().enumerate() {
+                        //
+                        match m {
+                            TypeElement::Call(CallSignature {
+                                type_params,
+                                params,
+                                ret_ty,
+                                ..
+                            }) => {
+                                let mut params = params.clone();
+
+                                if let Some(type_params) = type_params {
+                                    if let Some(prev) = new_type_params.get(&i) {
+                                        // We replace new type params woth previous type param.
+                                        let mut inferred = prev
+                                            .params
+                                            .iter()
+                                            .cloned()
+                                            .map(Type::Param)
+                                            .map(Box::new)
+                                            .zip(type_params.params.iter())
+                                            .map(|(prev, new)| (new.name.clone(), prev))
+                                            .collect();
+
+                                        params = params.fold_with(&mut TypeParamReplacer {
+                                            inferred,
+                                            include_type_params: true,
+                                        });
+                                    } else {
+                                        new_type_params.entry(i).or_insert_with(|| type_params.clone());
+                                    }
+                                }
+
+                                // Parameters are intersectioned, and return
+                                // types are unioned.
+
+                                for (idx, param) in params.into_iter().enumerate() {
+                                    let new_params = new_params.entry(i).or_default();
+                                    if new_params.len() <= idx {
+                                        new_params.extend(repeat(vec![]).take(idx + 1 - new_params.len()));
+                                    }
+
+                                    new_params[idx].push(param);
+                                }
+
+                                new_return_types.entry(i).or_default().extend(ret_ty.clone());
+                            }
+                            _ => {
+                                if extra_members.len() <= type_idx {
+                                    extra_members.extend(repeat(vec![]).take(type_idx + 1 - extra_members.len()));
+                                }
+
+                                extra_members[type_idx].push(m.clone())
+                            }
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        if new_params.is_empty() {
             return;
         }
+
+        let mut members = vec![];
+
+        for (i, new_params) in new_params {
+            let mut return_types = new_return_types.remove(&i).unwrap_or_default();
+            return_types.dedup_type();
+            let type_params = new_type_params.remove(&i);
+
+            members.push(TypeElement::Call(CallSignature {
+                span: DUMMY_SP,
+                ret_ty: Some(Type::union(return_types)),
+                type_params,
+                params: new_params
+                    .into_iter()
+                    .map(|params| {
+                        let mut pat = None;
+                        let mut types = vec![];
+                        for param in params {
+                            if pat.is_none() {
+                                pat = Some(param.pat);
+                            }
+
+                            types.push(param.ty);
+                        }
+                        types.dedup_type();
+
+                        let ty = Type::intersection(DUMMY_SP, types);
+                        FnParam {
+                            span: DUMMY_SP,
+                            // TODO
+                            required: true,
+                            // TODO
+                            pat: pat.unwrap_or_else(|| RPat::Ident(RIdent::new("a".into(), DUMMY_SP))),
+                            ty,
+                        }
+                    })
+                    .collect_vec(),
+            }));
+        }
+
+        let new_lit = TypeLit { span: u.span, members };
+
+        if extra_members.is_empty() {
+            *ty = Type::TypeLit(new_lit);
+            return;
+        }
+
+        let mut new_types = extra_members
+            .into_iter()
+            .map(|extra_members| {
+                let mut new_lit = new_lit.clone();
+                new_lit.members.extend(extra_members);
+                new_lit
+            })
+            .map(Type::TypeLit)
+            .map(Box::new)
+            .collect_vec();
+
+        u.types = new_types;
+    }
+
+    fn normalize_keys(&self, u: &mut Union) {
         let keys = self.find_keys(&u.types);
 
         // Add properties.
@@ -104,6 +249,27 @@ impl VisitMut<Union> for ObjectUnionNormalizer {
     }
 }
 
+impl VisitMut<Type> for ObjectUnionNormalizer<'_, '_, '_> {
+    fn visit_mut(&mut self, ty: &mut Type) {
+        ty.visit_mut_children_with(self);
+
+        self.normalize_call_signatures(ty);
+    }
+}
+
+impl VisitMut<Union> for ObjectUnionNormalizer<'_, '_, '_> {
+    fn visit_mut(&mut self, u: &mut Union) {
+        u.visit_mut_children_with(self);
+
+        // If an union does not contains object literals, skip it.
+        if u.types.iter().all(|ty| !ty.normalize().is_type_lit()) {
+            return;
+        }
+
+        self.normalize_keys(u);
+    }
+}
+
 impl Analyzer<'_, '_> {
     /// Object literals in unions are normalized upon widening.
     ///
@@ -114,7 +280,7 @@ impl Analyzer<'_, '_> {
     /// Type of `a` in the code above is `{ a: number, b?: undefined } | {
     /// a:number, b: string }`.
     pub(super) fn normalize_union_of_objects(&mut self, ty: &mut Type) {
-        ty.visit_mut_with(&mut ObjectUnionNormalizer);
+        ty.visit_mut_with(&mut ObjectUnionNormalizer { anaylzer: self });
     }
 
     fn append_prop_or_spread_to_type(&mut self, to: Box<Type>, prop: &RPropOrSpread) -> ValidationResult {

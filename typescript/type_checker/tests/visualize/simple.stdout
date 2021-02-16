@@ -47,6 +47,14 @@ warning: Type
   = note: number | string
 
 warning: Type
+ --> $DIR/tests/visualize/simple.ts:1:42
+  |
+1 | export const arr = [1, '2', 3, 4, 5].map(v => !!v);
+  |                                          ^^^^^^^^
+  |
+  = note: (v: number | string) => boolean
+
+warning: Type
  --> $DIR/tests/visualize/simple.ts:1:20
   |
 1 | export const arr = [1, '2', 3, 4, 5].map(v => !!v);

@@ -191,7 +191,8 @@ impl Analyzer<'_, '_> {
                 Error::AssignFailed { .. }
                 | Error::Errors { .. }
                 | Error::Unimplemented { .. }
-                | Error::TupleAssignError { .. } => err,
+                | Error::TupleAssignError { .. }
+                | Error::ObjectAssignFailed { .. } => err,
                 _ => Error::AssignFailed {
                     span: opts.span,
                     left: box left.clone(),
@@ -430,6 +431,12 @@ impl Analyzer<'_, '_> {
             }) => return Ok(()),
 
             _ => {}
+        }
+
+        if to.is_str() || to.is_num() {
+            if rhs.is_type_lit() {
+                fail!()
+            }
         }
 
         // Allow v = null and v = undefined if strict null check is false

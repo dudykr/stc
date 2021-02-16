@@ -1,0 +1,64 @@
+warning: Type
+  --> $DIR/tests/visualize/types/inference/generic/contextual-2-3-1.ts:10:53
+   |
+10 | export const f: <T>(x: Box<T>) => T = id(a => unbox(a));
+   |                                                     ^
+   |
+   = note: any
+
+warning: Type
+  --> $DIR/tests/visualize/types/inference/generic/contextual-2-3-1.ts:10:47
+   |
+10 | export const f: <T>(x: Box<T>) => T = id(a => unbox(a));
+   |                                               ^^^^^
+   |
+   = note: <W>(x: Box<W>) => W
+
+warning: Type
+  --> $DIR/tests/visualize/types/inference/generic/contextual-2-3-1.ts:10:47
+   |
+10 | export const f: <T>(x: Box<T>) => T = id(a => unbox(a));
+   |                                               ^^^^^^^^
+   |
+   = note: W
+
+warning: Type
+  --> $DIR/tests/visualize/types/inference/generic/contextual-2-3-1.ts:10:42
+   |
+10 | export const f: <T>(x: Box<T>) => T = id(a => unbox(a));
+   |                                          ^^^^^^^^^^^^^
+   |
+   = note: (a: any) => W
+
+warning: Type
+  --> $DIR/tests/visualize/types/inference/generic/contextual-2-3-1.ts:10:39
+   |
+10 | export const f: <T>(x: Box<T>) => T = id(a => unbox(a));
+   |                                       ^^
+   |
+   = note: <T>(a: T) => T
+
+warning: Type
+  --> $DIR/tests/visualize/types/inference/generic/contextual-2-3-1.ts:10:53
+   |
+10 | export const f: <T>(x: Box<T>) => T = id(a => unbox(a));
+   |                                                     ^
+   |
+   = note: Box<W>
+
+warning: Type
+  --> $DIR/tests/visualize/types/inference/generic/contextual-2-3-1.ts:10:42
+   |
+10 | export const f: <T>(x: Box<T>) => T = id(a => unbox(a));
+   |                                          ^^^^^^^^^^^^^
+   |
+   = note: (a: Box<W>) => W
+
+warning: Type
+  --> $DIR/tests/visualize/types/inference/generic/contextual-2-3-1.ts:10:39
+   |
+10 | export const f: <T>(x: Box<T>) => T = id(a => unbox(a));
+   |                                       ^^^^^^^^^^^^^^^^^
+   |
+   = note: <W>(a: Box<W>) => W
+

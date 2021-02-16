@@ -98,6 +98,7 @@ impl Analyzer<'_, '_> {
                                 .call_property(
                                     span,
                                     ExtractKind::Call,
+                                    Default::default(),
                                     element_type,
                                     &Key::Computed(ComputedKey {
                                         span: *spread,
@@ -120,6 +121,7 @@ impl Analyzer<'_, '_> {
                                     &[],
                                     &[],
                                     &[],
+                                    None,
                                 )
                                 .context("tried to call `Symbol.iterator` property")?;
 
@@ -127,6 +129,7 @@ impl Analyzer<'_, '_> {
                                 .call_property(
                                     span,
                                     ExtractKind::Call,
+                                    Default::default(),
                                     iterator,
                                     &Key::Normal {
                                         span,
@@ -136,6 +139,7 @@ impl Analyzer<'_, '_> {
                                     &[],
                                     &[],
                                     &[],
+                                    None,
                                 )
                                 .context("tried calling `next()` to get element type of iterator")?;
 
@@ -192,6 +196,7 @@ impl Analyzer<'_, '_> {
             .call_property(
                 span,
                 ExtractKind::Call,
+                Default::default(),
                 box ty.into_owned(),
                 &Key::Computed(ComputedKey {
                     span,
@@ -214,6 +219,7 @@ impl Analyzer<'_, '_> {
                 &[],
                 &[],
                 &[],
+                None,
             )
             .map_err(|err| {
                 box err.convert(|err| match err {

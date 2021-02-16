@@ -372,6 +372,11 @@ pub enum Error {
         cause: Vec<Box<Error>>,
     },
 
+    ObjectAssignFailed {
+        span: Span,
+        errors: Vec<Box<Error>>,
+    },
+
     SimpleAssignFailed {
         span: Span,
     },
@@ -786,6 +791,7 @@ impl Error {
             Error::TS2704 { .. } => 2704,
 
             Error::AssignFailed { .. }
+            | Error::ObjectAssignFailed { .. }
             | Error::SimpleAssignFailed { .. }
             | Error::InvalidAssignmentOfArray { .. }
             | Error::UnknownPropertyInObjectLiteralAssignment { .. }

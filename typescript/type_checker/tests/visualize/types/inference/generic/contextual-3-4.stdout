@@ -1,0 +1,118 @@
+warning: Type
+ --> $DIR/tests/visualize/types/inference/generic/contextual-3-4.ts:8:62
+  |
+8 | const arrayMap = <T, U>(f: (x: T) => U) => (a: T[]) => a.map(f);
+  |                                                              ^
+  |
+  = note: (x: T) => U
+
+warning: Type
+ --> $DIR/tests/visualize/types/inference/generic/contextual-3-4.ts:8:56
+  |
+8 | const arrayMap = <T, U>(f: (x: T) => U) => (a: T[]) => a.map(f);
+  |                                                        ^
+  |
+  = note: T[]
+
+warning: Type
+ --> $DIR/tests/visualize/types/inference/generic/contextual-3-4.ts:8:56
+  |
+8 | const arrayMap = <T, U>(f: (x: T) => U) => (a: T[]) => a.map(f);
+  |                                                        ^^^^^^^^
+  |
+  = note: U[]
+
+warning: Type
+ --> $DIR/tests/visualize/types/inference/generic/contextual-3-4.ts:8:44
+  |
+8 | const arrayMap = <T, U>(f: (x: T) => U) => (a: T[]) => a.map(f);
+  |                                            ^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: (a: T[]) => U[]
+
+warning: Type
+ --> $DIR/tests/visualize/types/inference/generic/contextual-3-4.ts:8:18
+  |
+8 | const arrayMap = <T, U>(f: (x: T) => U) => (a: T[]) => a.map(f);
+  |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: <T, U>(f: (x: T) => U) => (a: T[]) => U[]
+
+warning: Type
+  --> $DIR/tests/visualize/types/inference/generic/contextual-3-4.ts:10:64
+   |
+10 | export const f23: <A>(a: A[]) => Box<A>[] = arrayMap(value => ({ value }));
+   |                                                                ^^^^^^^^^
+   |
+   = note: {
+               value: any;
+           }
+
+warning: Type
+  --> $DIR/tests/visualize/types/inference/generic/contextual-3-4.ts:10:63
+   |
+10 | export const f23: <A>(a: A[]) => Box<A>[] = arrayMap(value => ({ value }));
+   |                                                               ^^^^^^^^^^^
+   |
+   = note: {
+               value: any;
+           }
+
+warning: Type
+  --> $DIR/tests/visualize/types/inference/generic/contextual-3-4.ts:10:54
+   |
+10 | export const f23: <A>(a: A[]) => Box<A>[] = arrayMap(value => ({ value }));
+   |                                                      ^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: (value: any) => {
+               value: any;
+           }
+
+warning: Type
+  --> $DIR/tests/visualize/types/inference/generic/contextual-3-4.ts:10:45
+   |
+10 | export const f23: <A>(a: A[]) => Box<A>[] = arrayMap(value => ({ value }));
+   |                                             ^^^^^^^^
+   |
+   = note: <T, U>(f: (x: T) => U) => <T, U>(a: T[]) => U[]
+
+warning: Type
+  --> $DIR/tests/visualize/types/inference/generic/contextual-3-4.ts:10:64
+   |
+10 | export const f23: <A>(a: A[]) => Box<A>[] = arrayMap(value => ({ value }));
+   |                                                                ^^^^^^^^^
+   |
+   = note: {
+               value: A;
+           }
+
+warning: Type
+  --> $DIR/tests/visualize/types/inference/generic/contextual-3-4.ts:10:63
+   |
+10 | export const f23: <A>(a: A[]) => Box<A>[] = arrayMap(value => ({ value }));
+   |                                                               ^^^^^^^^^^^
+   |
+   = note: {
+               value: A;
+           }
+
+warning: Type
+  --> $DIR/tests/visualize/types/inference/generic/contextual-3-4.ts:10:54
+   |
+10 | export const f23: <A>(a: A[]) => Box<A>[] = arrayMap(value => ({ value }));
+   |                                                      ^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: (value: A) => {
+               value: A;
+           }
+
+warning: Type
+  --> $DIR/tests/visualize/types/inference/generic/contextual-3-4.ts:10:45
+   |
+10 | export const f23: <A>(a: A[]) => Box<A>[] = arrayMap(value => ({ value }));
+   |                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: <A>(a: A[]) => {
+               value: A;
+           }[]
+

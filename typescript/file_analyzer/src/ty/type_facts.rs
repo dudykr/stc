@@ -6,6 +6,7 @@ use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_types::IndexedAccessType;
+use stc_ts_types::TypeLit;
 use stc_ts_types::Union;
 use swc_common::Span;
 use swc_common::Spanned;
@@ -149,7 +150,7 @@ impl Fold<Type> for TypeFactsHandler {
 
             Type::Keyword(..) => {}
 
-            Type::IndexedAccessType(IndexedAccessType { span, .. }) => {
+            Type::IndexedAccessType(IndexedAccessType { span, .. }) | Type::TypeLit(TypeLit { span, .. }) => {
                 // Treat as any and apply type facts.
                 let simple = facts_to_union(span, self.facts);
                 if !simple.is_never() {
