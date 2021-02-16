@@ -8,7 +8,6 @@ use itertools::Itertools;
 use rnode::Fold;
 use rnode::FoldWith;
 use rnode::NodeId;
-use rnode::Visit;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
 use rnode::VisitWith;
@@ -24,6 +23,8 @@ use stc_ts_errors::debug::print_backtrace;
 use stc_ts_errors::debug::print_type;
 use stc_ts_errors::DebugExt;
 use stc_ts_generics::type_param::remover::TypeParamRemover;
+use stc_ts_generics::type_param::renamer::TypeParamRenamer;
+use stc_ts_generics::type_param::renamer::TypeParamUsageFinder;
 use stc_ts_types::Array;
 use stc_ts_types::FnParam;
 use stc_ts_types::Id;
@@ -1919,57 +1920,6 @@ impl Analyzer<'_, '_> {
         }
 
         Ok(ty.fold_with(&mut TypeParamRemover::new()))
-    }
-}
-
-#[derive(Debug)]
-struct TypeParamRenamer {
-    inferred: FxHashMap<Id, Box<Type>>,
-}
-
-impl Fold<Type> for TypeParamRenamer {
-    fn fold(&mut self, mut ty: Type) -> Type {
-        ty = ty.fold_children_with(self);
-
-        match ty {
-            Type::Param(ref param) => {
-                if let Some(mapped) = self.inferred.get(&param.name) {
-                    match mapped.normalize() {
-                        Type::Param(..) => return ty,
-                        _ => {}
-                    }
-                    return *mapped.clone();
-                }
-            }
-            _ => {}
-        }
-
-        ty
-    }
-}
-
-#[derive(Debug, Default)]
-struct TypeParamUsageFinder {
-    params: Vec<TypeParam>,
-}
-
-/// Noop as declaration is not usage.
-impl Visit<TypeParamDecl> for TypeParamUsageFinder {
-    #[inline]
-    fn visit(&mut self, _: &TypeParamDecl) {}
-}
-
-impl Visit<TypeParam> for TypeParamUsageFinder {
-    fn visit(&mut self, node: &TypeParam) {
-        for p in &self.params {
-            if node.name == p.name {
-                return;
-            }
-        }
-
-        // slog::info!(self.logger, "Found type parameter({})", node.name);
-
-        self.params.push(node.clone());
     }
 }
 
