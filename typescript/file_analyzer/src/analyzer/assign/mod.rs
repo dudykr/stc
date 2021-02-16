@@ -432,6 +432,12 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
+        if to.is_str() || to.is_num() {
+            if rhs.is_type_lit() {
+                fail!()
+            }
+        }
+
         // Allow v = null and v = undefined if strict null check is false
         if !self.rule().strict_null_checks {
             match rhs {
