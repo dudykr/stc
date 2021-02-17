@@ -11,7 +11,7 @@ use swc_common::TypeEq;
 ///
 /// This struct is treated as a span while comparison. It means, [EqIgnoreSpan]
 /// and [TypeEq] will always return true.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Metadata {}
 
 impl EqIgnoreSpan for Metadata {

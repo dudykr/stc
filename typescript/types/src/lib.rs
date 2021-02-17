@@ -19,12 +19,12 @@ use rnode::NodeId;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
 use rnode::VisitWith;
+use static_assertions::assert_eq_size;
 use stc_ts_ast_rnode::RBigInt;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RNumber;
 use stc_ts_ast_rnode::RPat;
-use stc_ts_ast_rnode::RPrivateName;
 use stc_ts_ast_rnode::RStr;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsEnumMemberId;
@@ -185,6 +185,8 @@ pub enum Type {
     Symbol(Symbol),
 }
 
+assert_eq_size!(Type, [u8; 128]);
+
 fn _assert_send_sync() {
     fn assert<T: Send + Sync>() {}
 
@@ -250,8 +252,16 @@ pub enum Key {
     Normal { span: Span, sym: JsWord },
     Num(#[use_eq_ignore_span] RNumber),
     BigInt(#[use_eq_ignore_span] RBigInt),
-    Private(#[use_eq_ignore_span] RPrivateName),
+    Private(#[use_eq_ignore_span] PrivateName),
 }
+
+#[derive(Debug, Clone, PartialEq, Eq, EqIgnoreSpan, TypeEq, Visit, Spanned)]
+pub struct PrivateName {
+    pub span: Span,
+    pub id: Id,
+}
+
+assert_eq_size!(Key, [u8; 56]);
 
 impl Key {
     pub fn ty(&self) -> Cow<Type> {
@@ -312,6 +322,8 @@ pub struct ComputedKey {
     pub expr: Box<RExpr>,
     pub ty: Box<Type>,
 }
+
+assert_eq_size!(ComputedKey, [u8; 32]);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EqIgnoreSpan, TypeEq, Visit)]
 pub struct SymbolId(usize);
@@ -529,6 +541,7 @@ pub struct Interface {
 pub struct TypeLit {
     pub span: Span,
     pub members: Vec<TypeElement>,
+    pub metadata: Metadata,
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]

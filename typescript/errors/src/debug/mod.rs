@@ -50,6 +50,7 @@ pub fn dump_type_as_string(cm: &Lrc<SourceMap>, t: &Type) -> String {
                             Type::TypeLit(TypeLit {
                                 span: DUMMY_SP,
                                 members: t.body.clone(),
+                                metadata: Default::default(),
                             })
                             .fold_with(&mut Visualizer),
                         )

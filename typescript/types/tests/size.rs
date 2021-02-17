@@ -6,11 +6,6 @@ use stc_ts_types::*;
 use std::mem::size_of;
 
 #[test]
-fn size_of_type() {
-    assert_eq!(size_of::<Type>(), 128);
-}
-
-#[test]
 fn size_of_module() {
     assert_eq!(size_of::<Module>(), 96);
 }
