@@ -8,7 +8,7 @@
 #![feature(specialization)]
 
 pub use self::convert::rprop_name_to_expr;
-pub use self::metadata::Metadata;
+pub use self::metadata::TypeLitMetadata;
 pub use self::{id::Id, module_id::ModuleId};
 use fxhash::FxHashMap;
 use is_macro::Is;
@@ -587,7 +587,7 @@ assert_eq_size!(Interface, [u8; 120]);
 pub struct TypeLit {
     pub span: Span,
     pub members: Vec<TypeElement>,
-    pub metadata: Metadata,
+    pub metadata: TypeLitMetadata,
 }
 
 assert_eq_size!(TypeLit, [u8; 40]);
