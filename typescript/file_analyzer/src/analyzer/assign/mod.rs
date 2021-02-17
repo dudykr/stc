@@ -990,7 +990,7 @@ impl Analyzer<'_, '_> {
             Type::Interface(Interface {
                 ref body, ref extends, ..
             }) => {
-                self.assign_to_type_elements(opts, span, &body, rhs)
+                self.assign_to_type_elements(opts, span, &body, rhs, Default::default())
                     .context("tried to assign a type to an interface")?;
 
                 let mut errors = vec![];
@@ -1054,9 +1054,11 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
 
-            Type::TypeLit(TypeLit { ref members, .. }) => {
+            Type::TypeLit(TypeLit {
+                ref members, metadata, ..
+            }) => {
                 return self
-                    .assign_to_type_elements(opts, span, &members, rhs)
+                    .assign_to_type_elements(opts, span, &members, rhs, *metadata)
                     .context("tried to assign a type to type elements");
             }
 
