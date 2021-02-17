@@ -1057,6 +1057,38 @@ impl Analyzer<'_, '_> {
                 type_ann,
             ),
 
+            // new fn()
+            Type::Function(f) => self.get_return_type(
+                span,
+                kind,
+                expr,
+                f.type_params.as_ref().map(|v| &*v.params),
+                &f.params,
+                Type::any(span),
+                type_args,
+                args,
+                arg_types,
+                spread_arg_types,
+                type_ann,
+            ),
+
+            Type::Param(TypeParam {
+                constraint: Some(constraint),
+                ..
+            }) => {
+                return self.extract(
+                    span,
+                    expr,
+                    constraint,
+                    kind,
+                    args,
+                    arg_types,
+                    spread_arg_types,
+                    type_args,
+                    type_ann,
+                )
+            }
+
             // Type::Constructor(ty::Constructor {
             //     ref params,
             //     ref type_params,
@@ -1489,6 +1521,22 @@ impl Analyzer<'_, '_> {
                 _ => {}
             }
             if param.required {
+                if !param.ty.is_any()
+                    && self
+                        .assign(
+                            &param.ty,
+                            &Type::Keyword(RTsKeywordType {
+                                span,
+                                kind: TsKeywordTypeKind::TsVoidKeyword,
+                            }),
+                            span,
+                        )
+                        .is_ok()
+                {
+                    // Reduce min_params if the type of parameter accepts void.
+                    continue;
+                }
+
                 min_param += 1;
             }
         }
@@ -1507,7 +1555,11 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
             }
-            return Err(box Error::ArgCountMismatch {
+
+            if max_param.is_none() {
+                return Err(box Error::ExpectedAtLeastNArgsButGotM { span, min: min_param });
+            }
+            return Err(box Error::ExpectedNArgsButGotM {
                 span,
                 min: min_param,
                 max: max_param,
@@ -1655,6 +1707,9 @@ impl Analyzer<'_, '_> {
                 }
 
                 let mut patch_arg = |idx: usize, pat: &RPat| -> ValidationResult<()> {
+                    if actual_params.len() <= idx {
+                        return Ok(());
+                    }
                     let actual = &actual_params[idx];
 
                     let default_any_ty: Option<_> = try {
@@ -1840,7 +1895,10 @@ impl Analyzer<'_, '_> {
             if arg.spread.is_some() {
                 if let Some(rest_idx) = rest_idx {
                     if idx < rest_idx {
-                        self.storage.report(box Error::TooEarlySpread { span: arg.span() })
+                        self.storage.report(box Error::ExpectedAtLeastNArgsButGotMOrMore {
+                            span: arg.span(),
+                            min: rest_idx - 1,
+                        })
                     }
                 }
             }
