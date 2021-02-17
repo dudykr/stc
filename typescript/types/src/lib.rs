@@ -25,6 +25,7 @@ use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RNumber;
 use stc_ts_ast_rnode::RPat;
+use stc_ts_ast_rnode::RPrivateName;
 use stc_ts_ast_rnode::RStr;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsEnumMemberId;
@@ -259,6 +260,15 @@ pub enum Key {
 pub struct PrivateName {
     pub span: Span,
     pub id: Id,
+}
+
+impl From<RPrivateName> for PrivateName {
+    fn from(n: RPrivateName) -> Self {
+        Self {
+            span: n.span,
+            id: n.id.into(),
+        }
+    }
 }
 
 assert_eq_size!(Key, [u8; 56]);
