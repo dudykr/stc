@@ -8,6 +8,7 @@
 #![feature(specialization)]
 
 pub use self::convert::rprop_name_to_expr;
+pub use self::metadata::Metadata;
 pub use self::{id::Id, module_id::ModuleId};
 use fxhash::FxHashMap;
 use is_macro::Is;
@@ -60,6 +61,7 @@ use swc_ecma_utils::{
 mod convert;
 mod id;
 pub mod macros;
+mod metadata;
 pub mod module_id;
 pub mod name;
 
