@@ -7,6 +7,10 @@ use swc_common::TypeEq;
 
 macro_rules! impl_traits {
     ($T:ty) => {
+        /// # Note
+        ///
+        /// This struct is treated as a span while comparison. It means, [EqIgnoreSpan]
+        /// will always return true.
         impl EqIgnoreSpan for $T {
             #[inline]
             fn eq_ignore_span(&self, _: &Self) -> bool {
@@ -14,6 +18,10 @@ macro_rules! impl_traits {
             }
         }
 
+        /// # Note
+        ///
+        /// This struct is treated as a span while comparison. It means, [TypeEq]
+        /// will always return true.
         impl TypeEq for $T {
             #[inline]
             fn type_eq(&self, _: &Self) -> bool {
@@ -23,6 +31,7 @@ macro_rules! impl_traits {
 
         impl Visitable for $T {}
 
+        /// Noop.
         impl<F: ?Sized> FoldWith<F> for $T {
             #[inline]
             fn fold_children_with(self, _: &mut F) -> Self {
@@ -30,11 +39,13 @@ macro_rules! impl_traits {
             }
         }
 
+        /// Noop.
         impl<F: ?Sized> VisitWith<F> for $T {
             #[inline]
             fn visit_children_with(&self, _: &mut F) {}
         }
 
+        /// Noop.
         impl<F: ?Sized> VisitMutWith<F> for $T {
             #[inline]
             fn visit_mut_children_with(&mut self, _: &mut F) {}
@@ -42,13 +53,9 @@ macro_rules! impl_traits {
     };
 }
 
-/// Stores metadata of the type.
-///
-/// # Note
-///
-/// This struct is treated as a span while comparison. It means, [EqIgnoreSpan]
-/// and [TypeEq] will always return true.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
-pub struct TypeLitMetadata {}
+pub struct TypeLitMetadata {
+    pub exact: bool,
+}
 
 impl_traits!(TypeLitMetadata);
