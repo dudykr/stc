@@ -531,11 +531,15 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                     })) => {
                         let obj_type = box obj_type.foldable();
                         match *obj_type {
-                            Type::TypeLit(TypeLit { span, members, .. })
-                                if members.iter().all(|m| match m {
-                                    TypeElement::Property(_) => true,
-                                    _ => false,
-                                }) =>
+                            Type::TypeLit(TypeLit {
+                                span,
+                                members,
+                                metadata,
+                                ..
+                            }) if members.iter().all(|m| match m {
+                                TypeElement::Property(_) => true,
+                                _ => false,
+                            }) =>
                             {
                                 let mut new_members = Vec::with_capacity(members.len());
                                 for m in members {
@@ -551,6 +555,7 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                                 return Type::TypeLit(TypeLit {
                                     span,
                                     members: new_members,
+                                    metadata,
                                 });
                             }
 
@@ -571,14 +576,18 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                             span,
                             op: TsTypeOperatorOp::KeyOf,
                             ty,
-                        }) => match &**ty {
+                        }) => match ty.normalize() {
                             Type::Keyword(..) => return *ty.clone(),
-                            Type::TypeLit(TypeLit { span, members, .. })
-                                if members.iter().all(|m| match m {
-                                    TypeElement::Property(_) => true,
-                                    TypeElement::Method(_) => true,
-                                    _ => false,
-                                }) =>
+                            Type::TypeLit(TypeLit {
+                                span,
+                                members,
+                                metadata: ty_metadata,
+                                ..
+                            }) if members.iter().all(|m| match m {
+                                TypeElement::Property(_) => true,
+                                TypeElement::Method(_) => true,
+                                _ => false,
+                            }) =>
                             {
                                 let mut new_members = Vec::with_capacity(members.len());
                                 for member in members {
@@ -609,6 +618,7 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                                 return Type::TypeLit(TypeLit {
                                     span: *span,
                                     members: new_members,
+                                    metadata: *ty_metadata,
                                 });
                             }
                             _ => {}

@@ -546,7 +546,12 @@ impl Fold<Type> for Simplifier<'_> {
                 span,
                 ty:
                     Some(box Type::IndexedAccessType(IndexedAccessType {
-                        obj_type: box Type::TypeLit(TypeLit { members, .. }),
+                        obj_type:
+                            box Type::TypeLit(TypeLit {
+                                metadata: obj_type_metadata,
+                                members,
+                                ..
+                            }),
                         index_type: box Type::Param(index_type),
                         ..
                     })),
@@ -590,6 +595,7 @@ impl Fold<Type> for Simplifier<'_> {
                 return Type::TypeLit(TypeLit {
                     span,
                     members: new_members,
+                    metadata: obj_type_metadata,
                 });
             }
 
