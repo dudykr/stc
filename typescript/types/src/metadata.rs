@@ -1,3 +1,8 @@
+//! # Rules
+//!
+//! All metadata structs should **derive** [Default].
+//! It means, all field should be `false` by default.
+
 use rnode::FoldWith;
 use rnode::VisitMutWith;
 use rnode::VisitWith;
@@ -55,7 +60,8 @@ macro_rules! impl_traits {
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct TypeLitMetadata {
-    pub exact: bool,
+    /// `true` if a spread element is used while initializing.
+    pub inexact: bool,
 }
 
 impl_traits!(TypeLitMetadata);
