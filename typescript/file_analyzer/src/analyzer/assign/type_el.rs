@@ -27,7 +27,6 @@ use swc_atoms::js_word;
 use swc_common::Span;
 use swc_common::Spanned;
 use swc_common::TypeEq;
-use swc_common::DUMMY_SP;
 use swc_ecma_ast::Accessibility;
 use swc_ecma_ast::TsKeywordTypeKind;
 
@@ -426,18 +425,9 @@ impl Analyzer<'_, '_> {
         }
 
         if !missing_fields.is_empty() {
-            let error = box Error::MissingFields {
+            errors.push(box Error::MissingFields {
                 span,
                 fields: missing_fields,
-            };
-            errors.push(box Error::AssignFailed {
-                span,
-                left: box Type::TypeLit(TypeLit {
-                    span: DUMMY_SP,
-                    members: lhs.to_vec(),
-                }),
-                right: box rhs.clone(),
-                cause: vec![error],
             });
         }
 
