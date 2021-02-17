@@ -62,6 +62,8 @@ macro_rules! impl_traits {
 pub struct TypeLitMetadata {
     /// `true` if a spread element is used while initializing.
     pub inexact: bool,
+    /// `true` if a type literal is modified by object union normalizer.
+    pub normalized: bool,
 }
 
 impl_traits!(TypeLitMetadata);

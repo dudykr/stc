@@ -24,6 +24,7 @@ use stc_ts_types::PropertySignature;
 use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
+use stc_ts_types::TypeLitMetadata;
 use stc_ts_types::TypeParamDecl;
 use stc_ts_types::Union;
 use std::iter::repeat;
@@ -37,6 +38,7 @@ impl Analyzer<'_, '_> {
             let mut ty = box Type::TypeLit(TypeLit {
                 span: node.span,
                 members: vec![],
+                metadata: Default::default(),
             });
 
             for prop in node.props.iter() {
@@ -74,6 +76,7 @@ impl ObjectUnionNormalizer<'_, '_, '_> {
             Type::Union(u) => u,
             _ => return,
         };
+        let mut inexact = false;
 
         let mut new_type_params = FxHashMap::<_, TypeParamDecl>::default();
         let mut new_params = FxHashMap::<_, Vec<_>>::default();
@@ -83,6 +86,7 @@ impl ObjectUnionNormalizer<'_, '_, '_> {
         for (type_idx, ty) in u.types.iter().enumerate() {
             match &**ty {
                 Type::TypeLit(ty) => {
+                    inexact |= ty.metadata.inexact;
                     for (i, m) in ty.members.iter().enumerate() {
                         //
                         match m {
@@ -187,7 +191,14 @@ impl ObjectUnionNormalizer<'_, '_, '_> {
             }));
         }
 
-        let new_lit = TypeLit { span: u.span, members };
+        let new_lit = TypeLit {
+            span: u.span,
+            members,
+            metadata: TypeLitMetadata {
+                normalized: true,
+                inexact,
+            },
+        };
 
         if extra_members.is_empty() {
             *ty = Type::TypeLit(new_lit);
@@ -209,12 +220,24 @@ impl ObjectUnionNormalizer<'_, '_, '_> {
     }
 
     fn normalize_keys(&self, u: &mut Union) {
+        if u.types.len() <= 1 {
+            return;
+        }
+
         let keys = self.find_keys(&u.types);
+
+        let inexact = u.types.iter().any(|ty| match ty.normalize() {
+            Type::TypeLit(ty) => ty.metadata.inexact,
+            _ => false,
+        });
 
         // Add properties.
         for ty in u.types.iter_mut() {
             match ty.normalize_mut() {
                 Type::TypeLit(ty) => {
+                    ty.metadata.inexact |= inexact;
+                    ty.metadata.normalized = true;
+
                     for key in &keys {
                         let has_key = ty.members.iter().any(|member| {
                             if let Some(member_key) = member.non_computed_key() {
