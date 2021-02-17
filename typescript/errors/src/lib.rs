@@ -700,6 +700,38 @@ impl Error {
             _ => op(self),
         }
     }
+
+    /// Convert all errors if `self` is [Error::Errors] and convert itself
+    /// otherwise.
+    pub fn convert_all<F>(self, mut op: F) -> Self
+    where
+        F: FnMut(Self) -> Self,
+    {
+        self.convert_all_inner(&mut op)
+    }
+
+    fn convert_all_inner<F>(self, op: &mut F) -> Self
+    where
+        F: FnMut(Self) -> Self,
+    {
+        match self {
+            Error::DebugContext(c) => {
+                let c = c.convert_all(op);
+                Error::DebugContext(c)
+            }
+
+            Error::Errors { span, errors } => {
+                let mut new = Vec::with_capacity(errors.capacity());
+                for err in errors {
+                    new.push(box err.convert_all_inner(op));
+                }
+
+                Error::Errors { span, errors: new }
+            }
+
+            _ => op(self),
+        }
+    }
 }
 
 impl DebugContext {
@@ -708,6 +740,15 @@ impl DebugContext {
         F: FnOnce(Error) -> Error,
     {
         let inner = box self.inner.convert(op);
+
+        Self { inner, ..self }
+    }
+
+    fn convert_all<F>(self, op: &mut F) -> Self
+    where
+        F: FnMut(Error) -> Error,
+    {
+        let inner = box self.inner.convert_all_inner(op);
 
         Self { inner, ..self }
     }
