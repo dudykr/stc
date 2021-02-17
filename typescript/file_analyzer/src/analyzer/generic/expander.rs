@@ -462,7 +462,11 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                                             }
                                         }
 
-                                        return Type::TypeLit(TypeLit { span: ty.span, members });
+                                        return Type::TypeLit(TypeLit {
+                                            span: ty.span,
+                                            members,
+                                            metadata: ty.metadata,
+                                        });
                                     }
                                     _ => {}
                                 }
@@ -500,7 +504,11 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                                 _ => todo!("type element other than property in a mapped type"),
                             })
                             .collect();
-                        return Type::TypeLit(TypeLit { span, members });
+                        return Type::TypeLit(TypeLit {
+                            span,
+                            members,
+                            metadata: lit.metadata,
+                        });
                     }
 
                     Some(box Type::Operator(Operator {

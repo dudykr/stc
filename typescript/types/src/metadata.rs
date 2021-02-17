@@ -58,7 +58,7 @@ macro_rules! impl_traits {
     };
 }
 
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct TypeLitMetadata {
     /// `true` if a spread element is used while initializing.
     pub inexact: bool,
