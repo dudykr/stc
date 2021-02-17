@@ -5,7 +5,7 @@ use stc_visit::Visitable;
 use swc_common::EqIgnoreSpan;
 use swc_common::TypeEq;
 
-macro_rules! metadata_traits {
+macro_rules! impl_traits {
     ($T:ty) => {
         impl EqIgnoreSpan for $T {
             #[inline]
@@ -51,4 +51,4 @@ macro_rules! metadata_traits {
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct TypeLitMetadata {}
 
-metadata_traits!(TypeLitMetadata);
+impl_traits!(TypeLitMetadata);
