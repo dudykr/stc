@@ -220,7 +220,11 @@ impl Analyzer<'_, '_> {
                 );
 
                 // Defaults to {}
-                params.push(box Type::TypeLit(TypeLit { span, members: vec![] }));
+                params.push(box Type::TypeLit(TypeLit {
+                    span,
+                    members: vec![],
+                    metadata: Default::default(),
+                }));
             }
         }
 
@@ -733,6 +737,7 @@ impl Analyzer<'_, '_> {
                                 let mut new_lit = TypeLit {
                                     span: arg_iat.span,
                                     members: vec![],
+                                    metadata: Default::default(),
                                 };
                                 for member in &param.members {
                                     match member {
@@ -1298,6 +1303,7 @@ impl Analyzer<'_, '_> {
                             box Type::TypeLit(TypeLit {
                                 span: arg.span,
                                 members: new_members,
+                                metadata: arg.metadata,
                             }),
                         )?;
 
@@ -1579,6 +1585,7 @@ impl Analyzer<'_, '_> {
                                         let list_ty = Type::TypeLit(TypeLit {
                                             span: arg.span,
                                             members: type_elements.remove(&name).unwrap_or_default(),
+                                            metadata: arg.metadata,
                                         });
 
                                         self.insert_inferred(inferred, name.clone(), box list_ty)?;
@@ -1673,6 +1680,7 @@ impl Analyzer<'_, '_> {
                                                 let list_ty = Type::TypeLit(TypeLit {
                                                     span: arg.span,
                                                     members,
+                                                    metadata: arg.metadata,
                                                 });
 
                                                 self.insert_inferred(inferred, name.clone(), box list_ty)?;
@@ -2091,20 +2099,23 @@ impl Fold<Type> for MappedReverser {
         ty = ty.fold_children_with(self);
 
         match ty {
-            Type::TypeLit(TypeLit { span, members })
-                if members.len() == 1
-                    && members.iter().any(|member| match member {
-                        TypeElement::Property(p) => {
-                            if let Some(ty) = &p.type_ann {
-                                ty.is_mapped()
-                            } else {
-                                false
-                            }
+            Type::TypeLit(TypeLit {
+                span,
+                members,
+                metadata,
+            }) if members.len() == 1
+                && members.iter().any(|member| match member {
+                    TypeElement::Property(p) => {
+                        if let Some(ty) = &p.type_ann {
+                            ty.is_mapped()
+                        } else {
+                            false
                         }
-                        TypeElement::Method(_) => unimplemented!(),
-                        TypeElement::Index(_) => unimplemented!(),
-                        _ => false,
-                    }) =>
+                    }
+                    TypeElement::Method(_) => unimplemented!(),
+                    TypeElement::Index(_) => unimplemented!(),
+                    _ => false,
+                }) =>
             {
                 self.did_work = true;
                 let member = members.into_iter().next().unwrap();
@@ -2118,6 +2129,7 @@ impl Fold<Type> for MappedReverser {
                                 type_ann: mapped.ty,
                                 ..p
                             })],
+                            metadata,
                         });
 
                         return Type::Mapped(Mapped { ty: Some(ty), ..mapped });
