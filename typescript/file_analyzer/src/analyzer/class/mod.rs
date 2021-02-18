@@ -85,7 +85,7 @@ impl Analyzer<'_, '_> {
         is_static: bool,
         type_ann: &Option<RTsTypeAnn>,
         value: &Option<Box<RExpr>>,
-    ) -> ValidationResult<Option<Box<Type>>> {
+    ) -> ValidationResult<Option<Type>> {
         let ty = try_opt!(type_ann.validate_with(self));
         let value_ty = try_opt!(value.validate_with_args(self, (TypeOfMode::RValue, None, ty.as_ref())));
 
@@ -113,7 +113,9 @@ impl Analyzer<'_, '_> {
             self.validate_computed_prop_key(p.span, &p.key);
         }
 
-        let value = self.validate_type_of_class_property(p.span, p.readonly, p.is_static, &p.type_ann, &p.value)?;
+        let value = self
+            .validate_type_of_class_property(p.span, p.readonly, p.is_static, &p.type_ann, &p.value)?
+            .map(Box::new);
         match p.accessibility {
             Some(Accessibility::Private) => {}
             _ => {
@@ -149,7 +151,9 @@ impl Analyzer<'_, '_> {
 
         let key = Key::Private(p.key.clone().into());
 
-        let value = self.validate_type_of_class_property(p.span, p.readonly, p.is_static, &p.type_ann, &p.value)?;
+        let value = self
+            .validate_type_of_class_property(p.span, p.readonly, p.is_static, &p.type_ann, &p.value)?
+            .map(Box::new);
 
         Ok(ClassProperty {
             span: p.span,
@@ -286,7 +290,7 @@ impl Analyzer<'_, '_> {
                     Some(ty) => ty,
                     None => {
                         let e: Option<_> = $e.validate_with(self).try_opt()?;
-                        e.unwrap_or_else(|| {
+                        box e.unwrap_or_else(|| {
                             let mut ty = Type::any(span);
                             self.mark_as_implicit(&mut ty);
                             ty

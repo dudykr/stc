@@ -141,8 +141,8 @@ impl Analyzer<'_, '_> {
         let param = TypeParam {
             span: p.span,
             name: p.name.clone().into(),
-            constraint: try_opt!(p.constraint.validate_with(self)),
-            default: try_opt!(p.default.validate_with(self)),
+            constraint: try_opt!(p.constraint.validate_with(self)).map(Box::new),
+            default: try_opt!(p.default.validate_with(self)).map(Box::new),
         };
         self.register_type(param.name.clone().into(), box param.clone().into());
 
@@ -502,7 +502,7 @@ impl Analyzer<'_, '_> {
             span: t.span,
             type_params,
             params: t.params.validate_with(self)?,
-            type_ann: t.type_ann.validate_with(self)?,
+            type_ann: t.type_ann.validate_with(self).map(Box::new)?,
             is_abstract: t.is_abstract,
         })
     }
