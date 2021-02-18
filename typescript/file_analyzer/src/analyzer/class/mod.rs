@@ -894,7 +894,7 @@ impl Analyzer<'_, '_> {
                                         type_args: None,
                                     }))
                                 }
-                                _ => Some(super_ty),
+                                _ => Some(box super_ty),
                             }
                         }
 
@@ -971,7 +971,7 @@ impl Analyzer<'_, '_> {
                     c.body.iter().for_each(|v| match v {
                         RClassMember::Method(method) => match &method.key {
                             RPropName::Computed(c) => match c.expr.validate_with_default(child) {
-                                Ok(ty) => match *ty {
+                                Ok(ty) => match ty {
                                     Type::EnumVariant(e) => {
                                         //
                                         if let Some(m) = &mut child.mutations {
@@ -1091,7 +1091,7 @@ impl Analyzer<'_, '_> {
                                                 span: i.span,
                                                 sym: i.sym.clone(),
                                             },
-                                            value: ty,
+                                            value: ty.map(Box::new),
                                             is_static: false,
                                             accessibility: p.accessibility,
                                             is_abstract: false,
@@ -1187,7 +1187,7 @@ impl Analyzer<'_, '_> {
                                         if param.ty.is_any() {
                                             if let Some(ty) = prop_types.get_prop_name(&m.key) {
                                                 let new_ty = ty.clone().generalize_lit();
-                                                param.ty = new_ty.clone();
+                                                param.ty = box new_ty.clone();
                                                 match orig {
                                                     RClassMember::Method(ref method) => {
                                                         let node_id = method.function.params[0].pat.node_id();
@@ -1253,7 +1253,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, c: &RClassExpr) -> ValidationResult<()> {
         self.scope.this_class_name = c.ident.as_ref().map(|v| v.into());
         let ty = match c.class.validate_with(self) {
-            Ok(ty) => box ty.into(),
+            Ok(ty) => ty.into(),
             Err(err) => {
                 self.storage.report(err);
                 Type::any(c.span())

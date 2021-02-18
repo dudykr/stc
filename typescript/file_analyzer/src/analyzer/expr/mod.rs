@@ -1432,7 +1432,7 @@ impl Analyzer<'_, '_> {
                     return Ok(new.into_iter().next().unwrap());
                 }
 
-                return Ok(box Type::Union(Union { span, types: new }));
+                return Ok(Type::Union(Union { span, types: new }));
             }
 
             Type::Mapped(m) => {
@@ -1462,7 +1462,7 @@ impl Analyzer<'_, '_> {
                         //     [P in string]: number;
                         // };
                         if let Ok(()) = self.assign(&index, &prop.ty(), span) {
-                            return Ok(m.ty.clone().unwrap_or_else(|| Type::any(span)));
+                            return Ok(m.ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(span)));
                         }
                     }
 

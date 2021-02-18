@@ -84,7 +84,7 @@ pub(crate) struct Scope<'a> {
     /// literal.
     pub(super) declaring_prop: Option<Id>,
 
-    pub(super) this: Option<Box<Type>>,
+    pub(super) this: Option<Type>,
 
     /// Used while validating static class properties. Otherwise [None].
     ///
@@ -98,7 +98,7 @@ pub(crate) struct Scope<'a> {
 
     pub(super) this_object_members: Vec<TypeElement>,
 
-    pub(super) super_class: Option<Box<Type>>,
+    pub(super) super_class: Option<Type>,
 
     pub(super) return_values: ReturnValues,
 
@@ -199,7 +199,7 @@ impl Scope<'_> {
         }
     }
 
-    pub fn store_type_param(&mut self, name: Id, ty: Box<Type>) {
+    pub fn store_type_param(&mut self, name: Id, ty: Type) {
         self.type_params.insert(name, ty);
     }
 
@@ -227,7 +227,7 @@ impl Scope<'_> {
         }
     }
 
-    pub fn get_super_class(&self) -> Option<&Box<Type>> {
+    pub fn get_super_class(&self) -> Option<&Type> {
         if let ScopeKind::Class = self.kind {
             return self.super_class.as_ref();
         }
@@ -308,7 +308,7 @@ impl Scope<'_> {
     }
 
     /// Add a type to the scope.
-    fn register_type(&mut self, name: Id, ty: Box<Type>) {
+    fn register_type(&mut self, name: Id, ty: Type) {
         let ty = ty.cheap();
         match ty.normalize() {
             Type::Param(..) => {
@@ -378,7 +378,7 @@ impl Scope<'_> {
         }
     }
 
-    pub fn this(&self) -> Option<Cow<Box<Type>>> {
+    pub fn this(&self) -> Option<Cow<Type>> {
         if let Some(ref this) = self.this {
             return Some(Cow::Borrowed(this));
         }
@@ -414,7 +414,7 @@ impl Scope<'_> {
 
 impl Analyzer<'_, '_> {
     /// Overrides a variable. Used for removing lazily-typed stuffs.
-    pub(super) fn override_var(&mut self, kind: VarDeclKind, name: Id, ty: Box<Type>) -> ValidationResult<()> {
+    pub(super) fn override_var(&mut self, kind: VarDeclKind, name: Id, ty: Type) -> ValidationResult<()> {
         self.declare_var(ty.span(), kind, name, Some(ty), true, true)?;
 
         Ok(())
@@ -423,7 +423,7 @@ impl Analyzer<'_, '_> {
     /// Expands
     ///
     ///   - Type alias
-    pub(super) fn expand(&mut self, span: Span, ty: Box<Type>) -> ValidationResult {
+    pub(super) fn expand(&mut self, span: Span, ty: Type) -> ValidationResult {
         if !self.is_builtin {
             debug_assert_ne!(
                 span, DUMMY_SP,
@@ -452,7 +452,7 @@ impl Analyzer<'_, '_> {
     ///  - `expand_union` should be true if you are going to use it in
     ///    assignment, and false if you are going to use it in user-visible
     ///    stuffs (e.g. type annotation for .d.ts file)
-    pub(super) fn expand_fully(&mut self, span: Span, ty: Box<Type>, expand_union: bool) -> ValidationResult {
+    pub(super) fn expand_fully(&mut self, span: Span, ty: Type, expand_union: bool) -> ValidationResult {
         if !self.is_builtin {
             debug_assert_ne!(
                 span, DUMMY_SP,
@@ -476,7 +476,7 @@ impl Analyzer<'_, '_> {
         Ok(ty)
     }
 
-    pub(super) fn expand_type_params_using_scope(&mut self, ty: Box<Type>) -> ValidationResult {
+    pub(super) fn expand_type_params_using_scope(&mut self, ty: Type) -> ValidationResult {
         let type_params = take(&mut self.scope.type_params);
         let res = self.expand_type_params(&type_params, ty);
         self.scope.type_params = type_params;
@@ -562,12 +562,7 @@ impl Analyzer<'_, '_> {
         self.declare_vars_inner_with_ty(kind, pat, false, None)
     }
 
-    pub fn declare_vars_with_ty(
-        &mut self,
-        kind: VarDeclKind,
-        pat: &RPat,
-        ty: Option<Box<Type>>,
-    ) -> ValidationResult<()> {
+    pub fn declare_vars_with_ty(&mut self, kind: VarDeclKind, pat: &RPat, ty: Option<Type>) -> ValidationResult<()> {
         self.declare_vars_inner_with_ty(kind, pat, false, ty)
     }
 
@@ -633,7 +628,7 @@ impl Analyzer<'_, '_> {
         None
     }
 
-    pub(super) fn find_var_type(&self, name: &Id, mode: TypeOfMode) -> Option<Cow<Box<Type>>> {
+    pub(super) fn find_var_type(&self, name: &Id, mode: TypeOfMode) -> Option<Cow<Type>> {
         if let Some(v) = self.cur_facts.true_facts.vars.get(&Name::from(name)) {
             return Some(Cow::Borrowed(v));
         }
@@ -812,7 +807,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         kind: VarDeclKind,
         name: Id,
-        ty: Option<Box<Type>>,
+        ty: Option<Type>,
         initialized: bool,
         allow_multiple: bool,
     ) -> ValidationResult<()> {
@@ -925,7 +920,7 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    pub fn declare_complex_vars(&mut self, kind: VarDeclKind, pat: &RPat, ty: Box<Type>) -> ValidationResult<()> {
+    pub fn declare_complex_vars(&mut self, kind: VarDeclKind, pat: &RPat, ty: Type) -> ValidationResult<()> {
         let span = pat.span();
 
         match ty.normalize() {
@@ -1068,7 +1063,7 @@ impl Analyzer<'_, '_> {
             }
 
             RPat::Object(RObjectPat { ref props, .. }) => {
-                fn find<'a>(members: &[TypeElement], key: &RPropName) -> Option<Box<Type>> {
+                fn find<'a>(members: &[TypeElement], key: &RPropName) -> Option<Type> {
                     let mut index_el = None;
                     // First, we search for Property
                     for m in members {
@@ -1357,10 +1352,10 @@ pub(crate) struct VarInfo {
     pub initialized: bool,
 
     /// Declared type.
-    pub ty: Option<Box<Type>>,
+    pub ty: Option<Type>,
 
     /// Stored type.
-    pub actual_ty: Option<Box<Type>>,
+    pub actual_ty: Option<Type>,
 
     /// Copied from parent scope. If this is true, it's not a variable
     /// declaration.

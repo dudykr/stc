@@ -186,7 +186,7 @@ impl Analyzer<'_, '_> {
                 },
             )?
         };
-        self.register_type(d.id.clone().into(), box Type::Alias(alias.clone()));
+        self.register_type(d.id.clone().into(), Type::Alias(alias.clone()));
 
         Ok(alias)
     }
@@ -205,7 +205,7 @@ impl Analyzer<'_, '_> {
             };
             child.prevent_expansion(&mut ty.body);
 
-            child.register_type(d.id.clone().into(), box ty.clone().into());
+            child.register_type(d.id.clone().into(), ty.clone().into());
 
             child.resolve_parent_interfaces(&d.extends);
 
@@ -263,7 +263,7 @@ impl Analyzer<'_, '_> {
             span: d.span,
             params: d.params.validate_with(self)?,
             type_params,
-            ret_ty: try_opt!(d.type_ann.validate_with(self)),
+            ret_ty: try_opt!(d.type_ann.validate_with(self)).map(Box::new),
         })
     }
 }
