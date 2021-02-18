@@ -284,7 +284,7 @@ impl Analyzer<'_, '_> {
                     // Handle toString()
 
                     if prop == js_word!("toString") {
-                        return Ok(box Type::from(RTsKeywordType {
+                        return Ok(Type::from(RTsKeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsStringKeyword,
                         }));
@@ -294,7 +294,7 @@ impl Analyzer<'_, '_> {
                 // Handle member expression
                 let obj_type = obj.validate_with_default(self)?.generalize_lit();
 
-                let obj_type: Type = box self.expand_top_ref(span, Cow::Owned(*obj_type))?.into_owned();
+                let obj_type: Type = self.expand_top_ref(span, Cow::Owned(*obj_type))?.into_owned();
 
                 let obj_type = match *obj_type.normalize() {
                     Type::Keyword(RTsKeywordType {
