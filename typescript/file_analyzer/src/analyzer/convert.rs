@@ -404,10 +404,10 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsConditionalType) -> ValidationResult<Conditional> {
         Ok(Conditional {
             span: t.span,
-            check_type: t.check_type.validate_with(self)?,
-            extends_type: t.extends_type.validate_with(self)?,
-            true_type: t.true_type.validate_with(self)?,
-            false_type: t.false_type.validate_with(self)?,
+            check_type: box t.check_type.validate_with(self)?,
+            extends_type: box t.extends_type.validate_with(self)?,
+            true_type: box t.true_type.validate_with(self)?,
+            false_type: box t.false_type.validate_with(self)?,
         })
     }
 }

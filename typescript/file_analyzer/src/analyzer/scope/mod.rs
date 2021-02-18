@@ -503,7 +503,7 @@ impl Analyzer<'_, '_> {
             .map(Cow::Owned)
     }
 
-    pub(super) fn register_type(&mut self, name: Id, ty: Box<Type>) {
+    pub(super) fn register_type(&mut self, name: Id, ty: Type) {
         if self.ctx.in_global {
             if !ty.normalize().is_type_param() {
                 self.env.declare_global_type(name.sym().clone(), ty.clone());
