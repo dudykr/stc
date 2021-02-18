@@ -68,8 +68,8 @@ pub mod name;
 
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct ModuleTypeData {
-    pub private_vars: FxHashMap<Id, Box<Type>>,
-    pub vars: FxHashMap<JsWord, Box<Type>>,
+    pub private_vars: FxHashMap<Id, Type>,
+    pub vars: FxHashMap<JsWord, Type>,
 
     pub private_types: FxHashMap<Id, Vec<Type>>,
     pub types: FxHashMap<JsWord, Vec<Type>>,
@@ -794,7 +794,7 @@ impl Type {
         let mut tys = vec![];
 
         for ty in iter {
-            match *ty {
+            match ty {
                 Type::Intersection(Intersection { types, .. }) => {
                     tys.extend(types);
                 }
@@ -828,7 +828,7 @@ impl Type {
     /// Note:
     ///
     ///  - never types are excluded.
-    pub fn union<I: IntoIterator<Item = Self>>(iter: I) -> Box<Self> {
+    pub fn union<I: IntoIterator<Item = Self>>(iter: I) -> Self {
         let mut span = DUMMY_SP;
 
         let mut tys = vec![];
@@ -843,7 +843,7 @@ impl Type {
                 span = span.with_hi(sp.hi());
             }
 
-            match *ty {
+            match ty {
                 Type::Union(Union { types, .. }) => {
                     assert_ne!(types, vec![]);
                     tys.extend(types);
@@ -858,7 +858,7 @@ impl Type {
         match tys.len() {
             0 => Type::never(span),
             1 => tys.into_iter().next().unwrap(),
-            _ => Box::new(Type::Union(Union { span, types: tys })),
+            _ => Type::Union(Union { span, types: tys }),
         }
     }
 
@@ -1212,7 +1212,7 @@ impl<'a> Iterator for Iter<'a> {
             Type::Union(ref u) => {
                 let ty = u.types.get(self.idx);
                 self.idx += 1;
-                return Some(&**ty?);
+                return Some(&*ty?);
             }
 
             _ if self.idx == 0 => {

@@ -723,7 +723,7 @@ impl Error {
             Error::Errors { span, errors } => {
                 let mut new = Vec::with_capacity(errors.capacity());
                 for err in errors {
-                    new.push(box err.convert_all_inner(op));
+                    new.push(err.convert_all_inner(op));
                 }
 
                 Error::Errors { span, errors: new }
@@ -981,17 +981,17 @@ impl Error {
         let mut buf = Vec::with_capacity(vec.len());
 
         for e in vec {
-            match *e {
+            match e {
                 Error::Errors { errors, .. } | Error::TupleAssignError { errors, .. } => {
                     buf.extend(Self::flatten(errors))
                 }
                 Error::DebugContext(DebugContext { inner, context, .. }) => {
                     //
-                    buf.extend(Self::flatten(vec![inner]).into_iter().map(|inner| {
-                        box Error::DebugContext(DebugContext {
+                    buf.extend(Self::flatten(vec![*inner]).into_iter().map(|inner| {
+                        Error::DebugContext(DebugContext {
                             span: inner.span(),
                             context: context.clone(),
-                            inner,
+                            inner: box inner,
                         })
                     }))
                 }
@@ -1036,7 +1036,7 @@ impl From<Errors> for Vec<Error> {
 }
 
 impl IntoIterator for Errors {
-    type Item = Box<Error>;
+    type Item = Error;
     type IntoIter = <Vec<Error> as IntoIterator>::IntoIter;
 
     #[inline]
@@ -1057,7 +1057,7 @@ impl Errors {
     }
 
     #[inline]
-    pub fn push(&mut self, err: Box<Error>) {
+    pub fn push(&mut self, err: Error) {
         self.validate(&err);
 
         self.0.push(err);
@@ -1083,9 +1083,9 @@ impl Errors {
     }
 }
 
-impl Extend<Box<Error>> for Errors {
+impl Extend<Error> for Errors {
     #[inline]
-    fn extend<T: IntoIterator<Item = Box<Error>>>(&mut self, iter: T) {
+    fn extend<T: IntoIterator<Item = Error>>(&mut self, iter: T) {
         if cfg!(debug_assertions) {
             for err in iter {
                 self.push(err)
