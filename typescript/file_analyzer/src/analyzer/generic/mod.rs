@@ -75,7 +75,7 @@ type Priority = u16;
 #[derive(Debug, Default)]
 pub(super) struct InferData {
     /// Inferred type parameters
-    type_params: FxHashMap<Id, Box<Type>>,
+    type_params: FxHashMap<Id, Type>,
 
     priorities: FxHashMap<Id, Priority>,
 
@@ -92,7 +92,7 @@ pub(super) struct InferData {
     /// var empty = one(() => {
     /// });
     /// ```
-    defaults: FxHashMap<Id, Box<Type>>,
+    defaults: FxHashMap<Id, Type>,
 }
 
 /// Type inference for arguments.
@@ -102,7 +102,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         type_params: &[TypeParam],
-        mut inferred: FxHashMap<Id, Box<Type>>,
+        mut inferred: FxHashMap<Id, Type>,
     ) -> ValidationResult<TypeParamInstantiation> {
         let mut params = Vec::with_capacity(type_params.len());
         for type_param in type_params {
@@ -182,7 +182,7 @@ impl Analyzer<'_, '_> {
         params: &[FnParam],
         args: &[TypeOrSpread],
         default_ty: Option<&Type>,
-    ) -> ValidationResult<FxHashMap<Id, Box<Type>>> {
+    ) -> ValidationResult<FxHashMap<Id, Type>> {
         slog::warn!(
             self.logger,
             "infer_arg_types: {:?}",
@@ -377,7 +377,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         base: &Type,
         concrete: &Type,
-    ) -> ValidationResult<FxHashMap<Id, Box<Type>>> {
+    ) -> ValidationResult<FxHashMap<Id, Type>> {
         let mut inferred = InferData::default();
         self.infer_type(span, &mut inferred, base, concrete)?;
         Ok(inferred.type_params)
@@ -1786,7 +1786,7 @@ impl Analyzer<'_, '_> {
 
     fn rename_inferred(&mut self, inferred: &mut InferData, arg_type_params: &TypeParamDecl) -> ValidationResult<()> {
         struct Renamer<'a> {
-            fixed: &'a FxHashMap<Id, Box<Type>>,
+            fixed: &'a FxHashMap<Id, Type>,
         }
 
         impl VisitMut<Type> for Renamer<'_> {

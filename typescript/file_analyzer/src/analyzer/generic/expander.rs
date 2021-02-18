@@ -27,7 +27,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         type_params: &TypeParamDecl,
         type_args: &TypeParamInstantiation,
-    ) -> ValidationResult<FxHashMap<Id, Box<Type>>> {
+    ) -> ValidationResult<FxHashMap<Id, Type>> {
         let mut params = FxHashMap::default();
 
         for (idx, param) in type_params.params.iter().enumerate() {
@@ -55,7 +55,7 @@ impl Analyzer<'_, '_> {
 
     pub(in super::super) fn expand_type_params(
         &mut self,
-        params: &FxHashMap<Id, Box<Type>>,
+        params: &FxHashMap<Id, Type>,
         ty: Box<Type>,
     ) -> ValidationResult {
         let ty = self.expand_type_params_inner(params, ty, false)?;
@@ -80,7 +80,7 @@ impl Analyzer<'_, '_> {
     ///      } ? P : never
     fn expand_type_params_inner(
         &mut self,
-        params: &FxHashMap<Id, Box<Type>>,
+        params: &FxHashMap<Id, Type>,
         ty: Box<Type>,
         fully: bool,
     ) -> ValidationResult {
@@ -273,7 +273,7 @@ impl Analyzer<'_, '_> {
 struct GenericExpander<'a, 'b, 'c, 'd> {
     logger: Logger,
     analyzer: &'a mut Analyzer<'b, 'c>,
-    params: &'d FxHashMap<Id, Box<Type>>,
+    params: &'d FxHashMap<Id, Type>,
     /// Expand fully?
     fully: bool,
     dejavu: FxHashSet<Id>,

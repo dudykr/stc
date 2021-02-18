@@ -6,7 +6,7 @@ use stc_ts_types::Type;
 
 #[derive(Debug)]
 pub struct TypeParamReplacer {
-    pub inferred: FxHashMap<Id, Box<Type>>,
+    pub inferred: FxHashMap<Id, Type>,
     /// `true` means we should replace type parameters with other type
     /// parameter.
     pub include_type_params: bool,

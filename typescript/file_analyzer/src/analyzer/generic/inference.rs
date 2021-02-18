@@ -116,7 +116,7 @@ impl Analyzer<'_, '_> {
         type_params: &[TypeParam],
         param: &Type,
         arg: &Type,
-    ) -> ValidationResult<FxHashMap<Id, Box<Type>>> {
+    ) -> ValidationResult<FxHashMap<Id, Type>> {
         let mut inferred = InferData::default();
 
         let ctx = Ctx {

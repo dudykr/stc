@@ -76,7 +76,7 @@ pub(crate) struct Scope<'a> {
     pub declaring: SmallVec<[Id; 8]>,
 
     pub(super) vars: FxHashMap<Id, VarInfo>,
-    types: FxHashMap<Id, Box<Type>>,
+    types: FxHashMap<Id, Type>,
     pub(super) facts: CondFacts,
 
     pub(super) declaring_fn: Option<Id>,
@@ -108,7 +108,7 @@ pub(crate) struct Scope<'a> {
     /// Used to handle `...any` in calls.
     pub(super) is_call_arg_count_unknown: bool,
 
-    pub(super) type_params: FxHashMap<Id, Box<Type>>,
+    pub(super) type_params: FxHashMap<Id, Type>,
 
     /// If two modules have same name, the latter can reference exported members
     /// from other modules.
