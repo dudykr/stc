@@ -64,7 +64,7 @@ impl Analyzer<'_, '_> {
                     expr,
                 }) => {
                     let element_type = expr.validate_with_default(self)?;
-                    let element_type = box element_type.foldable();
+                    let element_type = element_type.foldable();
 
                     match *element_type {
                         Type::Array(array) => {

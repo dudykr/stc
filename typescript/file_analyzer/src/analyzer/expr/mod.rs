@@ -723,7 +723,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            match &*obj {
+            match &obj {
                 Type::This(this) if self.scope.is_this_ref_to_object_lit() => {
                     if let Key::Computed(prop) = prop {
                         //
@@ -817,7 +817,7 @@ impl Analyzer<'_, '_> {
                     // TODO: Handle string literals like
                     //
                     // `this['props']`
-                    return Ok(box Type::IndexedAccessType(IndexedAccessType {
+                    return Ok(Type::IndexedAccessType(IndexedAccessType {
                         span,
                         readonly: false,
                         obj_type: box Type::This(this.clone()),
@@ -831,7 +831,7 @@ impl Analyzer<'_, '_> {
                         match member {
                             stc_ts_types::ClassMember::Method(member @ Method { is_static: true, .. }) => {
                                 if member.key.type_eq(prop) {
-                                    return Ok(box Type::Function(ty::Function {
+                                    return Ok(Type::Function(ty::Function {
                                         span: member.span,
                                         type_params: member.type_params.clone(),
                                         params: member.params.clone(),
@@ -842,7 +842,7 @@ impl Analyzer<'_, '_> {
 
                             stc_ts_types::ClassMember::Property(property @ ClassProperty { is_static: true, .. }) => {
                                 if property.key.type_eq(prop) {
-                                    return Ok(property.value.clone().unwrap_or_else(|| Type::any(span.clone())));
+                                    return Ok(*property.value.clone().unwrap_or_else(|| box Type::any(span.clone())));
                                 }
                             }
 
@@ -854,7 +854,7 @@ impl Analyzer<'_, '_> {
 
                     return Err(Error::NoSuchProperty {
                         span: *span,
-                        obj: Some(obj.clone()),
+                        obj: Some(box obj.clone()),
                         prop: Some(box prop.clone()),
                     });
                 }
