@@ -1266,7 +1266,7 @@ impl Analyzer<'_, '_> {
                 let mut errors = Vec::with_capacity(types.len());
 
                 for ty in types {
-                    let ty = box self.expand_top_ref(span, Cow::Borrowed(ty))?.into_owned();
+                    let ty = self.expand_top_ref(span, Cow::Borrowed(ty))?.into_owned();
 
                     match self.access_property(span, ty, prop, type_mode, id_ctx) {
                         Ok(ty) => tys.push(ty),
@@ -1277,7 +1277,7 @@ impl Analyzer<'_, '_> {
                 if type_mode == TypeOfMode::LValue {
                     // In l-value context, it's success if one of types matches it.
                     let is_err = errors.iter().any(|err| match *err {
-                        box Error::ReadOnly { .. } => true,
+                        Error::ReadOnly { .. } => true,
                         _ => false,
                     });
                     if tys.is_empty() || is_err {
@@ -1311,7 +1311,7 @@ impl Analyzer<'_, '_> {
                             Some(elem) => match elem.ty.normalize() {
                                 Type::Rest(rest_ty) => {
                                     // debug_assert!(rest_ty.ty.is_clone_cheap());
-                                    return Ok(rest_ty.ty.clone());
+                                    return Ok(*rest_ty.ty.clone());
                                 }
                                 _ => {}
                             },

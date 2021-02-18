@@ -66,7 +66,7 @@ impl Analyzer<'_, '_> {
                     let element_type = expr.validate_with_default(self)?;
                     let element_type = element_type.foldable();
 
-                    match *element_type {
+                    match element_type {
                         Type::Array(array) => {
                             can_be_tuple = false;
                             elements.push(TupleElement {
@@ -158,13 +158,17 @@ impl Analyzer<'_, '_> {
                     ty
                 }
             };
-            elements.push(TupleElement { span, label: None, ty });
+            elements.push(TupleElement {
+                span,
+                label: None,
+                ty: box ty,
+            });
         }
 
         if self.ctx.in_export_default_expr && elements.is_empty() {
             return Ok(Type::Array(Array {
                 span,
-                elem_type: Type::any(span),
+                elem_type: box Type::any(span),
             }));
         }
 
@@ -197,7 +201,7 @@ impl Analyzer<'_, '_> {
                 span,
                 ExtractKind::Call,
                 Default::default(),
-                box ty.into_owned(),
+                ty.into_owned(),
                 &Key::Computed(ComputedKey {
                     span,
                     expr: box RExpr::Member(RMemberExpr {
@@ -222,7 +226,7 @@ impl Analyzer<'_, '_> {
                 None,
             )
             .map_err(|err| {
-                box err.convert(|err| match err {
+                err.convert(|err| match err {
                     Error::NoCallabelPropertyWithName { span, .. } => {
                         Error::MustHaveSymbolIteratorThatReturnsIterator { span }
                     }
@@ -231,6 +235,6 @@ impl Analyzer<'_, '_> {
             })
             .context("tried to call `[Symbol.iterator]()` to convert a type to an iterator")?;
 
-        Ok(Cow::Owned(*ty))
+        Ok(Cow::Owned(ty))
     }
 }

@@ -129,9 +129,9 @@ impl Analyzer<'_, '_> {
                                 _ => match op {
                                     op!("||") | op!("??") => {
                                         truthy_lt = lt.clone().map(|ty| ty.apply_type_facts(TypeFacts::Truthy));
-                                        truthy_lt.as_deref()
+                                        truthy_lt.as_ref()
                                     }
-                                    _ => lt.as_deref(),
+                                    _ => lt.as_ref(),
                                 },
                             },
                             _ => None,
