@@ -26,15 +26,25 @@ use swc_ecma_ast::TsKeywordTypeKind;
 use swc_ecma_ast::TsTypeOperatorOp;
 
 impl Analyzer<'_, '_> {
+    /// # Rules
+    ///
+    /// ## Type literal
+    ///
+    /// If one of type literal is `specified` accoarding to the metadata, type inference is done.
+    ///
+    /// See:
+    ///
     /// ```ts
     ///
     /// declare function f<T>(...items: T[]): T;
     /// declare let data: { a: 1, b: "abc", c: true };
     /// declare let data2: { b: "foo", c: true };
     ///
-    /// // Object literals are inferred as a single normalized union type
+    /// // Not specified
     /// let e1 = f({ a: 1, b: 2 }, { a: "abc" }, {});
     /// let e2 = f({}, { a: "abc" }, { a: 1, b: 2 });
+    ///
+    /// // Type inference is done if at least one element is specified.
     /// let e3 = f(data, { a: 2 }); // Error
     /// let e4 = f({ a: 2 }, data); // Error
     /// let e5 = f(data, data2); // Error
