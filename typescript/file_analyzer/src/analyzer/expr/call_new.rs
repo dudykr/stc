@@ -1022,7 +1022,7 @@ impl Analyzer<'_, '_> {
                 // TODO: Check if all types has constructor signature
                 return Ok(Type::ClassInstance(ClassInstance {
                     span,
-                    ty: instantiate_class(self.ctx.module_id, box ty.clone()),
+                    ty: box instantiate_class(self.ctx.module_id, ty.clone()),
                     type_args: type_args.cloned().map(Box::new),
                 }));
             }
