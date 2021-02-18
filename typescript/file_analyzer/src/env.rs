@@ -34,8 +34,8 @@ use swc_ecma_parser::JscTarget;
 
 #[derive(Debug, Default)]
 pub struct BuiltIn {
-    vars: FxHashMap<JsWord, Box<Type>>,
-    types: FxHashMap<JsWord, Box<Type>>,
+    vars: FxHashMap<JsWord, Type>,
+    types: FxHashMap<JsWord, Type>,
 }
 
 impl BuiltIn {
@@ -247,8 +247,8 @@ pub struct Env {
     rule: Rule,
     target: JscTarget,
     builtin: Arc<BuiltIn>,
-    global_types: Arc<DashMap<JsWord, Box<Type>>>,
-    global_vars: Arc<DashMap<JsWord, Box<Type>>>,
+    global_types: Arc<DashMap<JsWord, Type>>,
+    global_vars: Arc<DashMap<JsWord, Type>>,
 }
 
 impl Env {
@@ -307,11 +307,11 @@ impl Env {
         self.stable.logger_for_builtin().clone()
     }
 
-    pub(crate) fn declare_global_var(&mut self, name: JsWord, ty: Box<Type>) {
+    pub(crate) fn declare_global_var(&mut self, name: JsWord, ty: Type) {
         todo!("declare_global_var")
     }
 
-    pub(crate) fn declare_global_type(&mut self, name: JsWord, ty: Box<Type>) {
+    pub(crate) fn declare_global_type(&mut self, name: JsWord, ty: Type) {
         match self.get_global_type(ty.span(), &name) {
             Ok(prev_ty) => {
                 self.global_types
@@ -323,7 +323,7 @@ impl Env {
         }
     }
 
-    pub(crate) fn get_global_var(&self, span: Span, name: &JsWord) -> Result<Box<Type>, Error> {
+    pub(crate) fn get_global_var(&self, span: Span, name: &JsWord) -> Result<Type, Error> {
         if let Some(ty) = self.global_vars.get(name) {
             debug_assert!(ty.is_clone_cheap(), "{:?}", *ty);
             return Ok((*ty).clone());
@@ -340,7 +340,7 @@ impl Env {
         })
     }
 
-    pub(crate) fn get_global_type(&self, span: Span, name: &JsWord) -> Result<Box<Type>, Error> {
+    pub(crate) fn get_global_type(&self, span: Span, name: &JsWord) -> Result<Type, Error> {
         if let Some(ty) = self.global_types.get(name) {
             debug_assert!(ty.is_clone_cheap(), "{:?}", *ty);
             return Ok((*ty).clone());

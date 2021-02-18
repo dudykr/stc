@@ -556,7 +556,7 @@ impl Analyzer<'_, '_> {
                             }
 
                             if let Some(ref type_ann) = p.type_ann {
-                                matching_elements.push(type_ann.clone());
+                                matching_elements.push(*type_ann.clone());
                                 continue;
                             }
 
@@ -567,11 +567,11 @@ impl Analyzer<'_, '_> {
 
                         TypeElement::Method(ref m) => {
                             //
-                            matching_elements.push(box Type::Function(ty::Function {
+                            matching_elements.push(Type::Function(ty::Function {
                                 span,
                                 type_params: m.type_params.clone(),
                                 params: m.params.clone(),
-                                ret_ty: m.ret_ty.clone().unwrap_or_else(|| Type::any(span)),
+                                ret_ty: m.ret_ty.clone().unwrap_or_else(|| box Type::any(span)),
                             }));
                             continue;
                         }
@@ -630,7 +630,7 @@ impl Analyzer<'_, '_> {
                     if indexed {
                         if let Some(ref type_ann) = type_ann {
                             let ty = self.expand_top_ref(span, Cow::Borrowed(type_ann))?;
-                            return Ok(Some(box ty.into_owned()));
+                            return Ok(Some(ty.into_owned()));
                         }
 
                         return Ok(Some(Type::any(span)));
@@ -639,7 +639,7 @@ impl Analyzer<'_, '_> {
                     match prop_ty.normalize() {
                         // TODO: Only string or number
                         Type::EnumVariant(..) => {
-                            matching_elements.extend(type_ann.clone());
+                            matching_elements.extend(type_ann.clone().map(|v| *v));
                             continue;
                         }
 
@@ -648,7 +648,7 @@ impl Analyzer<'_, '_> {
 
                     // This check exists to prefer a specific property over generic index signature.
                     if prop.is_computed() || matching_elements.is_empty() {
-                        let ty = box Type::IndexedAccessType(IndexedAccessType {
+                        let ty = Type::IndexedAccessType(IndexedAccessType {
                             span,
                             obj_type: box obj.clone(),
                             index_type: box prop_ty.into_owned(),
@@ -755,7 +755,7 @@ impl Analyzer<'_, '_> {
                                 ty::ClassMember::Method(member @ Method { is_static: false, .. })
                                     if member.key.type_eq(prop) =>
                                 {
-                                    return Ok(box Type::Function(ty::Function {
+                                    return Ok(Type::Function(ty::Function {
                                         span: member.span,
                                         type_params: member.type_params.clone(),
                                         params: member.params.clone(),
@@ -765,7 +765,7 @@ impl Analyzer<'_, '_> {
 
                                 ty::ClassMember::Property(member @ ClassProperty { is_static: false, .. }) => {
                                     if member.key.type_eq(prop) {
-                                        return Ok(member.value.clone().unwrap_or_else(|| Type::any(span)));
+                                        return Ok(*member.value.clone().unwrap_or_else(|| box Type::any(span)));
                                     }
                                 }
 

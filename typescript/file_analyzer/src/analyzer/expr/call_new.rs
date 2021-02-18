@@ -294,7 +294,7 @@ impl Analyzer<'_, '_> {
                 // Handle member expression
                 let obj_type = obj.validate_with_default(self)?.generalize_lit();
 
-                let obj_type: Box<Type> = box self.expand_top_ref(span, Cow::Owned(*obj_type))?.into_owned();
+                let obj_type: Type = box self.expand_top_ref(span, Cow::Owned(*obj_type))?.into_owned();
 
                 let obj_type = match *obj_type.normalize() {
                     Type::Keyword(RTsKeywordType {
@@ -435,7 +435,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         kind: ExtractKind,
         expr: ReevalMode,
-        obj_type: Box<Type>,
+        obj_type: Type,
         prop: &Key,
         type_args: Option<&TypeParamInstantiation>,
         args: &[RExprOrSpread],
@@ -1420,7 +1420,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         expr: ReevalMode,
-        callee: Box<Type>,
+        callee: Type,
         kind: ExtractKind,
         type_args: Option<&TypeParamInstantiation>,
         args: &[RExprOrSpread],
@@ -1613,7 +1613,7 @@ impl Analyzer<'_, '_> {
         expr: ReevalMode,
         type_params: Option<&[TypeParam]>,
         params: &[FnParam],
-        mut ret_ty: Box<Type>,
+        mut ret_ty: Type,
         type_args: Option<&TypeParamInstantiation>,
         args: &[RExprOrSpread],
         arg_types: &[TypeOrSpread],
@@ -2012,7 +2012,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn narrow_with_predicate(&mut self, span: Span, orig_ty: &Type, new_ty: Box<Type>) -> ValidationResult {
+    fn narrow_with_predicate(&mut self, span: Span, orig_ty: &Type, new_ty: Type) -> ValidationResult {
         match new_ty.normalize() {
             Type::Keyword(..) | Type::Lit(..) => {}
             _ => {
