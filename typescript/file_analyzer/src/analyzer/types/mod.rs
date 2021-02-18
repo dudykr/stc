@@ -42,7 +42,7 @@ impl Analyzer<'_, '_> {
         exclude_types(ty, self.cur_facts.true_facts.excludes.get(&name));
     }
 
-    pub(crate) fn apply_type_facts(&self, name: &Name, ty: Box<Type>) -> Box<Type> {
+    pub(crate) fn apply_type_facts(&self, name: &Name, ty: Type) -> Type {
         let type_facts = self.scope.get_type_facts(&name)
             | self
                 .cur_facts

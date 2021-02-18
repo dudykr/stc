@@ -1422,7 +1422,7 @@ impl Analyzer<'_, '_> {
                 // TODO: Verify if multiple type has field
                 let mut new = vec![];
                 for ty in types {
-                    let ty = box self.expand_top_ref(span, Cow::Borrowed(ty))?.into_owned();
+                    let ty = self.expand_top_ref(span, Cow::Borrowed(ty))?.into_owned();
                     if let Some(v) = self.access_property(span, ty, prop, type_mode, id_ctx).ok() {
                         new.push(v);
                     }
@@ -1480,10 +1480,10 @@ impl Analyzer<'_, '_> {
                 if let Key::Computed(prop) = prop {
                     let index_type = prop.ty.clone();
                     // Return something like SimpleDBRecord<Flag>[Flag];
-                    return Ok(box Type::IndexedAccessType(IndexedAccessType {
+                    return Ok(Type::IndexedAccessType(IndexedAccessType {
                         span,
                         readonly: false,
-                        obj_type: obj,
+                        obj_type: box obj,
                         index_type,
                     }));
                 } else {
@@ -1494,7 +1494,7 @@ impl Analyzer<'_, '_> {
                                 if class == *i {
                                     return self.access_property(
                                         span,
-                                        box Type::StaticThis(StaticThis { span }),
+                                        Type::StaticThis(StaticThis { span }),
                                         prop,
                                         type_mode,
                                         id_ctx,
@@ -1534,9 +1534,9 @@ impl Analyzer<'_, '_> {
                     _ => unreachable!(),
                 };
 
-                let ty = box Type::IndexedAccessType(IndexedAccessType {
+                let ty = Type::IndexedAccessType(IndexedAccessType {
                     span,
-                    obj_type: obj,
+                    obj_type: box obj,
                     readonly: false,
                     index_type,
                 });
@@ -1578,7 +1578,7 @@ impl Analyzer<'_, '_> {
                 });
                 if is_all_fn {
                     // We should return typeof function name
-                    return box Type::Query(QueryType {
+                    return Type::Query(QueryType {
                         span,
                         expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(i.clone())),
                     });
@@ -1630,7 +1630,7 @@ impl Analyzer<'_, '_> {
                     debug_assert!(ty.is_clone_cheap());
 
                     match ty.normalize() {
-                        Type::Module(..) => modules.push(box ty.clone().into_owned()),
+                        Type::Module(..) => modules.push(ty.clone().into_owned()),
                         Type::Intersection(intersection) => {
                             for ty in &intersection.types {
                                 debug_assert!(ty.is_clone_cheap());

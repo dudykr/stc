@@ -178,7 +178,7 @@ impl Analyzer<'_, '_> {
             self.cur_facts += lhs_facts;
         }
 
-        let (lt, rt): (Box<Type>, Box<Type>) = match (lt, rt) {
+        let (lt, rt): (Type, Type) = match (lt, rt) {
             (Some(l), Some(r)) => (l, r),
             _ => return Err(Error::Errors { span, errors }),
         };
@@ -258,9 +258,9 @@ impl Analyzer<'_, '_> {
                 }) {
                     Some((Ok(name), ty)) => {
                         if is_eq {
-                            self.add_deep_type_fact(name.clone(), box ty.clone(), false);
+                            self.add_deep_type_fact(name.clone(), ty.clone(), false);
                         } else {
-                            self.add_deep_type_fact(name.clone(), box ty.clone(), true);
+                            self.add_deep_type_fact(name.clone(), ty.clone(), true);
                         }
                     }
                     _ => {}
@@ -292,7 +292,7 @@ impl Analyzer<'_, '_> {
                                 .excludes
                                 .entry(l.into())
                                 .or_default()
-                                .push(r.clone());
+                                .push(*r.clone());
 
                             self.prevent_generalize(&mut r);
                             self.cur_facts.true_facts.vars.insert(l.into(), r);
@@ -708,7 +708,7 @@ impl Analyzer<'_, '_> {
     /// error.
     ///
     /// TODO: Use Cow
-    fn narrow_with_instanceof(&mut self, span: Span, ty: Box<Type>, orig_ty: &Type) -> ValidationResult {
+    fn narrow_with_instanceof(&mut self, span: Span, ty: Type, orig_ty: &Type) -> ValidationResult {
         let orig_ty = orig_ty.normalize();
 
         match orig_ty {
@@ -965,7 +965,7 @@ impl Analyzer<'_, '_> {
 
     /// The right operand to be of type Any or a subtype of the 'Function'
     /// interface type.
-    fn validate_rhs_of_instanceof(&mut self, span: Span, ty: Box<Type>) -> Box<Type> {
+    fn validate_rhs_of_instanceof(&mut self, span: Span, ty: Type) -> Type {
         if ty.is_any() {
             return ty;
         }
