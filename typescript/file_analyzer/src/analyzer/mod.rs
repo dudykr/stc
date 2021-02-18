@@ -591,7 +591,7 @@ impl Analyzer<'_, '_> {
                     self.export_equals_span = decl.span;
                 }
                 if has_normal_export {
-                    self.storage.report(box Error::TS2309 { span: decl.span });
+                    self.storage.report(Error::TS2309 { span: decl.span });
                 }
 
                 //
@@ -604,7 +604,7 @@ impl Analyzer<'_, '_> {
                 | RModuleDecl::TsNamespaceExport(..) => {
                     has_normal_export = true;
                     if !self.export_equals_span.is_dummy() {
-                        self.storage.report(box Error::TS2309 {
+                        self.storage.report(Error::TS2309 {
                             span: self.export_equals_span,
                         });
                     }

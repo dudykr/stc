@@ -235,9 +235,9 @@ impl Analyzer<'_, '_> {
 
                 if !self.has_overlap(span, &lt, &rt)? {
                     if self.ctx.in_switch_case_test {
-                        self.storage.report(box Error::SwitchCaseTestNotCompatible { span })
+                        self.storage.report(Error::SwitchCaseTestNotCompatible { span })
                     } else {
-                        self.storage.report(box Error::NoOverlap {
+                        self.storage.report(Error::NoOverlap {
                             span,
                             value: true,
                             left: lt.span(),
@@ -540,7 +540,7 @@ impl Analyzer<'_, '_> {
 
             op!("instanceof") => {
                 if !self.is_valid_lhs_of_instanceof(span, &lt) {
-                    self.storage.report(box Error::InvalidLhsInInstanceOf {
+                    self.storage.report(Error::InvalidLhsInInstanceOf {
                         ty: lt.clone(),
                         span: left.span(),
                     })
@@ -560,15 +560,14 @@ impl Analyzer<'_, '_> {
                         span,
                         kind: TsKeywordTypeKind::TsUndefinedKeyword,
                     }) => {
-                        self.storage
-                            .report(box Error::ObjectIsPossiblyUndefined { span: *span });
+                        self.storage.report(Error::ObjectIsPossiblyUndefined { span: *span });
                     }
 
                     Type::Keyword(RTsKeywordType {
                         span,
                         kind: TsKeywordTypeKind::TsNullKeyword,
                     }) => {
-                        self.storage.report(box Error::ObjectIsPossiblyNull { span: *span });
+                        self.storage.report(Error::ObjectIsPossiblyNull { span: *span });
                     }
 
                     _ => {}
@@ -794,7 +793,7 @@ impl Analyzer<'_, '_> {
                                     continue;
                                 }
                                 //
-                                self.storage.report(box Error::CannotCompareWithOp { span, op });
+                                self.storage.report(Error::CannotCompareWithOp { span, op });
                                 return;
                             }
                             _ => {}
@@ -811,7 +810,7 @@ impl Analyzer<'_, '_> {
             return;
         }
 
-        self.storage.report(box Error::CannotCompareWithOp { span, op });
+        self.storage.report(Error::CannotCompareWithOp { span, op });
     }
 
     fn can_compare_relatively(&mut self, span: Span, l: &Type, r: &Type) -> ValidationResult<bool> {
@@ -1001,12 +1000,12 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {
                 self.storage
-                    .report(box Error::InvalidRhsInInstanceOf { span, ty: ty.clone() });
+                    .report(Error::InvalidRhsInInstanceOf { span, ty: ty.clone() });
             }
 
             Type::TypeLit(e) if e.members.is_empty() => {
                 self.storage
-                    .report(box Error::InvalidRhsInInstanceOf { span, ty: ty.clone() });
+                    .report(Error::InvalidRhsInInstanceOf { span, ty: ty.clone() });
             }
 
             // Ok
@@ -1030,7 +1029,7 @@ impl Analyzer<'_, '_> {
                     span,
                 ) {
                     self.storage
-                        .report(box Error::InvalidRhsInInstanceOf { span, ty: ty.clone() });
+                        .report(Error::InvalidRhsInInstanceOf { span, ty: ty.clone() });
                 }
             }
 
@@ -1096,15 +1095,14 @@ impl Analyzer<'_, '_> {
                                 span,
                                 kind: TsKeywordTypeKind::TsUndefinedKeyword,
                             }) => {
-                                self.storage
-                                    .report(box Error::ObjectIsPossiblyUndefined { span: *span });
+                                self.storage.report(Error::ObjectIsPossiblyUndefined { span: *span });
                             }
 
                             Type::Keyword(RTsKeywordType {
                                 span,
                                 kind: TsKeywordTypeKind::TsNullKeyword,
                             }) => {
-                                self.storage.report(box Error::ObjectIsPossiblyNull { span: *span });
+                                self.storage.report(Error::ObjectIsPossiblyNull { span: *span });
                             }
 
                             _ => errors.push(if is_left {
@@ -1152,14 +1150,14 @@ impl Analyzer<'_, '_> {
                             kind: TsKeywordTypeKind::TsNullKeyword,
                             ..
                         }) => {
-                            self.storage.report(box Error::ObjectIsPossiblyNull { span });
+                            self.storage.report(Error::ObjectIsPossiblyNull { span });
                         }
 
                         Type::Keyword(RTsKeywordType {
                             kind: TsKeywordTypeKind::TsUndefinedKeyword,
                             ..
                         }) => {
-                            self.storage.report(box Error::ObjectIsPossiblyUndefined { span });
+                            self.storage.report(Error::ObjectIsPossiblyUndefined { span });
                         }
 
                         ty => {
@@ -1176,14 +1174,14 @@ impl Analyzer<'_, '_> {
                             kind: TsKeywordTypeKind::TsNullKeyword,
                             ..
                         }) => {
-                            self.storage.report(box Error::ObjectIsPossiblyNull { span });
+                            self.storage.report(Error::ObjectIsPossiblyNull { span });
                         }
 
                         Type::Keyword(RTsKeywordType {
                             kind: TsKeywordTypeKind::TsUndefinedKeyword,
                             ..
                         }) => {
-                            self.storage.report(box Error::ObjectIsPossiblyUndefined { span });
+                            self.storage.report(Error::ObjectIsPossiblyUndefined { span });
                         }
 
                         _ => {

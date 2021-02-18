@@ -179,8 +179,7 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {
                 if self.ctx.in_declare {
-                    self.storage
-                        .report(box Error::DestructuringAssignInAmbientContext { span });
+                    self.storage.report(Error::DestructuringAssignInAmbientContext { span });
                 }
 
                 let ty = match ty {

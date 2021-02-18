@@ -753,7 +753,7 @@ impl Analyzer<'_, '_> {
                 && !(self.ctx.in_return_arg && self.ctx.in_fn_with_return_type)
                 && !self.ctx.in_assign_rhs
             {
-                self.storage.report(box Error::ImplicitAny { span: i.span });
+                self.storage.report(Error::ImplicitAny { span: i.span });
             }
         }
         let implicit_type_mark = self.marks().implicit_type_mark;

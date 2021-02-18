@@ -116,8 +116,7 @@ impl Analyzer<'_, '_> {
                 }) if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) => {}
                 _ => {
                     //
-                    self.storage
-                        .report(box Error::NonSymbolComputedPropInFormOfSymbol { span });
+                    self.storage.report(Error::NonSymbolComputedPropInFormOfSymbol { span });
                 }
             }
         }
@@ -417,7 +416,7 @@ impl Analyzer<'_, '_> {
                     let ret_ty = child.visit_stmts_for_return(n.span, false, false, &body.stmts)?;
                     if let None = ret_ty {
                         // getter property must have return statements.
-                        child.storage.report(box Error::TS2378 { span: n.key.span() });
+                        child.storage.report(Error::TS2378 { span: n.key.span() });
                     }
 
                     return Ok(ret_ty);

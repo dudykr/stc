@@ -359,7 +359,7 @@ impl Analyzer<'_, '_> {
                     // It's error if abstract method has a body
 
                     if c.is_abstract && c.function.body.is_some() {
-                        child.storage.report(box Error::TS1318 { span: key_span });
+                        child.storage.report(Error::TS1318 { span: key_span });
                     }
                 }
 
@@ -369,7 +369,7 @@ impl Analyzer<'_, '_> {
                     let mut has_optional = false;
                     for p in &c.function.params {
                         if has_optional {
-                            child.storage.report(box Error::TS1016 { span: p.span() });
+                            child.storage.report(Error::TS1016 { span: p.span() });
                         }
 
                         match p.pat {
@@ -385,7 +385,7 @@ impl Analyzer<'_, '_> {
 
                 let type_params = try_opt!(c.function.type_params.validate_with(child));
                 if (c.kind == MethodKind::Getter || c.kind == MethodKind::Setter) && type_params.is_some() {
-                    child.storage.report(box Error::TS1094 { span: key_span })
+                    child.storage.report(Error::TS1094 { span: key_span })
                 }
 
                 let params = c.function.params.validate_with(child)?;
@@ -398,7 +398,7 @@ impl Analyzer<'_, '_> {
                 // }
 
                 if c.kind == MethodKind::Setter && c.function.return_type.is_some() {
-                    child.storage.report(box Error::TS1095 { span: key_span })
+                    child.storage.report(Error::TS1095 { span: key_span })
                 }
 
                 let declared_ret_ty = try_opt!(c.function.return_type.validate_with(child));
@@ -427,7 +427,7 @@ impl Analyzer<'_, '_> {
 
             // getter property must have return statements.
             if let None = inferred_ret_ty {
-                self.storage.report(box Error::TS2378 { span: key_span });
+                self.storage.report(Error::TS2378 { span: key_span });
             }
         }
 
@@ -925,7 +925,7 @@ impl Analyzer<'_, '_> {
                                     for p in &cons.params {
                                         match *p {
                                             RParamOrTsParamProp::TsParamProp(..) => {
-                                                child.storage.report(box Error::TS2369 { span: p.span() })
+                                                child.storage.report(Error::TS2369 { span: p.span() })
                                             }
                                             _ => {}
                                         }
@@ -949,7 +949,7 @@ impl Analyzer<'_, '_> {
                                     match constructor_required_param_count {
                                         Some(v) if required_param_count != v => {
                                             for span in constructor_spans.drain(..) {
-                                                child.storage.report(box Error::TS2394 { span })
+                                                child.storage.report(Error::TS2394 { span })
                                             }
                                         }
 

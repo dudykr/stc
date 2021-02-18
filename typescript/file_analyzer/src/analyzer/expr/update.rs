@@ -53,7 +53,7 @@ impl Analyzer<'_, '_> {
                 }) => {
                     match &*e.arg {
                         RExpr::Lit(RLit::Num(..)) | RExpr::Call(..) | RExpr::Paren(..) | RExpr::Bin(..) => {
-                            self.storage.report(box Error::ExprInvalidForUpdateArg { span });
+                            self.storage.report(Error::ExprInvalidForUpdateArg { span });
                         }
                         _ => {}
                     }
@@ -66,7 +66,7 @@ impl Analyzer<'_, '_> {
 
         if let Some(ty) = ty {
             if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) {
-                self.storage.report(box Error::UpdateOpToSymbol {
+                self.storage.report(Error::UpdateOpToSymbol {
                     span: e.arg.span(),
                     op: e.op,
                 })

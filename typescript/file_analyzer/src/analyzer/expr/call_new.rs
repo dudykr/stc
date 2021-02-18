@@ -363,9 +363,7 @@ impl Analyzer<'_, '_> {
                             }) if type_args.is_some() => {
                                 // If it's implicit any, we should postpone this check.
                                 if !analyzer.is_implicitly_typed(&callee_ty) {
-                                    analyzer
-                                        .storage
-                                        .report(box Error::AnyTypeUsedAsCalleeWithTypeArgs { span })
+                                    analyzer.storage.report(Error::AnyTypeUsedAsCalleeWithTypeArgs { span })
                                 }
                             }
                             _ => {}
@@ -929,8 +927,7 @@ impl Analyzer<'_, '_> {
             ExtractKind::New => match ty.normalize() {
                 Type::Class(ref cls) => {
                     if cls.is_abstract {
-                        self.storage
-                            .report(box Error::CannotCreateInstanceOfAbstractClass { span })
+                        self.storage.report(Error::CannotCreateInstanceOfAbstractClass { span })
                     }
 
                     if let Some(type_params) = &cls.type_params {
@@ -1895,7 +1892,7 @@ impl Analyzer<'_, '_> {
             if arg.spread.is_some() {
                 if let Some(rest_idx) = rest_idx {
                     if idx < rest_idx {
-                        self.storage.report(box Error::ExpectedAtLeastNArgsButGotMOrMore {
+                        self.storage.report(Error::ExpectedAtLeastNArgsButGotMOrMore {
                             span: arg.span(),
                             min: rest_idx - 1,
                         })

@@ -101,7 +101,7 @@ impl Analyzer<'_, '_> {
                     span, optional: true, ..
                 }) => self
                     .storage
-                    .report(box Error::OptionalBindingPatternInImplSignature { span: *span }),
+                    .report(Error::OptionalBindingPatternInImplSignature { span: *span }),
                 _ => {}
             }
         }
@@ -346,7 +346,7 @@ impl Analyzer<'_, '_> {
                                         }
                                     }
 
-                                    self.storage.report(box Error::TS2353 { span: prop.span() })
+                                    self.storage.report(Error::TS2353 { span: prop.span() })
                                 }
                                 _ => {}
                             }

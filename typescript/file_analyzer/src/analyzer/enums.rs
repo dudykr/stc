@@ -148,8 +148,7 @@ impl Analyzer<'_, '_> {
                     let mut v = LitValidator { error: false, decl: &e };
                     init.visit_with(&mut v);
                     if v.error {
-                        self.storage
-                            .report(box Error::InvalidInitInConstEnum { span: init.span() })
+                        self.storage.report(Error::InvalidInitInConstEnum { span: init.span() })
                     }
                 }
             }
@@ -376,7 +375,7 @@ impl Analyzer<'_, '_> {
     pub(super) fn check_rvalue(&mut self, span: Span, rhs_ty: &Type) {
         match *rhs_ty.normalize() {
             Type::Enum(ref e) if e.is_const => {
-                self.storage.report(box Error::InvalidUseOfConstEnum { span });
+                self.storage.report(Error::InvalidUseOfConstEnum { span });
             }
             _ => {}
         }
@@ -417,7 +416,7 @@ impl Analyzer<'_, '_> {
             Some(e) => {
                 if type_of_expr(&e).is_none() {
                     self.storage
-                        .report(box Error::ComputedMemberInEnumWithStrMember { span: m.span })
+                        .report(Error::ComputedMemberInEnumWithStrMember { span: m.span })
                 }
             }
             _ => {}

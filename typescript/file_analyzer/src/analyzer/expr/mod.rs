@@ -454,7 +454,7 @@ impl Analyzer<'_, '_> {
                     | RExpr::Unary(RUnaryExpr { op: op!("typeof"), .. })
                         if !self.rule().allow_unreachable_code =>
                     {
-                        self.storage.report(box Error::UselessSeqExpr {
+                        self.storage.report(Error::UselessSeqExpr {
                             span: span.with_lo(first_span.lo()),
                         });
                     }

@@ -48,7 +48,7 @@ impl Analyzer<'_, '_> {
                         match p.pat {
                             RPat::Ident(RIdent { optional: true, .. }) | RPat::Rest(..) => {}
                             _ => {
-                                child.storage.report(box Error::TS1016 { span: p.span() });
+                                child.storage.report(Error::TS1016 { span: p.span() });
                             }
                         }
                     }
@@ -136,7 +136,7 @@ impl Analyzer<'_, '_> {
                         if f.is_generator && declared.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
                             child
                                 .storage
-                                .report(box Error::GeneratorCannotHaveVoidAsReturnType { span: declared.span() })
+                                .report(Error::GeneratorCannotHaveVoidAsReturnType { span: declared.span() })
                         } else {
                             // It's okay to return more properties than declared.
                             child
@@ -283,7 +283,7 @@ impl Analyzer<'_, '_> {
                 if let Some(default) = default {
                     args.params.push(default);
                 } else {
-                    self.storage.report(box Error::ImplicitAny { span });
+                    self.storage.report(Error::ImplicitAny { span });
                     args.params.push(Type::any(span));
                 }
             }

@@ -37,11 +37,11 @@ impl Analyzer<'_, '_> {
                 RExpr::Member(..) => {}
 
                 RExpr::Await(arg) => {
-                    self.storage.report(box Error::InvalidDeleteOperand { span: arg.span });
+                    self.storage.report(Error::InvalidDeleteOperand { span: arg.span });
                 }
 
                 _ => {
-                    self.storage.report(box Error::InvalidDeleteOperand { span });
+                    self.storage.report(Error::InvalidDeleteOperand { span });
                 }
             }
         }
@@ -86,7 +86,7 @@ impl Analyzer<'_, '_> {
             op!(unary, "+") | op!(unary, "-") | op!("~") => {
                 if let Some(arg) = &arg {
                     if arg.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) {
-                        self.storage.report(box Error::NumericUnaryOpToSymbol {
+                        self.storage.report(Error::NumericUnaryOpToSymbol {
                             span: arg.span(),
                             op: *op,
                         })

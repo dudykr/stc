@@ -408,7 +408,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
             }
-            None => self.storage.report(box Error::ExportAllFailed { span }),
+            None => self.storage.report(Error::ExportAllFailed { span }),
         }
 
         Ok(())
@@ -502,7 +502,7 @@ impl Analyzer<'_, '_> {
         }
 
         if !did_work {
-            self.storage.report(box Error::ExportFailed { span, orig, id })
+            self.storage.report(Error::ExportFailed { span, orig, id })
         }
     }
 }
