@@ -176,21 +176,21 @@ impl Analyzer<'_, '_> {
                 RExpr::Array(arr) => return arr.validate_with_args(self, (mode, type_args, type_ann)),
 
                 RExpr::Lit(RLit::Bool(v)) => {
-                    return Ok(box Type::Lit(RTsLitType {
+                    return Ok(Type::Lit(RTsLitType {
                         node_id: NodeId::invalid(),
                         span: v.span,
                         lit: RTsLit::Bool(v.clone()),
                     }));
                 }
                 RExpr::Lit(RLit::Str(ref v)) => {
-                    return Ok(box Type::Lit(RTsLitType {
+                    return Ok(Type::Lit(RTsLitType {
                         node_id: NodeId::invalid(),
                         span: v.span,
                         lit: RTsLit::Str(v.clone()),
                     }));
                 }
                 RExpr::Lit(RLit::Num(v)) => {
-                    return Ok(box Type::Lit(RTsLitType {
+                    return Ok(Type::Lit(RTsLitType {
                         node_id: NodeId::invalid(),
                         span: v.span,
                         lit: RTsLit::Number(v.clone()),
@@ -199,19 +199,19 @@ impl Analyzer<'_, '_> {
                 RExpr::Lit(RLit::Null(RNull { span })) => {
                     if self.ctx.in_export_default_expr {
                         // TODO: strict mode
-                        return Ok(box Type::Keyword(RTsKeywordType {
+                        return Ok(Type::Keyword(RTsKeywordType {
                             span: *span,
                             kind: TsKeywordTypeKind::TsAnyKeyword,
                         }));
                     }
 
-                    return Ok(box Type::Keyword(RTsKeywordType {
+                    return Ok(Type::Keyword(RTsKeywordType {
                         span: *span,
                         kind: TsKeywordTypeKind::TsNullKeyword,
                     }));
                 }
                 RExpr::Lit(RLit::Regex(..)) => {
-                    return Ok(box Type::Ref(Ref {
+                    return Ok(Type::Ref(Ref {
                         span,
                         ctxt: ModuleId::builtin(),
                         type_name: RTsEntityName::Ident(RIdent {
@@ -230,20 +230,20 @@ impl Analyzer<'_, '_> {
                 RExpr::Tpl(ref t) => {
                     // Check if tpl is constant. If it is, it's type is string literal.
                     if t.exprs.is_empty() {
-                        return Ok(box Type::Lit(RTsLitType {
+                        return Ok(Type::Lit(RTsLitType {
                             node_id: NodeId::invalid(),
                             span: t.span(),
                             lit: RTsLit::Str(t.quasis[0].cooked.clone().unwrap_or_else(|| t.quasis[0].raw.clone())),
                         }));
                     }
 
-                    return Ok(box Type::Keyword(RTsKeywordType {
+                    return Ok(Type::Keyword(RTsKeywordType {
                         span,
                         kind: TsKeywordTypeKind::TsStringKeyword,
                     }));
                 }
 
-                RExpr::TsNonNull(RTsNonNullExpr { ref expr, .. }) => Ok(box expr
+                RExpr::TsNonNull(RTsNonNullExpr { ref expr, .. }) => Ok(expr
                     .validate_with_args(self, (mode, type_args, type_ann))?
                     .remove_falsy()),
 
@@ -263,13 +263,13 @@ impl Analyzer<'_, '_> {
                     ref ident, ref class, ..
                 }) => {
                     self.scope.this_class_name = ident.as_ref().map(|i| i.into());
-                    return Ok(box class.validate_with(self)?.into());
+                    return Ok(class.validate_with(self)?.into());
                 }
 
-                RExpr::Arrow(ref e) => return Ok(box e.validate_with_args(self, type_ann)?.into()),
+                RExpr::Arrow(ref e) => return Ok(e.validate_with_args(self, type_ann)?.into()),
 
                 RExpr::Fn(RFnExpr { ref function, .. }) => {
-                    return Ok(box function.validate_with(self)?.into());
+                    return Ok(function.validate_with(self)?.into());
                 }
 
                 RExpr::Member(ref expr) => {
@@ -366,7 +366,7 @@ impl Analyzer<'_, '_> {
                         .type_of_var(i, TypeOfMode::LValue, None)
                         .context("tried to get type of lhs of an assignment")?;
 
-                    (any_span, Some(&*ty_of_left))
+                    (any_span, Some(&ty_of_left))
                 }
 
                 _ => (None, type_ann),
@@ -504,12 +504,12 @@ impl Analyzer<'_, '_> {
             }
 
             prop.validate_with_default(self)
-                .and_then(|ty| self.expand_top_ref(ty.span(), Cow::Owned(*ty)).map(Cow::into_owned))
-                .and_then(|ty| self.expand_enum(box ty))
+                .and_then(|ty| self.expand_top_ref(ty.span(), Cow::Owned(ty)).map(Cow::into_owned))
+                .and_then(|ty| self.expand_enum(ty))
                 .and_then(|ty| self.expand_enum_variant(ty))
                 .map(|ty| ComputedKey {
                     span: prop.span(),
-                    ty,
+                    ty: box ty,
                     expr: box prop.clone(),
                 })
                 .map(Key::Computed)
@@ -544,7 +544,7 @@ impl Analyzer<'_, '_> {
         prop: &Key,
         type_mode: TypeOfMode,
         members: &[TypeElement],
-    ) -> ValidationResult<Option<Box<Type>>> {
+    ) -> ValidationResult<Option<Type>> {
         let mut matching_elements = vec![];
         for el in members.iter() {
             if let Some(key) = el.key() {
@@ -672,7 +672,7 @@ impl Analyzer<'_, '_> {
     pub(super) fn access_property(
         &mut self,
         span: Span,
-        obj: Box<Type>,
+        obj: Type,
         prop: &Key,
         type_mode: TypeOfMode,
         id_ctx: IdCtx,
@@ -697,7 +697,7 @@ impl Analyzer<'_, '_> {
     fn access_property_inner(
         &mut self,
         span: Span,
-        obj: Box<Type>,
+        obj: Type,
         prop: &Key,
         type_mode: TypeOfMode,
         id_ctx: IdCtx,
@@ -1565,7 +1565,7 @@ impl Analyzer<'_, '_> {
         unimplemented!("access_property(MemberExpr):\nObject: {:?}\nProp: {:?}", obj, prop);
     }
 
-    fn type_to_query_if_required(&mut self, span: Span, i: &RIdent, ty: Box<Type>) -> Box<Type> {
+    fn type_to_query_if_required(&mut self, span: Span, i: &RIdent, ty: Type) -> Type {
         if self.scope.is_in_call() {
             return ty;
         }
