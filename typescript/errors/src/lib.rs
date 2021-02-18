@@ -783,9 +783,9 @@ impl Debug for DebugContext {
 
 impl Error {
     #[track_caller]
-    pub fn context(self, context: impl Display) -> Box<Self> {
+    pub fn context(self, context: impl Display) -> Self {
         if !cfg!(debug_assertions) {
-            return box self;
+            return self;
         }
 
         match self {
@@ -797,7 +797,7 @@ impl Error {
             }
         }
 
-        box Error::DebugContext(DebugContext {
+        Error::DebugContext(DebugContext {
             span: self.span(),
             context: context.to_string(),
             inner: box self,
@@ -1014,13 +1014,6 @@ impl From<Errors> for Error {
     #[inline]
     fn from(errors: Errors) -> Self {
         errors.0.into()
-    }
-}
-
-impl From<Errors> for Box<Error> {
-    #[inline]
-    fn from(errors: Errors) -> Self {
-        box errors.into()
     }
 }
 
