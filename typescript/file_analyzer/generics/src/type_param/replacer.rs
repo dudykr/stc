@@ -23,7 +23,7 @@ impl Fold<Type> for TypeParamReplacer {
                         Type::Param(..) if !self.include_type_params => return ty,
                         _ => {}
                     }
-                    return *mapped.clone();
+                    return mapped.clone();
                 }
             }
             _ => {}

@@ -187,7 +187,7 @@ impl Analyzer<'_, '_> {
         }
 
         res.map_err(|err| {
-            box err.convert(|err| match err {
+            err.convert(|err| match err {
                 Error::AssignFailed { .. }
                 | Error::Errors { .. }
                 | Error::Unimplemented { .. }
@@ -197,7 +197,7 @@ impl Analyzer<'_, '_> {
                     span: opts.span,
                     left: box left.clone(),
                     right: box right.clone(),
-                    cause: vec![box err],
+                    cause: vec![err],
                 },
             })
         })
@@ -350,11 +350,11 @@ impl Analyzer<'_, '_> {
                 return self.assign_inner(
                     to,
                     &Type::union(vec![
-                        box Type::Keyword(RTsKeywordType {
+                        Type::Keyword(RTsKeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsNumberKeyword,
                         }),
-                        box Type::Keyword(RTsKeywordType {
+                        Type::Keyword(RTsKeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsStringKeyword,
                         }),
@@ -810,7 +810,7 @@ impl Analyzer<'_, '_> {
                 // TODO: Multiple error
                 for v in vs {
                     if let Err(error) = v {
-                        return Err(Error::IntersectionError { span, error });
+                        return Err(Error::IntersectionError { span, error: box error });
                     }
                 }
 
@@ -1181,7 +1181,7 @@ impl Analyzer<'_, '_> {
                             key: Key::Normal { sym: key, .. },
                             ..
                         }) => {
-                            keys.push(Box::new(Type::Lit(RTsLitType {
+                            keys.push(Type::Lit(RTsLitType {
                                 node_id: NodeId::invalid(),
                                 span: *span,
                                 lit: RTsLit::Str(RStr {
@@ -1190,7 +1190,7 @@ impl Analyzer<'_, '_> {
                                     kind: Default::default(),
                                     value: key.clone(),
                                 }),
-                            })));
+                            }));
                         }
                         _ => {}
                     }
