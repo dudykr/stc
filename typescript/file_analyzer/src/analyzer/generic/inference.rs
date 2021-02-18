@@ -36,7 +36,6 @@ impl Analyzer<'_, '_> {
     /// See:
     ///
     /// ```ts
-    ///
     /// declare function f<T>(...items: T[]): T;
     /// declare let data: { a: 1, b: "abc", c: true };
     /// declare let data2: { b: "foo", c: true };
