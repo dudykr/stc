@@ -307,7 +307,7 @@ impl Analyzer<'_, '_> {
                                 .push(r.clone());
 
                             self.prevent_generalize(&mut r);
-                            self.cur_facts.false_facts.vars.insert(l.into(), *r);
+                            self.cur_facts.false_facts.vars.insert(l.into(), r);
                         }
                     }
                     _ => {}
@@ -427,7 +427,7 @@ impl Analyzer<'_, '_> {
                     }));
                 }
 
-                if let Some(()) = c.take_if_any_matches(|(_, lt), (_, _)| match **lt {
+                if let Some(()) = c.take_if_any_matches(|(_, lt), (_, _)| match *lt {
                     Type::Keyword(RTsKeywordType {
                         kind: TsKeywordTypeKind::TsStringKeyword,
                         ..
@@ -635,7 +635,7 @@ impl Analyzer<'_, '_> {
                         // }
 
                         // Remove falsy types from lhs
-                        let lt = box lt.remove_falsy();
+                        let lt = lt.remove_falsy();
 
                         return Ok(Type::union(vec![lt, rt]));
                     }
@@ -662,7 +662,7 @@ impl Analyzer<'_, '_> {
             op!("??") => {
                 let may_generalize_lt = self.may_generalize(&lt);
 
-                let mut lt = box lt.remove_falsy();
+                let mut lt = lt.remove_falsy();
                 let mut rt = rt;
                 if may_generalize_lt {
                     lt = lt.generalize_lit();
@@ -671,7 +671,7 @@ impl Analyzer<'_, '_> {
                     rt = rt.generalize_lit();
                 }
                 //
-                if lt.type_eq(&rt) {
+                if lt.normalize().type_eq(rt.normalize()) {
                     return Ok(lt);
                 }
 
@@ -728,7 +728,7 @@ impl Analyzer<'_, '_> {
 
                 new_types.dedup_type();
 
-                return Ok(box Type::Union(Union {
+                return Ok(Type::Union(Union {
                     span: orig.span,
                     types: new_types,
                 }));
