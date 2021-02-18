@@ -18,7 +18,9 @@ use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
 use stc_ts_types::TypeParam;
 use swc_common::Span;
+use swc_common::Spanned;
 use swc_common::TypeEq;
+use swc_ecma_ast::TsKeywordTypeKind;
 use swc_ecma_ast::TsTypeOperatorOp;
 
 impl Analyzer<'_, '_> {
@@ -320,7 +322,36 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    pub(super) fn cleanup_inferred(&self, inferred: &mut InferData) {}
+    pub(super) fn cleanup_inferred(&self, inferred: &mut InferData) {
+        for (k, v) in inferred.type_params.iter_mut() {
+            self.replace_null_or_undefined_while_defaulting_to_any(&mut **v);
+        }
+    }
+
+    /// TODO: Handle union
+    fn replace_null_or_undefined_while_defaulting_to_any(&self, ty: &mut Type) {
+        if ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
+            *ty = *Type::any(ty.span());
+            return;
+        }
+
+        if ty.is_kwd(TsKeywordTypeKind::TsNullKeyword) {
+            *ty = *Type::any(ty.span());
+            return;
+        }
+
+        match ty.normalize() {
+            Type::Tuple(..) => match ty.normalize_mut() {
+                Type::Tuple(ty) => {
+                    for elem in ty.elems.iter_mut() {
+                        self.replace_null_or_undefined_while_defaulting_to_any(&mut elem.ty);
+                    }
+                }
+                _ => unreachable!(),
+            },
+            _ => {}
+        }
+    }
 
     /// Prevent generalizations if a type parameter extends literal.
     pub(super) fn prevent_generalization_of_inferred_types(
