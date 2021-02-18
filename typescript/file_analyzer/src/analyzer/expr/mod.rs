@@ -1179,7 +1179,7 @@ impl Analyzer<'_, '_> {
 
                         return Err(Error::NoSuchProperty {
                             span: prop.span(),
-                            obj: Some(obj),
+                            obj: Some(box obj),
                             prop: Some(box prop.clone()),
                         });
                     }
@@ -1254,7 +1254,7 @@ impl Analyzer<'_, '_> {
                 dbg!();
                 return Err(Error::NoSuchProperty {
                     span,
-                    obj: Some(obj),
+                    obj: Some(box obj),
                     prop: Some(box prop.clone()),
                 });
             }

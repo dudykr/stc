@@ -147,7 +147,7 @@ impl Analyzer<'_, '_> {
                             elements.push(TupleElement {
                                 span,
                                 label: None,
-                                ty: elem_type,
+                                ty: box elem_type,
                             });
                         }
                     }
@@ -162,26 +162,26 @@ impl Analyzer<'_, '_> {
         }
 
         if self.ctx.in_export_default_expr && elements.is_empty() {
-            return Ok(box Type::Array(Array {
+            return Ok(Type::Array(Array {
                 span,
                 elem_type: Type::any(span),
             }));
         }
 
         if !can_be_tuple {
-            let mut types: Vec<_> = elements.into_iter().map(|element| element.ty).collect();
+            let mut types: Vec<_> = elements.into_iter().map(|element| *element.ty).collect();
             types.dedup_type();
 
-            let mut ty = box Type::Array(Array {
+            let mut ty = Type::Array(Array {
                 span,
-                elem_type: Type::union(types),
+                elem_type: box Type::union(types),
             });
             self.normalize_union_of_objects(&mut ty, false);
 
             return Ok(ty);
         }
 
-        return Ok(box Type::Tuple(Tuple { span, elems: elements }));
+        return Ok(Type::Tuple(Tuple { span, elems: elements }));
     }
 }
 
