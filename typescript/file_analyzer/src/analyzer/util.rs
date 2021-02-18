@@ -38,7 +38,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        Err(box Error::NoNewSignature {
+        Err(Error::NoNewSignature {
             span,
             callee: box callee.clone(),
         })
@@ -126,7 +126,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        Err(box Error::NoNewSignature {
+        Err(Error::NoNewSignature {
             span,
             callee: box ty.clone(),
         })

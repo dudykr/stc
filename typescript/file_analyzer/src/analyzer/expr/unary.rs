@@ -180,7 +180,7 @@ impl Analyzer<'_, '_> {
                 ..
             })) => {
                 debug_assert!(!arg.span().is_dummy());
-                return Err(box Error::Unknown { span: arg.span() });
+                return Err(Error::Unknown { span: arg.span() });
             }
             _ => {}
         }

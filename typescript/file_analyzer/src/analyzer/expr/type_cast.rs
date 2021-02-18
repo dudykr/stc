@@ -170,7 +170,7 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        Err(box Error::NonOverlappingTypeCast { span })
+        Err(Error::NonOverlappingTypeCast { span })
     }
 
     pub(crate) fn has_overlap(&mut self, span: Span, l: &Type, r: &Type) -> ValidationResult<bool> {

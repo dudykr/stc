@@ -480,12 +480,12 @@ impl Analyzer<'_, '_> {
 
                     if types.is_empty() {
                         if kind == ExtractKind::Call {
-                            return Err(box Error::NoCallabelPropertyWithName {
+                            return Err(Error::NoCallabelPropertyWithName {
                                 span,
                                 key: box prop.clone(),
                             });
                         } else {
-                            return Err(box Error::NoSuchConstructor {
+                            return Err(Error::NoSuchConstructor {
                                 span,
                                 key: box prop.clone(),
                             });
@@ -774,7 +774,7 @@ impl Analyzer<'_, '_> {
         }
 
         match candidates.len() {
-            0 => Err(box Error::NoSuchProperty {
+            0 => Err(Error::NoSuchProperty {
                 span,
                 obj: Some(box obj.clone()),
                 prop: Some(box prop.clone()),
@@ -1005,13 +1005,13 @@ impl Analyzer<'_, '_> {
                 dbg!();
                 match kind {
                     ExtractKind::Call => {
-                        return Err(box Error::NoCallSignature {
+                        return Err(Error::NoCallSignature {
                             span,
                             callee: box ty.clone(),
                         })
                     }
                     ExtractKind::New => {
-                        return Err(box Error::NoNewSignature {
+                        return Err(Error::NoNewSignature {
                             span,
                             callee: box ty.clone(),
                         })
@@ -1040,7 +1040,7 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {
                 debug_assert!(!span.is_dummy());
-                return Err(box Error::Unknown { span });
+                return Err(Error::Unknown { span });
             }
 
             Type::Function(ref f) if kind == ExtractKind::Call => self.get_return_type(
@@ -1222,11 +1222,11 @@ impl Analyzer<'_, '_> {
 
         if candidates.is_empty() {
             return match kind {
-                ExtractKind::Call => Err(box Error::NoCallSignature {
+                ExtractKind::Call => Err(Error::NoCallSignature {
                     span,
                     callee: box callee_ty.clone(),
                 }),
-                ExtractKind::New => Err(box Error::NoNewSignature {
+                ExtractKind::New => Err(Error::NoNewSignature {
                     span,
                     callee: box callee_ty.clone(),
                 }),
@@ -1557,9 +1557,9 @@ impl Analyzer<'_, '_> {
             }
 
             if max_param.is_none() {
-                return Err(box Error::ExpectedAtLeastNArgsButGotM { span, min: min_param });
+                return Err(Error::ExpectedAtLeastNArgsButGotM { span, min: min_param });
             }
-            return Err(box Error::ExpectedNArgsButGotM {
+            return Err(Error::ExpectedNArgsButGotM {
                 span,
                 min: min_param,
                 max: max_param,
@@ -2100,7 +2100,7 @@ impl Analyzer<'_, '_> {
             if let Some(type_args) = type_args {
                 // TODO: Handle defaults of the type parameter (Change to range)
                 if type_params.len() != type_args.params.len() {
-                    return Err(box Error::TypeParameterCountMismatch {
+                    return Err(Error::TypeParameterCountMismatch {
                         span,
                         max: type_params.len(),
                         min: type_params.len(),

@@ -654,7 +654,7 @@ impl Analyzer<'_, '_> {
             Ok(ty) => ty,
             Err(err) => {
                 match err {
-                    box Error::TS2585 { span } => Err(box Error::TS2585 { span })?,
+                    box Error::TS2585 { span } => Err(Error::TS2585 { span })?,
                     _ => {}
                 }
 

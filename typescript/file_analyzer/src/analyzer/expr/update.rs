@@ -39,9 +39,9 @@ impl Analyzer<'_, '_> {
                     lit: RTsLit::Bool(..), ..
                 })
                 | Type::TypeLit(..)
-                | Type::Array(..) => Err(box Error::TypeInvalidForUpdateArg { span: e.arg.span() }),
+                | Type::Array(..) => Err(Error::TypeInvalidForUpdateArg { span: e.arg.span() }),
 
-                Type::Enum(..) => Err(box Error::CannotAssignToNonVariable { span: e.arg.span() }),
+                Type::Enum(..) => Err(Error::CannotAssignToNonVariable { span: e.arg.span() }),
 
                 Type::Lit(RTsLitType {
                     lit: RTsLit::Number(..),

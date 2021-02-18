@@ -587,7 +587,7 @@ impl Analyzer<'_, '_> {
                         for ty in types {
                             match &*ty {
                                 Type::Module(..) => {
-                                    return Err(box Error::NotVariable {
+                                    return Err(Error::NotVariable {
                                         span: i.span,
                                         left: lhs.span(),
                                     });
@@ -601,7 +601,7 @@ impl Analyzer<'_, '_> {
                         Ok(())
                     } else {
                         // undefined symbol
-                        Err(box Error::UndefinedSymbol {
+                        Err(Error::UndefinedSymbol {
                             sym: i.into(),
                             span: i.span,
                         })

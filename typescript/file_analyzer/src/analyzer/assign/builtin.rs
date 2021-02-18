@@ -44,7 +44,7 @@ impl Analyzer<'_, '_> {
                             errors.extend(self.assign_inner(&type_args.params[0], &el.ty, opts).err());
                         }
                         if !errors.is_empty() {
-                            return Some(Err(box Error::TupleAssignError { span, errors }));
+                            return Some(Err(Error::TupleAssignError { span, errors }));
                         }
                     }
                     return Some(Ok(()));
@@ -77,7 +77,7 @@ impl Analyzer<'_, '_> {
                         return Some(Ok(()));
                     }
 
-                    return Some(Err(box Error::NoCallSignature {
+                    return Some(Err(Error::NoCallSignature {
                         span: opts.span,
                         callee: box r.clone(),
                     }));
@@ -119,7 +119,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    return Some(Err(box Error::NoCallSignature {
+                    return Some(Err(Error::NoCallSignature {
                         span: opts.span,
                         callee: box r.clone(),
                     }));

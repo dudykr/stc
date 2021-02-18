@@ -291,7 +291,7 @@ impl Analyzer<'_, '_> {
                     if mode == TypeOfMode::RValue {
                         return expr.expr.validate_with_args(self, (mode, None, type_ann));
                     } else {
-                        return Err(box Error::Unimplemented {
+                        return Err(Error::Unimplemented {
                             span,
                             msg: format!(
                                 "Proper error reporting for using const assertion expression in left hand side of an \
@@ -474,7 +474,7 @@ impl Analyzer<'_, '_> {
             if !is_last {
                 match e.validate_with_default(self) {
                     Ok(..) => {}
-                    Err(box Error::ReferencedInInit { .. }) => {
+                    Err(Error::ReferencedInInit { .. }) => {
                         is_any = true;
                     }
                     Err(..) => {}
@@ -552,7 +552,7 @@ impl Analyzer<'_, '_> {
                     match el {
                         TypeElement::Property(ref p) => {
                             if type_mode == TypeOfMode::LValue && p.readonly {
-                                return Err(box Error::ReadOnly { span });
+                                return Err(Error::ReadOnly { span });
                             }
 
                             if let Some(ref type_ann) = p.type_ann {
@@ -791,7 +791,7 @@ impl Analyzer<'_, '_> {
                             }
                         }
 
-                        return Err(box Error::NoSuchPropertyInClass {
+                        return Err(Error::NoSuchPropertyInClass {
                             span,
                             class_name: self.scope.get_this_class_name(),
                             prop: prop.clone(),
@@ -852,7 +852,7 @@ impl Analyzer<'_, '_> {
 
                     dbg!();
 
-                    return Err(box Error::NoSuchProperty {
+                    return Err(Error::NoSuchProperty {
                         span: *span,
                         obj: Some(obj.clone()),
                         prop: Some(box prop.clone()),
@@ -885,7 +885,7 @@ impl Analyzer<'_, '_> {
                             RTsEnumMemberId::Str(s) => s.value == *sym,
                         });
                         if !has_such_member {
-                            return Err(box Error::NoSuchEnumVariant {
+                            return Err(Error::NoSuchEnumVariant {
                                 span,
                                 name: sym.clone(),
                             });
@@ -920,7 +920,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         if type_mode == TypeOfMode::LValue {
-                            return Err(box Error::EnumCannotBeLValue { span: prop.span() });
+                            return Err(Error::EnumCannotBeLValue { span: prop.span() });
                         }
 
                         debug_assert_ne!(span, prop.span());
@@ -962,7 +962,7 @@ impl Analyzer<'_, '_> {
 
                     _ => {
                         if e.is_const {
-                            return Err(box Error::ConstEnumNonIndexAccess { span: prop.span() });
+                            return Err(Error::ConstEnumNonIndexAccess { span: prop.span() });
                         }
 
                         // TODO: Validate type of enum
@@ -1024,7 +1024,7 @@ impl Analyzer<'_, '_> {
                         ty::ClassMember::Property(ref class_prop) => {
                             if let Some(declaring) = self.scope.declaring_prop.as_ref() {
                                 if class_prop.key == *declaring.sym() {
-                                    return Err(box Error::ReferencedInInit { span });
+                                    return Err(Error::ReferencedInInit { span });
                                 }
                             }
 
@@ -1078,7 +1078,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                return Err(box Error::NoSuchPropertyInClass {
+                return Err(Error::NoSuchPropertyInClass {
                     span,
                     class_name: c.name.clone(),
                     prop: prop.clone(),
@@ -1164,7 +1164,7 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {
                 debug_assert!(!span.is_dummy());
-                return Err(box Error::Unknown { span });
+                return Err(Error::Unknown { span });
             }
 
             Type::Keyword(RTsKeywordType { kind, .. }) if !self.is_builtin => {
@@ -1177,7 +1177,7 @@ impl Analyzer<'_, '_> {
                     _ => {
                         dbg!();
 
-                        return Err(box Error::NoSuchProperty {
+                        return Err(Error::NoSuchProperty {
                             span: prop.span(),
                             obj: Some(obj),
                             prop: Some(box prop.clone()),
@@ -1239,7 +1239,7 @@ impl Analyzer<'_, '_> {
 
                 // TODO: Check parent interfaces
 
-                return Err(box Error::NoSuchProperty {
+                return Err(Error::NoSuchProperty {
                     span,
                     obj: Some(obj),
                     prop: Some(box prop.clone()),
@@ -1252,7 +1252,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 dbg!();
-                return Err(box Error::NoSuchProperty {
+                return Err(Error::NoSuchProperty {
                     span,
                     obj: Some(obj),
                     prop: Some(box prop.clone()),
@@ -1282,7 +1282,7 @@ impl Analyzer<'_, '_> {
                     });
                     if tys.is_empty() || is_err {
                         assert_ne!(errors.len(), 0);
-                        return Err(box Error::UnionError { span, errors });
+                        return Err(Error::UnionError { span, errors });
                     }
                 } else {
                     if !errors.is_empty() {
@@ -1299,7 +1299,7 @@ impl Analyzer<'_, '_> {
                     let v = n.value.round() as i64;
 
                     if v < 0 {
-                        return Err(box Error::TupleIndexError {
+                        return Err(Error::TupleIndexError {
                             span: n.span(),
                             index: v,
                             len: elems.len() as u64,
@@ -1318,7 +1318,7 @@ impl Analyzer<'_, '_> {
                             _ => {}
                         }
 
-                        return Err(box Error::TupleIndexError {
+                        return Err(Error::TupleIndexError {
                             span: n.span(),
                             index: v,
                             len: elems.len() as u64,
@@ -1372,7 +1372,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                return Err(box Error::NoSuchPropertyInClass {
+                return Err(Error::NoSuchPropertyInClass {
                     span,
                     class_name: cls.name.clone(),
                     prop: prop.clone(),
@@ -1406,7 +1406,7 @@ impl Analyzer<'_, '_> {
 
                 print_backtrace();
                 // No property found
-                return Err(box Error::NoSuchPropertyInModule { span });
+                return Err(Error::NoSuchPropertyInModule { span });
             }
 
             Type::This(..) => {
@@ -1719,7 +1719,7 @@ impl Analyzer<'_, '_> {
             js_word!("undefined") => return Ok(Type::undefined(span)),
             js_word!("void") => return Ok(Type::any(span)),
             js_word!("eval") => match type_mode {
-                TypeOfMode::LValue => return Err(box Error::CannotAssignToNonVariable { span }),
+                TypeOfMode::LValue => return Err(Error::CannotAssignToNonVariable { span }),
                 TypeOfMode::RValue => {
                     return Ok(box Type::Function(ty::Function {
                         span,
@@ -1767,7 +1767,7 @@ impl Analyzer<'_, '_> {
             if self.ctx.allow_ref_declaring {
                 return Ok(Type::any(span));
             } else {
-                return Err(box Error::ReferencedInInit { span });
+                return Err(Error::ReferencedInInit { span });
             }
         }
 
@@ -1811,18 +1811,18 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
             }
-            Err(box Error::TypeUsedAsVar {
+            Err(Error::TypeUsedAsVar {
                 span,
                 name: i.clone().into(),
             })
         } else {
             if self.this_has_property_named(&i.clone().into()) {
-                Err(box Error::NoSuchVarButThisHasSuchProperty {
+                Err(Error::NoSuchVarButThisHasSuchProperty {
                     span,
                     name: i.clone().into(),
                 })
             } else {
-                Err(box Error::NoSuchVar {
+                Err(Error::NoSuchVar {
                     span,
                     name: i.clone().into(),
                 })

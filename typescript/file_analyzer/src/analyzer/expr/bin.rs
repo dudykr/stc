@@ -180,7 +180,7 @@ impl Analyzer<'_, '_> {
 
         let (lt, rt): (Box<Type>, Box<Type>) = match (lt, rt) {
             (Some(l), Some(r)) => (l, r),
-            _ => return Err(box Error::Errors { span, errors }),
+            _ => return Err(Error::Errors { span, errors }),
         };
 
         // Handle control-flow based typing
@@ -392,7 +392,7 @@ impl Analyzer<'_, '_> {
                         ..
                     }) => {
                         debug_assert!(!span.is_dummy());
-                        return Err(box Error::Unknown { span });
+                        return Err(Error::Unknown { span });
                     }
                     _ => {}
                 }
@@ -417,7 +417,7 @@ impl Analyzer<'_, '_> {
                     _ => None,
                 }) {
                     debug_assert!(!span.is_dummy());
-                    return Err(box Error::Unknown { span });
+                    return Err(Error::Unknown { span });
                 }
 
                 if lt.is_num() && rt.is_num() {
@@ -463,7 +463,7 @@ impl Analyzer<'_, '_> {
                 if c.any(|(_, ty)| {
                     ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) || ty.is_kwd(TsKeywordTypeKind::TsNullKeyword)
                 }) {
-                    return Err(box Error::TS2365 { span });
+                    return Err(Error::TS2365 { span });
                 }
 
                 // Rule:
@@ -481,7 +481,7 @@ impl Analyzer<'_, '_> {
 
                     _ => false,
                 }) {
-                    return Err(box Error::TS2365 { span });
+                    return Err(Error::TS2365 { span });
                 }
 
                 if is_str_or_union(&lt) || is_str_or_union(&rt) {
@@ -503,7 +503,7 @@ impl Analyzer<'_, '_> {
                     }));
                 }
 
-                return Err(box Error::InvalidBinaryOp { span, op });
+                return Err(Error::InvalidBinaryOp { span, op });
             }
             op!("*") | op!("/") => {
                 no_unknown!();
@@ -1292,7 +1292,7 @@ impl Analyzer<'_, '_> {
                 match operand {
                     RExpr::Bin(bin) => {
                         if bin.op == op!("||") || bin.op == op!("&&") {
-                            return Err(box Error::NullishCoalescingMixedWithLogicalWithoutParen { span });
+                            return Err(Error::NullishCoalescingMixedWithLogicalWithoutParen { span });
                         }
                     }
                     _ => {}
@@ -1301,7 +1301,7 @@ impl Analyzer<'_, '_> {
                 match operand {
                     RExpr::Bin(bin) => {
                         if bin.op == op!("??") {
-                            return Err(box Error::NullishCoalescingMixedWithLogicalWithoutParen { span });
+                            return Err(Error::NullishCoalescingMixedWithLogicalWithoutParen { span });
                         }
                     }
                     _ => {}

@@ -971,7 +971,7 @@ impl Analyzer<'_, '_> {
                         ..
                     }) => {
                         if tuple_elements.len() < elems.len() {
-                            return Err(box Error::TooManyTupleElements { span });
+                            return Err(Error::TooManyTupleElements { span });
                         }
 
                         for (elem, tuple_element) in elems.into_iter().zip(tuple_elements) {
@@ -1020,7 +1020,7 @@ impl Analyzer<'_, '_> {
                             }
                         }
                         if !errors.is_empty() {
-                            return Err(box Error::UnionError { span, errors });
+                            return Err(Error::UnionError { span, errors });
                         }
 
                         for (elem, tuple_elements) in
@@ -1131,7 +1131,7 @@ impl Analyzer<'_, '_> {
 
                     dbg!();
 
-                    return Err(box Error::NoSuchProperty {
+                    return Err(Error::NoSuchProperty {
                         span,
                         obj: None,
                         prop: None,
@@ -1190,11 +1190,11 @@ impl Analyzer<'_, '_> {
                             };
                             debug_assert!(!span.is_dummy());
 
-                            return Err(box Error::Unknown { span });
+                            return Err(Error::Unknown { span });
                         }
 
                         debug_assert!(!span.is_dummy());
-                        return Err(box Error::Unknown { span });
+                        return Err(Error::Unknown { span });
                     }
 
                     Type::Ref(..) => {
@@ -1777,7 +1777,7 @@ impl Expander<'_, '_, '_> {
         }
 
         print_backtrace();
-        Err(box Error::TypeNotFound {
+        Err(Error::TypeNotFound {
             name: box type_name.clone().into(),
             ctxt,
             type_args: type_args.clone(),

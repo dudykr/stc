@@ -328,7 +328,7 @@ impl TypeStore for Group<'_> {
             Some(v) => {
                 e.vars.insert(id.sym().clone(), v.clone());
             }
-            None => self.report(box Error::NoSuchVar { span, name: id }),
+            None => self.report(Error::NoSuchVar { span, name: id }),
         }
     }
 
@@ -338,7 +338,7 @@ impl TypeStore for Group<'_> {
             Some(v) => {
                 e.types.insert(id.sym().clone(), v.clone());
             }
-            None => self.report(box Error::NoSuchType { span, name: id }),
+            None => self.report(Error::NoSuchType { span, name: id }),
         }
     }
 

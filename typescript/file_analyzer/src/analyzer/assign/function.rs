@@ -91,7 +91,7 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
 
-            Type::Lit(..) => return Err(box Error::CannotAssignToNonVariable { span }),
+            Type::Lit(..) => return Err(Error::CannotAssignToNonVariable { span }),
             _ => {}
         }
 
@@ -115,7 +115,7 @@ impl Analyzer<'_, '_> {
 
         // TODO: Consider optional parameters.
         if li.clone().count() < ri.clone().count() {
-            return Err(box Error::SimpleAssignFailed { span });
+            return Err(Error::SimpleAssignFailed { span });
         }
 
         for (lp, rp) in li.zip(ri) {
