@@ -30,7 +30,8 @@ impl Analyzer<'_, '_> {
     ///
     /// ## Type literal
     ///
-    /// If one of type literal is `specified` accoarding to the metadata, type inference is done.
+    /// If one of type literal is `specified` accoarding to the metadata, type
+    /// inference is done.
     ///
     /// See:
     ///
@@ -49,7 +50,6 @@ impl Analyzer<'_, '_> {
     /// let e4 = f({ a: 2 }, data); // Error
     /// let e5 = f(data, data2); // Error
     /// ```
-    ///
     pub(super) fn insert_inferred(
         &mut self,
         inferred: &mut InferData,
