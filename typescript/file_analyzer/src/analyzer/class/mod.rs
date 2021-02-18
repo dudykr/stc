@@ -87,10 +87,10 @@ impl Analyzer<'_, '_> {
         value: &Option<Box<RExpr>>,
     ) -> ValidationResult<Option<Box<Type>>> {
         let ty = try_opt!(type_ann.validate_with(self));
-        let value_ty = try_opt!(value.validate_with_args(self, (TypeOfMode::RValue, None, ty.as_ref().map(|v| &**v))));
+        let value_ty = try_opt!(value.validate_with_args(self, (TypeOfMode::RValue, None, ty.as_ref())));
 
-        Ok(ty.or_else(|| value_ty).map(|ty| match *ty {
-            Type::Symbol(..) if readonly && is_static => box Type::Operator(Operator {
+        Ok(ty.or_else(|| value_ty).map(|ty| match ty {
+            Type::Symbol(..) if readonly && is_static => Type::Operator(Operator {
                 span: ty.span(),
                 op: TsTypeOperatorOp::Unique,
                 ty: box Type::Keyword(RTsKeywordType {
@@ -181,7 +181,7 @@ impl Analyzer<'_, '_> {
                 let mut has_optional = false;
                 for p in params.iter() {
                     if has_optional {
-                        child.storage.report(box Error::TS1016 { span: p.span() });
+                        child.storage.report(Error::TS1016 { span: p.span() });
                     }
 
                     match *p {

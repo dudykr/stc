@@ -301,7 +301,7 @@ impl Analyzer<'_, '_> {
                     span,
                     errors: unhandled_rhs
                         .into_iter()
-                        .map(|span| box Error::UnknownPropertyInObjectLiteralAssignment { span })
+                        .map(|span| Error::UnknownPropertyInObjectLiteralAssignment { span })
                         .collect(),
                 });
             }
@@ -341,7 +341,7 @@ impl Analyzer<'_, '_> {
                                 }
                             }
 
-                            errors.push(box Error::ConstructorRequired {
+                            errors.push(Error::ConstructorRequired {
                                 span,
                                 lhs: lhs_span,
                                 rhs: rhs.span(),
@@ -386,7 +386,7 @@ impl Analyzer<'_, '_> {
                                     ClassMember::Property(ref rp) => {
                                         match rp.accessibility {
                                             Some(Accessibility::Private) | Some(Accessibility::Protected) => {
-                                                errors.push(box Error::AccessibilityDiffers { span });
+                                                errors.push(Error::AccessibilityDiffers { span });
                                             }
                                             _ => {}
                                         }
@@ -428,7 +428,7 @@ impl Analyzer<'_, '_> {
         }
 
         if !missing_fields.is_empty() {
-            errors.push(box Error::MissingFields {
+            errors.push(Error::MissingFields {
                 span,
                 fields: missing_fields,
             });
@@ -515,8 +515,8 @@ impl Analyzer<'_, '_> {
                             TypeElement::Property(ref el) => match rm {
                                 TypeElement::Property(ref r_el) => {
                                     self.assign_inner(
-                                        el.type_ann.as_ref().unwrap_or(&Type::any(span)),
-                                        r_el.type_ann.as_ref().unwrap_or(&Type::any(span)),
+                                        el.type_ann.as_deref().unwrap_or(&Type::any(span)),
+                                        r_el.type_ann.as_deref().unwrap_or(&Type::any(span)),
                                         opts,
                                     )?;
                                     return Ok(());
