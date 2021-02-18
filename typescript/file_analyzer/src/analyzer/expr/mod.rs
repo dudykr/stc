@@ -1721,7 +1721,7 @@ impl Analyzer<'_, '_> {
             js_word!("eval") => match type_mode {
                 TypeOfMode::LValue => return Err(Error::CannotAssignToNonVariable { span }),
                 TypeOfMode::RValue => {
-                    return Ok(box Type::Function(ty::Function {
+                    return Ok(Type::Function(ty::Function {
                         span,
                         params: vec![],
                         ret_ty: Type::any(span),
