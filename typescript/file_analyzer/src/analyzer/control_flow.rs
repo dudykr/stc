@@ -665,7 +665,7 @@ impl Analyzer<'_, '_> {
                             self.try_assign_pat(span, lhs, &Type::any(ty.span()))?;
                         }
 
-                        Type::TypeLit(TypeLit { span, ref members }) => {
+                        Type::TypeLit(TypeLit { span, ref members, .. }) => {
                             // Iterate over members, and assign if key matches.
                             for member in members {
                                 match member {

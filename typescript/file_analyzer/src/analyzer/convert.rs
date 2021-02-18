@@ -237,6 +237,7 @@ impl Analyzer<'_, '_> {
         Ok(TypeLit {
             span: lit.span,
             members: lit.members.validate_with(self)?,
+            metadata: Default::default(),
         })
     }
 }
@@ -882,6 +883,7 @@ impl Analyzer<'_, '_> {
                 box Type::TypeLit(TypeLit {
                     span: DUMMY_SP.apply_mark(implicit_type_mark),
                     members,
+                    metadata: Default::default(),
                 })
             });
         }

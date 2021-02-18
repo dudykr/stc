@@ -925,6 +925,7 @@ expressions/nullishCoalescingOperator/nullishCoalescingOperator8.ts
 expressions/nullishCoalescingOperator/nullishCoalescingOperator9.ts
 expressions/nullishCoalescingOperator/nullishCoalescingOperator_es2020.ts
 expressions/nullishCoalescingOperator/nullishCoalescingOperator_not_strict.ts
+expressions/objectLiterals/
 expressions/optionalChaining/callChain/callChain.3.ts
 expressions/optionalChaining/callChain/superMethodCall.ts
 expressions/optionalChaining/callChain/thisMethodCall.ts

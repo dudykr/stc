@@ -22,6 +22,7 @@ use stc_ts_types::Tuple;
 use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
+use stc_ts_types::TypeLitMetadata;
 use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::Span;
@@ -45,6 +46,7 @@ impl Analyzer<'_, '_> {
         lhs_span: Span,
         lhs: &[TypeElement],
         rhs: &Type,
+        lhs_metadata: TypeLitMetadata,
     ) -> ValidationResult<()> {
         let span = opts.span;
         // debug_assert!(!span.is_dummy());
@@ -224,6 +226,7 @@ impl Analyzer<'_, '_> {
                             lhs_span,
                             lhs,
                             &rhs,
+                            lhs_metadata,
                         )
                         .context("tried to assign an enum to type elements");
                 }
@@ -237,7 +240,7 @@ impl Analyzer<'_, '_> {
                         .unwrap();
 
                     return self
-                        .assign_to_type_elements(opts, lhs_span, lhs, &rhs)
+                        .assign_to_type_elements(opts, lhs_span, lhs, &rhs, lhs_metadata)
                         .context("tried to assign the converted type to type elements");
                 }
 

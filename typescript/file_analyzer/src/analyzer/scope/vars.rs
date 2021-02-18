@@ -194,6 +194,7 @@ impl Analyzer<'_, '_> {
                             span,
                             // TODO: Fill it
                             members: vec![],
+                            metadata: Default::default(),
                         }));
                     }
                 }

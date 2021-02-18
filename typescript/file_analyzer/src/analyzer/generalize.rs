@@ -16,6 +16,7 @@ use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_types::Key;
+use stc_ts_types::TypeLitMetadata;
 use stc_ts_types::{
     Array, Class, ClassMember, IndexedAccessType, Mapped, Operator, PropertySignature, TypeElement, TypeLit, TypeParam,
     Union,
@@ -319,7 +320,11 @@ impl Fold<Type> for Simplifier<'_> {
                     })
                     .collect();
 
-                return Type::TypeLit(TypeLit { span, members });
+                return Type::TypeLit(TypeLit {
+                    span,
+                    members,
+                    metadata: Default::default(),
+                });
             }
 
             // TODO: Handle optional and reaonly
@@ -354,7 +359,7 @@ impl Fold<Type> for Simplifier<'_> {
                         lit: RTsLit::Str(..), ..
                     }),
                 ..
-            }) if obj.types.iter().all(|ty| match &**ty {
+            }) if obj.types.iter().all(|ty| match ty.normalize() {
                 Type::TypeLit(..) => true,
                 Type::Keyword(RTsKeywordType {
                     kind: TsKeywordTypeKind::TsUnknownKeyword,
@@ -363,10 +368,18 @@ impl Fold<Type> for Simplifier<'_> {
                 _ => false,
             }) =>
             {
+                let inexact = obj
+                    .types
+                    .iter()
+                    .filter_map(|ty| match ty.normalize() {
+                        Type::TypeLit(ty) => Some(ty),
+                        _ => None,
+                    })
+                    .any(|ty| ty.metadata.inexact);
                 let mut members = obj
                     .types
                     .into_iter()
-                    .filter_map(|ty| match *ty {
+                    .filter_map(|ty| match ty.foldable() {
                         Type::TypeLit(ty) => Some(ty.members),
                         _ => None,
                     })
@@ -392,7 +405,14 @@ impl Fold<Type> for Simplifier<'_> {
                 return Type::IndexedAccessType(IndexedAccessType {
                     span,
                     readonly,
-                    obj_type: box Type::TypeLit(TypeLit { span, members }),
+                    obj_type: box Type::TypeLit(TypeLit {
+                        span,
+                        members,
+                        metadata: TypeLitMetadata {
+                            inexact,
+                            ..Default::default()
+                        },
+                    }),
                     index_type,
                 })
                 .fold_with(self);
@@ -526,7 +546,12 @@ impl Fold<Type> for Simplifier<'_> {
                 span,
                 ty:
                     Some(box Type::IndexedAccessType(IndexedAccessType {
-                        obj_type: box Type::TypeLit(TypeLit { members, .. }),
+                        obj_type:
+                            box Type::TypeLit(TypeLit {
+                                metadata: obj_type_metadata,
+                                members,
+                                ..
+                            }),
                         index_type: box Type::Param(index_type),
                         ..
                     })),
@@ -570,6 +595,7 @@ impl Fold<Type> for Simplifier<'_> {
                 return Type::TypeLit(TypeLit {
                     span,
                     members: new_members,
+                    metadata: obj_type_metadata,
                 });
             }
 
