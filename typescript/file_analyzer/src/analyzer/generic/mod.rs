@@ -423,6 +423,8 @@ impl Analyzer<'_, '_> {
 
         self.prevent_generalization_of_inferred_types(type_params, &mut inferred);
 
+        self.cleanup_inferred(&mut inferred);
+
         slog::warn!(self.logger, "infer_arg_types is finished");
 
         Ok(inferred.type_params)

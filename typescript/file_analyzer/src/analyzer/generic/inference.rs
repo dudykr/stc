@@ -40,6 +40,8 @@ impl Analyzer<'_, '_> {
             .infer_type(span, &mut inferred, &param, &arg)
             .context("tried to infer type using two type")?;
 
+        self.cleanup_inferred(&mut inferred);
+
         Ok(inferred.type_params)
     }
 
@@ -317,6 +319,8 @@ impl Analyzer<'_, '_> {
         // TODO: Check for parents.
         Ok(())
     }
+
+    pub(super) fn cleanup_inferred(&self, inferred: &mut InferData) {}
 
     /// Prevent generalizations if a type parameter extends literal.
     pub(super) fn prevent_generalization_of_inferred_types(
