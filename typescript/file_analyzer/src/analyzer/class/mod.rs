@@ -227,7 +227,7 @@ impl Analyzer<'_, '_> {
 
                 match param {
                     RParamOrTsParamProp::Param(RParam { ref pat, .. }) => {
-                        match child.declare_vars_with_ty(VarDeclKind::Let, pat, Some(p.ty.clone())) {
+                        match child.declare_vars_with_ty(VarDeclKind::Let, pat, Some(*p.ty.clone())) {
                             Ok(()) => {}
                             Err(err) => {
                                 child.storage.report(err);
@@ -243,7 +243,7 @@ impl Analyzer<'_, '_> {
                             i.span,
                             VarDeclKind::Let,
                             i.clone().into(),
-                            Some(p.ty.clone()),
+                            Some(*p.ty.clone()),
                             true,
                             false,
                         ) {
@@ -827,7 +827,7 @@ impl Analyzer<'_, '_> {
                                                             .name
                                                             .as_ref()
                                                             .map(|id| {
-                                                                box Type::Query(QueryType {
+                                                                Type::Query(QueryType {
                                                                     span: c.span,
                                                                     expr: box QueryExpr::TsEntityName(
                                                                         id.clone().into(),
@@ -911,7 +911,9 @@ impl Analyzer<'_, '_> {
 
                 child.check_ambient_methods(c, false)?;
 
-                child.scope.super_class = super_class.clone().map(|ty| instantiate_class(child.ctx.module_id, ty));
+                child.scope.super_class = super_class
+                    .clone()
+                    .map(|ty| instantiate_class(child.ctx.module_id, *ty));
                 {
                     // Validate constructors
                     let mut constructor_spans = vec![];
@@ -1318,7 +1320,7 @@ impl Analyzer<'_, '_> {
 
         self.scope.this_class_name = Some(c.ident.clone().into());
         let ty = match c.class.validate_with(self) {
-            Ok(ty) => box ty.into(),
+            Ok(ty) => ty.into(),
             Err(err) => {
                 self.storage.report(err);
                 Type::any(c.span())

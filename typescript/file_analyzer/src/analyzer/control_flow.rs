@@ -195,9 +195,9 @@ impl Merge for Type {
     fn or(&mut self, r: Self) {
         let l_span = self.span();
 
-        let l = box replace(self, *Type::never(l_span));
+        let l = replace(self, Type::never(l_span));
 
-        *self = *Type::union(vec![l, box r]);
+        *self = Type::union(vec![l, r]);
     }
 }
 
@@ -293,10 +293,10 @@ impl Analyzer<'_, '_> {
                 Type::Tuple(tuple) => {
                     let span = tuple.span;
 
-                    let mut elem_types: Vec<_> = tuple.elems.take().into_iter().map(|elem| elem.ty).collect();
+                    let mut elem_types: Vec<_> = tuple.elems.take().into_iter().map(|elem| *elem.ty).collect();
                     elem_types.dedup_type();
-                    let elem_type = Type::union(elem_types);
-                    *ty = box Type::Array(Array { span, elem_type });
+                    let elem_type = box Type::union(elem_types);
+                    *ty = Type::Array(Array { span, elem_type });
                 }
                 _ => {}
             }
@@ -351,7 +351,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            new.push(box ty.clone());
+            new.push(ty.clone());
         }
 
         Ok(new)
@@ -381,7 +381,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            new.push(box ty.clone());
+            new.push(ty.clone());
         }
 
         Ok(new)
