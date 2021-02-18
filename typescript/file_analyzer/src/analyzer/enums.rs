@@ -435,7 +435,7 @@ impl Analyzer<'_, '_> {
     /// declare const e: E;
     /// const a = o[e]
     /// ```
-    pub(super) fn expand_enum(&mut self, ty: Box<Type>) -> ValidationResult {
+    pub(super) fn expand_enum(&mut self, ty: Type) -> ValidationResult {
         let e = match ty.normalize() {
             Type::Enum(e) => e,
             _ => return Ok(ty),
@@ -467,7 +467,7 @@ impl Analyzer<'_, '_> {
         Ok(ty)
     }
 
-    pub(super) fn expand_enum_variant(&self, ty: Box<Type>) -> ValidationResult {
+    pub(super) fn expand_enum_variant(&self, ty: Type) -> ValidationResult {
         match ty.normalize() {
             Type::EnumVariant(ref v) => {
                 if let Some(types) = self.find_type(v.ctxt, &v.enum_name)? {

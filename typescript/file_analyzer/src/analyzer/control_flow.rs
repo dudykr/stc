@@ -50,7 +50,7 @@ use swc_ecma_ast::*;
 #[derive(Debug, Clone, Default)]
 pub(crate) struct CondFacts {
     pub facts: FxHashMap<Name, TypeFacts>,
-    pub vars: FxHashMap<Name, Box<Type>>,
+    pub vars: FxHashMap<Name, Type>,
     pub excludes: FxHashMap<Name, Vec<Type>>,
     pub types: FxHashMap<Id, Type>,
 }
@@ -574,7 +574,7 @@ impl Analyzer<'_, '_> {
                     let actual_ty = if true || (var_info.ty.is_some() && var_info.ty.as_ref().unwrap().is_any()) {
                         return Ok(());
                     } else {
-                        Some(box ty.clone())
+                        Some(ty.clone())
                     };
 
                     VarInfo {
@@ -705,12 +705,12 @@ impl Analyzer<'_, '_> {
         unimplemented!("assignment with complex pattern\nPat: {:?}\nType: {:?}", lhs, ty)
     }
 
-    pub(super) fn add_type_fact(&mut self, sym: &Id, ty: Box<Type>) {
+    pub(super) fn add_type_fact(&mut self, sym: &Id, ty: Type) {
         slog::info!(self.logger, "add_type_fact({}); ty = {:?}", sym, ty);
         self.cur_facts.insert_var(sym, ty, false);
     }
 
-    pub(super) fn add_deep_type_fact(&mut self, sym: Name, ty: Box<Type>, is_for_true: bool) {
+    pub(super) fn add_deep_type_fact(&mut self, sym: Name, ty: Type, is_for_true: bool) {
         if is_for_true {
             self.cur_facts.true_facts.vars.insert(sym, ty);
         } else {
@@ -759,7 +759,7 @@ impl Analyzer<'_, '_> {
 }
 
 impl Facts {
-    fn insert_var<N: Into<Name>>(&mut self, name: N, ty: Box<Type>, negate: bool) {
+    fn insert_var<N: Into<Name>>(&mut self, name: N, ty: Type, negate: bool) {
         let name = name.into();
 
         if negate {
