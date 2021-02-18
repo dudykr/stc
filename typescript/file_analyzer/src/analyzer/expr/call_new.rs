@@ -267,7 +267,7 @@ impl Analyzer<'_, '_> {
                     unimplemented!("Error reporting for calling `Symbol` with arguments is not implemented yet")
                 }
 
-                return Ok(box Type::Symbol(Symbol {
+                return Ok(Type::Symbol(Symbol {
                     span,
                     id: self.symbols.generate(),
                 }));
@@ -294,7 +294,7 @@ impl Analyzer<'_, '_> {
                 // Handle member expression
                 let obj_type = obj.validate_with_default(self)?.generalize_lit();
 
-                let obj_type: Type = self.expand_top_ref(span, Cow::Owned(*obj_type))?.into_owned();
+                let obj_type: Type = self.expand_top_ref(span, Cow::Owned(obj_type))?.into_owned();
 
                 let obj_type = match *obj_type.normalize() {
                     Type::Keyword(RTsKeywordType {
@@ -404,13 +404,13 @@ impl Analyzer<'_, '_> {
                         type_args.as_ref(),
                         type_ann,
                     )?;
-                    match *expanded_ty {
+                    match expanded_ty {
                         Type::ClassInstance(ClassInstance {
                             ty: box Type::Class(..),
                             type_args,
                             ..
                         }) if ret_ty.is_some() => {
-                            return Ok(box Type::Ref(Ref {
+                            return Ok(Type::Ref(Ref {
                                 type_args,
                                 ..ret_ty.unwrap()
                             }));
