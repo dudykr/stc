@@ -75,7 +75,7 @@ impl Analyzer<'_, '_> {
             let declared_ret_ty = match declared_ret_ty {
                 Some(ty) => {
                     let span = ty.span();
-                    Some(match *ty {
+                    Some(match ty {
                         Type::Class(cls) => box Type::ClassInstance(ClassInstance {
                             span,
                             ty: box Type::Class(cls),

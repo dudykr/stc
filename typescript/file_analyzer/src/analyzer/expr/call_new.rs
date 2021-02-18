@@ -495,7 +495,7 @@ impl Analyzer<'_, '_> {
 
                 Type::Ref(..) => {
                     let obj_type = self
-                        .expand_top_ref(span, Cow::Owned(*obj_type))
+                        .expand_top_ref(span, Cow::Owned(obj_type))
                         .context("tried to expand object to call property of it")?
                         .into_owned();
 
@@ -652,7 +652,7 @@ impl Analyzer<'_, '_> {
 
             let callee = self.access_property(span, obj_type, &prop, TypeOfMode::RValue, IdCtx::Var)?;
 
-            let callee = box self.expand_top_ref(span, Cow::Owned(*callee))?.into_owned();
+            let callee = self.expand_top_ref(span, Cow::Owned(callee))?.into_owned();
 
             self.get_best_return_type(
                 span,
@@ -689,7 +689,7 @@ impl Analyzer<'_, '_> {
             TypeElement::Property(p) if kind == ExtractKind::Call => {
                 if let Ok(()) = self.assign(&p.key.ty(), &prop.ty(), span) {
                     // TODO: Remove useless clone
-                    let ty = p.type_ann.as_ref().cloned().unwrap_or(Type::any(m.span()));
+                    let ty = *p.type_ann.as_ref().cloned().unwrap_or(box Type::any(m.span()));
 
                     match ty.foldable() {
                         Type::Keyword(RTsKeywordType {
