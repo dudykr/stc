@@ -29,7 +29,6 @@ stc_ts_env = {path = "../env"}
 stc_ts_errors = {path = "../errors"}
 stc_ts_file_analyzer_macros = {path = "./macros"}
 stc_ts_generics = {path = "./generics"}
-stc_ts_normalization = {path = "./normalization"}
 stc_ts_storage = {path = "../storage"}
 stc_ts_types = {path = "../types"}
 stc_ts_utils = {path = "../utils"}
