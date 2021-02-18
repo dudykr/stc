@@ -51,7 +51,7 @@ use swc_ecma_ast::*;
 pub(crate) struct CondFacts {
     pub facts: FxHashMap<Name, TypeFacts>,
     pub vars: FxHashMap<Name, Box<Type>>,
-    pub excludes: FxHashMap<Name, Vec<Box<Type>>>,
+    pub excludes: FxHashMap<Name, Vec<Type>>,
     pub types: FxHashMap<Id, Box<Type>>,
 }
 
@@ -286,7 +286,7 @@ impl Analyzer<'_, '_> {
     /// `SafeSubscriber` or downgrade the type, like converting `Subscriber` |
     /// `SafeSubscriber` into `SafeSubscriber`. This behavior is controlled by
     /// the mark applied while handling type facts related to call.
-    fn adjust_ternary_type(&mut self, span: Span, mut types: Vec<Box<Type>>) -> ValidationResult<Vec<Box<Type>>> {
+    fn adjust_ternary_type(&mut self, span: Span, mut types: Vec<Type>) -> ValidationResult<Vec<Type>> {
         types.iter_mut().for_each(|ty| {
             // Tuple -> Array
             match ty.normalize_mut() {
@@ -315,7 +315,7 @@ impl Analyzer<'_, '_> {
         self.downcast_types(span, types)
     }
 
-    fn downcast_types(&mut self, span: Span, types: Vec<Box<Type>>) -> ValidationResult<Vec<Box<Type>>> {
+    fn downcast_types(&mut self, span: Span, types: Vec<Type>) -> ValidationResult<Vec<Type>> {
         fn need_work(ty: &Type) -> bool {
             match ty.normalize() {
                 Type::Lit(..)
@@ -358,7 +358,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Remove `SafeSubscriber` from `Subscriber` | `SafeSubscriber`.
-    fn remove_child_types(&mut self, span: Span, types: Vec<Box<Type>>) -> ValidationResult<Vec<Box<Type>>> {
+    fn remove_child_types(&mut self, span: Span, types: Vec<Type>) -> ValidationResult<Vec<Type>> {
         let mut new = vec![];
 
         'outer: for (ai, ty) in types

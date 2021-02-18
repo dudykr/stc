@@ -242,12 +242,12 @@ pub enum Error {
 
     TupleAssignError {
         span: Span,
-        errors: Vec<Box<Error>>,
+        errors: Vec<Error>,
     },
 
     Errors {
         span: Span,
-        errors: Vec<Box<Error>>,
+        errors: Vec<Error>,
     },
 
     RedeclaredVarWithDifferentType {
@@ -369,12 +369,12 @@ pub enum Error {
         span: Span,
         left: Box<Type>,
         right: Box<Type>,
-        cause: Vec<Box<Error>>,
+        cause: Vec<Error>,
     },
 
     ObjectAssignFailed {
         span: Span,
-        errors: Vec<Box<Error>>,
+        errors: Vec<Error>,
     },
 
     SimpleAssignFailed {
@@ -388,7 +388,7 @@ pub enum Error {
     /// a or b or c
     UnionError {
         span: Span,
-        errors: Vec<Box<Error>>,
+        errors: Vec<Error>,
     },
 
     IntersectionError {
@@ -977,7 +977,7 @@ impl Error {
     }
 
     #[cold]
-    pub fn flatten(vec: Vec<Box<Error>>) -> Vec<Box<Error>> {
+    pub fn flatten(vec: Vec<Error>) -> Vec<Error> {
         let mut buf = Vec::with_capacity(vec.len());
 
         for e in vec {
@@ -1003,9 +1003,9 @@ impl Error {
     }
 }
 
-impl From<Vec<Box<Error>>> for Error {
+impl From<Vec<Error>> for Error {
     #[inline]
-    fn from(errors: Vec<Box<Error>>) -> Self {
+    fn from(errors: Vec<Error>) -> Self {
         Error::Errors { span: DUMMY_SP, errors }
     }
 }
@@ -1026,9 +1026,9 @@ impl From<Errors> for Box<Error> {
 
 /// A utility type to track
 #[derive(Debug, Clone, Default, PartialEq)]
-pub struct Errors(Vec<Box<Error>>);
+pub struct Errors(Vec<Error>);
 
-impl From<Errors> for Vec<Box<Error>> {
+impl From<Errors> for Vec<Error> {
     #[inline]
     fn from(e: Errors) -> Self {
         e.0
@@ -1037,7 +1037,7 @@ impl From<Errors> for Vec<Box<Error>> {
 
 impl IntoIterator for Errors {
     type Item = Box<Error>;
-    type IntoIter = <Vec<Box<Error>> as IntoIterator>::IntoIter;
+    type IntoIter = <Vec<Error> as IntoIterator>::IntoIter;
 
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
@@ -1069,7 +1069,7 @@ impl Errors {
     }
 
     #[inline]
-    pub fn append(&mut self, other: &mut Vec<Box<Error>>) {
+    pub fn append(&mut self, other: &mut Vec<Error>) {
         for err in &*other {
             self.validate(err)
         }

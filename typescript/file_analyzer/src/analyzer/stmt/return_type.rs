@@ -40,8 +40,8 @@ pub(in crate::analyzer) struct ReturnValues {
     /// If all cases are handled, `return literal` like `return 5` and never
     /// type is used, we should not generalize the return value.
     should_generalize: bool,
-    pub return_types: Vec<Box<Type>>,
-    yield_types: Vec<Box<Type>>,
+    pub return_types: Vec<Type>,
+    yield_types: Vec<Type>,
     /// Are we in if or switch statement?
     pub(super) in_conditional: bool,
     pub(super) forced_never: bool,
@@ -344,7 +344,7 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
 
                     match *index_ty {
                         Type::TypeLit(obj) => {
-                            let mut types: Vec<Box<Type>> = vec![];
+                            let mut types: Vec<Type> = vec![];
                             for member in obj.members {
                                 match member {
                                     TypeElement::Call(_) => {
@@ -389,7 +389,7 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
 
                     match *index_ty {
                         Type::TypeLit(obj) => {
-                            let mut types: Vec<Box<Type>> = vec![];
+                            let mut types: Vec<Type> = vec![];
                             for member in obj.members {
                                 match member {
                                     TypeElement::Call(_) => {

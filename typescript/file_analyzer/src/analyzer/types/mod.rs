@@ -355,7 +355,7 @@ fn exclude_type(ty: &mut Type, excluded: &Type) {
     }
 }
 
-fn exclude_types(ty: &mut Type, excludes: Option<&Vec<Box<Type>>>) {
+fn exclude_types(ty: &mut Type, excludes: Option<&Vec<Type>>) {
     let excludes = match excludes {
         Some(v) => v,
         None => return,

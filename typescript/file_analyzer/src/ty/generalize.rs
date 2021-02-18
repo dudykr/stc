@@ -13,7 +13,7 @@ impl Fold<Type> for TupleToArray {
 
         match ty {
             Type::Tuple(tuple) => {
-                let mut types: Vec<Box<Type>> = vec![];
+                let mut types: Vec<Type> = vec![];
 
                 for element in tuple.elems {
                     if types.iter().any(|item| item.type_eq(&element.ty)) {

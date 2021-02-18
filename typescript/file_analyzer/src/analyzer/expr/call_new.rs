@@ -2295,7 +2295,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                 index_type,
                 ..
             }) if is_str_lit_or_union(&index_type) => {
-                let mut types: Vec<Box<Type>> = vec![];
+                let mut types: Vec<Type> = vec![];
 
                 for index_ty in index_type.iter_union() {
                     let (lit_span, value) = match &*index_ty {
