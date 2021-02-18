@@ -95,65 +95,6 @@ pub(super) struct InferData {
     defaults: FxHashMap<Id, Box<Type>>,
 }
 
-/// TODO: Move to inference.rs
-impl Analyzer<'_, '_> {
-    fn insert_inferred(&mut self, inferred: &mut InferData, name: Id, ty: Box<Type>) -> ValidationResult<()> {
-        slog::info!(self.logger, "Inferred {} as {:?}", name, ty);
-
-        match ty.normalize() {
-            Type::Param(ty) => {
-                if name == ty.name {
-                    return Ok(());
-                }
-            }
-            _ => {}
-        }
-
-        if ty.is_any() && self.is_implicitly_typed(&ty) {
-            if inferred.type_params.contains_key(&name.clone()) {
-                return Ok(());
-            }
-
-            match inferred.defaults.entry(name.clone()) {
-                Entry::Occupied(..) => {}
-                Entry::Vacant(e) => {
-                    e.insert(box Type::Param(TypeParam {
-                        span: ty.span(),
-                        name: name.clone(),
-                        constraint: None,
-                        default: None,
-                    }));
-                }
-            }
-
-            //
-            return Ok(());
-        }
-
-        match inferred.type_params.entry(name.clone()) {
-            Entry::Occupied(e) => {
-                if e.get().iter_union().any(|prev| prev.type_eq(&ty)) {
-                    return Ok(());
-                }
-
-                // Use this for type inference.
-                let (name, param_ty) = e.remove_entry();
-
-                inferred
-                    .type_params
-                    .insert(name, Type::union(vec![param_ty.clone(), ty]));
-            }
-            Entry::Vacant(e) => {
-                e.insert(ty);
-            }
-        }
-
-        inferred.priorities.insert(name, inferred.cur_priority);
-
-        Ok(())
-    }
-}
-
 /// Type inference for arguments.
 impl Analyzer<'_, '_> {
     /// Create [TypeParamInstantiation] from inferred type information.
