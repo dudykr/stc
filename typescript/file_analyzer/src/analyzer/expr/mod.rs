@@ -1053,7 +1053,7 @@ impl Analyzer<'_, '_> {
                                     span,
                                     type_params: cons.type_params.clone(),
                                     params: cons.params.clone(),
-                                    type_ann: cons.ret_ty.clone().unwrap_or_else(|| obj.clone()),
+                                    type_ann: cons.ret_ty.clone().unwrap_or_else(|| box obj.clone()),
                                     is_abstract: false,
                                 }));
                             }
@@ -1141,10 +1141,10 @@ impl Analyzer<'_, '_> {
                     self.prevent_generalize(&mut prop_ty);
                 }
 
-                return Ok(box Type::IndexedAccessType(IndexedAccessType {
+                return Ok(Type::IndexedAccessType(IndexedAccessType {
                     span,
                     readonly: false,
-                    obj_type: obj,
+                    obj_type: box obj,
                     index_type: prop_ty,
                 }));
             }
@@ -1153,7 +1153,7 @@ impl Analyzer<'_, '_> {
                 kind: TsKeywordTypeKind::TsAnyKeyword,
                 ..
             }) => {
-                return Ok(box Type::Keyword(RTsKeywordType {
+                return Ok(Type::Keyword(RTsKeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsAnyKeyword,
                 }));
@@ -1241,7 +1241,7 @@ impl Analyzer<'_, '_> {
 
                 return Err(Error::NoSuchProperty {
                     span,
-                    obj: Some(obj),
+                    obj: Some(box obj),
                     prop: Some(box prop.clone()),
                 });
             }
