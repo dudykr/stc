@@ -1655,7 +1655,7 @@ impl Analyzer<'_, '_> {
 
         if !modules.is_empty() {
             modules.push(ty);
-            ty = box Type::Intersection(Intersection {
+            ty = Type::Intersection(Intersection {
                 span: i.span,
                 types: modules,
             });
