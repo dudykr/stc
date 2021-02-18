@@ -1325,14 +1325,14 @@ impl Analyzer<'_, '_> {
                         });
                     }
 
-                    return Ok(elems[v as usize].ty.clone());
+                    return Ok(*elems[v as usize].ty.clone());
                 }
                 _ => {
-                    let mut types = elems.iter().map(|e| e.ty.clone()).collect::<Vec<_>>();
+                    let mut types = elems.iter().map(|e| *e.ty.clone()).collect::<Vec<_>>();
                     types.dedup_type();
-                    let obj = box Type::Array(Array {
+                    let obj = Type::Array(Array {
                         span,
-                        elem_type: Type::union(types),
+                        elem_type: box Type::union(types),
                     });
 
                     return self.access_property(span, obj, prop, type_mode, id_ctx);
@@ -1351,7 +1351,7 @@ impl Analyzer<'_, '_> {
                             // TODO: normalized string / ident
                             if p.key.type_eq(&prop) {
                                 if let Some(ref ty) = p.value {
-                                    return Ok(ty.clone());
+                                    return Ok(*ty.clone());
                                 }
 
                                 return Ok(Type::any(p.key.span()));
@@ -1360,7 +1360,7 @@ impl Analyzer<'_, '_> {
 
                         ty::ClassMember::Method(ref m) => {
                             if m.key.type_eq(prop) {
-                                return Ok(box Type::Function(ty::Function {
+                                return Ok(Type::Function(ty::Function {
                                     span,
                                     type_params: m.type_params.clone(),
                                     params: m.params.clone(),
@@ -1380,7 +1380,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::ClassInstance(ClassInstance { ty, .. }) => {
-                return self.access_property(span, ty.clone(), prop, type_mode, id_ctx)
+                return self.access_property(span, *ty.clone(), prop, type_mode, id_ctx)
             }
 
             Type::Module(ty::Module { ref exports, .. }) => {
@@ -1391,7 +1391,7 @@ impl Analyzer<'_, '_> {
                                 if types.len() == 1 {
                                     return Ok(types.into_iter().next().unwrap());
                                 }
-                                return Ok(box Type::Intersection(Intersection { span, types }));
+                                return Ok(Type::Intersection(Intersection { span, types }));
                             }
                         }
                     }

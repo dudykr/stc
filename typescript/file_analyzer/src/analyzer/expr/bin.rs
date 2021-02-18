@@ -161,7 +161,7 @@ impl Analyzer<'_, '_> {
 
         let rt = rhs;
 
-        self.validate_bin_inner(span, op, lt.as_deref(), rt.as_deref());
+        self.validate_bin_inner(span, op, lt.as_ref(), rt.as_ref());
 
         if op == op!("||") {
             for (k, type_fact) in lhs_facts.true_facts.facts.drain() {
