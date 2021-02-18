@@ -176,7 +176,7 @@ impl Analyzer<'_, '_> {
                 span,
                 elem_type: Type::union(types),
             });
-            self.normalize_union_of_objects(&mut ty);
+            self.normalize_union_of_objects(&mut ty, false);
 
             return Ok(ty);
         }

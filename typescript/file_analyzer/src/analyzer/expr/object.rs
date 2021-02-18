@@ -52,6 +52,7 @@ impl Analyzer<'_, '_> {
 
 struct ObjectUnionNormalizer<'a, 'b, 'c> {
     anaylzer: &'a mut Analyzer<'b, 'c>,
+    preserve_specified: bool,
 }
 
 impl ObjectUnionNormalizer<'_, '_, '_> {
@@ -77,6 +78,7 @@ impl ObjectUnionNormalizer<'_, '_, '_> {
             _ => return,
         };
         let mut inexact = false;
+        let mut prev_specified = false;
 
         let mut new_type_params = FxHashMap::<_, TypeParamDecl>::default();
         let mut new_params = FxHashMap::<_, Vec<_>>::default();
@@ -87,6 +89,8 @@ impl ObjectUnionNormalizer<'_, '_, '_> {
             match &**ty {
                 Type::TypeLit(ty) => {
                     inexact |= ty.metadata.inexact;
+                    prev_specified |= ty.metadata.specified;
+
                     for (i, m) in ty.members.iter().enumerate() {
                         //
                         match m {
@@ -197,6 +201,7 @@ impl ObjectUnionNormalizer<'_, '_, '_> {
             metadata: TypeLitMetadata {
                 normalized: true,
                 inexact,
+                specified: self.preserve_specified && prev_specified,
             },
         };
 
@@ -302,8 +307,11 @@ impl Analyzer<'_, '_> {
     ///
     /// Type of `a` in the code above is `{ a: number, b?: undefined } | {
     /// a:number, b: string }`.
-    pub(super) fn normalize_union_of_objects(&mut self, ty: &mut Type) {
-        ty.visit_mut_with(&mut ObjectUnionNormalizer { anaylzer: self });
+    pub(super) fn normalize_union_of_objects(&mut self, ty: &mut Type, preserve_specified: bool) {
+        ty.visit_mut_with(&mut ObjectUnionNormalizer {
+            anaylzer: self,
+            preserve_specified,
+        });
     }
 
     fn append_prop_or_spread_to_type(&mut self, to: Box<Type>, prop: &RPropOrSpread) -> ValidationResult {
