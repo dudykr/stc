@@ -494,7 +494,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::Ref(..) => {
-                    let obj_type = box self
+                    let obj_type = self
                         .expand_top_ref(span, Cow::Owned(*obj_type))
                         .context("tried to expand object to call property of it")?
                         .into_owned();
@@ -601,7 +601,7 @@ impl Analyzer<'_, '_> {
                             expr,
                             type_params.as_ref().map(|v| &*v.params),
                             &params,
-                            ret_ty.clone(),
+                            *ret_ty.clone(),
                             type_args,
                             args,
                             &arg_types,
@@ -615,7 +615,7 @@ impl Analyzer<'_, '_> {
                             span,
                             kind,
                             expr,
-                            ty.clone(),
+                            *ty.clone(),
                             prop,
                             type_args,
                             args,
@@ -628,11 +628,11 @@ impl Analyzer<'_, '_> {
                     }
 
                     return Err(match kind {
-                        ExtractKind::Call => box Error::NoCallabelPropertyWithName {
+                        ExtractKind::Call => Error::NoCallabelPropertyWithName {
                             span,
                             key: box prop.clone(),
                         },
-                        ExtractKind::New => box Error::NoSuchConstructor {
+                        ExtractKind::New => Error::NoSuchConstructor {
                             span,
                             key: box prop.clone(),
                         },
@@ -932,7 +932,7 @@ impl Analyzer<'_, '_> {
 
                     if let Some(type_params) = &cls.type_params {
                         for param in &type_params.params {
-                            self.register_type(param.name.clone(), box Type::Param(param.clone()));
+                            self.register_type(param.name.clone(), Type::Param(param.clone()));
                         }
 
                         // Infer type arguments using constructors.
@@ -961,7 +961,7 @@ impl Analyzer<'_, '_> {
 
                             let type_args = self.instantiate(span, &type_params.params, inferred)?;
 
-                            return Ok(box Type::ClassInstance(ClassInstance {
+                            return Ok(Type::ClassInstance(ClassInstance {
                                 span,
                                 ty: box Type::Class(cls.clone()),
                                 type_args: Some(box type_args),
@@ -969,7 +969,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    return Ok(box Type::ClassInstance(ClassInstance {
+                    return Ok(Type::ClassInstance(ClassInstance {
                         span,
                         ty: box Type::Class(cls.clone()),
                         type_args: type_args.cloned().map(Box::new),
@@ -983,7 +983,7 @@ impl Analyzer<'_, '_> {
                         expr,
                         c.type_params.as_ref().map(|v| &*v.params),
                         &c.params,
-                        c.type_ann.clone(),
+                        *c.type_ann.clone(),
                         type_args,
                         args,
                         arg_types,
@@ -1020,7 +1020,7 @@ impl Analyzer<'_, '_> {
         match ty.normalize() {
             Type::Intersection(..) if kind == ExtractKind::New => {
                 // TODO: Check if all types has constructor signature
-                return Ok(box Type::ClassInstance(ClassInstance {
+                return Ok(Type::ClassInstance(ClassInstance {
                     span,
                     ty: instantiate_class(self.ctx.module_id, box ty.clone()),
                     type_args: type_args.cloned().map(Box::new),

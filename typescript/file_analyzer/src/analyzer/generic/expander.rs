@@ -53,11 +53,7 @@ impl Analyzer<'_, '_> {
         Ok(params)
     }
 
-    pub(in super::super) fn expand_type_params(
-        &mut self,
-        params: &FxHashMap<Id, Type>,
-        ty: Box<Type>,
-    ) -> ValidationResult {
+    pub(in super::super) fn expand_type_params(&mut self, params: &FxHashMap<Id, Type>, ty: Type) -> ValidationResult {
         let ty = self.expand_type_params_inner(params, ty, false)?;
         Ok(ty)
     }
@@ -78,12 +74,7 @@ impl Analyzer<'_, '_> {
     ///z     T extends {
     ///          x: infer P extends number ? infer P : string;
     ///      } ? P : never
-    fn expand_type_params_inner(
-        &mut self,
-        params: &FxHashMap<Id, Type>,
-        ty: Box<Type>,
-        fully: bool,
-    ) -> ValidationResult {
+    fn expand_type_params_inner(&mut self, params: &FxHashMap<Id, Type>, ty: Type, fully: bool) -> ValidationResult {
         let ty = ty.fold_with(&mut GenericExpander {
             logger: self.logger.clone(),
             analyzer: self,
