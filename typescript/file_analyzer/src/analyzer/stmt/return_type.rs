@@ -66,7 +66,7 @@ impl Analyzer<'_, '_> {
         is_async: bool,
         is_generator: bool,
         stmts: &Vec<RStmt>,
-    ) -> Result<Option<Box<Type>>, Error> {
+    ) -> Result<Option<Type>, Error> {
         slog::debug!(self.logger, "visit_stmts_for_return()");
         debug_assert!(!self.is_builtin, "builtin: visit_stmts_for_return should not be called");
 

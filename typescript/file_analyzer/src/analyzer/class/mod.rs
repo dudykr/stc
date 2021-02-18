@@ -431,9 +431,9 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let ret_ty = declared_ret_ty.unwrap_or_else(|| {
+        let ret_ty = box declared_ret_ty.unwrap_or_else(|| {
             inferred_ret_ty.unwrap_or_else(|| {
-                box Type::Keyword(RTsKeywordType {
+                Type::Keyword(RTsKeywordType {
                     span: c_span,
                     kind: if c.function.body.is_some() {
                         TsKeywordTypeKind::TsVoidKeyword
@@ -450,7 +450,7 @@ impl Analyzer<'_, '_> {
             let ret_ty = if self.may_generalize(&ret_ty) {
                 ret_ty.clone().generalize_lit()
             } else {
-                ret_ty.clone()
+                *ret_ty.clone()
             };
             if let Some(m) = &mut self.mutations {
                 m.for_fns.entry(node_id).or_default().ret_ty = Some(ret_ty);
@@ -562,7 +562,7 @@ impl Analyzer<'_, '_> {
                             && !is_prop_name_eq_include_computed(&name.unwrap(), &m.key)
                         {
                             for span in replace(&mut spans, vec![]) {
-                                errors.push(box Error::FnImplMissingOrNotFollowedByDecl { span });
+                                errors.push(Error::FnImplMissingOrNotFollowedByDecl { span });
                             }
                         }
 
@@ -591,16 +591,16 @@ impl Analyzer<'_, '_> {
 
                             if is_prop_name_eq_include_computed(&name.unwrap(), &constructor_name) {
                                 for span in replace(&mut spans, vec![]) {
-                                    errors.push(box Error::FnImplMissingOrNotFollowedByDecl { span });
+                                    errors.push(Error::FnImplMissingOrNotFollowedByDecl { span });
                                 }
                             } else if is_prop_name_eq_include_computed(&m.key, &constructor_name) {
                                 for span in replace(&mut spans, vec![]) {
-                                    errors.push(box Error::FnImplMissingOrNotFollowedByDecl { span });
+                                    errors.push(Error::FnImplMissingOrNotFollowedByDecl { span });
                                 }
                             } else {
                                 spans = vec![];
 
-                                errors.push(box Error::TS2389 { span: m.key.span() });
+                                errors.push(Error::TS2389 { span: m.key.span() });
                             }
 
                             name = None;
