@@ -95,65 +95,6 @@ pub(super) struct InferData {
     defaults: FxHashMap<Id, Box<Type>>,
 }
 
-/// TODO: Move to inference.rs
-impl Analyzer<'_, '_> {
-    fn insert_inferred(&mut self, inferred: &mut InferData, name: Id, ty: Box<Type>) -> ValidationResult<()> {
-        slog::info!(self.logger, "Inferred {} as {:?}", name, ty);
-
-        match ty.normalize() {
-            Type::Param(ty) => {
-                if name == ty.name {
-                    return Ok(());
-                }
-            }
-            _ => {}
-        }
-
-        if ty.is_any() && self.is_implicitly_typed(&ty) {
-            if inferred.type_params.contains_key(&name.clone()) {
-                return Ok(());
-            }
-
-            match inferred.defaults.entry(name.clone()) {
-                Entry::Occupied(..) => {}
-                Entry::Vacant(e) => {
-                    e.insert(box Type::Param(TypeParam {
-                        span: ty.span(),
-                        name: name.clone(),
-                        constraint: None,
-                        default: None,
-                    }));
-                }
-            }
-
-            //
-            return Ok(());
-        }
-
-        match inferred.type_params.entry(name.clone()) {
-            Entry::Occupied(e) => {
-                if e.get().iter_union().any(|prev| prev.type_eq(&ty)) {
-                    return Ok(());
-                }
-
-                // Use this for type inference.
-                let (name, param_ty) = e.remove_entry();
-
-                inferred
-                    .type_params
-                    .insert(name, Type::union(vec![param_ty.clone(), ty]));
-            }
-            Entry::Vacant(e) => {
-                e.insert(ty);
-            }
-        }
-
-        inferred.priorities.insert(name, inferred.cur_priority);
-
-        Ok(())
-    }
-}
-
 /// Type inference for arguments.
 impl Analyzer<'_, '_> {
     /// Create [TypeParamInstantiation] from inferred type information.
@@ -220,7 +161,11 @@ impl Analyzer<'_, '_> {
                 );
 
                 // Defaults to {}
-                params.push(box Type::TypeLit(TypeLit { span, members: vec![] }));
+                params.push(box Type::TypeLit(TypeLit {
+                    span,
+                    members: vec![],
+                    metadata: Default::default(),
+                }));
             }
         }
 
@@ -418,6 +363,8 @@ impl Analyzer<'_, '_> {
         }
 
         self.prevent_generalization_of_inferred_types(type_params, &mut inferred);
+
+        self.finalize_inference(&mut inferred);
 
         slog::warn!(self.logger, "infer_arg_types is finished");
 
@@ -733,6 +680,7 @@ impl Analyzer<'_, '_> {
                                 let mut new_lit = TypeLit {
                                     span: arg_iat.span,
                                     members: vec![],
+                                    metadata: Default::default(),
                                 };
                                 for member in &param.members {
                                     match member {
@@ -1298,6 +1246,7 @@ impl Analyzer<'_, '_> {
                             box Type::TypeLit(TypeLit {
                                 span: arg.span,
                                 members: new_members,
+                                metadata: arg.metadata,
                             }),
                         )?;
 
@@ -1579,6 +1528,7 @@ impl Analyzer<'_, '_> {
                                         let list_ty = Type::TypeLit(TypeLit {
                                             span: arg.span,
                                             members: type_elements.remove(&name).unwrap_or_default(),
+                                            metadata: arg.metadata,
                                         });
 
                                         self.insert_inferred(inferred, name.clone(), box list_ty)?;
@@ -1673,6 +1623,7 @@ impl Analyzer<'_, '_> {
                                                 let list_ty = Type::TypeLit(TypeLit {
                                                     span: arg.span,
                                                     members,
+                                                    metadata: arg.metadata,
                                                 });
 
                                                 self.insert_inferred(inferred, name.clone(), box list_ty)?;
@@ -2091,20 +2042,23 @@ impl Fold<Type> for MappedReverser {
         ty = ty.fold_children_with(self);
 
         match ty {
-            Type::TypeLit(TypeLit { span, members })
-                if members.len() == 1
-                    && members.iter().any(|member| match member {
-                        TypeElement::Property(p) => {
-                            if let Some(ty) = &p.type_ann {
-                                ty.is_mapped()
-                            } else {
-                                false
-                            }
+            Type::TypeLit(TypeLit {
+                span,
+                members,
+                metadata,
+            }) if members.len() == 1
+                && members.iter().any(|member| match member {
+                    TypeElement::Property(p) => {
+                        if let Some(ty) = &p.type_ann {
+                            ty.is_mapped()
+                        } else {
+                            false
                         }
-                        TypeElement::Method(_) => unimplemented!(),
-                        TypeElement::Index(_) => unimplemented!(),
-                        _ => false,
-                    }) =>
+                    }
+                    TypeElement::Method(_) => unimplemented!(),
+                    TypeElement::Index(_) => unimplemented!(),
+                    _ => false,
+                }) =>
             {
                 self.did_work = true;
                 let member = members.into_iter().next().unwrap();
@@ -2118,6 +2072,7 @@ impl Fold<Type> for MappedReverser {
                                 type_ann: mapped.ty,
                                 ..p
                             })],
+                            metadata,
                         });
 
                         return Type::Mapped(Mapped { ty: Some(ty), ..mapped });

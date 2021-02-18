@@ -229,6 +229,7 @@ impl Analyzer<'_, '_> {
         Ok(TypeLit {
             span: f.span,
             members: vec![self.fn_to_type_element(f)?],
+            metadata: Default::default(),
         })
     }
 

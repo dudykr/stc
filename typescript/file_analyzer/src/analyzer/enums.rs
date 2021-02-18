@@ -365,7 +365,11 @@ impl Analyzer<'_, '_> {
             }));
         }
 
-        Ok(TypeLit { span: e.span, members })
+        Ok(TypeLit {
+            span: e.span,
+            members,
+            metadata: Default::default(),
+        })
     }
 
     // Check for constant enum in rvalue.

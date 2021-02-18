@@ -1,3 +1,5 @@
+use std::collections::hash_map::Entry;
+
 use super::InferData;
 use crate::analyzer::Analyzer;
 use crate::analyzer::Ctx;
@@ -18,10 +20,96 @@ use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
 use stc_ts_types::TypeParam;
 use swc_common::Span;
+use swc_common::Spanned;
 use swc_common::TypeEq;
+use swc_ecma_ast::TsKeywordTypeKind;
 use swc_ecma_ast::TsTypeOperatorOp;
 
 impl Analyzer<'_, '_> {
+    /// # Rules
+    ///
+    /// ## Type literal
+    ///
+    /// If one of type literal is `specified` accoarding to the metadata, type
+    /// inference is done.
+    ///
+    /// See:
+    ///
+    /// ```ts
+    /// declare function f<T>(...items: T[]): T;
+    /// declare let data: { a: 1, b: "abc", c: true };
+    /// declare let data2: { b: "foo", c: true };
+    ///
+    /// // Not specified
+    /// let e1 = f({ a: 1, b: 2 }, { a: "abc" }, {});
+    /// let e2 = f({}, { a: "abc" }, { a: 1, b: 2 });
+    ///
+    /// // Type inference is done if at least one element is specified.
+    /// let e3 = f(data, { a: 2 }); // Error
+    /// let e4 = f({ a: 2 }, data); // Error
+    /// let e5 = f(data, data2); // Error
+    /// ```
+    pub(super) fn insert_inferred(
+        &mut self,
+        inferred: &mut InferData,
+        name: Id,
+        ty: Box<Type>,
+    ) -> ValidationResult<()> {
+        slog::info!(self.logger, "Inferred {} as {:?}", name, ty);
+
+        match ty.normalize() {
+            Type::Param(ty) => {
+                if name == ty.name {
+                    return Ok(());
+                }
+            }
+            _ => {}
+        }
+
+        if ty.is_any() && self.is_implicitly_typed(&ty) {
+            if inferred.type_params.contains_key(&name.clone()) {
+                return Ok(());
+            }
+
+            match inferred.defaults.entry(name.clone()) {
+                Entry::Occupied(..) => {}
+                Entry::Vacant(e) => {
+                    e.insert(box Type::Param(TypeParam {
+                        span: ty.span(),
+                        name: name.clone(),
+                        constraint: None,
+                        default: None,
+                    }));
+                }
+            }
+
+            //
+            return Ok(());
+        }
+
+        match inferred.type_params.entry(name.clone()) {
+            Entry::Occupied(e) => {
+                if e.get().iter_union().any(|prev| prev.type_eq(&ty)) {
+                    return Ok(());
+                }
+
+                // Use this for type inference.
+                let (name, param_ty) = e.remove_entry();
+
+                inferred
+                    .type_params
+                    .insert(name, Type::union(vec![param_ty.clone(), ty]));
+            }
+            Entry::Vacant(e) => {
+                e.insert(ty);
+            }
+        }
+
+        inferred.priorities.insert(name, inferred.cur_priority);
+
+        Ok(())
+    }
+
     pub(crate) fn infer_type_with_types(
         &mut self,
         span: Span,
@@ -39,6 +127,8 @@ impl Analyzer<'_, '_> {
         self.with_ctx(ctx)
             .infer_type(span, &mut inferred, &param, &arg)
             .context("tried to infer type using two type")?;
+
+        self.finalize_inference(&mut inferred);
 
         Ok(inferred.type_params)
     }
@@ -316,6 +406,37 @@ impl Analyzer<'_, '_> {
 
         // TODO: Check for parents.
         Ok(())
+    }
+
+    pub(super) fn finalize_inference(&self, inferred: &mut InferData) {
+        for (k, v) in inferred.type_params.iter_mut() {
+            self.replace_null_or_undefined_while_defaulting_to_any(&mut **v);
+        }
+    }
+
+    /// TODO: Handle union
+    fn replace_null_or_undefined_while_defaulting_to_any(&self, ty: &mut Type) {
+        if ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
+            *ty = *Type::any(ty.span());
+            return;
+        }
+
+        if ty.is_kwd(TsKeywordTypeKind::TsNullKeyword) {
+            *ty = *Type::any(ty.span());
+            return;
+        }
+
+        match ty.normalize() {
+            Type::Tuple(..) => match ty.normalize_mut() {
+                Type::Tuple(ty) => {
+                    for elem in ty.elems.iter_mut() {
+                        self.replace_null_or_undefined_while_defaulting_to_any(&mut elem.ty);
+                    }
+                }
+                _ => unreachable!(),
+            },
+            _ => {}
+        }
     }
 
     /// Prevent generalizations if a type parameter extends literal.

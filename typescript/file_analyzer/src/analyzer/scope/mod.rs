@@ -41,6 +41,7 @@ use stc_ts_types::name::Name;
 use stc_ts_types::Array;
 use stc_ts_types::Intersection;
 use stc_ts_types::Key;
+use stc_ts_types::TypeLitMetadata;
 use stc_ts_types::{
     Conditional, FnParam, Id, IndexedAccessType, Mapped, ModuleId, Operator, QueryExpr, QueryType, StaticThis,
     TupleElement, TypeParam,
@@ -576,7 +577,12 @@ impl Analyzer<'_, '_> {
 
     pub(super) fn resolve_typeof(&mut self, span: Span, name: &RTsEntityName) -> ValidationResult {
         match name {
-            RTsEntityName::Ident(i) => self.type_of_var(i, TypeOfMode::RValue, None),
+            RTsEntityName::Ident(i) => {
+                if i.sym == js_word!("undefined") {
+                    return Ok(Type::any(span));
+                }
+                return self.type_of_var(i, TypeOfMode::RValue, None);
+            }
             RTsEntityName::TsQualifiedName(n) => {
                 let obj = self
                     .resolve_typeof(span, &n.left)
@@ -1650,7 +1656,11 @@ impl Expander<'_, '_, '_> {
                                         &type_params.params,
                                         &[],
                                         &[],
-                                        Some(&Type::TypeLit(TypeLit { span, members: vec![] })),
+                                        Some(&Type::TypeLit(TypeLit {
+                                            span,
+                                            members: vec![],
+                                            metadata: Default::default(),
+                                        })),
                                     )?;
                                     inferred.iter_mut().for_each(|(_, ty)| {
                                         self.analyzer.allow_expansion(&mut **ty);
@@ -2079,7 +2089,14 @@ impl Fold<Type> for Expander<'_, '_, '_> {
 
                 Type::Interface(i) => {
                     // TODO: Handle type params
-                    return Type::TypeLit(TypeLit { span, members: i.body });
+                    return Type::TypeLit(TypeLit {
+                        span,
+                        members: i.body,
+                        metadata: TypeLitMetadata {
+                            inexact: true,
+                            ..Default::default()
+                        },
+                    });
                 }
 
                 Type::Union(Union { span, types }) => {

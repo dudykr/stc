@@ -18,6 +18,7 @@ use stc_ts_types::PropertySignature;
 use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
+use stc_ts_types::TypeLitMetadata;
 use stc_ts_utils::MapWithMut;
 use std::borrow::Cow;
 use swc_common::Span;
@@ -118,7 +119,14 @@ impl Analyzer<'_, '_> {
                 // TODO: Override
                 members.extend(t.body.clone());
 
-                Cow::Owned(TypeLit { span: t.span, members })
+                Cow::Owned(TypeLit {
+                    span: t.span,
+                    members,
+                    metadata: TypeLitMetadata {
+                        inexact: true,
+                        ..Default::default()
+                    },
+                })
             }
 
             Type::Enum(e) => self.enum_to_type_lit(e).map(Cow::Owned)?,
@@ -136,7 +144,11 @@ impl Analyzer<'_, '_> {
                     members.extend(self.make_type_el_from_class_member(member)?);
                 }
 
-                Cow::Owned(TypeLit { span: c.span, members })
+                Cow::Owned(TypeLit {
+                    span: c.span,
+                    members,
+                    metadata: TypeLitMetadata { ..Default::default() },
+                })
             }
 
             Type::Intersection(t) => {
@@ -146,7 +158,11 @@ impl Analyzer<'_, '_> {
                     members.extend(opt.into_iter().map(Cow::into_owned).flat_map(|v| v.members));
                 }
 
-                Cow::Owned(TypeLit { span: t.span, members })
+                Cow::Owned(TypeLit {
+                    span: t.span,
+                    members,
+                    metadata: Default::default(),
+                })
             }
 
             Type::Alias(ty) => return self.type_to_type_lit(span, &ty.ty),
@@ -162,6 +178,7 @@ impl Analyzer<'_, '_> {
                 Cow::Owned(TypeLit {
                     span: ty.span,
                     members: vec![el],
+                    metadata: Default::default(),
                 })
             }
 
@@ -173,6 +190,7 @@ impl Analyzer<'_, '_> {
                 Cow::Owned(TypeLit {
                     span: ty.span,
                     members: vec![el],
+                    metadata: Default::default(),
                 })
             }
 
@@ -211,7 +229,11 @@ impl Analyzer<'_, '_> {
                     })),
                 }));
 
-                Cow::Owned(TypeLit { span: ty.span, members })
+                Cow::Owned(TypeLit {
+                    span: ty.span,
+                    members,
+                    metadata: Default::default(),
+                })
             }
 
             _ => {

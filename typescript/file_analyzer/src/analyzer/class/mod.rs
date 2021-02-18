@@ -147,7 +147,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, p: &RPrivateProp) -> ValidationResult<ClassProperty> {
         self.record(p);
 
-        let key = Key::Private(p.key.clone());
+        let key = Key::Private(p.key.clone().into());
 
         let value = self.validate_type_of_class_property(p.span, p.readonly, p.is_static, &p.type_ann, &p.value)?;
 

@@ -421,15 +421,6 @@ impl Analyzer<'_, '_> {
                 return self.assign_inner(&to, rhs, opts);
             }
 
-            Type::Keyword(RTsKeywordType {
-                kind: TsKeywordTypeKind::TsNullKeyword,
-                ..
-            })
-            | Type::Keyword(RTsKeywordType {
-                kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                ..
-            }) => return Ok(()),
-
             _ => {}
         }
 
@@ -793,10 +784,21 @@ impl Analyzer<'_, '_> {
                 if results.iter().any(Result::is_ok) {
                     return Ok(());
                 }
-                return Err(box Error::Errors {
-                    span,
-                    errors: results.into_iter().map(Result::unwrap_err).collect(),
+                let normalized = types.iter().map(|ty| ty.normalize()).any(|ty| match ty {
+                    Type::TypeLit(ty) => ty.metadata.normalized,
+                    _ => false,
                 });
+                let errors = results.into_iter().map(Result::unwrap_err).collect();
+                if normalized {
+                    return Err(box Error::AssignFailed {
+                        span,
+                        cause: errors,
+                        left: box to.clone(),
+                        right: box rhs.clone(),
+                    });
+                } else {
+                    return Err(box Error::Errors { span, errors });
+                }
             }
 
             Type::Intersection(Intersection { ref types, .. }) => {
@@ -990,7 +992,7 @@ impl Analyzer<'_, '_> {
             Type::Interface(Interface {
                 ref body, ref extends, ..
             }) => {
-                self.assign_to_type_elements(opts, span, &body, rhs)
+                self.assign_to_type_elements(opts, span, &body, rhs, Default::default())
                     .context("tried to assign a type to an interface")?;
 
                 let mut errors = vec![];
@@ -1054,9 +1056,11 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
 
-            Type::TypeLit(TypeLit { ref members, .. }) => {
+            Type::TypeLit(TypeLit {
+                ref members, metadata, ..
+            }) => {
                 return self
-                    .assign_to_type_elements(opts, span, &members, rhs)
+                    .assign_to_type_elements(opts, span, &members, rhs, *metadata)
                     .context("tried to assign a type to type elements");
             }
 

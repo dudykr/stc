@@ -24,6 +24,7 @@ use stc_ts_types::PropertySignature;
 use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
+use stc_ts_types::TypeLitMetadata;
 use stc_ts_types::TypeParamDecl;
 use stc_ts_types::Union;
 use std::iter::repeat;
@@ -37,6 +38,7 @@ impl Analyzer<'_, '_> {
             let mut ty = box Type::TypeLit(TypeLit {
                 span: node.span,
                 members: vec![],
+                metadata: Default::default(),
             });
 
             for prop in node.props.iter() {
@@ -50,6 +52,7 @@ impl Analyzer<'_, '_> {
 
 struct ObjectUnionNormalizer<'a, 'b, 'c> {
     anaylzer: &'a mut Analyzer<'b, 'c>,
+    preserve_specified: bool,
 }
 
 impl ObjectUnionNormalizer<'_, '_, '_> {
@@ -74,6 +77,8 @@ impl ObjectUnionNormalizer<'_, '_, '_> {
             Type::Union(u) => u,
             _ => return,
         };
+        let mut inexact = false;
+        let mut prev_specified = false;
 
         let mut new_type_params = FxHashMap::<_, TypeParamDecl>::default();
         let mut new_params = FxHashMap::<_, Vec<_>>::default();
@@ -83,6 +88,9 @@ impl ObjectUnionNormalizer<'_, '_, '_> {
         for (type_idx, ty) in u.types.iter().enumerate() {
             match &**ty {
                 Type::TypeLit(ty) => {
+                    inexact |= ty.metadata.inexact;
+                    prev_specified |= ty.metadata.specified;
+
                     for (i, m) in ty.members.iter().enumerate() {
                         //
                         match m {
@@ -187,7 +195,15 @@ impl ObjectUnionNormalizer<'_, '_, '_> {
             }));
         }
 
-        let new_lit = TypeLit { span: u.span, members };
+        let new_lit = TypeLit {
+            span: u.span,
+            members,
+            metadata: TypeLitMetadata {
+                normalized: true,
+                inexact,
+                specified: self.preserve_specified && prev_specified,
+            },
+        };
 
         if extra_members.is_empty() {
             *ty = Type::TypeLit(new_lit);
@@ -209,12 +225,24 @@ impl ObjectUnionNormalizer<'_, '_, '_> {
     }
 
     fn normalize_keys(&self, u: &mut Union) {
+        if u.types.len() <= 1 {
+            return;
+        }
+
         let keys = self.find_keys(&u.types);
+
+        let inexact = u.types.iter().any(|ty| match ty.normalize() {
+            Type::TypeLit(ty) => ty.metadata.inexact,
+            _ => false,
+        });
 
         // Add properties.
         for ty in u.types.iter_mut() {
             match ty.normalize_mut() {
                 Type::TypeLit(ty) => {
+                    ty.metadata.inexact |= inexact;
+                    ty.metadata.normalized = true;
+
                     for key in &keys {
                         let has_key = ty.members.iter().any(|member| {
                             if let Some(member_key) = member.non_computed_key() {
@@ -279,8 +307,11 @@ impl Analyzer<'_, '_> {
     ///
     /// Type of `a` in the code above is `{ a: number, b?: undefined } | {
     /// a:number, b: string }`.
-    pub(super) fn normalize_union_of_objects(&mut self, ty: &mut Type) {
-        ty.visit_mut_with(&mut ObjectUnionNormalizer { anaylzer: self });
+    pub(super) fn normalize_union_of_objects(&mut self, ty: &mut Type, preserve_specified: bool) {
+        ty.visit_mut_with(&mut ObjectUnionNormalizer {
+            anaylzer: self,
+            preserve_specified,
+        });
     }
 
     fn append_prop_or_spread_to_type(&mut self, to: Box<Type>, prop: &RPropOrSpread) -> ValidationResult {

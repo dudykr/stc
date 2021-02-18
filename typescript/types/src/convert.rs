@@ -35,6 +35,7 @@ use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RLit;
 use stc_ts_ast_rnode::RObjectPat;
 use stc_ts_ast_rnode::RPat;
+use stc_ts_ast_rnode::RPrivateName;
 use stc_ts_ast_rnode::RPropName;
 use stc_ts_ast_rnode::RRestPat;
 use stc_ts_ast_rnode::RTsArrayType;
@@ -753,7 +754,11 @@ impl Key {
                 optional: false,
                 type_ann: None,
             }),
-            Key::Private(name) => box RExpr::PrivateName(name),
+            Key::Private(name) => box RExpr::PrivateName(RPrivateName {
+                span: name.span,
+                node_id: NodeId::invalid(),
+                id: name.id.into(),
+            }),
             Key::Num(n) => box RExpr::Lit(RLit::Num(n)),
             Key::BigInt(i) => box RExpr::Lit(RLit::BigInt(i)),
         }

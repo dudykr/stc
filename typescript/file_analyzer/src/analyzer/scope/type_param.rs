@@ -125,6 +125,7 @@ impl VisitMut<Type> for TypeParamEscapeHandler<'_, '_, '_> {
                     *ty = Type::TypeLit(TypeLit {
                         span: param.span,
                         members: vec![],
+                        metadata: Default::default(),
                     });
                     return;
                 }
