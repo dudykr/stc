@@ -421,15 +421,6 @@ impl Analyzer<'_, '_> {
                 return self.assign_inner(&to, rhs, opts);
             }
 
-            Type::Keyword(RTsKeywordType {
-                kind: TsKeywordTypeKind::TsNullKeyword,
-                ..
-            })
-            | Type::Keyword(RTsKeywordType {
-                kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                ..
-            }) => return Ok(()),
-
             _ => {}
         }
 
