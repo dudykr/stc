@@ -51,7 +51,7 @@ impl Analyzer<'_, '_> {
             let ty = match elem {
                 Some(RExprOrSpread { spread: None, ref expr }) => {
                     let ty = expr.validate_with_default(self)?;
-                    match &*ty {
+                    match &ty {
                         Type::TypeLit(..) => {
                             can_be_tuple = false;
                         }
@@ -89,7 +89,7 @@ impl Analyzer<'_, '_> {
                             elements.push(TupleElement {
                                 span,
                                 label: None,
-                                ty: element_type.clone(),
+                                ty: box element_type.clone(),
                             });
                         }
                         _ => {

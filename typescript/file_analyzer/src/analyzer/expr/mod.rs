@@ -924,7 +924,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         debug_assert_ne!(span, prop.span());
-                        return Ok(box Type::EnumVariant(EnumVariant {
+                        return Ok(Type::EnumVariant(EnumVariant {
                             span: match type_mode {
                                 TypeOfMode::LValue => prop.span(),
                                 TypeOfMode::RValue => span,
@@ -942,7 +942,7 @@ impl Analyzer<'_, '_> {
                                 RExpr::Lit(RLit::Str(..)) | RExpr::Lit(RLit::Num(..)) => true,
                                 _ => false,
                             } {
-                                let new_obj_ty = box Type::Lit(RTsLitType {
+                                let new_obj_ty = Type::Lit(RTsLitType {
                                     node_id: NodeId::invalid(),
                                     span,
                                     lit: match *v.val.clone() {
@@ -954,7 +954,7 @@ impl Analyzer<'_, '_> {
                                 return self.access_property(span, new_obj_ty, prop, type_mode, id_ctx);
                             }
                         }
-                        return Ok(box Type::Keyword(RTsKeywordType {
+                        return Ok(Type::Keyword(RTsKeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsStringKeyword,
                         }));
@@ -970,7 +970,7 @@ impl Analyzer<'_, '_> {
                         // enumBasics.ts says
                         //
                         // Reverse mapping of enum returns string name of property
-                        return Ok(box Type::Keyword(RTsKeywordType {
+                        return Ok(Type::Keyword(RTsKeywordType {
                             span: prop.span(),
                             kind: TsKeywordTypeKind::TsStringKeyword,
                         }));
@@ -998,7 +998,7 @@ impl Analyzer<'_, '_> {
                                         RExpr::Lit(RLit::Str(..)) | RExpr::Lit(RLit::Num(..)) => true,
                                         _ => false,
                                     } {
-                                        let new_obj_ty = box Type::Lit(RTsLitType {
+                                        let new_obj_ty = Type::Lit(RTsLitType {
                                             node_id: NodeId::invalid(),
                                             span: *span,
                                             lit: match *v.val.clone() {
@@ -1031,14 +1031,14 @@ impl Analyzer<'_, '_> {
                             //
                             if class_prop.key.type_eq(prop) {
                                 return Ok(match class_prop.value {
-                                    Some(ref ty) => ty.clone(),
+                                    Some(ref ty) => *ty.clone(),
                                     None => Type::any(span),
                                 });
                             }
                         }
                         ty::ClassMember::Method(ref mtd) => {
                             if mtd.key.type_eq(prop) {
-                                return Ok(box Type::Function(stc_ts_types::Function {
+                                return Ok(Type::Function(stc_ts_types::Function {
                                     span: mtd.span,
                                     type_params: mtd.type_params.clone(),
                                     params: mtd.params.clone(),
@@ -1049,7 +1049,7 @@ impl Analyzer<'_, '_> {
 
                         ty::ClassMember::Constructor(ref cons) => {
                             if prop == "constructor" {
-                                return Ok(box Type::Constructor(ty::Constructor {
+                                return Ok(Type::Constructor(ty::Constructor {
                                     span,
                                     type_params: cons.type_params.clone(),
                                     params: cons.params.clone(),
@@ -1072,7 +1072,7 @@ impl Analyzer<'_, '_> {
                     };
                     let super_ty = self
                         .with_ctx(ctx)
-                        .expand_fully(span, box super_ty.normalize().clone(), true)?;
+                        .expand_fully(span, super_ty.normalize().clone(), true)?;
                     if let Ok(v) = self.access_property(span, super_ty, prop, type_mode, id_ctx) {
                         return Ok(v);
                     }
@@ -1101,7 +1101,7 @@ impl Analyzer<'_, '_> {
                             };
                             if let Ok(ty) =
                                 self.with_ctx(ctx)
-                                    .access_property(span, constraint.clone(), prop, type_mode, id_ctx)
+                                    .access_property(span, *constraint.clone(), prop, type_mode, id_ctx)
                             {
                                 return Ok(ty);
                             }
