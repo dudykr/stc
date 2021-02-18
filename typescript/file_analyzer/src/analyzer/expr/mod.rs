@@ -121,7 +121,7 @@ impl Analyzer<'_, '_> {
             _ => false,
         };
 
-        let mut ty = (|| {
+        let mut ty = (|| -> ValidationResult {
             match e {
                 // super() returns any
                 RExpr::Call(RCallExpr {
@@ -144,7 +144,7 @@ impl Analyzer<'_, '_> {
 
                 RExpr::This(RThisExpr { span, .. }) => {
                     if !self.scope.is_this_defined() {
-                        return Ok(box Type::Keyword(RTsKeywordType {
+                        return Ok(Type::Keyword(RTsKeywordType {
                             span: *span,
                             kind: TsKeywordTypeKind::TsUndefinedKeyword,
                         }));
@@ -153,12 +153,12 @@ impl Analyzer<'_, '_> {
                     if let Some(ty) = self.scope.this() {
                         return Ok(ty.into_owned());
                     }
-                    return Ok(box Type::from(RTsThisType { span }));
+                    return Ok(Type::from(RTsThisType { span }));
                 }
 
                 RExpr::Ident(ref i) => {
                     if i.sym == js_word!("undefined") {
-                        return Ok(box Type::Keyword(RTsKeywordType {
+                        return Ok(Type::Keyword(RTsKeywordType {
                             span: i.span.with_ctxt(SyntaxContext::empty()),
                             kind: TsKeywordTypeKind::TsUndefinedKeyword,
                         }));

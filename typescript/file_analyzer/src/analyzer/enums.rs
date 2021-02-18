@@ -445,12 +445,12 @@ impl Analyzer<'_, '_> {
 
         for m in &e.members {
             match &*m.val {
-                RExpr::Lit(RLit::Str(lit)) => values.push(box Type::Lit(RTsLitType {
+                RExpr::Lit(RLit::Str(lit)) => values.push(Type::Lit(RTsLitType {
                     node_id: NodeId::invalid(),
                     span: m.span,
                     lit: RTsLit::Str(lit.clone()),
                 })),
-                RExpr::Lit(RLit::Num(lit)) => values.push(box Type::Lit(RTsLitType {
+                RExpr::Lit(RLit::Num(lit)) => values.push(Type::Lit(RTsLitType {
                     node_id: NodeId::invalid(),
                     span: m.span,
                     lit: RTsLit::Number(lit.clone()),
@@ -479,7 +479,7 @@ impl Analyzer<'_, '_> {
                             }) {
                                 match *v.val {
                                     RExpr::Lit(RLit::Str(..)) | RExpr::Lit(RLit::Num(..)) => {
-                                        return Ok(box Type::Lit(RTsLitType {
+                                        return Ok(Type::Lit(RTsLitType {
                                             node_id: NodeId::invalid(),
                                             span: v.span,
                                             lit: match *v.val.clone() {
