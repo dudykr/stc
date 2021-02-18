@@ -42,7 +42,7 @@ impl Analyzer<'_, '_> {
             .infer_type(span, &mut inferred, &param, &arg)
             .context("tried to infer type using two type")?;
 
-        self.cleanup_inferred(&mut inferred);
+        self.finalize_inference(&mut inferred);
 
         Ok(inferred.type_params)
     }
@@ -322,7 +322,7 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    pub(super) fn cleanup_inferred(&self, inferred: &mut InferData) {
+    pub(super) fn finalize_inference(&self, inferred: &mut InferData) {
         for (k, v) in inferred.type_params.iter_mut() {
             self.replace_null_or_undefined_while_defaulting_to_any(&mut **v);
         }
