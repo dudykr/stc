@@ -744,7 +744,7 @@ impl Analyzer<'_, '_> {
 
         if let Some(v) = self.extends(span, orig_ty, &ty) {
             if v {
-                return Ok(box orig_ty.clone());
+                return Ok(orig_ty.clone());
             } else {
                 if !self
                     .has_overlap(span, orig_ty, &ty)
@@ -999,13 +999,17 @@ impl Analyzer<'_, '_> {
                     }),
                 ..
             }) => {
-                self.storage
-                    .report(Error::InvalidRhsInInstanceOf { span, ty: ty.clone() });
+                self.storage.report(Error::InvalidRhsInInstanceOf {
+                    span,
+                    ty: box ty.clone(),
+                });
             }
 
             Type::TypeLit(e) if e.members.is_empty() => {
-                self.storage
-                    .report(Error::InvalidRhsInInstanceOf { span, ty: ty.clone() });
+                self.storage.report(Error::InvalidRhsInInstanceOf {
+                    span,
+                    ty: box ty.clone(),
+                });
             }
 
             // Ok
@@ -1028,8 +1032,10 @@ impl Analyzer<'_, '_> {
                     &ty,
                     span,
                 ) {
-                    self.storage
-                        .report(Error::InvalidRhsInInstanceOf { span, ty: ty.clone() });
+                    self.storage.report(Error::InvalidRhsInInstanceOf {
+                        span,
+                        ty: box ty.clone(),
+                    });
                 }
             }
 
@@ -1062,7 +1068,7 @@ impl Analyzer<'_, '_> {
                         Type::Keyword(RTsKeywordType {
                             kind: TsKeywordTypeKind::TsVoidKeyword,
                             ..
-                        }) => errors.push(box Error::TS1345 { span }),
+                        }) => errors.push(Error::TS1345 { span }),
                         _ => {}
                     }
                 }
@@ -1106,9 +1112,9 @@ impl Analyzer<'_, '_> {
                             }
 
                             _ => errors.push(if is_left {
-                                box Error::TS2362 { span: ty.span() }
+                                Error::TS2362 { span: ty.span() }
                             } else {
-                                box Error::TS2363 { span: ty.span() }
+                                Error::TS2363 { span: ty.span() }
                             }),
                         }
                     };
@@ -1135,7 +1141,7 @@ impl Analyzer<'_, '_> {
                             _ => false,
                         }
                     {
-                        errors.push(box Error::TS2447 { span });
+                        errors.push(Error::TS2447 { span });
                     } else {
                         check(&lt, true);
                         check(&rt, false);
@@ -1162,7 +1168,7 @@ impl Analyzer<'_, '_> {
 
                         ty => {
                             if !self.is_valid_lhs_of_in(&ty) {
-                                errors.push(box Error::TS2360 { span: ls });
+                                errors.push(Error::TS2360 { span: ls });
                             }
                         }
                     }
@@ -1186,7 +1192,7 @@ impl Analyzer<'_, '_> {
 
                         _ => {
                             if !self.is_valid_rhs_of_in(&rt.unwrap()) {
-                                errors.push(box Error::TS2361 { span: rs })
+                                errors.push(Error::TS2361 { span: rs })
                             }
                         }
                     }
