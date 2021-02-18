@@ -458,7 +458,7 @@ impl Analyzer<'_, '_> {
             for (kwd, interface) in special_cases {
                 let rhs = rhs.clone().generalize_lit();
                 match to {
-                    Type::Keyword(k) if k.kind == *kwd => match *rhs {
+                    Type::Keyword(k) if k.kind == *kwd => match rhs {
                         Type::Interface(ref i) => {
                             if i.name.as_str() == *interface {
                                 return Err(Error::AssignedWrapperToPrimitive { span });
@@ -466,7 +466,7 @@ impl Analyzer<'_, '_> {
                         }
                         _ => {}
                     },
-                    Type::Interface(ref i) if i.name.as_str() == *interface => match *rhs {
+                    Type::Interface(ref i) if i.name.as_str() == *interface => match rhs {
                         Type::Keyword(ref k) if k.kind == *kwd => return Ok(()),
                         _ => {}
                     },

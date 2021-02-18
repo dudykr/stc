@@ -287,7 +287,7 @@ impl Analyzer<'_, '_> {
                     .flatten()
                     .flatten()
                 {
-                    Some(ty) => ty,
+                    Some(ty) => box ty,
                     None => {
                         let e: Option<_> = $e.validate_with(self).try_opt()?;
                         box e.unwrap_or_else(|| {
