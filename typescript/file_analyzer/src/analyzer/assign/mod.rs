@@ -786,22 +786,18 @@ impl Analyzer<'_, '_> {
 
             // let a: string | number = 'string';
             Type::Union(Union { ref types, .. }) => {
-                let normalized = types.iter().map(|ty| ty.normalize()).any(|ty| match ty {
-                    Type::TypeLit(ty) => ty.metadata.normalized,
-                    _ => false,
-                });
-
                 let results = types
                     .iter()
                     .map(|to| self.assign_inner(&to, rhs, opts))
                     .collect::<Vec<_>>();
-                if !normalized && results.iter().any(Result::is_ok) {
+                if results.iter().any(Result::is_ok) {
                     return Ok(());
                 }
-                if results.iter().all(Result::is_ok) {
-                    return Ok(());
-                }
-                let errors = results.into_iter().filter_map(Result::err).collect();
+                let normalized = types.iter().map(|ty| ty.normalize()).any(|ty| match ty {
+                    Type::TypeLit(ty) => ty.metadata.normalized,
+                    _ => false,
+                });
+                let errors = results.into_iter().map(Result::unwrap_err).collect();
                 if normalized {
                     return Err(box Error::AssignFailed {
                         span,
