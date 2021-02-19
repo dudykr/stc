@@ -242,12 +242,12 @@ pub enum Error {
 
     TupleAssignError {
         span: Span,
-        errors: Vec<Box<Error>>,
+        errors: Vec<Error>,
     },
 
     Errors {
         span: Span,
-        errors: Vec<Box<Error>>,
+        errors: Vec<Error>,
     },
 
     RedeclaredVarWithDifferentType {
@@ -369,12 +369,12 @@ pub enum Error {
         span: Span,
         left: Box<Type>,
         right: Box<Type>,
-        cause: Vec<Box<Error>>,
+        cause: Vec<Error>,
     },
 
     ObjectAssignFailed {
         span: Span,
-        errors: Vec<Box<Error>>,
+        errors: Vec<Error>,
     },
 
     SimpleAssignFailed {
@@ -388,7 +388,7 @@ pub enum Error {
     /// a or b or c
     UnionError {
         span: Span,
-        errors: Vec<Box<Error>>,
+        errors: Vec<Error>,
     },
 
     IntersectionError {
@@ -723,7 +723,7 @@ impl Error {
             Error::Errors { span, errors } => {
                 let mut new = Vec::with_capacity(errors.capacity());
                 for err in errors {
-                    new.push(box err.convert_all_inner(op));
+                    new.push(err.convert_all_inner(op));
                 }
 
                 Error::Errors { span, errors: new }
@@ -783,9 +783,9 @@ impl Debug for DebugContext {
 
 impl Error {
     #[track_caller]
-    pub fn context(self, context: impl Display) -> Box<Self> {
+    pub fn context(self, context: impl Display) -> Self {
         if !cfg!(debug_assertions) {
-            return box self;
+            return self;
         }
 
         match self {
@@ -797,7 +797,7 @@ impl Error {
             }
         }
 
-        box Error::DebugContext(DebugContext {
+        Error::DebugContext(DebugContext {
             span: self.span(),
             context: context.to_string(),
             inner: box self,
@@ -977,21 +977,21 @@ impl Error {
     }
 
     #[cold]
-    pub fn flatten(vec: Vec<Box<Error>>) -> Vec<Box<Error>> {
+    pub fn flatten(vec: Vec<Error>) -> Vec<Error> {
         let mut buf = Vec::with_capacity(vec.len());
 
         for e in vec {
-            match *e {
+            match e {
                 Error::Errors { errors, .. } | Error::TupleAssignError { errors, .. } => {
                     buf.extend(Self::flatten(errors))
                 }
                 Error::DebugContext(DebugContext { inner, context, .. }) => {
                     //
-                    buf.extend(Self::flatten(vec![inner]).into_iter().map(|inner| {
-                        box Error::DebugContext(DebugContext {
+                    buf.extend(Self::flatten(vec![*inner]).into_iter().map(|inner| {
+                        Error::DebugContext(DebugContext {
                             span: inner.span(),
                             context: context.clone(),
-                            inner,
+                            inner: box inner,
                         })
                     }))
                 }
@@ -1003,9 +1003,9 @@ impl Error {
     }
 }
 
-impl From<Vec<Box<Error>>> for Error {
+impl From<Vec<Error>> for Error {
     #[inline]
-    fn from(errors: Vec<Box<Error>>) -> Self {
+    fn from(errors: Vec<Error>) -> Self {
         Error::Errors { span: DUMMY_SP, errors }
     }
 }
@@ -1017,18 +1017,11 @@ impl From<Errors> for Error {
     }
 }
 
-impl From<Errors> for Box<Error> {
-    #[inline]
-    fn from(errors: Errors) -> Self {
-        box errors.into()
-    }
-}
-
 /// A utility type to track
 #[derive(Debug, Clone, Default, PartialEq)]
-pub struct Errors(Vec<Box<Error>>);
+pub struct Errors(Vec<Error>);
 
-impl From<Errors> for Vec<Box<Error>> {
+impl From<Errors> for Vec<Error> {
     #[inline]
     fn from(e: Errors) -> Self {
         e.0
@@ -1036,8 +1029,8 @@ impl From<Errors> for Vec<Box<Error>> {
 }
 
 impl IntoIterator for Errors {
-    type Item = Box<Error>;
-    type IntoIter = <Vec<Box<Error>> as IntoIterator>::IntoIter;
+    type Item = Error;
+    type IntoIter = <Vec<Error> as IntoIterator>::IntoIter;
 
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
@@ -1057,7 +1050,7 @@ impl Errors {
     }
 
     #[inline]
-    pub fn push(&mut self, err: Box<Error>) {
+    pub fn push(&mut self, err: Error) {
         self.validate(&err);
 
         self.0.push(err);
@@ -1069,7 +1062,7 @@ impl Errors {
     }
 
     #[inline]
-    pub fn append(&mut self, other: &mut Vec<Box<Error>>) {
+    pub fn append(&mut self, other: &mut Vec<Error>) {
         for err in &*other {
             self.validate(err)
         }
@@ -1083,9 +1076,9 @@ impl Errors {
     }
 }
 
-impl Extend<Box<Error>> for Errors {
+impl Extend<Error> for Errors {
     #[inline]
-    fn extend<T: IntoIterator<Item = Box<Error>>>(&mut self, iter: T) {
+    fn extend<T: IntoIterator<Item = Error>>(&mut self, iter: T) {
         if cfg!(debug_assertions) {
             for err in iter {
                 self.push(err)

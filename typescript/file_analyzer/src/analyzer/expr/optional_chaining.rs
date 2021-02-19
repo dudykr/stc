@@ -20,7 +20,7 @@ impl Analyzer<'_, '_> {
             RExpr::Member(me) => {
                 let prop = self.validate_key(&me.prop, me.computed)?;
                 let obj = me.obj.validate_with(self)?;
-                let mut obj = box obj.remove_falsy();
+                let mut obj = obj.remove_falsy();
 
                 if obj.normalize().is_ref_type() {
                     let ctx = Ctx {

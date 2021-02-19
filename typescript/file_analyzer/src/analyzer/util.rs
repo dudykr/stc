@@ -26,19 +26,19 @@ impl Analyzer<'_, '_> {
         span: Span,
         callee: &Type,
         elements: &[TypeElement],
-    ) -> ValidationResult<Box<Type>> {
+    ) -> ValidationResult<Type> {
         for member in elements {
             match member {
                 TypeElement::Constructor(c) => {
                     if let Some(ty) = &c.ret_ty {
-                        return Ok(ty.clone());
+                        return Ok(*ty.clone());
                     }
                 }
                 _ => continue,
             }
         }
 
-        Err(box Error::NoNewSignature {
+        Err(Error::NoNewSignature {
             span,
             callee: box callee.clone(),
         })
@@ -49,7 +49,7 @@ impl Analyzer<'_, '_> {
     ///
     ///
     /// TODO: Use Cow
-    pub(super) fn make_instance_or_report(&mut self, span: Span, ty: &Type) -> Box<Type> {
+    pub(super) fn make_instance_or_report(&mut self, span: Span, ty: &Type) -> Type {
         if span.is_dummy() {
             panic!("Cannot make an instance with dummy span")
         }
@@ -59,7 +59,7 @@ impl Analyzer<'_, '_> {
             Ok(ty) => ty,
             Err(err) => {
                 self.storage.report(err);
-                box ty.clone()
+                ty.clone()
             }
         }
     }
@@ -69,11 +69,11 @@ impl Analyzer<'_, '_> {
         let ty = ty.normalize();
 
         if ty.is_any() {
-            return Ok(box ty.clone());
+            return Ok(ty.clone());
         }
 
         if ty.is_kwd(TsKeywordTypeKind::TsNullKeyword) || ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
-            return Ok(box ty.clone());
+            return Ok(ty.clone());
         }
 
         match ty {
@@ -83,9 +83,7 @@ impl Analyzer<'_, '_> {
                     ignore_expand_prevention_for_top: true,
                     ..self.ctx
                 };
-                let ty = self
-                    .with_ctx(ctx)
-                    .expand_fully(span, box ty.normalize().clone(), false)?;
+                let ty = self.with_ctx(ctx).expand_fully(span, ty.normalize().clone(), false)?;
 
                 match ty.normalize() {
                     Type::Ref(..) => return Ok(ty.clone()),
@@ -116,7 +114,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Class(..) => {
-                return Ok(box Type::ClassInstance(ClassInstance {
+                return Ok(Type::ClassInstance(ClassInstance {
                     span,
                     ty: box ty.clone(),
                     type_args: None,
@@ -126,30 +124,30 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        Err(box Error::NoNewSignature {
+        Err(Error::NoNewSignature {
             span,
             callee: box ty.clone(),
         })
     }
 }
 
-pub(crate) fn instantiate_class(module_id: ModuleId, ty: Box<Type>) -> Box<Type> {
+pub(crate) fn instantiate_class(module_id: ModuleId, ty: Type) -> Type {
     let span = ty.span();
 
     match *ty.normalize() {
-        Type::Tuple(Tuple { ref elems, span }) => box Type::Tuple(Tuple {
+        Type::Tuple(Tuple { ref elems, span }) => Type::Tuple(Tuple {
             span,
             elems: elems
                 .iter()
                 .cloned()
                 .map(|mut element| {
                     // TODO: Remove clone
-                    element.ty = instantiate_class(module_id, element.ty);
+                    element.ty = box instantiate_class(module_id, *element.ty);
                     element
                 })
                 .collect(),
         }),
-        Type::Class(ref cls) => box Type::ClassInstance(ClassInstance {
+        Type::Class(ref cls) => Type::ClassInstance(ClassInstance {
             // TODO
             span,
 
@@ -167,13 +165,13 @@ pub(crate) fn instantiate_class(module_id: ModuleId, ty: Box<Type>) -> Box<Type>
                 .map(|ty| instantiate_class(module_id, ty.clone()))
                 .collect();
 
-            box Type::Intersection(Intersection { span: i.span, types })
+            Type::Intersection(Intersection { span: i.span, types })
         }
 
         Type::Query(QueryType {
             span,
             expr: box QueryExpr::TsEntityName(ref type_name),
-        }) => box Type::Ref(Ref {
+        }) => Type::Ref(Ref {
             span,
             ctxt: module_id,
             type_name: type_name.clone(),
@@ -220,7 +218,7 @@ impl Fold<Type> for Generalizer {
         ty = ty.fold_children_with(self);
         self.force = old;
 
-        *ty.generalize_lit()
+        ty.generalize_lit()
     }
 }
 
@@ -241,10 +239,10 @@ impl Analyzer<'_, '_> {
     //    }
 }
 
-pub trait ResultExt<T>: Into<Result<T, Box<Error>>> {
+pub trait ResultExt<T>: Into<Result<T, Error>> {
     fn store<V>(self, to: &mut V) -> Option<T>
     where
-        V: Extend<Box<Error>>,
+        V: Extend<Error>,
     {
         match self.into() {
             Ok(val) => Some(val),
@@ -266,7 +264,7 @@ pub trait ResultExt<T>: Into<Result<T, Box<Error>>> {
     }
 }
 
-impl<T> ResultExt<T> for Result<T, Box<Error>> {}
+impl<T> ResultExt<T> for Result<T, Error> {}
 
 /// Simple utility to check (l, r) and (r, l) with same code.
 #[derive(Debug, Clone, Copy)]

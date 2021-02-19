@@ -13,17 +13,17 @@ impl Fold<Type> for TupleToArray {
 
         match ty {
             Type::Tuple(tuple) => {
-                let mut types: Vec<Box<Type>> = vec![];
+                let mut types: Vec<Type> = vec![];
 
                 for element in tuple.elems {
                     if types.iter().any(|item| item.type_eq(&element.ty)) {
                         continue;
                     }
 
-                    types.push(element.ty);
+                    types.push(*element.ty);
                 }
 
-                let elem_type = Type::union(types);
+                let elem_type = box Type::union(types);
                 return Type::Array(Array { span, elem_type });
             }
 

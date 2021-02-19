@@ -39,9 +39,9 @@ impl Analyzer<'_, '_> {
                     lit: RTsLit::Bool(..), ..
                 })
                 | Type::TypeLit(..)
-                | Type::Array(..) => Err(box Error::TypeInvalidForUpdateArg { span: e.arg.span() }),
+                | Type::Array(..) => Err(Error::TypeInvalidForUpdateArg { span: e.arg.span() }),
 
-                Type::Enum(..) => Err(box Error::CannotAssignToNonVariable { span: e.arg.span() }),
+                Type::Enum(..) => Err(Error::CannotAssignToNonVariable { span: e.arg.span() }),
 
                 Type::Lit(RTsLitType {
                     lit: RTsLit::Number(..),
@@ -53,7 +53,7 @@ impl Analyzer<'_, '_> {
                 }) => {
                     match &*e.arg {
                         RExpr::Lit(RLit::Num(..)) | RExpr::Call(..) | RExpr::Paren(..) | RExpr::Bin(..) => {
-                            self.storage.report(box Error::ExprInvalidForUpdateArg { span });
+                            self.storage.report(Error::ExprInvalidForUpdateArg { span });
                         }
                         _ => {}
                     }
@@ -66,14 +66,14 @@ impl Analyzer<'_, '_> {
 
         if let Some(ty) = ty {
             if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) {
-                self.storage.report(box Error::UpdateOpToSymbol {
+                self.storage.report(Error::UpdateOpToSymbol {
                     span: e.arg.span(),
                     op: e.op,
                 })
             }
         }
 
-        Ok(box Type::Keyword(RTsKeywordType {
+        Ok(Type::Keyword(RTsKeywordType {
             kind: TsKeywordTypeKind::TsNumberKeyword,
             span,
         }))

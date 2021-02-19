@@ -103,7 +103,7 @@ impl Analyzer<'_, '_> {
                 value: true,
             }),
         });
-        self.check_for_inifinite_loop(test.as_ref().map(|v| &**v).unwrap_or(&always_true), &node.body);
+        self.check_for_inifinite_loop(test.as_ref().unwrap_or(&always_true), &node.body);
 
         node.update.visit_with(self);
         node.body.validate_with(self)?;

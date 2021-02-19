@@ -39,7 +39,7 @@ mod type_facts;
 pub mod util;
 pub mod validator;
 
-pub type ValidationResult<T = Box<Type>> = Result<T, Box<Error>>;
+pub type ValidationResult<T = Type> = Result<T, Error>;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct DepInfo {

@@ -101,7 +101,7 @@ impl Analyzer<'_, '_> {
                     span, optional: true, ..
                 }) => self
                     .storage
-                    .report(box Error::OptionalBindingPatternInImplSignature { span: *span }),
+                    .report(Error::OptionalBindingPatternInImplSignature { span: *span }),
                 _ => {}
             }
         }
@@ -194,17 +194,17 @@ impl Analyzer<'_, '_> {
                     .get_ty()
                     .map(|v| v.validate_with(self))
                     .unwrap_or_else(|| {
-                        let mut ty = default_value_ty.generalize_lit();
+                        let mut ty = default_value_ty.generalize_lit().foldable();
 
-                        match *ty {
+                        match ty {
                             Type::Tuple(tuple) => {
-                                let mut types = tuple.elems.into_iter().map(|element| element.ty).collect::<Vec<_>>();
+                                let mut types = tuple.elems.into_iter().map(|element| *element.ty).collect::<Vec<_>>();
 
                                 types.dedup_type();
 
-                                ty = box Type::Array(Array {
+                                ty = Type::Array(Array {
                                     span: tuple.span,
-                                    elem_type: Type::union(types),
+                                    elem_type: box Type::union(types),
                                 });
                             }
                             _ => {}
@@ -265,7 +265,7 @@ impl Analyzer<'_, '_> {
                 RPat::Rest(..) => false,
                 _ => true,
             },
-            ty,
+            ty: box ty,
         })
     }
 }
@@ -346,7 +346,7 @@ impl Analyzer<'_, '_> {
                                         }
                                     }
 
-                                    self.storage.report(box Error::TS2353 { span: prop.span() })
+                                    self.storage.report(Error::TS2353 { span: prop.span() })
                                 }
                                 _ => {}
                             }

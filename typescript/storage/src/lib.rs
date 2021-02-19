@@ -25,22 +25,22 @@ pub struct Info {
 pub type Storage<'b> = Box<dyn 'b + Mode>;
 
 pub trait ErrorStore {
-    fn report(&mut self, err: Box<Error>);
+    fn report(&mut self, err: Error);
     fn report_all(&mut self, err: Errors);
     fn take_errors(&mut self) -> Errors;
 }
 pub trait TypeStore: Send + Sync {
-    fn get_local_type(&self, ctxt: ModuleId, id: Id) -> Option<Box<Type>>;
-    fn get_local_var(&self, ctxt: ModuleId, id: Id) -> Option<Box<Type>>;
+    fn get_local_type(&self, ctxt: ModuleId, id: Id) -> Option<Type>;
+    fn get_local_var(&self, ctxt: ModuleId, id: Id) -> Option<Type>;
 
-    fn store_private_type(&mut self, ctxt: ModuleId, id: Id, ty: Box<Type>);
-    fn store_private_var(&mut self, ctxt: ModuleId, id: Id, ty: Box<Type>);
+    fn store_private_type(&mut self, ctxt: ModuleId, id: Id, ty: Type);
+    fn store_private_var(&mut self, ctxt: ModuleId, id: Id, ty: Type);
 
     fn export_type(&mut self, span: Span, ctxt: ModuleId, id: Id);
     fn export_var(&mut self, span: Span, ctxt: ModuleId, id: Id);
 
-    fn reexport_type(&mut self, span: Span, ctxt: ModuleId, id: JsWord, ty: Box<Type>);
-    fn reexport_var(&mut self, span: Span, ctxt: ModuleId, id: JsWord, ty: Box<Type>);
+    fn reexport_type(&mut self, span: Span, ctxt: ModuleId, id: JsWord, ty: Type);
+    fn reexport_var(&mut self, span: Span, ctxt: ModuleId, id: JsWord, ty: Type);
 
     fn take_info(&mut self, ctxt: ModuleId) -> ModuleTypeData;
 }
@@ -67,7 +67,7 @@ impl<'a, T> ErrorStore for &'a mut T
 where
     T: ErrorStore,
 {
-    fn report(&mut self, err: Box<Error>) {
+    fn report(&mut self, err: Error) {
         (**self).report(err);
     }
 
@@ -84,19 +84,19 @@ impl<'a, T> TypeStore for &'a mut T
 where
     T: TypeStore,
 {
-    fn get_local_type(&self, ctxt: ModuleId, id: Id) -> Option<Box<Type>> {
+    fn get_local_type(&self, ctxt: ModuleId, id: Id) -> Option<Type> {
         (**self).get_local_type(ctxt, id)
     }
 
-    fn get_local_var(&self, ctxt: ModuleId, id: Id) -> Option<Box<Type>> {
+    fn get_local_var(&self, ctxt: ModuleId, id: Id) -> Option<Type> {
         (**self).get_local_var(ctxt, id)
     }
 
-    fn store_private_type(&mut self, ctxt: ModuleId, id: Id, ty: Box<Type>) {
+    fn store_private_type(&mut self, ctxt: ModuleId, id: Id, ty: Type) {
         (**self).store_private_type(ctxt, id, ty)
     }
 
-    fn store_private_var(&mut self, ctxt: ModuleId, id: Id, ty: Box<Type>) {
+    fn store_private_var(&mut self, ctxt: ModuleId, id: Id, ty: Type) {
         (**self).store_private_var(ctxt, id, ty)
     }
 
@@ -112,11 +112,11 @@ where
         (**self).take_info(ctxt)
     }
 
-    fn reexport_type(&mut self, span: Span, ctxt: ModuleId, id: JsWord, ty: Box<Type>) {
+    fn reexport_type(&mut self, span: Span, ctxt: ModuleId, id: JsWord, ty: Type) {
         (**self).reexport_type(span, ctxt, id, ty)
     }
 
-    fn reexport_var(&mut self, span: Span, ctxt: ModuleId, id: JsWord, ty: Box<Type>) {
+    fn reexport_var(&mut self, span: Span, ctxt: ModuleId, id: JsWord, ty: Type) {
         (**self).reexport_var(span, ctxt, id, ty)
     }
 }
@@ -147,7 +147,7 @@ pub struct Single<'a> {
 }
 
 impl ErrorStore for Single<'_> {
-    fn report(&mut self, err: Box<Error>) {
+    fn report(&mut self, err: Error) {
         self.info.errors.push(err);
     }
 
@@ -161,13 +161,13 @@ impl ErrorStore for Single<'_> {
 }
 
 impl TypeStore for Single<'_> {
-    fn store_private_type(&mut self, ctxt: ModuleId, id: Id, ty: Box<Type>) {
+    fn store_private_type(&mut self, ctxt: ModuleId, id: Id, ty: Type) {
         debug_assert_eq!(ctxt, self.id);
 
         self.info.exports.private_types.entry(id).or_default().push(ty);
     }
 
-    fn store_private_var(&mut self, ctxt: ModuleId, id: Id, ty: Box<Type>) {
+    fn store_private_var(&mut self, ctxt: ModuleId, id: Id, ty: Type) {
         debug_assert_eq!(ctxt, self.id);
 
         match self.info.exports.private_vars.entry(id) {
@@ -192,7 +192,7 @@ impl TypeStore for Single<'_> {
                 Some(..) => {}
                 None => {}
             },
-            None => self.report(box Error::NoSuchVar { span, name: id }),
+            None => self.report(Error::NoSuchVar { span, name: id }),
         }
     }
 
@@ -203,11 +203,11 @@ impl TypeStore for Single<'_> {
             Some(ty) => {
                 *self.info.exports.types.entry(id.sym().clone()).or_default() = ty.clone();
             }
-            None => self.report(box Error::NoSuchVar { span, name: id }),
+            None => self.report(Error::NoSuchVar { span, name: id }),
         }
     }
 
-    fn get_local_type(&self, ctxt: ModuleId, id: Id) -> Option<Box<Type>> {
+    fn get_local_type(&self, ctxt: ModuleId, id: Id) -> Option<Type> {
         debug_assert_eq!(ctxt, self.id);
         let ty = self
             .info
@@ -222,7 +222,7 @@ impl TypeStore for Single<'_> {
         }
     }
 
-    fn get_local_var(&self, ctxt: ModuleId, id: Id) -> Option<Box<Type>> {
+    fn get_local_var(&self, ctxt: ModuleId, id: Id) -> Option<Type> {
         debug_assert_eq!(ctxt, self.id);
 
         match self.info.exports.private_vars.get(&id) {
@@ -236,12 +236,12 @@ impl TypeStore for Single<'_> {
         take(&mut self.info.exports)
     }
 
-    fn reexport_type(&mut self, _span: Span, ctxt: ModuleId, id: JsWord, ty: Box<Type>) {
+    fn reexport_type(&mut self, _span: Span, ctxt: ModuleId, id: JsWord, ty: Type) {
         debug_assert_eq!(ctxt, self.id);
         self.info.exports.types.entry(id).or_default().push(ty);
     }
 
-    fn reexport_var(&mut self, _span: Span, ctxt: ModuleId, id: JsWord, ty: Box<Type>) {
+    fn reexport_var(&mut self, _span: Span, ctxt: ModuleId, id: JsWord, ty: Type) {
         debug_assert_eq!(ctxt, self.id);
         // TODO: error reporting for duplicate
         self.info.exports.vars.insert(id, ty);
@@ -284,7 +284,7 @@ pub struct Group<'a> {
 }
 
 impl ErrorStore for Group<'_> {
-    fn report(&mut self, err: Box<Error>) {
+    fn report(&mut self, err: Error) {
         self.errors.push(err);
     }
 
@@ -298,7 +298,7 @@ impl ErrorStore for Group<'_> {
 }
 
 impl TypeStore for Group<'_> {
-    fn store_private_type(&mut self, ctxt: ModuleId, id: Id, ty: Box<Type>) {
+    fn store_private_type(&mut self, ctxt: ModuleId, id: Id, ty: Type) {
         self.info
             .entry(ctxt)
             .or_default()
@@ -308,7 +308,7 @@ impl TypeStore for Group<'_> {
             .push(ty);
     }
 
-    fn store_private_var(&mut self, ctxt: ModuleId, id: Id, ty: Box<Type>) {
+    fn store_private_var(&mut self, ctxt: ModuleId, id: Id, ty: Type) {
         let map = self.info.entry(ctxt).or_default();
 
         match map.private_vars.entry(id) {
@@ -328,7 +328,7 @@ impl TypeStore for Group<'_> {
             Some(v) => {
                 e.vars.insert(id.sym().clone(), v.clone());
             }
-            None => self.report(box Error::NoSuchVar { span, name: id }),
+            None => self.report(Error::NoSuchVar { span, name: id }),
         }
     }
 
@@ -338,11 +338,11 @@ impl TypeStore for Group<'_> {
             Some(v) => {
                 e.types.insert(id.sym().clone(), v.clone());
             }
-            None => self.report(box Error::NoSuchType { span, name: id }),
+            None => self.report(Error::NoSuchType { span, name: id }),
         }
     }
 
-    fn get_local_type(&self, ctxt: ModuleId, id: Id) -> Option<Box<Type>> {
+    fn get_local_type(&self, ctxt: ModuleId, id: Id) -> Option<Type> {
         let ty = self
             .info
             .get(&ctxt)?
@@ -355,7 +355,7 @@ impl TypeStore for Group<'_> {
         }
     }
 
-    fn get_local_var(&self, ctxt: ModuleId, id: Id) -> Option<Box<Type>> {
+    fn get_local_var(&self, ctxt: ModuleId, id: Id) -> Option<Type> {
         match self.info.get(&ctxt)?.private_vars.get(&id).cloned() {
             Some(ty) => Some(ty),
             None => self.parent?.get_local_var(ctxt, id),
@@ -366,11 +366,11 @@ impl TypeStore for Group<'_> {
         self.info.remove(&ctxt).unwrap_or_default()
     }
 
-    fn reexport_type(&mut self, _span: Span, ctxt: ModuleId, id: JsWord, ty: Box<Type>) {
+    fn reexport_type(&mut self, _span: Span, ctxt: ModuleId, id: JsWord, ty: Type) {
         self.info.entry(ctxt).or_default().types.entry(id).or_default().push(ty);
     }
 
-    fn reexport_var(&mut self, _span: Span, ctxt: ModuleId, id: JsWord, ty: Box<Type>) {
+    fn reexport_var(&mut self, _span: Span, ctxt: ModuleId, id: JsWord, ty: Type) {
         // TODO: Error reporting for duplicates
         self.info.entry(ctxt).or_default().vars.insert(id, ty);
     }
@@ -416,12 +416,12 @@ impl Mode for Group<'_> {
 
 #[derive(Debug, Default)]
 pub struct Builtin {
-    pub vars: FxHashMap<JsWord, Box<Type>>,
-    pub types: FxHashMap<JsWord, Vec<Box<Type>>>,
+    pub vars: FxHashMap<JsWord, Type>,
+    pub types: FxHashMap<JsWord, Vec<Type>>,
 }
 
 impl ErrorStore for Builtin {
-    fn report(&mut self, err: Box<Error>) {
+    fn report(&mut self, err: Error) {
         unreachable!("builtin error: {:?}", err);
     }
 
@@ -438,13 +438,13 @@ impl ErrorStore for Builtin {
 }
 
 impl TypeStore for Builtin {
-    fn store_private_type(&mut self, ctxt: ModuleId, id: Id, ty: Box<Type>) {
+    fn store_private_type(&mut self, ctxt: ModuleId, id: Id, ty: Type) {
         debug_assert_eq!(ctxt, ModuleId::builtin());
 
         self.types.entry(id.sym().clone()).or_default().push(ty);
     }
 
-    fn store_private_var(&mut self, ctxt: ModuleId, id: Id, ty: Box<Type>) {
+    fn store_private_var(&mut self, ctxt: ModuleId, id: Id, ty: Type) {
         debug_assert_eq!(ctxt, ModuleId::builtin());
 
         match self.vars.entry(id.sym().clone()) {
@@ -462,12 +462,12 @@ impl TypeStore for Builtin {
 
     fn export_type(&mut self, _: Span, _: ModuleId, _: Id) {}
 
-    fn get_local_type(&self, _ctxt: ModuleId, id: Id) -> Option<Box<Type>> {
+    fn get_local_type(&self, _ctxt: ModuleId, id: Id) -> Option<Type> {
         let types = self.types.get(id.sym()).cloned()?;
         Some(Type::intersection(DUMMY_SP, types))
     }
 
-    fn get_local_var(&self, _ctxt: ModuleId, id: Id) -> Option<Box<Type>> {
+    fn get_local_var(&self, _ctxt: ModuleId, id: Id) -> Option<Type> {
         self.vars.get(id.sym()).cloned()
     }
 
@@ -475,9 +475,9 @@ impl TypeStore for Builtin {
         unimplemented!("builtin.take_info")
     }
 
-    fn reexport_type(&mut self, _: Span, _: ModuleId, _: JsWord, _: Box<Type>) {}
+    fn reexport_type(&mut self, _: Span, _: ModuleId, _: JsWord, _: Type) {}
 
-    fn reexport_var(&mut self, _: Span, _: ModuleId, _: JsWord, _: Box<Type>) {}
+    fn reexport_var(&mut self, _: Span, _: ModuleId, _: JsWord, _: Type) {}
 }
 
 impl Mode for Builtin {

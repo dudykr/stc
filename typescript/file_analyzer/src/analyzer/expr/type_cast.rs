@@ -65,7 +65,7 @@ impl Analyzer<'_, '_> {
     /// ```
     ///
     /// results in error.
-    fn validate_type_cast(&mut self, span: Span, orig_ty: Box<Type>, to: &RTsType) -> ValidationResult {
+    fn validate_type_cast(&mut self, span: Span, orig_ty: Type, to: &RTsType) -> ValidationResult {
         let orig_ty = self.expand_fully(span, orig_ty, true)?;
 
         let casted_ty = to.validate_with(self)?;
@@ -170,7 +170,7 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        Err(box Error::NonOverlappingTypeCast { span })
+        Err(Error::NonOverlappingTypeCast { span })
     }
 
     pub(crate) fn has_overlap(&mut self, span: Span, l: &Type, r: &Type) -> ValidationResult<bool> {

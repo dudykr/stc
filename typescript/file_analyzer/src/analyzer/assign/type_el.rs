@@ -92,7 +92,7 @@ impl Analyzer<'_, '_> {
                     return if errors.is_empty() {
                         Ok(())
                     } else {
-                        Err(box Error::Errors {
+                        Err(Error::Errors {
                             span,
                             errors: errors.into(),
                         })
@@ -166,7 +166,7 @@ impl Analyzer<'_, '_> {
 
                 Type::Array(..) if lhs.is_empty() => return Ok(()),
 
-                Type::Array(..) => return Err(box Error::InvalidAssignmentOfArray { span }),
+                Type::Array(..) => return Err(Error::InvalidAssignmentOfArray { span }),
 
                 Type::Tuple(rhs) => {
                     // Handle { 0: nubmer } = [1]
@@ -189,7 +189,7 @@ impl Analyzer<'_, '_> {
                 Type::Class(rhs) => {
                     // TODO: Check if constructor exists.
                     if rhs.is_abstract {
-                        return Err(box Error::CannotAssignAbstractConstructorToNonAbstractConstructor { span });
+                        return Err(Error::CannotAssignAbstractConstructorToNonAbstractConstructor { span });
                     }
                     //
                     for el in lhs {
@@ -265,7 +265,7 @@ impl Analyzer<'_, '_> {
                 })
                 | Type::Lit(RTsLitType {
                     lit: RTsLit::Bool(..), ..
-                }) => return Err(box Error::SimpleAssignFailed { span }),
+                }) => return Err(Error::SimpleAssignFailed { span }),
 
                 // TODO: Strict mode
                 Type::Keyword(RTsKeywordType {
@@ -280,7 +280,7 @@ impl Analyzer<'_, '_> {
                 }) => return Ok(()),
 
                 _ => {
-                    return Err(box Error::Unimplemented {
+                    return Err(Error::Unimplemented {
                         span,
                         msg: format!("assign_to_type_elements - {:#?}", rhs),
                     })
@@ -288,7 +288,7 @@ impl Analyzer<'_, '_> {
             }
 
             if !errors.is_empty() {
-                return Err(box Error::ObjectAssignFailed { span, errors })?;
+                return Err(Error::ObjectAssignFailed { span, errors })?;
             }
 
             if !unhandled_rhs.is_empty() {
@@ -297,11 +297,11 @@ impl Analyzer<'_, '_> {
                 //      var c { [n: number]: { a: string; b: number; }; } = [{ a:
                 // '', b: 0, c: '' }];
 
-                return Err(box Error::Errors {
+                return Err(Error::Errors {
                     span,
                     errors: unhandled_rhs
                         .into_iter()
-                        .map(|span| box Error::UnknownPropertyInObjectLiteralAssignment { span })
+                        .map(|span| Error::UnknownPropertyInObjectLiteralAssignment { span })
                         .collect(),
                 });
             }
@@ -341,7 +341,7 @@ impl Analyzer<'_, '_> {
                                 }
                             }
 
-                            errors.push(box Error::ConstructorRequired {
+                            errors.push(Error::ConstructorRequired {
                                 span,
                                 lhs: lhs_span,
                                 rhs: rhs.span(),
@@ -386,7 +386,7 @@ impl Analyzer<'_, '_> {
                                     ClassMember::Property(ref rp) => {
                                         match rp.accessibility {
                                             Some(Accessibility::Private) | Some(Accessibility::Protected) => {
-                                                errors.push(box Error::AccessibilityDiffers { span });
+                                                errors.push(Error::AccessibilityDiffers { span });
                                             }
                                             _ => {}
                                         }
@@ -428,14 +428,14 @@ impl Analyzer<'_, '_> {
         }
 
         if !missing_fields.is_empty() {
-            errors.push(box Error::MissingFields {
+            errors.push(Error::MissingFields {
                 span,
                 fields: missing_fields,
             });
         }
 
         if !errors.is_empty() {
-            return Err(box Error::Errors {
+            return Err(Error::Errors {
                 span,
                 errors: errors.into(),
             });
@@ -460,7 +460,7 @@ impl Analyzer<'_, '_> {
 
             let success = match res {
                 Ok(()) => true,
-                Err(box Error::Errors { ref errors, .. }) if errors.is_empty() => true,
+                Err(Error::Errors { ref errors, .. }) if errors.is_empty() => true,
                 Err(err) => return Err(err),
             };
             if success && rhs.len() > i {
@@ -481,7 +481,7 @@ impl Analyzer<'_, '_> {
 
                 let success = match res {
                     Ok(()) => true,
-                    Err(box Error::Errors { ref errors, .. }) if errors.is_empty() => true,
+                    Err(Error::Errors { ref errors, .. }) if errors.is_empty() => true,
                     Err(..) => false,
                 };
 
@@ -515,8 +515,8 @@ impl Analyzer<'_, '_> {
                             TypeElement::Property(ref el) => match rm {
                                 TypeElement::Property(ref r_el) => {
                                     self.assign_inner(
-                                        el.type_ann.as_ref().unwrap_or(&Type::any(span)),
-                                        r_el.type_ann.as_ref().unwrap_or(&Type::any(span)),
+                                        el.type_ann.as_deref().unwrap_or(&Type::any(span)),
+                                        r_el.type_ann.as_deref().unwrap_or(&Type::any(span)),
                                         opts,
                                     )?;
                                     return Ok(());

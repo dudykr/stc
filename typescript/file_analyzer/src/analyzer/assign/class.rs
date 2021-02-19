@@ -28,7 +28,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 if !l.is_abstract && rc.is_abstract {
-                    return Err(box Error::CannotAssignAbstractConstructorToNonAbstractConstructor { span: opts.span });
+                    return Err(Error::CannotAssignAbstractConstructorToNonAbstractConstructor { span: opts.span });
                 }
 
                 if !rc.is_abstract {
@@ -49,7 +49,7 @@ impl Analyzer<'_, '_> {
                         new_body = members;
                         &*new_body
                     } else {
-                        return Err(box Error::Unimplemented {
+                        return Err(Error::Unimplemented {
                             span: opts.span,
                             msg: format!("Failed to collect class members"),
                         });
@@ -153,11 +153,11 @@ impl Analyzer<'_, '_> {
         }
 
         match r {
-            Type::Lit(..) => return Err(box Error::SimpleAssignFailed { span: opts.span }),
+            Type::Lit(..) => return Err(Error::SimpleAssignFailed { span: opts.span }),
             _ => {}
         }
 
-        Err(box Error::Unimplemented {
+        Err(Error::Unimplemented {
             span: opts.span,
             msg: format!("Assignment of non-class object to class\n{:#?}", r),
         })
@@ -186,7 +186,7 @@ impl Analyzer<'_, '_> {
             }
             ClassMember::Method(lm) => {
                 if lm.accessibility == Some(Accessibility::Private) {
-                    return Err(box Error::PrivateMethodIsDifferent { span });
+                    return Err(Error::PrivateMethodIsDifferent { span });
                 }
 
                 for rmember in r {
@@ -196,7 +196,7 @@ impl Analyzer<'_, '_> {
                             //
                             if self.assign(&lm.key.ty(), &rm.key.ty(), opts.span).is_ok() {
                                 if rm.accessibility == Some(Accessibility::Private) {
-                                    return Err(box Error::PrivateMethodIsDifferent { span });
+                                    return Err(Error::PrivateMethodIsDifferent { span });
                                 }
 
                                 // TODO: Parameters.
@@ -215,11 +215,11 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
-                return Err(box Error::SimpleAssignFailed { span });
+                return Err(Error::SimpleAssignFailed { span });
             }
             ClassMember::Property(lp) => {
                 if lp.accessibility == Some(Accessibility::Private) {
-                    return Err(box Error::PrivatePropertyIsDifferent { span });
+                    return Err(Error::PrivatePropertyIsDifferent { span });
                 }
 
                 for rm in r {
@@ -229,7 +229,7 @@ impl Analyzer<'_, '_> {
                         ClassMember::Property(rp) => {
                             if self.assign(&lp.key.ty(), &rp.key.ty(), opts.span).is_ok() {
                                 if rp.accessibility == Some(Accessibility::Private) {
-                                    return Err(box Error::PrivatePropertyIsDifferent { span });
+                                    return Err(Error::PrivatePropertyIsDifferent { span });
                                 }
 
                                 if let Some(lt) = &lp.value {
@@ -249,12 +249,12 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
-                return Err(box Error::SimpleAssignFailed { span });
+                return Err(Error::SimpleAssignFailed { span });
             }
             ClassMember::IndexSignature(_) => {}
         }
 
-        Err(box Error::Unimplemented {
+        Err(Error::Unimplemented {
             span: opts.span,
             msg: format!("fine-grained class assignment to lhs memeber: {:#?}", l),
         })

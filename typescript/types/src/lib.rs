@@ -68,11 +68,11 @@ pub mod name;
 
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct ModuleTypeData {
-    pub private_vars: FxHashMap<Id, Box<Type>>,
-    pub vars: FxHashMap<JsWord, Box<Type>>,
+    pub private_vars: FxHashMap<Id, Type>,
+    pub vars: FxHashMap<JsWord, Type>,
 
-    pub private_types: FxHashMap<Id, Vec<Box<Type>>>,
-    pub types: FxHashMap<JsWord, Vec<Box<Type>>>,
+    pub private_types: FxHashMap<Id, Vec<Type>>,
+    pub types: FxHashMap<JsWord, Vec<Type>>,
 }
 
 impl Visitable for ModuleTypeData {}
@@ -115,7 +115,7 @@ impl AddAssign for ModuleTypeData {
     }
 }
 
-/// This type is expected to stored in a [Box], like `Vec<Box<Type>>`.
+/// This type is expected to stored in a [Box], like `Vec<Type>`.
 #[derive(Debug, Clone, PartialEq, Spanned, FromVariant, Is, EqIgnoreSpan, TypeEq, Visit)]
 pub enum Type {
     StaticThis(StaticThis),
@@ -458,7 +458,7 @@ pub struct Class {
     pub super_class: Option<Box<Type>>,
     pub body: Vec<ClassMember>,
     pub type_params: Option<TypeParamDecl>,
-    // pub implements: Vec<Box<Type>>,
+    // pub implements: Vec<Type>,
 }
 
 assert_eq_size!(Class, [u8; 104]);
@@ -468,7 +468,7 @@ pub struct ClassInstance {
     pub span: Span,
     pub ty: Box<Type>,
     pub type_args: Option<Box<TypeParamInstantiation>>,
-    // pub implements: Vec<Box<Type>>,
+    // pub implements: Vec<Type>,
 }
 
 assert_eq_size!(ClassInstance, [u8; 32]);
@@ -610,7 +610,7 @@ pub struct TsExpr {
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct TypeParamInstantiation {
     pub span: Span,
-    pub params: Vec<Box<Type>>,
+    pub params: Vec<Type>,
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit)]
@@ -702,7 +702,7 @@ assert_eq_size!(Array, [u8; 24]);
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Union {
     pub span: Span,
-    pub types: Vec<Box<Type>>,
+    pub types: Vec<Type>,
 }
 
 assert_eq_size!(Union, [u8; 40]);
@@ -720,7 +720,7 @@ pub struct FnParam {
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Intersection {
     pub span: Span,
-    pub types: Vec<Box<Type>>,
+    pub types: Vec<Type>,
 }
 
 assert_eq_size!(Intersection, [u8; 40]);
@@ -787,14 +787,14 @@ pub struct TypeOrSpread {
 pub trait TypeIterExt {}
 
 impl Type {
-    pub fn intersection<I>(span: Span, iter: I) -> Box<Self>
+    pub fn intersection<I>(span: Span, iter: I) -> Self
     where
-        I: IntoIterator<Item = Box<Type>>,
+        I: IntoIterator<Item = Type>,
     {
         let mut tys = vec![];
 
         for ty in iter {
-            match *ty {
+            match ty {
                 Type::Intersection(Intersection { types, .. }) => {
                     tys.extend(types);
                 }
@@ -819,7 +819,7 @@ impl Type {
         match tys.len() {
             0 => Type::never(span),
             1 => tys.into_iter().next().unwrap(),
-            _ => Box::new(Type::Intersection(Intersection { span, types: tys })),
+            _ => Type::Intersection(Intersection { span, types: tys }),
         }
     }
 
@@ -828,7 +828,7 @@ impl Type {
     /// Note:
     ///
     ///  - never types are excluded.
-    pub fn union<I: IntoIterator<Item = Box<Self>>>(iter: I) -> Box<Self> {
+    pub fn union<I: IntoIterator<Item = Self>>(iter: I) -> Self {
         let mut span = DUMMY_SP;
 
         let mut tys = vec![];
@@ -843,7 +843,7 @@ impl Type {
                 span = span.with_hi(sp.hi());
             }
 
-            match *ty {
+            match ty {
                 Type::Union(Union { types, .. }) => {
                     assert_ne!(types, vec![]);
                     tys.extend(types);
@@ -858,7 +858,7 @@ impl Type {
         match tys.len() {
             0 => Type::never(span),
             1 => tys.into_iter().next().unwrap(),
-            _ => Box::new(Type::Union(Union { span, types: tys })),
+            _ => Type::Union(Union { span, types: tys }),
         }
     }
 
@@ -958,36 +958,36 @@ impl Type {
         self.is_kwd(TsKeywordTypeKind::TsNeverKeyword)
     }
 
-    pub fn never<'any>(span: Span) -> Box<Type> {
-        box Type::Keyword(RTsKeywordType {
+    pub fn never<'any>(span: Span) -> Self {
+        Type::Keyword(RTsKeywordType {
             span,
             kind: TsKeywordTypeKind::TsNeverKeyword,
         })
     }
 
-    pub fn undefined<'any>(span: Span) -> Box<Type> {
-        box Type::Keyword(RTsKeywordType {
+    pub fn undefined<'any>(span: Span) -> Self {
+        Type::Keyword(RTsKeywordType {
             span,
             kind: TsKeywordTypeKind::TsUndefinedKeyword,
         })
     }
 
-    pub fn any<'any>(span: Span) -> Box<Type> {
-        box Type::Keyword(RTsKeywordType {
+    pub fn any<'any>(span: Span) -> Self {
+        Type::Keyword(RTsKeywordType {
             span,
             kind: TsKeywordTypeKind::TsAnyKeyword,
         })
     }
 
-    pub fn void<'any>(span: Span) -> Box<Type> {
-        box Type::Keyword(RTsKeywordType {
+    pub fn void<'any>(span: Span) -> Self {
+        Type::Keyword(RTsKeywordType {
             span,
             kind: TsKeywordTypeKind::TsVoidKeyword,
         })
     }
 
-    pub fn unknown<'any>(span: Span) -> Box<Type> {
-        box Type::Keyword(RTsKeywordType {
+    pub fn unknown<'any>(span: Span) -> Self {
+        Type::Keyword(RTsKeywordType {
             span,
             kind: TsKeywordTypeKind::TsUnknownKeyword,
         })
@@ -1212,7 +1212,7 @@ impl<'a> Iterator for Iter<'a> {
             Type::Union(ref u) => {
                 let ty = u.types.get(self.idx);
                 self.idx += 1;
-                return Some(&**ty?);
+                return Some(&*ty?);
             }
 
             _ if self.idx == 0 => {
@@ -1565,9 +1565,9 @@ impl VisitMut<Type> for CheapClone {
 impl Type {
     /// Make cloning cheap.
     #[inline]
-    pub fn cheap(mut self) -> Box<Type> {
+    pub fn cheap(mut self) -> Self {
         self.make_cheap();
-        box self
+        self
     }
 
     /// Make cloning cheap.

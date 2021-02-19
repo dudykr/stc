@@ -51,7 +51,7 @@ impl Analyzer<'_, '_> {
             let ty = match elem {
                 Some(RExprOrSpread { spread: None, ref expr }) => {
                     let ty = expr.validate_with_default(self)?;
-                    match &*ty {
+                    match &ty {
                         Type::TypeLit(..) => {
                             can_be_tuple = false;
                         }
@@ -64,9 +64,9 @@ impl Analyzer<'_, '_> {
                     expr,
                 }) => {
                     let element_type = expr.validate_with_default(self)?;
-                    let element_type = box element_type.foldable();
+                    let element_type = element_type.foldable();
 
-                    match *element_type {
+                    match element_type {
                         Type::Array(array) => {
                             can_be_tuple = false;
                             elements.push(TupleElement {
@@ -89,7 +89,7 @@ impl Analyzer<'_, '_> {
                             elements.push(TupleElement {
                                 span,
                                 label: None,
-                                ty: element_type.clone(),
+                                ty: box element_type.clone(),
                             });
                         }
                         _ => {
@@ -147,7 +147,7 @@ impl Analyzer<'_, '_> {
                             elements.push(TupleElement {
                                 span,
                                 label: None,
-                                ty: elem_type,
+                                ty: box elem_type,
                             });
                         }
                     }
@@ -158,30 +158,34 @@ impl Analyzer<'_, '_> {
                     ty
                 }
             };
-            elements.push(TupleElement { span, label: None, ty });
+            elements.push(TupleElement {
+                span,
+                label: None,
+                ty: box ty,
+            });
         }
 
         if self.ctx.in_export_default_expr && elements.is_empty() {
-            return Ok(box Type::Array(Array {
+            return Ok(Type::Array(Array {
                 span,
-                elem_type: Type::any(span),
+                elem_type: box Type::any(span),
             }));
         }
 
         if !can_be_tuple {
-            let mut types: Vec<_> = elements.into_iter().map(|element| element.ty).collect();
+            let mut types: Vec<_> = elements.into_iter().map(|element| *element.ty).collect();
             types.dedup_type();
 
-            let mut ty = box Type::Array(Array {
+            let mut ty = Type::Array(Array {
                 span,
-                elem_type: Type::union(types),
+                elem_type: box Type::union(types),
             });
             self.normalize_union_of_objects(&mut ty, false);
 
             return Ok(ty);
         }
 
-        return Ok(box Type::Tuple(Tuple { span, elems: elements }));
+        return Ok(Type::Tuple(Tuple { span, elems: elements }));
     }
 }
 
@@ -197,7 +201,7 @@ impl Analyzer<'_, '_> {
                 span,
                 ExtractKind::Call,
                 Default::default(),
-                box ty.into_owned(),
+                ty.into_owned(),
                 &Key::Computed(ComputedKey {
                     span,
                     expr: box RExpr::Member(RMemberExpr {
@@ -222,7 +226,7 @@ impl Analyzer<'_, '_> {
                 None,
             )
             .map_err(|err| {
-                box err.convert(|err| match err {
+                err.convert(|err| match err {
                     Error::NoCallabelPropertyWithName { span, .. } => {
                         Error::MustHaveSymbolIteratorThatReturnsIterator { span }
                     }
@@ -231,6 +235,6 @@ impl Analyzer<'_, '_> {
             })
             .context("tried to call `[Symbol.iterator]()` to convert a type to an iterator")?;
 
-        Ok(Cow::Owned(*ty))
+        Ok(Cow::Owned(ty))
     }
 }

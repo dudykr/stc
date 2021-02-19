@@ -109,16 +109,16 @@ impl Fold<Function> for LitGeneralizer {
 }
 
 pub trait TypeExt: Into<Type> {
-    fn generalize_lit(self) -> Box<Type> {
-        box self.into().fold_with(&mut LitGeneralizer)
+    fn generalize_lit(self) -> Type {
+        self.into().fold_with(&mut LitGeneralizer)
     }
 
-    fn generalize_tuple(self) -> Box<Type> {
-        box self.into().fold_with(&mut TupleToArray)
+    fn generalize_tuple(self) -> Type {
+        self.into().fold_with(&mut TupleToArray)
     }
 
-    fn apply_type_facts(self, facts: TypeFacts) -> Box<Type> {
-        (box self.into()).fold_with(&mut TypeFactsHandler { facts })
+    fn apply_type_facts(self, facts: TypeFacts) -> Type {
+        self.into().fold_with(&mut TypeFactsHandler { facts })
     }
 }
 

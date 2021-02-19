@@ -80,7 +80,7 @@ impl Analyzer<'_, '_> {
         span.apply_mark(self.marks().prevent_generalization_mark)
     }
 
-    pub(super) fn simplify(&self, ty: Box<Type>) -> Box<Type> {
+    pub(super) fn simplify(&self, ty: Type) -> Type {
         slog::info!(self.logger, "Simplifying");
         ty.fold_with(&mut Simplifier {
             env: &self.env,
@@ -211,9 +211,9 @@ impl Fold<Type> for Simplifier<'_> {
                     .get_global_type(
                         span,
                         &match k.kind {
-                            TsKeywordTypeKind::TsAnyKeyword => return *Type::any(span),
-                            TsKeywordTypeKind::TsUnknownKeyword => return *Type::unknown(span),
-                            TsKeywordTypeKind::TsNeverKeyword => return *Type::never(span),
+                            TsKeywordTypeKind::TsAnyKeyword => return Type::any(span),
+                            TsKeywordTypeKind::TsUnknownKeyword => return Type::unknown(span),
+                            TsKeywordTypeKind::TsNeverKeyword => return Type::never(span),
                             TsKeywordTypeKind::TsIntrinsicKeyword => {
                                 return Type::Keyword(RTsKeywordType {
                                     span,
@@ -275,13 +275,13 @@ impl Fold<Type> for Simplifier<'_> {
                 return Type::IndexedAccessType(IndexedAccessType {
                     span,
                     readonly,
-                    obj_type,
+                    obj_type: box obj_type,
                     index_type,
                 });
             }
 
             Type::Union(u) if u.types.is_empty() => {
-                return *Type::never(u.span);
+                return Type::never(u.span);
             }
 
             Type::Mapped(Mapped {
@@ -426,7 +426,7 @@ impl Fold<Type> for Simplifier<'_> {
                     lit: RTsLit::Str(s), ..
                 }),
                 ..
-            }) if obj.types.iter().all(|ty| match &**ty {
+            }) if obj.types.iter().all(|ty| match ty.normalize() {
                 Type::TypeLit(..) => true,
                 _ => false,
             }) =>
@@ -434,7 +434,7 @@ impl Fold<Type> for Simplifier<'_> {
                 let mut types = obj
                     .types
                     .into_iter()
-                    .map(|ty| match *ty {
+                    .map(|ty| match ty.foldable() {
                         Type::TypeLit(ty) => ty.members,
                         _ => unreachable!(),
                     })
@@ -444,7 +444,7 @@ impl Fold<Type> for Simplifier<'_> {
 
                         match element {
                             TypeElement::Property(p) if p.key == s.value => {
-                                Some(p.type_ann.unwrap_or_else(|| Type::any(span)))
+                                Some(p.type_ann.map(|v| *v).unwrap_or_else(|| Type::any(span)))
                             }
                             _ => None,
                         }
@@ -453,7 +453,7 @@ impl Fold<Type> for Simplifier<'_> {
 
                 types.dedup_type();
 
-                return *Type::union(types);
+                return Type::union(types);
             }
 
             Type::IndexedAccessType(IndexedAccessType {
@@ -517,9 +517,9 @@ impl Fold<Type> for Simplifier<'_> {
                     .into_iter()
                     .map(|el| *el.ty)
                     .nth(idx)
-                    .unwrap_or_else(|| *Type::never(span));
+                    .unwrap_or_else(|| Type::never(span));
             }
-            Type::Union(ty) if ty.types.len() == 1 => return *ty.types.into_iter().next().unwrap(),
+            Type::Union(ty) if ty.types.len() == 1 => return ty.types.into_iter().next().unwrap(),
 
             // Convert
             //
@@ -638,7 +638,7 @@ impl Fold<Type> for Simplifier<'_> {
                     }
                     TypeElement::Property(p) => {
                         let span = p.span;
-                        return *p.type_ann.unwrap_or_else(|| Type::any(span));
+                        return p.type_ann.map(|v| *v).unwrap_or_else(|| Type::any(span));
                     }
                     TypeElement::Method(_) => {
                         unimplemented!("Generic mapped type inference involving `Method` element")
@@ -679,7 +679,7 @@ impl Fold<Type> for Simplifier<'_> {
                             return *value;
                         }
 
-                        return *Type::any(p.span);
+                        return Type::any(p.span);
                     }
                     ClassMember::Constructor(_) => unreachable!(),
                     ClassMember::IndexSignature(_) => unreachable!(),
@@ -694,7 +694,7 @@ impl Fold<Type> for Simplifier<'_> {
                 let mut new_types = keys
                     .types
                     .into_iter()
-                    .map(|key| match *key {
+                    .map(|key| match key.foldable() {
                         Type::Lit(RTsLitType {
                             lit: RTsLit::Str(s), ..
                         }) => s,
@@ -715,7 +715,7 @@ impl Fold<Type> for Simplifier<'_> {
                             ClassMember::Method(_) => unimplemented!(),
                             ClassMember::Property(p) => {
                                 if let Some(value) = &p.value {
-                                    return value.clone();
+                                    return *value.clone();
                                 }
 
                                 return Type::any(p.span);
@@ -728,7 +728,7 @@ impl Fold<Type> for Simplifier<'_> {
 
                 new_types.dedup_type();
 
-                return *Type::union(new_types);
+                return Type::union(new_types);
             }
 
             _ => {}

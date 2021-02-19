@@ -141,10 +141,10 @@ impl Analyzer<'_, '_> {
         let param = TypeParam {
             span: p.span,
             name: p.name.clone().into(),
-            constraint: try_opt!(p.constraint.validate_with(self)),
-            default: try_opt!(p.default.validate_with(self)),
+            constraint: try_opt!(p.constraint.validate_with(self)).map(Box::new),
+            default: try_opt!(p.default.validate_with(self)).map(Box::new),
         };
-        self.register_type(param.name.clone().into(), box param.clone().into());
+        self.register_type(param.name.clone().into(), param.clone().into());
 
         Ok(param)
     }
@@ -181,12 +181,16 @@ impl Analyzer<'_, '_> {
                     } else {
                         child.prevent_expansion(&mut ty);
                     }
-                    let alias = Alias { span, ty, type_params };
+                    let alias = Alias {
+                        span,
+                        ty: box ty,
+                        type_params,
+                    };
                     Ok(alias)
                 },
             )?
         };
-        self.register_type(d.id.clone().into(), box Type::Alias(alias.clone()));
+        self.register_type(d.id.clone().into(), Type::Alias(alias.clone()));
 
         Ok(alias)
     }
@@ -205,7 +209,7 @@ impl Analyzer<'_, '_> {
             };
             child.prevent_expansion(&mut ty.body);
 
-            child.register_type(d.id.clone().into(), box ty.clone().into());
+            child.register_type(d.id.clone().into(), ty.clone().into());
 
             child.resolve_parent_interfaces(&d.extends);
 
@@ -263,7 +267,7 @@ impl Analyzer<'_, '_> {
             span: d.span,
             params: d.params.validate_with(self)?,
             type_params,
-            ret_ty: try_opt!(d.type_ann.validate_with(self)),
+            ret_ty: try_opt!(d.type_ann.validate_with(self)).map(Box::new),
         })
     }
 }
@@ -277,7 +281,7 @@ impl Analyzer<'_, '_> {
             span: d.span,
             params: d.params.validate_with(self)?,
             type_params,
-            ret_ty: try_opt!(d.type_ann.validate_with(self)),
+            ret_ty: try_opt!(d.type_ann.validate_with(self)).map(Box::new),
         })
     }
 }
@@ -301,7 +305,7 @@ impl Analyzer<'_, '_> {
                 optional: d.optional,
                 type_params,
                 params: d.params.validate_with(child)?,
-                ret_ty: try_opt!(d.type_ann.validate_with(child)),
+                ret_ty: try_opt!(d.type_ann.validate_with(child)).map(Box::new),
             })
         })
     }
@@ -314,7 +318,7 @@ impl Analyzer<'_, '_> {
             span: d.span,
             params: d.params.validate_with(self)?,
             readonly: d.readonly,
-            type_ann: try_opt!(d.type_ann.validate_with(self)),
+            type_ann: try_opt!(d.type_ann.validate_with(self)).map(Box::new),
         })
     }
 }
@@ -344,13 +348,13 @@ impl Analyzer<'_, '_> {
                 // TODO: implicit any
                 match d.type_ann.validate_with(self) {
                     Some(v) => match v {
-                        Ok(v) => Some(v),
+                        Ok(v) => Some(box v),
                         Err(e) => {
                             self.storage.report(e);
-                            Some(Type::any(d.span))
+                            Some(box Type::any(d.span))
                         }
                     },
-                    None => Some(Type::any(d.span)),
+                    None => Some(box Type::any(d.span)),
                 }
             },
             type_params,
@@ -394,7 +398,7 @@ impl Analyzer<'_, '_> {
         Ok(TupleElement {
             span: node.span,
             label: node.label.clone(),
-            ty: node.ty.validate_with(self)?,
+            ty: box node.ty.validate_with(self)?,
         })
     }
 }
@@ -404,10 +408,10 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsConditionalType) -> ValidationResult<Conditional> {
         Ok(Conditional {
             span: t.span,
-            check_type: t.check_type.validate_with(self)?,
-            extends_type: t.extends_type.validate_with(self)?,
-            true_type: t.true_type.validate_with(self)?,
-            false_type: t.false_type.validate_with(self)?,
+            check_type: box t.check_type.validate_with(self)?,
+            extends_type: box t.extends_type.validate_with(self)?,
+            true_type: box t.true_type.validate_with(self)?,
+            false_type: box t.false_type.validate_with(self)?,
         })
     }
 }
@@ -419,9 +423,9 @@ impl Analyzer<'_, '_> {
             span: ty.span,
             readonly: ty.readonly,
             optional: ty.optional,
-            name_type: try_opt!(ty.name_type.validate_with(self)),
+            name_type: try_opt!(ty.name_type.validate_with(self)).map(Box::new),
             type_param: ty.type_param.validate_with(self)?,
-            ty: try_opt!(ty.type_ann.validate_with(self)),
+            ty: try_opt!(ty.type_ann.validate_with(self)).map(Box::new),
         })
     }
 }
@@ -432,7 +436,7 @@ impl Analyzer<'_, '_> {
         Ok(Operator {
             span: ty.span,
             op: ty.op,
-            ty: ty.type_ann.validate_with(self)?,
+            ty: box ty.type_ann.validate_with(self)?,
         })
     }
 }
@@ -442,7 +446,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RTsArrayType) -> ValidationResult<Array> {
         Ok(Array {
             span: node.span,
-            elem_type: node.elem_type.validate_with(self)?,
+            elem_type: box node.elem_type.validate_with(self)?,
         })
     }
 }
@@ -478,7 +482,7 @@ impl Analyzer<'_, '_> {
 
         let mut params: Vec<_> = t.params.validate_with(self)?;
 
-        let ret_ty = t.type_ann.validate_with(self)?;
+        let ret_ty = box t.type_ann.validate_with(self)?;
 
         Ok(stc_ts_types::Function {
             span: t.span,
@@ -502,7 +506,7 @@ impl Analyzer<'_, '_> {
             span: t.span,
             type_params,
             params: t.params.validate_with(self)?,
-            type_ann: t.type_ann.validate_with(self)?,
+            type_ann: t.type_ann.validate_with(self).map(Box::new)?,
             is_abstract: t.is_abstract,
         })
     }
@@ -526,9 +530,9 @@ impl Analyzer<'_, '_> {
         match t.type_name {
             RTsEntityName::Ident(ref i) if i.sym == js_word!("Array") && type_args.is_some() => {
                 if type_args.as_ref().unwrap().params.len() == 1 {
-                    return Ok(box Type::Array(Array {
+                    return Ok(Type::Array(Array {
                         span: t.span,
-                        elem_type: type_args.unwrap().params.into_iter().next().unwrap(),
+                        elem_type: box type_args.unwrap().params.into_iter().next().unwrap(),
                     }));
                 }
             }
@@ -541,7 +545,7 @@ impl Analyzer<'_, '_> {
                         }
                         // We use type param instead of reference type if possible.
                         match ty.normalize() {
-                            Type::Param(..) => return Ok(box ty.into_owned()),
+                            Type::Param(..) => return Ok(ty.into_owned()),
                             _ => {}
                         }
                     }
@@ -616,7 +620,7 @@ impl Analyzer<'_, '_> {
 
         Ok(RestType {
             span: t.span,
-            ty: t.type_ann.validate_with(self)?,
+            ty: box t.type_ann.validate_with(self)?,
         })
     }
 }
@@ -628,7 +632,7 @@ impl Analyzer<'_, '_> {
 
         Ok(OptionalType {
             span: t.span,
-            ty: t.type_ann.validate_with(self)?,
+            ty: box t.type_ann.validate_with(self)?,
         })
     }
 }
@@ -649,10 +653,10 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsTypePredicate) -> ValidationResult<Predicate> {
         self.record(t);
-        let mut ty = try_opt!(t.type_ann.validate_with(self));
+        let mut ty = try_opt!(t.type_ann.validate_with(self)).map(Box::new);
         match &mut ty {
             Some(ty) => {
-                self.prevent_expansion(&mut **ty);
+                self.prevent_expansion(ty);
             }
             None => {}
         }
@@ -674,8 +678,8 @@ impl Analyzer<'_, '_> {
         Ok(IndexedAccessType {
             span: t.span,
             readonly: t.readonly,
-            obj_type: t.obj_type.validate_with(self)?,
-            index_type: t.index_type.validate_with(self)?,
+            obj_type: box t.obj_type.validate_with(self)?,
+            index_type: box t.index_type.validate_with(self)?,
         })
     }
 }
@@ -712,7 +716,7 @@ impl Analyzer<'_, '_> {
             RTsType::TsMappedType(ty) => Type::Mapped(ty.validate_with(self)?),
             RTsType::TsTypeOperator(ty) => Type::Operator(ty.validate_with(self)?),
             RTsType::TsParenthesizedType(ty) => return ty.validate_with(self),
-            RTsType::TsTypeRef(ty) => *ty.validate_with(self)?,
+            RTsType::TsTypeRef(ty) => ty.validate_with(self)?,
             RTsType::TsTypeQuery(ty) => Type::Query(ty.validate_with(self)?),
             RTsType::TsOptionalType(ty) => Type::Optional(ty.validate_with(self)?),
             RTsType::TsRestType(ty) => Type::Rest(ty.validate_with(self)?),
@@ -753,7 +757,7 @@ impl Analyzer<'_, '_> {
                 && !(self.ctx.in_return_arg && self.ctx.in_fn_with_return_type)
                 && !self.ctx.in_assign_rhs
             {
-                self.storage.report(box Error::ImplicitAny { span: i.span });
+                self.storage.report(Error::ImplicitAny { span: i.span });
             }
         }
         let implicit_type_mark = self.marks().implicit_type_mark;
@@ -774,7 +778,7 @@ impl Analyzer<'_, '_> {
         }
         let cnt = arr.elems.len();
 
-        let ty = box Type::Tuple(Tuple {
+        let ty = Type::Tuple(Tuple {
             span: DUMMY_SP,
             elems: arr
                 .elems
@@ -808,7 +812,7 @@ impl Analyzer<'_, '_> {
                         span,
                         // TODO?
                         label: None,
-                        ty,
+                        ty: box ty,
                     }
                 })
                 .collect(),
@@ -841,7 +845,7 @@ impl Analyzer<'_, '_> {
                     }
                     let ty = if let Some(value_node_id) = p.value.node_id() {
                         if let Some(m) = &mut self.mutations {
-                            m.for_pats.entry(value_node_id).or_default().ty.take()
+                            m.for_pats.entry(value_node_id).or_default().ty.take().map(Box::new)
                         } else {
                             None
                         }
@@ -880,7 +884,7 @@ impl Analyzer<'_, '_> {
 
         if let Some(m) = &mut self.mutations {
             m.for_pats.entry(obj.node_id).or_default().ty.fill_with(|| {
-                box Type::TypeLit(TypeLit {
+                Type::TypeLit(TypeLit {
                     span: DUMMY_SP.apply_mark(implicit_type_mark),
                     members,
                     metadata: Default::default(),

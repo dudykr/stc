@@ -5,9 +5,9 @@ pub trait TypeVecExt {
     fn dedup_type(&mut self);
 }
 
-impl TypeVecExt for Vec<Box<Type>> {
+impl TypeVecExt for Vec<Type> {
     fn dedup_type(&mut self) {
-        let mut types: Vec<Box<Type>> = Vec::with_capacity(self.len());
+        let mut types: Vec<Type> = Vec::with_capacity(self.len());
         for ty in self.drain(..) {
             if types.iter().any(|stored| stored.type_eq(&ty)) {
                 continue;

@@ -75,10 +75,10 @@ impl Analyzer<'_, '_> {
 
         if op == op!("*=") {
             if rhs.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
-                return Err(box Error::ObjectIsPossiblyUndefined { span: rhs.span() });
+                return Err(Error::ObjectIsPossiblyUndefined { span: rhs.span() });
             }
             if rhs.is_kwd(TsKeywordTypeKind::TsNullKeyword) {
-                return Err(box Error::ObjectIsPossiblyNull { span: rhs.span() });
+                return Err(Error::ObjectIsPossiblyNull { span: rhs.span() });
             }
 
             let r_castable = self.can_be_casted_to_number_in_rhs(rhs.span(), &rhs);
@@ -125,7 +125,7 @@ impl Analyzer<'_, '_> {
                 || rhs.is_kwd(TsKeywordTypeKind::TsNullKeyword)
                 || rhs.is_kwd(TsKeywordTypeKind::TsVoidKeyword)
             {
-                return Err(box Error::AssignOpCannotBeApplied { span, op });
+                return Err(Error::AssignOpCannotBeApplied { span, op });
             }
         }
 
@@ -145,7 +145,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        Err(box Error::InvalidOpAssign {
+        Err(Error::InvalidOpAssign {
             span,
             op,
             lhs: box l.into_owned().clone(),
@@ -182,12 +182,12 @@ impl Analyzer<'_, '_> {
 
         let res = self.assign_inner(left, right, opts);
         match res {
-            Err(box Error::Errors { errors, .. }) if errors.is_empty() => return Ok(()),
+            Err(Error::Errors { errors, .. }) if errors.is_empty() => return Ok(()),
             _ => {}
         }
 
         res.map_err(|err| {
-            box err.convert(|err| match err {
+            err.convert(|err| match err {
                 Error::AssignFailed { .. }
                 | Error::Errors { .. }
                 | Error::Unimplemented { .. }
@@ -197,7 +197,7 @@ impl Analyzer<'_, '_> {
                     span: opts.span,
                     left: box left.clone(),
                     right: box right.clone(),
-                    cause: vec![box err],
+                    cause: vec![err],
                 },
             })
         })
@@ -284,7 +284,7 @@ impl Analyzer<'_, '_> {
 
         macro_rules! fail {
             () => {{
-                return Err(box Error::AssignFailed {
+                return Err(Error::AssignFailed {
                     span,
                     left: box to.clone(),
                     right: box rhs.clone(),
@@ -350,11 +350,11 @@ impl Analyzer<'_, '_> {
                 return self.assign_inner(
                     to,
                     &Type::union(vec![
-                        box Type::Keyword(RTsKeywordType {
+                        Type::Keyword(RTsKeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsNumberKeyword,
                         }),
-                        box Type::Keyword(RTsKeywordType {
+                        Type::Keyword(RTsKeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsStringKeyword,
                         }),
@@ -458,15 +458,15 @@ impl Analyzer<'_, '_> {
             for (kwd, interface) in special_cases {
                 let rhs = rhs.clone().generalize_lit();
                 match to {
-                    Type::Keyword(k) if k.kind == *kwd => match *rhs {
+                    Type::Keyword(k) if k.kind == *kwd => match rhs {
                         Type::Interface(ref i) => {
                             if i.name.as_str() == *interface {
-                                return Err(box Error::AssignedWrapperToPrimitive { span });
+                                return Err(Error::AssignedWrapperToPrimitive { span });
                             }
                         }
                         _ => {}
                     },
-                    Type::Interface(ref i) if i.name.as_str() == *interface => match *rhs {
+                    Type::Interface(ref i) if i.name.as_str() == *interface => match rhs {
                         Type::Keyword(ref k) if k.kind == *kwd => return Ok(()),
                         _ => {}
                     },
@@ -507,7 +507,7 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
                 dbg!();
-                return Err(box Error::InvalidLValue { span: to.span() });
+                return Err(Error::InvalidLValue { span: to.span() });
             }
             Type::Enum(ref e) => {
                 match rhs.normalize() {
@@ -533,7 +533,7 @@ impl Analyzer<'_, '_> {
             }
             Type::EnumVariant(ref e) => {
                 dbg!();
-                return Err(box Error::InvalidLValue { span: e.span });
+                return Err(Error::InvalidLValue { span: e.span });
             }
 
             Type::Intersection(ref i) => {
@@ -550,7 +550,7 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
-                return Err(box Error::Errors {
+                return Err(Error::Errors {
                     span,
                     errors: errors.into(),
                 });
@@ -617,7 +617,7 @@ impl Analyzer<'_, '_> {
                 if errors.iter().any(Result::is_ok) {
                     return Ok(());
                 }
-                return Err(box Error::Errors {
+                return Err(Error::Errors {
                     span,
                     errors: errors.into_iter().map(Result::unwrap_err).collect(),
                 });
@@ -634,7 +634,7 @@ impl Analyzer<'_, '_> {
                 if errors.is_empty() {
                     return Ok(());
                 }
-                return Err(box Error::Errors { span, errors });
+                return Err(Error::Errors { span, errors });
             }
 
             Type::Keyword(RTsKeywordType {
@@ -767,7 +767,7 @@ impl Analyzer<'_, '_> {
                         errors.extend(self.assign_inner(elem_type, &el.ty, opts).err());
                     }
                     if !errors.is_empty() {
-                        Err(box Error::Errors { span, errors })?;
+                        Err(Error::Errors { span, errors })?;
                     }
 
                     return Ok(());
@@ -790,14 +790,14 @@ impl Analyzer<'_, '_> {
                 });
                 let errors = results.into_iter().map(Result::unwrap_err).collect();
                 if normalized {
-                    return Err(box Error::AssignFailed {
+                    return Err(Error::AssignFailed {
                         span,
                         cause: errors,
                         left: box to.clone(),
                         right: box rhs.clone(),
                     });
                 } else {
-                    return Err(box Error::Errors { span, errors });
+                    return Err(Error::Errors { span, errors });
                 }
             }
 
@@ -810,7 +810,7 @@ impl Analyzer<'_, '_> {
                 // TODO: Multiple error
                 for v in vs {
                     if let Err(error) = v {
-                        return Err(box Error::IntersectionError { span, error });
+                        return Err(Error::IntersectionError { span, error: box error });
                     }
                 }
 
@@ -931,9 +931,7 @@ impl Analyzer<'_, '_> {
                             | Type::Interface(..)
                             | Type::Module(..)
                             | Type::EnumVariant(..) => fail!(),
-                            Type::Function(..) => {
-                                return Err(box Error::CannotAssignToNonVariable { span: rhs.span() })
-                            }
+                            Type::Function(..) => return Err(Error::CannotAssignToNonVariable { span: rhs.span() }),
                             _ => {}
                         }
                     }
@@ -965,7 +963,7 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
 
-                return Err(box Error::AssignFailed {
+                return Err(Error::AssignFailed {
                     span,
                     left: box Type::Enum(e.clone()),
                     right: box rhs.clone(),
@@ -983,11 +981,11 @@ impl Analyzer<'_, '_> {
                 }
                 _ => {
                     dbg!();
-                    return Err(box Error::InvalidLValue { span });
+                    return Err(Error::InvalidLValue { span });
                 }
             },
 
-            Type::This(RTsThisType { span }) => return Err(box Error::CannotAssingToThis { span: *span }),
+            Type::This(RTsThisType { span }) => return Err(Error::CannotAssingToThis { span: *span }),
 
             Type::Interface(Interface {
                 ref body, ref extends, ..
@@ -1045,7 +1043,7 @@ impl Analyzer<'_, '_> {
                 //
                 // TODO: Use errors returned from parent assignment.
                 if body.is_empty() && !extends.is_empty() {
-                    return Err(box Error::AssignFailed {
+                    return Err(Error::AssignFailed {
                         span,
                         left: box to.clone(),
                         right: box rhs.clone(),
@@ -1122,7 +1120,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         if !errors.is_empty() {
-                            return Err(box Error::TupleAssignError { span, errors });
+                            return Err(Error::TupleAssignError { span, errors });
                         }
 
                         return Ok(());
@@ -1183,7 +1181,7 @@ impl Analyzer<'_, '_> {
                             key: Key::Normal { sym: key, .. },
                             ..
                         }) => {
-                            keys.push(Box::new(Type::Lit(RTsLitType {
+                            keys.push(Type::Lit(RTsLitType {
                                 node_id: NodeId::invalid(),
                                 span: *span,
                                 lit: RTsLit::Str(RStr {
@@ -1192,7 +1190,7 @@ impl Analyzer<'_, '_> {
                                     kind: Default::default(),
                                     value: key.clone(),
                                 }),
-                            })));
+                            }));
                         }
                         _ => {}
                     }
@@ -1203,7 +1201,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        Err(box Error::Unimplemented {
+        Err(Error::Unimplemented {
             span,
             msg: format!("Extract keys"),
         })
@@ -1250,7 +1248,7 @@ impl Analyzer<'_, '_> {
                             }
                         }
                         _ => {
-                            return Err(box Error::Unimplemented {
+                            return Err(Error::Unimplemented {
                                 span: opts.span,
                                 msg: format!("Assignment to mapped type: type element - {:?}", member),
                             })
@@ -1263,7 +1261,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        Err(box Error::Unimplemented {
+        Err(Error::Unimplemented {
             span: opts.span,
             msg: format!("Assignment to mapped type"),
         })

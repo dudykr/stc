@@ -27,7 +27,7 @@ pub struct Mutations {
 pub struct PatMut {
     /// None: No change
     pub optional: Option<bool>,
-    pub ty: Option<Box<Type>>,
+    pub ty: Option<Type>,
 }
 
 #[derive(Default)]
@@ -37,7 +37,7 @@ pub struct VarDeclMut {
 
 #[derive(Default)]
 pub struct FunctionMut {
-    pub ret_ty: Option<Box<Type>>,
+    pub ret_ty: Option<Type>,
 }
 
 #[derive(Default)]
@@ -53,7 +53,7 @@ pub struct ClassMemberMut {
 
 #[derive(Default)]
 pub struct ClassPropMut {
-    pub ty: Option<Box<Type>>,
+    pub ty: Option<Type>,
 }
 
 #[derive(Default)]

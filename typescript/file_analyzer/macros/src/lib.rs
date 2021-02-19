@@ -64,7 +64,7 @@ pub fn extra_validator(_: proc_macro::TokenStream, item: proc_macro::TokenStream
             Quote::new_call_site()
                 .quote_with(smart_quote!(Vars { try_block: &try_block }, {
                     {
-                        let res: Result<_, Box<Error>> = try_block;
+                        let res: Result<_, Error> = try_block;
 
                         match res {
                             Ok(v) => Ok(v),
@@ -80,7 +80,7 @@ pub fn extra_validator(_: proc_macro::TokenStream, item: proc_macro::TokenStream
             Quote::new_call_site()
                 .quote_with(smart_quote!(Vars { try_block: &try_block }, {
                     {
-                        let res: Result<_, Box<Error>> = try_block;
+                        let res: Result<_, Error> = try_block;
 
                         match res {
                             Err(err) => {

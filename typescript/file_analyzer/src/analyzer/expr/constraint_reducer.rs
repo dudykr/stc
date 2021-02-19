@@ -3,10 +3,10 @@ use rnode::VisitMutWith;
 use stc_ts_types::{Mapped, Type, TypeParam};
 use stc_ts_utils::MapWithMut;
 
-pub fn reduce(m: &Mapped) -> Option<Box<Type>> {
+pub fn reduce(m: &Mapped) -> Option<Type> {
     let mut type_param = m.type_param.clone();
     type_param.constraint.visit_mut_with(&mut ConstraintReducer);
-    type_param.constraint
+    type_param.constraint.map(|v| *v)
 }
 
 struct ConstraintReducer;

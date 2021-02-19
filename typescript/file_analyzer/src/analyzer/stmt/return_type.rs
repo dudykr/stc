@@ -40,8 +40,8 @@ pub(in crate::analyzer) struct ReturnValues {
     /// If all cases are handled, `return literal` like `return 5` and never
     /// type is used, we should not generalize the return value.
     should_generalize: bool,
-    pub return_types: Vec<Box<Type>>,
-    yield_types: Vec<Box<Type>>,
+    pub return_types: Vec<Type>,
+    yield_types: Vec<Type>,
     /// Are we in if or switch statement?
     pub(super) in_conditional: bool,
     pub(super) forced_never: bool,
@@ -66,7 +66,7 @@ impl Analyzer<'_, '_> {
         is_async: bool,
         is_generator: bool,
         stmts: &Vec<RStmt>,
-    ) -> Result<Option<Box<Type>>, Error> {
+    ) -> Result<Option<Type>, Error> {
         slog::debug!(self.logger, "visit_stmts_for_return()");
         debug_assert!(!self.is_builtin, "builtin: visit_stmts_for_return should not be called");
 
@@ -157,7 +157,7 @@ impl Analyzer<'_, '_> {
                 self.simplify(Type::union(actual))
             };
 
-            return Ok(Some(box Type::Ref(Ref {
+            return Ok(Some(Type::Ref(Ref {
                 span,
                 ctxt: ModuleId::builtin(),
                 type_name: if is_async {
@@ -170,7 +170,7 @@ impl Analyzer<'_, '_> {
                     params: vec![
                         yield_ty,
                         ret_ty,
-                        box Type::Keyword(RTsKeywordType {
+                        Type::Keyword(RTsKeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsUnknownKeyword,
                         }),
@@ -186,7 +186,7 @@ impl Analyzer<'_, '_> {
                 self.simplify(Type::union(actual))
             };
 
-            return Ok(Some(box Type::Ref(Ref {
+            return Ok(Some(Type::Ref(Ref {
                 span,
                 ctxt: ModuleId::builtin(),
                 type_name: RTsEntityName::Ident(RIdent::new("Promise".into(), DUMMY_SP)),
@@ -227,7 +227,7 @@ impl Analyzer<'_, '_> {
         } {
             res?
         } else {
-            box Type::Keyword(RTsKeywordType {
+            Type::Keyword(RTsKeywordType {
                 span: node.span,
                 kind: TsKeywordTypeKind::TsVoidKeyword,
             })
@@ -248,8 +248,8 @@ impl Analyzer<'_, '_> {
 
             if e.delegate {
                 // TODO: Use correct symbol. (need proper symbol handling)
-                let item_ty = box self
-                    .convert_to_iterator(e.span, Cow::Owned(*ty))
+                let item_ty = self
+                    .convert_to_iterator(e.span, Cow::Owned(ty))
                     .context("tried to convert argument as an interator for delegating yield")?
                     .into_owned();
 
@@ -258,13 +258,10 @@ impl Analyzer<'_, '_> {
                 self.scope.return_values.yield_types.push(ty);
             }
         } else {
-            self.scope
-                .return_values
-                .yield_types
-                .push(box Type::Keyword(RTsKeywordType {
-                    span: e.span,
-                    kind: TsKeywordTypeKind::TsVoidKeyword,
-                }));
+            self.scope.return_values.yield_types.push(Type::Keyword(RTsKeywordType {
+                span: e.span,
+                kind: TsKeywordTypeKind::TsVoidKeyword,
+            }));
         }
 
         Ok(Type::any(e.span))
@@ -332,8 +329,8 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                 let index_ty = self
                     .analyzer
                     .with_ctx(ctx)
-                    .expand_fully(span, index_type.clone(), true)
-                    .unwrap_or_else(|_| index_type.clone());
+                    .expand_fully(span, *index_type.clone(), true)
+                    .unwrap_or_else(|_| *index_type.clone());
 
                 if obj_type.type_eq(&index_type) {
                     // declare type S2 = {
@@ -342,9 +339,9 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                     // };
                     // `S2[keyof S2]`;
 
-                    match *index_ty {
+                    match index_ty.foldable() {
                         Type::TypeLit(obj) => {
-                            let mut types: Vec<Box<Type>> = vec![];
+                            let mut types: Vec<Type> = vec![];
                             for member in obj.members {
                                 match member {
                                     TypeElement::Call(_) => {
@@ -360,7 +357,7 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
 
                                         if let Some(ty) = p.type_ann {
                                             if types.iter().all(|previous| !previous.type_eq(&ty)) {
-                                                types.push(ty);
+                                                types.push(*ty);
                                             }
                                         }
                                     }
@@ -372,7 +369,7 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                                     }
                                 }
                             }
-                            let ty = *Type::union(types);
+                            let ty = Type::union(types);
 
                             return ty;
                         }
@@ -387,9 +384,9 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                     // =>
                     // `T["a" | "b"]`
 
-                    match *index_ty {
+                    match index_ty.foldable() {
                         Type::TypeLit(obj) => {
-                            let mut types: Vec<Box<Type>> = vec![];
+                            let mut types: Vec<Type> = vec![];
                             for member in obj.members {
                                 match member {
                                     TypeElement::Call(_) => {
@@ -411,7 +408,7 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
 
                                         match key {
                                             Key::Normal { span: i_span, sym: key } => {
-                                                let ty = box Type::Lit(RTsLitType {
+                                                let ty = Type::Lit(RTsLitType {
                                                     node_id: NodeId::invalid(),
                                                     span: i_span,
                                                     lit: RTsLit::Str(RStr {
@@ -435,7 +432,7 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                                 span,
                                 readonly,
                                 obj_type: obj_type.clone(),
-                                index_type: Type::union(types),
+                                index_type: box Type::union(types),
                             });
                         }
                         _ => {}

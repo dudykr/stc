@@ -49,12 +49,7 @@ impl Analyzer<'_, '_> {
     /// let e4 = f({ a: 2 }, data); // Error
     /// let e5 = f(data, data2); // Error
     /// ```
-    pub(super) fn insert_inferred(
-        &mut self,
-        inferred: &mut InferData,
-        name: Id,
-        ty: Box<Type>,
-    ) -> ValidationResult<()> {
+    pub(super) fn insert_inferred(&mut self, inferred: &mut InferData, name: Id, ty: Type) -> ValidationResult<()> {
         slog::info!(self.logger, "Inferred {} as {:?}", name, ty);
 
         match ty.normalize() {
@@ -74,7 +69,7 @@ impl Analyzer<'_, '_> {
             match inferred.defaults.entry(name.clone()) {
                 Entry::Occupied(..) => {}
                 Entry::Vacant(e) => {
-                    e.insert(box Type::Param(TypeParam {
+                    e.insert(Type::Param(TypeParam {
                         span: ty.span(),
                         name: name.clone(),
                         constraint: None,
@@ -116,7 +111,7 @@ impl Analyzer<'_, '_> {
         type_params: &[TypeParam],
         param: &Type,
         arg: &Type,
-    ) -> ValidationResult<FxHashMap<Id, Box<Type>>> {
+    ) -> ValidationResult<FxHashMap<Id, Type>> {
         let mut inferred = InferData::default();
 
         let ctx = Ctx {
@@ -410,19 +405,19 @@ impl Analyzer<'_, '_> {
 
     pub(super) fn finalize_inference(&self, inferred: &mut InferData) {
         for (k, v) in inferred.type_params.iter_mut() {
-            self.replace_null_or_undefined_while_defaulting_to_any(&mut **v);
+            self.replace_null_or_undefined_while_defaulting_to_any(v);
         }
     }
 
     /// TODO: Handle union
     fn replace_null_or_undefined_while_defaulting_to_any(&self, ty: &mut Type) {
         if ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
-            *ty = *Type::any(ty.span());
+            *ty = Type::any(ty.span());
             return;
         }
 
         if ty.is_kwd(TsKeywordTypeKind::TsNullKeyword) {
-            *ty = *Type::any(ty.span());
+            *ty = Type::any(ty.span());
             return;
         }
 
