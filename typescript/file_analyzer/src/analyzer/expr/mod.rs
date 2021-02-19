@@ -400,7 +400,12 @@ impl Analyzer<'_, '_> {
                 Err(()) => Type::any(span),
             };
 
-            let rhs_ty = analyzer.expand_fully(span, rhs_ty.clone(), true)?;
+            let ctx = Ctx {
+                preserve_params: true,
+                preserve_ret_ty: true,
+                ..analyzer.ctx
+            };
+            let rhs_ty = analyzer.with_ctx(ctx).expand_fully(span, rhs_ty.clone(), true)?;
             analyzer.try_assign(span, e.op, &e.left, &rhs_ty);
 
             match &e.left {
