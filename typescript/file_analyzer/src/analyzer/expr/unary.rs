@@ -47,7 +47,7 @@ impl Analyzer<'_, '_> {
         }
 
         // TODO: Check for `self.ctx.in_cond` to improve performance.
-        let arg: Option<Box<Type>> = match op {
+        let arg: Option<Type> = match op {
             op!("!") => {
                 let orig_facts = self.cur_facts.take();
                 let arg_ty = self
@@ -100,7 +100,7 @@ impl Analyzer<'_, '_> {
         match op {
             op!("typeof") => {
                 if self.ctx.in_export_default_expr {
-                    return Ok(box Type::Union(Union {
+                    return Ok(Type::Union(Union {
                         span,
                         types: [
                             js_word!("string"),
@@ -125,11 +125,10 @@ impl Analyzer<'_, '_> {
                             }),
                         })
                         .map(Type::Lit)
-                        .map(Box::new)
                         .collect(),
                     }));
                 }
-                return Ok(box Type::Keyword(RTsKeywordType {
+                return Ok(Type::Keyword(RTsKeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsStringKeyword,
                 }));
@@ -250,11 +249,11 @@ impl Analyzer<'_, '_> {
     }
 }
 
-fn negate(ty: Box<Type>) -> Box<Type> {
-    match *ty {
+fn negate(ty: Type) -> Type {
+    match ty {
         Type::Lit(RTsLitType { ref lit, span, node_id }) => match *lit {
             RTsLit::Bool(ref v) => {
-                return box Type::Lit(RTsLitType {
+                return Type::Lit(RTsLitType {
                     node_id,
                     lit: RTsLit::Bool(RBool {
                         value: !v.value,
@@ -264,7 +263,7 @@ fn negate(ty: Box<Type>) -> Box<Type> {
                 });
             }
             RTsLit::Number(ref v) => {
-                return box Type::Lit(RTsLitType {
+                return Type::Lit(RTsLitType {
                     node_id: NodeId::invalid(),
                     lit: RTsLit::Bool(RBool {
                         value: v.value != 0.0,
@@ -274,7 +273,7 @@ fn negate(ty: Box<Type>) -> Box<Type> {
                 });
             }
             RTsLit::Str(ref v) => {
-                return box Type::Lit(RTsLitType {
+                return Type::Lit(RTsLitType {
                     node_id: NodeId::invalid(),
                     lit: RTsLit::Bool(RBool {
                         value: v.value != js_word!(""),
@@ -284,7 +283,7 @@ fn negate(ty: Box<Type>) -> Box<Type> {
                 });
             }
             RTsLit::Tpl(ref v) => {
-                return box Type::Lit(RTsLitType {
+                return Type::Lit(RTsLitType {
                     node_id: NodeId::invalid(),
                     lit: RTsLit::Bool(RBool {
                         value: v.quasis.iter().next().as_ref().unwrap().raw.value != js_word!(""),
@@ -294,7 +293,7 @@ fn negate(ty: Box<Type>) -> Box<Type> {
                 });
             }
             RTsLit::BigInt(ref v) => {
-                return box Type::Lit(RTsLitType {
+                return Type::Lit(RTsLitType {
                     node_id: NodeId::invalid(),
                     lit: RTsLit::BigInt(RBigInt {
                         value: -v.value.clone(),
@@ -308,7 +307,7 @@ fn negate(ty: Box<Type>) -> Box<Type> {
         _ => {}
     }
 
-    box RTsKeywordType {
+    RTsKeywordType {
         span: ty.span(),
         kind: TsKeywordTypeKind::TsBooleanKeyword,
     }

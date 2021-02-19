@@ -341,18 +341,18 @@ impl Analyzer<'_, '_> {
         }
         let mut to = to.foldable();
         match to {
-            Type::TypeLit(ref mut lit) => match *rhs {
+            Type::TypeLit(ref mut lit) => match rhs {
                 Type::TypeLit(rhs) => {
                     lit.members.extend(rhs.members);
-                    return Ok(box to);
+                    return Ok(to);
                 }
                 Type::Union(rhs) => {
-                    return Ok(box Type::Union(Union {
+                    return Ok(Type::Union(Union {
                         span: lit.span,
                         types: rhs
                             .types
                             .into_iter()
-                            .map(|rhs| self.append_type(box to.clone(), rhs))
+                            .map(|rhs| self.append_type(to.clone(), rhs))
                             .collect::<Result<_, _>>()?,
                     }))
                 }
@@ -360,7 +360,7 @@ impl Analyzer<'_, '_> {
             },
 
             Type::Union(to) => {
-                return Ok(box Type::Union(Union {
+                return Ok(Type::Union(Union {
                     span: to.span,
                     types: to
                         .types
@@ -375,7 +375,7 @@ impl Analyzer<'_, '_> {
         unimplemented!("append_type:\n{:?}\n{:?}", to, rhs)
     }
 
-    fn append_type_element(&mut self, to: Type, rhs: TypeElement) -> ValidationResult<Type> {
+    fn append_type_element(&mut self, to: Type, rhs: TypeElement) -> ValidationResult {
         if to.is_any() || to.is_unknown() {
             return Ok(to);
         }
@@ -386,9 +386,9 @@ impl Analyzer<'_, '_> {
                 // TODO: Remove previous member with same key.
 
                 lit.members.push(rhs);
-                Ok(box to)
+                Ok(to)
             }
-            Type::Union(to) => Ok(box Type::Union(Union {
+            Type::Union(to) => Ok(Type::Union(Union {
                 span: to.span,
                 types: to
                     .types
