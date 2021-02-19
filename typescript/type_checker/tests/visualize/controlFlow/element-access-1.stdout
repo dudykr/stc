@@ -62,6 +62,14 @@ warning: Type
  --> $DIR/tests/visualize/controlFlow/element-access-1.ts:6:5
   |
 6 |     config.works.prop = 'test'; // ok
+  |     ^^^^^^^^^^^^^^^^^
+  |
+  = note: string
+
+warning: Type
+ --> $DIR/tests/visualize/controlFlow/element-access-1.ts:6:5
+  |
+6 |     config.works.prop = 'test'; // ok
   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
   |
   = note: 'test'
