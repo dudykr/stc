@@ -944,7 +944,7 @@ impl Analyzer<'_, '_> {
                     ..self.ctx
                 };
                 let arg = self.with_ctx(ctx).expand_fully(span, arg.clone(), true)?;
-                match *arg {
+                match arg.normalize() {
                     Type::Ref(..) => {}
                     _ => {
                         return self.infer_type(span, inferred, param, &arg);
@@ -1249,7 +1249,7 @@ impl Analyzer<'_, '_> {
                             }),
                         )?;
 
-                        let mut keys = box Type::Union(Union {
+                        let mut keys = Type::Union(Union {
                             span: param.span,
                             types: key_types,
                         });
@@ -1273,7 +1273,7 @@ impl Analyzer<'_, '_> {
 
                             match &mut inferred_ty {
                                 Some(ty) => {
-                                    handle_optional_for_element(&mut **ty, optional);
+                                    handle_optional_for_element(ty, optional);
                                 }
                                 None => {}
                             }
@@ -1286,9 +1286,9 @@ impl Analyzer<'_, '_> {
                         self.insert_inferred(
                             inferred,
                             name.clone(),
-                            box Type::Array(Array {
+                            Type::Array(Array {
                                 span: arg.span,
-                                elem_type: new_ty.unwrap_or_else(|| Type::any(arg.span)),
+                                elem_type: box new_ty.unwrap_or_else(|| Type::any(arg.span)),
                             }),
                         )?;
 
@@ -1322,7 +1322,7 @@ impl Analyzer<'_, '_> {
 
                                 match &mut inferred_ty {
                                     Some(ty) => {
-                                        handle_optional_for_element(&mut **ty, optional);
+                                        handle_optional_for_element(ty, optional);
                                     }
                                     None => {}
                                 }
@@ -1331,12 +1331,12 @@ impl Analyzer<'_, '_> {
 
                                 if let Some(rest) = rest {
                                     if let Some(elem_type) = inferred_ty {
-                                        Some(box Type::Rest(RestType {
+                                        Some(Type::Rest(RestType {
                                             span: rest,
                                             ty: box Type::Array(Array {
                                                 // TODO
                                                 span: DUMMY_SP,
-                                                elem_type,
+                                                elem_type: box elem_type,
                                             }),
                                         }))
                                     } else {
@@ -1350,7 +1350,7 @@ impl Analyzer<'_, '_> {
                             };
 
                             new_elements.push(TupleElement {
-                                ty: new_ty.unwrap_or_else(|| Type::any(arg.span)),
+                                ty: box new_ty.unwrap_or_else(|| Type::any(arg.span)),
                                 ..element.clone()
                             });
                         }
@@ -1358,7 +1358,7 @@ impl Analyzer<'_, '_> {
                         self.insert_inferred(
                             inferred,
                             name.clone(),
-                            box Type::Tuple(Tuple {
+                            Type::Tuple(Tuple {
                                 span: arg.span,
                                 elems: new_elements,
                             }),
@@ -1391,7 +1391,7 @@ impl Analyzer<'_, '_> {
                                         Key::Normal {
                                             span: i_span,
                                             sym: i_sym,
-                                        } => Some(box Type::Lit(RTsLitType {
+                                        } => Some(Type::Lit(RTsLitType {
                                             node_id: NodeId::invalid(),
                                             span: param.span,
                                             lit: RTsLit::Str(RStr {
@@ -1437,7 +1437,7 @@ impl Analyzer<'_, '_> {
 
                             match &tp.constraint {
                                 Some(box Type::Union(ty))
-                                    if ty.types.iter().all(|ty| match &**ty {
+                                    if ty.types.iter().all(|ty| match ty.normalize() {
                                         Type::Operator(Operator {
                                             ty: box Type::Param(..),
                                             ..
@@ -1447,7 +1447,7 @@ impl Analyzer<'_, '_> {
                                 {
                                     ty.types
                                         .iter()
-                                        .map(|ty| match &**ty {
+                                        .map(|ty| match ty.normalize() {
                                             Type::Operator(Operator {
                                                 ty: box Type::Param(p), ..
                                             }) => p.name.clone(),
@@ -1496,7 +1496,7 @@ impl Analyzer<'_, '_> {
                                                         continue;
                                                     }
 
-                                                    let ty = inferred.type_params.remove(name);
+                                                    let ty = inferred.type_params.remove(name).map(Box::new);
 
                                                     type_elements.entry(name.clone()).or_default().push(
                                                         TypeElement::Property(PropertySignature {
@@ -1530,7 +1530,7 @@ impl Analyzer<'_, '_> {
                                             metadata: arg.metadata,
                                         });
 
-                                        self.insert_inferred(inferred, name.clone(), box list_ty)?;
+                                        self.insert_inferred(inferred, name.clone(), list_ty)?;
                                     }
                                 }
 
@@ -1625,7 +1625,7 @@ impl Analyzer<'_, '_> {
                                                     metadata: arg.metadata,
                                                 });
 
-                                                self.insert_inferred(inferred, name.clone(), box list_ty)?;
+                                                self.insert_inferred(inferred, name.clone(), list_ty)?;
                                                 return Ok(true);
                                             }
 
@@ -1792,7 +1792,7 @@ impl Analyzer<'_, '_> {
             fn visit_mut(&mut self, node: &mut Type) {
                 match node {
                     Type::Param(p) if self.fixed.contains_key(&p.name) => {
-                        *node = (**self.fixed.get(&p.name).unwrap()).clone();
+                        *node = (*self.fixed.get(&p.name).unwrap()).clone();
                     }
                     _ => node.visit_mut_children_with(self),
                 }
@@ -1838,7 +1838,7 @@ impl Analyzer<'_, '_> {
         ty.normalize().visit_with(&mut usage_visitor);
         if usage_visitor.params.is_empty() {
             slog::debug!(self.logger, "rename_type_param: No type parameter is used in type");
-            match *ty {
+            match ty.foldable() {
                 Type::Function(ref mut f) => {
                     f.type_params = None;
                 }
@@ -1858,7 +1858,7 @@ impl Analyzer<'_, '_> {
                 "renaming type parameters based on type annotation provided by user\ntype_ann = {:?}",
                 type_ann
             );
-            return Ok(box ty.foldable().fold_with(&mut TypeParamRenamer {
+            return Ok(ty.foldable().fold_with(&mut TypeParamRenamer {
                 inferred: inferred.type_params,
                 declared: Default::default(),
             }));
@@ -1869,7 +1869,7 @@ impl Analyzer<'_, '_> {
             params: usage_visitor.params,
         });
 
-        match *ty {
+        match ty.normalize_mut() {
             Type::Function(ref mut f) => {
                 f.type_params = decl;
             }
