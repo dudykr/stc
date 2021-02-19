@@ -157,7 +157,7 @@ impl Analyzer<'_, '_> {
                 self.simplify(Type::union(actual))
             };
 
-            return Ok(Some(box Type::Ref(Ref {
+            return Ok(Some(Type::Ref(Ref {
                 span,
                 ctxt: ModuleId::builtin(),
                 type_name: if is_async {
@@ -170,7 +170,7 @@ impl Analyzer<'_, '_> {
                     params: vec![
                         yield_ty,
                         ret_ty,
-                        box Type::Keyword(RTsKeywordType {
+                        Type::Keyword(RTsKeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsUnknownKeyword,
                         }),
@@ -186,7 +186,7 @@ impl Analyzer<'_, '_> {
                 self.simplify(Type::union(actual))
             };
 
-            return Ok(Some(box Type::Ref(Ref {
+            return Ok(Some(Type::Ref(Ref {
                 span,
                 ctxt: ModuleId::builtin(),
                 type_name: RTsEntityName::Ident(RIdent::new("Promise".into(), DUMMY_SP)),
@@ -227,7 +227,7 @@ impl Analyzer<'_, '_> {
         } {
             res?
         } else {
-            box Type::Keyword(RTsKeywordType {
+            Type::Keyword(RTsKeywordType {
                 span: node.span,
                 kind: TsKeywordTypeKind::TsVoidKeyword,
             })
@@ -248,8 +248,8 @@ impl Analyzer<'_, '_> {
 
             if e.delegate {
                 // TODO: Use correct symbol. (need proper symbol handling)
-                let item_ty = box self
-                    .convert_to_iterator(e.span, Cow::Owned(*ty))
+                let item_ty = self
+                    .convert_to_iterator(e.span, Cow::Owned(ty))
                     .context("tried to convert argument as an interator for delegating yield")?
                     .into_owned();
 
@@ -258,13 +258,10 @@ impl Analyzer<'_, '_> {
                 self.scope.return_values.yield_types.push(ty);
             }
         } else {
-            self.scope
-                .return_values
-                .yield_types
-                .push(box Type::Keyword(RTsKeywordType {
-                    span: e.span,
-                    kind: TsKeywordTypeKind::TsVoidKeyword,
-                }));
+            self.scope.return_values.yield_types.push(Type::Keyword(RTsKeywordType {
+                span: e.span,
+                kind: TsKeywordTypeKind::TsVoidKeyword,
+            }));
         }
 
         Ok(Type::any(e.span))

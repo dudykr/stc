@@ -515,12 +515,12 @@ impl Analyzer<'_, '_> {
                         }
 
                         let var_ty = (|| -> ValidationResult<_> {
-                            match &*ty {
+                            match ty.normalize() {
                                 Type::EnumVariant(ref v) => {
                                     if let Some(items) = self.find_type(self.ctx.module_id, &v.enum_name)? {
                                         for ty in items {
                                             if let Type::Enum(ref e) = ty.normalize() {
-                                                return Ok(box Type::Enum(e.clone()));
+                                                return Ok(Type::Enum(e.clone()));
                                             }
                                         }
                                     }

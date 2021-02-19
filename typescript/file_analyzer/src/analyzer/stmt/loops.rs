@@ -51,7 +51,14 @@ impl Analyzer<'_, '_> {
                     Err(..) => return,
                 };
 
-                match self.assign(&Type::Array(Array { span, elem_type: lty }), &rty, lhs.span()) {
+                match self.assign(
+                    &Type::Array(Array {
+                        span,
+                        elem_type: box lty,
+                    }),
+                    &rty,
+                    lhs.span(),
+                ) {
                     Ok(..) => {}
                     Err(err) => self.storage.report(err),
                 }
