@@ -570,8 +570,9 @@ impl Analyzer<'_, '_> {
                         if declared_ty.is_any() {
                             return Ok(());
                         }
+                        let declared_ty = declared_ty.clone();
 
-                        actual_ty = Some(self.narrowed_type_of_assignment(declared_ty.clone(), &ty)?);
+                        actual_ty = Some(self.narrowed_type_of_assignment(span, declared_ty, &ty)?);
                     }
                 }
 
