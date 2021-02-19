@@ -21,13 +21,5 @@ function hasKind(entity: Entity, kind: Kind): boolean {
     return entity.kind === kind;
 }
 
-let x: A = {
-    kind: "A",
-    a: 100,
-}
 
-if (!hasKind(x, "B")) {
-    let c = x;
-}
-
-export { }
+hasKind
