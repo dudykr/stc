@@ -205,14 +205,14 @@ impl RemoveTypes for Type {
         match self {
             Type::Keyword(RTsKeywordType { kind, span }) => match kind {
                 TsKeywordTypeKind::TsUndefinedKeyword | TsKeywordTypeKind::TsNullKeyword => {
-                    return *Type::never(span);
+                    return Type::never(span);
                 }
                 _ => {}
             },
             Type::Lit(RTsLitType {
                 lit: RTsLit::Bool(RBool { value: false, span, .. }),
                 ..
-            }) => return *Type::never(span),
+            }) => return Type::never(span),
 
             Type::Union(u) => return u.remove_falsy(),
             Type::Intersection(i) => return i.remove_falsy(),
@@ -227,7 +227,7 @@ impl RemoveTypes for Type {
             Type::Lit(RTsLitType {
                 lit: RTsLit::Bool(RBool { value: true, span, .. }),
                 ..
-            }) => return *Type::never(span),
+            }) => return Type::never(span),
 
             Type::Union(u) => u.remove_truthy(),
             Type::Intersection(i) => i.remove_truthy(),

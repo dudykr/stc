@@ -144,9 +144,9 @@ impl Fold<Type> for TypeFactsHandler {
         let span = ty.span();
 
         match ty {
-            Type::Union(ref u) if u.types.is_empty() => return *Type::never(u.span),
-            Type::Union(u) if u.types.len() == 1 => return *u.types.into_iter().next().unwrap(),
-            Type::Intersection(ref i) if i.types.iter().any(|ty| ty.is_never()) => return *Type::never(i.span),
+            Type::Union(ref u) if u.types.is_empty() => return Type::never(u.span),
+            Type::Union(u) if u.types.len() == 1 => return u.types.into_iter().next().unwrap(),
+            Type::Intersection(ref i) if i.types.iter().any(|ty| ty.is_never()) => return Type::never(i.span),
 
             Type::Keyword(..) => {}
 
@@ -154,7 +154,7 @@ impl Fold<Type> for TypeFactsHandler {
                 // Treat as any and apply type facts.
                 let simple = facts_to_union(span, self.facts);
                 if !simple.is_never() {
-                    return *simple;
+                    return simple;
                 }
             }
             _ => {}
@@ -164,24 +164,24 @@ impl Fold<Type> for TypeFactsHandler {
     }
 }
 
-fn facts_to_union(span: Span, facts: TypeFacts) -> Box<Type> {
+fn facts_to_union(span: Span, facts: TypeFacts) -> Type {
     let mut types = vec![];
     if facts.contains(TypeFacts::TypeofEQString) {
-        types.push(box Type::Keyword(RTsKeywordType {
+        types.push(Type::Keyword(RTsKeywordType {
             span,
             kind: TsKeywordTypeKind::TsStringKeyword,
         }));
     }
 
     if facts.contains(TypeFacts::TypeofEQNumber) {
-        types.push(box Type::Keyword(RTsKeywordType {
+        types.push(Type::Keyword(RTsKeywordType {
             span,
             kind: TsKeywordTypeKind::TsNumberKeyword,
         }));
     }
 
     if facts.contains(TypeFacts::TypeofEQBoolean) {
-        types.push(box Type::Keyword(RTsKeywordType {
+        types.push(Type::Keyword(RTsKeywordType {
             span,
             kind: TsKeywordTypeKind::TsBooleanKeyword,
         }));
