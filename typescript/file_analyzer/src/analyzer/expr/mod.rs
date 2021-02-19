@@ -1868,7 +1868,7 @@ impl Analyzer<'_, '_> {
                             | Type::Optional(_)
                             | Type::Rest(_)
                             | Type::Lit(_) => {
-                                let mut ty = box ty.into_owned().clone();
+                                let mut ty = ty.into_owned().clone();
                                 let mut params = None;
                                 if let Some(type_args) = type_args {
                                     match ty.normalize() {
@@ -1929,7 +1929,7 @@ impl Analyzer<'_, '_> {
 
                 slog::warn!(self.logger, "Creating Type::Ref: {:?}", i);
 
-                Ok(box Type::Ref(Ref {
+                Ok(Type::Ref(Ref {
                     span,
                     ctxt: self.ctx.module_id,
                     type_name: RTsEntityName::Ident(i.clone()),
@@ -2053,7 +2053,7 @@ impl Analyzer<'_, '_> {
                     preserve_ref: false,
                     ..self.ctx
                 };
-                let ty = self.with_ctx(ctx).expand_fully(*span, box ty.clone(), true);
+                let ty = self.with_ctx(ctx).expand_fully(*span, ty.clone(), true);
                 let ty = match ty {
                     Ok(v) => v,
                     Err(..) => return false,
@@ -2079,7 +2079,7 @@ impl Analyzer<'_, '_> {
                         Ok(v) => v,
                         Err(..) => return false,
                     };
-                    if !self.prefer_tuple(Some(&*parent_ty)) {
+                    if !self.prefer_tuple(Some(&parent_ty)) {
                         return false;
                     }
                 }

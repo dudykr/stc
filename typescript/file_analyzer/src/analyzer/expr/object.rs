@@ -35,7 +35,7 @@ use swc_common::DUMMY_SP;
 impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RObjectLit) -> ValidationResult {
         self.with_child(ScopeKind::ObjectLit, Default::default(), |a: &mut Analyzer| {
-            let mut ty = box Type::TypeLit(TypeLit {
+            let mut ty = Type::TypeLit(TypeLit {
                 span: node.span,
                 members: vec![],
                 metadata: Default::default(),
@@ -59,10 +59,10 @@ impl ObjectUnionNormalizer<'_, '_, '_> {
     /// We need to know shape of normalized type literal.
     ///
     /// We use indexset to remove duplicate while preserving order.
-    fn find_keys(&self, types: &[Box<Type>]) -> IndexSet<JsWord> {
+    fn find_keys(&self, types: &[Type]) -> IndexSet<JsWord> {
         types
             .iter()
-            .filter_map(|ty| match &**ty {
+            .filter_map(|ty| match ty.normalize() {
                 Type::TypeLit(ty) => Some(&ty.members),
                 _ => None,
             })
@@ -86,7 +86,7 @@ impl ObjectUnionNormalizer<'_, '_, '_> {
         let mut extra_members = vec![];
         //
         for (type_idx, ty) in u.types.iter().enumerate() {
-            match &**ty {
+            match ty.normalize() {
                 Type::TypeLit(ty) => {
                     inexact |= ty.metadata.inexact;
                     prev_specified |= ty.metadata.specified;
@@ -110,7 +110,6 @@ impl ObjectUnionNormalizer<'_, '_, '_> {
                                             .iter()
                                             .cloned()
                                             .map(Type::Param)
-                                            .map(Box::new)
                                             .zip(type_params.params.iter())
                                             .map(|(prev, new)| (new.name.clone(), prev))
                                             .collect();
@@ -136,7 +135,10 @@ impl ObjectUnionNormalizer<'_, '_, '_> {
                                     new_params[idx].push(param);
                                 }
 
-                                new_return_types.entry(i).or_default().extend(ret_ty.clone());
+                                new_return_types
+                                    .entry(i)
+                                    .or_default()
+                                    .extend(ret_ty.clone().map(|v| *v));
                             }
                             _ => {
                                 if extra_members.len() <= type_idx {
@@ -165,7 +167,7 @@ impl ObjectUnionNormalizer<'_, '_, '_> {
 
             members.push(TypeElement::Call(CallSignature {
                 span: DUMMY_SP,
-                ret_ty: Some(Type::union(return_types)),
+                ret_ty: Some(box Type::union(return_types)),
                 type_params,
                 params: new_params
                     .into_iter()
@@ -177,11 +179,11 @@ impl ObjectUnionNormalizer<'_, '_, '_> {
                                 pat = Some(param.pat);
                             }
 
-                            types.push(param.ty);
+                            types.push(*param.ty);
                         }
                         types.dedup_type();
 
-                        let ty = Type::intersection(DUMMY_SP, types);
+                        let ty = box Type::intersection(DUMMY_SP, types);
                         FnParam {
                             span: DUMMY_SP,
                             // TODO
@@ -218,7 +220,6 @@ impl ObjectUnionNormalizer<'_, '_, '_> {
                 new_lit
             })
             .map(Type::TypeLit)
-            .map(Box::new)
             .collect_vec();
 
         u.types = new_types;
@@ -314,10 +315,10 @@ impl Analyzer<'_, '_> {
         });
     }
 
-    fn append_prop_or_spread_to_type(&mut self, to: Box<Type>, prop: &RPropOrSpread) -> ValidationResult {
+    fn append_prop_or_spread_to_type(&mut self, to: Type, prop: &RPropOrSpread) -> ValidationResult {
         match prop {
             RPropOrSpread::Spread(RSpreadElement { expr, .. }) => {
-                let prop_ty: Box<Type> = expr.validate_with_default(self)?;
+                let prop_ty: Type = expr.validate_with_default(self)?;
                 self.append_type(to, prop_ty)
             }
             RPropOrSpread::Prop(prop) => {
@@ -331,7 +332,7 @@ impl Analyzer<'_, '_> {
     ///
     /// `{ a: number } + ( {b: number} | { c: number } )` => `{ a: number, b:
     /// number } | { a: number, c: number }`
-    fn append_type(&mut self, to: Box<Type>, rhs: Box<Type>) -> ValidationResult<Box<Type>> {
+    fn append_type(&mut self, to: Type, rhs: Type) -> ValidationResult<Type> {
         if to.is_any() || to.is_unknown() {
             return Ok(to);
         }
@@ -374,7 +375,7 @@ impl Analyzer<'_, '_> {
         unimplemented!("append_type:\n{:?}\n{:?}", to, rhs)
     }
 
-    fn append_type_element(&mut self, to: Box<Type>, rhs: TypeElement) -> ValidationResult<Box<Type>> {
+    fn append_type_element(&mut self, to: Type, rhs: TypeElement) -> ValidationResult<Type> {
         if to.is_any() || to.is_unknown() {
             return Ok(to);
         }
