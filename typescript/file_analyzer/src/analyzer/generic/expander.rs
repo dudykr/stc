@@ -362,7 +362,7 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                     // If it's not self-referential, we fold it again.
 
                     self.dejavu.insert(param.name.clone());
-                    let ty = *ty.clone().fold_with(self);
+                    let ty = ty.clone().fold_with(self);
                     self.dejavu.remove(&param.name);
                     return ty;
                 }

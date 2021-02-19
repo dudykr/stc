@@ -304,7 +304,7 @@ impl Analyzer<'_, '_> {
                             type_param.name,
                             p.name
                         );
-                        self.insert_inferred(&mut inferred, type_param.name.clone(), box Type::Param(p.clone()))?;
+                        self.insert_inferred(&mut inferred, type_param.name.clone(), Type::Param(p.clone()))?;
                     }
                     continue;
                 }
@@ -315,7 +315,7 @@ impl Analyzer<'_, '_> {
                 self.insert_inferred(
                     &mut inferred,
                     type_param.name.clone(),
-                    type_param.constraint.clone().unwrap(),
+                    *type_param.constraint.clone().unwrap(),
                 )?;
                 continue;
             }
@@ -333,7 +333,7 @@ impl Analyzer<'_, '_> {
                 };
                 let ty = self
                     .with_ctx(ctx)
-                    .expand_fully(span, type_param.constraint.clone().unwrap(), false)?;
+                    .expand_fully(span, *type_param.constraint.clone().unwrap(), false)?;
                 if !inferred.type_params.contains_key(&type_param.name) {
                     self.insert_inferred(&mut inferred, type_param.name.clone(), ty)?;
                 }
@@ -344,7 +344,7 @@ impl Analyzer<'_, '_> {
                     self.insert_inferred(&mut inferred, type_param.name.clone(), default_ty)?;
                 } else {
                     if let Some(default) = &type_param.default {
-                        self.insert_inferred(&mut inferred, type_param.name.clone(), default.clone())?;
+                        self.insert_inferred(&mut inferred, type_param.name.clone(), *default.clone())?;
                         continue;
                     }
 
