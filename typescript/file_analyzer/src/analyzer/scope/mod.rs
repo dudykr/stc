@@ -1052,7 +1052,7 @@ impl Analyzer<'_, '_> {
                         for elem in elems {
                             match elem {
                                 Some(elem) => {
-                                    self.declare_complex_vars(kind, elem, ty.clone())?;
+                                    self.declare_complex_vars(kind, elem, *ty.clone())?;
                                 }
                                 None => {}
                             }
@@ -1073,14 +1073,14 @@ impl Analyzer<'_, '_> {
                         match *m {
                             TypeElement::Property(PropertySignature { ref type_ann, .. }) => {
                                 return match *type_ann {
-                                    Some(ref ty) => Some(ty.clone()),
+                                    Some(ref ty) => Some(*ty.clone()),
                                     None => Some(Type::any(key.span())),
                                 }
                             }
 
                             TypeElement::Index(IndexSignature { ref type_ann, .. }) => {
                                 index_el = Some(match *type_ann {
-                                    Some(ref ty) => ty.clone(),
+                                    Some(ref ty) => *ty.clone(),
                                     None => Type::any(key.span()),
                                 });
                             }
@@ -1257,7 +1257,10 @@ impl Analyzer<'_, '_> {
             }
 
             RPat::Rest(pat) => {
-                let ty = box Type::Array(Array { span, elem_type: ty });
+                let ty = Type::Array(Array {
+                    span,
+                    elem_type: box ty,
+                });
                 return self.declare_complex_vars(kind, &pat.arg, ty);
             }
 
@@ -1659,10 +1662,10 @@ impl Expander<'_, '_, '_> {
                                         })),
                                     )?;
                                     inferred.iter_mut().for_each(|(_, ty)| {
-                                        self.analyzer.allow_expansion(&mut **ty);
+                                        self.analyzer.allow_expansion(ty);
                                     });
 
-                                    let mut ty = *self.analyzer.expand_type_params(&inferred, box ty.foldable())?;
+                                    let mut ty = self.analyzer.expand_type_params(&inferred, ty.foldable())?;
 
                                     if is_alias {
                                         self.dejavu.insert(i.into());
@@ -1727,7 +1730,7 @@ impl Expander<'_, '_, '_> {
                 ..
             }) => {
                 if left.sym == js_word!("void") {
-                    return Ok(Some(*Type::any(span)));
+                    return Ok(Some(Type::any(span)));
                 }
 
                 if let Some(types) = self.analyzer.find_type(ctxt, &left.into())? {
@@ -1745,7 +1748,7 @@ impl Expander<'_, '_, '_> {
                                 ));
                             }
                             Type::Param(..) | Type::Namespace(..) | Type::Module(..) => {
-                                let ty = box ty.into_owned();
+                                let ty = ty.into_owned();
                                 let ty = self
                                     .analyzer
                                     .access_property(
@@ -1760,7 +1763,7 @@ impl Expander<'_, '_, '_> {
                                     )
                                     .report(&mut self.analyzer.storage)
                                     .unwrap_or_else(|| Type::any(span));
-                                return Ok(Some(*ty));
+                                return Ok(Some(ty));
                             }
                             _ => {}
                         }
@@ -1885,7 +1888,7 @@ impl Fold<Type> for Expander<'_, '_, '_> {
                                 let ctxt = self.analyzer.ctx.module_id;
                                 //
                                 if let Some(ty) = self.analyzer.find_var_type(&id, TypeOfMode::RValue) {
-                                    *cond_ty.check_type = *ty.into_owned();
+                                    cond_ty.check_type = box ty.into_owned();
                                 } else {
                                     slog::error!(self.analyzer.logger, "Failed to find variable named {:?}", id);
                                 }
@@ -2038,10 +2041,10 @@ impl Fold<Type> for Expander<'_, '_, '_> {
                                         let ty = if v { true_type } else { false_type };
 
                                         let (unwrapped, ty) = unwrap_type(&ty);
-                                        let mut ty = box ty;
+                                        let mut ty = ty;
                                         if unwrapped {
-                                            match *ty {
-                                                Type::Tuple(Tuple { elems, .. }) => ty = elems[idx].ty.clone(),
+                                            match ty.normalize() {
+                                                Type::Tuple(Tuple { elems, .. }) => ty = *elems[idx].ty.clone(),
                                                 _ => {}
                                             };
                                         }
@@ -2053,7 +2056,7 @@ impl Fold<Type> for Expander<'_, '_, '_> {
                                             ty = self.analyzer.expand_type_params(&type_params, ty).unwrap();
                                         }
 
-                                        element.ty = ty;
+                                        element.ty = box ty;
                                     }
 
                                     element
@@ -2074,7 +2077,7 @@ impl Fold<Type> for Expander<'_, '_, '_> {
 
                         let type_params = self.analyzer.infer_ts_infer_types(span, &extends_type, &obj_type).ok();
                         if let Some(type_params) = type_params {
-                            ty = *self.analyzer.expand_type_params(&type_params, box ty).unwrap();
+                            ty = self.analyzer.expand_type_params(&type_params, ty).unwrap();
                         }
 
                         return ty;
@@ -2096,7 +2099,7 @@ impl Fold<Type> for Expander<'_, '_, '_> {
                 }
 
                 Type::Union(Union { span, types }) => {
-                    return *Type::union(types);
+                    return Type::union(types);
                 }
 
                 Type::Function(ty::Function {
@@ -2105,7 +2108,7 @@ impl Fold<Type> for Expander<'_, '_, '_> {
                     params,
                     ret_ty,
                 }) => {
-                    let ret_ty = self.analyzer.rename_type_params(span, ret_ty, None)?;
+                    let ret_ty = self.analyzer.rename_type_params(span, *ret_ty, None)?;
                     let ret_ty = box ret_ty.foldable().fold_with(self);
 
                     return Type::Function(ty::Function {
