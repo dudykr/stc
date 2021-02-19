@@ -1838,7 +1838,7 @@ impl Analyzer<'_, '_> {
         ty.normalize().visit_with(&mut usage_visitor);
         if usage_visitor.params.is_empty() {
             slog::debug!(self.logger, "rename_type_param: No type parameter is used in type");
-            match ty.foldable() {
+            match ty.normalize_mut() {
                 Type::Function(ref mut f) => {
                     f.type_params = None;
                 }

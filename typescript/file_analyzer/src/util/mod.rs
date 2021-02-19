@@ -238,35 +238,27 @@ impl RemoveTypes for Type {
 
 impl RemoveTypes for Intersection {
     fn remove_falsy(self) -> Type {
-        let types = self
-            .types
-            .into_iter()
-            .map(|ty| box ty.remove_falsy())
-            .collect::<Vec<_>>();
+        let types = self.types.into_iter().map(|ty| ty.remove_falsy()).collect::<Vec<_>>();
 
         if types.iter().any(|ty| ty.is_never()) {
-            return *Type::never(self.span);
+            return Type::never(self.span);
         }
 
         if types.len() == 1 {
-            return *types.into_iter().next().unwrap();
+            return types.into_iter().next().unwrap();
         }
 
         Intersection { span: self.span, types }.into()
     }
 
     fn remove_truthy(self) -> Type {
-        let types = self
-            .types
-            .into_iter()
-            .map(|ty| box ty.remove_truthy())
-            .collect::<Vec<_>>();
+        let types = self.types.into_iter().map(|ty| ty.remove_truthy()).collect::<Vec<_>>();
         if types.iter().any(|ty| ty.is_never()) {
-            return *Type::never(self.span);
+            return Type::never(self.span);
         }
 
         if types.len() == 1 {
-            return *types.into_iter().next().unwrap();
+            return types.into_iter().next().unwrap();
         }
 
         Intersection { span: self.span, types }.into()
@@ -278,16 +270,16 @@ impl RemoveTypes for Union {
         let types: Vec<_> = self
             .types
             .into_iter()
-            .map(|ty| box ty.remove_falsy())
+            .map(|ty| ty.remove_falsy())
             .filter(|ty| !ty.is_never())
             .collect();
 
         if types.is_empty() {
-            return *Type::never(self.span);
+            return Type::never(self.span);
         }
 
         if types.len() == 1 {
-            return *types.into_iter().next().unwrap();
+            return types.into_iter().next().unwrap();
         }
 
         Union { span: self.span, types }.into()
@@ -297,16 +289,16 @@ impl RemoveTypes for Union {
         let types: Vec<_> = self
             .types
             .into_iter()
-            .map(|ty| box ty.remove_truthy())
+            .map(|ty| ty.remove_truthy())
             .filter(|ty| !ty.is_never())
             .collect();
 
         if types.is_empty() {
-            return *Type::never(self.span);
+            return Type::never(self.span);
         }
 
         if types.len() == 1 {
-            return *types.into_iter().next().unwrap();
+            return types.into_iter().next().unwrap();
         }
 
         Union { span: self.span, types }.into()
