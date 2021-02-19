@@ -80,10 +80,10 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RDoWhileStmt) {
+        node.body.visit_with(self);
+
         let test = node.test.validate_with_default(self)?;
         self.check_for_inifinite_loop(&test, &node.body);
-
-        node.body.visit_with(self);
 
         Ok(())
     }
