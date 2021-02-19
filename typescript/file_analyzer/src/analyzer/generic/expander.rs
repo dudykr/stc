@@ -108,9 +108,9 @@ impl Analyzer<'_, '_> {
                 };
                 let child = self
                     .with_ctx(ctx)
-                    .expand_fully(child.span(), box child.clone(), true)
+                    .expand_fully(child.span(), child.clone(), true)
                     .unwrap();
-                match &*child {
+                match child.normalize() {
                     Type::Ref(..) => return None,
                     _ => {}
                 }
@@ -134,9 +134,9 @@ impl Analyzer<'_, '_> {
                 };
                 let parent = self
                     .with_ctx(ctx)
-                    .expand_fully(parent.span(), box parent.clone(), true)
+                    .expand_fully(parent.span(), parent.clone(), true)
                     .unwrap();
-                match &*parent {
+                match parent.normalize() {
                     Type::Ref(..) => return None,
                     _ => {}
                 }
@@ -293,7 +293,7 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                 if i.sym == js_word!("Array") {
                     return Type::Array(Array {
                         span,
-                        elem_type: type_args
+                        elem_type: box type_args
                             .as_ref()
                             .and_then(|args| args.params.iter().next().cloned())
                             .unwrap_or_else(|| Type::any(span)),
@@ -444,7 +444,7 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                                                             prop_ty: &*p
                                                                 .type_ann
                                                                 .clone()
-                                                                .unwrap_or_else(|| Type::any(p.span)),
+                                                                .unwrap_or_else(|| box Type::any(p.span)),
                                                         }),
                                                         ..p.clone()
                                                     }))
