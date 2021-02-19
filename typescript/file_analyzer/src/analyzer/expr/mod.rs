@@ -497,17 +497,6 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     pub(crate) fn validate_key(&mut self, prop: &RExpr, computed: bool) -> ValidationResult<Key> {
         if computed {
-            match prop {
-                RExpr::Lit(RLit::Str(s)) => {
-                    return Ok(Key::Normal {
-                        span: s.span,
-                        sym: s.value.clone(),
-                    })
-                }
-                RExpr::Lit(RLit::Num(n)) => return Ok(Key::Num(n.clone())),
-                _ => {}
-            }
-
             prop.validate_with_default(self)
                 .and_then(|ty| self.expand_top_ref(ty.span(), Cow::Owned(ty)).map(Cow::into_owned))
                 .and_then(|ty| self.expand_enum(ty))
@@ -1280,12 +1269,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 if type_mode == TypeOfMode::LValue {
-                    // In l-value context, it's success if one of types matches it.
-                    let is_err = errors.iter().any(|err| match *err {
-                        Error::ReadOnly { .. } => true,
-                        _ => false,
-                    });
-                    if tys.is_empty() || is_err {
+                    if !errors.is_empty() {
                         assert_ne!(errors.len(), 0);
                         return Err(Error::UnionError { span, errors });
                     }
