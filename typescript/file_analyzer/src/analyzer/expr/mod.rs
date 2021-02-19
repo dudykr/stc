@@ -1291,6 +1291,7 @@ impl Analyzer<'_, '_> {
                     }
                 } else {
                     if !errors.is_empty() {
+                        print_backtrace();
                         return Err(Error::NoSuchProperty {
                             span,
                             obj: Some(box obj),
