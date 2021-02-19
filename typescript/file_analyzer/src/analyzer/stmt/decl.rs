@@ -309,7 +309,7 @@ impl Analyzer<'_, '_> {
                             self.normalize_tuples(&mut ty);
                             ty = match ty.normalize() {
                                 Type::Function(f) => {
-                                    let ret_ty = f.ret_ty.clone().generalize_lit();
+                                    let ret_ty = box f.ret_ty.clone().generalize_lit();
                                     Type::Function(stc_ts_types::Function { ret_ty, ..f.clone() })
                                 }
 
@@ -319,11 +319,11 @@ impl Analyzer<'_, '_> {
                                         _ => false,
                                     }) =>
                                 {
-                                    let mut types = tuple.elems.iter().map(|e| e.ty.clone()).collect::<Vec<_>>();
+                                    let mut types = tuple.elems.iter().map(|e| *e.ty.clone()).collect::<Vec<_>>();
                                     types.dedup_type();
                                     Type::Array(Array {
                                         span: tuple.span,
-                                        elem_type: Type::union(types),
+                                        elem_type: box Type::union(types),
                                     })
                                 }
 
@@ -357,10 +357,10 @@ impl Analyzer<'_, '_> {
                                 };
 
                                 let ty = match ty.normalize() {
-                                    Type::ClassInstance(c) => c.ty.clone(),
+                                    Type::ClassInstance(c) => *c.ty.clone(),
 
                                     // `err is Error` => boolean
-                                    Type::Predicate(..) => box Type::Keyword(RTsKeywordType {
+                                    Type::Predicate(..) => Type::Keyword(RTsKeywordType {
                                         span,
                                         kind: TsKeywordTypeKind::TsBooleanKeyword,
                                     }),
@@ -381,7 +381,7 @@ impl Analyzer<'_, '_> {
                                     | Type::Symbol(Symbol { span, .. }) => {
                                         match self.ctx.var_kind {
                                             // It's `uniqute symbol` only if it's `Symbol()`
-                                            VarDeclKind::Const if is_symbol_call => box Type::Operator(Operator {
+                                            VarDeclKind::Const if is_symbol_call => Type::Operator(Operator {
                                                 span: *span,
                                                 op: TsTypeOperatorOp::Unique,
                                                 ty: box Type::Keyword(RTsKeywordType {
@@ -390,7 +390,7 @@ impl Analyzer<'_, '_> {
                                                 }),
                                             }),
 
-                                            _ => box Type::Keyword(RTsKeywordType {
+                                            _ => Type::Keyword(RTsKeywordType {
                                                 span: *span,
                                                 kind: TsKeywordTypeKind::TsSymbolKeyword,
                                             }),
@@ -407,7 +407,7 @@ impl Analyzer<'_, '_> {
                                             }),
                                         ..
                                     }) => {
-                                        box Type::Array(Array {
+                                        Type::Array(Array {
                                             span: *span,
                                             elem_type: match constraint {
                                                 Some(_constraint) => {
@@ -426,7 +426,7 @@ impl Analyzer<'_, '_> {
                                     }
 
                                     // We failed to infer type of the type parameter.
-                                    Type::Param(TypeParam { span, .. }) => box Type::Keyword(RTsKeywordType {
+                                    Type::Param(TypeParam { span, .. }) => Type::Keyword(RTsKeywordType {
                                         span: *span,
                                         kind: TsKeywordTypeKind::TsUnknownKeyword,
                                     }),
@@ -440,11 +440,10 @@ impl Analyzer<'_, '_> {
                             if let Some(box RExpr::Ident(ref alias)) = &v.init {
                                 if let RPat::Ident(ref i) = v.name {
                                     if let Some(m) = &mut self.mutations {
-                                        m.for_pats.entry(i.node_id).or_default().ty =
-                                            Some(box Type::Query(QueryType {
-                                                span,
-                                                expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(alias.clone())),
-                                            }));
+                                        m.for_pats.entry(i.node_id).or_default().ty = Some(Type::Query(QueryType {
+                                            span,
+                                            expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(alias.clone())),
+                                        }));
                                     }
                                 }
                             }
@@ -488,18 +487,18 @@ impl Analyzer<'_, '_> {
                                         }
                                     }
                                     // Widen tuple types
-                                    element.ty = Type::any(span);
+                                    element.ty = box Type::any(span);
 
                                     if self.rule().no_implicit_any {
                                         match v.name {
                                             RPat::Ident(ref i) => {
                                                 let span = i.span;
-                                                type_errors.push(box Error::ImplicitAny { span });
+                                                type_errors.push(Error::ImplicitAny { span });
                                                 break;
                                             }
                                             RPat::Array(RArrayPat { ref elems, .. }) => {
                                                 let span = elems[i].span();
-                                                type_errors.push(box Error::ImplicitAny { span });
+                                                type_errors.push(Error::ImplicitAny { span });
                                             }
                                             _ => {}
                                         }
