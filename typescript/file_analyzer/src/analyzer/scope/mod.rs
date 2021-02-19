@@ -268,15 +268,24 @@ impl Scope<'_> {
         self.parent?.current_module_name()
     }
 
-    pub fn copy_hoisted_vars_from(&mut self, from: &mut Scope) {
-        match from.kind {
+    pub fn move_vars_from_child(&mut self, child: &mut Scope) {
+        match child.kind {
             // We don't copy variable information from nested function.
             ScopeKind::Module | ScopeKind::Method | ScopeKind::Fn | ScopeKind::ArrowFn => return,
             _ => {}
         }
 
-        for (name, var) in from.vars.drain() {
-            if var.kind == VarDeclKind::Var {
+        for (name, var) in child.vars.drain() {
+            if var.copied {
+                match self.vars.entry(name.clone()) {
+                    Entry::Occupied(mut e) => {
+                        if let Some(actual_ty) = var.actual_ty {
+                            e.get_mut().actual_ty.get_or_insert_with(|| actual_ty);
+                        }
+                    }
+                    Entry::Vacant(..) => {}
+                }
+            } else if var.kind == VarDeclKind::Var {
                 self.vars.insert(name, var);
             }
         }

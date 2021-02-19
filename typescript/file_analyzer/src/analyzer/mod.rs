@@ -478,7 +478,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         // }
 
         self.duplicated_tracker.record_all(dup);
-        self.scope.copy_hoisted_vars_from(&mut child_scope);
+        self.scope.move_vars_from_child(&mut child_scope);
         self.prepend_stmts.extend(prepend_stmts);
         self.append_stmts.extend(append_stmts);
 
