@@ -120,7 +120,7 @@ impl Analyzer<'_, '_> {
                     //
                     // export = React
                     // declare namespace React {}
-                    box Error::UndefinedSymbol { .. } => {
+                    Error::UndefinedSymbol { .. } => {
                         self.pending_exports
                             .push(((Id::word(js_word!("default")), expr.span()), expr.clone()));
                         return;
@@ -233,13 +233,13 @@ impl Analyzer<'_, '_> {
                 if f.function.return_type.is_none() {
                     if let Some(m) = &mut self.mutations {
                         if m.for_fns.entry(f.function.node_id).or_default().ret_ty.is_none() {
-                            m.for_fns.entry(f.function.node_id).or_default().ret_ty = Some(fn_ty.ret_ty.clone());
+                            m.for_fns.entry(f.function.node_id).or_default().ret_ty = Some(*fn_ty.ret_ty.clone());
                         }
                     }
                 }
-                self.register_type(i.clone(), box fn_ty.clone().into());
+                self.register_type(i.clone(), fn_ty.clone().into());
                 if let Some(ref i) = f.ident {
-                    self.override_var(VarDeclKind::Var, i.into(), box fn_ty.into())
+                    self.override_var(VarDeclKind::Var, i.into(), fn_ty.into())
                         .report(&mut self.storage);
                 }
 
@@ -253,7 +253,7 @@ impl Analyzer<'_, '_> {
                     .unwrap_or_else(|| Id::word(js_word!("default")));
 
                 let class_ty = c.class.validate_with(self)?;
-                self.register_type(id.clone(), box Type::Class(class_ty));
+                self.register_type(id.clone(), Type::Class(class_ty));
 
                 self.export(span, Id::word(js_word!("default")), Some(id));
             }
@@ -408,7 +408,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
             }
-            None => self.storage.report(box Error::ExportAllFailed { span }),
+            None => self.storage.report(Error::ExportAllFailed { span }),
         }
 
         Ok(())
@@ -502,7 +502,7 @@ impl Analyzer<'_, '_> {
         }
 
         if !did_work {
-            self.storage.report(box Error::ExportFailed { span, orig, id })
+            self.storage.report(Error::ExportFailed { span, orig, id })
         }
     }
 }

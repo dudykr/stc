@@ -42,7 +42,7 @@ impl Analyzer<'_, '_> {
         exclude_types(ty, self.cur_facts.true_facts.excludes.get(&name));
     }
 
-    pub(crate) fn apply_type_facts(&self, name: &Name, ty: Box<Type>) -> Box<Type> {
+    pub(crate) fn apply_type_facts(&self, name: &Name, ty: Type) -> Type {
         let type_facts = self.scope.get_type_facts(&name)
             | self
                 .cur_facts
@@ -319,13 +319,13 @@ impl VisitMut<Type> for TupleNormalizer {
                     .unwrap()
                     .elems
                     .into_iter()
-                    .map(|elem| elem.ty)
+                    .map(|elem| *elem.ty)
                     .collect::<Vec<_>>();
                 types.dedup_type();
 
                 *ty = Type::Array(Array {
                     span,
-                    elem_type: Type::union(types),
+                    elem_type: box Type::union(types),
                 });
             }
             _ => {}
@@ -355,7 +355,7 @@ fn exclude_type(ty: &mut Type, excluded: &Type) {
     }
 }
 
-fn exclude_types(ty: &mut Type, excludes: Option<&Vec<Box<Type>>>) {
+fn exclude_types(ty: &mut Type, excludes: Option<&Vec<Type>>) {
     let excludes = match excludes {
         Some(v) => v,
         None => return,

@@ -24,7 +24,7 @@ use swc_common::Span;
 use swc_common::Spanned;
 
 impl Analyzer<'_, '_> {
-    pub(super) fn find_imported_var(&self, id: &Id) -> ValidationResult<Option<Box<Type>>> {
+    pub(super) fn find_imported_var(&self, id: &Id) -> ValidationResult<Option<Type>> {
         if let Some(ModuleInfo { module_id, data }) = self.imports_by_id.get(&id) {
             if let Some(dep) = data.vars.get(id.sym()).cloned() {
                 debug_assert!(dep.is_clone_cheap());
@@ -107,7 +107,7 @@ impl Analyzer<'_, '_> {
         }
 
         if !did_work {
-            self.storage.report(box Error::ImportFailed { span, orig, id });
+            self.storage.report(Error::ImportFailed { span, orig, id });
         }
     }
 }

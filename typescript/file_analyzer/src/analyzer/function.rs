@@ -48,7 +48,7 @@ impl Analyzer<'_, '_> {
                         match p.pat {
                             RPat::Ident(RIdent { optional: true, .. }) | RPat::Rest(..) => {}
                             _ => {
-                                child.storage.report(box Error::TS1016 { span: p.span() });
+                                child.storage.report(Error::TS1016 { span: p.span() });
                             }
                         }
                     }
@@ -81,7 +81,7 @@ impl Analyzer<'_, '_> {
                 params = params
                     .into_iter()
                     .map(|param: FnParam| -> ValidationResult<_> {
-                        let ty = child.expand(param.span, param.ty)?;
+                        let ty = box child.expand(param.span, *param.ty)?;
                         Ok(FnParam { ty, ..param })
                     })
                     .collect::<Result<_, _>>()?;
@@ -91,8 +91,8 @@ impl Analyzer<'_, '_> {
 
             if let Some(ret_ty) = declared_ret_ty {
                 let span = ret_ty.span();
-                declared_ret_ty = Some(match *ret_ty {
-                    Type::Class(cls) => box Type::ClassInstance(ClassInstance {
+                declared_ret_ty = Some(match ret_ty {
+                    Type::Class(cls) => Type::ClassInstance(ClassInstance {
                         span,
                         ty: box Type::Class(cls),
                         type_args: None,
@@ -124,8 +124,8 @@ impl Analyzer<'_, '_> {
 
             let inferred_return_type = match inferred_return_type {
                 Some(Some(inferred_return_type)) => {
-                    let mut inferred_return_type = match *inferred_return_type {
-                        Type::Ref(ty) => box Type::Ref(child.qualify_ref_type_args(span, ty)?),
+                    let mut inferred_return_type = match inferred_return_type {
+                        Type::Ref(ty) => Type::Ref(child.qualify_ref_type_args(span, ty)?),
                         _ => inferred_return_type,
                     };
 
@@ -136,7 +136,7 @@ impl Analyzer<'_, '_> {
                         if f.is_generator && declared.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
                             child
                                 .storage
-                                .report(box Error::GeneratorCannotHaveVoidAsReturnType { span: declared.span() })
+                                .report(Error::GeneratorCannotHaveVoidAsReturnType { span: declared.span() })
                         } else {
                             // It's okay to return more properties than declared.
                             child
@@ -179,7 +179,7 @@ impl Analyzer<'_, '_> {
                                 kind: TsKeywordTypeKind::TsNeverKeyword,
                                 ..
                             }) => {}
-                            _ => errors.push(box Error::ReturnRequired { span }),
+                            _ => errors.push(Error::ReturnRequired { span }),
                         }
                     }
 
@@ -187,15 +187,14 @@ impl Analyzer<'_, '_> {
                     if f.return_type.is_none() {
                         if let Some(m) = &mut child.mutations {
                             if m.for_fns.entry(f.node_id).or_default().ret_ty.is_none() {
-                                m.for_fns.entry(f.node_id).or_default().ret_ty =
-                                    Some(box Type::Keyword(RTsKeywordType {
-                                        span,
-                                        kind: TsKeywordTypeKind::TsVoidKeyword,
-                                    }));
+                                m.for_fns.entry(f.node_id).or_default().ret_ty = Some(Type::Keyword(RTsKeywordType {
+                                    span,
+                                    kind: TsKeywordTypeKind::TsVoidKeyword,
+                                }));
                             }
                         }
                     }
-                    box Type::Keyword(RTsKeywordType {
+                    Type::Keyword(RTsKeywordType {
                         span,
                         kind: TsKeywordTypeKind::TsVoidKeyword,
                     })
@@ -217,7 +216,7 @@ impl Analyzer<'_, '_> {
                 span: f.span,
                 params,
                 type_params,
-                ret_ty: declared_ret_ty.unwrap_or_else(|| inferred_return_type),
+                ret_ty: box declared_ret_ty.unwrap_or_else(|| inferred_return_type),
             }
             .into())
         })
@@ -278,12 +277,12 @@ impl Analyzer<'_, '_> {
                 .params
                 .into_iter()
                 .skip(arg_cnt)
-                .map(|param| (param.span, param.default))
+                .map(|param| (param.span, param.default.map(|v| *v)))
             {
                 if let Some(default) = default {
                     args.params.push(default);
                 } else {
-                    self.storage.report(box Error::ImplicitAny { span });
+                    self.storage.report(Error::ImplicitAny { span });
                     args.params.push(Type::any(span));
                 }
             }
@@ -293,7 +292,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO: Handle recursive funciton
-    fn visit_fn(&mut self, name: Option<&RIdent>, f: &RFunction) -> Box<Type> {
+    fn visit_fn(&mut self, name: Option<&RIdent>, f: &RFunction) -> Type {
         let fn_ty: Result<_, _> = try {
             let no_implicit_any_span = name.as_ref().map(|name| name.span);
 
@@ -357,7 +356,7 @@ impl Analyzer<'_, '_> {
                                 //    });
                                 //}
 
-                                element.ty = Type::any(span);
+                                element.ty = box Type::any(span);
                             }
                         }
 

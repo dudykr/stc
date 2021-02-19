@@ -10,7 +10,7 @@ use stc_ts_types::TypeParamDecl;
 
 #[derive(Debug)]
 pub struct TypeParamRenamer {
-    pub inferred: FxHashMap<Id, Box<Type>>,
+    pub inferred: FxHashMap<Id, Type>,
     /// Declared type parameters. Only type parameters in this set will be
     /// replaced.
     ///
@@ -82,7 +82,7 @@ impl Fold<Type> for TypeParamRenamer {
                     if self.declared.is_none() && mapped.is_type_param() {
                         return ty;
                     }
-                    return *mapped.clone();
+                    return mapped.clone();
                 }
             }
             _ => {}

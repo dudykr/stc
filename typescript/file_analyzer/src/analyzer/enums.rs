@@ -148,8 +148,7 @@ impl Analyzer<'_, '_> {
                     let mut v = LitValidator { error: false, decl: &e };
                     init.visit_with(&mut v);
                     if v.error {
-                        self.storage
-                            .report(box Error::InvalidInitInConstEnum { span: init.span() })
+                        self.storage.report(Error::InvalidInitInConstEnum { span: init.span() })
                     }
                 }
             }
@@ -376,7 +375,7 @@ impl Analyzer<'_, '_> {
     pub(super) fn check_rvalue(&mut self, span: Span, rhs_ty: &Type) {
         match *rhs_ty.normalize() {
             Type::Enum(ref e) if e.is_const => {
-                self.storage.report(box Error::InvalidUseOfConstEnum { span });
+                self.storage.report(Error::InvalidUseOfConstEnum { span });
             }
             _ => {}
         }
@@ -417,7 +416,7 @@ impl Analyzer<'_, '_> {
             Some(e) => {
                 if type_of_expr(&e).is_none() {
                     self.storage
-                        .report(box Error::ComputedMemberInEnumWithStrMember { span: m.span })
+                        .report(Error::ComputedMemberInEnumWithStrMember { span: m.span })
                 }
             }
             _ => {}
@@ -436,7 +435,7 @@ impl Analyzer<'_, '_> {
     /// declare const e: E;
     /// const a = o[e]
     /// ```
-    pub(super) fn expand_enum(&mut self, ty: Box<Type>) -> ValidationResult {
+    pub(super) fn expand_enum(&mut self, ty: Type) -> ValidationResult {
         let e = match ty.normalize() {
             Type::Enum(e) => e,
             _ => return Ok(ty),
@@ -446,12 +445,12 @@ impl Analyzer<'_, '_> {
 
         for m in &e.members {
             match &*m.val {
-                RExpr::Lit(RLit::Str(lit)) => values.push(box Type::Lit(RTsLitType {
+                RExpr::Lit(RLit::Str(lit)) => values.push(Type::Lit(RTsLitType {
                     node_id: NodeId::invalid(),
                     span: m.span,
                     lit: RTsLit::Str(lit.clone()),
                 })),
-                RExpr::Lit(RLit::Num(lit)) => values.push(box Type::Lit(RTsLitType {
+                RExpr::Lit(RLit::Num(lit)) => values.push(Type::Lit(RTsLitType {
                     node_id: NodeId::invalid(),
                     span: m.span,
                     lit: RTsLit::Number(lit.clone()),
@@ -468,7 +467,7 @@ impl Analyzer<'_, '_> {
         Ok(ty)
     }
 
-    pub(super) fn expand_enum_variant(&self, ty: Box<Type>) -> ValidationResult {
+    pub(super) fn expand_enum_variant(&self, ty: Type) -> ValidationResult {
         match ty.normalize() {
             Type::EnumVariant(ref v) => {
                 if let Some(types) = self.find_type(v.ctxt, &v.enum_name)? {
@@ -480,7 +479,7 @@ impl Analyzer<'_, '_> {
                             }) {
                                 match *v.val {
                                     RExpr::Lit(RLit::Str(..)) | RExpr::Lit(RLit::Num(..)) => {
-                                        return Ok(box Type::Lit(RTsLitType {
+                                        return Ok(Type::Lit(RTsLitType {
                                             node_id: NodeId::invalid(),
                                             span: v.span,
                                             lit: match *v.val.clone() {

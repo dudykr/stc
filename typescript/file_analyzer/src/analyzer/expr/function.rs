@@ -46,7 +46,7 @@ impl Analyzer<'_, '_> {
                                                 .entry(pat_node_id)
                                                 .or_default()
                                                 .ty
-                                                .fill_with(|| ty.ty.clone());
+                                                .fill_with(|| *ty.ty.clone());
                                         }
                                     }
                                 }
@@ -75,8 +75,8 @@ impl Analyzer<'_, '_> {
             let declared_ret_ty = match declared_ret_ty {
                 Some(ty) => {
                     let span = ty.span();
-                    Some(match *ty {
-                        Type::Class(cls) => box Type::ClassInstance(ClassInstance {
+                    Some(match ty {
+                        Type::Class(cls) => Type::ClassInstance(ClassInstance {
                             span,
                             ty: box Type::Class(cls),
                             type_args: None,
@@ -105,9 +105,9 @@ impl Analyzer<'_, '_> {
 
             // Remove void from inferred return type.
             let inferred_return_type = inferred_return_type.map(|mut ty| {
-                match &mut *ty {
+                match &mut ty {
                     Type::Union(ty) => {
-                        ty.types.retain(|ty| match &**ty {
+                        ty.types.retain(|ty| match ty.normalize() {
                             Type::Keyword(RTsKeywordType {
                                 kind: TsKeywordTypeKind::TsVoidKeyword,
                                 ..
@@ -132,7 +132,8 @@ impl Analyzer<'_, '_> {
                 span: f.span,
                 params,
                 type_params,
-                ret_ty: declared_ret_ty.unwrap_or_else(|| inferred_return_type.unwrap_or_else(|| Type::void(f.span))),
+                ret_ty: box declared_ret_ty
+                    .unwrap_or_else(|| inferred_return_type.unwrap_or_else(|| Type::void(f.span))),
             })
         })
     }

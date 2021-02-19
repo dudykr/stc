@@ -50,9 +50,9 @@ use swc_ecma_ast::*;
 #[derive(Debug, Clone, Default)]
 pub(crate) struct CondFacts {
     pub facts: FxHashMap<Name, TypeFacts>,
-    pub vars: FxHashMap<Name, Box<Type>>,
-    pub excludes: FxHashMap<Name, Vec<Box<Type>>>,
-    pub types: FxHashMap<Id, Box<Type>>,
+    pub vars: FxHashMap<Name, Type>,
+    pub excludes: FxHashMap<Name, Vec<Type>>,
+    pub types: FxHashMap<Id, Type>,
 }
 
 impl CondFacts {
@@ -195,9 +195,9 @@ impl Merge for Type {
     fn or(&mut self, r: Self) {
         let l_span = self.span();
 
-        let l = box replace(self, *Type::never(l_span));
+        let l = replace(self, Type::never(l_span));
 
-        *self = *Type::union(vec![l, box r]);
+        *self = Type::union(vec![l, r]);
     }
 }
 
@@ -286,17 +286,17 @@ impl Analyzer<'_, '_> {
     /// `SafeSubscriber` or downgrade the type, like converting `Subscriber` |
     /// `SafeSubscriber` into `SafeSubscriber`. This behavior is controlled by
     /// the mark applied while handling type facts related to call.
-    fn adjust_ternary_type(&mut self, span: Span, mut types: Vec<Box<Type>>) -> ValidationResult<Vec<Box<Type>>> {
+    fn adjust_ternary_type(&mut self, span: Span, mut types: Vec<Type>) -> ValidationResult<Vec<Type>> {
         types.iter_mut().for_each(|ty| {
             // Tuple -> Array
             match ty.normalize_mut() {
                 Type::Tuple(tuple) => {
                     let span = tuple.span;
 
-                    let mut elem_types: Vec<_> = tuple.elems.take().into_iter().map(|elem| elem.ty).collect();
+                    let mut elem_types: Vec<_> = tuple.elems.take().into_iter().map(|elem| *elem.ty).collect();
                     elem_types.dedup_type();
-                    let elem_type = Type::union(elem_types);
-                    *ty = box Type::Array(Array { span, elem_type });
+                    let elem_type = box Type::union(elem_types);
+                    *ty = Type::Array(Array { span, elem_type });
                 }
                 _ => {}
             }
@@ -315,7 +315,7 @@ impl Analyzer<'_, '_> {
         self.downcast_types(span, types)
     }
 
-    fn downcast_types(&mut self, span: Span, types: Vec<Box<Type>>) -> ValidationResult<Vec<Box<Type>>> {
+    fn downcast_types(&mut self, span: Span, types: Vec<Type>) -> ValidationResult<Vec<Type>> {
         fn need_work(ty: &Type) -> bool {
             match ty.normalize() {
                 Type::Lit(..)
@@ -351,14 +351,14 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            new.push(box ty.clone());
+            new.push(ty.clone());
         }
 
         Ok(new)
     }
 
     /// Remove `SafeSubscriber` from `Subscriber` | `SafeSubscriber`.
-    fn remove_child_types(&mut self, span: Span, types: Vec<Box<Type>>) -> ValidationResult<Vec<Box<Type>>> {
+    fn remove_child_types(&mut self, span: Span, types: Vec<Type>) -> ValidationResult<Vec<Type>> {
         let mut new = vec![];
 
         'outer: for (ai, ty) in types
@@ -381,7 +381,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            new.push(box ty.clone());
+            new.push(ty.clone());
         }
 
         Ok(new)
@@ -574,7 +574,7 @@ impl Analyzer<'_, '_> {
                     let actual_ty = if true || (var_info.ty.is_some() && var_info.ty.as_ref().unwrap().is_any()) {
                         return Ok(());
                     } else {
-                        Some(box ty.clone())
+                        Some(ty.clone())
                     };
 
                     VarInfo {
@@ -587,7 +587,7 @@ impl Analyzer<'_, '_> {
                         for ty in types {
                             match &*ty {
                                 Type::Module(..) => {
-                                    return Err(box Error::NotVariable {
+                                    return Err(Error::NotVariable {
                                         span: i.span,
                                         left: lhs.span(),
                                     });
@@ -601,7 +601,7 @@ impl Analyzer<'_, '_> {
                         Ok(())
                     } else {
                         // undefined symbol
-                        Err(box Error::UndefinedSymbol {
+                        Err(Error::UndefinedSymbol {
                             sym: i.into(),
                             span: i.span,
                         })
@@ -705,12 +705,12 @@ impl Analyzer<'_, '_> {
         unimplemented!("assignment with complex pattern\nPat: {:?}\nType: {:?}", lhs, ty)
     }
 
-    pub(super) fn add_type_fact(&mut self, sym: &Id, ty: Box<Type>) {
+    pub(super) fn add_type_fact(&mut self, sym: &Id, ty: Type) {
         slog::info!(self.logger, "add_type_fact({}); ty = {:?}", sym, ty);
         self.cur_facts.insert_var(sym, ty, false);
     }
 
-    pub(super) fn add_deep_type_fact(&mut self, sym: Name, ty: Box<Type>, is_for_true: bool) {
+    pub(super) fn add_deep_type_fact(&mut self, sym: Name, ty: Type, is_for_true: bool) {
         if is_for_true {
             self.cur_facts.true_facts.vars.insert(sym, ty);
         } else {
@@ -759,7 +759,7 @@ impl Analyzer<'_, '_> {
 }
 
 impl Facts {
-    fn insert_var<N: Into<Name>>(&mut self, name: N, ty: Box<Type>, negate: bool) {
+    fn insert_var<N: Into<Name>>(&mut self, name: N, ty: Type, negate: bool) {
         let name = name.into();
 
         if negate {

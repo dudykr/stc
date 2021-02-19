@@ -53,7 +53,7 @@ impl Analyzer<'_, '_> {
                             .map(|(l, r)| (r.name.clone(), Type::Param(l.clone()).cheap()))
                             .collect::<FxHashMap<_, _>>();
                         let r = self
-                            .expand_type_params(&map, box r.clone())
+                            .expand_type_params(&map, r.clone())
                             .context("tried to expand type parameters as a step of function assignemnt")?;
                         new_r = r.function().unwrap();
                         (&new_r.params, &new_r.ret_ty)
@@ -63,7 +63,7 @@ impl Analyzer<'_, '_> {
                     (None, Some(rt)) => {
                         let map = self.infer_type_with_types(span, &*rt.params, r, lt)?;
                         let r = self
-                            .expand_type_params(&map, box r.clone())
+                            .expand_type_params(&map, r.clone())
                             .context("tried to expand type parameters of rhs as a step of function assignemnt")?;
                         new_r = r.function().unwrap();
                         (&new_r.params, &new_r.ret_ty)
@@ -91,7 +91,7 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
 
-            Type::Lit(..) => return Err(box Error::CannotAssignToNonVariable { span }),
+            Type::Lit(..) => return Err(Error::CannotAssignToNonVariable { span }),
             _ => {}
         }
 
@@ -115,7 +115,7 @@ impl Analyzer<'_, '_> {
 
         // TODO: Consider optional parameters.
         if li.clone().count() < ri.clone().count() {
-            return Err(box Error::SimpleAssignFailed { span });
+            return Err(Error::SimpleAssignFailed { span });
         }
 
         for (lp, rp) in li.zip(ri) {

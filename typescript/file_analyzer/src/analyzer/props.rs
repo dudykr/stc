@@ -93,7 +93,7 @@ impl Analyzer<'_, '_> {
             Err(err) => {
                 check_for_symbol_form = false;
                 match err {
-                    box Error::TS2585 { span } => Err(box Error::TS2585 { span })?,
+                    Error::TS2585 { span } => Err(Error::TS2585 { span })?,
                     _ => {}
                 }
 
@@ -116,8 +116,7 @@ impl Analyzer<'_, '_> {
                 }) if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) => {}
                 _ => {
                     //
-                    self.storage
-                        .report(box Error::NonSymbolComputedPropInFormOfSymbol { span });
+                    self.storage.report(Error::NonSymbolComputedPropInFormOfSymbol { span });
                 }
             }
         }
@@ -130,13 +129,13 @@ impl Analyzer<'_, '_> {
 
                 if let Some(ref ty) = ty {
                     // TODO: Add support for expressions like '' + ''.
-                    match **ty {
+                    match ty.normalize() {
                         _ if is_valid_key => {}
                         Type::Lit(..) => {}
                         Type::EnumVariant(..) => {}
                         _ if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) || ty.is_unique_symbol() => {}
                         _ => match mode {
-                            ComputedPropMode::Interface => errors.push(box Error::TS1169 { span: node.span }),
+                            ComputedPropMode::Interface => errors.push(Error::TS1169 { span: node.span }),
                             _ => {}
                         },
                     }
@@ -180,7 +179,7 @@ impl Analyzer<'_, '_> {
                     ..
                 }) => {}
                 _ if is_symbol_access => {}
-                _ => errors.push(box Error::TS2464 { span }),
+                _ => errors.push(Error::TS2464 { span }),
             }
         }
         if !errors.is_empty() {
@@ -205,7 +204,7 @@ impl Analyzer<'_, '_> {
         Ok(Key::Computed(ComputedKey {
             span,
             expr: node.expr.clone(),
-            ty,
+            ty: box ty,
         }))
     }
 }
@@ -248,7 +247,9 @@ impl Analyzer<'_, '_> {
         let shorthand_type_ann = match prop {
             RProp::Shorthand(ref i) => {
                 // TODO: Check if RValue is correct
-                self.type_of_var(&i, TypeOfMode::RValue, None).report(&mut self.storage)
+                self.type_of_var(&i, TypeOfMode::RValue, None)
+                    .report(&mut self.storage)
+                    .map(Box::new)
             }
             _ => None,
         };
@@ -287,7 +288,7 @@ impl Analyzer<'_, '_> {
                     params: Default::default(),
                     optional: false,
                     readonly: false,
-                    type_ann: Some(ty),
+                    type_ann: Some(box ty),
                     type_params: Default::default(),
                 }
                 .into()
@@ -312,7 +313,7 @@ impl Analyzer<'_, '_> {
                             params: vec![param.validate_with(child)?],
                             optional: false,
                             readonly: false,
-                            type_ann: Some(Type::any(parma_span)),
+                            type_ann: Some(box Type::any(parma_span)),
                             type_params: Default::default(),
                         }
                         .into())
@@ -352,7 +353,7 @@ impl Analyzer<'_, '_> {
                                     &body.stmts,
                                 )?
                                 .unwrap_or_else(|| {
-                                    box Type::Keyword(RTsKeywordType {
+                                    Type::Keyword(RTsKeywordType {
                                         span: body.span,
                                         kind: TsKeywordTypeKind::TsVoidKeyword,
                                     })
@@ -382,7 +383,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         let ret_ty = try_opt!(p.function.return_type.validate_with(child));
-                        let ret_ty = ret_ty.or(inferred);
+                        let ret_ty = ret_ty.or(inferred).map(Box::new);
 
                         Ok(MethodSignature {
                             span,
@@ -417,7 +418,7 @@ impl Analyzer<'_, '_> {
                     let ret_ty = child.visit_stmts_for_return(n.span, false, false, &body.stmts)?;
                     if let None = ret_ty {
                         // getter property must have return statements.
-                        child.storage.report(box Error::TS2378 { span: n.key.span() });
+                        child.storage.report(Error::TS2378 { span: n.key.span() });
                     }
 
                     return Ok(ret_ty);
@@ -434,7 +435,11 @@ impl Analyzer<'_, '_> {
             params: Default::default(),
             optional: false,
             readonly: true,
-            type_ann: if computed { type_ann } else { Some(Type::any(n.span)) },
+            type_ann: if computed {
+                type_ann.map(Box::new)
+            } else {
+                Some(box Type::any(n.span))
+            },
             type_params: Default::default(),
         }
         .into())

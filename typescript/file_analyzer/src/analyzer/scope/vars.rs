@@ -41,7 +41,7 @@ impl Analyzer<'_, '_> {
         kind: VarDeclKind,
         pat: &RPat,
         export: bool,
-        ty: Option<Box<Type>>,
+        ty: Option<Type>,
     ) -> ValidationResult<()> {
         let span = ty
             .as_ref()
@@ -125,13 +125,13 @@ impl Analyzer<'_, '_> {
                     if let Some(m) = &mut self.mutations {
                         //
                         m.for_pats.entry(*node_id).or_default().ty.fill_with(|| {
-                            box Type::Ref(Ref {
+                            Type::Ref(Ref {
                                 span: *span,
                                 ctxt,
                                 type_name: RTsEntityName::Ident(RIdent::new("Iterable".into(), DUMMY_SP)),
                                 type_args: Some(box TypeParamInstantiation {
                                     span: *span,
-                                    params: vec![box Type::Keyword(RTsKeywordType {
+                                    params: vec![Type::Keyword(RTsKeywordType {
                                         span: DUMMY_SP,
                                         kind: TsKeywordTypeKind::TsAnyKeyword,
                                     })],
@@ -179,8 +179,7 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {
                 if self.ctx.in_declare {
-                    self.storage
-                        .report(box Error::DestructuringAssignInAmbientContext { span });
+                    self.storage.report(Error::DestructuringAssignInAmbientContext { span });
                 }
 
                 let ty = match ty {
@@ -190,7 +189,7 @@ impl Analyzer<'_, '_> {
 
                 if type_ann.is_none() {
                     if let Some(m) = &mut self.mutations {
-                        m.for_pats.entry(*node_id).or_default().ty = Some(box Type::TypeLit(TypeLit {
+                        m.for_pats.entry(*node_id).or_default().ty = Some(Type::TypeLit(TypeLit {
                             span,
                             // TODO: Fill it
                             members: vec![],

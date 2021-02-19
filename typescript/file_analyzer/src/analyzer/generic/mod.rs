@@ -75,7 +75,7 @@ type Priority = u16;
 #[derive(Debug, Default)]
 pub(super) struct InferData {
     /// Inferred type parameters
-    type_params: FxHashMap<Id, Box<Type>>,
+    type_params: FxHashMap<Id, Type>,
 
     priorities: FxHashMap<Id, Priority>,
 
@@ -92,7 +92,7 @@ pub(super) struct InferData {
     /// var empty = one(() => {
     /// });
     /// ```
-    defaults: FxHashMap<Id, Box<Type>>,
+    defaults: FxHashMap<Id, Type>,
 }
 
 /// Type inference for arguments.
@@ -102,7 +102,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         type_params: &[TypeParam],
-        mut inferred: FxHashMap<Id, Box<Type>>,
+        mut inferred: FxHashMap<Id, Type>,
     ) -> ValidationResult<TypeParamInstantiation> {
         let mut params = Vec::with_capacity(type_params.len());
         for type_param in type_params {
@@ -131,7 +131,7 @@ impl Analyzer<'_, '_> {
                                 type_param.name,
                                 p.name
                             );
-                            params.push(box Type::Param(p.clone()));
+                            params.push(Type::Param(p.clone()));
                         }
                         continue;
                     }
@@ -139,7 +139,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 if type_param.constraint.is_some() && is_literals(&type_param.constraint.as_ref().unwrap()) {
-                    params.push(type_param.constraint.clone().unwrap());
+                    params.push(*type_param.constraint.clone().unwrap());
                     continue;
                 }
 
@@ -149,7 +149,7 @@ impl Analyzer<'_, '_> {
                         _ => false,
                     }
                 {
-                    let ty = self.expand_fully(span, type_param.constraint.clone().unwrap(), false)?;
+                    let ty = self.expand_fully(span, *type_param.constraint.clone().unwrap(), false)?;
                     params.push(ty);
                     continue;
                 }
@@ -161,7 +161,7 @@ impl Analyzer<'_, '_> {
                 );
 
                 // Defaults to {}
-                params.push(box Type::TypeLit(TypeLit {
+                params.push(Type::TypeLit(TypeLit {
                     span,
                     members: vec![],
                     metadata: Default::default(),
@@ -182,7 +182,7 @@ impl Analyzer<'_, '_> {
         params: &[FnParam],
         args: &[TypeOrSpread],
         default_ty: Option<&Type>,
-    ) -> ValidationResult<FxHashMap<Id, Box<Type>>> {
+    ) -> ValidationResult<FxHashMap<Id, Type>> {
         slog::warn!(
             self.logger,
             "infer_arg_types: {:?}",
@@ -304,7 +304,7 @@ impl Analyzer<'_, '_> {
                             type_param.name,
                             p.name
                         );
-                        self.insert_inferred(&mut inferred, type_param.name.clone(), box Type::Param(p.clone()))?;
+                        self.insert_inferred(&mut inferred, type_param.name.clone(), Type::Param(p.clone()))?;
                     }
                     continue;
                 }
@@ -315,7 +315,7 @@ impl Analyzer<'_, '_> {
                 self.insert_inferred(
                     &mut inferred,
                     type_param.name.clone(),
-                    type_param.constraint.clone().unwrap(),
+                    *type_param.constraint.clone().unwrap(),
                 )?;
                 continue;
             }
@@ -333,7 +333,7 @@ impl Analyzer<'_, '_> {
                 };
                 let ty = self
                     .with_ctx(ctx)
-                    .expand_fully(span, type_param.constraint.clone().unwrap(), false)?;
+                    .expand_fully(span, *type_param.constraint.clone().unwrap(), false)?;
                 if !inferred.type_params.contains_key(&type_param.name) {
                     self.insert_inferred(&mut inferred, type_param.name.clone(), ty)?;
                 }
@@ -344,7 +344,7 @@ impl Analyzer<'_, '_> {
                     self.insert_inferred(&mut inferred, type_param.name.clone(), default_ty)?;
                 } else {
                     if let Some(default) = &type_param.default {
-                        self.insert_inferred(&mut inferred, type_param.name.clone(), default.clone())?;
+                        self.insert_inferred(&mut inferred, type_param.name.clone(), *default.clone())?;
                         continue;
                     }
 
@@ -356,7 +356,7 @@ impl Analyzer<'_, '_> {
                             default_ty
                         );
 
-                        self.insert_inferred(&mut inferred, type_param.name.clone(), box default_ty.clone())?;
+                        self.insert_inferred(&mut inferred, type_param.name.clone(), default_ty.clone())?;
                     }
                 }
             }
@@ -377,7 +377,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         base: &Type,
         concrete: &Type,
-    ) -> ValidationResult<FxHashMap<Id, Box<Type>>> {
+    ) -> ValidationResult<FxHashMap<Id, Type>> {
         let mut inferred = InferData::default();
         self.infer_type(span, &mut inferred, base, concrete)?;
         Ok(inferred.type_params)
@@ -456,7 +456,7 @@ impl Analyzer<'_, '_> {
         match arg {
             Type::Param(arg) => {
                 if !param.normalize().is_type_param() {
-                    self.insert_inferred(inferred, arg.name.clone(), box param.clone())?;
+                    self.insert_inferred(inferred, arg.name.clone(), param.clone())?;
                     return Ok(());
                 }
             }
@@ -484,7 +484,7 @@ impl Analyzer<'_, '_> {
                         constraint
                     );
                     if let Some(orig) = inferred.type_params.get(&name) {
-                        if !(**orig).eq_ignore_span(&constraint.as_ref().unwrap()) {
+                        if !(*orig).eq_ignore_span(&constraint.as_ref().unwrap()) {
                             print_backtrace();
                             panic!(
                                 "Cannot override T in `T extends <literal>`\nOrig: {:?}\nConstraints: {:?}",
@@ -523,7 +523,7 @@ impl Analyzer<'_, '_> {
                     match inferred.defaults.entry(name.clone()) {
                         Entry::Occupied(..) => {}
                         Entry::Vacant(e) => {
-                            e.insert(box Type::Param(TypeParam {
+                            e.insert(Type::Param(TypeParam {
                                 span: arg.span(),
                                 name: name.clone(),
                                 constraint: None,
@@ -536,7 +536,7 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
-                let arg = box arg.clone();
+                let arg = arg.clone();
                 slog::info!(self.logger, "({}): infer: {} = {:?}", self.scope.depth(), name, arg);
 
                 match inferred.type_params.entry(name.clone()) {
@@ -581,7 +581,7 @@ impl Analyzer<'_, '_> {
             },
 
             Type::Infer(param) => {
-                self.insert_inferred(inferred, param.type_param.name.clone(), box arg.clone())?;
+                self.insert_inferred(inferred, param.type_param.name.clone(), arg.clone())?;
                 return Ok(());
             }
 
@@ -611,7 +611,7 @@ impl Analyzer<'_, '_> {
                     }) => return self.infer_type(span, inferred, &arr.elem_type, &arg_elem_type),
 
                     Type::Tuple(arg) => {
-                        let arg = Type::union(arg.elems.iter().map(|element| &element.ty).cloned());
+                        let arg = Type::union(arg.elems.iter().map(|element| *element.ty.clone()));
                         return self.infer_type(span, inferred, &arr.elem_type, &arg);
                     }
 
@@ -664,7 +664,7 @@ impl Analyzer<'_, '_> {
 
                 Type::IndexedAccessType(arg_iat) => {
                     let arg_obj_ty = self
-                        .expand_fully(arg_iat.span, arg_iat.obj_type.clone(), true)?
+                        .expand_fully(arg_iat.span, *arg_iat.obj_type.clone(), true)?
                         .foldable();
                     match arg_obj_ty {
                         Type::Mapped(arg_obj_ty) => match &arg_obj_ty.type_param {
@@ -701,7 +701,7 @@ impl Analyzer<'_, '_> {
                                         ),
                                     }
                                 }
-                                self.insert_inferred(inferred, param_ty.name.clone(), box Type::TypeLit(new_lit))?;
+                                self.insert_inferred(inferred, param_ty.name.clone(), Type::TypeLit(new_lit))?;
 
                                 return Ok(());
                             }
@@ -790,10 +790,8 @@ impl Analyzer<'_, '_> {
                         ..self.ctx
                     };
                     slog::debug!(self.logger, "infer_type: expanding param");
-                    let param = self
-                        .with_ctx(ctx)
-                        .expand_fully(span, box Type::Ref(param.clone()), true)?;
-                    match *param {
+                    let param = self.with_ctx(ctx).expand_fully(span, Type::Ref(param.clone()), true)?;
+                    match param.normalize() {
                         Type::Ref(..) => {
                             dbg!();
 
@@ -842,14 +840,14 @@ impl Analyzer<'_, '_> {
                         obj_type: box Type::Param(obj_type),
                         ..
                     } if self.mapped_type_param_name.contains(&obj_type.name) => {
-                        self.insert_inferred(inferred, obj_type.name.clone(), box arg.clone())?;
+                        self.insert_inferred(inferred, obj_type.name.clone(), arg.clone())?;
                         return Ok(());
                     }
 
                     IndexedAccessType {
                         obj_type: box Type::Intersection(Intersection { types, .. }),
                         ..
-                    } if types.iter().all(|ty| match &**ty {
+                    } if types.iter().all(|ty| match ty.normalize() {
                         Type::Param(obj_type) => {
                             let current = self.mapped_type_param_name.contains(&obj_type.name);
                             current
@@ -858,9 +856,9 @@ impl Analyzer<'_, '_> {
                     }) =>
                     {
                         for ty in types {
-                            match &**ty {
+                            match ty.normalize() {
                                 Type::Param(obj_type) => {
-                                    self.insert_inferred(inferred, obj_type.name.clone(), box arg.clone())?;
+                                    self.insert_inferred(inferred, obj_type.name.clone(), arg.clone())?;
                                 }
 
                                 _ => {}
@@ -918,7 +916,7 @@ impl Analyzer<'_, '_> {
 
             Type::Array(arr) => {
                 let mut params = vec![];
-                params.push(arr.elem_type.clone());
+                params.push(*arr.elem_type.clone());
                 return self.infer_type(
                     span,
                     inferred,
@@ -945,8 +943,8 @@ impl Analyzer<'_, '_> {
                     preserve_params: true,
                     ..self.ctx
                 };
-                let arg = self.with_ctx(ctx).expand_fully(span, box arg.clone(), true)?;
-                match *arg {
+                let arg = self.with_ctx(ctx).expand_fully(span, arg.clone(), true)?;
+                match arg.normalize() {
                     Type::Ref(..) => {}
                     _ => {
                         return self.infer_type(span, inferred, param, &arg);
@@ -1022,7 +1020,7 @@ impl Analyzer<'_, '_> {
 
                 let arg = self
                     .with_ctx(ctx)
-                    .expand_fully(arg.span, box Type::Ref(arg.clone()), true)?;
+                    .expand_fully(arg.span, Type::Ref(arg.clone()), true)?;
 
                 match arg.normalize() {
                     Type::Ref(..) => return Ok(false),
@@ -1163,7 +1161,7 @@ impl Analyzer<'_, '_> {
                         for arg_member in &arg.members {
                             if let Some(key) = arg_member.key() {
                                 match key {
-                                    Key::Normal { span: i_span, sym } => key_types.push(box Type::Lit(RTsLitType {
+                                    Key::Normal { span: i_span, sym } => key_types.push(Type::Lit(RTsLitType {
                                         node_id: NodeId::invalid(),
                                         span: param.span,
                                         lit: RTsLit::Str(RStr {
@@ -1199,7 +1197,8 @@ impl Analyzer<'_, '_> {
                                     } else {
                                         None
                                     };
-                                    let type_ann = type_ann.or_else(|| Some(Type::any(arg_prop.span)));
+                                    let type_ann =
+                                        type_ann.map(Box::new).or_else(|| Some(box Type::any(arg_prop.span)));
 
                                     new_members.push(TypeElement::Property(PropertySignature {
                                         optional: calc_true_plus_minus_in_param(optional, arg_prop.optional),
@@ -1224,7 +1223,7 @@ impl Analyzer<'_, '_> {
                                         // inferred.type_elements.remove(&name)
                                         None
                                     } else {
-                                        Some(Type::any(i.span))
+                                        Some(box Type::any(i.span))
                                     };
                                     new_members.push(TypeElement::Index(IndexSignature { type_ann, ..i.clone() }));
                                 }
@@ -1243,14 +1242,14 @@ impl Analyzer<'_, '_> {
                         self.insert_inferred(
                             inferred,
                             name.clone(),
-                            box Type::TypeLit(TypeLit {
+                            Type::TypeLit(TypeLit {
                                 span: arg.span,
                                 members: new_members,
                                 metadata: arg.metadata,
                             }),
                         )?;
 
-                        let mut keys = box Type::Union(Union {
+                        let mut keys = Type::Union(Union {
                             span: param.span,
                             types: key_types,
                         });
@@ -1274,7 +1273,7 @@ impl Analyzer<'_, '_> {
 
                             match &mut inferred_ty {
                                 Some(ty) => {
-                                    handle_optional_for_element(&mut **ty, optional);
+                                    handle_optional_for_element(ty, optional);
                                 }
                                 None => {}
                             }
@@ -1287,9 +1286,9 @@ impl Analyzer<'_, '_> {
                         self.insert_inferred(
                             inferred,
                             name.clone(),
-                            box Type::Array(Array {
+                            Type::Array(Array {
                                 span: arg.span,
-                                elem_type: new_ty.unwrap_or_else(|| Type::any(arg.span)),
+                                elem_type: box new_ty.unwrap_or_else(|| Type::any(arg.span)),
                             }),
                         )?;
 
@@ -1323,7 +1322,7 @@ impl Analyzer<'_, '_> {
 
                                 match &mut inferred_ty {
                                     Some(ty) => {
-                                        handle_optional_for_element(&mut **ty, optional);
+                                        handle_optional_for_element(ty, optional);
                                     }
                                     None => {}
                                 }
@@ -1332,12 +1331,12 @@ impl Analyzer<'_, '_> {
 
                                 if let Some(rest) = rest {
                                     if let Some(elem_type) = inferred_ty {
-                                        Some(box Type::Rest(RestType {
+                                        Some(Type::Rest(RestType {
                                             span: rest,
                                             ty: box Type::Array(Array {
                                                 // TODO
                                                 span: DUMMY_SP,
-                                                elem_type,
+                                                elem_type: box elem_type,
                                             }),
                                         }))
                                     } else {
@@ -1351,7 +1350,7 @@ impl Analyzer<'_, '_> {
                             };
 
                             new_elements.push(TupleElement {
-                                ty: new_ty.unwrap_or_else(|| Type::any(arg.span)),
+                                ty: box new_ty.unwrap_or_else(|| Type::any(arg.span)),
                                 ..element.clone()
                             });
                         }
@@ -1359,7 +1358,7 @@ impl Analyzer<'_, '_> {
                         self.insert_inferred(
                             inferred,
                             name.clone(),
-                            box Type::Tuple(Tuple {
+                            Type::Tuple(Tuple {
                                 span: arg.span,
                                 elems: new_elements,
                             }),
@@ -1392,7 +1391,7 @@ impl Analyzer<'_, '_> {
                                         Key::Normal {
                                             span: i_span,
                                             sym: i_sym,
-                                        } => Some(box Type::Lit(RTsLitType {
+                                        } => Some(Type::Lit(RTsLitType {
                                             node_id: NodeId::invalid(),
                                             span: param.span,
                                             lit: RTsLit::Str(RStr {
@@ -1438,7 +1437,7 @@ impl Analyzer<'_, '_> {
 
                             match &tp.constraint {
                                 Some(box Type::Union(ty))
-                                    if ty.types.iter().all(|ty| match &**ty {
+                                    if ty.types.iter().all(|ty| match ty.normalize() {
                                         Type::Operator(Operator {
                                             ty: box Type::Param(..),
                                             ..
@@ -1448,7 +1447,7 @@ impl Analyzer<'_, '_> {
                                 {
                                     ty.types
                                         .iter()
-                                        .map(|ty| match &**ty {
+                                        .map(|ty| match ty.normalize() {
                                             Type::Operator(Operator {
                                                 ty: box Type::Param(p), ..
                                             }) => p.name.clone(),
@@ -1497,7 +1496,7 @@ impl Analyzer<'_, '_> {
                                                         continue;
                                                     }
 
-                                                    let ty = inferred.type_params.remove(name);
+                                                    let ty = inferred.type_params.remove(name).map(Box::new);
 
                                                     type_elements.entry(name.clone()).or_default().push(
                                                         TypeElement::Property(PropertySignature {
@@ -1531,7 +1530,7 @@ impl Analyzer<'_, '_> {
                                             metadata: arg.metadata,
                                         });
 
-                                        self.insert_inferred(inferred, name.clone(), box list_ty)?;
+                                        self.insert_inferred(inferred, name.clone(), list_ty)?;
                                     }
                                 }
 
@@ -1626,7 +1625,7 @@ impl Analyzer<'_, '_> {
                                                     metadata: arg.metadata,
                                                 });
 
-                                                self.insert_inferred(inferred, name.clone(), box list_ty)?;
+                                                self.insert_inferred(inferred, name.clone(), list_ty)?;
                                                 return Ok(true);
                                             }
 
@@ -1786,14 +1785,14 @@ impl Analyzer<'_, '_> {
 
     fn rename_inferred(&mut self, inferred: &mut InferData, arg_type_params: &TypeParamDecl) -> ValidationResult<()> {
         struct Renamer<'a> {
-            fixed: &'a FxHashMap<Id, Box<Type>>,
+            fixed: &'a FxHashMap<Id, Type>,
         }
 
         impl VisitMut<Type> for Renamer<'_> {
             fn visit_mut(&mut self, node: &mut Type) {
                 match node {
                     Type::Param(p) if self.fixed.contains_key(&p.name) => {
-                        *node = (**self.fixed.get(&p.name).unwrap()).clone();
+                        *node = (*self.fixed.get(&p.name).unwrap()).clone();
                     }
                     _ => node.visit_mut_children_with(self),
                 }
@@ -1822,12 +1821,7 @@ impl Analyzer<'_, '_> {
 
 /// Handles renaming of the type parameters.
 impl Analyzer<'_, '_> {
-    pub(super) fn rename_type_params(
-        &mut self,
-        span: Span,
-        mut ty: Box<Type>,
-        type_ann: Option<&Type>,
-    ) -> ValidationResult {
+    pub(super) fn rename_type_params(&mut self, span: Span, mut ty: Type, type_ann: Option<&Type>) -> ValidationResult {
         if self.is_builtin {
             return Ok(ty);
         }
@@ -1844,7 +1838,7 @@ impl Analyzer<'_, '_> {
         ty.normalize().visit_with(&mut usage_visitor);
         if usage_visitor.params.is_empty() {
             slog::debug!(self.logger, "rename_type_param: No type parameter is used in type");
-            match *ty {
+            match ty.normalize_mut() {
                 Type::Function(ref mut f) => {
                     f.type_params = None;
                 }
@@ -1864,7 +1858,7 @@ impl Analyzer<'_, '_> {
                 "renaming type parameters based on type annotation provided by user\ntype_ann = {:?}",
                 type_ann
             );
-            return Ok(box ty.foldable().fold_with(&mut TypeParamRenamer {
+            return Ok(ty.foldable().fold_with(&mut TypeParamRenamer {
                 inferred: inferred.type_params,
                 declared: Default::default(),
             }));
@@ -1875,7 +1869,7 @@ impl Analyzer<'_, '_> {
             params: usage_visitor.params,
         });
 
-        match *ty {
+        match ty.normalize_mut() {
             Type::Function(ref mut f) => {
                 f.type_params = decl;
             }

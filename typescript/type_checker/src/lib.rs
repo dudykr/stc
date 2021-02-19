@@ -63,7 +63,7 @@ pub struct Checker {
     /// Modules which are being processed or analyzed.
     started: Arc<DashSet<ModuleId>>,
 
-    errors: Mutex<Vec<Box<Error>>>,
+    errors: Mutex<Vec<Error>>,
 
     env: Env,
 
@@ -139,7 +139,7 @@ impl Checker {
         })
     }
 
-    pub fn take_errors(&mut self) -> Vec<Box<Error>> {
+    pub fn take_errors(&mut self) -> Vec<Error> {
         take(self.errors.get_mut())
     }
 

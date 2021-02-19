@@ -27,7 +27,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         type_params: &TypeParamDecl,
         type_args: &TypeParamInstantiation,
-    ) -> ValidationResult<FxHashMap<Id, Box<Type>>> {
+    ) -> ValidationResult<FxHashMap<Id, Type>> {
         let mut params = FxHashMap::default();
 
         for (idx, param) in type_params.params.iter().enumerate() {
@@ -53,11 +53,7 @@ impl Analyzer<'_, '_> {
         Ok(params)
     }
 
-    pub(in super::super) fn expand_type_params(
-        &mut self,
-        params: &FxHashMap<Id, Box<Type>>,
-        ty: Box<Type>,
-    ) -> ValidationResult {
+    pub(in super::super) fn expand_type_params(&mut self, params: &FxHashMap<Id, Type>, ty: Type) -> ValidationResult {
         let ty = self.expand_type_params_inner(params, ty, false)?;
         Ok(ty)
     }
@@ -78,12 +74,7 @@ impl Analyzer<'_, '_> {
     ///z     T extends {
     ///          x: infer P extends number ? infer P : string;
     ///      } ? P : never
-    fn expand_type_params_inner(
-        &mut self,
-        params: &FxHashMap<Id, Box<Type>>,
-        ty: Box<Type>,
-        fully: bool,
-    ) -> ValidationResult {
+    fn expand_type_params_inner(&mut self, params: &FxHashMap<Id, Type>, ty: Type, fully: bool) -> ValidationResult {
         let ty = ty.fold_with(&mut GenericExpander {
             logger: self.logger.clone(),
             analyzer: self,
@@ -117,9 +108,9 @@ impl Analyzer<'_, '_> {
                 };
                 let child = self
                     .with_ctx(ctx)
-                    .expand_fully(child.span(), box child.clone(), true)
+                    .expand_fully(child.span(), child.clone(), true)
                     .unwrap();
-                match &*child {
+                match child.normalize() {
                     Type::Ref(..) => return None,
                     _ => {}
                 }
@@ -143,9 +134,9 @@ impl Analyzer<'_, '_> {
                 };
                 let parent = self
                     .with_ctx(ctx)
-                    .expand_fully(parent.span(), box parent.clone(), true)
+                    .expand_fully(parent.span(), parent.clone(), true)
                     .unwrap();
-                match &*parent {
+                match parent.normalize() {
                     Type::Ref(..) => return None,
                     _ => {}
                 }
@@ -273,7 +264,7 @@ impl Analyzer<'_, '_> {
 struct GenericExpander<'a, 'b, 'c, 'd> {
     logger: Logger,
     analyzer: &'a mut Analyzer<'b, 'c>,
-    params: &'d FxHashMap<Id, Box<Type>>,
+    params: &'d FxHashMap<Id, Type>,
     /// Expand fully?
     fully: bool,
     dejavu: FxHashSet<Id>,
@@ -302,7 +293,7 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                 if i.sym == js_word!("Array") {
                     return Type::Array(Array {
                         span,
-                        elem_type: type_args
+                        elem_type: box type_args
                             .as_ref()
                             .and_then(|args| args.params.iter().next().cloned())
                             .unwrap_or_else(|| Type::any(span)),
@@ -371,7 +362,7 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                     // If it's not self-referential, we fold it again.
 
                     self.dejavu.insert(param.name.clone());
-                    let ty = *ty.clone().fold_with(self);
+                    let ty = ty.clone().fold_with(self);
                     self.dejavu.remove(&param.name);
                     return ty;
                 }
@@ -453,7 +444,7 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                                                             prop_ty: &*p
                                                                 .type_ann
                                                                 .clone()
-                                                                .unwrap_or_else(|| Type::any(p.span)),
+                                                                .unwrap_or_else(|| box Type::any(p.span)),
                                                         }),
                                                         ..p.clone()
                                                     }))

@@ -121,7 +121,7 @@ impl Analyzer<'_, '_> {
             _ => false,
         };
 
-        let mut ty = (|| {
+        let mut ty = (|| -> ValidationResult {
             match e {
                 // super() returns any
                 RExpr::Call(RCallExpr {
@@ -144,7 +144,7 @@ impl Analyzer<'_, '_> {
 
                 RExpr::This(RThisExpr { span, .. }) => {
                     if !self.scope.is_this_defined() {
-                        return Ok(box Type::Keyword(RTsKeywordType {
+                        return Ok(Type::Keyword(RTsKeywordType {
                             span: *span,
                             kind: TsKeywordTypeKind::TsUndefinedKeyword,
                         }));
@@ -153,12 +153,12 @@ impl Analyzer<'_, '_> {
                     if let Some(ty) = self.scope.this() {
                         return Ok(ty.into_owned());
                     }
-                    return Ok(box Type::from(RTsThisType { span }));
+                    return Ok(Type::from(RTsThisType { span }));
                 }
 
                 RExpr::Ident(ref i) => {
                     if i.sym == js_word!("undefined") {
-                        return Ok(box Type::Keyword(RTsKeywordType {
+                        return Ok(Type::Keyword(RTsKeywordType {
                             span: i.span.with_ctxt(SyntaxContext::empty()),
                             kind: TsKeywordTypeKind::TsUndefinedKeyword,
                         }));
@@ -176,21 +176,21 @@ impl Analyzer<'_, '_> {
                 RExpr::Array(arr) => return arr.validate_with_args(self, (mode, type_args, type_ann)),
 
                 RExpr::Lit(RLit::Bool(v)) => {
-                    return Ok(box Type::Lit(RTsLitType {
+                    return Ok(Type::Lit(RTsLitType {
                         node_id: NodeId::invalid(),
                         span: v.span,
                         lit: RTsLit::Bool(v.clone()),
                     }));
                 }
                 RExpr::Lit(RLit::Str(ref v)) => {
-                    return Ok(box Type::Lit(RTsLitType {
+                    return Ok(Type::Lit(RTsLitType {
                         node_id: NodeId::invalid(),
                         span: v.span,
                         lit: RTsLit::Str(v.clone()),
                     }));
                 }
                 RExpr::Lit(RLit::Num(v)) => {
-                    return Ok(box Type::Lit(RTsLitType {
+                    return Ok(Type::Lit(RTsLitType {
                         node_id: NodeId::invalid(),
                         span: v.span,
                         lit: RTsLit::Number(v.clone()),
@@ -199,19 +199,19 @@ impl Analyzer<'_, '_> {
                 RExpr::Lit(RLit::Null(RNull { span })) => {
                     if self.ctx.in_export_default_expr {
                         // TODO: strict mode
-                        return Ok(box Type::Keyword(RTsKeywordType {
+                        return Ok(Type::Keyword(RTsKeywordType {
                             span: *span,
                             kind: TsKeywordTypeKind::TsAnyKeyword,
                         }));
                     }
 
-                    return Ok(box Type::Keyword(RTsKeywordType {
+                    return Ok(Type::Keyword(RTsKeywordType {
                         span: *span,
                         kind: TsKeywordTypeKind::TsNullKeyword,
                     }));
                 }
                 RExpr::Lit(RLit::Regex(..)) => {
-                    return Ok(box Type::Ref(Ref {
+                    return Ok(Type::Ref(Ref {
                         span,
                         ctxt: ModuleId::builtin(),
                         type_name: RTsEntityName::Ident(RIdent {
@@ -230,20 +230,20 @@ impl Analyzer<'_, '_> {
                 RExpr::Tpl(ref t) => {
                     // Check if tpl is constant. If it is, it's type is string literal.
                     if t.exprs.is_empty() {
-                        return Ok(box Type::Lit(RTsLitType {
+                        return Ok(Type::Lit(RTsLitType {
                             node_id: NodeId::invalid(),
                             span: t.span(),
                             lit: RTsLit::Str(t.quasis[0].cooked.clone().unwrap_or_else(|| t.quasis[0].raw.clone())),
                         }));
                     }
 
-                    return Ok(box Type::Keyword(RTsKeywordType {
+                    return Ok(Type::Keyword(RTsKeywordType {
                         span,
                         kind: TsKeywordTypeKind::TsStringKeyword,
                     }));
                 }
 
-                RExpr::TsNonNull(RTsNonNullExpr { ref expr, .. }) => Ok(box expr
+                RExpr::TsNonNull(RTsNonNullExpr { ref expr, .. }) => Ok(expr
                     .validate_with_args(self, (mode, type_args, type_ann))?
                     .remove_falsy()),
 
@@ -263,13 +263,13 @@ impl Analyzer<'_, '_> {
                     ref ident, ref class, ..
                 }) => {
                     self.scope.this_class_name = ident.as_ref().map(|i| i.into());
-                    return Ok(box class.validate_with(self)?.into());
+                    return Ok(class.validate_with(self)?.into());
                 }
 
-                RExpr::Arrow(ref e) => return Ok(box e.validate_with_args(self, type_ann)?.into()),
+                RExpr::Arrow(ref e) => return Ok(e.validate_with_args(self, type_ann)?.into()),
 
                 RExpr::Fn(RFnExpr { ref function, .. }) => {
-                    return Ok(box function.validate_with(self)?.into());
+                    return Ok(function.validate_with(self)?.into());
                 }
 
                 RExpr::Member(ref expr) => {
@@ -291,7 +291,7 @@ impl Analyzer<'_, '_> {
                     if mode == TypeOfMode::RValue {
                         return expr.expr.validate_with_args(self, (mode, None, type_ann));
                     } else {
-                        return Err(box Error::Unimplemented {
+                        return Err(Error::Unimplemented {
                             span,
                             msg: format!(
                                 "Proper error reporting for using const assertion expression in left hand side of an \
@@ -366,7 +366,7 @@ impl Analyzer<'_, '_> {
                         .type_of_var(i, TypeOfMode::LValue, None)
                         .context("tried to get type of lhs of an assignment")?;
 
-                    (any_span, Some(&*ty_of_left))
+                    (any_span, Some(&ty_of_left))
                 }
 
                 _ => (None, type_ann),
@@ -454,7 +454,7 @@ impl Analyzer<'_, '_> {
                     | RExpr::Unary(RUnaryExpr { op: op!("typeof"), .. })
                         if !self.rule().allow_unreachable_code =>
                     {
-                        self.storage.report(box Error::UselessSeqExpr {
+                        self.storage.report(Error::UselessSeqExpr {
                             span: span.with_lo(first_span.lo()),
                         });
                     }
@@ -474,7 +474,7 @@ impl Analyzer<'_, '_> {
             if !is_last {
                 match e.validate_with_default(self) {
                     Ok(..) => {}
-                    Err(box Error::ReferencedInInit { .. }) => {
+                    Err(Error::ReferencedInInit { .. }) => {
                         is_any = true;
                     }
                     Err(..) => {}
@@ -504,12 +504,12 @@ impl Analyzer<'_, '_> {
             }
 
             prop.validate_with_default(self)
-                .and_then(|ty| self.expand_top_ref(ty.span(), Cow::Owned(*ty)).map(Cow::into_owned))
-                .and_then(|ty| self.expand_enum(box ty))
+                .and_then(|ty| self.expand_top_ref(ty.span(), Cow::Owned(ty)).map(Cow::into_owned))
+                .and_then(|ty| self.expand_enum(ty))
                 .and_then(|ty| self.expand_enum_variant(ty))
                 .map(|ty| ComputedKey {
                     span: prop.span(),
-                    ty,
+                    ty: box ty,
                     expr: box prop.clone(),
                 })
                 .map(Key::Computed)
@@ -544,7 +544,7 @@ impl Analyzer<'_, '_> {
         prop: &Key,
         type_mode: TypeOfMode,
         members: &[TypeElement],
-    ) -> ValidationResult<Option<Box<Type>>> {
+    ) -> ValidationResult<Option<Type>> {
         let mut matching_elements = vec![];
         for el in members.iter() {
             if let Some(key) = el.key() {
@@ -552,11 +552,11 @@ impl Analyzer<'_, '_> {
                     match el {
                         TypeElement::Property(ref p) => {
                             if type_mode == TypeOfMode::LValue && p.readonly {
-                                return Err(box Error::ReadOnly { span });
+                                return Err(Error::ReadOnly { span });
                             }
 
                             if let Some(ref type_ann) = p.type_ann {
-                                matching_elements.push(type_ann.clone());
+                                matching_elements.push(*type_ann.clone());
                                 continue;
                             }
 
@@ -567,11 +567,11 @@ impl Analyzer<'_, '_> {
 
                         TypeElement::Method(ref m) => {
                             //
-                            matching_elements.push(box Type::Function(ty::Function {
+                            matching_elements.push(Type::Function(ty::Function {
                                 span,
                                 type_params: m.type_params.clone(),
                                 params: m.params.clone(),
-                                ret_ty: m.ret_ty.clone().unwrap_or_else(|| Type::any(span)),
+                                ret_ty: m.ret_ty.clone().unwrap_or_else(|| box Type::any(span)),
                             }));
                             continue;
                         }
@@ -630,7 +630,7 @@ impl Analyzer<'_, '_> {
                     if indexed {
                         if let Some(ref type_ann) = type_ann {
                             let ty = self.expand_top_ref(span, Cow::Borrowed(type_ann))?;
-                            return Ok(Some(box ty.into_owned()));
+                            return Ok(Some(ty.into_owned()));
                         }
 
                         return Ok(Some(Type::any(span)));
@@ -639,7 +639,7 @@ impl Analyzer<'_, '_> {
                     match prop_ty.normalize() {
                         // TODO: Only string or number
                         Type::EnumVariant(..) => {
-                            matching_elements.extend(type_ann.clone());
+                            matching_elements.extend(type_ann.clone().map(|v| *v));
                             continue;
                         }
 
@@ -648,7 +648,7 @@ impl Analyzer<'_, '_> {
 
                     // This check exists to prefer a specific property over generic index signature.
                     if prop.is_computed() || matching_elements.is_empty() {
-                        let ty = box Type::IndexedAccessType(IndexedAccessType {
+                        let ty = Type::IndexedAccessType(IndexedAccessType {
                             span,
                             obj_type: box obj.clone(),
                             index_type: box prop_ty.into_owned(),
@@ -672,7 +672,7 @@ impl Analyzer<'_, '_> {
     pub(super) fn access_property(
         &mut self,
         span: Span,
-        obj: Box<Type>,
+        obj: Type,
         prop: &Key,
         type_mode: TypeOfMode,
         id_ctx: IdCtx,
@@ -697,7 +697,7 @@ impl Analyzer<'_, '_> {
     fn access_property_inner(
         &mut self,
         span: Span,
-        obj: Box<Type>,
+        obj: Type,
         prop: &Key,
         type_mode: TypeOfMode,
         id_ctx: IdCtx,
@@ -723,7 +723,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            match &*obj {
+            match &obj {
                 Type::This(this) if self.scope.is_this_ref_to_object_lit() => {
                     if let Key::Computed(prop) = prop {
                         //
@@ -755,7 +755,7 @@ impl Analyzer<'_, '_> {
                                 ty::ClassMember::Method(member @ Method { is_static: false, .. })
                                     if member.key.type_eq(prop) =>
                                 {
-                                    return Ok(box Type::Function(ty::Function {
+                                    return Ok(Type::Function(ty::Function {
                                         span: member.span,
                                         type_params: member.type_params.clone(),
                                         params: member.params.clone(),
@@ -765,7 +765,7 @@ impl Analyzer<'_, '_> {
 
                                 ty::ClassMember::Property(member @ ClassProperty { is_static: false, .. }) => {
                                     if member.key.type_eq(prop) {
-                                        return Ok(member.value.clone().unwrap_or_else(|| Type::any(span)));
+                                        return Ok(*member.value.clone().unwrap_or_else(|| box Type::any(span)));
                                     }
                                 }
 
@@ -791,7 +791,7 @@ impl Analyzer<'_, '_> {
                             }
                         }
 
-                        return Err(box Error::NoSuchPropertyInClass {
+                        return Err(Error::NoSuchPropertyInClass {
                             span,
                             class_name: self.scope.get_this_class_name(),
                             prop: prop.clone(),
@@ -817,7 +817,7 @@ impl Analyzer<'_, '_> {
                     // TODO: Handle string literals like
                     //
                     // `this['props']`
-                    return Ok(box Type::IndexedAccessType(IndexedAccessType {
+                    return Ok(Type::IndexedAccessType(IndexedAccessType {
                         span,
                         readonly: false,
                         obj_type: box Type::This(this.clone()),
@@ -831,7 +831,7 @@ impl Analyzer<'_, '_> {
                         match member {
                             stc_ts_types::ClassMember::Method(member @ Method { is_static: true, .. }) => {
                                 if member.key.type_eq(prop) {
-                                    return Ok(box Type::Function(ty::Function {
+                                    return Ok(Type::Function(ty::Function {
                                         span: member.span,
                                         type_params: member.type_params.clone(),
                                         params: member.params.clone(),
@@ -842,7 +842,7 @@ impl Analyzer<'_, '_> {
 
                             stc_ts_types::ClassMember::Property(property @ ClassProperty { is_static: true, .. }) => {
                                 if property.key.type_eq(prop) {
-                                    return Ok(property.value.clone().unwrap_or_else(|| Type::any(span.clone())));
+                                    return Ok(*property.value.clone().unwrap_or_else(|| box Type::any(span.clone())));
                                 }
                             }
 
@@ -852,9 +852,9 @@ impl Analyzer<'_, '_> {
 
                     dbg!();
 
-                    return Err(box Error::NoSuchProperty {
+                    return Err(Error::NoSuchProperty {
                         span: *span,
-                        obj: Some(obj.clone()),
+                        obj: Some(box obj.clone()),
                         prop: Some(box prop.clone()),
                     });
                 }
@@ -885,7 +885,7 @@ impl Analyzer<'_, '_> {
                             RTsEnumMemberId::Str(s) => s.value == *sym,
                         });
                         if !has_such_member {
-                            return Err(box Error::NoSuchEnumVariant {
+                            return Err(Error::NoSuchEnumVariant {
                                 span,
                                 name: sym.clone(),
                             });
@@ -920,11 +920,11 @@ impl Analyzer<'_, '_> {
                         }
 
                         if type_mode == TypeOfMode::LValue {
-                            return Err(box Error::EnumCannotBeLValue { span: prop.span() });
+                            return Err(Error::EnumCannotBeLValue { span: prop.span() });
                         }
 
                         debug_assert_ne!(span, prop.span());
-                        return Ok(box Type::EnumVariant(EnumVariant {
+                        return Ok(Type::EnumVariant(EnumVariant {
                             span: match type_mode {
                                 TypeOfMode::LValue => prop.span(),
                                 TypeOfMode::RValue => span,
@@ -942,7 +942,7 @@ impl Analyzer<'_, '_> {
                                 RExpr::Lit(RLit::Str(..)) | RExpr::Lit(RLit::Num(..)) => true,
                                 _ => false,
                             } {
-                                let new_obj_ty = box Type::Lit(RTsLitType {
+                                let new_obj_ty = Type::Lit(RTsLitType {
                                     node_id: NodeId::invalid(),
                                     span,
                                     lit: match *v.val.clone() {
@@ -954,7 +954,7 @@ impl Analyzer<'_, '_> {
                                 return self.access_property(span, new_obj_ty, prop, type_mode, id_ctx);
                             }
                         }
-                        return Ok(box Type::Keyword(RTsKeywordType {
+                        return Ok(Type::Keyword(RTsKeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsStringKeyword,
                         }));
@@ -962,7 +962,7 @@ impl Analyzer<'_, '_> {
 
                     _ => {
                         if e.is_const {
-                            return Err(box Error::ConstEnumNonIndexAccess { span: prop.span() });
+                            return Err(Error::ConstEnumNonIndexAccess { span: prop.span() });
                         }
 
                         // TODO: Validate type of enum
@@ -970,7 +970,7 @@ impl Analyzer<'_, '_> {
                         // enumBasics.ts says
                         //
                         // Reverse mapping of enum returns string name of property
-                        return Ok(box Type::Keyword(RTsKeywordType {
+                        return Ok(Type::Keyword(RTsKeywordType {
                             span: prop.span(),
                             kind: TsKeywordTypeKind::TsStringKeyword,
                         }));
@@ -998,7 +998,7 @@ impl Analyzer<'_, '_> {
                                         RExpr::Lit(RLit::Str(..)) | RExpr::Lit(RLit::Num(..)) => true,
                                         _ => false,
                                     } {
-                                        let new_obj_ty = box Type::Lit(RTsLitType {
+                                        let new_obj_ty = Type::Lit(RTsLitType {
                                             node_id: NodeId::invalid(),
                                             span: *span,
                                             lit: match *v.val.clone() {
@@ -1024,21 +1024,21 @@ impl Analyzer<'_, '_> {
                         ty::ClassMember::Property(ref class_prop) => {
                             if let Some(declaring) = self.scope.declaring_prop.as_ref() {
                                 if class_prop.key == *declaring.sym() {
-                                    return Err(box Error::ReferencedInInit { span });
+                                    return Err(Error::ReferencedInInit { span });
                                 }
                             }
 
                             //
                             if class_prop.key.type_eq(prop) {
                                 return Ok(match class_prop.value {
-                                    Some(ref ty) => ty.clone(),
+                                    Some(ref ty) => *ty.clone(),
                                     None => Type::any(span),
                                 });
                             }
                         }
                         ty::ClassMember::Method(ref mtd) => {
                             if mtd.key.type_eq(prop) {
-                                return Ok(box Type::Function(stc_ts_types::Function {
+                                return Ok(Type::Function(stc_ts_types::Function {
                                     span: mtd.span,
                                     type_params: mtd.type_params.clone(),
                                     params: mtd.params.clone(),
@@ -1049,11 +1049,11 @@ impl Analyzer<'_, '_> {
 
                         ty::ClassMember::Constructor(ref cons) => {
                             if prop == "constructor" {
-                                return Ok(box Type::Constructor(ty::Constructor {
+                                return Ok(Type::Constructor(ty::Constructor {
                                     span,
                                     type_params: cons.type_params.clone(),
                                     params: cons.params.clone(),
-                                    type_ann: cons.ret_ty.clone().unwrap_or_else(|| obj.clone()),
+                                    type_ann: cons.ret_ty.clone().unwrap_or_else(|| box obj.clone()),
                                     is_abstract: false,
                                 }));
                             }
@@ -1072,13 +1072,13 @@ impl Analyzer<'_, '_> {
                     };
                     let super_ty = self
                         .with_ctx(ctx)
-                        .expand_fully(span, box super_ty.normalize().clone(), true)?;
+                        .expand_fully(span, super_ty.normalize().clone(), true)?;
                     if let Ok(v) = self.access_property(span, super_ty, prop, type_mode, id_ctx) {
                         return Ok(v);
                     }
                 }
 
-                return Err(box Error::NoSuchPropertyInClass {
+                return Err(Error::NoSuchPropertyInClass {
                     span,
                     class_name: c.name.clone(),
                     prop: prop.clone(),
@@ -1101,7 +1101,7 @@ impl Analyzer<'_, '_> {
                             };
                             if let Ok(ty) =
                                 self.with_ctx(ctx)
-                                    .access_property(span, constraint.clone(), prop, type_mode, id_ctx)
+                                    .access_property(span, *constraint.clone(), prop, type_mode, id_ctx)
                             {
                                 return Ok(ty);
                             }
@@ -1141,10 +1141,10 @@ impl Analyzer<'_, '_> {
                     self.prevent_generalize(&mut prop_ty);
                 }
 
-                return Ok(box Type::IndexedAccessType(IndexedAccessType {
+                return Ok(Type::IndexedAccessType(IndexedAccessType {
                     span,
                     readonly: false,
-                    obj_type: obj,
+                    obj_type: box obj,
                     index_type: prop_ty,
                 }));
             }
@@ -1153,7 +1153,7 @@ impl Analyzer<'_, '_> {
                 kind: TsKeywordTypeKind::TsAnyKeyword,
                 ..
             }) => {
-                return Ok(box Type::Keyword(RTsKeywordType {
+                return Ok(Type::Keyword(RTsKeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsAnyKeyword,
                 }));
@@ -1164,7 +1164,7 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {
                 debug_assert!(!span.is_dummy());
-                return Err(box Error::Unknown { span });
+                return Err(Error::Unknown { span });
             }
 
             Type::Keyword(RTsKeywordType { kind, .. }) if !self.is_builtin => {
@@ -1177,9 +1177,9 @@ impl Analyzer<'_, '_> {
                     _ => {
                         dbg!();
 
-                        return Err(box Error::NoSuchProperty {
+                        return Err(Error::NoSuchProperty {
                             span: prop.span(),
-                            obj: Some(obj),
+                            obj: Some(box obj),
                             prop: Some(box prop.clone()),
                         });
                     }
@@ -1239,9 +1239,9 @@ impl Analyzer<'_, '_> {
 
                 // TODO: Check parent interfaces
 
-                return Err(box Error::NoSuchProperty {
+                return Err(Error::NoSuchProperty {
                     span,
-                    obj: Some(obj),
+                    obj: Some(box obj),
                     prop: Some(box prop.clone()),
                 });
             }
@@ -1252,9 +1252,9 @@ impl Analyzer<'_, '_> {
                 }
 
                 dbg!();
-                return Err(box Error::NoSuchProperty {
+                return Err(Error::NoSuchProperty {
                     span,
-                    obj: Some(obj),
+                    obj: Some(box obj),
                     prop: Some(box prop.clone()),
                 });
             }
@@ -1266,7 +1266,7 @@ impl Analyzer<'_, '_> {
                 let mut errors = Vec::with_capacity(types.len());
 
                 for ty in types {
-                    let ty = box self.expand_top_ref(span, Cow::Borrowed(ty))?.into_owned();
+                    let ty = self.expand_top_ref(span, Cow::Borrowed(ty))?.into_owned();
 
                     match self.access_property(span, ty, prop, type_mode, id_ctx) {
                         Ok(ty) => tys.push(ty),
@@ -1277,12 +1277,12 @@ impl Analyzer<'_, '_> {
                 if type_mode == TypeOfMode::LValue {
                     // In l-value context, it's success if one of types matches it.
                     let is_err = errors.iter().any(|err| match *err {
-                        box Error::ReadOnly { .. } => true,
+                        Error::ReadOnly { .. } => true,
                         _ => false,
                     });
                     if tys.is_empty() || is_err {
                         assert_ne!(errors.len(), 0);
-                        return Err(box Error::UnionError { span, errors });
+                        return Err(Error::UnionError { span, errors });
                     }
                 } else {
                     if !errors.is_empty() {
@@ -1299,7 +1299,7 @@ impl Analyzer<'_, '_> {
                     let v = n.value.round() as i64;
 
                     if v < 0 {
-                        return Err(box Error::TupleIndexError {
+                        return Err(Error::TupleIndexError {
                             span: n.span(),
                             index: v,
                             len: elems.len() as u64,
@@ -1311,28 +1311,28 @@ impl Analyzer<'_, '_> {
                             Some(elem) => match elem.ty.normalize() {
                                 Type::Rest(rest_ty) => {
                                     // debug_assert!(rest_ty.ty.is_clone_cheap());
-                                    return Ok(rest_ty.ty.clone());
+                                    return Ok(*rest_ty.ty.clone());
                                 }
                                 _ => {}
                             },
                             _ => {}
                         }
 
-                        return Err(box Error::TupleIndexError {
+                        return Err(Error::TupleIndexError {
                             span: n.span(),
                             index: v,
                             len: elems.len() as u64,
                         });
                     }
 
-                    return Ok(elems[v as usize].ty.clone());
+                    return Ok(*elems[v as usize].ty.clone());
                 }
                 _ => {
-                    let mut types = elems.iter().map(|e| e.ty.clone()).collect::<Vec<_>>();
+                    let mut types = elems.iter().map(|e| *e.ty.clone()).collect::<Vec<_>>();
                     types.dedup_type();
-                    let obj = box Type::Array(Array {
+                    let obj = Type::Array(Array {
                         span,
-                        elem_type: Type::union(types),
+                        elem_type: box Type::union(types),
                     });
 
                     return self.access_property(span, obj, prop, type_mode, id_ctx);
@@ -1351,7 +1351,7 @@ impl Analyzer<'_, '_> {
                             // TODO: normalized string / ident
                             if p.key.type_eq(&prop) {
                                 if let Some(ref ty) = p.value {
-                                    return Ok(ty.clone());
+                                    return Ok(*ty.clone());
                                 }
 
                                 return Ok(Type::any(p.key.span()));
@@ -1360,7 +1360,7 @@ impl Analyzer<'_, '_> {
 
                         ty::ClassMember::Method(ref m) => {
                             if m.key.type_eq(prop) {
-                                return Ok(box Type::Function(ty::Function {
+                                return Ok(Type::Function(ty::Function {
                                     span,
                                     type_params: m.type_params.clone(),
                                     params: m.params.clone(),
@@ -1372,7 +1372,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                return Err(box Error::NoSuchPropertyInClass {
+                return Err(Error::NoSuchPropertyInClass {
                     span,
                     class_name: cls.name.clone(),
                     prop: prop.clone(),
@@ -1380,7 +1380,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::ClassInstance(ClassInstance { ty, .. }) => {
-                return self.access_property(span, ty.clone(), prop, type_mode, id_ctx)
+                return self.access_property(span, *ty.clone(), prop, type_mode, id_ctx)
             }
 
             Type::Module(ty::Module { ref exports, .. }) => {
@@ -1391,7 +1391,7 @@ impl Analyzer<'_, '_> {
                                 if types.len() == 1 {
                                     return Ok(types.into_iter().next().unwrap());
                                 }
-                                return Ok(box Type::Intersection(Intersection { span, types }));
+                                return Ok(Type::Intersection(Intersection { span, types }));
                             }
                         }
                     }
@@ -1406,7 +1406,7 @@ impl Analyzer<'_, '_> {
 
                 print_backtrace();
                 // No property found
-                return Err(box Error::NoSuchPropertyInModule { span });
+                return Err(Error::NoSuchPropertyInModule { span });
             }
 
             Type::This(..) => {
@@ -1422,7 +1422,7 @@ impl Analyzer<'_, '_> {
                 // TODO: Verify if multiple type has field
                 let mut new = vec![];
                 for ty in types {
-                    let ty = box self.expand_top_ref(span, Cow::Borrowed(ty))?.into_owned();
+                    let ty = self.expand_top_ref(span, Cow::Borrowed(ty))?.into_owned();
                     if let Some(v) = self.access_property(span, ty, prop, type_mode, id_ctx).ok() {
                         new.push(v);
                     }
@@ -1432,7 +1432,7 @@ impl Analyzer<'_, '_> {
                     return Ok(new.into_iter().next().unwrap());
                 }
 
-                return Ok(box Type::Union(Union { span, types: new }));
+                return Ok(Type::Union(Union { span, types: new }));
             }
 
             Type::Mapped(m) => {
@@ -1441,7 +1441,7 @@ impl Analyzer<'_, '_> {
                 // If type of prop is equal to the type of index signature, it's
                 // index access.
 
-                match constraint.as_deref().map(Type::normalize) {
+                match constraint.as_ref().map(Type::normalize) {
                     Some(Type::Operator(Operator {
                         op: TsTypeOperatorOp::KeyOf,
                         ty: box Type::Array(..),
@@ -1462,7 +1462,7 @@ impl Analyzer<'_, '_> {
                         //     [P in string]: number;
                         // };
                         if let Ok(()) = self.assign(&index, &prop.ty(), span) {
-                            return Ok(m.ty.clone().unwrap_or_else(|| Type::any(span)));
+                            return Ok(m.ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(span)));
                         }
                     }
 
@@ -1480,10 +1480,10 @@ impl Analyzer<'_, '_> {
                 if let Key::Computed(prop) = prop {
                     let index_type = prop.ty.clone();
                     // Return something like SimpleDBRecord<Flag>[Flag];
-                    return Ok(box Type::IndexedAccessType(IndexedAccessType {
+                    return Ok(Type::IndexedAccessType(IndexedAccessType {
                         span,
                         readonly: false,
-                        obj_type: obj,
+                        obj_type: box obj,
                         index_type,
                     }));
                 } else {
@@ -1494,7 +1494,7 @@ impl Analyzer<'_, '_> {
                                 if class == *i {
                                     return self.access_property(
                                         span,
-                                        box Type::StaticThis(StaticThis { span }),
+                                        Type::StaticThis(StaticThis { span }),
                                         prop,
                                         type_mode,
                                         id_ctx,
@@ -1534,9 +1534,9 @@ impl Analyzer<'_, '_> {
                     _ => unreachable!(),
                 };
 
-                let ty = box Type::IndexedAccessType(IndexedAccessType {
+                let ty = Type::IndexedAccessType(IndexedAccessType {
                     span,
-                    obj_type: obj,
+                    obj_type: box obj,
                     readonly: false,
                     index_type,
                 });
@@ -1565,7 +1565,7 @@ impl Analyzer<'_, '_> {
         unimplemented!("access_property(MemberExpr):\nObject: {:?}\nProp: {:?}", obj, prop);
     }
 
-    fn type_to_query_if_required(&mut self, span: Span, i: &RIdent, ty: Box<Type>) -> Box<Type> {
+    fn type_to_query_if_required(&mut self, span: Span, i: &RIdent, ty: Type) -> Type {
         if self.scope.is_in_call() {
             return ty;
         }
@@ -1578,7 +1578,7 @@ impl Analyzer<'_, '_> {
                 });
                 if is_all_fn {
                     // We should return typeof function name
-                    return box Type::Query(QueryType {
+                    return Type::Query(QueryType {
                         span,
                         expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(i.clone())),
                     });
@@ -1630,7 +1630,7 @@ impl Analyzer<'_, '_> {
                     debug_assert!(ty.is_clone_cheap());
 
                     match ty.normalize() {
-                        Type::Module(..) => modules.push(box ty.clone().into_owned()),
+                        Type::Module(..) => modules.push(ty.clone().into_owned()),
                         Type::Intersection(intersection) => {
                             for ty in &intersection.types {
                                 debug_assert!(ty.is_clone_cheap());
@@ -1655,7 +1655,7 @@ impl Analyzer<'_, '_> {
 
         if !modules.is_empty() {
             modules.push(ty);
-            ty = box Type::Intersection(Intersection {
+            ty = Type::Intersection(Intersection {
                 span: i.span,
                 types: modules,
             });
@@ -1705,7 +1705,7 @@ impl Analyzer<'_, '_> {
                     "Creating ref because we are currently defining a class: {}",
                     i.sym
                 );
-                return Ok(box Type::Ref(Ref {
+                return Ok(Type::Ref(Ref {
                     span,
                     ctxt: self.ctx.module_id,
                     type_name: RTsEntityName::Ident(i.clone()),
@@ -1719,12 +1719,12 @@ impl Analyzer<'_, '_> {
             js_word!("undefined") => return Ok(Type::undefined(span)),
             js_word!("void") => return Ok(Type::any(span)),
             js_word!("eval") => match type_mode {
-                TypeOfMode::LValue => return Err(box Error::CannotAssignToNonVariable { span }),
+                TypeOfMode::LValue => return Err(Error::CannotAssignToNonVariable { span }),
                 TypeOfMode::RValue => {
-                    return Ok(box Type::Function(ty::Function {
+                    return Ok(Type::Function(ty::Function {
                         span,
                         params: vec![],
-                        ret_ty: Type::any(span),
+                        ret_ty: box Type::any(span),
                         type_params: None,
                     }));
                 }
@@ -1767,7 +1767,7 @@ impl Analyzer<'_, '_> {
             if self.ctx.allow_ref_declaring {
                 return Ok(Type::any(span));
             } else {
-                return Err(box Error::ReferencedInInit { span });
+                return Err(Error::ReferencedInInit { span });
             }
         }
 
@@ -1807,22 +1807,22 @@ impl Analyzer<'_, '_> {
                 debug_assert!(ty.is_clone_cheap());
 
                 match ty.normalize() {
-                    Type::Module(..) => return Ok(box ty.clone().into_owned()),
+                    Type::Module(..) => return Ok(ty.clone().into_owned()),
                     _ => {}
                 }
             }
-            Err(box Error::TypeUsedAsVar {
+            Err(Error::TypeUsedAsVar {
                 span,
                 name: i.clone().into(),
             })
         } else {
             if self.this_has_property_named(&i.clone().into()) {
-                Err(box Error::NoSuchVarButThisHasSuchProperty {
+                Err(Error::NoSuchVarButThisHasSuchProperty {
                     span,
                     name: i.clone().into(),
                 })
             } else {
-                Err(box Error::NoSuchVar {
+                Err(Error::NoSuchVar {
                     span,
                     name: i.clone().into(),
                 })
@@ -1842,11 +1842,11 @@ impl Analyzer<'_, '_> {
                 if i.sym == js_word!("Array") {
                     if let Some(type_args) = type_args {
                         // TODO: Validate number of args.
-                        return Ok(Box::new(Type::Array(Array {
+                        return Ok(Type::Array(Array {
                             span,
                             // TODO: Check length (After implementing error recovery for the parser)
-                            elem_type: type_args.clone().params.into_iter().next().unwrap(),
-                        })));
+                            elem_type: box type_args.clone().params.into_iter().next().unwrap(),
+                        }));
                     }
                 }
 
@@ -1868,7 +1868,7 @@ impl Analyzer<'_, '_> {
                             | Type::Optional(_)
                             | Type::Rest(_)
                             | Type::Lit(_) => {
-                                let mut ty = box ty.into_owned().clone();
+                                let mut ty = ty.into_owned().clone();
                                 let mut params = None;
                                 if let Some(type_args) = type_args {
                                     match ty.normalize() {
@@ -1929,7 +1929,7 @@ impl Analyzer<'_, '_> {
 
                 slog::warn!(self.logger, "Creating Type::Ref: {:?}", i);
 
-                Ok(box Type::Ref(Ref {
+                Ok(Type::Ref(Ref {
                     span,
                     ctxt: self.ctx.module_id,
                     type_name: RTsEntityName::Ident(i.clone()),
@@ -2053,7 +2053,7 @@ impl Analyzer<'_, '_> {
                     preserve_ref: false,
                     ..self.ctx
                 };
-                let ty = self.with_ctx(ctx).expand_fully(*span, box ty.clone(), true);
+                let ty = self.with_ctx(ctx).expand_fully(*span, ty.clone(), true);
                 let ty = match ty {
                     Ok(v) => v,
                     Err(..) => return false,
@@ -2079,7 +2079,7 @@ impl Analyzer<'_, '_> {
                         Ok(v) => v,
                         Err(..) => return false,
                     };
-                    if !self.prefer_tuple(Some(&*parent_ty)) {
+                    if !self.prefer_tuple(Some(&parent_ty)) {
                         return false;
                     }
                 }
