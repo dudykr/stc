@@ -40,7 +40,7 @@ impl Analyzer<'_, '_> {
                                 self.apply_mapped_flags(member, m.optional, m.readonly);
                             }
 
-                            return Ok(box Type::TypeLit(new));
+                            return Ok(Type::TypeLit(new));
                         }
                     }
                 }

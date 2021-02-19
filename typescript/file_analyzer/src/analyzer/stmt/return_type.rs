@@ -329,8 +329,8 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                 let index_ty = self
                     .analyzer
                     .with_ctx(ctx)
-                    .expand_fully(span, index_type.clone(), true)
-                    .unwrap_or_else(|_| index_type.clone());
+                    .expand_fully(span, *index_type.clone(), true)
+                    .unwrap_or_else(|_| *index_type.clone());
 
                 if obj_type.type_eq(&index_type) {
                     // declare type S2 = {
@@ -339,7 +339,7 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                     // };
                     // `S2[keyof S2]`;
 
-                    match *index_ty {
+                    match index_ty.foldable() {
                         Type::TypeLit(obj) => {
                             let mut types: Vec<Type> = vec![];
                             for member in obj.members {
@@ -357,7 +357,7 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
 
                                         if let Some(ty) = p.type_ann {
                                             if types.iter().all(|previous| !previous.type_eq(&ty)) {
-                                                types.push(ty);
+                                                types.push(*ty);
                                             }
                                         }
                                     }
@@ -369,7 +369,7 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                                     }
                                 }
                             }
-                            let ty = *Type::union(types);
+                            let ty = Type::union(types);
 
                             return ty;
                         }
@@ -384,7 +384,7 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                     // =>
                     // `T["a" | "b"]`
 
-                    match *index_ty {
+                    match index_ty.foldable() {
                         Type::TypeLit(obj) => {
                             let mut types: Vec<Type> = vec![];
                             for member in obj.members {
@@ -408,7 +408,7 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
 
                                         match key {
                                             Key::Normal { span: i_span, sym: key } => {
-                                                let ty = box Type::Lit(RTsLitType {
+                                                let ty = Type::Lit(RTsLitType {
                                                     node_id: NodeId::invalid(),
                                                     span: i_span,
                                                     lit: RTsLit::Str(RStr {
@@ -432,7 +432,7 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                                 span,
                                 readonly,
                                 obj_type: obj_type.clone(),
-                                index_type: Type::union(types),
+                                index_type: box Type::union(types),
                             });
                         }
                         _ => {}

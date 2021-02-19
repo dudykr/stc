@@ -319,13 +319,13 @@ impl VisitMut<Type> for TupleNormalizer {
                     .unwrap()
                     .elems
                     .into_iter()
-                    .map(|elem| elem.ty)
+                    .map(|elem| *elem.ty)
                     .collect::<Vec<_>>();
                 types.dedup_type();
 
                 *ty = Type::Array(Array {
                     span,
-                    elem_type: Type::union(types),
+                    elem_type: box Type::union(types),
                 });
             }
             _ => {}
