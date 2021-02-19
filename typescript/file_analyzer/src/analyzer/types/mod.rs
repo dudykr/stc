@@ -28,6 +28,7 @@ use swc_common::TypeEq;
 use swc_ecma_ast::TsKeywordTypeKind;
 
 mod mapped;
+mod narrowing;
 mod type_param;
 
 impl Analyzer<'_, '_> {

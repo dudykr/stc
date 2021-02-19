@@ -564,22 +564,25 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                let mut actual_ty = None;
                 if let Some(var_info) = self.scope.get_var(&i.into()) {
                     if let Some(declared_ty) = &var_info.ty {
                         if declared_ty.is_any() {
                             return Ok(());
                         }
+
+                        actual_ty = Some(self.narrowed_type_of_assignment(declared_ty.clone(), &ty)?);
                     }
                 }
 
                 // TODO: Update actual types.
                 if let Some(var_info) = self.scope.get_var_mut(&i.into()) {
-                    var_info.actual_ty = Some(ty.clone());
+                    var_info.actual_ty = Some(actual_ty.unwrap_or_else(|| ty.clone()));
                     return Ok(());
                 }
 
                 let var_info = if let Some(var_info) = self.scope.search_parent(&i.into()) {
-                    let actual_ty = Some(ty.clone());
+                    let actual_ty = Some(actual_ty.unwrap_or_else(|| ty.clone()));
 
                     VarInfo {
                         actual_ty,
