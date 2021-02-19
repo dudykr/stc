@@ -62,7 +62,7 @@ mod vars;
 macro_rules! no_ref {
     ($t:expr) => {{
         match $t {
-            Some(box Type::Ref(..)) => panic!("cannot store a variable with type `Ref`"),
+            Some(Type::Ref(..)) => panic!("cannot store a variable with type `Ref`"),
             _ => {}
         }
     }};
@@ -324,7 +324,7 @@ impl Scope<'_> {
                         } else if prev.normalize().is_intersection_type() {
                             match prev.normalize_mut() {
                                 Type::Intersection(prev) => {
-                                    if let Some(index) = prev.types.iter().position(|v| match &**v {
+                                    if let Some(index) = prev.types.iter().position(|v| match v.normalize() {
                                         Type::Param(..) => true,
                                         _ => false,
                                     }) {
@@ -441,7 +441,7 @@ impl Analyzer<'_, '_> {
             expand_union: false,
             expand_top_level: true,
         };
-        Ok(box ty.foldable().fold_with(&mut v))
+        Ok(ty.foldable().fold_with(&mut v))
     }
 
     /// Expands
@@ -471,7 +471,7 @@ impl Analyzer<'_, '_> {
             expand_top_level: true,
         };
 
-        let ty = box ty.foldable().fold_with(&mut v);
+        let ty = ty.foldable().fold_with(&mut v);
 
         Ok(ty)
     }
@@ -498,8 +498,7 @@ impl Analyzer<'_, '_> {
             ..self.ctx
         };
         self.with_ctx(ctx)
-            .expand_fully(span, box ty.into_owned(), true)
-            .map(|v| *v)
+            .expand_fully(span, ty.into_owned(), true)
             .map(Cow::Owned)
     }
 
