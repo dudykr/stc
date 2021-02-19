@@ -1807,7 +1807,7 @@ impl Analyzer<'_, '_> {
                 debug_assert!(ty.is_clone_cheap());
 
                 match ty.normalize() {
-                    Type::Module(..) => return Ok(box ty.clone().into_owned()),
+                    Type::Module(..) => return Ok(ty.clone().into_owned()),
                     _ => {}
                 }
             }
@@ -1842,11 +1842,11 @@ impl Analyzer<'_, '_> {
                 if i.sym == js_word!("Array") {
                     if let Some(type_args) = type_args {
                         // TODO: Validate number of args.
-                        return Ok(Box::new(Type::Array(Array {
+                        return Ok(Type::Array(Array {
                             span,
                             // TODO: Check length (After implementing error recovery for the parser)
-                            elem_type: type_args.clone().params.into_iter().next().unwrap(),
-                        })));
+                            elem_type: box type_args.clone().params.into_iter().next().unwrap(),
+                        }));
                     }
                 }
 

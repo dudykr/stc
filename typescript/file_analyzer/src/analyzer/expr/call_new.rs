@@ -1454,9 +1454,15 @@ impl Analyzer<'_, '_> {
 
             return Err(if kind == ExtractKind::Call {
                 print_backtrace();
-                Error::NoCallSignature { span, callee }
+                Error::NoCallSignature {
+                    span,
+                    callee: box callee,
+                }
             } else {
-                Error::NoNewSignature { span, callee }
+                Error::NoNewSignature {
+                    span,
+                    callee: box callee,
+                }
             });
         }
 
@@ -1480,10 +1486,7 @@ impl Analyzer<'_, '_> {
             expr,
             type_params.as_deref(),
             &params,
-            ret_ty
-                .map(Cow::into_owned)
-                .map(Box::new)
-                .unwrap_or_else(|| Type::any(span)),
+            ret_ty.map(Cow::into_owned).unwrap_or_else(|| Type::any(span)),
             type_args,
             args,
             arg_types,
@@ -1959,7 +1962,7 @@ impl Analyzer<'_, '_> {
                                     inner: box err,
                                 },
                             });
-                            self.storage.report(box err);
+                            self.storage.report(err);
                         }
                     }
                 }
@@ -2025,7 +2028,7 @@ impl Analyzer<'_, '_> {
                     _ => {
                         if let Some(v) = self.extends(span, orig_ty, &new_ty) {
                             if v {
-                                return Ok(box orig_ty.clone());
+                                return Ok(orig_ty.clone());
                             }
                         }
 
@@ -2040,7 +2043,7 @@ impl Analyzer<'_, '_> {
                     match self.extends(span, &new_ty, &ty) {
                         Some(true) => {
                             upcasted = true;
-                            new_types.push(box ty.clone());
+                            new_types.push(ty.clone());
                         }
                         _ => {}
                     }
@@ -2076,7 +2079,7 @@ impl Analyzer<'_, '_> {
                     .find_var_type(&var_name.clone().into(), TypeOfMode::RValue)
                     .map(Cow::into_owned)
                 {
-                    let new_ty = self.narrow_with_predicate(span, &previous_types, box new_ty.clone())?;
+                    let new_ty = self.narrow_with_predicate(span, &previous_types, new_ty.clone())?;
 
                     self.add_type_fact(&var_name.into(), new_ty);
                     return;
@@ -2084,7 +2087,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        self.add_type_fact(&var_name.into(), box new_ty.clone());
+        self.add_type_fact(&var_name.into(), new_ty.clone());
     }
 
     pub(crate) fn validate_type_args_count(
@@ -2135,7 +2138,7 @@ impl Analyzer<'_, '_> {
         self.with_scope_for_type_params(|analyzer: &mut Analyzer| {
             if let Some(type_params) = type_params {
                 for param in type_params {
-                    analyzer.register_type(param.name.clone(), box Type::Param(param.clone()));
+                    analyzer.register_type(param.name.clone(), Type::Param(param.clone()));
                 }
             }
 
@@ -2197,7 +2200,7 @@ impl Analyzer<'_, '_> {
                         .unwrap_or_else(|| TypeOrSpread {
                             span: arg.span(),
                             spread: arg.spread,
-                            ty: Type::any(arg.expr.span()),
+                            ty: box Type::any(arg.expr.span()),
                         })
                 })
                 .collect();
@@ -2233,7 +2236,7 @@ impl Fold<Type> for ReturnTypeGeneralizer<'_, '_, '_> {
 
         ty = ty.fold_children_with(self);
 
-        *ty.generalize_lit()
+        ty.generalize_lit()
     }
 }
 
@@ -2310,7 +2313,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                         ..self.analyzer.ctx
                     };
                     let mut a = self.analyzer.with_ctx(ctx);
-                    let obj = a.expand_fully(*span, obj_ty.clone(), true).report(&mut a.storage);
+                    let obj = a.expand_fully(*span, *obj_ty.clone(), true).report(&mut a.storage);
                     if let Some(obj) = obj {
                         if let Some(actual_ty) = a
                             .access_property(
@@ -2325,14 +2328,14 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                             )
                             .report(&mut a.storage)
                         {
-                            if types.iter().all(|prev_ty| !(**prev_ty).type_eq(&actual_ty)) {
+                            if types.iter().all(|prev_ty| !(*prev_ty).type_eq(&actual_ty)) {
                                 types.push(actual_ty);
                             }
                         }
                     }
                 }
 
-                *ty = *Type::union(types);
+                *ty = Type::union(types);
                 return;
             }
 
@@ -2349,7 +2352,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                 type_name: RTsEntityName::Ident(i),
                 type_args: Some(type_args),
             }) if type_args.params.len() == 1
-                && type_args.params.iter().any(|ty| match &**ty {
+                && type_args.params.iter().any(|ty| match ty.normalize() {
                     Type::Union(..) => true,
                     _ => false,
                 }) =>
@@ -2361,10 +2364,10 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                             Type::Alias(Alias { ty: aliased_ty, .. }) => {
                                 let mut types = vec![];
 
-                                match &*type_args.params[0] {
+                                match &type_args.params[0] {
                                     Type::Union(type_arg) => {
                                         for ty in &type_arg.types {
-                                            types.push(box Type::Ref(Ref {
+                                            types.push(Type::Ref(Ref {
                                                 span: *span,
                                                 ctxt: *ctxt,
                                                 type_name: RTsEntityName::Ident(i.clone()),
@@ -2379,7 +2382,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                                     _ => unreachable!(),
                                 }
 
-                                *ty = *Type::union(types);
+                                *ty = Type::union(types);
                                 return;
                             }
                             _ => {}
