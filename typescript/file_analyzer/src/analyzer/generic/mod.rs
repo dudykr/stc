@@ -356,7 +356,7 @@ impl Analyzer<'_, '_> {
                             default_ty
                         );
 
-                        self.insert_inferred(&mut inferred, type_param.name.clone(), box default_ty.clone())?;
+                        self.insert_inferred(&mut inferred, type_param.name.clone(), default_ty.clone())?;
                     }
                 }
             }
@@ -456,7 +456,7 @@ impl Analyzer<'_, '_> {
         match arg {
             Type::Param(arg) => {
                 if !param.normalize().is_type_param() {
-                    self.insert_inferred(inferred, arg.name.clone(), box param.clone())?;
+                    self.insert_inferred(inferred, arg.name.clone(), param.clone())?;
                     return Ok(());
                 }
             }
@@ -484,7 +484,7 @@ impl Analyzer<'_, '_> {
                         constraint
                     );
                     if let Some(orig) = inferred.type_params.get(&name) {
-                        if !(**orig).eq_ignore_span(&constraint.as_ref().unwrap()) {
+                        if !(*orig).eq_ignore_span(&constraint.as_ref().unwrap()) {
                             print_backtrace();
                             panic!(
                                 "Cannot override T in `T extends <literal>`\nOrig: {:?}\nConstraints: {:?}",
@@ -523,7 +523,7 @@ impl Analyzer<'_, '_> {
                     match inferred.defaults.entry(name.clone()) {
                         Entry::Occupied(..) => {}
                         Entry::Vacant(e) => {
-                            e.insert(box Type::Param(TypeParam {
+                            e.insert(Type::Param(TypeParam {
                                 span: arg.span(),
                                 name: name.clone(),
                                 constraint: None,
@@ -536,7 +536,7 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
-                let arg = box arg.clone();
+                let arg = arg.clone();
                 slog::info!(self.logger, "({}): infer: {} = {:?}", self.scope.depth(), name, arg);
 
                 match inferred.type_params.entry(name.clone()) {
