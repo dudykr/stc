@@ -280,7 +280,7 @@ impl Scope<'_> {
                 match self.vars.entry(name.clone()) {
                     Entry::Occupied(mut e) => {
                         if let Some(actual_ty) = var.actual_ty {
-                            e.get_mut().actual_ty.get_or_insert_with(|| actual_ty);
+                            e.get_mut().actual_ty = Some(actual_ty);
                         }
                     }
                     Entry::Vacant(..) => {}
