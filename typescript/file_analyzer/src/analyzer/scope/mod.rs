@@ -908,6 +908,8 @@ impl Analyzer<'_, '_> {
                         None
                     }
                 };
+                // TODO: Use better logic
+                v.actual_ty = v.ty.clone();
 
                 self.scope.vars.insert(k, v);
             }
