@@ -565,7 +565,11 @@ impl Analyzer<'_, '_> {
                 }
 
                 let mut actual_ty = None;
-                if let Some(var_info) = self.scope.get_var(&i.into()) {
+                if let Some(var_info) = self
+                    .scope
+                    .get_var(&i.into())
+                    .or_else(|| self.scope.search_parent(&i.into()))
+                {
                     if let Some(declared_ty) = &var_info.ty {
                         if declared_ty.is_any() {
                             return Ok(());
