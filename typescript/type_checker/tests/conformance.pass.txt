@@ -201,6 +201,7 @@ controlFlow/controlFlowDoWhileStatement.ts
 controlFlow/controlFlowElementAccess.ts
 controlFlow/controlFlowElementAccess2.ts
 controlFlow/controlFlowForInStatement.ts
+controlFlow/controlFlowForOfStatement.ts
 controlFlow/controlFlowIfStatement.ts
 controlFlow/controlFlowIteration.ts
 controlFlow/controlFlowStringIndex.ts
@@ -453,14 +454,22 @@ es6/for-ofStatements/for-of28.ts
 es6/for-ofStatements/for-of31.ts
 es6/for-ofStatements/for-of36.ts
 es6/for-ofStatements/for-of37.ts
+es6/for-ofStatements/for-of38.ts
 es6/for-ofStatements/for-of4.ts
+es6/for-ofStatements/for-of40.ts
+es6/for-ofStatements/for-of41.ts
+es6/for-ofStatements/for-of42.ts
+es6/for-ofStatements/for-of43.ts
+es6/for-ofStatements/for-of44.ts
 es6/for-ofStatements/for-of45.ts
 es6/for-ofStatements/for-of49.ts
 es6/for-ofStatements/for-of5.ts
+es6/for-ofStatements/for-of50.ts
 es6/for-ofStatements/for-of53.ts
 es6/for-ofStatements/for-of56.ts
 es6/for-ofStatements/for-of57.ts
 es6/for-ofStatements/for-of58.ts
+es6/for-ofStatements/for-of6.ts
 es6/for-ofStatements/for-of7.ts
 es6/for-ofStatements/for-of9.ts
 es6/functionDeclarations/FunctionDeclaration11_es6.ts
@@ -954,6 +963,7 @@ expressions/typeGuards/typeGuardOfFormExpr1OrExpr2.ts
 expressions/typeGuards/typeGuardOfFormFunctionEquality.ts
 expressions/typeGuards/typeGuardOfFormInstanceOf.ts
 expressions/typeGuards/typeGuardOfFormTypeOfBoolean.ts
+expressions/typeGuards/typeGuardOfFormTypeOfFunction.ts
 expressions/typeGuards/typeGuardOfFormTypeOfIsOrderIndependent.ts
 expressions/typeGuards/typeGuardOfFormTypeOfNumber.ts
 expressions/typeGuards/typeGuardOfFormTypeOfPrimitiveSubtype.ts
@@ -1309,6 +1319,7 @@ parser/ecmascript5/Statements/parserES5ForOfStatement19.ts
 parser/ecmascript5/Statements/parserES5ForOfStatement8.ts
 parser/ecmascript5/Statements/parserES5ForOfStatement9.ts
 parser/ecmascript5/Statements/parserForStatement2.ts
+parser/ecmascript5/Statements/parserForStatement3.ts
 parser/ecmascript5/Statements/parserIfStatement2.ts
 parser/ecmascript5/StrictMode/parserStrictMode1.ts
 parser/ecmascript5/StrictMode/parserStrictMode15-negative.ts
@@ -1434,6 +1445,7 @@ statements/for-ofStatements/ES5For-of24.ts
 statements/for-ofStatements/ES5For-of25.ts
 statements/for-ofStatements/ES5For-of3.ts
 statements/for-ofStatements/ES5For-of33.ts
+statements/for-ofStatements/ES5For-of37.ts
 statements/for-ofStatements/ES5For-of4.ts
 statements/for-ofStatements/ES5For-of5.ts
 statements/for-ofStatements/ES5For-of6.ts
@@ -1466,6 +1478,7 @@ types/contextualTypes/partiallyAnnotatedFunction/partiallyAnnotatedFunctionInfer
 types/contextualTypes/partiallyAnnotatedFunction/partiallyAnnotatedFunctionInferenceWithTypeParameter.ts
 types/contextualTypes/partiallyAnnotatedFunction/partiallyAnnotatedFunctionWitoutTypeParameter.ts
 types/intersection/intersectionTypeEquivalence.ts
+types/keyof/keyofAndForIn.ts
 types/keyof/keyofIntersection.ts
 types/literal/literalTypes1.ts
 types/literal/literalTypes3.ts
@@ -1543,6 +1556,7 @@ types/primitives/void/validVoidAssignments.ts
 types/primitives/void/validVoidValues.ts
 types/rest/genericRestParameters2.ts
 types/rest/objectRest2.ts
+types/rest/objectRestForOf.ts
 types/specifyingTypes/typeLiterals/arrayLiteral.ts
 types/specifyingTypes/typeLiterals/arrayOfFunctionTypes3.ts
 types/specifyingTypes/typeLiterals/functionLiteral.ts
