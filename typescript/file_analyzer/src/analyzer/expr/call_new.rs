@@ -1046,7 +1046,7 @@ impl Analyzer<'_, '_> {
                 expr,
                 f.type_params.as_ref().map(|v| &*v.params),
                 &f.params,
-                f.ret_ty.clone(),
+                *f.ret_ty.clone(),
                 type_args,
                 args,
                 arg_types,
@@ -1103,7 +1103,7 @@ impl Analyzer<'_, '_> {
             Type::Union(..) => self.get_best_return_type(
                 span,
                 expr,
-                box ty.clone(),
+                ty.clone(),
                 kind,
                 type_args,
                 args,
@@ -1169,7 +1169,7 @@ impl Analyzer<'_, '_> {
 
             Type::Class(ref cls) if kind == ExtractKind::New => {
                 // TODO: Remove clone
-                return Ok(box ClassInstance {
+                return Ok(ClassInstance {
                     span,
                     ty: box Type::Class(cls.clone()),
                     type_args: type_args.cloned().map(Box::new),
@@ -1250,7 +1250,7 @@ impl Analyzer<'_, '_> {
             expr,
             type_params.as_ref().map(|v| &*v.params),
             params,
-            ret_ty.clone().unwrap_or(Type::any(span)),
+            ret_ty.clone().map(|v| *v).unwrap_or(Type::any(span)),
             type_args,
             args,
             arg_types,
