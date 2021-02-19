@@ -1724,7 +1724,7 @@ impl Analyzer<'_, '_> {
                     return Ok(Type::Function(ty::Function {
                         span,
                         params: vec![],
-                        ret_ty: Type::any(span),
+                        ret_ty: box Type::any(span),
                         type_params: None,
                     }));
                 }

@@ -80,7 +80,7 @@ impl Analyzer<'_, '_> {
         span.apply_mark(self.marks().prevent_generalization_mark)
     }
 
-    pub(super) fn simplify(&self, ty: Box<Type>) -> Box<Type> {
+    pub(super) fn simplify(&self, ty: Type) -> Type {
         slog::info!(self.logger, "Simplifying");
         ty.fold_with(&mut Simplifier {
             env: &self.env,

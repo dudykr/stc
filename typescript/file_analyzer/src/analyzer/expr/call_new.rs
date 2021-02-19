@@ -1276,7 +1276,7 @@ impl Analyzer<'_, '_> {
             expr,
             c.type_params.as_ref().map(|v| &*v.params),
             &c.params,
-            c.ret_ty.clone().unwrap_or_else(|| Type::any(span)),
+            c.ret_ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(span)),
             type_args,
             args,
             arg_types,
@@ -1443,7 +1443,7 @@ impl Analyzer<'_, '_> {
             match callee.normalize() {
                 Type::Class(cls) if kind == ExtractKind::New => {
                     // TODO: Handle type parameters.
-                    return Ok(box Type::ClassInstance(ClassInstance {
+                    return Ok(Type::ClassInstance(ClassInstance {
                         span,
                         ty: box Type::Class(cls.clone()),
                         type_args: type_args.cloned().map(Box::new),
@@ -1454,9 +1454,9 @@ impl Analyzer<'_, '_> {
 
             return Err(if kind == ExtractKind::Call {
                 print_backtrace();
-                box Error::NoCallSignature { span, callee }
+                Error::NoCallSignature { span, callee }
             } else {
-                box Error::NoNewSignature { span, callee }
+                Error::NoNewSignature { span, callee }
             });
         }
 
@@ -1644,7 +1644,7 @@ impl Analyzer<'_, '_> {
             for param in type_params {
                 slog::info!(self.logger, "({}) Defining {}", self.scope.depth(), param.name);
 
-                self.register_type(param.name.clone(), box Type::Param(param.clone()));
+                self.register_type(param.name.clone(), Type::Param(param.clone()));
             }
 
             let inferred_from_return_type = match type_ann {
@@ -1660,7 +1660,7 @@ impl Analyzer<'_, '_> {
                     .into_iter()
                     .cloned()
                     .map(|v| -> ValidationResult<_> {
-                        let ty = self.expand_type_params(&map, v.ty)?;
+                        let ty = box self.expand_type_params(&map, *v.ty)?;
 
                         Ok(FnParam { ty, ..v })
                     })
@@ -1676,7 +1676,7 @@ impl Analyzer<'_, '_> {
                 .into_iter()
                 .cloned()
                 .map(|v| -> ValidationResult<_> {
-                    let ty = self.expand_type_params(&inferred, v.ty)?;
+                    let ty = box self.expand_type_params(&inferred, *v.ty)?;
 
                     Ok(FnParam { ty, ..v })
                 })
@@ -1699,7 +1699,7 @@ impl Analyzer<'_, '_> {
 
                 if let Some(type_param_decl) = type_param_decl {
                     for param in &type_param_decl.params {
-                        self.register_type(param.name.clone(), box Type::Param(param.clone()));
+                        self.register_type(param.name.clone(), Type::Param(param.clone()));
                     }
                 }
 
@@ -1715,7 +1715,7 @@ impl Analyzer<'_, '_> {
                     };
 
                     if let Some(ty) = default_any_ty {
-                        match &*ty {
+                        match &ty {
                             Type::Keyword(RTsKeywordType {
                                 span,
                                 kind: TsKeywordTypeKind::TsAnyKeyword,
@@ -1726,7 +1726,7 @@ impl Analyzer<'_, '_> {
                                 //         m.for_pats.entry(node_id).or_default().ty = Some(new_ty);
                                 //     }
                                 // }
-                                let new_ty = actual.ty.clone();
+                                let new_ty = *actual.ty.clone();
                                 if let Some(node_id) = pat.node_id() {
                                     if let Some(m) = &mut self.mutations {
                                         m.for_pats.entry(node_id).or_default().ty = Some(new_ty);
