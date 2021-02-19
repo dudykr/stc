@@ -7,7 +7,7 @@ if (typeof x === "string") {
 
 } else {
     x = 10;
-    var b = x; // number | boolean | string
+    var b = x;
     b
 }
 
