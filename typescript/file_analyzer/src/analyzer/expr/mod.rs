@@ -1291,7 +1291,11 @@ impl Analyzer<'_, '_> {
                     }
                 } else {
                     if !errors.is_empty() {
-                        return Ok(Type::any(span));
+                        return Err(Error::NoSuchProperty {
+                            span,
+                            obj: Some(box obj),
+                            prop: Some(box prop.clone()),
+                        });
                     }
                 }
 
