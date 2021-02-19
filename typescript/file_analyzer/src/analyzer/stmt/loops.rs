@@ -43,7 +43,7 @@ impl Analyzer<'_, '_> {
         e.validate_with_default(self)
     }
 
-    fn validate_for_loop(&mut self, span: Span, lhs: &RVarDeclOrPat, rty: Box<Type>) {
+    fn validate_for_loop(&mut self, span: Span, lhs: &RVarDeclOrPat, rty: Type) {
         match lhs {
             RVarDeclOrPat::Pat(RPat::Expr(l)) => {
                 let lty = match l.validate_with_args(self, (TypeOfMode::LValue, None, None)) {

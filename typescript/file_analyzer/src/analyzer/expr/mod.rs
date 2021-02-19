@@ -1441,7 +1441,7 @@ impl Analyzer<'_, '_> {
                 // If type of prop is equal to the type of index signature, it's
                 // index access.
 
-                match constraint.as_deref().map(Type::normalize) {
+                match constraint.as_ref().map(Type::normalize) {
                     Some(Type::Operator(Operator {
                         op: TsTypeOperatorOp::KeyOf,
                         ty: box Type::Array(..),

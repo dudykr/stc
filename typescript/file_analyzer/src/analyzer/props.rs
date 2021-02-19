@@ -93,7 +93,7 @@ impl Analyzer<'_, '_> {
             Err(err) => {
                 check_for_symbol_form = false;
                 match err {
-                    box Error::TS2585 { span } => Err(Error::TS2585 { span })?,
+                    Error::TS2585 { span } => Err(Error::TS2585 { span })?,
                     _ => {}
                 }
 
@@ -129,13 +129,13 @@ impl Analyzer<'_, '_> {
 
                 if let Some(ref ty) = ty {
                     // TODO: Add support for expressions like '' + ''.
-                    match **ty {
+                    match ty.normalize() {
                         _ if is_valid_key => {}
                         Type::Lit(..) => {}
                         Type::EnumVariant(..) => {}
                         _ if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) || ty.is_unique_symbol() => {}
                         _ => match mode {
-                            ComputedPropMode::Interface => errors.push(box Error::TS1169 { span: node.span }),
+                            ComputedPropMode::Interface => errors.push(Error::TS1169 { span: node.span }),
                             _ => {}
                         },
                     }
@@ -179,7 +179,7 @@ impl Analyzer<'_, '_> {
                     ..
                 }) => {}
                 _ if is_symbol_access => {}
-                _ => errors.push(box Error::TS2464 { span }),
+                _ => errors.push(Error::TS2464 { span }),
             }
         }
         if !errors.is_empty() {

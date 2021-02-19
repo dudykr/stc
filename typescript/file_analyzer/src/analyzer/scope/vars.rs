@@ -41,7 +41,7 @@ impl Analyzer<'_, '_> {
         kind: VarDeclKind,
         pat: &RPat,
         export: bool,
-        ty: Option<Box<Type>>,
+        ty: Option<Type>,
     ) -> ValidationResult<()> {
         let span = ty
             .as_ref()
@@ -189,7 +189,7 @@ impl Analyzer<'_, '_> {
 
                 if type_ann.is_none() {
                     if let Some(m) = &mut self.mutations {
-                        m.for_pats.entry(*node_id).or_default().ty = Some(box Type::TypeLit(TypeLit {
+                        m.for_pats.entry(*node_id).or_default().ty = Some(Type::TypeLit(TypeLit {
                             span,
                             // TODO: Fill it
                             members: vec![],

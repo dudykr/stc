@@ -196,15 +196,15 @@ impl Analyzer<'_, '_> {
                     .unwrap_or_else(|| {
                         let mut ty = default_value_ty.generalize_lit();
 
-                        match *ty {
+                        match ty.foldable() {
                             Type::Tuple(tuple) => {
-                                let mut types = tuple.elems.into_iter().map(|element| element.ty).collect::<Vec<_>>();
+                                let mut types = tuple.elems.into_iter().map(|element| *element.ty).collect::<Vec<_>>();
 
                                 types.dedup_type();
 
-                                ty = box Type::Array(Array {
+                                ty = Type::Array(Array {
                                     span: tuple.span,
-                                    elem_type: Type::union(types),
+                                    elem_type: box Type::union(types),
                                 });
                             }
                             _ => {}
@@ -265,7 +265,7 @@ impl Analyzer<'_, '_> {
                 RPat::Rest(..) => false,
                 _ => true,
             },
-            ty,
+            ty: box ty,
         })
     }
 }
