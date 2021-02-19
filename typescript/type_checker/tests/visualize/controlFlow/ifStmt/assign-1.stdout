@@ -33,7 +33,7 @@ warning: Type
 warning: Type
   --> $DIR/tests/visualize/controlFlow/ifStmt/assign-1.ts:10:13
    |
-10 |     var b = x; // number | boolean | string
+10 |     var b = x;
    |             ^
    |
    = note: number
