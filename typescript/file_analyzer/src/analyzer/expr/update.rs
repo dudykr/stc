@@ -73,7 +73,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        Ok(box Type::Keyword(RTsKeywordType {
+        Ok(Type::Keyword(RTsKeywordType {
             kind: TsKeywordTypeKind::TsNumberKeyword,
             span,
         }))

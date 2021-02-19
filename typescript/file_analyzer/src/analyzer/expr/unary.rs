@@ -138,14 +138,14 @@ impl Analyzer<'_, '_> {
 
             op!(unary, "-") | op!(unary, "+") => {
                 if let Some(arg) = &arg {
-                    match &**arg {
+                    match arg.normalize() {
                         Type::Lit(RTsLitType {
                             lit: RTsLit::Number(RNumber { span, value }),
                             ..
                         }) => {
                             let span = *span;
 
-                            return Ok(box Type::Lit(RTsLitType {
+                            return Ok(Type::Lit(RTsLitType {
                                 node_id: NodeId::invalid(),
                                 span,
                                 lit: RTsLit::Number(RNumber {
@@ -158,14 +158,14 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                return Ok(box Type::Keyword(RTsKeywordType {
+                return Ok(Type::Keyword(RTsKeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                 }));
             }
 
             op!("~") => {
-                return Ok(box Type::Keyword(RTsKeywordType {
+                return Ok(Type::Keyword(RTsKeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                 }));
@@ -174,7 +174,7 @@ impl Analyzer<'_, '_> {
         }
 
         match arg {
-            Some(box Type::Keyword(RTsKeywordType {
+            Some(Type::Keyword(RTsKeywordType {
                 kind: TsKeywordTypeKind::TsUnknownKeyword,
                 ..
             })) => {
@@ -197,7 +197,7 @@ impl Analyzer<'_, '_> {
         // This is a worst case. We only return the type without good error reporting.
         match op {
             op!("!") | op!("delete") => {
-                return Ok(box Type::Keyword(RTsKeywordType {
+                return Ok(Type::Keyword(RTsKeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
                 }))
@@ -216,7 +216,7 @@ impl Analyzer<'_, '_> {
 
         match op {
             op!("typeof") | op!("delete") | op!("void") => match arg.normalize() {
-                Type::EnumVariant(..) if op == op!("delete") => errors.push(box Error::TS2704 { span: arg.span() }),
+                Type::EnumVariant(..) if op == op!("delete") => errors.push(Error::TS2704 { span: arg.span() }),
 
                 _ => {}
             },
@@ -230,12 +230,12 @@ impl Analyzer<'_, '_> {
                 Type::Keyword(RTsKeywordType {
                     kind: TsKeywordTypeKind::TsNullKeyword,
                     ..
-                }) => errors.push(box Error::TS2531 { span: arg.span() }),
+                }) => errors.push(Error::TS2531 { span: arg.span() }),
 
                 Type::Keyword(RTsKeywordType {
                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
                     ..
-                }) => errors.push(box Error::TS2532 { span: arg.span() }),
+                }) => errors.push(Error::TS2532 { span: arg.span() }),
 
                 _ => {
                     //

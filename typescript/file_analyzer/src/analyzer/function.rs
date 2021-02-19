@@ -81,7 +81,7 @@ impl Analyzer<'_, '_> {
                 params = params
                     .into_iter()
                     .map(|param: FnParam| -> ValidationResult<_> {
-                        let ty = child.expand(param.span, param.ty)?;
+                        let ty = box child.expand(param.span, *param.ty)?;
                         Ok(FnParam { ty, ..param })
                     })
                     .collect::<Result<_, _>>()?;
@@ -91,8 +91,8 @@ impl Analyzer<'_, '_> {
 
             if let Some(ret_ty) = declared_ret_ty {
                 let span = ret_ty.span();
-                declared_ret_ty = Some(match *ret_ty {
-                    Type::Class(cls) => box Type::ClassInstance(ClassInstance {
+                declared_ret_ty = Some(match ret_ty {
+                    Type::Class(cls) => Type::ClassInstance(ClassInstance {
                         span,
                         ty: box Type::Class(cls),
                         type_args: None,
