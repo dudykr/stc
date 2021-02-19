@@ -653,13 +653,6 @@ impl Analyzer<'_, '_> {
         }
 
         {
-            if let Some(ty) = self.storage.get_local_var(self.ctx.module_id, name.clone()) {
-                slog::debug!(self.logger, "Scope.find_var_type({}): Handled with storage", name);
-                return Some(Cow::Owned(ty));
-            }
-        }
-
-        {
             // Improted variables
             if let Some(info) = self.imports_by_id.get(name) {
                 if let Some(var_ty) = info.data.vars.get(name.sym()) {
@@ -707,6 +700,13 @@ impl Analyzer<'_, '_> {
             }
 
             return Some(Cow::Owned(ty));
+        }
+
+        {
+            if let Some(ty) = self.storage.get_local_var(self.ctx.module_id, name.clone()) {
+                slog::debug!(self.logger, "Scope.find_var_type({}): Handled with storage", name);
+                return Some(Cow::Owned(ty));
+            }
         }
 
         None
