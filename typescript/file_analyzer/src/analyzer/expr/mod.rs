@@ -497,6 +497,17 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     pub(crate) fn validate_key(&mut self, prop: &RExpr, computed: bool) -> ValidationResult<Key> {
         if computed {
+            match prop {
+                RExpr::Lit(RLit::Str(s)) => {
+                    return Ok(Key::Normal {
+                        span: s.span,
+                        sym: s.value.clone(),
+                    })
+                }
+                RExpr::Lit(RLit::Num(n)) => return Ok(Key::Num(n.clone())),
+                _ => {}
+            }
+
             prop.validate_with_default(self)
                 .and_then(|ty| self.expand_top_ref(ty.span(), Cow::Owned(ty)).map(Cow::into_owned))
                 .and_then(|ty| self.expand_enum(ty))
