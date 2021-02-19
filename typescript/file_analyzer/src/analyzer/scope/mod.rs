@@ -583,7 +583,7 @@ impl Analyzer<'_, '_> {
                     .context("tried to resolve lhs of typeof")?;
                 let i = &n.right;
 
-                let obj = box self.expand_top_ref(span, Cow::Owned(*obj))?.into_owned();
+                let obj = self.expand_top_ref(span, Cow::Owned(obj))?.into_owned();
 
                 self.access_property(
                     span,
@@ -682,7 +682,7 @@ impl Analyzer<'_, '_> {
             };
 
             if let Some(ref excludes) = self.scope.facts.excludes.get(&name) {
-                match *ty {
+                match ty.normalize_mut() {
                     Type::Union(ty::Union { ref mut types, .. }) => {
                         for ty in types {
                             let span = (*ty).span();
@@ -780,7 +780,7 @@ impl Analyzer<'_, '_> {
 
     pub(super) fn mark_var_as_truthy(&mut self, name: Id) -> ValidationResult<()> {
         self.modify_var(name, |var| {
-            var.ty = var.ty.take().map(|ty| box ty.remove_falsy());
+            var.ty = var.ty.take().map(|ty| ty.remove_falsy());
             Ok(())
         })
     }
@@ -928,7 +928,7 @@ impl Analyzer<'_, '_> {
                     .expand_top_ref(ty.span(), Cow::Borrowed(&ty))
                     .context("tried to expand reference to declare a complex variable")?;
 
-                return self.declare_complex_vars(kind, pat, box ty.into_owned());
+                return self.declare_complex_vars(kind, pat, ty.into_owned());
             }
             _ => {}
         }
@@ -971,7 +971,7 @@ impl Analyzer<'_, '_> {
                         for (elem, tuple_element) in elems.into_iter().zip(tuple_elements) {
                             match *elem {
                                 Some(ref elem) => {
-                                    self.declare_complex_vars(kind, elem, tuple_element.ty.clone())?;
+                                    self.declare_complex_vars(kind, elem, *tuple_element.ty.clone())?;
                                 }
                                 None => {
                                     // Skip
@@ -986,7 +986,7 @@ impl Analyzer<'_, '_> {
                         for elem in elems.into_iter() {
                             match *elem {
                                 Some(ref elem) => {
-                                    self.declare_complex_vars(kind, elem, elem_type.clone())?;
+                                    self.declare_complex_vars(kind, elem, *elem_type.clone())?;
                                 }
                                 None => {
                                     // Skip
@@ -1009,7 +1009,7 @@ impl Analyzer<'_, '_> {
                                     buf.push(elem_types);
                                 }
                                 _ => {
-                                    errors.push(box Error::NotTuple { span: ty.span() });
+                                    errors.push(Error::NotTuple { span: ty.span() });
                                 }
                             }
                         }
@@ -1021,14 +1021,18 @@ impl Analyzer<'_, '_> {
                             elems.into_iter().zip(buf.into_iter().chain(repeat(&vec![TupleElement {
                                 span: DUMMY_SP,
                                 label: None,
-                                ty: Type::undefined(span),
+                                ty: box Type::undefined(span),
                             }])))
                         {
                             match *elem {
                                 Some(ref elem) => {
-                                    let ty = box Union {
+                                    let ty = Union {
                                         span,
-                                        types: tuple_elements.into_iter().map(|element| &element.ty).cloned().collect(),
+                                        types: tuple_elements
+                                            .into_iter()
+                                            .map(|element| &*element.ty)
+                                            .cloned()
+                                            .collect(),
                                     }
                                     .into();
                                     self.declare_complex_vars(kind, elem, ty)?;
@@ -1478,9 +1482,8 @@ impl<'a> Scope<'a> {
 #[derive(Debug, Clone)]
 pub enum ItemRef<'a, T: Clone> {
     Single(iter::Once<&'a T>),
-    Boxed(iter::Once<&'a Box<T>>),
-    Multi(slice::Iter<'a, Box<T>>),
-    Owned(std::vec::IntoIter<Box<T>>),
+    Multi(slice::Iter<'a, T>),
+    Owned(std::vec::IntoIter<T>),
 }
 
 impl<'a, T> Iterator for ItemRef<'a, T>
@@ -1492,9 +1495,8 @@ where
     fn next(&mut self) -> Option<Self::Item> {
         Some(match self {
             ItemRef::Single(v) => Cow::Borrowed(v.next()?),
-            ItemRef::Boxed(v) => Cow::Borrowed(v.next().map(|v| &**v)?),
-            ItemRef::Multi(v) => Cow::Borrowed(v.next().map(|v| &**v)?),
-            ItemRef::Owned(v) => Cow::Owned(v.next().map(|v| *v)?),
+            ItemRef::Multi(v) => Cow::Borrowed(v.next()?),
+            ItemRef::Owned(v) => Cow::Owned(v.next()?),
         })
     }
 }
