@@ -438,6 +438,7 @@ es6/destructuring/nonIterableRestElement2.ts
 es6/destructuring/objectBindingPatternKeywordIdentifiers05.ts
 es6/destructuring/objectBindingPatternKeywordIdentifiers06.ts
 es6/destructuring/optionalBindingParameters1.ts
+es6/destructuring/optionalBindingParametersInOverloads1.ts
 es6/destructuring/restElementWithBindingPattern.ts
 es6/for-ofStatements/for-of1.ts
 es6/for-ofStatements/for-of13.ts
