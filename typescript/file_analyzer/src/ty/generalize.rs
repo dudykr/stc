@@ -20,10 +20,10 @@ impl Fold<Type> for TupleToArray {
                         continue;
                     }
 
-                    types.push(element.ty);
+                    types.push(*element.ty);
                 }
 
-                let elem_type = Type::union(types);
+                let elem_type = box Type::union(types);
                 return Type::Array(Array { span, elem_type });
             }
 

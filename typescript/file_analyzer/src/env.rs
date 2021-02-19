@@ -122,7 +122,7 @@ impl BuiltIn {
                                     })
                                     .unwrap();
 
-                                result.types.insert(c.ident.sym.clone(), box ty);
+                                result.types.insert(c.ident.sym.clone(), ty);
                             }
 
                             RStmt::Decl(RDecl::TsModule(ref mut m)) => {
@@ -177,7 +177,7 @@ impl BuiltIn {
                                     .map(Type::from)
                                     .expect("builtin: failed to process type alias");
 
-                                result.types.insert(a.id.sym.clone(), box ty);
+                                result.types.insert(a.id.sym.clone(), ty);
                             }
 
                             // Merge interface
@@ -195,14 +195,14 @@ impl BuiltIn {
                                     .expect("builtin: failed to parse interface body");
 
                                 match result.types.entry(i.id.sym.clone()) {
-                                    Entry::Occupied(mut e) => match &mut **e.get_mut() {
+                                    Entry::Occupied(mut e) => match &mut *e.get_mut() {
                                         Type::Interface(ref mut v) => {
                                             v.body.extend(body.body);
                                         }
                                         _ => unreachable!("cannot merge interface with other type"),
                                     },
                                     Entry::Vacant(e) => {
-                                        let ty = box i
+                                        let ty = i
                                             .clone()
                                             .validate_with(&mut analyzer)
                                             .expect("builtin: failed to parse interface")

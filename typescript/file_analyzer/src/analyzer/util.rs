@@ -31,7 +31,7 @@ impl Analyzer<'_, '_> {
             match member {
                 TypeElement::Constructor(c) => {
                     if let Some(ty) = &c.ret_ty {
-                        return Ok(ty.clone());
+                        return Ok(*ty.clone());
                     }
                 }
                 _ => continue,
@@ -59,7 +59,7 @@ impl Analyzer<'_, '_> {
             Ok(ty) => ty,
             Err(err) => {
                 self.storage.report(err);
-                box ty.clone()
+                ty.clone()
             }
         }
     }
@@ -69,11 +69,11 @@ impl Analyzer<'_, '_> {
         let ty = ty.normalize();
 
         if ty.is_any() {
-            return Ok(box ty.clone());
+            return Ok(ty.clone());
         }
 
         if ty.is_kwd(TsKeywordTypeKind::TsNullKeyword) || ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
-            return Ok(box ty.clone());
+            return Ok(ty.clone());
         }
 
         match ty {
@@ -83,9 +83,7 @@ impl Analyzer<'_, '_> {
                     ignore_expand_prevention_for_top: true,
                     ..self.ctx
                 };
-                let ty = self
-                    .with_ctx(ctx)
-                    .expand_fully(span, box ty.normalize().clone(), false)?;
+                let ty = self.with_ctx(ctx).expand_fully(span, ty.normalize().clone(), false)?;
 
                 match ty.normalize() {
                     Type::Ref(..) => return Ok(ty.clone()),
@@ -116,7 +114,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Class(..) => {
-                return Ok(box Type::ClassInstance(ClassInstance {
+                return Ok(Type::ClassInstance(ClassInstance {
                     span,
                     ty: box ty.clone(),
                     type_args: None,
@@ -144,7 +142,7 @@ pub(crate) fn instantiate_class(module_id: ModuleId, ty: Type) -> Type {
                 .cloned()
                 .map(|mut element| {
                     // TODO: Remove clone
-                    element.ty = instantiate_class(module_id, element.ty);
+                    element.ty = box instantiate_class(module_id, *element.ty);
                     element
                 })
                 .collect(),
@@ -220,7 +218,7 @@ impl Fold<Type> for Generalizer {
         ty = ty.fold_children_with(self);
         self.force = old;
 
-        *ty.generalize_lit()
+        ty.generalize_lit()
     }
 }
 
