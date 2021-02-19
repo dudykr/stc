@@ -564,18 +564,22 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                if let Some(var_info) = self.scope.get_var(&i.into()) {
+                    if let Some(declared_ty) = &var_info.ty {
+                        if declared_ty.is_any() {
+                            return Ok(());
+                        }
+                    }
+                }
+
                 // TODO: Update actual types.
                 if let Some(var_info) = self.scope.get_var_mut(&i.into()) {
-                    // var_info.actual_ty = Some(box ty.clone());
+                    var_info.actual_ty = Some(ty.clone());
                     return Ok(());
                 }
 
                 let var_info = if let Some(var_info) = self.scope.search_parent(&i.into()) {
-                    let actual_ty = if true || (var_info.ty.is_some() && var_info.ty.as_ref().unwrap().is_any()) {
-                        return Ok(());
-                    } else {
-                        Some(ty.clone())
-                    };
+                    let actual_ty = Some(ty.clone());
 
                     VarInfo {
                         actual_ty,
