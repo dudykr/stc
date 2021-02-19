@@ -581,7 +581,7 @@ impl Analyzer<'_, '_> {
             },
 
             Type::Infer(param) => {
-                self.insert_inferred(inferred, param.type_param.name.clone(), box arg.clone())?;
+                self.insert_inferred(inferred, param.type_param.name.clone(), arg.clone())?;
                 return Ok(());
             }
 
@@ -611,7 +611,7 @@ impl Analyzer<'_, '_> {
                     }) => return self.infer_type(span, inferred, &arr.elem_type, &arg_elem_type),
 
                     Type::Tuple(arg) => {
-                        let arg = Type::union(arg.elems.iter().map(|element| &element.ty).cloned());
+                        let arg = Type::union(arg.elems.iter().map(|element| *element.ty.clone()));
                         return self.infer_type(span, inferred, &arr.elem_type, &arg);
                     }
 
@@ -664,7 +664,7 @@ impl Analyzer<'_, '_> {
 
                 Type::IndexedAccessType(arg_iat) => {
                     let arg_obj_ty = self
-                        .expand_fully(arg_iat.span, arg_iat.obj_type.clone(), true)?
+                        .expand_fully(arg_iat.span, *arg_iat.obj_type.clone(), true)?
                         .foldable();
                     match arg_obj_ty {
                         Type::Mapped(arg_obj_ty) => match &arg_obj_ty.type_param {
@@ -701,7 +701,7 @@ impl Analyzer<'_, '_> {
                                         ),
                                     }
                                 }
-                                self.insert_inferred(inferred, param_ty.name.clone(), box Type::TypeLit(new_lit))?;
+                                self.insert_inferred(inferred, param_ty.name.clone(), Type::TypeLit(new_lit))?;
 
                                 return Ok(());
                             }
@@ -790,10 +790,8 @@ impl Analyzer<'_, '_> {
                         ..self.ctx
                     };
                     slog::debug!(self.logger, "infer_type: expanding param");
-                    let param = self
-                        .with_ctx(ctx)
-                        .expand_fully(span, box Type::Ref(param.clone()), true)?;
-                    match *param {
+                    let param = self.with_ctx(ctx).expand_fully(span, Type::Ref(param.clone()), true)?;
+                    match param.normalize() {
                         Type::Ref(..) => {
                             dbg!();
 
@@ -842,14 +840,14 @@ impl Analyzer<'_, '_> {
                         obj_type: box Type::Param(obj_type),
                         ..
                     } if self.mapped_type_param_name.contains(&obj_type.name) => {
-                        self.insert_inferred(inferred, obj_type.name.clone(), box arg.clone())?;
+                        self.insert_inferred(inferred, obj_type.name.clone(), arg.clone())?;
                         return Ok(());
                     }
 
                     IndexedAccessType {
                         obj_type: box Type::Intersection(Intersection { types, .. }),
                         ..
-                    } if types.iter().all(|ty| match &**ty {
+                    } if types.iter().all(|ty| match ty.normalize() {
                         Type::Param(obj_type) => {
                             let current = self.mapped_type_param_name.contains(&obj_type.name);
                             current
@@ -858,9 +856,9 @@ impl Analyzer<'_, '_> {
                     }) =>
                     {
                         for ty in types {
-                            match &**ty {
+                            match ty.normalize() {
                                 Type::Param(obj_type) => {
-                                    self.insert_inferred(inferred, obj_type.name.clone(), box arg.clone())?;
+                                    self.insert_inferred(inferred, obj_type.name.clone(), arg.clone())?;
                                 }
 
                                 _ => {}
@@ -918,7 +916,7 @@ impl Analyzer<'_, '_> {
 
             Type::Array(arr) => {
                 let mut params = vec![];
-                params.push(arr.elem_type.clone());
+                params.push(*arr.elem_type.clone());
                 return self.infer_type(
                     span,
                     inferred,
@@ -945,7 +943,7 @@ impl Analyzer<'_, '_> {
                     preserve_params: true,
                     ..self.ctx
                 };
-                let arg = self.with_ctx(ctx).expand_fully(span, box arg.clone(), true)?;
+                let arg = self.with_ctx(ctx).expand_fully(span, arg.clone(), true)?;
                 match *arg {
                     Type::Ref(..) => {}
                     _ => {
@@ -1022,7 +1020,7 @@ impl Analyzer<'_, '_> {
 
                 let arg = self
                     .with_ctx(ctx)
-                    .expand_fully(arg.span, box Type::Ref(arg.clone()), true)?;
+                    .expand_fully(arg.span, Type::Ref(arg.clone()), true)?;
 
                 match arg.normalize() {
                     Type::Ref(..) => return Ok(false),
@@ -1163,7 +1161,7 @@ impl Analyzer<'_, '_> {
                         for arg_member in &arg.members {
                             if let Some(key) = arg_member.key() {
                                 match key {
-                                    Key::Normal { span: i_span, sym } => key_types.push(box Type::Lit(RTsLitType {
+                                    Key::Normal { span: i_span, sym } => key_types.push(Type::Lit(RTsLitType {
                                         node_id: NodeId::invalid(),
                                         span: param.span,
                                         lit: RTsLit::Str(RStr {
@@ -1199,7 +1197,8 @@ impl Analyzer<'_, '_> {
                                     } else {
                                         None
                                     };
-                                    let type_ann = type_ann.or_else(|| Some(Type::any(arg_prop.span)));
+                                    let type_ann =
+                                        type_ann.map(Box::new).or_else(|| Some(box Type::any(arg_prop.span)));
 
                                     new_members.push(TypeElement::Property(PropertySignature {
                                         optional: calc_true_plus_minus_in_param(optional, arg_prop.optional),
@@ -1224,7 +1223,7 @@ impl Analyzer<'_, '_> {
                                         // inferred.type_elements.remove(&name)
                                         None
                                     } else {
-                                        Some(Type::any(i.span))
+                                        Some(box Type::any(i.span))
                                     };
                                     new_members.push(TypeElement::Index(IndexSignature { type_ann, ..i.clone() }));
                                 }
@@ -1243,7 +1242,7 @@ impl Analyzer<'_, '_> {
                         self.insert_inferred(
                             inferred,
                             name.clone(),
-                            box Type::TypeLit(TypeLit {
+                            Type::TypeLit(TypeLit {
                                 span: arg.span,
                                 members: new_members,
                                 metadata: arg.metadata,
