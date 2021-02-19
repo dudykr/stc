@@ -125,13 +125,13 @@ impl Analyzer<'_, '_> {
                     if let Some(m) = &mut self.mutations {
                         //
                         m.for_pats.entry(*node_id).or_default().ty.fill_with(|| {
-                            box Type::Ref(Ref {
+                            Type::Ref(Ref {
                                 span: *span,
                                 ctxt,
                                 type_name: RTsEntityName::Ident(RIdent::new("Iterable".into(), DUMMY_SP)),
                                 type_args: Some(box TypeParamInstantiation {
                                     span: *span,
-                                    params: vec![box Type::Keyword(RTsKeywordType {
+                                    params: vec![Type::Keyword(RTsKeywordType {
                                         span: DUMMY_SP,
                                         kind: TsKeywordTypeKind::TsAnyKeyword,
                                     })],

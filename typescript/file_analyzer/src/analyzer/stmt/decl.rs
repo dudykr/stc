@@ -63,8 +63,7 @@ impl Analyzer<'_, '_> {
                     span, elems, node_id, ..
                 }) => {
                     if let Some(m) = &self.mutations {
-                        if let Some(box Type::Tuple(tuple)) = m.for_pats.get(&node_id).map(|m| &m.ty).cloned().flatten()
-                        {
+                        if let Some(Type::Tuple(tuple)) = m.for_pats.get(&node_id).map(|m| &m.ty).cloned().flatten() {
                             for (i, elem) in elems.iter().enumerate() {
                                 match elem {
                                     Some(pat) => {
@@ -73,7 +72,7 @@ impl Analyzer<'_, '_> {
                                             let ty = &tuple.elems[i].ty;
                                             if let Some(node_id) = pat.node_id() {
                                                 if let Some(m) = &mut self.mutations {
-                                                    m.for_pats.entry(node_id).or_default().ty = Some(ty.clone());
+                                                    m.for_pats.entry(node_id).or_default().ty = Some(*ty.clone());
                                                 }
                                             }
                                         }
@@ -237,7 +236,7 @@ impl Analyzer<'_, '_> {
                         let ty = self.expand(span, ty)?;
                         self.check_rvalue(span, &ty);
 
-                        self.scope.this = Some(box ty.clone().remove_falsy());
+                        self.scope.this = Some(ty.clone().remove_falsy());
                         let mut value_ty = get_value_ty!(Some(&ty));
                         value_ty = self.expand(span, value_ty)?;
                         value_ty = self.rename_type_params(span, value_ty, Some(&ty))?;
@@ -311,7 +310,7 @@ impl Analyzer<'_, '_> {
                             ty = match ty.normalize() {
                                 Type::Function(f) => {
                                     let ret_ty = f.ret_ty.clone().generalize_lit();
-                                    box Type::Function(stc_ts_types::Function { ret_ty, ..f.clone() })
+                                    Type::Function(stc_ts_types::Function { ret_ty, ..f.clone() })
                                 }
 
                                 Type::Tuple(tuple)
@@ -322,7 +321,7 @@ impl Analyzer<'_, '_> {
                                 {
                                     let mut types = tuple.elems.iter().map(|e| e.ty.clone()).collect::<Vec<_>>();
                                     types.dedup_type();
-                                    box Type::Array(Array {
+                                    Type::Array(Array {
                                         span: tuple.span,
                                         elem_type: Type::union(types),
                                     })
@@ -353,7 +352,7 @@ impl Analyzer<'_, '_> {
                                 let ty = match ty.normalize() {
                                     Type::Param(TypeParam {
                                         constraint: Some(ty), ..
-                                    }) => ty.clone(),
+                                    }) => *ty.clone(),
                                     _ => ty,
                                 };
 

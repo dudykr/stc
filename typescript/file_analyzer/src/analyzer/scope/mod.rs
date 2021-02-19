@@ -958,8 +958,8 @@ impl Analyzer<'_, '_> {
                 //      const [a , setA] = useState();
                 //
 
-                let ty = box ty.foldable();
-                match *ty {
+                let ty = ty.foldable();
+                match ty {
                     Type::Tuple(Tuple {
                         elems: ref tuple_elements,
                         ..
@@ -1052,7 +1052,7 @@ impl Analyzer<'_, '_> {
                         for elem in elems {
                             match elem {
                                 Some(elem) => {
-                                    self.declare_complex_vars(kind, elem, *ty.clone())?;
+                                    self.declare_complex_vars(kind, elem, ty.clone())?;
                                 }
                                 None => {}
                             }
@@ -2119,15 +2119,15 @@ impl Fold<Type> for Expander<'_, '_, '_> {
                     });
                 }
 
-                ty => box ty,
+                ty => ty,
             }
         };
 
         let mut ty = match res {
-            Ok(ty) => *ty,
+            Ok(ty) => ty,
             Err(err) => {
                 self.analyzer.storage.report(err);
-                return *Type::any(span);
+                return Type::any(span);
             }
         };
 
@@ -2147,8 +2147,8 @@ impl Fold<Type> for Expander<'_, '_, '_> {
                     .ok();
 
                 if let Some(type_params) = type_params {
-                    true_type = self.analyzer.expand_type_params(&type_params, true_type).unwrap();
-                    false_type = self.analyzer.expand_type_params(&type_params, false_type).unwrap();
+                    true_type = box self.analyzer.expand_type_params(&type_params, *true_type).unwrap();
+                    false_type = box self.analyzer.expand_type_params(&type_params, *false_type).unwrap();
                 }
 
                 match check_type.normalize_mut() {
