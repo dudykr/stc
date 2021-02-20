@@ -1,12 +1,7 @@
 use super::IdCtx;
 use super::TypeOfMode;
 use crate::util::RemoveTypes;
-use crate::{
-    analyzer::{Analyzer, Ctx},
-    validator,
-    validator::ValidateWith,
-    ValidationResult,
-};
+use crate::{analyzer::Analyzer, validator, validator::ValidateWith, ValidationResult};
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::ROptChainExpr;
 use stc_ts_types::Type;
