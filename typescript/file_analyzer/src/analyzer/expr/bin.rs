@@ -18,6 +18,8 @@ use stc_ts_ast_rnode::RBinExpr;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RLit;
+use stc_ts_ast_rnode::RPat;
+use stc_ts_ast_rnode::RPatOrExpr;
 use stc_ts_ast_rnode::RStr;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
@@ -281,8 +283,7 @@ impl Analyzer<'_, '_> {
                         _,
                     ) => None,
 
-                    (RExpr::Ident(l), r) => Some((l, r_ty)),
-                    _ => return None,
+                    (l, r) => Some((extract_name_for_assignment(l)?, r_ty)),
                 }) {
                     Some((l, r)) => {
                         if self.ctx.in_cond && op == op!("===") {
@@ -290,7 +291,7 @@ impl Analyzer<'_, '_> {
                             self.cur_facts
                                 .false_facts
                                 .excludes
-                                .entry(l.into())
+                                .entry(l.clone())
                                 .or_default()
                                 .push(r.clone());
 
@@ -302,12 +303,12 @@ impl Analyzer<'_, '_> {
                             self.cur_facts
                                 .true_facts
                                 .excludes
-                                .entry(l.into())
+                                .entry(l.clone())
                                 .or_default()
                                 .push(r.clone());
 
                             self.prevent_generalize(&mut r);
-                            self.cur_facts.false_facts.vars.insert(l.into(), r);
+                            self.cur_facts.false_facts.vars.insert(l, r);
                         }
                     }
                     _ => {}
@@ -1317,5 +1318,19 @@ impl Analyzer<'_, '_> {
 
         search(e.span, e.op, &e.left)?;
         search(e.span, e.op, &e.right)?;
+    }
+}
+
+fn extract_name_for_assignment(e: &RExpr) -> Option<Name> {
+    match e {
+        RExpr::Assign(e) => match &e.left {
+            RPatOrExpr::Expr(e) => extract_name_for_assignment(e),
+            RPatOrExpr::Pat(pat) => match &**pat {
+                RPat::Ident(i) => Some(i.into()),
+                RPat::Expr(e) => extract_name_for_assignment(e),
+                _ => None,
+            },
+        },
+        _ => Name::try_from(e).ok(),
     }
 }
