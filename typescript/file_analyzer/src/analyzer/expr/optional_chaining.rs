@@ -35,21 +35,13 @@ impl Analyzer<'_, '_> {
 
                 //
 
-                if self.rule().strict_null_checks {
-                    Ok(Type::union(vec![Type::undefined(span), ty]))
-                } else {
-                    Ok(ty)
-                }
+                Ok(Type::union(vec![Type::undefined(span), ty]))
             }
 
             RExpr::Call(ce) => {
                 let ty = ce.validate_with_args(self, type_ann)?;
 
-                if self.rule().strict_null_checks {
-                    Ok(Type::union(vec![Type::undefined(span), ty]))
-                } else {
-                    Ok(ty)
-                }
+                Ok(Type::union(vec![Type::undefined(span), ty]))
             }
 
             _ => unreachable!("Onvalid optional chaining expression found",),
