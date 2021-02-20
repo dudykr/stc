@@ -1323,6 +1323,7 @@ impl Analyzer<'_, '_> {
 
 fn extract_name_for_assignment(e: &RExpr) -> Option<Name> {
     match e {
+        RExpr::Paren(e) => extract_name_for_assignment(&e.expr),
         RExpr::Assign(e) => match &e.left {
             RPatOrExpr::Expr(e) => extract_name_for_assignment(e),
             RPatOrExpr::Pat(pat) => match &**pat {
