@@ -5,7 +5,9 @@ use rnode::FoldWith;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
+use stc_ts_types::ClassMember;
 use stc_ts_types::IndexedAccessType;
+use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
 use stc_ts_types::Union;
 use swc_common::Span;
@@ -14,6 +16,20 @@ use swc_ecma_ast::TsKeywordTypeKind;
 
 pub(super) struct TypeFactsHandler {
     pub facts: TypeFacts,
+}
+
+impl Fold<TypeElement> for TypeFactsHandler {
+    #[inline]
+    fn fold(&mut self, el: TypeElement) -> TypeElement {
+        el
+    }
+}
+
+impl Fold<ClassMember> for TypeFactsHandler {
+    #[inline]
+    fn fold(&mut self, m: ClassMember) -> ClassMember {
+        m
+    }
 }
 
 impl Fold<RTsKeywordType> for TypeFactsHandler {
