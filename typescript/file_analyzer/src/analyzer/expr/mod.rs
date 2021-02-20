@@ -1271,6 +1271,12 @@ impl Analyzer<'_, '_> {
                 let mut errors = Vec::with_capacity(types.len());
 
                 for ty in types {
+                    if !self.rule().strict_null_checks {
+                        if ty.is_kwd(TsKeywordTypeKind::TsNullKeyword) {
+                            continue;
+                        }
+                    }
+
                     match self.access_property(span, ty.clone(), prop, type_mode, id_ctx) {
                         Ok(ty) => tys.push(ty),
                         Err(err) => errors.push(err),
