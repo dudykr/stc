@@ -294,8 +294,6 @@ impl Analyzer<'_, '_> {
                 // Handle member expression
                 let obj_type = obj.validate_with_default(self)?.generalize_lit();
 
-                let obj_type: Type = self.expand_top_ref(span, Cow::Owned(obj_type))?.into_owned();
-
                 let obj_type = match *obj_type.normalize() {
                     Type::Keyword(RTsKeywordType {
                         kind: TsKeywordTypeKind::TsNumberKeyword,
