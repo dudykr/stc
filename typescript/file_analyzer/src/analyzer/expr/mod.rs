@@ -1271,9 +1271,7 @@ impl Analyzer<'_, '_> {
                 let mut errors = Vec::with_capacity(types.len());
 
                 for ty in types {
-                    let ty = self.expand_top_ref(span, Cow::Borrowed(ty))?.into_owned();
-
-                    match self.access_property(span, ty, prop, type_mode, id_ctx) {
+                    match self.access_property(span, ty.clone(), prop, type_mode, id_ctx) {
                         Ok(ty) => tys.push(ty),
                         Err(err) => errors.push(err),
                     }
