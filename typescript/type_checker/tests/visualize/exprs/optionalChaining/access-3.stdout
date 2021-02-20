@@ -35,7 +35,7 @@ warning: Type
   | ^^
   |
   = note: {
-              b: {
+              b: undefined | {
                   c: string;
               };
           }
@@ -46,7 +46,7 @@ warning: Type
 4 | o3.b?.["c"];
   | ^^^^
   |
-  = note: {
+  = note: undefined | {
               c: string;
           }
 
