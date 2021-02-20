@@ -7,7 +7,6 @@ use stc_ts_ast_rnode::RExprOrSuper;
 use stc_ts_ast_rnode::RMemberExpr;
 use stc_ts_ast_rnode::ROptChainExpr;
 use stc_ts_types::Type;
-use swc_common::TypeEq;
 use swc_ecma_ast::TsKeywordTypeKind;
 
 #[validator]
@@ -20,9 +19,9 @@ impl Analyzer<'_, '_> {
                 let prop = self.validate_key(&me.prop, me.computed)?;
                 let obj = me.obj.validate_with(self)?;
 
-                let obj = obj.remove_falsy();
-
                 let is_obj_optional = self.is_obj_optional(&obj)?;
+
+                let obj = obj.remove_falsy();
 
                 let ty = self.access_property(span, obj, &prop, TypeOfMode::RValue, IdCtx::Var)?;
 
