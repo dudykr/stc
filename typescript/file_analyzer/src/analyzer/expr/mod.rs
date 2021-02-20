@@ -564,7 +564,11 @@ impl Analyzer<'_, '_> {
                             }
 
                             if let Some(ref type_ann) = p.type_ann {
-                                matching_elements.push(*type_ann.clone());
+                                if p.optional {
+                                    matching_elements.push(Type::union(vec![Type::undefined(span), *type_ann.clone()]));
+                                } else {
+                                    matching_elements.push(*type_ann.clone());
+                                }
                                 continue;
                             }
 
