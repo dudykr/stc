@@ -69,9 +69,7 @@ warning: Type
 20 |     if (v.onChanges) {
    |         ^^^^^^^^^^^
    |
-   = note: (changes: {
-               [P in string]: unknown;
-           }) => void
+   = note: (changes: Record<string, unknown>) => void
 
 warning: Type
   --> $DIR/tests/visualize/controlFlow/ifStmt/subTypes/reduction-1.ts:21:21
