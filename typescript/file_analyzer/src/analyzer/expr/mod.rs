@@ -14,6 +14,7 @@ use crate::{
     validator::ValidateWith,
     ValidationResult,
 };
+use optional_chaining::is_obj_opt_chaining;
 use rnode::NodeId;
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RAssignExpr;
@@ -1983,13 +1984,18 @@ impl Analyzer<'_, '_> {
         } = *expr;
 
         let mut errors = Errors::default();
-        let obj_ctx = Ctx {
-            allow_module_var: true,
-            should_store_truthy_for_access: true,
-            ..self.ctx
-        };
+
+        let mut should_be_optional = false;
         let obj_ty = match *obj {
             RExprOrSuper::Expr(ref obj) => {
+                should_be_optional = is_obj_opt_chaining(&obj);
+
+                let obj_ctx = Ctx {
+                    allow_module_var: true,
+                    should_store_truthy_for_access: true,
+                    ..self.ctx
+                };
+
                 let obj_ty = match obj.validate_with_default(&mut *self.with_ctx(obj_ctx)) {
                     Ok(ty) => ty,
                     Err(err) => {
@@ -2002,6 +2008,10 @@ impl Analyzer<'_, '_> {
                         }
                     }
                 };
+
+                if should_be_optional {
+                    should_be_optional = self.is_obj_optional(&obj_ty)?;
+                }
 
                 obj_ty
             }
@@ -2018,9 +2028,8 @@ impl Analyzer<'_, '_> {
 
         let prop = self.validate_key(prop, computed)?;
 
-        if computed {
-            let ty = self.access_property(span, obj_ty, &prop, type_mode, IdCtx::Var)?;
-            return Ok(ty);
+        let ty = if computed {
+            self.access_property(span, obj_ty, &prop, type_mode, IdCtx::Var)?
         } else {
             let mut ty = self
                 .access_property(span, obj_ty, &prop, type_mode, IdCtx::Var)
@@ -2034,6 +2043,13 @@ impl Analyzer<'_, '_> {
 
                 self.exclude_types_using_fact(&name, &mut ty);
             }
+
+            ty
+        };
+
+        if should_be_optional {
+            Ok(Type::union(vec![Type::undefined(span), ty]))
+        } else {
             Ok(ty)
         }
     }
