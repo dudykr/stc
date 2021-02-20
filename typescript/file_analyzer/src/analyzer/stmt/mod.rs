@@ -1,5 +1,6 @@
 use self::return_type::LoopBreakerFinder;
 use super::Analyzer;
+use super::Ctx;
 use crate::{
     analyzer::{scope::ScopeKind, util::ResultExt},
     validator,
@@ -68,7 +69,13 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RWhileStmt) {
-        let test = node.test.validate_with_default(self)?;
+        let test = {
+            let ctx = Ctx {
+                in_cond: true,
+                ..self.ctx
+            };
+            node.test.validate_with_default(&mut *self.with_ctx(ctx))?
+        };
         self.check_for_inifinite_loop(&test, &node.body);
 
         node.body.visit_with(self);
