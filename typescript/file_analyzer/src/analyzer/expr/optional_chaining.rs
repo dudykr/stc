@@ -1,5 +1,6 @@
 use super::IdCtx;
 use super::TypeOfMode;
+use crate::util::type_ext::TypeVecExt;
 use crate::util::RemoveTypes;
 use crate::{analyzer::Analyzer, validator, validator::ValidateWith, ValidationResult};
 use stc_ts_ast_rnode::RExpr;
@@ -28,7 +29,9 @@ impl Analyzer<'_, '_> {
                 //
 
                 if is_obj_optional {
-                    Ok(Type::union(vec![Type::undefined(span), ty]))
+                    let mut types = vec![Type::undefined(span), ty];
+                    types.dedup_type();
+                    Ok(Type::union(types))
                 } else {
                     Ok(ty)
                 }
