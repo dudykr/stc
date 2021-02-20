@@ -20,16 +20,7 @@ impl Analyzer<'_, '_> {
             RExpr::Member(me) => {
                 let prop = self.validate_key(&me.prop, me.computed)?;
                 let obj = me.obj.validate_with(self)?;
-                let mut obj = obj.remove_falsy();
-
-                if obj.normalize().is_ref_type() {
-                    let ctx = Ctx {
-                        preserve_ref: false,
-                        ignore_expand_prevention_for_top: true,
-                        ..self.ctx
-                    };
-                    obj = self.with_ctx(ctx).expand_fully(span, obj, true)?;
-                }
+                let obj = obj.remove_falsy();
 
                 let ty = self.access_property(span, obj, &prop, TypeOfMode::RValue, IdCtx::Var)?;
 
