@@ -1509,12 +1509,12 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    print_backtrace();
-                    unreachable!(
-                        "access_property: object type should be expanded before calling this\n:Object: \
-                         {:#?}\nProperty: {:#?}",
-                        obj, prop
-                    )
+                    let obj = self
+                        .expand_top_ref(span, Cow::Borrowed(&obj))
+                        .context("tried to expand reference to access property")?
+                        .into_owned();
+
+                    return self.access_property(span, obj, prop, type_mode, id_ctx);
                 }
             }
 
