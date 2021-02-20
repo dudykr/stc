@@ -1272,7 +1272,9 @@ impl Analyzer<'_, '_> {
 
                 for ty in types {
                     if !self.rule().strict_null_checks {
-                        if ty.is_kwd(TsKeywordTypeKind::TsNullKeyword) {
+                        if ty.is_kwd(TsKeywordTypeKind::TsNullKeyword)
+                            || ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
+                        {
                             continue;
                         }
                     }
