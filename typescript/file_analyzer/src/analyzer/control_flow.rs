@@ -733,9 +733,9 @@ impl Analyzer<'_, '_> {
             .flatten()
         {
             if is_for_true {
-                self.cur_facts.true_facts.vars.insert(name, ty);
+                self.cur_facts.true_facts.vars.insert(name, new_ty);
             } else {
-                self.cur_facts.false_facts.vars.insert(name, ty);
+                self.cur_facts.false_facts.vars.insert(name, new_ty);
             }
             return;
         }
