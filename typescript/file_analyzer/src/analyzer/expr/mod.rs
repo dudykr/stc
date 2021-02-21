@@ -2001,7 +2001,7 @@ impl Analyzer<'_, '_> {
 
                 let obj_ctx = Ctx {
                     allow_module_var: true,
-                    should_store_truthy_for_access: !should_be_optional,
+                    should_store_truthy_for_access: self.ctx.in_cond && !should_be_optional,
                     ..self.ctx
                 };
 
