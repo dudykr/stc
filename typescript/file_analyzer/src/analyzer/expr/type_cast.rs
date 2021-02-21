@@ -327,6 +327,10 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
+        if from.is_class() && to.is_interface() {
+            return Ok(false);
+        }
+
         // class A {}
         // class B extends A {}
         //
