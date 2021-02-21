@@ -204,7 +204,16 @@ impl Analyzer<'_, '_> {
                         .map(Type::TypeLit)
                         .unwrap();
 
-                    return self.assign_to_type_elements(opts, lhs_span, lhs, &rhs, lhs_metadata);
+                    return self.assign_to_type_elements(
+                        AssignOpts {
+                            allow_unknown_rhs: true,
+                            ..opts
+                        },
+                        lhs_span,
+                        lhs,
+                        &rhs,
+                        lhs_metadata,
+                    );
                 }
 
                 Type::Keyword(RTsKeywordType {
