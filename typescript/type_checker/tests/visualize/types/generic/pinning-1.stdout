@@ -48,7 +48,9 @@ warning: Type
 12 | var r = c.foo('');
    |         ^
    |
-   = note: C
+   = note: C<{
+               length: 2;
+           }>
 
 warning: Type
   --> $DIR/tests/visualize/types/generic/pinning-1.ts:12:9
