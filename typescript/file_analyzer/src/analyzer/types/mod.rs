@@ -1,6 +1,5 @@
 use super::Analyzer;
 use crate::ty::type_facts::TypeFactsHandler;
-use crate::ty::TypeExt;
 use crate::type_facts::TypeFacts;
 use crate::util::type_ext::TypeVecExt;
 use crate::ValidationResult;

@@ -1,6 +1,6 @@
-use self::{generalize::TupleToArray, type_facts::TypeFactsHandler};
+use self::generalize::TupleToArray;
+use crate::util::is_str_lit_or_union;
 use crate::util::type_ext::TypeVecExt;
-use crate::{type_facts::TypeFacts, util::is_str_lit_or_union};
 use retain_mut::RetainMut;
 use rnode::Fold;
 use rnode::FoldWith;
