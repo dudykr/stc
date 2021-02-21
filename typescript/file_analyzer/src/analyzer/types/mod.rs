@@ -355,7 +355,7 @@ impl VisitMut<Type> for TupleNormalizer {
 
 /// Exclude `excluded` from `ty`
 fn exclude_type(ty: &mut Type, excluded: &Type) {
-    match excluded {
+    match excluded.normalize() {
         Type::Union(excluded) => {
             //
             for excluded in &excluded.types {
@@ -367,7 +367,7 @@ fn exclude_type(ty: &mut Type, excluded: &Type) {
         _ => {}
     }
 
-    match &mut *ty {
+    match ty.normalize_mut() {
         Type::Union(ty) => {
             ty.types.retain(|element| !excluded.type_eq(element));
         }

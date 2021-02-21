@@ -693,7 +693,7 @@ impl Analyzer<'_, '_> {
                         for ty in types {
                             let span = (*ty).span();
                             for excluded_ty in excludes.iter() {
-                                if ty.type_eq(excluded_ty) {
+                                if ty.normalize().type_eq(excluded_ty.normalize()) {
                                     *ty = Type::never(span)
                                 }
                             }
