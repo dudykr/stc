@@ -4,6 +4,7 @@ use crate::{
     ValidationResult,
 };
 use rnode::NodeId;
+use stc_ts_ast_rnode::RBool;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RStr;
@@ -777,6 +778,25 @@ impl Analyzer<'_, '_> {
 
             // let a: string | number = 'string';
             Type::Union(Union { ref types, .. }) => {
+                // true | false = boolean
+                if rhs.is_kwd(TsKeywordTypeKind::TsBooleanKeyword) {
+                    if types.iter().any(|ty| match ty {
+                        Type::Lit(RTsLitType {
+                            lit: RTsLit::Bool(RBool { value: true, .. }),
+                            ..
+                        }) => true,
+                        _ => false,
+                    }) && types.iter().any(|ty| match ty {
+                        Type::Lit(RTsLitType {
+                            lit: RTsLit::Bool(RBool { value: false, .. }),
+                            ..
+                        }) => true,
+                        _ => false,
+                    }) {
+                        return Ok(());
+                    }
+                }
+
                 let results = types
                     .iter()
                     .map(|to| self.assign_inner(&to, rhs, opts))
