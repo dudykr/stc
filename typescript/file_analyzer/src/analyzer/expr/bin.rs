@@ -387,13 +387,12 @@ impl Analyzer<'_, '_> {
                                     .vars
                                     .insert(Name::from(i), narrowed_ty.clone());
 
-                                // TODO: Exclude ObjectConstrurctor must remove Date in `else`
                                 self.cur_facts
                                     .false_facts
                                     .excludes
                                     .entry(Name::from(i))
                                     .or_default()
-                                    .push(ty);
+                                    .push(narrowed_ty);
                             }
                         }
                     }
