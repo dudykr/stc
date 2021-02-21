@@ -727,15 +727,15 @@ impl Analyzer<'_, '_> {
     pub(super) fn add_deep_type_fact(&mut self, name: Name, ty: Type, is_for_true: bool) {
         debug_assert!(!self.is_builtin);
 
-        if let Some((name, new_ty)) = self
+        if let Some((name, ty)) = self
             .determine_type_fact_by_field_fact(&name, &ty)
             .report(&mut self.storage)
             .flatten()
         {
             if is_for_true {
-                self.cur_facts.true_facts.vars.insert(name, new_ty);
+                self.cur_facts.true_facts.vars.insert(name, ty);
             } else {
-                self.cur_facts.false_facts.vars.insert(name, new_ty);
+                self.cur_facts.false_facts.vars.insert(name, ty);
             }
             return;
         }
