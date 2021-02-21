@@ -79,6 +79,22 @@ warning: Type
   = note: string
 
 warning: Type
+ --> $DIR/tests/visualize/controlFlow/guard/primitive-1.ts:5:56
+  |
+5 |         console.log("Aha!! It's a string of length " + thing.length);
+  |                                                        ^^^^^^^^^^^^
+  |
+  = note: number
+
+warning: Type
+ --> $DIR/tests/visualize/controlFlow/guard/primitive-1.ts:5:21
+  |
+5 |         console.log("Aha!! It's a string of length " + thing.length);
+  |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: string
+
+warning: Type
  --> $DIR/tests/visualize/controlFlow/guard/primitive-1.ts:5:9
   |
 5 |         console.log("Aha!! It's a string of length " + thing.length);
