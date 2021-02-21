@@ -28,7 +28,7 @@ warning: Type
 8 |         super.baz(a, y);
   |         ^^^^^^^^^
   |
-  = note: (a: string, y?: 10) => void
+  = note: (a: string, y?: number) => void
 
 warning: Type
  --> $DIR/tests/visualize/class/super/infer/super-arg-1.ts:8:9
