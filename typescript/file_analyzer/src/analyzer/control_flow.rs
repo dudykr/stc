@@ -6,6 +6,7 @@ use super::{
     scope::{ScopeKind, VarInfo},
     Analyzer,
 };
+use crate::analyzer::expr::IdCtx;
 use crate::util::type_ext::TypeVecExt;
 use crate::{
     ty::{Tuple, Type, TypeElement, TypeLit},
@@ -33,6 +34,7 @@ use stc_ts_errors::Error;
 use stc_ts_types::name::Name;
 use stc_ts_types::Array;
 use stc_ts_types::Id;
+use stc_ts_types::Key;
 use stc_ts_utils::find_ids_in_pat;
 use stc_ts_utils::MapWithMut;
 use std::borrow::Cow;
@@ -722,12 +724,70 @@ impl Analyzer<'_, '_> {
         self.cur_facts.insert_var(sym, ty, false);
     }
 
-    pub(super) fn add_deep_type_fact(&mut self, sym: Name, ty: Type, is_for_true: bool) {
-        if is_for_true {
-            self.cur_facts.true_facts.vars.insert(sym, ty);
-        } else {
-            self.cur_facts.false_facts.vars.insert(sym, ty);
+    pub(super) fn add_deep_type_fact(&mut self, name: Name, ty: Type, is_for_true: bool) {
+        debug_assert!(!self.is_builtin);
+
+        if let Some((name, new_ty)) = self
+            .determine_type_fact_by_field_fact(&name, &ty)
+            .report(&mut self.storage)
+            .flatten()
+        {
+            if is_for_true {
+                self.cur_facts.true_facts.vars.insert(name, ty);
+            } else {
+                self.cur_facts.false_facts.vars.insert(name, ty);
+            }
+            return;
         }
+
+        if is_for_true {
+            self.cur_facts.true_facts.vars.insert(name, ty);
+        } else {
+            self.cur_facts.false_facts.vars.insert(name, ty);
+        }
+    }
+
+    fn determine_type_fact_by_field_fact(&mut self, name: &Name, ty: &Type) -> ValidationResult<Option<(Name, Type)>> {
+        if name.len() == 1 {
+            return Ok(None);
+        }
+
+        let ids = name.as_ids();
+        let obj = self.type_of_var(&ids[0].clone().into(), TypeOfMode::RValue, None)?;
+
+        match obj.normalize() {
+            Type::Union(u) => {
+                if ids.len() == 2 {
+                    let mut new_obj_types = vec![];
+
+                    for obj in &u.types {
+                        if let Ok(prop_ty) = self.access_property(
+                            obj.span(),
+                            obj.clone(),
+                            &Key::Normal {
+                                span: ty.span(),
+                                sym: ids[1].sym().clone(),
+                            },
+                            TypeOfMode::RValue,
+                            IdCtx::Var,
+                        ) {
+                            if ty.normalize().type_eq(&prop_ty.normalize()) {
+                                new_obj_types.push(obj.clone());
+                            }
+                        }
+                    }
+
+                    if new_obj_types.is_empty() {
+                        return Ok(None);
+                    }
+
+                    return Ok(Some((Name::from(ids[0].clone()), Type::union(new_obj_types))));
+                }
+            }
+            _ => {}
+        }
+
+        Ok(None)
     }
 }
 

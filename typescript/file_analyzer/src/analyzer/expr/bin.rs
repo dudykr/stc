@@ -296,7 +296,7 @@ impl Analyzer<'_, '_> {
                                 .push(r.clone());
 
                             self.prevent_generalize(&mut r);
-                            self.cur_facts.true_facts.vars.insert(l.into(), r);
+                            self.add_deep_type_fact(l, r, true);
                         } else if self.ctx.in_cond && !is_eq {
                             // Remove from union
                             let mut r = r.clone();
@@ -308,7 +308,7 @@ impl Analyzer<'_, '_> {
                                 .push(r.clone());
 
                             self.prevent_generalize(&mut r);
-                            self.cur_facts.false_facts.vars.insert(l, r);
+                            self.add_deep_type_fact(l, r, false);
                         }
                     }
                     _ => {}
