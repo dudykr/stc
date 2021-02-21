@@ -1496,14 +1496,19 @@ impl Analyzer<'_, '_> {
 
             Type::Ref(r) => {
                 if let Key::Computed(prop) = prop {
-                    let index_type = prop.ty.clone();
-                    // Return something like SimpleDBRecord<Flag>[Flag];
-                    return Ok(Type::IndexedAccessType(IndexedAccessType {
-                        span,
-                        readonly: false,
-                        obj_type: box obj,
-                        index_type,
-                    }));
+                    match obj.normalize() {
+                        Type::Param(..) => {
+                            let index_type = prop.ty.clone();
+                            // Return something like SimpleDBRecord<Flag>[Flag];
+                            return Ok(Type::IndexedAccessType(IndexedAccessType {
+                                span,
+                                readonly: false,
+                                obj_type: box obj,
+                                index_type,
+                            }));
+                        }
+                        _ => {}
+                    }
                 } else {
                     match &r.type_name {
                         RTsEntityName::TsQualifiedName(_) => {}
@@ -1521,14 +1526,14 @@ impl Analyzer<'_, '_> {
                             }
                         }
                     }
-
-                    let obj = self
-                        .expand_top_ref(span, Cow::Borrowed(&obj))
-                        .context("tried to expand reference to access property")?
-                        .into_owned();
-
-                    return self.access_property(span, obj, prop, type_mode, id_ctx);
                 }
+
+                let obj = self
+                    .expand_top_ref(span, Cow::Borrowed(&obj))
+                    .context("tried to expand reference to access property")?
+                    .into_owned();
+
+                return self.access_property(span, obj, prop, type_mode, id_ctx);
             }
 
             Type::IndexedAccessType(..) => {
