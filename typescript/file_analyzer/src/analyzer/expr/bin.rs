@@ -366,8 +366,8 @@ impl Analyzer<'_, '_> {
                             };
 
                         if !cannot_narrow {
-                            let ty = self
-                                .narrow_with_instanceof(span, ty, &orig_ty)
+                            let narrowed_ty = self
+                                .narrow_with_instanceof(span, ty.clone(), &orig_ty)
                                 .context("tried to narrow type with instanceof")?
                                 .cheap();
 
@@ -377,12 +377,17 @@ impl Analyzer<'_, '_> {
                                     Name::from(i),
                                     Type::Intersection(Intersection {
                                         span,
-                                        types: vec![orig_ty, ty],
+                                        types: vec![orig_ty, narrowed_ty],
                                     })
                                     .cheap(),
                                 );
                             } else {
-                                self.cur_facts.true_facts.vars.insert(Name::from(i), ty.clone());
+                                self.cur_facts
+                                    .true_facts
+                                    .vars
+                                    .insert(Name::from(i), narrowed_ty.clone());
+
+                                // TODO: Exclude ObjectConstrurctor must remove Date in `else`
                                 self.cur_facts
                                     .false_facts
                                     .excludes
