@@ -556,7 +556,12 @@ impl Analyzer<'_, '_> {
         let mut matching_elements = vec![];
         for el in members.iter() {
             if let Some(key) = el.key() {
-                if self.assign(&prop.ty(), &key.ty(), span).is_ok() {
+                let key_matched = match (key, prop) {
+                    (Key::Num(RNumber { value, .. }), Key::Normal { sym, .. }) => *sym == *value.to_string(),
+                    _ => false,
+                } || self.assign(&prop.ty(), &key.ty(), span).is_ok();
+
+                if key_matched {
                     match el {
                         TypeElement::Property(ref p) => {
                             if type_mode == TypeOfMode::LValue && p.readonly {
