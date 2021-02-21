@@ -1010,8 +1010,17 @@ impl Analyzer<'_, '_> {
             Type::Interface(Interface {
                 ref body, ref extends, ..
             }) => {
-                self.assign_to_type_elements(opts, span, &body, rhs, Default::default())
-                    .context("tried to assign a type to an interface")?;
+                self.assign_to_type_elements(
+                    AssignOpts {
+                        allow_unknown_rhs: true,
+                        ..opts
+                    },
+                    span,
+                    &body,
+                    rhs,
+                    Default::default(),
+                )
+                .context("tried to assign a type to an interface")?;
 
                 let mut errors = vec![];
                 for parent in extends {
