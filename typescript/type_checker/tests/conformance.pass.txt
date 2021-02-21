@@ -1764,6 +1764,7 @@ types/typeRelationships/widenedTypes/strictNullChecksNoWidening.ts
 types/union/
 types/union/contextualTypeWithUnionTypeCallSignatures.ts
 types/union/contextualTypeWithUnionTypeIndexSignatures.ts
+types/union/discriminatedUnionTypes1.ts
 types/union/unionTypeCallSignatures2.ts
 types/union/unionTypeFromArrayLiteral.ts
 types/union/unionTypeIndexSignature.ts
