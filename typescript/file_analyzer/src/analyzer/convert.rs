@@ -86,6 +86,7 @@ use stc_ts_types::TupleElement;
 use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
+use stc_ts_types::TypeLitMetadata;
 use stc_ts_types::TypeParam;
 use stc_ts_types::TypeParamDecl;
 use stc_ts_types::TypeParamInstantiation;
