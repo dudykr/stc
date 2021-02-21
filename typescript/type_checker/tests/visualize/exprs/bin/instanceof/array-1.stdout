@@ -28,5 +28,13 @@ warning: Type
 7 |         return message.length;  // Should have type Message[] here
   |                ^^^^^^^
   |
-  = note: Message
+  = note: Message[]
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/bin/instanceof/array-1.ts:7:16
+  |
+7 |         return message.length;  // Should have type Message[] here
+  |                ^^^^^^^^^^^^^^
+  |
+  = note: number
 
