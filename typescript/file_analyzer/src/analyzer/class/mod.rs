@@ -227,7 +227,7 @@ impl Analyzer<'_, '_> {
 
                 match param {
                     RParamOrTsParamProp::Param(RParam { ref pat, .. }) => {
-                        match child.declare_vars_with_ty(VarDeclKind::Let, pat, Some(*p.ty.clone())) {
+                        match child.declare_vars_with_ty(VarDeclKind::Let, pat, Some(*p.ty.clone()), None) {
                             Ok(()) => {}
                             Err(err) => {
                                 child.storage.report(err);
@@ -244,6 +244,7 @@ impl Analyzer<'_, '_> {
                             VarDeclKind::Let,
                             i.clone().into(),
                             Some(*p.ty.clone()),
+                            None,
                             true,
                             false,
                         ) {
@@ -1275,6 +1276,7 @@ impl Analyzer<'_, '_> {
                         VarDeclKind::Var,
                         i.into(),
                         Some(ty),
+                        None,
                         // initialized = true
                         true,
                         // declare Class does not allow multiple declarations.
@@ -1338,6 +1340,7 @@ impl Analyzer<'_, '_> {
             VarDeclKind::Var,
             c.ident.clone().into(),
             Some(ty),
+            None,
             // initialized = true
             true,
             // declare Class does not allow multiple declarations.

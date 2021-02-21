@@ -117,7 +117,7 @@ impl Analyzer<'_, '_> {
             macro_rules! inject_any {
                 () => {
                     // Declare variable with type any
-                    match self.declare_complex_vars(kind, &v.name, Type::any(v_span)) {
+                    match self.declare_complex_vars(kind, &v.name, Type::any(v_span), Some(Type::any(v_span))) {
                         Ok(()) => {}
                         Err(err) => {
                             self.storage.report(err);
