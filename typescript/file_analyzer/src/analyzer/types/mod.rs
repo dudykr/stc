@@ -25,6 +25,7 @@ use swc_common::Span;
 use swc_common::Spanned;
 use swc_common::SyntaxContext;
 use swc_common::TypeEq;
+use swc_ecma_ast::MethodKind;
 use swc_ecma_ast::TsKeywordTypeKind;
 
 mod mapped;
@@ -274,15 +275,29 @@ impl Analyzer<'_, '_> {
                 if m.is_static {
                     return Ok(None);
                 }
-                TypeElement::Method(MethodSignature {
-                    span: m.span,
-                    key: m.key.clone(),
-                    type_params: m.type_params.clone(),
-                    params: m.params.clone(),
-                    optional: m.is_optional,
-                    ret_ty: Some(m.ret_ty.clone()),
-                    readonly: false,
-                })
+
+                match m.kind {
+                    MethodKind::Method => TypeElement::Method(MethodSignature {
+                        span: m.span,
+                        key: m.key.clone(),
+                        type_params: m.type_params.clone(),
+                        params: m.params.clone(),
+                        optional: m.is_optional,
+                        ret_ty: Some(m.ret_ty.clone()),
+                        readonly: false,
+                    }),
+                    MethodKind::Getter => TypeElement::Property(PropertySignature {
+                        span: m.span,
+                        key: m.key.clone(),
+                        params: vec![],
+                        optional: m.is_optional,
+                        type_params: None,
+                        // TODO: Check for setter property with same key.
+                        readonly: false,
+                        type_ann: Some(m.ret_ty.clone()),
+                    }),
+                    MethodKind::Setter => return Ok(None),
+                }
             }
             ClassMember::Property(p) => {
                 if p.is_static {
