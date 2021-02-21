@@ -1,8 +1,10 @@
 use crate::analyzer::Analyzer;
 use crate::util::type_ext::TypeVecExt;
 use crate::ValidationResult;
+use stc_ts_errors::DebugExt;
 use stc_ts_types::Type;
 use stc_ts_types::Union;
+use std::borrow::Cow;
 use swc_common::Span;
 use swc_common::Spanned;
 
@@ -14,6 +16,13 @@ impl Analyzer<'_, '_> {
         actual: &Type,
     ) -> ValidationResult {
         match actual.normalize() {
+            Type::Ref(..) => {
+                let actual = self
+                    .expand_top_ref(span, Cow::Borrowed(actual))
+                    .context("tried to expand actual type to calculate narrowed type")?;
+
+                return self.narrowed_type_of_assignment(span, declared, &actual);
+            }
             Type::Union(actual) => {
                 let mut new_types = vec![];
                 for actual in &actual.types {
@@ -32,6 +41,18 @@ impl Analyzer<'_, '_> {
                     span: actual.span,
                     types: new_types,
                 }));
+            }
+            _ => {}
+        }
+
+        match declared.normalize() {
+            Type::Ref(..) => {
+                let declared = self
+                    .expand_top_ref(span, Cow::Owned(declared))
+                    .context("tried to expand declared type to calculate narrowed type")?
+                    .into_owned();
+
+                return self.narrowed_type_of_assignment(span, declared, actual);
             }
             _ => {}
         }
