@@ -104,7 +104,7 @@ warning: Type
 8 | o2?.["b"]!["c"];
   | ^^
   |
-  = note: {
+  = note: undefined | {
               b: {
                   c: string;
               };
@@ -116,7 +116,7 @@ warning: Type
 8 | o2?.["b"]!["c"];
   | ^^^^^^^^^
   |
-  = note: {
+  = note: undefined | {
               c: string;
           }
 
