@@ -12,7 +12,7 @@ warning: Type
 8 |     switch (x.kind) {
   |             ^^^^^^
   |
-  = note: number | number | number
+  = note: 0 | 1 | 2
 
 warning: Type
  --> $DIR/tests/visualize/types/facts/field/switch-1.ts:9:14
@@ -28,7 +28,18 @@ warning: Type
 9 |         case 0: return x.a;
   |                        ^
   |
-  = note: { kind: 0, a: string }
+  = note: {
+              kind: 0;
+              a: string;
+          }
+
+warning: Type
+ --> $DIR/tests/visualize/types/facts/field/switch-1.ts:9:24
+  |
+9 |         case 0: return x.a;
+  |                        ^^^
+  |
+  = note: string
 
 warning: Type
   --> $DIR/tests/visualize/types/facts/field/switch-1.ts:10:14
@@ -44,7 +55,18 @@ warning: Type
 10 |         case 1: return x.b;
    |                        ^
    |
-   = note: { kind: 1, b: string }
+   = note: {
+               kind: 1;
+               b: string;
+           }
+
+warning: Type
+  --> $DIR/tests/visualize/types/facts/field/switch-1.ts:10:24
+   |
+10 |         case 1: return x.b;
+   |                        ^^^
+   |
+   = note: string
 
 warning: Type
   --> $DIR/tests/visualize/types/facts/field/switch-1.ts:11:14
@@ -60,5 +82,16 @@ warning: Type
 11 |         case 2: return x.c;
    |                        ^
    |
-   = note: { kind: 2, c: string }
+   = note: {
+               kind: 2;
+               c: string;
+           }
+
+warning: Type
+  --> $DIR/tests/visualize/types/facts/field/switch-1.ts:11:24
+   |
+11 |         case 2: return x.c;
+   |                        ^^^
+   |
+   = note: string
 
