@@ -114,6 +114,15 @@ impl Fold<Interface> for LitGeneralizer {
     }
 }
 
+impl Fold<TypeLit> for LitGeneralizer {
+    fn fold(&mut self, node: TypeLit) -> TypeLit {
+        if node.metadata.specified {
+            return node;
+        }
+        node.fold_children_with(self)
+    }
+}
+
 pub trait TypeExt: Into<Type> {
     fn generalize_lit(self) -> Type {
         self.into().fold_with(&mut LitGeneralizer)
