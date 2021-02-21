@@ -754,6 +754,7 @@ impl Analyzer<'_, '_> {
 
         let ids = name.as_ids();
         let obj = self.type_of_var(&ids[0].clone().into(), TypeOfMode::RValue, None)?;
+        let obj = self.expand_top_ref(ty.span(), Cow::Owned(obj))?;
 
         match obj.normalize() {
             Type::Union(u) => {
