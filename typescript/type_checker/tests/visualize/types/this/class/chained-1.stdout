@@ -54,3 +54,19 @@ warning: Type
    |
    = note: C
 
+warning: Type
+  --> $DIR/tests/visualize/types/this/class/chained-1.ts:17:16
+   |
+17 | export var z = c.foo().bar().baz();  // Fluent pattern
+   |                ^^^^^^^^^^^^^
+   |
+   = note: C
+
+warning: Type
+  --> $DIR/tests/visualize/types/this/class/chained-1.ts:17:16
+   |
+17 | export var z = c.foo().bar().baz();  // Fluent pattern
+   |                ^^^^^^^^^^^^^^^^^^^
+   |
+   = note: C
+
