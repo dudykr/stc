@@ -326,48 +326,6 @@ impl Analyzer<'_, '_> {
             }
 
             match *rhs.normalize() {
-                // Check class itself
-                Type::Class(Class { ref body, .. }) => {
-                    match m {
-                        TypeElement::Call(_) => {
-                            unimplemented!("ssign: interface {{ () => ret; }} = class Foo {{}}",)
-                        }
-                        TypeElement::Constructor(_) => {
-                            // TODO: Check # of parameters
-                            for rm in body {
-                                match rm {
-                                    ClassMember::Constructor(..) => continue 'l,
-                                    _ => {}
-                                }
-                            }
-
-                            errors.push(Error::ConstructorRequired {
-                                span,
-                                lhs: lhs_span,
-                                rhs: rhs.span(),
-                            });
-                        }
-                        TypeElement::Property(p) => {
-                            //
-
-                            for rm in body {
-                                match rm {
-                                    ClassMember::Constructor(..) => continue 'l,
-                                    _ => {}
-                                }
-                            }
-                        }
-                        TypeElement::Method(_) => {
-                            unimplemented!("assign: interface {{ method() => ret; }} = class Foo {{}}")
-                        }
-                        TypeElement::Index(_) => {
-                            unimplemented!("assign: interface {{ [key: string]: Type; }} = class Foo {{}}")
-                        }
-                    }
-
-                    // TODO: missing fields
-                }
-
                 // Check class members
                 Type::ClassInstance(ClassInstance {
                     ty: box Type::Class(Class { ref body, .. }),
