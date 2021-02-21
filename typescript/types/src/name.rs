@@ -20,6 +20,20 @@ type Inner = SmallVec<[Id; 4]>;
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub struct Name(Inner);
 
+impl Name {
+    pub fn top(&self) -> Id {
+        self.0[0].clone()
+    }
+
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    pub fn as_ids(&self) -> &[Id] {
+        &self.0
+    }
+}
+
 impl Debug for Name {
     #[cold]
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
