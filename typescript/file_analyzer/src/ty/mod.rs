@@ -27,12 +27,12 @@ impl Fold<Ref> for LitGeneralizer {
 }
 
 impl Fold<Union> for LitGeneralizer {
-    fn fold(&mut self, mut union: Union) -> Union {
-        union = union.fold_children_with(self);
+    fn fold(&mut self, mut u: Union) -> Union {
+        u = u.fold_children_with(self);
 
-        union.types.dedup_type();
+        u.types.dedup_type();
 
-        union
+        u
     }
 }
 
@@ -104,6 +104,12 @@ impl Fold<Type> for LitGeneralizer {
 
 impl Fold<Function> for LitGeneralizer {
     fn fold(&mut self, node: Function) -> Function {
+        node
+    }
+}
+
+impl Fold<Interface> for LitGeneralizer {
+    fn fold(&mut self, node: Interface) -> Interface {
         node
     }
 }
