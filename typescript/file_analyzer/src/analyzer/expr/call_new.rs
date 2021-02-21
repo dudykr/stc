@@ -316,7 +316,8 @@ impl Analyzer<'_, '_> {
                     span,
                     kind,
                     expr,
-                    obj_type,
+                    &obj_type,
+                    &obj_type,
                     &prop,
                     type_args.as_ref(),
                     args,
@@ -435,7 +436,8 @@ impl Analyzer<'_, '_> {
         span: Span,
         kind: ExtractKind,
         expr: ReevalMode,
-        obj_type: Type,
+        this: &Type,
+        obj_type: &Type,
         prop: &Key,
         type_args: Option<&TypeParamInstantiation>,
         args: &[RExprOrSpread],
@@ -444,7 +446,7 @@ impl Analyzer<'_, '_> {
         type_ann: Option<&Type>,
     ) -> ValidationResult {
         let old_this = self.scope.this.take();
-        self.scope.this = Some(obj_type.clone());
+        self.scope.this = Some(this.clone());
 
         let res = (|| {
             match obj_type.normalize() {
@@ -464,7 +466,8 @@ impl Analyzer<'_, '_> {
                                 span,
                                 kind,
                                 expr,
-                                obj.clone(),
+                                this,
+                                obj,
                                 prop,
                                 type_args,
                                 args,
@@ -495,15 +498,15 @@ impl Analyzer<'_, '_> {
 
                 Type::Ref(..) => {
                     let obj_type = self
-                        .expand_top_ref(span, Cow::Owned(obj_type))
-                        .context("tried to expand object to call property of it")?
-                        .into_owned();
+                        .expand_top_ref(span, Cow::Borrowed(obj_type))
+                        .context("tried to expand object to call property of it")?;
 
                     return self.call_property(
                         span,
                         kind,
                         expr,
-                        obj_type,
+                        this,
+                        &obj_type,
                         prop,
                         type_args,
                         args,
@@ -541,7 +544,8 @@ impl Analyzer<'_, '_> {
                             span,
                             kind,
                             expr,
-                            parent,
+                            this,
+                            &parent,
                             prop,
                             type_args,
                             args,
@@ -641,7 +645,8 @@ impl Analyzer<'_, '_> {
                             span,
                             kind,
                             expr,
-                            *ty.clone(),
+                            this,
+                            ty,
                             prop,
                             type_args,
                             args,
@@ -676,7 +681,7 @@ impl Analyzer<'_, '_> {
                 _ => {}
             }
 
-            let callee = self.access_property(span, obj_type, &prop, TypeOfMode::RValue, IdCtx::Var)?;
+            let callee = self.access_property(span, obj_type.clone(), &prop, TypeOfMode::RValue, IdCtx::Var)?;
 
             let callee = self.expand_top_ref(span, Cow::Owned(callee))?.into_owned();
 

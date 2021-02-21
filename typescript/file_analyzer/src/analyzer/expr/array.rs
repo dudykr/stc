@@ -99,7 +99,8 @@ impl Analyzer<'_, '_> {
                                     span,
                                     ExtractKind::Call,
                                     Default::default(),
-                                    element_type,
+                                    &element_type,
+                                    &element_type,
                                     &Key::Computed(ComputedKey {
                                         span: *spread,
                                         expr: box RExpr::Member(RMemberExpr {
@@ -130,7 +131,8 @@ impl Analyzer<'_, '_> {
                                     span,
                                     ExtractKind::Call,
                                     Default::default(),
-                                    iterator,
+                                    &iterator,
+                                    &iterator,
                                     &Key::Normal {
                                         span,
                                         sym: "next".into(),
@@ -201,7 +203,8 @@ impl Analyzer<'_, '_> {
                 span,
                 ExtractKind::Call,
                 Default::default(),
-                ty.into_owned(),
+                &ty,
+                &ty,
                 &Key::Computed(ComputedKey {
                     span,
                     expr: box RExpr::Member(RMemberExpr {
