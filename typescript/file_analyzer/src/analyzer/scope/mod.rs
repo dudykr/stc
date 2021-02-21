@@ -493,7 +493,7 @@ impl Analyzer<'_, '_> {
         res
     }
 
-    pub(super) fn expand_top_ref<'a>(&mut self, span: Span, ty: Cow<'a, Type>) -> ValidationResult<Cow<'a, Type>> {
+    pub(crate) fn expand_top_ref<'a>(&mut self, span: Span, ty: Cow<'a, Type>) -> ValidationResult<Cow<'a, Type>> {
         if !ty.normalize().is_ref_type() {
             return Ok(ty);
         }

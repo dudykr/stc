@@ -11,6 +11,7 @@ use stc_ts_types::IndexedAccessType;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
 use stc_ts_types::Union;
+use std::borrow::Cow;
 use swc_common::Span;
 use swc_common::Spanned;
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -19,6 +20,23 @@ pub(crate) struct TypeFactsHandler<'a, 'b, 'c> {
     /// Used to expand references.
     pub analyzer: &'a mut Analyzer<'b, 'c>,
     pub facts: TypeFacts,
+}
+
+impl TypeFactsHandler<'_, '_, '_> {
+    fn can_be_primitive(&mut self, ty: &Type) -> bool {
+        let ty = if let Ok(ty) = self.analyzer.expand_top_ref(ty.span(), Cow::Borrowed(ty)) {
+            ty
+        } else {
+            return true;
+        };
+
+        match ty.normalize() {
+            Type::Interface(..) | Type::TypeLit(..) | Type::Class(..) => return false,
+            _ => {}
+        }
+
+        true
+    }
 }
 
 impl Fold<TypeElement> for TypeFactsHandler<'_, '_, '_> {
@@ -145,7 +163,7 @@ impl Fold<Union> for TypeFactsHandler<'_, '_, '_> {
 
                     Type::Param(..) => false,
 
-                    _ => true,
+                    _ => self.can_be_primitive(&ty),
                 });
             }
         }
