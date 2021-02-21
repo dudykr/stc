@@ -761,7 +761,7 @@ impl Analyzer<'_, '_> {
             || orig_ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword)
             || orig_ty.is_kwd(TsKeywordTypeKind::TsBooleanKeyword)
         {
-            if ty.is_interface() {
+            if ty.normalize().is_interface() {
                 return Ok(Type::never(span));
             }
         }
