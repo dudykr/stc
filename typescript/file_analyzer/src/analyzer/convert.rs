@@ -241,7 +241,10 @@ impl Analyzer<'_, '_> {
         Ok(TypeLit {
             span: lit.span,
             members: lit.members.validate_with(self)?,
-            metadata: Default::default(),
+            metadata: TypeLitMetadata {
+                specified: true,
+                ..Default::default()
+            },
         })
     }
 }
