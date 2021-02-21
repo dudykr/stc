@@ -51,8 +51,9 @@ use std::mem::replace;
 use std::mem::take;
 use std::{borrow::Cow, collections::hash_map::Entry, fmt::Debug, iter, iter::repeat, slice};
 use swc_atoms::js_word;
+use swc_common::Spanned;
 use swc_common::TypeEq;
-use swc_common::{util::move_map::MoveMap, Mark, Span, Spanned, SyntaxContext, DUMMY_SP};
+use swc_common::{util::move_map::MoveMap, Mark, Span, SyntaxContext, DUMMY_SP};
 use swc_ecma_ast::*;
 
 mod this;
@@ -766,18 +767,20 @@ impl Analyzer<'_, '_> {
 
         slog::debug!(self.logger, "({}) Analyzer.find_type(`{}`)", self.scope.depth(), name);
 
+        let mut src = vec![];
         if !self.is_builtin {
             if let Ok(ty) = self.env.get_global_type(DUMMY_SP, name.sym()) {
                 debug_assert!(ty.is_clone_cheap(), "{:?}", ty);
 
                 slog::debug!(self.logger, "Using builtin / global type");
-                return Some(ItemRef::Owned(vec![ty].into_iter()));
+                src.push(ty.clone());
             }
         }
 
         if let Some(ty) = self.scope.find_type(name) {
             slog::debug!(self.logger, "Using type from scope: {:?}", ty);
-            return Some(ty);
+            src.extend(ty.into_iter().map(Cow::into_owned));
+            return Some(ItemRef::Owned(vec![Type::intersection(DUMMY_SP, src)].into_iter()));
         }
 
         if let Some(ty) = self.storage.get_local_type(self.ctx.module_id, name.clone()) {

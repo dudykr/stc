@@ -464,7 +464,7 @@ impl Analyzer<'_, '_> {
                         ctxt: ModuleId::builtin(),
                         type_name: RTsEntityName::Ident(RIdent::new(
                             "Array".into(),
-                            span.with_ctxt(SyntaxContext::empty()),
+                            span.with_ctxt(self.marks().top_level_mark.as_ctxt()),
                         )),
                         type_args: Some(box TypeParamInstantiation {
                             span,
