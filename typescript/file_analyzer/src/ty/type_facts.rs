@@ -1,4 +1,5 @@
 use super::Type;
+use crate::analyzer::Analyzer;
 use crate::type_facts::TypeFacts;
 use rnode::Fold;
 use rnode::FoldWith;
@@ -14,25 +15,27 @@ use swc_common::Span;
 use swc_common::Spanned;
 use swc_ecma_ast::TsKeywordTypeKind;
 
-pub(super) struct TypeFactsHandler {
+pub(crate) struct TypeFactsHandler<'a, 'b, 'c> {
+    /// Used to expand references.
+    pub analyzer: &'a mut Analyzer<'b, 'c>,
     pub facts: TypeFacts,
 }
 
-impl Fold<TypeElement> for TypeFactsHandler {
+impl Fold<TypeElement> for TypeFactsHandler<'_, '_, '_> {
     #[inline]
     fn fold(&mut self, el: TypeElement) -> TypeElement {
         el
     }
 }
 
-impl Fold<ClassMember> for TypeFactsHandler {
+impl Fold<ClassMember> for TypeFactsHandler<'_, '_, '_> {
     #[inline]
     fn fold(&mut self, m: ClassMember) -> ClassMember {
         m
     }
 }
 
-impl Fold<RTsKeywordType> for TypeFactsHandler {
+impl Fold<RTsKeywordType> for TypeFactsHandler<'_, '_, '_> {
     fn fold(&mut self, ty: RTsKeywordType) -> RTsKeywordType {
         if self.facts.contains(TypeFacts::Truthy) {
             match ty.kind {
@@ -96,7 +99,7 @@ impl Fold<RTsKeywordType> for TypeFactsHandler {
     }
 }
 
-impl Fold<Union> for TypeFactsHandler {
+impl Fold<Union> for TypeFactsHandler<'_, '_, '_> {
     fn fold(&mut self, mut u: Union) -> Union {
         u = u.fold_children_with(self);
 
@@ -151,7 +154,7 @@ impl Fold<Union> for TypeFactsHandler {
     }
 }
 
-impl Fold<Type> for TypeFactsHandler {
+impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
     fn fold(&mut self, mut ty: Type) -> Type {
         // TODO: Don't do anything if type fact is none.
 

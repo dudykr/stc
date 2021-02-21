@@ -1,8 +1,10 @@
 use super::Analyzer;
+use crate::ty::type_facts::TypeFactsHandler;
 use crate::ty::TypeExt;
 use crate::type_facts::TypeFacts;
 use crate::util::type_ext::TypeVecExt;
 use crate::ValidationResult;
+use rnode::FoldWith;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
 use stc_ts_ast_rnode::RNumber;
@@ -44,7 +46,7 @@ impl Analyzer<'_, '_> {
         exclude_types(ty, self.cur_facts.true_facts.excludes.get(&name));
     }
 
-    pub(crate) fn apply_type_facts(&self, name: &Name, ty: Type) -> Type {
+    pub(crate) fn apply_type_facts(&mut self, name: &Name, ty: Type) -> Type {
         let type_facts = self.scope.get_type_facts(&name)
             | self
                 .cur_facts
@@ -54,7 +56,10 @@ impl Analyzer<'_, '_> {
                 .copied()
                 .unwrap_or(TypeFacts::None);
 
-        ty.apply_type_facts(type_facts)
+        ty.fold_with(&mut TypeFactsHandler {
+            facts: type_facts,
+            analyzer: self,
+        })
     }
 
     pub(crate) fn collect_class_members(&mut self, ty: &Type) -> ValidationResult<Option<Vec<ClassMember>>> {

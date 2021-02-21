@@ -14,7 +14,7 @@ pub(crate) use stc_ts_types::*;
 use swc_ecma_ast::TsKeywordTypeKind;
 
 mod generalize;
-mod type_facts;
+pub mod type_facts;
 
 pub(crate) struct LitGeneralizer;
 
@@ -130,10 +130,6 @@ pub trait TypeExt: Into<Type> {
 
     fn generalize_tuple(self) -> Type {
         self.into().fold_with(&mut TupleToArray)
-    }
-
-    fn apply_type_facts(self, facts: TypeFacts) -> Type {
-        self.into().fold_with(&mut TypeFactsHandler { facts })
     }
 }
 
