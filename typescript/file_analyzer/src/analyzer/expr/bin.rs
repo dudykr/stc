@@ -757,6 +757,15 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
+        if orig_ty.is_kwd(TsKeywordTypeKind::TsStringKeyword)
+            || orig_ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword)
+            || orig_ty.is_kwd(TsKeywordTypeKind::TsBooleanKeyword)
+        {
+            if ty.is_interface() {
+                return Ok(Type::never(span));
+            }
+        }
+
         if let Some(v) = self.extends(span, orig_ty, &ty) {
             if v {
                 return Ok(orig_ty.clone());
