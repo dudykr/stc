@@ -825,7 +825,9 @@ impl Analyzer<'_, '_> {
         allow_multiple: bool,
     ) -> ValidationResult<()> {
         let ty = ty.map(|ty| ty.cheap());
-        let actual_ty = actual_ty.map(|ty| ty.cheap());
+        let actual_ty = actual_ty
+            .and_then(|ty| if ty.is_any() { None } else { Some(ty) })
+            .map(|ty| ty.cheap());
 
         if self.ctx.in_global {
             if let Some(ty) = ty.clone() {
