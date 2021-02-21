@@ -186,17 +186,25 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
-                Type::Class(rhs) => {
+                Type::Class(rhs_cls) => {
                     // TODO: Check if constructor exists.
-                    if rhs.is_abstract {
+                    if rhs_cls.is_abstract {
                         return Err(Error::CannotAssignAbstractConstructorToNonAbstractConstructor { span });
                     }
-                    //
-                    for el in lhs {
-                        self.assign_class_members_to_type_element(opts, el, &rhs.body)?;
-                    }
 
-                    return Ok(());
+                    // TODO: Optimize
+                    // for el in lhs {
+                    //     self.assign_class_members_to_type_element(opts, el, &rhs.body)?;
+                    // }
+
+                    let rhs = self
+                        .type_to_type_lit(span, rhs)
+                        .context("tried to convert a class into type literal for assignment")?
+                        .map(Cow::into_owned)
+                        .map(Type::TypeLit)
+                        .unwrap();
+
+                    return self.assign_to_type_elements(opts, lhs_span, lhs, &rhs, lhs_metadata);
                 }
 
                 Type::Keyword(RTsKeywordType {
@@ -558,8 +566,6 @@ impl Analyzer<'_, '_> {
         rhs_members: &[ClassMember],
     ) -> ValidationResult<()> {
         match el {
-            TypeElement::Call(_) => {}
-            TypeElement::Constructor(_) => {}
             TypeElement::Property(lp) => {
                 for rhs_member in rhs_members {
                     match rhs_member {
@@ -570,6 +576,7 @@ impl Analyzer<'_, '_> {
                                 if let Some(lt) = &lp.type_ann {
                                     if let Some(rt) = &rp.value {
                                         self.assign(&lt, &rt, opts.span)?;
+                                        return Ok(());
                                     }
                                 }
                             }
@@ -584,8 +591,9 @@ impl Analyzer<'_, '_> {
 
                 // TODO: Report error.
             }
-            TypeElement::Method(_) => {}
-            TypeElement::Index(_) => {}
+
+            // TODO: Optimize
+            TypeElement::Call(_) | TypeElement::Constructor(_) | TypeElement::Method(_) | TypeElement::Index(_) => {}
         }
 
         Ok(())
