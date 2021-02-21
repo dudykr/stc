@@ -68,7 +68,7 @@ warning: Type
 4 |     } else if (typeof thing === 'string') {
   |                       ^^^^^
   |
-  = note: string | number | Date
+  = note: string | number
 
 warning: Type
  --> $DIR/tests/visualize/controlFlow/guard/primitive-1.ts:4:16
@@ -133,6 +133,22 @@ warning: Type
   |                                                ^^^^^
   |
   = note: number
+
+warning: Type
+ --> $DIR/tests/visualize/controlFlow/guard/primitive-1.ts:7:48
+  |
+7 |         console.log("Aha!! It's the number " + thing.toPrecision(3));
+  |                                                ^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: string
+
+warning: Type
+ --> $DIR/tests/visualize/controlFlow/guard/primitive-1.ts:7:21
+  |
+7 |         console.log("Aha!! It's the number " + thing.toPrecision(3));
+  |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: string
 
 warning: Type
  --> $DIR/tests/visualize/controlFlow/guard/primitive-1.ts:7:9
