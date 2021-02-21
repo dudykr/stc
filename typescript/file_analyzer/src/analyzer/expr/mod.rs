@@ -545,6 +545,45 @@ impl Analyzer<'_, '_> {
         }
     }
 
+    /// Check if key matches.
+    ///
+    /// # Parameters
+    ///
+    /// - `declared`: Key of declared property.
+    pub(crate) fn key_matches(&mut self, span: Span, declared: &Key, cur: &Key) -> bool {
+        match (declared, cur) {
+            (
+                Key::Num(RNumber {
+                    value: declared_value, ..
+                }),
+                Key::Num(RNumber { value, .. }),
+            ) => {
+                if declared_value == value {
+                    return true;
+                }
+            }
+            (Key::Num(RNumber { value, .. }), Key::Normal { sym, .. }) => {
+                if value.is_infinite() {
+                    if *sym == *"Infinity" {
+                        return true;
+                    }
+                    let parsed = sym.parse::<f64>();
+                    if let Ok(v) = parsed {
+                        if v.is_infinite() {
+                            return true;
+                        }
+                    }
+                }
+                if *sym == *value.to_string() {
+                    return true;
+                }
+            }
+            _ => {}
+        }
+
+        self.assign(&declared.ty(), &cur.ty(), span).is_ok()
+    }
+
     fn access_property_of_type_elements(
         &mut self,
         span: Span,
@@ -556,14 +595,7 @@ impl Analyzer<'_, '_> {
         let mut matching_elements = vec![];
         for el in members.iter() {
             if let Some(key) = el.key() {
-                let key_matched = match (key, prop) {
-                    (Key::Num(RNumber { value, .. }), Key::Normal { sym, .. }) => {
-                        value.is_infinite() && *sym == *"Infinity" || *sym == *value.to_string()
-                    }
-                    _ => false,
-                } || self.assign(&prop.ty(), &key.ty(), span).is_ok();
-
-                if key_matched {
+                if self.key_matches(span, key, prop) {
                     match el {
                         TypeElement::Property(ref p) => {
                             if type_mode == TypeOfMode::LValue && p.readonly {
