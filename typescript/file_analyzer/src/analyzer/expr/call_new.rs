@@ -55,6 +55,7 @@ use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::ClassProperty;
 use stc_ts_types::Key;
+use stc_ts_types::ModuleId;
 use stc_ts_types::{Alias, Id, IndexedAccessType, Ref, Symbol, Union};
 use stc_ts_utils::PatExt;
 use std::borrow::Cow;
@@ -455,6 +456,34 @@ impl Analyzer<'_, '_> {
                     ..
                 }) => {
                     return Ok(Type::any(span));
+                }
+
+                Type::Array(obj) => {
+                    let obj = Type::Ref(Ref {
+                        span,
+                        ctxt: ModuleId::builtin(),
+                        type_name: RTsEntityName::Ident(RIdent::new(
+                            "Array".into(),
+                            span.with_ctxt(SyntaxContext::empty()),
+                        )),
+                        type_args: Some(box TypeParamInstantiation {
+                            span,
+                            params: vec![*obj.elem_type.clone()],
+                        }),
+                    });
+                    return self.call_property(
+                        span,
+                        kind,
+                        expr,
+                        this,
+                        &obj,
+                        prop,
+                        type_args,
+                        args,
+                        arg_types,
+                        spread_arg_types,
+                        type_ann,
+                    );
                 }
 
                 Type::Intersection(obj) => {
