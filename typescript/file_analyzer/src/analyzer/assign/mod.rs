@@ -780,13 +780,13 @@ impl Analyzer<'_, '_> {
             Type::Union(Union { ref types, .. }) => {
                 // true | false = boolean
                 if rhs.is_kwd(TsKeywordTypeKind::TsBooleanKeyword) {
-                    if types.iter().any(|ty| match ty {
+                    if types.iter().any(|ty| match ty.normalize() {
                         Type::Lit(RTsLitType {
                             lit: RTsLit::Bool(RBool { value: true, .. }),
                             ..
                         }) => true,
                         _ => false,
-                    }) && types.iter().any(|ty| match ty {
+                    }) && types.iter().any(|ty| match ty.normalize() {
                         Type::Lit(RTsLitType {
                             lit: RTsLit::Bool(RBool { value: false, .. }),
                             ..
