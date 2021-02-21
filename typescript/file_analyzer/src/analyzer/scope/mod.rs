@@ -825,6 +825,7 @@ impl Analyzer<'_, '_> {
         allow_multiple: bool,
     ) -> ValidationResult<()> {
         let ty = ty.map(|ty| ty.cheap());
+        let actual_ty = actual_ty.map(|ty| ty.cheap());
 
         if self.ctx.in_global {
             if let Some(ty) = ty.clone() {
@@ -914,7 +915,7 @@ impl Analyzer<'_, '_> {
                     }
                 };
                 // TODO: Use better logic
-                v.actual_ty = v.ty.clone();
+                v.actual_ty = actual_ty.or_else(|| v.ty.clone());
 
                 self.scope.vars.insert(k, v);
             }
@@ -924,7 +925,7 @@ impl Analyzer<'_, '_> {
                 let info = VarInfo {
                     kind,
                     ty: ty.clone(),
-                    actual_ty: ty,
+                    actual_ty: actual_ty.or_else(|| ty.clone()),
                     initialized,
                     copied: false,
                 };
