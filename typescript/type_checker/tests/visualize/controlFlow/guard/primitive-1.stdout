@@ -31,6 +31,22 @@ warning: Type
   = note: Date
 
 warning: Type
+ --> $DIR/tests/visualize/controlFlow/guard/primitive-1.ts:3:47
+  |
+3 |         console.log("Aha!! It's a Date in " + thing.getFullYear());
+  |                                               ^^^^^^^^^^^^^^^^^^^
+  |
+  = note: number
+
+warning: Type
+ --> $DIR/tests/visualize/controlFlow/guard/primitive-1.ts:3:21
+  |
+3 |         console.log("Aha!! It's a Date in " + thing.getFullYear());
+  |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: string
+
+warning: Type
  --> $DIR/tests/visualize/controlFlow/guard/primitive-1.ts:3:9
   |
 3 |         console.log("Aha!! It's a Date in " + thing.getFullYear());
