@@ -285,6 +285,7 @@ es6/Symbols/symbolProperty23.ts
 es6/Symbols/symbolProperty26.ts
 es6/Symbols/symbolProperty27.ts
 es6/Symbols/symbolProperty28.ts
+es6/Symbols/symbolProperty3.ts
 es6/Symbols/symbolProperty37.ts
 es6/Symbols/symbolProperty38.ts
 es6/Symbols/symbolProperty4.ts
