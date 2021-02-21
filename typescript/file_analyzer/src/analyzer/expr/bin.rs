@@ -209,7 +209,7 @@ impl Analyzer<'_, '_> {
                             slog::info!(self.logger, "cond_facts: typeof {:?}", name);
                             match r {
                                 RExpr::Tpl(RTpl { quasis, .. }) if quasis.len() == 1 => {
-                                    let value = &quasis[0].cookedas_ref()?.value;
+                                    let value = &quasis[0].cooked.as_ref()?.value;
                                     Some((
                                         name,
                                         if is_eq {
