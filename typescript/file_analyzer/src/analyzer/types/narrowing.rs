@@ -13,8 +13,6 @@ impl Analyzer<'_, '_> {
         declared: Type,
         actual: &Type,
     ) -> ValidationResult {
-        let declared = declared.foldable();
-
         match actual.normalize() {
             Type::Union(actual) => {
                 let mut new_types = vec![];
@@ -37,6 +35,8 @@ impl Analyzer<'_, '_> {
             }
             _ => {}
         }
+
+        let declared = declared.foldable();
 
         match declared {
             Type::Union(declared) => {

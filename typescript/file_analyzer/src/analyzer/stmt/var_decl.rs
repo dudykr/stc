@@ -246,11 +246,13 @@ impl Analyzer<'_, '_> {
                             .context("tried to assign from var decl")
                         {
                             Ok(()) => {
-                                let mut ty = ty;
+                                let mut ty = ty.cheap();
                                 self.prevent_generalize(&mut ty);
 
+                                let actual_ty = self.narrowed_type_of_assignment(span, ty.clone(), &value_ty)?;
+
                                 // let ty = ty.fold_with(&mut Generalizer::default());
-                                match self.declare_complex_vars(kind, &v.name, ty, Some(value_ty.clone())) {
+                                match self.declare_complex_vars(kind, &v.name, ty, Some(actual_ty)) {
                                     Ok(()) => {}
                                     Err(err) => {
                                         self.storage.report(err);
@@ -531,7 +533,7 @@ impl Analyzer<'_, '_> {
                         })()?
                         .cheap();
 
-                        self.declare_complex_vars(kind, &v.name, var_ty.clone(), Some(var_ty.clone()))
+                        self.declare_complex_vars(kind, &v.name, var_ty.clone(), None)
                             .report(&mut self.storage);
                         remove_declaring!();
                         return Ok(());
