@@ -1080,7 +1080,7 @@ impl Analyzer<'_, '_> {
                             }
 
                             //
-                            if class_prop.key.type_eq(prop) {
+                            if self.key_matches(span, &class_prop.key, &prop) {
                                 return Ok(match class_prop.value {
                                     Some(ref ty) => *ty.clone(),
                                     None => Type::any(span),
@@ -1088,7 +1088,7 @@ impl Analyzer<'_, '_> {
                             }
                         }
                         ty::ClassMember::Method(ref mtd) => {
-                            if mtd.key.type_eq(prop) {
+                            if self.key_matches(span, &mtd.key, prop) {
                                 return Ok(Type::Function(stc_ts_types::Function {
                                     span: mtd.span,
                                     type_params: mtd.type_params.clone(),
