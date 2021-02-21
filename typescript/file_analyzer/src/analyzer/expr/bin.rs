@@ -21,6 +21,7 @@ use stc_ts_ast_rnode::RLit;
 use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RPatOrExpr;
 use stc_ts_ast_rnode::RStr;
+use stc_ts_ast_rnode::RTpl;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
@@ -207,6 +208,17 @@ impl Analyzer<'_, '_> {
                             let name = Name::try_from(&**arg);
                             slog::info!(self.logger, "cond_facts: typeof {:?}", name);
                             match r {
+                                RExpr::Tpl(RTpl { quasis, .. }) if quasis.len() == 1 => {
+                                    let value = &quasis[0].cookedas_ref()?.value;
+                                    Some((
+                                        name,
+                                        if is_eq {
+                                            (TypeFacts::typeof_eq(&*value), TypeFacts::typeof_neq(&*value))
+                                        } else {
+                                            (TypeFacts::typeof_neq(&*value), TypeFacts::typeof_eq(&*value))
+                                        },
+                                    ))
+                                }
                                 RExpr::Lit(RLit::Str(RStr { ref value, .. })) => Some((
                                     name,
                                     if is_eq {
