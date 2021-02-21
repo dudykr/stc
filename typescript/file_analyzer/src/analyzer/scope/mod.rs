@@ -592,8 +592,6 @@ impl Analyzer<'_, '_> {
                     .context("tried to resolve lhs of typeof")?;
                 let i = &n.right;
 
-                let obj = self.expand_top_ref(span, Cow::Owned(obj))?.into_owned();
-
                 self.access_property(
                     span,
                     obj,
