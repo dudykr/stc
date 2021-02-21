@@ -231,7 +231,7 @@ impl Analyzer<'_, '_> {
         let ty = match ty {
             Some(v) => Some(v),
             None => match p {
-                RPat::Assign(p) => Some(p.right.validate_with_default(self)?),
+                RPat::Assign(p) => Some(p.right.validate_with_default(self)?.generalize_lit()),
                 _ => None,
             },
         };
