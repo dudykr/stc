@@ -514,8 +514,8 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::Interface(ref i) => {
-                    // TODO: Check parent interface
-                    return self.search_members_for_callable_prop(
+                    // We check for body before parent to support overriding
+                    let err = match self.search_members_for_callable_prop(
                         kind,
                         expr,
                         span,
@@ -527,7 +527,33 @@ impl Analyzer<'_, '_> {
                         &arg_types,
                         &spread_arg_types,
                         type_ann,
-                    );
+                    ) {
+                        Ok(v) => return Ok(v),
+                        Err(err) => err,
+                    };
+
+                    // Check parent interface
+                    for parent in &i.extends {
+                        let parent = self
+                            .type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr, parent.type_args.as_deref())
+                            .context("tried to check parent interface to call a property of it")?;
+                        if let Ok(v) = self.call_property(
+                            span,
+                            kind,
+                            expr,
+                            parent,
+                            prop,
+                            type_args,
+                            args,
+                            arg_types,
+                            spread_arg_types,
+                            type_ann,
+                        ) {
+                            return Ok(v);
+                        }
+                    }
+
+                    return Err(err);
                 }
 
                 Type::TypeLit(ref t) => {
