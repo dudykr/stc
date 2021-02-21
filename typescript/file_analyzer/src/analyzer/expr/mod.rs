@@ -557,7 +557,9 @@ impl Analyzer<'_, '_> {
         for el in members.iter() {
             if let Some(key) = el.key() {
                 let key_matched = match (key, prop) {
-                    (Key::Num(RNumber { value, .. }), Key::Normal { sym, .. }) => *sym == *value.to_string(),
+                    (Key::Num(RNumber { value, .. }), Key::Normal { sym, .. }) => {
+                        value.is_infinite() && *sym == *"Infinity" || *sym == *value.to_string()
+                    }
                     _ => false,
                 } || self.assign(&prop.ty(), &key.ty(), span).is_ok();
 
