@@ -23,10 +23,10 @@ use swc_common::DUMMY_SP;
 use swc_ecma_utils::Value::Known;
 
 mod ambient_decl;
-mod decl;
 mod loops;
 pub(crate) mod return_type;
 mod try_catch;
+mod var_decl;
 
 #[validator]
 impl Analyzer<'_, '_> {
