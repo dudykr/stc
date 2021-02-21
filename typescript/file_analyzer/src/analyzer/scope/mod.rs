@@ -826,7 +826,17 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult<()> {
         let ty = ty.map(|ty| ty.cheap());
         let actual_ty = actual_ty
-            .and_then(|ty| if ty.is_any() { None } else { Some(ty) })
+            .and_then(|ty| {
+                if ty.is_any()
+                    || ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
+                    || ty.is_kwd(TsKeywordTypeKind::TsNullKeyword)
+                    || ty.is_unknown()
+                {
+                    None
+                } else {
+                    Some(ty)
+                }
+            })
             .map(|ty| ty.cheap());
 
         if self.ctx.in_global {
