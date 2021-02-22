@@ -1,6 +1,7 @@
 use std::borrow::Cow;
 
 use super::call_new::ExtractKind;
+use super::IdCtx;
 use super::TypeOfMode;
 use crate::analyzer::Analyzer;
 use crate::util::type_ext::TypeVecExt;
@@ -192,7 +193,11 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
-    pub(crate) fn convert_to_iterator<'a>(&mut self, span: Span, ty: Cow<'a, Type>) -> ValidationResult<Cow<'a, Type>> {
+    pub(crate) fn get_iterator_element_type<'a>(
+        &mut self,
+        span: Span,
+        ty: Cow<'a, Type>,
+    ) -> ValidationResult<Cow<'a, Type>> {
         match ty.normalize() {
             Type::Array(..) | Type::Tuple(..) => return Ok(ty),
             _ => {}
@@ -237,6 +242,19 @@ impl Analyzer<'_, '_> {
                 })
             })
             .context("tried to call `[Symbol.iterator]()` to convert a type to an iterator")?;
+
+        let ty = self
+            .access_property(
+                span,
+                ty,
+                &Key::Normal {
+                    span,
+                    sym: "value".into(),
+                },
+                TypeOfMode::RValue,
+                IdCtx::Var,
+            )
+            .context("tried to get type of propert named `value` to determine the type of an iterator")?;
 
         Ok(Cow::Owned(ty))
     }
