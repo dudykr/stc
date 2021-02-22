@@ -44,7 +44,7 @@ warning: Type
 5 | export let f = foo((y: "foo" | "bar") => y === "foo" ? y : "foo");
   |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   |
-  = note: (y: "foo") => "foo"
+  = note: (y: "foo" | "bar") => "foo"
 
 warning: Type
  --> $DIR/tests/visualize/exprs/literal/string/type-param-contraint-1.ts:5:16
