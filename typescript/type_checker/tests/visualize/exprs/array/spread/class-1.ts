@@ -12,4 +12,5 @@ export class SymbolIterator {
 }
 
 export var array: symbol[];
-array.concat([...new SymbolIterator]);
+export const b = array.concat([...new SymbolIterator]);
+b;
