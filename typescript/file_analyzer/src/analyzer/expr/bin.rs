@@ -609,6 +609,23 @@ impl Analyzer<'_, '_> {
             }
 
             op!("in") => {
+                if self.ctx.in_cond {
+                    let left = match &**left {
+                        RExpr::Lit(RLit::Str(s)) => Some(s.value.clone()),
+                        RExpr::Tpl(t) if t.quasis.len() == 1 => t.quasis[0].cooked.clone().map(|v| v.value),
+                        _ => None,
+                    };
+                    let name = Name::try_from(&**right).ok();
+
+                    if let Some(name) = name {
+                        if let Some(property) = left {
+                            let mut new_ty = self.filter_types_with_property(&rt, &property)?.cheap();
+
+                            self.add_deep_type_fact(name.clone(), new_ty.clone(), true);
+                        }
+                    }
+                }
+
                 return Ok(Type::Keyword(RTsKeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsBooleanKeyword,

@@ -35,6 +35,7 @@ use stc_ts_types::name::Name;
 use stc_ts_types::Array;
 use stc_ts_types::Id;
 use stc_ts_types::Key;
+use stc_ts_types::Union;
 use stc_ts_utils::find_ids_in_pat;
 use stc_ts_utils::MapWithMut;
 use std::borrow::Cow;
@@ -44,7 +45,9 @@ use std::{
     mem::{replace, take},
     ops::{AddAssign, BitOr, Not},
 };
+use swc_atoms::JsWord;
 use swc_common::TypeEq;
+use swc_common::DUMMY_SP;
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::*;
 
@@ -745,6 +748,55 @@ impl Analyzer<'_, '_> {
         } else {
             self.cur_facts.false_facts.vars.insert(name, ty);
         }
+    }
+
+    /// Calculate type facts created by `'foo' in obj`.
+    pub(super) fn filter_types_with_property(&mut self, src: &Type, property: &JsWord) -> ValidationResult<Type> {
+        match src.normalize() {
+            Type::Ref(..) => {
+                let src = self.expand_top_ref(src.span(), Cow::Borrowed(src))?;
+                return self.filter_types_with_property(&src, property);
+            }
+            Type::Union(ty) => {
+                let mut new_types = vec![];
+                for ty in &ty.types {
+                    let ty = self.filter_types_with_property(&ty, property)?;
+                    new_types.push(ty);
+                }
+                new_types.retain(|ty| !ty.is_never());
+                new_types.dedup_type();
+
+                if new_types.len() == 1 {
+                    return Ok(new_types.into_iter().next().unwrap());
+                }
+
+                return Ok(Type::Union(Union {
+                    span: ty.span(),
+                    types: new_types,
+                }));
+            }
+            _ => {}
+        }
+
+        if let Err(err) = self.access_property(
+            src.span(),
+            src.clone(),
+            &Key::Normal {
+                span: DUMMY_SP,
+                sym: property.clone(),
+            },
+            TypeOfMode::RValue,
+            IdCtx::Var,
+        ) {
+            match err.actual() {
+                Error::NoSuchProperty { .. } | Error::NoSuchPropertyInClass { .. } => {
+                    return Ok(Type::never(src.span()))
+                }
+                _ => {}
+            }
+        }
+
+        Ok(src.clone())
     }
 
     fn determine_type_fact_by_field_fact(&mut self, name: &Name, ty: &Type) -> ValidationResult<Option<(Name, Type)>> {
