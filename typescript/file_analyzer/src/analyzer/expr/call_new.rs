@@ -1994,6 +1994,7 @@ impl Analyzer<'_, '_> {
                                     inner: box err,
                                 });
                                 self.storage.report(err);
+                                return;
                             }
                             _ => {}
                         },
