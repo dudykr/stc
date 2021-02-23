@@ -1,13 +1,15 @@
-use std::borrow::Cow;
-
 use super::call_new::ExtractKind;
 use super::IdCtx;
 use super::TypeOfMode;
 use crate::analyzer::Analyzer;
+use crate::ty::type_facts::TypeFactsHandler;
+use crate::type_facts::TypeFacts;
 use crate::util::type_ext::TypeVecExt;
+use crate::util::RemoveTypes;
 use crate::validator;
 use crate::validator::ValidateWith;
 use crate::ValidationResult;
+use rnode::FoldWith;
 use rnode::NodeId;
 use stc_ts_ast_rnode::RArrayLit;
 use stc_ts_ast_rnode::RExpr;
@@ -25,6 +27,7 @@ use stc_ts_types::Tuple;
 use stc_ts_types::TupleElement;
 use stc_ts_types::Type;
 use stc_ts_types::TypeParamInstantiation;
+use std::borrow::Cow;
 use swc_common::Span;
 use swc_common::Spanned;
 use swc_common::SyntaxContext;
@@ -227,6 +230,11 @@ impl Analyzer<'_, '_> {
                 IdCtx::Var,
             )
             .context("tried to get the type of property named `value` to determine the type of an iterator")?;
+
+        let elem_ty = elem_ty.fold_with(&mut TypeFactsHandler {
+            facts: TypeFacts::Truthy,
+            analyzer: self,
+        });
 
         Ok(Cow::Owned(elem_ty))
     }
