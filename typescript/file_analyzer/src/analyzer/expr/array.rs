@@ -28,7 +28,6 @@ use stc_ts_types::TypeParamInstantiation;
 use swc_common::Span;
 use swc_common::Spanned;
 use swc_common::SyntaxContext;
-use swc_common::DUMMY_SP;
 use swc_ecma_ast::TsKeywordTypeKind;
 
 #[validator]
@@ -94,57 +93,10 @@ impl Analyzer<'_, '_> {
                             });
                         }
                         _ => {
-                            // TODO: Handle symbols correctly.
-                            let iterator = self
-                                .call_property(
-                                    span,
-                                    ExtractKind::Call,
-                                    Default::default(),
-                                    &element_type,
-                                    &element_type,
-                                    &Key::Computed(ComputedKey {
-                                        span: *spread,
-                                        expr: box RExpr::Member(RMemberExpr {
-                                            node_id: NodeId::invalid(),
-                                            span: DUMMY_SP,
-                                            obj: RExprOrSuper::Expr(box RExpr::Ident(RIdent::new(
-                                                "Symbol".into(),
-                                                DUMMY_SP,
-                                            ))),
-                                            prop: box RExpr::Ident(RIdent::new("iterator".into(), DUMMY_SP)),
-                                            computed: false,
-                                        }),
-                                        ty: box Type::Keyword(RTsKeywordType {
-                                            span: DUMMY_SP,
-                                            kind: TsKeywordTypeKind::TsSymbolKeyword,
-                                        }),
-                                    }),
-                                    None,
-                                    &[],
-                                    &[],
-                                    &[],
-                                    None,
-                                )
-                                .context("tried to call `Symbol.iterator` property")?;
-
                             let elem_type = self
-                                .call_property(
-                                    span,
-                                    ExtractKind::Call,
-                                    Default::default(),
-                                    &iterator,
-                                    &iterator,
-                                    &Key::Normal {
-                                        span,
-                                        sym: "next".into(),
-                                    },
-                                    None,
-                                    &[],
-                                    &[],
-                                    &[],
-                                    None,
-                                )
-                                .context("tried calling `next()` to get element type of iterator")?;
+                                .get_iterator_element_type(span, Cow::Owned(element_type))
+                                .context("tried to calculated the element type of a iterable provided to spread")?
+                                .into_owned();
 
                             can_be_tuple = false;
                             elements.push(TupleElement {
@@ -199,11 +151,12 @@ impl Analyzer<'_, '_> {
         ty: Cow<'a, Type>,
     ) -> ValidationResult<Cow<'a, Type>> {
         match ty.normalize() {
+            // TODO
             Type::Array(..) | Type::Tuple(..) => return Ok(ty),
             _ => {}
         }
 
-        let ty = self
+        let iterator = self
             .call_property(
                 span,
                 ExtractKind::Call,
@@ -243,10 +196,29 @@ impl Analyzer<'_, '_> {
             })
             .context("tried to call `[Symbol.iterator]()` to convert a type to an iterator")?;
 
-        let ty = self
+        let next_ret_ty = self
+            .call_property(
+                span,
+                ExtractKind::Call,
+                Default::default(),
+                &iterator,
+                &iterator,
+                &Key::Normal {
+                    span,
+                    sym: "next".into(),
+                },
+                None,
+                &[],
+                &[],
+                &[],
+                None,
+            )
+            .context("tried calling `next()` to get element type of iterator")?;
+
+        let elem_ty = self
             .access_property(
                 span,
-                ty,
+                next_ret_ty,
                 &Key::Normal {
                     span,
                     sym: "value".into(),
@@ -254,8 +226,8 @@ impl Analyzer<'_, '_> {
                 TypeOfMode::RValue,
                 IdCtx::Var,
             )
-            .context("tried to get type of propert named `value` to determine the type of an iterator")?;
+            .context("tried to get the type of property named `value` to determine the type of an iterator")?;
 
-        Ok(Cow::Owned(ty))
+        Ok(Cow::Owned(elem_ty))
     }
 }
