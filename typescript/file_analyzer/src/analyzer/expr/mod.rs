@@ -1309,7 +1309,7 @@ impl Analyzer<'_, '_> {
                 let mut errors = Vec::with_capacity(types.len());
 
                 for ty in types {
-                    if !self.rule().strict_null_checks || self.ctx.in_obj_of_opt_chain {
+                    if !self.rule().strict_null_checks || self.ctx.in_opt_chain {
                         if ty.is_kwd(TsKeywordTypeKind::TsNullKeyword)
                             || ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
                         {
@@ -2041,15 +2041,16 @@ impl Analyzer<'_, '_> {
 
         let mut errors = Errors::default();
 
+        let mut is_obj_opt_chain = false;
         let mut should_be_optional = false;
         let obj_ty = match *obj {
             RExprOrSuper::Expr(ref obj) => {
-                should_be_optional = is_obj_opt_chaining(&obj);
+                is_obj_opt_chain = is_obj_opt_chaining(&obj);
 
                 let obj_ctx = Ctx {
                     allow_module_var: true,
-                    in_obj_of_opt_chain: should_be_optional,
-                    should_store_truthy_for_access: self.ctx.in_cond && !should_be_optional,
+                    in_opt_chain: is_obj_opt_chain,
+                    should_store_truthy_for_access: self.ctx.in_cond && !is_obj_opt_chain,
                     ..self.ctx
                 };
 
@@ -2066,7 +2067,7 @@ impl Analyzer<'_, '_> {
                     }
                 };
 
-                if should_be_optional {
+                if is_obj_opt_chain {
                     should_be_optional = self.is_obj_optional(&obj_ty)?;
                 }
 
@@ -2085,10 +2086,17 @@ impl Analyzer<'_, '_> {
 
         let prop = self.validate_key(prop, computed)?;
 
+        let prop_access_ctx = Ctx {
+            in_opt_chain: self.ctx.in_opt_chain || is_obj_opt_chain,
+            ..self.ctx
+        };
+
         let ty = if computed {
-            self.access_property(span, obj_ty, &prop, type_mode, IdCtx::Var)?
+            self.with_ctx(prop_access_ctx)
+                .access_property(span, obj_ty, &prop, type_mode, IdCtx::Var)?
         } else {
             let mut ty = self
+                .with_ctx(prop_access_ctx)
                 .access_property(span, obj_ty, &prop, type_mode, IdCtx::Var)
                 .context(
                     "tried to access property of an object to calculate type of a non-computed member expression",

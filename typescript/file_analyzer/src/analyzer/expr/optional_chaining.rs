@@ -19,19 +19,19 @@ impl Analyzer<'_, '_> {
         match &*node.expr {
             RExpr::Member(me) => {
                 let prop = self.validate_key(&me.prop, me.computed)?;
-                let obj = {
-                    let ctx = Ctx {
-                        in_obj_of_opt_chain: true,
-                        ..self.ctx
-                    };
-                    me.obj.validate_with(&mut *self.with_ctx(ctx))?
-                };
+                let obj = me.obj.validate_with(self)?;
 
                 let is_obj_optional = self.is_obj_optional(&obj)?;
 
                 let obj = obj.remove_falsy();
 
-                let ty = self.access_property(span, obj, &prop, TypeOfMode::RValue, IdCtx::Var)?;
+                let ctx = Ctx {
+                    in_opt_chain: true,
+                    ..self.ctx
+                };
+                let ty = self
+                    .with_ctx(ctx)
+                    .access_property(span, obj, &prop, TypeOfMode::RValue, IdCtx::Var)?;
 
                 //
 
