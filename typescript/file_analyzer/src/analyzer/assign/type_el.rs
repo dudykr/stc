@@ -124,16 +124,22 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::TypeLit(TypeLit {
-                    members: rhs_members, ..
+                    members: rhs_members,
+                    metadata: rhs_metadata,
+                    ..
                 }) => {
+                    let allow_unknown_rhs = opts.allow_unknown_rhs || rhs_metadata.inexact;
                     for r in rhs_members {
-                        if !opts.allow_unknown_rhs {
+                        if !allow_unknown_rhs {
                             unhandled_rhs.push(r.span());
                         }
                     }
 
                     self.handle_assignment_of_type_elements_to_type_elements(
-                        opts,
+                        AssignOpts {
+                            allow_unknown_rhs,
+                            ..opts
+                        },
                         &mut missing_fields,
                         &mut unhandled_rhs,
                         lhs,
