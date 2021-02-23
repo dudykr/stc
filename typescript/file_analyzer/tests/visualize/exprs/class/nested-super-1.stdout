@@ -36,7 +36,7 @@ warning: Type
 2 | let c = new C();
   |         ^^^^^^^
   |
-  = note: C
+  = note: anonymous class
 
 warning: Type
  --> $DIR/tests/visualize/exprs/class/nested-super-1.ts:3:1
@@ -44,7 +44,7 @@ warning: Type
 3 | c.a;
   | ^
   |
-  = note: C
+  = note: anonymous class
 
 warning: Type
  --> $DIR/tests/visualize/exprs/class/nested-super-1.ts:3:1
@@ -60,7 +60,7 @@ warning: Type
 4 | c.b;
   | ^
   |
-  = note: C
+  = note: anonymous class
 
 warning: Type
  --> $DIR/tests/visualize/exprs/class/nested-super-1.ts:4:1
@@ -76,7 +76,7 @@ warning: Type
 5 | c.c;
   | ^
   |
-  = note: C
+  = note: anonymous class
 
 warning: Type
  --> $DIR/tests/visualize/exprs/class/nested-super-1.ts:5:1
