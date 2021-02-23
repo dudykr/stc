@@ -123,6 +123,12 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                Type::ClassInstance(i) => {
+                    return self
+                        .assign_to_type_elements(opts, lhs_span, lhs, &i.ty, lhs_metadata)
+                        .context("tried to assign an instance to type elements");
+                }
+
                 Type::TypeLit(TypeLit {
                     members: rhs_members,
                     metadata: rhs_metadata,
