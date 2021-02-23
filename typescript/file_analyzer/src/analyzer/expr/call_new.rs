@@ -1983,9 +1983,17 @@ impl Analyzer<'_, '_> {
                         RPat::Rest(..) => match &*param.ty {
                             Type::Array(arr) => {
                                 // We should change type if the parameter is a rest parameter.
-                                if let Ok(()) = self.assign(&arr.elem_type, &arg.ty, arg.span()) {
-                                    continue;
-                                }
+                                let res = self.assign(&arr.elem_type, &arg.ty, arg.span());
+                                let err = match res {
+                                    Ok(()) => return,
+                                    Err(err) => err,
+                                };
+
+                                let err = err.convert(|err| Error::WrongArgType {
+                                    span: arg.span(),
+                                    inner: box err,
+                                });
+                                self.storage.report(err);
                             }
                             _ => {}
                         },
