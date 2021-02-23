@@ -1421,6 +1421,22 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                if let Some(super_ty) = &cls.super_class {
+                    if let Ok(v) = self.access_property(
+                        span,
+                        Type::ClassInstance(ClassInstance {
+                            span: super_ty.span(),
+                            ty: super_ty.clone(),
+                            type_args: None,
+                        }),
+                        prop,
+                        type_mode,
+                        id_ctx,
+                    ) {
+                        return Ok(v);
+                    }
+                }
+
                 return Err(Error::NoSuchPropertyInClass {
                     span,
                     class_name: cls.name.clone(),
