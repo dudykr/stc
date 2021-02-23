@@ -5,4 +5,9 @@
 #
 set -eu
 
-git diff --unified=0 origin/main -- tests/conformance.pass.txt
+git diff --unified=0 origin/main -- tests/conformance.pass.txt \
+    | grep '^[-]' \
+    | sed 's/^.\{1\}//' \
+    | grep -v '^[-]' >> tests/conformance.pass.txt
+
+./scripts/sort.sh
