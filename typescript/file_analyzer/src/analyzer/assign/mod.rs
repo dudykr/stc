@@ -1208,12 +1208,11 @@ impl Analyzer<'_, '_> {
             //},
 
             // TODO: Check type arguments
-            Type::ClassInstance(ClassInstance { ty: ref l_ty, .. }) => match *rhs.normalize() {
-                Type::Keyword(..) | Type::TypeLit(..) | Type::Lit(..) => fail!(),
-
-                Type::ClassInstance(ClassInstance { ty: ref r_ty, .. }) => return self.assign_inner(l_ty, &r_ty, opts),
-                _ => {}
-            },
+            Type::ClassInstance(ClassInstance { ty: ref l_ty, .. }) => {
+                return self
+                    .assign_with_opts(opts, &l_ty, rhs)
+                    .context("tried to asssign a type of instance to another type")
+            }
 
             Type::Constructor(ref lc) => match *rhs.normalize() {
                 Type::Lit(..) | Type::Class(ty::Class { is_abstract: true, .. }) => fail!(),
