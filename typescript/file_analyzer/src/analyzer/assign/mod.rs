@@ -476,6 +476,15 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        match rhs {
+            Type::ClassInstance(i) => {
+                return self
+                    .assign_with_opts(opts, to, &i.ty)
+                    .context("tried to assign an instance to a type");
+            }
+            _ => {}
+        }
+
         match to {
             // let a: any = 'foo'
             Type::Keyword(RTsKeywordType {
@@ -558,7 +567,6 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Class(l) => match rhs.normalize() {
-                Type::ClassInstance(r) => return self.assign_to_class(opts, l, &r.ty),
                 Type::Interface(..) | Type::Ref(..) | Type::TypeLit(..) | Type::Lit(..) | Type::Class(..) => {
                     return self.assign_to_class(opts, l, rhs.normalize())
                 }
