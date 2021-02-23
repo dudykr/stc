@@ -182,6 +182,7 @@ impl Analyzer<'_, '_> {
                     } else {
                         child.prevent_expansion(&mut ty);
                     }
+                    ty.make_cheap();
                     let alias = Alias {
                         span,
                         ty: box ty,
