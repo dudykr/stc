@@ -1980,7 +1980,7 @@ impl Analyzer<'_, '_> {
             match pair {
                 EitherOrBoth::Both(param, arg) => {
                     match &param.pat {
-                        RPat::Rest(..) => match &*param.ty {
+                        RPat::Rest(..) => match param.ty.normalize() {
                             Type::Array(arr) => {
                                 // We should change type if the parameter is a rest parameter.
                                 let res = self.assign(&arr.elem_type, &arg.ty, arg.span());
