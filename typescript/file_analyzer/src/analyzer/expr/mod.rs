@@ -596,6 +596,10 @@ impl Analyzer<'_, '_> {
     fn check_if_type_matches_key(&mut self, span: Span, declared: &Key, key_ty: &Type, allow_union: bool) -> bool {
         let key_ty = key_ty.normalize();
 
+        if declared.ty().normalize().type_eq(key_ty) {
+            return true;
+        }
+
         match key_ty {
             Type::Ref(..) => {
                 let cur = self.expand_top_ref(span, Cow::Borrowed(key_ty));
@@ -624,9 +628,14 @@ impl Analyzer<'_, '_> {
                     }
                 }
             }
-            _ => {
-                dbg!(&key_ty);
+            Type::Union(u) if allow_union => {
+                return u
+                    .types
+                    .iter()
+                    .any(|ty| self.check_if_type_matches_key(span, declared, &ty, true))
             }
+
+            _ => {}
         }
 
         false
