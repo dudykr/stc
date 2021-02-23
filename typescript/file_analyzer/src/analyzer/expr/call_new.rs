@@ -406,19 +406,6 @@ impl Analyzer<'_, '_> {
                         type_args.as_ref(),
                         type_ann,
                     )?;
-                    match expanded_ty {
-                        Type::ClassInstance(ClassInstance {
-                            ty: box Type::Class(..),
-                            type_args,
-                            ..
-                        }) if ret_ty.is_some() => {
-                            return Ok(Type::Ref(Ref {
-                                type_args,
-                                ..ret_ty.unwrap()
-                            }));
-                        }
-                        _ => {}
-                    }
 
                     return Ok(expanded_ty);
                 })
