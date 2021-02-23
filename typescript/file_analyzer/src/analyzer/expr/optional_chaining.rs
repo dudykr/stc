@@ -1,5 +1,6 @@
 use super::IdCtx;
 use super::TypeOfMode;
+use crate::analyzer::Ctx;
 use crate::util::type_ext::TypeVecExt;
 use crate::util::RemoveTypes;
 use crate::{analyzer::Analyzer, validator, validator::ValidateWith, ValidationResult};
@@ -18,7 +19,13 @@ impl Analyzer<'_, '_> {
         match &*node.expr {
             RExpr::Member(me) => {
                 let prop = self.validate_key(&me.prop, me.computed)?;
-                let obj = me.obj.validate_with(self)?;
+                let obj = {
+                    let ctx = Ctx {
+                        in_obj_of_opt_chain: true,
+                        ..self.ctx
+                    };
+                    me.obj.validate_with(&mut *self.with_ctx(ctx))?
+                };
 
                 let is_obj_optional = self.is_obj_optional(&obj)?;
 

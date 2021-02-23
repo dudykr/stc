@@ -1309,7 +1309,7 @@ impl Analyzer<'_, '_> {
                 let mut errors = Vec::with_capacity(types.len());
 
                 for ty in types {
-                    if !self.rule().strict_null_checks {
+                    if !self.rule().strict_null_checks || self.ctx.in_obj_of_opt_chain {
                         if ty.is_kwd(TsKeywordTypeKind::TsNullKeyword)
                             || ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
                         {
