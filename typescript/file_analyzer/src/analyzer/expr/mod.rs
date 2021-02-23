@@ -1116,15 +1116,7 @@ impl Analyzer<'_, '_> {
 
                 // check for super class
                 if let Some(super_ty) = &c.super_class {
-                    let ctx = Ctx {
-                        preserve_ref: false,
-                        ignore_expand_prevention_for_top: true,
-                        ..self.ctx
-                    };
-                    let super_ty = self
-                        .with_ctx(ctx)
-                        .expand_fully(span, super_ty.normalize().clone(), true)?;
-                    if let Ok(v) = self.access_property(span, super_ty, prop, type_mode, id_ctx) {
+                    if let Ok(v) = self.access_property(span, *super_ty.clone(), prop, type_mode, id_ctx) {
                         return Ok(v);
                     }
                 }
