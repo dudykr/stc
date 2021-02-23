@@ -1697,7 +1697,7 @@ impl Analyzer<'_, '_> {
         if self.ctx.allow_module_var && need_intersection {
             if let Some(types) = self.find_type(self.ctx.module_id, &id)? {
                 for ty in types {
-                    debug_assert!(ty.is_clone_cheap());
+                    debug_assert!(ty.is_clone_cheap(), "{:?}", ty);
 
                     match ty.normalize() {
                         Type::Module(..) => modules.push(ty.clone().into_owned()),
