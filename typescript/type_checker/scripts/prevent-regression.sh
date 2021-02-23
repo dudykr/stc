@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 #
 # A script to prevent regression.
-# This scripts add all regressed lines to passing list.
+#
+# This scripts compares the main branch and current pr and
+# adds all regressed lines to passing list. 
 #
 set -eu
 
