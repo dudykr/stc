@@ -127,8 +127,8 @@ impl Analyzer<'_, '_> {
 
         for (lp, rp) in li.zip(ri) {
             self.assign_inner(
-                &rp.ty,
                 &lp.ty,
+                &rp.ty,
                 AssignOpts {
                     allow_unknown_type: true,
                     ..opts
