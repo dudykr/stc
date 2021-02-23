@@ -780,7 +780,9 @@ impl Analyzer<'_, '_> {
         if let Some(ty) = self.scope.find_type(name) {
             slog::debug!(self.logger, "Using type from scope: {:?}", ty);
             src.extend(ty.into_iter().map(Cow::into_owned));
-            return Some(ItemRef::Owned(vec![Type::intersection(DUMMY_SP, src)].into_iter()));
+            return Some(ItemRef::Owned(
+                vec![Type::intersection(DUMMY_SP, src).cheap()].into_iter(),
+            ));
         }
 
         if let Some(ty) = self.storage.get_local_type(self.ctx.module_id, name.clone()) {
