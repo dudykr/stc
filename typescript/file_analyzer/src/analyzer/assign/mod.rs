@@ -781,7 +781,31 @@ impl Analyzer<'_, '_> {
 
                     return Ok(());
                 }
-                _ => fail!(),
+
+                _ => {
+                    let r = self.type_to_type_lit(span, &rhs)?;
+                    if let Some(r) = r {
+                        for m in &r.members {
+                            match m {
+                                TypeElement::Index(m) => match m.params[0].ty.normalize() {
+                                    Type::Keyword(RTsKeywordType {
+                                        span,
+                                        kind: TsKeywordTypeKind::TsNumberKeyword,
+                                        ..
+                                    }) => {
+                                        if let Some(type_ann) = &m.type_ann {
+                                            return self.assign_with_opts(opts, elem_type, type_ann);
+                                        }
+                                    }
+                                    _ => {}
+                                },
+                                _ => {}
+                            }
+                        }
+                    }
+
+                    fail!()
+                }
             },
 
             // let a: string | number = 'string';
