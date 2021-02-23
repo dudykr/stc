@@ -367,7 +367,6 @@ impl Analyzer<'_, '_> {
         match ty.normalize_mut() {
             Type::Union(ty) => {
                 for ty in &mut ty.types {
-                    dbg!(&ty, &excluded);
                     self.exclude_type(ty, excluded);
                 }
                 ty.types.retain(|element| !element.is_never());
