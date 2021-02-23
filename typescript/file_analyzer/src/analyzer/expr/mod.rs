@@ -550,7 +550,7 @@ impl Analyzer<'_, '_> {
     /// # Parameters
     ///
     /// - `declared`: Key of declared property.
-    pub(crate) fn key_matches(&mut self, span: Span, declared: &Key, cur: &Key) -> bool {
+    pub(crate) fn key_matches(&mut self, span: Span, declared: &Key, cur: &Key, allow_union: bool) -> bool {
         match (declared, cur) {
             (
                 Key::Num(RNumber {
@@ -581,7 +581,55 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
+        match cur {
+            Key::Computed(cur) => {
+                if self.check_if_type_matches_key(span, declared, &cur.ty, true) {
+                    return true;
+                }
+            }
+            _ => {}
+        }
+
         self.assign(&declared.ty(), &cur.ty(), span).is_ok()
+    }
+
+    fn check_if_type_matches_key(&mut self, span: Span, declared: &Key, key_ty: &Type, allow_union: bool) -> bool {
+        let key_ty = key_ty.normalize();
+
+        match key_ty {
+            Type::Ref(..) => {
+                let cur = self.expand_top_ref(span, Cow::Borrowed(key_ty));
+                if let Ok(cur) = cur {
+                    return self.check_if_type_matches_key(span, declared, &cur, allow_union);
+                }
+            }
+            Type::Enum(e) if allow_union => {
+                //
+                for m in &e.members {
+                    match &*m.val {
+                        RExpr::Lit(RLit::Str(s)) => {
+                            if self.key_matches(
+                                span,
+                                declared,
+                                &Key::Normal {
+                                    span: s.span,
+                                    sym: s.value.clone(),
+                                },
+                                true,
+                            ) {
+                                return true;
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            _ => {
+                dbg!(&key_ty);
+            }
+        }
+
+        false
     }
 
     fn access_property_of_type_elements(
@@ -595,7 +643,7 @@ impl Analyzer<'_, '_> {
         let mut matching_elements = vec![];
         for el in members.iter() {
             if let Some(key) = el.key() {
-                if self.key_matches(span, key, prop) {
+                if self.key_matches(span, key, prop, true) {
                     match el {
                         TypeElement::Property(ref p) => {
                             if type_mode == TypeOfMode::LValue && p.readonly {
@@ -1080,7 +1128,7 @@ impl Analyzer<'_, '_> {
                             }
 
                             //
-                            if self.key_matches(span, &class_prop.key, &prop) {
+                            if self.key_matches(span, &class_prop.key, &prop, false) {
                                 return Ok(match class_prop.value {
                                     Some(ref ty) => *ty.clone(),
                                     None => Type::any(span),
@@ -1088,7 +1136,7 @@ impl Analyzer<'_, '_> {
                             }
                         }
                         ty::ClassMember::Method(ref mtd) => {
-                            if self.key_matches(span, &mtd.key, prop) {
+                            if self.key_matches(span, &mtd.key, prop, false) {
                                 return Ok(Type::Function(stc_ts_types::Function {
                                     span: mtd.span,
                                     type_params: mtd.type_params.clone(),
