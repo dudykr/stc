@@ -161,6 +161,7 @@ classes/constructorDeclarations/classConstructorParametersAccessibility3.ts
 classes/constructorDeclarations/constructorParameters/constructorImplementationWithDefaultValues.ts
 classes/constructorDeclarations/constructorParameters/declarationEmitReadonly.ts
 classes/constructorDeclarations/constructorWithExpressionLessReturn.ts
+classes/constructorDeclarations/quotedConstructors.ts
 classes/members/accessibility/protectedClassPropertyAccessibleWithinSubclass.ts
 classes/members/classTypes/indexersInClassType.ts
 classes/members/constructorFunctionTypes/classWithNoConstructorOrBaseClass.ts
@@ -206,6 +207,7 @@ controlFlow/controlFlowElementAccess2.ts
 controlFlow/controlFlowForInStatement.ts
 controlFlow/controlFlowForOfStatement.ts
 controlFlow/controlFlowIfStatement.ts
+controlFlow/controlFlowInstanceOfGuardPrimitives.ts
 controlFlow/controlFlowIteration.ts
 controlFlow/controlFlowStringIndex.ts
 controlFlow/controlFlowSuperPropertyAccess.ts
@@ -1296,6 +1298,7 @@ parser/ecmascript5/RegressionTests/parser643728.ts
 parser/ecmascript5/RegressionTests/parser645086_3.ts
 parser/ecmascript5/RegressionTests/parser645086_4.ts
 parser/ecmascript5/RegressionTests/parser645484.ts
+parser/ecmascript5/RegressionTests/parserNotHexLiteral1.ts
 parser/ecmascript5/RegularExpressions/parserRegularExpression2.ts
 parser/ecmascript5/RegularExpressions/parserRegularExpression3.ts
 parser/ecmascript5/RegularExpressions/parserRegularExpressionDivideAmbiguity1.ts
@@ -1368,6 +1371,7 @@ parser/ecmascript5/parserDebuggerStatement2.ts
 parser/ecmascript5/parserEmptyFile1.ts
 parser/ecmascript5/parserEmptyStatement1.ts
 parser/ecmascript5/parserExportAsFunctionIdentifier.ts
+parser/ecmascript5/parserInExpression1.ts
 parser/ecmascript5/parserKeywordsAsIdentifierName1.ts
 parser/ecmascript5/parserNotRegex2.ts
 parser/ecmascript5/parserObjectCreationArrayLiteral2.ts
