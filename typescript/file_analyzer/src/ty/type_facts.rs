@@ -7,6 +7,7 @@ use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_types::ClassMember;
+use stc_ts_types::Constructor;
 use stc_ts_types::Function;
 use stc_ts_types::IndexedAccessType;
 use stc_ts_types::TypeElement;
@@ -57,6 +58,13 @@ impl Fold<ClassMember> for TypeFactsHandler<'_, '_, '_> {
 impl Fold<Function> for TypeFactsHandler<'_, '_, '_> {
     #[inline]
     fn fold(&mut self, m: Function) -> Function {
+        m
+    }
+}
+
+impl Fold<Constructor> for TypeFactsHandler<'_, '_, '_> {
+    #[inline]
+    fn fold(&mut self, m: Constructor) -> Constructor {
         m
     }
 }
