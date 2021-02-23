@@ -2,4 +2,5 @@
 set -eux
 
 export RUST_BACKTRACE=1
-cargo test --test visualize $@
+git restore -- tests/visualize
+UPDATE=1 cargo test --test visualize $@
