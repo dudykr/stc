@@ -7,6 +7,7 @@ use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_types::ClassMember;
+use stc_ts_types::Function;
 use stc_ts_types::IndexedAccessType;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
@@ -53,11 +54,20 @@ impl Fold<ClassMember> for TypeFactsHandler<'_, '_, '_> {
     }
 }
 
+impl Fold<Function> for TypeFactsHandler<'_, '_, '_> {
+    #[inline]
+    fn fold(&mut self, m: Function) -> Function {
+        m
+    }
+}
+
 impl Fold<RTsKeywordType> for TypeFactsHandler<'_, '_, '_> {
     fn fold(&mut self, ty: RTsKeywordType) -> RTsKeywordType {
         if self.facts.contains(TypeFacts::Truthy) {
             match ty.kind {
-                TsKeywordTypeKind::TsUndefinedKeyword | TsKeywordTypeKind::TsNullKeyword => {
+                TsKeywordTypeKind::TsVoidKeyword
+                | TsKeywordTypeKind::TsUndefinedKeyword
+                | TsKeywordTypeKind::TsNullKeyword => {
                     return RTsKeywordType {
                         span: ty.span,
                         kind: TsKeywordTypeKind::TsNeverKeyword,
