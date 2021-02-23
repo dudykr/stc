@@ -532,6 +532,22 @@ impl Analyzer<'_, '_> {
                     );
                 }
 
+                Type::ClassInstance(i) => {
+                    return self.call_property(
+                        span,
+                        kind,
+                        expr,
+                        this,
+                        &i.ty,
+                        prop,
+                        type_args,
+                        args,
+                        arg_types,
+                        spread_arg_types,
+                        type_ann,
+                    );
+                }
+
                 Type::Interface(ref i) => {
                     // We check for body before parent to support overriding
                     let err = match self.search_members_for_callable_prop(
