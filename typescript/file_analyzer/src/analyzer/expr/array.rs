@@ -5,7 +5,6 @@ use crate::analyzer::Analyzer;
 use crate::ty::type_facts::TypeFactsHandler;
 use crate::type_facts::TypeFacts;
 use crate::util::type_ext::TypeVecExt;
-use crate::util::RemoveTypes;
 use crate::validator;
 use crate::validator::ValidateWith;
 use crate::ValidationResult;
