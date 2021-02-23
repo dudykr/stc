@@ -1985,7 +1985,7 @@ impl Analyzer<'_, '_> {
                                 // We should change type if the parameter is a rest parameter.
                                 let res = self.assign(&arr.elem_type, &arg.ty, arg.span());
                                 let err = match res {
-                                    Ok(()) => return,
+                                    Ok(()) => continue,
                                     Err(err) => err,
                                 };
 
@@ -1994,7 +1994,7 @@ impl Analyzer<'_, '_> {
                                     inner: box err,
                                 });
                                 self.storage.report(err);
-                                return;
+                                continue;
                             }
                             _ => {}
                         },
