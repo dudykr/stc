@@ -1107,6 +1107,9 @@ impl Analyzer<'_, '_> {
                                 RParamOrTsParamProp::Param(..) => {}
                             }
                         }
+
+                        let member = constructor.validate_with(child)?;
+                        child.scope.this_class_members.push((index, member.into()));
                     }
 
                     // Handle properties
