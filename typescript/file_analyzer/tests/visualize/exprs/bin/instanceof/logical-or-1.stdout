@@ -70,3 +70,11 @@ warning: Type
    |
    = note: C3
 
+warning: Type
+  --> $DIR/tests/visualize/exprs/bin/instanceof/logical-or-1.ts:20:5
+   |
+20 |     ctor6.p4; // C3
+   |     ^^^^^^^^
+   |
+   = note: number
+
