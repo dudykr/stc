@@ -1,3 +1,4 @@
+use fxhash::FxHashSet;
 use rnode::Visit;
 use rnode::VisitWith;
 use stc_ts_types::Id;
@@ -6,7 +7,7 @@ use stc_ts_types::TypeParamDecl;
 
 #[derive(Debug, Default)]
 pub struct TypeParamDeclFinder {
-    pub params: Vec<Id>,
+    pub params: FxHashSet<Id>,
 }
 
 impl Visit<TypeParamDecl> for TypeParamDeclFinder {
