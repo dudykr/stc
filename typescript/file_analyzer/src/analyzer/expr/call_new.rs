@@ -1064,10 +1064,6 @@ impl Analyzer<'_, '_> {
                                 })),
                             )?;
 
-                            for (id, ty) in &inferred {
-                                print_type(&self.logger, &format!("{}", id), &self.cm, &ty);
-                            }
-
                             let type_args = self.instantiate(span, &type_params.params, inferred)?;
 
                             return Ok(Type::ClassInstance(ClassInstance {
@@ -1551,12 +1547,20 @@ impl Analyzer<'_, '_> {
 
             match callee.normalize() {
                 Type::Class(cls) if kind == ExtractKind::New => {
-                    // TODO: Handle type parameters.
-                    return Ok(Type::ClassInstance(ClassInstance {
+                    let ret_ty = self.get_return_type(
                         span,
-                        ty: box Type::Class(cls.clone()),
-                        type_args: type_args.cloned().map(Box::new),
-                    }));
+                        kind,
+                        expr,
+                        cls.type_params.as_ref().map(|v| &*v.params),
+                        &[],
+                        callee.clone(),
+                        type_args,
+                        args,
+                        arg_types,
+                        spread_arg_types,
+                        type_ann,
+                    )?;
+                    return Ok(ret_ty);
                 }
                 _ => {}
             }
