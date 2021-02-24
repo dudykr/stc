@@ -228,8 +228,27 @@ impl AddAssign for CondFacts {
         }
 
         self.types.extend(rhs.types);
-        self.vars.extend(rhs.vars);
-        self.excludes.extend(rhs.excludes);
+
+        for (k, v) in rhs.vars {
+            match self.vars.entry(k) {
+                Entry::Occupied(mut e) => match e.get_mut().normalize_mut() {
+                    Type::Union(u) => {
+                        u.types.push(v);
+                    }
+                    prev => {
+                        let prev = prev.take();
+                        *e.get_mut() = Type::union(vec![prev, v]).cheap();
+                    }
+                },
+                Entry::Vacant(e) => {
+                    e.insert(v);
+                }
+            }
+        }
+
+        for (k, v) in rhs.excludes {
+            self.excludes.entry(k).or_default().extend(v);
+        }
     }
 }
 
