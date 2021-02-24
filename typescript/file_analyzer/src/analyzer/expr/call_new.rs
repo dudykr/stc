@@ -1072,6 +1072,21 @@ impl Analyzer<'_, '_> {
                                 type_args: Some(box type_args),
                             }));
                         }
+
+                        let ret_ty = self.get_return_type(
+                            span,
+                            kind,
+                            expr,
+                            cls.type_params.as_ref().map(|v| &*v.params),
+                            &[],
+                            Type::Class(cls.clone()),
+                            type_args,
+                            args,
+                            arg_types,
+                            spread_arg_types,
+                            type_ann,
+                        )?;
+                        return Ok(ret_ty);
                     }
 
                     return Ok(Type::ClassInstance(ClassInstance {
