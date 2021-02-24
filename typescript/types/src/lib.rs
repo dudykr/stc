@@ -158,24 +158,11 @@ pub enum Type {
     Namespace(#[use_eq_ignore_span] RTsNamespaceDecl),
     Module(Module),
 
+    /// Instance of a class.
     Class(Class),
-    /// Instance of the class.
-    ///
-    /// This variant is required ([TypeLit] is insufficient) because of codes
-    /// like
-    ///
-    ///
-    /// ```ts
-    /// class A {
-    ///     a: string;
-    /// }
-    ///
-    /// class B {
-    ///     a: string;
-    ///     b: string;
-    /// }
-    /// ```
-    ClassInstance(ClassInstance),
+
+    /// Class definition itself.
+    ClassDef(ClassDef),
 
     Arc(Freezed),
 
