@@ -1,0 +1,48 @@
+warning: Type
+ --> $DIR/tests/visualize/exprs/array/object/normalized-1.ts:1:10
+  |
+1 | var x = [() => 1, () => { }];
+  |          ^^^^^^^
+  |
+  = note: () => number
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/array/object/normalized-1.ts:1:19
+  |
+1 | var x = [() => 1, () => { }];
+  |                   ^^^^^^^^^
+  |
+  = note: () => void
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/array/object/normalized-1.ts:1:9
+  |
+1 | var x = [() => 1, () => { }];
+  |         ^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: [() => number, () => void]
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/array/object/normalized-1.ts:2:17
+  |
+2 | export var r2 = x[0]();
+  |                 ^
+  |
+  = note: (() => number | () => void)[]
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/array/object/normalized-1.ts:2:17
+  |
+2 | export var r2 = x[0]();
+  |                 ^^^^
+  |
+  = note: () => number | () => void
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/array/object/normalized-1.ts:2:17
+  |
+2 | export var r2 = x[0]();
+  |                 ^^^^^^
+  |
+  = note: void
+
