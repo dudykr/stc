@@ -1,0 +1,40 @@
+warning: Type
+ --> $DIR/tests/visualize/exprs/bin/instanceof/array-1.ts:6:9
+  |
+6 |     if (message instanceof Array) {
+  |         ^^^^^^^
+  |
+  = note: Message | Message[]
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/bin/instanceof/array-1.ts:6:28
+  |
+6 |     if (message instanceof Array) {
+  |                            ^^^^^
+  |
+  = note: ArrayConstructor
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/bin/instanceof/array-1.ts:6:9
+  |
+6 |     if (message instanceof Array) {
+  |         ^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: boolean
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/bin/instanceof/array-1.ts:7:16
+  |
+7 |         return message.length;  // Should have type Message[] here
+  |                ^^^^^^^
+  |
+  = note: Message[]
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/bin/instanceof/array-1.ts:7:16
+  |
+7 |         return message.length;  // Should have type Message[] here
+  |                ^^^^^^^^^^^^^^
+  |
+  = note: number
+

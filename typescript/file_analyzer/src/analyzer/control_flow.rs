@@ -6,6 +6,7 @@ use super::{
     scope::{ScopeKind, VarInfo},
     Analyzer,
 };
+use crate::analyzer::expr::IdCtx;
 use crate::util::type_ext::TypeVecExt;
 use crate::{
     ty::{Tuple, Type, TypeElement, TypeLit},
@@ -33,6 +34,8 @@ use stc_ts_errors::Error;
 use stc_ts_types::name::Name;
 use stc_ts_types::Array;
 use stc_ts_types::Id;
+use stc_ts_types::Key;
+use stc_ts_types::Union;
 use stc_ts_utils::find_ids_in_pat;
 use stc_ts_utils::MapWithMut;
 use std::borrow::Cow;
@@ -42,7 +45,9 @@ use std::{
     mem::{replace, take},
     ops::{AddAssign, BitOr, Not},
 };
+use swc_atoms::JsWord;
 use swc_common::TypeEq;
+use swc_common::DUMMY_SP;
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::*;
 
@@ -223,8 +228,27 @@ impl AddAssign for CondFacts {
         }
 
         self.types.extend(rhs.types);
-        self.vars.extend(rhs.vars);
-        self.excludes.extend(rhs.excludes);
+
+        for (k, v) in rhs.vars {
+            match self.vars.entry(k) {
+                Entry::Occupied(mut e) => match e.get_mut().normalize_mut() {
+                    Type::Union(u) => {
+                        u.types.push(v);
+                    }
+                    prev => {
+                        let prev = prev.take();
+                        *e.get_mut() = Type::union(vec![prev, v]).cheap();
+                    }
+                },
+                Entry::Vacant(e) => {
+                    e.insert(v);
+                }
+            }
+        }
+
+        for (k, v) in rhs.excludes {
+            self.excludes.entry(k).or_default().extend(v);
+        }
     }
 }
 
@@ -564,18 +588,30 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                let mut actual_ty = None;
+                if let Some(var_info) = self
+                    .scope
+                    .get_var(&i.into())
+                    .or_else(|| self.scope.search_parent(&i.into()))
+                {
+                    if let Some(declared_ty) = &var_info.ty {
+                        if declared_ty.is_any() {
+                            return Ok(());
+                        }
+                        let declared_ty = declared_ty.clone();
+
+                        actual_ty = Some(self.narrowed_type_of_assignment(span, declared_ty, &ty)?);
+                    }
+                }
+
                 // TODO: Update actual types.
                 if let Some(var_info) = self.scope.get_var_mut(&i.into()) {
-                    // var_info.actual_ty = Some(box ty.clone());
+                    var_info.actual_ty = Some(actual_ty.unwrap_or_else(|| ty.clone()));
                     return Ok(());
                 }
 
                 let var_info = if let Some(var_info) = self.scope.search_parent(&i.into()) {
-                    let actual_ty = if true || (var_info.ty.is_some() && var_info.ty.as_ref().unwrap().is_any()) {
-                        return Ok(());
-                    } else {
-                        Some(ty.clone())
-                    };
+                    let actual_ty = Some(actual_ty.unwrap_or_else(|| ty.clone()));
 
                     VarInfo {
                         actual_ty,
@@ -710,12 +746,120 @@ impl Analyzer<'_, '_> {
         self.cur_facts.insert_var(sym, ty, false);
     }
 
-    pub(super) fn add_deep_type_fact(&mut self, sym: Name, ty: Type, is_for_true: bool) {
-        if is_for_true {
-            self.cur_facts.true_facts.vars.insert(sym, ty);
-        } else {
-            self.cur_facts.false_facts.vars.insert(sym, ty);
+    pub(super) fn add_deep_type_fact(&mut self, name: Name, ty: Type, is_for_true: bool) {
+        debug_assert!(!self.is_builtin);
+
+        if let Some((name, ty)) = self
+            .determine_type_fact_by_field_fact(&name, &ty)
+            .report(&mut self.storage)
+            .flatten()
+        {
+            if is_for_true {
+                self.cur_facts.true_facts.vars.insert(name, ty);
+            } else {
+                self.cur_facts.false_facts.vars.insert(name, ty);
+            }
+            return;
         }
+
+        if is_for_true {
+            self.cur_facts.true_facts.vars.insert(name, ty);
+        } else {
+            self.cur_facts.false_facts.vars.insert(name, ty);
+        }
+    }
+
+    /// Calculate type facts created by `'foo' in obj`.
+    pub(super) fn filter_types_with_property(&mut self, src: &Type, property: &JsWord) -> ValidationResult<Type> {
+        match src.normalize() {
+            Type::Ref(..) => {
+                let src = self.expand_top_ref(src.span(), Cow::Borrowed(src))?;
+                return self.filter_types_with_property(&src, property);
+            }
+            Type::Union(ty) => {
+                let mut new_types = vec![];
+                for ty in &ty.types {
+                    let ty = self.filter_types_with_property(&ty, property)?;
+                    new_types.push(ty);
+                }
+                new_types.retain(|ty| !ty.is_never());
+                new_types.dedup_type();
+
+                if new_types.len() == 1 {
+                    return Ok(new_types.into_iter().next().unwrap());
+                }
+
+                return Ok(Type::Union(Union {
+                    span: ty.span(),
+                    types: new_types,
+                }));
+            }
+            _ => {}
+        }
+
+        if let Err(err) = self.access_property(
+            src.span(),
+            src.clone(),
+            &Key::Normal {
+                span: DUMMY_SP,
+                sym: property.clone(),
+            },
+            TypeOfMode::RValue,
+            IdCtx::Var,
+        ) {
+            match err.actual() {
+                Error::NoSuchProperty { .. } | Error::NoSuchPropertyInClass { .. } => {
+                    return Ok(Type::never(src.span()))
+                }
+                _ => {}
+            }
+        }
+
+        Ok(src.clone())
+    }
+
+    fn determine_type_fact_by_field_fact(&mut self, name: &Name, ty: &Type) -> ValidationResult<Option<(Name, Type)>> {
+        if name.len() == 1 {
+            return Ok(None);
+        }
+
+        let ids = name.as_ids();
+        let obj = self.type_of_var(&ids[0].clone().into(), TypeOfMode::RValue, None)?;
+        let obj = self.expand_top_ref(ty.span(), Cow::Owned(obj))?;
+
+        match obj.normalize() {
+            Type::Union(u) => {
+                if ids.len() == 2 {
+                    let mut new_obj_types = vec![];
+
+                    for obj in &u.types {
+                        if let Ok(prop_ty) = self.access_property(
+                            obj.span(),
+                            obj.clone(),
+                            &Key::Normal {
+                                span: ty.span(),
+                                sym: ids[1].sym().clone(),
+                            },
+                            TypeOfMode::RValue,
+                            IdCtx::Var,
+                        ) {
+                            if ty.normalize().type_eq(&prop_ty.normalize()) {
+                                new_obj_types.push(obj.clone());
+                            }
+                        }
+                    }
+
+                    if new_obj_types.is_empty() {
+                        return Ok(None);
+                    }
+
+                    return Ok(Some((Name::from(ids[0].clone()), Type::union(new_obj_types))));
+                }
+            }
+            _ => {}
+        }
+
+        Ok(None)
     }
 }
 

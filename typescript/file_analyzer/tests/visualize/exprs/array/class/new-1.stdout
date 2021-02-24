@@ -1,0 +1,48 @@
+warning: Type
+ --> $DIR/tests/visualize/exprs/array/class/new-1.ts:4:10
+  |
+4 | var y = [C, C];
+  |          ^
+  |
+  = note: C
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/array/class/new-1.ts:4:13
+  |
+4 | var y = [C, C];
+  |             ^
+  |
+  = note: C
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/array/class/new-1.ts:4:9
+  |
+4 | var y = [C, C];
+  |         ^^^^^^
+  |
+  = note: [C, C]
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/array/class/new-1.ts:5:14
+  |
+5 | var r3 = new y[0]();
+  |              ^
+  |
+  = note: C[]
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/array/class/new-1.ts:5:14
+  |
+5 | var r3 = new y[0]();
+  |              ^^^^
+  |
+  = note: C
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/array/class/new-1.ts:5:10
+  |
+5 | var r3 = new y[0]();
+  |          ^^^^^^^^^^
+  |
+  = note: C
+

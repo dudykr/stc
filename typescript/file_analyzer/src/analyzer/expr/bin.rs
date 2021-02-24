@@ -4,6 +4,7 @@ use super::super::{
 };
 use super::TypeOfMode;
 use crate::analyzer::assign::AssignOpts;
+use crate::ty::type_facts::TypeFactsHandler;
 use crate::util::type_ext::TypeVecExt;
 use crate::{
     analyzer::{Ctx, ScopeKind},
@@ -14,11 +15,15 @@ use crate::{
     validator::ValidateWith,
     ValidationResult,
 };
+use rnode::FoldWith;
 use stc_ts_ast_rnode::RBinExpr;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RLit;
+use stc_ts_ast_rnode::RPat;
+use stc_ts_ast_rnode::RPatOrExpr;
 use stc_ts_ast_rnode::RStr;
+use stc_ts_ast_rnode::RTpl;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
@@ -128,7 +133,12 @@ impl Analyzer<'_, '_> {
                                 Some(ty) => Some(ty),
                                 _ => match op {
                                     op!("||") | op!("??") => {
-                                        truthy_lt = lt.clone().map(|ty| ty.apply_type_facts(TypeFacts::Truthy));
+                                        truthy_lt = lt.clone().map(|ty| {
+                                            ty.fold_with(&mut TypeFactsHandler {
+                                                analyzer: child,
+                                                facts: TypeFacts::Truthy,
+                                            })
+                                        });
                                         truthy_lt.as_ref()
                                     }
                                     _ => lt.as_ref(),
@@ -205,6 +215,17 @@ impl Analyzer<'_, '_> {
                             let name = Name::try_from(&**arg);
                             slog::info!(self.logger, "cond_facts: typeof {:?}", name);
                             match r {
+                                RExpr::Tpl(RTpl { quasis, .. }) if quasis.len() == 1 => {
+                                    let value = &quasis[0].cooked.as_ref()?.value;
+                                    Some((
+                                        name,
+                                        if is_eq {
+                                            (TypeFacts::typeof_eq(&*value), TypeFacts::typeof_neq(&*value))
+                                        } else {
+                                            (TypeFacts::typeof_neq(&*value), TypeFacts::typeof_eq(&*value))
+                                        },
+                                    ))
+                                }
                                 RExpr::Lit(RLit::Str(RStr { ref value, .. })) => Some((
                                     name,
                                     if is_eq {
@@ -281,8 +302,7 @@ impl Analyzer<'_, '_> {
                         _,
                     ) => None,
 
-                    (RExpr::Ident(l), r) => Some((l, r_ty)),
-                    _ => return None,
+                    (l, r) => Some((extract_name_for_assignment(l)?, r_ty)),
                 }) {
                     Some((l, r)) => {
                         if self.ctx.in_cond && op == op!("===") {
@@ -290,24 +310,24 @@ impl Analyzer<'_, '_> {
                             self.cur_facts
                                 .false_facts
                                 .excludes
-                                .entry(l.into())
+                                .entry(l.clone())
                                 .or_default()
                                 .push(r.clone());
 
                             self.prevent_generalize(&mut r);
-                            self.cur_facts.true_facts.vars.insert(l.into(), r);
+                            self.add_deep_type_fact(l, r, true);
                         } else if self.ctx.in_cond && !is_eq {
                             // Remove from union
                             let mut r = r.clone();
                             self.cur_facts
                                 .true_facts
                                 .excludes
-                                .entry(l.into())
+                                .entry(l.clone())
                                 .or_default()
                                 .push(r.clone());
 
                             self.prevent_generalize(&mut r);
-                            self.cur_facts.false_facts.vars.insert(l.into(), r);
+                            self.add_deep_type_fact(l, r, false);
                         }
                     }
                     _ => {}
@@ -346,8 +366,8 @@ impl Analyzer<'_, '_> {
                             };
 
                         if !cannot_narrow {
-                            let ty = self
-                                .narrow_with_instanceof(span, ty, &orig_ty)
+                            let narrowed_ty = self
+                                .narrow_with_instanceof(span, ty.clone(), &orig_ty)
                                 .context("tried to narrow type with instanceof")?
                                 .cheap();
 
@@ -357,18 +377,22 @@ impl Analyzer<'_, '_> {
                                     Name::from(i),
                                     Type::Intersection(Intersection {
                                         span,
-                                        types: vec![orig_ty, ty],
+                                        types: vec![orig_ty, narrowed_ty],
                                     })
                                     .cheap(),
                                 );
                             } else {
-                                self.cur_facts.true_facts.vars.insert(Name::from(i), ty.clone());
+                                self.cur_facts
+                                    .true_facts
+                                    .vars
+                                    .insert(Name::from(i), narrowed_ty.clone());
+
                                 self.cur_facts
                                     .false_facts
                                     .excludes
                                     .entry(Name::from(i))
                                     .or_default()
-                                    .push(ty);
+                                    .push(narrowed_ty);
                             }
                         }
                     }
@@ -585,6 +609,23 @@ impl Analyzer<'_, '_> {
             }
 
             op!("in") => {
+                if self.ctx.in_cond {
+                    let left = match &**left {
+                        RExpr::Lit(RLit::Str(s)) => Some(s.value.clone()),
+                        RExpr::Tpl(t) if t.quasis.len() == 1 => t.quasis[0].cooked.clone().map(|v| v.value),
+                        _ => None,
+                    };
+                    let name = Name::try_from(&**right).ok();
+
+                    if let Some(name) = name {
+                        if let Some(property) = left {
+                            let mut new_ty = self.filter_types_with_property(&rt, &property)?.cheap();
+
+                            self.add_deep_type_fact(name.clone(), new_ty.clone(), true);
+                        }
+                    }
+                }
+
                 return Ok(Type::Keyword(RTsKeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
@@ -734,18 +775,27 @@ impl Analyzer<'_, '_> {
                 }));
             }
 
-            Type::Interface(..) => match ty.normalize() {
-                Type::Interface(..) => return Ok(ty),
-                _ => {}
-            },
-
             _ => {}
+        }
+
+        if orig_ty.is_kwd(TsKeywordTypeKind::TsStringKeyword)
+            || orig_ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword)
+            || orig_ty.is_kwd(TsKeywordTypeKind::TsBooleanKeyword)
+        {
+            if ty.normalize().is_interface() {
+                return Ok(Type::never(span));
+            }
         }
 
         if let Some(v) = self.extends(span, orig_ty, &ty) {
             if v {
                 return Ok(orig_ty.clone());
             } else {
+                match (orig_ty, ty.normalize()) {
+                    (Type::Interface(..), Type::Interface(..)) => return Ok(ty),
+                    _ => {}
+                }
+
                 if !self
                     .has_overlap(span, orig_ty, &ty)
                     .context("tried to check if overlap exists to calculate the type created by instanceof")?
@@ -1317,5 +1367,20 @@ impl Analyzer<'_, '_> {
 
         search(e.span, e.op, &e.left)?;
         search(e.span, e.op, &e.right)?;
+    }
+}
+
+fn extract_name_for_assignment(e: &RExpr) -> Option<Name> {
+    match e {
+        RExpr::Paren(e) => extract_name_for_assignment(&e.expr),
+        RExpr::Assign(e) => match &e.left {
+            RPatOrExpr::Expr(e) => extract_name_for_assignment(e),
+            RPatOrExpr::Pat(pat) => match &**pat {
+                RPat::Ident(i) => Some(i.into()),
+                RPat::Expr(e) => extract_name_for_assignment(e),
+                _ => None,
+            },
+        },
+        _ => Name::try_from(e).ok(),
     }
 }

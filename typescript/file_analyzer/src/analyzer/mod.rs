@@ -97,6 +97,8 @@ pub(crate) struct Ctx {
     should_store_truthy_for_access: bool,
     in_switch_case_test: bool,
 
+    in_opt_chain: bool,
+
     in_declare: bool,
     in_fn_without_body: bool,
     in_global: bool,
@@ -360,6 +362,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 in_cond: false,
                 should_store_truthy_for_access: false,
                 in_switch_case_test: false,
+                in_opt_chain: false,
                 in_declare: false,
                 in_fn_without_body: false,
                 in_global: false,
@@ -478,7 +481,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         // }
 
         self.duplicated_tracker.record_all(dup);
-        self.scope.copy_hoisted_vars_from(&mut child_scope);
+        self.scope.move_vars_from_child(&mut child_scope);
         self.prepend_stmts.extend(prepend_stmts);
         self.append_stmts.extend(append_stmts);
 

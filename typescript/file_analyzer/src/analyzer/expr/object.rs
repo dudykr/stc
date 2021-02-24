@@ -341,23 +341,27 @@ impl Analyzer<'_, '_> {
         }
         let mut to = to.foldable();
         match to {
-            Type::TypeLit(ref mut lit) => match rhs {
-                Type::TypeLit(rhs) => {
-                    lit.members.extend(rhs.members);
-                    return Ok(to);
+            Type::TypeLit(ref mut lit) => {
+                lit.metadata.inexact = true;
+
+                match rhs {
+                    Type::TypeLit(rhs) => {
+                        lit.members.extend(rhs.members);
+                        return Ok(to);
+                    }
+                    Type::Union(rhs) => {
+                        return Ok(Type::Union(Union {
+                            span: lit.span,
+                            types: rhs
+                                .types
+                                .into_iter()
+                                .map(|rhs| self.append_type(to.clone(), rhs))
+                                .collect::<Result<_, _>>()?,
+                        }))
+                    }
+                    _ => {}
                 }
-                Type::Union(rhs) => {
-                    return Ok(Type::Union(Union {
-                        span: lit.span,
-                        types: rhs
-                            .types
-                            .into_iter()
-                            .map(|rhs| self.append_type(to.clone(), rhs))
-                            .collect::<Result<_, _>>()?,
-                    }))
-                }
-                _ => {}
-            },
+            }
 
             Type::Union(to) => {
                 return Ok(Type::Union(Union {

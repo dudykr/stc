@@ -1,5 +1,6 @@
 use self::return_type::LoopBreakerFinder;
 use super::Analyzer;
+use super::Ctx;
 use crate::{
     analyzer::{scope::ScopeKind, util::ResultExt},
     validator,
@@ -22,10 +23,10 @@ use swc_common::DUMMY_SP;
 use swc_ecma_utils::Value::Known;
 
 mod ambient_decl;
-mod decl;
 mod loops;
 pub(crate) mod return_type;
 mod try_catch;
+mod var_decl;
 
 #[validator]
 impl Analyzer<'_, '_> {
@@ -68,7 +69,13 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RWhileStmt) {
-        let test = node.test.validate_with_default(self)?;
+        let test = {
+            let ctx = Ctx {
+                in_cond: true,
+                ..self.ctx
+            };
+            node.test.validate_with_default(&mut *self.with_ctx(ctx))?
+        };
         self.check_for_inifinite_loop(&test, &node.body);
 
         node.body.visit_with(self);
@@ -80,10 +87,10 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RDoWhileStmt) {
+        node.body.visit_with(self);
+
         let test = node.test.validate_with_default(self)?;
         self.check_for_inifinite_loop(&test, &node.body);
-
-        node.body.visit_with(self);
 
         Ok(())
     }

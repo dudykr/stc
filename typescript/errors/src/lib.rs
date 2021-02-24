@@ -710,6 +710,13 @@ impl Error {
         self.convert_all_inner(&mut op)
     }
 
+    pub fn actual(&self) -> &Self {
+        match self {
+            Error::DebugContext(ctx) => ctx.inner.actual(),
+            _ => self,
+        }
+    }
+
     fn convert_all_inner<F>(self, op: &mut F) -> Self
     where
         F: FnMut(Self) -> Self,

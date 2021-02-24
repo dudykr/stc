@@ -29,3 +29,5 @@ keyofInferenceLowerPriorityThanReturn.ts
 arrayLiteralInference.ts
 recursiveIntersectionTypes.ts
 typeRelationships.ts
+intersectionThisTypes.ts
+generatorReturnContextualType.ts

@@ -42,6 +42,7 @@ impl Analyzer<'_, '_> {
         pat: &RPat,
         export: bool,
         ty: Option<Type>,
+        actual_ty: Option<Type>,
     ) -> ValidationResult<()> {
         let span = ty
             .as_ref()
@@ -67,6 +68,7 @@ impl Analyzer<'_, '_> {
                     kind,
                     name.clone(),
                     ty.clone(),
+                    actual_ty,
                     // initialized
                     true,
                     // allow_multiple
@@ -87,7 +89,7 @@ impl Analyzer<'_, '_> {
                     p.left,
                     ty
                 );
-                self.declare_vars_inner_with_ty(kind, &p.left, export, ty)?;
+                self.declare_vars_inner_with_ty(kind, &p.left, export, ty, actual_ty)?;
 
                 return Ok(());
             }
@@ -162,7 +164,8 @@ impl Analyzer<'_, '_> {
                                 None => None,
                             };
 
-                            self.declare_vars_inner_with_ty(kind, elem, export, elem_ty)?;
+                            // TODO: actual_ty
+                            self.declare_vars_inner_with_ty(kind, elem, export, elem_ty, None)?;
                         }
                         // Skip
                         None => {}
@@ -232,17 +235,30 @@ impl Analyzer<'_, '_> {
                                     let _type_of_default_value =
                                         value.validate_with_default(self).report(&mut self.storage);
 
-                                    self.declare_vars_inner_with_ty(kind, &RPat::Ident(key.clone()), export, prop_ty)
-                                        .context(
-                                            "tried to declare a variable from an assignment property in an object \
-                                             pattern",
-                                        )?;
+                                    // TODO: actual_ty
+                                    self.declare_vars_inner_with_ty(
+                                        kind,
+                                        &RPat::Ident(key.clone()),
+                                        export,
+                                        prop_ty,
+                                        None,
+                                    )
+                                    .context(
+                                        "tried to declare a variable from an assignment property in an object pattern",
+                                    )?;
                                 }
                                 None => {
-                                    self.declare_vars_inner_with_ty(kind, &RPat::Ident(key.clone()), export, prop_ty)
-                                        .context(
-                                            "tried to declare a variable from a simple property in an object pattern",
-                                        )?;
+                                    // TODO: actual_ty
+                                    self.declare_vars_inner_with_ty(
+                                        kind,
+                                        &RPat::Ident(key.clone()),
+                                        export,
+                                        prop_ty,
+                                        None,
+                                    )
+                                    .context(
+                                        "tried to declare a variable from a simple property in an object pattern",
+                                    )?;
                                 }
                             }
                         }
@@ -259,7 +275,8 @@ impl Analyzer<'_, '_> {
                                 None => None,
                             };
 
-                            self.declare_vars_inner_with_ty(kind, &p.value, export, prop_ty)
+                            // TODO: actual_ty
+                            self.declare_vars_inner_with_ty(kind, &p.value, export, prop_ty, None)
                                 .context("tried to declare a variable from key-value property in an object pattern")?;
                         }
 

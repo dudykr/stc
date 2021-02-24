@@ -1,0 +1,72 @@
+warning: Type
+ --> $DIR/tests/visualize/types/this/class/chained-1.ts:3:16
+  |
+3 |         return this;
+  |                ^^^^
+  |
+  = note: this
+
+warning: Type
+ --> $DIR/tests/visualize/types/this/class/chained-1.ts:6:17
+  |
+6 | class B extends A {
+  |                 ^
+  |
+  = note: A
+
+warning: Type
+ --> $DIR/tests/visualize/types/this/class/chained-1.ts:8:16
+  |
+8 |         return this;
+  |                ^^^^
+  |
+  = note: this
+
+warning: Type
+  --> $DIR/tests/visualize/types/this/class/chained-1.ts:11:17
+   |
+11 | class C extends B {
+   |                 ^
+   |
+   = note: B
+
+warning: Type
+  --> $DIR/tests/visualize/types/this/class/chained-1.ts:13:16
+   |
+13 |         return this;
+   |                ^^^^
+   |
+   = note: this
+
+warning: Type
+  --> $DIR/tests/visualize/types/this/class/chained-1.ts:17:16
+   |
+17 | export var z = c.foo().bar().baz();  // Fluent pattern
+   |                ^
+   |
+   = note: C
+
+warning: Type
+  --> $DIR/tests/visualize/types/this/class/chained-1.ts:17:16
+   |
+17 | export var z = c.foo().bar().baz();  // Fluent pattern
+   |                ^^^^^^^
+   |
+   = note: C
+
+warning: Type
+  --> $DIR/tests/visualize/types/this/class/chained-1.ts:17:16
+   |
+17 | export var z = c.foo().bar().baz();  // Fluent pattern
+   |                ^^^^^^^^^^^^^
+   |
+   = note: C
+
+warning: Type
+  --> $DIR/tests/visualize/types/this/class/chained-1.ts:17:16
+   |
+17 | export var z = c.foo().bar().baz();  // Fluent pattern
+   |                ^^^^^^^^^^^^^^^^^^^
+   |
+   = note: C
+

@@ -51,8 +51,9 @@ use std::mem::replace;
 use std::mem::take;
 use std::{borrow::Cow, collections::hash_map::Entry, fmt::Debug, iter, iter::repeat, slice};
 use swc_atoms::js_word;
+use swc_common::Spanned;
 use swc_common::TypeEq;
-use swc_common::{util::move_map::MoveMap, Mark, Span, Spanned, SyntaxContext, DUMMY_SP};
+use swc_common::{util::move_map::MoveMap, Mark, Span, SyntaxContext, DUMMY_SP};
 use swc_ecma_ast::*;
 
 mod this;
@@ -268,15 +269,24 @@ impl Scope<'_> {
         self.parent?.current_module_name()
     }
 
-    pub fn copy_hoisted_vars_from(&mut self, from: &mut Scope) {
-        match from.kind {
+    pub fn move_vars_from_child(&mut self, child: &mut Scope) {
+        match child.kind {
             // We don't copy variable information from nested function.
             ScopeKind::Module | ScopeKind::Method | ScopeKind::Fn | ScopeKind::ArrowFn => return,
             _ => {}
         }
 
-        for (name, var) in from.vars.drain() {
-            if var.kind == VarDeclKind::Var {
+        for (name, var) in child.vars.drain() {
+            if var.copied {
+                match self.vars.entry(name.clone()) {
+                    Entry::Occupied(mut e) => {
+                        if let Some(actual_ty) = var.actual_ty {
+                            e.get_mut().actual_ty = Some(actual_ty);
+                        }
+                    }
+                    Entry::Vacant(..) => {}
+                }
+            } else if var.kind == VarDeclKind::Var {
                 self.vars.insert(name, var);
             }
         }
@@ -415,7 +425,7 @@ impl Scope<'_> {
 impl Analyzer<'_, '_> {
     /// Overrides a variable. Used for removing lazily-typed stuffs.
     pub(super) fn override_var(&mut self, kind: VarDeclKind, name: Id, ty: Type) -> ValidationResult<()> {
-        self.declare_var(ty.span(), kind, name, Some(ty), true, true)?;
+        self.declare_var(ty.span(), kind, name, Some(ty), None, true, true)?;
 
         Ok(())
     }
@@ -484,7 +494,7 @@ impl Analyzer<'_, '_> {
         res
     }
 
-    pub(super) fn expand_top_ref<'a>(&mut self, span: Span, ty: Cow<'a, Type>) -> ValidationResult<Cow<'a, Type>> {
+    pub(crate) fn expand_top_ref<'a>(&mut self, span: Span, ty: Cow<'a, Type>) -> ValidationResult<Cow<'a, Type>> {
         if !ty.normalize().is_ref_type() {
             return Ok(ty);
         }
@@ -558,15 +568,21 @@ impl Analyzer<'_, '_> {
     }
 
     pub fn declare_vars(&mut self, kind: VarDeclKind, pat: &RPat) -> ValidationResult<()> {
-        self.declare_vars_inner_with_ty(kind, pat, false, None)
+        self.declare_vars_inner_with_ty(kind, pat, false, None, None)
     }
 
-    pub fn declare_vars_with_ty(&mut self, kind: VarDeclKind, pat: &RPat, ty: Option<Type>) -> ValidationResult<()> {
-        self.declare_vars_inner_with_ty(kind, pat, false, ty)
+    pub fn declare_vars_with_ty(
+        &mut self,
+        kind: VarDeclKind,
+        pat: &RPat,
+        ty: Option<Type>,
+        actual_ty: Option<Type>,
+    ) -> ValidationResult<()> {
+        self.declare_vars_inner_with_ty(kind, pat, false, ty, actual_ty)
     }
 
     pub(super) fn declare_vars_inner(&mut self, kind: VarDeclKind, pat: &RPat, export: bool) -> ValidationResult<()> {
-        self.declare_vars_inner_with_ty(kind, pat, export, None)
+        self.declare_vars_inner_with_ty(kind, pat, export, None, None)
     }
 
     pub(super) fn resolve_typeof(&mut self, span: Span, name: &RTsEntityName) -> ValidationResult {
@@ -582,8 +598,6 @@ impl Analyzer<'_, '_> {
                     .resolve_typeof(span, &n.left)
                     .context("tried to resolve lhs of typeof")?;
                 let i = &n.right;
-
-                let obj = self.expand_top_ref(span, Cow::Owned(obj))?.into_owned();
 
                 self.access_property(
                     span,
@@ -644,13 +658,6 @@ impl Analyzer<'_, '_> {
         }
 
         {
-            if let Some(ty) = self.storage.get_local_var(self.ctx.module_id, name.clone()) {
-                slog::debug!(self.logger, "Scope.find_var_type({}): Handled with storage", name);
-                return Some(Cow::Owned(ty));
-            }
-        }
-
-        {
             // Improted variables
             if let Some(info) = self.imports_by_id.get(name) {
                 if let Some(var_ty) = info.data.vars.get(name.sym()) {
@@ -687,7 +694,7 @@ impl Analyzer<'_, '_> {
                         for ty in types {
                             let span = (*ty).span();
                             for excluded_ty in excludes.iter() {
-                                if ty.type_eq(excluded_ty) {
+                                if ty.normalize().type_eq(excluded_ty.normalize()) {
                                     *ty = Type::never(span)
                                 }
                             }
@@ -698,6 +705,13 @@ impl Analyzer<'_, '_> {
             }
 
             return Some(Cow::Owned(ty));
+        }
+
+        {
+            if let Some(ty) = self.storage.get_local_var(self.ctx.module_id, name.clone()) {
+                slog::debug!(self.logger, "Scope.find_var_type({}): Handled with storage", name);
+                return Some(Cow::Owned(ty));
+            }
         }
 
         None
@@ -753,18 +767,22 @@ impl Analyzer<'_, '_> {
 
         slog::debug!(self.logger, "({}) Analyzer.find_type(`{}`)", self.scope.depth(), name);
 
+        let mut src = vec![];
         if !self.is_builtin {
             if let Ok(ty) = self.env.get_global_type(DUMMY_SP, name.sym()) {
                 debug_assert!(ty.is_clone_cheap(), "{:?}", ty);
 
                 slog::debug!(self.logger, "Using builtin / global type");
-                return Some(ItemRef::Owned(vec![ty].into_iter()));
+                src.push(ty.clone());
             }
         }
 
         if let Some(ty) = self.scope.find_type(name) {
             slog::debug!(self.logger, "Using type from scope: {:?}", ty);
-            return Some(ty);
+            src.extend(ty.into_iter().map(Cow::into_owned));
+            return Some(ItemRef::Owned(
+                vec![Type::intersection(DUMMY_SP, src).cheap()].into_iter(),
+            ));
         }
 
         if let Some(ty) = self.storage.get_local_type(self.ctx.module_id, name.clone()) {
@@ -807,10 +825,24 @@ impl Analyzer<'_, '_> {
         kind: VarDeclKind,
         name: Id,
         ty: Option<Type>,
+        actual_ty: Option<Type>,
         initialized: bool,
         allow_multiple: bool,
     ) -> ValidationResult<()> {
         let ty = ty.map(|ty| ty.cheap());
+        let actual_ty = actual_ty
+            .and_then(|ty| {
+                if ty.is_any()
+                    || ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
+                    || ty.is_kwd(TsKeywordTypeKind::TsNullKeyword)
+                    || ty.is_unknown()
+                {
+                    None
+                } else {
+                    Some(ty)
+                }
+            })
+            .map(|ty| ty.cheap());
 
         if self.ctx.in_global {
             if let Some(ty) = ty.clone() {
@@ -899,6 +931,8 @@ impl Analyzer<'_, '_> {
                         None
                     }
                 };
+                // TODO: Use better logic
+                v.actual_ty = actual_ty.or_else(|| v.ty.clone());
 
                 self.scope.vars.insert(k, v);
             }
@@ -908,7 +942,7 @@ impl Analyzer<'_, '_> {
                 let info = VarInfo {
                     kind,
                     ty: ty.clone(),
-                    actual_ty: ty,
+                    actual_ty: actual_ty.or_else(|| ty.clone()),
                     initialized,
                     copied: false,
                 };
@@ -919,22 +953,34 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    pub fn declare_complex_vars(&mut self, kind: VarDeclKind, pat: &RPat, ty: Type) -> ValidationResult<()> {
+    pub fn declare_complex_vars(
+        &mut self,
+        kind: VarDeclKind,
+        pat: &RPat,
+        ty: Type,
+        actual_ty: Option<Type>,
+    ) -> ValidationResult<()> {
         let span = pat.span();
 
-        match ty.normalize() {
-            Type::Ref(..) => {
-                let ty = self
-                    .expand_top_ref(ty.span(), Cow::Borrowed(&ty))
-                    .context("tried to expand reference to declare a complex variable")?;
+        if match pat {
+            RPat::Ident(..) => false,
+            _ => true,
+        } {
+            match ty.normalize() {
+                Type::Ref(..) => {
+                    let ty = self
+                        .expand_top_ref(ty.span(), Cow::Borrowed(&ty))
+                        .context("tried to expand reference to declare a complex variable")?;
 
-                return self.declare_complex_vars(kind, pat, ty.into_owned());
+                    return self.declare_complex_vars(kind, pat, ty.into_owned(), actual_ty);
+                }
+                _ => {}
             }
-            _ => {}
         }
 
         match pat {
-            RPat::Assign(p) => return self.declare_complex_vars(kind, &p.left, ty),
+            // TODO
+            RPat::Assign(p) => return self.declare_complex_vars(kind, &p.left, ty, actual_ty),
 
             RPat::Ident(ref i) => {
                 slog::debug!(&self.logger, "declare_complex_vars: declaring {}", i.sym);
@@ -943,6 +989,7 @@ impl Analyzer<'_, '_> {
                     kind,
                     i.into(),
                     Some(ty),
+                    actual_ty,
                     // initialized
                     true,
                     // let/const declarations does not allow multiple declarations with
@@ -971,7 +1018,8 @@ impl Analyzer<'_, '_> {
                         for (elem, tuple_element) in elems.into_iter().zip(tuple_elements) {
                             match *elem {
                                 Some(ref elem) => {
-                                    self.declare_complex_vars(kind, elem, *tuple_element.ty.clone())?;
+                                    // TODO: actual_ty
+                                    self.declare_complex_vars(kind, elem, *tuple_element.ty.clone(), None)?;
                                 }
                                 None => {
                                     // Skip
@@ -986,7 +1034,8 @@ impl Analyzer<'_, '_> {
                         for elem in elems.into_iter() {
                             match *elem {
                                 Some(ref elem) => {
-                                    self.declare_complex_vars(kind, elem, *elem_type.clone())?;
+                                    // TODO: actual_ty
+                                    self.declare_complex_vars(kind, elem, *elem_type.clone(), None)?;
                                 }
                                 None => {
                                     // Skip
@@ -1035,7 +1084,8 @@ impl Analyzer<'_, '_> {
                                             .collect(),
                                     }
                                     .into();
-                                    self.declare_complex_vars(kind, elem, ty)?;
+                                    // TODO: actual_ty
+                                    self.declare_complex_vars(kind, elem, ty, None)?;
                                 }
                                 None => {}
                             }
@@ -1052,7 +1102,7 @@ impl Analyzer<'_, '_> {
                         for elem in elems {
                             match elem {
                                 Some(elem) => {
-                                    self.declare_complex_vars(kind, elem, ty.clone())?;
+                                    self.declare_complex_vars(kind, elem, ty.clone(), Some(ty.clone()))?;
                                 }
                                 None => {}
                             }
@@ -1105,7 +1155,8 @@ impl Analyzer<'_, '_> {
                         match p {
                             RObjectPatProp::KeyValue(RKeyValuePatProp { ref key, ref value, .. }) => {
                                 if let Some(ty) = find(&members, key) {
-                                    a.declare_complex_vars(kind, value, ty)?;
+                                    // TODO: actual_ty
+                                    a.declare_complex_vars(kind, value, ty, None)?;
                                     return Ok(());
                                 }
                             }
@@ -1118,7 +1169,8 @@ impl Analyzer<'_, '_> {
                                     _ => {}
                                 }
                                 if let Some(ty) = find(&members, &RPropName::Ident(key.clone())) {
-                                    a.declare_complex_vars(kind, &RPat::Ident(key.clone()), ty)?;
+                                    // TODO: actual_ty
+                                    a.declare_complex_vars(kind, &RPat::Ident(key.clone()), ty, None)?;
                                     return Ok(());
                                 }
                             }
@@ -1154,13 +1206,23 @@ impl Analyzer<'_, '_> {
                         for p in props.iter() {
                             match p {
                                 RObjectPatProp::KeyValue(ref kv) => {
-                                    self.declare_complex_vars(kind, &kv.value, Type::any(kv.span()))?;
+                                    self.declare_complex_vars(
+                                        kind,
+                                        &kv.value,
+                                        Type::any(kv.span()),
+                                        Some(Type::any(kv.span())),
+                                    )?;
                                 }
 
                                 RObjectPatProp::Assign(RAssignPatProp { span, key, value, .. }) => {
                                     let ty = value.validate_with_default(self).try_opt()?;
 
-                                    self.declare_complex_vars(kind, &RPat::Ident(key.clone()), Type::any(*span))?;
+                                    self.declare_complex_vars(
+                                        kind,
+                                        &RPat::Ident(key.clone()),
+                                        Type::any(*span),
+                                        Some(Type::any(*span)),
+                                    )?;
                                 }
 
                                 _ => unimplemented!("handle_elems({:#?})", p),
@@ -1196,14 +1258,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     Type::Ref(..) => {
-                        let ctx = Ctx {
-                            preserve_ref: false,
-                            ignore_expand_prevention_for_top: true,
-                            ..self.ctx
-                        };
-                        let ty = self.with_ctx(ctx).expand_fully(span, ty, false)?;
-
-                        return self.declare_complex_vars(kind, pat, ty);
+                        return self.declare_complex_vars(kind, pat, ty, actual_ty);
                     }
 
                     // TODO: Check if allowing class is same (I mean static vs instance method
@@ -1219,7 +1274,8 @@ impl Analyzer<'_, '_> {
                                     let ty =
                                         self.access_property(span, ty.clone(), &key, TypeOfMode::RValue, IdCtx::Var)?;
 
-                                    self.declare_complex_vars(kind, &prop.value, ty)?;
+                                    // TODO: actual_ty
+                                    self.declare_complex_vars(kind, &prop.value, ty, None)?;
                                 }
                                 RObjectPatProp::Assign(prop) => {
                                     let mut key = Key::Normal {
@@ -1235,7 +1291,8 @@ impl Analyzer<'_, '_> {
                                             unimplemented!("pattern with default where rhs is this")
                                         }
                                         None => {
-                                            self.declare_complex_vars(kind, &RPat::Ident(prop.key.clone()), ty)?;
+                                            // TODO: actual_ty
+                                            self.declare_complex_vars(kind, &RPat::Ident(prop.key.clone()), ty, None)?;
                                         }
                                     }
                                 }
@@ -1261,7 +1318,17 @@ impl Analyzer<'_, '_> {
                     span,
                     elem_type: box ty,
                 });
-                return self.declare_complex_vars(kind, &pat.arg, ty);
+                return self.declare_complex_vars(
+                    kind,
+                    &pat.arg,
+                    ty,
+                    actual_ty.map(|ty| {
+                        Type::Array(Array {
+                            span,
+                            elem_type: box ty,
+                        })
+                    }),
+                );
             }
 
             _ => unimplemented!("declare_complex_vars({:#?}, {:#?})", pat, ty),

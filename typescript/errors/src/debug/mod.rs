@@ -12,6 +12,8 @@ use stc_ts_types::Id;
 use stc_ts_types::Ref;
 use stc_ts_types::Type;
 use stc_ts_types::TypeLit;
+use stc_ts_types::TypeParam;
+use std::collections::HashSet;
 use swc_common::{sync::Lrc, SourceMap, DUMMY_SP};
 use swc_ecma_ast::*;
 use swc_ecma_codegen::{text_writer::JsWriter, Emitter};
@@ -35,7 +37,7 @@ pub fn dump_type_as_string(cm: &Lrc<SourceMap>, t: &Type) -> String {
             expr: box Expr::TsAs(TsAsExpr {
                 span: DUMMY_SP,
                 expr: box Expr::Ident(Ident::new("TYPE".into(), DUMMY_SP)),
-                type_ann: box RTsType::from(t.clone().fold_with(&mut Visualizer)).into_orig(),
+                type_ann: box RTsType::from(t.clone().fold_with(&mut Visualizer::default())).into_orig(),
             }),
         })));
 
@@ -52,7 +54,7 @@ pub fn dump_type_as_string(cm: &Lrc<SourceMap>, t: &Type) -> String {
                                 members: t.body.clone(),
                                 metadata: Default::default(),
                             })
-                            .fold_with(&mut Visualizer),
+                            .fold_with(&mut Visualizer::default()),
                         )
                         .into_orig(),
                     }),
@@ -181,10 +183,23 @@ fn filter(mut bt: Backtrace) -> Backtrace {
     frames.into()
 }
 
-struct Visualizer;
+#[derive(Default)]
+struct Visualizer {
+    done: HashSet<Id>,
+}
 impl Fold<Id> for Visualizer {
     fn fold(&mut self, id: Id) -> Id {
         Id::word(format!("{}", id).into())
+    }
+}
+
+impl Fold<TypeParam> for Visualizer {
+    fn fold(&mut self, mut ty: TypeParam) -> TypeParam {
+        ty.name = ty.name.fold_with(self);
+        if !self.done.insert(ty.name.clone()) {
+            return ty;
+        }
+        ty.fold_children_with(self)
     }
 }
 

@@ -424,6 +424,10 @@ fn do_test(treat_error_as_bug: bool, file_name: &Path) -> Result<(), StdErr> {
 
     let err_count = actual_errors.len();
 
+    if expected_errors.is_empty() {
+        println!("[INFER_ONLY]{}", file_name.display());
+    }
+
     if !success {
         panic!(
             "\n============================================================\n{:?}

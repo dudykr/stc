@@ -161,6 +161,13 @@ impl Analyzer<'_, '_> {
                 return Some(true);
             }
 
+            Type::Interface(Interface { name, .. }) if *name.sym() == *"ObjectConstructor" => match child {
+                Type::Class(..) | Type::ClassInstance(..) | Type::Interface(..) | Type::TypeLit(..) => {
+                    return Some(true);
+                }
+                _ => {}
+            },
+
             Type::Interface(Interface { name, .. }) if *name.sym() == *"ArrayConstructor" => match child {
                 Type::Array(..) | Type::Tuple(..) => {
                     return Some(true);

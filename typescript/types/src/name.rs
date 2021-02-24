@@ -3,6 +3,7 @@ use smallvec::{smallvec, SmallVec};
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RExprOrSuper;
 use stc_ts_ast_rnode::RIdent;
+use stc_ts_ast_rnode::RLit;
 use stc_ts_ast_rnode::RMemberExpr;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsThisTypeOrIdent;
@@ -18,6 +19,20 @@ type Inner = SmallVec<[Id; 4]>;
 /// Efficient alternative for [RTsEntityName].
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub struct Name(Inner);
+
+impl Name {
+    pub fn top(&self) -> Id {
+        self.0[0].clone()
+    }
+
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    pub fn as_ids(&self) -> &[Id] {
+        &self.0
+    }
+}
 
 impl Debug for Name {
     #[cold]
@@ -125,28 +140,18 @@ impl<'a> TryFrom<&'a RMemberExpr> for Name {
     type Error = ();
 
     fn try_from(e: &RMemberExpr) -> Result<Self, ()> {
-        if e.computed {
-            return Err(());
-        }
+        let mut name = match &e.obj {
+            RExprOrSuper::Expr(box RExpr::Ident(i)) => Name::from(i),
+            RExprOrSuper::Expr(box RExpr::Member(member)) => member.try_into()?,
+            _ => return Err(()),
+        };
 
-        match &e.obj {
-            RExprOrSuper::Expr(box RExpr::Ident(i)) => {
-                let mut name = Name::from(i);
-                name.0.push(match &*e.prop {
-                    RExpr::Ident(i) => i.clone().into(),
-                    _ => return Err(()),
-                });
-                Ok(name)
-            }
-            RExprOrSuper::Expr(box RExpr::Member(member)) => {
-                let mut obj: Name = member.try_into()?;
-                obj.0.push(match &*e.prop {
-                    RExpr::Ident(i) => i.clone().into(),
-                    _ => return Err(()),
-                });
-                Ok(obj)
-            }
-            _ => Err(()),
-        }
+        name.0.push(match &*e.prop {
+            RExpr::Ident(i) if !e.computed => i.clone().into(),
+            RExpr::Lit(RLit::Str(s)) if e.computed => Id::word(s.value.clone()),
+            _ => return Err(()),
+        });
+
+        return Ok(name);
     }
 }

@@ -86,6 +86,7 @@ use stc_ts_types::TupleElement;
 use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
+use stc_ts_types::TypeLitMetadata;
 use stc_ts_types::TypeParam;
 use stc_ts_types::TypeParamDecl;
 use stc_ts_types::TypeParamInstantiation;
@@ -181,6 +182,7 @@ impl Analyzer<'_, '_> {
                     } else {
                         child.prevent_expansion(&mut ty);
                     }
+                    ty.make_cheap();
                     let alias = Alias {
                         span,
                         ty: box ty,
@@ -241,7 +243,10 @@ impl Analyzer<'_, '_> {
         Ok(TypeLit {
             span: lit.span,
             members: lit.members.validate_with(self)?,
-            metadata: Default::default(),
+            metadata: TypeLitMetadata {
+                specified: true,
+                ..Default::default()
+            },
         })
     }
 }

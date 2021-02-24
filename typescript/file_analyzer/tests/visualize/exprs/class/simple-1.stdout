@@ -1,0 +1,45 @@
+warning: Type
+ --> $DIR/tests/visualize/exprs/class/simple-1.ts:1:9
+  |
+1 |   let C = class {
+  |  _________^
+2 | |     foo() {
+3 | |         return new C();
+4 | |     }
+5 | | };
+  | |_^
+  |
+  = note: anonymous class
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/class/simple-1.ts:6:21
+  |
+6 | export let x = (new C).foo();
+  |                     ^
+  |
+  = note: anonymous class
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/class/simple-1.ts:6:17
+  |
+6 | export let x = (new C).foo();
+  |                 ^^^^^
+  |
+  = note: anonymous class
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/class/simple-1.ts:6:16
+  |
+6 | export let x = (new C).foo();
+  |                ^^^^^^^
+  |
+  = note: anonymous class
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/class/simple-1.ts:6:16
+  |
+6 | export let x = (new C).foo();
+  |                ^^^^^^^^^^^^^
+  |
+  = note: void
+

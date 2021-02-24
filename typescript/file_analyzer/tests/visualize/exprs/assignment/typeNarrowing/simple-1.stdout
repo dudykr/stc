@@ -1,0 +1,56 @@
+warning: Type
+ --> $DIR/tests/visualize/exprs/assignment/typeNarrowing/simple-1.ts:2:1
+  |
+2 | x = 1000;
+  | ^^^^^^^^
+  |
+  = note: 1000
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/assignment/typeNarrowing/simple-1.ts:4:5
+  |
+4 |     x; // number
+  |     ^
+  |
+  = note: number
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/assignment/typeNarrowing/simple-1.ts:5:5
+  |
+5 |     x = "";
+  |     ^^^^^^
+  |
+  = note: ""
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/assignment/typeNarrowing/simple-1.ts:6:14
+  |
+6 | } while (x = x.length)
+  |              ^
+  |
+  = note: string
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/assignment/typeNarrowing/simple-1.ts:6:14
+  |
+6 | } while (x = x.length)
+  |              ^^^^^^^^
+  |
+  = note: number
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/assignment/typeNarrowing/simple-1.ts:6:10
+  |
+6 | } while (x = x.length)
+  |          ^^^^^^^^^^^^
+  |
+  = note: number
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/assignment/typeNarrowing/simple-1.ts:7:1
+  |
+7 | x; // number
+  | ^
+  |
+  = note: number
+

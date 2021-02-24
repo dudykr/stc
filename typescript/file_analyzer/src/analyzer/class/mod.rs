@@ -227,7 +227,7 @@ impl Analyzer<'_, '_> {
 
                 match param {
                     RParamOrTsParamProp::Param(RParam { ref pat, .. }) => {
-                        match child.declare_vars_with_ty(VarDeclKind::Let, pat, Some(*p.ty.clone())) {
+                        match child.declare_vars_with_ty(VarDeclKind::Let, pat, Some(*p.ty.clone()), None) {
                             Ok(()) => {}
                             Err(err) => {
                                 child.storage.report(err);
@@ -244,6 +244,7 @@ impl Analyzer<'_, '_> {
                             VarDeclKind::Let,
                             i.clone().into(),
                             Some(*p.ty.clone()),
+                            None,
                             true,
                             false,
                         ) {
@@ -432,7 +433,7 @@ impl Analyzer<'_, '_> {
         }
 
         let ret_ty = box declared_ret_ty.unwrap_or_else(|| {
-            inferred_ret_ty.unwrap_or_else(|| {
+            inferred_ret_ty.map(|ty| ty.generalize_lit()).unwrap_or_else(|| {
                 Type::Keyword(RTsKeywordType {
                     span: c_span,
                     kind: if c.function.body.is_some() {
@@ -1106,6 +1107,9 @@ impl Analyzer<'_, '_> {
                                 RParamOrTsParamProp::Param(..) => {}
                             }
                         }
+
+                        let member = constructor.validate_with(child)?;
+                        child.scope.this_class_members.push((index, member.into()));
                     }
 
                     // Handle properties
@@ -1275,6 +1279,7 @@ impl Analyzer<'_, '_> {
                         VarDeclKind::Var,
                         i.into(),
                         Some(ty),
+                        None,
                         // initialized = true
                         true,
                         // declare Class does not allow multiple declarations.
@@ -1338,6 +1343,7 @@ impl Analyzer<'_, '_> {
             VarDeclKind::Var,
             c.ident.clone().into(),
             Some(ty),
+            None,
             // initialized = true
             true,
             // declare Class does not allow multiple declarations.

@@ -59,6 +59,10 @@ impl Marks {
 }
 
 pub(crate) trait MarkExt: Copy + Into<Mark> {
+    fn as_ctxt(self) -> SyntaxContext {
+        let ctxt = SyntaxContext::empty();
+        ctxt.apply_mark(self.into())
+    }
     fn apply_to_type(self, ty: &mut Type) {
         let span = ty.span();
         let span = self.apply_to_span(span);

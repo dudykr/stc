@@ -1,8 +1,9 @@
 use super::Analyzer;
-use crate::ty::TypeExt;
+use crate::ty::type_facts::TypeFactsHandler;
 use crate::type_facts::TypeFacts;
 use crate::util::type_ext::TypeVecExt;
 use crate::ValidationResult;
+use rnode::FoldWith;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
 use stc_ts_ast_rnode::RNumber;
@@ -25,24 +26,37 @@ use swc_common::Span;
 use swc_common::Spanned;
 use swc_common::SyntaxContext;
 use swc_common::TypeEq;
+use swc_ecma_ast::MethodKind;
 use swc_ecma_ast::TsKeywordTypeKind;
 
 mod mapped;
+mod narrowing;
 mod type_param;
 
 impl Analyzer<'_, '_> {
-    pub(crate) fn exclude_types_using_fact(&self, name: &Name, ty: &mut Type) {
+    pub(crate) fn exclude_types_using_fact(&mut self, name: &Name, ty: &mut Type) {
+        let mut types_to_exclude = vec![];
         let mut s = Some(&self.scope);
 
         while let Some(scope) = s {
-            exclude_types(ty, scope.facts.excludes.get(&name));
+            types_to_exclude.extend(scope.facts.excludes.get(&name).cloned().into_iter().flatten());
             s = scope.parent();
         }
 
-        exclude_types(ty, self.cur_facts.true_facts.excludes.get(&name));
+        types_to_exclude.extend(
+            self.cur_facts
+                .true_facts
+                .excludes
+                .get(&name)
+                .cloned()
+                .into_iter()
+                .flatten(),
+        );
+
+        self.exclude_types(ty, Some(types_to_exclude));
     }
 
-    pub(crate) fn apply_type_facts(&self, name: &Name, ty: Type) -> Type {
+    pub(crate) fn apply_type_facts(&mut self, name: &Name, ty: Type) -> Type {
         let type_facts = self.scope.get_type_facts(&name)
             | self
                 .cur_facts
@@ -52,7 +66,10 @@ impl Analyzer<'_, '_> {
                 .copied()
                 .unwrap_or(TypeFacts::None);
 
-        ty.apply_type_facts(type_facts)
+        ty.fold_with(&mut TypeFactsHandler {
+            facts: type_facts,
+            analyzer: self,
+        })
     }
 
     pub(crate) fn collect_class_members(&mut self, ty: &Type) -> ValidationResult<Option<Vec<ClassMember>>> {
@@ -273,15 +290,29 @@ impl Analyzer<'_, '_> {
                 if m.is_static {
                     return Ok(None);
                 }
-                TypeElement::Method(MethodSignature {
-                    span: m.span,
-                    key: m.key.clone(),
-                    type_params: m.type_params.clone(),
-                    params: m.params.clone(),
-                    optional: m.is_optional,
-                    ret_ty: Some(m.ret_ty.clone()),
-                    readonly: false,
-                })
+
+                match m.kind {
+                    MethodKind::Method => TypeElement::Method(MethodSignature {
+                        span: m.span,
+                        key: m.key.clone(),
+                        type_params: m.type_params.clone(),
+                        params: m.params.clone(),
+                        optional: m.is_optional,
+                        ret_ty: Some(m.ret_ty.clone()),
+                        readonly: false,
+                    }),
+                    MethodKind::Getter => TypeElement::Property(PropertySignature {
+                        span: m.span,
+                        key: m.key.clone(),
+                        params: vec![],
+                        optional: m.is_optional,
+                        type_params: None,
+                        // TODO: Check for setter property with same key.
+                        readonly: false,
+                        type_ann: Some(m.ret_ty.clone()),
+                    }),
+                    MethodKind::Setter => return Ok(None),
+                }
             }
             ClassMember::Property(p) => {
                 if p.is_static {
@@ -300,6 +331,59 @@ impl Analyzer<'_, '_> {
             }
             ClassMember::IndexSignature(i) => TypeElement::Index(i.clone()),
         }))
+    }
+
+    /// Exclude `excluded` from `ty`
+    fn exclude_type(&mut self, ty: &mut Type, excluded: &Type) {
+        if ty.normalize().type_eq(excluded.normalize()) {
+            *ty = Type::never(ty.span());
+            return;
+        }
+
+        match ty.normalize() {
+            Type::Ref(..) => {
+                // We ignore errors.
+                if let Ok(mut expanded_ty) = self.expand_top_ref(ty.span(), Cow::Borrowed(&*ty)).map(Cow::into_owned) {
+                    self.exclude_type(&mut expanded_ty, excluded);
+                    *ty = expanded_ty;
+                    return;
+                }
+            }
+            _ => {}
+        }
+
+        match excluded.normalize() {
+            Type::Union(excluded) => {
+                //
+                for excluded in &excluded.types {
+                    self.exclude_type(ty, &excluded)
+                }
+
+                return;
+            }
+            _ => {}
+        }
+
+        match ty.normalize_mut() {
+            Type::Union(ty) => {
+                for ty in &mut ty.types {
+                    self.exclude_type(ty, excluded);
+                }
+                ty.types.retain(|element| !element.is_never());
+            }
+            _ => {}
+        }
+    }
+
+    fn exclude_types(&mut self, ty: &mut Type, excludes: Option<Vec<Type>>) {
+        let excludes = match excludes {
+            Some(v) => v,
+            None => return,
+        };
+
+        for excluded in excludes {
+            self.exclude_type(ty, &excluded);
+        }
     }
 }
 
@@ -330,39 +414,5 @@ impl VisitMut<Type> for TupleNormalizer {
             }
             _ => {}
         }
-    }
-}
-
-/// Exclude `excluded` from `ty`
-fn exclude_type(ty: &mut Type, excluded: &Type) {
-    match excluded {
-        Type::Union(excluded) => {
-            //
-            for excluded in &excluded.types {
-                exclude_type(ty, &excluded)
-            }
-
-            return;
-        }
-        _ => {}
-    }
-
-    match &mut *ty {
-        Type::Union(ty) => {
-            ty.types.retain(|element| !excluded.type_eq(element));
-        }
-        _ => {}
-    }
-}
-
-fn exclude_types(ty: &mut Type, excludes: Option<&Vec<Type>>) {
-    let excludes = match excludes {
-        Some(v) => v,
-        None => return,
-    };
-    let ty = ty.normalize_mut();
-
-    for excluded in excludes {
-        exclude_type(ty, &excluded);
     }
 }
