@@ -1,0 +1,64 @@
+warning: Type
+ --> $DIR/tests/visualize/exprs/new/generic/specified-2.ts:7:32
+  |
+7 | export var aGenericClass = new D<string>();
+  |                                ^
+  |
+  = note: D
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/new/generic/specified-2.ts:7:28
+  |
+7 | export var aGenericClass = new D<string>();
+  |                            ^^^^^^^^^^^^^^^
+  |
+  = note: D
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/new/generic/specified-2.ts:9:1
+  |
+9 | aGenericClass.source
+  | ^^^^^^^^^^^^^
+  |
+  = note: D
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/new/generic/specified-2.ts:9:1
+  |
+9 | aGenericClass.source
+  | ^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: string
+
+warning: Type
+  --> $DIR/tests/visualize/exprs/new/generic/specified-2.ts:10:1
+   |
+10 | aGenericClass.recurse
+   | ^^^^^^^^^^^^^
+   |
+   = note: D
+
+warning: Type
+  --> $DIR/tests/visualize/exprs/new/generic/specified-2.ts:10:1
+   |
+10 | aGenericClass.recurse
+   | ^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: D<string>
+
+warning: Type
+  --> $DIR/tests/visualize/exprs/new/generic/specified-2.ts:11:1
+   |
+11 | aGenericClass.wrapped
+   | ^^^^^^^^^^^^^
+   |
+   = note: D
+
+warning: Type
+  --> $DIR/tests/visualize/exprs/new/generic/specified-2.ts:11:1
+   |
+11 | aGenericClass.wrapped
+   | ^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: D<D<string>>
+
