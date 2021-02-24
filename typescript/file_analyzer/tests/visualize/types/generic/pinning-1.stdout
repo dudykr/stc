@@ -1,0 +1,93 @@
+warning: Type
+ --> $DIR/tests/visualize/types/generic/pinning-1.ts:5:20
+  |
+5 |             return x;
+  |                    ^
+  |
+  = note: V
+
+warning: Type
+ --> $DIR/tests/visualize/types/generic/pinning-1.ts:7:16
+  |
+7 |         return bar;
+  |                ^^^
+  |
+  = note: <V extends U>(x: V) => V
+
+warning: Type
+  --> $DIR/tests/visualize/types/generic/pinning-1.ts:11:15
+   |
+11 | var c = new C({ length: 2 });
+   |               ^^^^^^^^^^^^^
+   |
+   = note: {
+               length: 2;
+           }
+
+warning: Type
+  --> $DIR/tests/visualize/types/generic/pinning-1.ts:11:13
+   |
+11 | var c = new C({ length: 2 });
+   |             ^
+   |
+   = note: C
+
+warning: Type
+  --> $DIR/tests/visualize/types/generic/pinning-1.ts:11:9
+   |
+11 | var c = new C({ length: 2 });
+   |         ^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: C
+
+warning: Type
+  --> $DIR/tests/visualize/types/generic/pinning-1.ts:12:9
+   |
+12 | var r = c.foo('');
+   |         ^
+   |
+   = note: C
+
+warning: Type
+  --> $DIR/tests/visualize/types/generic/pinning-1.ts:12:9
+   |
+12 | var r = c.foo('');
+   |         ^^^^^^^^^
+   |
+   = note: <V>(x: V) => V
+
+warning: Type
+  --> $DIR/tests/visualize/types/generic/pinning-1.ts:13:40
+   |
+13 | export var r2 = r({ length: 3, charAt: (x: number) => { '' } }); // error
+   |                                        ^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: (x: number) => void
+
+warning: Type
+  --> $DIR/tests/visualize/types/generic/pinning-1.ts:13:19
+   |
+13 | export var r2 = r({ length: 3, charAt: (x: number) => { '' } }); // error
+   |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: {
+               length: 3;
+               charAt: (x: number) => void;
+           }
+
+warning: Type
+  --> $DIR/tests/visualize/types/generic/pinning-1.ts:13:17
+   |
+13 | export var r2 = r({ length: 3, charAt: (x: number) => { '' } }); // error
+   |                 ^
+   |
+   = note: <V extends string>(x: V) => V
+
+warning: Type
+  --> $DIR/tests/visualize/types/generic/pinning-1.ts:13:17
+   |
+13 | export var r2 = r({ length: 3, charAt: (x: number) => { '' } }); // error
+   |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: string
+

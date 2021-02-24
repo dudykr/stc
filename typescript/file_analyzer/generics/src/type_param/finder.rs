@@ -1,6 +1,23 @@
+use fxhash::FxHashSet;
 use rnode::Visit;
+use rnode::VisitWith;
+use stc_ts_types::Id;
 use stc_ts_types::TypeParam;
 use stc_ts_types::TypeParamDecl;
+
+#[derive(Debug, Default)]
+pub struct TypeParamDeclFinder {
+    pub params: FxHashSet<Id>,
+}
+
+impl Visit<TypeParamDecl> for TypeParamDeclFinder {
+    #[inline]
+    fn visit(&mut self, decl: &TypeParamDecl) {
+        decl.visit_children_with(self);
+
+        self.params.extend(decl.params.iter().map(|v| v.name.clone()));
+    }
+}
 
 #[derive(Debug, Default)]
 pub struct TypeParamUsageFinder {

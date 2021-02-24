@@ -4,6 +4,7 @@ use rnode::Visit;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
 use rnode::VisitWith;
+use stc_ts_generics::type_param::finder::TypeParamDeclFinder;
 use stc_ts_types::Id;
 use stc_ts_types::Type;
 use stc_ts_types::TypeLit;
@@ -93,21 +94,17 @@ struct TypeParamEscapeHandler<'a, 'b, 'c> {
 
 impl VisitMut<Type> for TypeParamEscapeHandler<'_, '_, '_> {
     fn visit_mut(&mut self, ty: &mut Type) {
-        match ty.normalize() {
-            Type::Function(ty) => {
-                if let Some(type_params) = &ty.type_params {
-                    self.declared
-                        .extend(type_params.params.iter().map(|param| param.name.clone()));
-                }
-            }
-            _ => {}
-        }
+        let declared = {
+            let mut v = TypeParamDeclFinder::default();
+            ty.visit_with(&mut v);
+            v.params
+        };
 
         {
             // Fast path
             let mut v = TypeParamEscapeVisitor {
                 analyzer: self.analyzer,
-                declared: &self.declared,
+                declared: &declared,
                 should_work: false,
             };
             ty.visit_with(&mut v);

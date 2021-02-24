@@ -1,26 +1,81 @@
 use super::Type;
+use crate::analyzer::Analyzer;
 use crate::type_facts::TypeFacts;
 use rnode::Fold;
 use rnode::FoldWith;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
+use stc_ts_types::ClassMember;
+use stc_ts_types::Constructor;
+use stc_ts_types::Function;
 use stc_ts_types::IndexedAccessType;
+use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
 use stc_ts_types::Union;
+use std::borrow::Cow;
 use swc_common::Span;
 use swc_common::Spanned;
 use swc_ecma_ast::TsKeywordTypeKind;
 
-pub(super) struct TypeFactsHandler {
+pub(crate) struct TypeFactsHandler<'a, 'b, 'c> {
+    /// Used to expand references.
+    pub analyzer: &'a mut Analyzer<'b, 'c>,
     pub facts: TypeFacts,
 }
 
-impl Fold<RTsKeywordType> for TypeFactsHandler {
+impl TypeFactsHandler<'_, '_, '_> {
+    fn can_be_primitive(&mut self, ty: &Type) -> bool {
+        let ty = if let Ok(ty) = self.analyzer.expand_top_ref(ty.span(), Cow::Borrowed(ty)) {
+            ty
+        } else {
+            return true;
+        };
+
+        match ty.normalize() {
+            Type::Interface(..) | Type::TypeLit(..) | Type::Class(..) => return false,
+            _ => {}
+        }
+
+        true
+    }
+}
+
+impl Fold<TypeElement> for TypeFactsHandler<'_, '_, '_> {
+    #[inline]
+    fn fold(&mut self, el: TypeElement) -> TypeElement {
+        el
+    }
+}
+
+impl Fold<ClassMember> for TypeFactsHandler<'_, '_, '_> {
+    #[inline]
+    fn fold(&mut self, m: ClassMember) -> ClassMember {
+        m
+    }
+}
+
+impl Fold<Function> for TypeFactsHandler<'_, '_, '_> {
+    #[inline]
+    fn fold(&mut self, m: Function) -> Function {
+        m
+    }
+}
+
+impl Fold<Constructor> for TypeFactsHandler<'_, '_, '_> {
+    #[inline]
+    fn fold(&mut self, m: Constructor) -> Constructor {
+        m
+    }
+}
+
+impl Fold<RTsKeywordType> for TypeFactsHandler<'_, '_, '_> {
     fn fold(&mut self, ty: RTsKeywordType) -> RTsKeywordType {
         if self.facts.contains(TypeFacts::Truthy) {
             match ty.kind {
-                TsKeywordTypeKind::TsUndefinedKeyword | TsKeywordTypeKind::TsNullKeyword => {
+                TsKeywordTypeKind::TsVoidKeyword
+                | TsKeywordTypeKind::TsUndefinedKeyword
+                | TsKeywordTypeKind::TsNullKeyword => {
                     return RTsKeywordType {
                         span: ty.span,
                         kind: TsKeywordTypeKind::TsNeverKeyword,
@@ -80,7 +135,7 @@ impl Fold<RTsKeywordType> for TypeFactsHandler {
     }
 }
 
-impl Fold<Union> for TypeFactsHandler {
+impl Fold<Union> for TypeFactsHandler<'_, '_, '_> {
     fn fold(&mut self, mut u: Union) -> Union {
         u = u.fold_children_with(self);
 
@@ -126,7 +181,7 @@ impl Fold<Union> for TypeFactsHandler {
 
                     Type::Param(..) => false,
 
-                    _ => true,
+                    _ => self.can_be_primitive(&ty),
                 });
             }
         }
@@ -135,7 +190,7 @@ impl Fold<Union> for TypeFactsHandler {
     }
 }
 
-impl Fold<Type> for TypeFactsHandler {
+impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
     fn fold(&mut self, mut ty: Type) -> Type {
         // TODO: Don't do anything if type fact is none.
 

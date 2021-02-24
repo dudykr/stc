@@ -124,16 +124,22 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::TypeLit(TypeLit {
-                    members: rhs_members, ..
+                    members: rhs_members,
+                    metadata: rhs_metadata,
+                    ..
                 }) => {
+                    let allow_unknown_rhs = opts.allow_unknown_rhs || rhs_metadata.inexact;
                     for r in rhs_members {
-                        if !opts.allow_unknown_rhs {
+                        if !allow_unknown_rhs {
                             unhandled_rhs.push(r.span());
                         }
                     }
 
                     self.handle_assignment_of_type_elements_to_type_elements(
-                        opts,
+                        AssignOpts {
+                            allow_unknown_rhs,
+                            ..opts
+                        },
                         &mut missing_fields,
                         &mut unhandled_rhs,
                         lhs,
@@ -186,17 +192,34 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
-                Type::Class(rhs) => {
+                Type::Class(rhs_cls) => {
                     // TODO: Check if constructor exists.
-                    if rhs.is_abstract {
+                    if rhs_cls.is_abstract {
                         return Err(Error::CannotAssignAbstractConstructorToNonAbstractConstructor { span });
                     }
-                    //
-                    for el in lhs {
-                        self.assign_class_members_to_type_element(opts, el, &rhs.body)?;
-                    }
 
-                    return Ok(());
+                    // TODO: Optimize
+                    // for el in lhs {
+                    //     self.assign_class_members_to_type_element(opts, el, &rhs.body)?;
+                    // }
+
+                    let rhs = self
+                        .type_to_type_lit(span, rhs)
+                        .context("tried to convert a class into type literal for assignment")?
+                        .map(Cow::into_owned)
+                        .map(Type::TypeLit)
+                        .unwrap();
+
+                    return self.assign_to_type_elements(
+                        AssignOpts {
+                            allow_unknown_rhs: true,
+                            ..opts
+                        },
+                        lhs_span,
+                        lhs,
+                        &rhs,
+                        lhs_metadata,
+                    );
                 }
 
                 Type::Keyword(RTsKeywordType {
@@ -326,48 +349,6 @@ impl Analyzer<'_, '_> {
             }
 
             match *rhs.normalize() {
-                // Check class itself
-                Type::Class(Class { ref body, .. }) => {
-                    match m {
-                        TypeElement::Call(_) => {
-                            unimplemented!("ssign: interface {{ () => ret; }} = class Foo {{}}",)
-                        }
-                        TypeElement::Constructor(_) => {
-                            // TODO: Check # of parameters
-                            for rm in body {
-                                match rm {
-                                    ClassMember::Constructor(..) => continue 'l,
-                                    _ => {}
-                                }
-                            }
-
-                            errors.push(Error::ConstructorRequired {
-                                span,
-                                lhs: lhs_span,
-                                rhs: rhs.span(),
-                            });
-                        }
-                        TypeElement::Property(p) => {
-                            //
-
-                            for rm in body {
-                                match rm {
-                                    ClassMember::Constructor(..) => continue 'l,
-                                    _ => {}
-                                }
-                            }
-                        }
-                        TypeElement::Method(_) => {
-                            unimplemented!("assign: interface {{ method() => ret; }} = class Foo {{}}")
-                        }
-                        TypeElement::Index(_) => {
-                            unimplemented!("assign: interface {{ [key: string]: Type; }} = class Foo {{}}")
-                        }
-                    }
-
-                    // TODO: missing fields
-                }
-
                 // Check class members
                 Type::ClassInstance(ClassInstance {
                     ty: box Type::Class(Class { ref body, .. }),
@@ -600,8 +581,6 @@ impl Analyzer<'_, '_> {
         rhs_members: &[ClassMember],
     ) -> ValidationResult<()> {
         match el {
-            TypeElement::Call(_) => {}
-            TypeElement::Constructor(_) => {}
             TypeElement::Property(lp) => {
                 for rhs_member in rhs_members {
                     match rhs_member {
@@ -612,6 +591,7 @@ impl Analyzer<'_, '_> {
                                 if let Some(lt) = &lp.type_ann {
                                     if let Some(rt) = &rp.value {
                                         self.assign(&lt, &rt, opts.span)?;
+                                        return Ok(());
                                     }
                                 }
                             }
@@ -626,8 +606,9 @@ impl Analyzer<'_, '_> {
 
                 // TODO: Report error.
             }
-            TypeElement::Method(_) => {}
-            TypeElement::Index(_) => {}
+
+            // TODO: Optimize
+            TypeElement::Call(_) | TypeElement::Constructor(_) | TypeElement::Method(_) | TypeElement::Index(_) => {}
         }
 
         Ok(())

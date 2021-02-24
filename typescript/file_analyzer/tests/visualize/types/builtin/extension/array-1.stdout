@@ -1,0 +1,16 @@
+warning: Type
+ --> $DIR/tests/visualize/types/builtin/extension/array-1.ts:7:9
+  |
+7 | let x = a.equalsShallow();
+  |         ^
+  |
+  = note: (string | number)[]
+
+warning: Type
+ --> $DIR/tests/visualize/types/builtin/extension/array-1.ts:7:9
+  |
+7 | let x = a.equalsShallow();
+  |         ^^^^^^^^^^^^^^^^^
+  |
+  = note: any
+

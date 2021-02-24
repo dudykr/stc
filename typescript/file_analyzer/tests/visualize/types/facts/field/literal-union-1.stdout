@@ -1,0 +1,97 @@
+warning: Type
+ --> $DIR/tests/visualize/types/facts/field/literal-union-1.ts:8:13
+  |
+8 |     switch (x.kind) {
+  |             ^
+  |
+  = note: Item
+
+warning: Type
+ --> $DIR/tests/visualize/types/facts/field/literal-union-1.ts:8:13
+  |
+8 |     switch (x.kind) {
+  |             ^^^^^^
+  |
+  = note: 0 | 1 | 2
+
+warning: Type
+ --> $DIR/tests/visualize/types/facts/field/literal-union-1.ts:9:14
+  |
+9 |         case 0: return x.a;
+  |              ^
+  |
+  = note: boolean
+
+warning: Type
+ --> $DIR/tests/visualize/types/facts/field/literal-union-1.ts:9:24
+  |
+9 |         case 0: return x.a;
+  |                        ^
+  |
+  = note: {
+              kind: 0;
+              a: string;
+          }
+
+warning: Type
+ --> $DIR/tests/visualize/types/facts/field/literal-union-1.ts:9:24
+  |
+9 |         case 0: return x.a;
+  |                        ^^^
+  |
+  = note: string
+
+warning: Type
+  --> $DIR/tests/visualize/types/facts/field/literal-union-1.ts:10:14
+   |
+10 |         case 1: return x.b;
+   |              ^
+   |
+   = note: boolean
+
+warning: Type
+  --> $DIR/tests/visualize/types/facts/field/literal-union-1.ts:10:24
+   |
+10 |         case 1: return x.b;
+   |                        ^
+   |
+   = note: {
+               kind: 1;
+               b: string;
+           }
+
+warning: Type
+  --> $DIR/tests/visualize/types/facts/field/literal-union-1.ts:10:24
+   |
+10 |         case 1: return x.b;
+   |                        ^^^
+   |
+   = note: string
+
+warning: Type
+  --> $DIR/tests/visualize/types/facts/field/literal-union-1.ts:11:14
+   |
+11 |         case 2: return x.c;
+   |              ^
+   |
+   = note: boolean
+
+warning: Type
+  --> $DIR/tests/visualize/types/facts/field/literal-union-1.ts:11:24
+   |
+11 |         case 2: return x.c;
+   |                        ^
+   |
+   = note: {
+               kind: 2;
+               c: string;
+           }
+
+warning: Type
+  --> $DIR/tests/visualize/types/facts/field/literal-union-1.ts:11:24
+   |
+11 |         case 2: return x.c;
+   |                        ^^^
+   |
+   = note: string
+

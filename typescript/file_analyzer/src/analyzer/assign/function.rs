@@ -98,6 +98,13 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
+    /// ``ts
+    /// declare let a: (parent: 'foo' | 'bar') => void
+    /// declare let b: (parent: 'bar') => void
+    ///
+    /// a = b // error
+    /// b = a // ok
+    /// ```
     pub(crate) fn assign_params(&mut self, opts: AssignOpts, l: &[FnParam], r: &[FnParam]) -> ValidationResult<()> {
         let span = opts.span;
         let li = l.iter().filter(|p| match p.pat {
@@ -119,9 +126,23 @@ impl Analyzer<'_, '_> {
         }
 
         for (lp, rp) in li.zip(ri) {
+            // TODO: What should we do?
+            if opts.allow_assignment_to_param {
+                if let Ok(()) = self.assign_inner(
+                    &rp.ty,
+                    &lp.ty,
+                    AssignOpts {
+                        allow_unknown_type: true,
+                        ..opts
+                    },
+                ) {
+                    continue;
+                }
+            }
+
             self.assign_inner(
-                &lp.ty,
                 &rp.ty,
+                &lp.ty,
                 AssignOpts {
                     allow_unknown_type: true,
                     ..opts

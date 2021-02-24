@@ -56,6 +56,13 @@ struct TypeParamUsageFinder {
     used: IndexSet<Id, FxBuildHasher>,
 }
 
+/// Ignore usages of type parameters in `contraint`.
+impl Visit<TypeParam> for TypeParamUsageFinder {
+    fn visit(&mut self, ty: &TypeParam) {
+        ty.default.visit_with(self);
+    }
+}
+
 impl Visit<Type> for TypeParamUsageFinder {
     fn visit(&mut self, ty: &Type) {
         ty.visit_children_with(self);

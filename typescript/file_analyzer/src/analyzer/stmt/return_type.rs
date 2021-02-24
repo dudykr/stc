@@ -247,9 +247,8 @@ impl Analyzer<'_, '_> {
             let ty = res?;
 
             if e.delegate {
-                // TODO: Use correct symbol. (need proper symbol handling)
                 let item_ty = self
-                    .convert_to_iterator(e.span, Cow::Owned(ty))
+                    .get_iterator_element_type(e.span, Cow::Owned(ty))
                     .context("tried to convert argument as an interator for delegating yield")?
                     .into_owned();
 

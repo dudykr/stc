@@ -1,6 +1,6 @@
-use self::{generalize::TupleToArray, type_facts::TypeFactsHandler};
+use self::generalize::TupleToArray;
+use crate::util::is_str_lit_or_union;
 use crate::util::type_ext::TypeVecExt;
-use crate::{type_facts::TypeFacts, util::is_str_lit_or_union};
 use retain_mut::RetainMut;
 use rnode::Fold;
 use rnode::FoldWith;
@@ -14,7 +14,7 @@ pub(crate) use stc_ts_types::*;
 use swc_ecma_ast::TsKeywordTypeKind;
 
 mod generalize;
-mod type_facts;
+pub mod type_facts;
 
 pub(crate) struct LitGeneralizer;
 
@@ -27,12 +27,12 @@ impl Fold<Ref> for LitGeneralizer {
 }
 
 impl Fold<Union> for LitGeneralizer {
-    fn fold(&mut self, mut union: Union) -> Union {
-        union = union.fold_children_with(self);
+    fn fold(&mut self, mut u: Union) -> Union {
+        u = u.fold_children_with(self);
 
-        union.types.dedup_type();
+        u.types.dedup_type();
 
-        union
+        u
     }
 }
 
@@ -108,6 +108,21 @@ impl Fold<Function> for LitGeneralizer {
     }
 }
 
+impl Fold<Interface> for LitGeneralizer {
+    fn fold(&mut self, node: Interface) -> Interface {
+        node
+    }
+}
+
+impl Fold<TypeLit> for LitGeneralizer {
+    fn fold(&mut self, node: TypeLit) -> TypeLit {
+        if node.metadata.specified {
+            return node;
+        }
+        node.fold_children_with(self)
+    }
+}
+
 pub trait TypeExt: Into<Type> {
     fn generalize_lit(self) -> Type {
         self.into().fold_with(&mut LitGeneralizer)
@@ -115,10 +130,6 @@ pub trait TypeExt: Into<Type> {
 
     fn generalize_tuple(self) -> Type {
         self.into().fold_with(&mut TupleToArray)
-    }
-
-    fn apply_type_facts(self, facts: TypeFacts) -> Type {
-        self.into().fold_with(&mut TypeFactsHandler { facts })
     }
 }
 

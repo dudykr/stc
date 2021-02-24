@@ -1208,7 +1208,7 @@ impl<'a> Iterator for Iter<'a> {
     type Item = &'a Type;
 
     fn next(&mut self) -> Option<Self::Item> {
-        match self.ty {
+        match self.ty.normalize() {
             Type::Union(ref u) => {
                 let ty = u.types.get(self.idx);
                 self.idx += 1;

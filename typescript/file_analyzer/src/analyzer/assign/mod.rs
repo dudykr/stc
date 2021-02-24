@@ -4,6 +4,7 @@ use crate::{
     ValidationResult,
 };
 use rnode::NodeId;
+use stc_ts_ast_rnode::RBool;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RStr;
@@ -475,6 +476,15 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        match rhs {
+            Type::ClassInstance(i) => {
+                return self
+                    .assign_with_opts(opts, to, &i.ty)
+                    .context("tried to assign an instance to a type");
+            }
+            _ => {}
+        }
+
         match to {
             // let a: any = 'foo'
             Type::Keyword(RTsKeywordType {
@@ -557,7 +567,6 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Class(l) => match rhs.normalize() {
-                Type::ClassInstance(r) => return self.assign_to_class(opts, l, &r.ty),
                 Type::Interface(..) | Type::Ref(..) | Type::TypeLit(..) | Type::Lit(..) | Type::Class(..) => {
                     return self.assign_to_class(opts, l, rhs.normalize())
                 }
@@ -772,11 +781,54 @@ impl Analyzer<'_, '_> {
 
                     return Ok(());
                 }
-                _ => fail!(),
+
+                _ => {
+                    let r = self.type_to_type_lit(span, &rhs)?;
+                    if let Some(r) = r {
+                        for m in &r.members {
+                            match m {
+                                TypeElement::Index(m) => match m.params[0].ty.normalize() {
+                                    Type::Keyword(RTsKeywordType {
+                                        span,
+                                        kind: TsKeywordTypeKind::TsNumberKeyword,
+                                        ..
+                                    }) => {
+                                        if let Some(type_ann) = &m.type_ann {
+                                            return self.assign_with_opts(opts, elem_type, type_ann);
+                                        }
+                                    }
+                                    _ => {}
+                                },
+                                _ => {}
+                            }
+                        }
+                    }
+
+                    fail!()
+                }
             },
 
             // let a: string | number = 'string';
             Type::Union(Union { ref types, .. }) => {
+                // true | false = boolean
+                if rhs.is_kwd(TsKeywordTypeKind::TsBooleanKeyword) {
+                    if types.iter().any(|ty| match ty.normalize() {
+                        Type::Lit(RTsLitType {
+                            lit: RTsLit::Bool(RBool { value: true, .. }),
+                            ..
+                        }) => true,
+                        _ => false,
+                    }) && types.iter().any(|ty| match ty.normalize() {
+                        Type::Lit(RTsLitType {
+                            lit: RTsLit::Bool(RBool { value: false, .. }),
+                            ..
+                        }) => true,
+                        _ => false,
+                    }) {
+                        return Ok(());
+                    }
+                }
+
                 let results = types
                     .iter()
                     .map(|to| self.assign_inner(&to, rhs, opts))
@@ -864,7 +916,14 @@ impl Analyzer<'_, '_> {
                         fail!()
                     }
 
-                    Type::Array(..) => fail!(),
+                    Type::Symbol(..) => match kind {
+                        TsKeywordTypeKind::TsSymbolKeyword => return Ok(()),
+                        _ => {
+                            fail!()
+                        }
+                    },
+
+                    Type::Array(..) | Type::Tuple(..) => fail!(),
 
                     _ => {}
                 }
@@ -990,8 +1049,17 @@ impl Analyzer<'_, '_> {
             Type::Interface(Interface {
                 ref body, ref extends, ..
             }) => {
-                self.assign_to_type_elements(opts, span, &body, rhs, Default::default())
-                    .context("tried to assign a type to an interface")?;
+                self.assign_to_type_elements(
+                    AssignOpts {
+                        allow_unknown_rhs: true,
+                        ..opts
+                    },
+                    span,
+                    &body,
+                    rhs,
+                    Default::default(),
+                )
+                .context("tried to assign a type to an interface")?;
 
                 let mut errors = vec![];
                 for parent in extends {
@@ -1087,7 +1155,11 @@ impl Analyzer<'_, '_> {
             },
 
             Type::Function(lf) => match rhs {
-                Type::Function(..) | Type::Lit(..) => return self.assign_to_function(opts, to, lf, rhs),
+                Type::Function(..) | Type::Lit(..) => {
+                    return self
+                        .assign_to_function(opts, to, lf, rhs)
+                        .context("tried to assign a function to a function")
+                }
                 _ => {}
             },
 
@@ -1147,12 +1219,11 @@ impl Analyzer<'_, '_> {
             //},
 
             // TODO: Check type arguments
-            Type::ClassInstance(ClassInstance { ty: ref l_ty, .. }) => match *rhs.normalize() {
-                Type::Keyword(..) | Type::TypeLit(..) | Type::Lit(..) => fail!(),
-
-                Type::ClassInstance(ClassInstance { ty: ref r_ty, .. }) => return self.assign_inner(l_ty, &r_ty, opts),
-                _ => {}
-            },
+            Type::ClassInstance(ClassInstance { ty: ref l_ty, .. }) => {
+                return self
+                    .assign_with_opts(opts, &l_ty, rhs)
+                    .context("tried to asssign a type of instance to another type")
+            }
 
             Type::Constructor(ref lc) => match *rhs.normalize() {
                 Type::Lit(..) | Type::Class(ty::Class { is_abstract: true, .. }) => fail!(),
