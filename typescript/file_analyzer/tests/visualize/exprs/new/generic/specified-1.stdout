@@ -20,7 +20,7 @@ warning: Type
 9 | aGenericClass.source
   | ^^^^^^^^^^^^^
   |
-  = note: D<string>
+  = note: D
 
 warning: Type
  --> $DIR/tests/visualize/exprs/new/generic/specified-1.ts:9:1
@@ -36,7 +36,7 @@ warning: Type
 10 | aGenericClass.recurse
    | ^^^^^^^^^^^^^
    |
-   = note: D<string>
+   = note: D
 
 warning: Type
   --> $DIR/tests/visualize/exprs/new/generic/specified-1.ts:10:1
@@ -52,7 +52,7 @@ warning: Type
 11 | aGenericClass.wrapped
    | ^^^^^^^^^^^^^
    |
-   = note: D<string>
+   = note: D
 
 warning: Type
   --> $DIR/tests/visualize/exprs/new/generic/specified-1.ts:11:1
