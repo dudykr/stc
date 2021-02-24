@@ -81,7 +81,7 @@ warning: Type
 13 | export var r2 = r({ length: 3, charAt: (x: number) => { '' } }); // error
    |                 ^
    |
-   = note: <V extends U>(x: V) => V
+   = note: <V extends string>(x: V) => V
 
 warning: Type
   --> $DIR/tests/visualize/types/generic/pinning-1.ts:13:17
@@ -89,8 +89,5 @@ warning: Type
 13 | export var r2 = r({ length: 3, charAt: (x: number) => { '' } }); // error
    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    |
-   = note: {
-               length: number;
-               charAt: (x: number) => void;
-           }
+   = note: string
 
