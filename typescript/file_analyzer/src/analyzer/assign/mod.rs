@@ -923,7 +923,7 @@ impl Analyzer<'_, '_> {
                         }
                     },
 
-                    Type::Array(..) => fail!(),
+                    Type::Array(..) | Type::Tuple(..) => fail!(),
 
                     _ => {}
                 }
