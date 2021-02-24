@@ -101,11 +101,11 @@ use swc_common::DUMMY_SP;
 /// topological order.
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, decl: &RTsTypeParamDecl) -> ValidationResult<TypeParamDecl> {
+    fn validate(&mut self, decl: &RTsTypeParamDecl) -> ValidationResult<Box<TypeParamDecl>> {
         self.record(decl);
 
         if self.is_builtin {
-            Ok(TypeParamDecl {
+            Ok(box TypeParamDecl {
                 span: decl.span,
                 params: decl.params.validate_with(self)?,
             })
@@ -126,7 +126,7 @@ impl Analyzer<'_, '_> {
 
             let params = decl.params.validate_with(self)?;
 
-            Ok(TypeParamDecl {
+            Ok(box TypeParamDecl {
                 span: decl.span,
                 params,
             })

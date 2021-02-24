@@ -1178,6 +1178,8 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                for parent in &c.implements {}
+
                 return Err(Error::NoSuchPropertyInClass {
                     span,
                     class_name: c.name.clone(),

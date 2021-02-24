@@ -118,6 +118,7 @@ impl BuiltIn {
                                             type_params: c.class.type_params.clone().validate_with(analyzer).map(
                                                 |opt| opt.expect("builtin: failed to parse type parmas of a class"),
                                             ),
+                                            implements: c.class.implements.validate_with(analyzer)?,
                                         }))
                                     })
                                     .unwrap();
