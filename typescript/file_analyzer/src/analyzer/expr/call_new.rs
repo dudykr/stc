@@ -54,6 +54,7 @@ use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::ClassProperty;
+use stc_ts_types::Interface;
 use stc_ts_types::Key;
 use stc_ts_types::ModuleId;
 use stc_ts_types::{Alias, Id, IndexedAccessType, Ref, Symbol, Union};
@@ -689,7 +690,56 @@ impl Analyzer<'_, '_> {
                             return Ok(ret_ty);
                         }
                     }
+                }
+                Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsSymbolKeyword,
+                    ..
+                }) => {
+                    if let Ok(ty) = self.env.get_global_type(span, &js_word!("Symbol")) {
+                        return Ok(ty);
+                    }
+                }
 
+                _ => {}
+            }
+
+            // Handle methods from `Object`.
+            match obj_type.normalize() {
+                Type::Interface(Interface { name, .. }) if *name.sym() == js_word!("Object") => {}
+                _ => {
+                    let obj_res = self.call_property(
+                        span,
+                        kind,
+                        expr,
+                        this,
+                        &Type::Ref(Ref {
+                            span: DUMMY_SP,
+                            type_name: RTsEntityName::Ident(RIdent::new(
+                                js_word!("Object"),
+                                DUMMY_SP.with_ctxt(self.marks().top_level_mark.as_ctxt()),
+                            )),
+                            ctxt: ModuleId::builtin(),
+                            type_args: None,
+                        }),
+                        prop,
+                        type_args,
+                        args,
+                        arg_types,
+                        spread_arg_types,
+                        type_ann,
+                    );
+                    match obj_res {
+                        Ok(v) => return Ok(v),
+                        Err(err) => {
+                            dbg!(&err);
+                        }
+                    }
+                }
+            }
+
+            // Use proper error.
+            match obj_type.normalize() {
+                Type::Class(..) => {
                     return Err(match kind {
                         ExtractKind::Call => Error::NoCallabelPropertyWithName {
                             span,
@@ -701,15 +751,6 @@ impl Analyzer<'_, '_> {
                         },
                     });
                 }
-                Type::Keyword(RTsKeywordType {
-                    kind: TsKeywordTypeKind::TsSymbolKeyword,
-                    ..
-                }) => {
-                    if let Ok(ty) = self.env.get_global_type(span, &js_word!("Symbol")) {
-                        return Ok(ty);
-                    }
-                }
-
                 _ => {}
             }
 
