@@ -916,6 +916,13 @@ impl Analyzer<'_, '_> {
                         fail!()
                     }
 
+                    Type::Symbol(..) => match kind {
+                        TsKeywordTypeKind::TsSymbolKeyword => return Ok(()),
+                        _ => {
+                            fail!()
+                        }
+                    },
+
                     Type::Array(..) => fail!(),
 
                     _ => {}
