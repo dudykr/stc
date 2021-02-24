@@ -80,7 +80,7 @@ impl ObjectUnionNormalizer<'_, '_, '_> {
         let mut inexact = false;
         let mut prev_specified = false;
 
-        let mut new_type_params = FxHashMap::<_, Box<TypeParamDecl>>::default();
+        let mut new_type_params = FxHashMap::<_, TypeParamDecl>::default();
         let mut new_params = FxHashMap::<_, Vec<_>>::default();
         let mut new_return_types = FxHashMap::<_, Vec<_>>::default();
         let mut extra_members = vec![];

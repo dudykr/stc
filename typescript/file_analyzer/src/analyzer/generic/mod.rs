@@ -1864,7 +1864,7 @@ impl Analyzer<'_, '_> {
             }));
         }
 
-        let decl = Some(box TypeParamDecl {
+        let decl = Some(TypeParamDecl {
             span: DUMMY_SP,
             params: usage_visitor.params,
         });

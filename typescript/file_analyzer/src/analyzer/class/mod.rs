@@ -903,7 +903,7 @@ impl Analyzer<'_, '_> {
                     }
                 };
 
-                let implements = c.implements.validate_with(child)?;
+                c.implements.visit_with(child);
 
                 // TODO: Check for implements
 
@@ -1235,7 +1235,6 @@ impl Analyzer<'_, '_> {
                     super_class,
                     type_params,
                     body: body.into_iter().map(|v| v.1).collect(),
-                    implements,
                 };
 
                 child.validate_inherited_members(None, &class);
