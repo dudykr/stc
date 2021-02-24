@@ -11,6 +11,4 @@ class SymbolIterator {
     }
 }
 
-var array: number[] = [0, 1, ...new SymbolIterator];
-
-export { }
+export var array: number[] = [0, 1, ...new SymbolIterator];
