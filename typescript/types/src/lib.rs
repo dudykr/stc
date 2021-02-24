@@ -457,11 +457,11 @@ pub struct Class {
     pub name: Option<Id>,
     pub super_class: Option<Box<Type>>,
     pub body: Vec<ClassMember>,
-    pub type_params: Option<Box<TypeParamDecl>>,
-    pub implements: Vec<TsExpr>,
+    pub type_params: Option<TypeParamDecl>,
+    // pub implements: Vec<Type>,
 }
 
-assert_eq_size!(Class, [u8; 96]);
+assert_eq_size!(Class, [u8; 104]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct ClassInstance {
@@ -490,7 +490,7 @@ pub struct Method {
     pub is_static: bool,
     pub is_abstract: bool,
     pub is_optional: bool,
-    pub type_params: Option<Box<TypeParamDecl>>,
+    pub type_params: Option<TypeParamDecl>,
     pub params: Vec<FnParam>,
     pub ret_ty: Box<Type>,
     #[use_eq]
@@ -566,22 +566,22 @@ pub struct TupleElement {
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Alias {
     pub span: Span,
-    pub type_params: Option<Box<TypeParamDecl>>,
+    pub type_params: Option<TypeParamDecl>,
     pub ty: Box<Type>,
 }
 
-assert_eq_size!(Alias, [u8; 32]);
+assert_eq_size!(Alias, [u8; 64]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Interface {
     pub span: Span,
     pub name: Id,
-    pub type_params: Option<Box<TypeParamDecl>>,
+    pub type_params: Option<TypeParamDecl>,
     pub extends: Vec<TsExpr>,
     pub body: Vec<TypeElement>,
 }
 
-assert_eq_size!(Interface, [u8; 88]);
+assert_eq_size!(Interface, [u8; 120]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct TypeLit {
@@ -647,7 +647,7 @@ impl TypeElement {
 pub struct CallSignature {
     pub span: Span,
     pub params: Vec<FnParam>,
-    pub type_params: Option<Box<TypeParamDecl>>,
+    pub type_params: Option<TypeParamDecl>,
     pub ret_ty: Option<Box<Type>>,
 }
 
@@ -656,7 +656,7 @@ pub struct ConstructorSignature {
     pub span: Span,
     pub params: Vec<FnParam>,
     pub ret_ty: Option<Box<Type>>,
-    pub type_params: Option<Box<TypeParamDecl>>,
+    pub type_params: Option<TypeParamDecl>,
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
@@ -667,7 +667,7 @@ pub struct PropertySignature {
     pub optional: bool,
     pub params: Vec<FnParam>,
     pub type_ann: Option<Box<Type>>,
-    pub type_params: Option<Box<TypeParamDecl>>,
+    pub type_params: Option<TypeParamDecl>,
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
@@ -678,7 +678,7 @@ pub struct MethodSignature {
     pub optional: bool,
     pub params: Vec<FnParam>,
     pub ret_ty: Option<Box<Type>>,
-    pub type_params: Option<Box<TypeParamDecl>>,
+    pub type_params: Option<TypeParamDecl>,
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
@@ -748,23 +748,23 @@ assert_eq_size!(EnumVariant, [u8; 40]);
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Function {
     pub span: Span,
-    pub type_params: Option<Box<TypeParamDecl>>,
+    pub type_params: Option<TypeParamDecl>,
     pub params: Vec<FnParam>,
     pub ret_ty: Box<Type>,
 }
 
-assert_eq_size!(Function, [u8; 56]);
+assert_eq_size!(Function, [u8; 88]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Constructor {
     pub span: Span,
-    pub type_params: Option<Box<TypeParamDecl>>,
+    pub type_params: Option<TypeParamDecl>,
     pub params: Vec<FnParam>,
     pub type_ann: Box<Type>,
     pub is_abstract: bool,
 }
 
-assert_eq_size!(Constructor, [u8; 56]);
+assert_eq_size!(Constructor, [u8; 88]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Predicate {
