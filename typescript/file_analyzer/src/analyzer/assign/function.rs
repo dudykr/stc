@@ -126,6 +126,20 @@ impl Analyzer<'_, '_> {
         }
 
         for (lp, rp) in li.zip(ri) {
+            // TODO: What should we do?
+            if opts.allow_assignment_to_param {
+                if let Ok(()) = self.assign_inner(
+                    &rp.ty,
+                    &lp.ty,
+                    AssignOpts {
+                        allow_unknown_type: true,
+                        ..opts
+                    },
+                ) {
+                    continue;
+                }
+            }
+
             self.assign_inner(
                 &rp.ty,
                 &lp.ty,
