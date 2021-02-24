@@ -275,6 +275,13 @@ impl Analyzer<'_, '_> {
                 }));
             }
 
+            // Use general callee validation.
+            RExpr::Member(RMemberExpr {
+                prop: box RExpr::Lit(RLit::Num(..)),
+                computed: true,
+                ..
+            }) => {}
+
             RExpr::Member(RMemberExpr {
                 obj: RExprOrSuper::Expr(ref obj),
                 ref prop,
@@ -314,7 +321,7 @@ impl Analyzer<'_, '_> {
                     _ => obj_type,
                 };
 
-                self.call_property(
+                return self.call_property(
                     span,
                     kind,
                     expr,
@@ -326,92 +333,92 @@ impl Analyzer<'_, '_> {
                     &arg_types,
                     &spread_arg_types,
                     type_ann,
-                )
+                );
             }
-            _ => {
-                let ctx = Ctx {
-                    preserve_ref: false,
-                    ignore_expand_prevention_for_all: false,
-                    ignore_expand_prevention_for_top: false,
-                    preserve_ret_ty: true,
-                    preserve_params: true,
-                    ..self.ctx
-                };
+            _ => {}
+        }
 
-                self.with_ctx(ctx).with(|analyzer: &mut Analyzer| {
-                    let ret_ty = match callee {
-                        RExpr::Ident(i) if kind == ExtractKind::New => {
-                            let mut ty = Type::Ref(Ref {
-                                span: i.span,
-                                ctxt: analyzer.ctx.module_id,
-                                type_name: RTsEntityName::Ident(i.clone()),
-                                type_args: Default::default(),
-                            });
-                            // It's specified by user
-                            analyzer.prevent_expansion(&mut ty);
-                            match ty {
-                                Type::Ref(r) => Some(r),
-                                _ => unreachable!(),
-                            }
-                        }
-                        _ => None,
-                    };
+        let ctx = Ctx {
+            preserve_ref: false,
+            ignore_expand_prevention_for_all: false,
+            ignore_expand_prevention_for_top: false,
+            preserve_ret_ty: true,
+            preserve_params: true,
+            ..self.ctx
+        };
 
-                    let mut callee_ty = {
-                        let callee_ty = callee.validate_with_default(analyzer)?;
-                        match callee_ty.normalize() {
-                            Type::Keyword(RTsKeywordType {
-                                kind: TsKeywordTypeKind::TsAnyKeyword,
-                                ..
-                            }) if type_args.is_some() => {
-                                // If it's implicit any, we should postpone this check.
-                                if !analyzer.is_implicitly_typed(&callee_ty) {
-                                    analyzer.storage.report(Error::AnyTypeUsedAsCalleeWithTypeArgs { span })
-                                }
-                            }
-                            _ => {}
-                        }
-                        callee_ty
-                    };
+        self.with_ctx(ctx).with(|analyzer: &mut Analyzer| {
+            let ret_ty = match callee {
+                RExpr::Ident(i) if kind == ExtractKind::New => {
+                    let mut ty = Type::Ref(Ref {
+                        span: i.span,
+                        ctxt: analyzer.ctx.module_id,
+                        type_name: RTsEntityName::Ident(i.clone()),
+                        type_args: Default::default(),
+                    });
+                    // It's specified by user
+                    analyzer.prevent_expansion(&mut ty);
+                    match ty {
+                        Type::Ref(r) => Some(r),
+                        _ => unreachable!(),
+                    }
+                }
+                _ => None,
+            };
 
-                    if let Some(type_args) = &type_args {
-                        let type_params = match callee_ty.normalize() {
-                            Type::Function(f) => f.type_params.as_ref(),
-                            _ => None,
-                        };
-                        if let Some(type_param_decl) = type_params {
-                            let mut params = FxHashMap::default();
-
-                            for (type_param, ty) in type_param_decl.params.iter().zip(type_args.params.iter()) {
-                                params.insert(type_param.name.clone(), ty.clone());
-                            }
-
-                            callee_ty = analyzer.expand_type_params(&params, callee_ty)?;
+            let mut callee_ty = {
+                let callee_ty = callee.validate_with_default(analyzer)?;
+                match callee_ty.normalize() {
+                    Type::Keyword(RTsKeywordType {
+                        kind: TsKeywordTypeKind::TsAnyKeyword,
+                        ..
+                    }) if type_args.is_some() => {
+                        // If it's implicit any, we should postpone this check.
+                        if !analyzer.is_implicitly_typed(&callee_ty) {
+                            analyzer.storage.report(Error::AnyTypeUsedAsCalleeWithTypeArgs { span })
                         }
                     }
+                    _ => {}
+                }
+                callee_ty
+            };
 
-                    let ctx = Ctx {
-                        preserve_params: true,
-                        ..analyzer.ctx
-                    };
-                    callee_ty = analyzer.with_ctx(ctx).expand_fully(span, callee_ty, false)?;
+            if let Some(type_args) = &type_args {
+                let type_params = match callee_ty.normalize() {
+                    Type::Function(f) => f.type_params.as_ref(),
+                    _ => None,
+                };
+                if let Some(type_param_decl) = type_params {
+                    let mut params = FxHashMap::default();
 
-                    let expanded_ty = analyzer.extract(
-                        span,
-                        expr,
-                        &callee_ty,
-                        kind,
-                        args,
-                        &arg_types,
-                        &spread_arg_types,
-                        type_args.as_ref(),
-                        type_ann,
-                    )?;
+                    for (type_param, ty) in type_param_decl.params.iter().zip(type_args.params.iter()) {
+                        params.insert(type_param.name.clone(), ty.clone());
+                    }
 
-                    return Ok(expanded_ty);
-                })
+                    callee_ty = analyzer.expand_type_params(&params, callee_ty)?;
+                }
             }
-        }
+
+            let ctx = Ctx {
+                preserve_params: true,
+                ..analyzer.ctx
+            };
+            callee_ty = analyzer.with_ctx(ctx).expand_fully(span, callee_ty, false)?;
+
+            let expanded_ty = analyzer.extract(
+                span,
+                expr,
+                &callee_ty,
+                kind,
+                args,
+                &arg_types,
+                &spread_arg_types,
+                type_args.as_ref(),
+                type_ann,
+            )?;
+
+            return Ok(expanded_ty);
+        })
     }
 
     /// TODO: Use Cow for `obj_type`
