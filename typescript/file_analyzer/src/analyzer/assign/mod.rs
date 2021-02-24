@@ -1155,7 +1155,11 @@ impl Analyzer<'_, '_> {
             },
 
             Type::Function(lf) => match rhs {
-                Type::Function(..) | Type::Lit(..) => return self.assign_to_function(opts, to, lf, rhs),
+                Type::Function(..) | Type::Lit(..) => {
+                    return self
+                        .assign_to_function(opts, to, lf, rhs)
+                        .context("tried to assign a function to a function")
+                }
                 _ => {}
             },
 
