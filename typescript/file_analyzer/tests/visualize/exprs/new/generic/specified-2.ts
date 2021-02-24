@@ -4,7 +4,7 @@ class D<T>{
     wrapped: D<D<T>>
 }
 
-export var aGenericClass: D<string> = new D<string>();
+export var aGenericClass = new D<string>();
 
 aGenericClass.source
 aGenericClass.recurse
