@@ -1,0 +1,96 @@
+warning: Type
+ --> $DIR/tests/visualize/types/inference/generic/inheritance/class/method-1.ts:5:20
+  |
+5 |             return x;
+  |                    ^
+  |
+  = note: V
+
+warning: Type
+ --> $DIR/tests/visualize/types/inference/generic/inheritance/class/method-1.ts:7:16
+  |
+7 |         return bar;
+  |                ^^^
+  |
+  = note: <V extends U>(x: V) => V
+
+warning: Type
+  --> $DIR/tests/visualize/types/inference/generic/inheritance/class/method-1.ts:11:15
+   |
+11 | var c = new C({ length: 2 });
+   |               ^^^^^^^^^^^^^
+   |
+   = note: {
+               length: 2;
+           }
+
+warning: Type
+  --> $DIR/tests/visualize/types/inference/generic/inheritance/class/method-1.ts:11:13
+   |
+11 | var c = new C({ length: 2 });
+   |             ^
+   |
+   = note: C
+
+warning: Type
+  --> $DIR/tests/visualize/types/inference/generic/inheritance/class/method-1.ts:11:9
+   |
+11 | var c = new C({ length: 2 });
+   |         ^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: C
+
+warning: Type
+  --> $DIR/tests/visualize/types/inference/generic/inheritance/class/method-1.ts:12:43
+   |
+12 | export var r = c.foo({ length: 3, charAt: (x: number) => { '' } });
+   |                                           ^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: (x: number) => void
+
+warning: Type
+  --> $DIR/tests/visualize/types/inference/generic/inheritance/class/method-1.ts:12:22
+   |
+12 | export var r = c.foo({ length: 3, charAt: (x: number) => { '' } });
+   |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: {
+               length: 3;
+               charAt: (x: number) => void;
+           }
+
+warning: Type
+  --> $DIR/tests/visualize/types/inference/generic/inheritance/class/method-1.ts:12:16
+   |
+12 | export var r = c.foo({ length: 3, charAt: (x: number) => { '' } });
+   |                ^
+   |
+   = note: C
+
+warning: Type
+  --> $DIR/tests/visualize/types/inference/generic/inheritance/class/method-1.ts:12:16
+   |
+12 | export var r = c.foo({ length: 3, charAt: (x: number) => { '' } });
+   |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: <V>(x: V) => V
+
+warning: Type
+  --> $DIR/tests/visualize/types/inference/generic/inheritance/class/method-1.ts:13:17
+   |
+13 | export var r2 = r('');
+   |                 ^
+   |
+   = note: <V extends {
+               length: number;
+               charAt: (x: number) => void;
+           }>(x: V) => V
+
+warning: Type
+  --> $DIR/tests/visualize/types/inference/generic/inheritance/class/method-1.ts:13:17
+   |
+13 | export var r2 = r('');
+   |                 ^^^^^
+   |
+   = note: string
+
