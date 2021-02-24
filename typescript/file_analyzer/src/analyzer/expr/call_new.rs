@@ -730,9 +730,7 @@ impl Analyzer<'_, '_> {
                     );
                     match obj_res {
                         Ok(v) => return Ok(v),
-                        Err(err) => {
-                            dbg!(&err);
-                        }
+                        Err(..) => {}
                     }
                 }
             }
