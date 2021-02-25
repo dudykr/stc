@@ -398,7 +398,7 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
             Type::Class(mut c) => {
                 c = c.fold_with(self);
 
-                if let Some(..) = &c.type_params {
+                if let Some(..) = &c.def.type_params {
                     slog::error!(
                         self.logger,
                         "A class has type parameters. It may not be fully expanded."
@@ -648,7 +648,7 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
             | Type::EnumVariant(..)
             | Type::Namespace(..)
             | Type::Module(..)
-            | Type::ClassInstance(..)
+            | Type::ClassDef(..)
             | Type::Optional(..)
             | Type::Rest(..)
             | Type::IndexedAccessType(..)

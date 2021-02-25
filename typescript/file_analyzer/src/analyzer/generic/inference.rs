@@ -381,8 +381,8 @@ impl Analyzer<'_, '_> {
         param: &Class,
         arg: &Class,
     ) -> ValidationResult<()> {
-        for pm in &param.body {
-            for am in &arg.body {
+        for pm in &param.def.body {
+            for am in &arg.def.body {
                 match (pm, am) {
                     (ClassMember::Property(p), ClassMember::Property(a)) if p.is_static == a.is_static => {
                         if self.assign(&p.key.ty(), &a.key.ty(), span).is_ok() {

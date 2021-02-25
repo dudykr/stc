@@ -872,7 +872,7 @@ impl Analyzer<'_, '_> {
 
             Type::Constructor(param) => match arg {
                 Type::Class(arg_class) => {
-                    for member in &arg_class.body {
+                    for member in &arg_class.def.body {
                         match member {
                             stc_ts_types::ClassMember::Constructor(constructor) => {
                                 self.infer_type_of_fn_params(span, inferred, &param.params, &constructor.params)?;
