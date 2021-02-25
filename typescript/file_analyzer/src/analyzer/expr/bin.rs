@@ -34,6 +34,7 @@ use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::name::Name;
+use stc_ts_types::Class;
 use stc_ts_types::Intersection;
 use stc_ts_types::ModuleId;
 use stc_ts_types::Ref;
@@ -46,7 +47,10 @@ use swc_atoms::js_word;
 use swc_common::SyntaxContext;
 use swc_common::TypeEq;
 use swc_common::{Span, Spanned};
-use swc_ecma_ast::*;
+use swc_ecma_ast::op;
+use swc_ecma_ast::BinaryOp;
+use swc_ecma_ast::TsKeywordTypeKind;
+use swc_ecma_ast::TsTypeOperatorOp;
 use swc_ecma_utils::Value::Known;
 
 #[validator]
@@ -789,6 +793,15 @@ impl Analyzer<'_, '_> {
 
         if let Some(v) = self.extends(span, orig_ty, &ty) {
             if v {
+                match orig_ty.normalize() {
+                    Type::ClassDef(def) => {
+                        return Ok(Type::Class(Class {
+                            span,
+                            def: box def.clone(),
+                        }))
+                    }
+                    _ => {}
+                }
                 return Ok(orig_ty.clone());
             } else {
                 match (orig_ty, ty.normalize()) {
@@ -805,6 +818,15 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        match ty.normalize() {
+            Type::ClassDef(def) => {
+                return Ok(Type::Class(Class {
+                    span,
+                    def: box def.clone(),
+                }))
+            }
+            _ => {}
+        }
         Ok(ty)
     }
 
