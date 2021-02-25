@@ -18,6 +18,7 @@ use stc_ts_errors::debug::print_backtrace;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
+use stc_ts_types::ClassDef;
 use stc_ts_types::Key;
 use stc_ts_types::Mapped;
 use stc_ts_types::PropertySignature;
@@ -974,7 +975,7 @@ impl Analyzer<'_, '_> {
                     TsKeywordTypeKind::TsVoidKeyword | TsKeywordTypeKind::TsUndefinedKeyword => {
                         //
 
-                        match *rhs.normalize() {
+                        match rhs {
                             Type::Keyword(RTsKeywordType {
                                 kind: TsKeywordTypeKind::TsVoidKeyword,
                                 ..
@@ -983,7 +984,7 @@ impl Analyzer<'_, '_> {
                             | Type::Keyword(..)
                             | Type::TypeLit(..)
                             | Type::Class(..)
-                            | Type::ClassInstance(..)
+                            | Type::ClassDef(..)
                             | Type::Interface(..)
                             | Type::Module(..)
                             | Type::EnumVariant(..) => fail!(),
@@ -1214,16 +1215,12 @@ impl Analyzer<'_, '_> {
             //
             //    _ => {}
             //},
-
-            // TODO: Check type arguments
-            Type::ClassInstance(ClassInstance { ty: ref l_ty, .. }) => {
-                return self
-                    .assign_with_opts(opts, &l_ty, rhs)
-                    .context("tried to asssign a type of instance to another type")
-            }
-
             Type::Constructor(ref lc) => match *rhs.normalize() {
-                Type::Lit(..) | Type::Class(ty::Class { is_abstract: true, .. }) => fail!(),
+                Type::Lit(..)
+                | Type::Class(ty::Class {
+                    def: box ClassDef { is_abstract: true, .. },
+                    ..
+                }) => fail!(),
                 _ => {}
             },
 

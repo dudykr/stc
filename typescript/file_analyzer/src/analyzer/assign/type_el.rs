@@ -12,7 +12,6 @@ use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_types::Array;
 use stc_ts_types::Class;
-use stc_ts_types::ClassInstance;
 use stc_ts_types::ClassMember;
 use stc_ts_types::Interface;
 use stc_ts_types::MethodSignature;
@@ -194,7 +193,7 @@ impl Analyzer<'_, '_> {
 
                 Type::Class(rhs_cls) => {
                     // TODO: Check if constructor exists.
-                    if rhs_cls.is_abstract {
+                    if rhs_cls.def.is_abstract {
                         return Err(Error::CannotAssignAbstractConstructorToNonAbstractConstructor { span });
                     }
 
