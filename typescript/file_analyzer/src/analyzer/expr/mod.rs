@@ -1630,6 +1630,10 @@ impl Analyzer<'_, '_> {
                     .expand_top_ref(span, Cow::Borrowed(&obj))
                     .context("tried to expand reference to access property")?
                     .into_owned();
+                let obj = match obj {
+                    Type::ClassDef(def) => Type::Class(Class { span, def: box def }),
+                    _ => obj,
+                };
 
                 return self.access_property(span, obj, prop, type_mode, id_ctx);
             }
