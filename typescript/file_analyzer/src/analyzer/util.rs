@@ -13,6 +13,7 @@ use stc_ts_errors::Error;
 use stc_ts_storage::Storage;
 use stc_ts_types::Class;
 use stc_ts_types::TypeElement;
+use stc_ts_types::Union;
 use stc_ts_types::{Id, IndexedAccessType, Intersection, ModuleId, QueryExpr, QueryType, Ref, Tuple};
 use std::iter::once;
 use swc_common::Span;
@@ -160,6 +161,16 @@ pub(crate) fn instantiate_class(module_id: ModuleId, ty: Type) -> Type {
                 .collect();
 
             Type::Intersection(Intersection { span: i.span, types })
+        }
+
+        Type::Union(ref u) => {
+            let types = u
+                .types
+                .iter()
+                .map(|ty| instantiate_class(module_id, ty.clone()))
+                .collect();
+
+            Type::Union(Union { span: u.span, types })
         }
 
         Type::Query(QueryType {
