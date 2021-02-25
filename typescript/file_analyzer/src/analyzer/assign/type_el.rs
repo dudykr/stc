@@ -12,6 +12,7 @@ use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_types::Array;
 use stc_ts_types::Class;
+use stc_ts_types::ClassDef;
 use stc_ts_types::ClassMember;
 use stc_ts_types::Interface;
 use stc_ts_types::MethodSignature;
@@ -349,8 +350,8 @@ impl Analyzer<'_, '_> {
 
             match *rhs.normalize() {
                 // Check class members
-                Type::ClassInstance(ClassInstance {
-                    ty: box Type::Class(Class { ref body, .. }),
+                Type::Class(Class {
+                    def: box ClassDef { ref body, .. },
                     ..
                 }) => {
                     match m {
