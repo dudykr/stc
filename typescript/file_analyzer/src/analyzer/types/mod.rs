@@ -11,15 +11,20 @@ use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_errors::DebugExt;
 use stc_ts_types::name::Name;
 use stc_ts_types::Array;
+use stc_ts_types::Class;
 use stc_ts_types::ClassMember;
 use stc_ts_types::ConstructorSignature;
+use stc_ts_types::Intersection;
 use stc_ts_types::Key;
 use stc_ts_types::MethodSignature;
 use stc_ts_types::PropertySignature;
+use stc_ts_types::Tuple;
+use stc_ts_types::TupleElement;
 use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
 use stc_ts_types::TypeLitMetadata;
+use stc_ts_types::Union;
 use stc_ts_utils::MapWithMut;
 use std::borrow::Cow;
 use swc_common::Span;
@@ -331,6 +336,62 @@ impl Analyzer<'_, '_> {
             }
             ClassMember::IndexSignature(i) => TypeElement::Index(i.clone()),
         }))
+    }
+
+    pub(crate) fn instantiate_class(&mut self, ty: &Type) -> ValidationResult {
+        let span = ty.span();
+
+        Ok(match ty.normalize() {
+            Type::Ref(..) => {
+                let ty = self
+                    .expand_top_ref(span, Cow::Borrowed(ty))
+                    .context("tried to expand a type to instantiate")?;
+
+                return self.instantiate_class(&ty);
+            }
+
+            Type::Tuple(Tuple { elems, .. }) => Type::Tuple(Tuple {
+                span,
+                elems: elems
+                    .iter()
+                    .map(|mut element| -> ValidationResult<_> {
+                        // TODO: Remove clone
+                        let ty = box self.instantiate_class(&element.ty)?;
+                        Ok(TupleElement {
+                            span: element.span,
+                            ty,
+                            label: element.label.clone(),
+                        })
+                    })
+                    .collect::<Result<_, _>>()?,
+            }),
+            Type::ClassDef(def) => Type::Class(Class {
+                span,
+                def: box def.clone(),
+            }),
+
+            Type::Intersection(i) => {
+                let types = i
+                    .types
+                    .iter()
+                    .map(|ty| self.instantiate_class(ty))
+                    .collect::<Result<_, _>>()?;
+
+                Type::Intersection(Intersection { span: i.span, types })
+            }
+
+            Type::Union(u) => {
+                let types = u
+                    .types
+                    .iter()
+                    .map(|ty| self.instantiate_class(ty))
+                    .collect::<Result<_, _>>()?;
+
+                Type::Union(Union { span: u.span, types })
+            }
+
+            _ => return Ok(ty.clone()),
+        })
     }
 
     /// Exclude `excluded` from `ty`

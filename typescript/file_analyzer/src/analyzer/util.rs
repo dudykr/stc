@@ -132,61 +132,6 @@ impl Analyzer<'_, '_> {
     }
 }
 
-pub(crate) fn instantiate_class(module_id: ModuleId, ty: Type) -> Type {
-    let span = ty.span();
-
-    match *ty.normalize() {
-        Type::Tuple(Tuple { ref elems, span }) => Type::Tuple(Tuple {
-            span,
-            elems: elems
-                .iter()
-                .cloned()
-                .map(|mut element| {
-                    // TODO: Remove clone
-                    element.ty = box instantiate_class(module_id, *element.ty);
-                    element
-                })
-                .collect(),
-        }),
-        Type::ClassDef(ref def) => Type::Class(Class {
-            span,
-            def: box def.clone(),
-        }),
-
-        Type::Intersection(ref i) => {
-            let types = i
-                .types
-                .iter()
-                .map(|ty| instantiate_class(module_id, ty.clone()))
-                .collect();
-
-            Type::Intersection(Intersection { span: i.span, types })
-        }
-
-        Type::Union(ref u) => {
-            let types = u
-                .types
-                .iter()
-                .map(|ty| instantiate_class(module_id, ty.clone()))
-                .collect();
-
-            Type::Union(Union { span: u.span, types })
-        }
-
-        Type::Query(QueryType {
-            span,
-            expr: box QueryExpr::TsEntityName(ref type_name),
-        }) => Type::Ref(Ref {
-            span,
-            ctxt: module_id,
-            type_name: type_name.clone(),
-            type_args: Default::default(),
-        }),
-
-        _ => return ty,
-    }
-}
-
 #[derive(Debug, Default)]
 pub(super) struct Generalizer {
     pub force: bool,

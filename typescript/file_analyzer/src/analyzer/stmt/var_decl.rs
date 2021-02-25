@@ -1,5 +1,4 @@
 use super::super::{pat::PatMode, Analyzer, Ctx};
-use crate::analyzer::util::instantiate_class;
 use crate::util::type_ext::TypeVecExt;
 use crate::{
     analyzer::{
@@ -234,11 +233,7 @@ impl Analyzer<'_, '_> {
                                 return Ok(());
                             }
                         };
-                        let ty = self
-                            .expand_top_ref(span, Cow::Owned(ty))
-                            .context("tried to expand reference type of a variable")?
-                            .into_owned();
-                        let ty = instantiate_class(self.ctx.module_id, ty);
+                        let ty = self.instantiate_class(&ty)?;
                         self.check_rvalue(span, &ty);
 
                         self.scope.this = Some(ty.clone().remove_falsy());

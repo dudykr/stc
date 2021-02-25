@@ -3,12 +3,7 @@ use super::super::Analyzer;
 use super::IdCtx;
 use crate::analyzer::assign::AssignOpts;
 use crate::{
-    analyzer::{
-        expr::TypeOfMode,
-        marks::MarkExt,
-        util::{instantiate_class, ResultExt},
-        Ctx, ScopeKind,
-    },
+    analyzer::{expr::TypeOfMode, marks::MarkExt, util::ResultExt, Ctx, ScopeKind},
     ty,
     ty::{
         CallSignature, ConstructorSignature, FnParam, Method, MethodSignature, QueryExpr, QueryType, Type, TypeElement,
@@ -1130,7 +1125,7 @@ impl Analyzer<'_, '_> {
         match ty.normalize() {
             Type::Intersection(..) if kind == ExtractKind::New => {
                 // TODO: Check if all types has constructor signature
-                return Ok(instantiate_class(self.ctx.module_id, ty.clone()));
+                return Ok(self.instantiate_class(&ty)?);
             }
 
             Type::Keyword(RTsKeywordType {

@@ -1,6 +1,5 @@
 use super::expr::TypeOfMode;
 use super::props::ComputedPropMode;
-use super::util::instantiate_class;
 use super::util::is_prop_name_eq;
 use super::util::ResultExt;
 use super::util::VarVisitor;
@@ -914,9 +913,7 @@ impl Analyzer<'_, '_> {
 
                 child.check_ambient_methods(c, false)?;
 
-                child.scope.super_class = super_class
-                    .clone()
-                    .map(|ty| instantiate_class(child.ctx.module_id, *ty));
+                child.scope.super_class = super_class.clone().map(|ty| child.instantiate_class(&ty)).try_opt()?;
                 {
                     // Validate constructors
                     let mut constructor_spans = vec![];
