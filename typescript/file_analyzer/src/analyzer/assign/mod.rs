@@ -23,8 +23,7 @@ use stc_ts_types::Mapped;
 use stc_ts_types::PropertySignature;
 use stc_ts_types::Ref;
 use stc_ts_types::{
-    Array, ClassInstance, EnumVariant, FnParam, Interface, Intersection, Tuple, Type, TypeElement, TypeLit, TypeParam,
-    Union,
+    Array, EnumVariant, FnParam, Interface, Intersection, Tuple, Type, TypeElement, TypeLit, TypeParam, Union,
 };
 use std::borrow::Cow;
 use swc_atoms::js_word;
@@ -476,15 +475,6 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match rhs {
-            Type::ClassInstance(i) => {
-                return self
-                    .assign_with_opts(opts, to, &i.ty)
-                    .context("tried to assign an instance to a type");
-            }
-            _ => {}
-        }
-
         match to {
             // let a: any = 'foo'
             Type::Keyword(RTsKeywordType {
@@ -566,12 +556,17 @@ impl Analyzer<'_, '_> {
                 });
             }
 
-            Type::Class(l) => match rhs.normalize() {
+            Type::Class(l) => match rhs {
                 Type::Interface(..) | Type::Ref(..) | Type::TypeLit(..) | Type::Lit(..) | Type::Class(..) => {
-                    return self.assign_to_class(opts, l, rhs.normalize())
+                    return self.assign_to_class(opts, l, rhs)
                 }
                 _ => {}
             },
+            Type::ClassDef(l) => {
+                return self
+                    .assign_to_class_def(opts, l, rhs)
+                    .context("tried to assign a type to a class definition")
+            }
 
             Type::Lit(ref lhs) => match rhs.normalize() {
                 Type::Lit(rhs) if lhs.eq_ignore_span(&rhs) => return Ok(()),
