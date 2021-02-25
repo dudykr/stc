@@ -1449,12 +1449,15 @@ impl Analyzer<'_, '_> {
                 }
             },
 
-            Type::Class(cls) => {
+            Type::ClassDef(cls) => {
                 //
-                for m in &cls.def.body {
+                for m in &cls.body {
                     //
                     match *m {
                         ty::ClassMember::Property(ref p) => {
+                            if !p.is_static {
+                                continue;
+                            }
                             // TODO: normalized string / ident
                             if p.key.type_eq(&prop) {
                                 if let Some(ref ty) = p.value {
@@ -1466,6 +1469,10 @@ impl Analyzer<'_, '_> {
                         }
 
                         ty::ClassMember::Method(ref m) => {
+                            if !m.is_static {
+                                continue;
+                            }
+
                             if m.key.type_eq(prop) {
                                 return Ok(Type::Function(ty::Function {
                                     span,
@@ -1479,7 +1486,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                if let Some(super_ty) = &cls.def.super_class {
+                if let Some(super_ty) = &cls.super_class {
                     if let Ok(v) = self.access_property(span, *super_ty.clone(), prop, type_mode, id_ctx) {
                         return Ok(v);
                     }
@@ -1487,7 +1494,7 @@ impl Analyzer<'_, '_> {
 
                 return Err(Error::NoSuchPropertyInClass {
                     span,
-                    class_name: cls.def.name.clone(),
+                    class_name: cls.name.clone(),
                     prop: prop.clone(),
                 });
             }

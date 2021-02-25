@@ -1063,7 +1063,7 @@ impl Analyzer<'_, '_> {
             }
 
             // Ok
-            Type::Class(..) => {}
+            Type::ClassDef(..) => {}
 
             // Conditionally error.
             //

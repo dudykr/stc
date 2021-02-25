@@ -101,7 +101,7 @@ impl BuiltIn {
                                 debug_assert_eq!(c.class.implements, vec![]);
                                 let ty = analyzer
                                     .with_child(ScopeKind::Flow, Default::default(), |analyzer: &mut Analyzer| {
-                                        Ok(Type::Class(ClassDef {
+                                        Ok(Type::ClassDef(ClassDef {
                                             span: c.class.span,
                                             name: Some(c.ident.clone().into()),
                                             is_abstract: c.class.is_abstract,
