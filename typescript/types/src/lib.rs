@@ -211,7 +211,7 @@ fn _assert_send_sync() {
     assert::<Module>();
 
     assert::<Class>();
-    assert::<ClassInstance>();
+    assert::<ClassDef>();
 
     assert::<RestType>();
     assert::<OptionalType>();
@@ -440,25 +440,22 @@ pub struct EnumMember {
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Class {
     pub span: Span,
+    pub def: Box<ClassDef>,
+}
+
+assert_eq_size!(Class, [u8; 24]);
+
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+pub struct ClassDef {
+    pub span: Span,
     pub is_abstract: bool,
     pub name: Option<Id>,
     pub super_class: Option<Box<Type>>,
     pub body: Vec<ClassMember>,
     pub type_params: Option<TypeParamDecl>,
-    // pub implements: Vec<Type>,
 }
 
-assert_eq_size!(Class, [u8; 104]);
-
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
-pub struct ClassInstance {
-    pub span: Span,
-    pub ty: Box<Type>,
-    pub type_args: Option<Box<TypeParamInstantiation>>,
-    // pub implements: Vec<Type>,
-}
-
-assert_eq_size!(ClassInstance, [u8; 32]);
+assert_eq_size!(ClassDef, [u8; 104]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit)]
 pub enum ClassMember {
@@ -1033,7 +1030,7 @@ impl Type {
 
             Type::Class(c) => c.span = span,
 
-            Type::ClassInstance(c) => c.span = span,
+            Type::ClassDef(c) => c.span = span,
 
             Type::Param(p) => p.span = span,
 
