@@ -1459,7 +1459,7 @@ impl Analyzer<'_, '_> {
                                 continue;
                             }
                             // TODO: normalized string / ident
-                            if p.key.type_eq(&prop) {
+                            if self.key_matches(span, &p.key, prop, false) {
                                 if let Some(ref ty) = p.value {
                                     return Ok(*ty.clone());
                                 }
@@ -1473,7 +1473,7 @@ impl Analyzer<'_, '_> {
                                 continue;
                             }
 
-                            if m.key.type_eq(prop) {
+                            if self.key_matches(span, &m.key, prop, false) {
                                 return Ok(Type::Function(ty::Function {
                                     span,
                                     type_params: m.type_params.clone(),
