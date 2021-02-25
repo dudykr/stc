@@ -4,7 +4,7 @@ warning: Type
 5 | class C extends A {
   |                 ^
   |
-  = note: A
+  = note: typeof A
 
 warning: Type
   --> $DIR/tests/visualize/types/predicate/type-guard-2.ts:12:9
