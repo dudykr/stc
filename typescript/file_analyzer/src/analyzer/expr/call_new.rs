@@ -53,6 +53,8 @@ use stc_ts_errors::debug::print_type;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
+use stc_ts_types::Class;
+use stc_ts_types::ClassDef;
 use stc_ts_types::ClassProperty;
 use stc_ts_types::Interface;
 use stc_ts_types::Key;
@@ -65,7 +67,7 @@ use swc_common::SyntaxContext;
 use swc_common::TypeEq;
 use swc_common::DUMMY_SP;
 use swc_common::{Span, Spanned};
-use swc_ecma_ast::*;
+use swc_ecma_ast::TsKeywordTypeKind;
 use ty::TypeExt;
 
 #[validator]
@@ -540,22 +542,6 @@ impl Analyzer<'_, '_> {
                     );
                 }
 
-                Type::ClassInstance(i) => {
-                    return self.call_property(
-                        span,
-                        kind,
-                        expr,
-                        this,
-                        &i.ty,
-                        prop,
-                        type_args,
-                        args,
-                        arg_types,
-                        spread_arg_types,
-                        type_ann,
-                    );
-                }
-
                 Type::Interface(ref i) => {
                     // We check for body before parent to support overriding
                     let err = match self.search_members_for_callable_prop(
@@ -616,7 +602,10 @@ impl Analyzer<'_, '_> {
                     );
                 }
 
-                Type::Class(ty::Class { body, super_class, .. }) => {
+                Type::Class(ty::Class {
+                    def: box ClassDef { body, super_class, .. },
+                    ..
+                }) => {
                     let mut candidates = vec![];
                     for member in body.iter() {
                         match member {
@@ -1034,7 +1023,7 @@ impl Analyzer<'_, '_> {
 
         match kind {
             ExtractKind::New => match ty.normalize() {
-                Type::Class(ref cls) => {
+                Type::ClassDef(ref cls) => {
                     if cls.is_abstract {
                         self.storage.report(Error::CannotCreateInstanceOfAbstractClass { span })
                     }
@@ -1066,10 +1055,9 @@ impl Analyzer<'_, '_> {
 
                             let type_args = self.instantiate(span, &type_params.params, inferred)?;
 
-                            return Ok(Type::ClassInstance(ClassInstance {
+                            return Ok(Type::Class(Class {
                                 span,
-                                ty: box Type::Class(cls.clone()),
-                                type_args: Some(box type_args),
+                                def: box cls.clone(),
                             }));
                         }
 
@@ -1079,7 +1067,10 @@ impl Analyzer<'_, '_> {
                             expr,
                             cls.type_params.as_ref().map(|v| &*v.params),
                             &[],
-                            Type::Class(cls.clone()),
+                            Type::Class(Class {
+                                span,
+                                def: box cls.clone(),
+                            }),
                             type_args,
                             args,
                             arg_types,
@@ -1089,10 +1080,9 @@ impl Analyzer<'_, '_> {
                         return Ok(ret_ty);
                     }
 
-                    return Ok(Type::ClassInstance(ClassInstance {
+                    return Ok(Type::Class(Class {
                         span,
-                        ty: box Type::Class(cls.clone()),
-                        type_args: type_args.cloned().map(Box::new),
+                        def: box cls.clone(),
                     }));
                 }
 
@@ -1140,11 +1130,7 @@ impl Analyzer<'_, '_> {
         match ty.normalize() {
             Type::Intersection(..) if kind == ExtractKind::New => {
                 // TODO: Check if all types has constructor signature
-                return Ok(Type::ClassInstance(ClassInstance {
-                    span,
-                    ty: box instantiate_class(self.ctx.module_id, ty.clone()),
-                    type_args: type_args.cloned().map(Box::new),
-                }));
+                return Ok(instantiate_class(self.ctx.module_id, ty.clone()));
             }
 
             Type::Keyword(RTsKeywordType {
@@ -1287,12 +1273,11 @@ impl Analyzer<'_, '_> {
                 );
             }
 
-            Type::Class(ref cls) if kind == ExtractKind::New => {
+            Type::ClassDef(ref def) if kind == ExtractKind::New => {
                 // TODO: Remove clone
-                return Ok(ClassInstance {
+                return Ok(Class {
                     span,
-                    ty: box Type::Class(cls.clone()),
-                    type_args: type_args.cloned().map(Box::new),
+                    def: box def.clone(),
                 }
                 .into());
             }
@@ -1561,7 +1546,7 @@ impl Analyzer<'_, '_> {
             dbg!();
 
             match callee.normalize() {
-                Type::Class(cls) if kind == ExtractKind::New => {
+                Type::ClassDef(cls) if kind == ExtractKind::New => {
                     let ret_ty = self.get_return_type(
                         span,
                         kind,
