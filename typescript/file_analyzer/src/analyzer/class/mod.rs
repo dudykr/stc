@@ -50,6 +50,7 @@ use stc_ts_ast_rnode::RVarDeclarator;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_file_analyzer_macros::extra_validator;
+use stc_ts_types::ClassDef;
 use stc_ts_types::ClassProperty;
 use stc_ts_types::ConstructorSignature;
 use stc_ts_types::FnParam;
@@ -694,7 +695,7 @@ impl Analyzer<'_, '_> {
 
     /// Should be called only from `Validate<Class>`.
     fn validate_inherited_members(&mut self, name: Option<Span>, class: &stc_ts_types::Class) {
-        if class.is_abstract || self.ctx.in_declare {
+        if class.def.is_abstract || self.ctx.in_declare {
             return;
         }
 
@@ -705,10 +706,10 @@ impl Analyzer<'_, '_> {
         let mut errors = Errors::default();
 
         let res: ValidationResult<()> = try {
-            if let Some(ref super_ty) = class.super_class {
+            if let Some(ref super_ty) = class.def.super_class {
                 match super_ty.normalize() {
                     Type::Class(sc) => {
-                        'outer: for sm in &sc.body {
+                        'outer: for sm in &sc.def.body {
                             match sm {
                                 stc_ts_types::ClassMember::Method(sm) => {
                                     if sm.is_optional || !sm.is_abstract {
@@ -718,7 +719,7 @@ impl Analyzer<'_, '_> {
                                         continue 'outer;
                                     }
 
-                                    for m in &class.body {
+                                    for m in &class.def.body {
                                         match m {
                                             stc_ts_types::ClassMember::Method(ref m) => {
                                                 if !&m.key.type_eq(&sm.key) {
@@ -742,7 +743,7 @@ impl Analyzer<'_, '_> {
 
                             errors.push(Error::TS2515 { span: name_span });
 
-                            if sc.is_abstract {
+                            if sc.def.is_abstract {
                                 // TODO: Check super class of super class
                             }
                         }
@@ -825,6 +826,7 @@ impl Analyzer<'_, '_> {
                                                         has_class_in_super = true;
                                                         // class A -> typeof A
                                                         return c
+                                                            .def
                                                             .name
                                                             .as_ref()
                                                             .map(|id| {
@@ -1231,7 +1233,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                let class = stc_ts_types::Class {
+                let class = ClassDef {
                     span: c.span,
                     name,
                     is_abstract: c.is_abstract,
