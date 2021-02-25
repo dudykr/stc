@@ -1783,7 +1783,7 @@ impl Analyzer<'_, '_> {
             ty.make_cheap();
         }
 
-        slog::debug!(self.logger, "{:?} = Type: {:?}", id, ty);
+        slog::debug!(self.logger, "type_of_var({:?}): {:?}", id, ty);
 
         Ok(ty)
     }
