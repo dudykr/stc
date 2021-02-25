@@ -4,7 +4,7 @@ warning: Type
 5 | export class C extends B {
   |                        ^
   |
-  = note: B
+  = note: typeof B
 
 warning: Type
  --> $DIR/tests/visualize/class/super/infer/super-arg-1.ts:8:19
@@ -44,7 +44,7 @@ warning: Type
 11 | export class D extends C {
    |                        ^
    |
-   = note: C
+   = note: typeof C
 
 warning: Type
   --> $DIR/tests/visualize/class/super/infer/super-arg-1.ts:17:9

@@ -51,7 +51,7 @@ warning: Type
 14 | export var array: number[] = [0, 1, ...new SymbolIterator];
    |                                            ^^^^^^^^^^^^^^
    |
-   = note: SymbolIterator
+   = note: typeof SymbolIterator
 
 warning: Type
   --> $DIR/tests/visualize/exprs/array/spread/mixed-class-1.ts:14:40
