@@ -558,7 +558,9 @@ impl Analyzer<'_, '_> {
 
             Type::Class(l) => match rhs {
                 Type::Interface(..) | Type::Ref(..) | Type::TypeLit(..) | Type::Lit(..) | Type::Class(..) => {
-                    return self.assign_to_class(opts, l, rhs)
+                    return self
+                        .assign_to_class(opts, l, rhs)
+                        .context("tried to assign a type to an instance of a class")
                 }
                 _ => {}
             },
