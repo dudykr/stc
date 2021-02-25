@@ -1,4 +1,5 @@
 use super::super::{pat::PatMode, Analyzer, Ctx};
+use crate::analyzer::util::instantiate_class;
 use crate::util::type_ext::TypeVecExt;
 use crate::{
     analyzer::{
@@ -234,6 +235,7 @@ impl Analyzer<'_, '_> {
                             }
                         };
                         let ty = self.expand(span, ty)?;
+                        let ty = instantiate_class(self.ctx.module_id, ty);
                         self.check_rvalue(span, &ty);
 
                         self.scope.this = Some(ty.clone().remove_falsy());
