@@ -910,8 +910,8 @@ impl Analyzer<'_, '_> {
         // where it's not enough.
         match (l, r) {
             (Type::Class(l), Type::Class(r)) => {
-                if l.super_class.is_none() && r.super_class.is_none() {
-                    if l.body.is_empty() || r.body.is_empty() {
+                if l.def.super_class.is_none() && r.def.super_class.is_none() {
+                    if l.def.body.is_empty() || r.def.body.is_empty() {
                         return Ok(false);
                     }
                 }
@@ -1040,7 +1040,7 @@ impl Analyzer<'_, '_> {
                 ..
             })
             | Type::Lit(..)
-            | Type::ClassInstance(..)
+            | Type::Class(..)
             | Type::Ref(Ref {
                 type_name:
                     RTsEntityName::Ident(RIdent {

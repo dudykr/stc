@@ -694,8 +694,8 @@ impl Analyzer<'_, '_> {
     }
 
     /// Should be called only from `Validate<Class>`.
-    fn validate_inherited_members(&mut self, name: Option<Span>, class: &stc_ts_types::Class) {
-        if class.def.is_abstract || self.ctx.in_declare {
+    fn validate_inherited_members(&mut self, name: Option<Span>, class: &ClassDef) {
+        if class.is_abstract || self.ctx.in_declare {
             return;
         }
 
@@ -706,7 +706,7 @@ impl Analyzer<'_, '_> {
         let mut errors = Errors::default();
 
         let res: ValidationResult<()> = try {
-            if let Some(ref super_ty) = class.def.super_class {
+            if let Some(ref super_ty) = class.super_class {
                 match super_ty.normalize() {
                     Type::Class(sc) => {
                         'outer: for sm in &sc.def.body {
@@ -719,7 +719,7 @@ impl Analyzer<'_, '_> {
                                         continue 'outer;
                                     }
 
-                                    for m in &class.def.body {
+                                    for m in &class.body {
                                         match m {
                                             stc_ts_types::ClassMember::Method(ref m) => {
                                                 if !&m.key.type_eq(&sm.key) {
@@ -770,7 +770,7 @@ impl Analyzer<'_, '_> {
 /// 5. Others, using dependency graph.
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, c: &RClass) -> ValidationResult<stc_ts_types::Class> {
+    fn validate(&mut self, c: &RClass) -> ValidationResult<ClassDef> {
         self.record(c);
 
         self.ctx.computed_prop_mode = ComputedPropMode::Class {
