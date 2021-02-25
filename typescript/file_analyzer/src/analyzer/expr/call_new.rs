@@ -2189,6 +2189,16 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        match new_ty.normalize() {
+            Type::ClassDef(def) => {
+                return Ok(Type::Class(Class {
+                    span,
+                    def: box def.clone(),
+                }))
+            }
+            _ => {}
+        }
+
         Ok(new_ty)
     }
 
