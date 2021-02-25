@@ -793,15 +793,6 @@ impl Analyzer<'_, '_> {
 
         if let Some(v) = self.extends(span, orig_ty, &ty) {
             if v {
-                match orig_ty.normalize() {
-                    Type::ClassDef(def) => {
-                        return Ok(Type::Class(Class {
-                            span,
-                            def: box def.clone(),
-                        }))
-                    }
-                    _ => {}
-                }
                 return Ok(orig_ty.clone());
             } else {
                 match (orig_ty, ty.normalize()) {
@@ -818,15 +809,6 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match ty.normalize() {
-            Type::ClassDef(def) => {
-                return Ok(Type::Class(Class {
-                    span,
-                    def: box def.clone(),
-                }))
-            }
-            _ => {}
-        }
         Ok(ty)
     }
 
