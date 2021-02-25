@@ -4,7 +4,7 @@ use crate::analyzer::util::ResultExt;
 use crate::{
     analyzer::{pat::PatMode, Ctx, ScopeKind},
     ty,
-    ty::{ClassInstance, FnParam, Tuple, Type, TypeParam},
+    ty::{FnParam, Tuple, Type, TypeParam},
     validator,
     validator::ValidateWith,
     ValidationResult,

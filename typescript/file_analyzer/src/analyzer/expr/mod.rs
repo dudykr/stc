@@ -5,8 +5,8 @@ use crate::{
     analyzer::{pat::PatMode, Ctx},
     ty,
     ty::{
-        Array, ClassInstance, EnumVariant, IndexSignature, IndexedAccessType, Interface, Intersection, Ref, Tuple,
-        Type, TypeElement, TypeLit, TypeParam, TypeParamInstantiation, Union,
+        Array, EnumVariant, IndexSignature, IndexedAccessType, Interface, Intersection, Ref, Tuple, Type, TypeElement,
+        TypeLit, TypeParam, TypeParamInstantiation, Union,
     },
     type_facts::TypeFacts,
     util::is_str_lit_or_union,
@@ -1127,7 +1127,7 @@ impl Analyzer<'_, '_> {
             },
 
             Type::Class(ref c) => {
-                for v in c.body.iter() {
+                for v in c.def.body.iter() {
                     match v {
                         ty::ClassMember::Property(ref class_prop) => {
                             if let Some(declaring) = self.scope.declaring_prop.as_ref() {
@@ -1172,7 +1172,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 // check for super class
-                if let Some(super_ty) = &c.super_class {
+                if let Some(super_ty) = &c.def.super_class {
                     if let Ok(v) = self.access_property(span, *super_ty.clone(), prop, type_mode, id_ctx) {
                         return Ok(v);
                     }
@@ -1180,7 +1180,7 @@ impl Analyzer<'_, '_> {
 
                 return Err(Error::NoSuchPropertyInClass {
                     span,
-                    class_name: c.name.clone(),
+                    class_name: c.def.name.clone(),
                     prop: prop.clone(),
                 });
             }
@@ -1445,12 +1445,9 @@ impl Analyzer<'_, '_> {
                 }
             },
 
-            Type::ClassInstance(ClassInstance {
-                ty: box Type::Class(ref cls),
-                ..
-            }) => {
+            Type::Class(cls) => {
                 //
-                for m in &cls.body {
+                for m in &cls.def.body {
                     //
                     match *m {
                         ty::ClassMember::Property(ref p) => {
@@ -1478,31 +1475,17 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                if let Some(super_ty) = &cls.super_class {
-                    if let Ok(v) = self.access_property(
-                        span,
-                        Type::ClassInstance(ClassInstance {
-                            span: super_ty.span(),
-                            ty: super_ty.clone(),
-                            type_args: None,
-                        }),
-                        prop,
-                        type_mode,
-                        id_ctx,
-                    ) {
+                if let Some(super_ty) = &cls.def.super_class {
+                    if let Ok(v) = self.access_property(span, super_ty.clone(), prop, type_mode, id_ctx) {
                         return Ok(v);
                     }
                 }
 
                 return Err(Error::NoSuchPropertyInClass {
                     span,
-                    class_name: cls.name.clone(),
+                    class_name: cls.def.name.clone(),
                     prop: prop.clone(),
                 });
-            }
-
-            Type::ClassInstance(ClassInstance { ty, .. }) => {
-                return self.access_property(span, *ty.clone(), prop, type_mode, id_ctx)
             }
 
             Type::Module(ty::Module { ref exports, .. }) => {
