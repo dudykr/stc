@@ -75,9 +75,9 @@ impl Analyzer<'_, '_> {
     pub(crate) fn collect_class_members(&mut self, ty: &Type) -> ValidationResult<Option<Vec<ClassMember>>> {
         let ty = ty.normalize();
         match ty {
-            Type::Class(c) => match &c.super_class {
+            Type::Class(c) => match &c.def.super_class {
                 Some(sc) => {
-                    let mut members = c.body.clone();
+                    let mut members = c.def.body.clone();
                     // TODO: Override
 
                     if let Some(super_members) = self.collect_class_members(&sc)? {
@@ -87,7 +87,7 @@ impl Analyzer<'_, '_> {
                     return Ok(Some(members));
                 }
                 None => {
-                    return Ok(Some(c.body.clone()));
+                    return Ok(Some(c.def.body.clone()));
                 }
             },
             _ => {
@@ -150,14 +150,14 @@ impl Analyzer<'_, '_> {
 
             Type::Class(c) => {
                 let mut members = vec![];
-                if let Some(super_class) = &c.super_class {
+                if let Some(super_class) = &c.def.super_class {
                     let super_els = self.type_to_type_lit(span, super_class)?;
                     members.extend(super_els.map(|ty| ty.into_owned().members).into_iter().flatten());
                 }
 
                 // TODO: Override
 
-                for member in &c.body {
+                for member in &c.def.body {
                     members.extend(self.make_type_el_from_class_member(member)?);
                 }
 

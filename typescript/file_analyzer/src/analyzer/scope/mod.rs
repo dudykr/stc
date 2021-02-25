@@ -39,6 +39,8 @@ use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_types::name::Name;
 use stc_ts_types::Array;
+use stc_ts_types::Class;
+use stc_ts_types::ClassDef;
 use stc_ts_types::Intersection;
 use stc_ts_types::Key;
 use stc_ts_types::TypeLitMetadata;
@@ -529,7 +531,7 @@ impl Analyzer<'_, '_> {
                 | Type::Namespace(_)
                 | Type::Module(_)
                 | Type::Class(_)
-                | Type::ClassInstance(_)
+                | Type::ClassDef(_)
                 | Type::Intersection(_)
                 | Type::Function(_)
                 | Type::Constructor(_)
@@ -1709,7 +1711,10 @@ impl Expander<'_, '_, '_> {
 
                             Type::Interface(Interface { type_params, .. })
                             | Type::Alias(Alias { type_params, .. })
-                            | Type::Class(ty::Class { type_params, .. }) => {
+                            | Type::Class(Class {
+                                def: box ClassDef { type_params, .. },
+                                ..
+                            }) => {
                                 let ty = t.clone().into_owned();
                                 let type_params = type_params.clone();
                                 let type_args: Option<_> = type_args.clone().fold_with(self);

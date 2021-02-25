@@ -359,8 +359,6 @@ impl Analyzer<'_, '_> {
                                 };
 
                                 let ty = match ty.normalize() {
-                                    Type::ClassInstance(c) => *c.ty.clone(),
-
                                     // `err is Error` => boolean
                                     Type::Predicate(..) => Type::Keyword(RTsKeywordType {
                                         span,
