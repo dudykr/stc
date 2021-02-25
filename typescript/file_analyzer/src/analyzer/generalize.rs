@@ -15,6 +15,7 @@ use stc_ts_ast_rnode::RStr;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
+use stc_ts_types::ClassDef;
 use stc_ts_types::Key;
 use stc_ts_types::TypeLitMetadata;
 use stc_ts_types::{
@@ -650,7 +651,11 @@ impl Fold<Type> for Simplifier<'_> {
             }
 
             Type::IndexedAccessType(IndexedAccessType {
-                obj_type: box Type::Class(Class { body, .. }),
+                obj_type:
+                    box Type::Class(Class {
+                        def: box ClassDef { body, .. },
+                        ..
+                    }),
                 index_type: box Type::Lit(RTsLitType {
                     lit: RTsLit::Str(s), ..
                 }),
@@ -687,7 +692,11 @@ impl Fold<Type> for Simplifier<'_> {
             }
 
             Type::IndexedAccessType(IndexedAccessType {
-                obj_type: box Type::Class(Class { body, .. }),
+                obj_type:
+                    box Type::Class(Class {
+                        def: box ClassDef { body, .. },
+                        ..
+                    }),
                 index_type: box Type::Union(keys),
                 ..
             }) if keys.types.iter().all(|ty| is_str_lit_or_union(&ty)) => {

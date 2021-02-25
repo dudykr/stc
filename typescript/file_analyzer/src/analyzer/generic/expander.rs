@@ -162,7 +162,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Interface(Interface { name, .. }) if *name.sym() == *"ObjectConstructor" => match child {
-                Type::Class(..) | Type::ClassInstance(..) | Type::Interface(..) | Type::TypeLit(..) => {
+                Type::Class(..) | Type::ClassDef(..) | Type::Interface(..) | Type::TypeLit(..) => {
                     return Some(true);
                 }
                 _ => {}
@@ -216,7 +216,7 @@ impl Analyzer<'_, '_> {
                     // return Some(true);
                 }
                 _ => {
-                    if let Some(super_class) = &child_class.super_class {
+                    if let Some(super_class) = &child_class.def.super_class {
                         if (&**super_class).type_eq(parent) {
                             return Some(true);
                         }
@@ -225,7 +225,7 @@ impl Analyzer<'_, '_> {
                     match parent {
                         Type::Class(parent) => {
                             // Check for grand parent
-                            if let Some(grand_parent) = &parent.super_class {
+                            if let Some(grand_parent) = &parent.def.super_class {
                                 if let Some(false) = self.extends(span, child, grand_parent) {
                                     return Some(false);
                                 }

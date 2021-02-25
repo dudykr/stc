@@ -48,6 +48,8 @@ use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_types::name::Name;
 use stc_ts_types::Alias;
+use stc_ts_types::Class;
+use stc_ts_types::ClassDef;
 use stc_ts_types::ComputedKey;
 use stc_ts_types::Key;
 use stc_ts_types::PropertySignature;
@@ -59,7 +61,9 @@ use swc_atoms::js_word;
 use swc_common::SyntaxContext;
 use swc_common::TypeEq;
 use swc_common::{Span, Spanned, DUMMY_SP};
-use swc_ecma_ast::*;
+use swc_ecma_ast::op;
+use swc_ecma_ast::TsKeywordTypeKind;
+use swc_ecma_ast::TsTypeOperatorOp;
 use ty::TypeExt;
 
 mod array;
@@ -1476,7 +1480,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 if let Some(super_ty) = &cls.def.super_class {
-                    if let Ok(v) = self.access_property(span, super_ty.clone(), prop, type_mode, id_ctx) {
+                    if let Ok(v) = self.access_property(span, *super_ty.clone(), prop, type_mode, id_ctx) {
                         return Ok(v);
                     }
                 }
@@ -1965,7 +1969,7 @@ impl Analyzer<'_, '_> {
                         match ty.normalize() {
                             Type::Interface(_)
                             | Type::Class(_)
-                            | Type::ClassInstance(_)
+                            | Type::ClassDef(_)
                             | Type::Enum(_)
                             | Type::EnumVariant(_)
                             | Type::This(_)
@@ -1990,8 +1994,12 @@ impl Analyzer<'_, '_> {
                                             type_params: Some(type_params),
                                             ..
                                         })
-                                        | Type::Class(stc_ts_types::Class {
-                                            type_params: Some(type_params),
+                                        | Type::Class(Class {
+                                            def:
+                                                box ClassDef {
+                                                    type_params: Some(type_params),
+                                                    ..
+                                                },
                                             ..
                                         }) => {
                                             params = self

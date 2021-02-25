@@ -12,7 +12,7 @@ use stc_ts_ast_rnode::RStr;
 use stc_ts_errors::Error;
 use stc_ts_storage::Storage;
 use stc_ts_types::TypeElement;
-use stc_ts_types::{ClassInstance, Id, IndexedAccessType, Intersection, ModuleId, QueryExpr, QueryType, Ref, Tuple};
+use stc_ts_types::{Id, IndexedAccessType, Intersection, ModuleId, QueryExpr, QueryType, Ref, Tuple};
 use std::iter::once;
 use swc_common::Span;
 use swc_common::Spanned;
