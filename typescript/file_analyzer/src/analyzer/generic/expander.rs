@@ -191,7 +191,7 @@ impl Analyzer<'_, '_> {
                 Type::Class(..) => return Some(false),
                 _ => {}
             },
-            Type::Class(child_class) => match parent {
+            Type::ClassDef(child_class) => match parent {
                 Type::Function(..) | Type::Lit(..) => return Some(false),
                 Type::TypeLit(parent) => {
                     // //
@@ -216,16 +216,16 @@ impl Analyzer<'_, '_> {
                     // return Some(true);
                 }
                 _ => {
-                    if let Some(super_class) = &child_class.def.super_class {
+                    if let Some(super_class) = &child_class.super_class {
                         if (&**super_class).type_eq(parent) {
                             return Some(true);
                         }
                     }
 
                     match parent {
-                        Type::Class(parent) => {
+                        Type::ClassDef(parent) => {
                             // Check for grand parent
-                            if let Some(grand_parent) = &parent.def.super_class {
+                            if let Some(grand_parent) = &parent.super_class {
                                 if let Some(false) = self.extends(span, child, grand_parent) {
                                     return Some(false);
                                 }
