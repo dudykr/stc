@@ -1,6 +1,6 @@
 use super::{super::Analyzer, TypeOfMode};
 use crate::analyzer::util::ResultExt;
-use crate::{ty::Type, validator, validator::ValidateWith, ValidationResult};
+use crate::{analyzer::util::instantiate_class, ty::Type, validator, validator::ValidateWith, ValidationResult};
 use stc_ts_ast_rnode::RTsAsExpr;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
@@ -69,7 +69,7 @@ impl Analyzer<'_, '_> {
         let orig_ty = self.expand_fully(span, orig_ty, true)?;
 
         let casted_ty = to.validate_with(self)?;
-        let mut casted_ty = self.instantiate_class(&casted_ty)?;
+        let mut casted_ty = instantiate_class(self.ctx.module_id, casted_ty);
         self.prevent_inference_while_simplifying(&mut casted_ty);
         casted_ty = self.simplify(casted_ty);
 
