@@ -1976,7 +1976,8 @@ impl Analyzer<'_, '_> {
                 if let Some(types) = self.find_type(ctxt, &i.into())? {
                     for ty in types {
                         match ty.normalize() {
-                            Type::Interface(_)
+                            Type::Instance(..)
+                            | Type::Interface(_)
                             | Type::Class(_)
                             | Type::ClassDef(_)
                             | Type::Enum(_)

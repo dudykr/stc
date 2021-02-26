@@ -44,6 +44,7 @@ use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
+use stc_ts_ast_rnode::RTsThisType;
 use stc_ts_ast_rnode::RTsThisTypeOrIdent;
 use stc_ts_ast_rnode::RTsType;
 use stc_ts_ast_rnode::RTsTypeParamInstantiation;
@@ -56,6 +57,7 @@ use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::Class;
 use stc_ts_types::ClassDef;
 use stc_ts_types::ClassProperty;
+use stc_ts_types::Instance;
 use stc_ts_types::Interface;
 use stc_ts_types::Key;
 use stc_ts_types::ModuleId;
@@ -1162,6 +1164,13 @@ impl Analyzer<'_, '_> {
                         spread_arg_types,
                         type_ann,
                     )
+                }
+
+                Type::This(..) => {
+                    return Ok(Type::Instance(Instance {
+                        span,
+                        of: box Type::This(RTsThisType { span }),
+                    }))
                 }
 
                 _ => {}

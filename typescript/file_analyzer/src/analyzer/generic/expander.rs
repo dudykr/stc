@@ -317,7 +317,7 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                 return ty.fold_children_with(self);
             }
 
-            Type::Ref(..) => return ty.fold_children_with(self),
+            Type::Instance(..) | Type::Ref(..) => return ty.fold_children_with(self),
 
             // Type::IndexedAccessType(IndexedAccessType {
             //     span,
