@@ -791,6 +791,20 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        match ty.normalize() {
+            Type::ClassDef(ty) => {
+                return self.narrow_with_instanceof(
+                    span,
+                    Type::Class(Class {
+                        span,
+                        def: box ty.clone(),
+                    }),
+                    orig_ty,
+                )
+            }
+            _ => {}
+        }
+
         if let Some(v) = self.extends(span, orig_ty, &ty) {
             if v {
                 match orig_ty.normalize() {
