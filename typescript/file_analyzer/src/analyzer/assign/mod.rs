@@ -1216,11 +1216,8 @@ impl Analyzer<'_, '_> {
             //    _ => {}
             //},
             Type::Constructor(ref lc) => match *rhs.normalize() {
-                Type::Lit(..)
-                | Type::Class(ty::Class {
-                    def: box ClassDef { is_abstract: true, .. },
-                    ..
-                }) => fail!(),
+                Type::Lit(..) => fail!(),
+                Type::ClassDef(ClassDef { is_abstract: true, .. }) => fail!(),
                 _ => {}
             },
 
