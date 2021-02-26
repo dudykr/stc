@@ -1177,7 +1177,16 @@ impl Analyzer<'_, '_> {
 
                 // check for super class
                 if let Some(super_ty) = &c.def.super_class {
-                    if let Ok(v) = self.access_property(span, *super_ty.clone(), prop, type_mode, id_ctx) {
+                    // TODO: Instantate fully
+                    let super_ty = match super_ty.normalize() {
+                        Type::ClassDef(def) => Type::Class(Class {
+                            span,
+                            def: box def.clone(),
+                        }),
+                        _ => *super_ty.clone(),
+                    };
+
+                    if let Ok(v) = self.access_property(span, super_ty, prop, type_mode, id_ctx) {
                         return Ok(v);
                     }
                 }
