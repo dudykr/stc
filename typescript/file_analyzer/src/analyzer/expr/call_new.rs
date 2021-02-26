@@ -615,26 +615,30 @@ impl Analyzer<'_, '_> {
                                 type_params,
                                 params,
                                 ..
-                            }) if key.type_eq(&prop) => {
-                                candidates.push((type_params, params, ret_ty));
+                            }) => {
+                                if self.key_matches(span, key, prop, false) {
+                                    candidates.push((type_params, params, ret_ty));
+                                }
                             }
-                            ty::ClassMember::Property(ClassProperty { key, value, .. }) if key.type_eq(&prop) => {
-                                // Check for properties with callable type.
+                            ty::ClassMember::Property(ClassProperty { key, value, .. }) => {
+                                if self.key_matches(span, key, prop, false) {
+                                    // Check for properties with callable type.
 
-                                // TODO: Change error message from no callable
-                                // property to property exists but not callable.
-                                if let Some(ty) = &value {
-                                    return self.extract(
-                                        span,
-                                        expr,
-                                        ty,
-                                        kind,
-                                        args,
-                                        arg_types,
-                                        spread_arg_types,
-                                        type_args,
-                                        type_ann,
-                                    );
+                                    // TODO: Change error message from no callable
+                                    // property to property exists but not callable.
+                                    if let Some(ty) = &value {
+                                        return self.extract(
+                                            span,
+                                            expr,
+                                            ty,
+                                            kind,
+                                            args,
+                                            arg_types,
+                                            spread_arg_types,
+                                            type_args,
+                                            type_ann,
+                                        );
+                                    }
                                 }
                             }
                             _ => {}
