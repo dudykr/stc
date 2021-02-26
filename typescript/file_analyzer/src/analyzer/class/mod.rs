@@ -709,8 +709,8 @@ impl Analyzer<'_, '_> {
         let res: ValidationResult<()> = try {
             if let Some(ref super_ty) = class.super_class {
                 match super_ty.normalize() {
-                    Type::Class(sc) => {
-                        'outer: for sm in &sc.def.body {
+                    Type::ClassDef(sc) => {
+                        'outer: for sm in &sc.body {
                             match sm {
                                 stc_ts_types::ClassMember::Method(sm) => {
                                     if sm.is_optional || !sm.is_abstract {
@@ -744,7 +744,7 @@ impl Analyzer<'_, '_> {
 
                             errors.push(Error::TS2515 { span: name_span });
 
-                            if sc.def.is_abstract {
+                            if sc.is_abstract {
                                 // TODO: Check super class of super class
                             }
                         }
