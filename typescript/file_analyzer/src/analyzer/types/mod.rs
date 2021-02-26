@@ -75,21 +75,24 @@ impl Analyzer<'_, '_> {
     pub(crate) fn collect_class_members(&mut self, ty: &Type) -> ValidationResult<Option<Vec<ClassMember>>> {
         let ty = ty.normalize();
         match ty {
-            Type::Class(c) => match &c.def.super_class {
-                Some(sc) => {
-                    let mut members = c.def.body.clone();
-                    // TODO: Override
+            Type::ClassDef(c) => {
+                match &c.super_class {
+                    Some(sc) => {
+                        let mut members = c.body.clone();
+                        // TODO: Override
 
-                    if let Some(super_members) = self.collect_class_members(&sc)? {
-                        members.extend(super_members)
+                        if let Some(super_members) = self.collect_class_members(&sc)? {
+                            members.extend(super_members)
+                        }
+
+                        return Ok(Some(members));
                     }
-
-                    return Ok(Some(members));
+                    None => {
+                        return Ok(Some(c.body.clone()));
+                    }
                 }
-                None => {
-                    return Ok(Some(c.def.body.clone()));
-                }
-            },
+            }
+            Type::Class(c) => self.collect_class_members(&Type::ClassDef(*c.def.clone())),
             _ => {
                 slog::error!(self.logger, "unimplemented: collect_class_members: {:?}", ty);
                 return Ok(None);
