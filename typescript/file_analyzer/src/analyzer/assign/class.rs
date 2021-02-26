@@ -94,7 +94,7 @@ impl Analyzer<'_, '_> {
                 // TODO: Verify that all class members all public.
 
                 for lm in &l.def.body {
-                    let lm = self.make_type_el_from_class_member(lm)?;
+                    let lm = self.make_type_el_from_class_member(lm, false)?;
                     let lm = match lm {
                         Some(v) => v,
                         None => {
@@ -115,7 +115,7 @@ impl Analyzer<'_, '_> {
 
             Type::TypeLit(rhs) => {
                 for lm in &l.def.body {
-                    let lm = self.make_type_el_from_class_member(lm)?;
+                    let lm = self.make_type_el_from_class_member(lm, false)?;
                     let lm = match lm {
                         Some(v) => v,
                         None => {
@@ -135,7 +135,7 @@ impl Analyzer<'_, '_> {
                     .context("tried to convert a type to type literal to assign it to a class")?;
                 if let Some(rhs) = rhs.as_deref() {
                     for lm in &l.def.body {
-                        let lm = self.make_type_el_from_class_member(lm)?;
+                        let lm = self.make_type_el_from_class_member(lm, false)?;
                         let lm = match lm {
                             Some(v) => v,
                             None => {

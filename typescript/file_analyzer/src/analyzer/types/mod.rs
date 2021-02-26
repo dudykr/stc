@@ -154,14 +154,35 @@ impl Analyzer<'_, '_> {
             Type::Class(c) => {
                 let mut members = vec![];
                 if let Some(super_class) = &c.def.super_class {
-                    let super_els = self.type_to_type_lit(span, super_class)?;
+                    let super_class = self.instantiate_class(span, super_class)?;
+                    let super_els = self.type_to_type_lit(span, &super_class)?;
                     members.extend(super_els.map(|ty| ty.into_owned().members).into_iter().flatten());
                 }
 
                 // TODO: Override
 
                 for member in &c.def.body {
-                    members.extend(self.make_type_el_from_class_member(member)?);
+                    members.extend(self.make_type_el_from_class_member(member, false)?);
+                }
+
+                Cow::Owned(TypeLit {
+                    span: c.span,
+                    members,
+                    metadata: TypeLitMetadata { ..Default::default() },
+                })
+            }
+
+            Type::ClassDef(c) => {
+                let mut members = vec![];
+                if let Some(super_class) = &c.super_class {
+                    let super_els = self.type_to_type_lit(span, super_class)?;
+                    members.extend(super_els.map(|ty| ty.into_owned().members).into_iter().flatten());
+                }
+
+                // TODO: Override
+
+                for member in &c.body {
+                    members.extend(self.make_type_el_from_class_member(member, true)?);
                 }
 
                 Cow::Owned(TypeLit {
@@ -286,11 +307,15 @@ impl Analyzer<'_, '_> {
     /// This method is used while inferring types and while assigning type
     /// element to class member or vice versa.
     #[inline]
-    pub(super) fn make_type_el_from_class_member(&self, member: &ClassMember) -> ValidationResult<Option<TypeElement>> {
+    pub(super) fn make_type_el_from_class_member(
+        &self,
+        member: &ClassMember,
+        static_mode: bool,
+    ) -> ValidationResult<Option<TypeElement>> {
         Ok(Some(match member {
             ClassMember::Constructor(c) => TypeElement::Constructor(c.clone()),
             ClassMember::Method(m) => {
-                if m.is_static {
+                if m.is_static != static_mode {
                     return Ok(None);
                 }
 
@@ -318,7 +343,7 @@ impl Analyzer<'_, '_> {
                 }
             }
             ClassMember::Property(p) => {
-                if p.is_static {
+                if p.is_static != static_mode {
                     return Ok(None);
                 }
 
