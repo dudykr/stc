@@ -605,7 +605,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::ClassDef(cls) => {
-                    return self.call_property_of_class(
+                    if let Some(v) = self.call_property_of_class(
                         span,
                         expr,
                         kind,
@@ -618,11 +618,13 @@ impl Analyzer<'_, '_> {
                         arg_types,
                         spread_arg_types,
                         type_ann,
-                    )
+                    )? {
+                        return Ok(v);
+                    }
                 }
 
                 Type::Class(ty::Class { def, .. }) => {
-                    return self.call_property_of_class(
+                    if let Some(v) = self.call_property_of_class(
                         span,
                         expr,
                         kind,
@@ -635,7 +637,9 @@ impl Analyzer<'_, '_> {
                         arg_types,
                         spread_arg_types,
                         type_ann,
-                    )
+                    )? {
+                        return Ok(v);
+                    }
                 }
 
                 Type::Keyword(RTsKeywordType {
@@ -733,7 +737,7 @@ impl Analyzer<'_, '_> {
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
-    ) -> ValidationResult {
+    ) -> ValidationResult<Option<Type>> {
         let mut candidates = vec![];
         for member in c.body.iter() {
             match member {
@@ -758,17 +762,19 @@ impl Analyzer<'_, '_> {
                         // TODO: Change error message from no callable
                         // property to property exists but not callable.
                         if let Some(ty) = &value {
-                            return self.extract(
-                                span,
-                                expr,
-                                ty,
-                                kind,
-                                args,
-                                arg_types,
-                                spread_arg_types,
-                                type_args,
-                                type_ann,
-                            );
+                            return self
+                                .extract(
+                                    span,
+                                    expr,
+                                    ty,
+                                    kind,
+                                    args,
+                                    arg_types,
+                                    spread_arg_types,
+                                    type_args,
+                                    type_ann,
+                                )
+                                .map(Some);
                         }
                     }
                 }
@@ -789,19 +795,21 @@ impl Analyzer<'_, '_> {
         });
 
         for (type_params, params, ret_ty) in candidates {
-            return self.get_return_type(
-                span,
-                kind,
-                expr,
-                type_params.as_ref().map(|v| &*v.params),
-                &params,
-                *ret_ty.clone(),
-                type_args,
-                args,
-                &arg_types,
-                &spread_arg_types,
-                type_ann,
-            );
+            return self
+                .get_return_type(
+                    span,
+                    kind,
+                    expr,
+                    type_params.as_ref().map(|v| &*v.params),
+                    &params,
+                    *ret_ty.clone(),
+                    type_args,
+                    args,
+                    &arg_types,
+                    &spread_arg_types,
+                    type_ann,
+                )
+                .map(Some);
         }
 
         if let Some(ty) = &c.super_class {
@@ -824,15 +832,11 @@ impl Analyzer<'_, '_> {
                 spread_arg_types,
                 type_ann,
             ) {
-                return Ok(ret_ty);
+                return Ok(Some(ret_ty));
             }
         }
 
-        Err(Error::NoSuchPropertyInClass {
-            span,
-            class_name: c.name.clone(),
-            prop: prop.clone(),
-        })
+        Ok(None)
     }
 
     fn check_type_element_for_call(
