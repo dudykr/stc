@@ -211,6 +211,11 @@ impl Analyzer<'_, '_> {
                             &rhs,
                             lhs_metadata,
                         )
+                        .convert_err(|err| match err {
+                            Error::Errors { span, .. } => Error::SimpleAssignFailed { span },
+                            Error::MissingFields { span, .. } => Error::SimpleAssignFailed { span },
+                            _ => err,
+                        })
                         .context("tried to assign a class definition to type elements");
                 }
 
