@@ -1,8 +1,5 @@
 use super::Analyzer;
-use crate::{
-    ty::{self, TypeExt},
-    ValidationResult,
-};
+use crate::{ty::TypeExt, ValidationResult};
 use rnode::NodeId;
 use stc_ts_ast_rnode::RBool;
 use stc_ts_ast_rnode::RExpr;
