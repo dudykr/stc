@@ -89,6 +89,7 @@ impl From<Box<Type>> for RTsType {
 impl From<Type> for RTsType {
     fn from(t: Type) -> Self {
         match t {
+            Type::Instance(t) => t.of.into(),
             Type::This(t) => t.into(),
             Type::Lit(t) => t.into(),
             Type::Query(t) => t.into(),

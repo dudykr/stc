@@ -118,6 +118,7 @@ impl AddAssign for ModuleTypeData {
 /// This type is expected to stored in a [Box], like `Vec<Type>`.
 #[derive(Debug, Clone, PartialEq, Spanned, FromVariant, Is, EqIgnoreSpan, TypeEq, Visit)]
 pub enum Type {
+    Instance(Instance),
     StaticThis(StaticThis),
     This(RTsThisType),
     Lit(#[use_eq_ignore_span] RTsLitType),
@@ -324,6 +325,24 @@ assert_eq_size!(ComputedKey, [u8; 32]);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EqIgnoreSpan, TypeEq, Visit)]
 pub struct SymbolId(usize);
+
+/// Used to handle code like
+///
+///
+/// ```ts
+/// class Derived {
+///     static create() {
+///         return new this();
+///     }
+/// }
+/// ```
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+pub struct Instance {
+    pub span: Span,
+    pub of: Box<Type>,
+}
+
+assert_eq_size!(Instance, [u8; 24]);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Symbol {
@@ -1057,6 +1076,8 @@ impl Type {
             Type::Symbol(ty) => ty.span = span,
 
             Type::StaticThis(ty) => ty.span = span,
+
+            Type::Instance(ty) => ty.span = span,
         }
     }
 }
