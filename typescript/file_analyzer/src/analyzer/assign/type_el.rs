@@ -192,6 +192,26 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
+                Type::ClassDef(rhs_cls) => {
+                    let rhs = self
+                        .type_to_type_lit(span, rhs)
+                        .context("tried to convert a class definition into a type literal for assignment")?
+                        .map(Cow::into_owned)
+                        .map(Type::TypeLit)
+                        .unwrap();
+
+                    return self.assign_to_type_elements(
+                        AssignOpts {
+                            allow_unknown_rhs: true,
+                            ..opts
+                        },
+                        lhs_span,
+                        lhs,
+                        &rhs,
+                        lhs_metadata,
+                    );
+                }
+
                 Type::Class(rhs_cls) => {
                     // TODO: Check if constructor exists.
                     if rhs_cls.def.is_abstract {
