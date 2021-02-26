@@ -21,6 +21,25 @@ impl Analyzer<'_, '_> {
                     return Err(Error::CannotAssignAbstractConstructorToNonAbstractConstructor { span: opts.span });
                 }
             }
+
+            Type::TypeLit(..) | Type::Interface(..) => {
+                let rhs = self.type_to_type_lit(opts.span, r)?.unwrap();
+
+                for lm in &l.body {
+                    let lm = self.make_type_el_from_class_member(lm, true)?;
+                    let lm = match lm {
+                        Some(v) => v,
+                        None => {
+                            // Instance property does not exist at the moment.
+                            continue;
+                        }
+                    };
+                    self.assign_type_elements_to_type_element(opts, &mut vec![], &lm, &rhs.members)
+                        .context("tried to assign type elements to a class member")?;
+                }
+
+                return Ok(());
+            }
             _ => {}
         }
 
