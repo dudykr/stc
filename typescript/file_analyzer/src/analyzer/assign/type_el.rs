@@ -200,16 +200,18 @@ impl Analyzer<'_, '_> {
                         .map(Type::TypeLit)
                         .unwrap();
 
-                    return self.assign_to_type_elements(
-                        AssignOpts {
-                            allow_unknown_rhs: true,
-                            ..opts
-                        },
-                        lhs_span,
-                        lhs,
-                        &rhs,
-                        lhs_metadata,
-                    );
+                    return self
+                        .assign_to_type_elements(
+                            AssignOpts {
+                                allow_unknown_rhs: true,
+                                ..opts
+                            },
+                            lhs_span,
+                            lhs,
+                            &rhs,
+                            lhs_metadata,
+                        )
+                        .context("tried to assign a class definition to type elements");
                 }
 
                 Type::Class(rhs_cls) => {
@@ -230,16 +232,18 @@ impl Analyzer<'_, '_> {
                         .map(Type::TypeLit)
                         .unwrap();
 
-                    return self.assign_to_type_elements(
-                        AssignOpts {
-                            allow_unknown_rhs: true,
-                            ..opts
-                        },
-                        lhs_span,
-                        lhs,
-                        &rhs,
-                        lhs_metadata,
-                    );
+                    return self
+                        .assign_to_type_elements(
+                            AssignOpts {
+                                allow_unknown_rhs: true,
+                                ..opts
+                            },
+                            lhs_span,
+                            lhs,
+                            &rhs,
+                            lhs_metadata,
+                        )
+                        .context("tried to assign a class instance to type elements");
                 }
 
                 Type::Keyword(RTsKeywordType {
