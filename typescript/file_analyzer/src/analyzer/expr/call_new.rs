@@ -670,12 +670,15 @@ impl Analyzer<'_, '_> {
                     }
 
                     if let Some(ty) = super_class {
+                        let ty = self
+                            .instantiate_class(span, ty)
+                            .context("tried to instantiate a class to call property of a super class")?;
                         if let Ok(ret_ty) = self.call_property(
                             span,
                             kind,
                             expr,
                             this,
-                            ty,
+                            &ty,
                             prop,
                             type_args,
                             args,

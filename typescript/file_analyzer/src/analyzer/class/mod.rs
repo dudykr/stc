@@ -50,6 +50,7 @@ use stc_ts_ast_rnode::RVarDeclarator;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_file_analyzer_macros::extra_validator;
+use stc_ts_types::Class;
 use stc_ts_types::ClassDef;
 use stc_ts_types::ClassProperty;
 use stc_ts_types::ConstructorSignature;
@@ -1322,6 +1323,17 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
+    /// TODO: Instantate fully
+    pub(crate) fn instantiate_class(&mut self, span: Span, ty: &Type) -> ValidationResult {
+        Ok(match ty.normalize() {
+            Type::ClassDef(def) => Type::Class(Class {
+                span,
+                def: box def.clone(),
+            }),
+            _ => ty.clone(),
+        })
+    }
+
     fn visit_class_decl_inner(&mut self, c: &RClassDecl) {
         c.ident.visit_with(self);
 
