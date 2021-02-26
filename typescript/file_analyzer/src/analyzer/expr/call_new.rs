@@ -602,98 +602,40 @@ impl Analyzer<'_, '_> {
                     );
                 }
 
-                Type::Class(ty::Class {
-                    def: box ClassDef { body, super_class, .. },
-                    ..
-                }) => {
-                    let mut candidates = vec![];
-                    for member in body.iter() {
-                        match member {
-                            ty::ClassMember::Method(Method {
-                                key,
-                                ret_ty,
-                                type_params,
-                                params,
-                                ..
-                            }) => {
-                                if self.key_matches(span, key, prop, false) {
-                                    candidates.push((type_params, params, ret_ty));
-                                }
-                            }
-                            ty::ClassMember::Property(ClassProperty { key, value, .. }) => {
-                                if self.key_matches(span, key, prop, false) {
-                                    // Check for properties with callable type.
-
-                                    // TODO: Change error message from no callable
-                                    // property to property exists but not callable.
-                                    if let Some(ty) = &value {
-                                        return self.extract(
-                                            span,
-                                            expr,
-                                            ty,
-                                            kind,
-                                            args,
-                                            arg_types,
-                                            spread_arg_types,
-                                            type_args,
-                                            type_ann,
-                                        );
-                                    }
-                                }
-                            }
-                            _ => {}
-                        }
-                    }
-
-                    candidates.sort_by_cached_key(|(type_params, params, _)| {
-                        self.check_call_args(
-                            span,
-                            type_params.as_ref().map(|v| &*v.params),
-                            params,
-                            type_args,
-                            args,
-                            arg_types,
-                            spread_arg_types,
-                        )
-                    });
-
-                    for (type_params, params, ret_ty) in candidates {
-                        return self.get_return_type(
-                            span,
-                            kind,
-                            expr,
-                            type_params.as_ref().map(|v| &*v.params),
-                            &params,
-                            *ret_ty.clone(),
-                            type_args,
-                            args,
-                            &arg_types,
-                            &spread_arg_types,
-                            type_ann,
-                        );
-                    }
-
-                    if let Some(ty) = super_class {
-                        let ty = self
-                            .instantiate_class(span, ty)
-                            .context("tried to instantiate a class to call property of a super class")?;
-                        if let Ok(ret_ty) = self.call_property(
-                            span,
-                            kind,
-                            expr,
-                            this,
-                            &ty,
-                            prop,
-                            type_args,
-                            args,
-                            arg_types,
-                            spread_arg_types,
-                            type_ann,
-                        ) {
-                            return Ok(ret_ty);
-                        }
-                    }
+                Type::ClassDef(cls) => {
+                    return self.call_property_of_class(
+                        span,
+                        expr,
+                        kind,
+                        this,
+                        cls,
+                        prop,
+                        true,
+                        type_args,
+                        args,
+                        arg_types,
+                        spread_arg_types,
+                        type_ann,
+                    )
                 }
+
+                Type::Class(ty::Class { def, .. }) => {
+                    return self.call_property_of_class(
+                        span,
+                        expr,
+                        kind,
+                        this,
+                        def,
+                        prop,
+                        false,
+                        type_args,
+                        args,
+                        arg_types,
+                        spread_arg_types,
+                        type_ann,
+                    )
+                }
+
                 Type::Keyword(RTsKeywordType {
                     kind: TsKeywordTypeKind::TsSymbolKeyword,
                     ..
@@ -773,6 +715,119 @@ impl Analyzer<'_, '_> {
         })();
         self.scope.this = old_this;
         res
+    }
+
+    fn call_property_of_class(
+        &mut self,
+        span: Span,
+        expr: ReevalMode,
+        kind: ExtractKind,
+        this: &Type,
+        c: &ClassDef,
+        prop: &Key,
+        is_static_call: bool,
+        type_args: Option<&TypeParamInstantiation>,
+        args: &[RExprOrSpread],
+        arg_types: &[TypeOrSpread],
+        spread_arg_types: &[TypeOrSpread],
+        type_ann: Option<&Type>,
+    ) -> ValidationResult {
+        let mut candidates = vec![];
+        for member in c.body.iter() {
+            match member {
+                ty::ClassMember::Method(Method {
+                    key,
+                    ret_ty,
+                    type_params,
+                    params,
+                    is_static,
+                    ..
+                }) if *is_static == is_static_call => {
+                    if self.key_matches(span, key, prop, false) {
+                        candidates.push((type_params, params, ret_ty));
+                    }
+                }
+                ty::ClassMember::Property(ClassProperty {
+                    key, value, is_static, ..
+                }) if *is_static == is_static_call => {
+                    if self.key_matches(span, key, prop, false) {
+                        // Check for properties with callable type.
+
+                        // TODO: Change error message from no callable
+                        // property to property exists but not callable.
+                        if let Some(ty) = &value {
+                            return self.extract(
+                                span,
+                                expr,
+                                ty,
+                                kind,
+                                args,
+                                arg_types,
+                                spread_arg_types,
+                                type_args,
+                                type_ann,
+                            );
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        candidates.sort_by_cached_key(|(type_params, params, _)| {
+            self.check_call_args(
+                span,
+                type_params.as_ref().map(|v| &*v.params),
+                params,
+                type_args,
+                args,
+                arg_types,
+                spread_arg_types,
+            )
+        });
+
+        for (type_params, params, ret_ty) in candidates {
+            return self.get_return_type(
+                span,
+                kind,
+                expr,
+                type_params.as_ref().map(|v| &*v.params),
+                &params,
+                *ret_ty.clone(),
+                type_args,
+                args,
+                &arg_types,
+                &spread_arg_types,
+                type_ann,
+            );
+        }
+
+        if let Some(ty) = &c.super_class {
+            let ty = self
+                .instantiate_class(span, ty)
+                .context("tried to instantiate a class to call property of a super class")?;
+            if let Ok(ret_ty) = self.call_property(
+                span,
+                kind,
+                expr,
+                this,
+                &ty,
+                prop,
+                type_args,
+                args,
+                arg_types,
+                spread_arg_types,
+                type_ann,
+            ) {
+                return Ok(ret_ty);
+            }
+        }
+
+        Err(Error::NoSuchPropertyInClass {
+            span,
+            class_name: c.name.clone(),
+            prop: prop.clone(),
+        })
     }
 
     fn check_type_element_for_call(
