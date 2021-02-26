@@ -9,7 +9,7 @@ warning: Type
 5 | | };
   | |_^
   |
-  = note: anonymous class
+  = note: typeof anonymous class
 
 warning: Type
  --> $DIR/tests/visualize/exprs/class/simple-1.ts:6:21
@@ -17,7 +17,7 @@ warning: Type
 6 | export let x = (new C).foo();
   |                     ^
   |
-  = note: anonymous class
+  = note: typeof anonymous class
 
 warning: Type
  --> $DIR/tests/visualize/exprs/class/simple-1.ts:6:17
