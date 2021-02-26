@@ -234,10 +234,7 @@ impl Analyzer<'_, '_> {
                                 return Ok(());
                             }
                         };
-                        let ty = self
-                            .expand_top_ref(span, Cow::Owned(ty))
-                            .context("tried to expand reference type of a variable")?
-                            .into_owned();
+                        let ty = self.expand(span, ty)?;
                         let ty = instantiate_class(self.ctx.module_id, ty);
                         self.check_rvalue(span, &ty);
 
