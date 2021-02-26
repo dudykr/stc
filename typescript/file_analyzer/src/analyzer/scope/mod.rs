@@ -1780,6 +1780,17 @@ impl Expander<'_, '_, '_> {
                                     ty = ty.fold_with(self);
                                     self.dejavu.remove(&i.into());
                                 }
+
+                                match ty {
+                                    Type::ClassDef(def) => {
+                                        ty = Type::Class(Class {
+                                            span: self.span,
+                                            def: box def,
+                                        });
+                                    }
+                                    _ => {}
+                                };
+
                                 return Ok(Some(ty));
                             }
 
