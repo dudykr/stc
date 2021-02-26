@@ -7,6 +7,14 @@ warning: Type
   = note: this
 
 warning: Type
+ --> $DIR/tests/visualize/class/member/static/factory-1.ts:4:16
+  |
+4 |         return new this();
+  |                ^^^^^^^^^^
+  |
+  = note: this
+
+warning: Type
  --> $DIR/tests/visualize/class/member/static/factory-1.ts:8:23
   |
 8 | class Derived extends Base {
@@ -37,4 +45,12 @@ warning: Type
    | ^
    |
    = note: Derived
+
+warning: Type
+  --> $DIR/tests/visualize/class/member/static/factory-1.ts:13:1
+   |
+13 | d.foo();
+   | ^^^^^^^
+   |
+   = note: number
 
