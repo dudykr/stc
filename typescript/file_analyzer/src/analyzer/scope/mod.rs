@@ -1714,7 +1714,8 @@ impl Expander<'_, '_, '_> {
                             | Type::Class(Class {
                                 def: box ClassDef { type_params, .. },
                                 ..
-                            }) => {
+                            })
+                            | Type::ClassDef(ClassDef { type_params, .. }) => {
                                 let ty = t.clone().into_owned();
                                 let type_params = type_params.clone();
                                 let type_args: Option<_> = type_args.clone().fold_with(self);
@@ -1738,6 +1739,16 @@ impl Expander<'_, '_, '_> {
                                     });
 
                                     let mut ty = self.analyzer.expand_type_params(&inferred, ty.foldable())?;
+
+                                    match ty {
+                                        Type::ClassDef(def) => {
+                                            ty = Type::Class(Class {
+                                                span: self.span,
+                                                def: box def,
+                                            });
+                                        }
+                                        _ => {}
+                                    };
 
                                     if is_alias {
                                         self.dejavu.insert(i.into());
