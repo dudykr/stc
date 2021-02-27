@@ -347,6 +347,13 @@ impl Analyzer<'_, '_> {
             return Ok(to);
         }
 
+        if to.is_kwd(TsKeywordTypeKind::TsObjectKeyword) || rhs.is_kwd(TsKeywordTypeKind::TsObjectKeyword) {
+            return Ok(Type::Keyword(RTsKeywordType {
+                span: to.span(),
+                kind: TsKeywordTypeKind::TsObjectKeyword,
+            }));
+        }
+
         match rhs.normalize() {
             Type::Ref(..) => {
                 let rhs = self.expand_top_ref(rhs.span(), Cow::Owned(rhs))?.into_owned();
