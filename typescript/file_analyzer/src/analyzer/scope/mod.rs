@@ -1806,6 +1806,10 @@ impl Expander<'_, '_, '_> {
                     }
                 }
 
+                if i.sym == *"undefined" || i.sym == *"null" {
+                    return Ok(Some(Type::any(span)));
+                }
+
                 slog::error!(
                     self.logger,
                     "({}) Failed to find type: {}{:?}",
