@@ -18,8 +18,10 @@ use crate::{
 use rnode::FoldWith;
 use stc_ts_ast_rnode::RBinExpr;
 use stc_ts_ast_rnode::RExpr;
+use stc_ts_ast_rnode::RExprOrSuper;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RLit;
+use stc_ts_ast_rnode::RMemberExpr;
 use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RPatOrExpr;
 use stc_ts_ast_rnode::RStr;
@@ -1417,6 +1419,23 @@ fn extract_name_for_assignment(e: &RExpr) -> Option<Name> {
                 _ => None,
             },
         },
+        RExpr::Member(RMemberExpr {
+            obj: RExprOrSuper::Expr(obj),
+            prop,
+            computed,
+            ..
+        }) => {
+            let mut name = extract_name_for_assignment(obj)?;
+
+            name.push(match &**prop {
+                RExpr::Ident(i) if !*computed => i.sym.clone(),
+                RExpr::Lit(RLit::Str(s)) if *computed => s.value.clone(),
+                _ => return None,
+            });
+
+            Some(name)
+        }
+
         _ => Name::try_from(e).ok(),
     }
 }

@@ -12,6 +12,7 @@ use std::{
     fmt::{self, Debug, Formatter},
 };
 use swc_atoms::js_word;
+use swc_atoms::JsWord;
 use swc_common::{iter::IdentifyLast, DUMMY_SP};
 
 type Inner = SmallVec<[Id; 4]>;
@@ -21,6 +22,9 @@ type Inner = SmallVec<[Id; 4]>;
 pub struct Name(Inner);
 
 impl Name {
+    pub fn push(&mut self, sym: JsWord) {
+        self.0.push(Id::word(sym))
+    }
     pub fn top(&self) -> Id {
         self.0[0].clone()
     }
