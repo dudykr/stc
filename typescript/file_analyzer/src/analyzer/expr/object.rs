@@ -415,6 +415,10 @@ impl Analyzer<'_, '_> {
         if to.is_any() || to.is_unknown() {
             return Ok(to);
         }
+        if to.is_kwd(TsKeywordTypeKind::TsObjectKeyword) {
+            return Ok(to);
+        }
+
         let mut to = to.foldable();
 
         match to {
