@@ -4,7 +4,7 @@ use crate::analyzer::util::ResultExt;
 use crate::{
     analyzer::{pat::PatMode, Ctx, ScopeKind},
     ty,
-    ty::{ClassInstance, FnParam, Tuple, Type, TypeParam},
+    ty::{FnParam, Tuple, Type, TypeParam},
     validator,
     validator::ValidateWith,
     ValidationResult,
@@ -21,12 +21,15 @@ use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_types::CallSignature;
+use stc_ts_types::Class;
+use stc_ts_types::ClassDef;
 use stc_ts_types::Function;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
 use stc_ts_types::{Alias, Interface, Ref};
 use swc_common::{Span, Spanned};
-use swc_ecma_ast::*;
+use swc_ecma_ast::TsKeywordTypeKind;
+use swc_ecma_ast::VarDeclKind;
 use ty::TypeExt;
 
 #[validator]
@@ -92,11 +95,7 @@ impl Analyzer<'_, '_> {
             if let Some(ret_ty) = declared_ret_ty {
                 let span = ret_ty.span();
                 declared_ret_ty = Some(match ret_ty {
-                    Type::Class(cls) => Type::ClassInstance(ClassInstance {
-                        span,
-                        ty: box Type::Class(cls),
-                        type_args: None,
-                    }),
+                    Type::ClassDef(def) => Type::Class(Class { span, def: box def }),
 
                     _ => ret_ty,
                 });
@@ -258,7 +257,11 @@ impl Analyzer<'_, '_> {
                 ..
             })
             | Type::Class(stc_ts_types::Class {
-                type_params: Some(type_params),
+                def:
+                    box ClassDef {
+                        type_params: Some(type_params),
+                        ..
+                    },
                 ..
             }) => type_params,
 

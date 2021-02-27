@@ -162,7 +162,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Interface(Interface { name, .. }) if *name.sym() == *"ObjectConstructor" => match child {
-                Type::Class(..) | Type::ClassInstance(..) | Type::Interface(..) | Type::TypeLit(..) => {
+                Type::Class(..) | Type::ClassDef(..) | Type::Interface(..) | Type::TypeLit(..) => {
                     return Some(true);
                 }
                 _ => {}
@@ -191,7 +191,7 @@ impl Analyzer<'_, '_> {
                 Type::Class(..) => return Some(false),
                 _ => {}
             },
-            Type::Class(child_class) => match parent {
+            Type::ClassDef(child_class) => match parent {
                 Type::Function(..) | Type::Lit(..) => return Some(false),
                 Type::TypeLit(parent) => {
                     // //
@@ -223,7 +223,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     match parent {
-                        Type::Class(parent) => {
+                        Type::ClassDef(parent) => {
                             // Check for grand parent
                             if let Some(grand_parent) = &parent.super_class {
                                 if let Some(false) = self.extends(span, child, grand_parent) {
@@ -317,7 +317,7 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                 return ty.fold_children_with(self);
             }
 
-            Type::Ref(..) => return ty.fold_children_with(self),
+            Type::Instance(..) | Type::Ref(..) => return ty.fold_children_with(self),
 
             // Type::IndexedAccessType(IndexedAccessType {
             //     span,
@@ -398,7 +398,7 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
             Type::Class(mut c) => {
                 c = c.fold_with(self);
 
-                if let Some(..) = &c.type_params {
+                if let Some(..) = &c.def.type_params {
                     slog::error!(
                         self.logger,
                         "A class has type parameters. It may not be fully expanded."
@@ -648,7 +648,7 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
             | Type::EnumVariant(..)
             | Type::Namespace(..)
             | Type::Module(..)
-            | Type::ClassInstance(..)
+            | Type::ClassDef(..)
             | Type::Optional(..)
             | Type::Rest(..)
             | Type::IndexedAccessType(..)

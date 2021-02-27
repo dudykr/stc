@@ -4,7 +4,7 @@ warning: Type
 4 | var y = [C, C];
   |          ^
   |
-  = note: C
+  = note: typeof C
 
 warning: Type
  --> $DIR/tests/visualize/exprs/array/class/new-1.ts:4:13
@@ -12,7 +12,7 @@ warning: Type
 4 | var y = [C, C];
   |             ^
   |
-  = note: C
+  = note: typeof C
 
 warning: Type
  --> $DIR/tests/visualize/exprs/array/class/new-1.ts:4:9
@@ -20,7 +20,7 @@ warning: Type
 4 | var y = [C, C];
   |         ^^^^^^
   |
-  = note: [C, C]
+  = note: [typeof C, typeof C]
 
 warning: Type
  --> $DIR/tests/visualize/exprs/array/class/new-1.ts:5:14
@@ -28,7 +28,7 @@ warning: Type
 5 | var r3 = new y[0]();
   |              ^
   |
-  = note: C[]
+  = note: typeof C[]
 
 warning: Type
  --> $DIR/tests/visualize/exprs/array/class/new-1.ts:5:14
@@ -36,7 +36,7 @@ warning: Type
 5 | var r3 = new y[0]();
   |              ^^^^
   |
-  = note: C
+  = note: typeof C
 
 warning: Type
  --> $DIR/tests/visualize/exprs/array/class/new-1.ts:5:10

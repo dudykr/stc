@@ -4,7 +4,7 @@ warning: Type
 7 | export var aGenericClass: D<string> = new D<string>();
   |                                           ^
   |
-  = note: D
+  = note: typeof D
 
 warning: Type
  --> $DIR/tests/visualize/exprs/new/generic/specified-1.ts:7:39

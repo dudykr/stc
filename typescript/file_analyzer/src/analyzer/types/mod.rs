@@ -3,6 +3,7 @@ use crate::ty::type_facts::TypeFactsHandler;
 use crate::type_facts::TypeFacts;
 use crate::util::type_ext::TypeVecExt;
 use crate::ValidationResult;
+use fxhash::FxHashMap;
 use rnode::FoldWith;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
@@ -11,6 +12,7 @@ use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_errors::DebugExt;
 use stc_ts_types::name::Name;
 use stc_ts_types::Array;
+use stc_ts_types::ClassDef;
 use stc_ts_types::ClassMember;
 use stc_ts_types::ConstructorSignature;
 use stc_ts_types::Key;
@@ -21,6 +23,7 @@ use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
 use stc_ts_types::TypeLitMetadata;
 use stc_ts_utils::MapWithMut;
+use stc_utils::TryOpt;
 use std::borrow::Cow;
 use swc_common::Span;
 use swc_common::Spanned;
@@ -34,6 +37,54 @@ mod narrowing;
 mod type_param;
 
 impl Analyzer<'_, '_> {
+    pub(crate) fn create_prototype_of_class_def(&mut self, def: &ClassDef) -> ValidationResult<TypeLit> {
+        let mut members = vec![];
+
+        let type_params = def.type_params.as_ref().map(|decl| {
+            let ty = Type::any(decl.span);
+
+            decl.params
+                .iter()
+                .map(|param| (param.name.clone(), ty.clone()))
+                .collect::<FxHashMap<_, _>>()
+        });
+
+        for member in &def.body {
+            match member {
+                ClassMember::Constructor(_) => {}
+                ClassMember::Method(_) => {}
+                ClassMember::Property(p) => {
+                    let mut type_ann = p.value.clone();
+                    if let Some(type_params) = &type_params {
+                        type_ann = type_ann
+                            .map(|ty| self.expand_type_params(&type_params, *ty).map(Box::new))
+                            .try_opt()?;
+                    }
+                    //
+                    members.push(TypeElement::Property(PropertySignature {
+                        span: p.span,
+                        key: p.key.clone(),
+                        optional: p.is_optional,
+                        readonly: p.readonly,
+                        params: Default::default(),
+                        type_params: Default::default(),
+                        type_ann,
+                    }))
+                }
+                ClassMember::IndexSignature(_) => {}
+            }
+        }
+
+        Ok(TypeLit {
+            span: def.span,
+            members,
+            metadata: TypeLitMetadata {
+                inexact: true,
+                ..Default::default()
+            },
+        })
+    }
+
     pub(crate) fn exclude_types_using_fact(&mut self, name: &Name, ty: &mut Type) {
         let mut types_to_exclude = vec![];
         let mut s = Some(&self.scope);
@@ -75,21 +126,24 @@ impl Analyzer<'_, '_> {
     pub(crate) fn collect_class_members(&mut self, ty: &Type) -> ValidationResult<Option<Vec<ClassMember>>> {
         let ty = ty.normalize();
         match ty {
-            Type::Class(c) => match &c.super_class {
-                Some(sc) => {
-                    let mut members = c.body.clone();
-                    // TODO: Override
+            Type::ClassDef(c) => {
+                match &c.super_class {
+                    Some(sc) => {
+                        let mut members = c.body.clone();
+                        // TODO: Override
 
-                    if let Some(super_members) = self.collect_class_members(&sc)? {
-                        members.extend(super_members)
+                        if let Some(super_members) = self.collect_class_members(&sc)? {
+                            members.extend(super_members)
+                        }
+
+                        return Ok(Some(members));
                     }
-
-                    return Ok(Some(members));
+                    None => {
+                        return Ok(Some(c.body.clone()));
+                    }
                 }
-                None => {
-                    return Ok(Some(c.body.clone()));
-                }
-            },
+            }
+            Type::Class(c) => self.collect_class_members(&Type::ClassDef(*c.def.clone())),
             _ => {
                 slog::error!(self.logger, "unimplemented: collect_class_members: {:?}", ty);
                 return Ok(None);
@@ -150,6 +204,27 @@ impl Analyzer<'_, '_> {
 
             Type::Class(c) => {
                 let mut members = vec![];
+                if let Some(super_class) = &c.def.super_class {
+                    let super_class = self.instantiate_class(span, super_class)?;
+                    let super_els = self.type_to_type_lit(span, &super_class)?;
+                    members.extend(super_els.map(|ty| ty.into_owned().members).into_iter().flatten());
+                }
+
+                // TODO: Override
+
+                for member in &c.def.body {
+                    members.extend(self.make_type_el_from_class_member(member, false)?);
+                }
+
+                Cow::Owned(TypeLit {
+                    span: c.span,
+                    members,
+                    metadata: TypeLitMetadata { ..Default::default() },
+                })
+            }
+
+            Type::ClassDef(c) => {
+                let mut members = vec![];
                 if let Some(super_class) = &c.super_class {
                     let super_els = self.type_to_type_lit(span, super_class)?;
                     members.extend(super_els.map(|ty| ty.into_owned().members).into_iter().flatten());
@@ -158,7 +233,7 @@ impl Analyzer<'_, '_> {
                 // TODO: Override
 
                 for member in &c.body {
-                    members.extend(self.make_type_el_from_class_member(member)?);
+                    members.extend(self.make_type_el_from_class_member(member, true)?);
                 }
 
                 Cow::Owned(TypeLit {
@@ -283,11 +358,15 @@ impl Analyzer<'_, '_> {
     /// This method is used while inferring types and while assigning type
     /// element to class member or vice versa.
     #[inline]
-    pub(super) fn make_type_el_from_class_member(&self, member: &ClassMember) -> ValidationResult<Option<TypeElement>> {
+    pub(super) fn make_type_el_from_class_member(
+        &self,
+        member: &ClassMember,
+        static_mode: bool,
+    ) -> ValidationResult<Option<TypeElement>> {
         Ok(Some(match member {
             ClassMember::Constructor(c) => TypeElement::Constructor(c.clone()),
             ClassMember::Method(m) => {
-                if m.is_static {
+                if m.is_static != static_mode {
                     return Ok(None);
                 }
 
@@ -315,7 +394,7 @@ impl Analyzer<'_, '_> {
                 }
             }
             ClassMember::Property(p) => {
-                if p.is_static {
+                if p.is_static != static_mode {
                     return Ok(None);
                 }
 

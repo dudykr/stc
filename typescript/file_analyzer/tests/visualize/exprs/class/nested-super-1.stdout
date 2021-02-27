@@ -4,7 +4,7 @@ warning: Type
 1 | let C = class extends class extends class { a = 1 } { b = 2 } { c = 3 };
   |                                     ^^^^^^^^^^^^^^^
   |
-  = note: anonymous class
+  = note: typeof anonymous class
 
 warning: Type
  --> $DIR/tests/visualize/exprs/class/nested-super-1.ts:1:23
@@ -12,7 +12,7 @@ warning: Type
 1 | let C = class extends class extends class { a = 1 } { b = 2 } { c = 3 };
   |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   |
-  = note: anonymous class
+  = note: typeof anonymous class
 
 warning: Type
  --> $DIR/tests/visualize/exprs/class/nested-super-1.ts:1:9
@@ -20,7 +20,7 @@ warning: Type
 1 | let C = class extends class extends class { a = 1 } { b = 2 } { c = 3 };
   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   |
-  = note: anonymous class
+  = note: typeof anonymous class
 
 warning: Type
  --> $DIR/tests/visualize/exprs/class/nested-super-1.ts:2:13
@@ -28,7 +28,7 @@ warning: Type
 2 | let c = new C();
   |             ^
   |
-  = note: anonymous class
+  = note: typeof anonymous class
 
 warning: Type
  --> $DIR/tests/visualize/exprs/class/nested-super-1.ts:2:9

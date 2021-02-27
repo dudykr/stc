@@ -1,8 +1,5 @@
 use super::Analyzer;
-use crate::{
-    ty::{self, TypeExt},
-    ValidationResult,
-};
+use crate::{ty::TypeExt, ValidationResult};
 use rnode::NodeId;
 use stc_ts_ast_rnode::RBool;
 use stc_ts_ast_rnode::RExpr;
@@ -18,13 +15,13 @@ use stc_ts_errors::debug::print_backtrace;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
+use stc_ts_types::ClassDef;
 use stc_ts_types::Key;
 use stc_ts_types::Mapped;
 use stc_ts_types::PropertySignature;
 use stc_ts_types::Ref;
 use stc_ts_types::{
-    Array, ClassInstance, EnumVariant, FnParam, Interface, Intersection, Tuple, Type, TypeElement, TypeLit, TypeParam,
-    Union,
+    Array, EnumVariant, FnParam, Interface, Intersection, Tuple, Type, TypeElement, TypeLit, TypeParam, Union,
 };
 use std::borrow::Cow;
 use swc_atoms::js_word;
@@ -476,15 +473,6 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match rhs {
-            Type::ClassInstance(i) => {
-                return self
-                    .assign_with_opts(opts, to, &i.ty)
-                    .context("tried to assign an instance to a type");
-            }
-            _ => {}
-        }
-
         match to {
             // let a: any = 'foo'
             Type::Keyword(RTsKeywordType {
@@ -566,12 +554,19 @@ impl Analyzer<'_, '_> {
                 });
             }
 
-            Type::Class(l) => match rhs.normalize() {
+            Type::Class(l) => match rhs {
                 Type::Interface(..) | Type::Ref(..) | Type::TypeLit(..) | Type::Lit(..) | Type::Class(..) => {
-                    return self.assign_to_class(opts, l, rhs.normalize())
+                    return self
+                        .assign_to_class(opts, l, rhs)
+                        .context("tried to assign a type to an instance of a class")
                 }
                 _ => {}
             },
+            Type::ClassDef(l) => {
+                return self
+                    .assign_to_class_def(opts, l, rhs)
+                    .context("tried to assign a type to a class definition")
+            }
 
             Type::Lit(ref lhs) => match rhs.normalize() {
                 Type::Lit(rhs) if lhs.eq_ignore_span(&rhs) => return Ok(()),
@@ -977,7 +972,7 @@ impl Analyzer<'_, '_> {
                     TsKeywordTypeKind::TsVoidKeyword | TsKeywordTypeKind::TsUndefinedKeyword => {
                         //
 
-                        match *rhs.normalize() {
+                        match rhs {
                             Type::Keyword(RTsKeywordType {
                                 kind: TsKeywordTypeKind::TsVoidKeyword,
                                 ..
@@ -986,7 +981,7 @@ impl Analyzer<'_, '_> {
                             | Type::Keyword(..)
                             | Type::TypeLit(..)
                             | Type::Class(..)
-                            | Type::ClassInstance(..)
+                            | Type::ClassDef(..)
                             | Type::Interface(..)
                             | Type::Module(..)
                             | Type::EnumVariant(..) => fail!(),
@@ -1217,16 +1212,9 @@ impl Analyzer<'_, '_> {
             //
             //    _ => {}
             //},
-
-            // TODO: Check type arguments
-            Type::ClassInstance(ClassInstance { ty: ref l_ty, .. }) => {
-                return self
-                    .assign_with_opts(opts, &l_ty, rhs)
-                    .context("tried to asssign a type of instance to another type")
-            }
-
             Type::Constructor(ref lc) => match *rhs.normalize() {
-                Type::Lit(..) | Type::Class(ty::Class { is_abstract: true, .. }) => fail!(),
+                Type::Lit(..) => fail!(),
+                Type::ClassDef(ClassDef { is_abstract: true, .. }) => fail!(),
                 _ => {}
             },
 

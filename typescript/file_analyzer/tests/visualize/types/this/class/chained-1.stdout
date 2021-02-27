@@ -12,7 +12,7 @@ warning: Type
 6 | class B extends A {
   |                 ^
   |
-  = note: A
+  = note: typeof A
 
 warning: Type
  --> $DIR/tests/visualize/types/this/class/chained-1.ts:8:16
@@ -28,7 +28,7 @@ warning: Type
 11 | class C extends B {
    |                 ^
    |
-   = note: B
+   = note: typeof B
 
 warning: Type
   --> $DIR/tests/visualize/types/this/class/chained-1.ts:13:16

@@ -1,6 +1,5 @@
 use super::Alias;
 use super::Array;
-use super::ClassInstance;
 use super::Conditional;
 use super::Enum;
 use super::EnumVariant;
@@ -25,6 +24,7 @@ use super::TypeParam;
 use super::TypeParamDecl;
 use super::TypeParamInstantiation;
 use super::Union;
+use crate::ClassDef;
 use crate::Id;
 use crate::Key;
 use crate::{OptionalType, RestType, StaticThis, Symbol};
@@ -89,6 +89,7 @@ impl From<Box<Type>> for RTsType {
 impl From<Type> for RTsType {
     fn from(t: Type) -> Self {
         match t {
+            Type::Instance(t) => t.of.into(),
             Type::This(t) => t.into(),
             Type::Lit(t) => t.into(),
             Type::Query(t) => t.into(),
@@ -118,7 +119,7 @@ impl From<Type> for RTsType {
             }
             Type::Module(t) => t.into(),
             Type::Class(t) => t.into(),
-            Type::ClassInstance(t) => t.into(),
+            Type::ClassDef(t) => t.into(),
             Type::Arc(t) => (*t.ty).clone().into(),
             Type::Optional(t) => t.into(),
             Type::Rest(t) => t.into(),
@@ -543,16 +544,28 @@ impl From<super::Class> for RTsType {
         RTsTypeRef {
             node_id: NodeId::invalid(),
             span: t.span,
-            type_name: RTsEntityName::Ident(t.name.unwrap_or(Id::word("anonymous class".into())).into()),
+            type_name: RTsEntityName::Ident(t.def.name.unwrap_or(Id::word("anonymous class".into())).into()),
             type_params: None,
         }
         .into()
     }
 }
 
-impl From<ClassInstance> for RTsType {
-    fn from(c: ClassInstance) -> Self {
-        c.ty.into()
+impl From<ClassDef> for RTsTypeQuery {
+    fn from(c: ClassDef) -> Self {
+        RTsTypeQuery {
+            span: c.span,
+            node_id: NodeId::invalid(),
+            expr_name: RTsTypeQueryExpr::TsEntityName(RTsEntityName::Ident(
+                c.name.unwrap_or_else(|| Id::word("anonymous class".into())).into(),
+            )),
+        }
+    }
+}
+
+impl From<ClassDef> for RTsType {
+    fn from(c: ClassDef) -> Self {
+        RTsTypeQuery::from(c).into()
     }
 }
 

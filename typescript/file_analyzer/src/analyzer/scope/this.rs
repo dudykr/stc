@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use crate::analyzer::Analyzer;
 use rnode::Visit;
 use rnode::VisitMut;
@@ -47,8 +49,11 @@ impl Analyzer<'_, '_> {
     pub(crate) fn expand_this(&mut self, ty: &mut Type) {
         let this_ty = self.scope.this();
 
-        if let Some(this) = this_ty {
-            ty.visit_mut_with(&mut ThisReplacer { this_ty: &this })
+        if let Some(this) = this_ty.map(Cow::into_owned) {
+            ty.visit_mut_with(&mut ThisReplacer {
+                this_ty: this,
+                analyzer: self,
+            })
         }
     }
 }
@@ -71,11 +76,12 @@ impl Visit<Type> for ThisFinder {
     }
 }
 
-struct ThisReplacer<'a> {
-    this_ty: &'a Type,
+struct ThisReplacer<'a, 'b, 'c> {
+    this_ty: Type,
+    analyzer: &'a mut Analyzer<'b, 'c>,
 }
 
-impl VisitMut<Type> for ThisReplacer<'_> {
+impl VisitMut<Type> for ThisReplacer<'_, '_, '_> {
     fn visit_mut(&mut self, ty: &mut Type) {
         // Fast path.
         {
@@ -87,9 +93,15 @@ impl VisitMut<Type> for ThisReplacer<'_> {
         }
 
         ty.normalize_mut();
+        ty.visit_mut_children_with(self);
         match ty {
             Type::This(..) => {
                 *ty = self.this_ty.clone();
+            }
+            Type::Instance(i) => {
+                if let Ok(instantiated) = self.analyzer.instantiate_class(i.span, &i.of) {
+                    *ty = instantiated;
+                }
             }
             _ => {}
         }

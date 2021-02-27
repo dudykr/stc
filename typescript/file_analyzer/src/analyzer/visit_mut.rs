@@ -36,6 +36,7 @@ use stc_ts_ast_rnode::RPrivateMethod;
 use stc_ts_ast_rnode::RPrivateProp;
 use stc_ts_ast_rnode::RPropName;
 use stc_ts_ast_rnode::RReturnStmt;
+use stc_ts_ast_rnode::RSeqExpr;
 use stc_ts_ast_rnode::RStmt;
 use stc_ts_ast_rnode::RSwitchStmt;
 use stc_ts_ast_rnode::RTsEnumDecl;
@@ -88,6 +89,7 @@ macro_rules! use_visit_mut {
 use_visit_mut!(RModule);
 
 forward!(visit_mut_expr, RExpr);
+forward!(visit_mut_seq_expr, RSeqExpr);
 forward!(visit_mut_block_stmt, RBlockStmt);
 forward!(visit_mut_if_stmt, RIfStmt);
 forward!(visit_mut_param, RParam);

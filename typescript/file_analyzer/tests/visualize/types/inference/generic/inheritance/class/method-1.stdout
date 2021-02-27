@@ -30,7 +30,7 @@ warning: Type
 11 | var c = new C({ length: 2 });
    |             ^
    |
-   = note: C
+   = note: typeof C
 
 warning: Type
   --> $DIR/tests/visualize/types/inference/generic/inheritance/class/method-1.ts:11:9

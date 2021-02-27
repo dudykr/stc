@@ -4,7 +4,7 @@ warning: Type
 9 | class D1 extends C1 {
   |                  ^^
   |
-  = note: C1
+  = note: typeof C1
 
 warning: Type
   --> $DIR/tests/visualize/exprs/bin/instanceof/logical-or-1.ts:17:5
@@ -20,7 +20,7 @@ warning: Type
 17 | if (ctor6 instanceof C1 || ctor6 instanceof C2) {
    |                      ^^
    |
-   = note: C1
+   = note: typeof C1
 
 warning: Type
   --> $DIR/tests/visualize/exprs/bin/instanceof/logical-or-1.ts:17:5
@@ -44,7 +44,7 @@ warning: Type
 17 | if (ctor6 instanceof C1 || ctor6 instanceof C2) {
    |                                             ^^
    |
-   = note: C2
+   = note: typeof C2
 
 warning: Type
   --> $DIR/tests/visualize/exprs/bin/instanceof/logical-or-1.ts:17:28

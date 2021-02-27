@@ -11,8 +11,8 @@ use crate::{
     },
     ty,
     ty::{
-        CallSignature, ClassInstance, ConstructorSignature, FnParam, Method, MethodSignature, QueryExpr, QueryType,
-        Type, TypeElement, TypeOrSpread, TypeParam, TypeParamInstantiation,
+        CallSignature, ConstructorSignature, FnParam, Method, MethodSignature, QueryExpr, QueryType, Type, TypeElement,
+        TypeOrSpread, TypeParam, TypeParamInstantiation,
     },
     util::{is_str_lit_or_union, type_ext::TypeVecExt},
     validator,
@@ -44,6 +44,7 @@ use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
+use stc_ts_ast_rnode::RTsThisType;
 use stc_ts_ast_rnode::RTsThisTypeOrIdent;
 use stc_ts_ast_rnode::RTsType;
 use stc_ts_ast_rnode::RTsTypeParamInstantiation;
@@ -53,7 +54,10 @@ use stc_ts_errors::debug::print_type;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
+use stc_ts_types::Class;
+use stc_ts_types::ClassDef;
 use stc_ts_types::ClassProperty;
+use stc_ts_types::Instance;
 use stc_ts_types::Interface;
 use stc_ts_types::Key;
 use stc_ts_types::ModuleId;
@@ -65,7 +69,7 @@ use swc_common::SyntaxContext;
 use swc_common::TypeEq;
 use swc_common::DUMMY_SP;
 use swc_common::{Span, Spanned};
-use swc_ecma_ast::*;
+use swc_ecma_ast::TsKeywordTypeKind;
 use ty::TypeExt;
 
 #[validator]
@@ -540,22 +544,6 @@ impl Analyzer<'_, '_> {
                     );
                 }
 
-                Type::ClassInstance(i) => {
-                    return self.call_property(
-                        span,
-                        kind,
-                        expr,
-                        this,
-                        &i.ty,
-                        prop,
-                        type_args,
-                        args,
-                        arg_types,
-                        spread_arg_types,
-                        type_ann,
-                    );
-                }
-
                 Type::Interface(ref i) => {
                     // We check for body before parent to support overriding
                     let err = match self.search_members_for_callable_prop(
@@ -616,88 +604,44 @@ impl Analyzer<'_, '_> {
                     );
                 }
 
-                Type::Class(ty::Class { body, super_class, .. }) => {
-                    let mut candidates = vec![];
-                    for member in body.iter() {
-                        match member {
-                            ty::ClassMember::Method(Method {
-                                key,
-                                ret_ty,
-                                type_params,
-                                params,
-                                ..
-                            }) if key.type_eq(&prop) => {
-                                candidates.push((type_params, params, ret_ty));
-                            }
-                            ty::ClassMember::Property(ClassProperty { key, value, .. }) if key.type_eq(&prop) => {
-                                // Check for properties with callable type.
-
-                                // TODO: Change error message from no callable
-                                // property to property exists but not callable.
-                                if let Some(ty) = &value {
-                                    return self.extract(
-                                        span,
-                                        expr,
-                                        ty,
-                                        kind,
-                                        args,
-                                        arg_types,
-                                        spread_arg_types,
-                                        type_args,
-                                        type_ann,
-                                    );
-                                }
-                            }
-                            _ => {}
-                        }
-                    }
-
-                    candidates.sort_by_cached_key(|(type_params, params, _)| {
-                        self.check_call_args(
-                            span,
-                            type_params.as_ref().map(|v| &*v.params),
-                            params,
-                            type_args,
-                            args,
-                            arg_types,
-                            spread_arg_types,
-                        )
-                    });
-
-                    for (type_params, params, ret_ty) in candidates {
-                        return self.get_return_type(
-                            span,
-                            kind,
-                            expr,
-                            type_params.as_ref().map(|v| &*v.params),
-                            &params,
-                            *ret_ty.clone(),
-                            type_args,
-                            args,
-                            &arg_types,
-                            &spread_arg_types,
-                            type_ann,
-                        );
-                    }
-
-                    if let Some(ty) = super_class {
-                        if let Ok(ret_ty) = self.call_property(
-                            span,
-                            kind,
-                            expr,
-                            this,
-                            ty,
-                            prop,
-                            type_args,
-                            args,
-                            arg_types,
-                            spread_arg_types,
-                            type_ann,
-                        ) {
-                            return Ok(ret_ty);
-                        }
+                Type::ClassDef(cls) => {
+                    if let Some(v) = self.call_property_of_class(
+                        span,
+                        expr,
+                        kind,
+                        this,
+                        cls,
+                        prop,
+                        true,
+                        type_args,
+                        args,
+                        arg_types,
+                        spread_arg_types,
+                        type_ann,
+                    )? {
+                        return Ok(v);
                     }
                 }
+
+                Type::Class(ty::Class { def, .. }) => {
+                    if let Some(v) = self.call_property_of_class(
+                        span,
+                        expr,
+                        kind,
+                        this,
+                        def,
+                        prop,
+                        false,
+                        type_args,
+                        args,
+                        arg_types,
+                        spread_arg_types,
+                        type_ann,
+                    )? {
+                        return Ok(v);
+                    }
+                }
+
                 Type::Keyword(RTsKeywordType {
                     kind: TsKeywordTypeKind::TsSymbolKeyword,
                     ..
@@ -777,6 +721,122 @@ impl Analyzer<'_, '_> {
         })();
         self.scope.this = old_this;
         res
+    }
+
+    fn call_property_of_class(
+        &mut self,
+        span: Span,
+        expr: ReevalMode,
+        kind: ExtractKind,
+        this: &Type,
+        c: &ClassDef,
+        prop: &Key,
+        is_static_call: bool,
+        type_args: Option<&TypeParamInstantiation>,
+        args: &[RExprOrSpread],
+        arg_types: &[TypeOrSpread],
+        spread_arg_types: &[TypeOrSpread],
+        type_ann: Option<&Type>,
+    ) -> ValidationResult<Option<Type>> {
+        let mut candidates = vec![];
+        for member in c.body.iter() {
+            match member {
+                ty::ClassMember::Method(Method {
+                    key,
+                    ret_ty,
+                    type_params,
+                    params,
+                    is_static,
+                    ..
+                }) if *is_static == is_static_call => {
+                    if self.key_matches(span, key, prop, false) {
+                        candidates.push((type_params, params, ret_ty));
+                    }
+                }
+                ty::ClassMember::Property(ClassProperty {
+                    key, value, is_static, ..
+                }) if *is_static == is_static_call => {
+                    if self.key_matches(span, key, prop, false) {
+                        // Check for properties with callable type.
+
+                        // TODO: Change error message from no callable
+                        // property to property exists but not callable.
+                        if let Some(ty) = &value {
+                            return self
+                                .extract(
+                                    span,
+                                    expr,
+                                    ty,
+                                    kind,
+                                    args,
+                                    arg_types,
+                                    spread_arg_types,
+                                    type_args,
+                                    type_ann,
+                                )
+                                .map(Some);
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        candidates.sort_by_cached_key(|(type_params, params, _)| {
+            self.check_call_args(
+                span,
+                type_params.as_ref().map(|v| &*v.params),
+                params,
+                type_args,
+                args,
+                arg_types,
+                spread_arg_types,
+            )
+        });
+
+        for (type_params, params, ret_ty) in candidates {
+            return self
+                .get_return_type(
+                    span,
+                    kind,
+                    expr,
+                    type_params.as_ref().map(|v| &*v.params),
+                    &params,
+                    *ret_ty.clone(),
+                    type_args,
+                    args,
+                    &arg_types,
+                    &spread_arg_types,
+                    type_ann,
+                )
+                .map(Some);
+        }
+
+        if let Some(ty) = &c.super_class {
+            let ty = if is_static_call {
+                *ty.clone()
+            } else {
+                self.instantiate_class(span, ty)
+                    .context("tried to instantiate a class to call property of a super class")?
+            };
+            if let Ok(ret_ty) = self.call_property(
+                span,
+                kind,
+                expr,
+                this,
+                &ty,
+                prop,
+                type_args,
+                args,
+                arg_types,
+                spread_arg_types,
+                type_ann,
+            ) {
+                return Ok(Some(ret_ty));
+            }
+        }
+
+        Ok(None)
     }
 
     fn check_type_element_for_call(
@@ -1034,7 +1094,7 @@ impl Analyzer<'_, '_> {
 
         match kind {
             ExtractKind::New => match ty.normalize() {
-                Type::Class(ref cls) => {
+                Type::ClassDef(ref cls) => {
                     if cls.is_abstract {
                         self.storage.report(Error::CannotCreateInstanceOfAbstractClass { span })
                     }
@@ -1066,10 +1126,9 @@ impl Analyzer<'_, '_> {
 
                             let type_args = self.instantiate(span, &type_params.params, inferred)?;
 
-                            return Ok(Type::ClassInstance(ClassInstance {
+                            return Ok(Type::Class(Class {
                                 span,
-                                ty: box Type::Class(cls.clone()),
-                                type_args: Some(box type_args),
+                                def: box cls.clone(),
                             }));
                         }
 
@@ -1079,7 +1138,10 @@ impl Analyzer<'_, '_> {
                             expr,
                             cls.type_params.as_ref().map(|v| &*v.params),
                             &[],
-                            Type::Class(cls.clone()),
+                            Type::Class(Class {
+                                span,
+                                def: box cls.clone(),
+                            }),
                             type_args,
                             args,
                             arg_types,
@@ -1089,10 +1151,9 @@ impl Analyzer<'_, '_> {
                         return Ok(ret_ty);
                     }
 
-                    return Ok(Type::ClassInstance(ClassInstance {
+                    return Ok(Type::Class(Class {
                         span,
-                        ty: box Type::Class(cls.clone()),
-                        type_args: type_args.cloned().map(Box::new),
+                        def: box cls.clone(),
                     }));
                 }
 
@@ -1110,6 +1171,13 @@ impl Analyzer<'_, '_> {
                         spread_arg_types,
                         type_ann,
                     )
+                }
+
+                Type::This(..) => {
+                    return Ok(Type::Instance(Instance {
+                        span,
+                        of: box Type::This(RTsThisType { span }),
+                    }))
                 }
 
                 _ => {}
@@ -1140,11 +1208,7 @@ impl Analyzer<'_, '_> {
         match ty.normalize() {
             Type::Intersection(..) if kind == ExtractKind::New => {
                 // TODO: Check if all types has constructor signature
-                return Ok(Type::ClassInstance(ClassInstance {
-                    span,
-                    ty: box instantiate_class(self.ctx.module_id, ty.clone()),
-                    type_args: type_args.cloned().map(Box::new),
-                }));
+                return Ok(instantiate_class(self.ctx.module_id, ty.clone()));
             }
 
             Type::Keyword(RTsKeywordType {
@@ -1287,12 +1351,11 @@ impl Analyzer<'_, '_> {
                 );
             }
 
-            Type::Class(ref cls) if kind == ExtractKind::New => {
+            Type::ClassDef(ref def) if kind == ExtractKind::New => {
                 // TODO: Remove clone
-                return Ok(ClassInstance {
+                return Ok(Class {
                     span,
-                    ty: box Type::Class(cls.clone()),
-                    type_args: type_args.cloned().map(Box::new),
+                    def: box def.clone(),
                 }
                 .into());
             }
@@ -1561,7 +1624,7 @@ impl Analyzer<'_, '_> {
             dbg!();
 
             match callee.normalize() {
-                Type::Class(cls) if kind == ExtractKind::New => {
+                Type::ClassDef(cls) if kind == ExtractKind::New => {
                     let ret_ty = self.get_return_type(
                         span,
                         kind,
@@ -2165,6 +2228,15 @@ impl Analyzer<'_, '_> {
                     _ => {
                         if let Some(v) = self.extends(span, orig_ty, &new_ty) {
                             if v {
+                                match orig_ty.normalize() {
+                                    Type::ClassDef(def) => {
+                                        return Ok(Type::Class(Class {
+                                            span,
+                                            def: box def.clone(),
+                                        }))
+                                    }
+                                    _ => {}
+                                }
                                 return Ok(orig_ty.clone());
                             }
                         }
@@ -2202,6 +2274,16 @@ impl Analyzer<'_, '_> {
                 }
                 return Ok(new_ty);
             }
+        }
+
+        match new_ty.normalize() {
+            Type::ClassDef(def) => {
+                return Ok(Type::Class(Class {
+                    span,
+                    def: box def.clone(),
+                }))
+            }
+            _ => {}
         }
 
         Ok(new_ty)

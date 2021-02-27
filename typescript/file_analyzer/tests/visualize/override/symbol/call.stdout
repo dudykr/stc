@@ -40,7 +40,7 @@ warning: Type
 7 | (new C)[Symbol.iterator](0)
   |      ^
   |
-  = note: C
+  = note: typeof C
 
 warning: Type
  --> $DIR/tests/visualize/override/symbol/call.ts:7:2

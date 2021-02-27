@@ -253,7 +253,7 @@ impl Analyzer<'_, '_> {
                     .unwrap_or_else(|| Id::word(js_word!("default")));
 
                 let class_ty = c.class.validate_with(self)?;
-                self.register_type(id.clone(), Type::Class(class_ty));
+                self.register_type(id.clone(), Type::ClassDef(class_ty));
 
                 self.export(span, Id::word(js_word!("default")), Some(id));
             }

@@ -1,5 +1,5 @@
 warning: Type
- --> $DIR/tests/visualize/exprs/assignment/typeNarrowing/simple-1.ts:2:1
+ --> $DIR/tests/visualize/exprs/assign/typeNarrowing/simple-1.ts:2:1
   |
 2 | x = 1000;
   | ^^^^^^^^
@@ -7,7 +7,7 @@ warning: Type
   = note: 1000
 
 warning: Type
- --> $DIR/tests/visualize/exprs/assignment/typeNarrowing/simple-1.ts:4:5
+ --> $DIR/tests/visualize/exprs/assign/typeNarrowing/simple-1.ts:4:5
   |
 4 |     x; // number
   |     ^
@@ -15,7 +15,7 @@ warning: Type
   = note: number
 
 warning: Type
- --> $DIR/tests/visualize/exprs/assignment/typeNarrowing/simple-1.ts:5:5
+ --> $DIR/tests/visualize/exprs/assign/typeNarrowing/simple-1.ts:5:5
   |
 5 |     x = "";
   |     ^^^^^^
@@ -23,7 +23,7 @@ warning: Type
   = note: ""
 
 warning: Type
- --> $DIR/tests/visualize/exprs/assignment/typeNarrowing/simple-1.ts:6:14
+ --> $DIR/tests/visualize/exprs/assign/typeNarrowing/simple-1.ts:6:14
   |
 6 | } while (x = x.length)
   |              ^
@@ -31,7 +31,7 @@ warning: Type
   = note: string
 
 warning: Type
- --> $DIR/tests/visualize/exprs/assignment/typeNarrowing/simple-1.ts:6:14
+ --> $DIR/tests/visualize/exprs/assign/typeNarrowing/simple-1.ts:6:14
   |
 6 | } while (x = x.length)
   |              ^^^^^^^^
@@ -39,7 +39,7 @@ warning: Type
   = note: number
 
 warning: Type
- --> $DIR/tests/visualize/exprs/assignment/typeNarrowing/simple-1.ts:6:10
+ --> $DIR/tests/visualize/exprs/assign/typeNarrowing/simple-1.ts:6:10
   |
 6 | } while (x = x.length)
   |          ^^^^^^^^^^^^
@@ -47,7 +47,7 @@ warning: Type
   = note: number
 
 warning: Type
- --> $DIR/tests/visualize/exprs/assignment/typeNarrowing/simple-1.ts:7:1
+ --> $DIR/tests/visualize/exprs/assign/typeNarrowing/simple-1.ts:7:1
   |
 7 | x; // number
   | ^

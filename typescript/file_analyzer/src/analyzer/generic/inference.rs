@@ -10,6 +10,7 @@ use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_errors::DebugExt;
 use stc_ts_types::Array;
 use stc_ts_types::Class;
+use stc_ts_types::ClassDef;
 use stc_ts_types::ClassMember;
 use stc_ts_types::Id;
 use stc_ts_types::Interface;
@@ -381,11 +382,21 @@ impl Analyzer<'_, '_> {
         param: &Class,
         arg: &Class,
     ) -> ValidationResult<()> {
+        self.infer_class_def(span, inferred, &param.def, &arg.def)
+    }
+
+    pub(super) fn infer_class_def(
+        &mut self,
+        span: Span,
+        inferred: &mut InferData,
+        param: &ClassDef,
+        arg: &ClassDef,
+    ) -> ValidationResult<()> {
         for pm in &param.body {
             for am in &arg.body {
                 match (pm, am) {
                     (ClassMember::Property(p), ClassMember::Property(a)) if p.is_static == a.is_static => {
-                        if self.assign(&p.key.ty(), &a.key.ty(), span).is_ok() {
+                        if self.key_matches(span, &p.key, &a.key, false) {
                             if let Some(p_ty) = &p.value {
                                 if let Some(a_ty) = &a.value {
                                     self.infer_type(span, inferred, p_ty, a_ty)?;

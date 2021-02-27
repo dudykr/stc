@@ -118,6 +118,7 @@ impl AddAssign for ModuleTypeData {
 /// This type is expected to stored in a [Box], like `Vec<Type>`.
 #[derive(Debug, Clone, PartialEq, Spanned, FromVariant, Is, EqIgnoreSpan, TypeEq, Visit)]
 pub enum Type {
+    Instance(Instance),
     StaticThis(StaticThis),
     This(RTsThisType),
     Lit(#[use_eq_ignore_span] RTsLitType),
@@ -158,24 +159,11 @@ pub enum Type {
     Namespace(#[use_eq_ignore_span] RTsNamespaceDecl),
     Module(Module),
 
+    /// Instance of a class.
     Class(Class),
-    /// Instance of the class.
-    ///
-    /// This variant is required ([TypeLit] is insufficient) because of codes
-    /// like
-    ///
-    ///
-    /// ```ts
-    /// class A {
-    ///     a: string;
-    /// }
-    ///
-    /// class B {
-    ///     a: string;
-    ///     b: string;
-    /// }
-    /// ```
-    ClassInstance(ClassInstance),
+
+    /// Class definition itself.
+    ClassDef(ClassDef),
 
     Arc(Freezed),
 
@@ -224,7 +212,7 @@ fn _assert_send_sync() {
     assert::<Module>();
 
     assert::<Class>();
-    assert::<ClassInstance>();
+    assert::<ClassDef>();
 
     assert::<RestType>();
     assert::<OptionalType>();
@@ -337,6 +325,24 @@ assert_eq_size!(ComputedKey, [u8; 32]);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EqIgnoreSpan, TypeEq, Visit)]
 pub struct SymbolId(usize);
+
+/// Used to handle code like
+///
+///
+/// ```ts
+/// class Derived {
+///     static create() {
+///         return new this();
+///     }
+/// }
+/// ```
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+pub struct Instance {
+    pub span: Span,
+    pub of: Box<Type>,
+}
+
+assert_eq_size!(Instance, [u8; 24]);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Symbol {
@@ -453,25 +459,22 @@ pub struct EnumMember {
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Class {
     pub span: Span,
+    pub def: Box<ClassDef>,
+}
+
+assert_eq_size!(Class, [u8; 24]);
+
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+pub struct ClassDef {
+    pub span: Span,
     pub is_abstract: bool,
     pub name: Option<Id>,
     pub super_class: Option<Box<Type>>,
     pub body: Vec<ClassMember>,
     pub type_params: Option<TypeParamDecl>,
-    // pub implements: Vec<Type>,
 }
 
-assert_eq_size!(Class, [u8; 104]);
-
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
-pub struct ClassInstance {
-    pub span: Span,
-    pub ty: Box<Type>,
-    pub type_args: Option<Box<TypeParamInstantiation>>,
-    // pub implements: Vec<Type>,
-}
-
-assert_eq_size!(ClassInstance, [u8; 32]);
+assert_eq_size!(ClassDef, [u8; 104]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit)]
 pub enum ClassMember {
@@ -1046,7 +1049,7 @@ impl Type {
 
             Type::Class(c) => c.span = span,
 
-            Type::ClassInstance(c) => c.span = span,
+            Type::ClassDef(c) => c.span = span,
 
             Type::Param(p) => p.span = span,
 
@@ -1073,6 +1076,8 @@ impl Type {
             Type::Symbol(ty) => ty.span = span,
 
             Type::StaticThis(ty) => ty.span = span,
+
+            Type::Instance(ty) => ty.span = span,
         }
     }
 }

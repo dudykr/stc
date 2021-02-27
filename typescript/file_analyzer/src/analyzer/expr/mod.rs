@@ -1,12 +1,14 @@
+use self::bin::extract_name_for_assignment;
 use super::{marks::MarkExt, Analyzer};
+use crate::analyzer::util::ResultExt;
 use crate::util::type_ext::TypeVecExt;
 use crate::util::RemoveTypes;
 use crate::{
     analyzer::{pat::PatMode, Ctx},
     ty,
     ty::{
-        Array, ClassInstance, EnumVariant, IndexSignature, IndexedAccessType, Interface, Intersection, Ref, Tuple,
-        Type, TypeElement, TypeLit, TypeParam, TypeParamInstantiation, Union,
+        Array, EnumVariant, IndexSignature, IndexedAccessType, Interface, Intersection, Ref, Tuple, Type, TypeElement,
+        TypeLit, TypeParam, TypeParamInstantiation, Union,
     },
     type_facts::TypeFacts,
     util::is_str_lit_or_union,
@@ -48,6 +50,8 @@ use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_types::name::Name;
 use stc_ts_types::Alias;
+use stc_ts_types::Class;
+use stc_ts_types::ClassDef;
 use stc_ts_types::ComputedKey;
 use stc_ts_types::Key;
 use stc_ts_types::PropertySignature;
@@ -59,7 +63,9 @@ use swc_atoms::js_word;
 use swc_common::SyntaxContext;
 use swc_common::TypeEq;
 use swc_common::{Span, Spanned, DUMMY_SP};
-use swc_ecma_ast::*;
+use swc_ecma_ast::op;
+use swc_ecma_ast::TsKeywordTypeKind;
+use swc_ecma_ast::TsTypeOperatorOp;
 use ty::TypeExt;
 
 mod array;
@@ -377,6 +383,19 @@ impl Analyzer<'_, '_> {
 
             let mut errors = Errors::default();
 
+            match &e.left {
+                RPatOrExpr::Pat(box RPat::Ident(i)) => {
+                    // TODO: Implemennt this
+                    let rhs_is_always_true = true;
+
+                    // TODO: Deny changing type of const
+                    if rhs_is_always_true {
+                        analyzer.mark_var_as_truthy(Id::from(&*i))?;
+                    }
+                }
+                _ => e.left.visit_with(analyzer),
+            }
+
             let rhs_ty = match {
                 let ctx = Ctx {
                     in_assign_rhs: true,
@@ -410,19 +429,6 @@ impl Analyzer<'_, '_> {
             };
             let rhs_ty = analyzer.with_ctx(ctx).expand_fully(span, rhs_ty.clone(), true)?;
             analyzer.try_assign(span, e.op, &e.left, &rhs_ty);
-
-            match &e.left {
-                RPatOrExpr::Pat(box RPat::Ident(i)) => {
-                    // TODO: Implemennt this
-                    let rhs_is_always_true = true;
-
-                    // TODO: Deny changing type of const
-                    if rhs_is_always_true {
-                        analyzer.mark_var_as_truthy(Id::from(&*i))?;
-                    }
-                }
-                _ => e.left.visit_with(analyzer),
-            }
 
             if let Some(span) = any_span {
                 return Ok(Type::any(span));
@@ -1127,7 +1133,7 @@ impl Analyzer<'_, '_> {
             },
 
             Type::Class(ref c) => {
-                for v in c.body.iter() {
+                for v in c.def.body.iter() {
                     match v {
                         ty::ClassMember::Property(ref class_prop) => {
                             if let Some(declaring) = self.scope.declaring_prop.as_ref() {
@@ -1172,15 +1178,17 @@ impl Analyzer<'_, '_> {
                 }
 
                 // check for super class
-                if let Some(super_ty) = &c.super_class {
-                    if let Ok(v) = self.access_property(span, *super_ty.clone(), prop, type_mode, id_ctx) {
+                if let Some(super_ty) = &c.def.super_class {
+                    let super_ty = self.instantiate_class(span, &super_ty)?;
+
+                    if let Ok(v) = self.access_property(span, super_ty, prop, type_mode, id_ctx) {
                         return Ok(v);
                     }
                 }
 
                 return Err(Error::NoSuchPropertyInClass {
                     span,
-                    class_name: c.name.clone(),
+                    class_name: c.def.name.clone(),
                     prop: prop.clone(),
                 });
             }
@@ -1445,17 +1453,24 @@ impl Analyzer<'_, '_> {
                 }
             },
 
-            Type::ClassInstance(ClassInstance {
-                ty: box Type::Class(ref cls),
-                ..
-            }) => {
+            Type::ClassDef(cls) => {
+                match prop {
+                    Key::Normal { sym, .. } if *sym == *"prototype" => {
+                        return self.create_prototype_of_class_def(cls).map(Type::TypeLit)
+                    }
+                    _ => {}
+                }
+
                 //
                 for m in &cls.body {
                     //
                     match *m {
                         ty::ClassMember::Property(ref p) => {
+                            if !p.is_static {
+                                continue;
+                            }
                             // TODO: normalized string / ident
-                            if p.key.type_eq(&prop) {
+                            if self.key_matches(span, &p.key, prop, false) {
                                 if let Some(ref ty) = p.value {
                                     return Ok(*ty.clone());
                                 }
@@ -1465,7 +1480,11 @@ impl Analyzer<'_, '_> {
                         }
 
                         ty::ClassMember::Method(ref m) => {
-                            if m.key.type_eq(prop) {
+                            if !m.is_static {
+                                continue;
+                            }
+
+                            if self.key_matches(span, &m.key, prop, false) {
                                 return Ok(Type::Function(ty::Function {
                                     span,
                                     type_params: m.type_params.clone(),
@@ -1479,17 +1498,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 if let Some(super_ty) = &cls.super_class {
-                    if let Ok(v) = self.access_property(
-                        span,
-                        Type::ClassInstance(ClassInstance {
-                            span: super_ty.span(),
-                            ty: super_ty.clone(),
-                            type_args: None,
-                        }),
-                        prop,
-                        type_mode,
-                        id_ctx,
-                    ) {
+                    if let Ok(v) = self.access_property(span, *super_ty.clone(), prop, type_mode, id_ctx) {
                         return Ok(v);
                     }
                 }
@@ -1499,10 +1508,6 @@ impl Analyzer<'_, '_> {
                     class_name: cls.name.clone(),
                     prop: prop.clone(),
                 });
-            }
-
-            Type::ClassInstance(ClassInstance { ty, .. }) => {
-                return self.access_property(span, *ty.clone(), prop, type_mode, id_ctx)
             }
 
             Type::Module(ty::Module { ref exports, .. }) => {
@@ -1789,7 +1794,7 @@ impl Analyzer<'_, '_> {
             ty.make_cheap();
         }
 
-        slog::debug!(self.logger, "{:?} = Type: {:?}", id, ty);
+        slog::debug!(self.logger, "type_of_var({:?}): {:?}", id, ty);
 
         Ok(ty)
     }
@@ -1980,9 +1985,10 @@ impl Analyzer<'_, '_> {
                 if let Some(types) = self.find_type(ctxt, &i.into())? {
                     for ty in types {
                         match ty.normalize() {
-                            Type::Interface(_)
+                            Type::Instance(..)
+                            | Type::Interface(_)
                             | Type::Class(_)
-                            | Type::ClassInstance(_)
+                            | Type::ClassDef(_)
                             | Type::Enum(_)
                             | Type::EnumVariant(_)
                             | Type::This(_)
@@ -2007,8 +2013,12 @@ impl Analyzer<'_, '_> {
                                             type_params: Some(type_params),
                                             ..
                                         })
-                                        | Type::Class(stc_ts_types::Class {
-                                            type_params: Some(type_params),
+                                        | Type::Class(Class {
+                                            def:
+                                                box ClassDef {
+                                                    type_params: Some(type_params),
+                                                    ..
+                                                },
                                             ..
                                         }) => {
                                             params = self
@@ -2154,7 +2164,7 @@ impl Analyzer<'_, '_> {
         } else {
             let mut ty = self
                 .with_ctx(prop_access_ctx)
-                .access_property(span, obj_ty, &prop, type_mode, IdCtx::Var)
+                .access_property(span, obj_ty.clone(), &prop, type_mode, IdCtx::Var)
                 .context(
                     "tried to access property of an object to calculate type of a non-computed member expression",
                 )?;
@@ -2164,6 +2174,38 @@ impl Analyzer<'_, '_> {
                 ty = self.apply_type_facts(&name, ty);
 
                 self.exclude_types_using_fact(&name, &mut ty);
+            }
+
+            if self.ctx.in_cond && self.ctx.should_store_truthy_for_access {
+                // Add type facts.
+                match obj {
+                    RExprOrSuper::Expr(obj) => {
+                        if let Some(name) = extract_name_for_assignment(obj) {
+                            let next_ty = self
+                                .filter_types_with_property(
+                                    &obj_ty,
+                                    match &prop {
+                                        Key::Normal { sym, .. } => sym,
+                                        _ => unreachable!(),
+                                    },
+                                    Some(TypeFacts::Truthy),
+                                )
+                                .report(&mut self.storage)
+                                .map(|ty| ty.cheap());
+                            if let Some(next_ty) = next_ty {
+                                self.cur_facts
+                                    .false_facts
+                                    .excludes
+                                    .entry(name.clone())
+                                    .or_default()
+                                    .push(next_ty.clone());
+
+                                self.add_deep_type_fact(name, next_ty, true);
+                            }
+                        }
+                    }
+                    _ => {}
+                }
             }
 
             ty

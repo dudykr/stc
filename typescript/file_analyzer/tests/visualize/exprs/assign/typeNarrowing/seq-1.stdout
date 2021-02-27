@@ -1,0 +1,96 @@
+warning: Type
+ --> $DIR/tests/visualize/exprs/assign/typeNarrowing/seq-1.ts:4:1
+  |
+4 | x = true;
+  | ^^^^^^^^
+  |
+  = note: true
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/assign/typeNarrowing/seq-1.ts:5:2
+  |
+5 | (x = "", obj).foo = (x = x.length);
+  |  ^^^^^^
+  |
+  = note: ""
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/assign/typeNarrowing/seq-1.ts:5:10
+  |
+5 | (x = "", obj).foo = (x = x.length);
+  |          ^^^
+  |
+  = note: any
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/assign/typeNarrowing/seq-1.ts:5:2
+  |
+5 | (x = "", obj).foo = (x = x.length);
+  |  ^^^^^^^^^^^
+  |
+  = note: any
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/assign/typeNarrowing/seq-1.ts:5:1
+  |
+5 | (x = "", obj).foo = (x = x.length);
+  | ^^^^^^^^^^^^^
+  |
+  = note: any
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/assign/typeNarrowing/seq-1.ts:5:1
+  |
+5 | (x = "", obj).foo = (x = x.length);
+  | ^^^^^^^^^^^^^^^^^
+  |
+  = note: any
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/assign/typeNarrowing/seq-1.ts:5:26
+  |
+5 | (x = "", obj).foo = (x = x.length);
+  |                          ^
+  |
+  = note: string
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/assign/typeNarrowing/seq-1.ts:5:26
+  |
+5 | (x = "", obj).foo = (x = x.length);
+  |                          ^^^^^^^^
+  |
+  = note: number
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/assign/typeNarrowing/seq-1.ts:5:22
+  |
+5 | (x = "", obj).foo = (x = x.length);
+  |                      ^^^^^^^^^^^^
+  |
+  = note: number
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/assign/typeNarrowing/seq-1.ts:5:21
+  |
+5 | (x = "", obj).foo = (x = x.length);
+  |                     ^^^^^^^^^^^^^^
+  |
+  = note: number
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/assign/typeNarrowing/seq-1.ts:5:1
+  |
+5 | (x = "", obj).foo = (x = x.length);
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: number
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/assign/typeNarrowing/seq-1.ts:6:1
+  |
+6 | x; // number
+  | ^
+  |
+  = note: number
+

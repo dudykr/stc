@@ -4,6 +4,7 @@ use crate::ValidationResult;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_types::Class;
+use stc_ts_types::ClassDef;
 use stc_ts_types::ClassMember;
 use stc_ts_types::Type;
 use std::borrow::Cow;
@@ -11,22 +12,16 @@ use swc_common::EqIgnoreSpan;
 use swc_ecma_ast::Accessibility;
 
 impl Analyzer<'_, '_> {
-    pub(super) fn assign_to_class(&mut self, opts: AssignOpts, l: &Class, r: &Type) -> ValidationResult<()> {
-        // debug_assert!(!span.is_dummy());
-
+    pub(super) fn assign_to_class_def(&mut self, opts: AssignOpts, l: &ClassDef, r: &Type) -> ValidationResult<()> {
         let r = r.normalize();
 
         match r {
             Type::Ref(..) => {
                 let r = self.expand_top_ref(opts.span, Cow::Borrowed(r))?;
-                return self.assign_to_class(opts, l, &r);
+                return self.assign_to_class_def(opts, l, &r);
             }
 
-            Type::Class(rc) => {
-                if l.eq_ignore_span(rc) {
-                    return Ok(());
-                }
-
+            Type::ClassDef(rc) => {
                 if !l.is_abstract && rc.is_abstract {
                     return Err(Error::CannotAssignAbstractConstructorToNonAbstractConstructor { span: opts.span });
                 }
@@ -37,7 +32,7 @@ impl Analyzer<'_, '_> {
                     // let p: Parent;
                     // `p = c` is valid
                     if let Some(parent) = &rc.super_class {
-                        if self.assign_to_class(opts, l, &parent).is_ok() {
+                        if self.assign_to_class_def(opts, l, &parent).is_ok() {
                             return Ok(());
                         }
                     }
@@ -70,6 +65,92 @@ impl Analyzer<'_, '_> {
 
                 return Ok(());
             }
+
+            Type::TypeLit(..) | Type::Interface(..) => {
+                let rhs = self.type_to_type_lit(opts.span, r)?.unwrap();
+
+                for lm in &l.body {
+                    let lm = self.make_type_el_from_class_member(lm, true)?;
+                    let lm = match lm {
+                        Some(v) => v,
+                        None => {
+                            // Instance property does not exist at the moment.
+                            continue;
+                        }
+                    };
+                    self.assign_type_elements_to_type_element(opts, &mut vec![], &lm, &rhs.members)
+                        .context("tried to assign type elements to a class member")?;
+                }
+
+                return Ok(());
+            }
+            _ => {}
+        }
+
+        Err(Error::Unimplemented {
+            span: opts.span,
+            msg: format!("Assignment of non-class object to class definition\n{:#?}", r),
+        })
+    }
+
+    pub(super) fn assign_to_class(&mut self, opts: AssignOpts, l: &Class, r: &Type) -> ValidationResult<()> {
+        // debug_assert!(!span.is_dummy());
+
+        let r = r.normalize();
+
+        match r {
+            Type::Ref(..) => {
+                let r = self.expand_top_ref(opts.span, Cow::Borrowed(r))?;
+                return self.assign_to_class(opts, l, &r);
+            }
+
+            Type::Class(rc) => {
+                if l.eq_ignore_span(rc) {
+                    return Ok(());
+                }
+
+                if !rc.def.is_abstract {
+                    // class Child extends Parent
+                    // let c: Child;
+                    // let p: Parent;
+                    // `p = c` is valid
+                    if let Some(parent) = &rc.def.super_class {
+                        let parent = self
+                            .instantiate_class(opts.span, &parent)
+                            .context("tried to instanitate class to asssign the super class to a class")?;
+                        if self.assign_to_class(opts, l, &parent).is_ok() {
+                            return Ok(());
+                        }
+                    }
+                }
+
+                let new_body;
+                let r_body = if rc.def.super_class.is_some() {
+                    if let Some(members) = self.collect_class_members(r)? {
+                        new_body = members;
+                        &*new_body
+                    } else {
+                        return Err(Error::Unimplemented {
+                            span: opts.span,
+                            msg: format!("Failed to collect class members"),
+                        });
+                    }
+                } else {
+                    &*rc.def.body
+                };
+
+                for (i, lm) in l.def.body.iter().enumerate() {
+                    self.assign_class_members_to_class_member(opts, lm, r_body)
+                        .with_context(|| {
+                            format!(
+                                "tried to assign class members to {}th class member\n{:#?}\n{:#?}",
+                                i, lm, r_body
+                            )
+                        })?;
+                }
+
+                return Ok(());
+            }
             Type::Interface(rhs) => {
                 // It's legal to assign an interface to a class if all class
                 // memebers are public.
@@ -78,8 +159,8 @@ impl Analyzer<'_, '_> {
 
                 // TODO: Verify that all class members all public.
 
-                for lm in &l.body {
-                    let lm = self.make_type_el_from_class_member(lm)?;
+                for lm in &l.def.body {
+                    let lm = self.make_type_el_from_class_member(lm, false)?;
                     let lm = match lm {
                         Some(v) => v,
                         None => {
@@ -99,8 +180,8 @@ impl Analyzer<'_, '_> {
             }
 
             Type::TypeLit(rhs) => {
-                for lm in &l.body {
-                    let lm = self.make_type_el_from_class_member(lm)?;
+                for lm in &l.def.body {
+                    let lm = self.make_type_el_from_class_member(lm, false)?;
                     let lm = match lm {
                         Some(v) => v,
                         None => {
@@ -119,8 +200,8 @@ impl Analyzer<'_, '_> {
                     .type_to_type_lit(opts.span, r)
                     .context("tried to convert a type to type literal to assign it to a class")?;
                 if let Some(rhs) = rhs.as_deref() {
-                    for lm in &l.body {
-                        let lm = self.make_type_el_from_class_member(lm)?;
+                    for lm in &l.def.body {
+                        let lm = self.make_type_el_from_class_member(lm, false)?;
                         let lm = match lm {
                             Some(v) => v,
                             None => {
@@ -141,6 +222,7 @@ impl Analyzer<'_, '_> {
         // Everything left is assignable to empty classes, including classes with only
         // constructors.
         let is_empty = l
+            .def
             .body
             .iter()
             .find(|member| match member {
@@ -148,7 +230,7 @@ impl Analyzer<'_, '_> {
                 _ => true,
             })
             .is_none();
-        if !l.is_abstract && is_empty {
+        if !l.def.is_abstract && is_empty {
             return Ok(());
         }
 

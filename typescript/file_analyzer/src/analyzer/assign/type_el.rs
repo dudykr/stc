@@ -12,7 +12,7 @@ use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_types::Array;
 use stc_ts_types::Class;
-use stc_ts_types::ClassInstance;
+use stc_ts_types::ClassDef;
 use stc_ts_types::ClassMember;
 use stc_ts_types::Interface;
 use stc_ts_types::MethodSignature;
@@ -192,9 +192,36 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
+                Type::ClassDef(rhs_cls) => {
+                    let rhs = self
+                        .type_to_type_lit(span, rhs)
+                        .context("tried to convert a class definition into a type literal for assignment")?
+                        .map(Cow::into_owned)
+                        .map(Type::TypeLit)
+                        .unwrap();
+
+                    return self
+                        .assign_to_type_elements(
+                            AssignOpts {
+                                allow_unknown_rhs: true,
+                                ..opts
+                            },
+                            lhs_span,
+                            lhs,
+                            &rhs,
+                            lhs_metadata,
+                        )
+                        .convert_err(|err| match err {
+                            Error::Errors { span, .. } => Error::SimpleAssignFailed { span },
+                            Error::MissingFields { span, .. } => Error::SimpleAssignFailed { span },
+                            _ => err,
+                        })
+                        .context("tried to assign a class definition to type elements");
+                }
+
                 Type::Class(rhs_cls) => {
                     // TODO: Check if constructor exists.
-                    if rhs_cls.is_abstract {
+                    if rhs_cls.def.is_abstract {
                         return Err(Error::CannotAssignAbstractConstructorToNonAbstractConstructor { span });
                     }
 
@@ -210,16 +237,18 @@ impl Analyzer<'_, '_> {
                         .map(Type::TypeLit)
                         .unwrap();
 
-                    return self.assign_to_type_elements(
-                        AssignOpts {
-                            allow_unknown_rhs: true,
-                            ..opts
-                        },
-                        lhs_span,
-                        lhs,
-                        &rhs,
-                        lhs_metadata,
-                    );
+                    return self
+                        .assign_to_type_elements(
+                            AssignOpts {
+                                allow_unknown_rhs: true,
+                                ..opts
+                            },
+                            lhs_span,
+                            lhs,
+                            &rhs,
+                            lhs_metadata,
+                        )
+                        .context("tried to assign a class instance to type elements");
                 }
 
                 Type::Keyword(RTsKeywordType {
@@ -350,8 +379,8 @@ impl Analyzer<'_, '_> {
 
             match *rhs.normalize() {
                 // Check class members
-                Type::ClassInstance(ClassInstance {
-                    ty: box Type::Class(Class { ref body, .. }),
+                Type::Class(Class {
+                    def: box ClassDef { ref body, .. },
                     ..
                 }) => {
                     match m {

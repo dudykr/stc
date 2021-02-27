@@ -23,6 +23,7 @@ use stc_ts_ast_rnode::RVarDecl;
 use stc_ts_builtin_types::Lib;
 use stc_ts_errors::Error;
 use stc_ts_storage::Builtin;
+use stc_ts_types::ClassDef;
 use stc_ts_types::{Id, ModuleTypeData, Type};
 use std::time::Instant;
 use std::{collections::hash_map::Entry, sync::Arc};
@@ -100,7 +101,7 @@ impl BuiltIn {
                                 debug_assert_eq!(c.class.implements, vec![]);
                                 let ty = analyzer
                                     .with_child(ScopeKind::Flow, Default::default(), |analyzer: &mut Analyzer| {
-                                        Ok(Type::Class(stc_ts_types::Class {
+                                        Ok(Type::ClassDef(ClassDef {
                                             span: c.class.span,
                                             name: Some(c.ident.clone().into()),
                                             is_abstract: c.class.is_abstract,
