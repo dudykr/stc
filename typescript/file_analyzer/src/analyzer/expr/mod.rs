@@ -1174,7 +1174,13 @@ impl Analyzer<'_, '_> {
                             }
                         }
 
-                        ref member => unimplemented!("propert access to class member: {:?}\nprop: {:?}", member, prop),
+                        ClassMember::IndexSignature(index) => {
+                            if index.params.len() == 1 {
+                                if let Ok(()) = self.assign(&index.params[0].ty, &prop.ty(), span) {
+                                    return Ok(index.type_ann.clone().map(|v| *v).unwrap_or_else(|| Type::any(span)));
+                                }
+                            }
+                        }
                     }
                 }
 
