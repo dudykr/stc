@@ -293,7 +293,7 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
 
-                match c.take_if_any_matches(|(l, _), (_, r_ty)| match (l, r_ty) {
+                match c.take_if_any_matches(|(l, l_ty), (_, r_ty)| match (l, r_ty) {
                     (
                         RExpr::Ident(RIdent {
                             sym: js_word!("undefined"),
@@ -308,32 +308,33 @@ impl Analyzer<'_, '_> {
                         _,
                     ) => None,
 
-                    (l, r) => Some((extract_name_for_assignment(l)?, r_ty)),
+                    (l, r) => Some((extract_name_for_assignment(l)?, l_ty, r_ty)),
                 }) {
-                    Some((l, r)) => {
-                        if self.ctx.in_cond && op == op!("===") {
-                            let mut r = r.clone();
-                            self.cur_facts
-                                .false_facts
-                                .excludes
-                                .entry(l.clone())
-                                .or_default()
-                                .push(r.clone());
+                    Some((l, l_ty, r_ty)) => {
+                        if self.ctx.in_cond {
+                            let (name, mut r) = self.calc_type_facts_for_equality(l, l_ty, r_ty)?;
+                            if op == op!("===") {
+                                self.cur_facts
+                                    .false_facts
+                                    .excludes
+                                    .entry(name.clone())
+                                    .or_default()
+                                    .push(r.clone());
 
-                            self.prevent_generalize(&mut r);
-                            self.add_deep_type_fact(l, r, true);
-                        } else if self.ctx.in_cond && !is_eq {
-                            // Remove from union
-                            let mut r = r.clone();
-                            self.cur_facts
-                                .true_facts
-                                .excludes
-                                .entry(l.clone())
-                                .or_default()
-                                .push(r.clone());
+                                self.prevent_generalize(&mut r);
+                                self.add_deep_type_fact(name, r, true);
+                            } else if !is_eq {
+                                // Remove from union
+                                self.cur_facts
+                                    .true_facts
+                                    .excludes
+                                    .entry(name.clone())
+                                    .or_default()
+                                    .push(r.clone());
 
-                            self.prevent_generalize(&mut r);
-                            self.add_deep_type_fact(l, r, false);
+                                self.prevent_generalize(&mut r);
+                                self.add_deep_type_fact(name, r, false);
+                            }
                         }
                     }
                     _ => {}
@@ -1136,6 +1137,21 @@ impl Analyzer<'_, '_> {
         }
 
         ty
+    }
+
+    /// # Parameters
+    ///
+    /// - `named_ty`: Type of `name`.
+    fn calc_type_facts_for_equality(
+        &mut self,
+        name: Name,
+        named_ty: &Type,
+        eq_ty: &Type,
+    ) -> ValidationResult<(Name, Type)> {
+        let named_ty = named_ty.normalize();
+        let eq_ty = eq_ty.normalize();
+
+        Ok((name, eq_ty.clone()))
     }
 
     fn validate_bin_inner(&mut self, span: Span, op: BinaryOp, lt: Option<&Type>, rt: Option<&Type>) {
