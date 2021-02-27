@@ -48,12 +48,12 @@ use stc_ts_types::TypeLitMetadata;
 use stc_ts_types::TypeParamInstantiation;
 use stc_ts_types::{
     Conditional, FnParam, Id, IndexedAccessType, Mapped, ModuleId, Operator, QueryExpr, QueryType, StaticThis,
-    TupleElement, TypeParam,
+    TypeParam,
 };
 use stc_utils::TryOpt;
 use std::mem::replace;
 use std::mem::take;
-use std::{borrow::Cow, collections::hash_map::Entry, fmt::Debug, iter, iter::repeat, slice};
+use std::{borrow::Cow, collections::hash_map::Entry, fmt::Debug, iter, slice};
 use swc_atoms::js_word;
 use swc_common::Spanned;
 use swc_common::TypeEq;
