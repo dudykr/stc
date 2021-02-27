@@ -194,6 +194,23 @@ impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
     fn fold(&mut self, mut ty: Type) -> Type {
         // TODO: Don't do anything if type fact is none.
 
+        match ty.normalize() {
+            Type::Lit(RTsLitType {
+                span,
+                lit: RTsLit::Bool(v),
+                ..
+            }) => {
+                if self.facts.contains(TypeFacts::Truthy) && !v.value {
+                    return Type::never(*span);
+                }
+
+                if self.facts.contains(TypeFacts::Falsy) && v.value {
+                    return Type::never(*span);
+                }
+            }
+            _ => {}
+        }
+
         ty = ty.foldable();
         ty = ty.fold_children_with(self);
         let span = ty.span();
