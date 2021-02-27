@@ -11,7 +11,7 @@ use itertools::Itertools;
 use stc_ts_ast_rnode::RArrowExpr;
 use stc_ts_ast_rnode::RBlockStmtOrExpr;
 use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_types::ClassInstance;
+use stc_ts_types::Class;
 use stc_ts_types::Function;
 use stc_ts_types::Type;
 use stc_ts_utils::OptionExt;
@@ -76,11 +76,7 @@ impl Analyzer<'_, '_> {
                 Some(ty) => {
                     let span = ty.span();
                     Some(match ty {
-                        Type::Class(cls) => Type::ClassInstance(ClassInstance {
-                            span,
-                            ty: box Type::Class(cls),
-                            type_args: None,
-                        }),
+                        Type::ClassDef(def) => Type::Class(Class { span, def: box def }),
                         _ => ty,
                     })
                 }

@@ -4,7 +4,7 @@ warning: Type
 7 | export class D1 extends C1 {
   |                         ^^
   |
-  = note: C1
+  = note: typeof C1
 
 warning: Type
   --> $DIR/tests/visualize/exprs/bin/instanceof/narrow-extends.ts:12:26
@@ -20,7 +20,7 @@ warning: Type
 12 | export var r2: D1 | C2 = ctor2 instanceof C1 && ctor2; // C2 | D1
    |                                           ^^
    |
-   = note: C1
+   = note: typeof C1
 
 warning: Type
   --> $DIR/tests/visualize/exprs/bin/instanceof/narrow-extends.ts:12:26

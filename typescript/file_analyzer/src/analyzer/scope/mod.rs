@@ -39,6 +39,8 @@ use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_types::name::Name;
 use stc_ts_types::Array;
+use stc_ts_types::Class;
+use stc_ts_types::ClassDef;
 use stc_ts_types::Intersection;
 use stc_ts_types::Key;
 use stc_ts_types::TypeLitMetadata;
@@ -529,7 +531,7 @@ impl Analyzer<'_, '_> {
                 | Type::Namespace(_)
                 | Type::Module(_)
                 | Type::Class(_)
-                | Type::ClassInstance(_)
+                | Type::ClassDef(_)
                 | Type::Intersection(_)
                 | Type::Function(_)
                 | Type::Constructor(_)
@@ -594,7 +596,12 @@ impl Analyzer<'_, '_> {
                 return self.type_of_var(i, TypeOfMode::RValue, None);
             }
             RTsEntityName::TsQualifiedName(n) => {
+                let ctx = Ctx {
+                    allow_module_var: true,
+                    ..self.ctx
+                };
                 let obj = self
+                    .with_ctx(ctx)
                     .resolve_typeof(span, &n.left)
                     .context("tried to resolve lhs of typeof")?;
                 let i = &n.right;
@@ -607,7 +614,7 @@ impl Analyzer<'_, '_> {
                         sym: i.sym.clone(),
                     },
                     TypeOfMode::RValue,
-                    IdCtx::Var,
+                    IdCtx::Type,
                 )
             }
         }
@@ -1709,7 +1716,11 @@ impl Expander<'_, '_, '_> {
 
                             Type::Interface(Interface { type_params, .. })
                             | Type::Alias(Alias { type_params, .. })
-                            | Type::Class(ty::Class { type_params, .. }) => {
+                            | Type::Class(Class {
+                                def: box ClassDef { type_params, .. },
+                                ..
+                            })
+                            | Type::ClassDef(ClassDef { type_params, .. }) => {
                                 let ty = t.clone().into_owned();
                                 let type_params = type_params.clone();
                                 let type_args: Option<_> = type_args.clone().fold_with(self);
@@ -1733,6 +1744,16 @@ impl Expander<'_, '_, '_> {
                                     });
 
                                     let mut ty = self.analyzer.expand_type_params(&inferred, ty.foldable())?;
+
+                                    match ty {
+                                        Type::ClassDef(def) => {
+                                            ty = Type::Class(Class {
+                                                span: self.span,
+                                                def: box def,
+                                            });
+                                        }
+                                        _ => {}
+                                    };
 
                                     if is_alias {
                                         self.dejavu.insert(i.into());
@@ -1764,6 +1785,17 @@ impl Expander<'_, '_, '_> {
                                     ty = ty.fold_with(self);
                                     self.dejavu.remove(&i.into());
                                 }
+
+                                match ty {
+                                    Type::ClassDef(def) => {
+                                        ty = Type::Class(Class {
+                                            span: self.span,
+                                            def: box def,
+                                        });
+                                    }
+                                    _ => {}
+                                };
+
                                 return Ok(Some(ty));
                             }
 
@@ -1777,6 +1809,10 @@ impl Expander<'_, '_, '_> {
                         self.expand_top_level = true;
                         return Ok(Some(t.into_owned().foldable().fold_with(self)));
                     }
+                }
+
+                if i.sym == *"undefined" || i.sym == *"null" {
+                    return Ok(Some(Type::any(span)));
                 }
 
                 slog::error!(

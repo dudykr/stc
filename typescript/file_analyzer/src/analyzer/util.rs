@@ -11,8 +11,9 @@ use stc_ts_ast_rnode::RPropName;
 use stc_ts_ast_rnode::RStr;
 use stc_ts_errors::Error;
 use stc_ts_storage::Storage;
+use stc_ts_types::Class;
 use stc_ts_types::TypeElement;
-use stc_ts_types::{ClassInstance, Id, IndexedAccessType, Intersection, ModuleId, QueryExpr, QueryType, Ref, Tuple};
+use stc_ts_types::{Id, IndexedAccessType, Intersection, ModuleId, QueryExpr, QueryType, Ref, Tuple};
 use std::iter::once;
 use swc_common::Span;
 use swc_common::Spanned;
@@ -113,11 +114,10 @@ impl Analyzer<'_, '_> {
                 return Err(err);
             }
 
-            Type::Class(..) => {
-                return Ok(Type::ClassInstance(ClassInstance {
+            Type::ClassDef(def) => {
+                return Ok(Type::Class(Class {
                     span,
-                    ty: box ty.clone(),
-                    type_args: None,
+                    def: box def.clone(),
                 }))
             }
 
@@ -147,15 +147,9 @@ pub(crate) fn instantiate_class(module_id: ModuleId, ty: Type) -> Type {
                 })
                 .collect(),
         }),
-        Type::Class(ref cls) => Type::ClassInstance(ClassInstance {
-            // TODO
+        Type::ClassDef(ref def) => Type::Class(Class {
             span,
-
-            // TODO; Remove clone
-            ty: box Type::Class(cls.clone()),
-
-            // TODO
-            type_args: None,
+            def: box def.clone(),
         }),
 
         Type::Intersection(ref i) => {

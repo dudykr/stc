@@ -18,8 +18,10 @@ use crate::{
 use rnode::FoldWith;
 use stc_ts_ast_rnode::RBinExpr;
 use stc_ts_ast_rnode::RExpr;
+use stc_ts_ast_rnode::RExprOrSuper;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RLit;
+use stc_ts_ast_rnode::RMemberExpr;
 use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RPatOrExpr;
 use stc_ts_ast_rnode::RStr;
@@ -34,6 +36,7 @@ use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::name::Name;
+use stc_ts_types::Class;
 use stc_ts_types::Intersection;
 use stc_ts_types::ModuleId;
 use stc_ts_types::Ref;
@@ -46,7 +49,10 @@ use swc_atoms::js_word;
 use swc_common::SyntaxContext;
 use swc_common::TypeEq;
 use swc_common::{Span, Spanned};
-use swc_ecma_ast::*;
+use swc_ecma_ast::op;
+use swc_ecma_ast::BinaryOp;
+use swc_ecma_ast::TsKeywordTypeKind;
+use swc_ecma_ast::TsTypeOperatorOp;
 use swc_ecma_utils::Value::Known;
 
 #[validator]
@@ -619,7 +625,7 @@ impl Analyzer<'_, '_> {
 
                     if let Some(name) = name {
                         if let Some(property) = left {
-                            let mut new_ty = self.filter_types_with_property(&rt, &property)?.cheap();
+                            let mut new_ty = self.filter_types_with_property(&rt, &property, None)?.cheap();
 
                             self.add_deep_type_fact(name.clone(), new_ty.clone(), true);
                         }
@@ -787,8 +793,31 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        match ty.normalize() {
+            Type::ClassDef(ty) => {
+                return self.narrow_with_instanceof(
+                    span,
+                    Type::Class(Class {
+                        span,
+                        def: box ty.clone(),
+                    }),
+                    orig_ty,
+                )
+            }
+            _ => {}
+        }
+
         if let Some(v) = self.extends(span, orig_ty, &ty) {
             if v {
+                match orig_ty.normalize() {
+                    Type::ClassDef(def) => {
+                        return Ok(Type::Class(Class {
+                            span,
+                            def: box def.clone(),
+                        }))
+                    }
+                    _ => {}
+                }
                 return Ok(orig_ty.clone());
             } else {
                 match (orig_ty, ty.normalize()) {
@@ -805,6 +834,15 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        match ty.normalize() {
+            Type::ClassDef(def) => {
+                return Ok(Type::Class(Class {
+                    span,
+                    def: box def.clone(),
+                }))
+            }
+            _ => {}
+        }
         Ok(ty)
     }
 
@@ -910,8 +948,8 @@ impl Analyzer<'_, '_> {
         // where it's not enough.
         match (l, r) {
             (Type::Class(l), Type::Class(r)) => {
-                if l.super_class.is_none() && r.super_class.is_none() {
-                    if l.body.is_empty() || r.body.is_empty() {
+                if l.def.super_class.is_none() && r.def.super_class.is_none() {
+                    if l.def.body.is_empty() || r.def.body.is_empty() {
                         return Ok(false);
                     }
                 }
@@ -1040,7 +1078,7 @@ impl Analyzer<'_, '_> {
                 ..
             })
             | Type::Lit(..)
-            | Type::ClassInstance(..)
+            | Type::Class(..)
             | Type::Ref(Ref {
                 type_name:
                     RTsEntityName::Ident(RIdent {
@@ -1063,7 +1101,7 @@ impl Analyzer<'_, '_> {
             }
 
             // Ok
-            Type::Class(..) => {}
+            Type::ClassDef(..) => {}
 
             // Conditionally error.
             //
@@ -1370,7 +1408,7 @@ impl Analyzer<'_, '_> {
     }
 }
 
-fn extract_name_for_assignment(e: &RExpr) -> Option<Name> {
+pub(super) fn extract_name_for_assignment(e: &RExpr) -> Option<Name> {
     match e {
         RExpr::Paren(e) => extract_name_for_assignment(&e.expr),
         RExpr::Assign(e) => match &e.left {
@@ -1381,6 +1419,23 @@ fn extract_name_for_assignment(e: &RExpr) -> Option<Name> {
                 _ => None,
             },
         },
+        RExpr::Member(RMemberExpr {
+            obj: RExprOrSuper::Expr(obj),
+            prop,
+            computed,
+            ..
+        }) => {
+            let mut name = extract_name_for_assignment(obj)?;
+
+            name.push(match &**prop {
+                RExpr::Ident(i) if !*computed => i.sym.clone(),
+                RExpr::Lit(RLit::Str(s)) if *computed => s.value.clone(),
+                _ => return None,
+            });
+
+            Some(name)
+        }
+
         _ => Name::try_from(e).ok(),
     }
 }

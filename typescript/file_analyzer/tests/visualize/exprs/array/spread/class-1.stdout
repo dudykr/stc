@@ -51,7 +51,7 @@ warning: Type
 15 | export const b = array.concat([...new SymbolIterator]);
    |                                       ^^^^^^^^^^^^^^
    |
-   = note: SymbolIterator
+   = note: typeof SymbolIterator
 
 warning: Type
   --> $DIR/tests/visualize/exprs/array/spread/class-1.ts:15:35

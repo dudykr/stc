@@ -50,6 +50,8 @@ use stc_ts_ast_rnode::RVarDeclarator;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_file_analyzer_macros::extra_validator;
+use stc_ts_types::Class;
+use stc_ts_types::ClassDef;
 use stc_ts_types::ClassProperty;
 use stc_ts_types::ConstructorSignature;
 use stc_ts_types::FnParam;
@@ -693,7 +695,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Should be called only from `Validate<Class>`.
-    fn validate_inherited_members(&mut self, name: Option<Span>, class: &stc_ts_types::Class) {
+    fn validate_inherited_members(&mut self, name: Option<Span>, class: &ClassDef) {
         if class.is_abstract || self.ctx.in_declare {
             return;
         }
@@ -707,7 +709,7 @@ impl Analyzer<'_, '_> {
         let res: ValidationResult<()> = try {
             if let Some(ref super_ty) = class.super_class {
                 match super_ty.normalize() {
-                    Type::Class(sc) => {
+                    Type::ClassDef(sc) => {
                         'outer: for sm in &sc.body {
                             match sm {
                                 stc_ts_types::ClassMember::Method(sm) => {
@@ -769,7 +771,7 @@ impl Analyzer<'_, '_> {
 /// 5. Others, using dependency graph.
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, c: &RClass) -> ValidationResult<stc_ts_types::Class> {
+    fn validate(&mut self, c: &RClass) -> ValidationResult<ClassDef> {
         self.record(c);
 
         self.ctx.computed_prop_mode = ComputedPropMode::Class {
@@ -825,6 +827,7 @@ impl Analyzer<'_, '_> {
                                                         has_class_in_super = true;
                                                         // class A -> typeof A
                                                         return c
+                                                            .def
                                                             .name
                                                             .as_ref()
                                                             .map(|id| {
@@ -1231,7 +1234,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                let class = stc_ts_types::Class {
+                let class = ClassDef {
                     span: c.span,
                     name,
                     is_abstract: c.is_abstract,
@@ -1320,6 +1323,17 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
+    /// TODO: Instantate fully
+    pub(crate) fn instantiate_class(&mut self, span: Span, ty: &Type) -> ValidationResult {
+        Ok(match ty.normalize() {
+            Type::ClassDef(def) => Type::Class(Class {
+                span,
+                def: box def.clone(),
+            }),
+            _ => ty.clone(),
+        })
+    }
+
     fn visit_class_decl_inner(&mut self, c: &RClassDecl) {
         c.ident.visit_with(self);
 

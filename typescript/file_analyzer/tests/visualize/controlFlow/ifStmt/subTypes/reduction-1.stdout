@@ -29,7 +29,7 @@ warning: Type
 16 |     if (v instanceof C) {
    |                      ^
    |
-   = note: C
+   = note: typeof C
 
 warning: Type
   --> $DIR/tests/visualize/controlFlow/ifStmt/subTypes/reduction-1.ts:16:9

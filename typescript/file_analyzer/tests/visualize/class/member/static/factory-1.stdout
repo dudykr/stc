@@ -1,0 +1,56 @@
+warning: Type
+ --> $DIR/tests/visualize/class/member/static/factory-1.ts:4:20
+  |
+4 |         return new this();
+  |                    ^^^^
+  |
+  = note: this
+
+warning: Type
+ --> $DIR/tests/visualize/class/member/static/factory-1.ts:4:16
+  |
+4 |         return new this();
+  |                ^^^^^^^^^^
+  |
+  = note: this
+
+warning: Type
+ --> $DIR/tests/visualize/class/member/static/factory-1.ts:8:23
+  |
+8 | class Derived extends Base {
+  |                       ^^^^
+  |
+  = note: typeof Base
+
+warning: Type
+  --> $DIR/tests/visualize/class/member/static/factory-1.ts:11:9
+   |
+11 | var d = Derived.create();
+   |         ^^^^^^^
+   |
+   = note: typeof Derived
+
+warning: Type
+  --> $DIR/tests/visualize/class/member/static/factory-1.ts:11:9
+   |
+11 | var d = Derived.create();
+   |         ^^^^^^^^^^^^^^^^
+   |
+   = note: Derived
+
+warning: Type
+  --> $DIR/tests/visualize/class/member/static/factory-1.ts:13:1
+   |
+13 | d.foo();
+   | ^
+   |
+   = note: Derived
+
+warning: Type
+  --> $DIR/tests/visualize/class/member/static/factory-1.ts:13:1
+   |
+13 | d.foo();
+   | ^^^^^^^
+   |
+   = note: number
+
