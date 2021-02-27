@@ -293,7 +293,7 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
 
-                match c.take_if_any_matches(|(l, l_ty), (_, r_ty)| match (l, r_ty) {
+                match c.take_if_any_matches(|(l, _), (_, r_ty)| match (l, r_ty) {
                     (
                         RExpr::Ident(RIdent {
                             sym: js_word!("undefined"),
@@ -308,11 +308,11 @@ impl Analyzer<'_, '_> {
                         _,
                     ) => None,
 
-                    (l, r) => Some((extract_name_for_assignment(l)?, l_ty, r_ty)),
+                    (l, r) => Some((extract_name_for_assignment(l)?, r_ty)),
                 }) {
-                    Some((l, l_ty, r_ty)) => {
+                    Some((l, r_ty)) => {
                         if self.ctx.in_cond {
-                            let (name, mut r) = self.calc_type_facts_for_equality(l, l_ty, r_ty)?;
+                            let (name, mut r) = self.calc_type_facts_for_equality(l, r_ty)?;
                             if op == op!("===") {
                                 self.cur_facts
                                     .false_facts
@@ -1139,17 +1139,20 @@ impl Analyzer<'_, '_> {
         ty
     }
 
-    /// # Parameters
-    ///
-    /// - `named_ty`: Type of `name`.
-    fn calc_type_facts_for_equality(
-        &mut self,
-        name: Name,
-        named_ty: &Type,
-        eq_ty: &Type,
-    ) -> ValidationResult<(Name, Type)> {
-        let named_ty = named_ty.normalize();
-        let eq_ty = eq_ty.normalize();
+    /// We should create a type fact for `foo` in `if (foo.type === 'bar');`.
+    fn calc_type_facts_for_equality(&mut self, name: Name, equals_to: &Type) -> ValidationResult<(Name, Type)> {
+        // For comparison of variables like `if (a === 'foo');`, we just return the type
+        // itself.
+        if name.len() == 1 {
+            return Ok((name, equals_to.clone()));
+        }
+
+        let eq_ty = equals_to.normalize();
+
+        // We create a type fact for `foo` in `if (foo.type === 'bar');`
+
+        let ids = name.as_ids();
+        let actual_ids = &ids[..ids.len() - 1];
 
         Ok((name, eq_ty.clone()))
     }
