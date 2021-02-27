@@ -38,6 +38,7 @@ use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::name::Name;
 use stc_ts_types::Class;
 use stc_ts_types::Intersection;
+use stc_ts_types::Key;
 use stc_ts_types::ModuleId;
 use stc_ts_types::Ref;
 use stc_ts_types::TypeElement;
@@ -1147,12 +1148,46 @@ impl Analyzer<'_, '_> {
             return Ok((name, equals_to.clone()));
         }
 
+        let span = equals_to.span();
         let eq_ty = equals_to.normalize();
 
         // We create a type fact for `foo` in `if (foo.type === 'bar');`
 
         let ids = name.as_ids();
-        let actual_ids = &ids[..ids.len() - 1];
+        if name.len() != 2 {
+            unimplemented!("calculating type facts for names with 3+ elements");
+        }
+
+        let prop = Key::Normal {
+            span,
+            sym: ids[ids.len() - 1].sym().clone(),
+        };
+
+        let ty = self.type_of_var(&ids[0].clone().into(), TypeOfMode::RValue, None)?;
+        let ty = self.expand_top_ref(span, Cow::Owned(ty))?.into_owned();
+
+        match ty.normalize() {
+            Type::Union(u) => {
+                let mut candidates = vec![];
+                for ty in &u.types {
+                    let prop_res = self.access_property(span, ty.clone(), &prop, TypeOfMode::RValue, super::IdCtx::Var);
+
+                    match prop_res {
+                        Ok(prop_ty) => {
+                            let prop_ty = self.expand_top_ref(prop_ty.span(), Cow::Owned(prop_ty))?;
+                            if prop_ty.normalize().type_eq(equals_to) {
+                                candidates.push(ty.clone())
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+                let actual = Name::from(&ids[0]);
+
+                return Ok((actual, Type::union(candidates)));
+            }
+            _ => {}
+        }
 
         Ok((name, eq_ty.clone()))
     }
