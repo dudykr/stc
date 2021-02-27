@@ -198,6 +198,7 @@ constEnums/constEnum4.ts
 constEnums/constEnumPropertyAccess1.ts
 constEnums/constEnumPropertyAccess2.ts
 controlFlow/constLocalsInFunctionExpressions.ts
+controlFlow/controlFlowAssignmentExpression.ts
 controlFlow/controlFlowBinaryAndExpression.ts
 controlFlow/controlFlowBinaryOrExpression.ts
 controlFlow/controlFlowCommaOperator.ts
