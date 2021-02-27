@@ -16,6 +16,11 @@ impl Analyzer<'_, '_> {
         let r = r.normalize();
 
         match r {
+            Type::Ref(..) => {
+                let r = self.expand_top_ref(opts.span, Cow::Borrowed(r))?;
+                return self.assign_to_class_def(opts, l, &r);
+            }
+
             Type::ClassDef(rc) => {
                 if !l.is_abstract && rc.is_abstract {
                     return Err(Error::CannotAssignAbstractConstructorToNonAbstractConstructor { span: opts.span });
