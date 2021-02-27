@@ -960,6 +960,7 @@ expressions/propertyAccess/propertyAccessNumericLiterals.ts
 expressions/superCalls/superCalls.ts
 expressions/superPropertyAccess/superSymbolIndexedAccess1.ts
 expressions/superPropertyAccess/superSymbolIndexedAccess2.ts
+expressions/superPropertyAccess/superSymbolIndexedAccess4.ts
 expressions/superPropertyAccess/superSymbolIndexedAccess5.ts
 expressions/superPropertyAccess/superSymbolIndexedAccess6.ts
 expressions/typeGuards/TypeGuardWithArrayUnion.ts
