@@ -359,6 +359,14 @@ impl Analyzer<'_, '_> {
                 let rhs = self.expand_top_ref(rhs.span(), Cow::Owned(rhs))?.into_owned();
                 return self.append_type(to, rhs);
             }
+
+            Type::Interface(..) | Type::Class(..) | Type::Intersection(..) => {
+                // Append as a type literal.
+                if let Some(rhs) = self.type_to_type_lit(rhs.span(), &rhs)? {
+                    return self.append_type(to, Type::TypeLit(rhs.into_owned()));
+                }
+            }
+
             _ => {}
         }
 
@@ -396,6 +404,7 @@ impl Analyzer<'_, '_> {
                         .collect::<Result<_, _>>()?,
                 }))
             }
+
             _ => {}
         }
 
