@@ -49,7 +49,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 // TODO: Verify that m.ty does not contain key type.
-                let keys = self.extract_keys_as_keys(span, ty)?;
+                let keys = self.get_keys(span, ty)?;
                 let members = keys
                     .into_iter()
                     .map(|key| PropertySignature {
@@ -83,13 +83,14 @@ impl Analyzer<'_, '_> {
         )
     }
 
-    fn extract_keys_as_keys(&mut self, span: Span, ty: &Type) -> ValidationResult<Vec<Key>> {
+    /// Evaluates `keyof` operator.
+    fn get_keys(&mut self, span: Span, ty: &Type) -> ValidationResult<Vec<Key>> {
         let ty = ty.normalize();
 
         match ty {
             Type::Ref(..) => {
                 let ty = self.expand_top_ref(span, Cow::Borrowed(ty))?;
-                return self.extract_keys_as_keys(span, &ty);
+                return self.get_keys(span, &ty);
             }
             Type::TypeLit(ty) => {
                 let mut keys = vec![];
@@ -132,7 +133,7 @@ impl Analyzer<'_, '_> {
                         &parent.expr,
                         parent.type_args.as_deref(),
                     )?;
-                    keys.extend(self.extract_keys_as_keys(span, &parent)?);
+                    keys.extend(self.get_keys(span, &parent)?);
                 }
 
                 return Ok(keys);
