@@ -3,6 +3,7 @@ use crate::ty::type_facts::TypeFactsHandler;
 use crate::type_facts::TypeFacts;
 use crate::util::type_ext::TypeVecExt;
 use crate::ValidationResult;
+use fxhash::FxHashMap;
 use rnode::FoldWith;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
@@ -22,6 +23,7 @@ use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
 use stc_ts_types::TypeLitMetadata;
 use stc_ts_utils::MapWithMut;
+use stc_utils::TryOpt;
 use std::borrow::Cow;
 use swc_common::Span;
 use swc_common::Spanned;
@@ -38,11 +40,26 @@ impl Analyzer<'_, '_> {
     pub(crate) fn create_prototype_of_class_def(&mut self, def: &ClassDef) -> ValidationResult<TypeLit> {
         let mut members = vec![];
 
+        let type_params = def.type_params.as_ref().map(|decl| {
+            let ty = Type::any(decl.span);
+
+            decl.params
+                .iter()
+                .map(|param| (param.name.clone(), ty.clone()))
+                .collect::<FxHashMap<_, _>>()
+        });
+
         for member in &def.body {
             match member {
                 ClassMember::Constructor(_) => {}
                 ClassMember::Method(_) => {}
                 ClassMember::Property(p) => {
+                    let mut type_ann = p.value.clone();
+                    if let Some(type_params) = &type_params {
+                        type_ann = type_ann
+                            .map(|ty| self.expand_type_params(&type_params, *ty).map(Box::new))
+                            .try_opt()?;
+                    }
                     //
                     members.push(TypeElement::Property(PropertySignature {
                         span: p.span,
@@ -51,7 +68,7 @@ impl Analyzer<'_, '_> {
                         readonly: p.readonly,
                         params: Default::default(),
                         type_params: Default::default(),
-                        type_ann: p.value.clone(),
+                        type_ann,
                     }))
                 }
                 ClassMember::IndexSignature(_) => {}
