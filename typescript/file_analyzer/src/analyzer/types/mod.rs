@@ -328,6 +328,12 @@ impl Analyzer<'_, '_> {
                 })
             }
 
+            Type::Mapped(m) => {
+                let ty = self.expand_mapped(span, m)?;
+                let ty = self.type_to_type_lit(span, &ty)?.map(Cow::into_owned).map(Cow::Owned);
+                return Ok(ty);
+            }
+
             _ => {
                 slog::error!(self.logger, "unimplemented: type_to_type_lit: {:?}", ty);
                 return Ok(None);
