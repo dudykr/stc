@@ -625,7 +625,7 @@ impl Analyzer<'_, '_> {
 
                     if let Some(name) = name {
                         if let Some(property) = left {
-                            let mut new_ty = self.filter_types_with_property(&rt, &property)?.cheap();
+                            let mut new_ty = self.filter_types_with_property(&rt, &property, None)?.cheap();
 
                             self.add_deep_type_fact(name.clone(), new_ty.clone(), true);
                         }
@@ -1408,7 +1408,7 @@ impl Analyzer<'_, '_> {
     }
 }
 
-fn extract_name_for_assignment(e: &RExpr) -> Option<Name> {
+pub(super) fn extract_name_for_assignment(e: &RExpr) -> Option<Name> {
     match e {
         RExpr::Paren(e) => extract_name_for_assignment(&e.expr),
         RExpr::Assign(e) => match &e.left {

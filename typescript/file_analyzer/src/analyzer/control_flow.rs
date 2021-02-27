@@ -7,6 +7,7 @@ use super::{
     Analyzer,
 };
 use crate::analyzer::expr::IdCtx;
+use crate::analyzer::ty::type_facts::TypeFactsHandler;
 use crate::util::type_ext::TypeVecExt;
 use crate::{
     ty::{Tuple, Type, TypeElement, TypeLit},
@@ -17,6 +18,7 @@ use crate::{
     ValidationResult,
 };
 use fxhash::FxHashMap;
+use rnode::FoldWith;
 use rnode::NodeId;
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RBinExpr;
@@ -769,17 +771,27 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    /// Calculate type facts created by `'foo' in obj`.
-    pub(super) fn filter_types_with_property(&mut self, src: &Type, property: &JsWord) -> ValidationResult<Type> {
+    /// If `type_facts` is [None], this method calculates type facts created by
+    /// `'foo' in obj`.
+    ///
+    /// Otherwise, this method calculates type facts created by `if (a.foo) ;`.
+    /// In this case, this method tests if `type_facts` matches the type of
+    /// property and returns `never` if it does not.
+    pub(super) fn filter_types_with_property(
+        &mut self,
+        src: &Type,
+        property: &JsWord,
+        type_facts: Option<TypeFacts>,
+    ) -> ValidationResult<Type> {
         match src.normalize() {
             Type::Ref(..) => {
                 let src = self.expand_top_ref(src.span(), Cow::Borrowed(src))?;
-                return self.filter_types_with_property(&src, property);
+                return self.filter_types_with_property(&src, property, type_facts);
             }
             Type::Union(ty) => {
                 let mut new_types = vec![];
                 for ty in &ty.types {
-                    let ty = self.filter_types_with_property(&ty, property)?;
+                    let ty = self.filter_types_with_property(&ty, property, type_facts)?;
                     new_types.push(ty);
                 }
                 new_types.retain(|ty| !ty.is_never());
@@ -797,7 +809,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        if let Err(err) = self.access_property(
+        let prop_res = self.access_property(
             src.span(),
             src.clone(),
             &Key::Normal {
@@ -806,13 +818,29 @@ impl Analyzer<'_, '_> {
             },
             TypeOfMode::RValue,
             IdCtx::Var,
-        ) {
-            match err.actual() {
+        );
+
+        match prop_res {
+            Ok(prop_ty) => {
+                // Check if property matches the type fact.
+                if let Some(type_facts) = type_facts {
+                    let orig = prop_ty.clone();
+                    let prop_ty = prop_ty.fold_with(&mut TypeFactsHandler {
+                        facts: type_facts,
+                        analyzer: self,
+                    });
+
+                    if !orig.normalize().type_eq(prop_ty.normalize()) {
+                        return Ok(Type::never(src.span()));
+                    }
+                }
+            }
+            Err(err) => match err.actual() {
                 Error::NoSuchProperty { .. } | Error::NoSuchPropertyInClass { .. } => {
                     return Ok(Type::never(src.span()))
                 }
                 _ => {}
-            }
+            },
         }
 
         Ok(src.clone())
