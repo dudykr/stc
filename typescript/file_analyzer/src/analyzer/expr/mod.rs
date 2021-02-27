@@ -1454,6 +1454,13 @@ impl Analyzer<'_, '_> {
             },
 
             Type::ClassDef(cls) => {
+                match prop {
+                    Key::Normal { sym, .. } if *sym == *"prototype" => {
+                        return self.create_prototype_of_class_def(cls).map(Type::TypeLit)
+                    }
+                    _ => {}
+                }
+
                 //
                 for m in &cls.body {
                     //

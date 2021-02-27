@@ -11,6 +11,7 @@ use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_errors::DebugExt;
 use stc_ts_types::name::Name;
 use stc_ts_types::Array;
+use stc_ts_types::ClassDef;
 use stc_ts_types::ClassMember;
 use stc_ts_types::ConstructorSignature;
 use stc_ts_types::Key;
@@ -34,6 +35,39 @@ mod narrowing;
 mod type_param;
 
 impl Analyzer<'_, '_> {
+    pub(crate) fn create_prototype_of_class_def(&mut self, def: &ClassDef) -> ValidationResult<TypeLit> {
+        let mut members = vec![];
+
+        for member in &def.body {
+            match member {
+                ClassMember::Constructor(_) => {}
+                ClassMember::Method(_) => {}
+                ClassMember::Property(p) => {
+                    //
+                    members.push(TypeElement::Property(PropertySignature {
+                        span: p.span,
+                        key: p.key.clone(),
+                        optional: p.is_optional,
+                        readonly: p.readonly,
+                        params: Default::default(),
+                        type_params: Default::default(),
+                        type_ann: p.value.clone(),
+                    }))
+                }
+                ClassMember::IndexSignature(_) => {}
+            }
+        }
+
+        Ok(TypeLit {
+            span: def.span,
+            members,
+            metadata: TypeLitMetadata {
+                inexact: true,
+                ..Default::default()
+            },
+        })
+    }
+
     pub(crate) fn exclude_types_using_fact(&mut self, name: &Name, ty: &mut Type) {
         let mut types_to_exclude = vec![];
         let mut s = Some(&self.scope);
