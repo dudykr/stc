@@ -1498,6 +1498,7 @@ types/intersection/intersectionTypeEquivalence.ts
 types/intersection/intersectionTypeInference.ts
 types/keyof/keyofAndForIn.ts
 types/keyof/keyofIntersection.ts
+types/literal
 types/literal/booleanLiteralTypes1.ts
 types/literal/booleanLiteralTypes2.ts
 types/literal/literalTypes1.ts
