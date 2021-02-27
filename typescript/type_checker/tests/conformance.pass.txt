@@ -129,7 +129,6 @@ async/es6/functionDeclarations/asyncFunctionDeclaration8_es6.ts
 classes/classDeclarations/classAbstractKeyword/classAbstractAsIdentifier.ts
 classes/classDeclarations/classAbstractKeyword/classAbstractAssignabilityConstructorFunction.ts
 classes/classDeclarations/classAbstractKeyword/classAbstractClinterfaceAssignability.ts
-classes/classDeclarations/classAbstractKeyword/classAbstractConstructorAssignability.ts
 classes/classDeclarations/classAbstractKeyword/classAbstractExtends.ts
 classes/classDeclarations/classAbstractKeyword/classAbstractFactoryFunction.ts
 classes/classDeclarations/classAbstractKeyword/classAbstractInstantiations1.ts
@@ -207,7 +206,6 @@ controlFlow/controlFlowConditionalExpression.ts
 controlFlow/controlFlowDestructuringDeclaration.ts
 controlFlow/controlFlowDoWhileStatement.ts
 controlFlow/controlFlowElementAccess.ts
-controlFlow/controlFlowElementAccess2.ts
 controlFlow/controlFlowForInStatement.ts
 controlFlow/controlFlowForOfStatement.ts
 controlFlow/controlFlowIfStatement.ts
@@ -225,7 +223,6 @@ declarationEmit/typePredicates/declarationEmitIdentifierPredicates01.ts
 declarationEmit/typePredicates/declarationEmitIdentifierPredicatesWithPrivateName01.ts
 decorators/1.0lib-noErrors.ts
 emitter/es2019/noCatchBinding/emitter.noCatchBinding.es2019.ts
-enums/enumBasics.ts
 enums/enumClassification.ts
 enums/enumConstantMemberWithString.ts
 enums/enumConstantMemberWithStringEmitDeclaration.ts
@@ -288,7 +285,6 @@ es6/Symbols/symbolProperty60.ts
 es6/Symbols/symbolProperty8.ts
 es6/Symbols/symbolType10.ts
 es6/Symbols/symbolType11.ts
-es6/Symbols/symbolType15.ts
 es6/Symbols/symbolType17.ts
 es6/Symbols/symbolType18.ts
 es6/Symbols/symbolType19.ts
@@ -446,7 +442,6 @@ es6/destructuring/iterableArrayPattern14.ts
 es6/destructuring/iterableArrayPattern17.ts
 es6/destructuring/iterableArrayPattern18.ts
 es6/destructuring/iterableArrayPattern19.ts
-es6/destructuring/iterableArrayPattern26.ts
 es6/destructuring/iterableArrayPattern9.ts
 es6/destructuring/nonIterableRestElement1.ts
 es6/destructuring/nonIterableRestElement2.ts
@@ -926,7 +921,6 @@ expressions/contextualTyping/arrayLiteralExpressionContextualTyping.ts
 expressions/contextualTyping/functionExpressionContextualTyping1.ts
 expressions/contextualTyping/functionExpressionContextualTyping3.ts
 expressions/contextualTyping/iterableContextualTyping1.ts
-expressions/contextualTyping/parenthesizedContexualTyping1.ts
 expressions/contextualTyping/parenthesizedContexualTyping2.ts
 expressions/contextualTyping/parenthesizedContexualTyping3.ts
 expressions/contextualTyping/superCallParameterContextualTyping1.ts
@@ -970,7 +964,6 @@ expressions/superPropertyAccess/superSymbolIndexedAccess5.ts
 expressions/superPropertyAccess/superSymbolIndexedAccess6.ts
 expressions/typeGuards/TypeGuardWithArrayUnion.ts
 expressions/typeGuards/TypeGuardWithEnumUnion.ts
-expressions/typeGuards/nullOrUndefinedTypeGuardIsOrderIndependent.ts
 expressions/typeGuards/typeGuardEnums.ts
 expressions/typeGuards/typeGuardFunction.ts
 expressions/typeGuards/typeGuardFunctionGenerics.ts
@@ -1088,9 +1081,6 @@ interfaces/declarationMerging/mergeThreeInterfaces.ts
 interfaces/declarationMerging/mergeTwoInterfaces.ts
 interfaces/declarationMerging/mergedInterfacesWithConflictingPropertyNames2.ts
 interfaces/declarationMerging/mergedInterfacesWithIndexers.ts
-interfaces/declarationMerging/mergedInterfacesWithMultipleBases.ts
-interfaces/declarationMerging/mergedInterfacesWithMultipleBases2.ts
-interfaces/declarationMerging/mergedInterfacesWithMultipleBases3.ts
 interfaces/declarationMerging/twoInterfacesDifferentRootModule.ts
 interfaces/declarationMerging/twoInterfacesDifferentRootModule2.ts
 interfaces/interfaceDeclarations/asiPreventsParsingAsInterface01.ts
@@ -1198,7 +1188,6 @@ parser/ecmascript5/ErrorRecovery/AccessibilityAfterStatic/parserAccessibilityAft
 parser/ecmascript5/ErrorRecovery/AccessibilityAfterStatic/parserAccessibilityAfterStatic5.ts
 parser/ecmascript5/ErrorRecovery/ArrowFunctions/ArrowFunction4.ts
 parser/ecmascript5/ErrorRecovery/ArrowFunctions/parserX_ArrowFunction4.ts
-parser/ecmascript5/ErrorRecovery/IncompleteMemberVariables/parserErrorRecovery_IncompleteMemberVariable1.ts
 parser/ecmascript5/ErrorRecovery/VariableLists/parserVariableStatement1.ts
 parser/ecmascript5/ErrorRecovery/VariableLists/parserVariableStatement2.ts
 parser/ecmascript5/ErrorRecovery/VariableLists/parserVariableStatement3.ts
@@ -1441,7 +1430,6 @@ scanner/ecmascript5/scannerNumericLiteral1.ts
 scanner/ecmascript5/scannerNumericLiteral5.ts
 scanner/ecmascript5/scannerNumericLiteral7.ts
 scanner/ecmascript5/scannerStringLiteralWithContainingNullCharacter1.ts
-statements/VariableStatements/everyTypeWithAnnotationAndInitializer.ts
 statements/breakStatements/doWhileBreakStatements.ts
 statements/breakStatements/forBreakStatements.ts
 statements/breakStatements/forInBreakStatements.ts
@@ -1483,10 +1471,8 @@ statements/for-ofStatements/ES5For-ofTypeCheck4.ts
 statements/for-ofStatements/ES5For-ofTypeCheck5.ts
 statements/for-ofStatements/ES5For-ofTypeCheck6.ts
 statements/for-ofStatements/ES5for-of32.ts
-statements/forStatements/forStatements.ts
 statements/ifDoWhileStatements/ifDoWhileStatements.ts
 statements/returnStatements/returnStatements.ts
-statements/switchStatements/switchStatements.ts
 statements/throwStatements/throwInEnclosingStatements.ts
 statements/tryStatements/tryStatements.ts
 types/any/anyAsConstructor.ts
@@ -1657,7 +1643,6 @@ types/typeAliases/circularTypeAliasForUnionWithClass.ts
 types/typeAliases/circularTypeAliasForUnionWithInterface.ts
 types/typeAliases/interfaceDoesNotDependOnBaseTypes.ts
 types/typeParameters/recurringTypeParamForContainerOfBase01.ts
-types/typeParameters/typeArgumentLists/callGenericFunctionWithZeroTypeArguments.ts
 types/typeParameters/typeArgumentLists/constraintSatisfactionWithAny.ts
 types/typeParameters/typeArgumentLists/constraintSatisfactionWithAny2.ts
 types/typeParameters/typeArgumentLists/constraintSatisfactionWithEmptyObject.ts
@@ -1804,6 +1789,4 @@ types/union/discriminatedUnionTypes1.ts
 types/union/unionTypeCallSignatures2.ts
 types/union/unionTypeFromArrayLiteral.ts
 types/union/unionTypeReduction.ts
-types/uniqueSymbol/uniqueSymbols.ts
-types/uniqueSymbol/uniqueSymbolsDeclarations.ts
 types/uniqueSymbol/uniqueSymbolsDeclarationsErrors.ts
