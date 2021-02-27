@@ -335,7 +335,56 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, c: &RPrivateMethod) -> ValidationResult<Method> {
-        unimplemented!("PrivateMethod")
+        let key = c.key.validate_with(self).map(Key::Private)?;
+        let key_span = key.span();
+
+        let (type_params, params, ret_ty) =
+            self.with_scope_for_type_params(|child: &mut Analyzer| -> ValidationResult<_> {
+                let type_params = try_opt!(c.function.type_params.validate_with(child));
+                if (c.kind == MethodKind::Getter || c.kind == MethodKind::Setter) && type_params.is_some() {
+                    child.storage.report(Error::TS1094 { span: key_span })
+                }
+
+                let params = c.function.params.validate_with(child)?;
+
+                let declared_ret_ty = try_opt!(c.function.return_type.validate_with(child));
+
+                let span = c.function.span;
+                let is_async = c.function.is_async;
+                let is_generator = c.function.is_generator;
+
+                let inferred_ret_ty = match c
+                    .function
+                    .body
+                    .as_ref()
+                    .map(|bs| child.visit_stmts_for_return(span, is_async, is_generator, &bs.stmts))
+                {
+                    Some(Ok(ty)) => ty,
+                    Some(err) => err?,
+                    None => None,
+                };
+
+                Ok((
+                    type_params,
+                    params,
+                    box declared_ret_ty
+                        .or_else(|| inferred_ret_ty)
+                        .unwrap_or_else(|| Type::any(key_span)),
+                ))
+            })?;
+
+        Ok(Method {
+            span: c.span,
+            key,
+            type_params,
+            params,
+            ret_ty,
+            kind: c.kind,
+            accessibility: None,
+            is_static: c.is_static,
+            is_abstract: c.is_abstract,
+            is_optional: c.is_optional,
+        })
     }
 }
 
