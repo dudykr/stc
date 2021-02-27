@@ -1649,6 +1649,9 @@ impl Expander<'_, '_, '_> {
                         return Ok(None);
                     }
                 }
+                if i.sym == js_word!("void") {
+                    return Ok(Some(Type::any(span)));
+                }
 
                 slog::info!(self.logger, "Info: {}{:?}", i.sym, i.span.ctxt);
                 if !trying_primitive_expansion && self.dejavu.contains(&i.into()) {
@@ -1821,54 +1824,27 @@ impl Expander<'_, '_, '_> {
             // Handle enum variant type.
             //
             //  let a: StringEnum.Foo = x;
-            RTsEntityName::TsQualifiedName(box RTsQualifiedName {
-                left: RTsEntityName::Ident(ref left),
-                ref right,
-                ..
-            }) => {
-                if left.sym == js_word!("void") {
-                    return Ok(Some(Type::any(span)));
-                }
+            RTsEntityName::TsQualifiedName(box RTsQualifiedName { left, ref right, .. }) => {
+                let left =
+                    self.expand_ts_entity_name(span, ctxt, left, None, was_top_level, trying_primitive_expansion)?;
 
-                if let Some(types) = self.analyzer.find_type(ctxt, &left.into())? {
-                    for ty in types {
-                        match ty.normalize() {
-                            Type::Enum(..) => {
-                                return Ok(Some(
-                                    EnumVariant {
-                                        span,
-                                        ctxt: self.analyzer.ctx.module_id,
-                                        enum_name: left.into(),
-                                        name: right.sym.clone(),
-                                    }
-                                    .into(),
-                                ));
-                            }
-                            Type::Param(..) | Type::Namespace(..) | Type::Module(..) => {
-                                let ty = ty.into_owned();
-                                let ty = self
-                                    .analyzer
-                                    .access_property(
-                                        span,
-                                        ty,
-                                        &Key::Normal {
-                                            span,
-                                            sym: right.sym.clone(),
-                                        },
-                                        TypeOfMode::RValue,
-                                        IdCtx::Type,
-                                    )
-                                    .report(&mut self.analyzer.storage)
-                                    .unwrap_or_else(|| Type::any(span));
-                                return Ok(Some(ty));
-                            }
-                            _ => {}
-                        }
-                    }
+                if let Some(left) = left {
+                    let ty = self
+                        .analyzer
+                        .access_property(
+                            span,
+                            left,
+                            &Key::Normal {
+                                span,
+                                sym: right.sym.clone(),
+                            },
+                            TypeOfMode::RValue,
+                            IdCtx::Type,
+                        )
+                        .report(&mut self.analyzer.storage)
+                        .unwrap_or_else(|| Type::any(span));
+                    return Ok(Some(ty));
                 }
-            }
-            _ => {
-                unimplemented!("TsEntityName: {:?}", type_name);
             }
         }
 
