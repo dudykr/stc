@@ -4,8 +4,8 @@ use crate::analyzer::ResultExt;
 use crate::{
     loader::ModuleInfo,
     ty::{
-        self, Alias, EnumVariant, IndexSignature, Interface, PropertySignature, Ref, Tuple, Type, TypeElement, TypeExt,
-        TypeLit, Union,
+        self, Alias, IndexSignature, Interface, PropertySignature, Ref, Tuple, Type, TypeElement, TypeExt, TypeLit,
+        Union,
     },
     type_facts::TypeFacts,
     util::{contains_infer_type, contains_mark, MarkFinder, RemoveTypes},
