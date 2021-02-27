@@ -1,0 +1,40 @@
+warning: Type
+ --> $DIR/tests/visualize/exprs/assign/typeNarrowing/simple-2.ts:4:1
+  |
+4 | x = "";
+  | ^^^^^^
+  |
+  = note: ""
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/assign/typeNarrowing/simple-2.ts:5:5
+  |
+5 | x = x.length;
+  |     ^
+  |
+  = note: string
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/assign/typeNarrowing/simple-2.ts:5:5
+  |
+5 | x = x.length;
+  |     ^^^^^^^^
+  |
+  = note: number
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/assign/typeNarrowing/simple-2.ts:5:1
+  |
+5 | x = x.length;
+  | ^^^^^^^^^^^^
+  |
+  = note: number
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/assign/typeNarrowing/simple-2.ts:6:1
+  |
+6 | x; // number
+  | ^
+  |
+  = note: number
+
