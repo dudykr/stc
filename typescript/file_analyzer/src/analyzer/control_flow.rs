@@ -25,6 +25,7 @@ use stc_ts_ast_rnode::RBinExpr;
 use stc_ts_ast_rnode::RCondExpr;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RIfStmt;
+use stc_ts_ast_rnode::RNumber;
 use stc_ts_ast_rnode::RObjectPatProp;
 use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RPatOrExpr;
@@ -669,7 +670,20 @@ impl Analyzer<'_, '_> {
                                 }
                             }
 
-                            _ => unimplemented!("assignment with array pattern\nPat: {:?}\nType: {:?}", lhs, ty),
+                            _ => {
+                                let elem_ty = self
+                                    .access_property(
+                                        span,
+                                        ty.clone(),
+                                        &Key::Num(RNumber { span, value: i as _ }),
+                                        TypeOfMode::LValue,
+                                        IdCtx::Var,
+                                    )
+                                    .context("tried to access a property of type to assign with an array pattern")?;
+
+                                self.try_assign_pat(span, elem, &elem_ty)
+                                    .context("tried to assign an element of an array pattern")?;
+                            }
                         }
                     }
                 }
