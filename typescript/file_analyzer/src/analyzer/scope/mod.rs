@@ -617,7 +617,7 @@ impl Analyzer<'_, '_> {
                         sym: i.sym.clone(),
                     },
                     TypeOfMode::RValue,
-                    IdCtx::Type,
+                    IdCtx::Var,
                 )
             }
         }
