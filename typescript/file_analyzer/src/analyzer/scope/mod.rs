@@ -596,7 +596,12 @@ impl Analyzer<'_, '_> {
                 return self.type_of_var(i, TypeOfMode::RValue, None);
             }
             RTsEntityName::TsQualifiedName(n) => {
+                let ctx = Ctx {
+                    allow_module_var: true,
+                    ..self.ctx
+                };
                 let obj = self
+                    .with_ctx(ctx)
                     .resolve_typeof(span, &n.left)
                     .context("tried to resolve lhs of typeof")?;
                 let i = &n.right;
