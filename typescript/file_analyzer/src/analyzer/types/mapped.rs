@@ -1,14 +1,17 @@
-use std::borrow::Cow;
-
 use crate::analyzer::Analyzer;
 use crate::ValidationResult;
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::DebugExt;
+use stc_ts_types::Key;
 use stc_ts_types::Mapped;
 use stc_ts_types::Operator;
+use stc_ts_types::PropertySignature;
 use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
+use stc_ts_types::TypeLit;
+use std::borrow::Cow;
 use swc_common::Span;
+use swc_common::Spanned;
 use swc_common::TypeEq;
 use swc_ecma_ast::TruePlusMinus;
 use swc_ecma_ast::TsTypeOperatorOp;
@@ -44,6 +47,32 @@ impl Analyzer<'_, '_> {
                         }
                     }
                 }
+
+                // TODO: Verify that m.ty does not contain key type.
+                let keys = self.extract_keys_as_keys(span, ty)?;
+                let members = keys
+                    .into_iter()
+                    .map(|key| PropertySignature {
+                        span: key.span(),
+                        key,
+                        type_ann: m.ty.clone(),
+                        readonly: false,
+                        optional: false,
+                        params: Default::default(),
+                        type_params: Default::default(),
+                    })
+                    .map(TypeElement::Property)
+                    .map(|mut el| {
+                        self.apply_mapped_flags(&mut el, m.optional, m.readonly);
+                        el
+                    })
+                    .collect();
+
+                return Ok(Type::TypeLit(TypeLit {
+                    span: m.span,
+                    members,
+                    metadata: Default::default(),
+                }));
             }
             _ => {}
         }
@@ -52,6 +81,66 @@ impl Analyzer<'_, '_> {
             "expand_mapped: {}",
             dump_type_as_string(&self.cm, &Type::Mapped(m.clone()))
         )
+    }
+
+    fn extract_keys_as_keys(&mut self, span: Span, ty: &Type) -> ValidationResult<Vec<Key>> {
+        let ty = ty.normalize();
+
+        match ty {
+            Type::Ref(..) => {
+                let ty = self.expand_top_ref(span, Cow::Borrowed(ty))?;
+                return self.extract_keys_as_keys(span, &ty);
+            }
+            Type::TypeLit(ty) => {
+                let mut keys = vec![];
+                for m in &ty.members {
+                    match m {
+                        TypeElement::Call(_) => {}
+                        TypeElement::Constructor(_) => {}
+                        TypeElement::Property(p) => {
+                            keys.push(p.key.clone());
+                        }
+                        TypeElement::Method(m) => {
+                            keys.push(m.key.clone());
+                        }
+                        TypeElement::Index(_) => {}
+                    }
+                }
+
+                return Ok(keys);
+            }
+            Type::Interface(ty) => {
+                let mut keys = vec![];
+                for m in &ty.body {
+                    match m {
+                        TypeElement::Call(_) => {}
+                        TypeElement::Constructor(_) => {}
+                        TypeElement::Property(p) => {
+                            keys.push(p.key.clone());
+                        }
+                        TypeElement::Method(m) => {
+                            keys.push(m.key.clone());
+                        }
+                        TypeElement::Index(_) => {}
+                    }
+                }
+
+                for parent in &ty.extends {
+                    let parent = self.type_of_ts_entity_name(
+                        span,
+                        self.ctx.module_id,
+                        &parent.expr,
+                        parent.type_args.as_deref(),
+                    )?;
+                    keys.extend(self.extract_keys_as_keys(span, &parent)?);
+                }
+
+                return Ok(keys);
+            }
+            _ => {
+                unimplemented!("extract_keys_as_keys: {:#?}", ty);
+            }
+        }
     }
 
     /// TODO(kdy1): I don't know well about TruePlusMinus currently.
