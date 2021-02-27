@@ -44,6 +44,7 @@ use stc_ts_types::ClassDef;
 use stc_ts_types::Intersection;
 use stc_ts_types::Key;
 use stc_ts_types::TypeLitMetadata;
+use stc_ts_types::TypeParamInstantiation;
 use stc_ts_types::{
     Conditional, FnParam, Id, IndexedAccessType, Mapped, ModuleId, Operator, QueryExpr, QueryType, StaticThis,
     TupleElement, TypeParam,
@@ -1621,7 +1622,15 @@ struct Expander<'a, 'b, 'c> {
 }
 
 impl Expander<'_, '_, '_> {
-    fn expand_ref(&mut self, r: Ref, was_top_level: bool) -> ValidationResult<Option<Type>> {
+    fn expand_ts_entity_name(
+        &mut self,
+        span: Span,
+        ctxt: ModuleId,
+        type_name: &RTsEntityName,
+        type_args: Option<&TypeParamInstantiation>,
+        was_top_level: bool,
+        trying_primitive_expansion: bool,
+    ) -> ValidationResult<Option<Type>> {
         macro_rules! verify {
             ($ty:expr) => {{
                 if cfg!(debug_assertions) {
@@ -1631,21 +1640,6 @@ impl Expander<'_, '_, '_> {
                     }
                 }
             }};
-        }
-
-        let trying_primitive_expansion = self.analyzer.scope.expand_triage_depth != 0;
-
-        let Ref {
-            span: r_span,
-            ctxt,
-            type_name,
-            type_args,
-            ..
-        } = r;
-        let span = self.span;
-
-        if !trying_primitive_expansion && (!self.full || self.analyzer.ctx.preserve_ref) {
-            return Ok(None);
         }
 
         match type_name {
@@ -1723,13 +1717,13 @@ impl Expander<'_, '_, '_> {
                             | Type::ClassDef(ClassDef { type_params, .. }) => {
                                 let ty = t.clone().into_owned();
                                 let type_params = type_params.clone();
-                                let type_args: Option<_> = type_args.clone().fold_with(self);
+                                let type_args: Option<_> = type_args.cloned().fold_with(self);
 
                                 if let Some(type_params) = type_params {
                                     slog::info!(self.logger, "expand: expanding type parameters");
                                     let mut inferred = self.analyzer.infer_arg_types(
                                         self.span,
-                                        type_args.as_deref(),
+                                        type_args.as_ref(),
                                         &type_params.params,
                                         &[],
                                         &[],
@@ -1882,9 +1876,34 @@ impl Expander<'_, '_, '_> {
         Err(Error::TypeNotFound {
             name: box type_name.clone().into(),
             ctxt,
-            type_args: type_args.clone(),
+            type_args: type_args.cloned().map(Box::new),
             span,
         })
+    }
+    fn expand_ref(&mut self, r: Ref, was_top_level: bool) -> ValidationResult<Option<Type>> {
+        let trying_primitive_expansion = self.analyzer.scope.expand_triage_depth != 0;
+
+        let Ref {
+            span: r_span,
+            ctxt,
+            type_name,
+            type_args,
+            ..
+        } = r;
+        let span = self.span;
+
+        if !trying_primitive_expansion && (!self.full || self.analyzer.ctx.preserve_ref) {
+            return Ok(None);
+        }
+
+        self.expand_ts_entity_name(
+            span,
+            ctxt,
+            &type_name,
+            type_args.as_deref(),
+            was_top_level,
+            trying_primitive_expansion,
+        )
     }
 }
 
