@@ -1039,7 +1039,6 @@ impl Analyzer<'_, '_> {
                             return Err(Error::EnumCannotBeLValue { span: prop.span() });
                         }
 
-                        debug_assert_ne!(span, prop.span());
                         return Ok(Type::EnumVariant(EnumVariant {
                             span: match type_mode {
                                 TypeOfMode::LValue => prop.span(),
