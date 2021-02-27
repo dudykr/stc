@@ -381,6 +381,19 @@ impl Analyzer<'_, '_> {
 
             let mut errors = Errors::default();
 
+            match &e.left {
+                RPatOrExpr::Pat(box RPat::Ident(i)) => {
+                    // TODO: Implemennt this
+                    let rhs_is_always_true = true;
+
+                    // TODO: Deny changing type of const
+                    if rhs_is_always_true {
+                        analyzer.mark_var_as_truthy(Id::from(&*i))?;
+                    }
+                }
+                _ => e.left.visit_with(analyzer),
+            }
+
             let rhs_ty = match {
                 let ctx = Ctx {
                     in_assign_rhs: true,
@@ -414,19 +427,6 @@ impl Analyzer<'_, '_> {
             };
             let rhs_ty = analyzer.with_ctx(ctx).expand_fully(span, rhs_ty.clone(), true)?;
             analyzer.try_assign(span, e.op, &e.left, &rhs_ty);
-
-            match &e.left {
-                RPatOrExpr::Pat(box RPat::Ident(i)) => {
-                    // TODO: Implemennt this
-                    let rhs_is_always_true = true;
-
-                    // TODO: Deny changing type of const
-                    if rhs_is_always_true {
-                        analyzer.mark_var_as_truthy(Id::from(&*i))?;
-                    }
-                }
-                _ => e.left.visit_with(analyzer),
-            }
 
             if let Some(span) = any_span {
                 return Ok(Type::any(span));
