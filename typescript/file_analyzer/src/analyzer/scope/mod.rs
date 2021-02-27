@@ -1208,7 +1208,7 @@ impl Analyzer<'_, '_> {
 
                                     match prop.value {
                                         Some(_) => {
-                                            unimplemented!("pattern with default where rhs is this")
+                                            unimplemented!("pattern with default")
                                         }
                                         None => {
                                             // TODO: actual_ty
@@ -1217,7 +1217,7 @@ impl Analyzer<'_, '_> {
                                     }
                                 }
                                 RObjectPatProp::Rest(_) => {
-                                    unimplemented!("rest pattern where rhs is this")
+                                    unimplemented!("rest pattern")
                                 }
                             }
                         }
