@@ -44,7 +44,10 @@ warning: Type
 9 |         x
   |         ^
   |
-  = note: { kind: Choice.Yes, a: string }
+  = note: {
+              kind: Choice.Yes;
+              a: string;
+          }
 
 warning: Type
   --> $DIR/tests/visualize/types/enums/controlFlow/if-lit-1.ts:11:9
@@ -52,5 +55,8 @@ warning: Type
 11 |         x
    |         ^
    |
-   = note: { kind: Choice.No, b: string }
+   = note: {
+               kind: Choice.No;
+               b: string;
+           }
 
