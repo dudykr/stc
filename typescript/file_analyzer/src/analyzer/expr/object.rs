@@ -27,9 +27,12 @@ use stc_ts_types::TypeLit;
 use stc_ts_types::TypeLitMetadata;
 use stc_ts_types::TypeParamDecl;
 use stc_ts_types::Union;
+use std::borrow::Cow;
 use std::iter::repeat;
 use swc_atoms::JsWord;
+use swc_common::Spanned;
 use swc_common::DUMMY_SP;
+use swc_ecma_ast::TsKeywordTypeKind;
 
 #[validator]
 impl Analyzer<'_, '_> {
@@ -339,6 +342,19 @@ impl Analyzer<'_, '_> {
         if rhs.is_any() || rhs.is_unknown() {
             return Ok(to);
         }
+
+        if rhs.is_kwd(TsKeywordTypeKind::TsNullKeyword) || rhs.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
+            return Ok(to);
+        }
+
+        match rhs.normalize() {
+            Type::Ref(..) => {
+                let rhs = self.expand_top_ref(rhs.span(), Cow::Owned(rhs))?.into_owned();
+                return self.append_type(to, rhs);
+            }
+            _ => {}
+        }
+
         let mut to = to.foldable();
         match to {
             Type::TypeLit(ref mut lit) => {
