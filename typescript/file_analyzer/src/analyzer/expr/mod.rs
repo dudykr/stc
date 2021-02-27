@@ -52,6 +52,7 @@ use stc_ts_types::name::Name;
 use stc_ts_types::Alias;
 use stc_ts_types::Class;
 use stc_ts_types::ClassDef;
+use stc_ts_types::ClassMember;
 use stc_ts_types::ComputedKey;
 use stc_ts_types::Key;
 use stc_ts_types::PropertySignature;
@@ -864,9 +865,9 @@ impl Analyzer<'_, '_> {
                             match member {
                                 // No-op, as constructor parameter properties are handled by
                                 // Validate<Class>.
-                                ty::ClassMember::Constructor(_) => {}
+                                ClassMember::Constructor(_) => {}
 
-                                ty::ClassMember::Method(member @ Method { is_static: false, .. })
+                                ClassMember::Method(member @ Method { is_static: false, .. })
                                     if member.key.type_eq(prop) =>
                                 {
                                     return Ok(Type::Function(ty::Function {
@@ -877,15 +878,15 @@ impl Analyzer<'_, '_> {
                                     }));
                                 }
 
-                                ty::ClassMember::Property(member @ ClassProperty { is_static: false, .. }) => {
+                                ClassMember::Property(member @ ClassProperty { is_static: false, .. }) => {
                                     if member.key.type_eq(prop) {
                                         return Ok(*member.value.clone().unwrap_or_else(|| box Type::any(span)));
                                     }
                                 }
 
-                                ty::ClassMember::Property(..) | ty::ClassMember::Method(..) => {}
+                                ClassMember::Property(..) | ClassMember::Method(..) => {}
 
-                                ty::ClassMember::IndexSignature(_) => {
+                                ClassMember::IndexSignature(_) => {
                                     unimplemented!("class -> this.foo where an `IndexSignature` exists")
                                 }
                             }
@@ -1135,7 +1136,7 @@ impl Analyzer<'_, '_> {
             Type::Class(ref c) => {
                 for v in c.def.body.iter() {
                     match v {
-                        ty::ClassMember::Property(ref class_prop) => {
+                        ClassMember::Property(ref class_prop) => {
                             if let Some(declaring) = self.scope.declaring_prop.as_ref() {
                                 if class_prop.key == *declaring.sym() {
                                     return Err(Error::ReferencedInInit { span });
@@ -1150,7 +1151,7 @@ impl Analyzer<'_, '_> {
                                 });
                             }
                         }
-                        ty::ClassMember::Method(ref mtd) => {
+                        ClassMember::Method(ref mtd) => {
                             if self.key_matches(span, &mtd.key, prop, false) {
                                 return Ok(Type::Function(stc_ts_types::Function {
                                     span: mtd.span,
@@ -1161,7 +1162,7 @@ impl Analyzer<'_, '_> {
                             }
                         }
 
-                        ty::ClassMember::Constructor(ref cons) => {
+                        ClassMember::Constructor(ref cons) => {
                             if prop == "constructor" {
                                 return Ok(Type::Constructor(ty::Constructor {
                                     span,
@@ -1465,7 +1466,7 @@ impl Analyzer<'_, '_> {
                 for m in &cls.body {
                     //
                     match *m {
-                        ty::ClassMember::Property(ref p) => {
+                        ClassMember::Property(ref p) => {
                             if !p.is_static {
                                 continue;
                             }
@@ -1479,7 +1480,7 @@ impl Analyzer<'_, '_> {
                             }
                         }
 
-                        ty::ClassMember::Method(ref m) => {
+                        ClassMember::Method(ref m) => {
                             if !m.is_static {
                                 continue;
                             }
