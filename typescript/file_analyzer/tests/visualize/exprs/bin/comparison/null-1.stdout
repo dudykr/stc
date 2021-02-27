@@ -1,0 +1,88 @@
+warning: Type
+ --> $DIR/tests/visualize/exprs/bin/comparison/null-1.ts:4:18
+  |
+4 |     if (null === strOrNull) {
+  |                  ^^^^^^^^^
+  |
+  = note: string | null
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/bin/comparison/null-1.ts:4:9
+  |
+4 |     if (null === strOrNull) {
+  |         ^^^^^^^^^^^^^^^^^^
+  |
+  = note: boolean
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/bin/comparison/null-1.ts:5:15
+  |
+5 |         nil = strOrNull;
+  |               ^^^^^^^^^
+  |
+  = note: null
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/bin/comparison/null-1.ts:5:9
+  |
+5 |         nil = strOrNull;
+  |         ^^^^^^^^^^^^^^^
+  |
+  = note: null
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/bin/comparison/null-1.ts:8:15
+  |
+8 |         str = strOrNull;
+  |               ^^^^^^^^^
+  |
+  = note: string
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/bin/comparison/null-1.ts:8:9
+  |
+8 |         str = strOrNull;
+  |         ^^^^^^^^^^^^^^^
+  |
+  = note: string
+
+warning: Type
+  --> $DIR/tests/visualize/exprs/bin/comparison/null-1.ts:10:9
+   |
+10 |     if (undefined !== strOrUndefined) {
+   |         ^^^^^^^^^
+   |
+   = note: undefined
+
+warning: Type
+  --> $DIR/tests/visualize/exprs/bin/comparison/null-1.ts:10:23
+   |
+10 |     if (undefined !== strOrUndefined) {
+   |                       ^^^^^^^^^^^^^^
+   |
+   = note: string | undefined
+
+warning: Type
+  --> $DIR/tests/visualize/exprs/bin/comparison/null-1.ts:10:9
+   |
+10 |     if (undefined !== strOrUndefined) {
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: boolean
+
+warning: Type
+  --> $DIR/tests/visualize/exprs/bin/comparison/null-1.ts:11:15
+   |
+11 |         str = strOrUndefined;
+   |               ^^^^^^^^^^^^^^
+   |
+   = note: string
+
+warning: Type
+  --> $DIR/tests/visualize/exprs/bin/comparison/null-1.ts:11:9
+   |
+11 |         str = strOrUndefined;
+   |         ^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: string
+
