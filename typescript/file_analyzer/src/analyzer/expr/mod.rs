@@ -35,6 +35,7 @@ use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RPatOrExpr;
 use stc_ts_ast_rnode::RSeqExpr;
 use stc_ts_ast_rnode::RStr;
+use stc_ts_ast_rnode::RSuper;
 use stc_ts_ast_rnode::RThisExpr;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsEnumMemberId;
@@ -2152,11 +2153,12 @@ impl Analyzer<'_, '_> {
                 obj_ty
             }
 
-            RExprOrSuper::Super(..) => {
+            RExprOrSuper::Super(RSuper { span, .. }) => {
                 if let Some(v) = self.scope.get_super_class() {
                     v.clone()
                 } else {
-                    unimplemented!("error reporting accessing super in a class without super class")
+                    self.storage.report(Error::SuperInClassWithoutSuper { span });
+                    Type::any(span)
                 }
             }
         };

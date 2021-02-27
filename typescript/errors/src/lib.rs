@@ -57,6 +57,10 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    SuperInClassWithoutSuper {
+        span: Span,
+    },
+
     GeneratorCannotHaveVoidAsReturnType {
         span: Span,
     },
@@ -857,6 +861,8 @@ impl Error {
             | Error::TupleAssignError { .. } => 2322,
 
             Error::NonOverlappingTypeCast { .. } => 2352,
+
+            Error::SuperInClassWithoutSuper { .. } => 2335,
 
             Error::NoSuchProperty { .. } => 2339,
             Error::AssignOpCannotBeApplied { .. } => 2365,
