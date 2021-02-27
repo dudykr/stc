@@ -20,6 +20,45 @@ impl Analyzer<'_, '_> {
                 if !l.is_abstract && rc.is_abstract {
                     return Err(Error::CannotAssignAbstractConstructorToNonAbstractConstructor { span: opts.span });
                 }
+
+                if !rc.is_abstract {
+                    // class Child extends Parent
+                    // let c: Child;
+                    // let p: Parent;
+                    // `p = c` is valid
+                    if let Some(parent) = &rc.super_class {
+                        if self.assign_to_class_def(opts, l, &parent).is_ok() {
+                            return Ok(());
+                        }
+                    }
+                }
+
+                let new_body;
+                let r_body = if rc.super_class.is_some() {
+                    if let Some(members) = self.collect_class_members(r)? {
+                        new_body = members;
+                        &*new_body
+                    } else {
+                        return Err(Error::Unimplemented {
+                            span: opts.span,
+                            msg: format!("Failed to collect class members"),
+                        });
+                    }
+                } else {
+                    &*rc.body
+                };
+
+                for (i, lm) in l.body.iter().enumerate() {
+                    self.assign_class_members_to_class_member(opts, lm, r_body)
+                        .with_context(|| {
+                            format!(
+                                "tried to assign class members to {}th class member\n{:#?}\n{:#?}",
+                                i, lm, r_body
+                            )
+                        })?;
+                }
+
+                return Ok(());
             }
 
             Type::TypeLit(..) | Type::Interface(..) => {
@@ -71,6 +110,9 @@ impl Analyzer<'_, '_> {
                     // let p: Parent;
                     // `p = c` is valid
                     if let Some(parent) = &rc.def.super_class {
+                        let parent = self
+                            .instantiate_class(opts.span, &parent)
+                            .context("tried to instanitate class to asssign the super class to a class")?;
                         if self.assign_to_class(opts, l, &parent).is_ok() {
                             return Ok(());
                         }
