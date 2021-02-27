@@ -26,6 +26,7 @@ use smallvec::SmallVec;
 use stc_ts_ast_rnode::RArrayPat;
 use stc_ts_ast_rnode::RAssignPatProp;
 use stc_ts_ast_rnode::RKeyValuePatProp;
+use stc_ts_ast_rnode::RNumber;
 use stc_ts_ast_rnode::RObjectPat;
 use stc_ts_ast_rnode::RObjectPatProp;
 use stc_ts_ast_rnode::RPat;
@@ -1013,114 +1014,25 @@ impl Analyzer<'_, '_> {
                 //      const [a , setA] = useState();
                 //
 
-                let ty = ty.foldable();
-                match ty {
-                    Type::Tuple(Tuple {
-                        elems: ref tuple_elements,
-                        ..
-                    }) => {
-                        if tuple_elements.len() < elems.len() {
-                            return Err(Error::TooManyTupleElements { span });
-                        }
-
-                        for (elem, tuple_element) in elems.into_iter().zip(tuple_elements) {
-                            match *elem {
-                                Some(ref elem) => {
-                                    // TODO: actual_ty
-                                    self.declare_complex_vars(kind, elem, *tuple_element.ty.clone(), None)?;
-                                }
-                                None => {
-                                    // Skip
-                                }
-                            }
-                        }
-
-                        return Ok(());
+                for (i, elem) in elems.iter().enumerate() {
+                    if let Some(elem) = elem {
+                        let elem_ty = self
+                            .access_property(
+                                span,
+                                ty.clone(),
+                                &Key::Num(RNumber { span, value: i as _ }),
+                                TypeOfMode::LValue,
+                                IdCtx::Var,
+                            )
+                            .context(
+                                "tried to access a property of a type to declare variable with an array pattern",
+                            )?;
+                        // TODO: actual_ty
+                        self.declare_complex_vars(kind, elem, elem_ty, None)?;
                     }
-
-                    Type::Array(Array { elem_type, .. }) => {
-                        for elem in elems.into_iter() {
-                            match *elem {
-                                Some(ref elem) => {
-                                    // TODO: actual_ty
-                                    self.declare_complex_vars(kind, elem, *elem_type.clone(), None)?;
-                                }
-                                None => {
-                                    // Skip
-                                }
-                            }
-                        }
-
-                        return Ok(());
-                    }
-
-                    // [a, b] | [c, d] => [a | c, b | d]
-                    Type::Union(Union { types, .. }) => {
-                        let mut errors = vec![];
-                        let mut buf = vec![];
-                        for ty in types.iter() {
-                            match *ty.normalize() {
-                                Type::Tuple(Tuple {
-                                    elems: ref elem_types, ..
-                                }) => {
-                                    buf.push(elem_types);
-                                }
-                                _ => {
-                                    errors.push(Error::NotTuple { span: ty.span() });
-                                }
-                            }
-                        }
-                        if !errors.is_empty() {
-                            return Err(Error::UnionError { span, errors });
-                        }
-
-                        for (elem, tuple_elements) in
-                            elems.into_iter().zip(buf.into_iter().chain(repeat(&vec![TupleElement {
-                                span: DUMMY_SP,
-                                label: None,
-                                ty: box Type::undefined(span),
-                            }])))
-                        {
-                            match *elem {
-                                Some(ref elem) => {
-                                    let ty = Union {
-                                        span,
-                                        types: tuple_elements
-                                            .into_iter()
-                                            .map(|element| &*element.ty)
-                                            .cloned()
-                                            .collect(),
-                                    }
-                                    .into();
-                                    // TODO: actual_ty
-                                    self.declare_complex_vars(kind, elem, ty, None)?;
-                                }
-                                None => {}
-                            }
-                        }
-
-                        return Ok(());
-                    }
-
-                    Type::Keyword(RTsKeywordType {
-                        kind: TsKeywordTypeKind::TsAnyKeyword,
-                        ..
-                    }) => {
-                        // Everything is any
-                        for elem in elems {
-                            match elem {
-                                Some(elem) => {
-                                    self.declare_complex_vars(kind, elem, ty.clone(), Some(ty.clone()))?;
-                                }
-                                None => {}
-                            }
-                        }
-
-                        return Ok(());
-                    }
-
-                    _ => unimplemented!("declare_complex_vars(pat={:#?}\nty={:#?}\n)", pat, ty),
                 }
+
+                Ok(())
             }
 
             RPat::Object(RObjectPat { ref props, .. }) => {
