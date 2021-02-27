@@ -2020,6 +2020,10 @@ impl Analyzer<'_, '_> {
                                                     ..
                                                 },
                                             ..
+                                        })
+                                        | Type::ClassDef(ClassDef {
+                                            type_params: Some(type_params),
+                                            ..
                                         }) => {
                                             params = self
                                                 .instantiate_type_params_using_args(span, type_params, type_args)
