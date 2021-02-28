@@ -31,7 +31,7 @@ impl Analyzer<'_, '_> {
                 }
                 RPat::Ident(ref i) => {
                     // TODO: verify
-                    self.type_of_var(i, TypeOfMode::LValue, None)?;
+                    self.type_of_var(&i.id, TypeOfMode::LValue, None)?;
                 }
                 _ => {}
             },

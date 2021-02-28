@@ -17,6 +17,7 @@ use iter::once;
 use once_cell::sync::Lazy;
 use rnode::Fold;
 use rnode::FoldWith;
+use rnode::NodeId;
 use rnode::Visit;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
@@ -25,6 +26,7 @@ use slog::Logger;
 use smallvec::SmallVec;
 use stc_ts_ast_rnode::RArrayPat;
 use stc_ts_ast_rnode::RAssignPatProp;
+use stc_ts_ast_rnode::RBindingIdent;
 use stc_ts_ast_rnode::RKeyValuePatProp;
 use stc_ts_ast_rnode::RNumber;
 use stc_ts_ast_rnode::RObjectPat;
@@ -993,11 +995,11 @@ impl Analyzer<'_, '_> {
             RPat::Assign(p) => return self.declare_complex_vars(kind, &p.left, ty, actual_ty),
 
             RPat::Ident(ref i) => {
-                slog::debug!(&self.logger, "declare_complex_vars: declaring {}", i.sym);
+                slog::debug!(&self.logger, "declare_complex_vars: declaring {}", i.id.sym);
                 self.declare_var(
                     span,
                     kind,
-                    i.into(),
+                    i.id.into(),
                     Some(ty),
                     actual_ty,
                     // initialized
@@ -1091,7 +1093,16 @@ impl Analyzer<'_, '_> {
                                 }
                                 if let Some(ty) = find(&members, &RPropName::Ident(key.clone())) {
                                     // TODO: actual_ty
-                                    a.declare_complex_vars(kind, &RPat::Ident(key.clone()), ty, None)?;
+                                    a.declare_complex_vars(
+                                        kind,
+                                        &RPat::Ident(RBindingIdent {
+                                            node_id: NodeId::invalid(),
+                                            id: key.clone(),
+                                            type_ann: None,
+                                        }),
+                                        ty,
+                                        None,
+                                    )?;
                                     return Ok(());
                                 }
                             }
@@ -1140,7 +1151,11 @@ impl Analyzer<'_, '_> {
 
                                     self.declare_complex_vars(
                                         kind,
-                                        &RPat::Ident(key.clone()),
+                                        &RPat::Ident(RBindingIdent {
+                                            node_id: NodeId::invalid(),
+                                            id: key.clone(),
+                                            type_ann: None,
+                                        }),
                                         Type::any(*span),
                                         Some(Type::any(*span)),
                                     )?;
@@ -1213,7 +1228,16 @@ impl Analyzer<'_, '_> {
                                         }
                                         None => {
                                             // TODO: actual_ty
-                                            self.declare_complex_vars(kind, &RPat::Ident(prop.key.clone()), ty, None)?;
+                                            self.declare_complex_vars(
+                                                kind,
+                                                &RPat::Ident(RBindingIdent {
+                                                    node_id: NodeId::invalid(),
+                                                    id: prop.key.clone(),
+                                                    type_ann: None,
+                                                }),
+                                                ty,
+                                                None,
+                                            )?;
                                         }
                                     }
                                 }
