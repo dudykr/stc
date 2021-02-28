@@ -561,7 +561,6 @@ impl Analyzer<'_, '_> {
                 .store_private_type(ModuleId::builtin(), name.clone(), ty.clone());
             self.scope.register_type(name, ty);
         } else {
-            slog::debug!(self.logger, "register_type({})", name);
             let ty = ty.cheap();
 
             if (self.scope.is_root() || self.scope.is_module()) && !ty.normalize().is_type_param() {
