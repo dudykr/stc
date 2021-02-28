@@ -725,17 +725,26 @@ impl Analyzer<'_, '_> {
 
         match to {
             Type::Mapped(to) => return self.assign_to_mapped(opts, to, rhs),
+            Type::Param(TypeParam {
+                constraint: Some(ref c),
+                ..
+            }) => {
+                return self.assign_inner(
+                    c,
+                    rhs,
+                    AssignOpts {
+                        allow_assignment_to_param: true,
+                        ..opts
+                    },
+                )
+            }
 
-            Type::Param(..) => {
+            Type::Param(..) if !opts.allow_assignment_to_param => {
                 // We handled equality above.
                 //
                 // This is optional so we can change behavior while selecting method to call.
                 // While selecting method, we may need to assign to a type parameter.
-                if opts.allow_assignment_to_param {
-                    return Ok(());
-                } else {
-                    fail!()
-                }
+                fail!()
             }
 
             Type::Array(Array { ref elem_type, .. }) => match rhs {
