@@ -1760,6 +1760,17 @@ impl Analyzer<'_, '_> {
         let id: Id = i.into();
         let name: Name = i.into();
 
+        if let Some(declaring) = &self.scope.declaring_fn {
+            if id == *declaring {
+                // We will expand this type query to proper type while calculating returns types
+                // of a function.
+                return Ok(Type::Query(QueryType {
+                    span,
+                    expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(id.into())),
+                }));
+            }
+        }
+
         let mut modules = vec![];
         let mut ty = self.type_of_raw_var(i, type_mode, type_args)?;
         let mut need_intersection = true;
