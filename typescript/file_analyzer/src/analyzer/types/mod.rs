@@ -22,6 +22,7 @@ use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
 use stc_ts_types::TypeLitMetadata;
+use stc_ts_types::TypeParam;
 use stc_ts_utils::MapWithMut;
 use stc_utils::TryOpt;
 use std::borrow::Cow;
@@ -455,6 +456,18 @@ impl Analyzer<'_, '_> {
                     self.exclude_type(ty, excluded);
                 }
                 ty.types.retain(|element| !element.is_never());
+            }
+
+            Type::Param(TypeParam {
+                span,
+                constraint: Some(constraint),
+                ..
+            }) => {
+                self.exclude_type(constraint, excluded);
+                if constraint.is_never() {
+                    *ty = Type::never(*span);
+                    return;
+                }
             }
             _ => {}
         }
