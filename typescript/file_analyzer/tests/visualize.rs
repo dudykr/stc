@@ -10,10 +10,12 @@ use stc_testing::logger;
 use stc_ts_ast_rnode::RModule;
 use stc_ts_builtin_types::Lib;
 use stc_ts_errors::debug::debugger::Debugger;
+use stc_ts_errors::Error;
 use stc_ts_file_analyzer::analyzer::Analyzer;
 use stc_ts_file_analyzer::analyzer::NoopLoader;
 use stc_ts_file_analyzer::env::Env;
 use stc_ts_file_analyzer::validator::ValidateWith;
+use stc_ts_storage::ErrorStore;
 use stc_ts_storage::Single;
 use stc_ts_types::module_id;
 use stc_ts_utils::StcComments;
@@ -29,7 +31,8 @@ use swc_ecma_parser::TsConfig;
 use swc_ecma_transforms::resolver::ts_resolver;
 use swc_ecma_visit::FoldWith;
 
-fn run_test(file_name: PathBuf, should_pass: bool) {
+/// If `for_error` is false, this function will run as type dump mode.
+fn run_test(file_name: PathBuf, for_error: bool) {
     let fname = file_name.display().to_string();
     println!("{}", fname);
 
@@ -90,21 +93,42 @@ fn run_test(file_name: PathBuf, should_pass: bool) {
                     cm.clone(),
                     box &mut storage,
                     &NoopLoader,
-                    Some(Debugger {
-                        cm: cm.clone(),
-                        handler: handler.clone(),
-                    }),
+                    if for_error {
+                        None
+                    } else {
+                        Some(Debugger {
+                            cm: cm.clone(),
+                            handler: handler.clone(),
+                        })
+                    },
                 );
                 GLOBALS.set(stable_env.swc_globals(), || {
                     module.validate_with(&mut analyzer).unwrap();
                 });
             }
 
+            if for_error {
+                let errors = storage.take_errors();
+                let errors = Error::flatten(errors.into());
+
+                for err in errors {
+                    err.emit(&handler);
+                }
+            }
+
             Err(())
         })
         .unwrap_err();
 
-    res.compare_to_file(&file_name.with_extension("stdout")).unwrap();
+    if for_error {
+        if res.trim().is_empty() {
+            return;
+        }
+
+        panic!("Failed to validate `{}`:\n{}", file_name.display(), res)
+    } else {
+        res.compare_to_file(&file_name.with_extension("stdout")).unwrap();
+    }
 }
 
 #[testing::fixture("visualize/**/*.ts", exclude(".*\\.\\.d.\\.ts"))]
@@ -114,5 +138,6 @@ fn visualize(file_name: PathBuf) {
 
 #[testing::fixture("pass/**/*.ts", exclude(".*\\.\\.d.\\.ts"))]
 fn pass(file_name: PathBuf) {
-    run_test(file_name, false);
+    run_test(file_name.clone(), false);
+    run_test(file_name, true);
 }
