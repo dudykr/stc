@@ -9,6 +9,7 @@ use rnode::VisitMut;
 use rnode::VisitMutWith;
 use stc_ts_ast_rnode::RNumber;
 use stc_ts_ast_rnode::RTsKeywordType;
+use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::DebugExt;
 use stc_ts_types::name::Name;
 use stc_ts_types::Array;
@@ -424,6 +425,18 @@ impl Analyzer<'_, '_> {
         if ty.normalize().type_eq(excluded.normalize()) {
             *ty = Type::never(ty.span());
             return;
+        }
+
+        if cfg!(debug_assertions) {
+            if dump_type_as_string(&self.cm, &ty) == dump_type_as_string(&self.cm, &excluded) {
+                eprintln!("Type: \n{}", dump_type_as_string(&self.cm, &ty));
+                eprintln!("Excluded: \n{}", dump_type_as_string(&self.cm, &excluded));
+
+                panic!(
+                    "exclude_type: \n{:#?}\n and \n{:#?}\n is identical, but typeq_eq failed",
+                    ty, excluded
+                )
+            }
         }
 
         match ty.normalize() {
