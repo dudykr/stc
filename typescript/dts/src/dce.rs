@@ -145,7 +145,7 @@ impl VisitMut<RVarDeclarator> for DceForDts<'_> {
         match node.name {
             RPat::Ident(ref mut i) => {
                 if i.type_ann.is_none() {
-                    if let Some(ty) = self.info.private_vars.get(&i.clone().into()) {
+                    if let Some(ty) = self.info.private_vars.get(&i.id.clone().into()) {
                         i.type_ann = Some(RTsTypeAnn {
                             node_id: NodeId::invalid(),
                             span: DUMMY_SP,

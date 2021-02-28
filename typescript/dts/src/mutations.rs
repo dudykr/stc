@@ -1,6 +1,7 @@
 use rnode::VisitMut;
 use rnode::VisitMutWith;
 use stc_ts_ast_rnode::RArrayPat;
+use stc_ts_ast_rnode::RBindingIdent;
 use stc_ts_ast_rnode::RClass;
 use stc_ts_ast_rnode::RClassMember;
 use stc_ts_ast_rnode::RClassProp;
@@ -139,8 +140,8 @@ impl VisitMut<RClassProp> for Operator<'_> {
     }
 }
 
-impl VisitMut<RIdent> for Operator<'_> {
-    fn visit_mut(&mut self, i: &mut RIdent) {
+impl VisitMut<RBindingIdent> for Operator<'_> {
+    fn visit_mut(&mut self, i: &mut RBindingIdent) {
         i.visit_mut_children_with(self);
 
         if let Some(PatMut { ty, optional }) = self.mutations.for_pats.remove(&i.node_id) {
@@ -148,7 +149,7 @@ impl VisitMut<RIdent> for Operator<'_> {
                 i.type_ann = Some(ty.into())
             }
             if let Some(optional) = optional {
-                i.optional = optional;
+                i.id.optional = optional;
             }
         }
     }
