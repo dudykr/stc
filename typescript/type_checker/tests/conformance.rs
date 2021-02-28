@@ -255,12 +255,19 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
                         rule.always_strict = strict;
                         rule.strict_null_checks = strict;
                         rule.strict_function_types = strict;
+                    } else if s.starts_with("strict") {
+                        let strict = true;
+                        rule.no_implicit_any = strict;
+                        rule.no_implicit_this = strict;
+                        rule.always_strict = strict;
+                        rule.strict_null_checks = strict;
+                        rule.strict_function_types = strict;
                     } else if s.starts_with("noLib:") {
                         let v = s["noLib:".len()..].trim().parse().unwrap();
                         if v {
                             libs = vec![];
                         }
-                    } else if s.starts_with("noImplicitAny:") {
+                    } else if s.to_lowercase().starts_with("noimplicitany:") {
                         let v = s["noImplicitAny:".len()..].trim().parse().unwrap();
                         rule.no_implicit_any = v;
                     } else if s.starts_with("noImplicitReturns:") {
@@ -276,7 +283,7 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
                         rule.allow_unused_labels = v;
                     } else if s.starts_with("noEmitHelpers") {
                         // TODO
-                    } else if s.starts_with("downlevelIteration: ") {
+                    } else if s.starts_with("downlevelIteration:") {
                         // TODO
                     } else if s.starts_with("sourceMap:") || s.starts_with("sourcemap:") {
                         // TODO
@@ -301,7 +308,9 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
                         // TODO
                     } else if s.starts_with("module") {
                     } else if s.starts_with("noTypesAndSymbols") {
-                        // Ignored
+                        // Ignored as we don't generate them.
+                    } else if s.starts_with("noEmit") || s.starts_with("jsx:") {
+                        // Ignored as we only checks type.
                     } else {
                         panic!("Comment is not handled: {}", s);
                     }
