@@ -585,10 +585,16 @@ impl Analyzer<'_, '_> {
         match rhs {
             Type::Ref(..) => {
                 let rhs = self.expand_top_ref(span, Cow::Borrowed(rhs))?;
-                return self.assign_inner(to, &rhs, opts);
+                return self
+                    .assign_inner(to, &rhs, opts)
+                    .context("tried to assign an expanded type to another type");
             }
 
-            Type::Query(rhs) => return self.assign_from_query_type(opts, to, &rhs),
+            Type::Query(rhs) => {
+                return self
+                    .assign_from_query_type(opts, to, &rhs)
+                    .context("tried to assign a query type to another type")
+            }
 
             Type::Infer(..) => fail!(),
 
