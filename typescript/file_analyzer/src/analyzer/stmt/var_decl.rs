@@ -25,6 +25,7 @@ use stc_ts_ast_rnode::RTsAsExpr;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsTypeAnn;
+use stc_ts_ast_rnode::RTsTypeAssertion;
 use stc_ts_ast_rnode::RVarDecl;
 use stc_ts_ast_rnode::RVarDeclarator;
 use stc_ts_errors::DebugExt;
@@ -130,7 +131,7 @@ impl Analyzer<'_, '_> {
                 // let a = {} as Foo
                 match v.init {
                     Some(box RExpr::TsAs(RTsAsExpr { ref type_ann, .. }))
-                    | Some(box RExpr::TsTypeCast(RTsTypeCastExpr {
+                    | Some(box RExpr::TsTypeAssertion(RTsTypeAssertion {
                         type_ann: RTsTypeAnn { ref type_ann, .. },
                         ..
                     })) => Some(type_ann.validate_with(self)?),

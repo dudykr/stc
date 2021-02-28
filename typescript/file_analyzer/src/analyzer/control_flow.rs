@@ -529,7 +529,7 @@ impl Analyzer<'_, '_> {
                         // TODO
                         match &**pat {
                             RPat::Ident(left) => {
-                                let lhs = self.type_of_var(left, TypeOfMode::LValue, None)?;
+                                let lhs = self.type_of_var(&left.id, TypeOfMode::LValue, None)?;
                                 self.assign_with_op(span, op, &lhs, &ty)?;
                             }
                             _ => Err(Error::InvalidOperatorForLhs { span, op })?,
@@ -585,17 +585,17 @@ impl Analyzer<'_, '_> {
 
             RPat::Ident(i) => {
                 // Verify using immutable references.
-                if let Some(var_info) = self.scope.get_var(&i.into()) {
+                if let Some(var_info) = self.scope.get_var(&i.id.into()) {
                     if let Some(var_ty) = var_info.ty.clone() {
-                        self.assign(&var_ty, ty, i.span)?;
+                        self.assign(&var_ty, ty, i.id.span)?;
                     }
                 }
 
                 let mut actual_ty = None;
                 if let Some(var_info) = self
                     .scope
-                    .get_var(&i.into())
-                    .or_else(|| self.scope.search_parent(&i.into()))
+                    .get_var(&i.id.into())
+                    .or_else(|| self.scope.search_parent(&i.id.into()))
                 {
                     if let Some(declared_ty) = &var_info.ty {
                         if declared_ty.is_any() {
@@ -608,12 +608,12 @@ impl Analyzer<'_, '_> {
                 }
 
                 // TODO: Update actual types.
-                if let Some(var_info) = self.scope.get_var_mut(&i.into()) {
+                if let Some(var_info) = self.scope.get_var_mut(&i.id.into()) {
                     var_info.actual_ty = Some(actual_ty.unwrap_or_else(|| ty.clone()));
                     return Ok(());
                 }
 
-                let var_info = if let Some(var_info) = self.scope.search_parent(&i.into()) {
+                let var_info = if let Some(var_info) = self.scope.search_parent(&i.id.into()) {
                     let actual_ty = Some(actual_ty.unwrap_or_else(|| ty.clone()));
 
                     VarInfo {
