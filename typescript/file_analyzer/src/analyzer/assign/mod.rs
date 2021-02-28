@@ -1009,6 +1009,18 @@ impl Analyzer<'_, '_> {
                     | Type::Keyword(RTsKeywordType {
                         kind: TsKeywordTypeKind::TsVoidKeyword,
                         ..
+                    })
+                    | Type::Keyword(RTsKeywordType {
+                        kind: TsKeywordTypeKind::TsStringKeyword,
+                        ..
+                    })
+                    | Type::Keyword(RTsKeywordType {
+                        kind: TsKeywordTypeKind::TsNumberKeyword,
+                        ..
+                    })
+                    | Type::Keyword(RTsKeywordType {
+                        kind: TsKeywordTypeKind::TsBooleanKeyword,
+                        ..
                     }) => fail!(),
                     _ => {}
                 }
@@ -1020,7 +1032,20 @@ impl Analyzer<'_, '_> {
                         return Ok(());
                     }
                 }
-                Type::Lit(..) | Type::TypeLit(..) => {
+                Type::Lit(..)
+                | Type::TypeLit(..)
+                | Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsStringKeyword,
+                    ..
+                })
+                | Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsNumberKeyword,
+                    ..
+                })
+                | Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsBooleanKeyword,
+                    ..
+                }) => {
                     fail!()
                 }
                 _ => {}
