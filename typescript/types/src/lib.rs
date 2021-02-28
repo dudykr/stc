@@ -388,7 +388,7 @@ pub struct Ref {
     pub type_args: Option<Box<TypeParamInstantiation>>,
 }
 
-assert_eq_size!(Ref, [u8; 96]);
+assert_eq_size!(Ref, [u8; 64]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct InferType {
@@ -421,7 +421,7 @@ pub struct ImportType {
     pub type_params: Option<Box<TypeParamInstantiation>>,
 }
 
-assert_eq_size!(ImportType, [u8; 120]);
+assert_eq_size!(ImportType, [u8; 88]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Module {
@@ -431,7 +431,7 @@ pub struct Module {
     pub exports: Box<ModuleTypeData>,
 }
 
-assert_eq_size!(Module, [u8; 96]);
+assert_eq_size!(Module, [u8; 64]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Enum {
@@ -445,7 +445,7 @@ pub struct Enum {
     pub has_str: bool,
 }
 
-assert_eq_size!(Enum, [u8; 104]);
+assert_eq_size!(Enum, [u8; 72]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct EnumMember {
@@ -778,7 +778,7 @@ pub struct Predicate {
     pub ty: Option<Box<Type>>,
 }
 
-assert_eq_size!(Predicate, [u8; 96]);
+assert_eq_size!(Predicate, [u8; 64]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct TypeOrSpread {
