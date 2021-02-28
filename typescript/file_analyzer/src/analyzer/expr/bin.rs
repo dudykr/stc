@@ -1175,7 +1175,12 @@ impl Analyzer<'_, '_> {
                     match prop_res {
                         Ok(prop_ty) => {
                             let prop_ty = self.expand_top_ref(prop_ty.span(), Cow::Owned(prop_ty))?;
-                            if prop_ty.normalize().type_eq(equals_to) {
+                            let possible = match prop_ty.normalize() {
+                                // Type parameters might have same value.
+                                Type::Param(..) => true,
+                                _ => prop_ty.normalize().type_eq(equals_to),
+                            };
+                            if possible {
                                 candidates.push(ty.clone())
                             }
                         }
