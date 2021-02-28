@@ -176,8 +176,10 @@ fn parse_targets(s: &str) -> Vec<EsVersion> {
         "esnext" => return vec![JscTarget::Es2020],
         _ => {}
     }
-
-    unimplemented!("target: {:?}", s)
+    if !s.contains(",") {
+        panic!("failed to parse `{}` as targets", s)
+    }
+    s.split(",").map(|s| s.trim()).flat_map(parse_targets).collect()
 }
 
 fn parse_test(file_name: &Path) -> Vec<TestSpec> {
