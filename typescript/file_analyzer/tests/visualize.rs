@@ -15,6 +15,7 @@ use stc_ts_file_analyzer::analyzer::Analyzer;
 use stc_ts_file_analyzer::analyzer::NoopLoader;
 use stc_ts_file_analyzer::env::Env;
 use stc_ts_file_analyzer::validator::ValidateWith;
+use stc_ts_file_analyzer::Rule;
 use stc_ts_storage::ErrorStore;
 use stc_ts_storage::Single;
 use stc_ts_types::module_id;
@@ -54,7 +55,26 @@ fn run_test(file_name: PathBuf, for_error: bool) {
             }
             libs.sort();
             libs.dedup();
-            let env = Env::simple(Default::default(), JscTarget::Es2020, &libs);
+            let env = Env::simple(
+                Rule {
+                    allow_unreachable_code: true,
+                    always_strict: false,
+                    no_implicit_any: true,
+                    allow_unused_labels: true,
+                    no_fallthrough_cases_in_switch: false,
+                    no_implicit_returns: false,
+                    no_implicit_this: false,
+                    no_strict_generic_checks: false,
+                    no_unused_locals: false,
+                    no_unused_parameters: false,
+                    strict_function_types: false,
+                    strict_null_checks: true,
+                    suppress_excess_property_errors: false,
+                    suppress_implicit_any_index_errors: false,
+                },
+                JscTarget::Es2020,
+                &libs,
+            );
             let stable_env = env.shared().clone();
             let generator = module_id::Generator::default();
             let path = Arc::new(file_name.clone());
