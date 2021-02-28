@@ -517,6 +517,8 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn register_type(&mut self, name: Id, ty: Type) {
+        slog::debug!(self.logger, "Registering: {:?}", name);
+
         if self.ctx.in_global {
             if !ty.normalize().is_type_param() {
                 self.env.declare_global_type(name.sym().clone(), ty.clone());
