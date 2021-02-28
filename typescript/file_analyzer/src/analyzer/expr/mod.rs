@@ -1957,11 +1957,13 @@ impl Analyzer<'_, '_> {
             })
         } else {
             if self.this_has_property_named(&i.clone().into()) {
+                dbg!();
                 Err(Error::NoSuchVarButThisHasSuchProperty {
                     span,
                     name: i.clone().into(),
                 })
             } else {
+                dbg!();
                 Err(Error::NoSuchVar {
                     span,
                     name: i.clone().into(),
