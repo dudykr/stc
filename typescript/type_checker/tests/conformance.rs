@@ -300,6 +300,8 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
                     } else if s.starts_with("skipDefaultLibCheck") {
                         // TODO
                     } else if s.starts_with("module") {
+                    } else if s.starts_with("noTypesAndSymbols") {
+                        // Ignored
                     } else {
                         panic!("Comment is not handled: {}", s);
                     }
