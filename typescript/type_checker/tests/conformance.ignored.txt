@@ -32,3 +32,4 @@ typeRelationships.ts
 intersectionThisTypes.ts
 generatorReturnContextualType.ts
 privateNameAndObjectRestSpread.ts
+generatorYieldContextualType.ts
