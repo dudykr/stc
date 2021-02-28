@@ -356,6 +356,7 @@ impl Analyzer<'_, '_> {
             let param = FnParam {
                 span: DUMMY_SP,
                 pat: RPat::Ident(RBindingIdent {
+                    node_id: NodeId::invalid(),
                     id: RIdent::new("n".into(), DUMMY_SP),
                     type_ann: None,
                 }),

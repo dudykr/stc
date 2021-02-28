@@ -1468,7 +1468,7 @@ pub(super) fn extract_name_for_assignment(e: &RExpr) -> Option<Name> {
         RExpr::Assign(e) => match &e.left {
             RPatOrExpr::Expr(e) => extract_name_for_assignment(e),
             RPatOrExpr::Pat(pat) => match &**pat {
-                RPat::Ident(i) => Some(i.into()),
+                RPat::Ident(i) => Some(i.id.into()),
                 RPat::Expr(e) => extract_name_for_assignment(e),
                 _ => None,
             },

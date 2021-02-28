@@ -27,6 +27,7 @@ use rnode::FoldWith;
 use rnode::NodeId;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
+use stc_ts_ast_rnode::RBindingIdent;
 use stc_ts_ast_rnode::RCallExpr;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RExprOrSpread;
@@ -1701,8 +1702,11 @@ impl Analyzer<'_, '_> {
                 RPat::Rest(..) => {
                     max_param = None;
                 }
-                RPat::Ident(RIdent {
-                    sym: js_word!("this"), ..
+                RPat::Ident(RBindingIdent {
+                    id: RIdent {
+                        sym: js_word!("this"), ..
+                    },
+                    ..
                 }) => {
                     if let Some(max) = &mut max_param {
                         *max -= 1;
