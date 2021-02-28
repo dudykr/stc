@@ -1,5 +1,5 @@
 warning: Type
-  --> $DIR/tests/visualize/types/inference/generic/contextual-2-2.ts:12:51
+  --> $DIR/tests/pass/types/inference/generic/contextual/contextual-2-2.ts:12:51
    |
 12 | export const f11: <T>(x: T) => Box<T[]> = compose(list, box);
    |                                                   ^^^^
@@ -7,7 +7,7 @@ warning: Type
    = note: <T>(a: T) => T[]
 
 warning: Type
-  --> $DIR/tests/visualize/types/inference/generic/contextual-2-2.ts:12:57
+  --> $DIR/tests/pass/types/inference/generic/contextual/contextual-2-2.ts:12:57
    |
 12 | export const f11: <T>(x: T) => Box<T[]> = compose(list, box);
    |                                                         ^^^
@@ -15,7 +15,7 @@ warning: Type
    = note: <V>(x: V) => Box<V>
 
 warning: Type
-  --> $DIR/tests/visualize/types/inference/generic/contextual-2-2.ts:12:43
+  --> $DIR/tests/pass/types/inference/generic/contextual/contextual-2-2.ts:12:43
    |
 12 | export const f11: <T>(x: T) => Box<T[]> = compose(list, box);
    |                                           ^^^^^^^
@@ -23,7 +23,7 @@ warning: Type
    = note: <A, B, C>(f: (a: A) => B, g: (b: B) => C) => (a: A) => C
 
 warning: Type
-  --> $DIR/tests/visualize/types/inference/generic/contextual-2-2.ts:12:43
+  --> $DIR/tests/pass/types/inference/generic/contextual/contextual-2-2.ts:12:43
    |
 12 | export const f11: <T>(x: T) => Box<T[]> = compose(list, box);
    |                                           ^^^^^^^^^^^^^^^^^^

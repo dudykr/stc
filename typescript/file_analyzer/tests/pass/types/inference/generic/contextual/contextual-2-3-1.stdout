@@ -1,5 +1,5 @@
 warning: Type
-  --> $DIR/tests/visualize/types/inference/generic/contextual-2-3-1.ts:10:53
+  --> $DIR/tests/pass/types/inference/generic/contextual/contextual-2-3-1.ts:10:53
    |
 10 | export const f: <T>(x: Box<T>) => T = id(a => unbox(a));
    |                                                     ^
@@ -7,7 +7,7 @@ warning: Type
    = note: any
 
 warning: Type
-  --> $DIR/tests/visualize/types/inference/generic/contextual-2-3-1.ts:10:47
+  --> $DIR/tests/pass/types/inference/generic/contextual/contextual-2-3-1.ts:10:47
    |
 10 | export const f: <T>(x: Box<T>) => T = id(a => unbox(a));
    |                                               ^^^^^
@@ -15,7 +15,7 @@ warning: Type
    = note: <W>(x: Box<W>) => W
 
 warning: Type
-  --> $DIR/tests/visualize/types/inference/generic/contextual-2-3-1.ts:10:47
+  --> $DIR/tests/pass/types/inference/generic/contextual/contextual-2-3-1.ts:10:47
    |
 10 | export const f: <T>(x: Box<T>) => T = id(a => unbox(a));
    |                                               ^^^^^^^^
@@ -23,7 +23,7 @@ warning: Type
    = note: W
 
 warning: Type
-  --> $DIR/tests/visualize/types/inference/generic/contextual-2-3-1.ts:10:42
+  --> $DIR/tests/pass/types/inference/generic/contextual/contextual-2-3-1.ts:10:42
    |
 10 | export const f: <T>(x: Box<T>) => T = id(a => unbox(a));
    |                                          ^^^^^^^^^^^^^
@@ -31,7 +31,7 @@ warning: Type
    = note: (a: any) => W
 
 warning: Type
-  --> $DIR/tests/visualize/types/inference/generic/contextual-2-3-1.ts:10:39
+  --> $DIR/tests/pass/types/inference/generic/contextual/contextual-2-3-1.ts:10:39
    |
 10 | export const f: <T>(x: Box<T>) => T = id(a => unbox(a));
    |                                       ^^
@@ -39,7 +39,7 @@ warning: Type
    = note: <T>(a: T) => T
 
 warning: Type
-  --> $DIR/tests/visualize/types/inference/generic/contextual-2-3-1.ts:10:53
+  --> $DIR/tests/pass/types/inference/generic/contextual/contextual-2-3-1.ts:10:53
    |
 10 | export const f: <T>(x: Box<T>) => T = id(a => unbox(a));
    |                                                     ^
@@ -47,7 +47,7 @@ warning: Type
    = note: Box<W>
 
 warning: Type
-  --> $DIR/tests/visualize/types/inference/generic/contextual-2-3-1.ts:10:42
+  --> $DIR/tests/pass/types/inference/generic/contextual/contextual-2-3-1.ts:10:42
    |
 10 | export const f: <T>(x: Box<T>) => T = id(a => unbox(a));
    |                                          ^^^^^^^^^^^^^
@@ -55,7 +55,7 @@ warning: Type
    = note: (a: Box<W>) => W
 
 warning: Type
-  --> $DIR/tests/visualize/types/inference/generic/contextual-2-3-1.ts:10:39
+  --> $DIR/tests/pass/types/inference/generic/contextual/contextual-2-3-1.ts:10:39
    |
 10 | export const f: <T>(x: Box<T>) => T = id(a => unbox(a));
    |                                       ^^^^^^^^^^^^^^^^^

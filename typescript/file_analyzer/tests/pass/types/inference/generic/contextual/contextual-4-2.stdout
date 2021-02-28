@@ -1,5 +1,5 @@
 warning: Type
- --> $DIR/tests/visualize/types/inference/generic/contextual-4-2.ts:6:71
+ --> $DIR/tests/pass/types/inference/generic/contextual/contextual-4-2.ts:6:71
   |
 6 | const arrayFilter = <T>(f: (x: T) => boolean) => (a: T[]) => a.filter(f);
   |                                                                       ^
@@ -7,7 +7,7 @@ warning: Type
   = note: (x: T) => boolean
 
 warning: Type
- --> $DIR/tests/visualize/types/inference/generic/contextual-4-2.ts:6:62
+ --> $DIR/tests/pass/types/inference/generic/contextual/contextual-4-2.ts:6:62
   |
 6 | const arrayFilter = <T>(f: (x: T) => boolean) => (a: T[]) => a.filter(f);
   |                                                              ^
@@ -15,7 +15,7 @@ warning: Type
   = note: T[]
 
 warning: Type
- --> $DIR/tests/visualize/types/inference/generic/contextual-4-2.ts:6:62
+ --> $DIR/tests/pass/types/inference/generic/contextual/contextual-4-2.ts:6:62
   |
 6 | const arrayFilter = <T>(f: (x: T) => boolean) => (a: T[]) => a.filter(f);
   |                                                              ^^^^^^^^^^^
@@ -23,7 +23,7 @@ warning: Type
   = note: T[]
 
 warning: Type
- --> $DIR/tests/visualize/types/inference/generic/contextual-4-2.ts:6:50
+ --> $DIR/tests/pass/types/inference/generic/contextual/contextual-4-2.ts:6:50
   |
 6 | const arrayFilter = <T>(f: (x: T) => boolean) => (a: T[]) => a.filter(f);
   |                                                  ^^^^^^^^^^^^^^^^^^^^^^^
@@ -31,7 +31,7 @@ warning: Type
   = note: (a: T[]) => T[]
 
 warning: Type
- --> $DIR/tests/visualize/types/inference/generic/contextual-4-2.ts:6:21
+ --> $DIR/tests/pass/types/inference/generic/contextual/contextual-4-2.ts:6:21
   |
 6 | const arrayFilter = <T>(f: (x: T) => boolean) => (a: T[]) => a.filter(f);
   |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -39,7 +39,7 @@ warning: Type
   = note: <T>(f: (x: T) => boolean) => (a: T[]) => T[]
 
 warning: Type
- --> $DIR/tests/visualize/types/inference/generic/contextual-4-2.ts:8:77
+ --> $DIR/tests/pass/types/inference/generic/contextual/contextual-4-2.ts:8:77
   |
 8 | export const f31: <T extends Box<number>>(a: T[]) => T[] = arrayFilter(x => x.value > 10);
   |                                                                             ^
@@ -47,7 +47,7 @@ warning: Type
   = note: any
 
 warning: Type
- --> $DIR/tests/visualize/types/inference/generic/contextual-4-2.ts:8:77
+ --> $DIR/tests/pass/types/inference/generic/contextual/contextual-4-2.ts:8:77
   |
 8 | export const f31: <T extends Box<number>>(a: T[]) => T[] = arrayFilter(x => x.value > 10);
   |                                                                             ^^^^^^^
@@ -55,7 +55,7 @@ warning: Type
   = note: any
 
 warning: Type
- --> $DIR/tests/visualize/types/inference/generic/contextual-4-2.ts:8:77
+ --> $DIR/tests/pass/types/inference/generic/contextual/contextual-4-2.ts:8:77
   |
 8 | export const f31: <T extends Box<number>>(a: T[]) => T[] = arrayFilter(x => x.value > 10);
   |                                                                             ^^^^^^^^^^^^
@@ -63,7 +63,7 @@ warning: Type
   = note: boolean
 
 warning: Type
- --> $DIR/tests/visualize/types/inference/generic/contextual-4-2.ts:8:72
+ --> $DIR/tests/pass/types/inference/generic/contextual/contextual-4-2.ts:8:72
   |
 8 | export const f31: <T extends Box<number>>(a: T[]) => T[] = arrayFilter(x => x.value > 10);
   |                                                                        ^^^^^^^^^^^^^^^^^
@@ -71,7 +71,7 @@ warning: Type
   = note: (x: any) => boolean
 
 warning: Type
- --> $DIR/tests/visualize/types/inference/generic/contextual-4-2.ts:8:60
+ --> $DIR/tests/pass/types/inference/generic/contextual/contextual-4-2.ts:8:60
   |
 8 | export const f31: <T extends Box<number>>(a: T[]) => T[] = arrayFilter(x => x.value > 10);
   |                                                            ^^^^^^^^^^^
@@ -79,7 +79,7 @@ warning: Type
   = note: <T>(f: (x: T) => boolean) => <T>(a: T[]) => T[]
 
 warning: Type
- --> $DIR/tests/visualize/types/inference/generic/contextual-4-2.ts:8:77
+ --> $DIR/tests/pass/types/inference/generic/contextual/contextual-4-2.ts:8:77
   |
 8 | export const f31: <T extends Box<number>>(a: T[]) => T[] = arrayFilter(x => x.value > 10);
   |                                                                             ^
@@ -87,7 +87,7 @@ warning: Type
   = note: T
 
 warning: Type
- --> $DIR/tests/visualize/types/inference/generic/contextual-4-2.ts:8:77
+ --> $DIR/tests/pass/types/inference/generic/contextual/contextual-4-2.ts:8:77
   |
 8 | export const f31: <T extends Box<number>>(a: T[]) => T[] = arrayFilter(x => x.value > 10);
   |                                                                             ^^^^^^^
@@ -95,7 +95,7 @@ warning: Type
   = note: number
 
 warning: Type
- --> $DIR/tests/visualize/types/inference/generic/contextual-4-2.ts:8:72
+ --> $DIR/tests/pass/types/inference/generic/contextual/contextual-4-2.ts:8:72
   |
 8 | export const f31: <T extends Box<number>>(a: T[]) => T[] = arrayFilter(x => x.value > 10);
   |                                                                        ^^^^^^^^^^^^^^^^^
@@ -103,7 +103,7 @@ warning: Type
   = note: (x: T) => boolean
 
 warning: Type
- --> $DIR/tests/visualize/types/inference/generic/contextual-4-2.ts:8:60
+ --> $DIR/tests/pass/types/inference/generic/contextual/contextual-4-2.ts:8:60
   |
 8 | export const f31: <T extends Box<number>>(a: T[]) => T[] = arrayFilter(x => x.value > 10);
   |                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
