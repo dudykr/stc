@@ -33,3 +33,4 @@ intersectionThisTypes.ts
 generatorReturnContextualType.ts
 privateNameAndObjectRestSpread.ts
 generatorYieldContextualType.ts
+types.asyncGenerators.es2018.1.ts
