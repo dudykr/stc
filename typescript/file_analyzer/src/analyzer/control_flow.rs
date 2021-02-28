@@ -844,7 +844,13 @@ impl Analyzer<'_, '_> {
                         analyzer: self,
                     });
 
-                    if !orig.normalize().type_eq(prop_ty.normalize()) {
+                    // TODO: See if which one is correct.
+                    //
+                    // if !orig.normalize().type_eq(prop_ty.normalize()) {
+                    //     return Ok(Type::never(src.span()));
+                    // }
+
+                    if prop_ty.is_never() {
                         return Ok(Type::never(src.span()));
                     }
                 }
