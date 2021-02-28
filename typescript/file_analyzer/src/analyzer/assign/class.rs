@@ -10,7 +10,6 @@ use stc_ts_types::QueryExpr;
 use stc_ts_types::Type;
 use std::borrow::Cow;
 use swc_common::EqIgnoreSpan;
-use swc_common::TypeEq;
 use swc_ecma_ast::Accessibility;
 
 impl Analyzer<'_, '_> {
