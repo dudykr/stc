@@ -309,7 +309,11 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
                     } else if s.starts_with("module") {
                     } else if s.to_lowercase().starts_with("notypesandsymbols") {
                         // Ignored as we don't generate them.
-                    } else if s.to_lowercase().starts_with("noemit") || s.to_lowercase().starts_with("jsx:") {
+                    } else if s.to_lowercase().starts_with("noemit")
+                        || s.to_lowercase().starts_with("jsx")
+                        || s.to_lowercase().starts_with("usedefineforclassfields")
+                        || s.to_lowercase().starts_with("preserveconstenums")
+                    {
                         // Ignored as we only checks type.
                     } else {
                         panic!("Comment is not handled: {}", s);
