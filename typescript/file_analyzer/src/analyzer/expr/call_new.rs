@@ -2102,8 +2102,11 @@ impl Analyzer<'_, '_> {
         for pair in params
             .iter()
             .filter(|param| match param.pat {
-                RPat::Ident(RIdent {
-                    sym: js_word!("this"), ..
+                RPat::Ident(RBindingIdent {
+                    id: RIdent {
+                        sym: js_word!("this"), ..
+                    },
+                    ..
                 }) => false,
                 _ => true,
             })
@@ -2199,7 +2202,7 @@ impl Analyzer<'_, '_> {
                     RTsThisTypeOrIdent::Ident(arg_id) => {
                         for (idx, param) in params.iter().enumerate() {
                             match &param.pat {
-                                RPat::Ident(i) if i.sym == arg_id.sym => {
+                                RPat::Ident(i) if i.id.sym == arg_id.sym => {
                                     // TODO: Check length of args.
                                     let arg = &args[idx];
                                     match &*arg.expr {

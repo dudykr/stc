@@ -7,8 +7,10 @@ use fxhash::FxHashMap;
 use indexmap::IndexSet;
 use itertools::Itertools;
 use rnode::FoldWith;
+use rnode::NodeId;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
+use stc_ts_ast_rnode::RBindingIdent;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RObjectLit;
 use stc_ts_ast_rnode::RPat;
@@ -199,7 +201,13 @@ impl ObjectUnionNormalizer<'_, '_, '_> {
                             // TODO
                             required: true,
                             // TODO
-                            pat: pat.unwrap_or_else(|| RPat::Ident(RIdent::new("a".into(), DUMMY_SP))),
+                            pat: pat.unwrap_or_else(|| {
+                                RPat::Ident(RBindingIdent {
+                                    node_id: NodeId::invalid(),
+                                    id: RIdent::new("a".into(), DUMMY_SP),
+                                    type_ann: None,
+                                })
+                            }),
                             ty,
                         }
                     })

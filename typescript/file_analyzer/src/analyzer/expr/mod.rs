@@ -20,6 +20,7 @@ use optional_chaining::is_obj_opt_chaining;
 use rnode::NodeId;
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RAssignExpr;
+use stc_ts_ast_rnode::RBindingIdent;
 use stc_ts_ast_rnode::RCallExpr;
 use stc_ts_ast_rnode::RClassExpr;
 use stc_ts_ast_rnode::RExpr;
@@ -228,7 +229,6 @@ impl Analyzer<'_, '_> {
                             span,
                             sym: js_word!("RegExp"),
                             optional: false,
-                            type_ann: None,
                         }),
                         type_args: None,
                     }));
@@ -365,7 +365,8 @@ impl Analyzer<'_, '_> {
 
             let ty_of_left;
             let (any_span, type_ann) = match e.left {
-                RPatOrExpr::Pat(box RPat::Ident(ref i)) | RPatOrExpr::Expr(box RExpr::Ident(ref i)) => {
+                RPatOrExpr::Pat(box RPat::Ident(RBindingIdent { id: ref i, .. }))
+                | RPatOrExpr::Expr(box RExpr::Ident(ref i)) => {
                     // Type is any if self.declaring contains ident
                     let any_span = if analyzer.scope.declaring.contains(&i.into()) {
                         Some(span)
@@ -392,7 +393,7 @@ impl Analyzer<'_, '_> {
 
                     // TODO: Deny changing type of const
                     if rhs_is_always_true {
-                        analyzer.mark_var_as_truthy(Id::from(&*i))?;
+                        analyzer.mark_var_as_truthy(Id::from(&i.id))?;
                     }
                 }
                 _ => e.left.visit_with(analyzer),

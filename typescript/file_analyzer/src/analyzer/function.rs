@@ -11,6 +11,7 @@ use crate::{
 };
 use rnode::Fold;
 use rnode::FoldWith;
+use stc_ts_ast_rnode::RBindingIdent;
 use stc_ts_ast_rnode::RFnDecl;
 use stc_ts_ast_rnode::RFnExpr;
 use stc_ts_ast_rnode::RFunction;
@@ -49,7 +50,11 @@ impl Analyzer<'_, '_> {
                 for p in &f.params {
                     if has_optional {
                         match p.pat {
-                            RPat::Ident(RIdent { optional: true, .. }) | RPat::Rest(..) => {}
+                            RPat::Ident(RBindingIdent {
+                                id: RIdent { optional: true, .. },
+                                ..
+                            })
+                            | RPat::Rest(..) => {}
                             _ => {
                                 child.storage.report(Error::TS1016 { span: p.span() });
                             }
