@@ -1502,11 +1502,15 @@ types/keyof/keyofIntersection.ts
 types/literal
 types/literal/booleanLiteralTypes1.ts
 types/literal/booleanLiteralTypes2.ts
+types/literal/enumLiteralTypes1.ts
+types/literal/enumLiteralTypes2.ts
 types/literal/literalTypes1.ts
 types/literal/literalTypes3.ts
 types/literal/literalTypesAndTypeAssertions.ts
 types/literal/numericLiteralTypes1.ts
 types/literal/numericLiteralTypes2.ts
+types/literal/stringEnumLiteralTypes1.ts
+types/literal/stringEnumLiteralTypes2.ts
 types/literal/stringLiteralsAssertionsInEqualityComparisons01.ts
 types/literal/stringLiteralsAssertionsInEqualityComparisons02.ts
 types/literal/stringLiteralsWithEqualityChecks01.ts
