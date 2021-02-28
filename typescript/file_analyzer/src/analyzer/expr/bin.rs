@@ -720,7 +720,7 @@ impl Analyzer<'_, '_> {
                     rt = rt.generalize_lit();
                 }
                 //
-                if lt.normalize().type_eq(rt.normalize()) {
+                if lt.type_eq(rt) {
                     return Ok(lt);
                 }
 
@@ -1178,7 +1178,7 @@ impl Analyzer<'_, '_> {
                             let possible = match prop_ty.normalize() {
                                 // Type parameters might have same value.
                                 Type::Param(..) => true,
-                                _ => prop_ty.normalize().type_eq(equals_to),
+                                _ => prop_ty.type_eq(equals_to),
                             };
                             if possible {
                                 candidates.push(ty.clone())

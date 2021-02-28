@@ -605,7 +605,7 @@ impl Analyzer<'_, '_> {
     fn check_if_type_matches_key(&mut self, span: Span, declared: &Key, key_ty: &Type, allow_union: bool) -> bool {
         let key_ty = key_ty.normalize();
 
-        if declared.ty().normalize().type_eq(key_ty) {
+        if declared.ty().type_eq(key_ty) {
             return true;
         }
 

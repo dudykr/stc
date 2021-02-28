@@ -422,7 +422,7 @@ impl Analyzer<'_, '_> {
 
     /// Exclude `excluded` from `ty`
     fn exclude_type(&mut self, ty: &mut Type, excluded: &Type) {
-        if ty.normalize().type_eq(excluded.normalize()) {
+        if ty.type_eq(excluded) {
             *ty = Type::never(ty.span());
             return;
         }

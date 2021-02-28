@@ -891,7 +891,7 @@ impl Analyzer<'_, '_> {
                             TypeOfMode::RValue,
                             IdCtx::Var,
                         ) {
-                            if ty.normalize().type_eq(&prop_ty.normalize()) {
+                            if ty.type_eq(&prop_ty) {
                                 new_obj_types.push(obj.clone());
                             }
                         }
