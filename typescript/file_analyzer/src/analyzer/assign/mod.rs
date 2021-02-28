@@ -687,7 +687,12 @@ impl Analyzer<'_, '_> {
                         if name == l_name {
                             return Ok(());
                         }
-                        fail!()
+                        match constraint.as_deref() {
+                            Some(constraint) if constraint.normalize().is_type_param() => {}
+                            _ => {
+                                fail!()
+                            }
+                        }
                     }
 
                     _ => {}
