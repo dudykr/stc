@@ -956,7 +956,6 @@ expressions/functionCalls/typeArgumentInferenceTransitiveConstraints.ts
 expressions/functions/arrowFunctionExpressions.ts
 expressions/functions/typeOfThisInFunctionExpression.ts
 expressions/newOperator/newOperatorConformance.ts
-expressions/nullishCoalescingOperator/
 expressions/nullishCoalescingOperator/nullishCoalescingOperator1.ts
 expressions/nullishCoalescingOperator/nullishCoalescingOperator10.ts
 expressions/nullishCoalescingOperator/nullishCoalescingOperator11.ts
@@ -1837,6 +1836,7 @@ types/union/contextualTypeWithUnionTypeCallSignatures.ts
 types/union/contextualTypeWithUnionTypeIndexSignatures.ts
 types/union/contextualTypeWithUnionTypeMembers.ts
 types/union/discriminatedUnionTypes1.ts
+types/union/discriminatedUnionTypes2.ts
 types/union/unionTypeCallSignatures2.ts
 types/union/unionTypeFromArrayLiteral.ts
 types/union/unionTypeReduction.ts
