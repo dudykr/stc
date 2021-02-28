@@ -1006,13 +1006,6 @@ impl Analyzer<'_, '_> {
                     }
                     _ => {}
                 }
-
-                return Err(Error::AssignFailed {
-                    span,
-                    left: box Type::Enum(e.clone()),
-                    right: box rhs.clone(),
-                    cause: vec![],
-                });
             }
 
             Type::EnumVariant(ref l) => match *rhs {
@@ -1020,13 +1013,8 @@ impl Analyzer<'_, '_> {
                     if l.enum_name == r.enum_name && l.name == r.name {
                         return Ok(());
                     }
-
-                    fail!()
                 }
-                _ => {
-                    dbg!();
-                    return Err(Error::InvalidLValue { span });
-                }
+                _ => {}
             },
 
             Type::This(RTsThisType { span }) => return Err(Error::CannotAssingToThis { span: *span }),
