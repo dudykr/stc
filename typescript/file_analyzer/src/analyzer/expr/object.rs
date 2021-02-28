@@ -166,6 +166,13 @@ impl ObjectUnionNormalizer<'_, '_, '_> {
         for (i, new_params) in new_params {
             let mut return_types = new_return_types.remove(&i).unwrap_or_default();
             return_types.dedup_type();
+            if let Some(ty) = return_types
+                .iter()
+                .find(|ty| ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword))
+            {
+                return_types = vec![ty.clone()]
+            }
+
             let type_params = new_type_params.remove(&i);
 
             members.push(TypeElement::Call(CallSignature {
