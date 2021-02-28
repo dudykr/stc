@@ -1499,7 +1499,6 @@ types/intersection/intersectionTypeEquivalence.ts
 types/intersection/intersectionTypeInference.ts
 types/keyof/keyofAndForIn.ts
 types/keyof/keyofIntersection.ts
-types/literal
 types/literal/booleanLiteralTypes1.ts
 types/literal/booleanLiteralTypes2.ts
 types/literal/enumLiteralTypes1.ts
@@ -1695,6 +1694,7 @@ types/typeRelationships/assignmentCompatibility/everyTypeAssignableToAny.ts
 types/typeRelationships/assignmentCompatibility/nullAssignableToEveryType.ts
 types/typeRelationships/assignmentCompatibility/numberAssignableToEnum.ts
 types/typeRelationships/assignmentCompatibility/typeParameterAssignability.ts
+types/typeRelationships/assignmentCompatibility/typeParameterAssignability3.ts
 types/typeRelationships/assignmentCompatibility/undefinedAssignableToEveryType.ts
 types/typeRelationships/bestCommonType/arrayLiteralWithMultipleBestCommonTypes.ts
 types/typeRelationships/bestCommonType/bestCommonTypeOfConditionalExpressions.ts
