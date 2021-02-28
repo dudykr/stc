@@ -9,7 +9,6 @@ use rnode::VisitMut;
 use rnode::VisitMutWith;
 use stc_ts_ast_rnode::RNumber;
 use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::DebugExt;
 use stc_ts_types::name::Name;
 use stc_ts_types::Array;
