@@ -687,6 +687,7 @@ impl Analyzer<'_, '_> {
                         if name == l_name {
                             return Ok(());
                         }
+                        fail!()
                     }
 
                     _ => {}
@@ -739,12 +740,17 @@ impl Analyzer<'_, '_> {
                 )
             }
 
-            Type::Param(..) if !opts.allow_assignment_to_param => {
+            Type::Param(..) => {
                 // We handled equality above.
                 //
                 // This is optional so we can change behavior while selecting method to call.
                 // While selecting method, we may need to assign to a type parameter.
-                fail!()
+
+                if opts.allow_assignment_to_param {
+                    return Ok(());
+                } else {
+                    fail!()
+                }
             }
 
             Type::Array(Array { ref elem_type, .. }) => match rhs {
