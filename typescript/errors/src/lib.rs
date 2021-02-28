@@ -129,6 +129,10 @@ pub enum Error {
         span: Span,
     },
 
+    ObjectIsPossiblyNullOrUndefined {
+        span: Span,
+    },
+
     CannotAssignAbstractConstructorToNonAbstractConstructor {
         span: Span,
     },
@@ -900,6 +904,7 @@ impl Error {
 
             Error::ObjectIsPossiblyNull { .. } => 2531,
             Error::ObjectIsPossiblyUndefined { .. } => 2532,
+            Error::ObjectIsPossiblyNullOrUndefined { .. } => 2533,
 
             Error::InvalidBinaryOp { .. } => 2365,
 
