@@ -247,9 +247,9 @@ impl Analyzer<'_, '_> {
                             left: box RPat::Ident(ref i),
                             ..
                         }) => match child.declare_var(
-                            i.span,
+                            i.id.span,
                             VarDeclKind::Let,
-                            i.clone().into(),
+                            i.id.clone().into(),
                             Some(*p.ty.clone()),
                             None,
                             true,
@@ -312,7 +312,7 @@ impl Analyzer<'_, '_> {
             RTsFnParam::Ident(i) => FnParam {
                 span,
                 pat: RPat::Ident(i.clone()),
-                required: !i.optional,
+                required: !i.id.optional,
                 ty: ty!(i.node_id, i.type_ann),
             },
             RTsFnParam::Array(p) => FnParam {
@@ -433,7 +433,10 @@ impl Analyzer<'_, '_> {
                         }
 
                         match p.pat {
-                            RPat::Ident(RIdent { optional, .. }) => {
+                            RPat::Ident(RBindingIdent {
+                                id: RIdent { optional, .. },
+                                ..
+                            }) => {
                                 if optional {
                                     has_optional = true;
                                 }
@@ -915,14 +918,14 @@ impl Analyzer<'_, '_> {
                                             decls: vec![RVarDeclarator {
                                                 node_id: NodeId::invalid(),
                                                 span: i.span,
-                                                name: RPat::Ident(RIdent {
+                                                name: RPat::Ident(RBindingIdent {
                                                     node_id: NodeId::invalid(),
                                                     type_ann: Some(RTsTypeAnn {
                                                         node_id: NodeId::invalid(),
                                                         span: DUMMY_SP,
                                                         type_ann: box super_ty.into(),
                                                     }),
-                                                    ..new_ty.clone()
+                                                    id: new_ty.clone(),
                                                 }),
                                                 init: None,
                                                 definite: false,
@@ -1002,7 +1005,11 @@ impl Analyzer<'_, '_> {
                                         .iter()
                                         .filter(|p| match p {
                                             RParamOrTsParamProp::Param(RParam {
-                                                pat: RPat::Ident(RIdent { optional: true, .. }),
+                                                pat:
+                                                    RPat::Ident(RBindingIdent {
+                                                        id: RIdent { optional: true, .. },
+                                                        ..
+                                                    }),
                                                 ..
                                             }) => false,
                                             _ => true,
@@ -1095,7 +1102,7 @@ impl Analyzer<'_, '_> {
                                             ),
                                         };
                                         key.type_ann = None;
-                                        let key = box RExpr::Ident(key);
+                                        let key = box RExpr::Ident(key.id);
                                         additional_members.push(RClassMember::ClassProp(RClassProp {
                                             node_id: NodeId::invalid(),
                                             span: p.span,
@@ -1151,8 +1158,8 @@ impl Analyzer<'_, '_> {
                                         stc_ts_types::ClassMember::Property(stc_ts_types::ClassProperty {
                                             span: p.span,
                                             key: Key::Normal {
-                                                span: i.span,
-                                                sym: i.sym.clone(),
+                                                span: i.id.span,
+                                                sym: i.id.sym.clone(),
                                             },
                                             value: ty.map(Box::new),
                                             is_static: false,

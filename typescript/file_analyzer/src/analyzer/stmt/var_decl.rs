@@ -559,7 +559,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         match self.declare_var(
-                            i.span,
+                            i.id.span,
                             kind,
                             sym,
                             ty,

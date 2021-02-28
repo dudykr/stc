@@ -8,7 +8,6 @@ use stc_ts_ast_rnode::RClassProp;
 use stc_ts_ast_rnode::REmptyStmt;
 use stc_ts_ast_rnode::RExportDefaultExpr;
 use stc_ts_ast_rnode::RFunction;
-use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RModule;
 use stc_ts_ast_rnode::RModuleItem;
 use stc_ts_ast_rnode::RObjectPat;
