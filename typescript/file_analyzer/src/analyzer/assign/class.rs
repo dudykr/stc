@@ -10,6 +10,7 @@ use stc_ts_types::QueryExpr;
 use stc_ts_types::Type;
 use std::borrow::Cow;
 use swc_common::EqIgnoreSpan;
+use swc_common::TypeEq;
 use swc_ecma_ast::Accessibility;
 
 impl Analyzer<'_, '_> {
@@ -34,6 +35,10 @@ impl Analyzer<'_, '_> {
             },
 
             Type::ClassDef(rc) => {
+                if l.eq_ignore_span(rc) {
+                    return Ok(());
+                }
+
                 if !l.is_abstract && rc.is_abstract {
                     return Err(Error::CannotAssignAbstractConstructorToNonAbstractConstructor { span: opts.span });
                 }
