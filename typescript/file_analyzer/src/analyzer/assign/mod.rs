@@ -1201,7 +1201,9 @@ impl Analyzer<'_, '_> {
 
         match to {
             Type::Enum(ref e) => match to {
-                Type::Interface(..) | Type::TypeLit(..) => {}
+                Type::Interface(..) | Type::TypeLit(..) => {
+                    fail!()
+                }
                 _ => {
                     handle_enum_in_rhs!(e)
                 }
