@@ -628,6 +628,18 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Union(Union { ref types, .. }) => {
+                match to {
+                    Type::Union(..) => {
+                        types
+                            .iter()
+                            .map(|rhs| self.assign_with_opts(opts, to, rhs))
+                            .collect::<Result<_, _>>()
+                            .context("tried to assign an union type to another one")?;
+
+                        return Ok(());
+                    }
+                    _ => {}
+                }
                 let errors = types
                     .iter()
                     .filter_map(|rhs| match self.assign_inner(to, rhs, opts) {
