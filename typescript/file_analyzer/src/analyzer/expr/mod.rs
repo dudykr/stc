@@ -1381,6 +1381,24 @@ impl Analyzer<'_, '_> {
                 let mut tys = vec![];
                 let mut errors = Vec::with_capacity(types.len());
 
+                let has_null = types.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsNullKeyword));
+                let has_undefined = types.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword));
+
+                // tsc is crazy. It uses different error code for these errors.
+                if !self.ctx.in_opt_chain && self.rule().strict_null_checks {
+                    if has_null && has_undefined {
+                        return Err(Error::ObjectIsPossiblyNullOrUndefined { span });
+                    }
+
+                    if has_null {
+                        return Err(Error::ObjectIsPossiblyNull { span });
+                    }
+
+                    if has_undefined {
+                        return Err(Error::ObjectIsPossiblyUndefined { span });
+                    }
+                }
+
                 for ty in types {
                     if !self.rule().strict_null_checks || self.ctx.in_opt_chain {
                         if ty.is_kwd(TsKeywordTypeKind::TsNullKeyword)
