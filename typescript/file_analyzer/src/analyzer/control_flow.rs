@@ -622,12 +622,12 @@ impl Analyzer<'_, '_> {
                         ..var_info.clone()
                     }
                 } else {
-                    if let Some(types) = self.find_type(self.ctx.module_id, &i.into())? {
+                    if let Some(types) = self.find_type(self.ctx.module_id, &i.id.into())? {
                         for ty in types {
                             match &*ty {
                                 Type::Module(..) => {
                                     return Err(Error::NotVariable {
-                                        span: i.span,
+                                        span: i.id.span,
                                         left: lhs.span(),
                                     });
                                 }
@@ -636,13 +636,13 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    return if self.ctx.allow_ref_declaring && self.scope.declaring.contains(&i.into()) {
+                    return if self.ctx.allow_ref_declaring && self.scope.declaring.contains(&i.id.into()) {
                         Ok(())
                     } else {
                         // undefined symbol
                         Err(Error::UndefinedSymbol {
-                            sym: i.into(),
-                            span: i.span,
+                            sym: i.id.into(),
+                            span: i.id.span,
                         })
                     };
                 };
@@ -650,7 +650,7 @@ impl Analyzer<'_, '_> {
                 // Variable is defined on parent scope.
                 //
                 // We copy varinfo with enhanced type.
-                self.scope.insert_var(i.into(), var_info);
+                self.scope.insert_var(i.id.into(), var_info);
 
                 return Ok(());
             }
@@ -698,11 +698,11 @@ impl Analyzer<'_, '_> {
                             let lhs = match prop {
                                 RObjectPatProp::KeyValue(kv) => &kv.value,
                                 RObjectPatProp::Assign(a) => {
-                                    if a.key.type_ann.is_none() {
-                                        if let Some(m) = &mut self.mutations {
-                                            m.for_pats.entry(a.key.node_id).or_default().ty = Some(Type::any(span));
-                                        }
-                                    }
+                                    // if a.key.type_ann.is_none() {
+                                    //     if let Some(m) = &mut self.mutations {
+                                    //         m.for_pats.entry(a.key.node_id).or_default().ty =
+                                    // Some(Type::any(span));     }
+                                    // }
                                     continue;
                                 }
                                 RObjectPatProp::Rest(r) => {
