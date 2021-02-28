@@ -19,6 +19,7 @@ use rnode::NodeId;
 use rnode::NodeIdGenerator;
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RAssignPat;
+use stc_ts_ast_rnode::RBindingIdent;
 use stc_ts_ast_rnode::RClass;
 use stc_ts_ast_rnode::RClassDecl;
 use stc_ts_ast_rnode::RClassExpr;
@@ -192,7 +193,11 @@ impl Analyzer<'_, '_> {
 
                     match *p {
                         RParamOrTsParamProp::Param(RParam {
-                            pat: RPat::Ident(RIdent { optional, .. }),
+                            pat:
+                                RPat::Ident(RBindingIdent {
+                                    id: RIdent { optional, .. },
+                                    ..
+                                }),
                             ..
                         }) => {
                             if optional {

@@ -10,6 +10,7 @@ use rnode::Visit;
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RArrayPat;
 use stc_ts_ast_rnode::RAssignPat;
+use stc_ts_ast_rnode::RBindingIdent;
 use stc_ts_ast_rnode::RDecl;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RIdent;
@@ -143,7 +144,7 @@ impl PatExt for RPat {
         match *self {
             RPat::Array(RArrayPat { ref type_ann, .. })
             | RPat::Assign(RAssignPat { ref type_ann, .. })
-            | RPat::Ident(RIdent { ref type_ann, .. })
+            | RPat::Ident(RBindingIdent { ref type_ann, .. })
             | RPat::Object(RObjectPat { ref type_ann, .. })
             | RPat::Rest(RRestPat { ref type_ann, .. }) => type_ann.as_ref().map(|ty| &*ty.type_ann),
 
@@ -163,7 +164,7 @@ impl PatExt for RPat {
         match *self {
             RPat::Array(RArrayPat { ref mut type_ann, .. })
             | RPat::Assign(RAssignPat { ref mut type_ann, .. })
-            | RPat::Ident(RIdent { ref mut type_ann, .. })
+            | RPat::Ident(RBindingIdent { ref mut type_ann, .. })
             | RPat::Object(RObjectPat { ref mut type_ann, .. })
             | RPat::Rest(RRestPat { ref mut type_ann, .. }) => type_ann.as_mut().map(|ty| &mut *ty.type_ann),
 
@@ -177,7 +178,7 @@ impl PatExt for RPat {
         match *self {
             RPat::Array(RArrayPat { ref mut type_ann, .. })
             | RPat::Assign(RAssignPat { ref mut type_ann, .. })
-            | RPat::Ident(RIdent { ref mut type_ann, .. })
+            | RPat::Ident(RBindingIdent { ref mut type_ann, .. })
             | RPat::Object(RObjectPat { ref mut type_ann, .. })
             | RPat::Rest(RRestPat { ref mut type_ann, .. }) => {
                 *type_ann = ty.map(|type_ann| RTsTypeAnn {
