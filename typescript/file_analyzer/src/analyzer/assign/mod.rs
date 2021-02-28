@@ -1004,6 +1004,7 @@ impl Analyzer<'_, '_> {
                             return Ok(());
                         }
                     }
+                    Type::Lit(..) => fail!(),
                     _ => {}
                 }
             }
