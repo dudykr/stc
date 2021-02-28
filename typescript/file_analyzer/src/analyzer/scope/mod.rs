@@ -1574,7 +1574,6 @@ impl Expander<'_, '_, '_> {
                     slog::error!(self.logger, "Dejavu: {}{:?}", &i.sym, i.span.ctxt);
                     return Ok(None);
                 }
-
                 if let Some(types) = self.analyzer.find_type(ctxt, &i.into())? {
                     slog::info!(
                         self.logger,
@@ -1636,9 +1635,10 @@ impl Expander<'_, '_, '_> {
                             | Type::ClassDef(ClassDef { type_params, .. }) => {
                                 let ty = t.clone().into_owned();
                                 let type_params = type_params.clone();
-                                let type_args: Option<_> = type_args.cloned().fold_with(self);
 
                                 if let Some(type_params) = type_params {
+                                    let type_args: Option<_> = type_args.cloned().fold_with(self);
+
                                     slog::info!(self.logger, "expand: expanding type parameters");
                                     let mut inferred = self.analyzer.infer_arg_types(
                                         self.span,
