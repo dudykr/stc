@@ -427,18 +427,6 @@ impl Analyzer<'_, '_> {
             return;
         }
 
-        if cfg!(debug_assertions) {
-            if dump_type_as_string(&self.cm, &ty) == dump_type_as_string(&self.cm, &excluded) {
-                eprintln!("Type: \n{}", dump_type_as_string(&self.cm, &ty));
-                eprintln!("Excluded: \n{}", dump_type_as_string(&self.cm, &excluded));
-
-                panic!(
-                    "exclude_type: \n{:#?}\n and \n{:#?}\n is identical, but typeq_eq failed",
-                    ty, excluded
-                )
-            }
-        }
-
         match ty.normalize() {
             Type::Ref(..) => {
                 // We ignore errors.
