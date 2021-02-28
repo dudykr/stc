@@ -18,8 +18,8 @@ static_assertions = "1.1.0"
 stc_ts_ast_rnode = {path = "../ast_rnode"}
 stc_visit = {path = "../../visit"}
 swc_atoms = "0.2.5"
-swc_common = {version = "0.10.9", features = ["concurrent"]}
-swc_ecma_ast = "0.38.0"
-swc_ecma_utils = "0.28.0"
-swc_ecma_visit = "0.24.0"
+swc_common = { version = "0.10.12", features = ["concurrent"] }
+swc_ecma_ast = "0.40.0"
+swc_ecma_utils = "0.30.0"
+swc_ecma_visit = "0.26.0"
 swc_visit = "0.2.2"

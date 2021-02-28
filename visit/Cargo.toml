@@ -9,5 +9,5 @@ version = "0.1.0"
 num-bigint = "0.2"
 stc_visit_macros = {path = "./macros"}
 swc_atoms = "0.2"
-swc_common = "0.10.9"
-swc_ecma_ast = "0.38.0"
+swc_common = "0.10.12"
+swc_ecma_ast = "0.40.0"
