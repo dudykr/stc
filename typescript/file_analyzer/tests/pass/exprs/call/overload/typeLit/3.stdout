@@ -1,0 +1,48 @@
+warning: Type
+  --> $DIR/tests/pass/exprs/call/overload/typeLit/3.ts:10:12
+   |
+10 |     return cb;
+   |            ^^
+   |
+   = note: typeof a
+
+warning: Type
+  --> $DIR/tests/pass/exprs/call/overload/typeLit/3.ts:14:20
+   |
+14 | var r4 = foo4(x => x);
+   |                    ^
+   |
+   = note: any
+
+warning: Type
+  --> $DIR/tests/pass/exprs/call/overload/typeLit/3.ts:14:15
+   |
+14 | var r4 = foo4(x => x);
+   |               ^^^^^^
+   |
+   = note: (x: any) => any
+
+warning: Type
+  --> $DIR/tests/pass/exprs/call/overload/typeLit/3.ts:14:10
+   |
+14 | var r4 = foo4(x => x);
+   |          ^^^^
+   |
+   = note: (cb: typeof a) => typeof a
+
+warning: Type
+  --> $DIR/tests/pass/exprs/call/overload/typeLit/3.ts:14:10
+   |
+14 | var r4 = foo4(x => x);
+   |          ^^^^^^^^^^^^
+   |
+   = note: typeof a
+
+warning: Type
+  --> $DIR/tests/pass/exprs/call/overload/typeLit/3.ts:15:1
+   |
+15 | r4
+   | ^^
+   |
+   = note: typeof a
+
