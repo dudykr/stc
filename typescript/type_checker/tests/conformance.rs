@@ -35,6 +35,7 @@ use swc_common::BytePos;
 use swc_common::SourceMap;
 use swc_common::Span;
 use swc_common::Spanned;
+use swc_ecma_ast::EsVersion;
 use swc_ecma_parser::JscTarget;
 use swc_ecma_parser::Parser;
 use swc_ecma_parser::Syntax;
@@ -131,7 +132,7 @@ fn conformance() {
         }
 
         Some(box move || {
-            do_test(false, &path).unwrap();
+            do_test(&path).unwrap();
         })
     });
     test_main(&args, tests, Default::default());
@@ -153,291 +154,335 @@ fn load_expected_errors(ts_file: &Path) -> Result<Vec<RefError>, Error> {
     }
 }
 
-fn do_test(treat_error_as_bug: bool, file_name: &Path) -> Result<(), StdErr> {
-    let fname = file_name.display().to_string();
-    let mut expected_errors = load_expected_errors(&file_name).unwrap();
+struct TestSpec {
+    err_shift_n: usize,
+    libs: Vec<Lib>,
+    rule: Rule,
+    ts_config: TsConfig,
+    target: EsVersion,
+}
+
+fn parse_targets(s: &str) -> Vec<EsVersion> {
+    match s {
+        "es3" => return vec![JscTarget::Es3],
+        "es5" => return vec![JscTarget::Es5],
+        "es2015" => return vec![JscTarget::Es2015],
+        "es6" => return vec![JscTarget::Es2015],
+        "es2016" => return vec![JscTarget::Es2016],
+        "es2017" => return vec![JscTarget::Es2017],
+        "es2018" => return vec![JscTarget::Es2018],
+        "es2019" => return vec![JscTarget::Es2019],
+        "es2020" => return vec![JscTarget::Es2020],
+        "esnext" => return vec![JscTarget::Es2020],
+        _ => {}
+    }
+
+    unimplemented!("target: {:?}", s)
+}
+
+fn parse_test(file_name: &Path) -> Vec<TestSpec> {
     let mut err_shift_n = 0;
     let mut first_stmt_line = 0;
 
-    let (libs, rule, ts_config, target) = ::testing::run_test(treat_error_as_bug, |cm, handler| {
+    let fname = file_name.to_string_lossy();
+    ::testing::run_test(false, |cm, handler| {
         let fm = cm.load_file(file_name).expect("failed to read file");
 
-        Ok({
-            // We parse files twice. At first, we read comments and detect
-            // configurations for following parse.
+        // We parse files twice. At first, we read comments and detect
+        // configurations for following parse.
 
-            let comments = SwcComments::default();
+        let comments = SwcComments::default();
 
-            let mut parser = Parser::new(
-                Syntax::Typescript(TsConfig {
-                    tsx: fname.contains("tsx"),
-                    ..Default::default()
-                }),
-                SourceFileInput::from(&*fm),
-                Some(&comments),
-            );
-            let mut target = JscTarget::default();
+        let mut parser = Parser::new(
+            Syntax::Typescript(TsConfig {
+                tsx: fname.contains("tsx"),
+                ..Default::default()
+            }),
+            SourceFileInput::from(&*fm),
+            Some(&comments),
+        );
+        let mut targets = vec![JscTarget::default()];
 
-            let module = parser.parse_module().map_err(|e| {
-                e.into_diagnostic(&handler).emit();
-                ()
-            })?;
+        let module = parser.parse_module().map_err(|e| {
+            e.into_diagnostic(&handler).emit();
+            ()
+        })?;
 
-            for line in fm.src.lines() {
-                if line.is_empty() {
-                    err_shift_n += 1;
-                } else {
-                    break;
-                }
+        for line in fm.src.lines() {
+            if line.is_empty() {
+                err_shift_n += 1;
+            } else {
+                break;
             }
+        }
 
-            if !module.body.is_empty() {
-                first_stmt_line = cm.lookup_line(module.body[0].span().lo).unwrap().line;
-            }
+        if !module.body.is_empty() {
+            first_stmt_line = cm.lookup_line(module.body[0].span().lo).unwrap().line;
+        }
 
-            let mut libs = vec![Lib::Es5, Lib::Dom];
-            let mut rule = Rule::default();
-            let ts_config = TsConfig::default();
+        let mut libs = vec![Lib::Es5, Lib::Dom];
+        let mut rule = Rule::default();
+        let ts_config = TsConfig::default();
 
-            let mut had_comment = false;
+        let mut had_comment = false;
 
-            let span = module.span;
-            let cmts = comments.leading.get(&span.lo());
-            match cmts {
-                Some(ref cmts) => {
-                    for cmt in cmts.iter() {
-                        let s = cmt.text.trim();
-                        if !s.starts_with("@") {
-                            if had_comment {
-                                err_shift_n = cm.lookup_char_pos(cmt.span.hi).line - 1;
-                                break;
-                            }
-                            continue;
+        let span = module.span;
+        let cmts = comments.leading.get(&span.lo());
+        match cmts {
+            Some(ref cmts) => {
+                for cmt in cmts.iter() {
+                    let s = cmt.text.trim();
+                    if !s.starts_with("@") {
+                        if had_comment {
+                            err_shift_n = cm.lookup_char_pos(cmt.span.hi).line - 1;
+                            break;
                         }
-                        had_comment = true;
-                        err_shift_n = cm.lookup_char_pos(cmt.span.hi + BytePos(1)).line;
-                        let s = &s[1..]; // '@'
+                        continue;
+                    }
+                    had_comment = true;
+                    err_shift_n = cm.lookup_char_pos(cmt.span.hi + BytePos(1)).line;
+                    let s = &s[1..]; // '@'
 
-                        if s.starts_with("target:") || s.starts_with("Target:") {
-                            let s = s["target:".len()..].trim().to_lowercase();
-                            target = match &*s {
-                                "es3" => JscTarget::Es3,
-                                "es5" => JscTarget::Es5,
-                                "es2015" => JscTarget::Es2015,
-                                "es6" => JscTarget::Es2015,
-                                "es2016" => JscTarget::Es2016,
-                                "es2017" => JscTarget::Es2017,
-                                "es2018" => JscTarget::Es2018,
-                                "es2019" => JscTarget::Es2019,
-                                "es2020" => JscTarget::Es2020,
-                                "esnext" => JscTarget::Es2020,
-                                _ => unimplemented!("target: {:?}", s),
-                            };
-                            libs = match target {
-                                JscTarget::Es3 | JscTarget::Es5 => vec![Lib::Es5],
-                                JscTarget::Es2015 => Lib::load("es2015"),
-                                JscTarget::Es2016 => Lib::load("es2016"),
-                                JscTarget::Es2017 => Lib::load("es2017"),
-                                JscTarget::Es2018 => Lib::load("es2018"),
-                                JscTarget::Es2019 => Lib::load("es2019"),
-                                JscTarget::Es2020 => Lib::load("es2020"),
-                            };
-                        } else if s.starts_with("strict:") {
-                            let strict = s["strict:".len()..].trim().parse().unwrap();
-                            rule.no_implicit_any = strict;
-                            rule.no_implicit_this = strict;
-                            rule.always_strict = strict;
-                            rule.strict_null_checks = strict;
-                            rule.strict_function_types = strict;
-                        } else if s.starts_with("noLib:") {
-                            let v = s["noLib:".len()..].trim().parse().unwrap();
-                            if v {
-                                libs = vec![];
-                            }
-                        } else if s.starts_with("noImplicitAny:") {
-                            let v = s["noImplicitAny:".len()..].trim().parse().unwrap();
-                            rule.no_implicit_any = v;
-                        } else if s.starts_with("noImplicitReturns:") {
-                            let v = s["noImplicitReturns:".len()..].trim().parse().unwrap();
-                            rule.no_implicit_returns = v;
-                        } else if s.starts_with("declaration") {
-                        } else if s.starts_with("stripInternal:") {
-                            // TODO: Handle
-                        } else if s.starts_with("traceResolution") {
-                            // no-op
-                        } else if s.starts_with("allowUnusedLabels:") {
-                            let v = s["allowUnusedLabels:".len()..].trim().parse().unwrap();
-                            rule.allow_unused_labels = v;
-                        } else if s.starts_with("noEmitHelpers") {
-                            // TODO
-                        } else if s.starts_with("downlevelIteration: ") {
-                            // TODO
-                        } else if s.starts_with("sourceMap:") || s.starts_with("sourcemap:") {
-                            // TODO
-                        } else if s.starts_with("isolatedModules:") {
-                            // TODO
-                        } else if s.starts_with("lib:") {
-                            let mut ls = HashSet::<_>::default();
-                            for v in s["lib:".len()..].trim().split(",") {
-                                ls.extend(Lib::load(v))
-                            }
-                            libs = ls.into_iter().collect()
-                        } else if s.starts_with("allowUnreachableCode:") {
-                            let v = s["allowUnreachableCode:".len()..].trim().parse().unwrap();
-                            rule.allow_unreachable_code = v;
-                        } else if s.starts_with("strictNullChecks:") {
-                            let v = s["strictNullChecks:".len()..].trim().parse().unwrap();
-                            rule.strict_null_checks = v;
-                        } else if s.starts_with("noImplicitThis:") {
-                            let v = s["noImplicitThis:".len()..].trim().parse().unwrap();
-                            rule.no_implicit_this = v;
-                        } else if s.starts_with("skipDefaultLibCheck") {
-                            // TODO
-                        } else if s.starts_with("module") {
-                        } else {
-                            panic!("Comment is not handled: {}", s);
+                    if s.starts_with("target:") || s.starts_with("Target:") {
+                        let s = s["target:".len()..].trim().to_lowercase();
+                        targets = parse_targets(&s);
+                    } else if s.starts_with("strict:") {
+                        let strict = s["strict:".len()..].trim().parse().unwrap();
+                        rule.no_implicit_any = strict;
+                        rule.no_implicit_this = strict;
+                        rule.always_strict = strict;
+                        rule.strict_null_checks = strict;
+                        rule.strict_function_types = strict;
+                    } else if s.starts_with("noLib:") {
+                        let v = s["noLib:".len()..].trim().parse().unwrap();
+                        if v {
+                            libs = vec![];
                         }
+                    } else if s.starts_with("noImplicitAny:") {
+                        let v = s["noImplicitAny:".len()..].trim().parse().unwrap();
+                        rule.no_implicit_any = v;
+                    } else if s.starts_with("noImplicitReturns:") {
+                        let v = s["noImplicitReturns:".len()..].trim().parse().unwrap();
+                        rule.no_implicit_returns = v;
+                    } else if s.starts_with("declaration") {
+                    } else if s.starts_with("stripInternal:") {
+                        // TODO: Handle
+                    } else if s.starts_with("traceResolution") {
+                        // no-op
+                    } else if s.starts_with("allowUnusedLabels:") {
+                        let v = s["allowUnusedLabels:".len()..].trim().parse().unwrap();
+                        rule.allow_unused_labels = v;
+                    } else if s.starts_with("noEmitHelpers") {
+                        // TODO
+                    } else if s.starts_with("downlevelIteration: ") {
+                        // TODO
+                    } else if s.starts_with("sourceMap:") || s.starts_with("sourcemap:") {
+                        // TODO
+                    } else if s.starts_with("isolatedModules:") {
+                        // TODO
+                    } else if s.starts_with("lib:") {
+                        let mut ls = HashSet::<_>::default();
+                        for v in s["lib:".len()..].trim().split(",") {
+                            ls.extend(Lib::load(v))
+                        }
+                        libs = ls.into_iter().collect()
+                    } else if s.starts_with("allowUnreachableCode:") {
+                        let v = s["allowUnreachableCode:".len()..].trim().parse().unwrap();
+                        rule.allow_unreachable_code = v;
+                    } else if s.starts_with("strictNullChecks:") {
+                        let v = s["strictNullChecks:".len()..].trim().parse().unwrap();
+                        rule.strict_null_checks = v;
+                    } else if s.starts_with("noImplicitThis:") {
+                        let v = s["noImplicitThis:".len()..].trim().parse().unwrap();
+                        rule.no_implicit_this = v;
+                    } else if s.starts_with("skipDefaultLibCheck") {
+                        // TODO
+                    } else if s.starts_with("module") {
+                    } else {
+                        panic!("Comment is not handled: {}", s);
                     }
                 }
-                None => {}
             }
+            None => {}
+        }
 
-            libs.sort();
-            dbg!(&libs);
-            (libs, rule, ts_config, target)
-        })
+        libs.sort();
+
+        err_shift_n = err_shift_n.min(first_stmt_line);
+        dbg!(err_shift_n);
+
+        Ok(targets
+            .into_iter()
+            .map(|target| {
+                let libs = if libs.is_empty() {
+                    match target {
+                        JscTarget::Es3 | JscTarget::Es5 => vec![Lib::Es5],
+                        JscTarget::Es2015 => Lib::load("es2015"),
+                        JscTarget::Es2016 => Lib::load("es2016"),
+                        JscTarget::Es2017 => Lib::load("es2017"),
+                        JscTarget::Es2018 => Lib::load("es2018"),
+                        JscTarget::Es2019 => Lib::load("es2019"),
+                        JscTarget::Es2020 => Lib::load("es2020"),
+                    }
+                } else {
+                    libs.clone()
+                };
+
+                TestSpec {
+                    err_shift_n,
+                    ts_config,
+                    libs,
+                    rule,
+                    target,
+                }
+            })
+            .collect())
     })
     .ok()
-    .unwrap_or_default();
+    .unwrap()
+}
 
-    err_shift_n = err_shift_n.min(first_stmt_line);
+fn do_test(file_name: &Path) -> Result<(), StdErr> {
+    let fname = file_name.display().to_string();
+    let mut expected_errors = load_expected_errors(&file_name).unwrap();
 
-    dbg!(err_shift_n);
+    let specs = parse_test(file_name);
 
-    for err in &mut expected_errors {
-        // Typescript conformance test remove lines starting with @-directives.
-        err.line += err_shift_n;
-    }
+    for TestSpec {
+        err_shift_n,
+        libs,
+        rule,
+        ts_config,
+        target,
+    } in specs
+    {
+        for err in &mut expected_errors {
+            // Typescript conformance test remove lines starting with @-directives.
+            err.line += err_shift_n;
+        }
 
-    let full_ref_errors = expected_errors.clone();
-    let full_ref_err_cnt = full_ref_errors.len();
+        let full_ref_errors = expected_errors.clone();
+        let full_ref_err_cnt = full_ref_errors.len();
 
-    let tester = Tester::new();
-    let diagnostics = tester
-        .errors(|cm, handler| {
-            let log = logger();
-            let handler = Arc::new(handler);
-            let mut checker = Checker::new(
-                log.logger,
-                cm.clone(),
-                handler.clone(),
-                Env::simple(rule, target, &libs),
-                TsConfig {
-                    tsx: fname.contains("tsx"),
-                    ..ts_config
-                },
-                None,
-                Arc::new(NodeResolver),
-            );
+        let tester = Tester::new();
+        let diagnostics = tester
+            .errors(|cm, handler| {
+                let log = logger();
+                let handler = Arc::new(handler);
+                let mut checker = Checker::new(
+                    log.logger,
+                    cm.clone(),
+                    handler.clone(),
+                    Env::simple(rule, target, &libs),
+                    TsConfig {
+                        tsx: fname.contains("tsx"),
+                        ..ts_config
+                    },
+                    None,
+                    Arc::new(NodeResolver),
+                );
 
-            checker.check(Arc::new(file_name.into()));
+                checker.check(Arc::new(file_name.into()));
 
-            let errors = ::stc_ts_errors::Error::flatten(checker.take_errors());
+                let errors = ::stc_ts_errors::Error::flatten(checker.take_errors());
 
-            checker.run(|| {
-                for e in errors {
-                    e.emit(&handler);
+                checker.run(|| {
+                    for e in errors {
+                        e.emit(&handler);
+                    }
+                });
+
+                if false {
+                    return Ok(());
                 }
-            });
 
-            if false {
-                return Ok(());
-            }
+                return Err(());
+            })
+            .expect_err("");
 
-            return Err(());
-        })
-        .expect_err("");
-
-    let mut actual_errors = diagnostics
-        .iter()
-        .map(|d| {
-            let span = d.span.primary_span().unwrap();
-            let cp = tester.cm.lookup_char_pos(span.lo());
-            let code = d
-                .code
-                .clone()
-                .expect("conformance teting: All errors should have proper error code");
-            let code = match code {
-                DiagnosticId::Error(err) => err,
-                DiagnosticId::Lint(lint) => {
-                    unreachable!("Unexpected lint '{}' found", lint)
-                }
-            };
-
-            (cp.line, code)
-        })
-        .collect::<Vec<_>>();
-
-    let full_actual_errors = actual_errors.clone();
-
-    for (line, error_code) in full_actual_errors.clone() {
-        if let Some(idx) = expected_errors
+        let mut actual_errors = diagnostics
             .iter()
-            .position(|err| err.line == line && err.code == error_code)
-        {
-            expected_errors.remove(idx);
-            if let Some(idx) = actual_errors
+            .map(|d| {
+                let span = d.span.primary_span().unwrap();
+                let cp = tester.cm.lookup_char_pos(span.lo());
+                let code = d
+                    .code
+                    .clone()
+                    .expect("conformance teting: All errors should have proper error code");
+                let code = match code {
+                    DiagnosticId::Error(err) => err,
+                    DiagnosticId::Lint(lint) => {
+                        unreachable!("Unexpected lint '{}' found", lint)
+                    }
+                };
+
+                (cp.line, code)
+            })
+            .collect::<Vec<_>>();
+
+        let full_actual_errors = actual_errors.clone();
+
+        for (line, error_code) in full_actual_errors.clone() {
+            if let Some(idx) = expected_errors
                 .iter()
-                .position(|(r_line, r_code)| line == *r_line && error_code == *r_code)
+                .position(|err| err.line == line && err.code == error_code)
             {
-                actual_errors.remove(idx);
-            }
-        }
-    }
-
-    //
-    //      - All reference errors are matched
-    //      - Actual errors does not remain
-    let success = expected_errors.is_empty() && actual_errors.is_empty();
-
-    let res: Result<(), _> = tester.print_errors(|_, handler| {
-        // If we failed, we only emit errors which has wrong line.
-
-        for (d, line_col) in diagnostics.into_iter().zip(full_actual_errors.clone()) {
-            if success || env::var("PRINT_ALL").unwrap_or(String::from("")) == "1" || actual_errors.contains(&line_col)
-            {
-                DiagnosticBuilder::new_diagnostic(&handler, d).emit();
+                expected_errors.remove(idx);
+                if let Some(idx) = actual_errors
+                    .iter()
+                    .position(|(r_line, r_code)| line == *r_line && error_code == *r_code)
+                {
+                    actual_errors.remove(idx);
+                }
             }
         }
 
-        Err(())
-    });
+        //
+        //      - All reference errors are matched
+        //      - Actual errors does not remain
+        let success = expected_errors.is_empty() && actual_errors.is_empty();
 
-    let err = match res {
-        Ok(_) => StdErr::from(String::from("")),
-        Err(err) => err,
-    };
+        let res: Result<(), _> = tester.print_errors(|_, handler| {
+            // If we failed, we only emit errors which has wrong line.
 
-    let err_count = actual_errors.len();
+            for (d, line_col) in diagnostics.into_iter().zip(full_actual_errors.clone()) {
+                if success
+                    || env::var("PRINT_ALL").unwrap_or(String::from("")) == "1"
+                    || actual_errors.contains(&line_col)
+                {
+                    DiagnosticBuilder::new_diagnostic(&handler, d).emit();
+                }
+            }
 
-    if expected_errors.is_empty() {
-        println!("[INFER_ONLY]{}", file_name.display());
-    }
+            Err(())
+        });
 
-    if !success {
-        panic!(
-            "\n============================================================\n{:?}
+        let err = match res {
+            Ok(_) => StdErr::from(String::from("")),
+            Err(err) => err,
+        };
+
+        let err_count = actual_errors.len();
+
+        if expected_errors.is_empty() {
+            println!("[INFER_ONLY]{}", file_name.display());
+        }
+
+        if !success {
+            panic!(
+                "\n============================================================\n{:?}
 ============================================================\n{} unmatched errors out of {} errors. Got {} extra \
-             errors.\nWanted: {:?}\nUnwanted: {:?}\n\nAll required errors: {:?}\nAll actual errors: {:?}",
-            err,
-            expected_errors.len(),
-            full_ref_err_cnt,
-            err_count,
-            expected_errors,
-            actual_errors,
-            full_ref_errors,
-            full_actual_errors,
-        );
+                 errors.\nWanted: {:?}\nUnwanted: {:?}\n\nAll required errors: {:?}\nAll actual errors: {:?}",
+                err,
+                expected_errors.len(),
+                full_ref_err_cnt,
+                err_count,
+                expected_errors,
+                actual_errors,
+                full_ref_errors,
+                full_actual_errors,
+            );
+        }
     }
 
     Ok(())
