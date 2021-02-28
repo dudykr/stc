@@ -390,7 +390,7 @@ define_rnode!({
     }
 
     pub struct BindingIdent {
-        pub span: Span,
+        #[span]
         pub id: Ident,
         pub type_ann: Option<TsTypeAnn>,
     }
