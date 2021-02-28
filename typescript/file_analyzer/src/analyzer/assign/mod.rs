@@ -1004,7 +1004,12 @@ impl Analyzer<'_, '_> {
                             return Ok(());
                         }
                     }
-                    Type::Lit(..) => fail!(),
+                    Type::Lit(..)
+                    | Type::TypeLit(..)
+                    | Type::Keyword(RTsKeywordType {
+                        kind: TsKeywordTypeKind::TsVoidKeyword,
+                        ..
+                    }) => fail!(),
                     _ => {}
                 }
             }
@@ -1014,6 +1019,9 @@ impl Analyzer<'_, '_> {
                     if l.enum_name == r.enum_name && l.name == r.name {
                         return Ok(());
                     }
+                }
+                Type::Lit(..) | Type::TypeLit(..) => {
+                    fail!()
                 }
                 _ => {}
             },
