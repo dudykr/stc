@@ -670,7 +670,9 @@ impl Analyzer<'_, '_> {
 
                             if let Some(ref type_ann) = p.type_ann {
                                 if p.optional {
-                                    matching_elements.push(Type::union(vec![Type::undefined(span), *type_ann.clone()]));
+                                    let mut types = vec![Type::undefined(span), *type_ann.clone()];
+                                    types.dedup_type();
+                                    matching_elements.push(Type::union(types));
                                 } else {
                                     matching_elements.push(*type_ann.clone());
                                 }
