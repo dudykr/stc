@@ -1647,7 +1647,6 @@ types/tuple/typeInferenceWithTupleType.ts
 types/tuple/wideningTuples1.ts
 types/tuple/wideningTuples4.ts
 types/tuple/wideningTuples6.ts
-types/typeAliases/
 types/typeAliases/asiPreventsParsingAsTypeAlias01.ts
 types/typeAliases/asiPreventsParsingAsTypeAlias02.ts
 types/typeAliases/circularTypeAliasForUnionWithClass.ts
