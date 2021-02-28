@@ -62,7 +62,10 @@ impl Analyzer<'_, '_> {
                     }
 
                     match p.pat {
-                        RPat::Ident(RIdent { optional, .. }) => {
+                        RPat::Ident(RBindingIdent {
+                            id: RIdent { optional, .. },
+                            ..
+                        }) => {
                             // Allow optional after optional parameter
                             if optional {
                                 has_optional = true;

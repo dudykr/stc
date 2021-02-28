@@ -12,6 +12,7 @@ use crate::{
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RArrayPat;
 use stc_ts_ast_rnode::RAssignPat;
+use stc_ts_ast_rnode::RBindingIdent;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RKeyValuePatProp;
@@ -134,8 +135,11 @@ impl Analyzer<'_, '_> {
         match self.ctx.pat_mode {
             PatMode::Decl => {
                 match p {
-                    RPat::Ident(RIdent {
-                        sym: js_word!("this"), ..
+                    RPat::Ident(RBindingIdent {
+                        id: RIdent {
+                            sym: js_word!("this"), ..
+                        },
+                        ..
                     }) => {
                         assert!(ty.is_some(), "parameter named `this` should have type");
                         self.scope.this = ty.clone();
@@ -258,7 +262,7 @@ impl Analyzer<'_, '_> {
             span: p.span(),
             pat: p.clone(),
             required: match p {
-                RPat::Ident(i) => !i.optional,
+                RPat::Ident(i) => !i.id.optional,
                 RPat::Array(arr) => !arr.optional,
                 RPat::Object(obj) => !obj.optional,
                 RPat::Assign(..) => false,
