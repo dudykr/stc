@@ -132,6 +132,11 @@ impl<'a, I: From<RIdent>> Visit<RIdent> for DestructuringFinder<'a, I> {
     }
 }
 
+/// No-op, as we don't care about types.
+impl<'a, I: From<RIdent>> Visit<RTsType> for DestructuringFinder<'a, I> {
+    fn visit(&mut self, _: &RTsType) {}
+}
+
 pub trait PatExt {
     fn get_ty(&self) -> Option<&RTsType>;
     fn get_mut_ty(&mut self) -> Option<&mut RTsType>;
