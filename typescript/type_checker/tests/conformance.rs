@@ -314,7 +314,7 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
         Ok(targets
             .into_iter()
             .map(|target| {
-                let libs = if libs.is_empty() {
+                let libs = if libs == vec![Lib::Es5, Lib::Dom] {
                     match target {
                         JscTarget::Es3 | JscTarget::Es5 => vec![Lib::Es5],
                         JscTarget::Es2015 => Lib::load("es2015"),
