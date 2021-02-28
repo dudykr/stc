@@ -201,7 +201,7 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
             SourceFileInput::from(&*fm),
             Some(&comments),
         );
-        let mut targets = vec![JscTarget::default()];
+        let mut targets = vec![(JscTarget::default(), false)];
 
         let module = parser.parse_module().map_err(|e| {
             e.into_diagnostic(&handler).emit();
@@ -245,7 +245,7 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
 
                     if s.starts_with("target:") || s.starts_with("Target:") {
                         let s = s["target:".len()..].trim().to_lowercase();
-                        targets = parse_targets(&s);
+                        targets = parse_targets(&s).into_iter().map(|v| (v, true)).collect();
                     } else if s.starts_with("strict:") {
                         let strict = s["strict:".len()..].trim().parse().unwrap();
                         rule.no_implicit_any = strict;
@@ -313,8 +313,8 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
 
         Ok(targets
             .into_iter()
-            .map(|target| {
-                let libs = if libs == vec![Lib::Es5, Lib::Dom] {
+            .map(|(target, specified)| {
+                let libs = if specified {
                     match target {
                         JscTarget::Es3 | JscTarget::Es5 => vec![Lib::Es5],
                         JscTarget::Es2015 => Lib::load("es2015"),
