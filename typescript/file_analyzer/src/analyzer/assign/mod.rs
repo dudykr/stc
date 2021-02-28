@@ -712,34 +712,6 @@ impl Analyzer<'_, '_> {
                 fail!()
             }
 
-            Type::Enum(ref e) => match to {
-                Type::Interface(..) | Type::TypeLit(..) => {}
-                _ => {
-                    handle_enum_in_rhs!(e)
-                }
-            },
-
-            Type::EnumVariant(EnumVariant {
-                ref ctxt,
-                ref enum_name,
-                ..
-            }) => {
-                if let Some(types) = self.find_type(*ctxt, enum_name)? {
-                    for ty in types {
-                        if let Type::Enum(ref e) = ty.normalize() {
-                            match to {
-                                Type::Interface(..) | Type::TypeLit(..) => {}
-                                _ => {
-                                    handle_enum_in_rhs!(e)
-                                }
-                            }
-                        }
-                    }
-                }
-
-                fail!()
-            }
-
             Type::Predicate(..) => match rhs {
                 Type::Keyword(RTsKeywordType {
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
@@ -1236,6 +1208,37 @@ impl Analyzer<'_, '_> {
                 _ => {}
             },
 
+            _ => {}
+        }
+
+        match to {
+            Type::Enum(ref e) => match to {
+                Type::Interface(..) | Type::TypeLit(..) => {}
+                _ => {
+                    handle_enum_in_rhs!(e)
+                }
+            },
+
+            Type::EnumVariant(EnumVariant {
+                ref ctxt,
+                ref enum_name,
+                ..
+            }) => {
+                if let Some(types) = self.find_type(*ctxt, enum_name)? {
+                    for ty in types {
+                        if let Type::Enum(ref e) = ty.normalize() {
+                            match to {
+                                Type::Interface(..) | Type::TypeLit(..) => {}
+                                _ => {
+                                    handle_enum_in_rhs!(e)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                fail!()
+            }
             _ => {}
         }
 
