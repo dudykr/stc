@@ -720,7 +720,7 @@ impl Analyzer<'_, '_> {
                     rt = rt.generalize_lit();
                 }
                 //
-                if lt.type_eq(rt) {
+                if lt.type_eq(&rt) {
                     return Ok(lt);
                 }
 
