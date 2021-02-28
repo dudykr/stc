@@ -1,0 +1,32 @@
+warning: Type
+ --> $DIR/tests/visualize/types/alias/simple-2.ts:6:1
+  |
+6 | x13_1.x
+  | ^^^^^
+  |
+  = note: I13
+
+warning: Type
+ --> $DIR/tests/visualize/types/alias/simple-2.ts:6:1
+  |
+6 | x13_1.x
+  | ^^^^^^^
+  |
+  = note: string
+
+warning: Type
+ --> $DIR/tests/visualize/types/alias/simple-2.ts:7:1
+  |
+7 | x13_2.x
+  | ^^^^^
+  |
+  = note: T13
+
+warning: Type
+ --> $DIR/tests/visualize/types/alias/simple-2.ts:7:1
+  |
+7 | x13_2.x
+  | ^^^^^^^
+  |
+  = note: string
+
