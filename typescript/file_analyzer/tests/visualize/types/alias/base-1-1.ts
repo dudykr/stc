@@ -25,4 +25,7 @@ type T6 = I6;
 var x6: I6;
 var x6: T6;
 
+x6.x
+x6.x
+
 export { }
