@@ -338,8 +338,10 @@ impl Analyzer<'_, '_> {
         let key = c.key.validate_with(self).map(Key::Private)?;
         let key_span = key.span();
 
-        let (type_params, params, ret_ty) =
-            self.with_scope_for_type_params(|child: &mut Analyzer| -> ValidationResult<_> {
+        let (type_params, params, ret_ty) = self.with_child(
+            ScopeKind::Method,
+            Default::default(),
+            |child: &mut Analyzer| -> ValidationResult<_> {
                 let type_params = try_opt!(c.function.type_params.validate_with(child));
                 if (c.kind == MethodKind::Getter || c.kind == MethodKind::Setter) && type_params.is_some() {
                     child.storage.report(Error::TS1094 { span: key_span })
@@ -371,7 +373,8 @@ impl Analyzer<'_, '_> {
                         .or_else(|| inferred_ret_ty)
                         .unwrap_or_else(|| Type::any(key_span)),
                 ))
-            })?;
+            },
+        )?;
 
         Ok(Method {
             span: c.span,
