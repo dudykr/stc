@@ -29,8 +29,7 @@ use swc_ecma_parser::TsConfig;
 use swc_ecma_transforms::resolver::ts_resolver;
 use swc_ecma_visit::FoldWith;
 
-#[testing::fixture("visualize/**/*.ts", exclude(".*\\.\\.d.\\.ts"))]
-fn visualize(file_name: PathBuf) {
+fn run_test(file_name: PathBuf, should_pass: bool) {
     let fname = file_name.display().to_string();
     println!("{}", fname);
 
@@ -106,4 +105,14 @@ fn visualize(file_name: PathBuf) {
         .unwrap_err();
 
     res.compare_to_file(&file_name.with_extension("stdout")).unwrap();
+}
+
+#[testing::fixture("visualize/**/*.ts", exclude(".*\\.\\.d.\\.ts"))]
+fn visualize(file_name: PathBuf) {
+    run_test(file_name, false);
+}
+
+#[testing::fixture("pass/**/*.ts", exclude(".*\\.\\.d.\\.ts"))]
+fn pass(file_name: PathBuf) {
+    run_test(file_name, false);
 }
