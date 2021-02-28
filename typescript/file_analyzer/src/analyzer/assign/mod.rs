@@ -1199,7 +1199,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        match to {
+        match rhs {
             Type::Enum(ref e) => match to {
                 Type::Interface(..) | Type::TypeLit(..) => {
                     fail!()
