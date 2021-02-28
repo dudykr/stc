@@ -999,7 +999,7 @@ impl Analyzer<'_, '_> {
                 self.declare_var(
                     span,
                     kind,
-                    i.id.into(),
+                    i.id.clone().into(),
                     Some(ty),
                     actual_ty,
                     // initialized

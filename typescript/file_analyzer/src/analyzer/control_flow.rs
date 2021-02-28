@@ -585,7 +585,7 @@ impl Analyzer<'_, '_> {
 
             RPat::Ident(i) => {
                 // Verify using immutable references.
-                if let Some(var_info) = self.scope.get_var(&i.id.into()) {
+                if let Some(var_info) = self.scope.get_var(&i.id.clone().into()) {
                     if let Some(var_ty) = var_info.ty.clone() {
                         self.assign(&var_ty, ty, i.id.span)?;
                     }
@@ -594,8 +594,8 @@ impl Analyzer<'_, '_> {
                 let mut actual_ty = None;
                 if let Some(var_info) = self
                     .scope
-                    .get_var(&i.id.into())
-                    .or_else(|| self.scope.search_parent(&i.id.into()))
+                    .get_var(&i.id.clone().into())
+                    .or_else(|| self.scope.search_parent(&i.id.clone().into()))
                 {
                     if let Some(declared_ty) = &var_info.ty {
                         if declared_ty.is_any() {
@@ -608,12 +608,12 @@ impl Analyzer<'_, '_> {
                 }
 
                 // TODO: Update actual types.
-                if let Some(var_info) = self.scope.get_var_mut(&i.id.into()) {
+                if let Some(var_info) = self.scope.get_var_mut(&i.id.clone().into()) {
                     var_info.actual_ty = Some(actual_ty.unwrap_or_else(|| ty.clone()));
                     return Ok(());
                 }
 
-                let var_info = if let Some(var_info) = self.scope.search_parent(&i.id.into()) {
+                let var_info = if let Some(var_info) = self.scope.search_parent(&i.id.clone().into()) {
                     let actual_ty = Some(actual_ty.unwrap_or_else(|| ty.clone()));
 
                     VarInfo {
@@ -622,7 +622,7 @@ impl Analyzer<'_, '_> {
                         ..var_info.clone()
                     }
                 } else {
-                    if let Some(types) = self.find_type(self.ctx.module_id, &i.id.into())? {
+                    if let Some(types) = self.find_type(self.ctx.module_id, &i.id.clone().into())? {
                         for ty in types {
                             match &*ty {
                                 Type::Module(..) => {
@@ -636,12 +636,12 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    return if self.ctx.allow_ref_declaring && self.scope.declaring.contains(&i.id.into()) {
+                    return if self.ctx.allow_ref_declaring && self.scope.declaring.contains(&i.id.clone().into()) {
                         Ok(())
                     } else {
                         // undefined symbol
                         Err(Error::UndefinedSymbol {
-                            sym: i.id.into(),
+                            sym: i.id.clone().into(),
                             span: i.id.span,
                         })
                     };
@@ -650,7 +650,7 @@ impl Analyzer<'_, '_> {
                 // Variable is defined on parent scope.
                 //
                 // We copy varinfo with enhanced type.
-                self.scope.insert_var(i.id.into(), var_info);
+                self.scope.insert_var(i.id.clone().into(), var_info);
 
                 return Ok(());
             }

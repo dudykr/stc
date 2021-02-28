@@ -493,7 +493,7 @@ impl Analyzer<'_, '_> {
                                     if self.rule().no_implicit_any {
                                         match v.name {
                                             RPat::Ident(ref i) => {
-                                                let span = i.span;
+                                                let span = i.id.span;
                                                 type_errors.push(Error::ImplicitAny { span });
                                                 break;
                                             }
@@ -542,7 +542,7 @@ impl Analyzer<'_, '_> {
                 match v.name {
                     RPat::Ident(ref i) => {
                         //
-                        let sym: Id = (&*i).into();
+                        let sym: Id = (&i.id).into();
                         let mut ty = try_opt!(i.type_ann.validate_with(self));
                         match ty {
                             Some(ref mut ty) => {
