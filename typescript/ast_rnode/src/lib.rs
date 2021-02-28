@@ -388,9 +388,15 @@ define_rnode!({
     pub struct Ident {
         pub span: Span,
         pub sym: JsWord,
-        pub type_ann: Option<TsTypeAnn>,
         pub optional: bool,
     }
+
+    pub struct BindingIdent {
+        pub span: Span,
+        pub id: Ident,
+        pub type_ann: Option<TsTypeAnn>,
+    }
+
     pub struct PrivateName {
         pub span: Span,
         pub id: Ident,
