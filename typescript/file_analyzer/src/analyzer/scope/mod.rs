@@ -873,8 +873,8 @@ impl Analyzer<'_, '_> {
         match self.scope.vars.entry(name.clone()) {
             Entry::Occupied(e) => {
                 if !allow_multiple {
-                    print_backtrace();
-                    panic!("{:?}", Error::DuplicateName { name, span });
+                    self.storage.report(Error::DuplicateName { span, name });
+                    return Ok(());
                 }
                 //println!("\tdeclare_var: found entry");
                 let (k, mut v) = e.remove_entry();

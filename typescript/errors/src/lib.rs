@@ -885,6 +885,9 @@ impl Error {
             Error::ReferencedInInit { .. } => 2372,
 
             Error::InvalidDeleteOperand { .. } => 2703,
+
+            Error::DuplicateName { .. } => 2300,
+
             Error::NoSuchVar { .. } => 2304,
             Error::NoSuchVarButThisHasSuchProperty { .. } => 2663,
 
