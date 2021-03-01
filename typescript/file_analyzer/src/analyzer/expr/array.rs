@@ -8,6 +8,7 @@ use crate::util::type_ext::TypeVecExt;
 use crate::validator;
 use crate::validator::ValidateWith;
 use crate::ValidationResult;
+use itertools::Itertools;
 use rnode::FoldWith;
 use rnode::NodeId;
 use stc_ts_ast_rnode::RArrayLit;
@@ -205,6 +206,17 @@ impl Analyzer<'_, '_> {
         let iterator = self
             .get_iterator(span, ty)
             .context("tried to get a type of an iterator to get the element type of it")?;
+
+        match iterator.normalize() {
+            Type::Array(arr) => return Ok(Cow::Owned(*arr.elem_type.clone())),
+            Type::Tuple(tuple) => {
+                let mut types = tuple.elems.iter().map(|e| *e.ty.clone()).collect_vec();
+                types.dedup_type();
+                return Ok(Cow::Owned(Type::union(types)));
+            }
+
+            _ => {}
+        }
 
         let next_ret_ty = self
             .call_property(
