@@ -100,5 +100,5 @@ warning: Type
 8 | export var e = fun(x => x, x => x, 10);
   |                ^^^^^^^^^^^^^^^^^^^^^^^
   |
-  = note: (x: number) => number
+  = note: number
 
