@@ -210,6 +210,9 @@ impl Analyzer<'_, '_> {
         match iterator.normalize() {
             Type::Array(arr) => return Ok(Cow::Owned(*arr.elem_type.clone())),
             Type::Tuple(tuple) => {
+                if tuple.elems.is_empty() {
+                    return Ok(Cow::Owned(Type::any(tuple.span)));
+                }
                 let mut types = tuple.elems.iter().map(|e| *e.ty.clone()).collect_vec();
                 types.dedup_type();
                 return Ok(Cow::Owned(Type::union(types)));
