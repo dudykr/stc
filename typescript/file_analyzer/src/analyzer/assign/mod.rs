@@ -374,6 +374,10 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
+        if to.is_kwd(TsKeywordTypeKind::TsNeverKeyword) {
+            fail!();
+        }
+
         match to {
             Type::Ref(Ref {
                 type_name:
