@@ -149,6 +149,10 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     pub(crate) fn get_iterator<'a>(&mut self, span: Span, ty: Cow<'a, Type>) -> ValidationResult<Cow<'a, Type>> {
         match ty.normalize() {
+            Type::Ref(..) => {
+                let ty = self.expand_top_ref(span, ty)?;
+                return self.get_iterator(span, ty);
+            }
             Type::Array(..) | Type::Tuple(..) => return Ok(ty),
             _ => {}
         }
