@@ -1178,6 +1178,12 @@ impl Analyzer<'_, '_> {
                         .assign_to_function(opts, to, lf, rhs)
                         .context("tried to assign a function to a function")
                 }
+                Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsVoidKeyword,
+                    ..
+                }) => {
+                    fail!()
+                }
                 _ => {}
             },
 
