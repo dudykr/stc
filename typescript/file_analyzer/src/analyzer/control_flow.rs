@@ -751,10 +751,15 @@ impl Analyzer<'_, '_> {
                 return self.try_assign_pat(span, &rest.arg, &ty);
             }
 
-            _ => {}
-        }
+            RPat::Expr(lhs) => {
+                let lhs_ty = lhs
+                    .validate_with_args(self, (TypeOfMode::LValue, None, None))
+                    .context("tried to validate type of the expression in lhs of assignment")?;
 
-        unimplemented!("assignment with complex pattern\nPat: {:?}\nType: {:?}", lhs, ty)
+                self.assign(&lhs_ty, ty, span)?;
+                return Ok(());
+            }
+        }
     }
 
     pub(super) fn add_type_fact(&mut self, sym: &Id, ty: Type) {
