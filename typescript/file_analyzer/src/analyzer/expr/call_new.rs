@@ -2351,14 +2351,14 @@ impl Analyzer<'_, '_> {
         spread_arg_types: &[TypeOrSpread],
     ) -> ArgCheckResult {
         if self.validate_type_args_count(span, type_params, type_args).is_err() {
-            return ArgCheckResult::NeverMatches;
+            return ArgCheckResult::WrongArgCount;
         }
 
         if self
             .validate_arg_count(span, params, args, arg_types, spread_arg_types)
             .is_err()
         {
-            return ArgCheckResult::NeverMatches;
+            return ArgCheckResult::WrongArgCount;
         }
 
         self.with_scope_for_type_params(|analyzer: &mut Analyzer| {
@@ -2395,7 +2395,7 @@ impl Analyzer<'_, '_> {
                             )
                             .is_err()
                         {
-                            return ArgCheckResult::NeverMatches;
+                            return ArgCheckResult::ArgTypeMismatch;
                         }
                         if analyzer.assign(&arg.ty, &param.ty, span).is_err() {
                             exact = false;
@@ -2649,7 +2649,8 @@ fn is_key_eq_prop(prop: &RExpr, computed: bool, e: &RExpr) -> bool {
 enum ArgCheckResult {
     Exact,
     MayBe,
-    NeverMatches,
+    ArgTypeMismatch,
+    WrongArgCount,
 }
 
 /// Ensure that sort work as expected.
@@ -2658,7 +2659,8 @@ fn test_arg_check_result_order() {
     let mut v = vec![
         ArgCheckResult::Exact,
         ArgCheckResult::MayBe,
-        ArgCheckResult::NeverMatches,
+        ArgCheckResult::ArgTypeMismatch,
+        ArgCheckResult::WrongArgCount,
     ];
     let expected = v.clone();
     v.sort();
