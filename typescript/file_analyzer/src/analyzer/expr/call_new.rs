@@ -530,19 +530,21 @@ impl Analyzer<'_, '_> {
                         .expand_top_ref(span, Cow::Borrowed(obj_type))
                         .context("tried to expand object to call property of it")?;
 
-                    return self.call_property(
-                        span,
-                        kind,
-                        expr,
-                        this,
-                        &obj_type,
-                        prop,
-                        type_args,
-                        args,
-                        arg_types,
-                        spread_arg_types,
-                        type_ann,
-                    );
+                    return self
+                        .call_property(
+                            span,
+                            kind,
+                            expr,
+                            this,
+                            &obj_type,
+                            prop,
+                            type_args,
+                            args,
+                            arg_types,
+                            spread_arg_types,
+                            type_ann,
+                        )
+                        .context("tried to call a property of expanded type");
                 }
 
                 Type::Interface(ref i) => {
