@@ -156,5 +156,5 @@ warning: Type
 8 | export var k = fun((Math.random() < 0.5 ? (x => x) : (x => undefined)), x => x, 10);
   |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   |
-  = note: (x: number) => number
+  = note: number
 
