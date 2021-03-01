@@ -67,33 +67,11 @@ jobs:
           sh ./rustup.sh --default-toolchain none -y
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
-      - name: Install apt dependencies
-        run: |
-          apt-get install -y wget
-          wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -
-          echo 'deb http://apt.llvm.org/focal/ llvm-toolchain-focal-11 main' >> /etc/apt/sources.list
-          apt-get update
-          apt-get install -y clang-11 lld-11
-
-      - uses: actions/setup-node@v2
-        with:
-          node-version: "12"
-
       - name: Install node dependencies
         run: |
           npm config set prefix ~/npm
           echo "$HOME/npm/bin" >> $GITHUB_PATH
           npm i
-
-      - name: Install llvm ( windows only )
-        if: matrix.os == 'windows-latest'
-        run: choco install -y llvm
-
-      - name: Set llvm path
-        if: matrix.os == 'windows-latest'
-        uses: allenevans/set-env@v1.0.0
-        with:
-          LIBCLANG_PATH: 'C:\\Program Files\\LLVM\\bin'
 
       - name: Cache
         uses: actions/cache@v2
