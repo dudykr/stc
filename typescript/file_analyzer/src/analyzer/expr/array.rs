@@ -147,56 +147,60 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
+    pub(crate) fn get_iterator<'a>(&mut self, span: Span, ty: Cow<'a, Type>) -> ValidationResult<Cow<'a, Type>> {
+        match ty.normalize() {
+            Type::Array(..) | Type::Tuple(..) => return Ok(ty),
+            _ => {}
+        }
+
+        self.call_property(
+            span,
+            ExtractKind::Call,
+            Default::default(),
+            &ty,
+            &ty,
+            &Key::Computed(ComputedKey {
+                span,
+                expr: box RExpr::Member(RMemberExpr {
+                    node_id: NodeId::invalid(),
+                    span,
+                    obj: RExprOrSuper::Expr(box RExpr::Ident(RIdent::new(
+                        "Symbol".into(),
+                        span.with_ctxt(SyntaxContext::empty()),
+                    ))),
+                    computed: false,
+                    prop: box RExpr::Ident(RIdent::new("iterator".into(), span.with_ctxt(SyntaxContext::empty()))),
+                }),
+                ty: box Type::Keyword(RTsKeywordType {
+                    span,
+                    kind: TsKeywordTypeKind::TsSymbolKeyword,
+                }),
+            }),
+            None,
+            &[],
+            &[],
+            &[],
+            None,
+        )
+        .map_err(|err| {
+            err.convert(|err| match err {
+                Error::NoCallabelPropertyWithName { span, .. } => {
+                    Error::MustHaveSymbolIteratorThatReturnsIterator { span }
+                }
+                _ => err,
+            })
+        })
+        .map(Cow::Owned)
+        .context("tried to call `[Symbol.iterator]()` to convert a type to an iterator")
+    }
     pub(crate) fn get_iterator_element_type<'a>(
         &mut self,
         span: Span,
         ty: Cow<'a, Type>,
     ) -> ValidationResult<Cow<'a, Type>> {
-        match ty.normalize() {
-            // TODO
-            Type::Array(..) | Type::Tuple(..) => return Ok(ty),
-            _ => {}
-        }
-
         let iterator = self
-            .call_property(
-                span,
-                ExtractKind::Call,
-                Default::default(),
-                &ty,
-                &ty,
-                &Key::Computed(ComputedKey {
-                    span,
-                    expr: box RExpr::Member(RMemberExpr {
-                        node_id: NodeId::invalid(),
-                        span,
-                        obj: RExprOrSuper::Expr(box RExpr::Ident(RIdent::new(
-                            "Symbol".into(),
-                            span.with_ctxt(SyntaxContext::empty()),
-                        ))),
-                        computed: false,
-                        prop: box RExpr::Ident(RIdent::new("iterator".into(), span.with_ctxt(SyntaxContext::empty()))),
-                    }),
-                    ty: box Type::Keyword(RTsKeywordType {
-                        span,
-                        kind: TsKeywordTypeKind::TsSymbolKeyword,
-                    }),
-                }),
-                None,
-                &[],
-                &[],
-                &[],
-                None,
-            )
-            .map_err(|err| {
-                err.convert(|err| match err {
-                    Error::NoCallabelPropertyWithName { span, .. } => {
-                        Error::MustHaveSymbolIteratorThatReturnsIterator { span }
-                    }
-                    _ => err,
-                })
-            })
-            .context("tried to call `[Symbol.iterator]()` to convert a type to an iterator")?;
+            .get_iterator(span, ty)
+            .context("tried to get a type of an iterator to get the element type of it")?;
 
         let next_ret_ty = self
             .call_property(
