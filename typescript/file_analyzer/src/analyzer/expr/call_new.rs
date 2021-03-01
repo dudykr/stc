@@ -226,7 +226,9 @@ impl Analyzer<'_, '_> {
         };
 
         let arg_types = self.validate_args(args)?;
-        let spread_arg_types = self.spread_args(&arg_types);
+        let spread_arg_types = self
+            .spread_args(&arg_types)
+            .context("tried to handle spreads in arguments")?;
 
         match *callee {
             RExpr::Ident(ref i) if i.sym == js_word!("require") => {
@@ -995,14 +997,17 @@ impl Analyzer<'_, '_> {
     }
 
     /// Returns `()`
-    fn spread_args<'a>(&mut self, arg_types: &'a [TypeOrSpread]) -> Cow<'a, [TypeOrSpread]> {
+    fn spread_args<'a>(&mut self, arg_types: &'a [TypeOrSpread]) -> ValidationResult<Cow<'a, [TypeOrSpread]>> {
         let mut new_arg_types;
 
         if arg_types.iter().any(|arg| arg.spread.is_some()) {
             new_arg_types = vec![];
             for arg in arg_types {
                 if arg.spread.is_some() {
-                    match &*arg.ty {
+                    let arg_ty = self
+                        .expand_top_ref(arg.span(), Cow::Borrowed(&arg.ty))
+                        .context("tried to expand ref to handle a spread argument")?;
+                    match arg_ty.normalize() {
                         Type::Tuple(arg_ty) => {
                             new_arg_types.extend(arg_ty.elems.iter().map(|element| &element.ty).cloned().map(|ty| {
                                 TypeOrSpread {
@@ -1040,9 +1045,9 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            return Cow::Owned(new_arg_types);
+            return Ok(Cow::Owned(new_arg_types));
         } else {
-            return Cow::Borrowed(arg_types);
+            return Ok(Cow::Borrowed(arg_types));
         }
     }
 
