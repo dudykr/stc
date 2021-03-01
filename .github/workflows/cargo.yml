@@ -7,7 +7,7 @@ env:
 
 jobs:
   fmt:
-    name: fmt
+    name: Formatting
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -24,8 +24,43 @@ jobs:
       - name: Run cargo fmt
         run: cargo fmt --all -- --check
 
+  check:
+    name: Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: Install rustup
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rustup.sh
+          sh ./rustup.sh --default-toolchain none -y
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Install node dependencies
+        run: |
+          npm config set prefix ~/npm
+          echo "$HOME/npm/bin" >> $GITHUB_PATH
+          npm i
+
+      - name: Cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo
+
+      # Ensure that all components all compilable.
+      - name: Run cargo check for all targets
+        run: cargo check --color always --all --all-targets
+
   test:
     name: test
+    needs:
+      - fmt
+      - check
     runs-on: ubuntu-latest
     # runs-on: self-hosted
     strategy:
@@ -80,10 +115,6 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
           key: ${{ runner.os }}-cargo
-
-      # Ensure that all components all compilable.
-      - name: Run cargo check for all targets
-        run: cargo check --color always -p ${{ matrix.crate }} --all-targets
 
       - name: Run cargo tests
         run: |
