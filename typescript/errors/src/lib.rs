@@ -5,6 +5,7 @@
 
 pub use self::result_ext::DebugExt;
 use fmt::Formatter;
+use static_assertions::assert_eq_size;
 use stc_ts_types::name::Name;
 use stc_ts_types::Id;
 use stc_ts_types::Key;
@@ -694,6 +695,8 @@ pub enum Error {
 
     DebugContext(DebugContext),
 }
+
+assert_eq_size!(Error, [u8; 88]);
 
 impl Error {
     pub fn convert<F>(self, op: F) -> Self
