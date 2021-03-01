@@ -1016,13 +1016,16 @@ impl Analyzer<'_, '_> {
                 //
                 //      const [a , setA] = useState();
                 //
+                let ty = self
+                    .get_iterator_element_type(span, Cow::Owned(ty))
+                    .context("tried to convert a type to an iterator to assign with an array pattern.")?;
 
                 for (i, elem) in elems.iter().enumerate() {
                     if let Some(elem) = elem {
                         let elem_ty = self
                             .access_property(
                                 span,
-                                ty.clone(),
+                                ty.clone().into_owned(),
                                 &Key::Num(RNumber { span, value: i as _ }),
                                 TypeOfMode::LValue,
                                 IdCtx::Var,
