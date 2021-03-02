@@ -198,6 +198,14 @@ impl Analyzer<'_, '_> {
                 &[],
                 None,
             )
+            .convert_err(|err| match err {
+                Error::NoCallabelPropertyWithName { span, .. }
+                | Error::NoSuchProperty { span, .. }
+                | Error::NoSuchPropertyInClass { span, .. } => {
+                    Error::MustHaveSymbolIteratorThatReturnsIterator { span }
+                }
+                _ => err,
+            })
             .context("tried calling `next()` to get element type of nth element of an iterator")?;
 
         let elem_ty = self
