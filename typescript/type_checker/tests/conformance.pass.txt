@@ -433,6 +433,7 @@ es6/destructuring/destructuringObjectBindingPatternAndAssignment5.ts
 es6/destructuring/destructuringParameterDeclaration7ES5.ts
 es6/destructuring/destructuringParameterDeclaration7ES5iterable.ts
 es6/destructuring/destructuringReassignsRightHandSide.ts
+es6/destructuring/destructuringSpread.ts
 es6/destructuring/destructuringTypeAssertionsES5_1.ts
 es6/destructuring/destructuringTypeAssertionsES5_2.ts
 es6/destructuring/destructuringTypeAssertionsES5_3.ts
