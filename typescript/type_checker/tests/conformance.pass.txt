@@ -462,9 +462,12 @@ es6/destructuring/emptyObjectBindingPatternParameter03.ts
 es6/destructuring/iterableArrayPattern11.ts
 es6/destructuring/iterableArrayPattern12.ts
 es6/destructuring/iterableArrayPattern14.ts
+es6/destructuring/iterableArrayPattern15.ts
 es6/destructuring/iterableArrayPattern17.ts
 es6/destructuring/iterableArrayPattern18.ts
 es6/destructuring/iterableArrayPattern19.ts
+es6/destructuring/iterableArrayPattern20.ts
+es6/destructuring/iterableArrayPattern27.ts
 es6/destructuring/iterableArrayPattern9.ts
 es6/destructuring/nonIterableRestElement1.ts
 es6/destructuring/nonIterableRestElement2.ts
@@ -546,6 +549,9 @@ es6/spread/iteratorSpreadInArray5.ts
 es6/spread/iteratorSpreadInArray7.ts
 es6/spread/iteratorSpreadInArray8.ts
 es6/spread/iteratorSpreadInArray9.ts
+es6/spread/iteratorSpreadInCall3.ts
+es6/spread/iteratorSpreadInCall4.ts
+es6/spread/iteratorSpreadInCall5.ts
 es6/templates/taggedTemplateStringsPlainCharactersThatArePartsOfEscapes01.ts
 es6/templates/taggedTemplateStringsPlainCharactersThatArePartsOfEscapes01_ES6.ts
 es6/templates/taggedTemplateStringsPlainCharactersThatArePartsOfEscapes02.ts
