@@ -440,6 +440,7 @@ es6/destructuring/destructuringTypeAssertionsES5_4.ts
 es6/destructuring/destructuringTypeAssertionsES5_5.ts
 es6/destructuring/destructuringTypeAssertionsES5_6.ts
 es6/destructuring/destructuringTypeAssertionsES5_7.ts
+es6/destructuring/destructuringVoid.ts
 es6/destructuring/emptyArrayBindingPatternParameter01.ts
 es6/destructuring/emptyArrayBindingPatternParameter02.ts
 es6/destructuring/emptyArrayBindingPatternParameter03.ts
@@ -459,6 +460,9 @@ es6/destructuring/emptyAssignmentPatterns04_ES6.ts
 es6/destructuring/emptyObjectBindingPatternParameter01.ts
 es6/destructuring/emptyObjectBindingPatternParameter02.ts
 es6/destructuring/emptyObjectBindingPatternParameter03.ts
+es6/destructuring/emptyVariableDeclarationBindingPatterns01_ES5.ts
+es6/destructuring/emptyVariableDeclarationBindingPatterns01_ES5iterable.ts
+es6/destructuring/emptyVariableDeclarationBindingPatterns01_ES6.ts
 es6/destructuring/iterableArrayPattern1.ts
 es6/destructuring/iterableArrayPattern10.ts
 es6/destructuring/iterableArrayPattern11.ts
