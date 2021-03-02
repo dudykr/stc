@@ -945,7 +945,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::StaticThis(StaticThis { span }) => {
-                    // Handle static access to class itself while *decalring* the class.
+                    // Handle static access to class itself while *declaring* the class.
                     for (_, member) in self.scope.class_members() {
                         match member {
                             stc_ts_types::ClassMember::Method(member @ Method { is_static: true, .. }) => {
