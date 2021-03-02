@@ -313,6 +313,10 @@ pub enum Error {
         prop: Option<Box<Key>>,
     },
 
+    NoInitAndNoDefault {
+        span: Span,
+    },
+
     TooManyTupleElements {
         span: Span,
     },
@@ -871,11 +875,13 @@ impl Error {
 
             Error::SuperInClassWithoutSuper { .. } => 2335,
 
-            Error::NoSuchProperty { .. } => 2339,
+            Error::NoSuchProperty { .. } | Error::NoSuchPropertyInClass { .. } => 2339,
             Error::AssignOpCannotBeApplied { .. } => 2365,
             Error::NonSymbolComputedPropInFormOfSymbol { .. } => 2471,
             Error::TypeUsedAsVar { .. } => 2585,
             Error::TypeNotFound { .. } => 2304,
+
+            Error::NoInitAndNoDefault { .. } => 2525,
 
             Error::ExpectedNArgsButGotM { .. } => 2554,
             Error::ExpectedAtLeastNArgsButGotM { .. } => 2555,

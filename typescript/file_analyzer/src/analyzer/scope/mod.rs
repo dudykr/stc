@@ -1148,11 +1148,24 @@ impl Analyzer<'_, '_> {
                                 RObjectPatProp::KeyValue(prop) => {
                                     let mut key = prop.key.validate_with(self)?;
 
-                                    let ty =
-                                        self.access_property(span, ty.clone(), &key, TypeOfMode::RValue, IdCtx::Var)?;
+                                    let prop =
+                                        self.access_property(span, ty.clone(), &key, TypeOfMode::RValue, IdCtx::Var);
 
-                                    // TODO: actual_ty
-                                    self.declare_complex_vars(kind, &prop.value, ty, None)?;
+                                    match prop {
+                                        Ok(ty) => {
+                                            // TODO: actual_ty
+                                            self.declare_complex_vars(kind, &prop.value, ty, None)?;
+                                        }
+
+                                        Err(err) => {
+                                            self.storage.report(err.convert(|err| match err {
+                                                Error::NoSuchProperty { span }
+                                                | Error::NoSuchPropertyInClass { span } => {
+                                                    Error::NoInitAndNoDefault { span }
+                                                }
+                                            }));
+                                        }
+                                    }
                                 }
                                 RObjectPatProp::Assign(prop) => {
                                     let mut key = Key::Normal {
