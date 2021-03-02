@@ -656,6 +656,9 @@ impl Analyzer<'_, '_> {
             }
 
             RPat::Array(ref arr) => {
+                let ty = self
+                    .get_iterator(span, Cow::Borrowed(ty))
+                    .context("tried to convert a type to an iterator to assign with an array pattern")?;
                 //
                 for (i, elem) in arr.elems.iter().enumerate() {
                     if let Some(elem) = elem {
@@ -672,14 +675,8 @@ impl Analyzer<'_, '_> {
 
                             _ => {
                                 let elem_ty = self
-                                    .access_property(
-                                        span,
-                                        ty.clone(),
-                                        &Key::Num(RNumber { span, value: i as _ }),
-                                        TypeOfMode::LValue,
-                                        IdCtx::Var,
-                                    )
-                                    .context("tried to access a property of type to assign with an array pattern")?;
+                                    .get_element_from_iterator(span, Cow::Borrowed(&ty), i)
+                                    .context("tried to get an element of type to assign with an array pattern")?;
 
                                 self.try_assign_pat(span, elem, &elem_ty)
                                     .context("tried to assign an element of an array pattern")?;
