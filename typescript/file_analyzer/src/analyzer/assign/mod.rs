@@ -1222,6 +1222,9 @@ impl Analyzer<'_, '_> {
                         return Ok(());
                     }
                     Type::Array(..) => fail!(),
+                    Type::Class(..) | Type::ClassDef(..) => {
+                        fail!()
+                    }
                     _ => {}
                 }
             }
