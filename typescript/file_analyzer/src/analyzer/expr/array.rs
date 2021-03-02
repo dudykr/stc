@@ -269,13 +269,11 @@ impl Analyzer<'_, '_> {
             &[],
             None,
         )
-        .map_err(|err| {
-            err.convert(|err| match err {
-                Error::NoCallabelPropertyWithName { span, .. } => {
-                    Error::MustHaveSymbolIteratorThatReturnsIterator { span }
-                }
-                _ => err,
-            })
+        .convert_err(|err| match err {
+            Error::NoCallabelPropertyWithName { span, .. }
+            | Error::NoSuchPropertyInClass { span, .. }
+            | Error::NoSuchProperty { span, .. } => Error::MustHaveSymbolIteratorThatReturnsIterator { span },
+            _ => err,
         })
         .map(Cow::Owned)
         .context("tried to call `[Symbol.iterator]()` to convert a type to an iterator")
