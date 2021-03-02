@@ -208,7 +208,7 @@ impl Analyzer<'_, '_> {
             })
             .context("tried calling `next()` to get element type of nth element of an iterator")?;
 
-        let elem_ty = self
+        let mut elem_ty = self
             .access_property(
                 span,
                 next_ret_ty,
@@ -223,16 +223,13 @@ impl Analyzer<'_, '_> {
                 "tried to get the type of property named `value` to determine the type of nth element of an iterator",
             )?;
 
-        match elem_ty.normalize() {
-            Type::Union(..) => match elem_ty.normalize_mut() {
-                Type::Union(u) => {
-                    u.types.retain(|ty| !ty.is_any());
-                    if u.types.is_empty() {
-                        u.types = vec![Type::any(u.span)]
-                    }
+        match elem_ty.normalize_mut() {
+            Type::Union(u) => {
+                u.types.retain(|ty| !ty.is_any());
+                if u.types.is_empty() {
+                    u.types = vec![Type::any(u.span)]
                 }
-                _ => {}
-            },
+            }
             _ => {}
         }
 
