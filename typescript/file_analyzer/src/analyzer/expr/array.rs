@@ -28,6 +28,7 @@ use stc_ts_types::Tuple;
 use stc_ts_types::TupleElement;
 use stc_ts_types::Type;
 use stc_ts_types::TypeParamInstantiation;
+use stc_ts_types::Union;
 use std::borrow::Cow;
 use swc_common::Span;
 use swc_common::Spanned;
@@ -247,6 +248,16 @@ impl Analyzer<'_, '_> {
                 return self.get_iterator(span, ty);
             }
             Type::Array(..) | Type::Tuple(..) => return Ok(ty),
+            Type::Union(u) => {
+                let types = u
+                    .types
+                    .iter()
+                    .map(|v| self.get_iterator(v.span(), Cow::Borrowed(v)))
+                    .map(|res| res.map(Cow::into_owned))
+                    .collect::<Result<_, _>>()?;
+                let new = Type::Union(Union { span: u.span, types });
+                return Ok(Cow::Owned(new));
+            }
             _ => {}
         }
 
