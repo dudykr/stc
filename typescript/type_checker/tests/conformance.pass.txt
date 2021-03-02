@@ -460,8 +460,10 @@ es6/destructuring/emptyObjectBindingPatternParameter01.ts
 es6/destructuring/emptyObjectBindingPatternParameter02.ts
 es6/destructuring/emptyObjectBindingPatternParameter03.ts
 es6/destructuring/iterableArrayPattern1.ts
+es6/destructuring/iterableArrayPattern10.ts
 es6/destructuring/iterableArrayPattern11.ts
 es6/destructuring/iterableArrayPattern12.ts
+es6/destructuring/iterableArrayPattern13.ts
 es6/destructuring/iterableArrayPattern14.ts
 es6/destructuring/iterableArrayPattern15.ts
 es6/destructuring/iterableArrayPattern17.ts
