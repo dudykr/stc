@@ -1027,7 +1027,7 @@ impl Analyzer<'_, '_> {
                             new_arg_types.push(TypeOrSpread {
                                 span: *span,
                                 spread: None,
-                                ty: arg.ty.clone(),
+                                ty: box arg_ty.clone().into_owned(),
                             });
                         }
 
@@ -1037,7 +1037,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         _ => {
-                            unimplemented!("spread_args: type other than tuple or \nType: {:#?}", arg.ty)
+                            unimplemented!("spread_args: type other than tuple or \nType: {:#?}", arg_ty)
                         }
                     }
                 } else {
