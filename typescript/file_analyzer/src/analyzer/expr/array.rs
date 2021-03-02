@@ -223,6 +223,19 @@ impl Analyzer<'_, '_> {
                 "tried to get the type of property named `value` to determine the type of nth element of an iterator",
             )?;
 
+        match elem_ty.normalize() {
+            Type::Union(..) => match elem_ty.normalize_mut() {
+                Type::Union(u) => {
+                    u.types.retain(|ty| !ty.is_any());
+                    if u.types.is_empty() {
+                        u.types = vec![Type::any(u.span)]
+                    }
+                }
+                _ => {}
+            },
+            _ => {}
+        }
+
         let elem_ty = elem_ty.fold_with(&mut TypeFactsHandler {
             facts: TypeFacts::Truthy,
             analyzer: self,
