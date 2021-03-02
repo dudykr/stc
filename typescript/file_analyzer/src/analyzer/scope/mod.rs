@@ -1148,10 +1148,10 @@ impl Analyzer<'_, '_> {
                                 RObjectPatProp::KeyValue(prop) => {
                                     let mut key = prop.key.validate_with(self)?;
 
-                                    let prop =
+                                    let prop_ty =
                                         self.access_property(span, ty.clone(), &key, TypeOfMode::RValue, IdCtx::Var);
 
-                                    match prop {
+                                    match prop_ty {
                                         Ok(ty) => {
                                             // TODO: actual_ty
                                             self.declare_complex_vars(kind, &prop.value, ty, None)?;
@@ -1159,10 +1159,11 @@ impl Analyzer<'_, '_> {
 
                                         Err(err) => {
                                             self.storage.report(err.convert(|err| match err {
-                                                Error::NoSuchProperty { span }
-                                                | Error::NoSuchPropertyInClass { span } => {
+                                                Error::NoSuchProperty { span, .. }
+                                                | Error::NoSuchPropertyInClass { span, .. } => {
                                                     Error::NoInitAndNoDefault { span }
                                                 }
+                                                _ => err,
                                             }));
                                         }
                                     }
