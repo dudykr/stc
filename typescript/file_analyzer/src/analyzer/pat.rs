@@ -77,6 +77,9 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RParam) -> ValidationResult<ty::FnParam> {
         node.decorators.visit_with(self);
+
+        self.default_any_pat(&node.pat);
+
         let ctx = Ctx {
             pat_mode: PatMode::Decl,
             ..self.ctx

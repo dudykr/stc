@@ -823,7 +823,7 @@ impl Analyzer<'_, '_> {
                 .collect(),
         });
         if let Some(m) = &mut self.mutations {
-            m.for_pats.entry(arr.node_id).or_default().ty.fill_with(|| ty);
+            m.for_pats.entry(arr.node_id).or_default().ty.get_or_insert_with(|| ty);
         }
     }
 
