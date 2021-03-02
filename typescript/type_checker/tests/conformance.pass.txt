@@ -471,6 +471,8 @@ es6/destructuring/iterableArrayPattern18.ts
 es6/destructuring/iterableArrayPattern19.ts
 es6/destructuring/iterableArrayPattern2.ts
 es6/destructuring/iterableArrayPattern20.ts
+es6/destructuring/iterableArrayPattern21.ts
+es6/destructuring/iterableArrayPattern22.ts
 es6/destructuring/iterableArrayPattern27.ts
 es6/destructuring/iterableArrayPattern9.ts
 es6/destructuring/nonIterableRestElement1.ts
