@@ -919,7 +919,7 @@ impl Analyzer<'_, '_> {
                         }
                     },
 
-                    Type::Array(..) | Type::Tuple(..) => fail!(),
+                    Type::Array(..) | Type::Tuple(..) | Type::Class(..) | Type::ClassDef(..) => fail!(),
 
                     _ => {}
                 }
