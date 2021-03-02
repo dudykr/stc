@@ -27,7 +27,6 @@ use smallvec::SmallVec;
 use stc_ts_ast_rnode::RArrayPat;
 use stc_ts_ast_rnode::RAssignPatProp;
 use stc_ts_ast_rnode::RBindingIdent;
-use stc_ts_ast_rnode::RKeyValuePatProp;
 use stc_ts_ast_rnode::RObjectPat;
 use stc_ts_ast_rnode::RObjectPatProp;
 use stc_ts_ast_rnode::RPat;
@@ -1063,73 +1062,8 @@ impl Analyzer<'_, '_> {
                     return index_el;
                 }
 
-                /// Handle TypeElements.
-                ///
-                /// Used for interfaces and type literals.
-                fn handle_elems(
-                    a: &mut Analyzer,
-                    kind: VarDeclKind,
-                    span: Span,
-                    props: &[RObjectPatProp],
-                    members: &[TypeElement],
-                ) -> ValidationResult<()> {
-                    for p in props.iter() {
-                        match p {
-                            RObjectPatProp::KeyValue(RKeyValuePatProp { ref key, ref value, .. }) => {
-                                if let Some(ty) = find(&members, key) {
-                                    // TODO: actual_ty
-                                    a.declare_complex_vars(kind, value, ty, None)?;
-                                    return Ok(());
-                                }
-                            }
-
-                            RObjectPatProp::Assign(RAssignPatProp { ref key, value, .. }) => {
-                                match value.validate_with_default(a) {
-                                    Some(res) => {
-                                        res.report(&mut a.storage);
-                                    }
-                                    _ => {}
-                                }
-                                if let Some(ty) = find(&members, &RPropName::Ident(key.clone())) {
-                                    // TODO: actual_ty
-                                    a.declare_complex_vars(
-                                        kind,
-                                        &RPat::Ident(RBindingIdent {
-                                            node_id: NodeId::invalid(),
-                                            id: key.clone(),
-                                            type_ann: None,
-                                        }),
-                                        ty,
-                                        None,
-                                    )?;
-                                    return Ok(());
-                                }
-                            }
-
-                            _ => unimplemented!("handle_elems({:#?})", p),
-                        }
-                    }
-
-                    dbg!();
-
-                    return Err(Error::NoSuchProperty {
-                        span,
-                        obj: None,
-                        prop: None,
-                    });
-                }
-
                 // TODO: Normalize static
                 match ty.normalize() {
-                    Type::TypeLit(TypeLit { members, .. }) => {
-                        return handle_elems(self, kind, span, props, &members);
-                    }
-
-                    // TODO: Handle extends
-                    Type::Interface(Interface { body, .. }) => {
-                        return handle_elems(self, kind, span, props, &body);
-                    }
-
                     Type::Keyword(RTsKeywordType {
                         kind: TsKeywordTypeKind::TsAnyKeyword,
                         ..
@@ -1198,7 +1132,15 @@ impl Analyzer<'_, '_> {
 
                     // TODO: Check if allowing class is same (I mean static vs instance method
                     // issue)
-                    Type::Class(..) | Type::Array(..) | Type::This(..) => {
+                    Type::Class(..)
+                    | Type::Array(..)
+                    | Type::This(..)
+                    | Type::TypeLit(..)
+                    | Type::Interface(..)
+                    | Type::Keyword(RTsKeywordType {
+                        kind: TsKeywordTypeKind::TsVoidKeyword,
+                        ..
+                    }) => {
                         //
 
                         for prop in props {
