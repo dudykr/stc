@@ -1174,25 +1174,38 @@ impl Analyzer<'_, '_> {
                                         sym: prop.key.sym.clone(),
                                     };
 
-                                    let ty =
-                                        self.access_property(span, ty.clone(), &key, TypeOfMode::RValue, IdCtx::Var)?;
+                                    let prop_ty =
+                                        self.access_property(span, ty.clone(), &key, TypeOfMode::RValue, IdCtx::Var);
 
-                                    match prop.value {
-                                        Some(_) => {
-                                            unimplemented!("pattern with default")
+                                    match prop_ty {
+                                        Ok(prop_ty) => {
+                                            match prop.value {
+                                                Some(_) => {
+                                                    unimplemented!("pattern with default")
+                                                }
+                                                None => {
+                                                    // TODO: actual_ty
+                                                    self.declare_complex_vars(
+                                                        kind,
+                                                        &RPat::Ident(RBindingIdent {
+                                                            node_id: NodeId::invalid(),
+                                                            id: prop.key.clone(),
+                                                            type_ann: None,
+                                                        }),
+                                                        prop_ty,
+                                                        None,
+                                                    )?;
+                                                }
+                                            }
                                         }
-                                        None => {
-                                            // TODO: actual_ty
-                                            self.declare_complex_vars(
-                                                kind,
-                                                &RPat::Ident(RBindingIdent {
-                                                    node_id: NodeId::invalid(),
-                                                    id: prop.key.clone(),
-                                                    type_ann: None,
-                                                }),
-                                                ty,
-                                                None,
-                                            )?;
+                                        Err(err) => {
+                                            self.storage.report(err.convert(|err| match err {
+                                                Error::NoSuchProperty { span, .. }
+                                                | Error::NoSuchPropertyInClass { span, .. } => {
+                                                    Error::NoInitAndNoDefault { span }
+                                                }
+                                                _ => err,
+                                            }));
                                         }
                                     }
                                 }
