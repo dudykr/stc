@@ -28,7 +28,6 @@ use stc_ts_ast_rnode::RArrayPat;
 use stc_ts_ast_rnode::RAssignPatProp;
 use stc_ts_ast_rnode::RBindingIdent;
 use stc_ts_ast_rnode::RKeyValuePatProp;
-use stc_ts_ast_rnode::RNumber;
 use stc_ts_ast_rnode::RObjectPat;
 use stc_ts_ast_rnode::RObjectPatProp;
 use stc_ts_ast_rnode::RPat;
@@ -1016,6 +1015,7 @@ impl Analyzer<'_, '_> {
                 //
                 //      const [a , setA] = useState();
                 //
+
                 let ty = self
                     .get_iterator(span, Cow::Owned(ty))
                     .context("tried to convert a type to an iterator to assign with an array pattern.")?;
@@ -1023,16 +1023,12 @@ impl Analyzer<'_, '_> {
                 for (i, elem) in elems.iter().enumerate() {
                     if let Some(elem) = elem {
                         let elem_ty = self
-                            .access_property(
-                                span,
-                                ty.clone().into_owned(),
-                                &Key::Num(RNumber { span, value: i as _ }),
-                                TypeOfMode::LValue,
-                                IdCtx::Var,
-                            )
+                            .get_element_from_iterator(span, Cow::Borrowed(&ty), i)
                             .context(
-                                "tried to access a property of a type to declare variable with an array pattern",
-                            )?;
+                                "tried to get the type of nth element from iterator to declare vars with an array \
+                                 pattern",
+                            )?
+                            .into_owned();
                         // TODO: actual_ty
                         self.declare_complex_vars(kind, elem, elem_ty, None)?;
                     }

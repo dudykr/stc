@@ -17,6 +17,7 @@ use stc_ts_ast_rnode::RExprOrSpread;
 use stc_ts_ast_rnode::RExprOrSuper;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RMemberExpr;
+use stc_ts_ast_rnode::RNumber;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
@@ -148,6 +149,79 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
+    /// Get `n`th element from the `iterator`.
+    pub(crate) fn get_element_from_iterator<'a>(
+        &mut self,
+        span: Span,
+        iterator: Cow<'a, Type>,
+        n: usize,
+    ) -> ValidationResult<Cow<'a, Type>> {
+        match iterator.normalize() {
+            Type::Ref(..) => {
+                let iterator = self
+                    .expand_top_ref(span, iterator)
+                    .context("tried to expand iterator to get nth element")?;
+
+                return self
+                    .get_element_from_iterator(span, iterator, n)
+                    .context("tried to get element from an expanded iterator");
+            }
+            Type::Array(..) | Type::Tuple(..) => {
+                return self
+                    .access_property(
+                        span,
+                        iterator.clone().into_owned(),
+                        &Key::Num(RNumber { span, value: n as _ }),
+                        TypeOfMode::RValue,
+                        IdCtx::Var,
+                    )
+                    .map(Cow::Owned)
+                    .context("tried to access property of a type to calculate element type")
+            }
+            _ => {}
+        }
+
+        let next_ret_ty = self
+            .call_property(
+                span,
+                ExtractKind::Call,
+                Default::default(),
+                &iterator,
+                &iterator,
+                &Key::Normal {
+                    span,
+                    sym: "next".into(),
+                },
+                None,
+                &[],
+                &[],
+                &[],
+                None,
+            )
+            .context("tried calling `next()` to get element type of nth element of an iterator")?;
+
+        let elem_ty = self
+            .access_property(
+                span,
+                next_ret_ty,
+                &Key::Normal {
+                    span,
+                    sym: "value".into(),
+                },
+                TypeOfMode::RValue,
+                IdCtx::Var,
+            )
+            .context(
+                "tried to get the type of property named `value` to determine the type of nth element of an iterator",
+            )?;
+
+        let elem_ty = elem_ty.fold_with(&mut TypeFactsHandler {
+            facts: TypeFacts::Truthy,
+            analyzer: self,
+        });
+
+        Ok(Cow::Owned(elem_ty))
+    }
     pub(crate) fn get_iterator<'a>(&mut self, span: Span, ty: Cow<'a, Type>) -> ValidationResult<Cow<'a, Type>> {
         match ty.normalize() {
             Type::Ref(..) => {
