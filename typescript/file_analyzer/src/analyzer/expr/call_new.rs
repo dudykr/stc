@@ -723,6 +723,13 @@ impl Analyzer<'_, '_> {
                 &spread_arg_types,
                 type_ann,
             )
+            .with_context(|| {
+                format!(
+                    "tried to call property by using access_property because the object type is not handled by \
+                     call_property: {:#?}",
+                    obj_type
+                )
+            })
         })();
         self.scope.this = old_this;
         res
