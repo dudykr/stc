@@ -420,6 +420,22 @@ impl Analyzer<'_, '_> {
     }
 
     /// Exclude `excluded` from `ty`
+    ///
+    /// # Subclasses
+    ///
+    /// ```ts
+    /// class B {}
+    /// class P {}
+    /// class C extends P {}
+    ///
+    /// declare let a: C | B
+    ///
+    ///
+    /// if (!(a instanceof P)) {
+    ///     // At here, we can deduce that `a` is `B`.
+    ///     // To use the fact that `a` is not `P`, we check for the parent type of `ty
+    /// }
+    /// ```
     fn exclude_type(&mut self, ty: &mut Type, excluded: &Type) {
         if ty.type_eq(excluded) {
             *ty = Type::never(ty.span());
@@ -469,6 +485,20 @@ impl Analyzer<'_, '_> {
                     return;
                 }
             }
+
+            Type::Class(cls) => {
+                //
+                if let Some(super_def) = &cls.def.super_class {
+                    if let Ok(mut super_instance) = self.instantiate_class(cls.span, &super_def) {
+                        self.exclude_type(&mut super_instance, excluded);
+                        if super_instance.is_never() {
+                            *ty = Type::never(cls.span);
+                            return;
+                        }
+                    }
+                }
+            }
+
             _ => {}
         }
     }
