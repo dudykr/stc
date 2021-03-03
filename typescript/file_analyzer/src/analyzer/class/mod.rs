@@ -188,7 +188,19 @@ impl Analyzer<'_, '_> {
                 let mut has_optional = false;
                 for p in params.iter() {
                     if has_optional {
-                        child.storage.report(Error::TS1016 { span: p.span() });
+                        match p {
+                            RParamOrTsParamProp::Param(RParam { pat, .. }) => match pat {
+                                RPat::Ident(RBindingIdent {
+                                    id: RIdent { optional: true, .. },
+                                    ..
+                                })
+                                | RPat::Rest(..) => {}
+                                _ => {
+                                    child.storage.report(Error::TS1016 { span: p.span() });
+                                }
+                            },
+                            _ => {}
+                        }
                     }
 
                     match *p {
@@ -429,7 +441,16 @@ impl Analyzer<'_, '_> {
                     let mut has_optional = false;
                     for p in &c.function.params {
                         if has_optional {
-                            child.storage.report(Error::TS1016 { span: p.span() });
+                            match p.pat {
+                                RPat::Ident(RBindingIdent {
+                                    id: RIdent { optional: true, .. },
+                                    ..
+                                })
+                                | RPat::Rest(..) => {}
+                                _ => {
+                                    child.storage.report(Error::TS1016 { span: p.span() });
+                                }
+                            }
                         }
 
                         match p.pat {
