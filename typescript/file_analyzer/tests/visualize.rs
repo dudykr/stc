@@ -158,6 +158,6 @@ fn visualize(file_name: PathBuf) {
 
 #[testing::fixture("pass/**/*.ts", exclude(".*\\.\\.d.\\.ts"))]
 fn pass(file_name: PathBuf) {
-    run_test(file_name.clone(), false);
-    run_test(file_name, true);
+    run_test(file_name.clone(), true);
+    run_test(file_name, false);
 }
