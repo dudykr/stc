@@ -1179,9 +1179,35 @@ impl Analyzer<'_, '_> {
 
                                     match prop_ty {
                                         Ok(prop_ty) => {
-                                            match prop.value {
-                                                Some(_) => {
-                                                    unimplemented!("pattern with default")
+                                            match &prop.value {
+                                                Some(default) => {
+                                                    self.declare_complex_vars(
+                                                        kind,
+                                                        &RPat::Ident(RBindingIdent {
+                                                            node_id: NodeId::invalid(),
+                                                            id: prop.key.clone(),
+                                                            type_ann: None,
+                                                        }),
+                                                        prop_ty,
+                                                        None,
+                                                    )?;
+
+                                                    let default_value_type =
+                                                        default.validate_with_default(self).context(
+                                                            "tried to validate default value of an assignment pattern",
+                                                        )?;
+
+                                                    self.try_assign_pat(
+                                                        span,
+                                                        &RPat::Ident(RBindingIdent {
+                                                            node_id: NodeId::invalid(),
+                                                            id: prop.key.clone(),
+                                                            type_ann: None,
+                                                        }),
+                                                        &ty,
+                                                    )
+                                                    .context("tried to assign default values")
+                                                    .report(&mut self.storage);
                                                 }
                                                 None => {
                                                     // TODO: actual_ty
