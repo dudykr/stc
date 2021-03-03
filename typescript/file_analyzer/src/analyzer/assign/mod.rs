@@ -827,7 +827,10 @@ impl Analyzer<'_, '_> {
 
                 let results = types
                     .iter()
-                    .map(|to| self.assign_inner(&to, rhs, opts))
+                    .map(|to| {
+                        self.assign_inner(&to, rhs, opts)
+                            .context("tried to assign a type to a union")
+                    })
                     .collect::<Vec<_>>();
                 if results.iter().any(Result::is_ok) {
                     return Ok(());
