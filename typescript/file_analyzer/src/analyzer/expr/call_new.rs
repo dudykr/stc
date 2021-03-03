@@ -2248,6 +2248,14 @@ impl Analyzer<'_, '_> {
 
     fn narrow_with_predicate(&mut self, span: Span, orig_ty: &Type, new_ty: Type) -> ValidationResult {
         match new_ty.normalize() {
+            Type::Ref(..) => {
+                let new_ty = self
+                    .expand_top_ref(span, Cow::Owned(new_ty))
+                    .context("tried to expand ref type in new_ty to narrow type with predicate")?
+                    .into_owned();
+                return self.narrow_with_predicate(span, orig_ty, new_ty);
+            }
+
             Type::Keyword(..) | Type::Lit(..) => {}
             _ => {
                 match orig_ty.normalize() {
