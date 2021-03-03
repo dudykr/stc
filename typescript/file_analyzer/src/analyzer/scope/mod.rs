@@ -1179,6 +1179,8 @@ impl Analyzer<'_, '_> {
 
                                     match prop_ty {
                                         Ok(prop_ty) => {
+                                            let prop_ty = prop_ty.cheap();
+
                                             match &prop.value {
                                                 Some(default) => {
                                                     self.declare_complex_vars(
@@ -1188,7 +1190,7 @@ impl Analyzer<'_, '_> {
                                                             id: prop.key.clone(),
                                                             type_ann: None,
                                                         }),
-                                                        prop_ty,
+                                                        prop_ty.clone(),
                                                         None,
                                                     )?;
 
@@ -1204,7 +1206,7 @@ impl Analyzer<'_, '_> {
                                                             id: prop.key.clone(),
                                                             type_ann: None,
                                                         }),
-                                                        &ty,
+                                                        &prop_ty,
                                                     )
                                                     .context("tried to assign default values")
                                                     .report(&mut self.storage);
