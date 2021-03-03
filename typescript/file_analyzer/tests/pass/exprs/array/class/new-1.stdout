@@ -1,5 +1,5 @@
 warning: Type
- --> $DIR/tests/visualize/exprs/array/class/new-1.ts:4:10
+ --> $DIR/tests/pass/exprs/array/class/new-1.ts:4:10
   |
 4 | var y = [C, C];
   |          ^
@@ -7,7 +7,7 @@ warning: Type
   = note: typeof C
 
 warning: Type
- --> $DIR/tests/visualize/exprs/array/class/new-1.ts:4:13
+ --> $DIR/tests/pass/exprs/array/class/new-1.ts:4:13
   |
 4 | var y = [C, C];
   |             ^
@@ -15,7 +15,7 @@ warning: Type
   = note: typeof C
 
 warning: Type
- --> $DIR/tests/visualize/exprs/array/class/new-1.ts:4:9
+ --> $DIR/tests/pass/exprs/array/class/new-1.ts:4:9
   |
 4 | var y = [C, C];
   |         ^^^^^^
@@ -23,7 +23,7 @@ warning: Type
   = note: [typeof C, typeof C]
 
 warning: Type
- --> $DIR/tests/visualize/exprs/array/class/new-1.ts:5:14
+ --> $DIR/tests/pass/exprs/array/class/new-1.ts:5:14
   |
 5 | var r3 = new y[0]();
   |              ^
@@ -31,7 +31,7 @@ warning: Type
   = note: typeof C[]
 
 warning: Type
- --> $DIR/tests/visualize/exprs/array/class/new-1.ts:5:14
+ --> $DIR/tests/pass/exprs/array/class/new-1.ts:5:14
   |
 5 | var r3 = new y[0]();
   |              ^^^^
@@ -39,7 +39,7 @@ warning: Type
   = note: typeof C
 
 warning: Type
- --> $DIR/tests/visualize/exprs/array/class/new-1.ts:5:10
+ --> $DIR/tests/pass/exprs/array/class/new-1.ts:5:10
   |
 5 | var r3 = new y[0]();
   |          ^^^^^^^^^^

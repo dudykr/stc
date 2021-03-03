@@ -1,5 +1,5 @@
 warning: Type
- --> $DIR/tests/visualize/simple.ts:1:49
+ --> $DIR/tests/pass/builltin/array/map/simple.ts:1:49
   |
 1 | export const arr = [1, '2', 3, 4, 5].map(v => !!v);
   |                                                 ^
@@ -7,7 +7,7 @@ warning: Type
   = note: any
 
 warning: Type
- --> $DIR/tests/visualize/simple.ts:1:48
+ --> $DIR/tests/pass/builltin/array/map/simple.ts:1:48
   |
 1 | export const arr = [1, '2', 3, 4, 5].map(v => !!v);
   |                                                ^^
@@ -15,7 +15,7 @@ warning: Type
   = note: boolean
 
 warning: Type
- --> $DIR/tests/visualize/simple.ts:1:47
+ --> $DIR/tests/pass/builltin/array/map/simple.ts:1:47
   |
 1 | export const arr = [1, '2', 3, 4, 5].map(v => !!v);
   |                                               ^^^
@@ -23,7 +23,7 @@ warning: Type
   = note: boolean
 
 warning: Type
- --> $DIR/tests/visualize/simple.ts:1:42
+ --> $DIR/tests/pass/builltin/array/map/simple.ts:1:42
   |
 1 | export const arr = [1, '2', 3, 4, 5].map(v => !!v);
   |                                          ^^^^^^^^
@@ -31,7 +31,7 @@ warning: Type
   = note: (v: any) => boolean
 
 warning: Type
- --> $DIR/tests/visualize/simple.ts:1:20
+ --> $DIR/tests/pass/builltin/array/map/simple.ts:1:20
   |
 1 | export const arr = [1, '2', 3, 4, 5].map(v => !!v);
   |                    ^^^^^^^^^^^^^^^^^
@@ -39,7 +39,7 @@ warning: Type
   = note: [1, '2', 3, 4, 5]
 
 warning: Type
- --> $DIR/tests/visualize/simple.ts:1:49
+ --> $DIR/tests/pass/builltin/array/map/simple.ts:1:49
   |
 1 | export const arr = [1, '2', 3, 4, 5].map(v => !!v);
   |                                                 ^
@@ -47,7 +47,7 @@ warning: Type
   = note: number | string
 
 warning: Type
- --> $DIR/tests/visualize/simple.ts:1:42
+ --> $DIR/tests/pass/builltin/array/map/simple.ts:1:42
   |
 1 | export const arr = [1, '2', 3, 4, 5].map(v => !!v);
   |                                          ^^^^^^^^
@@ -55,7 +55,7 @@ warning: Type
   = note: (v: number | string) => boolean
 
 warning: Type
- --> $DIR/tests/visualize/simple.ts:1:20
+ --> $DIR/tests/pass/builltin/array/map/simple.ts:1:20
   |
 1 | export const arr = [1, '2', 3, 4, 5].map(v => !!v);
   |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

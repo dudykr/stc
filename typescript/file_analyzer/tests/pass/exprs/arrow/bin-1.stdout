@@ -1,5 +1,5 @@
 warning: Type
- --> $DIR/tests/visualize/exprs/arrow/bin-1.ts:3:9
+ --> $DIR/tests/pass/exprs/arrow/bin-1.ts:3:9
   |
 3 | let g = f || (abc => { void abc.toLowerCase() })
   |         ^
@@ -7,7 +7,7 @@ warning: Type
   = note: null | (x: string) => void
 
 warning: Type
- --> $DIR/tests/visualize/exprs/arrow/bin-1.ts:3:29
+ --> $DIR/tests/pass/exprs/arrow/bin-1.ts:3:29
   |
 3 | let g = f || (abc => { void abc.toLowerCase() })
   |                             ^^^
@@ -15,7 +15,7 @@ warning: Type
   = note: string
 
 warning: Type
- --> $DIR/tests/visualize/exprs/arrow/bin-1.ts:3:29
+ --> $DIR/tests/pass/exprs/arrow/bin-1.ts:3:29
   |
 3 | let g = f || (abc => { void abc.toLowerCase() })
   |                             ^^^^^^^^^^^^^^^^^
@@ -23,7 +23,7 @@ warning: Type
   = note: string
 
 warning: Type
- --> $DIR/tests/visualize/exprs/arrow/bin-1.ts:3:24
+ --> $DIR/tests/pass/exprs/arrow/bin-1.ts:3:24
   |
 3 | let g = f || (abc => { void abc.toLowerCase() })
   |                        ^^^^^^^^^^^^^^^^^^^^^^
@@ -31,7 +31,7 @@ warning: Type
   = note: undefined
 
 warning: Type
- --> $DIR/tests/visualize/exprs/arrow/bin-1.ts:3:15
+ --> $DIR/tests/pass/exprs/arrow/bin-1.ts:3:15
   |
 3 | let g = f || (abc => { void abc.toLowerCase() })
   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -39,7 +39,7 @@ warning: Type
   = note: (abc: string) => void
 
 warning: Type
- --> $DIR/tests/visualize/exprs/arrow/bin-1.ts:3:14
+ --> $DIR/tests/pass/exprs/arrow/bin-1.ts:3:14
   |
 3 | let g = f || (abc => { void abc.toLowerCase() })
   |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -47,7 +47,7 @@ warning: Type
   = note: (abc: string) => void
 
 warning: Type
- --> $DIR/tests/visualize/exprs/arrow/bin-1.ts:3:9
+ --> $DIR/tests/pass/exprs/arrow/bin-1.ts:3:9
   |
 3 | let g = f || (abc => { void abc.toLowerCase() })
   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -55,7 +55,7 @@ warning: Type
   = note: (x: string) => void | (abc: string) => void
 
 warning: Type
- --> $DIR/tests/visualize/exprs/arrow/bin-1.ts:4:10
+ --> $DIR/tests/pass/exprs/arrow/bin-1.ts:4:10
   |
 4 | let gg = f ?? (abc => { void abc.toLowerCase() })
   |          ^
@@ -63,7 +63,7 @@ warning: Type
   = note: null | (x: string) => void
 
 warning: Type
- --> $DIR/tests/visualize/exprs/arrow/bin-1.ts:4:30
+ --> $DIR/tests/pass/exprs/arrow/bin-1.ts:4:30
   |
 4 | let gg = f ?? (abc => { void abc.toLowerCase() })
   |                              ^^^
@@ -71,7 +71,7 @@ warning: Type
   = note: string
 
 warning: Type
- --> $DIR/tests/visualize/exprs/arrow/bin-1.ts:4:30
+ --> $DIR/tests/pass/exprs/arrow/bin-1.ts:4:30
   |
 4 | let gg = f ?? (abc => { void abc.toLowerCase() })
   |                              ^^^^^^^^^^^^^^^^^
@@ -79,7 +79,7 @@ warning: Type
   = note: string
 
 warning: Type
- --> $DIR/tests/visualize/exprs/arrow/bin-1.ts:4:25
+ --> $DIR/tests/pass/exprs/arrow/bin-1.ts:4:25
   |
 4 | let gg = f ?? (abc => { void abc.toLowerCase() })
   |                         ^^^^^^^^^^^^^^^^^^^^^^
@@ -87,7 +87,7 @@ warning: Type
   = note: undefined
 
 warning: Type
- --> $DIR/tests/visualize/exprs/arrow/bin-1.ts:4:16
+ --> $DIR/tests/pass/exprs/arrow/bin-1.ts:4:16
   |
 4 | let gg = f ?? (abc => { void abc.toLowerCase() })
   |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -95,7 +95,7 @@ warning: Type
   = note: (abc: string) => void
 
 warning: Type
- --> $DIR/tests/visualize/exprs/arrow/bin-1.ts:4:15
+ --> $DIR/tests/pass/exprs/arrow/bin-1.ts:4:15
   |
 4 | let gg = f ?? (abc => { void abc.toLowerCase() })
   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -103,7 +103,7 @@ warning: Type
   = note: (abc: string) => void
 
 warning: Type
- --> $DIR/tests/visualize/exprs/arrow/bin-1.ts:4:10
+ --> $DIR/tests/pass/exprs/arrow/bin-1.ts:4:10
   |
 4 | let gg = f ?? (abc => { void abc.toLowerCase() })
   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

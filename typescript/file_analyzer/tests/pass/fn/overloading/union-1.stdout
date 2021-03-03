@@ -1,5 +1,5 @@
 warning: Type
-  --> $DIR/tests/visualize/fn/overload/union-1.ts:21:12
+  --> $DIR/tests/pass/fn/overloading/union-1.ts:21:12
    |
 21 |     return entity.kind === kind;
    |            ^^^^^^
@@ -7,7 +7,7 @@ warning: Type
    = note: Entity
 
 warning: Type
-  --> $DIR/tests/visualize/fn/overload/union-1.ts:21:12
+  --> $DIR/tests/pass/fn/overloading/union-1.ts:21:12
    |
 21 |     return entity.kind === kind;
    |            ^^^^^^^^^^^
@@ -15,7 +15,7 @@ warning: Type
    = note: Kind
 
 warning: Type
-  --> $DIR/tests/visualize/fn/overload/union-1.ts:21:28
+  --> $DIR/tests/pass/fn/overloading/union-1.ts:21:28
    |
 21 |     return entity.kind === kind;
    |                            ^^^^
@@ -23,7 +23,7 @@ warning: Type
    = note: Kind
 
 warning: Type
-  --> $DIR/tests/visualize/fn/overload/union-1.ts:21:12
+  --> $DIR/tests/pass/fn/overloading/union-1.ts:21:12
    |
 21 |     return entity.kind === kind;
    |            ^^^^^^^^^^^^^^^^^^^^
@@ -31,7 +31,7 @@ warning: Type
    = note: boolean
 
 warning: Type
-  --> $DIR/tests/visualize/fn/overload/union-1.ts:25:1
+  --> $DIR/tests/pass/fn/overloading/union-1.ts:25:1
    |
 25 | hasKind
    | ^^^^^^^
