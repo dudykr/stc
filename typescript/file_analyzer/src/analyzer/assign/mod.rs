@@ -18,6 +18,7 @@ use stc_ts_errors::Errors;
 use stc_ts_types::ClassDef;
 use stc_ts_types::Key;
 use stc_ts_types::Mapped;
+use stc_ts_types::Operator;
 use stc_ts_types::PropertySignature;
 use stc_ts_types::Ref;
 use stc_ts_types::{
@@ -583,6 +584,16 @@ impl Analyzer<'_, '_> {
             },
 
             Type::Query(ref to) => return self.assign_to_query_type(opts, to, &rhs),
+
+            Type::Operator(Operator {
+                op: TsTypeOperatorOp::ReadOnly,
+                ty,
+                ..
+            }) => {
+                return self
+                    .assign_with_opts(opts, &ty, rhs)
+                    .context("tried to assign a type to an operand of readonly type")
+            }
 
             _ => {}
         }
