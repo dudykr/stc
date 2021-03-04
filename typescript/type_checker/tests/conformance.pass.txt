@@ -538,6 +538,7 @@ es6/functionDeclarations/FunctionDeclaration2_es6.ts
 es6/functionDeclarations/FunctionDeclaration3_es6.ts
 es6/functionDeclarations/FunctionDeclaration4_es6.ts
 es6/functionDeclarations/FunctionDeclaration8_es6.ts
+es6/functionDeclarations/FunctionDeclaration9_es6.ts
 es6/functionExpressions/FunctionExpression1_es6.ts
 es6/functionExpressions/FunctionExpression2_es6.ts
 es6/functionPropertyAssignments/FunctionPropertyAssignments1_es6.ts
