@@ -37,24 +37,100 @@ mod mapped;
 mod narrowing;
 mod type_param;
 
+#[derive(Debug, Default, Clone, Copy)]
+pub(crate) struct NormalizeTypeOpts {
+    pub preserve_mapped: bool,
+}
+
 impl Analyzer<'_, '_> {
+    /// This methods normalizes a type.
+    ///
+    /// # Changed types.
+    ///
+    ///  - [Type::Ref]
+    ///  - [Type::Mapped]
+    ///  - [Type::Alias]
+
+    pub(crate) fn normalize<'a>(&mut self, ty: &'a Type, opts: NormalizeTypeOpts) -> ValidationResult<Cow<'a, Type>> {
+        let span = ty.span();
+        let ty = ty.normalize();
+
+        match ty {
+            Type::Ref(_) => {
+                let ty = self
+                    .expand_top_ref(span, Cow::Borrowed(ty))
+                    .context("tried to expand ref type as a part of normalization")?;
+                return Ok(Cow::Owned(self.normalize(&ty, opts)?.into_owned()));
+            }
+
+            Type::Mapped(m) => {
+                if !opts.preserve_mapped {
+                    let ty = self.expand_mapped(span, m)?;
+                    return Ok(Cow::Owned(self.normalize(&ty, opts)?.into_owned()));
+                }
+            }
+
+            Type::Alias(a) => return Ok(Cow::Owned(self.normalize(&a.ty, opts)?.into_owned())),
+
+            // Leaf types.
+            Type::Array(..)
+            | Type::Lit(..)
+            | Type::TypeLit(..)
+            | Type::Interface(..)
+            | Type::Class(..)
+            | Type::ClassDef(..)
+            | Type::Keyword(..)
+            | Type::Tuple(..)
+            | Type::Function(..)
+            | Type::Constructor(..)
+            | Type::EnumVariant(..)
+            | Type::Enum(..)
+            | Type::Param(_)
+            | Type::Module(_) => return Ok(Cow::Borrowed(ty)),
+
+            // Not normalizable.
+            Type::Infer(_) | Type::Instance(_) | Type::StaticThis(_) | Type::This(_) => {}
+
+            // Maybe it can be changed in future, but currently noop
+            Type::Union(_) | Type::Intersection(_) => {}
+
+            Type::Conditional(_) => {
+                // TODO
+            }
+
+            Type::Query(_) => {
+                // TODO
+            }
+
+            Type::Import(_) => {}
+
+            Type::Predicate(_) => {
+                // TODO: Add option for this.
+            }
+
+            Type::IndexedAccessType(_) => {
+                // TODO:
+            }
+
+            Type::Operator(_) => {
+                // TODO:
+            }
+
+            _ => {}
+        }
+
+        Ok(Cow::Borrowed(ty))
+    }
+
     pub(crate) fn expand_type_ann<'a>(&mut self, ty: Option<&'a Type>) -> ValidationResult<Option<Cow<'a, Type>>> {
         let ty = match ty {
             Some(v) => v,
             None => return Ok(None),
         };
 
-        match ty.normalize() {
-            Type::Ref(..) => {
-                let ty = self
-                    .expand_top_ref(ty.span(), Cow::Borrowed(ty))
-                    .context("tried to expand ref type in a type annotation")?;
-                return Ok(Some(ty));
-            }
-            _ => {}
-        }
+        let ty = self.normalize(ty, Default::default())?;
 
-        Ok(Some(Cow::Borrowed(ty)))
+        Ok(Some(ty))
     }
 
     pub(crate) fn create_prototype_of_class_def(&mut self, def: &ClassDef) -> ValidationResult<TypeLit> {
