@@ -38,6 +38,25 @@ mod narrowing;
 mod type_param;
 
 impl Analyzer<'_, '_> {
+    pub(crate) fn expand_type_ann<'a>(&mut self, ty: Option<&'a Type>) -> ValidationResult<Option<Cow<'a, Type>>> {
+        let ty = match ty {
+            Some(v) => v,
+            None => return Ok(None),
+        };
+
+        match ty.normalize() {
+            Type::Ref(..) => {
+                let ty = self
+                    .expand_top_ref(ty.span(), Cow::Borrowed(ty))
+                    .context("tried to expand ref type in a type annotation")?;
+                return Ok(Some(ty));
+            }
+            _ => {}
+        }
+
+        Ok(Some(Cow::Borrowed(ty)))
+    }
+
     pub(crate) fn create_prototype_of_class_def(&mut self, def: &ClassDef) -> ValidationResult<TypeLit> {
         let mut members = vec![];
 
