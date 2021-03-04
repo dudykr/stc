@@ -21,6 +21,7 @@ use stc_ts_file_analyzer_macros::validator;
 use stc_ts_generics::type_param::replacer::TypeParamReplacer;
 use stc_ts_types::CallSignature;
 use stc_ts_types::FnParam;
+use stc_ts_types::Function;
 use stc_ts_types::Key;
 use stc_ts_types::PropertySignature;
 use stc_ts_types::Type;
@@ -84,6 +85,77 @@ impl UnionNormalizer<'_, '_, '_> {
         if u.types.iter().any(|ty| !ty.normalize().is_function()) {
             return;
         }
+
+        let mut new_type_params = None;
+        let mut new_params = vec![];
+        let mut return_types = vec![];
+
+        for ty in &u.types {
+            match ty.normalize() {
+                Type::Function(f) => {
+                    if new_type_params.is_none() {
+                        new_type_params = f.type_params.clone();
+                    }
+
+                    for (idx, param) in f.params.iter().enumerate() {
+                        if new_params.len() <= idx {
+                            new_params.extend(repeat(vec![]).take(idx + 1 - new_params.len()));
+                        }
+
+                        new_params[idx].push(param);
+                    }
+
+                    return_types.push(*f.ret_ty.clone());
+                }
+
+                _ => {}
+            }
+        }
+
+        return_types.dedup_type();
+        if let Some(ty) = return_types
+            .iter()
+            .find(|ty| ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword))
+        {
+            return_types = vec![ty.clone()]
+        }
+
+        *ty = Type::Function(Function {
+            span: u.span,
+            type_params: new_type_params,
+            params: new_params
+                .into_iter()
+                .map(|params| {
+                    let mut pat = None;
+                    let mut types = vec![];
+                    for param in params {
+                        if pat.is_none() {
+                            pat = Some(param.pat.clone());
+                        }
+
+                        types.push(*param.ty.clone());
+                    }
+                    types.dedup_type();
+
+                    let ty = box Type::intersection(DUMMY_SP, types);
+                    FnParam {
+                        span: DUMMY_SP,
+                        // TODO
+                        required: true,
+                        // TODO
+                        pat: pat.unwrap_or_else(|| {
+                            RPat::Ident(RBindingIdent {
+                                node_id: NodeId::invalid(),
+                                id: RIdent::new("a".into(), DUMMY_SP),
+                                type_ann: None,
+                            })
+                        }),
+                        ty,
+                    }
+                })
+                .collect_vec(),
+            ret_ty: box Type::union(return_types),
+        })
     }
 
     /// TODO: Add type parameters.
