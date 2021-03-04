@@ -576,21 +576,13 @@ impl Analyzer<'_, '_> {
                         };
                     }
                     _ => {
-                        // assert!(
-                        //     var.declare,
-                        //     "complex pattern without initializer is invalid syntax and
-                        // parser \      should handle it"
-                        //  );
+                        // For ambient contexts and loops, we add variables to the scope.
 
-                        if self.ctx.in_declare {
-                            match self.declare_vars(kind, &v.name) {
-                                Ok(()) => {}
-                                Err(err) => {
-                                    self.storage.report(err);
-                                }
-                            };
-                        } else {
-                            // This is parsing error
+                        match self.declare_vars(kind, &v.name) {
+                            Ok(()) => {}
+                            Err(err) => {
+                                self.storage.report(err);
+                            }
                         }
                     }
                 };
