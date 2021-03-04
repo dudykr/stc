@@ -87,7 +87,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Returns `Some(true)` if `child` extends `parent`.
-    pub(in crate::analyzer) fn extends(&mut self, span: Span, child: &Type, parent: &Type) -> Option<bool> {
+    pub(crate) fn extends(&mut self, span: Span, child: &Type, parent: &Type) -> Option<bool> {
         let child = child.normalize();
         let parent = parent.normalize();
 

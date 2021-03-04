@@ -7,8 +7,10 @@ use fxhash::FxHashMap;
 use indexmap::IndexSet;
 use itertools::Itertools;
 use rnode::FoldWith;
+use rnode::NodeId;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
+use stc_ts_ast_rnode::RBindingIdent;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RObjectLit;
 use stc_ts_ast_rnode::RPat;
@@ -19,6 +21,7 @@ use stc_ts_file_analyzer_macros::validator;
 use stc_ts_generics::type_param::replacer::TypeParamReplacer;
 use stc_ts_types::CallSignature;
 use stc_ts_types::FnParam;
+use stc_ts_types::Function;
 use stc_ts_types::Key;
 use stc_ts_types::PropertySignature;
 use stc_ts_types::Type;
@@ -27,9 +30,12 @@ use stc_ts_types::TypeLit;
 use stc_ts_types::TypeLitMetadata;
 use stc_ts_types::TypeParamDecl;
 use stc_ts_types::Union;
+use std::borrow::Cow;
 use std::iter::repeat;
 use swc_atoms::JsWord;
+use swc_common::Spanned;
 use swc_common::DUMMY_SP;
+use swc_ecma_ast::TsKeywordTypeKind;
 
 #[validator]
 impl Analyzer<'_, '_> {
@@ -50,12 +56,12 @@ impl Analyzer<'_, '_> {
     }
 }
 
-struct ObjectUnionNormalizer<'a, 'b, 'c> {
+struct UnionNormalizer<'a, 'b, 'c> {
     anaylzer: &'a mut Analyzer<'b, 'c>,
     preserve_specified: bool,
 }
 
-impl ObjectUnionNormalizer<'_, '_, '_> {
+impl UnionNormalizer<'_, '_, '_> {
     /// We need to know shape of normalized type literal.
     ///
     /// We use indexset to remove duplicate while preserving order.
@@ -71,12 +77,96 @@ impl ObjectUnionNormalizer<'_, '_, '_> {
             .collect()
     }
 
+    fn normalize_fn_types(&mut self, ty: &mut Type) {
+        let u = match ty {
+            Type::Union(u) => u,
+            _ => return,
+        };
+        if u.types.iter().any(|ty| !ty.normalize().is_function()) {
+            return;
+        }
+
+        let mut new_type_params = None;
+        let mut new_params = vec![];
+        let mut return_types = vec![];
+
+        for ty in &u.types {
+            match ty.normalize() {
+                Type::Function(f) => {
+                    if new_type_params.is_none() {
+                        new_type_params = f.type_params.clone();
+                    }
+
+                    for (idx, param) in f.params.iter().enumerate() {
+                        if new_params.len() <= idx {
+                            new_params.extend(repeat(vec![]).take(idx + 1 - new_params.len()));
+                        }
+
+                        new_params[idx].push(param);
+                    }
+
+                    return_types.push(*f.ret_ty.clone());
+                }
+
+                _ => {}
+            }
+        }
+
+        return_types.dedup_type();
+        if let Some(ty) = return_types
+            .iter()
+            .find(|ty| ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword))
+        {
+            return_types = vec![ty.clone()]
+        }
+
+        *ty = Type::Function(Function {
+            span: u.span,
+            type_params: new_type_params,
+            params: new_params
+                .into_iter()
+                .map(|params| {
+                    let mut pat = None;
+                    let mut types = vec![];
+                    for param in params {
+                        if pat.is_none() {
+                            pat = Some(param.pat.clone());
+                        }
+
+                        types.push(*param.ty.clone());
+                    }
+                    types.dedup_type();
+
+                    let ty = box Type::intersection(DUMMY_SP, types);
+                    FnParam {
+                        span: DUMMY_SP,
+                        // TODO
+                        required: true,
+                        // TODO
+                        pat: pat.unwrap_or_else(|| {
+                            RPat::Ident(RBindingIdent {
+                                node_id: NodeId::invalid(),
+                                id: RIdent::new("a".into(), DUMMY_SP),
+                                type_ann: None,
+                            })
+                        }),
+                        ty,
+                    }
+                })
+                .collect_vec(),
+            ret_ty: box Type::union(return_types),
+        })
+    }
+
     /// TODO: Add type parameters.
     fn normalize_call_signatures(&self, ty: &mut Type) {
         let u = match ty {
             Type::Union(u) => u,
             _ => return,
         };
+        if u.types.iter().any(|ty| !ty.normalize().is_type_lit()) {
+            return;
+        }
         let mut inexact = false;
         let mut prev_specified = false;
 
@@ -163,6 +253,13 @@ impl ObjectUnionNormalizer<'_, '_, '_> {
         for (i, new_params) in new_params {
             let mut return_types = new_return_types.remove(&i).unwrap_or_default();
             return_types.dedup_type();
+            if let Some(ty) = return_types
+                .iter()
+                .find(|ty| ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword))
+            {
+                return_types = vec![ty.clone()]
+            }
+
             let type_params = new_type_params.remove(&i);
 
             members.push(TypeElement::Call(CallSignature {
@@ -189,7 +286,13 @@ impl ObjectUnionNormalizer<'_, '_, '_> {
                             // TODO
                             required: true,
                             // TODO
-                            pat: pat.unwrap_or_else(|| RPat::Ident(RIdent::new("a".into(), DUMMY_SP))),
+                            pat: pat.unwrap_or_else(|| {
+                                RPat::Ident(RBindingIdent {
+                                    node_id: NodeId::invalid(),
+                                    id: RIdent::new("a".into(), DUMMY_SP),
+                                    type_ann: None,
+                                })
+                            }),
                             ty,
                         }
                     })
@@ -278,15 +381,16 @@ impl ObjectUnionNormalizer<'_, '_, '_> {
     }
 }
 
-impl VisitMut<Type> for ObjectUnionNormalizer<'_, '_, '_> {
+impl VisitMut<Type> for UnionNormalizer<'_, '_, '_> {
     fn visit_mut(&mut self, ty: &mut Type) {
         ty.visit_mut_children_with(self);
 
         self.normalize_call_signatures(ty);
+        self.normalize_fn_types(ty);
     }
 }
 
-impl VisitMut<Union> for ObjectUnionNormalizer<'_, '_, '_> {
+impl VisitMut<Union> for UnionNormalizer<'_, '_, '_> {
     fn visit_mut(&mut self, u: &mut Union) {
         u.visit_mut_children_with(self);
 
@@ -308,8 +412,8 @@ impl Analyzer<'_, '_> {
     ///
     /// Type of `a` in the code above is `{ a: number, b?: undefined } | {
     /// a:number, b: string }`.
-    pub(super) fn normalize_union_of_objects(&mut self, ty: &mut Type, preserve_specified: bool) {
-        ty.visit_mut_with(&mut ObjectUnionNormalizer {
+    pub(super) fn normalize_union(&mut self, ty: &mut Type, preserve_specified: bool) {
+        ty.visit_mut_with(&mut UnionNormalizer {
             anaylzer: self,
             preserve_specified,
         });
@@ -339,6 +443,34 @@ impl Analyzer<'_, '_> {
         if rhs.is_any() || rhs.is_unknown() {
             return Ok(to);
         }
+
+        if rhs.is_kwd(TsKeywordTypeKind::TsNullKeyword) || rhs.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
+            return Ok(to);
+        }
+
+        if to.is_kwd(TsKeywordTypeKind::TsObjectKeyword) || rhs.is_kwd(TsKeywordTypeKind::TsObjectKeyword) {
+            return Ok(Type::Keyword(RTsKeywordType {
+                span: to.span(),
+                kind: TsKeywordTypeKind::TsObjectKeyword,
+            }));
+        }
+
+        match rhs.normalize() {
+            Type::Ref(..) => {
+                let rhs = self.expand_top_ref(rhs.span(), Cow::Owned(rhs))?.into_owned();
+                return self.append_type(to, rhs);
+            }
+
+            Type::Interface(..) | Type::Class(..) | Type::Intersection(..) | Type::Mapped(..) => {
+                // Append as a type literal.
+                if let Some(rhs) = self.type_to_type_lit(rhs.span(), &rhs)? {
+                    return self.append_type(to, Type::TypeLit(rhs.into_owned()));
+                }
+            }
+
+            _ => {}
+        }
+
         let mut to = to.foldable();
         match to {
             Type::TypeLit(ref mut lit) => {
@@ -373,6 +505,7 @@ impl Analyzer<'_, '_> {
                         .collect::<Result<_, _>>()?,
                 }))
             }
+
             _ => {}
         }
 
@@ -383,6 +516,10 @@ impl Analyzer<'_, '_> {
         if to.is_any() || to.is_unknown() {
             return Ok(to);
         }
+        if to.is_kwd(TsKeywordTypeKind::TsObjectKeyword) {
+            return Ok(to);
+        }
+
         let mut to = to.foldable();
 
         match to {

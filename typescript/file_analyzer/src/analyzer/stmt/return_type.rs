@@ -249,7 +249,7 @@ impl Analyzer<'_, '_> {
             if e.delegate {
                 let item_ty = self
                     .get_iterator_element_type(e.span, Cow::Owned(ty))
-                    .context("tried to convert argument as an interator for delegating yield")?
+                    .context("tried to convert argument as an iterator for delegating yield")?
                     .into_owned();
 
                 self.scope.return_values.yield_types.push(item_ty);

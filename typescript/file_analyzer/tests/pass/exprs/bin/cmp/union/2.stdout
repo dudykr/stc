@@ -1,0 +1,69 @@
+warning: Type
+ --> $DIR/tests/pass/exprs/bin/cmp/union/2.ts:4:10
+  |
+4 |     if (!x.error) {
+  |          ^
+  |
+  = note: Result<number>
+
+warning: Type
+ --> $DIR/tests/pass/exprs/bin/cmp/union/2.ts:4:10
+  |
+4 |     if (!x.error) {
+  |          ^^^^^^^
+  |
+  = note: Error
+
+warning: Type
+ --> $DIR/tests/pass/exprs/bin/cmp/union/2.ts:4:9
+  |
+4 |     if (!x.error) {
+  |         ^^^^^^^^
+  |
+  = note: boolean
+
+warning: Type
+ --> $DIR/tests/pass/exprs/bin/cmp/union/2.ts:5:9
+  |
+5 |         x.value;
+  |         ^
+  |
+  = note: {
+              error?: undefined;
+              value: number;
+          }
+
+warning: Type
+ --> $DIR/tests/pass/exprs/bin/cmp/union/2.ts:5:9
+  |
+5 |         x.value;
+  |         ^^^^^^^
+  |
+  = note: number
+
+warning: Type
+ --> $DIR/tests/pass/exprs/bin/cmp/union/2.ts:8:9
+  |
+8 |         x.error.message;
+  |         ^
+  |
+  = note: {
+              error: Error;
+          }
+
+warning: Type
+ --> $DIR/tests/pass/exprs/bin/cmp/union/2.ts:8:9
+  |
+8 |         x.error.message;
+  |         ^^^^^^^
+  |
+  = note: Error
+
+warning: Type
+ --> $DIR/tests/pass/exprs/bin/cmp/union/2.ts:8:9
+  |
+8 |         x.error.message;
+  |         ^^^^^^^^^^^^^^^
+  |
+  = note: string
+

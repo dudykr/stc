@@ -1,10 +1,8 @@
 use super::Analyzer;
-use crate::ty::type_facts::TypeFactsHandler;
 use crate::type_facts::TypeFacts;
 use crate::util::type_ext::TypeVecExt;
 use crate::ValidationResult;
 use fxhash::FxHashMap;
-use rnode::FoldWith;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
 use stc_ts_ast_rnode::RNumber;
@@ -22,6 +20,7 @@ use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
 use stc_ts_types::TypeLitMetadata;
+use stc_ts_types::TypeParam;
 use stc_ts_utils::MapWithMut;
 use stc_utils::TryOpt;
 use std::borrow::Cow;
@@ -36,7 +35,102 @@ mod mapped;
 mod narrowing;
 mod type_param;
 
+#[derive(Debug, Default, Clone, Copy)]
+pub(crate) struct NormalizeTypeOpts {
+    pub preserve_mapped: bool,
+}
+
 impl Analyzer<'_, '_> {
+    /// This methods normalizes a type.
+    ///
+    /// # Changed types.
+    ///
+    ///  - [Type::Ref]
+    ///  - [Type::Mapped]
+    ///  - [Type::Alias]
+
+    pub(crate) fn normalize<'a>(&mut self, ty: &'a Type, opts: NormalizeTypeOpts) -> ValidationResult<Cow<'a, Type>> {
+        let span = ty.span();
+        let ty = ty.normalize();
+
+        match ty {
+            Type::Ref(_) => {
+                let ty = self
+                    .expand_top_ref(span, Cow::Borrowed(ty))
+                    .context("tried to expand ref type as a part of normalization")?;
+                return Ok(Cow::Owned(self.normalize(&ty, opts)?.into_owned()));
+            }
+
+            Type::Mapped(m) => {
+                if !opts.preserve_mapped {
+                    let ty = self.expand_mapped(span, m)?;
+                    return Ok(Cow::Owned(self.normalize(&ty, opts)?.into_owned()));
+                }
+            }
+
+            Type::Alias(a) => return Ok(Cow::Owned(self.normalize(&a.ty, opts)?.into_owned())),
+
+            // Leaf types.
+            Type::Array(..)
+            | Type::Lit(..)
+            | Type::TypeLit(..)
+            | Type::Interface(..)
+            | Type::Class(..)
+            | Type::ClassDef(..)
+            | Type::Keyword(..)
+            | Type::Tuple(..)
+            | Type::Function(..)
+            | Type::Constructor(..)
+            | Type::EnumVariant(..)
+            | Type::Enum(..)
+            | Type::Param(_)
+            | Type::Module(_) => return Ok(Cow::Borrowed(ty)),
+
+            // Not normalizable.
+            Type::Infer(_) | Type::Instance(_) | Type::StaticThis(_) | Type::This(_) => {}
+
+            // Maybe it can be changed in future, but currently noop
+            Type::Union(_) | Type::Intersection(_) => {}
+
+            Type::Conditional(_) => {
+                // TODO
+            }
+
+            Type::Query(_) => {
+                // TODO
+            }
+
+            Type::Import(_) => {}
+
+            Type::Predicate(_) => {
+                // TODO: Add option for this.
+            }
+
+            Type::IndexedAccessType(_) => {
+                // TODO:
+            }
+
+            Type::Operator(_) => {
+                // TODO:
+            }
+
+            _ => {}
+        }
+
+        Ok(Cow::Borrowed(ty))
+    }
+
+    pub(crate) fn expand_type_ann<'a>(&mut self, ty: Option<&'a Type>) -> ValidationResult<Option<Cow<'a, Type>>> {
+        let ty = match ty {
+            Some(v) => v,
+            None => return Ok(None),
+        };
+
+        let ty = self.normalize(ty, Default::default())?;
+
+        Ok(Some(ty))
+    }
+
     pub(crate) fn create_prototype_of_class_def(&mut self, def: &ClassDef) -> ValidationResult<TypeLit> {
         let mut members = vec![];
 
@@ -117,10 +211,7 @@ impl Analyzer<'_, '_> {
                 .copied()
                 .unwrap_or(TypeFacts::None);
 
-        ty.fold_with(&mut TypeFactsHandler {
-            facts: type_facts,
-            analyzer: self,
-        })
+        self.apply_type_facts_to_type(type_facts, ty)
     }
 
     pub(crate) fn collect_class_members(&mut self, ty: &Type) -> ValidationResult<Option<Vec<ClassMember>>> {
@@ -328,6 +419,12 @@ impl Analyzer<'_, '_> {
                 })
             }
 
+            Type::Mapped(m) => {
+                let ty = self.expand_mapped(span, m)?;
+                let ty = self.type_to_type_lit(span, &ty)?.map(Cow::into_owned).map(Cow::Owned);
+                return Ok(ty);
+            }
+
             _ => {
                 slog::error!(self.logger, "unimplemented: type_to_type_lit: {:?}", ty);
                 return Ok(None);
@@ -413,8 +510,24 @@ impl Analyzer<'_, '_> {
     }
 
     /// Exclude `excluded` from `ty`
+    ///
+    /// # Subclasses
+    ///
+    /// ```ts
+    /// class B {}
+    /// class P {}
+    /// class C extends P {}
+    ///
+    /// declare let a: C | B
+    ///
+    ///
+    /// if (!(a instanceof P)) {
+    ///     // At here, we can deduce that `a` is `B`.
+    ///     // To use the fact that `a` is not `P`, we check for the parent type of `ty
+    /// }
+    /// ```
     fn exclude_type(&mut self, ty: &mut Type, excluded: &Type) {
-        if ty.normalize().type_eq(excluded.normalize()) {
+        if ty.type_eq(excluded) {
             *ty = Type::never(ty.span());
             return;
         }
@@ -450,6 +563,32 @@ impl Analyzer<'_, '_> {
                 }
                 ty.types.retain(|element| !element.is_never());
             }
+
+            Type::Param(TypeParam {
+                span,
+                constraint: Some(constraint),
+                ..
+            }) => {
+                self.exclude_type(constraint, excluded);
+                if constraint.is_never() {
+                    *ty = Type::never(*span);
+                    return;
+                }
+            }
+
+            Type::Class(cls) => {
+                //
+                if let Some(super_def) = &cls.def.super_class {
+                    if let Ok(mut super_instance) = self.instantiate_class(cls.span, &super_def) {
+                        self.exclude_type(&mut super_instance, excluded);
+                        if super_instance.is_never() {
+                            *ty = Type::never(cls.span);
+                            return;
+                        }
+                    }
+                }
+            }
+
             _ => {}
         }
     }

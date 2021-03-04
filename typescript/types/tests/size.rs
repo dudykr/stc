@@ -6,7 +6,7 @@ use std::mem::size_of;
 
 #[test]
 fn size_of_namespace() {
-    assert_eq!(size_of::<RTsNamespaceDecl>(), 96);
+    assert_eq!(size_of::<RTsNamespaceDecl>(), 64);
 }
 
 #[test]

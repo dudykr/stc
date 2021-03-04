@@ -1,0 +1,96 @@
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/1.ts:11:5
+   |
+11 |     x;  // number
+   |     ^
+   |
+   = note: number
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/1.ts:12:12
+   |
+12 |     while (cond) {
+   |            ^^^^
+   |
+   = note: boolean
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/1.ts:13:9
+   |
+13 |         x;  // number, then string | number
+   |         ^
+   |
+   = note: string | number
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/1.ts:14:20
+   |
+14 |         x = typeof x === "string" ? x.slice() : "abc";
+   |                    ^
+   |
+   = note: string | number
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/1.ts:14:13
+   |
+14 |         x = typeof x === "string" ? x.slice() : "abc";
+   |             ^^^^^^^^
+   |
+   = note: string
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/1.ts:14:13
+   |
+14 |         x = typeof x === "string" ? x.slice() : "abc";
+   |             ^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: boolean
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/1.ts:14:37
+   |
+14 |         x = typeof x === "string" ? x.slice() : "abc";
+   |                                     ^
+   |
+   = note: string
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/1.ts:14:37
+   |
+14 |         x = typeof x === "string" ? x.slice() : "abc";
+   |                                     ^^^^^^^^^
+   |
+   = note: string
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/1.ts:14:13
+   |
+14 |         x = typeof x === "string" ? x.slice() : "abc";
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: string | "abc"
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/1.ts:14:9
+   |
+14 |         x = typeof x === "string" ? x.slice() : "abc";
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: string | "abc"
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/1.ts:15:9
+   |
+15 |         x;  // string
+   |         ^
+   |
+   = note: string
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/1.ts:17:5
+   |
+17 |     x;
+   |     ^
+   |
+   = note: string | number
+

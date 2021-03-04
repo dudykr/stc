@@ -1,0 +1,16 @@
+warning: Type
+ --> $DIR/tests/pass/vars/typeAnn/fn/3.ts:2:21
+  |
+2 | const fn: fn = a => a;
+  |                     ^
+  |
+  = note: A
+
+warning: Type
+ --> $DIR/tests/pass/vars/typeAnn/fn/3.ts:2:16
+  |
+2 | const fn: fn = a => a;
+  |                ^^^^^^
+  |
+  = note: (a: A) => A
+

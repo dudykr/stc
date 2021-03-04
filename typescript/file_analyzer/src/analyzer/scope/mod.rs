@@ -4,8 +4,8 @@ use crate::analyzer::ResultExt;
 use crate::{
     loader::ModuleInfo,
     ty::{
-        self, Alias, EnumVariant, IndexSignature, Interface, PropertySignature, Ref, Tuple, Type, TypeElement, TypeExt,
-        TypeLit, Union,
+        self, Alias, IndexSignature, Interface, PropertySignature, Ref, Tuple, Type, TypeElement, TypeExt, TypeLit,
+        Union,
     },
     type_facts::TypeFacts,
     util::{contains_infer_type, contains_mark, MarkFinder, RemoveTypes},
@@ -17,6 +17,7 @@ use iter::once;
 use once_cell::sync::Lazy;
 use rnode::Fold;
 use rnode::FoldWith;
+use rnode::NodeId;
 use rnode::Visit;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
@@ -25,7 +26,7 @@ use slog::Logger;
 use smallvec::SmallVec;
 use stc_ts_ast_rnode::RArrayPat;
 use stc_ts_ast_rnode::RAssignPatProp;
-use stc_ts_ast_rnode::RKeyValuePatProp;
+use stc_ts_ast_rnode::RBindingIdent;
 use stc_ts_ast_rnode::RObjectPat;
 use stc_ts_ast_rnode::RObjectPatProp;
 use stc_ts_ast_rnode::RPat;
@@ -44,14 +45,15 @@ use stc_ts_types::ClassDef;
 use stc_ts_types::Intersection;
 use stc_ts_types::Key;
 use stc_ts_types::TypeLitMetadata;
+use stc_ts_types::TypeParamInstantiation;
 use stc_ts_types::{
     Conditional, FnParam, Id, IndexedAccessType, Mapped, ModuleId, Operator, QueryExpr, QueryType, StaticThis,
-    TupleElement, TypeParam,
+    TypeParam,
 };
 use stc_utils::TryOpt;
 use std::mem::replace;
 use std::mem::take;
-use std::{borrow::Cow, collections::hash_map::Entry, fmt::Debug, iter, iter::repeat, slice};
+use std::{borrow::Cow, collections::hash_map::Entry, fmt::Debug, iter, slice};
 use swc_atoms::js_word;
 use swc_common::Spanned;
 use swc_common::TypeEq;
@@ -515,6 +517,8 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn register_type(&mut self, name: Id, ty: Type) {
+        slog::debug!(self.logger, "Registering: {:?}", name);
+
         if self.ctx.in_global {
             if !ty.normalize().is_type_param() {
                 self.env.declare_global_type(name.sym().clone(), ty.clone());
@@ -557,12 +561,18 @@ impl Analyzer<'_, '_> {
                 .store_private_type(ModuleId::builtin(), name.clone(), ty.clone());
             self.scope.register_type(name, ty);
         } else {
-            slog::debug!(self.logger, "register_type({})", name);
             let ty = ty.cheap();
 
             if (self.scope.is_root() || self.scope.is_module()) && !ty.normalize().is_type_param() {
                 self.storage
                     .store_private_type(self.ctx.module_id, name.clone(), ty.clone());
+
+                match *name.sym() {
+                    js_word!("Array") | js_word!("Number") | js_word!("Boolean") | js_word!("String") => {
+                        self.env.declare_global_type(name.sym().clone(), ty.clone());
+                    }
+                    _ => {}
+                }
             }
 
             self.scope.register_type(name, ty);
@@ -614,7 +624,7 @@ impl Analyzer<'_, '_> {
                         sym: i.sym.clone(),
                     },
                     TypeOfMode::RValue,
-                    IdCtx::Type,
+                    IdCtx::Var,
                 )
             }
         }
@@ -701,7 +711,7 @@ impl Analyzer<'_, '_> {
                         for ty in types {
                             let span = (*ty).span();
                             for excluded_ty in excludes.iter() {
-                                if ty.normalize().type_eq(excluded_ty.normalize()) {
+                                if ty.type_eq(excluded_ty) {
                                     *ty = Type::never(span)
                                 }
                             }
@@ -868,8 +878,8 @@ impl Analyzer<'_, '_> {
         match self.scope.vars.entry(name.clone()) {
             Entry::Occupied(e) => {
                 if !allow_multiple {
-                    print_backtrace();
-                    panic!("{:?}", Error::DuplicateName { name, span });
+                    self.storage.report(Error::DuplicateName { span, name });
+                    return Ok(());
                 }
                 //println!("\tdeclare_var: found entry");
                 let (k, mut v) = e.remove_entry();
@@ -990,11 +1000,11 @@ impl Analyzer<'_, '_> {
             RPat::Assign(p) => return self.declare_complex_vars(kind, &p.left, ty, actual_ty),
 
             RPat::Ident(ref i) => {
-                slog::debug!(&self.logger, "declare_complex_vars: declaring {}", i.sym);
+                slog::debug!(&self.logger, "declare_complex_vars: declaring {}", i.id.sym);
                 self.declare_var(
                     span,
                     kind,
-                    i.into(),
+                    i.id.clone().into(),
                     Some(ty),
                     actual_ty,
                     // initialized
@@ -1012,114 +1022,25 @@ impl Analyzer<'_, '_> {
                 //      const [a , setA] = useState();
                 //
 
-                let ty = ty.foldable();
-                match ty {
-                    Type::Tuple(Tuple {
-                        elems: ref tuple_elements,
-                        ..
-                    }) => {
-                        if tuple_elements.len() < elems.len() {
-                            return Err(Error::TooManyTupleElements { span });
-                        }
+                let ty = self
+                    .get_iterator(span, Cow::Owned(ty))
+                    .context("tried to convert a type to an iterator to assign with an array pattern.")?;
 
-                        for (elem, tuple_element) in elems.into_iter().zip(tuple_elements) {
-                            match *elem {
-                                Some(ref elem) => {
-                                    // TODO: actual_ty
-                                    self.declare_complex_vars(kind, elem, *tuple_element.ty.clone(), None)?;
-                                }
-                                None => {
-                                    // Skip
-                                }
-                            }
-                        }
-
-                        return Ok(());
+                for (i, elem) in elems.iter().enumerate() {
+                    if let Some(elem) = elem {
+                        let elem_ty = self
+                            .get_element_from_iterator(span, Cow::Borrowed(&ty), i)
+                            .context(
+                                "tried to get the type of nth element from iterator to declare vars with an array \
+                                 pattern",
+                            )?
+                            .into_owned();
+                        // TODO: actual_ty
+                        self.declare_complex_vars(kind, elem, elem_ty, None)?;
                     }
-
-                    Type::Array(Array { elem_type, .. }) => {
-                        for elem in elems.into_iter() {
-                            match *elem {
-                                Some(ref elem) => {
-                                    // TODO: actual_ty
-                                    self.declare_complex_vars(kind, elem, *elem_type.clone(), None)?;
-                                }
-                                None => {
-                                    // Skip
-                                }
-                            }
-                        }
-
-                        return Ok(());
-                    }
-
-                    // [a, b] | [c, d] => [a | c, b | d]
-                    Type::Union(Union { types, .. }) => {
-                        let mut errors = vec![];
-                        let mut buf = vec![];
-                        for ty in types.iter() {
-                            match *ty.normalize() {
-                                Type::Tuple(Tuple {
-                                    elems: ref elem_types, ..
-                                }) => {
-                                    buf.push(elem_types);
-                                }
-                                _ => {
-                                    errors.push(Error::NotTuple { span: ty.span() });
-                                }
-                            }
-                        }
-                        if !errors.is_empty() {
-                            return Err(Error::UnionError { span, errors });
-                        }
-
-                        for (elem, tuple_elements) in
-                            elems.into_iter().zip(buf.into_iter().chain(repeat(&vec![TupleElement {
-                                span: DUMMY_SP,
-                                label: None,
-                                ty: box Type::undefined(span),
-                            }])))
-                        {
-                            match *elem {
-                                Some(ref elem) => {
-                                    let ty = Union {
-                                        span,
-                                        types: tuple_elements
-                                            .into_iter()
-                                            .map(|element| &*element.ty)
-                                            .cloned()
-                                            .collect(),
-                                    }
-                                    .into();
-                                    // TODO: actual_ty
-                                    self.declare_complex_vars(kind, elem, ty, None)?;
-                                }
-                                None => {}
-                            }
-                        }
-
-                        return Ok(());
-                    }
-
-                    Type::Keyword(RTsKeywordType {
-                        kind: TsKeywordTypeKind::TsAnyKeyword,
-                        ..
-                    }) => {
-                        // Everything is any
-                        for elem in elems {
-                            match elem {
-                                Some(elem) => {
-                                    self.declare_complex_vars(kind, elem, ty.clone(), Some(ty.clone()))?;
-                                }
-                                None => {}
-                            }
-                        }
-
-                        return Ok(());
-                    }
-
-                    _ => unimplemented!("declare_complex_vars(pat={:#?}\nty={:#?}\n)", pat, ty),
                 }
+
+                Ok(())
             }
 
             RPat::Object(RObjectPat { ref props, .. }) => {
@@ -1148,64 +1069,8 @@ impl Analyzer<'_, '_> {
                     return index_el;
                 }
 
-                /// Handle TypeElements.
-                ///
-                /// Used for interfaces and type literals.
-                fn handle_elems(
-                    a: &mut Analyzer,
-                    kind: VarDeclKind,
-                    span: Span,
-                    props: &[RObjectPatProp],
-                    members: &[TypeElement],
-                ) -> ValidationResult<()> {
-                    for p in props.iter() {
-                        match p {
-                            RObjectPatProp::KeyValue(RKeyValuePatProp { ref key, ref value, .. }) => {
-                                if let Some(ty) = find(&members, key) {
-                                    // TODO: actual_ty
-                                    a.declare_complex_vars(kind, value, ty, None)?;
-                                    return Ok(());
-                                }
-                            }
-
-                            RObjectPatProp::Assign(RAssignPatProp { ref key, value, .. }) => {
-                                match value.validate_with_default(a) {
-                                    Some(res) => {
-                                        res.report(&mut a.storage);
-                                    }
-                                    _ => {}
-                                }
-                                if let Some(ty) = find(&members, &RPropName::Ident(key.clone())) {
-                                    // TODO: actual_ty
-                                    a.declare_complex_vars(kind, &RPat::Ident(key.clone()), ty, None)?;
-                                    return Ok(());
-                                }
-                            }
-
-                            _ => unimplemented!("handle_elems({:#?})", p),
-                        }
-                    }
-
-                    dbg!();
-
-                    return Err(Error::NoSuchProperty {
-                        span,
-                        obj: None,
-                        prop: None,
-                    });
-                }
-
                 // TODO: Normalize static
                 match ty.normalize() {
-                    Type::TypeLit(TypeLit { members, .. }) => {
-                        return handle_elems(self, kind, span, props, &members);
-                    }
-
-                    // TODO: Handle extends
-                    Type::Interface(Interface { body, .. }) => {
-                        return handle_elems(self, kind, span, props, &body);
-                    }
-
                     Type::Keyword(RTsKeywordType {
                         kind: TsKeywordTypeKind::TsAnyKeyword,
                         ..
@@ -1226,7 +1091,11 @@ impl Analyzer<'_, '_> {
 
                                     self.declare_complex_vars(
                                         kind,
-                                        &RPat::Ident(key.clone()),
+                                        &RPat::Ident(RBindingIdent {
+                                            node_id: NodeId::invalid(),
+                                            id: key.clone(),
+                                            type_ann: None,
+                                        }),
                                         Type::any(*span),
                                         Some(Type::any(*span)),
                                     )?;
@@ -1270,7 +1139,15 @@ impl Analyzer<'_, '_> {
 
                     // TODO: Check if allowing class is same (I mean static vs instance method
                     // issue)
-                    Type::Class(..) | Type::Array(..) | Type::This(..) => {
+                    Type::Class(..)
+                    | Type::Array(..)
+                    | Type::This(..)
+                    | Type::TypeLit(..)
+                    | Type::Interface(..)
+                    | Type::Keyword(RTsKeywordType {
+                        kind: TsKeywordTypeKind::TsVoidKeyword,
+                        ..
+                    }) => {
                         //
 
                         for prop in props {
@@ -1278,11 +1155,25 @@ impl Analyzer<'_, '_> {
                                 RObjectPatProp::KeyValue(prop) => {
                                     let mut key = prop.key.validate_with(self)?;
 
-                                    let ty =
-                                        self.access_property(span, ty.clone(), &key, TypeOfMode::RValue, IdCtx::Var)?;
+                                    let prop_ty =
+                                        self.access_property(span, ty.clone(), &key, TypeOfMode::RValue, IdCtx::Var);
 
-                                    // TODO: actual_ty
-                                    self.declare_complex_vars(kind, &prop.value, ty, None)?;
+                                    match prop_ty {
+                                        Ok(ty) => {
+                                            // TODO: actual_ty
+                                            self.declare_complex_vars(kind, &prop.value, ty, None)?;
+                                        }
+
+                                        Err(err) => {
+                                            self.storage.report(err.convert(|err| match err {
+                                                Error::NoSuchProperty { span, .. }
+                                                | Error::NoSuchPropertyInClass { span, .. } => {
+                                                    Error::NoInitAndNoDefault { span }
+                                                }
+                                                _ => err,
+                                            }));
+                                        }
+                                    }
                                 }
                                 RObjectPatProp::Assign(prop) => {
                                     let mut key = Key::Normal {
@@ -1290,21 +1181,71 @@ impl Analyzer<'_, '_> {
                                         sym: prop.key.sym.clone(),
                                     };
 
-                                    let ty =
-                                        self.access_property(span, ty.clone(), &key, TypeOfMode::RValue, IdCtx::Var)?;
+                                    let prop_ty =
+                                        self.access_property(span, ty.clone(), &key, TypeOfMode::RValue, IdCtx::Var);
 
-                                    match prop.value {
-                                        Some(_) => {
-                                            unimplemented!("pattern with default where rhs is this")
+                                    match prop_ty {
+                                        Ok(prop_ty) => {
+                                            let prop_ty = prop_ty.cheap();
+
+                                            match &prop.value {
+                                                Some(default) => {
+                                                    self.declare_complex_vars(
+                                                        kind,
+                                                        &RPat::Ident(RBindingIdent {
+                                                            node_id: NodeId::invalid(),
+                                                            id: prop.key.clone(),
+                                                            type_ann: None,
+                                                        }),
+                                                        prop_ty.clone(),
+                                                        None,
+                                                    )?;
+
+                                                    let default_value_type =
+                                                        default.validate_with_default(self).context(
+                                                            "tried to validate default value of an assignment pattern",
+                                                        )?;
+
+                                                    self.try_assign_pat(
+                                                        span,
+                                                        &RPat::Ident(RBindingIdent {
+                                                            node_id: NodeId::invalid(),
+                                                            id: prop.key.clone(),
+                                                            type_ann: None,
+                                                        }),
+                                                        &prop_ty,
+                                                    )
+                                                    .context("tried to assign default values")
+                                                    .report(&mut self.storage);
+                                                }
+                                                None => {
+                                                    // TODO: actual_ty
+                                                    self.declare_complex_vars(
+                                                        kind,
+                                                        &RPat::Ident(RBindingIdent {
+                                                            node_id: NodeId::invalid(),
+                                                            id: prop.key.clone(),
+                                                            type_ann: None,
+                                                        }),
+                                                        prop_ty,
+                                                        None,
+                                                    )?;
+                                                }
+                                            }
                                         }
-                                        None => {
-                                            // TODO: actual_ty
-                                            self.declare_complex_vars(kind, &RPat::Ident(prop.key.clone()), ty, None)?;
+                                        Err(err) => {
+                                            self.storage.report(err.convert(|err| match err {
+                                                Error::NoSuchProperty { span, .. }
+                                                | Error::NoSuchPropertyInClass { span, .. } => {
+                                                    Error::NoInitAndNoDefault { span }
+                                                }
+                                                _ => err,
+                                            }));
                                         }
                                     }
                                 }
                                 RObjectPatProp::Rest(_) => {
-                                    unimplemented!("rest pattern where rhs is this")
+                                    unimplemented!("rest pattern")
                                 }
                             }
                         }
@@ -1451,7 +1392,9 @@ impl<'a> Scope<'a> {
     /// literal.
     pub fn is_this_ref_to_object_lit(&self) -> bool {
         match self.kind {
-            ScopeKind::Fn | ScopeKind::ArrowFn => return false,
+            ScopeKind::Fn => return false,
+            // An arrow function does not modified `this.`
+            ScopeKind::ArrowFn => {}
 
             // `this` in object literal resolves to the object literal itself.
             ScopeKind::ObjectLit => return true,
@@ -1476,7 +1419,9 @@ impl<'a> Scope<'a> {
         match self.kind {
             ScopeKind::Module => return false,
 
-            ScopeKind::Fn | ScopeKind::ArrowFn => return false,
+            ScopeKind::Fn => return false,
+            // An arrow function does not modified `this.`
+            ScopeKind::ArrowFn => {}
 
             // `this` in object literal resolves to the object literal itself.
             ScopeKind::ObjectLit => return false,
@@ -1621,7 +1566,15 @@ struct Expander<'a, 'b, 'c> {
 }
 
 impl Expander<'_, '_, '_> {
-    fn expand_ref(&mut self, r: Ref, was_top_level: bool) -> ValidationResult<Option<Type>> {
+    fn expand_ts_entity_name(
+        &mut self,
+        span: Span,
+        ctxt: ModuleId,
+        type_name: &RTsEntityName,
+        type_args: Option<&TypeParamInstantiation>,
+        was_top_level: bool,
+        trying_primitive_expansion: bool,
+    ) -> ValidationResult<Option<Type>> {
         macro_rules! verify {
             ($ty:expr) => {{
                 if cfg!(debug_assertions) {
@@ -1633,21 +1586,6 @@ impl Expander<'_, '_, '_> {
             }};
         }
 
-        let trying_primitive_expansion = self.analyzer.scope.expand_triage_depth != 0;
-
-        let Ref {
-            span: r_span,
-            ctxt,
-            type_name,
-            type_args,
-            ..
-        } = r;
-        let span = self.span;
-
-        if !trying_primitive_expansion && (!self.full || self.analyzer.ctx.preserve_ref) {
-            return Ok(None);
-        }
-
         match type_name {
             RTsEntityName::Ident(ref i) => {
                 if let Some(class) = &self.analyzer.scope.get_this_class_name() {
@@ -1655,13 +1593,15 @@ impl Expander<'_, '_, '_> {
                         return Ok(None);
                     }
                 }
+                if i.sym == js_word!("void") {
+                    return Ok(Some(Type::any(span)));
+                }
 
                 slog::info!(self.logger, "Info: {}{:?}", i.sym, i.span.ctxt);
                 if !trying_primitive_expansion && self.dejavu.contains(&i.into()) {
                     slog::error!(self.logger, "Dejavu: {}{:?}", &i.sym, i.span.ctxt);
                     return Ok(None);
                 }
-
                 if let Some(types) = self.analyzer.find_type(ctxt, &i.into())? {
                     slog::info!(
                         self.logger,
@@ -1723,13 +1663,14 @@ impl Expander<'_, '_, '_> {
                             | Type::ClassDef(ClassDef { type_params, .. }) => {
                                 let ty = t.clone().into_owned();
                                 let type_params = type_params.clone();
-                                let type_args: Option<_> = type_args.clone().fold_with(self);
 
                                 if let Some(type_params) = type_params {
+                                    let type_args: Option<_> = type_args.cloned().fold_with(self);
+
                                     slog::info!(self.logger, "expand: expanding type parameters");
                                     let mut inferred = self.analyzer.infer_arg_types(
                                         self.span,
-                                        type_args.as_deref(),
+                                        type_args.as_ref(),
                                         &type_params.params,
                                         &[],
                                         &[],
@@ -1827,54 +1768,27 @@ impl Expander<'_, '_, '_> {
             // Handle enum variant type.
             //
             //  let a: StringEnum.Foo = x;
-            RTsEntityName::TsQualifiedName(box RTsQualifiedName {
-                left: RTsEntityName::Ident(ref left),
-                ref right,
-                ..
-            }) => {
-                if left.sym == js_word!("void") {
-                    return Ok(Some(Type::any(span)));
-                }
+            RTsEntityName::TsQualifiedName(box RTsQualifiedName { left, ref right, .. }) => {
+                let left =
+                    self.expand_ts_entity_name(span, ctxt, left, None, was_top_level, trying_primitive_expansion)?;
 
-                if let Some(types) = self.analyzer.find_type(ctxt, &left.into())? {
-                    for ty in types {
-                        match ty.normalize() {
-                            Type::Enum(..) => {
-                                return Ok(Some(
-                                    EnumVariant {
-                                        span,
-                                        ctxt: self.analyzer.ctx.module_id,
-                                        enum_name: left.into(),
-                                        name: right.sym.clone(),
-                                    }
-                                    .into(),
-                                ));
-                            }
-                            Type::Param(..) | Type::Namespace(..) | Type::Module(..) => {
-                                let ty = ty.into_owned();
-                                let ty = self
-                                    .analyzer
-                                    .access_property(
-                                        span,
-                                        ty,
-                                        &Key::Normal {
-                                            span,
-                                            sym: right.sym.clone(),
-                                        },
-                                        TypeOfMode::RValue,
-                                        IdCtx::Type,
-                                    )
-                                    .report(&mut self.analyzer.storage)
-                                    .unwrap_or_else(|| Type::any(span));
-                                return Ok(Some(ty));
-                            }
-                            _ => {}
-                        }
-                    }
+                if let Some(left) = left {
+                    let ty = self
+                        .analyzer
+                        .access_property(
+                            span,
+                            left,
+                            &Key::Normal {
+                                span,
+                                sym: right.sym.clone(),
+                            },
+                            TypeOfMode::RValue,
+                            IdCtx::Type,
+                        )
+                        .report(&mut self.analyzer.storage)
+                        .unwrap_or_else(|| Type::any(span));
+                    return Ok(Some(ty));
                 }
-            }
-            _ => {
-                unimplemented!("TsEntityName: {:?}", type_name);
             }
         }
 
@@ -1882,9 +1796,34 @@ impl Expander<'_, '_, '_> {
         Err(Error::TypeNotFound {
             name: box type_name.clone().into(),
             ctxt,
-            type_args: type_args.clone(),
+            type_args: type_args.cloned().map(Box::new),
             span,
         })
+    }
+    fn expand_ref(&mut self, r: Ref, was_top_level: bool) -> ValidationResult<Option<Type>> {
+        let trying_primitive_expansion = self.analyzer.scope.expand_triage_depth != 0;
+
+        let Ref {
+            span: r_span,
+            ctxt,
+            type_name,
+            type_args,
+            ..
+        } = r;
+        let span = self.span;
+
+        if !trying_primitive_expansion && (!self.full || self.analyzer.ctx.preserve_ref) {
+            return Ok(None);
+        }
+
+        self.expand_ts_entity_name(
+            span,
+            ctxt,
+            &type_name,
+            type_args.as_deref(),
+            was_top_level,
+            trying_primitive_expansion,
+        )
     }
 }
 

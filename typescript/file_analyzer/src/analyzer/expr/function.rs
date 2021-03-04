@@ -24,6 +24,8 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, f: &RArrowExpr, type_ann: Option<&Type>) -> ValidationResult<Function> {
         self.record(f);
 
+        let type_ann = self.expand_type_ann(type_ann)?;
+
         self.with_child(ScopeKind::ArrowFn, Default::default(), |child: &mut Analyzer| {
             let type_params = try_opt!(f.type_params.validate_with(child));
 
@@ -34,7 +36,7 @@ impl Analyzer<'_, '_> {
                     ..child.ctx
                 };
 
-                match type_ann {
+                match type_ann.as_ref().map(|ty| ty.normalize()) {
                     Some(Type::Function(ty)) => {
                         for p in f.params.iter().zip_longest(ty.params.iter()) {
                             match p {

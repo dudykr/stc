@@ -10,10 +10,13 @@ use stc_testing::logger;
 use stc_ts_ast_rnode::RModule;
 use stc_ts_builtin_types::Lib;
 use stc_ts_errors::debug::debugger::Debugger;
+use stc_ts_errors::Error;
 use stc_ts_file_analyzer::analyzer::Analyzer;
 use stc_ts_file_analyzer::analyzer::NoopLoader;
 use stc_ts_file_analyzer::env::Env;
 use stc_ts_file_analyzer::validator::ValidateWith;
+use stc_ts_file_analyzer::Rule;
+use stc_ts_storage::ErrorStore;
 use stc_ts_storage::Single;
 use stc_ts_types::module_id;
 use stc_ts_utils::StcComments;
@@ -29,8 +32,8 @@ use swc_ecma_parser::TsConfig;
 use swc_ecma_transforms::resolver::ts_resolver;
 use swc_ecma_visit::FoldWith;
 
-#[testing::fixture("visualize/**/*.ts", exclude(".*\\.\\.d.\\.ts"))]
-fn visualize(file_name: PathBuf) {
+/// If `for_error` is false, this function will run as type dump mode.
+fn run_test(file_name: PathBuf, for_error: bool) {
     let fname = file_name.display().to_string();
     println!("{}", fname);
 
@@ -52,7 +55,26 @@ fn visualize(file_name: PathBuf) {
             }
             libs.sort();
             libs.dedup();
-            let env = Env::simple(Default::default(), JscTarget::Es2020, &libs);
+            let env = Env::simple(
+                Rule {
+                    allow_unreachable_code: true,
+                    always_strict: false,
+                    no_implicit_any: true,
+                    allow_unused_labels: true,
+                    no_fallthrough_cases_in_switch: false,
+                    no_implicit_returns: false,
+                    no_implicit_this: false,
+                    no_strict_generic_checks: false,
+                    no_unused_locals: false,
+                    no_unused_parameters: false,
+                    strict_function_types: false,
+                    strict_null_checks: true,
+                    suppress_excess_property_errors: false,
+                    suppress_implicit_any_index_errors: false,
+                },
+                JscTarget::Es2020,
+                &libs,
+            );
             let stable_env = env.shared().clone();
             let generator = module_id::Generator::default();
             let path = Arc::new(file_name.clone());
@@ -91,19 +113,51 @@ fn visualize(file_name: PathBuf) {
                     cm.clone(),
                     box &mut storage,
                     &NoopLoader,
-                    Some(Debugger {
-                        cm: cm.clone(),
-                        handler: handler.clone(),
-                    }),
+                    if for_error {
+                        None
+                    } else {
+                        Some(Debugger {
+                            cm: cm.clone(),
+                            handler: handler.clone(),
+                        })
+                    },
                 );
                 GLOBALS.set(stable_env.swc_globals(), || {
                     module.validate_with(&mut analyzer).unwrap();
                 });
             }
 
+            if for_error {
+                let errors = storage.take_errors();
+                let errors = Error::flatten(errors.into());
+
+                for err in errors {
+                    err.emit(&handler);
+                }
+            }
+
             Err(())
         })
         .unwrap_err();
 
-    res.compare_to_file(&file_name.with_extension("stdout")).unwrap();
+    if for_error {
+        if res.trim().is_empty() {
+            return;
+        }
+
+        panic!("Failed to validate `{}`:\n{}", file_name.display(), res)
+    } else {
+        res.compare_to_file(&file_name.with_extension("stdout")).unwrap();
+    }
+}
+
+#[testing::fixture("visualize/**/*.ts", exclude(".*\\.\\.d.\\.ts"))]
+fn visualize(file_name: PathBuf) {
+    run_test(file_name, false);
+}
+
+#[testing::fixture("pass/**/*.ts", exclude(".*\\.\\.d.\\.ts"))]
+fn pass(file_name: PathBuf) {
+    run_test(file_name.clone(), true);
+    run_test(file_name, false);
 }

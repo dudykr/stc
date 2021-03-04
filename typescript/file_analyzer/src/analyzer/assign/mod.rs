@@ -18,6 +18,7 @@ use stc_ts_errors::Errors;
 use stc_ts_types::ClassDef;
 use stc_ts_types::Key;
 use stc_ts_types::Mapped;
+use stc_ts_types::Operator;
 use stc_ts_types::PropertySignature;
 use stc_ts_types::Ref;
 use stc_ts_types::{
@@ -555,7 +556,12 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Class(l) => match rhs {
-                Type::Interface(..) | Type::Ref(..) | Type::TypeLit(..) | Type::Lit(..) | Type::Class(..) => {
+                Type::Interface(..)
+                | Type::Ref(..)
+                | Type::TypeLit(..)
+                | Type::Lit(..)
+                | Type::Class(..)
+                | Type::Predicate(..) => {
                     return self
                         .assign_to_class(opts, l, rhs)
                         .context("tried to assign a type to an instance of a class")
@@ -579,16 +585,32 @@ impl Analyzer<'_, '_> {
 
             Type::Query(ref to) => return self.assign_to_query_type(opts, to, &rhs),
 
+            Type::Operator(Operator {
+                op: TsTypeOperatorOp::ReadOnly,
+                ty,
+                ..
+            }) => {
+                return self
+                    .assign_with_opts(opts, &ty, rhs)
+                    .context("tried to assign a type to an operand of readonly type")
+            }
+
             _ => {}
         }
 
         match rhs {
             Type::Ref(..) => {
                 let rhs = self.expand_top_ref(span, Cow::Borrowed(rhs))?;
-                return self.assign_inner(to, &rhs, opts);
+                return self
+                    .assign_inner(to, &rhs, opts)
+                    .context("tried to assign an expanded type to another type");
             }
 
-            Type::Query(rhs) => return self.assign_from_query_type(opts, to, &rhs),
+            Type::Query(rhs) => {
+                return self
+                    .assign_from_query_type(opts, to, &rhs)
+                    .context("tried to assign a query type to another type")
+            }
 
             Type::Infer(..) => fail!(),
 
@@ -628,6 +650,18 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Union(Union { ref types, .. }) => {
+                match to {
+                    Type::Union(..) => {
+                        types
+                            .iter()
+                            .map(|rhs| self.assign_with_opts(opts, to, rhs))
+                            .collect::<Result<_, _>>()
+                            .context("tried to assign an union type to another one")?;
+
+                        return Ok(());
+                    }
+                    _ => {}
+                }
                 let errors = types
                     .iter()
                     .filter_map(|rhs| match self.assign_inner(to, rhs, opts) {
@@ -669,6 +703,12 @@ impl Analyzer<'_, '_> {
                         if name == l_name {
                             return Ok(());
                         }
+                        match constraint.as_deref() {
+                            Some(constraint) if constraint.normalize().is_type_param() => {}
+                            _ => {
+                                fail!()
+                            }
+                        }
                     }
 
                     _ => {}
@@ -689,34 +729,6 @@ impl Analyzer<'_, '_> {
                         Type::TypeLit(TypeLit { ref members, .. }) if members.is_empty() => return Ok(()),
                         _ => {}
                     },
-                }
-
-                fail!()
-            }
-
-            Type::Enum(ref e) => match to {
-                Type::Interface(..) | Type::TypeLit(..) => {}
-                _ => {
-                    handle_enum_in_rhs!(e)
-                }
-            },
-
-            Type::EnumVariant(EnumVariant {
-                ref ctxt,
-                ref enum_name,
-                ..
-            }) => {
-                if let Some(types) = self.find_type(*ctxt, enum_name)? {
-                    for ty in types {
-                        if let Type::Enum(ref e) = ty.normalize() {
-                            match to {
-                                Type::Interface(..) | Type::TypeLit(..) => {}
-                                _ => {
-                                    handle_enum_in_rhs!(e)
-                                }
-                            }
-                        }
-                    }
                 }
 
                 fail!()
@@ -749,12 +761,17 @@ impl Analyzer<'_, '_> {
                 )
             }
 
-            Type::Param(..) if !opts.allow_assignment_to_param => {
+            Type::Param(..) => {
                 // We handled equality above.
                 //
                 // This is optional so we can change behavior while selecting method to call.
                 // While selecting method, we may need to assign to a type parameter.
-                fail!()
+
+                if opts.allow_assignment_to_param {
+                    return Ok(());
+                } else {
+                    fail!()
+                }
             }
 
             Type::Array(Array { ref elem_type, .. }) => match rhs {
@@ -826,7 +843,10 @@ impl Analyzer<'_, '_> {
 
                 let results = types
                     .iter()
-                    .map(|to| self.assign_inner(&to, rhs, opts))
+                    .map(|to| {
+                        self.assign_inner(&to, rhs, opts)
+                            .context("tried to assign a type to a union")
+                    })
                     .collect::<Vec<_>>();
                 if results.iter().any(Result::is_ok) {
                     return Ok(());
@@ -918,7 +938,7 @@ impl Analyzer<'_, '_> {
                         }
                     },
 
-                    Type::Array(..) | Type::Tuple(..) => fail!(),
+                    Type::Array(..) | Type::Tuple(..) | Type::Class(..) | Type::ClassDef(..) => fail!(),
 
                     _ => {}
                 }
@@ -1014,15 +1034,26 @@ impl Analyzer<'_, '_> {
                             return Ok(());
                         }
                     }
+                    Type::Lit(..)
+                    | Type::TypeLit(..)
+                    | Type::Keyword(RTsKeywordType {
+                        kind: TsKeywordTypeKind::TsVoidKeyword,
+                        ..
+                    })
+                    | Type::Keyword(RTsKeywordType {
+                        kind: TsKeywordTypeKind::TsStringKeyword,
+                        ..
+                    })
+                    | Type::Keyword(RTsKeywordType {
+                        kind: TsKeywordTypeKind::TsNumberKeyword,
+                        ..
+                    })
+                    | Type::Keyword(RTsKeywordType {
+                        kind: TsKeywordTypeKind::TsBooleanKeyword,
+                        ..
+                    }) => fail!(),
                     _ => {}
                 }
-
-                return Err(Error::AssignFailed {
-                    span,
-                    left: box Type::Enum(e.clone()),
-                    right: box rhs.clone(),
-                    cause: vec![],
-                });
             }
 
             Type::EnumVariant(ref l) => match *rhs {
@@ -1030,13 +1061,24 @@ impl Analyzer<'_, '_> {
                     if l.enum_name == r.enum_name && l.name == r.name {
                         return Ok(());
                     }
-
+                }
+                Type::Lit(..)
+                | Type::TypeLit(..)
+                | Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsStringKeyword,
+                    ..
+                })
+                | Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsNumberKeyword,
+                    ..
+                })
+                | Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsBooleanKeyword,
+                    ..
+                }) => {
                     fail!()
                 }
-                _ => {
-                    dbg!();
-                    return Err(Error::InvalidLValue { span });
-                }
+                _ => {}
             },
 
             Type::This(RTsThisType { span }) => return Err(Error::CannotAssingToThis { span: *span }),
@@ -1155,6 +1197,12 @@ impl Analyzer<'_, '_> {
                         .assign_to_function(opts, to, lf, rhs)
                         .context("tried to assign a function to a function")
                 }
+                Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsVoidKeyword,
+                    ..
+                }) => {
+                    fail!()
+                }
                 _ => {}
             },
 
@@ -1192,7 +1240,14 @@ impl Analyzer<'_, '_> {
 
                         return Ok(());
                     }
-                    Type::Array(..) => fail!(),
+                    Type::Interface(..)
+                    | Type::TypeLit(..)
+                    | Type::Array(..)
+                    | Type::Class(..)
+                    | Type::ClassDef(..) => {
+                        fail!()
+                    }
+
                     _ => {}
                 }
             }
@@ -1219,6 +1274,43 @@ impl Analyzer<'_, '_> {
             },
 
             _ => {}
+        }
+
+        match rhs {
+            Type::Enum(ref e) => match to {
+                Type::Interface(..) | Type::TypeLit(..) => {
+                    fail!()
+                }
+                _ => {
+                    handle_enum_in_rhs!(e)
+                }
+            },
+
+            Type::EnumVariant(EnumVariant {
+                ref ctxt,
+                ref enum_name,
+                ..
+            }) => {
+                if let Some(types) = self.find_type(*ctxt, enum_name)? {
+                    for ty in types {
+                        if let Type::Enum(ref e) = ty.normalize() {
+                            match to {
+                                Type::Interface(..) | Type::TypeLit(..) => {}
+                                _ => {
+                                    handle_enum_in_rhs!(e)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                fail!()
+            }
+            _ => {}
+        }
+
+        if to.is_kwd(TsKeywordTypeKind::TsNeverKeyword) {
+            fail!();
         }
 
         // TODO: Implement full type checker

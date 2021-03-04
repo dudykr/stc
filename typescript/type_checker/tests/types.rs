@@ -34,17 +34,13 @@ use swc_common::errors::EmitterWriter;
 use swc_common::errors::Handler;
 use swc_common::errors::HandlerFlags;
 use swc_common::input::SourceFileInput;
-use swc_common::FileName;
 use swc_common::SourceMap;
 use swc_common::Span;
-use swc_common::Spanned;
-use swc_ecma_ast::*;
 use swc_ecma_parser::JscTarget;
 use swc_ecma_parser::Parser;
 use swc_ecma_parser::Syntax;
 use swc_ecma_parser::TsConfig;
 use swc_ecma_visit::Fold;
-use swc_ecma_visit::FoldWith;
 use test::test_main;
 use testing::run_test2;
 use testing::NormalizedOutput;
@@ -117,7 +113,6 @@ fn do_test(path: &Path) -> Result<(), StdErr> {
                 e.into_diagnostic(&handler).emit();
                 ()
             })?;
-            let module = make_test(&comments, module);
 
             let mut libs = vec![Lib::Es5];
             let mut rule = Rule::default();
@@ -294,135 +289,6 @@ fn do_test(path: &Path) -> Result<(), StdErr> {
     visualized.compare_to_file(path.with_extension("stdout")).unwrap();
 
     Ok(())
-}
-
-fn make_test(c: &SwcComments, module: Module) -> Module {
-    let mut m = TestMaker {
-        c,
-        stmts: Default::default(),
-    };
-
-    module.fold_with(&mut m)
-}
-
-struct TestMaker<'a> {
-    c: &'a SwcComments,
-    stmts: Vec<Stmt>,
-}
-
-impl Fold for TestMaker<'_> {
-    fn fold_module_items(&mut self, stmts: Vec<ModuleItem>) -> Vec<ModuleItem> {
-        let mut ss = vec![];
-        for stmt in stmts {
-            let stmt = stmt.fold_with(self);
-            ss.push(stmt);
-            ss.extend(self.stmts.drain(..).map(ModuleItem::Stmt));
-        }
-
-        ss
-    }
-
-    fn fold_stmts(&mut self, stmts: Vec<Stmt>) -> Vec<Stmt> {
-        let mut ss = vec![];
-        for stmt in stmts {
-            let stmt = stmt.fold_with(self);
-            ss.push(stmt);
-            ss.extend(self.stmts.drain(..));
-        }
-
-        ss
-    }
-
-    fn fold_ts_type_alias_decl(&mut self, decl: TsTypeAliasDecl) -> TsTypeAliasDecl {
-        let cmts = self.c.trailing.get(&decl.span.hi());
-
-        match cmts {
-            Some(cmts) => {
-                assert!(cmts.len() == 1);
-                let cmt = cmts.iter().next().unwrap();
-                let t = cmt.text.trim().replace("\n", "").replace("\r", "");
-
-                let cmt_type = match parse_type(cmt.span, &t) {
-                    Some(ty) => ty,
-                    None => return decl,
-                };
-
-                //  {
-                //      let _value: ty = (Object as any as Alias)
-                //  }
-                //
-                //
-                let span = decl.span();
-                self.stmts.push(Stmt::Block(BlockStmt {
-                    span,
-                    stmts: vec![Stmt::Decl(Decl::Var(VarDecl {
-                        span,
-                        decls: vec![VarDeclarator {
-                            span,
-                            name: Pat::Ident(Ident {
-                                span,
-                                sym: "_value".into(),
-                                type_ann: Some(TsTypeAnn {
-                                    span,
-                                    type_ann: box cmt_type,
-                                }),
-                                optional: false,
-                            }),
-                            init: Some(box Expr::TsAs(TsAsExpr {
-                                span,
-                                expr: box Expr::TsAs(TsAsExpr {
-                                    span,
-                                    expr: box Expr::Ident(Ident::new("Object".into(), span)),
-                                    type_ann: box TsType::TsKeywordType(TsKeywordType {
-                                        span,
-                                        kind: TsKeywordTypeKind::TsAnyKeyword,
-                                    }),
-                                }),
-                                type_ann: box TsType::TsTypeRef(TsTypeRef {
-                                    span,
-                                    type_name: TsEntityName::Ident(decl.id.clone()),
-                                    type_params: None,
-                                }),
-                            })),
-                            definite: false,
-                        }],
-                        kind: VarDeclKind::Const,
-                        declare: false,
-                    }))],
-                }));
-            }
-            None => {}
-        }
-
-        decl
-    }
-}
-
-fn parse_type(span: Span, s: &str) -> Option<TsType> {
-    let s = s.trim();
-
-    if s.starts_with("error") || s.starts_with("Error") {
-        return None;
-    }
-
-    let ty = ::testing::run_test(true, |cm, _handler| {
-        let fm = cm.new_source_file(FileName::Anon, s.into());
-
-        let mut parser = Parser::new(
-            Syntax::Typescript(Default::default()),
-            SourceFileInput::from(&*fm),
-            None,
-        );
-        let ty = match parser.parse_type() {
-            Ok(v) => v,
-            Err(..) => return Err(()),
-        };
-        Ok(ty)
-    });
-
-    let mut spanner = Spanner { span };
-
-    Some(*ty.ok()?.fold_with(&mut spanner))
 }
 
 struct Spanner {

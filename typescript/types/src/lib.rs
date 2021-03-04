@@ -116,12 +116,12 @@ impl AddAssign for ModuleTypeData {
 }
 
 /// This type is expected to stored in a [Box], like `Vec<Type>`.
-#[derive(Debug, Clone, PartialEq, Spanned, FromVariant, Is, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, FromVariant, Is, EqIgnoreSpan, Visit)]
 pub enum Type {
     Instance(Instance),
     StaticThis(StaticThis),
     This(RTsThisType),
-    Lit(#[use_eq_ignore_span] RTsLitType),
+    Lit(RTsLitType),
     Query(QueryType),
     Infer(InferType),
     Import(ImportType),
@@ -156,7 +156,7 @@ pub enum Type {
 
     /// export type A<B> = Foo<B>;
     Alias(Alias),
-    Namespace(#[use_eq_ignore_span] RTsNamespaceDecl),
+    Namespace(RTsNamespaceDecl),
     Module(Module),
 
     /// Instance of a class.
@@ -175,6 +175,47 @@ pub enum Type {
 }
 
 assert_eq_size!(Type, [u8; 128]);
+
+impl TypeEq for Type {
+    fn type_eq(&self, other: &Self) -> bool {
+        match (self.normalize(), other.normalize()) {
+            (Type::Instance(l), Type::Instance(r)) => l.type_eq(r),
+            (Type::StaticThis(l), Type::StaticThis(r)) => l.type_eq(r),
+            (Type::This(l), Type::This(r)) => l.type_eq(r),
+            (Type::Lit(l), Type::Lit(r)) => l.type_eq(r),
+            (Type::Query(l), Type::Query(r)) => l.type_eq(r),
+            (Type::Infer(l), Type::Infer(r)) => l.type_eq(r),
+            (Type::Import(l), Type::Import(r)) => l.type_eq(r),
+            (Type::Predicate(l), Type::Predicate(r)) => l.type_eq(r),
+            (Type::IndexedAccessType(l), Type::IndexedAccessType(r)) => l.type_eq(r),
+            (Type::Ref(l), Type::Ref(r)) => l.type_eq(r),
+            (Type::TypeLit(l), Type::TypeLit(r)) => l.type_eq(r),
+            (Type::Keyword(l), Type::Keyword(r)) => l.type_eq(r),
+            (Type::Conditional(l), Type::Conditional(r)) => l.type_eq(r),
+            (Type::Tuple(l), Type::Tuple(r)) => l.type_eq(r),
+            (Type::Array(l), Type::Array(r)) => l.type_eq(r),
+            (Type::Union(l), Type::Union(r)) => l.type_eq(r),
+            (Type::Intersection(l), Type::Intersection(r)) => l.type_eq(r),
+            (Type::Function(l), Type::Function(r)) => l.type_eq(r),
+            (Type::Constructor(l), Type::Constructor(r)) => l.type_eq(r),
+            (Type::Operator(l), Type::Operator(r)) => l.type_eq(r),
+            (Type::Param(l), Type::Param(r)) => l.type_eq(r),
+            (Type::EnumVariant(l), Type::EnumVariant(r)) => l.type_eq(r),
+            (Type::Interface(l), Type::Interface(r)) => l.type_eq(r),
+            (Type::Enum(l), Type::Enum(r)) => l.type_eq(r),
+            (Type::Mapped(l), Type::Mapped(r)) => l.type_eq(r),
+            (Type::Alias(l), Type::Alias(r)) => l.type_eq(r),
+            (Type::Namespace(l), Type::Namespace(r)) => l.type_eq(r),
+            (Type::Module(l), Type::Module(r)) => l.type_eq(r),
+            (Type::Class(l), Type::Class(r)) => l.type_eq(r),
+            (Type::ClassDef(l), Type::ClassDef(r)) => l.type_eq(r),
+            (Type::Rest(l), Type::Rest(r)) => l.type_eq(r),
+            (Type::Optional(l), Type::Optional(r)) => l.type_eq(r),
+            (Type::Symbol(l), Type::Symbol(r)) => l.type_eq(r),
+            _ => false,
+        }
+    }
+}
 
 fn _assert_send_sync() {
     fn assert<T: Send + Sync>() {}
@@ -388,7 +429,7 @@ pub struct Ref {
     pub type_args: Option<Box<TypeParamInstantiation>>,
 }
 
-assert_eq_size!(Ref, [u8; 96]);
+assert_eq_size!(Ref, [u8; 64]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct InferType {
@@ -421,7 +462,7 @@ pub struct ImportType {
     pub type_params: Option<Box<TypeParamInstantiation>>,
 }
 
-assert_eq_size!(ImportType, [u8; 120]);
+assert_eq_size!(ImportType, [u8; 88]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Module {
@@ -431,7 +472,7 @@ pub struct Module {
     pub exports: Box<ModuleTypeData>,
 }
 
-assert_eq_size!(Module, [u8; 96]);
+assert_eq_size!(Module, [u8; 64]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Enum {
@@ -445,7 +486,7 @@ pub struct Enum {
     pub has_str: bool,
 }
 
-assert_eq_size!(Enum, [u8; 104]);
+assert_eq_size!(Enum, [u8; 72]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct EnumMember {
@@ -778,7 +819,7 @@ pub struct Predicate {
     pub ty: Option<Box<Type>>,
 }
 
-assert_eq_size!(Predicate, [u8; 96]);
+assert_eq_size!(Predicate, [u8; 64]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct TypeOrSpread {

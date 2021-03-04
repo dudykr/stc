@@ -1,0 +1,104 @@
+warning: Type
+ --> $DIR/tests/pass/types/inference/generic/contextual/contextual-3-1.ts:8:62
+  |
+8 | const arrayMap = <T, U>(f: (x: T) => U) => (a: T[]) => a.map(f);
+  |                                                              ^
+  |
+  = note: (x: T) => U
+
+warning: Type
+ --> $DIR/tests/pass/types/inference/generic/contextual/contextual-3-1.ts:8:56
+  |
+8 | const arrayMap = <T, U>(f: (x: T) => U) => (a: T[]) => a.map(f);
+  |                                                        ^
+  |
+  = note: T[]
+
+warning: Type
+ --> $DIR/tests/pass/types/inference/generic/contextual/contextual-3-1.ts:8:56
+  |
+8 | const arrayMap = <T, U>(f: (x: T) => U) => (a: T[]) => a.map(f);
+  |                                                        ^^^^^^^^
+  |
+  = note: U[]
+
+warning: Type
+ --> $DIR/tests/pass/types/inference/generic/contextual/contextual-3-1.ts:8:44
+  |
+8 | const arrayMap = <T, U>(f: (x: T) => U) => (a: T[]) => a.map(f);
+  |                                            ^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: (a: T[]) => U[]
+
+warning: Type
+ --> $DIR/tests/pass/types/inference/generic/contextual/contextual-3-1.ts:8:18
+  |
+8 | const arrayMap = <T, U>(f: (x: T) => U) => (a: T[]) => a.map(f);
+  |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: <T, U>(f: (x: T) => U) => (a: T[]) => U[]
+
+warning: Type
+  --> $DIR/tests/pass/types/inference/generic/contextual/contextual-3-1.ts:10:61
+   |
+10 | export const f20: (a: string[]) => number[] = arrayMap(x => x.length);
+   |                                                             ^
+   |
+   = note: any
+
+warning: Type
+  --> $DIR/tests/pass/types/inference/generic/contextual/contextual-3-1.ts:10:61
+   |
+10 | export const f20: (a: string[]) => number[] = arrayMap(x => x.length);
+   |                                                             ^^^^^^^^
+   |
+   = note: any
+
+warning: Type
+  --> $DIR/tests/pass/types/inference/generic/contextual/contextual-3-1.ts:10:56
+   |
+10 | export const f20: (a: string[]) => number[] = arrayMap(x => x.length);
+   |                                                        ^^^^^^^^^^^^^
+   |
+   = note: (x: any) => any
+
+warning: Type
+  --> $DIR/tests/pass/types/inference/generic/contextual/contextual-3-1.ts:10:47
+   |
+10 | export const f20: (a: string[]) => number[] = arrayMap(x => x.length);
+   |                                               ^^^^^^^^
+   |
+   = note: <T, U>(f: (x: T) => U) => <T, U>(a: T[]) => U[]
+
+warning: Type
+  --> $DIR/tests/pass/types/inference/generic/contextual/contextual-3-1.ts:10:61
+   |
+10 | export const f20: (a: string[]) => number[] = arrayMap(x => x.length);
+   |                                                             ^
+   |
+   = note: string
+
+warning: Type
+  --> $DIR/tests/pass/types/inference/generic/contextual/contextual-3-1.ts:10:61
+   |
+10 | export const f20: (a: string[]) => number[] = arrayMap(x => x.length);
+   |                                                             ^^^^^^^^
+   |
+   = note: number
+
+warning: Type
+  --> $DIR/tests/pass/types/inference/generic/contextual/contextual-3-1.ts:10:56
+   |
+10 | export const f20: (a: string[]) => number[] = arrayMap(x => x.length);
+   |                                                        ^^^^^^^^^^^^^
+   |
+   = note: (x: string) => number
+
+warning: Type
+  --> $DIR/tests/pass/types/inference/generic/contextual/contextual-3-1.ts:10:47
+   |
+10 | export const f20: (a: string[]) => number[] = arrayMap(x => x.length);
+   |                                               ^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: (a: string[]) => number[]
+
