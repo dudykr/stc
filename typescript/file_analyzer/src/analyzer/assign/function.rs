@@ -2,6 +2,7 @@ use super::AssignOpts;
 use crate::analyzer::Analyzer;
 use crate::ValidationResult;
 use fxhash::FxHashMap;
+use stc_ts_ast_rnode::RBindingIdent;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RPat;
 use stc_ts_errors::DebugExt;
@@ -108,14 +109,20 @@ impl Analyzer<'_, '_> {
     pub(crate) fn assign_params(&mut self, opts: AssignOpts, l: &[FnParam], r: &[FnParam]) -> ValidationResult<()> {
         let span = opts.span;
         let li = l.iter().filter(|p| match p.pat {
-            RPat::Ident(RIdent {
-                sym: js_word!("this"), ..
+            RPat::Ident(RBindingIdent {
+                id: RIdent {
+                    sym: js_word!("this"), ..
+                },
+                ..
             }) => false,
             _ => true,
         });
         let ri = r.iter().filter(|p| match p.pat {
-            RPat::Ident(RIdent {
-                sym: js_word!("this"), ..
+            RPat::Ident(RBindingIdent {
+                id: RIdent {
+                    sym: js_word!("this"), ..
+                },
+                ..
             }) => false,
             _ => true,
         });

@@ -1,0 +1,40 @@
+warning: Type
+ --> $DIR/tests/pass/vars/destructuring/array/iterable/map/1.ts:1:46
+  |
+1 | export const [[k1, v1], [k2, v2]] = new Map([["", true], ["hello", true]])
+  |                                              ^^^^^^^^^^
+  |
+  = note: ["", true]
+
+warning: Type
+ --> $DIR/tests/pass/vars/destructuring/array/iterable/map/1.ts:1:58
+  |
+1 | export const [[k1, v1], [k2, v2]] = new Map([["", true], ["hello", true]])
+  |                                                          ^^^^^^^^^^^^^^^
+  |
+  = note: ["hello", true]
+
+warning: Type
+ --> $DIR/tests/pass/vars/destructuring/array/iterable/map/1.ts:1:45
+  |
+1 | export const [[k1, v1], [k2, v2]] = new Map([["", true], ["hello", true]])
+  |                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: [["", true], ["hello", true]]
+
+warning: Type
+ --> $DIR/tests/pass/vars/destructuring/array/iterable/map/1.ts:1:41
+  |
+1 | export const [[k1, v1], [k2, v2]] = new Map([["", true], ["hello", true]])
+  |                                         ^^^
+  |
+  = note: MapConstructor
+
+warning: Type
+ --> $DIR/tests/pass/vars/destructuring/array/iterable/map/1.ts:1:37
+  |
+1 | export const [[k1, v1], [k2, v2]] = new Map([["", true], ["hello", true]])
+  |                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: Map<string, boolean>
+

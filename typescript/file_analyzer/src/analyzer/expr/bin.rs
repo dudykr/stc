@@ -4,7 +4,6 @@ use super::super::{
 };
 use super::TypeOfMode;
 use crate::analyzer::assign::AssignOpts;
-use crate::ty::type_facts::TypeFactsHandler;
 use crate::util::type_ext::TypeVecExt;
 use crate::{
     analyzer::{Ctx, ScopeKind},
@@ -15,7 +14,6 @@ use crate::{
     validator::ValidateWith,
     ValidationResult,
 };
-use rnode::FoldWith;
 use stc_ts_ast_rnode::RBinExpr;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RExprOrSuper;
@@ -38,6 +36,7 @@ use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::name::Name;
 use stc_ts_types::Class;
 use stc_ts_types::Intersection;
+use stc_ts_types::Key;
 use stc_ts_types::ModuleId;
 use stc_ts_types::Ref;
 use stc_ts_types::TypeElement;
@@ -139,12 +138,9 @@ impl Analyzer<'_, '_> {
                                 Some(ty) => Some(ty),
                                 _ => match op {
                                     op!("||") | op!("??") => {
-                                        truthy_lt = lt.clone().map(|ty| {
-                                            ty.fold_with(&mut TypeFactsHandler {
-                                                analyzer: child,
-                                                facts: TypeFacts::Truthy,
-                                            })
-                                        });
+                                        truthy_lt = lt
+                                            .clone()
+                                            .map(|ty| child.apply_type_facts_to_type(TypeFacts::Truthy, ty));
                                         truthy_lt.as_ref()
                                     }
                                     _ => lt.as_ref(),
@@ -310,30 +306,31 @@ impl Analyzer<'_, '_> {
 
                     (l, r) => Some((extract_name_for_assignment(l)?, r_ty)),
                 }) {
-                    Some((l, r)) => {
-                        if self.ctx.in_cond && op == op!("===") {
-                            let mut r = r.clone();
-                            self.cur_facts
-                                .false_facts
-                                .excludes
-                                .entry(l.clone())
-                                .or_default()
-                                .push(r.clone());
+                    Some((l, r_ty)) => {
+                        if self.ctx.in_cond {
+                            let (name, mut r) = self.calc_type_facts_for_equality(l, r_ty)?;
+                            if op == op!("===") {
+                                self.cur_facts
+                                    .false_facts
+                                    .excludes
+                                    .entry(name.clone())
+                                    .or_default()
+                                    .push(r.clone());
 
-                            self.prevent_generalize(&mut r);
-                            self.add_deep_type_fact(l, r, true);
-                        } else if self.ctx.in_cond && !is_eq {
-                            // Remove from union
-                            let mut r = r.clone();
-                            self.cur_facts
-                                .true_facts
-                                .excludes
-                                .entry(l.clone())
-                                .or_default()
-                                .push(r.clone());
+                                self.prevent_generalize(&mut r);
+                                self.add_deep_type_fact(name, r, true);
+                            } else if !is_eq {
+                                // Remove from union
+                                self.cur_facts
+                                    .true_facts
+                                    .excludes
+                                    .entry(name.clone())
+                                    .or_default()
+                                    .push(r.clone());
 
-                            self.prevent_generalize(&mut r);
-                            self.add_deep_type_fact(l, r, false);
+                                self.prevent_generalize(&mut r);
+                                self.add_deep_type_fact(name, r, false);
+                            }
                         }
                     }
                     _ => {}
@@ -718,7 +715,7 @@ impl Analyzer<'_, '_> {
                     rt = rt.generalize_lit();
                 }
                 //
-                if lt.normalize().type_eq(rt.normalize()) {
+                if lt.type_eq(&rt) {
                     return Ok(lt);
                 }
 
@@ -1138,6 +1135,63 @@ impl Analyzer<'_, '_> {
         ty
     }
 
+    /// We should create a type fact for `foo` in `if (foo.type === 'bar');`.
+    fn calc_type_facts_for_equality(&mut self, name: Name, equals_to: &Type) -> ValidationResult<(Name, Type)> {
+        // For comparison of variables like `if (a === 'foo');`, we just return the type
+        // itself.
+        if name.len() == 1 {
+            return Ok((name, equals_to.clone()));
+        }
+
+        let span = equals_to.span();
+        let eq_ty = equals_to.normalize();
+
+        // We create a type fact for `foo` in `if (foo.type === 'bar');`
+
+        let ids = name.as_ids();
+        if name.len() != 2 {
+            unimplemented!("calculating type facts for names with 3+ elements");
+        }
+
+        let prop = Key::Normal {
+            span,
+            sym: ids[ids.len() - 1].sym().clone(),
+        };
+
+        let ty = self.type_of_var(&ids[0].clone().into(), TypeOfMode::RValue, None)?;
+        let ty = self.expand_top_ref(span, Cow::Owned(ty))?.into_owned();
+
+        match ty.normalize() {
+            Type::Union(u) => {
+                let mut candidates = vec![];
+                for ty in &u.types {
+                    let prop_res = self.access_property(span, ty.clone(), &prop, TypeOfMode::RValue, super::IdCtx::Var);
+
+                    match prop_res {
+                        Ok(prop_ty) => {
+                            let prop_ty = self.expand_top_ref(prop_ty.span(), Cow::Owned(prop_ty))?;
+                            let possible = match prop_ty.normalize() {
+                                // Type parameters might have same value.
+                                Type::Param(..) => true,
+                                _ => prop_ty.type_eq(equals_to),
+                            };
+                            if possible {
+                                candidates.push(ty.clone())
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+                let actual = Name::from(&ids[0]);
+
+                return Ok((actual, Type::union(candidates)));
+            }
+            _ => {}
+        }
+
+        Ok((name, eq_ty.clone()))
+    }
+
     fn validate_bin_inner(&mut self, span: Span, op: BinaryOp, lt: Option<&Type>, rt: Option<&Type>) {
         let ls = lt.span();
         let rs = rt.span();
@@ -1414,7 +1468,7 @@ pub(super) fn extract_name_for_assignment(e: &RExpr) -> Option<Name> {
         RExpr::Assign(e) => match &e.left {
             RPatOrExpr::Expr(e) => extract_name_for_assignment(e),
             RPatOrExpr::Pat(pat) => match &**pat {
-                RPat::Ident(i) => Some(i.into()),
+                RPat::Ident(i) => Some(i.id.clone().into()),
                 RPat::Expr(e) => extract_name_for_assignment(e),
                 _ => None,
             },

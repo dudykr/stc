@@ -12,9 +12,10 @@ backtrace = "0.3.55"
 fxhash = "0.2.1"
 rnode = {path = "../../rnode"}
 slog = "2.7.0"
+static_assertions = "1.1.0"
 stc_ts_ast_rnode = {path = "../ast_rnode"}
 stc_ts_types = {path = "../types"}
 swc_atoms = "0.2.5"
-swc_common = "0.10.9"
-swc_ecma_ast = "0.38.0"
-swc_ecma_codegen = "0.45.1"
+swc_common = "0.10.12"
+swc_ecma_ast = "0.40.0"
+swc_ecma_codegen = "0.47.0"

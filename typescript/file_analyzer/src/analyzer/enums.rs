@@ -9,6 +9,7 @@ use rnode::NodeId;
 use rnode::Visit;
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RBinExpr;
+use stc_ts_ast_rnode::RBindingIdent;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RLit;
@@ -354,7 +355,11 @@ impl Analyzer<'_, '_> {
         {
             let param = FnParam {
                 span: DUMMY_SP,
-                pat: RPat::Ident(RIdent::new("n".into(), DUMMY_SP)),
+                pat: RPat::Ident(RBindingIdent {
+                    node_id: NodeId::invalid(),
+                    id: RIdent::new("n".into(), DUMMY_SP),
+                    type_ann: None,
+                }),
                 required: true,
                 ty: box Type::Keyword(RTsKeywordType {
                     span: DUMMY_SP,

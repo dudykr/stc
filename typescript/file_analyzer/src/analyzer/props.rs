@@ -19,6 +19,7 @@ use stc_ts_ast_rnode::RLit;
 use stc_ts_ast_rnode::RMemberExpr;
 use stc_ts_ast_rnode::RMethodProp;
 use stc_ts_ast_rnode::RNumber;
+use stc_ts_ast_rnode::RPrivateName;
 use stc_ts_ast_rnode::RProp;
 use stc_ts_ast_rnode::RPropName;
 use stc_ts_ast_rnode::RSetterProp;
@@ -28,6 +29,7 @@ use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_types::ComputedKey;
 use stc_ts_types::Key;
+use stc_ts_types::PrivateName;
 use swc_atoms::js_word;
 use swc_common::Spanned;
 use swc_ecma_ast::*;
@@ -61,6 +63,16 @@ impl Analyzer<'_, '_> {
             RPropName::Num(v) => Ok(Key::Num(v.clone())),
             RPropName::BigInt(v) => Ok(Key::BigInt(v.clone())),
         }
+    }
+}
+
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, n: &RPrivateName) -> ValidationResult<PrivateName> {
+        Ok(PrivateName {
+            span: n.span,
+            id: n.id.clone().into(),
+        })
     }
 }
 

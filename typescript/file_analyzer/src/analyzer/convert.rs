@@ -10,8 +10,8 @@ use rnode::NodeId;
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RArrayPat;
 use stc_ts_ast_rnode::RAssignPatProp;
+use stc_ts_ast_rnode::RBindingIdent;
 use stc_ts_ast_rnode::RComputedPropName;
-use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RObjectPat;
 use stc_ts_ast_rnode::RObjectPatProp;
 use stc_ts_ast_rnode::RPat;
@@ -746,7 +746,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Handle implicit defaults.
-    pub(crate) fn default_any_ident(&mut self, i: &RIdent) {
+    pub(crate) fn default_any_ident(&mut self, i: &RBindingIdent) {
         if i.type_ann.is_some() {
             return;
         }
@@ -762,7 +762,7 @@ impl Analyzer<'_, '_> {
                 && !(self.ctx.in_return_arg && self.ctx.in_fn_with_return_type)
                 && !self.ctx.in_assign_rhs
             {
-                self.storage.report(Error::ImplicitAny { span: i.span });
+                self.storage.report(Error::ImplicitAny { span: i.id.span });
             }
         }
         let implicit_type_mark = self.marks().implicit_type_mark;
@@ -823,7 +823,7 @@ impl Analyzer<'_, '_> {
                 .collect(),
         });
         if let Some(m) = &mut self.mutations {
-            m.for_pats.entry(arr.node_id).or_default().ty.fill_with(|| ty);
+            m.for_pats.entry(arr.node_id).or_default().ty.get_or_insert_with(|| ty);
         }
     }
 

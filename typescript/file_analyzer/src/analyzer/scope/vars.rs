@@ -5,8 +5,10 @@ use crate::analyzer::Analyzer;
 use crate::ty::TypeExt;
 use crate::validator::ValidateWith;
 use crate::ValidationResult;
+use rnode::NodeId;
 use stc_ts_ast_rnode::RArrayPat;
 use stc_ts_ast_rnode::RAssignPatProp;
+use stc_ts_ast_rnode::RBindingIdent;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RNumber;
@@ -55,7 +57,7 @@ impl Analyzer<'_, '_> {
 
         match &*pat {
             RPat::Ident(i) => {
-                let name: Id = Id::from(i.clone());
+                let name: Id = Id::from(i.id.clone());
                 if !self.is_builtin {
                     debug_assert_ne!(span, DUMMY_SP);
                 }
@@ -75,8 +77,11 @@ impl Analyzer<'_, '_> {
                     kind == VarDeclKind::Var,
                 )?;
                 if export {
-                    self.storage
-                        .store_private_var(self.ctx.module_id, name.clone(), ty.unwrap_or(Type::any(i.span)));
+                    self.storage.store_private_var(
+                        self.ctx.module_id,
+                        name.clone(),
+                        ty.unwrap_or(Type::any(i.id.span)),
+                    );
                     self.storage.export_var(span, self.ctx.module_id, name);
                 }
                 return Ok(());
@@ -238,7 +243,11 @@ impl Analyzer<'_, '_> {
                                     // TODO: actual_ty
                                     self.declare_vars_inner_with_ty(
                                         kind,
-                                        &RPat::Ident(key.clone()),
+                                        &RPat::Ident(RBindingIdent {
+                                            node_id: NodeId::invalid(),
+                                            id: key.clone(),
+                                            type_ann: None,
+                                        }),
                                         export,
                                         prop_ty,
                                         None,
@@ -251,7 +260,11 @@ impl Analyzer<'_, '_> {
                                     // TODO: actual_ty
                                     self.declare_vars_inner_with_ty(
                                         kind,
-                                        &RPat::Ident(key.clone()),
+                                        &RPat::Ident(RBindingIdent {
+                                            node_id: NodeId::invalid(),
+                                            id: key.clone(),
+                                            type_ann: None,
+                                        }),
                                         export,
                                         prop_ty,
                                         None,

@@ -80,6 +80,20 @@ impl From<Id> for Name {
     }
 }
 
+impl From<&'_ [Id]> for Name {
+    #[inline]
+    fn from(v: &[Id]) -> Name {
+        v.to_vec().into()
+    }
+}
+
+impl From<Vec<Id>> for Name {
+    #[inline]
+    fn from(v: Vec<Id>) -> Name {
+        Name(v.into())
+    }
+}
+
 impl From<RTsEntityName> for Name {
     fn from(n: RTsEntityName) -> Self {
         fn expand(buf: &mut Inner, n: RTsEntityName) {

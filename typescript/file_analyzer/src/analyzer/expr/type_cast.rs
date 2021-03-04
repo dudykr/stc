@@ -82,6 +82,12 @@ impl Analyzer<'_, '_> {
     }
 
     fn validate_type_cast_inner(&mut self, span: Span, orig: &Type, casted: &Type) -> ValidationResult<()> {
+        // I don't know why this is valid, but `stringLiteralsWithTypeAssertions01.ts`
+        // has some tests for this.
+        if orig.is_str() && casted.is_str() {
+            return Ok(());
+        }
+
         match orig {
             Type::Union(ref rt) => {
                 let castable = rt.types.iter().any(|v| casted.type_eq(v));

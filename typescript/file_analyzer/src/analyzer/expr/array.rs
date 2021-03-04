@@ -2,13 +2,12 @@ use super::call_new::ExtractKind;
 use super::IdCtx;
 use super::TypeOfMode;
 use crate::analyzer::Analyzer;
-use crate::ty::type_facts::TypeFactsHandler;
 use crate::type_facts::TypeFacts;
 use crate::util::type_ext::TypeVecExt;
 use crate::validator;
 use crate::validator::ValidateWith;
 use crate::ValidationResult;
-use rnode::FoldWith;
+use itertools::Itertools;
 use rnode::NodeId;
 use stc_ts_ast_rnode::RArrayLit;
 use stc_ts_ast_rnode::RExpr;
@@ -16,6 +15,7 @@ use stc_ts_ast_rnode::RExprOrSpread;
 use stc_ts_ast_rnode::RExprOrSuper;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RMemberExpr;
+use stc_ts_ast_rnode::RNumber;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
@@ -26,6 +26,7 @@ use stc_ts_types::Tuple;
 use stc_ts_types::TupleElement;
 use stc_ts_types::Type;
 use stc_ts_types::TypeParamInstantiation;
+use stc_ts_types::Union;
 use std::borrow::Cow;
 use swc_common::Span;
 use swc_common::Spanned;
@@ -54,7 +55,7 @@ impl Analyzer<'_, '_> {
                 Some(RExprOrSpread { spread: None, ref expr }) => {
                     let ty = expr.validate_with_default(self)?;
                     match &ty {
-                        Type::TypeLit(..) => {
+                        Type::TypeLit(..) | Type::Function(..) => {
                             can_be_tuple = false;
                         }
                         _ => {}
@@ -137,7 +138,7 @@ impl Analyzer<'_, '_> {
                 span,
                 elem_type: box Type::union(types),
             });
-            self.normalize_union_of_objects(&mut ty, false);
+            self.normalize_union(&mut ty, false);
 
             return Ok(ty);
         }
@@ -147,56 +148,175 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
-    pub(crate) fn get_iterator_element_type<'a>(
+    /// Get `n`th element from the `iterator`.
+    pub(crate) fn get_element_from_iterator<'a>(
         &mut self,
         span: Span,
-        ty: Cow<'a, Type>,
+        iterator: Cow<'a, Type>,
+        n: usize,
     ) -> ValidationResult<Cow<'a, Type>> {
-        match ty.normalize() {
-            // TODO
-            Type::Array(..) | Type::Tuple(..) => return Ok(ty),
+        match iterator.normalize() {
+            Type::Ref(..) => {
+                let iterator = self
+                    .expand_top_ref(span, iterator)
+                    .context("tried to expand iterator to get nth element")?;
+
+                return self
+                    .get_element_from_iterator(span, iterator, n)
+                    .context("tried to get element from an expanded iterator");
+            }
+            Type::Array(..) | Type::Tuple(..) => {
+                return self
+                    .access_property(
+                        span,
+                        iterator.clone().into_owned(),
+                        &Key::Num(RNumber { span, value: n as _ }),
+                        TypeOfMode::RValue,
+                        IdCtx::Var,
+                    )
+                    .map(Cow::Owned)
+                    .context("tried to access property of a type to calculate element type")
+            }
             _ => {}
         }
 
-        let iterator = self
+        let next_ret_ty = self
             .call_property(
                 span,
                 ExtractKind::Call,
                 Default::default(),
-                &ty,
-                &ty,
-                &Key::Computed(ComputedKey {
+                &iterator,
+                &iterator,
+                &Key::Normal {
                     span,
-                    expr: box RExpr::Member(RMemberExpr {
-                        node_id: NodeId::invalid(),
-                        span,
-                        obj: RExprOrSuper::Expr(box RExpr::Ident(RIdent::new(
-                            "Symbol".into(),
-                            span.with_ctxt(SyntaxContext::empty()),
-                        ))),
-                        computed: false,
-                        prop: box RExpr::Ident(RIdent::new("iterator".into(), span.with_ctxt(SyntaxContext::empty()))),
-                    }),
-                    ty: box Type::Keyword(RTsKeywordType {
-                        span,
-                        kind: TsKeywordTypeKind::TsSymbolKeyword,
-                    }),
-                }),
+                    sym: "next".into(),
+                },
                 None,
                 &[],
                 &[],
                 &[],
                 None,
             )
-            .map_err(|err| {
-                err.convert(|err| match err {
-                    Error::NoCallabelPropertyWithName { span, .. } => {
-                        Error::MustHaveSymbolIteratorThatReturnsIterator { span }
-                    }
-                    _ => err,
-                })
+            .convert_err(|err| match err {
+                Error::NoCallabelPropertyWithName { span, .. }
+                | Error::NoSuchProperty { span, .. }
+                | Error::NoSuchPropertyInClass { span, .. } => {
+                    Error::MustHaveSymbolIteratorThatReturnsIterator { span }
+                }
+                _ => err,
             })
-            .context("tried to call `[Symbol.iterator]()` to convert a type to an iterator")?;
+            .context("tried calling `next()` to get element type of nth element of an iterator")?;
+
+        let mut elem_ty = self
+            .access_property(
+                span,
+                next_ret_ty,
+                &Key::Normal {
+                    span,
+                    sym: "value".into(),
+                },
+                TypeOfMode::RValue,
+                IdCtx::Var,
+            )
+            .context(
+                "tried to get the type of property named `value` to determine the type of nth element of an iterator",
+            )?;
+
+        // TODO: Remove `done: true` instead of removing `any` from value.
+        match elem_ty.normalize_mut() {
+            Type::Union(u) => {
+                u.types.retain(|ty| !ty.is_any());
+                if u.types.is_empty() {
+                    u.types = vec![Type::any(u.span)]
+                }
+            }
+            _ => {}
+        }
+
+        elem_ty = self.apply_type_facts_to_type(TypeFacts::Truthy, elem_ty);
+
+        Ok(Cow::Owned(elem_ty))
+    }
+    pub(crate) fn get_iterator<'a>(&mut self, span: Span, ty: Cow<'a, Type>) -> ValidationResult<Cow<'a, Type>> {
+        match ty.normalize() {
+            Type::Ref(..) => {
+                let ty = self.expand_top_ref(span, ty)?;
+                return self.get_iterator(span, ty);
+            }
+            Type::Array(..) | Type::Tuple(..) => return Ok(ty),
+            Type::Union(u) => {
+                let types = u
+                    .types
+                    .iter()
+                    .map(|v| self.get_iterator(v.span(), Cow::Borrowed(v)))
+                    .map(|res| res.map(Cow::into_owned))
+                    .collect::<Result<_, _>>()?;
+                let new = Type::Union(Union { span: u.span, types });
+                return Ok(Cow::Owned(new));
+            }
+            _ => {}
+        }
+
+        self.call_property(
+            span,
+            ExtractKind::Call,
+            Default::default(),
+            &ty,
+            &ty,
+            &Key::Computed(ComputedKey {
+                span,
+                expr: box RExpr::Member(RMemberExpr {
+                    node_id: NodeId::invalid(),
+                    span,
+                    obj: RExprOrSuper::Expr(box RExpr::Ident(RIdent::new(
+                        "Symbol".into(),
+                        span.with_ctxt(SyntaxContext::empty()),
+                    ))),
+                    computed: false,
+                    prop: box RExpr::Ident(RIdent::new("iterator".into(), span.with_ctxt(SyntaxContext::empty()))),
+                }),
+                ty: box Type::Keyword(RTsKeywordType {
+                    span,
+                    kind: TsKeywordTypeKind::TsSymbolKeyword,
+                }),
+            }),
+            None,
+            &[],
+            &[],
+            &[],
+            None,
+        )
+        .convert_err(|err| match err {
+            Error::NoCallabelPropertyWithName { span, .. }
+            | Error::NoSuchPropertyInClass { span, .. }
+            | Error::NoSuchProperty { span, .. } => Error::MustHaveSymbolIteratorThatReturnsIterator { span },
+            _ => err,
+        })
+        .map(Cow::Owned)
+        .context("tried to call `[Symbol.iterator]()` to convert a type to an iterator")
+    }
+    pub(crate) fn get_iterator_element_type<'a>(
+        &mut self,
+        span: Span,
+        ty: Cow<'a, Type>,
+    ) -> ValidationResult<Cow<'a, Type>> {
+        let iterator = self
+            .get_iterator(span, ty)
+            .context("tried to get a type of an iterator to get the element type of it")?;
+
+        match iterator.normalize() {
+            Type::Array(arr) => return Ok(Cow::Owned(*arr.elem_type.clone())),
+            Type::Tuple(tuple) => {
+                if tuple.elems.is_empty() {
+                    return Ok(Cow::Owned(Type::any(tuple.span)));
+                }
+                let mut types = tuple.elems.iter().map(|e| *e.ty.clone()).collect_vec();
+                types.dedup_type();
+                return Ok(Cow::Owned(Type::union(types)));
+            }
+
+            _ => {}
+        }
 
         let next_ret_ty = self
             .call_property(
@@ -217,7 +337,7 @@ impl Analyzer<'_, '_> {
             )
             .context("tried calling `next()` to get element type of iterator")?;
 
-        let elem_ty = self
+        let mut elem_ty = self
             .access_property(
                 span,
                 next_ret_ty,
@@ -230,10 +350,18 @@ impl Analyzer<'_, '_> {
             )
             .context("tried to get the type of property named `value` to determine the type of an iterator")?;
 
-        let elem_ty = elem_ty.fold_with(&mut TypeFactsHandler {
-            facts: TypeFacts::Truthy,
-            analyzer: self,
-        });
+        // TODO: Remove `done: true` instead of removing `any` from value.
+        match elem_ty.normalize_mut() {
+            Type::Union(u) => {
+                u.types.retain(|ty| !ty.is_any());
+                if u.types.is_empty() {
+                    u.types = vec![Type::any(u.span)]
+                }
+            }
+            _ => {}
+        }
+
+        elem_ty = self.apply_type_facts_to_type(TypeFacts::Truthy, elem_ty);
 
         Ok(Cow::Owned(elem_ty))
     }

@@ -335,6 +335,7 @@ impl Env {
             return Ok(v.clone());
         }
 
+        dbg!();
         Err(Error::NoSuchVar {
             span,
             name: Id::word(name.clone()),

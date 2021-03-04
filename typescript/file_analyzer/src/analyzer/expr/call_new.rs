@@ -27,6 +27,7 @@ use rnode::FoldWith;
 use rnode::NodeId;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
+use stc_ts_ast_rnode::RBindingIdent;
 use stc_ts_ast_rnode::RCallExpr;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RExprOrSpread;
@@ -225,7 +226,9 @@ impl Analyzer<'_, '_> {
         };
 
         let arg_types = self.validate_args(args)?;
-        let spread_arg_types = self.spread_args(&arg_types);
+        let spread_arg_types = self
+            .spread_args(&arg_types)
+            .context("tried to handle spreads in arguments")?;
 
         match *callee {
             RExpr::Ident(ref i) if i.sym == js_word!("require") => {
@@ -529,19 +532,21 @@ impl Analyzer<'_, '_> {
                         .expand_top_ref(span, Cow::Borrowed(obj_type))
                         .context("tried to expand object to call property of it")?;
 
-                    return self.call_property(
-                        span,
-                        kind,
-                        expr,
-                        this,
-                        &obj_type,
-                        prop,
-                        type_args,
-                        args,
-                        arg_types,
-                        spread_arg_types,
-                        type_ann,
-                    );
+                    return self
+                        .call_property(
+                            span,
+                            kind,
+                            expr,
+                            this,
+                            &obj_type,
+                            prop,
+                            type_args,
+                            args,
+                            arg_types,
+                            spread_arg_types,
+                            type_ann,
+                        )
+                        .context("tried to call a property of expanded type");
                 }
 
                 Type::Interface(ref i) => {
@@ -718,6 +723,13 @@ impl Analyzer<'_, '_> {
                 &spread_arg_types,
                 type_ann,
             )
+            .with_context(|| {
+                format!(
+                    "tried to call property by using access_property because the object type is not handled by \
+                     call_property: {:#?}",
+                    obj_type
+                )
+            })
         })();
         self.scope.this = old_this;
         res
@@ -992,14 +1004,17 @@ impl Analyzer<'_, '_> {
     }
 
     /// Returns `()`
-    fn spread_args<'a>(&mut self, arg_types: &'a [TypeOrSpread]) -> Cow<'a, [TypeOrSpread]> {
+    fn spread_args<'a>(&mut self, arg_types: &'a [TypeOrSpread]) -> ValidationResult<Cow<'a, [TypeOrSpread]>> {
         let mut new_arg_types;
 
         if arg_types.iter().any(|arg| arg.spread.is_some()) {
             new_arg_types = vec![];
             for arg in arg_types {
                 if arg.spread.is_some() {
-                    match &*arg.ty {
+                    let arg_ty = self
+                        .expand_top_ref(arg.span(), Cow::Borrowed(&arg.ty))
+                        .context("tried to expand ref to handle a spread argument")?;
+                    match arg_ty.normalize() {
                         Type::Tuple(arg_ty) => {
                             new_arg_types.extend(arg_ty.elems.iter().map(|element| &element.ty).cloned().map(|ty| {
                                 TypeOrSpread {
@@ -1019,7 +1034,7 @@ impl Analyzer<'_, '_> {
                             new_arg_types.push(TypeOrSpread {
                                 span: *span,
                                 spread: None,
-                                ty: arg.ty.clone(),
+                                ty: box arg_ty.clone().into_owned(),
                             });
                         }
 
@@ -1029,7 +1044,17 @@ impl Analyzer<'_, '_> {
                         }
 
                         _ => {
-                            unimplemented!("spread_args: type other than tuple or \nType: {:#?}", arg.ty)
+                            self.scope.is_call_arg_count_unknown = true;
+
+                            let elem_type = self
+                                .get_iterator_element_type(arg.span(), arg_ty)
+                                .context("tried to get element type of an iterator for spread syntax in arguments")?;
+
+                            new_arg_types.push(TypeOrSpread {
+                                span: arg.span(),
+                                spread: arg.spread,
+                                ty: box elem_type.into_owned(),
+                            });
                         }
                     }
                 } else {
@@ -1037,9 +1062,9 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            return Cow::Owned(new_arg_types);
+            return Ok(Cow::Owned(new_arg_types));
         } else {
-            return Cow::Borrowed(arg_types);
+            return Ok(Cow::Borrowed(arg_types));
         }
     }
 
@@ -1701,8 +1726,11 @@ impl Analyzer<'_, '_> {
                 RPat::Rest(..) => {
                     max_param = None;
                 }
-                RPat::Ident(RIdent {
-                    sym: js_word!("this"), ..
+                RPat::Ident(RBindingIdent {
+                    id: RIdent {
+                        sym: js_word!("this"), ..
+                    },
+                    ..
                 }) => {
                     if let Some(max) = &mut max_param {
                         *max -= 1;
@@ -1942,7 +1970,9 @@ impl Analyzer<'_, '_> {
 
                         slog::info!(self.logger, "Inferring type of arrow expr with updated type");
                         // It's okay to use default as we have patched parameters.
-                        box Type::Function(arrow.validate_with_default(&mut *self.with_ctx(ctx))?)
+                        let mut ty = box Type::Function(arrow.validate_with_default(&mut *self.with_ctx(ctx))?);
+                        self.add_required_type_params(&mut ty);
+                        ty
                     }
                     RExpr::Fn(fn_expr) => {
                         for (idx, param) in fn_expr.function.params.iter().enumerate() {
@@ -1950,7 +1980,9 @@ impl Analyzer<'_, '_> {
                         }
 
                         slog::info!(self.logger, "Inferring type of function expr with updated type");
-                        box Type::Function(fn_expr.function.validate_with(&mut *self.with_ctx(ctx))?)
+                        let mut ty = box Type::Function(fn_expr.function.validate_with(&mut *self.with_ctx(ctx))?);
+                        self.add_required_type_params(&mut ty);
+                        ty
                     }
                     _ => arg_ty.ty.clone(),
                 };
@@ -2098,8 +2130,11 @@ impl Analyzer<'_, '_> {
         for pair in params
             .iter()
             .filter(|param| match param.pat {
-                RPat::Ident(RIdent {
-                    sym: js_word!("this"), ..
+                RPat::Ident(RBindingIdent {
+                    id: RIdent {
+                        sym: js_word!("this"), ..
+                    },
+                    ..
                 }) => false,
                 _ => true,
             })
@@ -2195,7 +2230,7 @@ impl Analyzer<'_, '_> {
                     RTsThisTypeOrIdent::Ident(arg_id) => {
                         for (idx, param) in params.iter().enumerate() {
                             match &param.pat {
-                                RPat::Ident(i) if i.sym == arg_id.sym => {
+                                RPat::Ident(i) if i.id.sym == arg_id.sym => {
                                     // TODO: Check length of args.
                                     let arg = &args[idx];
                                     match &*arg.expr {
@@ -2217,6 +2252,14 @@ impl Analyzer<'_, '_> {
 
     fn narrow_with_predicate(&mut self, span: Span, orig_ty: &Type, new_ty: Type) -> ValidationResult {
         match new_ty.normalize() {
+            Type::Ref(..) => {
+                let new_ty = self
+                    .expand_top_ref(span, Cow::Owned(new_ty))
+                    .context("tried to expand ref type in new_ty to narrow type with predicate")?
+                    .into_owned();
+                return self.narrow_with_predicate(span, orig_ty, new_ty);
+            }
+
             Type::Keyword(..) | Type::Lit(..) => {}
             _ => {
                 match orig_ty.normalize() {
@@ -2344,14 +2387,14 @@ impl Analyzer<'_, '_> {
         spread_arg_types: &[TypeOrSpread],
     ) -> ArgCheckResult {
         if self.validate_type_args_count(span, type_params, type_args).is_err() {
-            return ArgCheckResult::NeverMatches;
+            return ArgCheckResult::WrongArgCount;
         }
 
         if self
             .validate_arg_count(span, params, args, arg_types, spread_arg_types)
             .is_err()
         {
-            return ArgCheckResult::NeverMatches;
+            return ArgCheckResult::WrongArgCount;
         }
 
         self.with_scope_for_type_params(|analyzer: &mut Analyzer| {
@@ -2388,7 +2431,7 @@ impl Analyzer<'_, '_> {
                             )
                             .is_err()
                         {
-                            return ArgCheckResult::NeverMatches;
+                            return ArgCheckResult::ArgTypeMismatch;
                         }
                         if analyzer.assign(&arg.ty, &param.ty, span).is_err() {
                             exact = false;
@@ -2642,7 +2685,8 @@ fn is_key_eq_prop(prop: &RExpr, computed: bool, e: &RExpr) -> bool {
 enum ArgCheckResult {
     Exact,
     MayBe,
-    NeverMatches,
+    ArgTypeMismatch,
+    WrongArgCount,
 }
 
 /// Ensure that sort work as expected.
@@ -2651,7 +2695,8 @@ fn test_arg_check_result_order() {
     let mut v = vec![
         ArgCheckResult::Exact,
         ArgCheckResult::MayBe,
-        ArgCheckResult::NeverMatches,
+        ArgCheckResult::ArgTypeMismatch,
+        ArgCheckResult::WrongArgCount,
     ];
     let expected = v.clone();
     v.sort();

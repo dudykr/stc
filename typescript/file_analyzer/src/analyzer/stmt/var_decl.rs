@@ -24,8 +24,7 @@ use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RTsAsExpr;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_ast_rnode::RTsTypeAnn;
-use stc_ts_ast_rnode::RTsTypeCastExpr;
+use stc_ts_ast_rnode::RTsTypeAssertion;
 use stc_ts_ast_rnode::RVarDecl;
 use stc_ts_ast_rnode::RVarDeclarator;
 use stc_ts_errors::DebugExt;
@@ -129,12 +128,12 @@ impl Analyzer<'_, '_> {
 
             let forced_type_ann = {
                 // let a = {} as Foo
-                match v.init {
-                    Some(box RExpr::TsAs(RTsAsExpr { ref type_ann, .. }))
-                    | Some(box RExpr::TsTypeCast(RTsTypeCastExpr {
-                        type_ann: RTsTypeAnn { ref type_ann, .. },
-                        ..
-                    })) => Some(type_ann.validate_with(self)?),
+                match &v.init {
+                    Some(box RExpr::TsAs(RTsAsExpr { type_ann, .. })) => Some(type_ann.validate_with(self)?),
+
+                    Some(box RExpr::TsTypeAssertion(RTsTypeAssertion { type_ann, .. })) => {
+                        Some(type_ann.validate_with(self)?)
+                    }
                     _ => None,
                 }
             };
@@ -494,7 +493,7 @@ impl Analyzer<'_, '_> {
                                     if self.rule().no_implicit_any {
                                         match v.name {
                                             RPat::Ident(ref i) => {
-                                                let span = i.span;
+                                                let span = i.id.span;
                                                 type_errors.push(Error::ImplicitAny { span });
                                                 break;
                                             }
@@ -543,7 +542,7 @@ impl Analyzer<'_, '_> {
                 match v.name {
                     RPat::Ident(ref i) => {
                         //
-                        let sym: Id = (&*i).into();
+                        let sym: Id = (&i.id).into();
                         let mut ty = try_opt!(i.type_ann.validate_with(self));
                         match ty {
                             Some(ref mut ty) => {
@@ -560,7 +559,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         match self.declare_var(
-                            i.span,
+                            i.id.span,
                             kind,
                             sym,
                             ty,
@@ -577,21 +576,13 @@ impl Analyzer<'_, '_> {
                         };
                     }
                     _ => {
-                        // assert!(
-                        //     var.declare,
-                        //     "complex pattern without initializer is invalid syntax and
-                        // parser \      should handle it"
-                        //  );
+                        // For ambient contexts and loops, we add variables to the scope.
 
-                        if self.ctx.in_declare {
-                            match self.declare_vars(kind, &v.name) {
-                                Ok(()) => {}
-                                Err(err) => {
-                                    self.storage.report(err);
-                                }
-                            };
-                        } else {
-                            // This is parsing error
+                        match self.declare_vars(kind, &v.name) {
+                            Ok(()) => {}
+                            Err(err) => {
+                                self.storage.report(err);
+                            }
                         }
                     }
                 };

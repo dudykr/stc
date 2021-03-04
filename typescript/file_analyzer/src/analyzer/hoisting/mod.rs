@@ -444,7 +444,7 @@ impl Visit<RPat> for RequirementCalculartor {
                 if self.in_var_decl {
                     return;
                 }
-                self.insert_var(i);
+                self.insert_var(&i.id);
             }
             _ => {}
         }

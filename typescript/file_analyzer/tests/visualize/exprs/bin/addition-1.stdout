@@ -47,6 +47,14 @@ warning: Type
   = note: number
 
 warning: Type
+ --> $DIR/tests/visualize/exprs/bin/addition-1.ts:3:5
+  |
+3 |     n += v[k]; // += should work the same way
+  |     ^
+  |
+  = note: number
+
+warning: Type
  --> $DIR/tests/visualize/exprs/bin/addition-1.ts:3:10
   |
 3 |     n += v[k]; // += should work the same way
@@ -67,14 +75,6 @@ warning: Type
   |
 3 |     n += v[k]; // += should work the same way
   |          ^^^^
-  |
-  = note: number
-
-warning: Type
- --> $DIR/tests/visualize/exprs/bin/addition-1.ts:3:5
-  |
-3 |     n += v[k]; // += should work the same way
-  |     ^
   |
   = note: number
 

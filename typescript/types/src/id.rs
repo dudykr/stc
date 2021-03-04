@@ -60,7 +60,6 @@ impl From<Id> for RIdent {
             node_id: NodeId::invalid(),
             span: DUMMY_SP.with_ctxt(i.ctxt),
             sym: i.sym,
-            type_ann: Default::default(),
             optional: false,
         }
     }

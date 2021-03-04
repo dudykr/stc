@@ -12,7 +12,6 @@ impl RIdent {
         Self {
             sym,
             span,
-            type_ann: None,
             optional: false,
             node_id: NodeId::invalid(),
         }
@@ -201,7 +200,6 @@ define_rnode!({
         TsTypeAssertion(TsTypeAssertion),
         TsConstAssertion(TsConstAssertion),
         TsNonNull(TsNonNullExpr),
-        TsTypeCast(TsTypeCastExpr),
         TsAs(TsAsExpr),
         PrivateName(PrivateName),
         OptChain(OptChainExpr),
@@ -388,9 +386,15 @@ define_rnode!({
     pub struct Ident {
         pub span: Span,
         pub sym: JsWord,
-        pub type_ann: Option<TsTypeAnn>,
         pub optional: bool,
     }
+
+    pub struct BindingIdent {
+        #[span]
+        pub id: Ident,
+        pub type_ann: Option<TsTypeAnn>,
+    }
+
     pub struct PrivateName {
         pub span: Span,
         pub id: Ident,
@@ -641,7 +645,7 @@ define_rnode!({
     }
 
     pub enum Pat {
-        Ident(Ident),
+        Ident(BindingIdent),
         Array(ArrayPat),
         Rest(RestPat),
         Object(ObjectPat),
@@ -883,11 +887,7 @@ define_rnode!({
         pub span: Span,
         pub params: Vec<Box<TsType>>,
     }
-    pub struct TsTypeCastExpr {
-        pub span: Span,
-        pub expr: Box<Expr>,
-        pub type_ann: TsTypeAnn,
-    }
+
     pub struct TsParamProp {
         pub span: Span,
         pub decorators: Vec<Decorator>,
@@ -896,8 +896,9 @@ define_rnode!({
         pub readonly: bool,
         pub param: TsParamPropParam,
     }
+
     pub enum TsParamPropParam {
-        Ident(Ident),
+        Ident(BindingIdent),
         Assign(AssignPat),
     }
     pub struct TsQualifiedName {
@@ -1000,7 +1001,7 @@ define_rnode!({
         pub span: Span,
     }
     pub enum TsFnParam {
-        Ident(Ident),
+        Ident(BindingIdent),
         Array(ArrayPat),
         Rest(RestPat),
         Object(ObjectPat),

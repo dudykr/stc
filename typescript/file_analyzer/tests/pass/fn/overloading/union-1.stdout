@@ -1,0 +1,40 @@
+warning: Type
+  --> $DIR/tests/pass/fn/overloading/union-1.ts:21:12
+   |
+21 |     return entity.kind === kind;
+   |            ^^^^^^
+   |
+   = note: Entity
+
+warning: Type
+  --> $DIR/tests/pass/fn/overloading/union-1.ts:21:12
+   |
+21 |     return entity.kind === kind;
+   |            ^^^^^^^^^^^
+   |
+   = note: Kind
+
+warning: Type
+  --> $DIR/tests/pass/fn/overloading/union-1.ts:21:28
+   |
+21 |     return entity.kind === kind;
+   |                            ^^^^
+   |
+   = note: Kind
+
+warning: Type
+  --> $DIR/tests/pass/fn/overloading/union-1.ts:21:12
+   |
+21 |     return entity.kind === kind;
+   |            ^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: boolean
+
+warning: Type
+  --> $DIR/tests/pass/fn/overloading/union-1.ts:25:1
+   |
+25 | hasKind
+   | ^^^^^^^
+   |
+   = note: typeof hasKind
+

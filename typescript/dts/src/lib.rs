@@ -512,7 +512,7 @@ impl VisitMut<RPat> for Dts {
             RPat::Assign(assign) => {
                 *pat = assign.left.take();
                 match pat {
-                    RPat::Ident(pat) => pat.optional = true,
+                    RPat::Ident(pat) => pat.id.optional = true,
                     RPat::Array(pat) => pat.optional = true,
                     RPat::Object(pat) => pat.optional = true,
                     _ => {}
@@ -551,10 +551,10 @@ impl VisitMut<Vec<RClassMember>> for Dts {
                                             span: Default::default(),
                                             declare: false,
                                             key: box match &p.param {
-                                                RTsParamPropParam::Ident(p) => RExpr::Ident(p.clone()),
+                                                RTsParamPropParam::Ident(p) => RExpr::Ident(p.id.clone()),
                                                 RTsParamPropParam::Assign(p) => match &p.left {
                                                     //
-                                                    box RPat::Ident(i) => RExpr::Ident(i.clone()),
+                                                    box RPat::Ident(i) => RExpr::Ident(i.id.clone()),
                                                     _ => unreachable!("binding pattern in property initializer"),
                                                 },
                                             },
@@ -582,7 +582,7 @@ impl VisitMut<Vec<RClassMember>> for Dts {
                                         }) => {
                                             // Original pattern has default value, so it should be
                                             // option
-                                            i.optional = true;
+                                            i.id.optional = true;
                                             p.param = RTsParamPropParam::Ident(i.clone());
                                         }
                                         _ => {}

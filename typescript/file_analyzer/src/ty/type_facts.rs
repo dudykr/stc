@@ -10,18 +10,41 @@ use stc_ts_types::ClassMember;
 use stc_ts_types::Constructor;
 use stc_ts_types::Function;
 use stc_ts_types::IndexedAccessType;
+use stc_ts_types::Intersection;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
 use stc_ts_types::Union;
 use std::borrow::Cow;
 use swc_common::Span;
 use swc_common::Spanned;
+use swc_common::DUMMY_SP;
 use swc_ecma_ast::TsKeywordTypeKind;
 
-pub(crate) struct TypeFactsHandler<'a, 'b, 'c> {
+impl Analyzer<'_, '_> {
+    pub fn apply_type_facts_to_type(&mut self, facts: TypeFacts, mut ty: Type) -> Type {
+        if facts.contains(TypeFacts::TypeofEQNumber)
+            || facts.contains(TypeFacts::TypeofEQString)
+            || facts.contains(TypeFacts::TypeofEQBoolean)
+        {
+            match ty {
+                Type::Param(..) | Type::IndexedAccessType(..) => {
+                    ty = Type::Intersection(Intersection {
+                        span: ty.span(),
+                        types: vec![ty],
+                    });
+                }
+                _ => {}
+            }
+        }
+
+        ty.fold_with(&mut TypeFactsHandler { analyzer: self, facts })
+    }
+}
+
+struct TypeFactsHandler<'a, 'b, 'c> {
     /// Used to expand references.
-    pub analyzer: &'a mut Analyzer<'b, 'c>,
-    pub facts: TypeFacts,
+    analyzer: &'a mut Analyzer<'b, 'c>,
+    facts: TypeFacts,
 }
 
 impl TypeFactsHandler<'_, '_, '_> {
@@ -129,6 +152,42 @@ impl Fold<RTsKeywordType> for TypeFactsHandler<'_, '_, '_> {
                     };
                 }
             }
+        }
+
+        ty
+    }
+}
+
+impl Fold<Intersection> for TypeFactsHandler<'_, '_, '_> {
+    fn fold(&mut self, ty: Intersection) -> Intersection {
+        let mut ty = ty.fold_children_with(self);
+
+        let has_keyword = |kind| ty.types.iter().any(|ty| ty.normalize().is_kwd(kind));
+
+        // TODO: Support literal type.
+        let has_str = has_keyword(TsKeywordTypeKind::TsStringKeyword);
+        let has_num = has_keyword(TsKeywordTypeKind::TsNumberKeyword);
+        let has_bool = has_keyword(TsKeywordTypeKind::TsBooleanKeyword);
+
+        if !has_str && self.facts.contains(TypeFacts::TypeofEQString) {
+            ty.types.push(Type::Keyword(RTsKeywordType {
+                span: DUMMY_SP,
+                kind: TsKeywordTypeKind::TsStringKeyword,
+            }));
+        }
+
+        if !has_num && self.facts.contains(TypeFacts::TypeofEQNumber) {
+            ty.types.push(Type::Keyword(RTsKeywordType {
+                span: DUMMY_SP,
+                kind: TsKeywordTypeKind::TsNumberKeyword,
+            }));
+        }
+
+        if !has_bool && self.facts.contains(TypeFacts::TypeofEQBoolean) {
+            ty.types.push(Type::Keyword(RTsKeywordType {
+                span: DUMMY_SP,
+                kind: TsKeywordTypeKind::TsBooleanKeyword,
+            }));
         }
 
         ty

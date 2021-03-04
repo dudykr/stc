@@ -30,6 +30,7 @@ use crate::Key;
 use crate::{OptionalType, RestType, StaticThis, Symbol};
 use rnode::NodeId;
 use stc_ts_ast_rnode::RArrayPat;
+use stc_ts_ast_rnode::RBindingIdent;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RLit;
@@ -690,12 +691,15 @@ impl From<FnParam> for RTsFnParam {
 
         fn convert(span: Span, type_ann: Option<RTsTypeAnn>, pat: RPat, optional: bool) -> RTsFnParam {
             match pat {
-                RPat::Ident(i) => RTsFnParam::Ident(RIdent {
+                RPat::Ident(i) => RTsFnParam::Ident(RBindingIdent {
                     node_id: NodeId::invalid(),
-                    span,
-                    sym: i.sym,
                     type_ann: type_ann.into(),
-                    optional,
+                    id: RIdent {
+                        node_id: NodeId::invalid(),
+                        span,
+                        sym: i.id.sym,
+                        optional,
+                    },
                 }),
                 RPat::Array(a) => RTsFnParam::Array(RArrayPat {
                     node_id: NodeId::invalid(),
@@ -765,7 +769,6 @@ impl Key {
                 span,
                 sym,
                 optional: false,
-                type_ann: None,
             }),
             Key::Private(name) => box RExpr::PrivateName(RPrivateName {
                 span: name.span,

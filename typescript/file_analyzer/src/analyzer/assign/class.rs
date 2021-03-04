@@ -6,6 +6,7 @@ use stc_ts_errors::Error;
 use stc_ts_types::Class;
 use stc_ts_types::ClassDef;
 use stc_ts_types::ClassMember;
+use stc_ts_types::QueryExpr;
 use stc_ts_types::Type;
 use std::borrow::Cow;
 use swc_common::EqIgnoreSpan;
@@ -21,7 +22,22 @@ impl Analyzer<'_, '_> {
                 return self.assign_to_class_def(opts, l, &r);
             }
 
+            Type::Query(r_ty) => match &*r_ty.expr {
+                QueryExpr::TsEntityName(e) => {
+                    let rhs = self
+                        .resolve_typeof(opts.span, e)
+                        .context("tried to resolve typeof for assignment")?;
+
+                    return self.assign_to_class_def(opts, l, &rhs);
+                }
+                QueryExpr::Import(_) => {}
+            },
+
             Type::ClassDef(rc) => {
+                if l.eq_ignore_span(rc) {
+                    return Ok(());
+                }
+
                 if !l.is_abstract && rc.is_abstract {
                     return Err(Error::CannotAssignAbstractConstructorToNonAbstractConstructor { span: opts.span });
                 }

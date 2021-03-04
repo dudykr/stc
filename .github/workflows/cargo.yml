@@ -7,7 +7,7 @@ env:
 
 jobs:
   fmt:
-    name: fmt
+    name: Formatting
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -24,37 +24,9 @@ jobs:
       - name: Run cargo fmt
         run: cargo fmt --all -- --check
 
-  test:
-    name: test
-    runs-on: self-hosted
-    strategy:
-      matrix:
-        crate:
-          - libstc
-          - node-stc
-          - rnode
-          - rnode_macros
-          - stc
-          - stc-devtools
-          - stc_testing
-          - stc_ts_ast_rnode
-          - stc_ts_builtin_macro
-          - stc_ts_builtin_types
-          - stc_ts_dts
-          - stc_ts_dts_mutations
-          - stc_ts_env
-          - stc_ts_errors
-          - stc_ts_file_analyzer
-          - stc_ts_file_analyzer_macros
-          - stc_ts_module_loader
-          - stc_ts_storage
-          - stc_ts_testing
-          - stc_ts_type_checker
-          - stc_ts_types
-          - stc_ts_utils
-          - stc_utils
-          - stc_visit
-          - stc_visit_macros
+  check:
+    name: Check
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
         with:
@@ -66,33 +38,11 @@ jobs:
           sh ./rustup.sh --default-toolchain none -y
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
-      - name: Install apt dependencies
-        run: |
-          apt-get install -y wget
-          wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -
-          echo 'deb http://apt.llvm.org/focal/ llvm-toolchain-focal-11 main' >> /etc/apt/sources.list
-          apt-get update
-          apt-get install -y clang-11 lld-11
-
-      - uses: actions/setup-node@v2
-        with:
-          node-version: "12"
-
       - name: Install node dependencies
         run: |
           npm config set prefix ~/npm
           echo "$HOME/npm/bin" >> $GITHUB_PATH
           npm i
-
-      - name: Install llvm ( windows only )
-        if: matrix.os == 'windows-latest'
-        run: choco install -y llvm
-
-      - name: Set llvm path
-        if: matrix.os == 'windows-latest'
-        uses: allenevans/set-env@v1.0.0
-        with:
-          LIBCLANG_PATH: 'C:\\Program Files\\LLVM\\bin'
 
       - name: Cache
         uses: actions/cache@v2
@@ -100,11 +50,73 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
+            target
           key: ${{ runner.os }}-cargo
 
       # Ensure that all components all compilable.
       - name: Run cargo check for all targets
-        run: cargo check --color always -p ${{ matrix.crate }} --all-targets
+        run: cargo check --color always --all --all-targets
+
+  test:
+    name: test
+    needs:
+      - fmt
+      - check
+    runs-on: ubuntu-latest
+    # runs-on: self-hosted
+    strategy:
+      matrix:
+        crate:
+          - libstc
+          - node-stc
+          - rnode
+          # - rnode_macros
+          - stc
+          # - stc-devtools
+          # - stc_testing
+          - stc_ts_ast_rnode
+          # - stc_ts_builtin_macro
+          - stc_ts_builtin_types
+          - stc_ts_dts
+          # - stc_ts_dts_mutations
+          - stc_ts_env
+          - stc_ts_errors
+          - stc_ts_file_analyzer
+          # - stc_ts_file_analyzer_macros
+          - stc_ts_module_loader
+          # - stc_ts_storage
+          # - stc_ts_testing
+          - stc_ts_type_checker
+          - stc_ts_types
+          # - stc_ts_utils
+          # - stc_utils
+          - stc_visit
+          # - stc_visit_macros
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: Install rustup
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rustup.sh
+          sh ./rustup.sh --default-toolchain none -y
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Install node dependencies
+        run: |
+          npm config set prefix ~/npm
+          echo "$HOME/npm/bin" >> $GITHUB_PATH
+          npm i
+
+      - name: Cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo
 
       - name: Run cargo tests
         run: |

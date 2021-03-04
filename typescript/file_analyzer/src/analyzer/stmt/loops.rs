@@ -31,7 +31,7 @@ impl Analyzer<'_, '_> {
                 }
                 RPat::Ident(ref i) => {
                     // TODO: verify
-                    self.type_of_var(i, TypeOfMode::LValue, None)?;
+                    self.type_of_var(&i.id, TypeOfMode::LValue, None)?;
                 }
                 _ => {}
             },
@@ -90,7 +90,10 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, s: &RForInStmt) {
+        s.left.visit_with(self);
         self.check_for_of_in_loop(s.span, &s.left, &s.right);
+
+        s.body.visit_with(self);
 
         Ok(())
     }
@@ -99,7 +102,11 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, s: &RForOfStmt) {
+        s.left.visit_with(self);
+
         self.check_for_of_in_loop(s.span, &s.left, &s.right);
+
+        s.body.visit_with(self);
 
         Ok(())
     }

@@ -1,0 +1,40 @@
+warning: Type
+ --> $DIR/tests/pass/exprs/array/iterable/map/1.ts:1:29
+  |
+1 | export const map = new Map([["", true], ["hello", true]])
+  |                             ^^^^^^^^^^
+  |
+  = note: ["", true]
+
+warning: Type
+ --> $DIR/tests/pass/exprs/array/iterable/map/1.ts:1:41
+  |
+1 | export const map = new Map([["", true], ["hello", true]])
+  |                                         ^^^^^^^^^^^^^^^
+  |
+  = note: ["hello", true]
+
+warning: Type
+ --> $DIR/tests/pass/exprs/array/iterable/map/1.ts:1:28
+  |
+1 | export const map = new Map([["", true], ["hello", true]])
+  |                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: [["", true], ["hello", true]]
+
+warning: Type
+ --> $DIR/tests/pass/exprs/array/iterable/map/1.ts:1:24
+  |
+1 | export const map = new Map([["", true], ["hello", true]])
+  |                        ^^^
+  |
+  = note: MapConstructor
+
+warning: Type
+ --> $DIR/tests/pass/exprs/array/iterable/map/1.ts:1:20
+  |
+1 | export const map = new Map([["", true], ["hello", true]])
+  |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: Map<string, boolean>
+

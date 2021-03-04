@@ -7,7 +7,6 @@ use super::{
     Analyzer,
 };
 use crate::analyzer::expr::IdCtx;
-use crate::analyzer::ty::type_facts::TypeFactsHandler;
 use crate::util::type_ext::TypeVecExt;
 use crate::{
     ty::{Tuple, Type, TypeElement, TypeLit},
@@ -18,7 +17,6 @@ use crate::{
     ValidationResult,
 };
 use fxhash::FxHashMap;
-use rnode::FoldWith;
 use rnode::NodeId;
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RBinExpr;
@@ -499,7 +497,7 @@ impl Analyzer<'_, '_> {
         }
 
         if ends_with_ret {
-            self.scope.facts.extend(false_facts);
+            self.cur_facts.true_facts += false_facts;
         }
 
         Ok(())
@@ -528,7 +526,7 @@ impl Analyzer<'_, '_> {
                         // TODO
                         match &**pat {
                             RPat::Ident(left) => {
-                                let lhs = self.type_of_var(left, TypeOfMode::LValue, None)?;
+                                let lhs = self.type_of_var(&left.id, TypeOfMode::LValue, None)?;
                                 self.assign_with_op(span, op, &lhs, &ty)?;
                             }
                             _ => Err(Error::InvalidOperatorForLhs { span, op })?,
@@ -544,7 +542,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn try_assign_pat(&mut self, span: Span, lhs: &RPat, ty: &Type) -> ValidationResult<()> {
+    pub(super) fn try_assign_pat(&mut self, span: Span, lhs: &RPat, ty: &Type) -> ValidationResult<()> {
         match ty {
             Type::Ref(..) => {
                 let ty = self
@@ -584,17 +582,17 @@ impl Analyzer<'_, '_> {
 
             RPat::Ident(i) => {
                 // Verify using immutable references.
-                if let Some(var_info) = self.scope.get_var(&i.into()) {
+                if let Some(var_info) = self.scope.get_var(&i.id.clone().into()) {
                     if let Some(var_ty) = var_info.ty.clone() {
-                        self.assign(&var_ty, ty, i.span)?;
+                        self.assign(&var_ty, ty, i.id.span)?;
                     }
                 }
 
                 let mut actual_ty = None;
                 if let Some(var_info) = self
                     .scope
-                    .get_var(&i.into())
-                    .or_else(|| self.scope.search_parent(&i.into()))
+                    .get_var(&i.id.clone().into())
+                    .or_else(|| self.scope.search_parent(&i.id.clone().into()))
                 {
                     if let Some(declared_ty) = &var_info.ty {
                         if declared_ty.is_any() {
@@ -607,12 +605,12 @@ impl Analyzer<'_, '_> {
                 }
 
                 // TODO: Update actual types.
-                if let Some(var_info) = self.scope.get_var_mut(&i.into()) {
+                if let Some(var_info) = self.scope.get_var_mut(&i.id.clone().into()) {
                     var_info.actual_ty = Some(actual_ty.unwrap_or_else(|| ty.clone()));
                     return Ok(());
                 }
 
-                let var_info = if let Some(var_info) = self.scope.search_parent(&i.into()) {
+                let var_info = if let Some(var_info) = self.scope.search_parent(&i.id.clone().into()) {
                     let actual_ty = Some(actual_ty.unwrap_or_else(|| ty.clone()));
 
                     VarInfo {
@@ -621,12 +619,12 @@ impl Analyzer<'_, '_> {
                         ..var_info.clone()
                     }
                 } else {
-                    if let Some(types) = self.find_type(self.ctx.module_id, &i.into())? {
+                    if let Some(types) = self.find_type(self.ctx.module_id, &i.id.clone().into())? {
                         for ty in types {
                             match &*ty {
                                 Type::Module(..) => {
                                     return Err(Error::NotVariable {
-                                        span: i.span,
+                                        span: i.id.span,
                                         left: lhs.span(),
                                     });
                                 }
@@ -635,13 +633,13 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    return if self.ctx.allow_ref_declaring && self.scope.declaring.contains(&i.into()) {
+                    return if self.ctx.allow_ref_declaring && self.scope.declaring.contains(&i.id.clone().into()) {
                         Ok(())
                     } else {
                         // undefined symbol
                         Err(Error::UndefinedSymbol {
-                            sym: i.into(),
-                            span: i.span,
+                            sym: i.id.clone().into(),
+                            span: i.id.span,
                         })
                     };
                 };
@@ -649,12 +647,15 @@ impl Analyzer<'_, '_> {
                 // Variable is defined on parent scope.
                 //
                 // We copy varinfo with enhanced type.
-                self.scope.insert_var(i.into(), var_info);
+                self.scope.insert_var(i.id.clone().into(), var_info);
 
                 return Ok(());
             }
 
             RPat::Array(ref arr) => {
+                let ty = self
+                    .get_iterator(span, Cow::Borrowed(ty))
+                    .context("tried to convert a type to an iterator to assign with an array pattern")?;
                 //
                 for (i, elem) in arr.elems.iter().enumerate() {
                     if let Some(elem) = elem {
@@ -669,7 +670,14 @@ impl Analyzer<'_, '_> {
                                 }
                             }
 
-                            _ => unimplemented!("assignment with array pattern\nPat: {:?}\nType: {:?}", lhs, ty),
+                            _ => {
+                                let elem_ty = self
+                                    .get_element_from_iterator(span, Cow::Borrowed(&ty), i)
+                                    .context("tried to get an element of type to assign with an array pattern")?;
+
+                                self.try_assign_pat(span, elem, &elem_ty)
+                                    .context("tried to assign an element of an array pattern")?;
+                            }
                         }
                     }
                 }
@@ -684,11 +692,11 @@ impl Analyzer<'_, '_> {
                             let lhs = match prop {
                                 RObjectPatProp::KeyValue(kv) => &kv.value,
                                 RObjectPatProp::Assign(a) => {
-                                    if a.key.type_ann.is_none() {
-                                        if let Some(m) = &mut self.mutations {
-                                            m.for_pats.entry(a.key.node_id).or_default().ty = Some(Type::any(span));
-                                        }
-                                    }
+                                    // if a.key.type_ann.is_none() {
+                                    //     if let Some(m) = &mut self.mutations {
+                                    //         m.for_pats.entry(a.key.node_id).or_default().ty =
+                                    // Some(Type::any(span));     }
+                                    // }
                                     continue;
                                 }
                                 RObjectPatProp::Rest(r) => {
@@ -737,10 +745,15 @@ impl Analyzer<'_, '_> {
                 return self.try_assign_pat(span, &rest.arg, &ty);
             }
 
-            _ => {}
-        }
+            RPat::Expr(lhs) => {
+                let lhs_ty = lhs
+                    .validate_with_args(self, (TypeOfMode::LValue, None, None))
+                    .context("tried to validate type of the expression in lhs of assignment")?;
 
-        unimplemented!("assignment with complex pattern\nPat: {:?}\nType: {:?}", lhs, ty)
+                self.assign(&lhs_ty, ty, span)?;
+                return Ok(());
+            }
+        }
     }
 
     pub(super) fn add_type_fact(&mut self, sym: &Id, ty: Type) {
@@ -821,16 +834,19 @@ impl Analyzer<'_, '_> {
         );
 
         match prop_res {
-            Ok(prop_ty) => {
+            Ok(mut prop_ty) => {
                 // Check if property matches the type fact.
                 if let Some(type_facts) = type_facts {
                     let orig = prop_ty.clone();
-                    let prop_ty = prop_ty.fold_with(&mut TypeFactsHandler {
-                        facts: type_facts,
-                        analyzer: self,
-                    });
+                    prop_ty = self.apply_type_facts_to_type(type_facts, prop_ty);
 
-                    if !orig.normalize().type_eq(prop_ty.normalize()) {
+                    // TODO: See if which one is correct.
+                    //
+                    // if !orig.normalize().type_eq(prop_ty.normalize()) {
+                    //     return Ok(Type::never(src.span()));
+                    // }
+
+                    if prop_ty.is_never() {
                         return Ok(Type::never(src.span()));
                     }
                 }
@@ -871,7 +887,7 @@ impl Analyzer<'_, '_> {
                             TypeOfMode::RValue,
                             IdCtx::Var,
                         ) {
-                            if ty.normalize().type_eq(&prop_ty.normalize()) {
+                            if ty.type_eq(&prop_ty) {
                                 new_obj_types.push(obj.clone());
                             }
                         }

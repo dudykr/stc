@@ -5,6 +5,7 @@
 
 pub use self::result_ext::DebugExt;
 use fmt::Formatter;
+use static_assertions::assert_eq_size;
 use stc_ts_types::name::Name;
 use stc_ts_types::Id;
 use stc_ts_types::Key;
@@ -57,6 +58,10 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    SuperInClassWithoutSuper {
+        span: Span,
+    },
+
     GeneratorCannotHaveVoidAsReturnType {
         span: Span,
     },
@@ -122,6 +127,10 @@ pub enum Error {
     },
 
     ObjectIsPossiblyUndefined {
+        span: Span,
+    },
+
+    ObjectIsPossiblyNullOrUndefined {
         span: Span,
     },
 
@@ -302,6 +311,10 @@ pub enum Error {
         span: Span,
         obj: Option<Box<Type>>,
         prop: Option<Box<Key>>,
+    },
+
+    NoInitAndNoDefault {
+        span: Span,
     },
 
     TooManyTupleElements {
@@ -687,6 +700,8 @@ pub enum Error {
     DebugContext(DebugContext),
 }
 
+assert_eq_size!(Error, [u8; 88]);
+
 impl Error {
     pub fn convert<F>(self, op: F) -> Self
     where
@@ -858,11 +873,15 @@ impl Error {
 
             Error::NonOverlappingTypeCast { .. } => 2352,
 
-            Error::NoSuchProperty { .. } => 2339,
+            Error::SuperInClassWithoutSuper { .. } => 2335,
+
+            Error::NoSuchProperty { .. } | Error::NoSuchPropertyInClass { .. } => 2339,
             Error::AssignOpCannotBeApplied { .. } => 2365,
             Error::NonSymbolComputedPropInFormOfSymbol { .. } => 2471,
             Error::TypeUsedAsVar { .. } => 2585,
             Error::TypeNotFound { .. } => 2304,
+
+            Error::NoInitAndNoDefault { .. } => 2525,
 
             Error::ExpectedNArgsButGotM { .. } => 2554,
             Error::ExpectedAtLeastNArgsButGotM { .. } => 2555,
@@ -872,6 +891,9 @@ impl Error {
             Error::ReferencedInInit { .. } => 2372,
 
             Error::InvalidDeleteOperand { .. } => 2703,
+
+            Error::DuplicateName { .. } => 2300,
+
             Error::NoSuchVar { .. } => 2304,
             Error::NoSuchVarButThisHasSuchProperty { .. } => 2663,
 
@@ -894,6 +916,7 @@ impl Error {
 
             Error::ObjectIsPossiblyNull { .. } => 2531,
             Error::ObjectIsPossiblyUndefined { .. } => 2532,
+            Error::ObjectIsPossiblyNullOrUndefined { .. } => 2533,
 
             Error::InvalidBinaryOp { .. } => 2365,
 

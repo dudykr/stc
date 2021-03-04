@@ -1,0 +1,1 @@
+export const map = new Map([["", true], ["hello", true]])

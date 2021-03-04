@@ -192,7 +192,10 @@ impl TypeStore for Single<'_> {
                 Some(..) => {}
                 None => {}
             },
-            None => self.report(Error::NoSuchVar { span, name: id }),
+            None => {
+                dbg!();
+                self.report(Error::NoSuchVar { span, name: id })
+            }
         }
     }
 
@@ -203,7 +206,10 @@ impl TypeStore for Single<'_> {
             Some(ty) => {
                 *self.info.exports.types.entry(id.sym().clone()).or_default() = ty.clone();
             }
-            None => self.report(Error::NoSuchVar { span, name: id }),
+            None => {
+                dbg!();
+                self.report(Error::NoSuchVar { span, name: id })
+            }
         }
     }
 
@@ -328,7 +334,10 @@ impl TypeStore for Group<'_> {
             Some(v) => {
                 e.vars.insert(id.sym().clone(), v.clone());
             }
-            None => self.report(Error::NoSuchVar { span, name: id }),
+            None => {
+                dbg!();
+                self.report(Error::NoSuchVar { span, name: id })
+            }
         }
     }
 
