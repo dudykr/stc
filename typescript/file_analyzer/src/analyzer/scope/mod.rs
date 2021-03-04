@@ -139,6 +139,19 @@ impl Scope<'_> {
         }
     }
 
+    pub fn is_declaring_fn(&self, id: &Id) -> bool {
+        if let Some(d) = self.declaring_fn {
+            if d == *id {
+                return true;
+            }
+        }
+
+        match self.parent {
+            Some(scope) => scope.is_declaring_fn(id),
+            _ => false,
+        }
+    }
+
     pub fn get_this_class_name(&self) -> Option<Id> {
         match &self.this_class_name {
             Some(v) => return Some(v.clone()),

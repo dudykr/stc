@@ -1771,15 +1771,13 @@ impl Analyzer<'_, '_> {
         let id: Id = i.into();
         let name: Name = i.into();
 
-        if let Some(declaring) = &self.scope.declaring_fn {
-            if id == *declaring {
-                // We will expand this type query to proper type while calculating returns types
-                // of a function.
-                return Ok(Type::Query(QueryType {
-                    span,
-                    expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(id.into())),
-                }));
-            }
+        if self.scope.is_declaring_fn(&id) {
+            // We will expand this type query to proper type while calculating returns types
+            // of a function.
+            return Ok(Type::Query(QueryType {
+                span,
+                expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(id.into())),
+            }));
         }
 
         let mut modules = vec![];
