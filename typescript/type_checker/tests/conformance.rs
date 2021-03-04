@@ -481,7 +481,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
 
         let err_count = actual_errors.len();
 
-        if expected_errors.is_empty() {
+        if full_ref_errors.is_empty() {
             println!("[INFER_ONLY]{}", file_name.display());
         }
 
