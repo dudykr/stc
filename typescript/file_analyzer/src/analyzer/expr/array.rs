@@ -57,7 +57,7 @@ impl Analyzer<'_, '_> {
                 Some(RExprOrSpread { spread: None, ref expr }) => {
                     let ty = expr.validate_with_default(self)?;
                     match &ty {
-                        Type::TypeLit(..) => {
+                        Type::TypeLit(..) | Type::Function(..) => {
                             can_be_tuple = false;
                         }
                         _ => {}
