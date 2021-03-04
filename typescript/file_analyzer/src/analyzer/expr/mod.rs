@@ -1582,6 +1582,17 @@ impl Analyzer<'_, '_> {
                         new.push(v);
                     }
                 }
+                // Exclude accesses to type params.
+                if new.len() >= 2 {
+                    new.retain(|prop_ty| match prop_ty.normalize() {
+                        Type::IndexedAccessType(iat) => match iat.obj_type.normalize() {
+                            Type::Param(..) => false,
+                            _ => true,
+                        },
+                        _ => true,
+                    });
+                }
+
                 // print_backtrace();
                 if new.len() == 1 {
                     return Ok(new.into_iter().next().unwrap());
