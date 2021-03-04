@@ -566,6 +566,13 @@ impl Analyzer<'_, '_> {
             if (self.scope.is_root() || self.scope.is_module()) && !ty.normalize().is_type_param() {
                 self.storage
                     .store_private_type(self.ctx.module_id, name.clone(), ty.clone());
+
+                match *name.sym() {
+                    js_word!("Array") | js_word!("Number") | js_word!("Boolean") | js_word!("String") => {
+                        self.env.declare_global_type(name.sym().clone(), ty.clone());
+                    }
+                    _ => {}
+                }
             }
 
             self.scope.register_type(name, ty);
