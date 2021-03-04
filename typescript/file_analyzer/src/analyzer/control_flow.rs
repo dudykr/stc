@@ -7,7 +7,6 @@ use super::{
     Analyzer,
 };
 use crate::analyzer::expr::IdCtx;
-use crate::analyzer::ty::type_facts::TypeFactsHandler;
 use crate::util::type_ext::TypeVecExt;
 use crate::{
     ty::{Tuple, Type, TypeElement, TypeLit},
@@ -18,7 +17,6 @@ use crate::{
     ValidationResult,
 };
 use fxhash::FxHashMap;
-use rnode::FoldWith;
 use rnode::NodeId;
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RBinExpr;
@@ -836,14 +834,11 @@ impl Analyzer<'_, '_> {
         );
 
         match prop_res {
-            Ok(prop_ty) => {
+            Ok(mut prop_ty) => {
                 // Check if property matches the type fact.
                 if let Some(type_facts) = type_facts {
                     let orig = prop_ty.clone();
-                    let prop_ty = prop_ty.fold_with(&mut TypeFactsHandler {
-                        facts: type_facts,
-                        analyzer: self,
-                    });
+                    prop_ty = self.apply_type_facts_to_type(type_facts, prop_ty);
 
                     // TODO: See if which one is correct.
                     //

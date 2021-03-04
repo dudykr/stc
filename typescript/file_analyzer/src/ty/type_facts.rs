@@ -20,10 +20,31 @@ use swc_common::Spanned;
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::TsKeywordTypeKind;
 
-pub(crate) struct TypeFactsHandler<'a, 'b, 'c> {
+impl Analyzer<'_, '_> {
+    pub fn apply_type_facts_to_type(&mut self, facts: TypeFacts, mut ty: Type) -> Type {
+        if facts.contains(TypeFacts::TypeofEQNumber)
+            || facts.contains(TypeFacts::TypeofEQString)
+            || facts.contains(TypeFacts::TypeofEQBoolean)
+        {
+            match ty {
+                Type::Param(..) | Type::IndexedAccessType(..) => {
+                    ty = Type::Intersection(Intersection {
+                        span: ty.span(),
+                        types: vec![ty],
+                    });
+                }
+                _ => {}
+            }
+        }
+
+        ty.fold_with(&mut TypeFactsHandler { analyzer: self, facts })
+    }
+}
+
+struct TypeFactsHandler<'a, 'b, 'c> {
     /// Used to expand references.
-    pub analyzer: &'a mut Analyzer<'b, 'c>,
-    pub facts: TypeFacts,
+    analyzer: &'a mut Analyzer<'b, 'c>,
+    facts: TypeFacts,
 }
 
 impl TypeFactsHandler<'_, '_, '_> {
@@ -268,24 +289,6 @@ impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
                 }
             }
             _ => {}
-        }
-
-        if self.facts.contains(TypeFacts::TypeofEQNumber)
-            || self.facts.contains(TypeFacts::TypeofEQString)
-            || self.facts.contains(TypeFacts::TypeofEQBoolean)
-        {
-            match ty {
-                Type::Param(..) | Type::IndexedAccessType(..) => {
-                    ty = Type::Intersection(
-                        Intersection {
-                            span: ty.span(),
-                            types: vec![ty],
-                        }
-                        .fold_with(self),
-                    );
-                }
-                _ => {}
-            }
         }
 
         ty

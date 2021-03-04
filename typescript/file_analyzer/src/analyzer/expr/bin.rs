@@ -4,7 +4,6 @@ use super::super::{
 };
 use super::TypeOfMode;
 use crate::analyzer::assign::AssignOpts;
-use crate::ty::type_facts::TypeFactsHandler;
 use crate::util::type_ext::TypeVecExt;
 use crate::{
     analyzer::{Ctx, ScopeKind},
@@ -15,7 +14,6 @@ use crate::{
     validator::ValidateWith,
     ValidationResult,
 };
-use rnode::FoldWith;
 use stc_ts_ast_rnode::RBinExpr;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RExprOrSuper;
@@ -140,12 +138,9 @@ impl Analyzer<'_, '_> {
                                 Some(ty) => Some(ty),
                                 _ => match op {
                                     op!("||") | op!("??") => {
-                                        truthy_lt = lt.clone().map(|ty| {
-                                            ty.fold_with(&mut TypeFactsHandler {
-                                                analyzer: child,
-                                                facts: TypeFacts::Truthy,
-                                            })
-                                        });
+                                        truthy_lt = lt
+                                            .clone()
+                                            .map(|ty| child.apply_type_facts_to_type(TypeFacts::Truthy, ty));
                                         truthy_lt.as_ref()
                                     }
                                     _ => lt.as_ref(),

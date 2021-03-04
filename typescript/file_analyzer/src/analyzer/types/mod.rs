@@ -1,10 +1,8 @@
 use super::Analyzer;
-use crate::ty::type_facts::TypeFactsHandler;
 use crate::type_facts::TypeFacts;
 use crate::util::type_ext::TypeVecExt;
 use crate::ValidationResult;
 use fxhash::FxHashMap;
-use rnode::FoldWith;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
 use stc_ts_ast_rnode::RNumber;
@@ -213,10 +211,7 @@ impl Analyzer<'_, '_> {
                 .copied()
                 .unwrap_or(TypeFacts::None);
 
-        ty.fold_with(&mut TypeFactsHandler {
-            facts: type_facts,
-            analyzer: self,
-        })
+        self.apply_type_facts_to_type(type_facts, ty)
     }
 
     pub(crate) fn collect_class_members(&mut self, ty: &Type) -> ValidationResult<Option<Vec<ClassMember>>> {

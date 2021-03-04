@@ -2,14 +2,12 @@ use super::call_new::ExtractKind;
 use super::IdCtx;
 use super::TypeOfMode;
 use crate::analyzer::Analyzer;
-use crate::ty::type_facts::TypeFactsHandler;
 use crate::type_facts::TypeFacts;
 use crate::util::type_ext::TypeVecExt;
 use crate::validator;
 use crate::validator::ValidateWith;
 use crate::ValidationResult;
 use itertools::Itertools;
-use rnode::FoldWith;
 use rnode::NodeId;
 use stc_ts_ast_rnode::RArrayLit;
 use stc_ts_ast_rnode::RExpr;
@@ -235,10 +233,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        let elem_ty = elem_ty.fold_with(&mut TypeFactsHandler {
-            facts: TypeFacts::Truthy,
-            analyzer: self,
-        });
+        elem_ty = self.apply_type_facts_to_type(TypeFacts::Truthy, elem_ty);
 
         Ok(Cow::Owned(elem_ty))
     }
@@ -366,10 +361,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        let elem_ty = elem_ty.fold_with(&mut TypeFactsHandler {
-            facts: TypeFacts::Truthy,
-            analyzer: self,
-        });
+        elem_ty = self.apply_type_facts_to_type(TypeFacts::Truthy, elem_ty);
 
         Ok(Cow::Owned(elem_ty))
     }
