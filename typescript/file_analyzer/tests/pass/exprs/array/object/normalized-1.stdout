@@ -20,7 +20,7 @@ warning: Type
 1 | var x = [() => 1, () => { }];
   |         ^^^^^^^^^^^^^^^^^^^^
   |
-  = note: [() => number, () => void]
+  = note: () => void[]
 
 warning: Type
  --> $DIR/tests/pass/exprs/array/object/normalized-1.ts:2:17
@@ -28,7 +28,7 @@ warning: Type
 2 | export var r2 = x[0]();
   |                 ^
   |
-  = note: (() => number | () => void)[]
+  = note: () => void[]
 
 warning: Type
  --> $DIR/tests/pass/exprs/array/object/normalized-1.ts:2:17
@@ -36,7 +36,7 @@ warning: Type
 2 | export var r2 = x[0]();
   |                 ^^^^
   |
-  = note: () => number | () => void
+  = note: () => void
 
 warning: Type
  --> $DIR/tests/pass/exprs/array/object/normalized-1.ts:2:17
