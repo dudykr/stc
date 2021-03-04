@@ -76,12 +76,25 @@ impl UnionNormalizer<'_, '_, '_> {
             .collect()
     }
 
+    fn normalize_fn_types(&mut self, ty: &mut Type) {
+        let u = match ty {
+            Type::Union(u) => u,
+            _ => return,
+        };
+        if u.types.iter().any(|ty| !ty.normalize().is_function()) {
+            return;
+        }
+    }
+
     /// TODO: Add type parameters.
     fn normalize_call_signatures(&self, ty: &mut Type) {
         let u = match ty {
             Type::Union(u) => u,
             _ => return,
         };
+        if u.types.iter().any(|ty| !ty.normalize().is_type_lit()) {
+            return;
+        }
         let mut inexact = false;
         let mut prev_specified = false;
 
@@ -301,6 +314,7 @@ impl VisitMut<Type> for UnionNormalizer<'_, '_, '_> {
         ty.visit_mut_children_with(self);
 
         self.normalize_call_signatures(ty);
+        self.normalize_fn_types(ty);
     }
 }
 
