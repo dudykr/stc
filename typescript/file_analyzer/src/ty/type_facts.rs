@@ -270,6 +270,24 @@ impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
             _ => {}
         }
 
+        if self.facts.contains(TypeFacts::TypeofEQNumber)
+            || self.facts.contains(TypeFacts::TypeofEQString)
+            || self.facts.contains(TypeFacts::TypeofEQBoolean)
+        {
+            match ty {
+                Type::Param(..) | Type::IndexedAccessType(..) => {
+                    ty = Type::Intersection(
+                        Intersection {
+                            span: ty.span(),
+                            types: vec![ty],
+                        }
+                        .fold_with(self),
+                    );
+                }
+                _ => {}
+            }
+        }
+
         ty
     }
 }
