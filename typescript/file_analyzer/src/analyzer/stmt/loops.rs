@@ -92,6 +92,8 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, s: &RForInStmt) {
         self.check_for_of_in_loop(s.span, &s.left, &s.right);
 
+        s.body.visit_with(self);
+
         Ok(())
     }
 }
@@ -100,6 +102,8 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, s: &RForOfStmt) {
         self.check_for_of_in_loop(s.span, &s.left, &s.right);
+
+        s.body.visit_with(self);
 
         Ok(())
     }
