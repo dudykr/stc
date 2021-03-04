@@ -140,7 +140,7 @@ impl Analyzer<'_, '_> {
                 span,
                 elem_type: box Type::union(types),
             });
-            self.normalize_union_of_objects(&mut ty, false);
+            self.normalize_union(&mut ty, false);
 
             return Ok(ty);
         }

@@ -326,7 +326,7 @@ impl Analyzer<'_, '_> {
     ///
     /// Type of `a` in the code above is `{ a: number, b?: undefined } | {
     /// a:number, b: string }`.
-    pub(super) fn normalize_union_of_objects(&mut self, ty: &mut Type, preserve_specified: bool) {
+    pub(super) fn normalize_union(&mut self, ty: &mut Type, preserve_specified: bool) {
         ty.visit_mut_with(&mut UnionNormalizer {
             anaylzer: self,
             preserve_specified,
