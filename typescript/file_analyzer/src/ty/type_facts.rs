@@ -10,12 +10,14 @@ use stc_ts_types::ClassMember;
 use stc_ts_types::Constructor;
 use stc_ts_types::Function;
 use stc_ts_types::IndexedAccessType;
+use stc_ts_types::Intersection;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
 use stc_ts_types::Union;
 use std::borrow::Cow;
 use swc_common::Span;
 use swc_common::Spanned;
+use swc_common::DUMMY_SP;
 use swc_ecma_ast::TsKeywordTypeKind;
 
 pub(crate) struct TypeFactsHandler<'a, 'b, 'c> {
@@ -129,6 +131,41 @@ impl Fold<RTsKeywordType> for TypeFactsHandler<'_, '_, '_> {
                     };
                 }
             }
+        }
+
+        ty
+    }
+}
+
+impl Fold<Intersection> for TypeFactsHandler<'_, '_, '_> {
+    fn fold(&mut self, ty: Intersection) -> Intersection {
+        let mut ty = ty.fold_children_with(self);
+
+        let has_keyword = |kind| ty.types.iter().any(|ty| ty.normalize().is_kwd(kind));
+
+        let has_str = has_keyword(TsKeywordTypeKind::TsStringKeyword);
+        let has_num = has_keyword(TsKeywordTypeKind::TsNumberKeyword);
+        let has_bool = has_keyword(TsKeywordTypeKind::TsBooleanKeyword);
+
+        if !has_str && self.facts.contains(TypeFacts::TypeofEQString) {
+            ty.types.push(Type::Keyword(RTsKeywordType {
+                span: DUMMY_SP,
+                kind: TsKeywordTypeKind::TsStringKeyword,
+            }));
+        }
+
+        if !has_num && self.facts.contains(TypeFacts::TypeofEQNumber) {
+            ty.types.push(Type::Keyword(RTsKeywordType {
+                span: DUMMY_SP,
+                kind: TsKeywordTypeKind::TsNumberKeyword,
+            }));
+        }
+
+        if !has_bool && self.facts.contains(TypeFacts::TypeofEQBoolean) {
+            ty.types.push(Type::Keyword(RTsKeywordType {
+                span: DUMMY_SP,
+                kind: TsKeywordTypeKind::TsBooleanKeyword,
+            }));
         }
 
         ty
