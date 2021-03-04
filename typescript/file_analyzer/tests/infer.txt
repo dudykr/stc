@@ -13,13 +13,6 @@
 /Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/es6/binaryAndOctalIntegerLiteral/octalIntegerLiteralES6.ts
 /Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/es6/binaryAndOctalIntegerLiteral/binaryIntegerLiteral.ts
 /Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/es6/classDeclaration/emitClassDeclarationWithTypeArgumentAndOverloadInES6.ts
-/Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/es6/computedProperties/computedPropertyNames46_ES6.ts
-/Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/es6/computedProperties/computedPropertyNames47_ES6.ts
-/Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/es6/computedProperties/computedPropertyNames47_ES5.ts
-/Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/es6/computedProperties/computedPropertyNames48_ES5.ts
-/Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/es6/computedProperties/computedPropertyNames48_ES6.ts
-/Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/es6/computedProperties/computedPropertyNames7_ES5.ts
-/Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/es6/computedProperties/computedPropertyNames7_ES6.ts
 /Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/es6/destructuring/declarationInAmbientContext.ts
 /Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/es2018/usePromiseFinally.ts
 /Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/es6/destructuring/destructuringObjectBindingPatternAndAssignment1ES5.ts
