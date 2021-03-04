@@ -140,8 +140,8 @@ impl Scope<'_> {
     }
 
     pub fn is_declaring_fn(&self, id: &Id) -> bool {
-        if let Some(d) = self.declaring_fn {
-            if d == *id {
+        if let Some(d) = &self.declaring_fn {
+            if *d == *id {
                 return true;
             }
         }
