@@ -143,6 +143,7 @@ impl Fold<Intersection> for TypeFactsHandler<'_, '_, '_> {
 
         let has_keyword = |kind| ty.types.iter().any(|ty| ty.normalize().is_kwd(kind));
 
+        // TODO: Support literal type.
         let has_str = has_keyword(TsKeywordTypeKind::TsStringKeyword);
         let has_num = has_keyword(TsKeywordTypeKind::TsNumberKeyword);
         let has_bool = has_keyword(TsKeywordTypeKind::TsBooleanKeyword);
