@@ -16,10 +16,3 @@ let mutuallyRecursive = {
     }
 }
 export var i: number = mutuallyRecursive.start();
-interface I {
-    a: number;
-    start(): number;
-    passthrough(n: number): number;
-    sub1(n: number): number;
-}
-export var impl: I = mutuallyRecursive;
