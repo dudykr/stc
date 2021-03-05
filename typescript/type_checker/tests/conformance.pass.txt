@@ -1154,6 +1154,7 @@ externalModules/exportAmbientClassNameWithObject.ts
 functions/functionOverloadCompatibilityWithVoid02.ts
 functions/functionOverloadCompatibilityWithVoid03.ts
 functions/functionWithUseStrictAndSimpleParameterList.ts
+functions/parameterInitializersForwardReferencing.2.ts
 functions/strictBindCallApply2.ts
 generators/generatorImplicitAny.ts
 generators/generatorReturnTypeFallback.1.ts
@@ -1693,6 +1694,7 @@ types/primitives/void/validVoidValues.ts
 types/rest/genericRestParameters2.ts
 types/rest/objectRest2.ts
 types/rest/objectRestAssignment.ts
+types/rest/objectRestCatchES5.ts
 types/rest/objectRestForOf.ts
 types/rest/objectRestReadonly.ts
 types/specifyingTypes/typeLiterals/arrayLiteral.ts
