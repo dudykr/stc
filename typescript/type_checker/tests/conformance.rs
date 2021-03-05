@@ -160,6 +160,13 @@ fn load_expected_errors(ts_file: &Path) -> Result<Vec<RefError>, Error> {
                     // TS2304: Type not found without recommendation.
                     err.code = "TS2304".to_string();
                 }
+
+                // TS2550: Property not found with a suggestion to change `lib`.
+                // TS2551: Property not found with a suggestion.
+                "TS2550" | "TS2551" => {
+                    err.code = "TS2339".to_string();
+                }
+
                 _ => {}
             }
             if err.code == "TS2552" || err.code == "TS2580" {

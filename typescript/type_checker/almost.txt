@@ -106,11 +106,6 @@
 /Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/declarationEmit/typePredicates/declarationEmitThisPredicates02.ts
 /Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/declarationEmit/typePredicates/declarationEmitThisPredicatesWithPrivateName02.ts
 /Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/enums/enumMergingErrors.ts
-/Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/es2017/useSharedArrayBuffer2.ts
-/Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/es2017/useSharedArrayBuffer3.ts
-/Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/es2017/useSharedArrayBuffer6.ts
-/Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/es2017/useObjectValuesAndEntries2.ts
-/Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/es2019/globalThisGlobalExportAsGlobal.ts
 /Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/es2017/useObjectValuesAndEntries3.ts
 /Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/es6/Symbols/symbolDeclarationEmit12.ts
 /Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/es6/Symbols/symbolType13.ts
