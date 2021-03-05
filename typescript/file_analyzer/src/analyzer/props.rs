@@ -27,7 +27,6 @@ use stc_ts_ast_rnode::RStr;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
-use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::ComputedKey;
 use stc_ts_types::Key;
 use stc_ts_types::PrivateName;
@@ -166,7 +165,9 @@ impl Analyzer<'_, '_> {
             ComputedPropMode::Interface => errors.is_empty(),
         } {
             if !is_symbol_access {
-                self.validate_type_of_computed_key(span, &ty);
+                if !self.is_type_valid_for_computed_key(span, &ty) {
+                    self.storage.report(Error::TS2464 { span });
+                }
             }
         }
         if !errors.is_empty() {
@@ -215,10 +216,14 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
-    #[extra_validator]
-    fn validate_type_of_computed_key(&mut self, span: Span, ty: &Type) {
+    fn is_type_valid_for_computed_key(&mut self, span: Span, ty: &Type) -> bool {
         let ty = ty.clone().generalize_lit();
-        match *ty.normalize() {
+        let ty = self.normalize(&ty, Default::default());
+        let ty = match ty {
+            Ok(v) => v,
+            _ => return true,
+        };
+        match ty.normalize() {
             Type::Keyword(RTsKeywordType {
                 kind: TsKeywordTypeKind::TsAnyKeyword,
                 ..
@@ -244,8 +249,11 @@ impl Analyzer<'_, '_> {
                     }),
                 ..
             })
-            | Type::EnumVariant(..) => {}
-            _ => Err(Error::TS2464 { span })?,
+            | Type::EnumVariant(..) => true,
+
+            Type::Union(u) => u.types.iter().all(|ty| self.is_type_valid_for_computed_key(span, ty)),
+
+            _ => false,
         }
     }
 
