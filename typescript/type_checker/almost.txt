@@ -1,6 +1,3 @@
-/Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/ambient/ambientDeclarationsPatterns_tooManyAsterisks.ts
-/Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/async/es5/asyncArrowFunction/asyncArrowFunctionCapturesArguments_es5.ts
-/Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/async/es5/asyncAwaitNestedClasses_es5.ts
 /Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/async/es5/functionDeclarations/asyncFunctionDeclarationCapturesArguments_es5.ts
 /Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/classes/classDeclarations/classAbstractKeyword/classAbstractImportInstantiation.ts
 /Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/classes/classDeclarations/classAbstractKeyword/classAbstractInAModule.ts
