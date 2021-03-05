@@ -1,5 +1,5 @@
 warning: Type
- --> $DIR/tests/visualize/exprs/bin/instanceof/narrow-extends.ts:7:25
+ --> $DIR/tests/pass/exprs/bin/instanceof/narrow-extends.ts:7:25
   |
 7 | export class D1 extends C1 {
   |                         ^^
@@ -7,7 +7,7 @@ warning: Type
   = note: typeof C1
 
 warning: Type
-  --> $DIR/tests/visualize/exprs/bin/instanceof/narrow-extends.ts:12:26
+  --> $DIR/tests/pass/exprs/bin/instanceof/narrow-extends.ts:12:26
    |
 12 | export var r2: D1 | C2 = ctor2 instanceof C1 && ctor2; // C2 | D1
    |                          ^^^^^
@@ -15,7 +15,7 @@ warning: Type
    = note: C2 | D1
 
 warning: Type
-  --> $DIR/tests/visualize/exprs/bin/instanceof/narrow-extends.ts:12:43
+  --> $DIR/tests/pass/exprs/bin/instanceof/narrow-extends.ts:12:43
    |
 12 | export var r2: D1 | C2 = ctor2 instanceof C1 && ctor2; // C2 | D1
    |                                           ^^
@@ -23,7 +23,7 @@ warning: Type
    = note: typeof C1
 
 warning: Type
-  --> $DIR/tests/visualize/exprs/bin/instanceof/narrow-extends.ts:12:26
+  --> $DIR/tests/pass/exprs/bin/instanceof/narrow-extends.ts:12:26
    |
 12 | export var r2: D1 | C2 = ctor2 instanceof C1 && ctor2; // C2 | D1
    |                          ^^^^^^^^^^^^^^^^^^^
@@ -31,7 +31,7 @@ warning: Type
    = note: boolean
 
 warning: Type
-  --> $DIR/tests/visualize/exprs/bin/instanceof/narrow-extends.ts:12:49
+  --> $DIR/tests/pass/exprs/bin/instanceof/narrow-extends.ts:12:49
    |
 12 | export var r2: D1 | C2 = ctor2 instanceof C1 && ctor2; // C2 | D1
    |                                                 ^^^^^
@@ -39,7 +39,7 @@ warning: Type
    = note: D1
 
 warning: Type
-  --> $DIR/tests/visualize/exprs/bin/instanceof/narrow-extends.ts:12:26
+  --> $DIR/tests/pass/exprs/bin/instanceof/narrow-extends.ts:12:26
    |
 12 | export var r2: D1 | C2 = ctor2 instanceof C1 && ctor2; // C2 | D1
    |                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^

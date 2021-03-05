@@ -1,5 +1,5 @@
 warning: Type
-  --> $DIR/tests/visualize/types/stringLiteral/tags-1.ts:21:12
+  --> $DIR/tests/pass/exprs/lit/string/tags-1.ts:21:12
    |
 21 |     return entity.kind === kind;
    |            ^^^^^^
@@ -7,7 +7,7 @@ warning: Type
    = note: Entity
 
 warning: Type
-  --> $DIR/tests/visualize/types/stringLiteral/tags-1.ts:21:12
+  --> $DIR/tests/pass/exprs/lit/string/tags-1.ts:21:12
    |
 21 |     return entity.kind === kind;
    |            ^^^^^^^^^^^
@@ -15,7 +15,7 @@ warning: Type
    = note: Kind
 
 warning: Type
-  --> $DIR/tests/visualize/types/stringLiteral/tags-1.ts:21:28
+  --> $DIR/tests/pass/exprs/lit/string/tags-1.ts:21:28
    |
 21 |     return entity.kind === kind;
    |                            ^^^^
@@ -23,7 +23,7 @@ warning: Type
    = note: Kind
 
 warning: Type
-  --> $DIR/tests/visualize/types/stringLiteral/tags-1.ts:21:12
+  --> $DIR/tests/pass/exprs/lit/string/tags-1.ts:21:12
    |
 21 |     return entity.kind === kind;
    |            ^^^^^^^^^^^^^^^^^^^^
@@ -31,7 +31,7 @@ warning: Type
    = note: boolean
 
 warning: Type
-  --> $DIR/tests/visualize/types/stringLiteral/tags-1.ts:24:12
+  --> $DIR/tests/pass/exprs/lit/string/tags-1.ts:24:12
    |
 24 |   let x: A = {
    |  ____________^
@@ -46,7 +46,7 @@ warning: Type
            }
 
 warning: Type
-  --> $DIR/tests/visualize/types/stringLiteral/tags-1.ts:29:14
+  --> $DIR/tests/pass/exprs/lit/string/tags-1.ts:29:14
    |
 29 | if (!hasKind(x, "B")) {
    |              ^
@@ -54,7 +54,7 @@ warning: Type
    = note: A
 
 warning: Type
-  --> $DIR/tests/visualize/types/stringLiteral/tags-1.ts:29:6
+  --> $DIR/tests/pass/exprs/lit/string/tags-1.ts:29:6
    |
 29 | if (!hasKind(x, "B")) {
    |      ^^^^^^^
@@ -62,7 +62,7 @@ warning: Type
    = note: (entity: Entity, kind: "A") => entity is A | (entity: Entity, kind: "B") => entity is B | (entity: Entity, kind: Kind) => entity is Entity | (entity: Entity, kind: Kind) => boolean
 
 warning: Type
-  --> $DIR/tests/visualize/types/stringLiteral/tags-1.ts:29:6
+  --> $DIR/tests/pass/exprs/lit/string/tags-1.ts:29:6
    |
 29 | if (!hasKind(x, "B")) {
    |      ^^^^^^^^^^^^^^^
@@ -70,7 +70,7 @@ warning: Type
    = note: entity is B
 
 warning: Type
-  --> $DIR/tests/visualize/types/stringLiteral/tags-1.ts:29:5
+  --> $DIR/tests/pass/exprs/lit/string/tags-1.ts:29:5
    |
 29 | if (!hasKind(x, "B")) {
    |     ^^^^^^^^^^^^^^^^
@@ -78,7 +78,7 @@ warning: Type
    = note: boolean
 
 warning: Type
-  --> $DIR/tests/visualize/types/stringLiteral/tags-1.ts:30:13
+  --> $DIR/tests/pass/exprs/lit/string/tags-1.ts:30:13
    |
 30 |     let c = x;
    |             ^

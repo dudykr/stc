@@ -1,5 +1,5 @@
 warning: Type
- --> $DIR/tests/visualize/exprs/array/from.ts:6:30
+ --> $DIR/tests/pass/exprs/array/from.ts:6:30
   |
 6 | export const c1 = Array.from(a)
   |                              ^
@@ -7,7 +7,7 @@ warning: Type
   = note: Set<A>
 
 warning: Type
- --> $DIR/tests/visualize/exprs/array/from.ts:6:19
+ --> $DIR/tests/pass/exprs/array/from.ts:6:19
   |
 6 | export const c1 = Array.from(a)
   |                   ^^^^^
@@ -15,7 +15,7 @@ warning: Type
   = note: ArrayConstructor
 
 warning: Type
- --> $DIR/tests/visualize/exprs/array/from.ts:6:19
+ --> $DIR/tests/pass/exprs/array/from.ts:6:19
   |
 6 | export const c1 = Array.from(a)
   |                   ^^^^^^^^^^^^^

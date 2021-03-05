@@ -1,5 +1,5 @@
 warning: Type
- --> $DIR/tests/visualize/exprs/array/access-property-1.ts:6:9
+ --> $DIR/tests/pass/exprs/array/access-property-1.ts:6:9
   |
 6 | var y = x as A<B>[];
   |         ^
@@ -7,7 +7,7 @@ warning: Type
   = note: any
 
 warning: Type
- --> $DIR/tests/visualize/exprs/array/access-property-1.ts:6:9
+ --> $DIR/tests/pass/exprs/array/access-property-1.ts:6:9
   |
 6 | var y = x as A<B>[];
   |         ^^^^^^^^^^^
@@ -15,7 +15,7 @@ warning: Type
   = note: A<B>[]
 
 warning: Type
- --> $DIR/tests/visualize/exprs/array/access-property-1.ts:7:9
+ --> $DIR/tests/pass/exprs/array/access-property-1.ts:7:9
   |
 7 | var z = y[0].x.m; // z should be string
   |         ^
@@ -23,7 +23,7 @@ warning: Type
   = note: A<B>[]
 
 warning: Type
- --> $DIR/tests/visualize/exprs/array/access-property-1.ts:7:9
+ --> $DIR/tests/pass/exprs/array/access-property-1.ts:7:9
   |
 7 | var z = y[0].x.m; // z should be string
   |         ^^^^
@@ -31,7 +31,7 @@ warning: Type
   = note: A<B>
 
 warning: Type
- --> $DIR/tests/visualize/exprs/array/access-property-1.ts:7:9
+ --> $DIR/tests/pass/exprs/array/access-property-1.ts:7:9
   |
 7 | var z = y[0].x.m; // z should be string
   |         ^^^^^^
@@ -39,7 +39,7 @@ warning: Type
   = note: B
 
 warning: Type
- --> $DIR/tests/visualize/exprs/array/access-property-1.ts:7:9
+ --> $DIR/tests/pass/exprs/array/access-property-1.ts:7:9
   |
 7 | var z = y[0].x.m; // z should be string
   |         ^^^^^^^^
