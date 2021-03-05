@@ -501,17 +501,10 @@
 /Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/parser/ecmascript5/Statements/parserWithStatement2.ts
 /Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/parser/ecmascript5/SuperExpressions/parserSuperExpression2.ts
 /Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/parser/ecmascript5/SuperExpressions/parserSuperExpression3.ts
-/Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/parser/ecmascript5/Types/parserTypeQuery1.ts
-/Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/parser/ecmascript5/Types/parserTypeQuery2.ts
-/Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/parser/ecmascript5/Types/parserTypeQuery5.ts
-/Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/parser/ecmascript5/Types/parserTypeQuery6.ts
-/Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/parser/ecmascript5/Types/parserTypeQuery7.ts
-/Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/parser/ecmascript5/Types/parserTypeQuery9.ts
 /Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/parser/ecmascript5/VariableDeclarations/parserVariableDeclaration3.ts
 /Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/parser/ecmascript5/parserImportDeclaration1.ts
 /Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/parser/ecmascript5/parserNoASIOnCallAfterFunctionExpression1.ts
 /Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/parser/ecmascript5/parserS7.3_A1.1_T2.ts
-/Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/parser/ecmascript5/parserUnicode1.ts
 /Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/parser/ecmascript6/ComputedPropertyNames/parserComputedPropertyName23.ts
 /Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/parser/ecmascript5/parservoidInQualifiedName2.ts
 /Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/parser/ecmascript6/Iterators/parserForOfStatement5.ts
