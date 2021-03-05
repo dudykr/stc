@@ -42,7 +42,7 @@ warning: Type
 4 |     let y = x;
   |             ^
   |
-  = note: any
+  = note: number
 
 warning: Type
  --> $DIR/tests/pass/controlFlow/forOfStmt/object-entries/1.ts:7:37
