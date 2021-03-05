@@ -35,9 +35,22 @@ mod mapped;
 mod narrowing;
 mod type_param;
 
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct NormalizeTypeOpts {
     pub preserve_mapped: bool,
+    /// Used to prevent infinite recursion.
+    ///
+    /// 128 by default.
+    pub lefting_stack: u16,
+}
+
+impl Default for NormalizeTypeOpts {
+    fn default() -> Self {
+        Self {
+            preserve_mapped: false,
+            lefting_stack: 128,
+        }
+    }
 }
 
 impl Analyzer<'_, '_> {
@@ -49,7 +62,16 @@ impl Analyzer<'_, '_> {
     ///  - [Type::Mapped]
     ///  - [Type::Alias]
 
-    pub(crate) fn normalize<'a>(&mut self, ty: &'a Type, opts: NormalizeTypeOpts) -> ValidationResult<Cow<'a, Type>> {
+    pub(crate) fn normalize<'a>(
+        &mut self,
+        ty: &'a Type,
+        mut opts: NormalizeTypeOpts,
+    ) -> ValidationResult<Cow<'a, Type>> {
+        opts.lefting_stack -= 1;
+        if opts.lefting_stack == 0 {
+            return Ok(Cow::Borrowed(ty));
+        }
+
         let span = ty.span();
         let ty = ty.normalize();
 
