@@ -238,6 +238,10 @@ impl Analyzer<'_, '_> {
         Ok(Cow::Owned(elem_ty))
     }
     pub(crate) fn get_iterator<'a>(&mut self, span: Span, ty: Cow<'a, Type>) -> ValidationResult<Cow<'a, Type>> {
+        if ty.is_str() {
+            return Ok(ty);
+        }
+
         match ty.normalize() {
             Type::Ref(..) => {
                 let ty = self.expand_top_ref(span, ty)?;
@@ -303,6 +307,13 @@ impl Analyzer<'_, '_> {
         let iterator = self
             .get_iterator(span, ty)
             .context("tried to get a type of an iterator to get the element type of it")?;
+
+        if iterator.is_str() {
+            return Ok(Cow::Owned(Type::Keyword(RTsKeywordType {
+                span: iterator.span(),
+                kind: TsKeywordTypeKind::TsStringKeyword,
+            })));
+        }
 
         match iterator.normalize() {
             Type::Array(arr) => return Ok(Cow::Owned(*arr.elem_type.clone())),
