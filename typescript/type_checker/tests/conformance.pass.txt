@@ -255,6 +255,8 @@ enums/enumConstantMemberWithTemplateLiterals.ts
 enums/enumConstantMemberWithTemplateLiteralsEmitDeclaration.ts
 enums/enumExportMergingES6.ts
 es2017/useObjectValuesAndEntries1.ts
+es2017/useObjectValuesAndEntries2.ts
+es2017/useObjectValuesAndEntries3.ts
 es2017/useObjectValuesAndEntries4.ts
 es2017/useSharedArrayBuffer1.ts
 es2017/useSharedArrayBuffer2.ts
