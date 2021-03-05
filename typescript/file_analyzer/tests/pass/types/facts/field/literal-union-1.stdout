@@ -1,5 +1,5 @@
 warning: Type
- --> $DIR/tests/visualize/types/facts/field/literal-union-1.ts:8:13
+ --> $DIR/tests/pass/types/facts/field/literal-union-1.ts:8:13
   |
 8 |     switch (x.kind) {
   |             ^
@@ -7,7 +7,7 @@ warning: Type
   = note: Item
 
 warning: Type
- --> $DIR/tests/visualize/types/facts/field/literal-union-1.ts:8:13
+ --> $DIR/tests/pass/types/facts/field/literal-union-1.ts:8:13
   |
 8 |     switch (x.kind) {
   |             ^^^^^^
@@ -15,7 +15,7 @@ warning: Type
   = note: 0 | 1 | 2
 
 warning: Type
- --> $DIR/tests/visualize/types/facts/field/literal-union-1.ts:9:14
+ --> $DIR/tests/pass/types/facts/field/literal-union-1.ts:9:14
   |
 9 |         case 0: return x.a;
   |              ^
@@ -23,7 +23,7 @@ warning: Type
   = note: boolean
 
 warning: Type
- --> $DIR/tests/visualize/types/facts/field/literal-union-1.ts:9:24
+ --> $DIR/tests/pass/types/facts/field/literal-union-1.ts:9:24
   |
 9 |         case 0: return x.a;
   |                        ^
@@ -34,7 +34,7 @@ warning: Type
           }
 
 warning: Type
- --> $DIR/tests/visualize/types/facts/field/literal-union-1.ts:9:24
+ --> $DIR/tests/pass/types/facts/field/literal-union-1.ts:9:24
   |
 9 |         case 0: return x.a;
   |                        ^^^
@@ -42,7 +42,7 @@ warning: Type
   = note: string
 
 warning: Type
-  --> $DIR/tests/visualize/types/facts/field/literal-union-1.ts:10:14
+  --> $DIR/tests/pass/types/facts/field/literal-union-1.ts:10:14
    |
 10 |         case 1: return x.b;
    |              ^
@@ -50,7 +50,7 @@ warning: Type
    = note: boolean
 
 warning: Type
-  --> $DIR/tests/visualize/types/facts/field/literal-union-1.ts:10:24
+  --> $DIR/tests/pass/types/facts/field/literal-union-1.ts:10:24
    |
 10 |         case 1: return x.b;
    |                        ^
@@ -61,7 +61,7 @@ warning: Type
            }
 
 warning: Type
-  --> $DIR/tests/visualize/types/facts/field/literal-union-1.ts:10:24
+  --> $DIR/tests/pass/types/facts/field/literal-union-1.ts:10:24
    |
 10 |         case 1: return x.b;
    |                        ^^^
@@ -69,7 +69,7 @@ warning: Type
    = note: string
 
 warning: Type
-  --> $DIR/tests/visualize/types/facts/field/literal-union-1.ts:11:14
+  --> $DIR/tests/pass/types/facts/field/literal-union-1.ts:11:14
    |
 11 |         case 2: return x.c;
    |              ^
@@ -77,7 +77,7 @@ warning: Type
    = note: boolean
 
 warning: Type
-  --> $DIR/tests/visualize/types/facts/field/literal-union-1.ts:11:24
+  --> $DIR/tests/pass/types/facts/field/literal-union-1.ts:11:24
    |
 11 |         case 2: return x.c;
    |                        ^
@@ -88,7 +88,7 @@ warning: Type
            }
 
 warning: Type
-  --> $DIR/tests/visualize/types/facts/field/literal-union-1.ts:11:24
+  --> $DIR/tests/pass/types/facts/field/literal-union-1.ts:11:24
    |
 11 |         case 2: return x.c;
    |                        ^^^

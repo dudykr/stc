@@ -1,5 +1,5 @@
 warning: Type
- --> $DIR/tests/visualize/types/predicate/type-guard-2.ts:5:17
+ --> $DIR/tests/pass/types/predicate/type-guard-2.ts:5:17
   |
 5 | class C extends A {
   |                 ^
@@ -7,7 +7,7 @@ warning: Type
   = note: typeof A
 
 warning: Type
-  --> $DIR/tests/visualize/types/predicate/type-guard-2.ts:12:9
+  --> $DIR/tests/pass/types/predicate/type-guard-2.ts:12:9
    |
 12 | if (isA(subType)) {
    |         ^^^^^^^
@@ -15,7 +15,7 @@ warning: Type
    = note: C
 
 warning: Type
-  --> $DIR/tests/visualize/types/predicate/type-guard-2.ts:12:5
+  --> $DIR/tests/pass/types/predicate/type-guard-2.ts:12:5
    |
 12 | if (isA(subType)) {
    |     ^^^
@@ -23,7 +23,7 @@ warning: Type
    = note: (p1: any) => p1 is A
 
 warning: Type
-  --> $DIR/tests/visualize/types/predicate/type-guard-2.ts:12:5
+  --> $DIR/tests/pass/types/predicate/type-guard-2.ts:12:5
    |
 12 | if (isA(subType)) {
    |     ^^^^^^^^^^^^
@@ -31,7 +31,7 @@ warning: Type
    = note: p1 is A
 
 warning: Type
-  --> $DIR/tests/visualize/types/predicate/type-guard-2.ts:13:5
+  --> $DIR/tests/pass/types/predicate/type-guard-2.ts:13:5
    |
 13 |     subType.propC;
    |     ^^^^^^^
@@ -39,7 +39,7 @@ warning: Type
    = note: C
 
 warning: Type
-  --> $DIR/tests/visualize/types/predicate/type-guard-2.ts:13:5
+  --> $DIR/tests/pass/types/predicate/type-guard-2.ts:13:5
    |
 13 |     subType.propC;
    |     ^^^^^^^^^^^^^

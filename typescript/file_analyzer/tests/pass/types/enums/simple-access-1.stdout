@@ -1,5 +1,5 @@
 warning: Type
-  --> $DIR/tests/visualize/types/enums/simple-access-1.ts:15:40
+  --> $DIR/tests/pass/types/enums/simple-access-1.ts:15:40
    |
 15 | const snb: string | number | boolean = item[e];
    |                                        ^^^^
@@ -7,7 +7,7 @@ warning: Type
    = note: Item
 
 warning: Type
-  --> $DIR/tests/visualize/types/enums/simple-access-1.ts:15:45
+  --> $DIR/tests/pass/types/enums/simple-access-1.ts:15:45
    |
 15 | const snb: string | number | boolean = item[e];
    |                                             ^
@@ -15,7 +15,7 @@ warning: Type
    = note: E
 
 warning: Type
-  --> $DIR/tests/visualize/types/enums/simple-access-1.ts:15:40
+  --> $DIR/tests/pass/types/enums/simple-access-1.ts:15:40
    |
 15 | const snb: string | number | boolean = item[e];
    |                                        ^^^^^^^

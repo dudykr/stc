@@ -1,5 +1,5 @@
 warning: Type
- --> $DIR/tests/visualize/exprs/optionalChaining/useless-1.ts:4:20
+ --> $DIR/tests/pass/exprs/optionalChaining/useless-1.ts:4:20
   |
 4 | export const foo = o?.b;
   |                    ^
@@ -9,7 +9,7 @@ warning: Type
           }
 
 warning: Type
- --> $DIR/tests/visualize/exprs/optionalChaining/useless-1.ts:4:20
+ --> $DIR/tests/pass/exprs/optionalChaining/useless-1.ts:4:20
   |
 4 | export const foo = o?.b;
   |                    ^^^^

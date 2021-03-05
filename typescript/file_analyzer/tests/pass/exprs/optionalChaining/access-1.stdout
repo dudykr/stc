@@ -1,5 +1,5 @@
 warning: Type
- --> $DIR/tests/visualize/exprs/optionalChaining/access-1.ts:2:1
+ --> $DIR/tests/pass/exprs/optionalChaining/access-1.ts:2:1
   |
 2 | o1?.["b"];
   | ^^
@@ -9,7 +9,7 @@ warning: Type
           }
 
 warning: Type
- --> $DIR/tests/visualize/exprs/optionalChaining/access-1.ts:2:1
+ --> $DIR/tests/pass/exprs/optionalChaining/access-1.ts:2:1
   |
 2 | o1?.["b"];
   | ^^^^^^^^^
