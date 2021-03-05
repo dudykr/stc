@@ -1,5 +1,5 @@
 warning: Type
- --> $DIR/tests/visualize/exprs/new/generic/interface-1.ts:9:33
+ --> $DIR/tests/pass/exprs/new/generic/interface-1.ts:9:33
   |
 9 | export var anInterface: I = new C()
   |                                 ^
@@ -7,7 +7,7 @@ warning: Type
   = note: typeof C
 
 warning: Type
- --> $DIR/tests/visualize/exprs/new/generic/interface-1.ts:9:29
+ --> $DIR/tests/pass/exprs/new/generic/interface-1.ts:9:29
   |
 9 | export var anInterface: I = new C()
   |                             ^^^^^^^

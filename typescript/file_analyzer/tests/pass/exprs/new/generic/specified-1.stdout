@@ -1,5 +1,5 @@
 warning: Type
- --> $DIR/tests/visualize/exprs/new/generic/specified-1.ts:7:43
+ --> $DIR/tests/pass/exprs/new/generic/specified-1.ts:7:43
   |
 7 | export var aGenericClass: D<string> = new D<string>();
   |                                           ^
@@ -7,7 +7,7 @@ warning: Type
   = note: typeof D
 
 warning: Type
- --> $DIR/tests/visualize/exprs/new/generic/specified-1.ts:7:39
+ --> $DIR/tests/pass/exprs/new/generic/specified-1.ts:7:39
   |
 7 | export var aGenericClass: D<string> = new D<string>();
   |                                       ^^^^^^^^^^^^^^^
@@ -15,7 +15,7 @@ warning: Type
   = note: D
 
 warning: Type
- --> $DIR/tests/visualize/exprs/new/generic/specified-1.ts:9:1
+ --> $DIR/tests/pass/exprs/new/generic/specified-1.ts:9:1
   |
 9 | aGenericClass.source
   | ^^^^^^^^^^^^^
@@ -23,7 +23,7 @@ warning: Type
   = note: D
 
 warning: Type
- --> $DIR/tests/visualize/exprs/new/generic/specified-1.ts:9:1
+ --> $DIR/tests/pass/exprs/new/generic/specified-1.ts:9:1
   |
 9 | aGenericClass.source
   | ^^^^^^^^^^^^^^^^^^^^
@@ -31,7 +31,7 @@ warning: Type
   = note: string
 
 warning: Type
-  --> $DIR/tests/visualize/exprs/new/generic/specified-1.ts:10:1
+  --> $DIR/tests/pass/exprs/new/generic/specified-1.ts:10:1
    |
 10 | aGenericClass.recurse
    | ^^^^^^^^^^^^^
@@ -39,7 +39,7 @@ warning: Type
    = note: D
 
 warning: Type
-  --> $DIR/tests/visualize/exprs/new/generic/specified-1.ts:10:1
+  --> $DIR/tests/pass/exprs/new/generic/specified-1.ts:10:1
    |
 10 | aGenericClass.recurse
    | ^^^^^^^^^^^^^^^^^^^^^
@@ -47,7 +47,7 @@ warning: Type
    = note: D<string>
 
 warning: Type
-  --> $DIR/tests/visualize/exprs/new/generic/specified-1.ts:11:1
+  --> $DIR/tests/pass/exprs/new/generic/specified-1.ts:11:1
    |
 11 | aGenericClass.wrapped
    | ^^^^^^^^^^^^^
@@ -55,7 +55,7 @@ warning: Type
    = note: D
 
 warning: Type
-  --> $DIR/tests/visualize/exprs/new/generic/specified-1.ts:11:1
+  --> $DIR/tests/pass/exprs/new/generic/specified-1.ts:11:1
    |
 11 | aGenericClass.wrapped
    | ^^^^^^^^^^^^^^^^^^^^^

@@ -1,5 +1,5 @@
 warning: Type
- --> $DIR/tests/visualize/exprs/new/generic/specified-2.ts:7:32
+ --> $DIR/tests/pass/exprs/new/generic/specified-2.ts:7:32
   |
 7 | export var aGenericClass = new D<string>();
   |                                ^
@@ -7,7 +7,7 @@ warning: Type
   = note: typeof D
 
 warning: Type
- --> $DIR/tests/visualize/exprs/new/generic/specified-2.ts:7:28
+ --> $DIR/tests/pass/exprs/new/generic/specified-2.ts:7:28
   |
 7 | export var aGenericClass = new D<string>();
   |                            ^^^^^^^^^^^^^^^
@@ -15,7 +15,7 @@ warning: Type
   = note: D
 
 warning: Type
- --> $DIR/tests/visualize/exprs/new/generic/specified-2.ts:9:1
+ --> $DIR/tests/pass/exprs/new/generic/specified-2.ts:9:1
   |
 9 | aGenericClass.source
   | ^^^^^^^^^^^^^
@@ -23,7 +23,7 @@ warning: Type
   = note: D
 
 warning: Type
- --> $DIR/tests/visualize/exprs/new/generic/specified-2.ts:9:1
+ --> $DIR/tests/pass/exprs/new/generic/specified-2.ts:9:1
   |
 9 | aGenericClass.source
   | ^^^^^^^^^^^^^^^^^^^^
@@ -31,7 +31,7 @@ warning: Type
   = note: string
 
 warning: Type
-  --> $DIR/tests/visualize/exprs/new/generic/specified-2.ts:10:1
+  --> $DIR/tests/pass/exprs/new/generic/specified-2.ts:10:1
    |
 10 | aGenericClass.recurse
    | ^^^^^^^^^^^^^
@@ -39,7 +39,7 @@ warning: Type
    = note: D
 
 warning: Type
-  --> $DIR/tests/visualize/exprs/new/generic/specified-2.ts:10:1
+  --> $DIR/tests/pass/exprs/new/generic/specified-2.ts:10:1
    |
 10 | aGenericClass.recurse
    | ^^^^^^^^^^^^^^^^^^^^^
@@ -47,7 +47,7 @@ warning: Type
    = note: D<string>
 
 warning: Type
-  --> $DIR/tests/visualize/exprs/new/generic/specified-2.ts:11:1
+  --> $DIR/tests/pass/exprs/new/generic/specified-2.ts:11:1
    |
 11 | aGenericClass.wrapped
    | ^^^^^^^^^^^^^
@@ -55,7 +55,7 @@ warning: Type
    = note: D
 
 warning: Type
-  --> $DIR/tests/visualize/exprs/new/generic/specified-2.ts:11:1
+  --> $DIR/tests/pass/exprs/new/generic/specified-2.ts:11:1
    |
 11 | aGenericClass.wrapped
    | ^^^^^^^^^^^^^^^^^^^^^
