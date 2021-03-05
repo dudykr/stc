@@ -1,0 +1,52 @@
+warning: Type
+ --> $DIR/tests/pass/class/member/static/bindingPat/1.ts:1:6
+  |
+1 | (({ [class { static x = 1 }.x]: b = "" }) => { })();
+  |      ^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: typeof anonymous class
+
+warning: Type
+ --> $DIR/tests/pass/class/member/static/bindingPat/1.ts:1:6
+  |
+1 | (({ [class { static x = 1 }.x]: b = "" }) => { })();
+  |      ^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: number
+
+warning: Type
+ --> $DIR/tests/pass/class/member/static/bindingPat/1.ts:1:2
+  |
+1 | (({ [class { static x = 1 }.x]: b = "" }) => { })();
+  |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: ({ [class {
+              static x = 1;
+          }.x]: b = ""  }: {
+              [class {
+                  static x = 1;
+              }.x];
+          }) => void
+
+warning: Type
+ --> $DIR/tests/pass/class/member/static/bindingPat/1.ts:1:1
+  |
+1 | (({ [class { static x = 1 }.x]: b = "" }) => { })();
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: ({ [class {
+              static x = 1;
+          }.x]: b = ""  }: {
+              [class {
+                  static x = 1;
+              }.x];
+          }) => void
+
+warning: Type
+ --> $DIR/tests/pass/class/member/static/bindingPat/1.ts:1:1
+  |
+1 | (({ [class { static x = 1 }.x]: b = "" }) => { })();
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: void
+
