@@ -1,5 +1,5 @@
 warning: Type
- --> $DIR/tests/visualize/types/enums/controlFlow/switch-lit-1.ts:8:13
+ --> $DIR/tests/pass/types/enums/controlFlow/switch-lit-1.ts:8:13
   |
 8 |     switch (x.kind) {
   |             ^
@@ -7,7 +7,7 @@ warning: Type
   = note: Item
 
 warning: Type
- --> $DIR/tests/visualize/types/enums/controlFlow/switch-lit-1.ts:8:13
+ --> $DIR/tests/pass/types/enums/controlFlow/switch-lit-1.ts:8:13
   |
 8 |     switch (x.kind) {
   |             ^^^^^^
@@ -15,7 +15,7 @@ warning: Type
   = note: Choice.Yes | Choice.No
 
 warning: Type
- --> $DIR/tests/visualize/types/enums/controlFlow/switch-lit-1.ts:9:14
+ --> $DIR/tests/pass/types/enums/controlFlow/switch-lit-1.ts:9:14
   |
 9 |         case Choice.Yes: return x.a;
   |              ^^^^^^
@@ -23,7 +23,7 @@ warning: Type
   = note: Choice
 
 warning: Type
- --> $DIR/tests/visualize/types/enums/controlFlow/switch-lit-1.ts:9:14
+ --> $DIR/tests/pass/types/enums/controlFlow/switch-lit-1.ts:9:14
   |
 9 |         case Choice.Yes: return x.a;
   |              ^^^^^^^^^^
@@ -31,7 +31,7 @@ warning: Type
   = note: Choice.Yes
 
 warning: Type
-  --> $DIR/tests/visualize/types/enums/controlFlow/switch-lit-1.ts:10:14
+  --> $DIR/tests/pass/types/enums/controlFlow/switch-lit-1.ts:10:14
    |
 10 |         case Choice.No: return x.b;
    |              ^^^^^^
@@ -39,7 +39,7 @@ warning: Type
    = note: Choice
 
 warning: Type
-  --> $DIR/tests/visualize/types/enums/controlFlow/switch-lit-1.ts:10:14
+  --> $DIR/tests/pass/types/enums/controlFlow/switch-lit-1.ts:10:14
    |
 10 |         case Choice.No: return x.b;
    |              ^^^^^^^^^
@@ -47,7 +47,7 @@ warning: Type
    = note: Choice.No
 
 warning: Type
- --> $DIR/tests/visualize/types/enums/controlFlow/switch-lit-1.ts:9:14
+ --> $DIR/tests/pass/types/enums/controlFlow/switch-lit-1.ts:9:14
   |
 9 |         case Choice.Yes: return x.a;
   |              ^^^^^^^^^^
@@ -55,7 +55,7 @@ warning: Type
   = note: boolean
 
 warning: Type
- --> $DIR/tests/visualize/types/enums/controlFlow/switch-lit-1.ts:9:33
+ --> $DIR/tests/pass/types/enums/controlFlow/switch-lit-1.ts:9:33
   |
 9 |         case Choice.Yes: return x.a;
   |                                 ^
@@ -66,7 +66,7 @@ warning: Type
           }
 
 warning: Type
- --> $DIR/tests/visualize/types/enums/controlFlow/switch-lit-1.ts:9:33
+ --> $DIR/tests/pass/types/enums/controlFlow/switch-lit-1.ts:9:33
   |
 9 |         case Choice.Yes: return x.a;
   |                                 ^^^
@@ -74,7 +74,7 @@ warning: Type
   = note: string
 
 warning: Type
-  --> $DIR/tests/visualize/types/enums/controlFlow/switch-lit-1.ts:10:14
+  --> $DIR/tests/pass/types/enums/controlFlow/switch-lit-1.ts:10:14
    |
 10 |         case Choice.No: return x.b;
    |              ^^^^^^^^^
@@ -82,7 +82,7 @@ warning: Type
    = note: boolean
 
 warning: Type
-  --> $DIR/tests/visualize/types/enums/controlFlow/switch-lit-1.ts:10:32
+  --> $DIR/tests/pass/types/enums/controlFlow/switch-lit-1.ts:10:32
    |
 10 |         case Choice.No: return x.b;
    |                                ^
@@ -93,7 +93,7 @@ warning: Type
            }
 
 warning: Type
-  --> $DIR/tests/visualize/types/enums/controlFlow/switch-lit-1.ts:10:32
+  --> $DIR/tests/pass/types/enums/controlFlow/switch-lit-1.ts:10:32
    |
 10 |         case Choice.No: return x.b;
    |                                ^^^

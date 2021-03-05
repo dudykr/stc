@@ -1,5 +1,5 @@
 warning: Type
- --> $DIR/tests/visualize/types/cast/union/assertions-1-1.ts:9:16
+ --> $DIR/tests/pass/types/union/assertions-1-1.ts:9:16
   |
 9 | export var x = { p1: 10, p2: 20 };
   |                ^^^^^^^^^^^^^^^^^^
@@ -10,7 +10,7 @@ warning: Type
           }
 
 warning: Type
-  --> $DIR/tests/visualize/types/cast/union/assertions-1-1.ts:10:29
+  --> $DIR/tests/pass/types/union/assertions-1-1.ts:10:29
    |
 10 | export var y: number | I2 = x;
    |                             ^
@@ -21,7 +21,7 @@ warning: Type
            }
 
 warning: Type
-  --> $DIR/tests/visualize/types/cast/union/assertions-1-1.ts:11:1
+  --> $DIR/tests/pass/types/union/assertions-1-1.ts:11:1
    |
 11 | y;
    | ^

@@ -1,5 +1,5 @@
 warning: Type
- --> $DIR/tests/visualize/types/enums/controlFlow/if-lit-1.ts:8:9
+ --> $DIR/tests/pass/types/enums/controlFlow/if-lit-1.ts:8:9
   |
 8 |     if (x.kind === Choice.Yes) {
   |         ^
@@ -7,7 +7,7 @@ warning: Type
   = note: Item
 
 warning: Type
- --> $DIR/tests/visualize/types/enums/controlFlow/if-lit-1.ts:8:9
+ --> $DIR/tests/pass/types/enums/controlFlow/if-lit-1.ts:8:9
   |
 8 |     if (x.kind === Choice.Yes) {
   |         ^^^^^^
@@ -15,7 +15,7 @@ warning: Type
   = note: Choice.Yes | Choice.No
 
 warning: Type
- --> $DIR/tests/visualize/types/enums/controlFlow/if-lit-1.ts:8:20
+ --> $DIR/tests/pass/types/enums/controlFlow/if-lit-1.ts:8:20
   |
 8 |     if (x.kind === Choice.Yes) {
   |                    ^^^^^^
@@ -23,7 +23,7 @@ warning: Type
   = note: Choice
 
 warning: Type
- --> $DIR/tests/visualize/types/enums/controlFlow/if-lit-1.ts:8:20
+ --> $DIR/tests/pass/types/enums/controlFlow/if-lit-1.ts:8:20
   |
 8 |     if (x.kind === Choice.Yes) {
   |                    ^^^^^^^^^^
@@ -31,7 +31,7 @@ warning: Type
   = note: Choice.Yes
 
 warning: Type
- --> $DIR/tests/visualize/types/enums/controlFlow/if-lit-1.ts:8:9
+ --> $DIR/tests/pass/types/enums/controlFlow/if-lit-1.ts:8:9
   |
 8 |     if (x.kind === Choice.Yes) {
   |         ^^^^^^^^^^^^^^^^^^^^^
@@ -39,7 +39,7 @@ warning: Type
   = note: boolean
 
 warning: Type
- --> $DIR/tests/visualize/types/enums/controlFlow/if-lit-1.ts:9:9
+ --> $DIR/tests/pass/types/enums/controlFlow/if-lit-1.ts:9:9
   |
 9 |         x
   |         ^
@@ -50,7 +50,7 @@ warning: Type
           }
 
 warning: Type
-  --> $DIR/tests/visualize/types/enums/controlFlow/if-lit-1.ts:11:9
+  --> $DIR/tests/pass/types/enums/controlFlow/if-lit-1.ts:11:9
    |
 11 |         x
    |         ^
