@@ -1,5 +1,5 @@
 warning: Type
- --> $DIR/tests/visualize/controlFlow/ifStmt/typeof-3.ts:2:16
+ --> $DIR/tests/pass/controlFlow/ifStmt/typeof-3.ts:2:16
   |
 2 |     if (typeof data === 'string') {
   |                ^^^^
@@ -7,7 +7,7 @@ warning: Type
   = note: string | T
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/ifStmt/typeof-3.ts:2:9
+ --> $DIR/tests/pass/controlFlow/ifStmt/typeof-3.ts:2:9
   |
 2 |     if (typeof data === 'string') {
   |         ^^^^^^^^^^^
@@ -15,7 +15,7 @@ warning: Type
   = note: string
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/ifStmt/typeof-3.ts:2:9
+ --> $DIR/tests/pass/controlFlow/ifStmt/typeof-3.ts:2:9
   |
 2 |     if (typeof data === 'string') {
   |         ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -23,7 +23,7 @@ warning: Type
   = note: boolean
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/ifStmt/typeof-3.ts:3:27
+ --> $DIR/tests/pass/controlFlow/ifStmt/typeof-3.ts:3:27
   |
 3 |         return JSON.parse(data);
   |                           ^^^^
@@ -31,7 +31,7 @@ warning: Type
   = note: string
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/ifStmt/typeof-3.ts:3:16
+ --> $DIR/tests/pass/controlFlow/ifStmt/typeof-3.ts:3:16
   |
 3 |         return JSON.parse(data);
   |                ^^^^
@@ -39,7 +39,7 @@ warning: Type
   = note: JSON
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/ifStmt/typeof-3.ts:3:16
+ --> $DIR/tests/pass/controlFlow/ifStmt/typeof-3.ts:3:16
   |
 3 |         return JSON.parse(data);
   |                ^^^^^^^^^^^^^^^^
@@ -47,7 +47,7 @@ warning: Type
   = note: any
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/ifStmt/typeof-3.ts:5:16
+ --> $DIR/tests/pass/controlFlow/ifStmt/typeof-3.ts:5:16
   |
 5 |         return data;
   |                ^^^^

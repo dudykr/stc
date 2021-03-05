@@ -1,5 +1,5 @@
 warning: Type
- --> $DIR/tests/visualize/controlFlow/ifStmt/instanceof-1.ts:5:5
+ --> $DIR/tests/pass/controlFlow/ifStmt/instanceof-1.ts:5:5
   |
 5 | if (result instanceof RegExp) {
   |     ^^^^^^
@@ -7,7 +7,7 @@ warning: Type
   = note: I
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/ifStmt/instanceof-1.ts:5:23
+ --> $DIR/tests/pass/controlFlow/ifStmt/instanceof-1.ts:5:23
   |
 5 | if (result instanceof RegExp) {
   |                       ^^^^^^
@@ -15,7 +15,7 @@ warning: Type
   = note: RegExpConstructor
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/ifStmt/instanceof-1.ts:5:5
+ --> $DIR/tests/pass/controlFlow/ifStmt/instanceof-1.ts:5:5
   |
 5 | if (result instanceof RegExp) {
   |     ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -23,7 +23,7 @@ warning: Type
   = note: boolean
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/ifStmt/instanceof-1.ts:6:5
+ --> $DIR/tests/pass/controlFlow/ifStmt/instanceof-1.ts:6:5
   |
 6 |     result;
   |     ^^^^^^
@@ -31,7 +31,7 @@ warning: Type
   = note: RegExpConstructor
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/ifStmt/instanceof-1.ts:8:5
+ --> $DIR/tests/pass/controlFlow/ifStmt/instanceof-1.ts:8:5
   |
 8 |     result;
   |     ^^^^^^

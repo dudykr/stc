@@ -1,5 +1,5 @@
 warning: Type
- --> $DIR/tests/visualize/controlFlow/ifStmt/typeof-2.ts:6:12
+ --> $DIR/tests/pass/controlFlow/ifStmt/typeof-2.ts:6:12
   |
 6 | if (typeof strOrNumOrBool === "string" || typeof strOrNumOrBool === "number") {
   |            ^^^^^^^^^^^^^^
@@ -7,7 +7,7 @@ warning: Type
   = note: string | number | boolean
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/ifStmt/typeof-2.ts:6:5
+ --> $DIR/tests/pass/controlFlow/ifStmt/typeof-2.ts:6:5
   |
 6 | if (typeof strOrNumOrBool === "string" || typeof strOrNumOrBool === "number") {
   |     ^^^^^^^^^^^^^^^^^^^^^
@@ -15,7 +15,7 @@ warning: Type
   = note: string
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/ifStmt/typeof-2.ts:6:5
+ --> $DIR/tests/pass/controlFlow/ifStmt/typeof-2.ts:6:5
   |
 6 | if (typeof strOrNumOrBool === "string" || typeof strOrNumOrBool === "number") {
   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -23,7 +23,7 @@ warning: Type
   = note: boolean
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/ifStmt/typeof-2.ts:6:50
+ --> $DIR/tests/pass/controlFlow/ifStmt/typeof-2.ts:6:50
   |
 6 | if (typeof strOrNumOrBool === "string" || typeof strOrNumOrBool === "number") {
   |                                                  ^^^^^^^^^^^^^^
@@ -31,7 +31,7 @@ warning: Type
   = note: number | boolean
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/ifStmt/typeof-2.ts:6:43
+ --> $DIR/tests/pass/controlFlow/ifStmt/typeof-2.ts:6:43
   |
 6 | if (typeof strOrNumOrBool === "string" || typeof strOrNumOrBool === "number") {
   |                                           ^^^^^^^^^^^^^^^^^^^^^
@@ -39,7 +39,7 @@ warning: Type
   = note: string
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/ifStmt/typeof-2.ts:6:43
+ --> $DIR/tests/pass/controlFlow/ifStmt/typeof-2.ts:6:43
   |
 6 | if (typeof strOrNumOrBool === "string" || typeof strOrNumOrBool === "number") {
   |                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -47,7 +47,7 @@ warning: Type
   = note: boolean
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/ifStmt/typeof-2.ts:6:5
+ --> $DIR/tests/pass/controlFlow/ifStmt/typeof-2.ts:6:5
   |
 6 | if (typeof strOrNumOrBool === "string" || typeof strOrNumOrBool === "number") {
   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -55,7 +55,7 @@ warning: Type
   = note: boolean
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/ifStmt/typeof-2.ts:7:16
+ --> $DIR/tests/pass/controlFlow/ifStmt/typeof-2.ts:7:16
   |
 7 |     strOrNum = strOrNumOrBool; // string | number
   |                ^^^^^^^^^^^^^^
@@ -63,7 +63,7 @@ warning: Type
   = note: string | number
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/ifStmt/typeof-2.ts:7:5
+ --> $DIR/tests/pass/controlFlow/ifStmt/typeof-2.ts:7:5
   |
 7 |     strOrNum = strOrNumOrBool; // string | number
   |     ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -71,7 +71,7 @@ warning: Type
   = note: string | number
 
 warning: Type
-  --> $DIR/tests/visualize/controlFlow/ifStmt/typeof-2.ts:10:12
+  --> $DIR/tests/pass/controlFlow/ifStmt/typeof-2.ts:10:12
    |
 10 |     bool = strOrNumOrBool; // boolean
    |            ^^^^^^^^^^^^^^
@@ -79,7 +79,7 @@ warning: Type
    = note: boolean
 
 warning: Type
-  --> $DIR/tests/visualize/controlFlow/ifStmt/typeof-2.ts:10:5
+  --> $DIR/tests/pass/controlFlow/ifStmt/typeof-2.ts:10:5
    |
 10 |     bool = strOrNumOrBool; // boolean
    |     ^^^^^^^^^^^^^^^^^^^^^
