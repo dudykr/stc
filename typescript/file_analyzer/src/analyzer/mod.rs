@@ -106,6 +106,12 @@ pub(crate) struct Ctx {
 
     is_calling_iife: bool,
 
+    /// `true` if unresolved references should be rerpoted.
+    ///
+    /// For example, while validating type parameter instantiation, unresolved
+    /// references are error.
+    in_actual_type: bool,
+
     reevaluating_call_or_new: bool,
 
     var_kind: VarDeclKind,
@@ -370,6 +376,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 in_global: false,
                 in_export_default_expr: false,
                 is_calling_iife: false,
+                in_actual_type: false,
                 reevaluating_call_or_new: false,
                 var_kind: VarDeclKind::Var,
                 pat_mode: PatMode::Assign,
