@@ -485,6 +485,10 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
             println!("[INFER_ONLY]{}", file_name.display());
         }
 
+        if actual_errors.len() <= 2 {
+            println!("[ALMOST]{}", file_name.display());
+        }
+
         if !success {
             panic!(
                 "\n============================================================\n{:?}
