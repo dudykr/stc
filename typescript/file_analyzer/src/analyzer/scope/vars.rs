@@ -37,7 +37,7 @@ use swc_ecma_ast::VarDeclKind;
 
 impl Analyzer<'_, '_> {
     pub(super) fn exclude_props(&mut self, ty: &Type, keys: &[Key]) -> ValidationResult<Type> {
-        let ty = self.normalize(&ty, NormalizeTypeOpts { ..Default::default() })?;
+        let ty = self.normalize(&ty, NormalizeTypeOpts { preserve_mapped: false })?;
 
         match ty.normalize() {
             Type::TypeLit(lit) => {
