@@ -189,7 +189,8 @@ impl Analyzer<'_, '_> {
                             ..
                         }),
                     ..
-                }) => {}
+                })
+                | Type::EnumVariant(..) => {}
                 _ if is_symbol_access => {}
                 _ => errors.push(Error::TS2464 { span }),
             }
