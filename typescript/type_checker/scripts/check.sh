@@ -7,7 +7,7 @@
 
 set -eu
 
-TEST='' cargo test --test conformance -- --nocapture \
+TEST='' cargo test --test conformance \
   | grep 'ts .\.\. ok$' \
   | sed -e 's!test tsc::conformance::!!' \
   | sed -e 's! ... ok!!' \
@@ -17,6 +17,6 @@ TEST='' cargo test --test conformance -- --nocapture \
 
 ./scripts/sort.sh
 
-TEST='' cargo test --test conformance -- --nocapture \
+TEST='' cargo test --test conformance \
   | grep 'ts .\.\. FAILED$' \
   | sed -e 's!test tsc::conformance::!!'
