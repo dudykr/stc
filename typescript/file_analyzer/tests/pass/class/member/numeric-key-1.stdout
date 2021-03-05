@@ -1,5 +1,5 @@
 warning: Type
- --> $DIR/tests/visualize/class/member/numeric-key-1.ts:7:17
+ --> $DIR/tests/pass/class/member/numeric-key-1.ts:7:17
   |
 7 | export var r1 = c[1];
   |                 ^
@@ -7,7 +7,7 @@ warning: Type
   = note: C
 
 warning: Type
- --> $DIR/tests/visualize/class/member/numeric-key-1.ts:7:17
+ --> $DIR/tests/pass/class/member/numeric-key-1.ts:7:17
   |
 7 | export var r1 = c[1];
   |                 ^^^^
@@ -15,7 +15,7 @@ warning: Type
   = note: number
 
 warning: Type
- --> $DIR/tests/visualize/class/member/numeric-key-1.ts:8:17
+ --> $DIR/tests/pass/class/member/numeric-key-1.ts:8:17
   |
 8 | export var r2 = c[1.1];
   |                 ^
@@ -23,7 +23,7 @@ warning: Type
   = note: C
 
 warning: Type
- --> $DIR/tests/visualize/class/member/numeric-key-1.ts:8:17
+ --> $DIR/tests/pass/class/member/numeric-key-1.ts:8:17
   |
 8 | export var r2 = c[1.1];
   |                 ^^^^^^
@@ -31,7 +31,7 @@ warning: Type
   = note: string
 
 warning: Type
- --> $DIR/tests/visualize/class/member/numeric-key-1.ts:9:17
+ --> $DIR/tests/pass/class/member/numeric-key-1.ts:9:17
   |
 9 | export var r3 = c['1'];
   |                 ^
@@ -39,7 +39,7 @@ warning: Type
   = note: C
 
 warning: Type
- --> $DIR/tests/visualize/class/member/numeric-key-1.ts:9:17
+ --> $DIR/tests/pass/class/member/numeric-key-1.ts:9:17
   |
 9 | export var r3 = c['1'];
   |                 ^^^^^^
@@ -47,7 +47,7 @@ warning: Type
   = note: number
 
 warning: Type
-  --> $DIR/tests/visualize/class/member/numeric-key-1.ts:10:17
+  --> $DIR/tests/pass/class/member/numeric-key-1.ts:10:17
    |
 10 | export var r4 = c['1.1'];
    |                 ^
@@ -55,7 +55,7 @@ warning: Type
    = note: C
 
 warning: Type
-  --> $DIR/tests/visualize/class/member/numeric-key-1.ts:10:17
+  --> $DIR/tests/pass/class/member/numeric-key-1.ts:10:17
    |
 10 | export var r4 = c['1.1'];
    |                 ^^^^^^^^

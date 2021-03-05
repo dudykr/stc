@@ -1,5 +1,5 @@
 warning: Type
- --> $DIR/tests/visualize/controlFlow/guard/tpl-in-1.ts:2:5
+ --> $DIR/tests/pass/controlFlow/guard/tpl-in-1.ts:2:5
   |
 2 | if (`test` in obj) {
   |     ^^^^^^
@@ -7,7 +7,7 @@ warning: Type
   = note: "test"
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/guard/tpl-in-1.ts:2:15
+ --> $DIR/tests/pass/controlFlow/guard/tpl-in-1.ts:2:15
   |
 2 | if (`test` in obj) {
   |               ^^^
@@ -18,7 +18,7 @@ warning: Type
           }
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/guard/tpl-in-1.ts:2:5
+ --> $DIR/tests/pass/controlFlow/guard/tpl-in-1.ts:2:5
   |
 2 | if (`test` in obj) {
   |     ^^^^^^^^^^^^^
@@ -26,7 +26,7 @@ warning: Type
   = note: boolean
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/guard/tpl-in-1.ts:3:5
+ --> $DIR/tests/pass/controlFlow/guard/tpl-in-1.ts:3:5
   |
 3 |     obj.test.slice(0)
   |     ^^^
@@ -36,7 +36,7 @@ warning: Type
           }
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/guard/tpl-in-1.ts:3:5
+ --> $DIR/tests/pass/controlFlow/guard/tpl-in-1.ts:3:5
   |
 3 |     obj.test.slice(0)
   |     ^^^^^^^^
@@ -44,7 +44,7 @@ warning: Type
   = note: string
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/guard/tpl-in-1.ts:3:5
+ --> $DIR/tests/pass/controlFlow/guard/tpl-in-1.ts:3:5
   |
 3 |     obj.test.slice(0)
   |     ^^^^^^^^^^^^^^^^^

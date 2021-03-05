@@ -1,5 +1,5 @@
 warning: Type
- --> $DIR/tests/visualize/class/member/static/factory-1.ts:4:20
+ --> $DIR/tests/pass/class/member/static/factory-1.ts:4:20
   |
 4 |         return new this();
   |                    ^^^^
@@ -7,7 +7,7 @@ warning: Type
   = note: this
 
 warning: Type
- --> $DIR/tests/visualize/class/member/static/factory-1.ts:4:16
+ --> $DIR/tests/pass/class/member/static/factory-1.ts:4:16
   |
 4 |         return new this();
   |                ^^^^^^^^^^
@@ -15,7 +15,7 @@ warning: Type
   = note: this
 
 warning: Type
- --> $DIR/tests/visualize/class/member/static/factory-1.ts:8:23
+ --> $DIR/tests/pass/class/member/static/factory-1.ts:8:23
   |
 8 | class Derived extends Base {
   |                       ^^^^
@@ -23,7 +23,7 @@ warning: Type
   = note: typeof Base
 
 warning: Type
-  --> $DIR/tests/visualize/class/member/static/factory-1.ts:11:9
+  --> $DIR/tests/pass/class/member/static/factory-1.ts:11:9
    |
 11 | var d = Derived.create();
    |         ^^^^^^^
@@ -31,7 +31,7 @@ warning: Type
    = note: typeof Derived
 
 warning: Type
-  --> $DIR/tests/visualize/class/member/static/factory-1.ts:11:9
+  --> $DIR/tests/pass/class/member/static/factory-1.ts:11:9
    |
 11 | var d = Derived.create();
    |         ^^^^^^^^^^^^^^^^
@@ -39,7 +39,7 @@ warning: Type
    = note: Derived
 
 warning: Type
-  --> $DIR/tests/visualize/class/member/static/factory-1.ts:13:1
+  --> $DIR/tests/pass/class/member/static/factory-1.ts:13:1
    |
 13 | d.foo();
    | ^
@@ -47,7 +47,7 @@ warning: Type
    = note: Derived
 
 warning: Type
-  --> $DIR/tests/visualize/class/member/static/factory-1.ts:13:1
+  --> $DIR/tests/pass/class/member/static/factory-1.ts:13:1
    |
 13 | d.foo();
    | ^^^^^^^

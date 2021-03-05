@@ -1,5 +1,5 @@
 warning: Type
- --> $DIR/tests/visualize/class/prototype/non-generic.ts:5:17
+ --> $DIR/tests/pass/class/prototype/non-generic.ts:5:17
   |
 5 | class D extends C {
   |                 ^
@@ -7,7 +7,7 @@ warning: Type
   = note: typeof C
 
 warning: Type
- --> $DIR/tests/visualize/class/prototype/non-generic.ts:9:9
+ --> $DIR/tests/pass/class/prototype/non-generic.ts:9:9
   |
 9 | var r = C.prototype;
   |         ^
@@ -15,7 +15,7 @@ warning: Type
   = note: typeof C
 
 warning: Type
- --> $DIR/tests/visualize/class/prototype/non-generic.ts:9:9
+ --> $DIR/tests/pass/class/prototype/non-generic.ts:9:9
   |
 9 | var r = C.prototype;
   |         ^^^^^^^^^^^
@@ -25,7 +25,7 @@ warning: Type
           }
 
 warning: Type
-  --> $DIR/tests/visualize/class/prototype/non-generic.ts:10:1
+  --> $DIR/tests/pass/class/prototype/non-generic.ts:10:1
    |
 10 | r.foo;
    | ^
@@ -35,7 +35,7 @@ warning: Type
            }
 
 warning: Type
-  --> $DIR/tests/visualize/class/prototype/non-generic.ts:10:1
+  --> $DIR/tests/pass/class/prototype/non-generic.ts:10:1
    |
 10 | r.foo;
    | ^^^^^
@@ -43,7 +43,7 @@ warning: Type
    = note: string
 
 warning: Type
-  --> $DIR/tests/visualize/class/prototype/non-generic.ts:11:10
+  --> $DIR/tests/pass/class/prototype/non-generic.ts:11:10
    |
 11 | var r2 = D.prototype;
    |          ^
@@ -51,7 +51,7 @@ warning: Type
    = note: typeof D
 
 warning: Type
-  --> $DIR/tests/visualize/class/prototype/non-generic.ts:11:10
+  --> $DIR/tests/pass/class/prototype/non-generic.ts:11:10
    |
 11 | var r2 = D.prototype;
    |          ^^^^^^^^^^^
@@ -61,7 +61,7 @@ warning: Type
            }
 
 warning: Type
-  --> $DIR/tests/visualize/class/prototype/non-generic.ts:12:1
+  --> $DIR/tests/pass/class/prototype/non-generic.ts:12:1
    |
 12 | r2.bar;
    | ^^
@@ -71,7 +71,7 @@ warning: Type
            }
 
 warning: Type
-  --> $DIR/tests/visualize/class/prototype/non-generic.ts:12:1
+  --> $DIR/tests/pass/class/prototype/non-generic.ts:12:1
    |
 12 | r2.bar;
    | ^^^^^^

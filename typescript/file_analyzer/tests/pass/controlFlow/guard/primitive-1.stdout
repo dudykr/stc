@@ -1,5 +1,5 @@
 warning: Type
- --> $DIR/tests/visualize/controlFlow/guard/primitive-1.ts:2:9
+ --> $DIR/tests/pass/controlFlow/guard/primitive-1.ts:2:9
   |
 2 |     if (thing instanceof Object) {
   |         ^^^^^
@@ -7,7 +7,7 @@ warning: Type
   = note: string | number | Date
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/guard/primitive-1.ts:2:26
+ --> $DIR/tests/pass/controlFlow/guard/primitive-1.ts:2:26
   |
 2 |     if (thing instanceof Object) {
   |                          ^^^^^^
@@ -15,7 +15,7 @@ warning: Type
   = note: ObjectConstructor
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/guard/primitive-1.ts:2:9
+ --> $DIR/tests/pass/controlFlow/guard/primitive-1.ts:2:9
   |
 2 |     if (thing instanceof Object) {
   |         ^^^^^^^^^^^^^^^^^^^^^^^
@@ -23,7 +23,7 @@ warning: Type
   = note: boolean
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/guard/primitive-1.ts:3:47
+ --> $DIR/tests/pass/controlFlow/guard/primitive-1.ts:3:47
   |
 3 |         console.log("Aha!! It's a Date in " + thing.getFullYear());
   |                                               ^^^^^
@@ -31,7 +31,7 @@ warning: Type
   = note: Date
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/guard/primitive-1.ts:3:47
+ --> $DIR/tests/pass/controlFlow/guard/primitive-1.ts:3:47
   |
 3 |         console.log("Aha!! It's a Date in " + thing.getFullYear());
   |                                               ^^^^^^^^^^^^^^^^^^^
@@ -39,7 +39,7 @@ warning: Type
   = note: number
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/guard/primitive-1.ts:3:21
+ --> $DIR/tests/pass/controlFlow/guard/primitive-1.ts:3:21
   |
 3 |         console.log("Aha!! It's a Date in " + thing.getFullYear());
   |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -47,7 +47,7 @@ warning: Type
   = note: string
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/guard/primitive-1.ts:3:9
+ --> $DIR/tests/pass/controlFlow/guard/primitive-1.ts:3:9
   |
 3 |         console.log("Aha!! It's a Date in " + thing.getFullYear());
   |         ^^^^^^^
@@ -55,7 +55,7 @@ warning: Type
   = note: Console
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/guard/primitive-1.ts:3:9
+ --> $DIR/tests/pass/controlFlow/guard/primitive-1.ts:3:9
   |
 3 |         console.log("Aha!! It's a Date in " + thing.getFullYear());
   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -63,7 +63,7 @@ warning: Type
   = note: void
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/guard/primitive-1.ts:4:23
+ --> $DIR/tests/pass/controlFlow/guard/primitive-1.ts:4:23
   |
 4 |     } else if (typeof thing === 'string') {
   |                       ^^^^^
@@ -71,7 +71,7 @@ warning: Type
   = note: string | number
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/guard/primitive-1.ts:4:16
+ --> $DIR/tests/pass/controlFlow/guard/primitive-1.ts:4:16
   |
 4 |     } else if (typeof thing === 'string') {
   |                ^^^^^^^^^^^^
@@ -79,7 +79,7 @@ warning: Type
   = note: string
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/guard/primitive-1.ts:4:16
+ --> $DIR/tests/pass/controlFlow/guard/primitive-1.ts:4:16
   |
 4 |     } else if (typeof thing === 'string') {
   |                ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -87,7 +87,7 @@ warning: Type
   = note: boolean
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/guard/primitive-1.ts:5:56
+ --> $DIR/tests/pass/controlFlow/guard/primitive-1.ts:5:56
   |
 5 |         console.log("Aha!! It's a string of length " + thing.length);
   |                                                        ^^^^^
@@ -95,7 +95,7 @@ warning: Type
   = note: string
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/guard/primitive-1.ts:5:56
+ --> $DIR/tests/pass/controlFlow/guard/primitive-1.ts:5:56
   |
 5 |         console.log("Aha!! It's a string of length " + thing.length);
   |                                                        ^^^^^^^^^^^^
@@ -103,7 +103,7 @@ warning: Type
   = note: number
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/guard/primitive-1.ts:5:21
+ --> $DIR/tests/pass/controlFlow/guard/primitive-1.ts:5:21
   |
 5 |         console.log("Aha!! It's a string of length " + thing.length);
   |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -111,7 +111,7 @@ warning: Type
   = note: string
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/guard/primitive-1.ts:5:9
+ --> $DIR/tests/pass/controlFlow/guard/primitive-1.ts:5:9
   |
 5 |         console.log("Aha!! It's a string of length " + thing.length);
   |         ^^^^^^^
@@ -119,7 +119,7 @@ warning: Type
   = note: Console
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/guard/primitive-1.ts:5:9
+ --> $DIR/tests/pass/controlFlow/guard/primitive-1.ts:5:9
   |
 5 |         console.log("Aha!! It's a string of length " + thing.length);
   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -127,7 +127,7 @@ warning: Type
   = note: void
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/guard/primitive-1.ts:7:48
+ --> $DIR/tests/pass/controlFlow/guard/primitive-1.ts:7:48
   |
 7 |         console.log("Aha!! It's the number " + thing.toPrecision(3));
   |                                                ^^^^^
@@ -135,7 +135,7 @@ warning: Type
   = note: number
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/guard/primitive-1.ts:7:48
+ --> $DIR/tests/pass/controlFlow/guard/primitive-1.ts:7:48
   |
 7 |         console.log("Aha!! It's the number " + thing.toPrecision(3));
   |                                                ^^^^^^^^^^^^^^^^^^^^
@@ -143,7 +143,7 @@ warning: Type
   = note: string
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/guard/primitive-1.ts:7:21
+ --> $DIR/tests/pass/controlFlow/guard/primitive-1.ts:7:21
   |
 7 |         console.log("Aha!! It's the number " + thing.toPrecision(3));
   |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -151,7 +151,7 @@ warning: Type
   = note: string
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/guard/primitive-1.ts:7:9
+ --> $DIR/tests/pass/controlFlow/guard/primitive-1.ts:7:9
   |
 7 |         console.log("Aha!! It's the number " + thing.toPrecision(3));
   |         ^^^^^^^
@@ -159,7 +159,7 @@ warning: Type
   = note: Console
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/guard/primitive-1.ts:7:9
+ --> $DIR/tests/pass/controlFlow/guard/primitive-1.ts:7:9
   |
 7 |         console.log("Aha!! It's the number " + thing.toPrecision(3));
   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -167,7 +167,7 @@ warning: Type
   = note: void
 
 warning: Type
-  --> $DIR/tests/visualize/controlFlow/guard/primitive-1.ts:11:17
+  --> $DIR/tests/pass/controlFlow/guard/primitive-1.ts:11:17
    |
 11 | distinguish(new Date());
    |                 ^^^^
@@ -175,7 +175,7 @@ warning: Type
    = note: DateConstructor
 
 warning: Type
-  --> $DIR/tests/visualize/controlFlow/guard/primitive-1.ts:11:13
+  --> $DIR/tests/pass/controlFlow/guard/primitive-1.ts:11:13
    |
 11 | distinguish(new Date());
    |             ^^^^^^^^^^
@@ -183,7 +183,7 @@ warning: Type
    = note: Date
 
 warning: Type
-  --> $DIR/tests/visualize/controlFlow/guard/primitive-1.ts:11:1
+  --> $DIR/tests/pass/controlFlow/guard/primitive-1.ts:11:1
    |
 11 | distinguish(new Date());
    | ^^^^^^^^^^^
@@ -191,7 +191,7 @@ warning: Type
    = note: (thing: string | number | Date) => void
 
 warning: Type
-  --> $DIR/tests/visualize/controlFlow/guard/primitive-1.ts:11:1
+  --> $DIR/tests/pass/controlFlow/guard/primitive-1.ts:11:1
    |
 11 | distinguish(new Date());
    | ^^^^^^^^^^^^^^^^^^^^^^^
@@ -199,7 +199,7 @@ warning: Type
    = note: void
 
 warning: Type
-  --> $DIR/tests/visualize/controlFlow/guard/primitive-1.ts:12:1
+  --> $DIR/tests/pass/controlFlow/guard/primitive-1.ts:12:1
    |
 12 | distinguish("beef");
    | ^^^^^^^^^^^
@@ -207,7 +207,7 @@ warning: Type
    = note: (thing: string | number | Date) => void
 
 warning: Type
-  --> $DIR/tests/visualize/controlFlow/guard/primitive-1.ts:12:1
+  --> $DIR/tests/pass/controlFlow/guard/primitive-1.ts:12:1
    |
 12 | distinguish("beef");
    | ^^^^^^^^^^^^^^^^^^^
@@ -215,7 +215,7 @@ warning: Type
    = note: void
 
 warning: Type
-  --> $DIR/tests/visualize/controlFlow/guard/primitive-1.ts:13:1
+  --> $DIR/tests/pass/controlFlow/guard/primitive-1.ts:13:1
    |
 13 | distinguish(3.14159265);
    | ^^^^^^^^^^^
@@ -223,7 +223,7 @@ warning: Type
    = note: (thing: string | number | Date) => void
 
 warning: Type
-  --> $DIR/tests/visualize/controlFlow/guard/primitive-1.ts:13:1
+  --> $DIR/tests/pass/controlFlow/guard/primitive-1.ts:13:1
    |
 13 | distinguish(3.14159265);
    | ^^^^^^^^^^^^^^^^^^^^^^^

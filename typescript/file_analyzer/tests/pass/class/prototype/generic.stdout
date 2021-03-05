@@ -1,5 +1,5 @@
 warning: Type
- --> $DIR/tests/visualize/class/prototype/generic.ts:7:23
+ --> $DIR/tests/pass/class/prototype/generic.ts:7:23
   |
 7 | class D<T, U> extends C<T, U> {
   |                       ^
@@ -7,7 +7,7 @@ warning: Type
   = note: typeof C
 
 warning: Type
-  --> $DIR/tests/visualize/class/prototype/generic.ts:12:9
+  --> $DIR/tests/pass/class/prototype/generic.ts:12:9
    |
 12 | var r = C.prototype; // C<any, any>
    |         ^
@@ -15,7 +15,7 @@ warning: Type
    = note: typeof C
 
 warning: Type
-  --> $DIR/tests/visualize/class/prototype/generic.ts:12:9
+  --> $DIR/tests/pass/class/prototype/generic.ts:12:9
    |
 12 | var r = C.prototype; // C<any, any>
    |         ^^^^^^^^^^^
@@ -26,7 +26,7 @@ warning: Type
            }
 
 warning: Type
-  --> $DIR/tests/visualize/class/prototype/generic.ts:13:10
+  --> $DIR/tests/pass/class/prototype/generic.ts:13:10
    |
 13 | var ra = r.foo; // any
    |          ^
@@ -37,7 +37,7 @@ warning: Type
            }
 
 warning: Type
-  --> $DIR/tests/visualize/class/prototype/generic.ts:13:10
+  --> $DIR/tests/pass/class/prototype/generic.ts:13:10
    |
 13 | var ra = r.foo; // any
    |          ^^^^^
@@ -45,7 +45,7 @@ warning: Type
    = note: any
 
 warning: Type
-  --> $DIR/tests/visualize/class/prototype/generic.ts:14:10
+  --> $DIR/tests/pass/class/prototype/generic.ts:14:10
    |
 14 | var r2 = D.prototype; // D<any, any>
    |          ^
@@ -53,7 +53,7 @@ warning: Type
    = note: typeof D
 
 warning: Type
-  --> $DIR/tests/visualize/class/prototype/generic.ts:14:10
+  --> $DIR/tests/pass/class/prototype/generic.ts:14:10
    |
 14 | var r2 = D.prototype; // D<any, any>
    |          ^^^^^^^^^^^
@@ -64,7 +64,7 @@ warning: Type
            }
 
 warning: Type
-  --> $DIR/tests/visualize/class/prototype/generic.ts:15:10
+  --> $DIR/tests/pass/class/prototype/generic.ts:15:10
    |
 15 | var rb = r2.baz; // any
    |          ^^
@@ -75,7 +75,7 @@ warning: Type
            }
 
 warning: Type
-  --> $DIR/tests/visualize/class/prototype/generic.ts:15:10
+  --> $DIR/tests/pass/class/prototype/generic.ts:15:10
    |
 15 | var rb = r2.baz; // any
    |          ^^^^^^
