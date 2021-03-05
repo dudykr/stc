@@ -1442,6 +1442,12 @@ parser/ecmascript5/TupleTypes/TupleType1.ts
 parser/ecmascript5/TupleTypes/TupleType2.ts
 parser/ecmascript5/TupleTypes/TupleType3.ts
 parser/ecmascript5/TupleTypes/TupleType5.ts
+parser/ecmascript5/Types/parserTypeQuery1.ts
+parser/ecmascript5/Types/parserTypeQuery2.ts
+parser/ecmascript5/Types/parserTypeQuery5.ts
+parser/ecmascript5/Types/parserTypeQuery6.ts
+parser/ecmascript5/Types/parserTypeQuery7.ts
+parser/ecmascript5/Types/parserTypeQuery9.ts
 parser/ecmascript5/VariableDeclarations/parserVariableDeclaration1.ts
 parser/ecmascript5/VariableDeclarations/parserVariableDeclaration11.ts
 parser/ecmascript5/VariableDeclarations/parserVariableDeclaration2.ts
