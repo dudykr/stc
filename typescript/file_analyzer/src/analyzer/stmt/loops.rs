@@ -1,4 +1,5 @@
 use super::super::Analyzer;
+use crate::analyzer::types::NormalizeTypeOpts;
 use crate::validator::ValidateWith;
 use crate::{
     analyzer::{expr::TypeOfMode, ScopeKind},
@@ -72,6 +73,38 @@ impl Analyzer<'_, '_> {
         e.validate_with_default(self)
     }
 
+    fn get_element_type_of_for_in(&mut self, rhs: &Type) -> ValidationResult {
+        let rhs = self
+            .normalize(
+                rhs,
+                NormalizeTypeOpts {
+                    preserve_mapped: true,
+                    ..Default::default()
+                },
+            )
+            .context("tried to normalize a type to handle a for-in loop")?;
+
+        match rhs.normalize() {
+            Type::Mapped(m) => {
+                // { [P in K]: T[P]; }
+                if let Some(constraint) = m.type_param.constraint.as_deref() {
+                    return Ok(Type::Param(m.type_param.clone()));
+                }
+            }
+            _ => {}
+        }
+
+        let s = Type::Keyword(RTsKeywordType {
+            span: rhs.span(),
+            kind: TsKeywordTypeKind::TsStringKeyword,
+        });
+        let n = Type::Keyword(RTsKeywordType {
+            span: rhs.span(),
+            kind: TsKeywordTypeKind::TsNumberKeyword,
+        });
+        Ok(Type::union(vec![s, n]))
+    }
+
     #[extra_validator]
     fn check_for_of_in_loop(&mut self, span: Span, left: &RVarDeclOrPat, rhs: &RExpr, kind: ForHeadKind, body: &RStmt) {
         self.with_child(
@@ -96,17 +129,11 @@ impl Analyzer<'_, '_> {
                     ForHeadKind::Of => child
                         .get_iterator_element_type(rhs.span(), Cow::Owned(rty))
                         .context("tried to get the element type of an iterator to calculate type for a for-of loop")?,
-                    ForHeadKind::In => {
-                        let s = Type::Keyword(RTsKeywordType {
-                            span: rhs.span(),
-                            kind: TsKeywordTypeKind::TsStringKeyword,
-                        });
-                        let n = Type::Keyword(RTsKeywordType {
-                            span: rhs.span(),
-                            kind: TsKeywordTypeKind::TsNumberKeyword,
-                        });
-                        Cow::Owned(Type::union(vec![s, n]))
-                    }
+                    ForHeadKind::In => Cow::Owned(
+                        child
+                            .get_element_type_of_for_in(&rty)
+                            .context("tried to calculate the element type for a for-in loop")?,
+                    ),
                 };
 
                 child.scope.declaring.clear();
