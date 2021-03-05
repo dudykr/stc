@@ -103,10 +103,7 @@ impl Analyzer<'_, '_> {
             RExprOrSuper::Expr(callee) => callee,
         };
 
-        let is_callee_iife = match &**callee {
-            RExpr::Fn(..) | RExpr::Arrow(..) => true,
-            _ => false,
-        };
+        let is_callee_iife = is_fn_expr(&callee);
 
         // TODO: validate children
 
@@ -2691,6 +2688,14 @@ fn is_key_eq_prop(prop: &RExpr, computed: bool, e: &RExpr) -> bool {
     };
 
     v.sym() == p
+}
+
+fn is_fn_expr(callee: &RExpr) -> bool {
+    match callee {
+        RExpr::Arrow(..) | RExpr::Fn(..) => true,
+        RExpr::Paren(e) => is_fn_expr(&e.expr),
+        _ => false,
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
