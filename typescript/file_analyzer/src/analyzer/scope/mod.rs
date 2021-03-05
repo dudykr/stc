@@ -23,7 +23,6 @@ use rnode::VisitMut;
 use rnode::VisitMutWith;
 use rnode::VisitWith;
 use slog::Logger;
-use smallvec::SmallVec;
 use stc_ts_ast_rnode::RArrayPat;
 use stc_ts_ast_rnode::RAssignPatProp;
 use stc_ts_ast_rnode::RBindingIdent;
@@ -78,7 +77,7 @@ pub(crate) struct Scope<'a> {
     logger: Logger,
     parent: Option<&'a Scope<'a>>,
     kind: ScopeKind,
-    pub declaring: SmallVec<[Id; 8]>,
+    pub declaring: Vec<Id>,
 
     pub(super) vars: FxHashMap<Id, VarInfo>,
     types: FxHashMap<Id, Type>,
