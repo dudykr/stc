@@ -103,9 +103,16 @@ impl Analyzer<'_, '_> {
             RExprOrSuper::Expr(callee) => callee,
         };
 
+        let is_callee_iife = match &**callee {
+            RExpr::Fn(..) | RExpr::Arrow(..) => true,
+            _ => false,
+        };
+
         // TODO: validate children
 
         self.with_child(ScopeKind::Call, Default::default(), |analyzer: &mut Analyzer| {
+            analyzer.ctx.is_calling_iife = is_callee_iife;
+
             analyzer.extract_call_new_expr_member(
                 span,
                 ReevalMode::Call(e),
