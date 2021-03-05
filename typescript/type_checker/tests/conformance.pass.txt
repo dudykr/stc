@@ -389,6 +389,8 @@ es6/computedProperties/computedPropertyNames4_ES5.ts
 es6/computedProperties/computedPropertyNames4_ES6.ts
 es6/computedProperties/computedPropertyNames5_ES5.ts
 es6/computedProperties/computedPropertyNames5_ES6.ts
+es6/computedProperties/computedPropertyNames7_ES5.ts
+es6/computedProperties/computedPropertyNames7_ES6.ts
 es6/computedProperties/computedPropertyNames9_ES5.ts
 es6/computedProperties/computedPropertyNames9_ES6.ts
 es6/computedProperties/computedPropertyNamesContextualType1_ES5.ts
