@@ -144,9 +144,17 @@ fn load_expected_errors(ts_file: &Path) -> Result<Vec<RefError>, Error> {
         println!("errors file does not exists: {}", errors_file.display());
         Ok(vec![])
     } else {
-        let errors: Vec<RefError> =
+        let mut errors: Vec<RefError> =
             serde_json::from_reader(File::open(errors_file).expect("failed to open error sfile"))
                 .context("failed to parse errors.txt.json")?;
+
+        for err in &mut errors {
+            // TS2552: Type not found with recommendation.
+            // TS2304: Type not found without recommendation.
+            if err.code == "TS2552" {
+                err.code = "TS2304".to_string();
+            }
+        }
 
         // TODO: Match column and message
 
