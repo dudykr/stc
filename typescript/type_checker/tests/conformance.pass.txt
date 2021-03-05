@@ -154,6 +154,9 @@ classes/classExpressions/classExpression1.ts
 classes/classExpressions/classExpression2.ts
 classes/classExpressions/classExpression3.ts
 classes/classExpressions/classExpression5.ts
+classes/classExpressions/classWithStaticFieldInParameterBindingPattern.2.ts
+classes/classExpressions/classWithStaticFieldInParameterBindingPattern.3.ts
+classes/classExpressions/classWithStaticFieldInParameterBindingPattern.ts
 classes/classExpressions/classWithStaticFieldInParameterInitializer.2.ts
 classes/classExpressions/classWithStaticFieldInParameterInitializer.3.ts
 classes/classExpressions/classWithStaticFieldInParameterInitializer.ts
@@ -999,6 +1002,7 @@ expressions/functionCalls/grammarAmbiguities.ts
 expressions/functionCalls/typeArgumentInferenceErrors.ts
 expressions/functionCalls/typeArgumentInferenceTransitiveConstraints.ts
 expressions/functions/arrowFunctionExpressions.ts
+expressions/functions/contextuallyTypedIife.ts
 expressions/functions/typeOfThisInFunctionExpression.ts
 expressions/newOperator/newOperatorConformance.ts
 expressions/nullishCoalescingOperator/nullishCoalescingOperator1.ts
