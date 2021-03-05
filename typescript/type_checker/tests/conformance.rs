@@ -149,9 +149,20 @@ fn load_expected_errors(ts_file: &Path) -> Result<Vec<RefError>, Error> {
                 .context("failed to parse errors.txt.json")?;
 
         for err in &mut errors {
-            // TS2552: Type not found with recommendation.
-            // TS2304: Type not found without recommendation.
-            if err.code == "TS2552" {
+            match &*err.code {
+                // TS2552: Type not found with recommendation.
+                // TS2580: Type not found with recommendation for package to instsall.
+                // TS2581: Type not found with recommendation for jQuery.
+                // TS2582: Type not found with recommendation for jest or mocha.
+                // TS2583: Type not found with recommendation to change target library.
+                // TS2584: Type not found with recommendation to change target library to include `dom`.
+                "TS2552" | "TS2580" | "TS2581" | "TS2582" | "TS2583" | "TS2584" => {
+                    // TS2304: Type not found without recommendation.
+                    err.code = "TS2304".to_string();
+                }
+                _ => {}
+            }
+            if err.code == "TS2552" || err.code == "TS2580" {
                 err.code = "TS2304".to_string();
             }
         }
