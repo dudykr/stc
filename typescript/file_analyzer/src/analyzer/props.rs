@@ -27,10 +27,12 @@ use stc_ts_ast_rnode::RStr;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
+use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::ComputedKey;
 use stc_ts_types::Key;
 use stc_ts_types::PrivateName;
 use swc_atoms::js_word;
+use swc_common::Span;
 use swc_common::Spanned;
 use swc_ecma_ast::*;
 
@@ -163,36 +165,8 @@ impl Analyzer<'_, '_> {
             // TODO:
             ComputedPropMode::Interface => errors.is_empty(),
         } {
-            let ty = ty.clone().generalize_lit();
-            match *ty.normalize() {
-                Type::Keyword(RTsKeywordType {
-                    kind: TsKeywordTypeKind::TsAnyKeyword,
-                    ..
-                })
-                | Type::Keyword(RTsKeywordType {
-                    kind: TsKeywordTypeKind::TsStringKeyword,
-                    ..
-                })
-                | Type::Keyword(RTsKeywordType {
-                    kind: TsKeywordTypeKind::TsNumberKeyword,
-                    ..
-                })
-                | Type::Keyword(RTsKeywordType {
-                    kind: TsKeywordTypeKind::TsSymbolKeyword,
-                    ..
-                })
-                | Type::Operator(Operator {
-                    op: TsTypeOperatorOp::Unique,
-                    ty:
-                        box Type::Keyword(RTsKeywordType {
-                            kind: TsKeywordTypeKind::TsSymbolKeyword,
-                            ..
-                        }),
-                    ..
-                })
-                | Type::EnumVariant(..) => {}
-                _ if is_symbol_access => {}
-                _ => errors.push(Error::TS2464 { span }),
+            if !is_symbol_access {
+                self.validate_type_of_computed_key(span, &ty);
             }
         }
         if !errors.is_empty() {
@@ -241,6 +215,40 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
+    #[extra_validator]
+    fn validate_type_of_computed_key(&mut self, span: Span, ty: &Type) {
+        let ty = ty.clone().generalize_lit();
+        match *ty.normalize() {
+            Type::Keyword(RTsKeywordType {
+                kind: TsKeywordTypeKind::TsAnyKeyword,
+                ..
+            })
+            | Type::Keyword(RTsKeywordType {
+                kind: TsKeywordTypeKind::TsStringKeyword,
+                ..
+            })
+            | Type::Keyword(RTsKeywordType {
+                kind: TsKeywordTypeKind::TsNumberKeyword,
+                ..
+            })
+            | Type::Keyword(RTsKeywordType {
+                kind: TsKeywordTypeKind::TsSymbolKeyword,
+                ..
+            })
+            | Type::Operator(Operator {
+                op: TsTypeOperatorOp::Unique,
+                ty:
+                    box Type::Keyword(RTsKeywordType {
+                        kind: TsKeywordTypeKind::TsSymbolKeyword,
+                        ..
+                    }),
+                ..
+            })
+            | Type::EnumVariant(..) => {}
+            _ => Err(Error::TS2464 { span })?,
+        }
+    }
+
     fn validate_prop_inner(&mut self, prop: &RProp) -> ValidationResult<TypeElement> {
         let computed = match prop {
             RProp::KeyValue(ref kv) => match &kv.key {
