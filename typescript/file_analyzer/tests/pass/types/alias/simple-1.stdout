@@ -1,5 +1,5 @@
 warning: Type
- --> $DIR/tests/visualize/types/alias/simple-1.ts:6:1
+ --> $DIR/tests/pass/types/alias/simple-1.ts:6:1
   |
 6 | x6_1.x
   | ^^^^
@@ -7,7 +7,7 @@ warning: Type
   = note: I6
 
 warning: Type
- --> $DIR/tests/visualize/types/alias/simple-1.ts:6:1
+ --> $DIR/tests/pass/types/alias/simple-1.ts:6:1
   |
 6 | x6_1.x
   | ^^^^^^
@@ -15,7 +15,7 @@ warning: Type
   = note: string
 
 warning: Type
- --> $DIR/tests/visualize/types/alias/simple-1.ts:7:1
+ --> $DIR/tests/pass/types/alias/simple-1.ts:7:1
   |
 7 | x6_2.x
   | ^^^^
@@ -23,7 +23,7 @@ warning: Type
   = note: T6
 
 warning: Type
- --> $DIR/tests/visualize/types/alias/simple-1.ts:7:1
+ --> $DIR/tests/pass/types/alias/simple-1.ts:7:1
   |
 7 | x6_2.x
   | ^^^^^^

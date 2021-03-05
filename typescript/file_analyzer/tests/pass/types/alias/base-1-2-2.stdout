@@ -1,5 +1,5 @@
 warning: Type
- --> $DIR/tests/visualize/types/alias/base-1-2-2.ts:6:1
+ --> $DIR/tests/pass/types/alias/base-1-2-2.ts:6:1
   |
 6 | x13_1.x
   | ^^^^^
@@ -7,7 +7,7 @@ warning: Type
   = note: I13
 
 warning: Type
- --> $DIR/tests/visualize/types/alias/base-1-2-2.ts:6:1
+ --> $DIR/tests/pass/types/alias/base-1-2-2.ts:6:1
   |
 6 | x13_1.x
   | ^^^^^^^
@@ -15,7 +15,7 @@ warning: Type
   = note: string
 
 warning: Type
- --> $DIR/tests/visualize/types/alias/base-1-2-2.ts:7:1
+ --> $DIR/tests/pass/types/alias/base-1-2-2.ts:7:1
   |
 7 | x13_2.x
   | ^^^^^
@@ -23,7 +23,7 @@ warning: Type
   = note: T13
 
 warning: Type
- --> $DIR/tests/visualize/types/alias/base-1-2-2.ts:7:1
+ --> $DIR/tests/pass/types/alias/base-1-2-2.ts:7:1
   |
 7 | x13_2.x
   | ^^^^^^^
@@ -31,7 +31,7 @@ warning: Type
   = note: string
 
 warning: Type
-  --> $DIR/tests/visualize/types/alias/base-1-2-2.ts:10:7
+  --> $DIR/tests/pass/types/alias/base-1-2-2.ts:10:7
    |
 10 | foo13(x13_1, x13_2);
    |       ^^^^^
@@ -39,7 +39,7 @@ warning: Type
    = note: I13
 
 warning: Type
-  --> $DIR/tests/visualize/types/alias/base-1-2-2.ts:10:14
+  --> $DIR/tests/pass/types/alias/base-1-2-2.ts:10:14
    |
 10 | foo13(x13_1, x13_2);
    |              ^^^^^
@@ -47,7 +47,7 @@ warning: Type
    = note: T13
 
 warning: Type
-  --> $DIR/tests/visualize/types/alias/base-1-2-2.ts:10:1
+  --> $DIR/tests/pass/types/alias/base-1-2-2.ts:10:1
    |
 10 | foo13(x13_1, x13_2);
    | ^^^^^
@@ -55,7 +55,7 @@ warning: Type
    = note: <T1 extends I13, T2 extends T13>(t1: T1, t2: T13) => void
 
 warning: Type
-  --> $DIR/tests/visualize/types/alias/base-1-2-2.ts:10:1
+  --> $DIR/tests/pass/types/alias/base-1-2-2.ts:10:1
    |
 10 | foo13(x13_1, x13_2);
    | ^^^^^^^^^^^^^^^^^^^
@@ -63,7 +63,7 @@ warning: Type
    = note: void
 
 warning: Type
-  --> $DIR/tests/visualize/types/alias/base-1-2-2.ts:11:7
+  --> $DIR/tests/pass/types/alias/base-1-2-2.ts:11:7
    |
 11 | foo13(x13_2, x13_1);
    |       ^^^^^
@@ -71,7 +71,7 @@ warning: Type
    = note: T13
 
 warning: Type
-  --> $DIR/tests/visualize/types/alias/base-1-2-2.ts:11:14
+  --> $DIR/tests/pass/types/alias/base-1-2-2.ts:11:14
    |
 11 | foo13(x13_2, x13_1);
    |              ^^^^^
@@ -79,7 +79,7 @@ warning: Type
    = note: I13
 
 warning: Type
-  --> $DIR/tests/visualize/types/alias/base-1-2-2.ts:11:1
+  --> $DIR/tests/pass/types/alias/base-1-2-2.ts:11:1
    |
 11 | foo13(x13_2, x13_1);
    | ^^^^^
@@ -87,7 +87,7 @@ warning: Type
    = note: <T1 extends I13, T2 extends T13>(t1: T1, t2: T13) => void
 
 warning: Type
-  --> $DIR/tests/visualize/types/alias/base-1-2-2.ts:11:1
+  --> $DIR/tests/pass/types/alias/base-1-2-2.ts:11:1
    |
 11 | foo13(x13_2, x13_1);
    | ^^^^^^^^^^^^^^^^^^^
@@ -95,7 +95,7 @@ warning: Type
    = note: void
 
 warning: Type
-  --> $DIR/tests/visualize/types/alias/base-1-2-2.ts:27:5
+  --> $DIR/tests/pass/types/alias/base-1-2-2.ts:27:5
    |
 27 | f15(E.x).toLowerCase();
    |     ^
@@ -103,7 +103,7 @@ warning: Type
    = note: E
 
 warning: Type
-  --> $DIR/tests/visualize/types/alias/base-1-2-2.ts:27:5
+  --> $DIR/tests/pass/types/alias/base-1-2-2.ts:27:5
    |
 27 | f15(E.x).toLowerCase();
    |     ^^^
@@ -111,7 +111,7 @@ warning: Type
    = note: E.x
 
 warning: Type
-  --> $DIR/tests/visualize/types/alias/base-1-2-2.ts:27:1
+  --> $DIR/tests/pass/types/alias/base-1-2-2.ts:27:1
    |
 27 | f15(E.x).toLowerCase();
    | ^^^
@@ -119,7 +119,7 @@ warning: Type
    = note: (a: string) => boolean | (a: Meters) => string
 
 warning: Type
-  --> $DIR/tests/visualize/types/alias/base-1-2-2.ts:27:1
+  --> $DIR/tests/pass/types/alias/base-1-2-2.ts:27:1
    |
 27 | f15(E.x).toLowerCase();
    | ^^^^^^^^
@@ -127,7 +127,7 @@ warning: Type
    = note: string
 
 warning: Type
-  --> $DIR/tests/visualize/types/alias/base-1-2-2.ts:27:1
+  --> $DIR/tests/pass/types/alias/base-1-2-2.ts:27:1
    |
 27 | f15(E.x).toLowerCase();
    | ^^^^^^^^^^^^^^^^^^^^^^
@@ -135,7 +135,7 @@ warning: Type
    = note: string
 
 warning: Type
-  --> $DIR/tests/visualize/types/alias/base-1-2-2.ts:32:5
+  --> $DIR/tests/pass/types/alias/base-1-2-2.ts:32:5
    |
 32 | f16(x);
    |     ^
@@ -143,7 +143,7 @@ warning: Type
    = note: [string, boolean]
 
 warning: Type
-  --> $DIR/tests/visualize/types/alias/base-1-2-2.ts:32:1
+  --> $DIR/tests/pass/types/alias/base-1-2-2.ts:32:1
    |
 32 | f16(x);
    | ^^^
@@ -151,7 +151,7 @@ warning: Type
    = note: (s: StringAndBoolean) => string
 
 warning: Type
-  --> $DIR/tests/visualize/types/alias/base-1-2-2.ts:32:1
+  --> $DIR/tests/pass/types/alias/base-1-2-2.ts:32:1
    |
 32 | f16(x);
    | ^^^^^^
@@ -159,7 +159,7 @@ warning: Type
    = note: string
 
 warning: Type
-  --> $DIR/tests/visualize/types/alias/base-1-2-2.ts:34:27
+  --> $DIR/tests/pass/types/alias/base-1-2-2.ts:34:27
    |
 34 | var y: StringAndBoolean = ["1", false];
    |                           ^^^^^^^^^^^^
@@ -167,7 +167,7 @@ warning: Type
    = note: ["1", false]
 
 warning: Type
-  --> $DIR/tests/visualize/types/alias/base-1-2-2.ts:35:1
+  --> $DIR/tests/pass/types/alias/base-1-2-2.ts:35:1
    |
 35 | y[0].toLowerCase();
    | ^
@@ -175,7 +175,7 @@ warning: Type
    = note: [string, boolean]
 
 warning: Type
-  --> $DIR/tests/visualize/types/alias/base-1-2-2.ts:35:1
+  --> $DIR/tests/pass/types/alias/base-1-2-2.ts:35:1
    |
 35 | y[0].toLowerCase();
    | ^^^^
@@ -183,7 +183,7 @@ warning: Type
    = note: string
 
 warning: Type
-  --> $DIR/tests/visualize/types/alias/base-1-2-2.ts:35:1
+  --> $DIR/tests/pass/types/alias/base-1-2-2.ts:35:1
    |
 35 | y[0].toLowerCase();
    | ^^^^^^^^^^^^^^^^^^

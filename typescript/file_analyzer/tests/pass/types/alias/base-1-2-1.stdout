@@ -1,5 +1,5 @@
 warning: Type
-  --> $DIR/tests/visualize/types/alias/base-1-2-1.ts:27:1
+  --> $DIR/tests/pass/types/alias/base-1-2-1.ts:27:1
    |
 27 | x13_1.x
    | ^^^^^
@@ -7,7 +7,7 @@ warning: Type
    = note: I13
 
 warning: Type
-  --> $DIR/tests/visualize/types/alias/base-1-2-1.ts:27:1
+  --> $DIR/tests/pass/types/alias/base-1-2-1.ts:27:1
    |
 27 | x13_1.x
    | ^^^^^^^
@@ -15,7 +15,7 @@ warning: Type
    = note: string
 
 warning: Type
-  --> $DIR/tests/visualize/types/alias/base-1-2-1.ts:28:1
+  --> $DIR/tests/pass/types/alias/base-1-2-1.ts:28:1
    |
 28 | x13_2.x
    | ^^^^^
@@ -23,7 +23,7 @@ warning: Type
    = note: T13
 
 warning: Type
-  --> $DIR/tests/visualize/types/alias/base-1-2-1.ts:28:1
+  --> $DIR/tests/pass/types/alias/base-1-2-1.ts:28:1
    |
 28 | x13_2.x
    | ^^^^^^^
