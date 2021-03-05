@@ -10,6 +10,7 @@ use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RForInStmt;
 use stc_ts_ast_rnode::RForOfStmt;
 use stc_ts_ast_rnode::RPat;
+use stc_ts_ast_rnode::RStmt;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RVarDeclOrPat;
 use stc_ts_errors::DebugExt;
@@ -72,7 +73,7 @@ impl Analyzer<'_, '_> {
     }
 
     #[extra_validator]
-    fn check_for_of_in_loop(&mut self, span: Span, left: &RVarDeclOrPat, rhs: &RExpr, kind: ForHeadKind) {
+    fn check_for_of_in_loop(&mut self, span: Span, left: &RVarDeclOrPat, rhs: &RExpr, kind: ForHeadKind, body: &RStmt) {
         self.with_child(
             ScopeKind::Flow,
             Default::default(),
@@ -112,6 +113,8 @@ impl Analyzer<'_, '_> {
 
                 child.check_lhs_of_for_loop(left, &elem_ty, kind);
 
+                body.visit_with(child);
+
                 Ok(())
             },
         )?;
@@ -121,9 +124,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, s: &RForInStmt) {
-        self.check_for_of_in_loop(s.span, &s.left, &s.right, ForHeadKind::In);
-
-        s.body.visit_with(self);
+        self.check_for_of_in_loop(s.span, &s.left, &s.right, ForHeadKind::In, &s.body);
 
         Ok(())
     }
@@ -132,9 +133,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, s: &RForOfStmt) {
-        self.check_for_of_in_loop(s.span, &s.left, &s.right, ForHeadKind::Of);
-
-        s.body.visit_with(self);
+        self.check_for_of_in_loop(s.span, &s.left, &s.right, ForHeadKind::Of, &s.body);
 
         Ok(())
     }
