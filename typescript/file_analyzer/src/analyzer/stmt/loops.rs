@@ -33,6 +33,21 @@ impl Analyzer<'_, '_> {
     fn check_lhs_of_for_loop(&mut self, e: &RVarDeclOrPat, elem_ty: &Type, kind: ForHeadKind) {
         match *e {
             RVarDeclOrPat::VarDecl(ref v) => {
+                // It is a parsing error if there are multiple variable declarators.
+                // So we only handle the case where there's only one variable declarator.
+                if v.decls.len() == 1 {
+                    if let Some(m) = &mut self.mutations {
+                        // We use node id of a variable declarator with `for_pats`.
+                        let node_id = v.decls.first().unwrap().node_id;
+                        m.for_pats
+                            .entry(node_id)
+                            .or_default()
+                            .ty
+                            .get_or_insert_with(|| elem_ty.clone());
+                    }
+                    // Add types.
+                }
+
                 // Store variables
                 v.visit_with(self);
             }

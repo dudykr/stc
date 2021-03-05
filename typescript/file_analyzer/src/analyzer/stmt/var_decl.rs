@@ -538,6 +538,19 @@ impl Analyzer<'_, '_> {
                     }
                 }
             } else {
+                let var_ty = self
+                    .mutations
+                    .as_ref()
+                    .and_then(|m| m.for_pats.get(&v.node_id))
+                    .and_then(|v| v.ty.as_ref())
+                    .cloned();
+
+                if let Some(var_ty) = var_ty {
+                    self.declare_complex_vars(kind, &v.name, var_ty, None)
+                        .report(&mut self.storage);
+                    return Ok(());
+                }
+
                 match v.name {
                     RPat::Ident(ref i) => {
                         //
