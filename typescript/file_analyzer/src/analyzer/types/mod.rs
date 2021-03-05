@@ -16,6 +16,7 @@ use stc_ts_types::ConstructorSignature;
 use stc_ts_types::Key;
 use stc_ts_types::MethodSignature;
 use stc_ts_types::PropertySignature;
+use stc_ts_types::QueryExpr;
 use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
@@ -38,6 +39,7 @@ mod type_param;
 #[derive(Debug, Default, Clone, Copy)]
 pub(crate) struct NormalizeTypeOpts {
     pub preserve_mapped: bool,
+    pub preserve_typeof: bool,
 }
 
 impl Analyzer<'_, '_> {
@@ -96,8 +98,25 @@ impl Analyzer<'_, '_> {
                 // TODO
             }
 
-            Type::Query(_) => {
-                // TODO
+            Type::Query(q) => {
+                match &*q.expr {
+                    QueryExpr::TsEntityName(e) => {
+                        //
+                        if !opts.preserve_typeof {
+                            let ty = self
+                                .resolve_typeof(ty.span(), e)
+                                .context("tried to resolve `typeof` as a part of type normalization")?;
+                            return Ok(Cow::Owned(
+                                self.normalize(&ty, opts)
+                                    .context("tried to normalize the type from `typeof`")?
+                                    .into_owned(),
+                            ));
+                        }
+                    }
+                    QueryExpr::Import(_) => {
+                        // TODO
+                    }
+                }
             }
 
             Type::Import(_) => {}
