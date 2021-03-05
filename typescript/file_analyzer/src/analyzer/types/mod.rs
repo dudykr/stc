@@ -102,8 +102,18 @@ impl Analyzer<'_, '_> {
             Type::Alias(a) => return Ok(Cow::Owned(self.normalize(&a.ty, opts)?.into_owned())),
 
             // Leaf types.
-            Type::Array(..)
-            | Type::Lit(..)
+            Type::Array(arr) => {
+                let elem_type = box self
+                    .normalize(&arr.elem_type, opts)
+                    .context("tried to normalize the type of the element of an array type")?
+                    .into_owned();
+                return Ok(Cow::Owned(Type::Array(Array {
+                    span: arr.span,
+                    elem_type,
+                })));
+            }
+
+            Type::Lit(..)
             | Type::TypeLit(..)
             | Type::Interface(..)
             | Type::Class(..)
