@@ -8,7 +8,6 @@ use crate::validator::ValidateWith;
 use crate::ValidationResult;
 use rnode::NodeId;
 use stc_ts_ast_rnode::RArrayPat;
-use stc_ts_ast_rnode::RAssignPatProp;
 use stc_ts_ast_rnode::RBindingIdent;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RIdent;
@@ -262,25 +261,23 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                let mut used_keys = vec![];
+
                 for prop in props {
                     match prop {
-                        RObjectPatProp::Assign(RAssignPatProp { span, key, value, .. }) => {
-                            let span = *span;
+                        RObjectPatProp::Assign(prop) => {
+                            let span = prop.span;
+                            let mut key = Key::Normal {
+                                span: prop.key.span,
+                                sym: prop.key.sym.clone(),
+                            };
+                            used_keys.push(key.clone());
 
                             let prop_ty = match &ty {
                                 Some(ty) => self
-                                    .access_property(
-                                        span,
-                                        ty.clone(),
-                                        &Key::Normal {
-                                            span: key.span,
-                                            sym: key.sym.clone(),
-                                        },
-                                        TypeOfMode::RValue,
-                                        IdCtx::Var,
-                                    )
+                                    .access_property(span, ty.clone(), &key, TypeOfMode::RValue, IdCtx::Var)
                                     .convert_err(|err| match err {
-                                        Error::NoSuchProperty { span, .. } if value.is_none() => {
+                                        Error::NoSuchProperty { span, .. } if prop.value.is_none() => {
                                             Error::NoSuchPropertyWhileDeclWithBidningPat { span }
                                         }
                                         _ => err,
@@ -290,7 +287,7 @@ impl Analyzer<'_, '_> {
                                 None => None,
                             };
 
-                            match value {
+                            match &prop.value {
                                 Some(value) => {
                                     // TODO: Assign this
                                     let _type_of_default_value =
@@ -301,7 +298,7 @@ impl Analyzer<'_, '_> {
                                         kind,
                                         &RPat::Ident(RBindingIdent {
                                             node_id: NodeId::invalid(),
-                                            id: key.clone(),
+                                            id: prop.key.clone(),
                                             type_ann: None,
                                         }),
                                         export,
@@ -318,7 +315,7 @@ impl Analyzer<'_, '_> {
                                         kind,
                                         &RPat::Ident(RBindingIdent {
                                             node_id: NodeId::invalid(),
-                                            id: key.clone(),
+                                            id: prop.key.clone(),
                                             type_ann: None,
                                         }),
                                         export,
@@ -335,6 +332,7 @@ impl Analyzer<'_, '_> {
                         RObjectPatProp::KeyValue(p) => {
                             let span = p.span();
                             let key = p.key.validate_with(self)?;
+                            used_keys.push(key.clone());
 
                             let prop_ty = match &ty {
                                 Some(ty) => self
@@ -349,9 +347,22 @@ impl Analyzer<'_, '_> {
                                 .context("tried to declare a variable from key-value property in an object pattern")?;
                         }
 
-                        RObjectPatProp::Rest(RRestPat { .. }) => {
-                            unimplemented!("rest pattern in object pattern")
-                        }
+                        RObjectPatProp::Rest(pat) => match ty {
+                            Some(ty) => {
+                                let rest_ty = self
+                                    .exclude_props(&ty, &used_keys)
+                                    .context("tried to exclude keys for declare vars with a object rest pattern")?;
+
+                                return self
+                                    .declare_complex_vars(kind, &pat.arg, rest_ty, None)
+                                    .context("tried to declare vars with an object rest pattern");
+                            }
+                            None => {
+                                return self
+                                    .declare_vars_inner_with_ty(kind, &pat.arg, export, None, None)
+                                    .context("tried to declare vars with an object rest pattern without types");
+                            }
+                        },
                     }
                 }
 

@@ -1267,7 +1267,7 @@ impl Analyzer<'_, '_> {
 
                                     return self
                                         .declare_complex_vars(kind, &pat.arg, rest_ty, None)
-                                        .context("tried to declare vars with an object rest pattern");
+                                        .context("tried to assign to an object rest pattern");
                                 }
                             }
                         }
