@@ -1298,6 +1298,7 @@ parser/ecmascript5/FunctionDeclarations/parserFunctionDeclaration6.ts
 parser/ecmascript5/FunctionDeclarations/parserFunctionDeclaration7.ts
 parser/ecmascript5/FunctionDeclarations/parserFunctionDeclaration8.ts
 parser/ecmascript5/Fuzz/parser768531.ts
+parser/ecmascript5/Generics/parserAmbiguity1.ts
 parser/ecmascript5/Generics/parserAmbiguity2.ts
 parser/ecmascript5/Generics/parserAmbiguity3.ts
 parser/ecmascript5/Generics/parserAmbiguityWithBinaryOperator1.ts
@@ -1427,6 +1428,7 @@ parser/ecmascript5/StrictMode/parserStrictMode15-negative.ts
 parser/ecmascript5/StrictMode/parserStrictMode16.ts
 parser/ecmascript5/StrictMode/parserStrictMode3-negative.ts
 parser/ecmascript5/StrictMode/parserStrictMode6-negative.ts
+parser/ecmascript5/SuperExpressions/parserSuperExpression3.ts
 parser/ecmascript5/Symbols/parserES5SymbolProperty1.ts
 parser/ecmascript5/Symbols/parserES5SymbolProperty2.ts
 parser/ecmascript5/Symbols/parserES5SymbolProperty3.ts
