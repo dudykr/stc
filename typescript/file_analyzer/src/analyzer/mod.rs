@@ -104,6 +104,8 @@ pub(crate) struct Ctx {
     in_global: bool,
     in_export_default_expr: bool,
 
+    is_calling_iife: bool,
+
     reevaluating_call_or_new: bool,
 
     var_kind: VarDeclKind,
@@ -367,6 +369,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 in_fn_without_body: false,
                 in_global: false,
                 in_export_default_expr: false,
+                is_calling_iife: false,
                 reevaluating_call_or_new: false,
                 var_kind: VarDeclKind::Var,
                 pat_mode: PatMode::Assign,

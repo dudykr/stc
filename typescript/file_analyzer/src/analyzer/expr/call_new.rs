@@ -1719,6 +1719,11 @@ impl Analyzer<'_, '_> {
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
     ) -> ValidationResult<()> {
+        // Argument counts are not checked if it's an iife.
+        if self.ctx.is_calling_iife {
+            return Ok(());
+        }
+
         let mut min_param = 0;
         let mut max_param = Some(params.len());
         for param in params {
