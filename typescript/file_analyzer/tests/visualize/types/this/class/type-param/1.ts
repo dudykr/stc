@@ -1,3 +1,5 @@
+class Foo { }
+
 export class C<T extends Foo, U extends Foo> {
     t: T;
     u: U;
@@ -6,3 +8,4 @@ export class C<T extends Foo, U extends Foo> {
         this.u = this.u;
     }
 }
+
