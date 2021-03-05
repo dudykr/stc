@@ -8,6 +8,7 @@ use rnode::VisitMutWith;
 use stc_ts_ast_rnode::RNumber;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_errors::DebugExt;
+use stc_ts_errors::Error;
 use stc_ts_types::name::Name;
 use stc_ts_types::Array;
 use stc_ts_types::ClassDef;
@@ -16,6 +17,7 @@ use stc_ts_types::ConstructorSignature;
 use stc_ts_types::Key;
 use stc_ts_types::MethodSignature;
 use stc_ts_types::PropertySignature;
+use stc_ts_types::QueryExpr;
 use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
@@ -38,9 +40,10 @@ mod type_param;
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct NormalizeTypeOpts {
     pub preserve_mapped: bool,
+    pub preserve_typeof: bool,
     /// Used to prevent infinite recursion.
     ///
-    /// 128 by default.
+    /// 64 by default.
     pub lefting_stack: u16,
 }
 
@@ -48,7 +51,8 @@ impl Default for NormalizeTypeOpts {
     fn default() -> Self {
         Self {
             preserve_mapped: false,
-            lefting_stack: 128,
+            preserve_typeof: false,
+            lefting_stack: 64,
         }
     }
 }
@@ -67,26 +71,31 @@ impl Analyzer<'_, '_> {
         ty: &'a Type,
         mut opts: NormalizeTypeOpts,
     ) -> ValidationResult<Cow<'a, Type>> {
+        let span = ty.span();
+
         opts.lefting_stack -= 1;
         if opts.lefting_stack == 0 {
-            return Ok(Cow::Borrowed(ty));
+            return Err(Error::StackOverlfow { span });
         }
 
-        let span = ty.span();
         let ty = ty.normalize();
 
         match ty {
             Type::Ref(_) => {
                 let ty = self
                     .expand_top_ref(span, Cow::Borrowed(ty))
-                    .context("tried to expand ref type as a part of normalization")?;
+                    .context("tried to expand a ref type as a part of normalization")?;
                 return Ok(Cow::Owned(self.normalize(&ty, opts)?.into_owned()));
             }
 
             Type::Mapped(m) => {
                 if !opts.preserve_mapped {
                     let ty = self.expand_mapped(span, m)?;
-                    return Ok(Cow::Owned(self.normalize(&ty, opts)?.into_owned()));
+                    return Ok(Cow::Owned(
+                        self.normalize(&ty, opts)
+                            .context("tried to expand a mapped type as a part of normalization")?
+                            .into_owned(),
+                    ));
                 }
             }
 
@@ -118,7 +127,23 @@ impl Analyzer<'_, '_> {
                 // TODO
             }
 
-            Type::Query(_) => {
+            Type::Query(q) => {
+                if !opts.preserve_typeof {
+                    match &*q.expr {
+                        QueryExpr::TsEntityName(e) => {
+                            let ty = self
+                                .resolve_typeof(span, e)
+                                .context("tried to resolve typeof as a part of normalization")?;
+
+                            return Ok(Cow::Owned(
+                                self.normalize(&ty, opts)
+                                    .context("tried to normalize the type returned from typeof")?
+                                    .into_owned(),
+                            ));
+                        }
+                        QueryExpr::Import(_) => {}
+                    }
+                }
                 // TODO
             }
 

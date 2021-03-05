@@ -58,6 +58,10 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    StackOverlfow {
+        span: Span,
+    },
+
     SuperInClassWithoutSuper {
         span: Span,
     },
