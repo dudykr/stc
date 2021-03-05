@@ -565,11 +565,11 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    if !found && self.ctx.in_actual_type {
+                    if !self.is_builtin && !found && self.ctx.in_actual_type {
                         self.storage.report(Error::NoSuchType { span, name: i.into() })
                     }
                 } else {
-                    if self.ctx.in_actual_type {
+                    if !self.is_builtin && self.ctx.in_actual_type {
                         self.storage.report(Error::NoSuchType { span, name: i.into() })
                     }
                 }
