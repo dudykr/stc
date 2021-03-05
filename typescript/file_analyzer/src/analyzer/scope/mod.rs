@@ -1162,11 +1162,13 @@ impl Analyzer<'_, '_> {
                         ..
                     }) => {
                         //
+                        let mut used_keys = vec![];
 
                         for prop in props {
                             match prop {
                                 RObjectPatProp::KeyValue(prop) => {
                                     let mut key = prop.key.validate_with(self)?;
+                                    used_keys.push(key.clone());
 
                                     let prop_ty =
                                         self.access_property(span, ty.clone(), &key, TypeOfMode::RValue, IdCtx::Var);
@@ -1193,6 +1195,7 @@ impl Analyzer<'_, '_> {
                                         span: prop.key.span,
                                         sym: prop.key.sym.clone(),
                                     };
+                                    used_keys.push(key.clone());
 
                                     let prop_ty =
                                         self.access_property(span, ty.clone(), &key, TypeOfMode::RValue, IdCtx::Var);
@@ -1257,8 +1260,14 @@ impl Analyzer<'_, '_> {
                                         }
                                     }
                                 }
-                                RObjectPatProp::Rest(_) => {
-                                    unimplemented!("rest pattern")
+                                RObjectPatProp::Rest(pat) => {
+                                    let rest_ty = self
+                                        .exclude_props(&ty, &used_keys)
+                                        .context("tried to exclude keys for assignment with a object rest pattern")?;
+
+                                    return self
+                                        .declare_complex_vars(kind, &pat.arg, rest_ty, None)
+                                        .context("tried to declare vars with an object rest pattern");
                                 }
                             }
                         }

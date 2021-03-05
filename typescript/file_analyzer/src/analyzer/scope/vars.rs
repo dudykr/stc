@@ -1,5 +1,6 @@
 use crate::analyzer::expr::IdCtx;
 use crate::analyzer::expr::TypeOfMode;
+use crate::analyzer::types::NormalizeTypeOpts;
 use crate::analyzer::util::ResultExt;
 use crate::analyzer::Analyzer;
 use crate::ty::TypeExt;
@@ -28,12 +29,61 @@ use stc_ts_types::TypeLit;
 use stc_ts_types::TypeParamInstantiation;
 use stc_ts_utils::OptionExt;
 use stc_ts_utils::PatExt;
+use std::borrow::Cow;
 use swc_common::Spanned;
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::TsKeywordTypeKind;
 use swc_ecma_ast::VarDeclKind;
 
 impl Analyzer<'_, '_> {
+    pub(super) fn exclude_props(&mut self, ty: &Type, keys: &[Key]) -> ValidationResult<Type> {
+        let ty = self.normalize(&ty, NormalizeTypeOpts { preserve_mapped: false })?;
+
+        match ty.normalize() {
+            Type::TypeLit(lit) => {
+                let mut new_members = vec![];
+                'outer: for m in &lit.members {
+                    if let Some(key) = m.key() {
+                        for prop in keys {
+                            if self.key_matches(ty.span(), &key, prop, false) {
+                                continue 'outer;
+                            }
+                        }
+
+                        new_members.push(m.clone());
+                    }
+                }
+
+                return Ok(Type::TypeLit(TypeLit {
+                    span: lit.span,
+                    members: new_members,
+                    metadata: lit.metadata,
+                }));
+            }
+            Type::Intersection(..) | Type::Class(..) | Type::Interface(..) | Type::ClassDef(..) => {
+                let ty = self
+                    .type_to_type_lit(ty.span(), &ty)?
+                    .map(Cow::into_owned)
+                    .map(Type::TypeLit);
+                if let Some(ty) = ty {
+                    return self.exclude_props(&ty, keys);
+                }
+            }
+            // TODO
+            Type::Function(..) | Type::Constructor(..) => {
+                return Ok(Type::TypeLit(TypeLit {
+                    span: ty.span(),
+                    members: vec![],
+                    metadata: Default::default(),
+                }))
+            }
+            Type::Param(..) => return Ok(ty.into_owned()),
+            _ => {}
+        }
+
+        unimplemented!("exclude_props: {:#?}", ty)
+    }
+
     /// Updates variable list.
     ///
     /// This method should be called for function parameters including error
