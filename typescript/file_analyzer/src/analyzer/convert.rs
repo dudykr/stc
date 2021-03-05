@@ -568,6 +568,10 @@ impl Analyzer<'_, '_> {
                     if !found && self.ctx.in_actual_type {
                         self.storage.report(Error::NoSuchType { span, name: i.into() })
                     }
+                } else {
+                    if self.ctx.in_actual_type {
+                        self.storage.report(Error::NoSuchType { span, name: i.into() })
+                    }
                 }
             }
 
