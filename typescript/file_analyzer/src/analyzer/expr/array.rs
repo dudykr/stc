@@ -325,6 +325,17 @@ impl Analyzer<'_, '_> {
                 types.dedup_type();
                 return Ok(Cow::Owned(Type::union(types)));
             }
+            Type::Union(u) => {
+                let mut types = u
+                    .types
+                    .iter()
+                    .map(|iterator| self.get_iterator_element_type(iterator.span(), Cow::Borrowed(iterator)))
+                    .map(|ty| ty.map(Cow::into_owned))
+                    .collect::<Result<Vec<_>, _>>()?;
+                types.dedup_type();
+
+                return Ok(Cow::Owned(Type::Union(Union { span: u.span, types })));
+            }
 
             _ => {}
         }
