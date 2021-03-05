@@ -895,6 +895,7 @@ impl Error {
             Error::DuplicateName { .. } => 2300,
 
             Error::NoSuchVar { .. } => 2304,
+            Error::NoSuchType { .. } => 2304,
             Error::NoSuchVarButThisHasSuchProperty { .. } => 2663,
 
             Error::CannotAssignAbstractConstructorToNonAbstractConstructor { .. } => 2322,
