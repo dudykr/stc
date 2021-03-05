@@ -257,6 +257,8 @@ enums/enumExportMergingES6.ts
 es2017/useObjectValuesAndEntries1.ts
 es2017/useObjectValuesAndEntries4.ts
 es2017/useSharedArrayBuffer1.ts
+es2017/useSharedArrayBuffer2.ts
+es2017/useSharedArrayBuffer3.ts
 es2017/useSharedArrayBuffer4.ts
 es2017/useSharedArrayBuffer5.ts
 es2018/usePromiseFinally.ts
@@ -1280,6 +1282,7 @@ parser/ecmascript5/ErrorRecovery/VariableLists/parserVariableStatement2.ts
 parser/ecmascript5/ErrorRecovery/VariableLists/parserVariableStatement3.ts
 parser/ecmascript5/ErrorRecovery/VariableLists/parserVariableStatement4.ts
 parser/ecmascript5/ErrorRecovery/parserCommaInTypeMemberList1.ts
+parser/ecmascript5/ErrorRecovery/parserCommaInTypeMemberList2.ts
 parser/ecmascript5/ErrorRecovery/parserModifierOnPropertySignature2.ts
 parser/ecmascript5/ExportAssignments/parserExportAssignment1.ts
 parser/ecmascript5/ExportAssignments/parserExportAssignment2.ts
@@ -1374,6 +1377,7 @@ parser/ecmascript5/RegressionTests/parser509546.ts
 parser/ecmascript5/RegressionTests/parser509546_1.ts
 parser/ecmascript5/RegressionTests/parser509546_2.ts
 parser/ecmascript5/RegressionTests/parser509677.ts
+parser/ecmascript5/RegressionTests/parser509693.ts
 parser/ecmascript5/RegressionTests/parser579071.ts
 parser/ecmascript5/RegressionTests/parser596700.ts
 parser/ecmascript5/RegressionTests/parser630933.ts
