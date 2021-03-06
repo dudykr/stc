@@ -26,6 +26,7 @@ use stc_ts_types::Ref;
 use stc_ts_types::Type;
 use stc_ts_types::TypeLit;
 use stc_ts_types::TypeParamInstantiation;
+use stc_ts_types::Union;
 use stc_ts_utils::OptionExt;
 use stc_ts_utils::PatExt;
 use std::borrow::Cow;
@@ -35,7 +36,7 @@ use swc_ecma_ast::TsKeywordTypeKind;
 use swc_ecma_ast::VarDeclKind;
 
 impl Analyzer<'_, '_> {
-    pub(super) fn exclude_props(&mut self, ty: &Type, keys: &[Key]) -> ValidationResult<Type> {
+    pub(crate) fn exclude_props(&mut self, ty: &Type, keys: &[Key]) -> ValidationResult<Type> {
         let ty = self.normalize(
             &ty,
             NormalizeTypeOpts {
@@ -65,6 +66,17 @@ impl Analyzer<'_, '_> {
                     metadata: lit.metadata,
                 }));
             }
+
+            Type::Union(u) => {
+                let types = u
+                    .types
+                    .iter()
+                    .map(|ty| self.exclude_props(ty, keys))
+                    .collect::<Result<_, _>>()?;
+
+                return Ok(Type::Union(Union { span: u.span, types }));
+            }
+
             Type::Intersection(..) | Type::Class(..) | Type::Interface(..) | Type::ClassDef(..) => {
                 let ty = self
                     .type_to_type_lit(ty.span(), &ty)?

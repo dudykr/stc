@@ -17,6 +17,7 @@ use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RPropOrSpread;
 use stc_ts_ast_rnode::RSpreadElement;
 use stc_ts_ast_rnode::RTsKeywordType;
+use stc_ts_errors::DebugExt;
 use stc_ts_file_analyzer_macros::validator;
 use stc_ts_generics::type_param::replacer::TypeParamReplacer;
 use stc_ts_types::CallSignature;
@@ -520,7 +521,12 @@ impl Analyzer<'_, '_> {
             return Ok(to);
         }
 
-        let mut to = to.foldable();
+        let mut to = if let Some(key) = rhs.key() {
+            self.exclude_props(&to, &[key.clone()])
+                .context("tried to exclude properties before appending a type element")?
+        } else {
+            to.foldable()
+        };
 
         match to {
             Type::TypeLit(ref mut lit) => {
