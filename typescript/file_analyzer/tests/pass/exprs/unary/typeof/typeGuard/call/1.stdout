@@ -1,0 +1,80 @@
+warning: Type
+ --> $DIR/tests/pass/exprs/unary/typeof/typeGuard/call/1.ts:3:21
+  |
+3 |     for (const k of keys) {
+  |                     ^^^^
+  |
+  = note: K[]
+
+warning: Type
+ --> $DIR/tests/pass/exprs/unary/typeof/typeGuard/call/1.ts:4:22
+  |
+4 |         const item = obj[k];
+  |                      ^^^
+  |
+  = note: T
+
+warning: Type
+ --> $DIR/tests/pass/exprs/unary/typeof/typeGuard/call/1.ts:4:26
+  |
+4 |         const item = obj[k];
+  |                          ^
+  |
+  = note: K
+
+warning: Type
+ --> $DIR/tests/pass/exprs/unary/typeof/typeGuard/call/1.ts:4:22
+  |
+4 |         const item = obj[k];
+  |                      ^^^^^^
+  |
+  = note: T[K]
+
+warning: Type
+ --> $DIR/tests/pass/exprs/unary/typeof/typeGuard/call/1.ts:5:20
+  |
+5 |         if (typeof item == 'function')
+  |                    ^^^^
+  |
+  = note: T[K]
+
+warning: Type
+ --> $DIR/tests/pass/exprs/unary/typeof/typeGuard/call/1.ts:5:13
+  |
+5 |         if (typeof item == 'function')
+  |             ^^^^^^^^^^^
+  |
+  = note: string
+
+warning: Type
+ --> $DIR/tests/pass/exprs/unary/typeof/typeGuard/call/1.ts:5:13
+  |
+5 |         if (typeof item == 'function')
+  |             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: boolean
+
+warning: Type
+ --> $DIR/tests/pass/exprs/unary/typeof/typeGuard/call/1.ts:6:23
+  |
+6 |             item.call(obj);
+  |                       ^^^
+  |
+  = note: T
+
+warning: Type
+ --> $DIR/tests/pass/exprs/unary/typeof/typeGuard/call/1.ts:6:13
+  |
+6 |             item.call(obj);
+  |             ^^^^
+  |
+  = note: T[K] | (...args: any) => any
+
+warning: Type
+ --> $DIR/tests/pass/exprs/unary/typeof/typeGuard/call/1.ts:6:13
+  |
+6 |             item.call(obj);
+  |             ^^^^^^^^^^^^^^
+  |
+  = note: any
+
