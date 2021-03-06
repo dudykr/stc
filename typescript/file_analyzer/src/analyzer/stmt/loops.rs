@@ -121,7 +121,9 @@ impl Analyzer<'_, '_> {
 
                 let rty = rhs
                     .validate_with_default(child)
-                    .context("tried to validate rhs of a for in/of loop")?;
+                    .context("tried to validate rhs of a for in/of loop")
+                    .report(&mut child.storage)
+                    .unwrap_or_else(|| Type::any(span));
 
                 let elem_ty = match kind {
                     ForHeadKind::Of => child
