@@ -637,8 +637,6 @@
 [ALMOST]/Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/types/tuple/emptyTuples/emptyTuplesTypeAssertion01.ts
 [ALMOST]/Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/types/tuple/emptyTuples/emptyTuplesTypeAssertion02.ts
 [ALMOST]/Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/types/tuple/castingTuple.ts
-[ALMOST]/Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/types/tuple/wideningTuples2.ts
-[ALMOST]/Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/types/tuple/wideningTuples5.ts
 [ALMOST]/Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/types/tuple/wideningTuples3.ts
 [ALMOST]/Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/types/tuple/wideningTuples7.ts
 [ALMOST]/Users/kdy1/projects/stc/typescript/type_checker/tests/conformance/types/typeAliases/directDependenceBetweenTypeAliases.ts
