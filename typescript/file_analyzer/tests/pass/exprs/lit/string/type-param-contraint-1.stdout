@@ -1,0 +1,80 @@
+warning: Type
+ --> $DIR/tests/pass/exprs/lit/string/type-param-contraint-1.ts:2:12
+  |
+2 |     return f;
+  |            ^
+  |
+  = note: (x: T) => T
+
+warning: Type
+ --> $DIR/tests/pass/exprs/lit/string/type-param-contraint-1.ts:5:42
+  |
+5 | export let f = foo((y: "foo" | "bar") => y === "foo" ? y : "foo");
+  |                                          ^
+  |
+  = note: "foo" | "bar"
+
+warning: Type
+ --> $DIR/tests/pass/exprs/lit/string/type-param-contraint-1.ts:5:42
+  |
+5 | export let f = foo((y: "foo" | "bar") => y === "foo" ? y : "foo");
+  |                                          ^^^^^^^^^^^
+  |
+  = note: boolean
+
+warning: Type
+ --> $DIR/tests/pass/exprs/lit/string/type-param-contraint-1.ts:5:56
+  |
+5 | export let f = foo((y: "foo" | "bar") => y === "foo" ? y : "foo");
+  |                                                        ^
+  |
+  = note: "foo"
+
+warning: Type
+ --> $DIR/tests/pass/exprs/lit/string/type-param-contraint-1.ts:5:42
+  |
+5 | export let f = foo((y: "foo" | "bar") => y === "foo" ? y : "foo");
+  |                                          ^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: "foo"
+
+warning: Type
+ --> $DIR/tests/pass/exprs/lit/string/type-param-contraint-1.ts:5:20
+  |
+5 | export let f = foo((y: "foo" | "bar") => y === "foo" ? y : "foo");
+  |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: (y: "foo" | "bar") => "foo"
+
+warning: Type
+ --> $DIR/tests/pass/exprs/lit/string/type-param-contraint-1.ts:5:16
+  |
+5 | export let f = foo((y: "foo" | "bar") => y === "foo" ? y : "foo");
+  |                ^^^
+  |
+  = note: <T extends "foo">(f: (x: T) => T) => (x: T) => T
+
+warning: Type
+ --> $DIR/tests/pass/exprs/lit/string/type-param-contraint-1.ts:5:16
+  |
+5 | export let f = foo((y: "foo" | "bar") => y === "foo" ? y : "foo");
+  |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: (x: "foo") => "foo"
+
+warning: Type
+ --> $DIR/tests/pass/exprs/lit/string/type-param-contraint-1.ts:6:22
+  |
+6 | export let fResult = f("foo");
+  |                      ^
+  |
+  = note: (x: "foo") => "foo"
+
+warning: Type
+ --> $DIR/tests/pass/exprs/lit/string/type-param-contraint-1.ts:6:22
+  |
+6 | export let fResult = f("foo");
+  |                      ^^^^^^^^
+  |
+  = note: "foo"
+

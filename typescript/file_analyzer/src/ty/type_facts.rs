@@ -3,17 +3,24 @@ use crate::analyzer::Analyzer;
 use crate::type_facts::TypeFacts;
 use rnode::Fold;
 use rnode::FoldWith;
+use rnode::NodeId;
+use stc_ts_ast_rnode::RBindingIdent;
+use stc_ts_ast_rnode::RIdent;
+use stc_ts_ast_rnode::RPat;
+use stc_ts_ast_rnode::RRestPat;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_types::ClassMember;
 use stc_ts_types::Constructor;
+use stc_ts_types::FnParam;
 use stc_ts_types::Function;
 use stc_ts_types::IndexedAccessType;
 use stc_ts_types::Intersection;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
 use stc_ts_types::Union;
+use stc_ts_utils::MapWithMut;
 use std::borrow::Cow;
 use swc_common::Span;
 use swc_common::Spanned;
@@ -37,7 +44,53 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        ty.fold_with(&mut TypeFactsHandler { analyzer: self, facts })
+        ty = ty.fold_with(&mut TypeFactsHandler { analyzer: self, facts });
+
+        // Add `(...args: any) => any` for typeof foo === 'function'
+        if facts.contains(TypeFacts::TypeofEQFunction) {
+            let param = FnParam {
+                span: DUMMY_SP,
+                pat: RPat::Rest(RRestPat {
+                    span: DUMMY_SP,
+                    dot3_token: DUMMY_SP,
+                    node_id: NodeId::invalid(),
+                    arg: box RPat::Ident(RBindingIdent {
+                        node_id: NodeId::invalid(),
+                        id: RIdent::new("args".into(), DUMMY_SP),
+                        type_ann: None,
+                    }),
+                    type_ann: None,
+                }),
+                ty: box Type::any(DUMMY_SP),
+                required: false,
+            };
+            let fn_type = Type::Function(Function {
+                span: DUMMY_SP,
+                type_params: None,
+                params: vec![param],
+                ret_ty: box Type::any(DUMMY_SP),
+            });
+            match ty.normalize_mut() {
+                Type::Union(u) => {
+                    let has_fn = u.types.iter().any(|ty| match ty.normalize() {
+                        Type::Function(..) => true,
+                        _ => false,
+                    });
+
+                    if !has_fn {
+                        u.types.push(fn_type)
+                    }
+                }
+                ty => {
+                    *ty = Type::Union(Union {
+                        span: ty.span(),
+                        types: vec![ty.take(), fn_type],
+                    })
+                }
+            }
+        }
+
+        ty
     }
 }
 

@@ -1,0 +1,1 @@
+export var iter: Iterable<(x: string) => number> = [s => s.length];

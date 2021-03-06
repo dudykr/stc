@@ -21,6 +21,7 @@ use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_types::Array;
 use stc_ts_types::ComputedKey;
+use stc_ts_types::Intersection;
 use stc_ts_types::Key;
 use stc_ts_types::Tuple;
 use stc_ts_types::TupleElement;
@@ -238,6 +239,10 @@ impl Analyzer<'_, '_> {
         Ok(Cow::Owned(elem_ty))
     }
     pub(crate) fn get_iterator<'a>(&mut self, span: Span, ty: Cow<'a, Type>) -> ValidationResult<Cow<'a, Type>> {
+        if ty.is_str() {
+            return Ok(ty);
+        }
+
         match ty.normalize() {
             Type::Ref(..) => {
                 let ty = self.expand_top_ref(span, ty)?;
@@ -252,6 +257,16 @@ impl Analyzer<'_, '_> {
                     .map(|res| res.map(Cow::into_owned))
                     .collect::<Result<_, _>>()?;
                 let new = Type::Union(Union { span: u.span, types });
+                return Ok(Cow::Owned(new));
+            }
+            Type::Intersection(i) => {
+                let types = i
+                    .types
+                    .iter()
+                    .map(|v| self.get_iterator(v.span(), Cow::Borrowed(v)))
+                    .map(|res| res.map(Cow::into_owned))
+                    .collect::<Result<_, _>>()?;
+                let new = Type::Intersection(Intersection { span: i.span, types });
                 return Ok(Cow::Owned(new));
             }
             _ => {}
@@ -304,6 +319,13 @@ impl Analyzer<'_, '_> {
             .get_iterator(span, ty)
             .context("tried to get a type of an iterator to get the element type of it")?;
 
+        if iterator.is_str() {
+            return Ok(Cow::Owned(Type::Keyword(RTsKeywordType {
+                span: iterator.span(),
+                kind: TsKeywordTypeKind::TsStringKeyword,
+            })));
+        }
+
         match iterator.normalize() {
             Type::Array(arr) => return Ok(Cow::Owned(*arr.elem_type.clone())),
             Type::Tuple(tuple) => {
@@ -313,6 +335,29 @@ impl Analyzer<'_, '_> {
                 let mut types = tuple.elems.iter().map(|e| *e.ty.clone()).collect_vec();
                 types.dedup_type();
                 return Ok(Cow::Owned(Type::union(types)));
+            }
+            Type::Union(u) => {
+                let mut types = u
+                    .types
+                    .iter()
+                    .map(|iterator| self.get_iterator_element_type(iterator.span(), Cow::Borrowed(iterator)))
+                    .map(|ty| ty.map(Cow::into_owned))
+                    .collect::<Result<Vec<_>, _>>()?;
+                types.dedup_type();
+
+                return Ok(Cow::Owned(Type::Union(Union { span: u.span, types })));
+            }
+
+            Type::Intersection(i) => {
+                let mut types = i
+                    .types
+                    .iter()
+                    .map(|iterator| self.get_iterator_element_type(iterator.span(), Cow::Borrowed(iterator)))
+                    .map(|ty| ty.map(Cow::into_owned))
+                    .collect::<Result<Vec<_>, _>>()?;
+                types.dedup_type();
+
+                return Ok(Cow::Owned(Type::Intersection(Intersection { span: i.span, types })));
             }
 
             _ => {}

@@ -1,0 +1,102 @@
+warning: Type
+ --> $DIR/tests/pass/types/enums/controlFlow/switch-lit-1.ts:8:13
+  |
+8 |     switch (x.kind) {
+  |             ^
+  |
+  = note: Item
+
+warning: Type
+ --> $DIR/tests/pass/types/enums/controlFlow/switch-lit-1.ts:8:13
+  |
+8 |     switch (x.kind) {
+  |             ^^^^^^
+  |
+  = note: Choice.Yes | Choice.No
+
+warning: Type
+ --> $DIR/tests/pass/types/enums/controlFlow/switch-lit-1.ts:9:14
+  |
+9 |         case Choice.Yes: return x.a;
+  |              ^^^^^^
+  |
+  = note: Choice
+
+warning: Type
+ --> $DIR/tests/pass/types/enums/controlFlow/switch-lit-1.ts:9:14
+  |
+9 |         case Choice.Yes: return x.a;
+  |              ^^^^^^^^^^
+  |
+  = note: Choice.Yes
+
+warning: Type
+  --> $DIR/tests/pass/types/enums/controlFlow/switch-lit-1.ts:10:14
+   |
+10 |         case Choice.No: return x.b;
+   |              ^^^^^^
+   |
+   = note: Choice
+
+warning: Type
+  --> $DIR/tests/pass/types/enums/controlFlow/switch-lit-1.ts:10:14
+   |
+10 |         case Choice.No: return x.b;
+   |              ^^^^^^^^^
+   |
+   = note: Choice.No
+
+warning: Type
+ --> $DIR/tests/pass/types/enums/controlFlow/switch-lit-1.ts:9:14
+  |
+9 |         case Choice.Yes: return x.a;
+  |              ^^^^^^^^^^
+  |
+  = note: boolean
+
+warning: Type
+ --> $DIR/tests/pass/types/enums/controlFlow/switch-lit-1.ts:9:33
+  |
+9 |         case Choice.Yes: return x.a;
+  |                                 ^
+  |
+  = note: {
+              kind: Choice.Yes;
+              a: string;
+          }
+
+warning: Type
+ --> $DIR/tests/pass/types/enums/controlFlow/switch-lit-1.ts:9:33
+  |
+9 |         case Choice.Yes: return x.a;
+  |                                 ^^^
+  |
+  = note: string
+
+warning: Type
+  --> $DIR/tests/pass/types/enums/controlFlow/switch-lit-1.ts:10:14
+   |
+10 |         case Choice.No: return x.b;
+   |              ^^^^^^^^^
+   |
+   = note: boolean
+
+warning: Type
+  --> $DIR/tests/pass/types/enums/controlFlow/switch-lit-1.ts:10:32
+   |
+10 |         case Choice.No: return x.b;
+   |                                ^
+   |
+   = note: {
+               kind: Choice.No;
+               b: string;
+           }
+
+warning: Type
+  --> $DIR/tests/pass/types/enums/controlFlow/switch-lit-1.ts:10:32
+   |
+10 |         case Choice.No: return x.b;
+   |                                ^^^
+   |
+   = note: string
+

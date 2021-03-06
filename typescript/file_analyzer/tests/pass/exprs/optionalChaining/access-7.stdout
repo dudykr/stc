@@ -1,0 +1,236 @@
+warning: Type
+ --> $DIR/tests/pass/exprs/optionalChaining/access-7.ts:3:1
+  |
+3 | o2?.["b"].c;
+  | ^^
+  |
+  = note: undefined | {
+              b: {
+                  c: string;
+              };
+          }
+
+warning: Type
+ --> $DIR/tests/pass/exprs/optionalChaining/access-7.ts:3:1
+  |
+3 | o2?.["b"].c;
+  | ^^^^^^^^^
+  |
+  = note: undefined | {
+              c: string;
+          }
+
+warning: Type
+ --> $DIR/tests/pass/exprs/optionalChaining/access-7.ts:3:1
+  |
+3 | o2?.["b"].c;
+  | ^^^^^^^^^^^
+  |
+  = note: undefined | string
+
+warning: Type
+ --> $DIR/tests/pass/exprs/optionalChaining/access-7.ts:4:1
+  |
+4 | o2?.b["c"];
+  | ^^
+  |
+  = note: undefined | {
+              b: {
+                  c: string;
+              };
+          }
+
+warning: Type
+ --> $DIR/tests/pass/exprs/optionalChaining/access-7.ts:4:1
+  |
+4 | o2?.b["c"];
+  | ^^^^^
+  |
+  = note: undefined | {
+              c: string;
+          }
+
+warning: Type
+ --> $DIR/tests/pass/exprs/optionalChaining/access-7.ts:4:1
+  |
+4 | o2?.b["c"];
+  | ^^^^^^^^^^
+  |
+  = note: undefined | string
+
+warning: Type
+ --> $DIR/tests/pass/exprs/optionalChaining/access-7.ts:7:1
+  |
+7 | o2?.["b"]!.c;
+  | ^^
+  |
+  = note: undefined | {
+              b: {
+                  c: string;
+              };
+          }
+
+warning: Type
+ --> $DIR/tests/pass/exprs/optionalChaining/access-7.ts:7:1
+  |
+7 | o2?.["b"]!.c;
+  | ^^^^^^^^^
+  |
+  = note: undefined | {
+              c: string;
+          }
+
+warning: Type
+ --> $DIR/tests/pass/exprs/optionalChaining/access-7.ts:7:1
+  |
+7 | o2?.["b"]!.c;
+  | ^^^^^^^^^^
+  |
+  = note: {
+              c: string;
+          }
+
+warning: Type
+ --> $DIR/tests/pass/exprs/optionalChaining/access-7.ts:7:1
+  |
+7 | o2?.["b"]!.c;
+  | ^^^^^^^^^^^^
+  |
+  = note: string
+
+warning: Type
+ --> $DIR/tests/pass/exprs/optionalChaining/access-7.ts:8:1
+  |
+8 | o2?.["b"]!["c"];
+  | ^^
+  |
+  = note: undefined | {
+              b: {
+                  c: string;
+              };
+          }
+
+warning: Type
+ --> $DIR/tests/pass/exprs/optionalChaining/access-7.ts:8:1
+  |
+8 | o2?.["b"]!["c"];
+  | ^^^^^^^^^
+  |
+  = note: undefined | {
+              c: string;
+          }
+
+warning: Type
+ --> $DIR/tests/pass/exprs/optionalChaining/access-7.ts:8:1
+  |
+8 | o2?.["b"]!["c"];
+  | ^^^^^^^^^^
+  |
+  = note: {
+              c: string;
+          }
+
+warning: Type
+ --> $DIR/tests/pass/exprs/optionalChaining/access-7.ts:8:1
+  |
+8 | o2?.["b"]!["c"];
+  | ^^^^^^^^^^^^^^^
+  |
+  = note: string
+
+warning: Type
+ --> $DIR/tests/pass/exprs/optionalChaining/access-7.ts:9:1
+  |
+9 | o2?.["b"]!.c!;
+  | ^^
+  |
+  = note: undefined | {
+              b: {
+                  c: string;
+              };
+          }
+
+warning: Type
+ --> $DIR/tests/pass/exprs/optionalChaining/access-7.ts:9:1
+  |
+9 | o2?.["b"]!.c!;
+  | ^^^^^^^^^
+  |
+  = note: undefined | {
+              c: string;
+          }
+
+warning: Type
+ --> $DIR/tests/pass/exprs/optionalChaining/access-7.ts:9:1
+  |
+9 | o2?.["b"]!.c!;
+  | ^^^^^^^^^^
+  |
+  = note: {
+              c: string;
+          }
+
+warning: Type
+ --> $DIR/tests/pass/exprs/optionalChaining/access-7.ts:9:1
+  |
+9 | o2?.["b"]!.c!;
+  | ^^^^^^^^^^^^
+  |
+  = note: string
+
+warning: Type
+ --> $DIR/tests/pass/exprs/optionalChaining/access-7.ts:9:1
+  |
+9 | o2?.["b"]!.c!;
+  | ^^^^^^^^^^^^^
+  |
+  = note: string
+
+warning: Type
+  --> $DIR/tests/pass/exprs/optionalChaining/access-7.ts:10:1
+   |
+10 | o2?.["b"]!["c"]!;
+   | ^^
+   |
+   = note: undefined | {
+               b: {
+                   c: string;
+               };
+           }
+
+warning: Type
+  --> $DIR/tests/pass/exprs/optionalChaining/access-7.ts:10:1
+   |
+10 | o2?.["b"]!["c"]!;
+   | ^^^^^^^^^
+   |
+   = note: undefined | {
+               c: string;
+           }
+
+warning: Type
+  --> $DIR/tests/pass/exprs/optionalChaining/access-7.ts:10:1
+   |
+10 | o2?.["b"]!["c"]!;
+   | ^^^^^^^^^^
+   |
+   = note: {
+               c: string;
+           }
+
+warning: Type
+  --> $DIR/tests/pass/exprs/optionalChaining/access-7.ts:10:1
+   |
+10 | o2?.["b"]!["c"]!;
+   | ^^^^^^^^^^^^^^^
+   |
+   = note: string
+
+warning: Type
+  --> $DIR/tests/pass/exprs/optionalChaining/access-7.ts:10:1
+   |
+10 | o2?.["b"]!["c"]!;
+   | ^^^^^^^^^^^^^^^^
+   |
+   = note: string
+

@@ -8,6 +8,7 @@ use rnode::VisitMutWith;
 use stc_ts_ast_rnode::RNumber;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_errors::DebugExt;
+use stc_ts_errors::Error;
 use stc_ts_types::name::Name;
 use stc_ts_types::Array;
 use stc_ts_types::ClassDef;
@@ -16,6 +17,7 @@ use stc_ts_types::ConstructorSignature;
 use stc_ts_types::Key;
 use stc_ts_types::MethodSignature;
 use stc_ts_types::PropertySignature;
+use stc_ts_types::QueryExpr;
 use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
@@ -35,9 +37,24 @@ mod mapped;
 mod narrowing;
 mod type_param;
 
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct NormalizeTypeOpts {
     pub preserve_mapped: bool,
+    pub preserve_typeof: bool,
+    /// Used to prevent infinite recursion.
+    ///
+    /// 64 by default.
+    pub lefting_stack: u16,
+}
+
+impl Default for NormalizeTypeOpts {
+    fn default() -> Self {
+        Self {
+            preserve_mapped: false,
+            preserve_typeof: false,
+            lefting_stack: 64,
+        }
+    }
 }
 
 impl Analyzer<'_, '_> {
@@ -49,30 +66,54 @@ impl Analyzer<'_, '_> {
     ///  - [Type::Mapped]
     ///  - [Type::Alias]
 
-    pub(crate) fn normalize<'a>(&mut self, ty: &'a Type, opts: NormalizeTypeOpts) -> ValidationResult<Cow<'a, Type>> {
+    pub(crate) fn normalize<'a>(
+        &mut self,
+        ty: &'a Type,
+        mut opts: NormalizeTypeOpts,
+    ) -> ValidationResult<Cow<'a, Type>> {
         let span = ty.span();
+
+        opts.lefting_stack -= 1;
+        if opts.lefting_stack == 0 {
+            return Err(Error::StackOverlfow { span });
+        }
+
         let ty = ty.normalize();
 
         match ty {
             Type::Ref(_) => {
                 let ty = self
                     .expand_top_ref(span, Cow::Borrowed(ty))
-                    .context("tried to expand ref type as a part of normalization")?;
+                    .context("tried to expand a ref type as a part of normalization")?;
                 return Ok(Cow::Owned(self.normalize(&ty, opts)?.into_owned()));
             }
 
             Type::Mapped(m) => {
                 if !opts.preserve_mapped {
                     let ty = self.expand_mapped(span, m)?;
-                    return Ok(Cow::Owned(self.normalize(&ty, opts)?.into_owned()));
+                    return Ok(Cow::Owned(
+                        self.normalize(&ty, opts)
+                            .context("tried to expand a mapped type as a part of normalization")?
+                            .into_owned(),
+                    ));
                 }
             }
 
             Type::Alias(a) => return Ok(Cow::Owned(self.normalize(&a.ty, opts)?.into_owned())),
 
             // Leaf types.
-            Type::Array(..)
-            | Type::Lit(..)
+            Type::Array(arr) => {
+                let elem_type = box self
+                    .normalize(&arr.elem_type, opts)
+                    .context("tried to normalize the type of the element of an array type")?
+                    .into_owned();
+                return Ok(Cow::Owned(Type::Array(Array {
+                    span: arr.span,
+                    elem_type,
+                })));
+            }
+
+            Type::Lit(..)
             | Type::TypeLit(..)
             | Type::Interface(..)
             | Type::Class(..)
@@ -96,7 +137,23 @@ impl Analyzer<'_, '_> {
                 // TODO
             }
 
-            Type::Query(_) => {
+            Type::Query(q) => {
+                if !opts.preserve_typeof {
+                    match &*q.expr {
+                        QueryExpr::TsEntityName(e) => {
+                            let ty = self
+                                .resolve_typeof(span, e)
+                                .context("tried to resolve typeof as a part of normalization")?;
+
+                            return Ok(Cow::Owned(
+                                self.normalize(&ty, opts)
+                                    .context("tried to normalize the type returned from typeof")?
+                                    .into_owned(),
+                            ));
+                        }
+                        QueryExpr::Import(_) => {}
+                    }
+                }
                 // TODO
             }
 

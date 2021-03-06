@@ -1,0 +1,92 @@
+warning: Type
+ --> $DIR/tests/pass/types/this/class/type-param/1.ts:7:9
+  |
+7 |         this.t = this.t;
+  |         ^^^^
+  |
+  = note: this
+
+warning: Type
+ --> $DIR/tests/pass/types/this/class/type-param/1.ts:7:9
+  |
+7 |         this.t = this.t;
+  |         ^^^^^^
+  |
+  = note: T
+
+warning: Type
+ --> $DIR/tests/pass/types/this/class/type-param/1.ts:7:18
+  |
+7 |         this.t = this.t;
+  |                  ^^^^
+  |
+  = note: this
+
+warning: Type
+ --> $DIR/tests/pass/types/this/class/type-param/1.ts:7:18
+  |
+7 |         this.t = this.t;
+  |                  ^^^^^^
+  |
+  = note: T
+
+warning: Type
+ --> $DIR/tests/pass/types/this/class/type-param/1.ts:7:9
+  |
+7 |         this.t = this.t;
+  |         ^^^^^^^^^^^^^^^
+  |
+  = note: T
+
+warning: Type
+ --> $DIR/tests/pass/types/this/class/type-param/1.ts:8:9
+  |
+8 |         this.u = this.u;
+  |         ^^^^
+  |
+  = note: this
+
+warning: Type
+ --> $DIR/tests/pass/types/this/class/type-param/1.ts:8:9
+  |
+8 |         this.u = this.u;
+  |         ^^^^^^
+  |
+  = note: U
+
+warning: Type
+ --> $DIR/tests/pass/types/this/class/type-param/1.ts:8:18
+  |
+8 |         this.u = this.u;
+  |                  ^^^^
+  |
+  = note: this
+
+warning: Type
+ --> $DIR/tests/pass/types/this/class/type-param/1.ts:8:18
+  |
+8 |         this.u = this.u;
+  |                  ^^^^^^
+  |
+  = note: U
+
+warning: Type
+ --> $DIR/tests/pass/types/this/class/type-param/1.ts:8:9
+  |
+8 |         this.u = this.u;
+  |         ^^^^^^^^^^^^^^^
+  |
+  = note: U
+
+warning: Type
+ --> $DIR/tests/pass/types/this/class/type-param/1.ts:6:9
+  |
+6 |       r = () => {
+  |  _________^
+7 | |         this.t = this.t;
+8 | |         this.u = this.u;
+9 | |     }
+  | |_____^
+  |
+  = note: () => void
+

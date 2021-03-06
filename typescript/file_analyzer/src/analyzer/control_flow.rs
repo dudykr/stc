@@ -602,9 +602,15 @@ impl Analyzer<'_, '_> {
 
                         actual_ty = Some(self.narrowed_type_of_assignment(span, declared_ty, &ty)?);
                     }
+                } else {
+                    self.storage.report(Error::NoSuchVar {
+                        span,
+                        name: i.id.clone().into(),
+                    });
+                    return Ok(());
                 }
 
-                // TODO: Update actual types.
+                // Update actual types.
                 if let Some(var_info) = self.scope.get_var_mut(&i.id.clone().into()) {
                     var_info.actual_ty = Some(actual_ty.unwrap_or_else(|| ty.clone()));
                     return Ok(());

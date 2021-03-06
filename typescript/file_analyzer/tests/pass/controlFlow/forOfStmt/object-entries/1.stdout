@@ -1,0 +1,73 @@
+warning: Type
+ --> $DIR/tests/pass/controlFlow/forOfStmt/object-entries/1.ts:1:9
+  |
+1 | var o = { a: 1, b: 2 };
+  |         ^^^^^^^^^^^^^^
+  |
+  = note: {
+              a: 1;
+              b: 2;
+          }
+
+warning: Type
+ --> $DIR/tests/pass/controlFlow/forOfStmt/object-entries/1.ts:3:29
+  |
+3 | for (var x of Object.values(o)) {
+  |                             ^
+  |
+  = note: {
+              a: number;
+              b: number;
+          }
+
+warning: Type
+ --> $DIR/tests/pass/controlFlow/forOfStmt/object-entries/1.ts:3:15
+  |
+3 | for (var x of Object.values(o)) {
+  |               ^^^^^^
+  |
+  = note: ObjectConstructor
+
+warning: Type
+ --> $DIR/tests/pass/controlFlow/forOfStmt/object-entries/1.ts:3:15
+  |
+3 | for (var x of Object.values(o)) {
+  |               ^^^^^^^^^^^^^^^^
+  |
+  = note: number[]
+
+warning: Type
+ --> $DIR/tests/pass/controlFlow/forOfStmt/object-entries/1.ts:4:13
+  |
+4 |     let y = x;
+  |             ^
+  |
+  = note: number
+
+warning: Type
+ --> $DIR/tests/pass/controlFlow/forOfStmt/object-entries/1.ts:7:37
+  |
+7 | export var entries = Object.entries(o);
+  |                                     ^
+  |
+  = note: {
+              a: number;
+              b: number;
+          }
+
+warning: Type
+ --> $DIR/tests/pass/controlFlow/forOfStmt/object-entries/1.ts:7:22
+  |
+7 | export var entries = Object.entries(o);
+  |                      ^^^^^^
+  |
+  = note: ObjectConstructor
+
+warning: Type
+ --> $DIR/tests/pass/controlFlow/forOfStmt/object-entries/1.ts:7:22
+  |
+7 | export var entries = Object.entries(o);
+  |                      ^^^^^^^^^^^^^^^^^
+  |
+  = note: [string, number][]
+

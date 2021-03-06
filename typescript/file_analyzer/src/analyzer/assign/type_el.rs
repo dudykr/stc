@@ -522,14 +522,28 @@ impl Analyzer<'_, '_> {
                 if let Some(r_key) = rm.key() {
                     if l_key.type_eq(&*r_key) {
                         match m {
-                            TypeElement::Property(ref el) => match rm {
+                            TypeElement::Property(ref lp) => match rm {
                                 TypeElement::Property(ref r_el) => {
                                     self.assign_inner(
-                                        el.type_ann.as_deref().unwrap_or(&Type::any(span)),
+                                        lp.type_ann.as_deref().unwrap_or(&Type::any(span)),
                                         r_el.type_ann.as_deref().unwrap_or(&Type::any(span)),
                                         opts,
                                     )?;
                                     return Ok(());
+                                }
+                                TypeElement::Method(rm) => {
+                                    if let Some(lp_ty) = &lp.type_ann {
+                                        if let Type::Function(lp_ty) = lp_ty.normalize() {
+                                            self.assign_params(opts, &lp_ty.params, &rm.params).context(
+                                                "tried to assign parameters of a method property to the parameters of \
+                                                 a property with callable type",
+                                            )?;
+
+                                            // TODO: Return type
+
+                                            return Ok(());
+                                        }
+                                    }
                                 }
                                 _ => {}
                             },
