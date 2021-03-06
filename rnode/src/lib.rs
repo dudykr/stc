@@ -8,7 +8,7 @@ use swc_common::TypeEq;
 
 /// Alternative for span. This is much more reliable than span.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct NodeId(u64);
+pub struct NodeId(u32);
 
 /// Always returns `true` as the struct is an alternative for span.
 impl EqIgnoreSpan for NodeId {
@@ -58,7 +58,7 @@ impl<V: ?Sized> FoldWith<V> for NodeId {
 #[derive(Debug)]
 pub struct NodeIdGenerator {
     /// If the stored value is zero, it's an invalid id genertor.
-    inner: u64,
+    inner: u32,
 }
 
 impl Default for NodeIdGenerator {
