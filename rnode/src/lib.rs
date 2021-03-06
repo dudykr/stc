@@ -1,5 +1,7 @@
 //! RNode: Node with node id
 
+use std::sync::Arc;
+
 pub use rnode_macros::define_rnode;
 use stc_visit::Visitable;
 pub use stc_visit::{Fold, FoldWith, Visit, VisitMut, VisitMutWith, VisitWith};
@@ -89,7 +91,7 @@ impl NodeIdGenerator {
     }
 }
 
-pub trait RNode: Send + Sync {
+pub trait RNode: Clone + Send + Sync {
     type Orig;
 
     fn from_orig(id_generator: &mut NodeIdGenerator, orig: Self::Orig) -> Self;
@@ -159,5 +161,24 @@ where
 {
     fn into_rnode(self, g: &mut NodeIdGenerator) -> R {
         RNode::from_orig(g, self)
+    }
+}
+
+impl<T> RNode for Arc<T>
+where
+    T: RNode,
+{
+    type Orig = <T as RNode>::Orig;
+
+    fn from_orig(id_generator: &mut NodeIdGenerator, orig: Self::Orig) -> Self {
+        let t = T::from_orig(id_generator, orig);
+        Arc::new(t)
+    }
+
+    fn into_orig(self) -> Self::Orig {
+        match Arc::try_unwrap(self) {
+            Ok(v) => v.into_orig(),
+            Err(err) => (*err).clone().into_orig(),
+        }
     }
 }
