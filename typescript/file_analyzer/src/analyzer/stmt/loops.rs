@@ -75,6 +75,13 @@ impl Analyzer<'_, '_> {
             )
             .context("tried to normalize a type to handle a for-in loop")?;
 
+        if rhs.is_kwd(TsKeywordTypeKind::TsObjectKeyword) {
+            return Ok(Type::Keyword(RTsKeywordType {
+                span: rhs.span(),
+                kind: TsKeywordTypeKind::TsStringKeyword,
+            }));
+        }
+
         match rhs.normalize() {
             Type::Mapped(m) => {
                 // { [P in K]: T[P]; }
