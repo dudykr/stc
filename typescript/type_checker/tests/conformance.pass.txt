@@ -516,8 +516,12 @@ es6/destructuring/optionalBindingParameters1.ts
 es6/destructuring/restElementWithAssignmentPattern5.ts
 es6/destructuring/restElementWithBindingPattern.ts
 es6/for-ofStatements/for-of1.ts
+es6/for-ofStatements/for-of10.ts
+es6/for-ofStatements/for-of11.ts
+es6/for-ofStatements/for-of12.ts
 es6/for-ofStatements/for-of13.ts
 es6/for-ofStatements/for-of14.ts
+es6/for-ofStatements/for-of17.ts
 es6/for-ofStatements/for-of18.ts
 es6/for-ofStatements/for-of19.ts
 es6/for-ofStatements/for-of20.ts
@@ -1573,6 +1577,7 @@ statements/for-ofStatements/ES5For-of5.ts
 statements/for-ofStatements/ES5For-of6.ts
 statements/for-ofStatements/ES5For-of9.ts
 statements/for-ofStatements/ES5For-ofTypeCheck1.ts
+statements/for-ofStatements/ES5For-ofTypeCheck11.ts
 statements/for-ofStatements/ES5For-ofTypeCheck2.ts
 statements/for-ofStatements/ES5For-ofTypeCheck3.ts
 statements/for-ofStatements/ES5For-ofTypeCheck4.ts
