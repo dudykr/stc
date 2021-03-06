@@ -257,7 +257,7 @@ impl Analyzer<'_, '_> {
                     .remove_falsy()),
 
                 RExpr::Object(e) => {
-                    return e.validate_with(self);
+                    return e.validate_with_args(self, type_ann);
                 }
 
                 // https://github.com/Microsoft/TypeScript/issues/26959

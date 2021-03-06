@@ -40,7 +40,9 @@ use swc_ecma_ast::TsKeywordTypeKind;
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &RObjectLit) -> ValidationResult {
+    fn validate(&mut self, node: &RObjectLit, type_ann: Option<&Type>) -> ValidationResult {
+        let type_ann = self.expand_type_ann(type_ann)?;
+
         self.with_child(ScopeKind::ObjectLit, Default::default(), |a: &mut Analyzer| {
             let mut ty = Type::TypeLit(TypeLit {
                 span: node.span,
