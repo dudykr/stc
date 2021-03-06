@@ -1,5 +1,6 @@
 use crate::Visitable;
 use std::cell::RefCell;
+use std::sync::Arc;
 use swc_common::Span;
 
 pub trait Fold<T: Visitable> {
@@ -75,6 +76,17 @@ where
 {
     fn fold_children_with(self, visitor: &mut V) -> Self {
         self.into_iter().map(|node| visitor.fold(node)).collect()
+    }
+}
+
+/// Noop.
+impl<T, V> FoldWith<V> for Arc<T>
+where
+    T: Visitable,
+    V: ?Sized + Fold<T>,
+{
+    fn fold_children_with(self, _: &mut V) -> Self {
+        self
     }
 }
 
