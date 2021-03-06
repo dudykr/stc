@@ -656,15 +656,14 @@ struct RNodeField {
     ty: Type,
 }
 
-/// Look for attributes, namely `#[rc]` or `#[refcell]`.
+/// Look for attributes, namely `#[arc]`.
 fn handle_field(nodes_to_convert: &[String], attrs: &[Attribute], match_binding: &Ident, ty: &Type) -> RNodeField {
-    // let rc = attrs.iter().any(|attr| attr.path.is_ident("rc"));
+    let arc = attrs.iter().any(|attr| attr.path.is_ident("arc"));
     // let ref_cell = attrs.iter().any(|attr| attr.path.is_ident("refcell"));
-    let rc = false;
     let ref_cell = false;
 
-    if rc && ref_cell {
-        panic!("#[rc] and #[ref_cell] cannot be applied to same field because #[rc] implies Rc<Refell<T>>")
+    if arc && ref_cell {
+        panic!("#[arc] and #[ref_cell] cannot be applied to same field because #[rc] implies Rc<Refell<T>>")
     }
 
     // If type can be converted to RNode, do it.
@@ -707,7 +706,7 @@ fn handle_field(nodes_to_convert: &[String], attrs: &[Attribute], match_binding:
     if let Some(ty) = extract_box(&ty) {
         let res = handle_field(nodes_to_convert, attrs, match_binding, ty);
 
-        if rc {
+        if arc {
             return RNodeField {
                 to_orig: q!(
                     Vars {
@@ -790,7 +789,7 @@ fn handle_field(nodes_to_convert: &[String], attrs: &[Attribute], match_binding:
         let mut info = handle_field(nodes_to_convert, &[], match_binding, ty);
         let boxed = extract_box(ty);
 
-        if !rc && !ref_cell {
+        if !arc && !ref_cell {
             return RNodeField {
                 from_orig: q!(
                     Vars {
@@ -814,7 +813,7 @@ fn handle_field(nodes_to_convert: &[String], attrs: &[Attribute], match_binding:
 
         info.ty = OptionReplacer { nodes_to_convert }.fold_type(info.ty);
 
-        if rc {
+        if arc {
             info.from_orig = q!(
                 Vars {
                     v: &match_binding,
@@ -865,7 +864,7 @@ fn handle_field(nodes_to_convert: &[String], attrs: &[Attribute], match_binding:
         let mut info = handle_field(nodes_to_convert, attrs, match_binding, ty);
         info.ty = q!(Vars { ty: &info.ty }, (Vec<ty>)).parse();
 
-        if !rc && !ref_cell {
+        if !arc && !ref_cell {
             info.to_orig = q!(
                 Vars {
                     v: match_binding,
@@ -898,7 +897,7 @@ fn handle_field(nodes_to_convert: &[String], attrs: &[Attribute], match_binding:
         };
     }
 
-    if !rc && !ref_cell {
+    if !arc && !ref_cell {
         return RNodeField {
             from_orig: q!(Vars { match_binding }, { match_binding }).parse(),
             to_orig: q!(Vars { match_binding }, { match_binding }).parse(),
@@ -908,7 +907,7 @@ fn handle_field(nodes_to_convert: &[String], attrs: &[Attribute], match_binding:
 
     // Vec<T> -> Vec<Rc<RefCell<T>>>
     // T -> Rc<RefCell<T>>
-    if rc {
+    if arc {
         if let Some(ty) = extract_vec(&ty) {
             return RNodeField {
                 from_orig: q!(Vars { match_binding }, {
