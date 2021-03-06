@@ -78,39 +78,39 @@ impl Analyzer<'_, '_> {
                     }));
                 }
             }
-            _ => {}
-        }
+            _ => {
+                match m.type_param.constraint.as_deref() {
+                    Some(constraint) => {
+                        if let Some(keys) = self.convert_type_to_keys(span, constraint)? {
+                            // TODO: Verify that m.ty does not contain key type.
+                            let members = keys
+                                .into_iter()
+                                .map(|key| PropertySignature {
+                                    span: key.span(),
+                                    key,
+                                    type_ann: m.ty.clone(),
+                                    readonly: false,
+                                    optional: false,
+                                    params: Default::default(),
+                                    type_params: Default::default(),
+                                })
+                                .map(TypeElement::Property)
+                                .map(|mut el| {
+                                    self.apply_mapped_flags(&mut el, m.optional, m.readonly);
+                                    el
+                                })
+                                .collect();
 
-        match m.type_param.constraint.as_deref() {
-            Some(constraint) => {
-                if let Some(keys) = self.convert_type_to_keys(span, constraint)? {
-                    // TODO: Verify that m.ty does not contain key type.
-                    let members = keys
-                        .into_iter()
-                        .map(|key| PropertySignature {
-                            span: key.span(),
-                            key,
-                            type_ann: m.ty.clone(),
-                            readonly: false,
-                            optional: false,
-                            params: Default::default(),
-                            type_params: Default::default(),
-                        })
-                        .map(TypeElement::Property)
-                        .map(|mut el| {
-                            self.apply_mapped_flags(&mut el, m.optional, m.readonly);
-                            el
-                        })
-                        .collect();
-
-                    return Ok(Type::TypeLit(TypeLit {
-                        span: m.span,
-                        members,
-                        metadata: Default::default(),
-                    }));
+                            return Ok(Type::TypeLit(TypeLit {
+                                span: m.span,
+                                members,
+                                metadata: Default::default(),
+                            }));
+                        }
+                    }
+                    None => {}
                 }
             }
-            None => {}
         }
 
         unimplemented!(
