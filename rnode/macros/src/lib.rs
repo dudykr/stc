@@ -221,7 +221,7 @@ fn handle_item(nodes_to_convert: &[String], item: Item) -> Vec<Item> {
                             attrs: field
                                 .attrs
                                 .iter()
-                                .filter(|attr| !attr.path.is_ident("rc") && !attr.path.is_ident("refcell"))
+                                .filter(|attr| !attr.path.is_ident("arc") && !attr.path.is_ident("refcell"))
                                 .cloned()
                                 .collect(),
                             vis: field.vis.clone(),
