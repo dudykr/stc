@@ -522,8 +522,12 @@ impl Analyzer<'_, '_> {
         }
 
         let mut to = if let Some(key) = rhs.key() {
-            self.exclude_props(&to, &[key.clone()])
-                .context("tried to exclude properties before appending a type element")?
+            match key {
+                Key::Computed(..) => to.foldable(),
+                _ => self
+                    .exclude_props(&to, &[key.clone()])
+                    .context("tried to exclude properties before appending a type element")?,
+            }
         } else {
             to.foldable()
         };
