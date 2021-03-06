@@ -703,6 +703,28 @@ fn handle_field(nodes_to_convert: &[String], attrs: &[Attribute], match_binding:
         _ => {}
     }
 
+    if arc {
+        if let Some(ty) = extract_opt(&ty) {
+            if let Some(ty) = extract_box(&ty) {
+                let inner = handle_field(nodes_to_convert, &[], match_binding, ty);
+                // Option<Box<T>>
+                return RNodeField {
+                    from_orig: q!(
+                        Vars { match_binding },
+                        ({ match_binding.map(|match_binding| { rnode::RNode::from_orig(id_gen, *match_binding) }) })
+                    )
+                    .parse(),
+                    to_orig: q!(
+                        Vars { match_binding },
+                        ({ match_binding.map(|v| Box::new(v.into_orig())) })
+                    )
+                    .parse(),
+                    ty: q!(Vars { ty: &inner.ty }, (Option<std::sync::Arc<ty>>)).parse(),
+                };
+            }
+        }
+    }
+
     if let Some(ty) = extract_box(&ty) {
         let res = handle_field(nodes_to_convert, attrs, match_binding, ty);
 
@@ -713,7 +735,7 @@ fn handle_field(nodes_to_convert: &[String], attrs: &[Attribute], match_binding:
                         match_binding,
                         inner: &res.to_orig
                     },
-                    (Box::new(inner))
+                    ({ inner }.to_orig())
                 )
                 .parse(),
                 from_orig: q!(
@@ -787,7 +809,7 @@ fn handle_field(nodes_to_convert: &[String], attrs: &[Attribute], match_binding:
 
     if let Some(ty) = extract_opt(&ty) {
         let mut info = handle_field(nodes_to_convert, &[], match_binding, ty);
-        let boxed = extract_box(ty);
+        let boxed = extract_box(&info.ty).cloned();
 
         if !arc && !ref_cell {
             return RNodeField {
@@ -821,7 +843,7 @@ fn handle_field(nodes_to_convert: &[String], attrs: &[Attribute], match_binding:
                 },
                 {
                     match v.map(|v| inner) {
-                        Some(v) => std::sync::Arc::new(Some(v)),
+                        Some(v) => Some(std::sync::Arc::new(v)),
                         None => Default::default(),
                     }
                 }
@@ -842,7 +864,7 @@ fn handle_field(nodes_to_convert: &[String], attrs: &[Attribute], match_binding:
                 }
             )
             .parse();
-            if let Some(boxed) = boxed {
+            if let Some(boxed) = &boxed {
                 let inner_info = handle_field(nodes_to_convert, attrs, match_binding, boxed);
                 info.to_orig = q!(
                     Vars {
