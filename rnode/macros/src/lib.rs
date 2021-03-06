@@ -663,7 +663,7 @@ fn handle_field(nodes_to_convert: &[String], attrs: &[Attribute], match_binding:
     let ref_cell = false;
 
     if arc && ref_cell {
-        panic!("#[arc] and #[ref_cell] cannot be applied to same field because #[rc] implies Rc<Refell<T>>")
+        panic!("#[arc] and #[ref_cell] cannot be applied to same field because #[arc] implies Rc<Refell<T>>")
     }
 
     // If type can be converted to RNode, do it.
@@ -727,7 +727,7 @@ fn handle_field(nodes_to_convert: &[String], attrs: &[Attribute], match_binding:
                     })
                 )
                 .parse(),
-                ty: q!(Vars { ty: &res.ty }, (std::rc::Rc<std::cell::RefCell<ty>>)).parse(),
+                ty: q!(Vars { ty: &res.ty }, (std::sync::Arc<std::cell::RefCell<ty>>)).parse(),
                 ..res
             };
         } else if ref_cell {
@@ -821,13 +821,13 @@ fn handle_field(nodes_to_convert: &[String], attrs: &[Attribute], match_binding:
                 },
                 {
                     match v.map(|v| inner) {
-                        Some(v) => std::rc::Rc::new(std::cell::RefCell::new(Some(v))),
+                        Some(v) => std::sync::Arc::new(std::cell::RefCell::new(Some(v))),
                         None => Default::default(),
                     }
                 }
             )
             .parse();
-            info.ty = q!(Vars { ty: &info.ty }, (std::rc::Rc<std::cell::RefCell<ty>>)).parse()
+            info.ty = q!(Vars { ty: &info.ty }, (std::sync::Arc<std::cell::RefCell<ty>>)).parse()
         } else {
             info.from_orig = q!(
                 Vars {
@@ -914,19 +914,19 @@ fn handle_field(nodes_to_convert: &[String], attrs: &[Attribute], match_binding:
                     match_binding
                         .into_iter()
                         .map(std::cell::RefCell::new)
-                        .map(std::rc::Rc::new)
+                        .map(std::sync::Arc::new)
                         .collect()
                 })
                 .parse(),
                 to_orig: q!(Vars { match_binding }, { match_binding }).parse(),
-                ty: q!(Vars { ty }, (Vec<std::rc::Rc<std::cell::RefCell<ty>>>)).parse(),
+                ty: q!(Vars { ty }, (Vec<std::sync::Arc<std::cell::RefCell<ty>>>)).parse(),
             };
         }
 
         return RNodeField {
             from_orig: q!(Vars { match_binding }, { match_binding }).parse(),
             to_orig: q!(Vars { match_binding }, { match_binding }).parse(),
-            ty: q!(Vars { ty }, (std::rc::Rc<std::cell::RefCell<ty>>)).parse(),
+            ty: q!(Vars { ty }, (std::sync::Arc<std::cell::RefCell<ty>>)).parse(),
         };
     }
 
