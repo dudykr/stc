@@ -13,7 +13,7 @@ pub enum Te {
 define_rnode!({
     pub struct Ts {
         pub span: Span,
-        #[refcell]
+        #[arc]
         pub value: Option<Box<Te>>,
     }
 
