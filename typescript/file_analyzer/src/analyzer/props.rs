@@ -1,4 +1,5 @@
 use super::{marks::MarkExt, scope::ScopeKind, Analyzer};
+use crate::analyzer::expr::IdCtx;
 use crate::{
     analyzer::{expr::TypeOfMode, util::ResultExt, Ctx},
     ty::{MethodSignature, Operator, PropertySignature, Type, TypeElement, TypeExt},
@@ -6,6 +7,8 @@ use crate::{
     validator::ValidateWith,
     ValidationResult,
 };
+use itertools::EitherOrBoth;
+use itertools::Itertools;
 use rnode::Visit;
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RAssignProp;
@@ -25,11 +28,13 @@ use stc_ts_ast_rnode::RPropName;
 use stc_ts_ast_rnode::RSetterProp;
 use stc_ts_ast_rnode::RStr;
 use stc_ts_ast_rnode::RTsKeywordType;
+use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_types::ComputedKey;
 use stc_ts_types::Key;
 use stc_ts_types::PrivateName;
+use stc_ts_utils::PatExt;
 use swc_atoms::js_word;
 use swc_common::Span;
 use swc_common::Spanned;
@@ -199,7 +204,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, prop: &RProp) -> ValidationResult<TypeElement> {
+    fn validate(&mut self, prop: &RProp, object_type: Option<&Type>) -> ValidationResult<TypeElement> {
         self.record(prop);
 
         let ctx = Ctx {
@@ -208,7 +213,7 @@ impl Analyzer<'_, '_> {
         };
 
         let old_this = self.scope.this.take();
-        let res = self.with_ctx(ctx).validate_prop_inner(prop);
+        let res = self.with_ctx(ctx).validate_prop_inner(prop, object_type);
         self.scope.this = old_this;
 
         res
@@ -257,7 +262,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn validate_prop_inner(&mut self, prop: &RProp) -> ValidationResult<TypeElement> {
+    fn validate_prop_inner(&mut self, prop: &RProp, object_type: Option<&Type>) -> ValidationResult<TypeElement> {
         let computed = match prop {
             RProp::KeyValue(ref kv) => match &kv.key {
                 RPropName::Computed(c) => {
@@ -356,9 +361,37 @@ impl Analyzer<'_, '_> {
                     RPropName::Computed(..) => true,
                     _ => false,
                 };
+                let method_type_ann = object_type.and_then(|obj| {
+                    self.access_property(span, obj.clone(), &key, TypeOfMode::RValue, IdCtx::Var)
+                        .context("tried to get type of a property for a method property")
+                        .report(&mut self.storage)
+                });
 
                 self.with_child(ScopeKind::Method, Default::default(), {
                     |child: &mut Analyzer| -> ValidationResult<_> {
+                        match method_type_ann.as_ref().map(|ty| ty.normalize()) {
+                            Some(Type::Function(ty)) => {
+                                for p in p.function.params.iter().zip_longest(ty.params.iter()) {
+                                    match p {
+                                        EitherOrBoth::Both(param, ty) => {
+                                            // Store type infomations, so the pattern validator can use correct type.
+                                            if let Some(pat_node_id) = param.pat.node_id() {
+                                                if let Some(m) = &mut child.mutations {
+                                                    m.for_pats
+                                                        .entry(pat_node_id)
+                                                        .or_default()
+                                                        .ty
+                                                        .get_or_insert_with(|| *ty.ty.clone());
+                                                }
+                                            }
+                                        }
+                                        _ => {}
+                                    }
+                                }
+                            }
+                            _ => {}
+                        }
+
                         // We mark as wip
                         if !computed {
                             match &p.key {

@@ -44,17 +44,17 @@ impl Analyzer<'_, '_> {
         let type_ann = self.expand_type_ann(type_ann)?;
 
         self.with_child(ScopeKind::ObjectLit, Default::default(), |a: &mut Analyzer| {
-            let mut ty = Type::TypeLit(TypeLit {
+            let mut ret = Type::TypeLit(TypeLit {
                 span: node.span,
                 members: vec![],
                 metadata: Default::default(),
             });
 
             for prop in node.props.iter() {
-                ty = a.append_prop_or_spread_to_type(ty, prop)?;
+                ret = a.append_prop_or_spread_to_type(ret, prop, type_ann.as_deref())?;
             }
 
-            Ok(ty)
+            Ok(ret)
         })
     }
 }
@@ -422,14 +422,19 @@ impl Analyzer<'_, '_> {
         });
     }
 
-    fn append_prop_or_spread_to_type(&mut self, to: Type, prop: &RPropOrSpread) -> ValidationResult {
+    fn append_prop_or_spread_to_type(
+        &mut self,
+        to: Type,
+        prop: &RPropOrSpread,
+        object_type: Option<&Type>,
+    ) -> ValidationResult {
         match prop {
             RPropOrSpread::Spread(RSpreadElement { expr, .. }) => {
                 let prop_ty: Type = expr.validate_with_default(self)?;
                 self.append_type(to, prop_ty)
             }
             RPropOrSpread::Prop(prop) => {
-                let p: TypeElement = prop.validate_with(self)?;
+                let p: TypeElement = prop.validate_with_args(self, object_type)?;
                 self.append_type_element(to, p)
             }
         }
