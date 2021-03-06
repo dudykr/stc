@@ -41,11 +41,18 @@ use syn::VisPublic;
 use syn::Visibility;
 
 ///
-/// # Struct attributed
+/// # Struct attributes
 ///
 /// ## `#[skip_node_id]`
 ///
 /// Don't inject `node_id`.
+///
+///
+/// # Fields atributes
+///
+/// ## `#[arc]`
+///
+/// Use `Arc` instead of owned values.
 #[proc_macro]
 pub fn define_rnode(module: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let module: Block = syn::parse(module).expect("#[rnode] should be applied to a module");
