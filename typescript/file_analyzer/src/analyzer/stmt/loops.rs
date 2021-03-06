@@ -1,16 +1,12 @@
 use super::super::Analyzer;
 use crate::analyzer::types::NormalizeTypeOpts;
+use crate::analyzer::util::ResultExt;
 use crate::validator::ValidateWith;
-use crate::{
-    analyzer::{expr::TypeOfMode, ScopeKind},
-    ty::Type,
-    validator, ValidationResult,
-};
+use crate::{analyzer::ScopeKind, ty::Type, validator, ValidationResult};
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RForInStmt;
 use stc_ts_ast_rnode::RForOfStmt;
-use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RStmt;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RVarDeclOrPat;
@@ -33,6 +29,8 @@ enum ForHeadKind {
 impl Analyzer<'_, '_> {
     #[extra_validator]
     fn check_lhs_of_for_loop(&mut self, e: &RVarDeclOrPat, elem_ty: &Type, kind: ForHeadKind) {
+        let span = e.span();
+
         match *e {
             RVarDeclOrPat::VarDecl(ref v) => {
                 // It is a parsing error if there are multiple variable declarators.
@@ -54,16 +52,9 @@ impl Analyzer<'_, '_> {
                 v.visit_with(self);
             }
             RVarDeclOrPat::Pat(ref pat) => {
-                match pat {
-                    RPat::Expr(ref e) => {
-                        e.validate_with_args(self, (TypeOfMode::LValue, None, None))?;
-                    }
-                    RPat::Ident(ref i) => {
-                        // TODO: verify
-                        self.type_of_var(&i.id, TypeOfMode::LValue, None)?;
-                    }
-                    _ => {}
-                }
+                self.try_assign_pat(span, &pat, elem_ty)
+                    .context("tried to assign to the pattern of a for-of/for-in loop")
+                    .report(&mut self.storage);
             }
         }
     }
