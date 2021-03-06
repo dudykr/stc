@@ -21,6 +21,7 @@ use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_types::Array;
 use stc_ts_types::ComputedKey;
+use stc_ts_types::Intersection;
 use stc_ts_types::Key;
 use stc_ts_types::Tuple;
 use stc_ts_types::TupleElement;
@@ -258,6 +259,16 @@ impl Analyzer<'_, '_> {
                 let new = Type::Union(Union { span: u.span, types });
                 return Ok(Cow::Owned(new));
             }
+            Type::Intersection(i) => {
+                let types = i
+                    .types
+                    .iter()
+                    .map(|v| self.get_iterator(v.span(), Cow::Borrowed(v)))
+                    .map(|res| res.map(Cow::into_owned))
+                    .collect::<Result<_, _>>()?;
+                let new = Type::Intersection(Intersection { span: i.span, types });
+                return Ok(Cow::Owned(new));
+            }
             _ => {}
         }
 
@@ -335,6 +346,18 @@ impl Analyzer<'_, '_> {
                 types.dedup_type();
 
                 return Ok(Cow::Owned(Type::Union(Union { span: u.span, types })));
+            }
+
+            Type::Intersection(i) => {
+                let mut types = i
+                    .types
+                    .iter()
+                    .map(|iterator| self.get_iterator_element_type(iterator.span(), Cow::Borrowed(iterator)))
+                    .map(|ty| ty.map(Cow::into_owned))
+                    .collect::<Result<Vec<_>, _>>()?;
+                types.dedup_type();
+
+                return Ok(Cow::Owned(Type::Intersection(Intersection { span: i.span, types })));
             }
 
             _ => {}
