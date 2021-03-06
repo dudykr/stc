@@ -1,0 +1,96 @@
+warning: Type
+ --> $DIR/tests/pass/class/member/index/string-tree-1.ts:6:36
+  |
+6 | class StringTreeCollection extends StringTreeCollectionBase { }
+  |                                    ^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: typeof StringTreeCollectionBase
+
+warning: Type
+ --> $DIR/tests/pass/class/member/index/string-tree-1.ts:9:12
+  |
+9 | if (typeof x !== "string") {
+  |            ^
+  |
+  = note: StringTree
+
+warning: Type
+ --> $DIR/tests/pass/class/member/index/string-tree-1.ts:9:5
+  |
+9 | if (typeof x !== "string") {
+  |     ^^^^^^^^
+  |
+  = note: string
+
+warning: Type
+ --> $DIR/tests/pass/class/member/index/string-tree-1.ts:9:5
+  |
+9 | if (typeof x !== "string") {
+  |     ^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: boolean
+
+warning: Type
+  --> $DIR/tests/pass/class/member/index/string-tree-1.ts:10:5
+   |
+10 |     x[0] = "";
+   |     ^
+   |
+   = note: StringTree
+
+warning: Type
+  --> $DIR/tests/pass/class/member/index/string-tree-1.ts:10:5
+   |
+10 |     x[0] = "";
+   |     ^^^^
+   |
+   = note: string | StringTree
+
+warning: Type
+  --> $DIR/tests/pass/class/member/index/string-tree-1.ts:10:5
+   |
+10 |     x[0] = "";
+   |     ^^^^^^^^^
+   |
+   = note: ""
+
+warning: Type
+  --> $DIR/tests/pass/class/member/index/string-tree-1.ts:11:5
+   |
+11 |     x[0] = new StringTreeCollection;
+   |     ^
+   |
+   = note: StringTree
+
+warning: Type
+  --> $DIR/tests/pass/class/member/index/string-tree-1.ts:11:5
+   |
+11 |     x[0] = new StringTreeCollection;
+   |     ^^^^
+   |
+   = note: string | StringTree
+
+warning: Type
+  --> $DIR/tests/pass/class/member/index/string-tree-1.ts:11:16
+   |
+11 |     x[0] = new StringTreeCollection;
+   |                ^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: typeof StringTreeCollection
+
+warning: Type
+  --> $DIR/tests/pass/class/member/index/string-tree-1.ts:11:12
+   |
+11 |     x[0] = new StringTreeCollection;
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: StringTreeCollection
+
+warning: Type
+  --> $DIR/tests/pass/class/member/index/string-tree-1.ts:11:5
+   |
+11 |     x[0] = new StringTreeCollection;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: StringTreeCollection
+

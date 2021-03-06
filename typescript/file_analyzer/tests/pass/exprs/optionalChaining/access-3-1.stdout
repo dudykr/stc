@@ -1,0 +1,52 @@
+warning: Type
+ --> $DIR/tests/pass/exprs/optionalChaining/access-3-1.ts:3:1
+  |
+3 | o3.b
+  | ^^
+  |
+  = note: {
+              b: undefined | {
+                  c: string;
+              };
+          }
+
+warning: Type
+ --> $DIR/tests/pass/exprs/optionalChaining/access-3-1.ts:3:1
+  |
+3 | o3.b
+  | ^^^^
+  |
+  = note: undefined | {
+              c: string;
+          }
+
+warning: Type
+ --> $DIR/tests/pass/exprs/optionalChaining/access-3-1.ts:4:1
+  |
+4 | o3.b?.["c"];
+  | ^^
+  |
+  = note: {
+              b: undefined | {
+                  c: string;
+              };
+          }
+
+warning: Type
+ --> $DIR/tests/pass/exprs/optionalChaining/access-3-1.ts:4:1
+  |
+4 | o3.b?.["c"];
+  | ^^^^
+  |
+  = note: undefined | {
+              c: string;
+          }
+
+warning: Type
+ --> $DIR/tests/pass/exprs/optionalChaining/access-3-1.ts:4:1
+  |
+4 | o3.b?.["c"];
+  | ^^^^^^^^^^^
+  |
+  = note: undefined | string
+

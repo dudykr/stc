@@ -180,7 +180,7 @@ impl Analyzer<'_, '_> {
     /// export type C = 5 | 10;
     /// export type B = A;
     /// ```
-    pub(super) fn reorder_stmts<T>(&mut self, stmts: &[&T]) -> (Vec<usize>, FxHashSet<usize>)
+    fn reorder_stmts<T>(&mut self, stmts: &[&T]) -> (Vec<usize>, FxHashSet<usize>)
     where
         T: AsModuleDecl + VisitWith<RequirementCalculartor>,
     {

@@ -257,7 +257,7 @@ impl Analyzer<'_, '_> {
                     .remove_falsy()),
 
                 RExpr::Object(e) => {
-                    return e.validate_with(self);
+                    return e.validate_with_args(self, type_ann);
                 }
 
                 // https://github.com/Microsoft/TypeScript/issues/26959
@@ -1304,7 +1304,15 @@ impl Analyzer<'_, '_> {
                 };
                 let interface = self.env.get_global_type(span, &word)?;
 
-                return self.access_property(span, interface, prop, type_mode, id_ctx);
+                let err = match self.access_property(span, interface, prop, type_mode, id_ctx) {
+                    Ok(v) => return Ok(v),
+                    Err(err) => err,
+                };
+                if *kind == TsKeywordTypeKind::TsObjectKeyword {
+                    return Ok(Type::any(span));
+                }
+
+                return Err(err);
             }
 
             Type::Array(Array { elem_type, .. }) => {
@@ -1771,15 +1779,13 @@ impl Analyzer<'_, '_> {
         let id: Id = i.into();
         let name: Name = i.into();
 
-        if let Some(declaring) = &self.scope.declaring_fn {
-            if id == *declaring {
-                // We will expand this type query to proper type while calculating returns types
-                // of a function.
-                return Ok(Type::Query(QueryType {
-                    span,
-                    expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(id.into())),
-                }));
-            }
+        if self.scope.is_declaring_fn(&id) {
+            // We will expand this type query to proper type while calculating returns types
+            // of a function.
+            return Ok(Type::Query(QueryType {
+                span,
+                expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(id.into())),
+            }));
         }
 
         let mut modules = vec![];

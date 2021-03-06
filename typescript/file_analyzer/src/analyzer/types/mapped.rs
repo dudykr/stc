@@ -52,37 +52,7 @@ impl Analyzer<'_, '_> {
 
                 // TODO: Verify that m.ty does not contain key type.
                 let keys = self.get_keys(span, ty)?;
-                let members = keys
-                    .into_iter()
-                    .map(|key| PropertySignature {
-                        span: key.span(),
-                        key,
-                        type_ann: m.ty.clone(),
-                        readonly: false,
-                        optional: false,
-                        params: Default::default(),
-                        type_params: Default::default(),
-                    })
-                    .map(TypeElement::Property)
-                    .map(|mut el| {
-                        self.apply_mapped_flags(&mut el, m.optional, m.readonly);
-                        el
-                    })
-                    .collect();
-
-                return Ok(Type::TypeLit(TypeLit {
-                    span: m.span,
-                    members,
-                    metadata: Default::default(),
-                }));
-            }
-            _ => {}
-        }
-
-        match m.type_param.constraint.as_deref() {
-            Some(constraint) => {
-                if let Some(keys) = self.convert_type_to_keys(span, constraint)? {
-                    // TODO: Verify that m.ty does not contain key type.
+                if let Some(keys) = keys {
                     let members = keys
                         .into_iter()
                         .map(|key| PropertySignature {
@@ -108,7 +78,39 @@ impl Analyzer<'_, '_> {
                     }));
                 }
             }
-            None => {}
+            _ => {
+                match m.type_param.constraint.as_deref() {
+                    Some(constraint) => {
+                        if let Some(keys) = self.convert_type_to_keys(span, constraint)? {
+                            // TODO: Verify that m.ty does not contain key type.
+                            let members = keys
+                                .into_iter()
+                                .map(|key| PropertySignature {
+                                    span: key.span(),
+                                    key,
+                                    type_ann: m.ty.clone(),
+                                    readonly: false,
+                                    optional: false,
+                                    params: Default::default(),
+                                    type_params: Default::default(),
+                                })
+                                .map(TypeElement::Property)
+                                .map(|mut el| {
+                                    self.apply_mapped_flags(&mut el, m.optional, m.readonly);
+                                    el
+                                })
+                                .collect();
+
+                            return Ok(Type::TypeLit(TypeLit {
+                                span: m.span,
+                                members,
+                                metadata: Default::default(),
+                            }));
+                        }
+                    }
+                    None => {}
+                }
+            }
         }
 
         unimplemented!(
@@ -176,17 +178,13 @@ impl Analyzer<'_, '_> {
     }
 
     /// Evaluates `keyof` operator.
-    fn get_keys(&mut self, span: Span, ty: &Type) -> ValidationResult<Vec<Key>> {
+    fn get_keys(&mut self, span: Span, ty: &Type) -> ValidationResult<Option<Vec<Key>>> {
+        let ty = self
+            .normalize(ty, Default::default())
+            .context("tried to normalize a type to get keys from it")?;
         let ty = ty.normalize();
 
         match ty {
-            Type::Ref(..) => {
-                let ty = self.expand_top_ref(span, Cow::Borrowed(ty))?;
-                return self.get_keys(span, &ty);
-            }
-
-            Type::Alias(alias) => return self.get_keys(span, &alias.ty),
-
             Type::TypeLit(ty) => {
                 let mut keys = vec![];
                 for m in &ty.members {
@@ -203,7 +201,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                return Ok(keys);
+                return Ok(Some(keys));
             }
             Type::Interface(ty) => {
                 let mut keys = vec![];
@@ -228,11 +226,14 @@ impl Analyzer<'_, '_> {
                         &parent.expr,
                         parent.type_args.as_deref(),
                     )?;
-                    keys.extend(self.get_keys(span, &parent)?);
+                    if let Some(parent_keys) = self.get_keys(span, &parent)? {
+                        keys.extend(parent_keys);
+                    }
                 }
 
-                return Ok(keys);
+                return Ok(Some(keys));
             }
+            Type::Param(..) => Ok(None),
             _ => {
                 unimplemented!("extract_keys_as_keys: {:#?}", ty);
             }

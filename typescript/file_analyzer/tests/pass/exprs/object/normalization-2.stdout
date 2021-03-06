@@ -1,0 +1,64 @@
+warning: Type
+ --> $DIR/tests/pass/exprs/object/normalization-2.ts:1:18
+  |
+1 | export let a2 = [{ a: 1, b: 2 }, { a: "abc" }, {}][0];
+  |                  ^^^^^^^^^^^^^^
+  |
+  = note: {
+              a: 1;
+              b: 2;
+          }
+
+warning: Type
+ --> $DIR/tests/pass/exprs/object/normalization-2.ts:1:34
+  |
+1 | export let a2 = [{ a: 1, b: 2 }, { a: "abc" }, {}][0];
+  |                                  ^^^^^^^^^^^^
+  |
+  = note: {
+              a: "abc";
+          }
+
+warning: Type
+ --> $DIR/tests/pass/exprs/object/normalization-2.ts:1:48
+  |
+1 | export let a2 = [{ a: 1, b: 2 }, { a: "abc" }, {}][0];
+  |                                                ^^
+  |
+  = note: {
+          }
+
+warning: Type
+ --> $DIR/tests/pass/exprs/object/normalization-2.ts:1:17
+  |
+1 | export let a2 = [{ a: 1, b: 2 }, { a: "abc" }, {}][0];
+  |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: ({
+              a: 1;
+              b: 2;
+          } | {
+              a: "abc";
+              b?: undefined;
+          } | {
+              a?: undefined;
+              b?: undefined;
+          })[]
+
+warning: Type
+ --> $DIR/tests/pass/exprs/object/normalization-2.ts:1:17
+  |
+1 | export let a2 = [{ a: 1, b: 2 }, { a: "abc" }, {}][0];
+  |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: {
+              a: number;
+              b: number;
+          } | {
+              a: string;
+              b?: undefined;
+          } | {
+              a?: undefined;
+              b?: undefined;
+          }
+

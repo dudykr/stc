@@ -35,3 +35,7 @@ privateNameAndObjectRestSpread.ts
 generatorYieldContextualType.ts
 types.asyncGenerators.es2018.1.ts
 genericRestParameters1.ts
+readonlyRestParameters.ts
+types.asyncGenerators.es2018.2.ts
+callSignatureWithoutReturnTypeAnnotationInference.ts
+typeParameterAsTypeArgument.ts

@@ -103,9 +103,13 @@ impl Analyzer<'_, '_> {
             RExprOrSuper::Expr(callee) => callee,
         };
 
+        let is_callee_iife = is_fn_expr(&callee);
+
         // TODO: validate children
 
         self.with_child(ScopeKind::Call, Default::default(), |analyzer: &mut Analyzer| {
+            analyzer.ctx.is_calling_iife = is_callee_iife;
+
             analyzer.extract_call_new_expr_member(
                 span,
                 ReevalMode::Call(e),
@@ -1719,6 +1723,11 @@ impl Analyzer<'_, '_> {
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
     ) -> ValidationResult<()> {
+        // Argument counts are not checked if it's an iife.
+        if self.ctx.is_calling_iife {
+            return Ok(());
+        }
+
         let mut min_param = 0;
         let mut max_param = Some(params.len());
         for param in params {
@@ -1844,10 +1853,19 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult {
         let logger = self.logger.clone();
 
+        // TODO: Optimize by skipping clone if `this type` is not used.
+        let params = params
+            .iter()
+            .map(|param| {
+                let mut ty = param.ty.clone();
+                self.expand_this(&mut ty);
+                FnParam { ty, ..param.clone() }
+            })
+            .collect_vec();
         self.expand_this(&mut ret_ty);
 
         {
-            let arg_check_res = self.validate_arg_count(span, params, args, arg_types, spread_arg_types);
+            let arg_check_res = self.validate_arg_count(span, &params, args, arg_types, spread_arg_types);
             match arg_check_res {
                 Err(..) => print_backtrace(),
                 _ => {}
@@ -1880,14 +1898,13 @@ impl Analyzer<'_, '_> {
             let params = if let Some(map) = &inferred_from_return_type {
                 expanded_params = params
                     .into_iter()
-                    .cloned()
                     .map(|v| -> ValidationResult<_> {
                         let ty = box self.expand_type_params(&map, *v.ty)?;
 
                         Ok(FnParam { ty, ..v })
                     })
                     .collect::<Result<Vec<_>, _>>()?;
-                &expanded_params
+                expanded_params
             } else {
                 params
             };
@@ -1896,7 +1913,6 @@ impl Analyzer<'_, '_> {
 
             let expanded_param_types = params
                 .into_iter()
-                .cloned()
                 .map(|v| -> ValidationResult<_> {
                     let ty = box self.expand_type_params(&inferred, *v.ty)?;
 
@@ -1948,7 +1964,7 @@ impl Analyzer<'_, '_> {
                                 //         m.for_pats.entry(node_id).or_default().ty = Some(new_ty);
                                 //     }
                                 // }
-                                let new_ty = *actual.ty.clone();
+                                let mut new_ty = *actual.ty.clone();
                                 if let Some(node_id) = pat.node_id() {
                                     if let Some(m) = &mut self.mutations {
                                         m.for_pats.entry(node_id).or_default().ty = Some(new_ty);
@@ -2010,8 +2026,8 @@ impl Analyzer<'_, '_> {
             }
 
             // if arg.len() > param.len(), we need to add all args
-            if arg_types.len() > params.len() {
-                new_args.extend(arg_types[params.len()..].iter().cloned());
+            if arg_types.len() > expanded_param_types.len() {
+                new_args.extend(arg_types[expanded_param_types.len()..].iter().cloned());
             }
 
             // We have to recalculate types.
@@ -2072,7 +2088,7 @@ impl Analyzer<'_, '_> {
             self.add_required_type_params(&mut ty);
 
             if kind == ExtractKind::Call {
-                self.add_call_facts(params, &args, &mut ty);
+                self.add_call_facts(&expanded_param_types, &args, &mut ty);
             }
 
             ty.reposition(span);
@@ -2080,14 +2096,14 @@ impl Analyzer<'_, '_> {
             return Ok(ty);
         }
 
-        self.validate_arg_types(params, &spread_arg_types);
+        self.validate_arg_types(&params, &spread_arg_types);
 
         ret_ty.reposition(span);
         ret_ty.visit_mut_with(&mut ReturnTypeSimplifier { analyzer: self });
         self.add_required_type_params(&mut ret_ty);
 
         if kind == ExtractKind::Call {
-            self.add_call_facts(params, &args, &mut ret_ty);
+            self.add_call_facts(&params, &args, &mut ret_ty);
         }
 
         return Ok(ret_ty);
@@ -2679,6 +2695,14 @@ fn is_key_eq_prop(prop: &RExpr, computed: bool, e: &RExpr) -> bool {
     };
 
     v.sym() == p
+}
+
+fn is_fn_expr(callee: &RExpr) -> bool {
+    match callee {
+        RExpr::Arrow(..) | RExpr::Fn(..) => true,
+        RExpr::Paren(e) => is_fn_expr(&e.expr),
+        _ => false,
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]

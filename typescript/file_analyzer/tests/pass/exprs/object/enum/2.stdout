@@ -1,0 +1,53 @@
+warning: Type
+ --> $DIR/tests/pass/exprs/object/enum/2.ts:4:6
+  |
+4 |     [E1.x || E2.x]: 0
+  |      ^^
+  |
+  = note: E1
+
+warning: Type
+ --> $DIR/tests/pass/exprs/object/enum/2.ts:4:6
+  |
+4 |     [E1.x || E2.x]: 0
+  |      ^^^^
+  |
+  = note: E1.x
+
+warning: Type
+ --> $DIR/tests/pass/exprs/object/enum/2.ts:4:14
+  |
+4 |     [E1.x || E2.x]: 0
+  |              ^^
+  |
+  = note: E2
+
+warning: Type
+ --> $DIR/tests/pass/exprs/object/enum/2.ts:4:14
+  |
+4 |     [E1.x || E2.x]: 0
+  |              ^^^^
+  |
+  = note: E2.x
+
+warning: Type
+ --> $DIR/tests/pass/exprs/object/enum/2.ts:4:6
+  |
+4 |     [E1.x || E2.x]: 0
+  |      ^^^^^^^^^^^^
+  |
+  = note: E1.x | E2.x
+
+warning: Type
+ --> $DIR/tests/pass/exprs/object/enum/2.ts:3:9
+  |
+3 |   var o = {
+  |  _________^
+4 | |     [E1.x || E2.x]: 0
+5 | | };
+  | |_^
+  |
+  = note: {
+              [E1.x || E2.x]: 0;
+          }
+

@@ -381,7 +381,13 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, i: &RTsTypeParamInstantiation) -> ValidationResult<TypeParamInstantiation> {
-        let params = i.params.validate_with(self)?;
+        let params = {
+            let ctx = Ctx {
+                in_actual_type: true,
+                ..self.ctx
+            };
+            i.params.validate_with(&mut *self.with_ctx(ctx))?
+        };
 
         Ok(TypeParamInstantiation { span: i.span, params })
     }
@@ -529,6 +535,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsTypeRef) -> ValidationResult {
         self.record(t);
 
+        let span = t.span;
         let type_args = try_opt!(t.type_params.validate_with(self)).map(Box::new);
         let mut contains_infer = false;
 
@@ -544,7 +551,10 @@ impl Analyzer<'_, '_> {
 
             RTsEntityName::Ident(ref i) => {
                 if let Some(types) = self.find_type(self.ctx.module_id, &i.into())? {
+                    let mut found = false;
                     for ty in types {
+                        found = true;
+
                         if contains_infer_type(&ty) || self.contains_infer_type(&*ty) {
                             contains_infer = true;
                         }
@@ -553,6 +563,14 @@ impl Analyzer<'_, '_> {
                             Type::Param(..) => return Ok(ty.into_owned()),
                             _ => {}
                         }
+                    }
+
+                    if !self.is_builtin && !found && self.ctx.in_actual_type {
+                        self.storage.report(Error::NoSuchType { span, name: i.into() })
+                    }
+                } else {
+                    if !self.is_builtin && self.ctx.in_actual_type {
+                        self.storage.report(Error::NoSuchType { span, name: i.into() })
                     }
                 }
             }

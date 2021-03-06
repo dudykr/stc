@@ -17,6 +17,7 @@ use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RPropOrSpread;
 use stc_ts_ast_rnode::RSpreadElement;
 use stc_ts_ast_rnode::RTsKeywordType;
+use stc_ts_errors::DebugExt;
 use stc_ts_file_analyzer_macros::validator;
 use stc_ts_generics::type_param::replacer::TypeParamReplacer;
 use stc_ts_types::CallSignature;
@@ -39,19 +40,21 @@ use swc_ecma_ast::TsKeywordTypeKind;
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &RObjectLit) -> ValidationResult {
+    fn validate(&mut self, node: &RObjectLit, type_ann: Option<&Type>) -> ValidationResult {
+        let type_ann = self.expand_type_ann(type_ann)?;
+
         self.with_child(ScopeKind::ObjectLit, Default::default(), |a: &mut Analyzer| {
-            let mut ty = Type::TypeLit(TypeLit {
+            let mut ret = Type::TypeLit(TypeLit {
                 span: node.span,
                 members: vec![],
                 metadata: Default::default(),
             });
 
             for prop in node.props.iter() {
-                ty = a.append_prop_or_spread_to_type(ty, prop)?;
+                ret = a.append_prop_or_spread_to_type(ret, prop, type_ann.as_deref())?;
             }
 
-            Ok(ty)
+            Ok(ret)
         })
     }
 }
@@ -419,14 +422,19 @@ impl Analyzer<'_, '_> {
         });
     }
 
-    fn append_prop_or_spread_to_type(&mut self, to: Type, prop: &RPropOrSpread) -> ValidationResult {
+    fn append_prop_or_spread_to_type(
+        &mut self,
+        to: Type,
+        prop: &RPropOrSpread,
+        object_type: Option<&Type>,
+    ) -> ValidationResult {
         match prop {
             RPropOrSpread::Spread(RSpreadElement { expr, .. }) => {
                 let prop_ty: Type = expr.validate_with_default(self)?;
                 self.append_type(to, prop_ty)
             }
             RPropOrSpread::Prop(prop) => {
-                let p: TypeElement = prop.validate_with(self)?;
+                let p: TypeElement = prop.validate_with_args(self, object_type)?;
                 self.append_type_element(to, p)
             }
         }
@@ -520,7 +528,16 @@ impl Analyzer<'_, '_> {
             return Ok(to);
         }
 
-        let mut to = to.foldable();
+        let mut to = if let Some(key) = rhs.key() {
+            match key {
+                Key::Computed(..) => to.foldable(),
+                _ => self
+                    .exclude_props(&to, &[key.clone()])
+                    .context("tried to exclude properties before appending a type element")?,
+            }
+        } else {
+            to.foldable()
+        };
 
         match to {
             Type::TypeLit(ref mut lit) => {

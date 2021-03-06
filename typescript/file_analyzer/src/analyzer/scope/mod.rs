@@ -23,7 +23,6 @@ use rnode::VisitMut;
 use rnode::VisitMutWith;
 use rnode::VisitWith;
 use slog::Logger;
-use smallvec::SmallVec;
 use stc_ts_ast_rnode::RArrayPat;
 use stc_ts_ast_rnode::RAssignPatProp;
 use stc_ts_ast_rnode::RBindingIdent;
@@ -78,7 +77,7 @@ pub(crate) struct Scope<'a> {
     logger: Logger,
     parent: Option<&'a Scope<'a>>,
     kind: ScopeKind,
-    pub declaring: SmallVec<[Id; 8]>,
+    pub declaring: Vec<Id>,
 
     pub(super) vars: FxHashMap<Id, VarInfo>,
     types: FxHashMap<Id, Type>,
@@ -136,6 +135,19 @@ impl Scope<'_> {
         match self.parent {
             Some(parent) => parent.get_type_facts(name),
             _ => TypeFacts::None,
+        }
+    }
+
+    pub fn is_declaring_fn(&self, id: &Id) -> bool {
+        if let Some(d) = &self.declaring_fn {
+            if *d == *id {
+                return true;
+            }
+        }
+
+        match self.parent {
+            Some(scope) => scope.is_declaring_fn(id),
+            _ => false,
         }
     }
 
@@ -1149,11 +1161,13 @@ impl Analyzer<'_, '_> {
                         ..
                     }) => {
                         //
+                        let mut used_keys = vec![];
 
                         for prop in props {
                             match prop {
                                 RObjectPatProp::KeyValue(prop) => {
                                     let mut key = prop.key.validate_with(self)?;
+                                    used_keys.push(key.clone());
 
                                     let prop_ty =
                                         self.access_property(span, ty.clone(), &key, TypeOfMode::RValue, IdCtx::Var);
@@ -1180,6 +1194,7 @@ impl Analyzer<'_, '_> {
                                         span: prop.key.span,
                                         sym: prop.key.sym.clone(),
                                     };
+                                    used_keys.push(key.clone());
 
                                     let prop_ty =
                                         self.access_property(span, ty.clone(), &key, TypeOfMode::RValue, IdCtx::Var);
@@ -1244,8 +1259,14 @@ impl Analyzer<'_, '_> {
                                         }
                                     }
                                 }
-                                RObjectPatProp::Rest(_) => {
-                                    unimplemented!("rest pattern")
+                                RObjectPatProp::Rest(pat) => {
+                                    let rest_ty = self
+                                        .exclude_props(&ty, &used_keys)
+                                        .context("tried to exclude keys for assignment with a object rest pattern")?;
+
+                                    return self
+                                        .declare_complex_vars(kind, &pat.arg, rest_ty, None)
+                                        .context("tried to assign to an object rest pattern");
                                 }
                             }
                         }

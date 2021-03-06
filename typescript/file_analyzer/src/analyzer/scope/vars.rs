@@ -1,5 +1,6 @@
 use crate::analyzer::expr::IdCtx;
 use crate::analyzer::expr::TypeOfMode;
+use crate::analyzer::types::NormalizeTypeOpts;
 use crate::analyzer::util::ResultExt;
 use crate::analyzer::Analyzer;
 use crate::ty::TypeExt;
@@ -7,7 +8,6 @@ use crate::validator::ValidateWith;
 use crate::ValidationResult;
 use rnode::NodeId;
 use stc_ts_ast_rnode::RArrayPat;
-use stc_ts_ast_rnode::RAssignPatProp;
 use stc_ts_ast_rnode::RBindingIdent;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RIdent;
@@ -26,14 +26,81 @@ use stc_ts_types::Ref;
 use stc_ts_types::Type;
 use stc_ts_types::TypeLit;
 use stc_ts_types::TypeParamInstantiation;
+use stc_ts_types::Union;
 use stc_ts_utils::OptionExt;
 use stc_ts_utils::PatExt;
+use std::borrow::Cow;
 use swc_common::Spanned;
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::TsKeywordTypeKind;
 use swc_ecma_ast::VarDeclKind;
 
 impl Analyzer<'_, '_> {
+    pub(crate) fn exclude_props(&mut self, ty: &Type, keys: &[Key]) -> ValidationResult<Type> {
+        let ty = self.normalize(
+            &ty,
+            NormalizeTypeOpts {
+                preserve_mapped: false,
+                ..Default::default()
+            },
+        )?;
+
+        match ty.normalize() {
+            Type::TypeLit(lit) => {
+                let mut new_members = vec![];
+                'outer: for m in &lit.members {
+                    if let Some(key) = m.key() {
+                        for prop in keys {
+                            if self.key_matches(ty.span(), &key, prop, false) {
+                                continue 'outer;
+                            }
+                        }
+
+                        new_members.push(m.clone());
+                    }
+                }
+
+                return Ok(Type::TypeLit(TypeLit {
+                    span: lit.span,
+                    members: new_members,
+                    metadata: lit.metadata,
+                }));
+            }
+
+            Type::Union(u) => {
+                let types = u
+                    .types
+                    .iter()
+                    .map(|ty| self.exclude_props(ty, keys))
+                    .collect::<Result<_, _>>()?;
+
+                return Ok(Type::Union(Union { span: u.span, types }));
+            }
+
+            Type::Intersection(..) | Type::Class(..) | Type::Interface(..) | Type::ClassDef(..) => {
+                let ty = self
+                    .type_to_type_lit(ty.span(), &ty)?
+                    .map(Cow::into_owned)
+                    .map(Type::TypeLit);
+                if let Some(ty) = ty {
+                    return self.exclude_props(&ty, keys);
+                }
+            }
+            // TODO
+            Type::Function(..) | Type::Constructor(..) => {
+                return Ok(Type::TypeLit(TypeLit {
+                    span: ty.span(),
+                    members: vec![],
+                    metadata: Default::default(),
+                }))
+            }
+            Type::Param(..) => return Ok(ty.into_owned()),
+            _ => {}
+        }
+
+        unimplemented!("exclude_props: {:#?}", ty)
+    }
+
     /// Updates variable list.
     ///
     /// This method should be called for function parameters including error
@@ -206,25 +273,23 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                let mut used_keys = vec![];
+
                 for prop in props {
                     match prop {
-                        RObjectPatProp::Assign(RAssignPatProp { span, key, value, .. }) => {
-                            let span = *span;
+                        RObjectPatProp::Assign(prop) => {
+                            let span = prop.span;
+                            let mut key = Key::Normal {
+                                span: prop.key.span,
+                                sym: prop.key.sym.clone(),
+                            };
+                            used_keys.push(key.clone());
 
                             let prop_ty = match &ty {
                                 Some(ty) => self
-                                    .access_property(
-                                        span,
-                                        ty.clone(),
-                                        &Key::Normal {
-                                            span: key.span,
-                                            sym: key.sym.clone(),
-                                        },
-                                        TypeOfMode::RValue,
-                                        IdCtx::Var,
-                                    )
+                                    .access_property(span, ty.clone(), &key, TypeOfMode::RValue, IdCtx::Var)
                                     .convert_err(|err| match err {
-                                        Error::NoSuchProperty { span, .. } if value.is_none() => {
+                                        Error::NoSuchProperty { span, .. } if prop.value.is_none() => {
                                             Error::NoSuchPropertyWhileDeclWithBidningPat { span }
                                         }
                                         _ => err,
@@ -234,7 +299,7 @@ impl Analyzer<'_, '_> {
                                 None => None,
                             };
 
-                            match value {
+                            match &prop.value {
                                 Some(value) => {
                                     // TODO: Assign this
                                     let _type_of_default_value =
@@ -245,7 +310,7 @@ impl Analyzer<'_, '_> {
                                         kind,
                                         &RPat::Ident(RBindingIdent {
                                             node_id: NodeId::invalid(),
-                                            id: key.clone(),
+                                            id: prop.key.clone(),
                                             type_ann: None,
                                         }),
                                         export,
@@ -262,7 +327,7 @@ impl Analyzer<'_, '_> {
                                         kind,
                                         &RPat::Ident(RBindingIdent {
                                             node_id: NodeId::invalid(),
-                                            id: key.clone(),
+                                            id: prop.key.clone(),
                                             type_ann: None,
                                         }),
                                         export,
@@ -279,6 +344,7 @@ impl Analyzer<'_, '_> {
                         RObjectPatProp::KeyValue(p) => {
                             let span = p.span();
                             let key = p.key.validate_with(self)?;
+                            used_keys.push(key.clone());
 
                             let prop_ty = match &ty {
                                 Some(ty) => self
@@ -293,9 +359,22 @@ impl Analyzer<'_, '_> {
                                 .context("tried to declare a variable from key-value property in an object pattern")?;
                         }
 
-                        RObjectPatProp::Rest(RRestPat { .. }) => {
-                            unimplemented!("rest pattern in object pattern")
-                        }
+                        RObjectPatProp::Rest(pat) => match ty {
+                            Some(ty) => {
+                                let rest_ty = self
+                                    .exclude_props(&ty, &used_keys)
+                                    .context("tried to exclude keys for declare vars with a object rest pattern")?;
+
+                                return self
+                                    .declare_complex_vars(kind, &pat.arg, rest_ty, None)
+                                    .context("tried to declare vars with an object rest pattern");
+                            }
+                            None => {
+                                return self
+                                    .declare_vars_inner_with_ty(kind, &pat.arg, export, None, None)
+                                    .context("tried to declare vars with an object rest pattern without types");
+                            }
+                        },
                     }
                 }
 

@@ -144,9 +144,35 @@ fn load_expected_errors(ts_file: &Path) -> Result<Vec<RefError>, Error> {
         println!("errors file does not exists: {}", errors_file.display());
         Ok(vec![])
     } else {
-        let errors: Vec<RefError> =
+        let mut errors: Vec<RefError> =
             serde_json::from_reader(File::open(errors_file).expect("failed to open error sfile"))
                 .context("failed to parse errors.txt.json")?;
+
+        for err in &mut errors {
+            match &*err.code {
+                // TS2552: Type not found with recommendation.
+                // TS2580: Type not found with recommendation for package to instsall.
+                // TS2581: Type not found with recommendation for jQuery.
+                // TS2582: Type not found with recommendation for jest or mocha.
+                // TS2583: Type not found with recommendation to change target library.
+                // TS2584: Type not found with recommendation to change target library to include `dom`.
+                "TS2552" | "TS2580" | "TS2581" | "TS2582" | "TS2583" | "TS2584" => {
+                    // TS2304: Type not found without recommendation.
+                    err.code = "TS2304".to_string();
+                }
+
+                // TS2550: Property not found with a suggestion to change `lib`.
+                // TS2551: Property not found with a suggestion.
+                "TS2550" | "TS2551" => {
+                    err.code = "TS2339".to_string();
+                }
+
+                _ => {}
+            }
+            if err.code == "TS2552" || err.code == "TS2580" {
+                err.code = "TS2304".to_string();
+            }
+        }
 
         // TODO: Match column and message
 
@@ -483,6 +509,10 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
 
         if full_ref_errors.is_empty() {
             println!("[INFER_ONLY]{}", file_name.display());
+        }
+
+        if actual_errors.len() <= 2 {
+            println!("[ALMOST]{}", file_name.display());
         }
 
         if !success {

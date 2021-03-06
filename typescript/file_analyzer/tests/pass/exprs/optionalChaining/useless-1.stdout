@@ -1,0 +1,18 @@
+warning: Type
+ --> $DIR/tests/pass/exprs/optionalChaining/useless-1.ts:4:20
+  |
+4 | export const foo = o?.b;
+  |                    ^
+  |
+  = note: {
+              b: string;
+          }
+
+warning: Type
+ --> $DIR/tests/pass/exprs/optionalChaining/useless-1.ts:4:20
+  |
+4 | export const foo = o?.b;
+  |                    ^^^^
+  |
+  = note: string
+

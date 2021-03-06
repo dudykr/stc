@@ -11,3 +11,6 @@ const obj: Readonly<ObjType> = {
 }
 
 export const { foo, ...rest } = obj
+
+foo
+rest
