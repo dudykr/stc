@@ -1304,7 +1304,15 @@ impl Analyzer<'_, '_> {
                 };
                 let interface = self.env.get_global_type(span, &word)?;
 
-                return self.access_property(span, interface, prop, type_mode, id_ctx);
+                let err = match self.access_property(span, interface, prop, type_mode, id_ctx) {
+                    Ok(v) => return Ok(v),
+                    Err(err) => err,
+                };
+                if *kind == TsKeywordTypeKind::TsObjectKeyword {
+                    return Ok(Type::any(span));
+                }
+
+                return Err(err);
             }
 
             Type::Array(Array { elem_type, .. }) => {
