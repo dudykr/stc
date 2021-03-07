@@ -14,6 +14,8 @@ use stc_ts_ast_rnode::RProp;
 use stc_ts_ast_rnode::RStmt;
 use stc_ts_ast_rnode::RTsModuleDecl;
 use stc_ts_ast_rnode::RTsModuleName;
+use stc_ts_ast_rnode::RVarDeclOrExpr;
+use stc_ts_ast_rnode::RVarDeclOrPat;
 use stc_ts_ast_rnode::RVarDeclarator;
 use stc_ts_types::Id;
 use stc_ts_utils::find_ids_in_pat;
@@ -101,6 +103,27 @@ where
         },
         Err(stmt) => match stmt {
             RStmt::Decl(d) => ids(d),
+            RStmt::For(s) => match &s.init {
+                Some(RVarDeclOrExpr::VarDecl(v)) => {
+                    let ids: Vec<Id> = find_ids_in_pat(&v.decls);
+                    return ids.into_iter().collect();
+                }
+                _ => Default::default(),
+            },
+            RStmt::ForOf(s) => match &s.left {
+                RVarDeclOrPat::VarDecl(v) => {
+                    let ids: Vec<Id> = find_ids_in_pat(&v.decls);
+                    return ids.into_iter().collect();
+                }
+                RVarDeclOrPat::Pat(_) => Default::default(),
+            },
+            RStmt::ForIn(s) => match &s.left {
+                RVarDeclOrPat::VarDecl(v) => {
+                    let ids: Vec<Id> = find_ids_in_pat(&v.decls);
+                    return ids.into_iter().collect();
+                }
+                RVarDeclOrPat::Pat(_) => Default::default(),
+            },
             _ => Default::default(),
         },
     }
