@@ -33,6 +33,17 @@ pub trait AsModuleDecl {
     fn as_module_decl(&self) -> Result<&RModuleDecl, &RStmt>;
 }
 
+impl<T> AsModuleDecl for &'_ T
+where
+    T: AsModuleDecl,
+{
+    const IS_MODULE_ITEM: bool = T::IS_MODULE_ITEM;
+
+    fn as_module_decl(&self) -> Result<&RModuleDecl, &RStmt> {
+        (**self).as_module_decl()
+    }
+}
+
 impl AsModuleDecl for RStmt {
     const IS_MODULE_ITEM: bool = false;
 
