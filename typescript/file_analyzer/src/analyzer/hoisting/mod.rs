@@ -33,6 +33,7 @@ use stc_ts_utils::find_ids_in_pat;
 use stc_ts_utils::HasNodeId;
 use swc_ecma_utils::DestructuringFinder;
 
+mod dep;
 #[cfg(test)]
 mod tests;
 
