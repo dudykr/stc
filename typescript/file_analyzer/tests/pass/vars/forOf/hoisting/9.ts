@@ -8,8 +8,7 @@ for (var a of [1, 2, 3, foo()]) {
 }
 
 var foo = function () {
-    console.log(a);
-    return 5
+    return a
 }
 
 export { }
