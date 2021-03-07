@@ -56,7 +56,7 @@ where
             RDecl::Class(c) => c.ident.clone().into(),
             RDecl::Fn(f) => f.ident.clone().into(),
             RDecl::Var(v) => {
-                let mut ids: Vec<Id> = find_ids_in_pat(&v.decls);
+                let ids: Vec<Id> = find_ids_in_pat(&v.decls);
                 return ids.into_iter().collect();
             }
             RDecl::TsEnum(e) => e.id.clone().into(),

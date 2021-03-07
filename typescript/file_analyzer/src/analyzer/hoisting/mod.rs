@@ -1,7 +1,4 @@
-use crate::{
-    analyzer::Analyzer,
-    util::{AsModuleDecl, ModuleItemOrStmt},
-};
+use crate::{analyzer::Analyzer, util::ModuleItemOrStmt};
 use bitflags::bitflags;
 use fxhash::{FxHashMap, FxHashSet};
 use petgraph::graphmap::DiGraphMap;
@@ -30,10 +27,10 @@ use stc_ts_ast_rnode::RTsTypeAliasDecl;
 use stc_ts_ast_rnode::RVarDeclarator;
 use stc_ts_types::Id;
 use stc_ts_utils::find_ids_in_pat;
+use stc_ts_utils::AsModuleDecl;
 use stc_ts_utils::HasNodeId;
 use swc_ecma_utils::DestructuringFinder;
 
-mod dep;
 #[cfg(test)]
 mod tests;
 

@@ -1,7 +1,8 @@
 use fxhash::FxHashSet;
+use std::hash::Hash;
 
 pub trait Sortable {
-    type Id;
+    type Id: Eq + Hash;
 
     /// This returns the name of a property if it's [RProp] or [RClassMember].
     fn declares(&self) -> FxHashSet<Self::Id>;
