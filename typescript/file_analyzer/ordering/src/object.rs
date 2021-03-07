@@ -1,5 +1,4 @@
-use stc_ts_ast_rnode::RProp;
+// use crate::types::Sortable;
+// use stc_ts_ast_rnode::RProp;
 
-use crate::types::Sortable;
-
-impl Sortable for RProp {}
+// impl Sortable for RProp {}
