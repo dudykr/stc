@@ -96,7 +96,6 @@ impl Analyzer<'_, '_> {
                 let type_decl_id = type_decl_id(&*stmts[idx]);
 
                 let node_id = stmts[idx].node_id();
-                self.ctx.module_id = self.storage.module_id(idx);
                 stmts[idx].visit_with(self);
 
                 if self.scope.is_root() {
