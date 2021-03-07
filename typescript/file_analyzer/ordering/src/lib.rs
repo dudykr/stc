@@ -1,3 +1,6 @@
+#![allow(incomplete_features)]
+#![feature(specialization)]
+
 use self::types::Sortable;
 
 mod class;
