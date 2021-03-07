@@ -2,7 +2,7 @@ use crate::{analyzer::Analyzer, util::ModuleItemOrStmt};
 use bitflags::bitflags;
 use fxhash::{FxHashMap, FxHashSet};
 use petgraph::graphmap::DiGraphMap;
-use petgraph::EdgeDirection::Incoming;
+use petgraph::EdgeDirection::Outgoing;
 use rnode::Visit;
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RArrowExpr;
@@ -25,6 +25,7 @@ use stc_ts_ast_rnode::RTsInterfaceDecl;
 use stc_ts_ast_rnode::RTsModuleDecl;
 use stc_ts_ast_rnode::RTsTypeAliasDecl;
 use stc_ts_ast_rnode::RVarDeclarator;
+use stc_ts_ordering::types::Sortable;
 use stc_ts_types::Id;
 use stc_ts_utils::find_ids_in_pat;
 use stc_ts_utils::AsModuleDecl;
@@ -67,7 +68,8 @@ impl Analyzer<'_, '_> {
             + VisitWith<RequirementCalculartor>
             + VisitWith<Self>
             + From<RStmt>
-            + HasNodeId,
+            + HasNodeId
+            + Sortable,
     {
         let (order, skip) = self.reorder_stmts(&stmts);
         let mut type_decls = FxHashMap::<Id, Vec<usize>>::with_capacity_and_hasher(order.len(), Default::default());
@@ -136,7 +138,8 @@ impl Analyzer<'_, '_> {
             + VisitWith<RequirementCalculartor>
             + VisitWith<Self>
             + From<RStmt>
-            + HasNodeId,
+            + HasNodeId
+            + Sortable,
     {
         self.validate_stmts_with_hoisting(stmts);
     }
@@ -181,7 +184,7 @@ impl Analyzer<'_, '_> {
     /// ```
     fn reorder_stmts<T>(&mut self, stmts: &[&T]) -> (Vec<usize>, FxHashSet<usize>)
     where
-        T: AsModuleDecl + VisitWith<RequirementCalculartor>,
+        T: AsModuleDecl + VisitWith<RequirementCalculartor> + Sortable,
     {
         let mut graph = StmtDepGraph::default();
         let mut declared_by = FxHashMap::<TypedId, Vec<usize>>::default();
@@ -294,12 +297,13 @@ impl Analyzer<'_, '_> {
                 if let Some(declarator_indexes) = declared_by.get(&id) {
                     for &declarator_index in declarator_indexes {
                         if declarator_index != idx {
-                            match graph.edge_weight_mut(declarator_index, idx) {
+                            dbg!(idx, declarator_index);
+                            match graph.edge_weight_mut(idx, declarator_index) {
                                 Some(v) => {
                                     *v |= id.kind;
                                 }
                                 None => {
-                                    graph.add_edge(declarator_index, idx, id.kind);
+                                    graph.add_edge(idx, declarator_index, id.kind);
                                 }
                             }
                         }
@@ -324,7 +328,7 @@ impl Analyzer<'_, '_> {
                     continue;
                 }
 
-                let dependants = graph.neighbors_directed(i, Incoming);
+                let dependants = graph.neighbors_directed(i, Outgoing);
 
                 if dependants.count() != 0 {
                     continue;
