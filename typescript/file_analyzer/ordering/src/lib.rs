@@ -8,7 +8,7 @@ use self::types::Sortable;
 
 mod class;
 mod object;
-mod stmt;
+pub mod stmt;
 pub mod types;
 
 pub fn calc_eval_order<T>(nodes: &[T]) -> Vec<usize>

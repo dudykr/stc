@@ -47,7 +47,7 @@ impl Sortable for RModuleItem {
     }
 }
 
-fn vars_declared_by<T>(node: &T) -> FxHashSet<Id>
+pub fn vars_declared_by<T>(node: &T) -> FxHashSet<Id>
 where
     T: AsModuleDecl,
 {
