@@ -10,6 +10,7 @@ use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RMemberExpr;
 use stc_ts_ast_rnode::RModuleDecl;
 use stc_ts_ast_rnode::RModuleItem;
+use stc_ts_ast_rnode::RProp;
 use stc_ts_ast_rnode::RStmt;
 use stc_ts_ast_rnode::RTsModuleDecl;
 use stc_ts_ast_rnode::RTsModuleName;
@@ -149,5 +150,18 @@ impl Visit<RExpr> for DepAnalyzer {
         }
 
         node.visit_children_with(self);
+    }
+}
+
+impl Visit<RProp> for DepAnalyzer {
+    fn visit(&mut self, p: &RProp) {
+        p.visit_children_with(self);
+
+        match p {
+            RProp::Shorthand(i) => {
+                self.used.insert(i.into());
+            }
+            _ => {}
+        }
     }
 }
