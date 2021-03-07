@@ -135,7 +135,7 @@ define_rnode!({
 
     pub enum Decl {
         Class(ClassDecl),
-        Fn(#[arc] FnDecl),
+        Fn(FnDecl),
         Var(VarDecl),
         TsInterface(TsInterfaceDecl),
         TsTypeAlias(TsTypeAliasDecl),
