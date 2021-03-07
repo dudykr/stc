@@ -918,6 +918,12 @@ fn handle_variant(variant: &Variant) -> RNodeVariant {
                         .into_pairs()
                         .map(|mut pair| {
                             let f = pair.value_mut();
+                            f.attrs = f
+                                .attrs
+                                .iter()
+                                .filter(|attr| !attr.path.is_ident("arc") && !attr.path.is_ident("refcell"))
+                                .cloned()
+                                .collect();
 
                             let new_ty = prefix_type_name(&f.ty);
                             f.ty = new_ty;
