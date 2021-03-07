@@ -167,30 +167,6 @@ pub(crate) fn is_str_or_union(t: &Type) -> bool {
     }
 }
 
-pub(crate) trait AsModuleDecl {
-    const IS_MODULE_ITEM: bool;
-    fn as_module_decl(&self) -> Result<&RModuleDecl, &RStmt>;
-}
-
-impl AsModuleDecl for RStmt {
-    const IS_MODULE_ITEM: bool = false;
-
-    fn as_module_decl(&self) -> Result<&RModuleDecl, &RStmt> {
-        Err(self)
-    }
-}
-
-impl AsModuleDecl for RModuleItem {
-    const IS_MODULE_ITEM: bool = true;
-
-    fn as_module_decl(&self) -> Result<&RModuleDecl, &RStmt> {
-        match self {
-            RModuleItem::ModuleDecl(decl) => Ok(decl),
-            RModuleItem::Stmt(stmt) => Err(stmt),
-        }
-    }
-}
-
 /// TODO: Change it to return Box<Type>
 pub(crate) trait RemoveTypes {
     /// Removes falsy values from `self`.

@@ -28,6 +28,30 @@ use swc_common::Spanned;
 mod comments;
 mod map_with_mut;
 
+pub trait AsModuleDecl {
+    const IS_MODULE_ITEM: bool;
+    fn as_module_decl(&self) -> Result<&RModuleDecl, &RStmt>;
+}
+
+impl AsModuleDecl for RStmt {
+    const IS_MODULE_ITEM: bool = false;
+
+    fn as_module_decl(&self) -> Result<&RModuleDecl, &RStmt> {
+        Err(self)
+    }
+}
+
+impl AsModuleDecl for RModuleItem {
+    const IS_MODULE_ITEM: bool = true;
+
+    fn as_module_decl(&self) -> Result<&RModuleDecl, &RStmt> {
+        match self {
+            RModuleItem::ModuleDecl(decl) => Ok(decl),
+            RModuleItem::Stmt(stmt) => Err(stmt),
+        }
+    }
+}
+
 pub trait HasNodeId {
     fn node_id(&self) -> Option<NodeId>;
 }
