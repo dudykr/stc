@@ -86,8 +86,10 @@ impl Analyzer<'_, '_> {
         }
 
         for idx in order {
-            let module_id = self.storage.module_id(idx);
-            self.ctx.module_id = module_id;
+            if self.scope.is_root() {
+                let module_id = self.storage.module_id(idx);
+                self.ctx.module_id = module_id;
+            }
 
             if skip.contains(&idx) {
             } else {
