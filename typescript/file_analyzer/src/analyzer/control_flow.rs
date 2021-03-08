@@ -610,6 +610,14 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
+                if let Some(ty) = actual_ty.take() {
+                    let new_ty = self.apply_type_facts_to_type(TypeFacts::NENull & TypeFacts::NEUndefined, ty);
+                    if new_ty.is_never() {
+                    } else {
+                        actual_ty = Some(new_ty);
+                    }
+                }
+
                 // Update actual types.
                 if let Some(var_info) = self.scope.get_var_mut(&i.id.clone().into()) {
                     var_info.actual_ty = Some(actual_ty.unwrap_or_else(|| ty.clone()));
