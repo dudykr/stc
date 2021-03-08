@@ -28,7 +28,6 @@ use stc_ts_ast_rnode::RPropName;
 use stc_ts_ast_rnode::RSetterProp;
 use stc_ts_ast_rnode::RStr;
 use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_types::ComputedKey;
