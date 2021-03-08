@@ -297,7 +297,7 @@ impl Analyzer<'_, '_> {
                 if let Some(declarator_indexes) = declared_by.get(&id) {
                     for &declarator_index in declarator_indexes {
                         if declarator_index != idx {
-                            dbg!(idx, declarator_index);
+                            // dbg!(idx, declarator_index);
                             match graph.edge_weight_mut(idx, declarator_index) {
                                 Some(v) => {
                                     *v |= id.kind;
