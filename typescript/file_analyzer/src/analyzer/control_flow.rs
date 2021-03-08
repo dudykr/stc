@@ -545,8 +545,8 @@ impl Analyzer<'_, '_> {
     pub(super) fn try_assign_pat(&mut self, span: Span, lhs: &RPat, ty: &Type) -> ValidationResult<()> {
         let ty = self
             .normalize(ty, Default::default())
-            .context("tried to normalize a type to assign it to a pattern")?
-            .normalize();
+            .context("tried to normalize a type to assign it to a pattern")?;
+        let ty = ty.normalize();
 
         // Update variable's type
         match lhs {
