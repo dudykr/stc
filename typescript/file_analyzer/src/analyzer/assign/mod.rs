@@ -952,7 +952,6 @@ impl Analyzer<'_, '_> {
                         Type::Lit(RTsLitType {
                             lit: RTsLit::Str(..), ..
                         }) => return Ok(()),
-                        Type::Lit(..) | Type::TypeLit(..) | Type::Interface(..) => fail!(),
                         _ => {}
                     },
 
@@ -961,7 +960,6 @@ impl Analyzer<'_, '_> {
                             lit: RTsLit::Number(..),
                             ..
                         }) => return Ok(()),
-                        Type::Lit(..) => fail!(),
 
                         Type::EnumVariant(ref v) => {
                             // Allow assigning enum with numeric values to
@@ -989,16 +987,6 @@ impl Analyzer<'_, '_> {
                         Type::Lit(RTsLitType {
                             lit: RTsLit::Bool(..), ..
                         }) => return Ok(()),
-                        Type::Lit(..) => fail!(),
-                        _ => {}
-                    },
-
-                    TsKeywordTypeKind::TsNullKeyword => match rhs {
-                        Type::Lit(..)
-                        | Type::TypeLit(..)
-                        | Type::Interface(..)
-                        | Type::Class(..)
-                        | Type::ClassDef(..) => fail!(),
                         _ => {}
                     },
 
@@ -1035,6 +1023,19 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
+                    _ => {}
+                }
+
+                match kind {
+                    TsKeywordTypeKind::TsStringKeyword
+                    | TsKeywordTypeKind::TsBigIntKeyword
+                    | TsKeywordTypeKind::TsNumberKeyword
+                    | TsKeywordTypeKind::TsBooleanKeyword
+                    | TsKeywordTypeKind::TsNullKeyword
+                    | TsKeywordTypeKind::TsUndefinedKeyword => match rhs {
+                        Type::Lit(..) | Type::Interface(..) | Type::TypeLit(..) => fail!(),
+                        _ => {}
+                    },
                     _ => {}
                 }
             }
