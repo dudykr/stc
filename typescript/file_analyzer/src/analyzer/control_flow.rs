@@ -543,18 +543,9 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn try_assign_pat(&mut self, span: Span, lhs: &RPat, ty: &Type) -> ValidationResult<()> {
-        match ty.normalize() {
-            Type::Ref(..) | Type::Mapped(..) | Type::Alias(..) | Type::Conditional(..) | Type::Query(..) => {
-                let ty = self
-                    .normalize(ty, Default::default())
-                    .context("tried to normalize a type to assign it to a pattern")?;
-
-                return self
-                    .try_assign_pat(span, lhs, &ty)
-                    .context("tried to assign the normalized type to a pattern");
-            }
-            _ => {}
-        }
+        let ty = self
+            .normalize(ty, Default::default())
+            .context("tried to normalize a type to assign it to a pattern")?;
 
         // Update variable's type
         match lhs {
@@ -564,7 +555,7 @@ impl Analyzer<'_, '_> {
             RPat::Assign(assign) => {
                 let ids: Vec<Id> = find_ids_in_pat(&assign.left);
 
-                self.try_assign_pat(span, &assign.left, ty)?;
+                self.try_assign_pat(span, &assign.left, &ty)?;
 
                 let prev_len = self.scope.declaring.len();
                 self.scope.declaring.extend(ids);
@@ -584,7 +575,7 @@ impl Analyzer<'_, '_> {
                 // Verify using immutable references.
                 if let Some(var_info) = self.scope.get_var(&i.id.clone().into()) {
                     if let Some(var_ty) = var_info.ty.clone() {
-                        self.assign(&var_ty, ty, i.id.span)?;
+                        self.assign(&var_ty, &ty, i.id.span)?;
                     }
                 }
 
@@ -604,7 +595,7 @@ impl Analyzer<'_, '_> {
 
                         let declared_ty = declared_ty.clone();
 
-                        let ty = ty.clone();
+                        let ty = ty.into_owned().clone();
                         let ty = self.apply_type_facts_to_type(TypeFacts::NEUndefined | TypeFacts::NENull, ty);
                         if ty.is_never() {
                             return Ok(());
@@ -622,12 +613,12 @@ impl Analyzer<'_, '_> {
 
                 // Update actual types.
                 if let Some(var_info) = self.scope.get_var_mut(&i.id.clone().into()) {
-                    var_info.actual_ty = Some(actual_ty.unwrap_or_else(|| ty.clone()));
+                    var_info.actual_ty = Some(actual_ty.unwrap_or_else(|| ty.into_owned()));
                     return Ok(());
                 }
 
                 let var_info = if let Some(var_info) = self.scope.search_parent(&i.id.clone().into()) {
-                    let actual_ty = Some(actual_ty.unwrap_or_else(|| ty.clone()));
+                    let actual_ty = Some(actual_ty.unwrap_or_else(|| ty.into_owned()));
 
                     VarInfo {
                         actual_ty,
@@ -670,7 +661,7 @@ impl Analyzer<'_, '_> {
 
             RPat::Array(ref arr) => {
                 let ty = self
-                    .get_iterator(span, Cow::Borrowed(ty))
+                    .get_iterator(span, Cow::Borrowed(&ty))
                     .context("tried to convert a type to an iterator to assign with an array pattern")?;
                 //
                 for (i, elem) in arr.elems.iter().enumerate() {
@@ -756,7 +747,7 @@ impl Analyzer<'_, '_> {
                 // TODO: Check if this is correct. (in object rest context)
                 let ty = Type::Array(Array {
                     span,
-                    elem_type: box ty.clone(),
+                    elem_type: box ty.into_owned(),
                 });
                 return self.try_assign_pat(span, &rest.arg, &ty);
             }
@@ -766,7 +757,7 @@ impl Analyzer<'_, '_> {
                     .validate_with_args(self, (TypeOfMode::LValue, None, None))
                     .context("tried to validate type of the expression in lhs of assignment")?;
 
-                self.assign(&lhs_ty, ty, span)?;
+                self.assign(&lhs_ty, &ty, span)?;
                 return Ok(());
             }
         }
