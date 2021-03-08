@@ -26,6 +26,7 @@ impl Analyzer<'_, '_> {
             (Type::ClassDef(l), Type::Interface(r)) => {
                 //
             }
+            _ => {}
         }
 
         Err(Error::DuplicateName {
