@@ -892,50 +892,6 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
 
-            Type::Keyword(RTsKeywordType {
-                kind: TsKeywordTypeKind::TsObjectKeyword,
-                ..
-            }) => {
-                // let a: object = {};
-                match *rhs {
-                    Type::Keyword(RTsKeywordType {
-                        kind: TsKeywordTypeKind::TsNumberKeyword,
-                        ..
-                    })
-                    | Type::Keyword(RTsKeywordType {
-                        kind: TsKeywordTypeKind::TsStringKeyword,
-                        ..
-                    })
-                    | Type::Keyword(RTsKeywordType {
-                        kind: TsKeywordTypeKind::TsBooleanKeyword,
-                        ..
-                    })
-                    | Type::Keyword(RTsKeywordType {
-                        kind: TsKeywordTypeKind::TsBigIntKeyword,
-                        ..
-                    })
-                    | Type::Keyword(RTsKeywordType {
-                        kind: TsKeywordTypeKind::TsVoidKeyword,
-                        ..
-                    })
-                    | Type::Keyword(RTsKeywordType {
-                        kind: TsKeywordTypeKind::TsNullKeyword,
-                        ..
-                    })
-                    | Type::Keyword(RTsKeywordType {
-                        kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                        ..
-                    })
-                    | Type::Function(..)
-                    | Type::Constructor(..)
-                    | Type::Enum(..)
-                    | Type::Class(..)
-                    | Type::TypeLit(..) => return Ok(()),
-
-                    _ => {}
-                }
-            }
-
             // Handle same keyword type.
             Type::Keyword(RTsKeywordType { kind, .. }) => {
                 match *rhs {
@@ -1047,6 +1003,51 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
+                    TsKeywordTypeKind::TsObjectKeyword => {
+                        match *rhs {
+                            Type::Keyword(RTsKeywordType {
+                                kind: TsKeywordTypeKind::TsNumberKeyword,
+                                ..
+                            })
+                            | Type::Keyword(RTsKeywordType {
+                                kind: TsKeywordTypeKind::TsStringKeyword,
+                                ..
+                            })
+                            | Type::Keyword(RTsKeywordType {
+                                kind: TsKeywordTypeKind::TsBooleanKeyword,
+                                ..
+                            })
+                            | Type::Keyword(RTsKeywordType {
+                                kind: TsKeywordTypeKind::TsBigIntKeyword,
+                                ..
+                            })
+                            | Type::Keyword(RTsKeywordType {
+                                kind: TsKeywordTypeKind::TsVoidKeyword,
+                                ..
+                            })
+                            | Type::Keyword(RTsKeywordType {
+                                kind: TsKeywordTypeKind::TsNullKeyword,
+                                ..
+                            })
+                            | Type::Keyword(RTsKeywordType {
+                                kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                                ..
+                            })
+                            | Type::Lit(..) => {
+                                fail!()
+                            }
+
+                            // let a: object = {};
+                            Type::Function(..)
+                            | Type::Constructor(..)
+                            | Type::Enum(..)
+                            | Type::Interface(..)
+                            | Type::Class(..)
+                            | Type::TypeLit(..) => return Ok(()),
+
+                            _ => {}
+                        }
+                    }
                     _ => {}
                 }
 
