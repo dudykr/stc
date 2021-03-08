@@ -860,7 +860,6 @@ impl Analyzer<'_, '_> {
         };
 
         c.decorators.visit_with(self);
-        self.resolve_parent_interfaces(&c.implements);
         let name = self.scope.this_class_name.take();
 
         let mut types_to_register: Vec<(Id, _)> = vec![];
@@ -873,6 +872,7 @@ impl Analyzer<'_, '_> {
             |child: &mut Analyzer| -> ValidationResult<_> {
                 // We handle type parameters first.
                 let type_params = try_opt!(c.type_params.validate_with(child));
+                child.resolve_parent_interfaces(&c.implements);
 
                 let super_class = {
                     // Then, we can expand super class
