@@ -363,8 +363,7 @@ impl Analyzer<'_, '_> {
                 };
                 let method_type_ann = object_type.and_then(|obj| {
                     self.access_property(span, obj.clone(), &key, TypeOfMode::RValue, IdCtx::Var)
-                        .context("tried to get type of a property for a method property")
-                        .report(&mut self.storage)
+                        .ok()
                 });
 
                 self.with_child(ScopeKind::Method, Default::default(), {
