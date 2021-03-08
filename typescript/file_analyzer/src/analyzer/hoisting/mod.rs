@@ -259,7 +259,7 @@ impl Analyzer<'_, '_> {
                 _ => {
                     let mut vars = stc_ts_ordering::stmt::vars_declared_by(&item);
 
-                    for id in vars {
+                    for (id, deps) in vars {
                         declared_by
                             .entry(TypedId { id, kind: IdKind::VAR })
                             .or_default()
