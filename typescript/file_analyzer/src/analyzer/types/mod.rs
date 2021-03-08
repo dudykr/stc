@@ -30,6 +30,7 @@ use swc_common::Span;
 use swc_common::Spanned;
 use swc_common::SyntaxContext;
 use swc_common::TypeEq;
+use swc_common::DUMMY_SP;
 use swc_ecma_ast::MethodKind;
 use swc_ecma_ast::TsKeywordTypeKind;
 
@@ -72,6 +73,9 @@ impl Analyzer<'_, '_> {
         mut opts: NormalizeTypeOpts,
     ) -> ValidationResult<Cow<'a, Type>> {
         let span = ty.span();
+        if !self.is_builtin {
+            debug_assert_ne!(span, DUMMY_SP, "Cannot normalize a type with dummy span");
+        }
 
         opts.lefting_stack -= 1;
         if opts.lefting_stack == 0 {
