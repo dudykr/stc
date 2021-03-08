@@ -10,6 +10,8 @@ version = "0.0.0"
 crate-type = ["cdylib"]
 
 [dependencies]
+anyhow = "1"
+backtrace = "0.3"
 napi = {version = "1", features = ["serde-json"]}
 napi-derive = {version = "1"}
 stc = {path = "../../"}
