@@ -1313,8 +1313,8 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        if to.is_kwd(TsKeywordTypeKind::TsNeverKeyword) {
-            fail!();
+        if to.is_kwd(TsKeywordTypeKind::TsNeverKeyword) || rhs.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
+            fail!()
         }
 
         // TODO: Implement full type checker
