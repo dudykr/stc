@@ -543,15 +543,15 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn try_assign_pat(&mut self, span: Span, lhs: &RPat, ty: &Type) -> ValidationResult<()> {
-        match ty {
-            Type::Ref(..) => {
+        match ty.normalize() {
+            Type::Ref(..) | Type::Mapped(..) | Type::Alias(..) | Type::Conditional(..) | Type::Query(..) => {
                 let ty = self
-                    .expand_top_ref(span, Cow::Borrowed(ty))
-                    .context("tried to expand reference to assign it to a pattern")?;
+                    .normalize(ty, Default::default())
+                    .context("tried to normalize a type to assign it to a pattern")?;
 
                 return self
                     .try_assign_pat(span, lhs, &ty)
-                    .context("tried to assign expanded type to a pattern");
+                    .context("tried to assign the normalized type to a pattern");
             }
             _ => {}
         }
