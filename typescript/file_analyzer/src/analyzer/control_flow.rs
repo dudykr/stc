@@ -545,7 +545,8 @@ impl Analyzer<'_, '_> {
     pub(super) fn try_assign_pat(&mut self, span: Span, lhs: &RPat, ty: &Type) -> ValidationResult<()> {
         let ty = self
             .normalize(ty, Default::default())
-            .context("tried to normalize a type to assign it to a pattern")?;
+            .context("tried to normalize a type to assign it to a pattern")?
+            .normalize();
 
         // Update variable's type
         match lhs {
@@ -595,7 +596,7 @@ impl Analyzer<'_, '_> {
 
                         let declared_ty = declared_ty.clone();
 
-                        let ty = ty.clone().into_owned();
+                        let ty = ty.clone();
                         let ty = self.apply_type_facts_to_type(TypeFacts::NEUndefined | TypeFacts::NENull, ty);
                         if ty.is_never() {
                             return Ok(());
@@ -613,12 +614,12 @@ impl Analyzer<'_, '_> {
 
                 // Update actual types.
                 if let Some(var_info) = self.scope.get_var_mut(&i.id.clone().into()) {
-                    var_info.actual_ty = Some(actual_ty.unwrap_or_else(|| ty.into_owned()));
+                    var_info.actual_ty = Some(actual_ty.unwrap_or_else(|| ty.clone()));
                     return Ok(());
                 }
 
                 let var_info = if let Some(var_info) = self.scope.search_parent(&i.id.clone().into()) {
-                    let actual_ty = Some(actual_ty.unwrap_or_else(|| ty.into_owned()));
+                    let actual_ty = Some(actual_ty.unwrap_or_else(|| ty.clone()));
 
                     VarInfo {
                         actual_ty,
@@ -747,7 +748,7 @@ impl Analyzer<'_, '_> {
                 // TODO: Check if this is correct. (in object rest context)
                 let ty = Type::Array(Array {
                     span,
-                    elem_type: box ty.into_owned(),
+                    elem_type: box ty.clone(),
                 });
                 return self.try_assign_pat(span, &rest.arg, &ty);
             }
