@@ -907,7 +907,23 @@ impl Analyzer<'_, '_> {
                         ..
                     })
                     | Type::Keyword(RTsKeywordType {
+                        kind: TsKeywordTypeKind::TsBooleanKeyword,
+                        ..
+                    })
+                    | Type::Keyword(RTsKeywordType {
+                        kind: TsKeywordTypeKind::TsBigIntKeyword,
+                        ..
+                    })
+                    | Type::Keyword(RTsKeywordType {
                         kind: TsKeywordTypeKind::TsVoidKeyword,
+                        ..
+                    })
+                    | Type::Keyword(RTsKeywordType {
+                        kind: TsKeywordTypeKind::TsNullKeyword,
+                        ..
+                    })
+                    | Type::Keyword(RTsKeywordType {
+                        kind: TsKeywordTypeKind::TsUndefinedKeyword,
                         ..
                     })
                     | Type::Function(..)
