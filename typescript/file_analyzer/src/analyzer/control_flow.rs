@@ -595,7 +595,7 @@ impl Analyzer<'_, '_> {
 
                         let declared_ty = declared_ty.clone();
 
-                        let ty = ty.into_owned().clone();
+                        let ty = ty.clone().into_owned();
                         let ty = self.apply_type_facts_to_type(TypeFacts::NEUndefined | TypeFacts::NENull, ty);
                         if ty.is_never() {
                             return Ok(());
