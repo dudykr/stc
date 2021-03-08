@@ -595,7 +595,10 @@ impl Analyzer<'_, '_> {
                     .or_else(|| self.scope.search_parent(&i.id.clone().into()))
                 {
                     if let Some(declared_ty) = &var_info.ty {
-                        if declared_ty.is_any() {
+                        if declared_ty.is_any()
+                            || ty.is_kwd(TsKeywordTypeKind::TsNullKeyword)
+                            || ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
+                        {
                             return Ok(());
                         }
                         let declared_ty = declared_ty.clone();
@@ -608,14 +611,6 @@ impl Analyzer<'_, '_> {
                         name: i.id.clone().into(),
                     });
                     return Ok(());
-                }
-
-                if let Some(ty) = actual_ty.take() {
-                    let new_ty = self.apply_type_facts_to_type(TypeFacts::NENull & TypeFacts::NEUndefined, ty);
-                    if new_ty.is_never() {
-                    } else {
-                        actual_ty = Some(new_ty);
-                    }
                 }
 
                 // Update actual types.
