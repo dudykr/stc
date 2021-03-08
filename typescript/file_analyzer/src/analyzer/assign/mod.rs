@@ -898,6 +898,10 @@ impl Analyzer<'_, '_> {
                         kind: TsKeywordTypeKind::TsStringKeyword,
                         ..
                     })
+                    | Type::Keyword(RTsKeywordType {
+                        kind: TsKeywordTypeKind::TsVoidKeyword,
+                        ..
+                    })
                     | Type::Function(..)
                     | Type::Constructor(..)
                     | Type::Enum(..)
