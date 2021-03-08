@@ -74,8 +74,9 @@ impl Analyzer<'_, '_> {
                 },
             )
             .context("tried to normalize a type to handle a for-in loop")?;
+        let rhs = rhs.normalize();
 
-        if rhs.is_kwd(TsKeywordTypeKind::TsObjectKeyword) {
+        if rhs.is_kwd(TsKeywordTypeKind::TsObjectKeyword) || rhs.is_array() || rhs.is_tuple() {
             return Ok(Type::Keyword(RTsKeywordType {
                 span: rhs.span(),
                 kind: TsKeywordTypeKind::TsStringKeyword,
