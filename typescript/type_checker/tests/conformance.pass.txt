@@ -882,6 +882,7 @@ es6/yieldExpressions/generatorTypeCheck53.ts
 es6/yieldExpressions/generatorTypeCheck54.ts
 es6/yieldExpressions/generatorTypeCheck55.ts
 es6/yieldExpressions/generatorTypeCheck56.ts
+es6/yieldExpressions/generatorTypeCheck6.ts
 es6/yieldExpressions/generatorTypeCheck60.ts
 es6/yieldExpressions/generatorTypeCheck7.ts
 es6/yieldExpressions/generatorTypeCheck9.ts
@@ -954,6 +955,7 @@ expressions/binaryOperators/comparisonOperator/comparisonOperatorWithNoRelations
 expressions/binaryOperators/comparisonOperator/comparisonOperatorWithNoRelationshipObjectsOnInstantiatedConstructorSignature.ts
 expressions/binaryOperators/comparisonOperator/comparisonOperatorWithNoRelationshipObjectsOnOptionalProperty.ts
 expressions/binaryOperators/comparisonOperator/comparisonOperatorWithNoRelationshipObjectsOnProperty.ts
+expressions/binaryOperators/comparisonOperator/comparisonOperatorWithNoRelationshipPrimitiveType.ts
 expressions/binaryOperators/comparisonOperator/comparisonOperatorWithNoRelationshipTypeParameter.ts
 expressions/binaryOperators/comparisonOperator/comparisonOperatorWithNumericLiteral.ts
 expressions/binaryOperators/comparisonOperator/comparisonOperatorWithOneOperandIsAny.ts
@@ -1387,6 +1389,7 @@ parser/ecmascript5/RegressionTests/parser509546_1.ts
 parser/ecmascript5/RegressionTests/parser509546_2.ts
 parser/ecmascript5/RegressionTests/parser509677.ts
 parser/ecmascript5/RegressionTests/parser509693.ts
+parser/ecmascript5/RegressionTests/parser536727.ts
 parser/ecmascript5/RegressionTests/parser579071.ts
 parser/ecmascript5/RegressionTests/parser596700.ts
 parser/ecmascript5/RegressionTests/parser630933.ts
@@ -1650,6 +1653,7 @@ types/namedTypes/classWithOptionalParameter.ts
 types/namedTypes/optionalMethods.ts
 types/never/neverUnionIntersection.ts
 types/nonPrimitive/assignObjectToNonPrimitive.ts
+types/nonPrimitive/nonPrimitiveAsProperty.ts
 types/nonPrimitive/nonPrimitiveIndexingWithForIn.ts
 types/nonPrimitive/nonPrimitiveRhsSideOfInExpression.ts
 types/objectTypeLiteral/callSignatures/callSignatureWithoutAnnotationsOrBody.ts
