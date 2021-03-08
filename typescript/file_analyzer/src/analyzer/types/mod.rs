@@ -140,7 +140,6 @@ impl Analyzer<'_, '_> {
                         .normalize(&ty, opts)
                         .context("tried to normalize the calculated type of a conditional type");
                 }
-                // TODO
             }
 
             Type::Query(q) => {
