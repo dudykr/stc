@@ -133,7 +133,13 @@ impl Analyzer<'_, '_> {
             // Maybe it can be changed in future, but currently noop
             Type::Union(_) | Type::Intersection(_) => {}
 
-            Type::Conditional(_) => {
+            Type::Conditional(c) => {
+                if let Some(v) = self.extends(ty.span(), &c.check_type, &c.extends_type) {
+                    let ty = if v { &c.true_type } else { &c.false_type };
+                    return self
+                        .normalize(&ty, opts)
+                        .context("tried to normalize the calculated type of a conditional type");
+                }
                 // TODO
             }
 
