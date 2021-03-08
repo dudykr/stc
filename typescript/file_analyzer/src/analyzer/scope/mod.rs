@@ -610,12 +610,12 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn resolve_typeof(&mut self, span: Span, name: &RTsEntityName) -> ValidationResult {
-        match name {
+        let mut ty = match name {
             RTsEntityName::Ident(i) => {
                 if i.sym == js_word!("undefined") {
                     return Ok(Type::any(span));
                 }
-                return self.type_of_var(i, TypeOfMode::RValue, None);
+                self.type_of_var(i, TypeOfMode::RValue, None)?
             }
             RTsEntityName::TsQualifiedName(n) => {
                 let ctx = Ctx {
@@ -637,9 +637,11 @@ impl Analyzer<'_, '_> {
                     },
                     TypeOfMode::RValue,
                     IdCtx::Var,
-                )
+                )?
             }
-        }
+        };
+        ty.reposition(span);
+        Ok(ty)
     }
 
     #[inline(never)]
