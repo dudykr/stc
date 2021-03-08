@@ -118,6 +118,16 @@ pub struct TscCommand {
     /// Disallow inconsistently-cased references to the same file.
     #[structopt(long = "forceConsistentCasingInFileNames")]
     pub force_consistent_casing_in_file_names: bool,
+
+    /// Generates a cpu profile at the given path. Passing an existing directory
+    /// name instead of a file path will cause a timestamp-named profile to be
+    /// generated in that directory instead.
+    #[structopt(long = "generateCpuProfile", default_value = "profile.cpuprofile")]
+    pub generate_cpu_profile: String,
+
+    /// Import emit helpers (e.g. __extends, __rest, etc..) from tslib
+    #[structopt(long = "importHelpers")]
+    pub import_helpers: bool,
 }
 
 #[derive(Debug)]
