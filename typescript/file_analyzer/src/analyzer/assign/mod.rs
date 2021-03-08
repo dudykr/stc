@@ -241,7 +241,7 @@ impl Analyzer<'_, '_> {
                     },
                 })));
             }
-            Type::Conditional(..) => {
+            Type::Conditional(..) | Type::Alias(..) => {
                 let ty = self
                     .normalize(&ty, Default::default())
                     .context("tried to normalize a type for assignment")?
