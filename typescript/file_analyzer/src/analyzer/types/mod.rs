@@ -34,6 +34,7 @@ use swc_ecma_ast::MethodKind;
 use swc_ecma_ast::TsKeywordTypeKind;
 
 mod mapped;
+mod merging;
 mod narrowing;
 mod type_param;
 
