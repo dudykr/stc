@@ -220,7 +220,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn normalize_for_assign<'a>(&mut self, ty: &'a Type) -> Cow<'a, Type> {
+    fn normalize_for_assign<'a>(&mut self, ty: &'a Type) -> ValidationResult<Cow<'a, Type>> {
         let ty = ty.normalize();
 
         match ty {
@@ -231,20 +231,28 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {
                 // TODO: Check if ref points global.
-                return Cow::Owned(Type::Keyword(RTsKeywordType {
+                return Ok(Cow::Owned(Type::Keyword(RTsKeywordType {
                     span: *span,
                     kind: match type_name.sym {
                         js_word!("Boolean") => TsKeywordTypeKind::TsBooleanKeyword,
                         js_word!("Number") => TsKeywordTypeKind::TsNumberKeyword,
                         js_word!("String") => TsKeywordTypeKind::TsStringKeyword,
-                        _ => return Cow::Borrowed(ty),
+                        _ => return Ok(Cow::Borrowed(ty)),
                     },
-                }));
+                })));
+            }
+            Type::Conditional(..) => {
+                let ty = self
+                    .normalize(&ty, Default::default())
+                    .context("tried to normalize a type for assignment")?
+                    .into_owned();
+
+                return Ok(Cow::Owned(ty));
             }
             _ => {}
         }
 
-        Cow::Borrowed(ty)
+        Ok(Cow::Borrowed(ty))
     }
 
     fn assign_inner(&mut self, to: &Type, rhs: &Type, opts: AssignOpts) -> ValidationResult<()> {
@@ -275,8 +283,8 @@ impl Analyzer<'_, '_> {
         }
 
         // debug_assert!(!span.is_dummy(), "\n\t{:?}\n<-\n\t{:?}", to, rhs);
-        let to = self.normalize_for_assign(to);
-        let rhs = self.normalize_for_assign(rhs);
+        let to = self.normalize_for_assign(to)?;
+        let rhs = self.normalize_for_assign(rhs)?;
 
         let to = to.normalize();
         let rhs = rhs.normalize();
