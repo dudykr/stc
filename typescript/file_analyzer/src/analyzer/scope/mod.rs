@@ -1837,14 +1837,19 @@ impl Expander<'_, '_, '_> {
             return Ok(None);
         }
 
-        self.expand_ts_entity_name(
+        let mut ty = self.expand_ts_entity_name(
             span,
             ctxt,
             &type_name,
             type_args.as_deref(),
             was_top_level,
             trying_primitive_expansion,
-        )
+        )?;
+        if let Some(ty) = &mut ty {
+            ty.reposition(r_span);
+        }
+
+        Ok(ty)
     }
 }
 
