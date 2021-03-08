@@ -1261,7 +1261,7 @@ impl Analyzer<'_, '_> {
                                 }
                                 RObjectPatProp::Rest(pat) => {
                                     let rest_ty = self
-                                        .exclude_props(&ty, &used_keys)
+                                        .exclude_props(pat.span(), &ty, &used_keys)
                                         .context("tried to exclude keys for assignment with a object rest pattern")?;
 
                                     return self

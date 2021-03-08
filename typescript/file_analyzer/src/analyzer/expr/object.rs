@@ -532,7 +532,7 @@ impl Analyzer<'_, '_> {
             match key {
                 Key::Computed(..) => to.foldable(),
                 _ => self
-                    .exclude_props(&to, &[key.clone()])
+                    .exclude_props(rhs.span(), &to, &[key.clone()])
                     .context("tried to exclude properties before appending a type element")?,
             }
         } else {

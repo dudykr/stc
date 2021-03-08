@@ -30,13 +30,14 @@ use stc_ts_types::Union;
 use stc_ts_utils::OptionExt;
 use stc_ts_utils::PatExt;
 use std::borrow::Cow;
+use swc_common::Span;
 use swc_common::Spanned;
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::TsKeywordTypeKind;
 use swc_ecma_ast::VarDeclKind;
 
 impl Analyzer<'_, '_> {
-    pub(crate) fn exclude_props(&mut self, ty: &Type, keys: &[Key]) -> ValidationResult<Type> {
+    pub(crate) fn exclude_props(&mut self, span: Span, ty: &Type, keys: &[Key]) -> ValidationResult<Type> {
         let ty = self.normalize(
             &ty,
             NormalizeTypeOpts {
@@ -51,7 +52,7 @@ impl Analyzer<'_, '_> {
                 'outer: for m in &lit.members {
                     if let Some(key) = m.key() {
                         for prop in keys {
-                            if self.key_matches(ty.span(), &key, prop, false) {
+                            if self.key_matches(span, &key, prop, false) {
                                 continue 'outer;
                             }
                         }
@@ -71,7 +72,7 @@ impl Analyzer<'_, '_> {
                 let types = u
                     .types
                     .iter()
-                    .map(|ty| self.exclude_props(ty, keys))
+                    .map(|ty| self.exclude_props(span, ty, keys))
                     .collect::<Result<_, _>>()?;
 
                 return Ok(Type::Union(Union { span: u.span, types }));
@@ -83,7 +84,7 @@ impl Analyzer<'_, '_> {
                     .map(Cow::into_owned)
                     .map(Type::TypeLit);
                 if let Some(ty) = ty {
-                    return self.exclude_props(&ty, keys);
+                    return self.exclude_props(span, &ty, keys);
                 }
             }
             // TODO
@@ -362,7 +363,7 @@ impl Analyzer<'_, '_> {
                         RObjectPatProp::Rest(pat) => match ty {
                             Some(ty) => {
                                 let rest_ty = self
-                                    .exclude_props(&ty, &used_keys)
+                                    .exclude_props(pat.span(), &ty, &used_keys)
                                     .context("tried to exclude keys for declare vars with a object rest pattern")?;
 
                                 return self
