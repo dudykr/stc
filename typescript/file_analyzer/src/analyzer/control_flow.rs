@@ -601,7 +601,14 @@ impl Analyzer<'_, '_> {
                         {
                             return Ok(());
                         }
+
                         let declared_ty = declared_ty.clone();
+
+                        let ty = ty.clone();
+                        let ty = self.apply_type_facts_to_type(TypeFacts::NEUndefined | TypeFacts::NENull, ty);
+                        if ty.is_never() {
+                            return Ok(());
+                        }
 
                         actual_ty = Some(self.narrowed_type_of_assignment(span, declared_ty, &ty)?);
                     }
