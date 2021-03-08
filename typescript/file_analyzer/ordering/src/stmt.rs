@@ -1,12 +1,15 @@
 //! Dependency analyzer for statements.
 
 use crate::types::Sortable;
+use fxhash::FxHashMap;
 use fxhash::FxHashSet;
 use rnode::Visit;
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RBindingIdent;
 use stc_ts_ast_rnode::RDecl;
 use stc_ts_ast_rnode::RExpr;
+use stc_ts_ast_rnode::RForInStmt;
+use stc_ts_ast_rnode::RForOfStmt;
 use stc_ts_ast_rnode::RMemberExpr;
 use stc_ts_ast_rnode::RModuleDecl;
 use stc_ts_ast_rnode::RModuleItem;
@@ -14,6 +17,7 @@ use stc_ts_ast_rnode::RProp;
 use stc_ts_ast_rnode::RStmt;
 use stc_ts_ast_rnode::RTsModuleDecl;
 use stc_ts_ast_rnode::RTsModuleName;
+use stc_ts_ast_rnode::RVarDecl;
 use stc_ts_ast_rnode::RVarDeclOrExpr;
 use stc_ts_ast_rnode::RVarDeclOrPat;
 use stc_ts_ast_rnode::RVarDeclarator;
@@ -24,7 +28,7 @@ use stc_ts_utils::AsModuleDecl;
 impl Sortable for RStmt {
     type Id = Id;
 
-    fn declares(&self) -> FxHashSet<Self::Id> {
+    fn get_decls(&self) -> FxHashMap<Self::Id, FxHashSet<Self::Id>> {
         vars_declared_by(self)
     }
 
@@ -38,7 +42,7 @@ impl Sortable for RStmt {
 impl Sortable for RModuleItem {
     type Id = Id;
 
-    fn declares(&self) -> FxHashSet<Self::Id> {
+    fn get_decls(&self) -> FxHashMap<Self::Id, FxHashSet<Self::Id>> {
         vars_declared_by(self)
     }
 
@@ -49,35 +53,65 @@ impl Sortable for RModuleItem {
     }
 }
 
-pub fn vars_declared_by<T>(node: &T) -> FxHashSet<Id>
+fn vars_used_by<T>(e: &T) -> FxHashSet<Id>
+where
+    T: VisitWith<DepAnalyzer>,
+{
+    let mut v = DepAnalyzer::default();
+    e.visit_with(&mut v);
+    v.used
+}
+
+fn vars_declared_by_var_decl(v: &RVarDecl) -> FxHashMap<Id, FxHashSet<Id>> {
+    let mut map = FxHashMap::<_, FxHashSet<_>>::default();
+    for decl in &v.decls {
+        let vars = find_ids_in_pat(&decl.name);
+        let used_ids = vars_used_by(&decl.init);
+        for id in vars {
+            map.entry(id).or_default().extend(used_ids.clone());
+        }
+    }
+
+    return map;
+}
+
+fn vars_declared_by_decl(d: &RDecl) -> FxHashMap<Id, FxHashSet<Id>> {
+    let mut map = FxHashMap::default();
+    match d {
+        RDecl::Class(c) => {
+            let used_ids = vars_used_by(&c.class);
+            map.insert(c.ident.clone().into(), used_ids);
+            return map;
+        }
+        RDecl::Fn(f) => {
+            let used_ids = vars_used_by(&f.function);
+            map.insert(f.ident.clone().into(), used_ids);
+            return map;
+        }
+        RDecl::Var(v) => return vars_declared_by_var_decl(v),
+        RDecl::TsEnum(e) => {
+            map.insert(e.id.clone().into(), Default::default());
+            return map;
+        }
+        RDecl::TsModule(RTsModuleDecl {
+            id: RTsModuleName::Ident(i),
+            ..
+        }) => {
+            map.insert(i.into(), Default::default());
+            return map;
+        }
+
+        RDecl::TsInterface(_) | RDecl::TsTypeAlias(_) | RDecl::TsModule(_) => return Default::default(),
+    }
+}
+
+pub fn vars_declared_by<T>(node: &T) -> FxHashMap<Id, FxHashSet<Id>>
 where
     T: AsModuleDecl,
 {
-    fn ids(d: &RDecl) -> FxHashSet<Id> {
-        let id: Id = match d {
-            RDecl::Class(c) => c.ident.clone().into(),
-            RDecl::Fn(f) => f.ident.clone().into(),
-            RDecl::Var(v) => {
-                let ids: Vec<Id> = find_ids_in_pat(&v.decls);
-                return ids.into_iter().collect();
-            }
-            RDecl::TsEnum(e) => e.id.clone().into(),
-            RDecl::TsModule(RTsModuleDecl {
-                id: RTsModuleName::Ident(i),
-                ..
-            }) => i.clone().into(),
-
-            RDecl::TsInterface(_) | RDecl::TsTypeAlias(_) | RDecl::TsModule(_) => return Default::default(),
-        };
-
-        let mut set = FxHashSet::with_capacity_and_hasher(1, Default::default());
-        set.insert(id);
-        set
-    }
-
     match node.as_module_decl() {
         Ok(v) => match v {
-            RModuleDecl::ExportDecl(d) => ids(&d.decl),
+            RModuleDecl::ExportDecl(d) => vars_declared_by_decl(&d.decl),
 
             RModuleDecl::Import(_)
             | RModuleDecl::ExportNamed(_)
@@ -102,28 +136,30 @@ where
             }
         },
         Err(stmt) => match stmt {
-            RStmt::Decl(d) => ids(d),
+            RStmt::Decl(d) => vars_declared_by_decl(d),
             RStmt::For(s) => match &s.init {
-                Some(RVarDeclOrExpr::VarDecl(v)) => {
-                    let ids: Vec<Id> = find_ids_in_pat(&v.decls);
-                    return ids.into_iter().collect();
-                }
+                Some(RVarDeclOrExpr::VarDecl(v)) => vars_declared_by_var_decl(v),
                 _ => Default::default(),
             },
-            RStmt::ForOf(s) => match &s.left {
-                RVarDeclOrPat::VarDecl(v) => {
-                    let ids: Vec<Id> = find_ids_in_pat(&v.decls);
-                    return ids.into_iter().collect();
+            RStmt::ForOf(RForOfStmt {
+                left: RVarDeclOrPat::VarDecl(v),
+                right,
+                ..
+            })
+            | RStmt::ForIn(RForInStmt {
+                left: RVarDeclOrPat::VarDecl(v),
+                right,
+                ..
+            }) => {
+                let mut map = vars_declared_by_var_decl(v);
+                let extra_ids = vars_used_by(&right);
+
+                for (_, e) in map.iter_mut() {
+                    e.extend(extra_ids.clone());
                 }
-                RVarDeclOrPat::Pat(_) => Default::default(),
-            },
-            RStmt::ForIn(s) => match &s.left {
-                RVarDeclOrPat::VarDecl(v) => {
-                    let ids: Vec<Id> = find_ids_in_pat(&v.decls);
-                    return ids.into_iter().collect();
-                }
-                RVarDeclOrPat::Pat(_) => Default::default(),
-            },
+
+                return map;
+            }
             _ => Default::default(),
         },
     }

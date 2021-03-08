@@ -1,11 +1,14 @@
+use fxhash::FxHashMap;
 use fxhash::FxHashSet;
 use std::hash::Hash;
 
 pub trait Sortable {
     type Id: Eq + Hash;
 
+    /// Returns `Set<(var_id, vars_required_for_var_id)>`.
+    ///
     /// This returns the name of a property if it's [RProp] or [RClassMember].
-    fn declares(&self) -> FxHashSet<Self::Id>;
+    fn get_decls(&self) -> FxHashMap<Self::Id, FxHashSet<Self::Id>>;
 
     fn uses(&self) -> FxHashSet<Self::Id>;
 }
@@ -16,8 +19,8 @@ where
 {
     type Id = T::Id;
 
-    fn declares(&self) -> FxHashSet<Self::Id> {
-        (**self).declares()
+    fn get_decls(&self) -> FxHashMap<Self::Id, FxHashSet<Self::Id>> {
+        (**self).get_decls()
     }
 
     fn uses(&self) -> FxHashSet<Self::Id> {
