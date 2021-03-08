@@ -240,6 +240,7 @@ controlFlow/controlFlowSuperPropertyAccess.ts
 controlFlow/controlFlowTruthiness.ts
 controlFlow/controlFlowWithTemplateLiterals.ts
 controlFlow/switchWithConstrainedTypeVariable.ts
+controlFlow/typeGuardsAsAssertions.ts
 controlFlow/typeGuardsNestedAssignments.ts
 declarationEmit/classDoesNotDependOnPrivateMember.ts
 declarationEmit/declarationEmitWorkWithInlineComments.ts
@@ -551,6 +552,7 @@ es6/for-ofStatements/for-of57.ts
 es6/for-ofStatements/for-of58.ts
 es6/for-ofStatements/for-of6.ts
 es6/for-ofStatements/for-of7.ts
+es6/for-ofStatements/for-of8.ts
 es6/for-ofStatements/for-of9.ts
 es6/functionDeclarations/FunctionDeclaration11_es6.ts
 es6/functionDeclarations/FunctionDeclaration13_es6.ts
