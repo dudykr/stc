@@ -952,7 +952,7 @@ impl Analyzer<'_, '_> {
                         Type::Lit(RTsLitType {
                             lit: RTsLit::Str(..), ..
                         }) => return Ok(()),
-                        Type::Lit(..) => fail!(),
+                        Type::Lit(..) | Type::TypeLit(..) | Type::Interface(..) => fail!(),
                         _ => {}
                     },
 
@@ -990,7 +990,16 @@ impl Analyzer<'_, '_> {
                             lit: RTsLit::Bool(..), ..
                         }) => return Ok(()),
                         Type::Lit(..) => fail!(),
-                        _ => return Ok(()),
+                        _ => {}
+                    },
+
+                    TsKeywordTypeKind::TsNullKeyword => match rhs {
+                        Type::Lit(..)
+                        | Type::TypeLit(..)
+                        | Type::Interface(..)
+                        | Type::Class(..)
+                        | Type::ClassDef(..) => fail!(),
+                        _ => {}
                     },
 
                     TsKeywordTypeKind::TsVoidKeyword | TsKeywordTypeKind::TsUndefinedKeyword => {
