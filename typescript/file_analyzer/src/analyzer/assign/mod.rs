@@ -1033,7 +1033,11 @@ impl Analyzer<'_, '_> {
                     | TsKeywordTypeKind::TsBooleanKeyword
                     | TsKeywordTypeKind::TsNullKeyword
                     | TsKeywordTypeKind::TsUndefinedKeyword => match rhs {
-                        Type::Lit(..) | Type::Interface(..) | Type::TypeLit(..) => fail!(),
+                        Type::Lit(..)
+                        | Type::Interface(..)
+                        | Type::TypeLit(..)
+                        | Type::Function(..)
+                        | Type::Constructor(..) => fail!(),
                         _ => {}
                     },
                     _ => {}
