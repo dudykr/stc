@@ -1313,7 +1313,24 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        if to.is_kwd(TsKeywordTypeKind::TsNeverKeyword) || rhs.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
+        // Handle symbol assignments
+        match to {
+            Type::Operator(Operator {
+                op: TsTypeOperatorOp::Unique,
+                ty,
+                ..
+            }) if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) => {
+                if rhs.is_symbol() {
+                    return Ok(());
+                }
+            }
+            _ => {}
+        }
+
+        if to.is_symbol()
+            || to.is_kwd(TsKeywordTypeKind::TsNeverKeyword)
+            || rhs.is_kwd(TsKeywordTypeKind::TsVoidKeyword)
+        {
             fail!()
         }
 
