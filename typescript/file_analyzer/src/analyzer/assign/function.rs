@@ -99,15 +99,14 @@ impl Analyzer<'_, '_> {
                 for rm in &rt.members {
                     match rm {
                         TypeElement::Call(rm) => {
-                            self.assign_params(opts, &l.params, &rm.params).context(
-                                "tried to assign parameters of a type element to the parameters of a function",
-                            )?;
+                            if self.assign_params(opts, &l.params, &rm.params).is_err() {
+                                continue;
+                            }
 
                             if let Some(r_ret_ty) = &rm.ret_ty {
-                                self.assign_with_opts(opts, &l.ret_ty, &r_ret_ty).context(
-                                    "tried to assign the return type of a type element to the return type of a \
-                                     function",
-                                )?
+                                if self.assign_with_opts(opts, &l.ret_ty, &r_ret_ty).is_err() {
+                                    continue;
+                                }
                             }
 
                             return Ok(());
