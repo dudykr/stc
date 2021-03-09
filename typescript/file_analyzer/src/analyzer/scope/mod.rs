@@ -1158,10 +1158,10 @@ impl Analyzer<'_, '_> {
                     | Type::This(..)
                     | Type::TypeLit(..)
                     | Type::Interface(..)
-                    | Type::Keyword(RTsKeywordType {
-                        kind: TsKeywordTypeKind::TsVoidKeyword,
-                        ..
-                    }) => {
+                    | Type::Union(..)
+                    | Type::Intersection(..)
+                    | Type::Lit(..)
+                    | Type::Keyword(..) => {
                         //
                         let mut used_keys = vec![];
 
@@ -1277,8 +1277,6 @@ impl Analyzer<'_, '_> {
                     }
 
                     _ => {
-                        print_backtrace();
-
                         unimplemented!("declare_complex_vars({:#?}, {:#?})", pat, ty)
                     }
                 }
