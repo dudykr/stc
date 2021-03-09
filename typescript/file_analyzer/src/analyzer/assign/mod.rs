@@ -15,7 +15,6 @@ use stc_ts_errors::debug::print_backtrace;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
-use stc_ts_types::ClassDef;
 use stc_ts_types::Key;
 use stc_ts_types::Mapped;
 use stc_ts_types::Operator;
@@ -1327,15 +1326,11 @@ impl Analyzer<'_, '_> {
             //
             //    _ => {}
             //},
-            Type::Constructor(ref lc) => match *rhs.normalize() {
-                Type::Lit(..) => fail!(),
-
-                Type::ClassDef(ClassDef { is_abstract: true, .. }) => fail!(),
-
-                Type::Function(..) => fail!(),
-
-                _ => {}
-            },
+            Type::Constructor(ref lc) => {
+                return self
+                    .assign_to_constructor(opts, to, &lc, rhs)
+                    .context("tried to assign to a constructor type")
+            }
 
             _ => {}
         }

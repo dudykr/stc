@@ -9,6 +9,8 @@ use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RPat;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
+use stc_ts_types::ClassDef;
+use stc_ts_types::Constructor;
 use stc_ts_types::FnParam;
 use stc_ts_types::Function;
 use stc_ts_types::Type;
@@ -122,6 +124,66 @@ impl Analyzer<'_, '_> {
                     return self
                         .assign_to_function(opts, lt, l, &ty)
                         .context("tried to assign an expanded type to a function");
+                }
+            }
+            _ => {}
+        }
+
+        Err(Error::SimpleAssignFailed { span })
+    }
+
+    pub(super) fn assign_to_constructor(
+        &mut self,
+        opts: AssignOpts,
+        lt: &Type,
+        l: &Constructor,
+        r: &Type,
+    ) -> ValidationResult<()> {
+        let span = opts.span;
+        let r = r.normalize();
+
+        match r {
+            Type::Constructor(rc) => {
+                self.assign_params(opts, &l.params, &rc.params).context(
+                    "tried to assign the parameters of constructor to the parameters of another constructor",
+                )?;
+
+                self.assign_with_opts(opts, &l.type_ann, &rc.type_ann).context(
+                    "tried to assign the return type of constructor to the return type of another constructor",
+                )?;
+
+                return Ok(());
+            }
+            Type::Lit(..) | Type::ClassDef(ClassDef { is_abstract: true, .. }) | Type::Function(..) => {
+                return Err(Error::SimpleAssignFailed { span })
+            }
+
+            Type::TypeLit(rt) => {
+                for rm in &rt.members {
+                    match rm {
+                        TypeElement::Constructor(rc) => {
+                            if self.assign_params(opts, &l.params, &rc.params).is_err() {
+                                continue;
+                            }
+
+                            if let Some(r_ret_ty) = &rc.ret_ty {
+                                if self.assign_with_opts(opts, &l.type_ann, &r_ret_ty).is_err() {
+                                    continue;
+                                }
+                            }
+
+                            return Ok(());
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            Type::Interface(..) => {
+                let ty = self.type_to_type_lit(span, r)?.map(Cow::into_owned).map(Type::TypeLit);
+                if let Some(ty) = ty {
+                    return self
+                        .assign_to_constructor(opts, lt, l, &ty)
+                        .context("tried to assign an expanded type to a constructor type");
                 }
             }
             _ => {}
