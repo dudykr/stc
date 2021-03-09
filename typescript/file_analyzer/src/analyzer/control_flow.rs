@@ -9,7 +9,7 @@ use super::{
 use crate::analyzer::expr::IdCtx;
 use crate::util::type_ext::TypeVecExt;
 use crate::{
-    ty::{Tuple, Type, TypeElement, TypeLit},
+    ty::{Tuple, Type},
     type_facts::TypeFacts,
     util::EndsWithRet,
     validator,
@@ -20,6 +20,7 @@ use fxhash::FxHashMap;
 use rnode::NodeId;
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RBinExpr;
+use stc_ts_ast_rnode::RBindingIdent;
 use stc_ts_ast_rnode::RCondExpr;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RIfStmt;
@@ -695,48 +696,51 @@ impl Analyzer<'_, '_> {
             RPat::Object(ref obj) => {
                 //
                 for prop in obj.props.iter() {
-                    match ty.normalize() {
-                        ty if ty.is_any() => {
-                            let lhs = match prop {
-                                RObjectPatProp::KeyValue(kv) => &kv.value,
-                                RObjectPatProp::Assign(a) => {
-                                    // if a.key.type_ann.is_none() {
-                                    //     if let Some(m) = &mut self.mutations {
-                                    //         m.for_pats.entry(a.key.node_id).or_default().ty =
-                                    // Some(Type::any(span));     }
-                                    // }
-                                    continue;
-                                }
-                                RObjectPatProp::Rest(r) => {
-                                    if r.type_ann.is_none() {
-                                        if let Some(m) = &mut self.mutations {
-                                            m.for_pats.entry(r.node_id).or_default().ty = Some(Type::any(span));
-                                        }
-                                    }
-                                    continue;
-                                }
-                            };
-                            self.try_assign_pat(span, lhs, &Type::any(ty.span()))?;
-                        }
+                    match prop {
+                        RObjectPatProp::KeyValue(kv) => {
+                            let key = kv.key.validate_with(self)?;
+                            let prop_ty = self
+                                .access_property(span, ty.clone(), &key, TypeOfMode::RValue, IdCtx::Var)
+                                .unwrap_or_else(|_| Type::any(span));
 
-                        Type::TypeLit(TypeLit { span, ref members, .. }) => {
-                            // Iterate over members, and assign if key matches.
-                            for member in members {
-                                match member {
-                                    TypeElement::Call(_) => unimplemented!(),
-                                    TypeElement::Constructor(_) => unimplemented!(),
-                                    TypeElement::Property(p) => match prop {
-                                        RObjectPatProp::KeyValue(prop) => {
-                                            //
-                                        }
-                                        RObjectPatProp::Assign(_) => {}
-                                        RObjectPatProp::Rest(_) => {}
-                                    },
-                                    TypeElement::Method(_) => unimplemented!(),
-                                    TypeElement::Index(_) => unimplemented!(),
+                            self.try_assign_pat(span, &kv.value, &prop_ty).report(&mut self.storage);
+                        }
+                        RObjectPatProp::Assign(a) => {
+                            let key = Key::Normal {
+                                span: a.key.span,
+                                sym: a.key.sym.clone(),
+                            };
+                            let prop_ty = self
+                                .access_property(span, ty.clone(), &key, TypeOfMode::RValue, IdCtx::Var)
+                                .unwrap_or_else(|_| Type::any(span));
+
+                            self.try_assign_pat(
+                                span,
+                                &RPat::Ident(RBindingIdent {
+                                    node_id: NodeId::invalid(),
+                                    id: a.key.clone(),
+                                    type_ann: None,
+                                }),
+                                &prop_ty,
+                            )
+                            .report(&mut self.storage);
+                            continue;
+                        }
+                        RObjectPatProp::Rest(r) => {
+                            if r.type_ann.is_none() {
+                                if let Some(m) = &mut self.mutations {
+                                    m.for_pats.entry(r.node_id).or_default().ty = Some(Type::any(span));
                                 }
                             }
+                            // TODO
+                            // self.try_assign_pat(span, lhs, &prop_ty).report(&mut self.storage);
+                            continue;
                         }
+                    }
+
+                    match ty.normalize() {
+                        ty if ty.is_any() => {}
+
                         _ => unimplemented!("assignment with object pattern\nPat: {:?}\nType: {:?}", lhs, ty),
                     }
                 }
