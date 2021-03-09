@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use super::AssignOpts;
 use crate::analyzer::Analyzer;
 use crate::ValidationResult;
@@ -10,6 +12,7 @@ use stc_ts_errors::Error;
 use stc_ts_types::FnParam;
 use stc_ts_types::Function;
 use stc_ts_types::Type;
+use stc_ts_types::TypeElement;
 use swc_atoms::js_word;
 
 impl Analyzer<'_, '_> {
@@ -92,11 +95,40 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
 
-            Type::Lit(..) => return Err(Error::CannotAssignToNonVariable { span }),
+            Type::TypeLit(rt) => {
+                for rm in &rt.members {
+                    match rm {
+                        TypeElement::Call(rm) => {
+                            self.assign_params(opts, &l.params, &rm.params).context(
+                                "tried to assign parameters of a type element to the parameters of a function",
+                            )?;
+
+                            if let Some(r_ret_ty) = &rm.ret_ty {
+                                self.assign_with_opts(opts, &l.ret_ty, &r_ret_ty).context(
+                                    "tried to assign the return type of a type element to the return type of a \
+                                     function",
+                                )?
+                            }
+
+                            return Ok(());
+                        }
+                        _ => {}
+                    }
+                }
+            }
+
+            Type::Interface(..) => {
+                let ty = self.type_to_type_lit(span, r)?.map(Cow::into_owned).map(Type::TypeLit);
+                if let Some(ty) = ty {
+                    return self
+                        .assign_to_function(opts, lt, l, &ty)
+                        .context("tried to assign an expanded type to a function");
+                }
+            }
             _ => {}
         }
 
-        Ok(())
+        Err(Error::SimpleAssignFailed { span })
     }
 
     /// ``ts

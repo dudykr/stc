@@ -1235,7 +1235,7 @@ impl Analyzer<'_, '_> {
             },
 
             Type::Function(lf) => match rhs {
-                Type::Function(..) | Type::Lit(..) => {
+                Type::Function(..) | Type::Lit(..) | Type::TypeLit(..) | Type::Interface(..) => {
                     return self
                         .assign_to_function(opts, to, lf, rhs)
                         .context("tried to assign a function to a function")
@@ -1259,7 +1259,8 @@ impl Analyzer<'_, '_> {
                 | Type::Keyword(RTsKeywordType {
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
                     ..
-                }) => {
+                })
+                | Type::Constructor(..) => {
                     fail!()
                 }
                 _ => {}
