@@ -66,6 +66,12 @@ mod metadata;
 pub mod module_id;
 pub mod name;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum IdCtx {
+    Var,
+    Type,
+}
+
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct ModuleTypeData {
     pub private_vars: FxHashMap<Id, Type>,

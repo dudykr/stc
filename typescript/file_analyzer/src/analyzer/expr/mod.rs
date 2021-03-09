@@ -56,6 +56,7 @@ use stc_ts_types::Class;
 use stc_ts_types::ClassDef;
 use stc_ts_types::ClassMember;
 use stc_ts_types::ComputedKey;
+pub use stc_ts_types::IdCtx;
 use stc_ts_types::Key;
 use stc_ts_types::PropertySignature;
 use stc_ts_types::{ClassProperty, Id, Method, ModuleId, Operator, QueryExpr, QueryType, StaticThis};
@@ -82,12 +83,6 @@ mod optional_chaining;
 mod type_cast;
 mod unary;
 mod update;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum IdCtx {
-    Var,
-    Type,
-}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TypeOfMode {
