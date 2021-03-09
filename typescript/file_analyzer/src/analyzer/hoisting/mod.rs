@@ -27,7 +27,6 @@ use stc_ts_ast_rnode::RTsTypeAliasDecl;
 use stc_ts_ast_rnode::RVarDeclarator;
 use stc_ts_ordering::types::Sortable;
 use stc_ts_types::Id;
-use stc_ts_utils::find_ids_in_pat;
 use stc_ts_utils::AsModuleDecl;
 use stc_ts_utils::HasNodeId;
 use swc_ecma_utils::DestructuringFinder;
@@ -69,7 +68,8 @@ impl Analyzer<'_, '_> {
             + VisitWith<Self>
             + From<RStmt>
             + HasNodeId
-            + Sortable,
+            + Sortable
+            + VisitWith<stc_ts_ordering::stmt::DepAnalyzer>,
     {
         let (order, skip) = self.reorder_stmts(&stmts);
         let mut type_decls = FxHashMap::<Id, Vec<usize>>::with_capacity_and_hasher(order.len(), Default::default());
@@ -139,7 +139,8 @@ impl Analyzer<'_, '_> {
             + VisitWith<Self>
             + From<RStmt>
             + HasNodeId
-            + Sortable,
+            + Sortable
+            + VisitWith<stc_ts_ordering::stmt::DepAnalyzer>,
     {
         self.validate_stmts_with_hoisting(stmts);
     }
@@ -184,7 +185,7 @@ impl Analyzer<'_, '_> {
     /// ```
     fn reorder_stmts<T>(&mut self, stmts: &[&T]) -> (Vec<usize>, FxHashSet<usize>)
     where
-        T: AsModuleDecl + VisitWith<RequirementCalculartor> + Sortable,
+        T: AsModuleDecl + VisitWith<RequirementCalculartor> + Sortable + VisitWith<stc_ts_ordering::stmt::DepAnalyzer>,
     {
         let mut graph = StmtDepGraph::default();
         let mut declared_by = FxHashMap::<TypedId, Vec<usize>>::default();
@@ -222,27 +223,6 @@ impl Analyzer<'_, '_> {
                                 .or_default()
                                 .push(idx);
                         }
-                        RDecl::Fn(RFnDecl { ident, .. }) => {
-                            declared_by
-                                .entry(TypedId {
-                                    id: Id::from(ident),
-                                    kind: IdKind::VAR,
-                                })
-                                .or_default()
-                                .push(idx);
-                        }
-                        RDecl::Var(vars) => {
-                            for var in &vars.decls {
-                                //
-                                let ids: Vec<Id> = find_ids_in_pat(&var.name);
-                                for id in ids {
-                                    declared_by
-                                        .entry(TypedId { id, kind: IdKind::VAR })
-                                        .or_default()
-                                        .push(idx);
-                                }
-                            }
-                        }
                         RDecl::TsInterface(RTsInterfaceDecl { id, .. })
                         | RDecl::TsTypeAlias(RTsTypeAliasDecl { id, .. })
                         | RDecl::TsEnum(RTsEnumDecl { id, .. }) => {
@@ -255,19 +235,24 @@ impl Analyzer<'_, '_> {
                                 .push(idx);
                         }
                         RDecl::TsModule(_) => {}
+
+                        RDecl::Fn(..) | RDecl::Var(..) => {
+                            let mut vars = stc_ts_ordering::stmt::vars_declared_by(&item);
+
+                            for (id, deps) in vars {
+                                declared_by
+                                    .entry(TypedId { id, kind: IdKind::VAR })
+                                    .or_default()
+                                    .push(idx);
+
+                                used.entry(idx).or_default().extend(deps);
+                            }
+                        }
                     }
                 }
                 _ => {
-                    let mut vars = stc_ts_ordering::stmt::vars_declared_by(&item);
-
-                    for (id, deps) in vars {
-                        declared_by
-                            .entry(TypedId { id, kind: IdKind::VAR })
-                            .or_default()
-                            .push(idx);
-
-                        used.entry(idx).or_default().extend(deps);
-                    }
+                    let mut used_vars = stc_ts_ordering::stmt::vars_used_by(&item);
+                    used.entry(idx).or_default().extend(used_vars);
                 }
             }
         }
@@ -280,7 +265,7 @@ impl Analyzer<'_, '_> {
                 }) {
                     for &declarator_index in declarator_indexes {
                         if declarator_index != idx {
-                            // dbg!(idx, declarator_index);
+                            dbg!(idx, declarator_index);
                             match graph.edge_weight_mut(idx, declarator_index) {
                                 Some(v) => {
                                     *v |= IdKind::VAR;

@@ -53,7 +53,7 @@ impl Sortable for RModuleItem {
     }
 }
 
-fn vars_used_by<T>(e: &T) -> FxHashSet<Id>
+pub fn vars_used_by<T>(e: &T) -> FxHashSet<Id>
 where
     T: VisitWith<DepAnalyzer>,
 {
@@ -166,7 +166,7 @@ where
 }
 
 #[derive(Default)]
-struct DepAnalyzer {
+pub struct DepAnalyzer {
     used: FxHashSet<Id>,
     in_var_decl: bool,
 }
