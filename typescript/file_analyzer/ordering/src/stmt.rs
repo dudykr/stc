@@ -10,13 +10,16 @@ use stc_ts_ast_rnode::RDecl;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RForInStmt;
 use stc_ts_ast_rnode::RForOfStmt;
+use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RMemberExpr;
 use stc_ts_ast_rnode::RModuleDecl;
 use stc_ts_ast_rnode::RModuleItem;
 use stc_ts_ast_rnode::RProp;
 use stc_ts_ast_rnode::RStmt;
+use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsModuleDecl;
 use stc_ts_ast_rnode::RTsModuleName;
+use stc_ts_ast_rnode::RTsTypeRef;
 use stc_ts_ast_rnode::RVarDecl;
 use stc_ts_ast_rnode::RVarDeclOrExpr;
 use stc_ts_ast_rnode::RVarDeclOrPat;
@@ -307,5 +310,24 @@ impl Visit<RProp> for DepAnalyzer {
             }
             _ => {}
         }
+    }
+}
+
+impl Visit<RTsTypeRef> for DepAnalyzer {
+    fn visit(&mut self, t: &RTsTypeRef) {
+        t.visit_children_with(self);
+
+        let id = left(&t.type_name);
+        self.used.insert(TypedId {
+            kind: IdCtx::Type,
+            id: id.into(),
+        });
+    }
+}
+
+fn left(t: &RTsEntityName) -> &RIdent {
+    match t {
+        RTsEntityName::TsQualifiedName(q) => left(&q.left),
+        RTsEntityName::Ident(i) => i,
     }
 }
