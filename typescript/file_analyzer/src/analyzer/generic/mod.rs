@@ -1176,6 +1176,13 @@ impl Analyzer<'_, '_> {
                                             kind: Default::default(),
                                         }),
                                     })),
+                                    Key::Num(n) => {
+                                        key_types.push(Type::Lit(RTsLitType {
+                                            node_id: NodeId::invalid(),
+                                            span: param.span,
+                                            lit: RTsLit::Number(n.clone()),
+                                        }));
+                                    }
                                     _ => {
                                         unimplemented!("Inference of keys except ident in mapped type.\nKey: {:?}", key)
                                     }
