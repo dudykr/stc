@@ -1314,21 +1314,6 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            //Type::Simple(ref s) => match **s {
-            //    RTsType::TsTypePredicate(..) => match *rhs.normalize() {
-            //        Type::Keyword(RTsKeywordType {
-            //            kind: TsKeywordTypeKind::TsBooleanKeyword,
-            //            ..
-            //        })
-            //        | Type::Lit(RTsLitType {
-            //            lit: RTsLit::Bool(..),
-            //            ..
-            //        }) => return Ok(()),
-            //        _ => {}
-            //    },
-            //
-            //    _ => {}
-            //},
             Type::Constructor(ref lc) => {
                 return self
                     .assign_to_constructor(opts, to, &lc, rhs)
