@@ -74,7 +74,7 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult<Cow<'a, Type>> {
         let span = ty.span();
         if !self.is_builtin {
-            debug_assert_ne!(span, DUMMY_SP, "Cannot normalize a type with dummy span");
+            debug_assert_ne!(span, DUMMY_SP, "Cannot normalize a type with dummy span\n{:?}", ty);
         }
 
         opts.lefting_stack -= 1;
