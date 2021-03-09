@@ -240,9 +240,13 @@ impl Analyzer<'_, '_> {
                     continue;
                 }
 
-                let dependants = graph.neighbors_directed(i, Outgoing);
+                // filter is used to workaround the bug of petgraph.
+                let deps = graph
+                    .neighbors_directed(i, Outgoing)
+                    .filter(|dep| !orders.contains(dep))
+                    .collect::<Vec<_>>();
 
-                if dependants.count() != 0 {
+                if deps.len() != 0 {
                     continue;
                 }
 
@@ -251,6 +255,7 @@ impl Analyzer<'_, '_> {
 
                 // Remove dependencies to other node.
                 graph.remove_node(i);
+                break;
             }
 
             if !did_work {
