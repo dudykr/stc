@@ -43,13 +43,7 @@ impl Analyzer<'_, '_> {
     /// Note: This method removes all items from `stmts`.
     pub(super) fn validate_stmts_with_hoisting<T>(&mut self, stmts: &Vec<&T>)
     where
-        T: AsModuleDecl
-            + ModuleItemOrStmt
-            + VisitWith<Self>
-            + From<RStmt>
-            + HasNodeId
-            + Sortable
-            + VisitWith<stc_ts_ordering::stmt::DepAnalyzer>,
+        T: AsModuleDecl + ModuleItemOrStmt + VisitWith<Self> + From<RStmt> + HasNodeId + Sortable<Id = TypedId>,
     {
         let (order, skip) = self.reorder_stmts(&stmts);
         let mut type_decls = FxHashMap::<Id, Vec<usize>>::with_capacity_and_hasher(order.len(), Default::default());
@@ -113,13 +107,7 @@ impl Analyzer<'_, '_> {
     /// ```
     pub(super) fn validate_stmts_and_collect<T>(&mut self, stmts: &Vec<&T>)
     where
-        T: AsModuleDecl
-            + ModuleItemOrStmt
-            + VisitWith<Self>
-            + From<RStmt>
-            + HasNodeId
-            + Sortable
-            + VisitWith<stc_ts_ordering::stmt::DepAnalyzer>,
+        T: AsModuleDecl + ModuleItemOrStmt + VisitWith<Self> + From<RStmt> + HasNodeId + Sortable<Id = TypedId>,
     {
         self.validate_stmts_with_hoisting(stmts);
     }
@@ -164,7 +152,7 @@ impl Analyzer<'_, '_> {
     /// ```
     fn reorder_stmts<T>(&mut self, stmts: &[&T]) -> (Vec<usize>, FxHashSet<usize>)
     where
-        T: AsModuleDecl + Sortable + VisitWith<stc_ts_ordering::stmt::DepAnalyzer>,
+        T: AsModuleDecl + Sortable<Id = TypedId>,
     {
         let mut graph = DiGraphMap::default();
         let mut declared_by = FxHashMap::<TypedId, Vec<usize>>::default();
@@ -192,7 +180,7 @@ impl Analyzer<'_, '_> {
                         | RDecl::TsEnum(..)
                         | RDecl::Fn(..)
                         | RDecl::Var(..) => {
-                            let mut vars = stc_ts_ordering::stmt::ids_declared_by(&item);
+                            let mut vars = item.get_decls();
 
                             for (id, deps) in vars {
                                 declared_by.entry(id).or_default().push(idx);
@@ -216,7 +204,7 @@ impl Analyzer<'_, '_> {
                     left: RVarDeclOrPat::VarDecl(..),
                     ..
                 })) => {
-                    let mut vars = stc_ts_ordering::stmt::ids_declared_by(&item);
+                    let mut vars = item.get_decls();
 
                     for (id, deps) in vars {
                         declared_by.entry(id).or_default().push(idx);
@@ -225,7 +213,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
                 _ => {
-                    let mut used_vars = stc_ts_ordering::stmt::deps_of(&item);
+                    let mut used_vars = item.uses();
                     used.entry(idx).or_default().extend(used_vars);
                 }
             }
