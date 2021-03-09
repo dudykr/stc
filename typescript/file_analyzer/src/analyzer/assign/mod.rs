@@ -1238,7 +1238,7 @@ impl Analyzer<'_, '_> {
                 Type::Function(..) | Type::Lit(..) | Type::TypeLit(..) | Type::Interface(..) => {
                     return self
                         .assign_to_function(opts, to, lf, rhs)
-                        .context("tried to assign a function to a function")
+                        .context("tried to assign to a function type")
                 }
                 Type::Keyword(RTsKeywordType {
                     kind: TsKeywordTypeKind::TsVoidKeyword,
