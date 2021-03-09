@@ -544,6 +544,8 @@ es6/for-ofStatements/for-of42.ts
 es6/for-ofStatements/for-of43.ts
 es6/for-ofStatements/for-of44.ts
 es6/for-ofStatements/for-of45.ts
+es6/for-ofStatements/for-of47.ts
+es6/for-ofStatements/for-of48.ts
 es6/for-ofStatements/for-of49.ts
 es6/for-ofStatements/for-of5.ts
 es6/for-ofStatements/for-of50.ts
