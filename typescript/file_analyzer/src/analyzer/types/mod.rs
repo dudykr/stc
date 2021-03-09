@@ -16,6 +16,7 @@ use stc_ts_types::ClassMember;
 use stc_ts_types::ConstructorSignature;
 use stc_ts_types::Key;
 use stc_ts_types::MethodSignature;
+use stc_ts_types::Operator;
 use stc_ts_types::PropertySignature;
 use stc_ts_types::QueryExpr;
 use stc_ts_types::Type;
@@ -33,6 +34,7 @@ use swc_common::TypeEq;
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::MethodKind;
 use swc_ecma_ast::TsKeywordTypeKind;
+use swc_ecma_ast::TsTypeOperatorOp;
 
 mod mapped;
 mod narrowing;
@@ -176,6 +178,20 @@ impl Analyzer<'_, '_> {
                 // TODO:
             }
 
+            Type::Operator(Operator {
+                op: TsTypeOperatorOp::KeyOf,
+                ty,
+                ..
+            }) => {
+                let keys = self
+                    .get_keys(span, &ty)
+                    .context("tried to get keys of a type as a part of normalization")?;
+                if let Some(keys) = keys {
+                    let types = keys.into_iter().map(|key| key.ty().into_owned()).collect::<Vec<_>>();
+                    return Ok(Cow::Owned(Type::union(types)));
+                }
+            }
+
             Type::Operator(_) => {
                 // TODO:
             }
@@ -183,7 +199,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        Ok(Cow::Borrowed(ty))
+        Ok(Cow::Borrowed(ty.normalize()))
     }
 
     pub(crate) fn expand_type_ann<'a>(&mut self, ty: Option<&'a Type>) -> ValidationResult<Option<Cow<'a, Type>>> {

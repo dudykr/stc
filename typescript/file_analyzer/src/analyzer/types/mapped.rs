@@ -178,7 +178,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Evaluates `keyof` operator.
-    fn get_keys(&mut self, span: Span, ty: &Type) -> ValidationResult<Option<Vec<Key>>> {
+    pub(super) fn get_keys(&mut self, span: Span, ty: &Type) -> ValidationResult<Option<Vec<Key>>> {
         let ty = self
             .normalize(ty, Default::default())
             .context("tried to normalize a type to get keys from it")?;

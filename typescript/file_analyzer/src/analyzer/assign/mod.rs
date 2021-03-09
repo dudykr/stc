@@ -240,7 +240,12 @@ impl Analyzer<'_, '_> {
                     },
                 })));
             }
-            Type::Conditional(..) | Type::Alias(..) => {
+            Type::Conditional(..)
+            | Type::Alias(..)
+            | Type::Operator(Operator {
+                op: TsTypeOperatorOp::KeyOf,
+                ..
+            }) => {
                 let ty = self
                     .normalize(&ty, Default::default())
                     .context("tried to normalize a type for assignment")?
