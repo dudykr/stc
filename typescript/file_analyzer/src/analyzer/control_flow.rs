@@ -724,7 +724,6 @@ impl Analyzer<'_, '_> {
                                 &prop_ty,
                             )
                             .report(&mut self.storage);
-                            continue;
                         }
                         RObjectPatProp::Rest(r) => {
                             if r.type_ann.is_none() {
@@ -733,15 +732,9 @@ impl Analyzer<'_, '_> {
                                 }
                             }
                             // TODO
-                            // self.try_assign_pat(span, lhs, &prop_ty).report(&mut self.storage);
-                            continue;
+                            // self.try_assign_pat(span, lhs,
+                            // &prop_ty).report(&mut self.storage);
                         }
-                    }
-
-                    match ty.normalize() {
-                        ty if ty.is_any() => {}
-
-                        _ => unimplemented!("assignment with object pattern\nPat: {:?}\nType: {:?}", lhs, ty),
                     }
                 }
 
