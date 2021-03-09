@@ -1303,6 +1303,7 @@ impl Analyzer<'_, '_> {
                     Type::Lit(..)
                     | Type::Interface(..)
                     | Type::TypeLit(..)
+                    | Type::Keyword(..)
                     | Type::Array(..)
                     | Type::Class(..)
                     | Type::ClassDef(..) => {
