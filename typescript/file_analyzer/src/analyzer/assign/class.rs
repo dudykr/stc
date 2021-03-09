@@ -251,7 +251,7 @@ impl Analyzer<'_, '_> {
         }
 
         match r {
-            Type::Lit(..) => return Err(Error::SimpleAssignFailed { span: opts.span }),
+            Type::Lit(..) | Type::Keyword(..) => return Err(Error::SimpleAssignFailed { span: opts.span }),
             _ => {}
         }
 

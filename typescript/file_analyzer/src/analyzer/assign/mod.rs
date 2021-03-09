@@ -567,6 +567,7 @@ impl Analyzer<'_, '_> {
                 | Type::Ref(..)
                 | Type::TypeLit(..)
                 | Type::Lit(..)
+                | Type::Keyword(..)
                 | Type::Class(..)
                 | Type::Predicate(..) => {
                     return self
@@ -1299,7 +1300,8 @@ impl Analyzer<'_, '_> {
 
                         return Ok(());
                     }
-                    Type::Interface(..)
+                    Type::Lit(..)
+                    | Type::Interface(..)
                     | Type::TypeLit(..)
                     | Type::Array(..)
                     | Type::Class(..)
@@ -1376,6 +1378,11 @@ impl Analyzer<'_, '_> {
                 ..
             }) if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) => {
                 if rhs.is_symbol() {
+                    return Ok(());
+                }
+            }
+            Type::Predicate(..) => {
+                if rhs.is_kwd(TsKeywordTypeKind::TsBooleanKeyword) {
                     return Ok(());
                 }
             }
