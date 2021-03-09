@@ -1868,6 +1868,8 @@ impl Analyzer<'_, '_> {
 
         slog::debug!(self.logger, "type_of_var({:?}): {:?}", id, ty);
 
+        ty.reposition(i.span);
+
         Ok(ty)
     }
 
