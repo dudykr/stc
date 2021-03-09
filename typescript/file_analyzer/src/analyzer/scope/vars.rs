@@ -46,7 +46,7 @@ impl Analyzer<'_, '_> {
             },
         )?;
 
-        if ty.is_any() {
+        if ty.is_any() || ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword) {
             return Ok(ty.into_owned());
         }
 
