@@ -33,34 +33,30 @@ pub struct TypedId {
 }
 
 impl Sortable for RStmt {
-    type Id = Id;
+    type Id = TypedId;
 
     fn get_decls(&self) -> FxHashMap<Self::Id, FxHashSet<Self::Id>> {
-        vars_declared_by(self)
+        ids_declared_by(self)
     }
 
     fn uses(&self) -> FxHashSet<Self::Id> {
-        let mut v = DepAnalyzer::default();
-        self.visit_with(&mut v);
-        v.used
+        deps_of(self)
     }
 }
 
 impl Sortable for RModuleItem {
-    type Id = Id;
+    type Id = TypedId;
 
     fn get_decls(&self) -> FxHashMap<Self::Id, FxHashSet<Self::Id>> {
-        vars_declared_by(self)
+        ids_declared_by(self)
     }
 
     fn uses(&self) -> FxHashSet<Self::Id> {
-        let mut v = DepAnalyzer::default();
-        self.visit_with(&mut v);
-        v.used
+        deps_of(self)
     }
 }
 
-fn vars_used_by<T>(e: &T) -> FxHashSet<Id>
+fn deps_of<T>(e: &T) -> FxHashSet<TypedId>
 where
     T: VisitWith<DepAnalyzer>,
 {
@@ -69,56 +65,129 @@ where
     v.used
 }
 
-fn vars_declared_by_var_decl(v: &RVarDecl) -> FxHashMap<Id, FxHashSet<Id>> {
+fn vars_declared_by_var_decl(v: &RVarDecl) -> FxHashMap<TypedId, FxHashSet<TypedId>> {
     let mut map = FxHashMap::<_, FxHashSet<_>>::default();
     for decl in &v.decls {
         let vars = find_ids_in_pat(&decl.name);
-        let used_ids = vars_used_by(&decl.init);
+        let used_ids = deps_of(&decl.init);
         for id in vars {
-            map.entry(id).or_default().extend(used_ids.clone());
+            map.entry(TypedId { kind: IdCtx::Var, id })
+                .or_default()
+                .extend(used_ids.clone());
         }
     }
 
     return map;
 }
 
-fn vars_declared_by_decl(d: &RDecl) -> FxHashMap<Id, FxHashSet<Id>> {
+fn ids_declared_by_decl(d: &RDecl) -> FxHashMap<TypedId, FxHashSet<TypedId>> {
     let mut map = FxHashMap::default();
     match d {
         RDecl::Class(c) => {
-            let used_ids = vars_used_by(&c.class);
-            map.insert(c.ident.clone().into(), used_ids);
+            let used_ids = deps_of(&c.class);
+            map.insert(
+                TypedId {
+                    kind: IdCtx::Type,
+                    id: c.ident.clone().into(),
+                },
+                used_ids.clone(),
+            );
+            map.insert(
+                TypedId {
+                    kind: IdCtx::Var,
+                    id: c.ident.clone().into(),
+                },
+                used_ids,
+            );
             return map;
         }
         RDecl::Fn(f) => {
-            let used_ids = vars_used_by(&f.function);
-            map.insert(f.ident.clone().into(), used_ids);
+            let used_ids = deps_of(&f.function);
+            map.insert(
+                TypedId {
+                    kind: IdCtx::Var,
+                    id: f.ident.clone().into(),
+                },
+                used_ids,
+            );
             return map;
         }
         RDecl::Var(v) => return vars_declared_by_var_decl(v),
         RDecl::TsEnum(e) => {
-            map.insert(e.id.clone().into(), Default::default());
+            map.insert(
+                TypedId {
+                    kind: IdCtx::Type,
+                    id: e.id.clone().into(),
+                },
+                Default::default(),
+            );
+            map.insert(
+                TypedId {
+                    kind: IdCtx::Var,
+                    id: e.id.clone().into(),
+                },
+                Default::default(),
+            );
             return map;
         }
         RDecl::TsModule(RTsModuleDecl {
             id: RTsModuleName::Ident(i),
             ..
         }) => {
-            map.insert(i.into(), Default::default());
+            map.insert(
+                TypedId {
+                    kind: IdCtx::Type,
+                    id: i.clone().into(),
+                },
+                Default::default(),
+            );
+            map.insert(
+                TypedId {
+                    kind: IdCtx::Var,
+                    id: i.clone().into(),
+                },
+                Default::default(),
+            );
             return map;
         }
 
-        RDecl::TsInterface(_) | RDecl::TsTypeAlias(_) | RDecl::TsModule(_) => return Default::default(),
+        RDecl::TsInterface(i) => {
+            let mut deps = deps_of(&i.extends);
+            deps.extend(deps_of(&i.type_params));
+            map.insert(
+                TypedId {
+                    kind: IdCtx::Type,
+                    id: i.id.clone().into(),
+                },
+                deps,
+            );
+            return map;
+        }
+
+        RDecl::TsTypeAlias(a) => {
+            let deps = deps_of(&a.type_ann);
+            map.insert(
+                TypedId {
+                    kind: IdCtx::Type,
+                    id: a.id.clone().into(),
+                },
+                deps,
+            );
+
+            return map;
+        }
+
+        RDecl::TsModule(_) => return Default::default(),
     }
 }
 
-fn vars_declared_by<T>(node: &T) -> FxHashMap<Id, FxHashSet<Id>>
+fn ids_declared_by<T>(node: &T) -> FxHashMap<TypedId, FxHashSet<TypedId>>
 where
     T: AsModuleDecl,
 {
     match node.as_module_decl() {
         Ok(v) => match v {
-            RModuleDecl::ExportDecl(d) => vars_declared_by_decl(&d.decl),
+            RModuleDecl::ExportDecl(d) => ids_declared_by_decl(&d.decl),
 
             RModuleDecl::Import(_)
             | RModuleDecl::ExportNamed(_)
@@ -143,7 +212,7 @@ where
             }
         },
         Err(stmt) => match stmt {
-            RStmt::Decl(d) => vars_declared_by_decl(d),
+            RStmt::Decl(d) => ids_declared_by_decl(d),
             RStmt::For(s) => match &s.init {
                 Some(RVarDeclOrExpr::VarDecl(v)) => vars_declared_by_var_decl(v),
                 _ => Default::default(),
@@ -159,7 +228,7 @@ where
                 ..
             }) => {
                 let mut map = vars_declared_by_var_decl(v);
-                let extra_ids = vars_used_by(&right);
+                let extra_ids = deps_of(&right);
 
                 for (_, e) in map.iter_mut() {
                     e.extend(extra_ids.clone());
@@ -174,7 +243,7 @@ where
 
 #[derive(Default)]
 struct DepAnalyzer {
-    used: FxHashSet<Id>,
+    used: FxHashSet<TypedId>,
     in_var_decl: bool,
 }
 
@@ -202,7 +271,10 @@ impl Visit<RBindingIdent> for DepAnalyzer {
         if self.in_var_decl {
             return;
         }
-        self.used.insert(value.id.clone().into());
+        self.used.insert(TypedId {
+            kind: IdCtx::Var,
+            id: value.id.clone().into(),
+        });
     }
 }
 
@@ -210,7 +282,10 @@ impl Visit<RExpr> for DepAnalyzer {
     fn visit(&mut self, node: &RExpr) {
         match node {
             RExpr::Ident(i) => {
-                self.used.insert(i.into());
+                self.used.insert(TypedId {
+                    kind: IdCtx::Var,
+                    id: i.into(),
+                });
             }
             _ => {}
         }
@@ -225,7 +300,10 @@ impl Visit<RProp> for DepAnalyzer {
 
         match p {
             RProp::Shorthand(i) => {
-                self.used.insert(i.into());
+                self.used.insert(TypedId {
+                    kind: IdCtx::Var,
+                    id: i.into(),
+                });
             }
             _ => {}
         }
