@@ -22,8 +22,15 @@ use stc_ts_ast_rnode::RVarDeclOrExpr;
 use stc_ts_ast_rnode::RVarDeclOrPat;
 use stc_ts_ast_rnode::RVarDeclarator;
 use stc_ts_types::Id;
+use stc_ts_types::IdCtx;
 use stc_ts_utils::find_ids_in_pat;
 use stc_ts_utils::AsModuleDecl;
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct TypedId {
+    pub kind: IdCtx,
+    pub id: Id,
+}
 
 impl Sortable for RStmt {
     type Id = Id;
@@ -53,7 +60,7 @@ impl Sortable for RModuleItem {
     }
 }
 
-pub fn vars_used_by<T>(e: &T) -> FxHashSet<Id>
+fn vars_used_by<T>(e: &T) -> FxHashSet<Id>
 where
     T: VisitWith<DepAnalyzer>,
 {
@@ -166,7 +173,7 @@ where
 }
 
 #[derive(Default)]
-pub struct DepAnalyzer {
+struct DepAnalyzer {
     used: FxHashSet<Id>,
     in_var_decl: bool,
 }
