@@ -190,6 +190,7 @@ impl Analyzer<'_, '_> {
         let mut declared_by = FxHashMap::<TypedId, Vec<usize>>::default();
         let mut unresolved_circular_imports = vec![];
         let mut skip = FxHashSet::default();
+        let mut used = FxHashMap::<_, FxHashSet<_>>::default();
 
         // TODO: Handle loaded circular imports. This is required to prevent deadlock
         // and duplicated work.
@@ -264,6 +265,31 @@ impl Analyzer<'_, '_> {
                             .entry(TypedId { id, kind: IdKind::VAR })
                             .or_default()
                             .push(idx);
+
+                        used.entry(idx).or_default().extend(deps);
+                    }
+                }
+            }
+        }
+
+        for (idx, deps) in used {
+            for dep in deps {
+                if let Some(declarator_indexes) = declared_by.get(&TypedId {
+                    id: dep.clone(),
+                    kind: IdKind::VAR,
+                }) {
+                    for &declarator_index in declarator_indexes {
+                        if declarator_index != idx {
+                            // dbg!(idx, declarator_index);
+                            match graph.edge_weight_mut(idx, declarator_index) {
+                                Some(v) => {
+                                    *v |= IdKind::VAR;
+                                }
+                                None => {
+                                    graph.add_edge(idx, declarator_index, IdKind::VAR);
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -294,6 +320,10 @@ impl Analyzer<'_, '_> {
             item.visit_with(&mut visitor);
 
             for id in visitor.required_ids {
+                if id.kind.contains(IdKind::VAR) {
+                    continue;
+                }
+
                 if let Some(declarator_indexes) = declared_by.get(&id) {
                     for &declarator_index in declarator_indexes {
                         if declarator_index != idx {
