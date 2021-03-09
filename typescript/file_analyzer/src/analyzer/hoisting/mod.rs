@@ -4,29 +4,21 @@ use petgraph::graphmap::DiGraphMap;
 use petgraph::EdgeDirection::Outgoing;
 use rnode::Visit;
 use rnode::VisitWith;
-use stc_ts_ast_rnode::RArrowExpr;
-use stc_ts_ast_rnode::RClassDecl;
 use stc_ts_ast_rnode::RDecl;
 use stc_ts_ast_rnode::RExportDecl;
-use stc_ts_ast_rnode::RExpr;
-use stc_ts_ast_rnode::RFnDecl;
 use stc_ts_ast_rnode::RForInStmt;
 use stc_ts_ast_rnode::RForOfStmt;
 use stc_ts_ast_rnode::RForStmt;
-use stc_ts_ast_rnode::RFunction;
 use stc_ts_ast_rnode::RIdent;
-use stc_ts_ast_rnode::RMemberExpr;
 use stc_ts_ast_rnode::RModuleDecl;
 use stc_ts_ast_rnode::RStmt;
 use stc_ts_ast_rnode::RVarDeclOrExpr;
 use stc_ts_ast_rnode::RVarDeclOrPat;
-use stc_ts_ast_rnode::RVarDeclarator;
 use stc_ts_ordering::stmt::TypedId;
 use stc_ts_ordering::types::Sortable;
 use stc_ts_types::Id;
 use stc_ts_utils::AsModuleDecl;
 use stc_ts_utils::HasNodeId;
-use swc_ecma_utils::DestructuringFinder;
 
 #[cfg(test)]
 mod tests;
@@ -292,97 +284,6 @@ impl Analyzer<'_, '_> {
     }
 }
 
-#[derive(Default)]
-pub(super) struct StmtDependencyFinder {
-    ids_buf: Vec<Id>,
-    /// Identifiers created by a statement.
-    ///
-    /// e.g.
-    ///
-    /// Value is `[a, b]` for the var declaration below.
-    /// ```js
-    /// var a, b = foo();
-    /// ```
-    ids: FxHashSet<Id>,
-
-    /// Dependencies of the id.
-    deps: FxHashSet<Id>,
-
-    no_decl: bool,
-}
-
-impl Visit<RFnDecl> for StmtDependencyFinder {
-    fn visit(&mut self, node: &RFnDecl) {
-        if !self.no_decl {
-            self.ids.insert(node.ident.clone().into());
-        }
-        node.visit_children_with(self);
-    }
-}
-
-impl Visit<RVarDeclarator> for StmtDependencyFinder {
-    fn visit(&mut self, node: &RVarDeclarator) {
-        if !self.no_decl {
-            {
-                let mut v = DestructuringFinder {
-                    found: &mut self.ids_buf,
-                };
-                node.name.visit_with(&mut v);
-            }
-
-            self.ids.extend(self.ids_buf.drain(..));
-        }
-
-        node.init.visit_with(self);
-    }
-}
-
-impl Visit<RClassDecl> for StmtDependencyFinder {
-    fn visit(&mut self, node: &RClassDecl) {
-        let old = self.no_decl;
-        node.class.visit_with(self);
-        self.no_decl = old;
-    }
-}
-
-impl Visit<RFunction> for StmtDependencyFinder {
-    fn visit(&mut self, n: &RFunction) {
-        let old = self.no_decl;
-        n.visit_children_with(self);
-        self.no_decl = old;
-    }
-}
-
-impl Visit<RArrowExpr> for StmtDependencyFinder {
-    fn visit(&mut self, n: &RArrowExpr) {
-        let old = self.no_decl;
-        n.visit_children_with(self);
-        self.no_decl = old;
-    }
-}
-
-impl Visit<RMemberExpr> for StmtDependencyFinder {
-    fn visit(&mut self, node: &RMemberExpr) {
-        node.obj.visit_with(self);
-
-        if node.computed {
-            node.prop.visit_with(self);
-        }
-    }
-}
-
-impl Visit<RExpr> for StmtDependencyFinder {
-    fn visit(&mut self, node: &RExpr) {
-        match node {
-            RExpr::Ident(ref i) => {
-                self.deps.insert(i.into());
-            }
-            _ => {}
-        }
-
-        node.visit_children_with(self);
-    }
-}
 #[derive(Debug)]
 struct TypeParamDepFinder<'a> {
     id: &'a Id,
