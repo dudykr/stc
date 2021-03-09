@@ -59,7 +59,7 @@ impl Sortable for RModuleItem {
     }
 }
 
-fn deps_of<T>(e: &T) -> FxHashSet<TypedId>
+pub fn deps_of<T>(e: &T) -> FxHashSet<TypedId>
 where
     T: VisitWith<DepAnalyzer>,
 {
@@ -184,7 +184,7 @@ fn ids_declared_by_decl(d: &RDecl) -> FxHashMap<TypedId, FxHashSet<TypedId>> {
     }
 }
 
-fn ids_declared_by<T>(node: &T) -> FxHashMap<TypedId, FxHashSet<TypedId>>
+pub fn ids_declared_by<T>(node: &T) -> FxHashMap<TypedId, FxHashSet<TypedId>>
 where
     T: AsModuleDecl,
 {
@@ -245,7 +245,7 @@ where
 }
 
 #[derive(Default)]
-struct DepAnalyzer {
+pub struct DepAnalyzer {
     used: FxHashSet<TypedId>,
     in_var_decl: bool,
 }

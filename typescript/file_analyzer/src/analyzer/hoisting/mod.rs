@@ -1,5 +1,4 @@
 use crate::{analyzer::Analyzer, util::ModuleItemOrStmt};
-use bitflags::bitflags;
 use fxhash::{FxHashMap, FxHashSet};
 use petgraph::graphmap::DiGraphMap;
 use petgraph::EdgeDirection::Outgoing;
@@ -9,7 +8,6 @@ use stc_ts_ast_rnode::RArrowExpr;
 use stc_ts_ast_rnode::RClassDecl;
 use stc_ts_ast_rnode::RDecl;
 use stc_ts_ast_rnode::RExportDecl;
-use stc_ts_ast_rnode::RExportNamedSpecifier;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RFnDecl;
 use stc_ts_ast_rnode::RForInStmt;
@@ -19,17 +17,11 @@ use stc_ts_ast_rnode::RFunction;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RMemberExpr;
 use stc_ts_ast_rnode::RModuleDecl;
-use stc_ts_ast_rnode::RPat;
-use stc_ts_ast_rnode::RProp;
 use stc_ts_ast_rnode::RStmt;
-use stc_ts_ast_rnode::RTsEntityName;
-use stc_ts_ast_rnode::RTsEnumDecl;
-use stc_ts_ast_rnode::RTsInterfaceDecl;
-use stc_ts_ast_rnode::RTsModuleDecl;
-use stc_ts_ast_rnode::RTsTypeAliasDecl;
 use stc_ts_ast_rnode::RVarDeclOrExpr;
 use stc_ts_ast_rnode::RVarDeclOrPat;
 use stc_ts_ast_rnode::RVarDeclarator;
+use stc_ts_ordering::stmt::TypedId;
 use stc_ts_ordering::types::Sortable;
 use stc_ts_types::Id;
 use stc_ts_utils::AsModuleDecl;
@@ -38,22 +30,6 @@ use swc_ecma_utils::DestructuringFinder;
 
 #[cfg(test)]
 mod tests;
-
-type StmtDepGraph = DiGraphMap<usize, IdKind>;
-
-bitflags! {
-    struct IdKind: u8 {
-        const VAR = 0b00000001;
-        const TYPE = 0b00000010;
-        const BOTH = Self::VAR.bits | Self::TYPE.bits;
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-struct TypedId {
-    id: Id,
-    kind: IdKind,
-}
 
 #[cfg_attr(debug_assertiobs, derive(Debug))]
 pub(super) enum TypeOrderItem {
@@ -69,7 +45,6 @@ impl Analyzer<'_, '_> {
     where
         T: AsModuleDecl
             + ModuleItemOrStmt
-            + VisitWith<RequirementCalculartor>
             + VisitWith<Self>
             + From<RStmt>
             + HasNodeId
@@ -140,7 +115,6 @@ impl Analyzer<'_, '_> {
     where
         T: AsModuleDecl
             + ModuleItemOrStmt
-            + VisitWith<RequirementCalculartor>
             + VisitWith<Self>
             + From<RStmt>
             + HasNodeId
@@ -190,9 +164,9 @@ impl Analyzer<'_, '_> {
     /// ```
     fn reorder_stmts<T>(&mut self, stmts: &[&T]) -> (Vec<usize>, FxHashSet<usize>)
     where
-        T: AsModuleDecl + VisitWith<RequirementCalculartor> + Sortable + VisitWith<stc_ts_ordering::stmt::DepAnalyzer>,
+        T: AsModuleDecl + Sortable + VisitWith<stc_ts_ordering::stmt::DepAnalyzer>,
     {
-        let mut graph = StmtDepGraph::default();
+        let mut graph = DiGraphMap::default();
         let mut declared_by = FxHashMap::<TypedId, Vec<usize>>::default();
         let mut unresolved_circular_imports = vec![];
         let mut skip = FxHashSet::default();
@@ -212,47 +186,22 @@ impl Analyzer<'_, '_> {
                 Ok(RModuleDecl::ExportDecl(RExportDecl { decl, .. })) | Err(RStmt::Decl(decl)) => {
                     //
                     match decl {
-                        RDecl::Class(RClassDecl { ident, .. }) => {
-                            declared_by
-                                .entry(TypedId {
-                                    id: Id::from(ident),
-                                    kind: IdKind::VAR,
-                                })
-                                .or_default()
-                                .push(idx);
-                            declared_by
-                                .entry(TypedId {
-                                    id: Id::from(ident),
-                                    kind: IdKind::TYPE,
-                                })
-                                .or_default()
-                                .push(idx);
-                        }
-                        RDecl::TsInterface(RTsInterfaceDecl { id, .. })
-                        | RDecl::TsTypeAlias(RTsTypeAliasDecl { id, .. })
-                        | RDecl::TsEnum(RTsEnumDecl { id, .. }) => {
-                            declared_by
-                                .entry(TypedId {
-                                    id: Id::from(id),
-                                    kind: IdKind::TYPE,
-                                })
-                                .or_default()
-                                .push(idx);
-                        }
-                        RDecl::TsModule(_) => {}
-
-                        RDecl::Fn(..) | RDecl::Var(..) => {
-                            let mut vars = stc_ts_ordering::stmt::vars_declared_by(&item);
+                        RDecl::Class(..)
+                        | RDecl::TsInterface(..)
+                        | RDecl::TsTypeAlias(..)
+                        | RDecl::TsEnum(..)
+                        | RDecl::Fn(..)
+                        | RDecl::Var(..) => {
+                            let mut vars = stc_ts_ordering::stmt::ids_declared_by(&item);
 
                             for (id, deps) in vars {
-                                declared_by
-                                    .entry(TypedId { id, kind: IdKind::VAR })
-                                    .or_default()
-                                    .push(idx);
+                                declared_by.entry(id).or_default().push(idx);
 
                                 used.entry(idx).or_default().extend(deps);
                             }
                         }
+
+                        RDecl::TsModule(_) => {}
                     }
                 }
                 Err(RStmt::For(RForStmt {
@@ -267,90 +216,28 @@ impl Analyzer<'_, '_> {
                     left: RVarDeclOrPat::VarDecl(..),
                     ..
                 })) => {
-                    let mut vars = stc_ts_ordering::stmt::vars_declared_by(&item);
+                    let mut vars = stc_ts_ordering::stmt::ids_declared_by(&item);
 
                     for (id, deps) in vars {
-                        declared_by
-                            .entry(TypedId { id, kind: IdKind::VAR })
-                            .or_default()
-                            .push(idx);
+                        declared_by.entry(id).or_default().push(idx);
 
                         used.entry(idx).or_default().extend(deps);
                     }
                 }
                 _ => {
-                    let mut used_vars = stc_ts_ordering::stmt::vars_used_by(&item);
+                    let mut used_vars = stc_ts_ordering::stmt::deps_of(&item);
                     used.entry(idx).or_default().extend(used_vars);
                 }
             }
         }
 
+        // Fill graph.
         for (idx, deps) in used {
-            dbg!(idx, &deps);
-
             for dep in deps {
-                if let Some(declarator_indexes) = declared_by.get(&TypedId {
-                    id: dep.clone(),
-                    kind: IdKind::VAR,
-                }) {
+                if let Some(declarator_indexes) = declared_by.get(&dep) {
                     for &declarator_index in declarator_indexes {
                         if declarator_index != idx {
-                            dbg!(idx, declarator_index);
-                            match graph.edge_weight_mut(idx, declarator_index) {
-                                Some(v) => {
-                                    *v |= IdKind::VAR;
-                                }
-                                None => {
-                                    graph.add_edge(idx, declarator_index, IdKind::VAR);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // Calculate requirements, and fill graph.
-        for (idx, item) in stmts.iter().enumerate() {
-            if skip.contains(&idx) {
-                continue;
-            }
-
-            match item.as_module_decl() {
-                Ok(RModuleDecl::ExportDecl(RExportDecl {
-                    decl: RDecl::TsTypeAlias(..),
-                    ..
-                }))
-                | Err(RStmt::Decl(RDecl::TsTypeAlias(..))) => continue,
-
-                Ok(RModuleDecl::ExportDecl(RExportDecl {
-                    decl: RDecl::TsModule(RTsModuleDecl { global: true, .. }),
-                    ..
-                }))
-                | Err(RStmt::Decl(RDecl::TsModule(RTsModuleDecl { global: true, .. }))) => continue,
-                _ => {}
-            }
-
-            let mut visitor = RequirementCalculartor::default();
-            item.visit_with(&mut visitor);
-
-            for id in visitor.required_ids {
-                if id.kind.contains(IdKind::VAR) {
-                    continue;
-                }
-
-                if let Some(declarator_indexes) = declared_by.get(&id) {
-                    for &declarator_index in declarator_indexes {
-                        if declarator_index != idx {
-                            // dbg!(idx, declarator_index);
-                            match graph.edge_weight_mut(idx, declarator_index) {
-                                Some(v) => {
-                                    *v |= id.kind;
-                                }
-                                None => {
-                                    graph.add_edge(idx, declarator_index, id.kind);
-                                }
-                            }
+                            graph.add_edge(idx, declarator_index, ());
                         }
                     }
                 }
@@ -414,110 +301,6 @@ impl Analyzer<'_, '_> {
         }
 
         (orders, skip)
-    }
-}
-
-#[derive(Default)]
-pub(super) struct RequirementCalculartor {
-    required_ids: Vec<TypedId>,
-    in_var_decl: bool,
-}
-
-impl RequirementCalculartor {
-    fn insert_var(&mut self, i: &RIdent) {
-        self.required_ids.push(TypedId {
-            id: i.into(),
-            kind: IdKind::VAR,
-        });
-    }
-
-    fn insert_type(&mut self, i: &RIdent) {
-        self.required_ids.push(TypedId {
-            id: i.into(),
-            kind: IdKind::TYPE,
-        });
-    }
-}
-
-impl Visit<RTsEntityName> for RequirementCalculartor {
-    fn visit(&mut self, n: &RTsEntityName) {
-        match n {
-            RTsEntityName::TsQualifiedName(n) => {
-                n.visit_with(self);
-            }
-            RTsEntityName::Ident(i) => {
-                self.insert_type(i);
-            }
-        }
-    }
-}
-
-impl Visit<RVarDeclarator> for RequirementCalculartor {
-    fn visit(&mut self, var: &RVarDeclarator) {
-        let in_var_decl = self.in_var_decl;
-        self.in_var_decl = true;
-
-        var.visit_children_with(self);
-
-        self.in_var_decl = in_var_decl;
-    }
-}
-
-impl Visit<RExportNamedSpecifier> for RequirementCalculartor {
-    fn visit(&mut self, n: &RExportNamedSpecifier) {
-        self.insert_var(&n.orig);
-    }
-}
-
-impl Visit<RMemberExpr> for RequirementCalculartor {
-    fn visit(&mut self, n: &RMemberExpr) {
-        n.obj.visit_with(self);
-
-        if n.computed {
-            n.prop.visit_with(self);
-        }
-    }
-}
-
-impl Visit<RExpr> for RequirementCalculartor {
-    fn visit(&mut self, n: &RExpr) {
-        n.visit_children_with(self);
-
-        match n {
-            RExpr::Ident(i) => {
-                self.insert_var(i);
-            }
-            _ => {}
-        }
-    }
-}
-
-impl Visit<RPat> for RequirementCalculartor {
-    fn visit(&mut self, n: &RPat) {
-        n.visit_children_with(self);
-
-        match n {
-            RPat::Ident(i) => {
-                if self.in_var_decl {
-                    return;
-                }
-                self.insert_var(&i.id);
-            }
-            _ => {}
-        }
-    }
-}
-
-impl Visit<RProp> for RequirementCalculartor {
-    fn visit(&mut self, n: &RProp) {
-        n.visit_children_with(self);
-
-        match n {
-            RProp::Shorthand(i) => {
-                self.insert_var(i);
-            }
-            _ => {}
-        }
     }
 }
 
