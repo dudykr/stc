@@ -112,7 +112,7 @@ fn vars_declared_by_decl(d: &RDecl) -> FxHashMap<Id, FxHashSet<Id>> {
     }
 }
 
-pub fn vars_declared_by<T>(node: &T) -> FxHashMap<Id, FxHashSet<Id>>
+fn vars_declared_by<T>(node: &T) -> FxHashMap<Id, FxHashSet<Id>>
 where
     T: AsModuleDecl,
 {
