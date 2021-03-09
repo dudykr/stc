@@ -1,0 +1,1 @@
+export var tuple: [number, string] = [2, "3"]
