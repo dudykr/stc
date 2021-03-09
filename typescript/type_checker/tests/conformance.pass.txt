@@ -526,6 +526,7 @@ es6/for-ofStatements/for-of18.ts
 es6/for-ofStatements/for-of19.ts
 es6/for-ofStatements/for-of20.ts
 es6/for-ofStatements/for-of21.ts
+es6/for-ofStatements/for-of22.ts
 es6/for-ofStatements/for-of23.ts
 es6/for-ofStatements/for-of24.ts
 es6/for-ofStatements/for-of25.ts
