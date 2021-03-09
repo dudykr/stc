@@ -12,6 +12,9 @@ use stc_ts_ast_rnode::RExportDecl;
 use stc_ts_ast_rnode::RExportNamedSpecifier;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RFnDecl;
+use stc_ts_ast_rnode::RForInStmt;
+use stc_ts_ast_rnode::RForOfStmt;
+use stc_ts_ast_rnode::RForStmt;
 use stc_ts_ast_rnode::RFunction;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RMemberExpr;
@@ -24,6 +27,8 @@ use stc_ts_ast_rnode::RTsEnumDecl;
 use stc_ts_ast_rnode::RTsInterfaceDecl;
 use stc_ts_ast_rnode::RTsModuleDecl;
 use stc_ts_ast_rnode::RTsTypeAliasDecl;
+use stc_ts_ast_rnode::RVarDeclOrExpr;
+use stc_ts_ast_rnode::RVarDeclOrPat;
 use stc_ts_ast_rnode::RVarDeclarator;
 use stc_ts_ordering::types::Sortable;
 use stc_ts_types::Id;
@@ -250,6 +255,29 @@ impl Analyzer<'_, '_> {
                         }
                     }
                 }
+                Err(RStmt::For(RForStmt {
+                    init: Some(RVarDeclOrExpr::VarDecl(..)),
+                    ..
+                }))
+                | Err(RStmt::ForOf(RForOfStmt {
+                    left: RVarDeclOrPat::VarDecl(..),
+                    ..
+                }))
+                | Err(RStmt::ForIn(RForInStmt {
+                    left: RVarDeclOrPat::VarDecl(..),
+                    ..
+                })) => {
+                    let mut vars = stc_ts_ordering::stmt::vars_declared_by(&item);
+
+                    for (id, deps) in vars {
+                        declared_by
+                            .entry(TypedId { id, kind: IdKind::VAR })
+                            .or_default()
+                            .push(idx);
+
+                        used.entry(idx).or_default().extend(deps);
+                    }
+                }
                 _ => {
                     let mut used_vars = stc_ts_ordering::stmt::vars_used_by(&item);
                     used.entry(idx).or_default().extend(used_vars);
@@ -258,6 +286,8 @@ impl Analyzer<'_, '_> {
         }
 
         for (idx, deps) in used {
+            dbg!(idx, &deps);
+
             for dep in deps {
                 if let Some(declarator_indexes) = declared_by.get(&TypedId {
                     id: dep.clone(),
