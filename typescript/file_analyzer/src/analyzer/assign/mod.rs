@@ -1327,7 +1327,7 @@ impl Analyzer<'_, '_> {
             //    _ => {}
             //},
             Type::Constructor(ref lc) => match *rhs.normalize() {
-                Type::Lit(..) | Type::Interface(..) | Type::TypeLit(..) => fail!(),
+                Type::Lit(..) => fail!(),
 
                 Type::ClassDef(ClassDef { is_abstract: true, .. }) => fail!(),
 
