@@ -1243,6 +1243,22 @@ impl Analyzer<'_, '_> {
                 Type::Keyword(RTsKeywordType {
                     kind: TsKeywordTypeKind::TsVoidKeyword,
                     ..
+                })
+                | Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsNumberKeyword,
+                    ..
+                })
+                | Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsStringKeyword,
+                    ..
+                })
+                | Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsBigIntKeyword,
+                    ..
+                })
+                | Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsBooleanKeyword,
+                    ..
                 }) => {
                     fail!()
                 }
@@ -1311,8 +1327,12 @@ impl Analyzer<'_, '_> {
             //    _ => {}
             //},
             Type::Constructor(ref lc) => match *rhs.normalize() {
-                Type::Lit(..) => fail!(),
+                Type::Lit(..) | Type::Interface(..) | Type::TypeLit(..) => fail!(),
+
                 Type::ClassDef(ClassDef { is_abstract: true, .. }) => fail!(),
+
+                Type::Function(..) => fail!(),
+
                 _ => {}
             },
 
