@@ -1655,6 +1655,7 @@ types/namedTypes/optionalMethods.ts
 types/never/neverUnionIntersection.ts
 types/nonPrimitive/assignObjectToNonPrimitive.ts
 types/nonPrimitive/nonPrimitiveAsProperty.ts
+types/nonPrimitive/nonPrimitiveInFunction.ts
 types/nonPrimitive/nonPrimitiveIndexingWithForIn.ts
 types/nonPrimitive/nonPrimitiveRhsSideOfInExpression.ts
 types/objectTypeLiteral/callSignatures/callSignatureWithoutAnnotationsOrBody.ts
