@@ -46,6 +46,10 @@ impl Analyzer<'_, '_> {
             },
         )?;
 
+        if ty.is_any() {
+            return Ok(ty.into_owned());
+        }
+
         match ty.normalize() {
             Type::TypeLit(lit) => {
                 let mut new_members = vec![];
