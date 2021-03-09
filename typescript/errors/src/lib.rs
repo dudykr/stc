@@ -175,6 +175,9 @@ pub enum Error {
     ExportAllFailed {
         span: Span,
     },
+    NoSuchPropertyInThis {
+        span: Span,
+    },
     NoSuchPropertyInClass {
         span: Span,
         class_name: Option<Id>,
@@ -879,7 +882,9 @@ impl Error {
 
             Error::SuperInClassWithoutSuper { .. } => 2335,
 
-            Error::NoSuchProperty { .. } | Error::NoSuchPropertyInClass { .. } => 2339,
+            Error::NoSuchProperty { .. } | Error::NoSuchPropertyInThis { .. } | Error::NoSuchPropertyInClass { .. } => {
+                2339
+            }
             Error::AssignOpCannotBeApplied { .. } => 2365,
             Error::NonSymbolComputedPropInFormOfSymbol { .. } => 2471,
             Error::TypeUsedAsVar { .. } => 2585,

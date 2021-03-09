@@ -977,6 +977,17 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        match obj.normalize() {
+            Type::This(..) => {
+                if let Some(this) = self.scope.this().map(Cow::into_owned) {
+                    return self
+                        .access_property(span, this, prop, type_mode, id_ctx)
+                        .context("tried to access property of `this`");
+                }
+            }
+            _ => {}
+        }
+
         let ctx = Ctx {
             preserve_ref: false,
             ignore_expand_prevention_for_top: true,
