@@ -17,6 +17,7 @@ use stc_ts_ast_rnode::RModuleItem;
 use stc_ts_ast_rnode::RProp;
 use stc_ts_ast_rnode::RStmt;
 use stc_ts_ast_rnode::RTsEntityName;
+use stc_ts_ast_rnode::RTsIndexSignature;
 use stc_ts_ast_rnode::RTsModuleDecl;
 use stc_ts_ast_rnode::RTsModuleName;
 use stc_ts_ast_rnode::RTsTypeRef;
@@ -342,6 +343,11 @@ impl Visit<RTsTypeRef> for DepAnalyzer {
             id: id.into(),
         });
     }
+}
+
+/// Noop.
+impl Visit<RTsIndexSignature> for DepAnalyzer {
+    fn visit(&mut self, _: &RTsIndexSignature) {}
 }
 
 fn left(t: &RTsEntityName) -> &RIdent {
