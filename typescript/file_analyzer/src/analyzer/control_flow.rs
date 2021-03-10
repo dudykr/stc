@@ -299,7 +299,7 @@ impl Analyzer<'_, '_> {
         }
 
         if ends_with_ret {
-            self.scope.facts.extend(false_facts);
+            self.cur_facts.true_facts += false_facts;
         }
 
         Ok(())
