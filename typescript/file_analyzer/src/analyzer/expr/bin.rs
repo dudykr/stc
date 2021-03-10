@@ -756,8 +756,8 @@ impl Analyzer<'_, '_> {
         let orig_ty = orig_ty.normalize();
 
         match orig_ty {
-            Type::Ref(..) => {
-                let orig_ty = self.expand_top_ref(span, Cow::Borrowed(orig_ty))?;
+            Type::Ref(..) | Type::Query(..) => {
+                let orig_ty = self.normalize(orig_ty, Default::default())?;
                 return self.narrow_with_instanceof(span, ty, &orig_ty);
             }
 
