@@ -413,10 +413,8 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     /// NOTE: This method **should not call f.fold_children_with(self)**
-    fn validate(&mut self, f: &RFnExpr) {
-        self.visit_fn(f.ident.as_ref(), &f.function);
-
-        Ok(())
+    fn validate(&mut self, f: &RFnExpr) -> ValidationResult<Type> {
+        Ok(self.visit_fn(f.ident.as_ref(), &f.function))
     }
 }
 

@@ -25,7 +25,6 @@ use stc_ts_ast_rnode::RCallExpr;
 use stc_ts_ast_rnode::RClassExpr;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RExprOrSuper;
-use stc_ts_ast_rnode::RFnExpr;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RLit;
 use stc_ts_ast_rnode::RMemberExpr;
@@ -272,8 +271,8 @@ impl Analyzer<'_, '_> {
 
                 RExpr::Arrow(ref e) => return Ok(e.validate_with_args(self, type_ann)?.into()),
 
-                RExpr::Fn(RFnExpr { ref function, .. }) => {
-                    return Ok(function.validate_with(self)?.into());
+                RExpr::Fn(f) => {
+                    return Ok(f.validate_with(self)?.into());
                 }
 
                 RExpr::Member(ref expr) => {
