@@ -145,7 +145,7 @@ fn run_test(file_name: PathBuf, for_error: bool) {
             return;
         }
 
-        panic!("Failed to validate `{}`:\n{}", file_name.display(), res)
+        panic!("Failed to validate.\n{}\n{}", res, file_name.display())
     } else {
         res.compare_to_file(&file_name.with_extension("stdout")).unwrap();
     }
