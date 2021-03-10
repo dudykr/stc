@@ -1844,6 +1844,10 @@ impl Analyzer<'_, '_> {
             ty
         );
 
+        if ty.normalize().is_intersection_type() {
+            return Ok(ty);
+        }
+
         // ty = self.expand(span, ty)?;
 
         let mut usage_visitor = TypeParamUsageFinder::default();
