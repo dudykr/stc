@@ -1085,26 +1085,8 @@ impl Analyzer<'_, '_> {
         type_ann: Option<&Type>,
     ) -> ValidationResult {
         match ty.normalize() {
-            Type::Ref(..) => {
-                let ty = self.expand_top_ref(span, Cow::Borrowed(ty))?;
-                return self.extract(
-                    span,
-                    expr,
-                    &ty,
-                    kind,
-                    args,
-                    arg_types,
-                    spread_arg_types,
-                    type_args,
-                    type_ann,
-                );
-            }
-
-            Type::Query(QueryType {
-                expr: box QueryExpr::TsEntityName(name),
-                ..
-            }) => {
-                let ty = self.resolve_typeof(span, name)?;
+            Type::Ref(..) | Type::Query(..) => {
+                let ty = self.normalize(ty, Default::default())?;
                 return self.extract(
                     span,
                     expr,
