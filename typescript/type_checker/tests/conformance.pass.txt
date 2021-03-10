@@ -1757,6 +1757,7 @@ types/tuple/typeInferenceWithTupleType.ts
 types/tuple/wideningTuples1.ts
 types/typeAliases/asiPreventsParsingAsTypeAlias01.ts
 types/typeAliases/asiPreventsParsingAsTypeAlias02.ts
+types/typeAliases/classDoesNotDependOnBaseTypes.ts
 types/typeAliases/typeAliases.ts
 types/typeParameters/recurringTypeParamForContainerOfBase01.ts
 types/typeParameters/typeArgumentLists/constraintSatisfactionWithAny.ts
