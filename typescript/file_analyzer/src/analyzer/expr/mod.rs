@@ -725,8 +725,8 @@ impl Analyzer<'_, '_> {
             return Ok(matching_elements.pop());
         }
 
+        let mut has_index_signature = false;
         for el in members.iter() {
-            if prop.is_computed() {}
             match el {
                 TypeElement::Index(IndexSignature {
                     ref params,
@@ -734,6 +734,8 @@ impl Analyzer<'_, '_> {
                     readonly,
                     ..
                 }) => {
+                    has_index_signature = true;
+
                     if params.len() != 1 {
                         unimplemented!("Index signature with multiple parameters")
                     }
@@ -772,20 +774,22 @@ impl Analyzer<'_, '_> {
 
                         _ => {}
                     }
-
-                    // This check exists to prefer a specific property over generic index signature.
-                    if prop.is_computed() || matching_elements.is_empty() {
-                        let ty = Type::IndexedAccessType(IndexedAccessType {
-                            span,
-                            obj_type: box obj.clone(),
-                            index_type: box prop_ty.into_owned(),
-                            readonly: *readonly,
-                        });
-
-                        return Ok(Some(ty));
-                    }
                 }
                 _ => {}
+            }
+        }
+
+        if has_index_signature {
+            // This check exists to prefer a specific property over generic index signature.
+            if prop.is_computed() || matching_elements.is_empty() {
+                let ty = Type::IndexedAccessType(IndexedAccessType {
+                    span,
+                    obj_type: box obj.clone(),
+                    index_type: box prop.ty().into_owned(),
+                    readonly: false,
+                });
+
+                return Ok(Some(ty));
             }
         }
 
