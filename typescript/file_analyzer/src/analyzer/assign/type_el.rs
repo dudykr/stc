@@ -14,7 +14,6 @@ use stc_ts_types::Array;
 use stc_ts_types::Class;
 use stc_ts_types::ClassDef;
 use stc_ts_types::ClassMember;
-use stc_ts_types::Interface;
 use stc_ts_types::MethodSignature;
 use stc_ts_types::PropertySignature;
 use stc_ts_types::Ref;
@@ -149,23 +148,16 @@ impl Analyzer<'_, '_> {
                     .store(&mut errors);
                 }
 
-                Type::Interface(Interface { body, .. }) => {
-                    if !opts.allow_unknown_rhs {
-                        for r in body {
-                            unhandled_rhs.push(r.span());
-                        }
+                Type::Interface(..) => {
+                    if let Some(rty) = self
+                        .type_to_type_lit(span, rhs)?
+                        .map(Cow::into_owned)
+                        .map(Type::TypeLit)
+                    {
+                        return self.assign_to_type_elements(opts, lhs_span, lhs, &rty, lhs_metadata);
                     }
-                    // TODO: Check parent interface
 
-                    self.handle_assignment_of_type_elements_to_type_elements(
-                        opts,
-                        &mut missing_fields,
-                        &mut unhandled_rhs,
-                        lhs,
-                        body,
-                    )
-                    .context("tried assignment of an interface to a type literal")
-                    .store(&mut errors);
+                    return Err(Error::SimpleAssignFailed { span });
                 }
 
                 Type::Tuple(..) if lhs.is_empty() => return Ok(()),
