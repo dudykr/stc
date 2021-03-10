@@ -6,15 +6,13 @@ export interface Base {
     baz: any;
 }
 
-export interface E1<T> extends Base {
-    foo: T;
-}
-
 export interface Something { name: string, value: string };
 export interface E2 extends Base {
     foo: Partial<Something>;  // or other mapped type
 }
 
-export interface E3<T> extends Base {
-    foo: Partial<T>; // or other mapped type
-}
+
+declare var e2: E2
+e2.foo
+e2.bar
+e2.baz
