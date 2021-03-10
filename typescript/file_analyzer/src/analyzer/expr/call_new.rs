@@ -11,8 +11,8 @@ use crate::{
     },
     ty,
     ty::{
-        CallSignature, ConstructorSignature, FnParam, Method, MethodSignature, QueryExpr, QueryType, Type, TypeElement,
-        TypeOrSpread, TypeParam, TypeParamInstantiation,
+        CallSignature, ConstructorSignature, FnParam, Method, MethodSignature, Type, TypeElement, TypeOrSpread,
+        TypeParam, TypeParamInstantiation,
     },
     util::{is_str_lit_or_union, type_ext::TypeVecExt},
     validator,
