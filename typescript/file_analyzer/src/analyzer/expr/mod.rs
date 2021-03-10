@@ -759,6 +759,10 @@ impl Analyzer<'_, '_> {
                         return Ok(Some(Type::any(span)));
                     }
 
+                    if (&**index_ty).type_eq(&*prop_ty) {
+                        return Ok(Some(type_ann.clone().map(|v| *v).unwrap_or_else(|| Type::any(span))));
+                    }
+
                     match prop_ty.normalize() {
                         // TODO: Only string or number
                         Type::EnumVariant(..) => {
