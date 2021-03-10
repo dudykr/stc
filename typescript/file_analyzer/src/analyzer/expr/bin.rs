@@ -375,7 +375,7 @@ impl Analyzer<'_, '_> {
                                 .cheap();
 
                             // TODO(kdy1): Maybe we need to check for intersection or union
-                            if orig_ty.is_type_param() {
+                            if orig_ty.normalize().is_type_param() {
                                 self.cur_facts.true_facts.vars.insert(
                                     Name::from(i),
                                     Type::Intersection(Intersection {
