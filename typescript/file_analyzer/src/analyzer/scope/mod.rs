@@ -43,7 +43,6 @@ use stc_ts_types::Class;
 use stc_ts_types::ClassDef;
 use stc_ts_types::Intersection;
 use stc_ts_types::Key;
-use stc_ts_types::TypeLitMetadata;
 use stc_ts_types::TypeParamInstantiation;
 use stc_ts_types::{
     Conditional, FnParam, Id, IndexedAccessType, Mapped, ModuleId, Operator, QueryExpr, QueryType, StaticThis,
@@ -2152,18 +2151,6 @@ impl Fold<Type> for Expander<'_, '_, '_> {
                     }
 
                     return ty;
-                }
-
-                Type::Interface(i) => {
-                    // TODO: Handle type params
-                    return Type::TypeLit(TypeLit {
-                        span,
-                        members: i.body,
-                        metadata: TypeLitMetadata {
-                            inexact: true,
-                            ..Default::default()
-                        },
-                    });
                 }
 
                 Type::Union(Union { span, types }) => {
