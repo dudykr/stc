@@ -1604,6 +1604,7 @@ types/literal/enumLiteralTypes1.ts
 types/literal/enumLiteralTypes2.ts
 types/literal/literalTypes1.ts
 types/literal/literalTypes3.ts
+types/literal/literalTypesAndDestructuring.ts
 types/literal/literalTypesAndTypeAssertions.ts
 types/literal/numericLiteralTypes1.ts
 types/literal/numericLiteralTypes2.ts
@@ -1810,6 +1811,7 @@ types/typeRelationships/bestCommonType/functionWithMultipleReturnStatements2.ts
 types/typeRelationships/bestCommonType/heterogeneousArrayLiterals.ts
 types/typeRelationships/comparable/equalityStrictNulls.ts
 types/typeRelationships/comparable/equalityWithIntersectionTypes01.ts
+types/typeRelationships/comparable/equalityWithUnionTypes01.ts
 types/typeRelationships/comparable/independentPropertyVariance.ts
 types/typeRelationships/comparable/switchCaseWithUnionTypes01.ts
 types/typeRelationships/instanceOf/narrowingConstrainedTypeVariable.ts
