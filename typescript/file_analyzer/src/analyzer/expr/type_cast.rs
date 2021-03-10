@@ -173,6 +173,25 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
+        // interface P {}
+        // interface C extends P {}
+        //
+        // declare var c:C
+        // declare var p:P
+        //
+        // console.log(c as C)
+        // console.log(c as P)
+        // console.log(p as C)
+        // console.log(p as P)
+        //
+        // We can cast P to C
+        if let Some(true) = self.extends(span, orig, casted) {
+            return Ok(());
+        }
+        if let Some(true) = self.extends(span, casted, orig) {
+            return Ok(());
+        }
+
         if self.castable(span, &orig, &casted)? {
             return Ok(());
         }
@@ -342,22 +361,6 @@ impl Analyzer<'_, '_> {
 
         if from.is_class() && to.is_interface() {
             return Ok(false);
-        }
-
-        // interface P {}
-        // interface C extends P {}
-        //
-        // declare var c:C
-        // declare var p:P
-        //
-        // console.log(c as C)
-        // console.log(c as P)
-        // console.log(p as C)
-        // console.log(p as P)
-        //
-        // We can cast P to C
-        if let Some(true) = self.extends(span, from, to).or_else(|| self.extends(span, to, from)) {
-            return Ok(true);
         }
 
         // class A {}
