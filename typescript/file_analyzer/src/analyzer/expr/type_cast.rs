@@ -1,4 +1,5 @@
 use super::{super::Analyzer, TypeOfMode};
+use crate::analyzer::assign::AssignOpts;
 use crate::analyzer::util::ResultExt;
 use crate::{analyzer::util::instantiate_class, ty::Type, validator, validator::ValidateWith, ValidationResult};
 use stc_ts_ast_rnode::RTsAsExpr;
@@ -310,6 +311,8 @@ impl Analyzer<'_, '_> {
                         return Ok(true);
                     }
                 }
+
+                return Ok(false);
             }
             _ => {}
         }
@@ -321,6 +324,8 @@ impl Analyzer<'_, '_> {
                         return Ok(true);
                     }
                 }
+
+                return Ok(false);
             }
 
             Type::Intersection(to) => {
@@ -329,6 +334,8 @@ impl Analyzer<'_, '_> {
                         return Ok(true);
                     }
                 }
+
+                return Ok(false);
             }
             _ => {}
         }
@@ -341,7 +348,16 @@ impl Analyzer<'_, '_> {
         // class B extends A {}
         //
         // We can cast A to B, thus from = A, to = B.
-        if let Ok(()) = self.assign(from, to, span) {
+        if let Ok(()) = self.assign_with_opts(
+            AssignOpts {
+                span,
+                allow_unknown_rhs: true,
+                allow_unknown_type: false,
+                allow_assignment_to_param: false,
+            },
+            from,
+            to,
+        ) {
             return Ok(true);
         }
 
