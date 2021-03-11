@@ -561,10 +561,9 @@ impl Analyzer<'_, '_> {
                                             )?;
 
                                             // TODO: Return type
-
-                                            return Ok(());
                                         }
                                     }
+                                    return Ok(());
                                 }
                                 _ => {}
                             },
@@ -591,10 +590,9 @@ impl Analyzer<'_, '_> {
                                             )?;
 
                                             // TODO: Return type
-
-                                            return Ok(());
                                         }
                                     }
+                                    return Ok(());
                                 }
                                 _ => {}
                             },
