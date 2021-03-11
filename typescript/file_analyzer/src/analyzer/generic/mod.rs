@@ -27,6 +27,7 @@ use stc_ts_generics::type_param::remover::TypeParamRemover;
 use stc_ts_generics::type_param::renamer::TypeParamRenamer;
 use stc_ts_types::Array;
 use stc_ts_types::FnParam;
+use stc_ts_types::Function;
 use stc_ts_types::Id;
 use stc_ts_types::IndexSignature;
 use stc_ts_types::IndexedAccessType;
@@ -1248,22 +1249,21 @@ impl Analyzer<'_, '_> {
                                 }
 
                                 TypeElement::Method(arg_method) => {
-                                    let ret_ty = if let Some(Type::Function(param_fn)) =
-                                        param.ty.as_ref().map(|ty| ty.normalize())
-                                    {
+                                    let arg_prop_ty = Type::Function(Function {
+                                        span: arg_method.span,
+                                        type_params: arg_method.type_params.clone(),
+                                        params: arg_method.params.clone(),
+                                        ret_ty: arg_method
+                                            .ret_ty
+                                            .clone()
+                                            .unwrap_or_else(|| box Type::any(arg_method.span)),
+                                    });
+                                    let type_ann = if let Some(param_ty) = param.ty.as_ref() {
                                         let old = take(&mut self.mapped_type_param_name);
                                         self.mapped_type_param_name = vec![name.clone()];
 
                                         let mut data = InferData::default();
-                                        self.infer_type_of_fn_params(
-                                            span,
-                                            &mut data,
-                                            &param_fn.params,
-                                            &arg_method.params,
-                                        )?;
-                                        if let Some(arg_ret_ty) = arg_method.ret_ty.as_deref() {
-                                            self.infer_type(span, &mut data, &param_fn.ret_ty, &arg_ret_ty)?;
-                                        }
+                                        self.infer_type(span, &mut data, &param_ty, &arg_prop_ty)?;
                                         let inferred_ty = data.type_params.remove(&name);
 
                                         self.mapped_type_param_name = old;
@@ -1272,13 +1272,17 @@ impl Analyzer<'_, '_> {
                                     } else {
                                         None
                                     };
-                                    let ret_ty = ret_ty.map(Box::new).or_else(|| Some(box Type::any(arg_method.span)));
+                                    let type_ann =
+                                        type_ann.map(Box::new).or_else(|| Some(box Type::any(arg_method.span)));
 
-                                    new_members.push(TypeElement::Method(MethodSignature {
+                                    new_members.push(TypeElement::Property(PropertySignature {
+                                        span: arg_method.span,
+                                        key: arg_method.key.clone(),
+                                        params: Default::default(),
+                                        type_params: Default::default(),
                                         optional: calc_true_plus_minus_in_param(optional, arg_method.optional),
                                         readonly: calc_true_plus_minus_in_param(readonly, arg_method.readonly),
-                                        ret_ty,
-                                        ..arg_method.clone()
+                                        type_ann,
                                     }));
                                 }
 
