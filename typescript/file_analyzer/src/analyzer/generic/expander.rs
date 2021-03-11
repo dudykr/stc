@@ -9,6 +9,7 @@ use rnode::FoldWith;
 use slog::Logger;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
+use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_types::Interface;
 use stc_ts_types::Key;
 use stc_ts_types::TypeParamDecl;
@@ -364,7 +365,12 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                 }
 
                 if let Some(ty) = self.params.get(&param.name) {
-                    slog::info!(self.logger, "generic_expand: Expanding type parameter `{}`", param.name);
+                    slog::info!(
+                        self.logger,
+                        "generic_expand: Expanding type parameter `{}` => {}",
+                        param.name,
+                        dump_type_as_string(&self.analyzer.cm, &ty)
+                    );
 
                     // If it's not self-referential, we fold it again.
 
