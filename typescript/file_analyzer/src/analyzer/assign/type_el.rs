@@ -50,6 +50,7 @@ impl Analyzer<'_, '_> {
         rhs: &Type,
         lhs_metadata: TypeLitMetadata,
     ) -> ValidationResult<()> {
+        let rhs = self.normalize(rhs, Default::default())?;
         let span = opts.span;
         // debug_assert!(!span.is_dummy());
 
@@ -153,7 +154,7 @@ impl Analyzer<'_, '_> {
 
                 Type::Interface(..) => {
                     if let Some(rty) = self
-                        .type_to_type_lit(span, rhs)?
+                        .type_to_type_lit(span, &rhs)?
                         .map(Cow::into_owned)
                         .map(Type::TypeLit)
                     {
@@ -204,7 +205,7 @@ impl Analyzer<'_, '_> {
 
                 Type::ClassDef(rhs_cls) => {
                     let rhs = self
-                        .type_to_type_lit(span, rhs)
+                        .type_to_type_lit(span, &rhs)
                         .context("tried to convert a class definition into a type literal for assignment")?
                         .map(Cow::into_owned)
                         .map(Type::TypeLit)
@@ -241,7 +242,7 @@ impl Analyzer<'_, '_> {
                     // }
 
                     let rhs = self
-                        .type_to_type_lit(span, rhs)
+                        .type_to_type_lit(span, &rhs)
                         .context("tried to convert a class into type literal for assignment")?
                         .map(Cow::into_owned)
                         .map(Type::TypeLit)
@@ -295,7 +296,7 @@ impl Analyzer<'_, '_> {
 
                 Type::Function(..) | Type::Constructor(..) => {
                     let rhs = self
-                        .type_to_type_lit(span, rhs)
+                        .type_to_type_lit(span, &rhs)
                         .context("tried to convert a function to a type literal for asssignment")?
                         .map(Cow::into_owned)
                         .map(Type::TypeLit)
