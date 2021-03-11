@@ -179,9 +179,8 @@ impl Analyzer<'_, '_> {
         let ty = self
             .normalize(ty, Default::default())
             .context("tried to normalize a type to get keys from it")?;
-        let ty = ty.normalize();
 
-        match ty {
+        match ty.normalize() {
             Type::TypeLit(ty) => {
                 let mut keys = vec![];
                 for m in &ty.members {
