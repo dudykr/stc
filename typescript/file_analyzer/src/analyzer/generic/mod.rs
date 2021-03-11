@@ -33,6 +33,7 @@ use stc_ts_types::IndexedAccessType;
 use stc_ts_types::Intersection;
 use stc_ts_types::Key;
 use stc_ts_types::Mapped;
+use stc_ts_types::MethodSignature;
 use stc_ts_types::ModuleId;
 use stc_ts_types::Operator;
 use stc_ts_types::OptionalType;
@@ -1219,6 +1220,7 @@ impl Analyzer<'_, '_> {
                                         ..arg_prop.clone()
                                     }));
                                 }
+
                                 TypeElement::Index(i) => {
                                     let type_ann = if let Some(arg_prop_ty) = &i.type_ann {
                                         if let Some(param_ty) = &param.ty {
@@ -1238,6 +1240,41 @@ impl Analyzer<'_, '_> {
                                         Some(box Type::any(i.span))
                                     };
                                     new_members.push(TypeElement::Index(IndexSignature { type_ann, ..i.clone() }));
+                                }
+
+                                TypeElement::Method(arg_method) => {
+                                    let ret_ty = if let Some(Type::Function(param_fn)) =
+                                        param.ty.as_ref().map(|ty| ty.normalize())
+                                    {
+                                        let old = take(&mut self.mapped_type_param_name);
+                                        self.mapped_type_param_name = vec![name.clone()];
+
+                                        let mut data = InferData::default();
+                                        self.infer_type_of_fn_params(
+                                            span,
+                                            &mut data,
+                                            &param_fn.params,
+                                            &arg_method.params,
+                                        )?;
+                                        if let Some(arg_ret_ty) = arg_method.ret_ty.as_deref() {
+                                            self.infer_type(span, &mut data, &param_fn.ret_ty, &arg_ret_ty)?;
+                                        }
+                                        let inferred_ty = data.type_params.remove(&name);
+
+                                        self.mapped_type_param_name = old;
+
+                                        inferred_ty.or_else(|| data.defaults.remove(&name))
+                                    } else {
+                                        None
+                                    };
+                                    let ret_ty = ret_ty.map(Box::new).or_else(|| Some(box Type::any(arg_method.span)));
+
+                                    new_members.push(TypeElement::Method(MethodSignature {
+                                        optional: calc_true_plus_minus_in_param(optional, arg_method.optional),
+                                        readonly: calc_true_plus_minus_in_param(readonly, arg_method.readonly),
+                                        ret_ty,
+                                        ..arg_method.clone()
+                                    }));
                                 }
 
                                 _ => {
