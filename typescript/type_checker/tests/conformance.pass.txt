@@ -1766,6 +1766,8 @@ types/tuple/tupleElementTypes4.ts
 types/tuple/tupleLengthCheck.ts
 types/tuple/typeInferenceWithTupleType.ts
 types/tuple/wideningTuples1.ts
+types/tuple/wideningTuples4.ts
+types/tuple/wideningTuples6.ts
 types/typeAliases/asiPreventsParsingAsTypeAlias01.ts
 types/typeAliases/asiPreventsParsingAsTypeAlias02.ts
 types/typeAliases/classDoesNotDependOnBaseTypes.ts
