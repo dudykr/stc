@@ -65,12 +65,7 @@ impl Analyzer<'_, '_> {
                         .and_then(|iterator| self.get_element_from_iterator(span, Cow::Borrowed(iterator), idx).ok());
 
                     let ty = expr.validate_with_args(self, (mode, type_args, elem_type_ann.as_deref()))?;
-                    let mut ty = ty.foldable();
-                    ty = self.apply_type_facts_to_type(TypeFacts::NENull | TypeFacts::NEUndefined, ty);
-                    if ty.is_never() {
-                        ty = Type::any(ty.span());
-                    }
-                    match &ty {
+                    match ty.normalize() {
                         Type::TypeLit(..) | Type::Function(..) => {
                             can_be_tuple = false;
                         }
@@ -147,8 +142,18 @@ impl Analyzer<'_, '_> {
         }
 
         if !can_be_tuple {
+            elements.retain(|el| {
+                if el.ty.is_kwd(TsKeywordTypeKind::TsNullKeyword) || el.ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
+                {
+                    return false;
+                }
+                true
+            });
             let mut types: Vec<_> = elements.into_iter().map(|element| *element.ty).collect();
             types.dedup_type();
+            if types.is_empty() {
+                types.push(Type::any(span));
+            }
 
             let mut ty = Type::Array(Array {
                 span,
