@@ -1543,6 +1543,7 @@ scanner/ecmascript5/scannerNumericLiteral7.ts
 scanner/ecmascript5/scannerS7.3_A1.1_T2.ts
 scanner/ecmascript5/scannerS7.6_A4.2_T1.ts
 scanner/ecmascript5/scannerStringLiteralWithContainingNullCharacter1.ts
+statements/VariableStatements/everyTypeWithInitializer.ts
 statements/breakStatements/doWhileBreakStatements.ts
 statements/breakStatements/forBreakStatements.ts
 statements/breakStatements/forInBreakStatements.ts
@@ -1588,6 +1589,7 @@ statements/for-ofStatements/ES5for-of32.ts
 statements/ifDoWhileStatements/ifDoWhileStatements.ts
 statements/returnStatements/returnStatements.ts
 statements/throwStatements/throwInEnclosingStatements.ts
+statements/throwStatements/throwStatements.ts
 statements/tryStatements/tryStatements.ts
 types/any/anyAsConstructor.ts
 types/any/anyAsFunctionCall.ts
