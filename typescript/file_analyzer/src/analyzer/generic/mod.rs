@@ -34,7 +34,6 @@ use stc_ts_types::IndexedAccessType;
 use stc_ts_types::Intersection;
 use stc_ts_types::Key;
 use stc_ts_types::Mapped;
-use stc_ts_types::MethodSignature;
 use stc_ts_types::ModuleId;
 use stc_ts_types::Operator;
 use stc_ts_types::OptionalType;
