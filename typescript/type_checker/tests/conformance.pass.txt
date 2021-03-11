@@ -375,8 +375,12 @@ es6/computedProperties/computedPropertyNames13_ES5.ts
 es6/computedProperties/computedPropertyNames13_ES6.ts
 es6/computedProperties/computedPropertyNames16_ES5.ts
 es6/computedProperties/computedPropertyNames16_ES6.ts
+es6/computedProperties/computedPropertyNames18_ES5.ts
+es6/computedProperties/computedPropertyNames18_ES6.ts
 es6/computedProperties/computedPropertyNames1_ES5.ts
 es6/computedProperties/computedPropertyNames1_ES6.ts
+es6/computedProperties/computedPropertyNames20_ES5.ts
+es6/computedProperties/computedPropertyNames20_ES6.ts
 es6/computedProperties/computedPropertyNames25_ES5.ts
 es6/computedProperties/computedPropertyNames25_ES6.ts
 es6/computedProperties/computedPropertyNames28_ES5.ts
