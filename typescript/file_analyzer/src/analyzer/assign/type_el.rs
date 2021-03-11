@@ -286,7 +286,12 @@ impl Analyzer<'_, '_> {
                 })
                 | Type::Lit(RTsLitType {
                     lit: RTsLit::Str(..), ..
-                }) if lhs.is_empty() => return Ok(()),
+                })
+                | Type::Mapped(..)
+                    if lhs.is_empty() =>
+                {
+                    return Ok(())
+                }
 
                 Type::Enum(r) => {
                     let rhs = self.enum_to_type_lit(r).map(Type::TypeLit)?;
