@@ -1797,7 +1797,7 @@ impl Fold<Type> for Expander<'_, '_, '_> {
 
         slog::debug!(
             self.logger,
-            "Expanding type: {:?}",
+            "Expanding type: {}",
             dump_type_as_string(&self.analyzer.cm, &ty)
         );
 
