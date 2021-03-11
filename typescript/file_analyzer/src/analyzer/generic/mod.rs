@@ -1145,6 +1145,12 @@ impl Analyzer<'_, '_> {
                 key_name,
             }) = matches(param)
             {
+                slog::debug!(
+                    self.logger,
+                    "[generic/inference] Found form of `T[P]` where T = {}, P = {}",
+                    name,
+                    key_name
+                );
                 match arg {
                     Type::TypeLit(arg) => {
                         // We should make a new type literal, based on the information.
