@@ -459,7 +459,15 @@ impl Analyzer<'_, '_> {
                         match ty.normalize() {
                             Type::Ref(..) => {}
                             _ => {
-                                ty = self.expand(span, ty)?;
+                                let ctx = Ctx {
+                                    preserve_ref: true,
+                                    ignore_expand_prevention_for_all: false,
+                                    ignore_expand_prevention_for_top: false,
+                                    preserve_params: true,
+                                    preserve_ret_ty: true,
+                                    ..self.ctx
+                                };
+                                ty = self.with_ctx(ctx).expand(span, ty)?;
                             }
                         }
                         self.check_rvalue(span, &ty);
