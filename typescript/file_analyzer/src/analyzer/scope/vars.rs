@@ -6,6 +6,7 @@ use crate::analyzer::Analyzer;
 use crate::ty::TypeExt;
 use crate::validator::ValidateWith;
 use crate::ValidationResult;
+use itertools::Itertools;
 use rnode::NodeId;
 use stc_ts_ast_rnode::RArrayPat;
 use stc_ts_ast_rnode::RBindingIdent;
@@ -16,12 +17,16 @@ use stc_ts_ast_rnode::RObjectPat;
 use stc_ts_ast_rnode::RObjectPatProp;
 use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RRestPat;
+use stc_ts_ast_rnode::RStr;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
+use stc_ts_ast_rnode::RTsLit;
+use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_types::Id;
 use stc_ts_types::Key;
+use stc_ts_types::ModuleId;
 use stc_ts_types::Ref;
 use stc_ts_types::Type;
 use stc_ts_types::TypeLit;
@@ -99,7 +104,49 @@ impl Analyzer<'_, '_> {
                     metadata: Default::default(),
                 }))
             }
-            Type::Param(..) => return Ok(ty.into_owned()),
+
+            // Create Omit<T, 'foo' | 'bar'>
+            Type::Param(..) => {
+                let mut key_types = keys
+                    .iter()
+                    .filter_map(|key| match key {
+                        Key::BigInt(v) => Some(Type::Lit(RTsLitType {
+                            node_id: NodeId::invalid(),
+                            span: v.span,
+                            lit: RTsLit::BigInt(v.clone()),
+                        })),
+                        Key::Num(v) => Some(Type::Lit(RTsLitType {
+                            node_id: NodeId::invalid(),
+                            span: v.span,
+                            lit: RTsLit::Number(v.clone()),
+                        })),
+                        Key::Normal { span, sym } => Some(Type::Lit(RTsLitType {
+                            node_id: NodeId::invalid(),
+                            span: *span,
+                            lit: RTsLit::Str(RStr {
+                                span: *span,
+                                value: sym.clone(),
+                                has_escape: false,
+                                kind: Default::default(),
+                            }),
+                        })),
+
+                        // TODO
+                        _ => None,
+                    })
+                    .collect_vec();
+                let keys = Type::Union(Union { span, types: key_types });
+
+                return Ok(Type::Ref(Ref {
+                    span,
+                    ctxt: ModuleId::builtin(),
+                    type_name: RTsEntityName::Ident(RIdent::new("Omit".into(), DUMMY_SP)),
+                    type_args: Some(box TypeParamInstantiation {
+                        span,
+                        params: vec![ty.clone().into_owned(), keys],
+                    }),
+                }));
+            }
             _ => {}
         }
 
