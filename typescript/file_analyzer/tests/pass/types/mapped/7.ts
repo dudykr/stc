@@ -5,11 +5,11 @@ type Computed<T> = {
     set?(value: T): void;
 }
 
-type VueOptions<D, M, P> = ThisType<D & M & P> & {
+type VueOptions<P> = {
     computed?: Accessors<P>;
 }
 
-declare const Vue: new <D, M, P>(options: VueOptions<D, M, P>) => D & M & P;
+declare const Vue: new <P>(options: VueOptions<P>) => P;
 
 let vue = new Vue({
     computed: {
