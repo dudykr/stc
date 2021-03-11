@@ -50,7 +50,6 @@ impl Analyzer<'_, '_> {
         rhs: &Type,
         lhs_metadata: TypeLitMetadata,
     ) -> ValidationResult<()> {
-        let rhs = self.normalize(rhs, Default::default())?;
         let span = opts.span;
         // debug_assert!(!span.is_dummy());
 
@@ -180,8 +179,10 @@ impl Analyzer<'_, '_> {
                         }),
                     });
 
+                    let rhs = self.normalize(&r_arr, Default::default())?;
+
                     return self
-                        .assign_to_type_elements(opts, lhs_span, lhs, &r_arr, lhs_metadata)
+                        .assign_to_type_elements(opts, lhs_span, lhs, &rhs, lhs_metadata)
                         .context("tried to assign an array as interface to type elements");
                 }
 
