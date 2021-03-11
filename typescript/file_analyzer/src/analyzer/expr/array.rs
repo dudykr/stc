@@ -48,7 +48,9 @@ impl Analyzer<'_, '_> {
 
         let type_ann = self.expand_type_ann(type_ann)?;
 
-        let type_ann = type_ann.and_then(|ty| self.get_iterator(span, ty).ok());
+        let iterator = type_ann
+            .as_deref()
+            .and_then(|ty| self.get_iterator(span, Cow::Borrowed(ty)).ok());
 
         let prefer_tuple = self.prefer_tuple(type_ann.as_deref());
         let mut can_be_tuple = true;
@@ -58,7 +60,7 @@ impl Analyzer<'_, '_> {
             let span = elem.span();
             let ty = match elem {
                 Some(RExprOrSpread { spread: None, ref expr }) => {
-                    let elem_type_ann = type_ann
+                    let elem_type_ann = iterator
                         .as_deref()
                         .and_then(|iterator| self.get_element_from_iterator(span, Cow::Borrowed(iterator), idx).ok());
 
