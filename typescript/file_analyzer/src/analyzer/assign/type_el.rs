@@ -182,7 +182,16 @@ impl Analyzer<'_, '_> {
                     let rhs = self.normalize(&r_arr, Default::default())?;
 
                     return self
-                        .assign_to_type_elements(opts, lhs_span, lhs, &rhs, lhs_metadata)
+                        .assign_to_type_elements(
+                            AssignOpts {
+                                allow_unknown_rhs: true,
+                                ..opts
+                            },
+                            lhs_span,
+                            lhs,
+                            &rhs,
+                            lhs_metadata,
+                        )
                         .context("tried to assign an array as interface to type elements");
                 }
 
