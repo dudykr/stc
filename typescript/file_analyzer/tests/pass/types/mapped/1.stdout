@@ -1,0 +1,32 @@
+warning: Type
+ --> $DIR/tests/pass/types/mapped/1.ts:3:11
+  |
+3 |     obj = x;
+  |           ^
+  |
+  = note: Partial<T>
+
+warning: Type
+ --> $DIR/tests/pass/types/mapped/1.ts:3:5
+  |
+3 |     obj = x;
+  |     ^^^^^^^
+  |
+  = note: Partial<T>
+
+warning: Type
+ --> $DIR/tests/pass/types/mapped/1.ts:4:11
+  |
+4 |     obj = y;
+  |           ^
+  |
+  = note: Readonly<T>
+
+warning: Type
+ --> $DIR/tests/pass/types/mapped/1.ts:4:5
+  |
+4 |     obj = y;
+  |     ^^^^^^^
+  |
+  = note: Readonly<T>
+
