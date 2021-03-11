@@ -24,13 +24,11 @@ use rnode::VisitMutWith;
 use rnode::VisitWith;
 use slog::Logger;
 use stc_ts_ast_rnode::RArrayPat;
-use stc_ts_ast_rnode::RAssignPatProp;
 use stc_ts_ast_rnode::RBindingIdent;
 use stc_ts_ast_rnode::RObjectPat;
 use stc_ts_ast_rnode::RObjectPatProp;
 use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RPropName;
-use stc_ts_ast_rnode::RRestPat;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsQualifiedName;
@@ -48,7 +46,6 @@ use stc_ts_types::{
     Conditional, FnParam, Id, IndexedAccessType, Mapped, ModuleId, Operator, QueryExpr, QueryType, StaticThis,
     TypeParam,
 };
-use stc_utils::TryOpt;
 use std::mem::replace;
 use std::mem::take;
 use std::{borrow::Cow, collections::hash_map::Entry, fmt::Debug, iter, slice};
@@ -1083,202 +1080,115 @@ impl Analyzer<'_, '_> {
                 }
 
                 // TODO: Normalize static
-                match ty.normalize() {
-                    Type::Keyword(RTsKeywordType {
-                        kind: TsKeywordTypeKind::TsAnyKeyword,
-                        ..
-                    }) => {
-                        for p in props.iter() {
-                            match p {
-                                RObjectPatProp::KeyValue(ref kv) => {
-                                    self.declare_complex_vars(
-                                        kind,
-                                        &kv.value,
-                                        Type::any(kv.span()),
-                                        Some(Type::any(kv.span())),
-                                    )?;
+                //
+                let mut used_keys = vec![];
+
+                for prop in props {
+                    match prop {
+                        RObjectPatProp::KeyValue(prop) => {
+                            let mut key = prop.key.validate_with(self)?;
+                            used_keys.push(key.clone());
+
+                            let prop_ty = self.access_property(span, ty.clone(), &key, TypeOfMode::RValue, IdCtx::Var);
+
+                            match prop_ty {
+                                Ok(ty) => {
+                                    // TODO: actual_ty
+                                    self.declare_complex_vars(kind, &prop.value, ty, None)?;
                                 }
 
-                                RObjectPatProp::Assign(RAssignPatProp { span, key, value, .. }) => {
-                                    let ty = value.validate_with_default(self).try_opt()?;
-
-                                    self.declare_complex_vars(
-                                        kind,
-                                        &RPat::Ident(RBindingIdent {
-                                            node_id: NodeId::invalid(),
-                                            id: key.clone(),
-                                            type_ann: None,
-                                        }),
-                                        Type::any(*span),
-                                        Some(Type::any(*span)),
-                                    )?;
+                                Err(err) => {
+                                    self.storage.report(err.convert(|err| match err {
+                                        Error::NoSuchProperty { span, .. }
+                                        | Error::NoSuchPropertyInClass { span, .. } => {
+                                            Error::NoInitAndNoDefault { span }
+                                        }
+                                        _ => err,
+                                    }));
                                 }
-
-                                _ => unimplemented!("handle_elems({:#?})", p),
                             }
                         }
-
-                        return Ok(());
-                    }
-
-                    Type::Keyword(RTsKeywordType {
-                        kind: TsKeywordTypeKind::TsUnknownKeyword,
-                        ..
-                    }) => {
-                        // TODO: Somehow get precise logic of determining span.
-                        //
-                        // let { ...a } = x;
-                        //          ^
-                        //
-
-                        // WTF...
-                        for p in props.iter().rev() {
-                            let span = match p {
-                                RObjectPatProp::Rest(RRestPat { ref arg, .. }) => arg.span(),
-                                _ => p.span(),
+                        RObjectPatProp::Assign(prop) => {
+                            let mut key = Key::Normal {
+                                span: prop.key.span,
+                                sym: prop.key.sym.clone(),
                             };
-                            debug_assert!(!span.is_dummy());
+                            used_keys.push(key.clone());
 
-                            return Err(Error::Unknown { span });
-                        }
+                            let prop_ty = self.access_property(span, ty.clone(), &key, TypeOfMode::RValue, IdCtx::Var);
 
-                        debug_assert!(!span.is_dummy());
-                        return Err(Error::Unknown { span });
-                    }
+                            match prop_ty {
+                                Ok(prop_ty) => {
+                                    let prop_ty = prop_ty.cheap();
 
-                    Type::Ref(..) => {
-                        return self.declare_complex_vars(kind, pat, ty, actual_ty);
-                    }
+                                    match &prop.value {
+                                        Some(default) => {
+                                            self.declare_complex_vars(
+                                                kind,
+                                                &RPat::Ident(RBindingIdent {
+                                                    node_id: NodeId::invalid(),
+                                                    id: prop.key.clone(),
+                                                    type_ann: None,
+                                                }),
+                                                prop_ty.clone(),
+                                                None,
+                                            )?;
 
-                    // TODO: Check if allowing class is same (I mean static vs instance method
-                    // issue)
-                    Type::Class(..)
-                    | Type::Array(..)
-                    | Type::This(..)
-                    | Type::TypeLit(..)
-                    | Type::Interface(..)
-                    | Type::Union(..)
-                    | Type::Intersection(..)
-                    | Type::Lit(..)
-                    | Type::Keyword(..) => {
-                        //
-                        let mut used_keys = vec![];
+                                            let default_value_type = default
+                                                .validate_with_default(self)
+                                                .context("tried to validate default value of an assignment pattern")?;
 
-                        for prop in props {
-                            match prop {
-                                RObjectPatProp::KeyValue(prop) => {
-                                    let mut key = prop.key.validate_with(self)?;
-                                    used_keys.push(key.clone());
-
-                                    let prop_ty =
-                                        self.access_property(span, ty.clone(), &key, TypeOfMode::RValue, IdCtx::Var);
-
-                                    match prop_ty {
-                                        Ok(ty) => {
+                                            self.try_assign_pat(
+                                                span,
+                                                &RPat::Ident(RBindingIdent {
+                                                    node_id: NodeId::invalid(),
+                                                    id: prop.key.clone(),
+                                                    type_ann: None,
+                                                }),
+                                                &prop_ty,
+                                            )
+                                            .context("tried to assign default values")
+                                            .report(&mut self.storage);
+                                        }
+                                        None => {
                                             // TODO: actual_ty
-                                            self.declare_complex_vars(kind, &prop.value, ty, None)?;
-                                        }
-
-                                        Err(err) => {
-                                            self.storage.report(err.convert(|err| match err {
-                                                Error::NoSuchProperty { span, .. }
-                                                | Error::NoSuchPropertyInClass { span, .. } => {
-                                                    Error::NoInitAndNoDefault { span }
-                                                }
-                                                _ => err,
-                                            }));
-                                        }
-                                    }
-                                }
-                                RObjectPatProp::Assign(prop) => {
-                                    let mut key = Key::Normal {
-                                        span: prop.key.span,
-                                        sym: prop.key.sym.clone(),
-                                    };
-                                    used_keys.push(key.clone());
-
-                                    let prop_ty =
-                                        self.access_property(span, ty.clone(), &key, TypeOfMode::RValue, IdCtx::Var);
-
-                                    match prop_ty {
-                                        Ok(prop_ty) => {
-                                            let prop_ty = prop_ty.cheap();
-
-                                            match &prop.value {
-                                                Some(default) => {
-                                                    self.declare_complex_vars(
-                                                        kind,
-                                                        &RPat::Ident(RBindingIdent {
-                                                            node_id: NodeId::invalid(),
-                                                            id: prop.key.clone(),
-                                                            type_ann: None,
-                                                        }),
-                                                        prop_ty.clone(),
-                                                        None,
-                                                    )?;
-
-                                                    let default_value_type =
-                                                        default.validate_with_default(self).context(
-                                                            "tried to validate default value of an assignment pattern",
-                                                        )?;
-
-                                                    self.try_assign_pat(
-                                                        span,
-                                                        &RPat::Ident(RBindingIdent {
-                                                            node_id: NodeId::invalid(),
-                                                            id: prop.key.clone(),
-                                                            type_ann: None,
-                                                        }),
-                                                        &prop_ty,
-                                                    )
-                                                    .context("tried to assign default values")
-                                                    .report(&mut self.storage);
-                                                }
-                                                None => {
-                                                    // TODO: actual_ty
-                                                    self.declare_complex_vars(
-                                                        kind,
-                                                        &RPat::Ident(RBindingIdent {
-                                                            node_id: NodeId::invalid(),
-                                                            id: prop.key.clone(),
-                                                            type_ann: None,
-                                                        }),
-                                                        prop_ty,
-                                                        None,
-                                                    )?;
-                                                }
-                                            }
-                                        }
-                                        Err(err) => {
-                                            self.storage.report(err.convert(|err| match err {
-                                                Error::NoSuchProperty { span, .. }
-                                                | Error::NoSuchPropertyInClass { span, .. } => {
-                                                    Error::NoInitAndNoDefault { span }
-                                                }
-                                                _ => err,
-                                            }));
+                                            self.declare_complex_vars(
+                                                kind,
+                                                &RPat::Ident(RBindingIdent {
+                                                    node_id: NodeId::invalid(),
+                                                    id: prop.key.clone(),
+                                                    type_ann: None,
+                                                }),
+                                                prop_ty,
+                                                None,
+                                            )?;
                                         }
                                     }
                                 }
-                                RObjectPatProp::Rest(pat) => {
-                                    let rest_ty = self
-                                        .exclude_props(pat.span(), &ty, &used_keys)
-                                        .context("tried to exclude keys for assignment with a object rest pattern")?;
-
-                                    return self
-                                        .declare_complex_vars(kind, &pat.arg, rest_ty, None)
-                                        .context("tried to assign to an object rest pattern");
+                                Err(err) => {
+                                    self.storage.report(err.convert(|err| match err {
+                                        Error::NoSuchProperty { span, .. }
+                                        | Error::NoSuchPropertyInClass { span, .. } => {
+                                            Error::NoInitAndNoDefault { span }
+                                        }
+                                        _ => err,
+                                    }));
                                 }
                             }
                         }
+                        RObjectPatProp::Rest(pat) => {
+                            let rest_ty = self
+                                .exclude_props(pat.span(), &ty, &used_keys)
+                                .context("tried to exclude keys for assignment with a object rest pattern")?;
 
-                        return Ok(());
-                    }
-
-                    _ => {
-                        unimplemented!("declare_complex_vars({:#?}, {:#?})", pat, ty)
+                            return self
+                                .declare_complex_vars(kind, &pat.arg, rest_ty, None)
+                                .context("tried to assign to an object rest pattern");
+                        }
                     }
                 }
+
+                return Ok(());
             }
 
             RPat::Rest(pat) => {
