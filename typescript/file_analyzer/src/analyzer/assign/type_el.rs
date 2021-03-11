@@ -15,6 +15,7 @@ use stc_ts_types::Class;
 use stc_ts_types::ClassDef;
 use stc_ts_types::ClassMember;
 use stc_ts_types::MethodSignature;
+use stc_ts_types::ModuleId;
 use stc_ts_types::PropertySignature;
 use stc_ts_types::Ref;
 use stc_ts_types::Tuple;
@@ -22,11 +23,13 @@ use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
 use stc_ts_types::TypeLitMetadata;
+use stc_ts_types::TypeParamInstantiation;
 use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::Span;
 use swc_common::Spanned;
 use swc_common::TypeEq;
+use swc_common::DUMMY_SP;
 use swc_ecma_ast::Accessibility;
 use swc_ecma_ast::TsKeywordTypeKind;
 
@@ -164,7 +167,22 @@ impl Analyzer<'_, '_> {
 
                 Type::Array(..) if lhs.is_empty() => return Ok(()),
 
-                Type::Array(..) => return Err(Error::InvalidAssignmentOfArray { span }),
+                Type::Array(r_arr) => {
+                    //
+                    let r_arr = Type::Ref(Ref {
+                        span,
+                        ctxt: ModuleId::builtin(),
+                        type_name: RTsEntityName::Ident(RIdent::new("Array".into(), DUMMY_SP)),
+                        type_args: Some(box TypeParamInstantiation {
+                            span: DUMMY_SP,
+                            params: vec![*r_arr.elem_type.clone()],
+                        }),
+                    });
+
+                    return self
+                        .assign_to_type_elements(opts, lhs_span, lhs, &r_arr, lhs_metadata)
+                        .context("tried to assign an array as interface to type elements");
+                }
 
                 Type::Tuple(rhs) => {
                     // Handle { 0: nubmer } = [1]
