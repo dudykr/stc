@@ -1446,8 +1446,6 @@ impl Analyzer<'_, '_> {
         self.assign_with_opts(opts, &keys, &rhs_keys)
     }
 
-    /// Returns `Ok(true)` if assignment was successfult and returns `Ok(false)`
-    /// if the method doesn't know the way to handle assignment.
     fn assign_to_mapped(&mut self, opts: AssignOpts, to: &Mapped, rhs: &Type) -> ValidationResult<()> {
         let rhs = rhs.normalize();
 
