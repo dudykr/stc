@@ -14,7 +14,7 @@ use crate::{
         CallSignature, ConstructorSignature, FnParam, Method, MethodSignature, Type, TypeElement, TypeOrSpread,
         TypeParam, TypeParamInstantiation,
     },
-    util::{is_str_lit_or_union, type_ext::TypeVecExt},
+    util::type_ext::TypeVecExt,
     validator,
     validator::ValidateWith,
     ValidationResult,
@@ -55,6 +55,7 @@ use stc_ts_errors::debug::print_type;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
+use stc_ts_type_ops::is_str_lit_or_union;
 use stc_ts_types::Class;
 use stc_ts_types::ClassDef;
 use stc_ts_types::ClassProperty;

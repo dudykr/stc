@@ -142,17 +142,6 @@ impl VisitMut<Type> for Marker {
     }
 }
 
-/// TODO: Rename: `is_all_str_lit`
-pub(crate) fn is_str_lit_or_union(t: &Type) -> bool {
-    match t {
-        Type::Lit(RTsLitType {
-            lit: RTsLit::Str(..), ..
-        }) => true,
-        Type::Union(Union { ref types, .. }) => types.iter().all(|ty| is_str_lit_or_union(&ty)),
-        _ => false,
-    }
-}
-
 pub(crate) fn is_str_or_union(t: &Type) -> bool {
     match t {
         Type::Lit(RTsLitType {

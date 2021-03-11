@@ -9,7 +9,7 @@ use crate::{
     analyzer::{Ctx, ScopeKind},
     ty::{Operator, Type, TypeExt},
     type_facts::TypeFacts,
-    util::{is_str_lit_or_union, is_str_or_union, RemoveTypes},
+    util::{is_str_or_union, RemoveTypes},
     validator,
     validator::ValidateWith,
     ValidationResult,
@@ -33,6 +33,7 @@ use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_file_analyzer_macros::extra_validator;
+use stc_ts_type_ops::is_str_lit_or_union;
 use stc_ts_types::name::Name;
 use stc_ts_types::Class;
 use stc_ts_types::Intersection;

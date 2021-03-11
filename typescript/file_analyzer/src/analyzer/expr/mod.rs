@@ -11,7 +11,6 @@ use crate::{
         TypeLit, TypeParam, TypeParamInstantiation, Union,
     },
     type_facts::TypeFacts,
-    util::is_str_lit_or_union,
     validator,
     validator::ValidateWith,
     ValidationResult,
@@ -49,6 +48,7 @@ use stc_ts_errors::debug::print_backtrace;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
+use stc_ts_type_ops::is_str_lit_or_union;
 use stc_ts_types::name::Name;
 use stc_ts_types::Alias;
 use stc_ts_types::Class;

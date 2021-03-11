@@ -1,7 +1,7 @@
 use super::Analyzer;
 use super::Ctx;
 use crate::ValidationResult;
-use crate::{analyzer::generic::is_literals, ty, ty::Type, util::is_str_lit_or_union};
+use crate::{analyzer::generic::is_literals, ty, ty::Type};
 use rnode::Fold;
 use rnode::FoldWith;
 use rnode::Visit;
@@ -11,6 +11,7 @@ use stc_ts_ast_rnode::RPropName;
 use stc_ts_ast_rnode::RStr;
 use stc_ts_errors::Error;
 use stc_ts_storage::Storage;
+use stc_ts_type_ops::is_str_lit_or_union;
 use stc_ts_types::Class;
 use stc_ts_types::TypeElement;
 use stc_ts_types::{Id, IndexedAccessType, Intersection, ModuleId, QueryExpr, QueryType, Ref, Tuple};

@@ -1,5 +1,4 @@
 use self::generalize::TupleToArray;
-use crate::util::is_str_lit_or_union;
 use crate::util::type_ext::TypeVecExt;
 use retain_mut::RetainMut;
 use rnode::Fold;
@@ -10,6 +9,7 @@ use stc_ts_ast_rnode::RStr;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
+use stc_ts_type_ops::is_str_lit_or_union;
 pub(crate) use stc_ts_types::*;
 use swc_ecma_ast::TsKeywordTypeKind;
 
