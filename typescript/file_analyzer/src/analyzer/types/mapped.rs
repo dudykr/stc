@@ -1,5 +1,6 @@
 use crate::analyzer::Analyzer;
 use crate::ValidationResult;
+use stc_ts_ast_rnode::RTsEnumMemberId;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_errors::DebugExt;
@@ -225,6 +226,23 @@ impl Analyzer<'_, '_> {
                     if let Some(parent_keys) = self.get_keys(span, &parent)? {
                         keys.extend(parent_keys);
                     }
+                }
+
+                return Ok(Some(keys));
+            }
+            Type::Enum(e) => {
+                let mut keys = vec![];
+                for member in &e.members {
+                    keys.push(match &member.id {
+                        RTsEnumMemberId::Ident(i) => Key::Normal {
+                            span: i.span,
+                            sym: i.sym.clone(),
+                        },
+                        RTsEnumMemberId::Str(s) => Key::Normal {
+                            span: s.span,
+                            sym: s.value.clone(),
+                        },
+                    })
                 }
 
                 return Ok(Some(keys));
