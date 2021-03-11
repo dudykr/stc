@@ -1615,7 +1615,15 @@ impl Expander<'_, '_, '_> {
                                         self.analyzer.allow_expansion(ty);
                                     });
 
+                                    let before = dump_type_as_string(&self.analyzer.cm, &ty);
                                     let mut ty = self.analyzer.expand_type_params(&inferred, ty.foldable())?;
+                                    let after = dump_type_as_string(&self.analyzer.cm, &ty);
+                                    slog::debug!(
+                                        &self.analyzer.logger,
+                                        "[expand] Expanded generics: {} => {}",
+                                        before,
+                                        after
+                                    );
 
                                     match ty {
                                         Type::ClassDef(def) => {
