@@ -1771,12 +1771,6 @@ impl Expander<'_, '_, '_> {
             _ => {}
         }
 
-        slog::debug!(
-            self.logger,
-            "Expanding type: {}",
-            dump_type_as_string(&self.analyzer.cm, &ty)
-        );
-
         self.full |= match ty {
             Type::Mapped(..) => true,
             _ => false,
