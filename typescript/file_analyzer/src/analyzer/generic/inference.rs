@@ -1,11 +1,10 @@
-use std::collections::hash_map::Entry;
-
 use super::InferData;
 use crate::analyzer::Analyzer;
 use crate::analyzer::Ctx;
 use crate::ValidationResult;
 use fxhash::FxHashMap;
 use stc_ts_ast_rnode::RTsEntityName;
+use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::DebugExt;
 use stc_ts_type_ops::is_str_lit_or_union;
 use stc_ts_types::Array;
@@ -20,6 +19,7 @@ use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
 use stc_ts_types::TypeParam;
+use std::collections::hash_map::Entry;
 use swc_common::Span;
 use swc_common::Spanned;
 use swc_common::TypeEq;
@@ -51,7 +51,12 @@ impl Analyzer<'_, '_> {
     /// let e5 = f(data, data2); // Error
     /// ```
     pub(super) fn insert_inferred(&mut self, inferred: &mut InferData, name: Id, ty: Type) -> ValidationResult<()> {
-        slog::info!(self.logger, "Inferred {} as {:?}", name, ty);
+        slog::info!(
+            self.logger,
+            "Inferred {} as {:?}",
+            name,
+            dump_type_as_string(&self.cm, &ty)
+        );
 
         match ty.normalize() {
             Type::Param(ty) => {
