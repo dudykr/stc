@@ -6,7 +6,6 @@ use stc_ts_ast_rnode::RTsAsExpr;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
-use stc_ts_ast_rnode::RTsType;
 use stc_ts_ast_rnode::RTsTypeAssertion;
 use stc_ts_errors::Error;
 use stc_ts_types::TypeElement;
@@ -26,9 +25,10 @@ impl Analyzer<'_, '_> {
         type_ann: Option<&Type>,
     ) -> ValidationResult {
         // We don't apply type annotation because it can corrupt type checking.
-        let orig_ty = e.expr.validate_with_args(self, (mode, type_args, type_ann))?;
+        let casted_ty = e.type_ann.validate_with(self)?;
+        let orig_ty = e.expr.validate_with_args(self, (mode, type_args, Some(&casted_ty)))?;
 
-        self.validate_type_cast(e.span, orig_ty, &e.type_ann)
+        self.validate_type_cast(e.span, orig_ty, casted_ty)
     }
 }
 
@@ -46,9 +46,10 @@ impl Analyzer<'_, '_> {
         }
 
         // We don't apply type annotation because it can corrupt type checking.
-        let orig_ty = e.expr.validate_with_args(self, (mode, type_args, type_ann))?;
+        let casted_ty = e.type_ann.validate_with(self)?;
+        let orig_ty = e.expr.validate_with_args(self, (mode, type_args, Some(&casted_ty)))?;
 
-        self.validate_type_cast(e.span, orig_ty, &e.type_ann)
+        self.validate_type_cast(e.span, orig_ty, casted_ty)
     }
 }
 
@@ -66,10 +67,9 @@ impl Analyzer<'_, '_> {
     /// ```
     ///
     /// results in error.
-    fn validate_type_cast(&mut self, span: Span, orig_ty: Type, to: &RTsType) -> ValidationResult {
+    fn validate_type_cast(&mut self, span: Span, orig_ty: Type, casted_ty: Type) -> ValidationResult {
         let orig_ty = self.expand_fully(span, orig_ty, true)?;
 
-        let casted_ty = to.validate_with(self)?;
         let mut casted_ty = instantiate_class(self.ctx.module_id, casted_ty);
         self.prevent_inference_while_simplifying(&mut casted_ty);
         casted_ty = self.simplify(casted_ty);
