@@ -100,6 +100,7 @@ async/es6/asyncArrowFunction/asyncUnParenthesizedArrowFunction_es6.ts
 async/es6/asyncAwait_es6.ts
 async/es6/asyncMethodWithSuper_es6.ts
 async/es6/asyncUseStrict_es6.ts
+async/es6/asyncWithVarShadowing_es6.ts
 async/es6/awaitBinaryExpression/awaitBinaryExpression1_es6.ts
 async/es6/awaitBinaryExpression/awaitBinaryExpression2_es6.ts
 async/es6/awaitBinaryExpression/awaitBinaryExpression3_es6.ts
