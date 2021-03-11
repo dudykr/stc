@@ -1322,7 +1322,7 @@ impl<'a> Scope<'a> {
     /// literal.
     pub fn is_this_ref_to_object_lit(&self) -> bool {
         match self.kind {
-            ScopeKind::Fn => return false,
+            ScopeKind::Fn => {}
             // An arrow function does not modified `this.`
             ScopeKind::ArrowFn => {}
 

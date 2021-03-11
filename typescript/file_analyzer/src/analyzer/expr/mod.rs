@@ -872,6 +872,8 @@ impl Analyzer<'_, '_> {
                         self.marks().infected_by_this_in_object_literal.apply_to_type(&mut v);
                         return Ok(v);
                     }
+
+                    return Ok(Type::any(span));
                 }
 
                 Type::This(this) if self.scope.is_this_ref_to_class() => {
