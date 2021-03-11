@@ -135,6 +135,9 @@ impl Analyzer<'_, '_> {
                         _ => None,
                     })
                     .collect_vec();
+                if key_types.is_empty() {
+                    return Ok(ty.into_owned());
+                }
                 let keys = Type::Union(Union { span, types: key_types });
 
                 return Ok(Type::Ref(Ref {
