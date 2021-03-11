@@ -65,7 +65,11 @@ impl Analyzer<'_, '_> {
                         .and_then(|iterator| self.get_element_from_iterator(span, Cow::Borrowed(iterator), idx).ok());
 
                     let ty = expr.validate_with_args(self, (mode, type_args, elem_type_ann.as_deref()))?;
-
+                    let mut ty = ty.foldable();
+                    ty = self.apply_type_facts_to_type(TypeFacts::NENull | TypeFacts::NEUndefined, ty);
+                    if ty.is_never() {
+                        ty = Type::any(ty.span());
+                    }
                     match &ty {
                         Type::TypeLit(..) | Type::Function(..) => {
                             can_be_tuple = false;
