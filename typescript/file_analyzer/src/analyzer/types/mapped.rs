@@ -2,7 +2,6 @@ use crate::analyzer::Analyzer;
 use crate::ValidationResult;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
-use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::DebugExt;
 use stc_ts_types::Key;
 use stc_ts_types::Mapped;
@@ -25,7 +24,7 @@ impl Analyzer<'_, '_> {
     /// ```ts
     /// declare const a: Partial<Foo>;
     /// ```
-    pub(crate) fn expand_mapped(&mut self, span: Span, m: &Mapped) -> ValidationResult {
+    pub(crate) fn expand_mapped(&mut self, span: Span, m: &Mapped) -> ValidationResult<Option<Type>> {
         match m.type_param.constraint.as_deref().map(|v| v.normalize()) {
             Some(Type::Operator(Operator {
                 op: TsTypeOperatorOp::KeyOf,
@@ -45,7 +44,7 @@ impl Analyzer<'_, '_> {
                                 self.apply_mapped_flags(member, m.optional, m.readonly);
                             }
 
-                            return Ok(Type::TypeLit(new));
+                            return Ok(Some(Type::TypeLit(new)));
                         }
                     }
                 }
@@ -71,11 +70,11 @@ impl Analyzer<'_, '_> {
                         })
                         .collect();
 
-                    return Ok(Type::TypeLit(TypeLit {
+                    return Ok(Some(Type::TypeLit(TypeLit {
                         span: m.span,
                         members,
                         metadata: Default::default(),
-                    }));
+                    })));
                 }
             }
             _ => {
@@ -101,11 +100,11 @@ impl Analyzer<'_, '_> {
                                 })
                                 .collect();
 
-                            return Ok(Type::TypeLit(TypeLit {
+                            return Ok(Some(Type::TypeLit(TypeLit {
                                 span: m.span,
                                 members,
                                 metadata: Default::default(),
-                            }));
+                            })));
                         }
                     }
                     None => {}
@@ -113,10 +112,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        unimplemented!(
-            "expand_mapped: {}",
-            dump_type_as_string(&self.cm, &Type::Mapped(m.clone()))
-        )
+        Ok(None)
     }
 
     /// Evaluate a type and convert it to keys.

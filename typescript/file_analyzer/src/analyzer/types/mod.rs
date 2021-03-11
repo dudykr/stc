@@ -97,11 +97,13 @@ impl Analyzer<'_, '_> {
             Type::Mapped(m) => {
                 if !opts.preserve_mapped {
                     let ty = self.expand_mapped(span, m)?;
-                    return Ok(Cow::Owned(
-                        self.normalize(&ty, opts)
-                            .context("tried to expand a mapped type as a part of normalization")?
-                            .into_owned(),
-                    ));
+                    if let Some(ty) = ty {
+                        return Ok(Cow::Owned(
+                            self.normalize(&ty, opts)
+                                .context("tried to expand a mapped type as a part of normalization")?
+                                .into_owned(),
+                        ));
+                    }
                 }
             }
 
@@ -503,8 +505,16 @@ impl Analyzer<'_, '_> {
 
             Type::Mapped(m) => {
                 let ty = self.expand_mapped(span, m)?;
-                let ty = self.type_to_type_lit(span, &ty)?.map(Cow::into_owned).map(Cow::Owned);
-                return Ok(ty);
+                if let Some(ty) = ty {
+                    let ty = self.type_to_type_lit(span, &ty)?.map(Cow::into_owned).map(Cow::Owned);
+
+                    match ty {
+                        Some(v) => v,
+                        None => return Ok(None),
+                    }
+                } else {
+                    return Ok(None);
+                }
             }
 
             _ => {

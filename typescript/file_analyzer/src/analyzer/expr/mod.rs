@@ -1672,7 +1672,9 @@ impl Analyzer<'_, '_> {
                     .expand_mapped(span, m)
                     .context("tried to expand a mapped type to access property")?;
 
-                return self.access_property_inner(span, obj, prop, type_mode, id_ctx);
+                if let Some(obj) = obj {
+                    return self.access_property_inner(span, obj, prop, type_mode, id_ctx);
+                }
             }
 
             Type::Ref(r) => {
