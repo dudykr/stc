@@ -164,6 +164,16 @@ impl Analyzer<'_, '_> {
             return Ok(ty);
         }
 
+        let should_be_any = elements.iter().all(|el| {
+            el.ty.is_kwd(TsKeywordTypeKind::TsNullKeyword) || el.ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
+        });
+
+        if should_be_any {
+            elements.iter_mut().for_each(|el| {
+                el.ty = box Type::any(el.ty.span());
+            });
+        }
+
         return Ok(Type::Tuple(Tuple { span, elems: elements }));
     }
 }
