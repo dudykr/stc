@@ -249,7 +249,7 @@ impl Analyzer<'_, '_> {
             }
             Type::Param(..) => Ok(None),
             _ => {
-                unimplemented!("extract_keys_as_keys: {:#?}", ty);
+                unimplemented!("get_keys: {:#?}", ty);
             }
         }
     }
