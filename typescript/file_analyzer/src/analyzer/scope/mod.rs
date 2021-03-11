@@ -32,6 +32,7 @@ use stc_ts_ast_rnode::RPropName;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsQualifiedName;
+use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::debug::print_backtrace;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
@@ -1794,7 +1795,11 @@ impl Fold<Type> for Expander<'_, '_, '_> {
             _ => {}
         }
 
-        slog::debug!(self.logger, "Expanding type: {:?}", ty);
+        slog::debug!(
+            self.logger,
+            "Expanding type: {:?}",
+            dump_type_as_string(&self.analyzer.cm, &ty)
+        );
 
         self.full |= match ty {
             Type::Mapped(..) => true,
