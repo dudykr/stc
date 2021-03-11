@@ -507,6 +507,7 @@ es6/destructuring/iterableArrayPattern8.ts
 es6/destructuring/iterableArrayPattern9.ts
 es6/destructuring/nonIterableRestElement1.ts
 es6/destructuring/nonIterableRestElement2.ts
+es6/destructuring/nonIterableRestElement3.ts
 es6/destructuring/objectBindingPatternKeywordIdentifiers05.ts
 es6/destructuring/objectBindingPatternKeywordIdentifiers06.ts
 es6/destructuring/optionalBindingParameters1.ts
@@ -999,6 +1000,7 @@ expressions/conditonalOperator/conditionalOperatorWithIdenticalBCT.ts
 expressions/contextualTyping/arrayLiteralExpressionContextualTyping.ts
 expressions/contextualTyping/functionExpressionContextualTyping3.ts
 expressions/contextualTyping/generatedContextualTyping.ts
+expressions/contextualTyping/iterableContextualTyping1.ts
 expressions/contextualTyping/parenthesizedContexualTyping1.ts
 expressions/contextualTyping/parenthesizedContexualTyping3.ts
 expressions/contextualTyping/superCallParameterContextualTyping1.ts
