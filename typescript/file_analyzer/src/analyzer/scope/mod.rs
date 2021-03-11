@@ -1761,32 +1761,8 @@ impl Expander<'_, '_, '_> {
 
         Ok(ty)
     }
-}
 
-impl Fold<ty::Function> for Expander<'_, '_, '_> {
-    fn fold(&mut self, mut f: ty::Function) -> ty::Function {
-        f.type_params = f.type_params.fold_with(self);
-        f.params = f.params.fold_with(self);
-        if self.analyzer.ctx.preserve_ret_ty {
-            f.ret_ty = f.ret_ty.fold_with(self);
-        }
-
-        f
-    }
-}
-
-impl Fold<FnParam> for Expander<'_, '_, '_> {
-    fn fold(&mut self, param: FnParam) -> FnParam {
-        if self.analyzer.ctx.preserve_params {
-            return param;
-        }
-
-        param.fold_children_with(self)
-    }
-}
-
-impl Fold<Type> for Expander<'_, '_, '_> {
-    fn fold(&mut self, mut ty: Type) -> Type {
+    fn expand_type(&mut self, mut ty: Type) -> Type {
         match ty {
             Type::Keyword(..) | Type::Lit(..) => return ty,
             Type::Arc(..) => {
@@ -2143,6 +2119,50 @@ impl Fold<Type> for Expander<'_, '_, '_> {
         }
 
         ty
+    }
+}
+
+impl Fold<ty::Function> for Expander<'_, '_, '_> {
+    fn fold(&mut self, mut f: ty::Function) -> ty::Function {
+        f.type_params = f.type_params.fold_with(self);
+        f.params = f.params.fold_with(self);
+        if self.analyzer.ctx.preserve_ret_ty {
+            f.ret_ty = f.ret_ty.fold_with(self);
+        }
+
+        f
+    }
+}
+
+impl Fold<FnParam> for Expander<'_, '_, '_> {
+    fn fold(&mut self, param: FnParam) -> FnParam {
+        if self.analyzer.ctx.preserve_params {
+            return param;
+        }
+
+        param.fold_children_with(self)
+    }
+}
+
+impl Fold<Type> for Expander<'_, '_, '_> {
+    fn fold(&mut self, mut ty: Type) -> Type {
+        match ty {
+            Type::Keyword(..) | Type::Lit(..) => return ty,
+            Type::Arc(..) => {
+                return ty.foldable().fold_with(self);
+            }
+            _ => {}
+        }
+        let before = dump_type_as_string(&self.analyzer.cm, &ty);
+        let expanded = self.expand_type(ty);
+        slog::debug!(
+            self.logger,
+            "[expand]: {} => {}",
+            before,
+            dump_type_as_string(&self.analyzer.cm, &expanded)
+        );
+
+        expanded
     }
 }
 
