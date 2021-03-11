@@ -55,14 +55,15 @@ impl Analyzer<'_, '_> {
         let mut elements = Vec::with_capacity(elems.len());
 
         for (idx, elem) in elems.iter().enumerate() {
-            let elem_type_ann = type_ann
-                .as_deref()
-                .and_then(|iterator| self.get_element_from_iterator(span, Cow::Borrowed(iterator), idx).ok());
-
             let span = elem.span();
             let ty = match elem {
                 Some(RExprOrSpread { spread: None, ref expr }) => {
+                    let elem_type_ann = type_ann
+                        .as_deref()
+                        .and_then(|iterator| self.get_element_from_iterator(span, Cow::Borrowed(iterator), idx).ok());
+
                     let ty = expr.validate_with_args(self, (mode, type_args, elem_type_ann.as_deref()))?;
+
                     match &ty {
                         Type::TypeLit(..) | Type::Function(..) => {
                             can_be_tuple = false;
