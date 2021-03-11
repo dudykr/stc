@@ -39,7 +39,6 @@ use stc_ts_types::Operator;
 use stc_ts_types::OptionalType;
 use stc_ts_types::PropertySignature;
 use stc_ts_types::Ref;
-use stc_ts_types::RestType;
 use stc_ts_types::Tuple;
 use stc_ts_types::TupleElement;
 use stc_ts_types::Type;
@@ -1147,7 +1146,7 @@ impl Analyzer<'_, '_> {
             {
                 slog::debug!(
                     self.logger,
-                    "[generic/inference] Found form of `T[P]` where T = {}, P = {}",
+                    "[generic/inference] Found form of `P in keyof T` where T = {}, P = {}",
                     name,
                     key_name
                 );
@@ -1350,78 +1349,6 @@ impl Analyzer<'_, '_> {
                         return Ok(true);
                     }
 
-                    // TODO: Handle array
-                    Type::Tuple(arg) => {
-                        let mut new_elements = vec![];
-
-                        for element in &arg.elems {
-                            let new_ty = if let Some(param_ty) = &param.ty {
-                                let old = take(&mut self.mapped_type_param_name);
-                                self.mapped_type_param_name = vec![name.clone()];
-
-                                let mut data = InferData::default();
-                                let rest = match &*element.ty {
-                                    Type::Rest(RestType {
-                                        span: rest_span,
-                                        ty: box Type::Array(arr),
-                                    }) => {
-                                        self.infer_type(span, &mut data, &param_ty, &arr.elem_type)?;
-                                        Some(*rest_span)
-                                    }
-                                    _ => {
-                                        self.infer_type(span, &mut data, &param_ty, &element.ty)?;
-                                        None
-                                    }
-                                };
-                                let mut inferred_ty = data.type_params.remove(&name);
-
-                                match &mut inferred_ty {
-                                    Some(ty) => {
-                                        handle_optional_for_element(ty, optional);
-                                    }
-                                    None => {}
-                                }
-
-                                self.mapped_type_param_name = old;
-
-                                if let Some(rest) = rest {
-                                    if let Some(elem_type) = inferred_ty {
-                                        Some(Type::Rest(RestType {
-                                            span: rest,
-                                            ty: box Type::Array(Array {
-                                                // TODO
-                                                span: DUMMY_SP,
-                                                elem_type: box elem_type,
-                                            }),
-                                        }))
-                                    } else {
-                                        None
-                                    }
-                                } else {
-                                    inferred_ty
-                                }
-                            } else {
-                                None
-                            };
-
-                            new_elements.push(TupleElement {
-                                ty: box new_ty.unwrap_or_else(|| Type::any(arg.span)),
-                                ..element.clone()
-                            });
-                        }
-
-                        self.insert_inferred(
-                            inferred,
-                            name.clone(),
-                            Type::Tuple(Tuple {
-                                span: arg.span,
-                                elems: new_elements,
-                            }),
-                        )?;
-
-                        return Ok(true);
-                    }
-
                     _ => {
                         dbg!();
                     }
@@ -1439,6 +1366,13 @@ impl Analyzer<'_, '_> {
             match &param.type_param.constraint {
                 Some(constraint) => match constraint.normalize() {
                     Type::Param(type_param) => {
+                        slog::debug!(
+                            self.logger,
+                            "[generic/inference] Found form of `P in T` where T = {}, P = {}",
+                            type_param.name,
+                            param.type_param.name
+                        );
+
                         match arg {
                             Type::TypeLit(arg) => {
                                 let key_ty = arg.members.iter().filter_map(|element| match element {
