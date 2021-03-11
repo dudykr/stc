@@ -53,7 +53,7 @@ impl Analyzer<'_, '_> {
     pub(super) fn insert_inferred(&mut self, inferred: &mut InferData, name: Id, ty: Type) -> ValidationResult<()> {
         slog::info!(
             self.logger,
-            "Inferred {} as {:?}",
+            "Inferred {} as {}",
             name,
             dump_type_as_string(&self.cm, &ty)
         );
