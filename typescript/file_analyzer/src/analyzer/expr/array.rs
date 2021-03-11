@@ -46,15 +46,23 @@ impl Analyzer<'_, '_> {
         let span = arr.span;
         let elems = &arr.elems;
 
-        let prefer_tuple = self.prefer_tuple(type_ann);
+        let type_ann = self.expand_type_ann(type_ann)?;
+
+        let type_ann = type_ann.and_then(|ty| self.get_iterator(span, ty).ok());
+
+        let prefer_tuple = self.prefer_tuple(type_ann.as_deref());
         let mut can_be_tuple = true;
         let mut elements = Vec::with_capacity(elems.len());
 
-        for elem in elems.iter() {
+        for (idx, elem) in elems.iter().enumerate() {
+            let elem_type_ann = type_ann
+                .as_deref()
+                .and_then(|iterator| self.get_element_from_iterator(span, Cow::Borrowed(iterator), idx).ok());
+
             let span = elem.span();
             let ty = match elem {
                 Some(RExprOrSpread { spread: None, ref expr }) => {
-                    let ty = expr.validate_with_default(self)?;
+                    let ty = expr.validate_with_args(self, (mode, type_args, elem_type_ann.as_deref()))?;
                     match &ty {
                         Type::TypeLit(..) | Type::Function(..) => {
                             can_be_tuple = false;
