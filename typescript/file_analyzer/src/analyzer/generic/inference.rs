@@ -338,6 +338,13 @@ impl Analyzer<'_, '_> {
                         continue;
                     }
 
+                    (TypeElement::Call(..), TypeElement::Call(..)) => {}
+
+                    (TypeElement::Call(..), _) | (TypeElement::Constructor(..), _) => {
+                        // Prevent log
+                        continue;
+                    }
+
                     _ => {}
                 }
 
