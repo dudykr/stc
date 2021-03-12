@@ -4,7 +4,11 @@ use crate::ValidationResult;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
+use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::DebugExt;
+use stc_ts_types::ClassMember;
+use stc_ts_types::ClassProperty;
+use stc_ts_types::Method;
 use stc_ts_types::ModuleId;
 use stc_ts_types::Ref;
 use stc_ts_types::Type;
@@ -95,9 +99,27 @@ impl Analyzer<'_, '_> {
                 }
                 TsKeywordTypeKind::TsIntrinsicKeyword => {}
             },
+
+            Type::ClassDef(cls) => {
+                let mut key_types = vec![];
+                for member in &cls.body {
+                    match member {
+                        ClassMember::Property(ClassProperty { key, .. }) | ClassMember::Method(Method { key, .. }) => {
+                            if !key.is_computed() {
+                                key_types.push(key.ty().into_owned());
+                            }
+                        }
+                        ClassMember::Constructor(_) => {}
+                        ClassMember::IndexSignature(_) => {}
+                    }
+                }
+
+                return Ok(Type::Union(Union { span, types: key_types }));
+            }
+
             _ => {}
         }
 
-        unimplemented!("keyof: {:#?}", ty);
+        unimplemented!("keyof: {}", dump_type_as_string(&self.cm, &ty));
     }
 }
