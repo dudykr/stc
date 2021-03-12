@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use super::NormalizeTypeOpts;
 use crate::analyzer::Analyzer;
 use crate::ValidationResult;
@@ -129,6 +131,34 @@ impl Analyzer<'_, '_> {
                         }),
                     )
                     .context("tried to get keys of Array (builtin)");
+            }
+
+            Type::Interface(..) | Type::Enum(..) => {
+                //
+                if let Some(ty) = self
+                    .type_to_type_lit(span, &ty)?
+                    .map(Cow::into_owned)
+                    .map(Type::TypeLit)
+                {
+                    return self
+                        .keyof(span, &ty)
+                        .context("tried to evaluate `keyof` for type literal created with type_to_type_lit");
+                }
+            }
+
+            Type::Intersection(i) => {
+                // We return union of keys.
+                let types = i
+                    .types
+                    .iter()
+                    .map(|ty| self.keyof(span, ty))
+                    .collect::<Result<_, _>>()?;
+
+                return Ok(Type::Union(Union { span, types }));
+            }
+
+            Type::Union(u) => {
+                // We return intersection of keys.
             }
 
             _ => {}
