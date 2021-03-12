@@ -7,3 +7,7 @@ class A {
 }
 
 export type Keys = keyof (A | any)
+
+declare var keys: Keys
+
+keys

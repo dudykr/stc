@@ -12,3 +12,8 @@ class B {
 }
 
 export type Keys = keyof (A | B)
+
+
+declare var keys: Keys
+
+keys
