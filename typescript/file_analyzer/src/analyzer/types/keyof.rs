@@ -200,7 +200,10 @@ impl Analyzer<'_, '_> {
                 let types = i
                     .types
                     .iter()
-                    .map(|ty| self.keyof(span, ty))
+                    .map(|ty| {
+                        self.keyof(span, ty)
+                            .context("tried to get keys of an element of an intersection type")
+                    })
                     .collect::<Result<_, _>>()?;
 
                 return Ok(Type::Union(Union { span, types }));
@@ -208,6 +211,16 @@ impl Analyzer<'_, '_> {
 
             Type::Union(u) => {
                 // We return intersection of keys.
+                let key_types = u
+                    .types
+                    .iter()
+                    .map(|ty| {
+                        self.keyof(span, ty)
+                            .context("tried to get keys of an element of a union type")
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+
+                return self.intersection(span, key_types);
             }
 
             Type::Param(..) => return Ok(ty.into_owned()),
