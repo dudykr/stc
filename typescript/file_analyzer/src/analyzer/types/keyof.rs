@@ -117,6 +117,20 @@ impl Analyzer<'_, '_> {
                 return Ok(Type::Union(Union { span, types: key_types }));
             }
 
+            Type::Array(arr) => {
+                return self
+                    .keyof(
+                        span,
+                        &Type::Ref(Ref {
+                            span,
+                            ctxt: ModuleId::builtin(),
+                            type_name: RTsEntityName::Ident(RIdent::new(js_word!("Array"), DUMMY_SP)),
+                            type_args: None,
+                        }),
+                    )
+                    .context("tried to get keys of Array (builtin)");
+            }
+
             _ => {}
         }
 
