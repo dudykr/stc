@@ -309,7 +309,7 @@ impl Env {
     }
 
     pub(crate) fn declare_global_var(&mut self, name: JsWord, ty: Type) {
-        todo!("declare_global_var")
+        unimplemented!("declare_global_var")
     }
 
     pub(crate) fn declare_global_type(&mut self, name: JsWord, ty: Type) {

@@ -332,7 +332,7 @@ impl Key {
                 span: n.span,
                 lit: RTsLit::BigInt(n.clone()),
             })),
-            Key::Private(..) => todo!("access to type elements using private name"),
+            Key::Private(..) => unimplemented!("access to type elements using private name"),
         }
     }
 }

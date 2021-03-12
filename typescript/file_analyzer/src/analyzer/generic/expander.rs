@@ -42,7 +42,7 @@ impl Analyzer<'_, '_> {
                     let default = default.clone().cheap();
                     params.insert(param.name.clone(), default.clone());
                 } else {
-                    todo!(
+                    unimplemented!(
                         "Reporting errors when type parameter count and type argument count \
                          difffers\nParams={:#?}\nArgs: {:#?}",
                         type_params,

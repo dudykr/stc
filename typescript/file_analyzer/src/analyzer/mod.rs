@@ -701,7 +701,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, decl: &RTsNamespaceDecl) {
-        todo!("namespace is not supported yet")
+        unimplemented!("namespace is not supported yet")
     }
 }
 

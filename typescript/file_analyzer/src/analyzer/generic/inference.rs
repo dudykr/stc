@@ -197,7 +197,7 @@ impl Analyzer<'_, '_> {
                 self.infer_type_using_type_elements_and_type_elements(span, inferred, &param.body, &arg.members)?;
             }
             _ => {
-                todo!()
+                unimplemented!()
             }
         }
 

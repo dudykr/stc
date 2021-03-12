@@ -469,7 +469,7 @@ impl Analyzer<'_, '_> {
                     lit: RTsLit::Number(lit.clone()),
                 })),
                 _ => {
-                    todo!("Handle enum with value other than string literal or numeric literals")
+                    unimplemented!("Handle enum with value other than string literal or numeric literals")
                 }
             }
         }
