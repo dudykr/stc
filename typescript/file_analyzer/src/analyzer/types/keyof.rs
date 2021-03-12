@@ -11,9 +11,12 @@ use stc_ts_errors::DebugExt;
 use stc_ts_types::ClassMember;
 use stc_ts_types::ClassProperty;
 use stc_ts_types::Method;
+use stc_ts_types::MethodSignature;
 use stc_ts_types::ModuleId;
+use stc_ts_types::PropertySignature;
 use stc_ts_types::Ref;
 use stc_ts_types::Type;
+use stc_ts_types::TypeElement;
 use stc_ts_types::Union;
 use swc_atoms::js_word;
 use swc_common::Span;
@@ -101,6 +104,35 @@ impl Analyzer<'_, '_> {
                 }
                 TsKeywordTypeKind::TsIntrinsicKeyword => {}
             },
+
+            Type::TypeLit(l) => {
+                let mut types = vec![];
+                for member in &l.members {
+                    match member {
+                        TypeElement::Property(PropertySignature { key, .. })
+                        | TypeElement::Method(MethodSignature { key, .. }) => {
+                            if !key.is_computed() {
+                                types.push(key.ty().into_owned());
+                            }
+                        }
+
+                        TypeElement::Index(i) => {
+                            // TODO: Check if this is correct.
+                            if let Some(p) = i.params.first() {
+                                types.push(*p.ty.clone());
+                            }
+                        }
+
+                        TypeElement::Call(_) | TypeElement::Constructor(_) => {}
+                    }
+                }
+
+                if types.is_empty() {
+                    return Ok(Type::never(span));
+                }
+
+                return Ok(Type::Union(Union { span, types }));
+            }
 
             Type::ClassDef(cls) => {
                 let mut key_types = vec![];
