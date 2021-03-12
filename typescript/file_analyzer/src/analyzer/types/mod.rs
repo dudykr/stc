@@ -187,7 +187,7 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {
                 let keys_ty = self
-                    .eval_keyof(span, &ty)
+                    .keyof(span, &ty)
                     .context("tried to get keys of a type as a part of normalization")?;
                 return Ok(Cow::Owned(keys_ty));
             }
