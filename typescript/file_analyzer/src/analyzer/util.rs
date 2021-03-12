@@ -22,6 +22,17 @@ use swc_ecma_ast::TsKeywordTypeKind;
 use ty::TypeExt;
 
 impl Analyzer<'_, '_> {
+    /// Prints type for visualization testing.
+    pub(crate) fn dump_type(&mut self, span: Span, ty: &Type) {
+        if !cfg!(debug_assertions) {
+            return;
+        }
+
+        if let Some(debugger) = &self.debugger {
+            debugger.dump_type(span, &ty);
+        }
+    }
+
     /// `span` and `callee` is used only for error reporting.
     fn make_instance_from_type_elements(
         &mut self,

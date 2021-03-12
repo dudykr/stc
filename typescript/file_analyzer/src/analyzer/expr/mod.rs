@@ -331,9 +331,7 @@ impl Analyzer<'_, '_> {
                 _ => true,
             }
         {
-            if let Some(debugger) = &self.debugger {
-                debugger.dump_type(span, &ty);
-            }
+            self.dump_type(span, &ty);
         }
 
         Ok(ty)
