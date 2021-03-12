@@ -8,6 +8,7 @@ use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::DebugExt;
+use stc_ts_types::Class;
 use stc_ts_types::ClassMember;
 use stc_ts_types::ClassProperty;
 use stc_ts_types::Method;
@@ -134,6 +135,14 @@ impl Analyzer<'_, '_> {
                 return Ok(Type::Union(Union { span, types }));
             }
 
+            Type::Class(Class { def, .. }) => {
+                // TODO: Add `KeyOfOpts` to control thi
+                //
+                // Class instance cannot be operand, but it can be passed as argument while
+                // normalizing.
+                return self.keyof(span, &Type::ClassDef(*def.clone()));
+            }
+
             Type::ClassDef(cls) => {
                 let mut key_types = vec![];
                 for member in &cls.body {
@@ -144,8 +153,16 @@ impl Analyzer<'_, '_> {
                             }
                         }
                         ClassMember::Constructor(_) => {}
-                        ClassMember::IndexSignature(_) => {}
+                        ClassMember::IndexSignature(i) => {
+                            if let Some(p) = i.params.first() {
+                                key_types.push(*p.ty.clone());
+                            }
+                        }
                     }
+                }
+
+                if key_types.is_empty() {
+                    return Ok(Type::never(span));
                 }
 
                 return Ok(Type::Union(Union { span, types: key_types }));
@@ -192,6 +209,8 @@ impl Analyzer<'_, '_> {
             Type::Union(u) => {
                 // We return intersection of keys.
             }
+
+            Type::Param(..) => return Ok(ty.into_owned()),
 
             _ => {}
         }
