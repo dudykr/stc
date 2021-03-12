@@ -51,7 +51,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 // TODO: Verify that m.ty does not contain key type.
-                let keys = self.get_keys(span, ty)?;
+                let keys = self.get_property_names(span, ty)?;
                 if let Some(keys) = keys {
                     let members = keys
                         .into_iter()
@@ -174,11 +174,15 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    /// Evaluates `keyof` operator.
-    pub(super) fn get_keys(&mut self, span: Span, ty: &Type) -> ValidationResult<Option<Vec<Key>>> {
+    /// Get keys of `ty` as a proerty name.
+    fn get_property_names(&mut self, span: Span, ty: &Type) -> ValidationResult<Option<Vec<Key>>> {
         let ty = self
             .normalize(ty, Default::default())
             .context("tried to normalize a type to get keys from it")?;
+
+        if ty.is_any() {
+            return Ok(None);
+        }
 
         match ty.normalize() {
             Type::TypeLit(ty) => {
@@ -222,7 +226,7 @@ impl Analyzer<'_, '_> {
                         &parent.expr,
                         parent.type_args.as_deref(),
                     )?;
-                    if let Some(parent_keys) = self.get_keys(span, &parent)? {
+                    if let Some(parent_keys) = self.get_property_names(span, &parent)? {
                         keys.extend(parent_keys);
                     }
                 }
@@ -248,7 +252,7 @@ impl Analyzer<'_, '_> {
             }
             Type::Param(..) => Ok(None),
             _ => {
-                unimplemented!("get_keys: {:#?}", ty);
+                unimplemented!("get_property_names: {:#?}", ty);
             }
         }
     }

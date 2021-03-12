@@ -36,6 +36,7 @@ use swc_ecma_ast::MethodKind;
 use swc_ecma_ast::TsKeywordTypeKind;
 use swc_ecma_ast::TsTypeOperatorOp;
 
+mod keyof;
 mod mapped;
 mod narrowing;
 mod type_param;
@@ -185,13 +186,10 @@ impl Analyzer<'_, '_> {
                 ty,
                 ..
             }) => {
-                let keys = self
-                    .get_keys(span, &ty)
+                let keys_ty = self
+                    .eval_keyof(span, &ty)
                     .context("tried to get keys of a type as a part of normalization")?;
-                if let Some(keys) = keys {
-                    let types = keys.into_iter().map(|key| key.ty().into_owned()).collect::<Vec<_>>();
-                    return Ok(Cow::Owned(Type::union(types)));
-                }
+                return Ok(Cow::Owned(keys_ty));
             }
 
             Type::Operator(_) => {
