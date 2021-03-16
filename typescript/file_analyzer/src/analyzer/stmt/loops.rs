@@ -27,6 +27,19 @@ enum ForHeadKind {
 }
 
 impl Analyzer<'_, '_> {
+    fn validate_loop_body_with_scope(&mut self, body: &RStmt) -> ValidationResult<()> {
+        let facts = self.cur_facts.take();
+
+        loop {
+            let facts_from_body =
+                self.with_child(ScopeKind::LoopBody, facts.true_facts.clone(), |child: &mut Analyzer| {
+                    body.visit_with(child);
+
+                    Ok(child.cur_facts.true_facts.take())
+                })?;
+        }
+    }
+
     #[extra_validator]
     fn check_lhs_of_for_loop(&mut self, e: &RVarDeclOrPat, elem_ty: &Type, kind: ForHeadKind) {
         let span = e.span();
@@ -141,7 +154,7 @@ impl Analyzer<'_, '_> {
 
                 child.check_lhs_of_for_loop(left, &elem_ty, kind);
 
-                body.visit_with(child);
+                child.validate_loop_body_with_scope(&body).report(&mut child.storage);
 
                 Ok(())
             },
