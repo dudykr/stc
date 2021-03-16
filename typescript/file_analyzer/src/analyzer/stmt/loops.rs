@@ -48,6 +48,8 @@ impl Analyzer<'_, '_> {
             prev_facts += facts_from_body;
         }
 
+        self.cur_facts.true_facts += prev_facts;
+
         Ok(())
     }
 
