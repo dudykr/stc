@@ -1,15 +1,18 @@
 use super::super::Analyzer;
 use crate::analyzer::types::NormalizeTypeOpts;
 use crate::analyzer::util::ResultExt;
+use crate::analyzer::Ctx;
 use crate::validator::ValidateWith;
 use crate::{analyzer::ScopeKind, ty::Type, validator, ValidationResult};
 use rnode::VisitWith;
+use stc_ts_ast_rnode::RDoWhileStmt;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RForInStmt;
 use stc_ts_ast_rnode::RForOfStmt;
 use stc_ts_ast_rnode::RStmt;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RVarDeclOrPat;
+use stc_ts_ast_rnode::RWhileStmt;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
@@ -175,6 +178,36 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, s: &RForOfStmt) {
         self.check_for_of_in_loop(s.span, &s.left, &s.right, ForHeadKind::Of, &s.body);
+
+        Ok(())
+    }
+}
+
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, node: &RWhileStmt) {
+        let test = {
+            let ctx = Ctx {
+                in_cond: true,
+                ..self.ctx
+            };
+            node.test.validate_with_default(&mut *self.with_ctx(ctx))?
+        };
+        self.check_for_inifinite_loop(&test, &node.body);
+
+        node.body.visit_with(self);
+
+        Ok(())
+    }
+}
+
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, node: &RDoWhileStmt) {
+        node.body.visit_with(self);
+
+        let test = node.test.validate_with_default(self)?;
+        self.check_for_inifinite_loop(&test, &node.body);
 
         Ok(())
     }
