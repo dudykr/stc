@@ -47,6 +47,8 @@ impl Analyzer<'_, '_> {
 
             prev_facts += facts_from_body;
         }
+
+        Ok(())
     }
 
     #[extra_validator]
