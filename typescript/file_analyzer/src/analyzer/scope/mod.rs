@@ -297,7 +297,9 @@ impl Scope<'_> {
                             e.get_mut().actual_ty = Some(actual_ty);
                         }
                     }
-                    Entry::Vacant(..) => {}
+                    Entry::Vacant(e) => {
+                        e.insert(var);
+                    }
                 }
             } else if var.kind == VarDeclKind::Var {
                 self.vars.insert(name, var);
