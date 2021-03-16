@@ -195,7 +195,7 @@ impl Analyzer<'_, '_> {
         };
         self.check_for_inifinite_loop(&test, &node.body);
 
-        node.body.visit_with(self);
+        self.validate_loop_body_with_scope(&node.body).report(&mut self.storage);
 
         Ok(())
     }
@@ -208,6 +208,8 @@ impl Analyzer<'_, '_> {
 
         let test = node.test.validate_with_default(self)?;
         self.check_for_inifinite_loop(&test, &node.body);
+
+        self.validate_loop_body_with_scope(&node.body).report(&mut self.storage);
 
         Ok(())
     }
