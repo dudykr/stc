@@ -1,4 +1,5 @@
 use super::super::Analyzer;
+use crate::analyzer::control_flow::CondFacts;
 use crate::analyzer::types::NormalizeTypeOpts;
 use crate::analyzer::util::ResultExt;
 use crate::analyzer::Ctx;
@@ -31,15 +32,20 @@ enum ForHeadKind {
 
 impl Analyzer<'_, '_> {
     fn validate_loop_body_with_scope(&mut self, body: &RStmt) -> ValidationResult<()> {
-        let facts = self.cur_facts.take();
+        let orig_facts = self.cur_facts.take();
 
-        loop {
-            let facts_from_body =
-                self.with_child(ScopeKind::LoopBody, facts.true_facts.clone(), |child: &mut Analyzer| {
+        let mut prev_facts = orig_facts.true_facts.clone();
+
+        // TODO: Loop again if required.
+        for _ in 0..2 {
+            let facts_from_body: CondFacts =
+                self.with_child(ScopeKind::LoopBody, prev_facts.clone(), |child: &mut Analyzer| {
                     body.visit_with(child);
 
                     Ok(child.cur_facts.true_facts.take())
                 })?;
+
+            prev_facts += facts_from_body;
         }
     }
 
