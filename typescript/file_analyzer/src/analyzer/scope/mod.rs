@@ -1336,7 +1336,8 @@ impl<'a> Scope<'a> {
             | ScopeKind::Method
             | ScopeKind::Flow
             | ScopeKind::Block
-            | ScopeKind::Module => {}
+            | ScopeKind::Module
+            | ScopeKind::LoopBody => {}
         }
 
         match self.parent {
@@ -1358,7 +1359,12 @@ impl<'a> Scope<'a> {
             ScopeKind::ObjectLit => return false,
 
             ScopeKind::Class => return true,
-            ScopeKind::TypeParams | ScopeKind::Call | ScopeKind::Method | ScopeKind::Flow | ScopeKind::Block => {}
+            ScopeKind::TypeParams
+            | ScopeKind::Call
+            | ScopeKind::Method
+            | ScopeKind::Flow
+            | ScopeKind::Block
+            | ScopeKind::LoopBody => {}
         }
 
         match self.parent {
@@ -1473,6 +1479,8 @@ pub(crate) enum ScopeKind {
     /// Type parameters are stored in this scope.
     Call,
     Module,
+    /// Used to capture type facts created by loop bodies.
+    LoopBody,
 }
 
 impl ScopeKind {
