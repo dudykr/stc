@@ -45,6 +45,8 @@ impl Analyzer<'_, '_> {
                     Ok(child.cur_facts.true_facts.take())
                 })?;
 
+            // We copy `actual` types and type facts from the child scope.
+
             prev_facts += facts_from_body;
         }
 
