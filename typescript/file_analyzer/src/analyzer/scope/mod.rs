@@ -307,9 +307,32 @@ impl Scope<'_> {
                 match self.vars.entry(name.clone()) {
                     Entry::Occupied(mut e) => {
                         e.get_mut().is_actual_type_modified_in_loop |= var.is_actual_type_modified_in_loop;
+                        let is_actual_type_modified_in_loop = e.get().is_actual_type_modified_in_loop;
 
                         if let Some(actual_ty) = var.actual_ty {
-                            e.get_mut().actual_ty = Some(actual_ty);
+                            let new_actual_type = if is_actual_type_modified_in_loop {
+                                let mut types = vec![];
+
+                                if let Some(prev) = &e.get().actual_ty {
+                                    if !actual_ty.type_eq(prev) {
+                                        types.push(actual_ty);
+                                    }
+                                } else {
+                                    types.push(actual_ty);
+                                }
+
+                                types.extend(e.get().actual_ty.clone());
+
+                                if types.len() == 1 {
+                                    types.into_iter().next().unwrap()
+                                } else {
+                                    Type::Union(Union { span: DUMMY_SP, types })
+                                }
+                            } else {
+                                actual_ty
+                            };
+
+                            e.get_mut().actual_ty = Some(new_actual_type);
                         }
                     }
                     Entry::Vacant(e) => {
