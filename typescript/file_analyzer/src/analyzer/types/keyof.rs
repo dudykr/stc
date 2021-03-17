@@ -223,7 +223,12 @@ impl Analyzer<'_, '_> {
                 return self.intersection(span, key_types);
             }
 
-            Type::Param(..) => return Ok(ty.into_owned()),
+            Type::Param(..) => {
+                return Ok(Type::Keyword(RTsKeywordType {
+                    span,
+                    kind: TsKeywordTypeKind::TsStringKeyword,
+                }))
+            }
 
             _ => {}
         }
