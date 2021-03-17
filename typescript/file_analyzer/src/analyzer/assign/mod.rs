@@ -1382,9 +1382,9 @@ impl Analyzer<'_, '_> {
 
             Type::Operator(Operator {
                 op: TsTypeOperatorOp::KeyOf,
-                ty: box Type::Param(..),
+                ty,
                 ..
-            }) => {
+            }) if ty.normalize().is_type_param() => {
                 return self
                     .assign_with_opts(
                         opts,
