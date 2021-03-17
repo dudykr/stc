@@ -27,6 +27,7 @@ use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::EqIgnoreSpan;
 use swc_common::TypeEq;
+use swc_common::DUMMY_SP;
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::*;
 
@@ -1361,8 +1362,8 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        // Handle symbol assignments
         match to {
+            // Handle symbol assignments
             Type::Operator(Operator {
                 op: TsTypeOperatorOp::Unique,
                 ty,
@@ -1372,11 +1373,30 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
             }
+
             Type::Predicate(..) => {
                 if rhs.is_kwd(TsKeywordTypeKind::TsBooleanKeyword) {
                     return Ok(());
                 }
             }
+
+            Type::Operator(Operator {
+                op: TsTypeOperatorOp::KeyOf,
+                ty: box Type::Param(..),
+                ..
+            }) => {
+                return self
+                    .assign_with_opts(
+                        opts,
+                        &Type::Keyword(RTsKeywordType {
+                            span: DUMMY_SP,
+                            kind: TsKeywordTypeKind::TsStringKeyword,
+                        }),
+                        rhs,
+                    )
+                    .context("tried to assign a type to a `keyof TypeParam`")
+            }
+
             _ => {}
         }
 
