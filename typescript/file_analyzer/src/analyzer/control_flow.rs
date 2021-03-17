@@ -544,6 +544,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn try_assign_pat(&mut self, span: Span, lhs: &RPat, ty: &Type) -> ValidationResult<()> {
+        let is_in_loop = self.scope.is_in_loop_body();
         let ty = self
             .normalize(ty, Default::default())
             .context("tried to normalize a type to assign it to a pattern")?;
@@ -615,6 +616,7 @@ impl Analyzer<'_, '_> {
 
                 // Update actual types.
                 if let Some(var_info) = self.scope.get_var_mut(&i.id.clone().into()) {
+                    var_info.is_actual_type_modified_in_loop |= is_in_loop;
                     var_info.actual_ty = Some(actual_ty.unwrap_or_else(|| ty.clone()));
                     return Ok(());
                 }

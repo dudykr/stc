@@ -213,6 +213,19 @@ impl Scope<'_> {
         }
     }
 
+    pub fn is_in_loop_body(&self) -> bool {
+        match self.kind {
+            ScopeKind::LoopBody => return true,
+            ScopeKind::Module | ScopeKind::ArrowFn | ScopeKind::Fn | ScopeKind::Class => return false,
+            _ => {}
+        }
+
+        match self.parent {
+            Some(v) => v.is_in_loop_body(),
+            None => false,
+        }
+    }
+
     pub fn store_type_param(&mut self, name: Id, ty: Type) {
         self.type_params.insert(name, ty);
     }
@@ -293,6 +306,8 @@ impl Scope<'_> {
             if var.copied {
                 match self.vars.entry(name.clone()) {
                     Entry::Occupied(mut e) => {
+                        e.get_mut().is_actual_type_modified_in_loop |= var.is_actual_type_modified_in_loop;
+
                         if let Some(actual_ty) = var.actual_ty {
                             e.get_mut().actual_ty = Some(actual_ty);
                         }
@@ -651,6 +666,7 @@ impl Analyzer<'_, '_> {
             kind: VarDeclKind::Const,
             initialized: true,
             copied: false,
+            is_actual_type_modified_in_loop: false,
         });
 
         let mut scope = Some(&self.scope);
@@ -846,6 +862,7 @@ impl Analyzer<'_, '_> {
             ty: ty.clone(),
             actual_ty: ty,
             copied: true,
+            is_actual_type_modified_in_loop: false,
         }))
     }
 
@@ -975,6 +992,7 @@ impl Analyzer<'_, '_> {
                     actual_ty: actual_ty.or_else(|| ty.clone()),
                     initialized,
                     copied: false,
+                    is_actual_type_modified_in_loop: false,
                 };
                 e.insert(info);
             }
@@ -1314,6 +1332,10 @@ pub(crate) struct VarInfo {
     /// Copied from parent scope. If this is true, it's not a variable
     /// declaration.
     pub copied: bool,
+
+    /// If this is true, types will become union while moving variables to
+    /// parent scope.
+    pub is_actual_type_modified_in_loop: bool,
 }
 
 impl<'a> Scope<'a> {
