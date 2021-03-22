@@ -144,11 +144,41 @@ impl Analyzer<'_, '_> {
 
         match r {
             Type::Constructor(rc) => {
-                self.assign_params(opts, &l.params, &rc.params).context(
+                let new_r;
+                let (r_params, r_type_ann) = match (&l.type_params, &rc.type_params) {
+                    (Some(lt), Some(rt)) => {
+                        //
+                        let map = lt
+                            .params
+                            .iter()
+                            .zip(rt.params.iter())
+                            .map(|(l, r)| (r.name.clone(), Type::Param(l.clone()).cheap()))
+                            .collect::<FxHashMap<_, _>>();
+                        let r = self
+                            .expand_type_params(&map, r.clone())
+                            .context("tried to expand type parameters as a step of constructor assignemnt")?;
+                        new_r = r.constructor().unwrap();
+                        (&new_r.params, &new_r.type_ann)
+                    }
+
+                    // Assigning `(a: 1) => string` to `<Z>(a: Z) => string` is valid.
+                    (None, Some(rt)) => {
+                        let map = self.infer_type_with_types(span, &*rt.params, r, lt)?;
+                        let r = self
+                            .expand_type_params(&map, r.clone())
+                            .context("tried to expand type parameters of rhs as a step of constructor assignemnt")?;
+                        new_r = r.constructor().unwrap();
+                        (&new_r.params, &new_r.type_ann)
+                    }
+
+                    _ => (&rc.params, &rc.type_ann),
+                };
+
+                self.assign_params(opts, &l.params, &r_params).context(
                     "tried to assign the parameters of constructor to the parameters of another constructor",
                 )?;
 
-                self.assign_with_opts(opts, &l.type_ann, &rc.type_ann).context(
+                self.assign_with_opts(opts, &l.type_ann, &r_type_ann).context(
                     "tried to assign the return type of constructor to the return type of another constructor",
                 )?;
 

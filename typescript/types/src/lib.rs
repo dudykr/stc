@@ -810,6 +810,7 @@ pub struct Constructor {
     pub span: Span,
     pub type_params: Option<TypeParamDecl>,
     pub params: Vec<FnParam>,
+    /// The return type.
     pub type_ann: Box<Type>,
     pub is_abstract: bool,
 }
