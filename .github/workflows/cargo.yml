@@ -19,7 +19,7 @@ jobs:
       - name: Install rust
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly
+          toolchain: nightly-2020-12-29
           components: rustfmt
 
       - name: Run cargo fmt
@@ -36,7 +36,7 @@ jobs:
       - name: Install rust
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly
+          toolchain: nightly-2020-12-29
 
       - name: Install node dependencies
         run: |
@@ -100,7 +100,7 @@ jobs:
       - name: Install rust
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly
+          toolchain: nightly-2020-12-29
 
       - name: Install node dependencies
         run: |
