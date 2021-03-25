@@ -5,6 +5,10 @@ on: [push, pull_request]
 env:
   CARGO_INCREMENTAL: 0
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   fmt:
     name: Formatting
@@ -12,14 +16,11 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Install rustup
-        run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rustup.sh
-          sh ./rustup.sh --default-toolchain none -y
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-
       - name: Install rustfmt
-        run: rustup component add rustfmt
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: none
+          components: rustfmt
 
       - name: Run cargo fmt
         run: cargo fmt --all -- --check
@@ -32,11 +33,11 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Install rustup
-        run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rustup.sh
-          sh ./rustup.sh --default-toolchain none -y
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      - name: Install rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: none
+          components: rustfmt
 
       - name: Install node dependencies
         run: |
@@ -62,8 +63,8 @@ jobs:
     needs:
       - fmt
       - check
-    runs-on: ubuntu-latest
-    # runs-on: self-hosted
+    # runs-on: ubuntu-latest
+    runs-on: self-hosted
     strategy:
       matrix:
         crate:
