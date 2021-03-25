@@ -11,12 +11,11 @@ defaults:
 
 jobs:
   build:
-    name: build
+    name: Build
+    runs-on: [self-hosted, ${{ matrix.os }}]
     strategy:
       matrix:
-        os:
-          - macOS
-    runs-on: [self-hosted, ${{ matrix.os }}]
+        os: [macOS]
     steps:
       - uses: actions/checkout@v2
 
