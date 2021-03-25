@@ -1,0 +1,13 @@
+name: Pubish
+
+on: [push, pull_request]
+
+env:
+  CARGO_INCREMENTAL: 0
+
+jobs:
+  build-mac:
+    name: Build (macOS)
+    runs-on: [self-hosted, macOS]
+    steps:
+      - uses: actions/checkout@v2
