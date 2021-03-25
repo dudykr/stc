@@ -12,7 +12,7 @@ defaults:
 jobs:
   build:
     name: Build
-    runs-on: [self-hosted, ${{ matrix.os }}]
+    runs-on: [self-hosted, macOS]
     strategy:
       matrix:
         os: [macOS]
@@ -28,4 +28,3 @@ jobs:
       - name: Build binaries
         run: |
           cargo build --release
-          
