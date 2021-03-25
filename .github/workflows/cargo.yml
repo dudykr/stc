@@ -16,10 +16,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Install rustfmt
+      - name: Install rust
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: none
+          toolchain: nightly
           components: rustfmt
 
       - name: Run cargo fmt
@@ -36,8 +36,7 @@ jobs:
       - name: Install rust
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: none
-          components: rustfmt
+          toolchain: nightly
 
       - name: Install node dependencies
         run: |
@@ -98,11 +97,10 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Install rustup
-        run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rustup.sh
-          sh ./rustup.sh --default-toolchain none -y
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      - name: Install rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
 
       - name: Install node dependencies
         run: |
