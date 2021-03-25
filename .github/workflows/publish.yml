@@ -23,7 +23,7 @@ jobs:
       - name: Install rust
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: none
+          toolchain: nightly-2020-12-29
           components: rustfmt
 
       - name: Build binaries
