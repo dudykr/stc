@@ -43,7 +43,6 @@ rustflags = [
   "-C",
   "target-feature=+sse2,+aes",
   "-C",
-  "link-arg=-fuse-ld=/usr/local/bin/zld",
   "-Zshare-generics=y",
   "-Zrun-dsymutil=no",
 ]
