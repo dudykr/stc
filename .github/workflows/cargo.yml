@@ -116,15 +116,6 @@ jobs:
           echo "$HOME/npm/bin" >> $GITHUB_PATH
           npm i
 
-      - name: Cache
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo
-
       - name: Run cargo tests
         run: |
           cargo test --color always -p ${{ matrix.crate }} -- -Z unstable-options --report-time=colored
