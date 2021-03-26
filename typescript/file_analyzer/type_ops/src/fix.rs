@@ -1,6 +1,7 @@
 use rnode::VisitMut;
 use rnode::VisitMutWith;
 use stc_ts_types::Type;
+use stc_ts_types::Union;
 
 pub trait Fix: Sized {
     fn fix(&mut self);
@@ -18,6 +19,19 @@ impl Fix for Type {
 }
 
 struct Fixer;
+
+impl VisitMut<Union> for Fixer {
+    fn visit_mut(&mut self, u: &mut Union) {
+        let mut new: Vec<Type> = Vec::with_capacity(types.capacity());
+        for ty in types.drain(..) {
+            if new.iter().any(|stored| stored.type_eq(&ty)) {
+                continue;
+            }
+            new.push(ty);
+        }
+        *self = new;
+    }
+}
 
 impl VisitMut<Type> for Fixer {
     fn visit_mut(&mut self, ty: &mut Type) {
