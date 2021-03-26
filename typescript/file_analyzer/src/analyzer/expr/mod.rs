@@ -59,7 +59,7 @@ pub use stc_ts_types::IdCtx;
 use stc_ts_types::Key;
 use stc_ts_types::PropertySignature;
 use stc_ts_types::{ClassProperty, Id, Method, ModuleId, Operator, QueryExpr, QueryType, StaticThis};
-use stc_ts_utils::panic_context;
+use stc_utils::panic_context;
 use std::borrow::Cow;
 use std::convert::TryFrom;
 use std::convert::TryInto;
