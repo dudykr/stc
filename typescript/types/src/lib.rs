@@ -929,7 +929,12 @@ impl Type {
                     }
                 }
 
-                _ => tys.push(ty),
+                _ => {
+                    if tys.iter().any(|prev: &Type| prev.type_eq(&ty)) {
+                        continue;
+                    }
+                    tys.push(ty)
+                }
             }
         }
 
