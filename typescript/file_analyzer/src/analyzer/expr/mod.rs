@@ -309,6 +309,7 @@ impl Analyzer<'_, '_> {
                 _ => unimplemented!("typeof ({:?})", e),
             }
         })()?;
+        ty.assert_valid();
 
         if need_type_param_handling {
             self.replace_invalid_type_params(&mut ty);
