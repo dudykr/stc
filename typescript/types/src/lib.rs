@@ -918,23 +918,19 @@ impl Type {
                 span = span.with_hi(sp.hi());
             }
 
-            match ty {
-                Type::Union(Union { types, .. }) => {
-                    assert_ne!(types, vec![]);
-                    for new in types {
-                        if tys.iter().any(|prev: &Type| prev.type_eq(&new)) {
-                            continue;
-                        }
-                        tys.push(new)
-                    }
-                }
-
-                _ => {
-                    if tys.iter().any(|prev: &Type| prev.type_eq(&ty)) {
+            if ty.normalize().is_union_type() {
+                let types = ty.foldable().union_type().unwrap().types;
+                for new in types {
+                    if tys.iter().any(|prev: &Type| prev.type_eq(&new)) {
                         continue;
                     }
-                    tys.push(ty)
+                    tys.push(new)
                 }
+            } else {
+                if tys.iter().any(|prev: &Type| prev.type_eq(&ty)) {
+                    continue;
+                }
+                tys.push(ty)
             }
         }
 
