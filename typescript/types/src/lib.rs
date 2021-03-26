@@ -765,8 +765,11 @@ impl Union {
 
         self.types.iter().for_each(|ty| ty.assert_valid());
 
-        for t1 in &self.types {
-            for t2 in &self.types {
+        for (i, t1) in self.types.iter().enumerate() {
+            for (j, t2) in self.types.iter().enumerate() {
+                if i == j {
+                    continue;
+                }
                 if t1.type_eq(t2) {
                     panic!("A union type has duplicate elements: ({:?})", t1)
                 }
