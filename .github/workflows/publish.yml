@@ -12,10 +12,8 @@ defaults:
 jobs:
   build:
     name: Build
-    runs-on: [self-hosted, macOS]
-    strategy:
-      matrix:
-        os: [macOS]
+    # runs-on: [self-hosted, macOS]
+    runs-on: [self-hosted, docker]
     steps:
       - uses: actions/checkout@v2
 

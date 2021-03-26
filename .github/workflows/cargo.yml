@@ -12,7 +12,7 @@ defaults:
 jobs:
   fmt:
     name: Formatting
-    runs-on: [self-hosted]
+    runs-on: [self-hosted, docker]
     steps:
       - uses: actions/checkout@v2
 
@@ -28,7 +28,7 @@ jobs:
 
   check:
     name: Check
-    runs-on: [self-hosted]
+    runs-on: [self-hosted, docker]
     steps:
       - uses: actions/checkout@v2
         with:
@@ -69,7 +69,7 @@ jobs:
       - fmt
       - check
     # runs-on: ubuntu-latest
-    runs-on: self-hosted
+    runs-on: [self-hosted, docker]
     strategy:
       matrix:
         crate:
