@@ -223,6 +223,8 @@ impl Analyzer<'_, '_> {
     }
 
     fn normalize_for_assign<'a>(&mut self, ty: &'a Type) -> ValidationResult<Cow<'a, Type>> {
+        ty.assert_valid();
+
         let ty = ty.normalize();
 
         match ty {
