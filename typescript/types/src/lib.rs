@@ -921,7 +921,12 @@ impl Type {
             match ty {
                 Type::Union(Union { types, .. }) => {
                     assert_ne!(types, vec![]);
-                    tys.extend(types);
+                    for new in types {
+                        if tys.iter().any(|prev: &Type| prev.type_eq(&new)) {
+                            continue;
+                        }
+                        tys.push(new)
+                    }
                 }
 
                 _ => tys.push(ty),
