@@ -1,0 +1,28 @@
+name: Pubish
+
+on: [push]
+
+env:
+  CARGO_INCREMENTAL: 0
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    name: Build
+    # runs-on: [self-hosted, macOS]
+    runs-on: [self-hosted, docker]
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+
+      - name: Build binaries
+        run: |
+          cargo build --release

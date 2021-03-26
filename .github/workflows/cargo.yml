@@ -5,53 +5,50 @@ on: [push, pull_request]
 env:
   CARGO_INCREMENTAL: 0
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   fmt:
     name: Formatting
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, docker]
     steps:
       - uses: actions/checkout@v2
 
-      - name: Install rustup
-        run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rustup.sh
-          sh ./rustup.sh --default-toolchain none -y
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-
-      - name: Install rustfmt
-        run: rustup component add rustfmt
+      - name: Install rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          profile: minimal
+          components: rustfmt
 
       - name: Run cargo fmt
         run: cargo fmt --all -- --check
 
   check:
     name: Check
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, docker]
     steps:
       - uses: actions/checkout@v2
         with:
           submodules: recursive
 
-      - name: Install rustup
-        run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rustup.sh
-          sh ./rustup.sh --default-toolchain none -y
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      - name: Install rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "14"
 
       - name: Install node dependencies
         run: |
           npm config set prefix ~/npm
           echo "$HOME/npm/bin" >> $GITHUB_PATH
           npm i
-
-      - name: Cache
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo
 
       # Ensure that all components all compilable.
       - name: Run cargo check for all targets
@@ -62,61 +59,56 @@ jobs:
     needs:
       - fmt
       - check
-    runs-on: ubuntu-latest
-    # runs-on: self-hosted
+    # runs-on: ubuntu-latest
+    runs-on: [self-hosted, docker]
     strategy:
       matrix:
         crate:
-          - libstc
           - node-stc
           - rnode
-          # - rnode_macros
+          - rnode_macros
           - stc
-          # - stc-devtools
-          # - stc_testing
+          - stc-devtools
+          - stc_testing
           - stc_ts_ast_rnode
-          # - stc_ts_builtin_macro
+          - stc_ts_builtin_macro
           - stc_ts_builtin_types
           - stc_ts_dts
-          # - stc_ts_dts_mutations
+          - stc_ts_dts_mutations
           - stc_ts_env
           - stc_ts_errors
           - stc_ts_file_analyzer
-          # - stc_ts_file_analyzer_macros
+          - stc_ts_file_analyzer_macros
+          - stc_ts_generics
           - stc_ts_module_loader
-          # - stc_ts_storage
-          # - stc_ts_testing
+          - stc_ts_storage
+          - stc_ts_testing
           - stc_ts_type_checker
           - stc_ts_types
-          # - stc_ts_utils
-          # - stc_utils
+          - stc_ts_utils
+          - stc_utils
           - stc_visit
-          # - stc_visit_macros
+          - stc_visit_macros
     steps:
       - uses: actions/checkout@v2
         with:
           submodules: recursive
 
-      - name: Install rustup
-        run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rustup.sh
-          sh ./rustup.sh --default-toolchain none -y
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      - name: Install rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "14"
 
       - name: Install node dependencies
         run: |
           npm config set prefix ~/npm
           echo "$HOME/npm/bin" >> $GITHUB_PATH
           npm i
-
-      - name: Cache
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo
 
       - name: Run cargo tests
         run: |
