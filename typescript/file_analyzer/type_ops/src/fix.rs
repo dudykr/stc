@@ -1,4 +1,5 @@
 use rnode::VisitMut;
+use swc_common::TypeEq;
 use rnode::VisitMutWith;
 use stc_ts_types::Type;
 use stc_ts_types::Union;
@@ -22,14 +23,14 @@ struct Fixer;
 
 impl VisitMut<Union> for Fixer {
     fn visit_mut(&mut self, u: &mut Union) {
-        let mut new: Vec<Type> = Vec::with_capacity(types.capacity());
-        for ty in types.drain(..) {
+        let mut new: Vec<Type> = Vec::with_capacity(u.types.capacity());
+        for ty in u.types.drain(..) {
             if new.iter().any(|stored| stored.type_eq(&ty)) {
                 continue;
             }
             new.push(ty);
         }
-        *self = new;
+        u.types = new;
     }
 }
 

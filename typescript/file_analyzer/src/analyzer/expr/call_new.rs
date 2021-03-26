@@ -56,6 +56,7 @@ use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_type_ops::is_str_lit_or_union;
+use stc_ts_type_ops::Fix;
 use stc_ts_types::Class;
 use stc_ts_types::ClassDef;
 use stc_ts_types::ClassProperty;
@@ -1882,7 +1883,8 @@ impl Analyzer<'_, '_> {
                 expanded_params = params
                     .into_iter()
                     .map(|v| -> ValidationResult<_> {
-                        let ty = box self.expand_type_params(&map, *v.ty)?;
+                        let mut ty = box self.expand_type_params(&map, *v.ty)?;
+                        ty.fix();
 
                         Ok(FnParam { ty, ..v })
                     })
@@ -1897,7 +1899,8 @@ impl Analyzer<'_, '_> {
             let expanded_param_types = params
                 .into_iter()
                 .map(|v| -> ValidationResult<_> {
-                    let ty = box self.expand_type_params(&inferred, *v.ty)?;
+                    let mut ty = box self.expand_type_params(&inferred, *v.ty)?;
+                    ty.fix();
 
                     Ok(FnParam { ty, ..v })
                 })
