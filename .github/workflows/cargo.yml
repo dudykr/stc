@@ -19,7 +19,6 @@ jobs:
       - name: Install rust
         uses: actions-rs/toolchain@v1
         with:
-          default: true
           toolchain: nightly-2020-12-29
           profile: minimal
           components: rustfmt
@@ -38,7 +37,6 @@ jobs:
       - name: Install rust
         uses: actions-rs/toolchain@v1
         with:
-          default: true
           profile: minimal
           toolchain: nightly-2020-12-29
 
@@ -108,7 +106,6 @@ jobs:
       - name: Install rust
         uses: actions-rs/toolchain@v1
         with:
-          default: true
           profile: minimal
           toolchain: nightly-2020-12-29
 
