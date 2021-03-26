@@ -31,5 +31,8 @@ lto = true
 codegen-units = 1
 debug = true
 
+[profile.dev]
+split-debuginfo = "unpacked"
+
 [profile.dev.package]
 swc_ecma_parser = {opt-level = 3}
