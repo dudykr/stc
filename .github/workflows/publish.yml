@@ -23,6 +23,7 @@ jobs:
           profile: minimal
           toolchain: nightly
 
-      - name: Build binaries
-        run: |
-          cargo build --release
+      # This consumes too much time needlessly.
+      # - name: Build binaries
+      #   run: |
+      #     cargo build --release
