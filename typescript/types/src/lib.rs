@@ -928,11 +928,13 @@ impl Type {
 
         tys.retain(|ty| !ty.is_never());
 
-        match tys.len() {
+        let ty = match tys.len() {
             0 => Type::never(span),
             1 => tys.into_iter().next().unwrap(),
             _ => Type::Union(Union { span, types: tys }),
-        }
+        };
+        ty.assert_valid();
+        ty
     }
 
     pub fn contains_void(&self) -> bool {
