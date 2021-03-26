@@ -1,6 +1,7 @@
 use std::{cell::RefCell, panic, sync::Once};
 
 #[cfg(not(debug_assertions))]
+#[inline(always)]
 pub fn enter(_: String) -> () {}
 
 #[cfg(debug_assertions)]
