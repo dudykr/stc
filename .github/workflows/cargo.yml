@@ -19,7 +19,9 @@ jobs:
       - name: Install rust
         uses: actions-rs/toolchain@v1
         with:
+          default: true
           toolchain: nightly-2020-12-29
+          profile: minimal
           components: rustfmt
 
       - name: Run cargo fmt
@@ -36,6 +38,8 @@ jobs:
       - name: Install rust
         uses: actions-rs/toolchain@v1
         with:
+          default: true
+          profile: minimal
           toolchain: nightly-2020-12-29
 
       - uses: actions/setup-node@v2
@@ -104,6 +108,8 @@ jobs:
       - name: Install rust
         uses: actions-rs/toolchain@v1
         with:
+          default: true
+          profile: minimal
           toolchain: nightly-2020-12-29
 
       - uses: actions/setup-node@v2

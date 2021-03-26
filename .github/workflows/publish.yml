@@ -22,6 +22,8 @@ jobs:
       - name: Install rust
         uses: actions-rs/toolchain@v1
         with:
+          default: true
+          profile: minimal
           toolchain: nightly-2020-12-29
           components: rustfmt
 
