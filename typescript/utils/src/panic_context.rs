@@ -1,5 +1,9 @@
 use std::{cell::RefCell, panic, sync::Once};
 
+#[cfg(not(debug_assertions))]
+pub fn enter(_: String) -> () {}
+
+#[cfg(debug_assertions)]
 pub fn enter(context: String) -> PanicContext {
     static ONCE: Once = Once::new();
     ONCE.call_once(PanicContext::init);
@@ -9,10 +13,12 @@ pub fn enter(context: String) -> PanicContext {
 }
 
 #[must_use]
+#[cfg(debug_assertions)]
 pub struct PanicContext {
     _priv: (),
 }
 
+#[cfg(debug_assertions)]
 impl PanicContext {
     fn init() {
         let default_hook = panic::take_hook();
@@ -31,12 +37,14 @@ impl PanicContext {
     }
 }
 
+#[cfg(debug_assertions)]
 impl Drop for PanicContext {
     fn drop(&mut self) {
         with_ctx(|ctx| assert!(ctx.pop().is_some()))
     }
 }
 
+#[cfg(debug_assertions)]
 fn with_ctx(f: impl FnOnce(&mut Vec<String>)) {
     thread_local! {
         static CTX: RefCell<Vec<String>> = RefCell::new(Vec::new());
