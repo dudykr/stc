@@ -189,21 +189,30 @@ impl Analyzer<'_, '_> {
 
             Type::TypeLit(rt) => {
                 let mut errors = vec![];
-                for rm in &rt.members {
+                for (idx, rm) in rt.members.iter().enumerate() {
                     match rm {
                         TypeElement::Constructor(rc) => {
-                            if let Err(err) = self
-                                .assign_params(opts, &l.params, &rc.params)
-                                .context("tried to assign parameters of a constructor to them of another constructor")
-                            {
+                            if let Err(err) = self.assign_params(opts, &l.params, &rc.params).with_context(|| {
+                                format!(
+                                    "tried to assign parameters of a constructor to them of another constructor ({}th \
+                                     element)",
+                                    idx
+                                )
+                            }) {
                                 errors.push(err);
                                 continue;
                             }
 
                             if let Some(r_ret_ty) = &rc.ret_ty {
-                                if let Err(err) = self.assign_with_opts(opts, &l.type_ann, &r_ret_ty).context(
-                                    "tried to  assign the return type of a constructor to it of another constructor",
-                                ) {
+                                if let Err(err) =
+                                    self.assign_with_opts(opts, &l.type_ann, &r_ret_ty).with_context(|| {
+                                        format!(
+                                            "tried to  assign the return type of a constructor to it of another \
+                                             constructor ({}th element)",
+                                            idx,
+                                        )
+                                    })
+                                {
                                     errors.push(err);
                                     continue;
                                 }
