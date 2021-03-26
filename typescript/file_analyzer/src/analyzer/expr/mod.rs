@@ -59,6 +59,7 @@ pub use stc_ts_types::IdCtx;
 use stc_ts_types::Key;
 use stc_ts_types::PropertySignature;
 use stc_ts_types::{ClassProperty, Id, Method, ModuleId, Operator, QueryExpr, QueryType, StaticThis};
+use stc_ts_utils::panic_context;
 use std::borrow::Cow;
 use std::convert::TryFrom;
 use std::convert::TryInto;
@@ -116,6 +117,8 @@ impl Analyzer<'_, '_> {
         type_ann: Option<&Type>,
     ) -> ValidationResult {
         self.record(e);
+
+        let _panic = panic_context::enter(format!("{:?}", e));
 
         let span = e.span();
         let need_type_param_handling = match e {
@@ -309,6 +312,18 @@ impl Analyzer<'_, '_> {
                 _ => unimplemented!("typeof ({:?})", e),
             }
         })()?;
+
+        if self.is_builtin {
+            // `Symbol.iterator` is defined multiple times, and it results in union of
+            // `symbol`s.
+            match &mut ty {
+                Type::Union(u) => {
+                    u.types.dedup_type();
+                }
+                _ => {}
+            }
+        }
+
         ty.assert_valid();
 
         if need_type_param_handling {
