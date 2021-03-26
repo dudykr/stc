@@ -401,6 +401,11 @@ pub enum Error {
         span: Span,
     },
 
+    SimpleAssignFailedWithCause {
+        span: Span,
+        cause: Vec<Error>,
+    },
+
     InvalidAssignmentOfArray {
         span: Span,
     },
@@ -873,6 +878,7 @@ impl Error {
             Error::AssignFailed { .. }
             | Error::ObjectAssignFailed { .. }
             | Error::SimpleAssignFailed { .. }
+            | Error::SimpleAssignFailedWithCause { .. }
             | Error::InvalidAssignmentOfArray { .. }
             | Error::UnknownPropertyInObjectLiteralAssignment { .. }
             | Error::InvalidOpAssign { .. }

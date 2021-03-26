@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use super::AssignOpts;
 use crate::analyzer::Analyzer;
 use crate::ValidationResult;
@@ -15,6 +13,7 @@ use stc_ts_types::FnParam;
 use stc_ts_types::Function;
 use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
+use std::borrow::Cow;
 use swc_atoms::js_word;
 
 impl Analyzer<'_, '_> {
@@ -189,15 +188,23 @@ impl Analyzer<'_, '_> {
             }
 
             Type::TypeLit(rt) => {
+                let mut errors = vec![];
                 for rm in &rt.members {
                     match rm {
                         TypeElement::Constructor(rc) => {
-                            if self.assign_params(opts, &l.params, &rc.params).is_err() {
+                            if let Err(err) = self
+                                .assign_params(opts, &l.params, &rc.params)
+                                .context("tried to assign parameters of a constructor to them of another constructor")
+                            {
+                                errors.push(err);
                                 continue;
                             }
 
                             if let Some(r_ret_ty) = &rc.ret_ty {
-                                if self.assign_with_opts(opts, &l.type_ann, &r_ret_ty).is_err() {
+                                if let Err(err) = self.assign_with_opts(opts, &l.type_ann, &r_ret_ty).context(
+                                    "tried to  assign the return type of a constructor to it of another constructor",
+                                ) {
+                                    errors.push(err);
                                     continue;
                                 }
                             }
@@ -206,6 +213,9 @@ impl Analyzer<'_, '_> {
                         }
                         _ => {}
                     }
+                }
+                if !errors.is_empty() {
+                    return Err(Error::SimpleAssignFailedWithCause { span, cause: errors });
                 }
             }
             Type::Interface(..) => {
