@@ -1647,6 +1647,8 @@ impl Analyzer<'_, '_> {
                     return Ok(new.into_iter().next().unwrap());
                 }
 
+                new.dedup_type();
+
                 let mut ty = Type::union(new);
                 ty.respan(span);
                 return Ok(ty);
