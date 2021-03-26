@@ -3,6 +3,7 @@ use super::Analyzer;
 use super::Ctx;
 use super::ScopeKind;
 use crate::util::contains_infer_type;
+use crate::util::type_ext::TypeVecExt;
 use crate::validator;
 use crate::validator::ValidateWith;
 use crate::ValidationResult;
@@ -465,10 +466,11 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, u: &RTsUnionType) -> ValidationResult<Union> {
-        Ok(Union {
-            span: u.span,
-            types: u.types.validate_with(self)?,
-        })
+        let mut types = u.types.validate_with(self)?;
+
+        types.dedup_type();
+
+        Ok(Union { span: u.span, types })
     }
 }
 
@@ -748,6 +750,9 @@ impl Analyzer<'_, '_> {
             RTsType::TsTypePredicate(ty) => Type::Predicate(ty.validate_with(self)?),
             RTsType::TsImportType(ty) => Type::Import(ty.validate_with(self)?),
         };
+
+        ty.assert_valid();
+
         Ok(ty.cheap())
     }
 }
