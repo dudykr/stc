@@ -1,3 +1,4 @@
+use self::tsc::TscCommand;
 use anyhow::Error;
 use slog::Discard;
 use slog::Logger;
@@ -15,6 +16,20 @@ use swc_common::FilePathMapping;
 use swc_common::SourceMap;
 use swc_ecma_parser::JscTarget;
 use swc_ecma_parser::TsConfig;
+
+mod tsc;
+
+#[derive(Debug, StructOpt)]
+#[structopt(
+    name = "stc",
+    about = "Super fast type checker for typescript",
+    author,
+    rename_all = "camel"
+)]
+enum Command {
+    /// Compatibillity layer for `tsc` cli.
+    Tsc(TscCommand),
+}
 
 #[derive(Debug, StructOpt)]
 #[structopt(

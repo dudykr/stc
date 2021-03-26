@@ -1,5 +1,4 @@
 #![recursion_limit = "256"]
-#![feature(vec_remove_item)]
 #![feature(box_syntax)]
 #![feature(box_patterns)]
 #![feature(test)]

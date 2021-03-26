@@ -14,7 +14,6 @@
 #![feature(box_syntax)]
 #![feature(try_blocks)]
 #![feature(specialization)]
-#![feature(vec_remove_item)]
 #![feature(option_expect_none)]
 #![feature(option_unwrap_none)]
 #![recursion_limit = "1024"]
