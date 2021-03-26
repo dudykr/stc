@@ -1481,6 +1481,8 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                tys.dedup_type();
+
                 // TODO: Validate that the ty has same type instead of returning union.
                 let ty = Type::union(tys);
                 ty.assert_valid();
