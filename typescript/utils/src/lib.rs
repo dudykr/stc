@@ -27,6 +27,7 @@ use swc_common::Spanned;
 
 mod comments;
 mod map_with_mut;
+pub mod panic_context;
 
 pub trait AsModuleDecl {
     const IS_MODULE_ITEM: bool;
