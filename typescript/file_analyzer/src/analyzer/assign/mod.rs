@@ -207,6 +207,8 @@ impl Analyzer<'_, '_> {
     /// - Not a reference
     /// - Not a type parameter declared on child scope.
     fn verify_before_assign(&self, ctx: &'static str, ty: &Type) {
+        ty.assert_valid();
+
         match ty.normalize() {
             Type::Ref(ref r) => {
                 print_backtrace();

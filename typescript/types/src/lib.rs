@@ -757,6 +757,24 @@ pub struct Union {
 
 assert_eq_size!(Union, [u8; 40]);
 
+impl Union {
+    pub fn assert_valid(&self) {
+        if !cfg!(debug_assertions) {
+            return;
+        }
+
+        self.types.iter().for_each(|ty| ty.assert_valid());
+
+        for t1 in &self.types {
+            for t2 in &self.types {
+                if t1.type_eq(t2) {
+                    panic!("A union type has duplicate elements: ({:?})", t1)
+                }
+            }
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct FnParam {
     pub span: Span,
@@ -1126,6 +1144,25 @@ impl Type {
             Type::StaticThis(ty) => ty.span = span,
 
             Type::Instance(ty) => ty.span = span,
+        }
+    }
+}
+
+impl Type {
+    /// Panics if type is invalid.
+    ///
+    /// # Validity
+    ///
+    /// For example, `any | any` is invalid because
+    /// union should not have duplicate elements.
+    pub fn assert_valid(&self) {
+        if !cfg!(debug_assertions) {
+            return;
+        }
+
+        match self.normalize() {
+            Type::Union(ty) => ty.assert_valid(),
+            _ => {}
         }
     }
 }
