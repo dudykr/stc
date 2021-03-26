@@ -992,7 +992,11 @@ impl Analyzer<'_, '_> {
                                 }
                             }
                         }
-                        Type::union(vec![var_ty, ty])
+                        if var_ty.type_eq(&ty) {
+                            var_ty
+                        } else {
+                            Type::union(vec![var_ty, ty])
+                        }
                     } else {
                         ty
                     })
