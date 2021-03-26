@@ -372,6 +372,8 @@ impl Scope<'_> {
 
     /// Add a type to the scope.
     fn register_type(&mut self, name: Id, ty: Type) {
+        ty.assert_valid();
+
         let ty = ty.cheap();
         match ty.normalize() {
             Type::Param(..) => {

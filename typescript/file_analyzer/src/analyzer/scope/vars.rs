@@ -168,6 +168,13 @@ impl Analyzer<'_, '_> {
         ty: Option<Type>,
         actual_ty: Option<Type>,
     ) -> ValidationResult<()> {
+        match &ty {
+            Some(ty) => {
+                ty.assert_valid();
+            }
+            _ => {}
+        }
+
         let span = ty
             .as_ref()
             .map(|v| v.span())
