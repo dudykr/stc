@@ -1480,7 +1480,9 @@ impl Analyzer<'_, '_> {
                 }
 
                 // TODO: Validate that the ty has same type instead of returning union.
-                return Ok(Type::union(tys));
+                let ty = Type::union(tys);
+                ty.assert_valid();
+                return Ok(ty);
             }
 
             Type::Tuple(Tuple { ref elems, .. }) => match prop {
@@ -1645,7 +1647,9 @@ impl Analyzer<'_, '_> {
                     return Ok(new.into_iter().next().unwrap());
                 }
 
-                return Ok(Type::Union(Union { span, types: new }));
+                let mut ty = Type::union(new);
+                ty.respan(span);
+                return Ok(ty);
             }
 
             Type::Mapped(m) => {
