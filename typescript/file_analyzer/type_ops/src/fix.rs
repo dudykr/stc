@@ -1,8 +1,8 @@
 use rnode::VisitMut;
-use swc_common::TypeEq;
 use rnode::VisitMutWith;
 use stc_ts_types::Type;
 use stc_ts_types::Union;
+use swc_common::TypeEq;
 
 pub trait Fix: Sized {
     fn fix(&mut self);
@@ -14,6 +14,12 @@ pub trait Fix: Sized {
 }
 
 impl Fix for Type {
+    fn fix(&mut self) {
+        self.visit_mut_with(&mut Fixer);
+    }
+}
+
+impl Fix for Union {
     fn fix(&mut self) {
         self.visit_mut_with(&mut Fixer);
     }
