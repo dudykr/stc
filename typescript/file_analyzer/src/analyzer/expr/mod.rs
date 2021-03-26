@@ -811,6 +811,8 @@ impl Analyzer<'_, '_> {
             return Ok(None);
         }
 
+        matching_elements.dedup_type();
+
         Ok(Some(Type::union(matching_elements)))
     }
 
