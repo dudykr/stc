@@ -50,15 +50,6 @@ jobs:
           echo "$HOME/npm/bin" >> $GITHUB_PATH
           npm i
 
-      - name: Cache
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo
-
       # Ensure that all components all compilable.
       - name: Run cargo check for all targets
         run: cargo check --color always --all --all-targets
