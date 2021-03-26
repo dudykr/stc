@@ -8,7 +8,7 @@ use crate::{
     ty,
     ty::{
         Array, EnumVariant, IndexSignature, IndexedAccessType, Interface, Intersection, Ref, Tuple, Type, TypeElement,
-        TypeLit, TypeParam, TypeParamInstantiation, Union,
+        TypeLit, TypeParam, TypeParamInstantiation,
     },
     type_facts::TypeFacts,
     validator,
