@@ -13,6 +13,7 @@ jobs:
   fmt:
     name: Formatting
     runs-on: [self-hosted]
+    container: ubuntu:18.04
     steps:
       - uses: actions/checkout@v2
 
@@ -29,6 +30,7 @@ jobs:
   check:
     name: Check
     runs-on: [self-hosted]
+    container: ubuntu:18.04
     steps:
       - uses: actions/checkout@v2
         with:
@@ -70,6 +72,7 @@ jobs:
       - check
     # runs-on: ubuntu-latest
     runs-on: self-hosted
+    container: ubuntu:18.04
     strategy:
       matrix:
         crate:
