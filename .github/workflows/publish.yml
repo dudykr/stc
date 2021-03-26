@@ -13,7 +13,6 @@ jobs:
   build:
     name: Build
     runs-on: [self-hosted, macOS]
-    container: ubuntu:18.04
     strategy:
       matrix:
         os: [macOS]
