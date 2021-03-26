@@ -901,7 +901,9 @@ impl Type {
     /// Note:
     ///
     ///  - never types are excluded.
-    pub fn union<I: IntoIterator<Item = Self>>(iter: I) -> Self {
+    pub fn union<I: IntoIterator<Item = Self> + Debug>(iter: I) -> Self {
+        let _panic = panic_context::enter(format!("Iterator: {:?}", iter));
+
         let mut span = DUMMY_SP;
 
         let mut tys = vec![];
