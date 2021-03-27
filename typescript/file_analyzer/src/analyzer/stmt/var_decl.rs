@@ -30,6 +30,7 @@ use stc_ts_ast_rnode::RVarDeclarator;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
+use stc_ts_type_ops::Fix;
 use stc_ts_types::QueryExpr;
 use stc_ts_types::QueryType;
 use stc_ts_types::{Array, Id, Operator, Symbol};
@@ -328,7 +329,7 @@ impl Analyzer<'_, '_> {
                                             span: tuple.span,
                                             elem_type: box Type::union(types),
                                         }
-                                        .fix(),
+                                        .fixed(),
                                     )
                                 }
 
