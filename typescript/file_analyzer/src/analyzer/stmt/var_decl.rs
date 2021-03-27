@@ -234,13 +234,18 @@ impl Analyzer<'_, '_> {
                             }
                         };
                         let ty = self.expand(span, ty)?;
+                        ty.assert_valid();
                         let ty = instantiate_class(self.ctx.module_id, ty);
+                        ty.assert_valid();
                         self.check_rvalue(span, &ty);
 
                         self.scope.this = Some(ty.clone().remove_falsy());
                         let mut value_ty = get_value_ty!(Some(&ty));
+                        value_ty.assert_valid();
                         value_ty = self.expand(span, value_ty)?;
+                        value_ty.assert_valid();
                         value_ty = self.rename_type_params(span, value_ty, Some(&ty))?;
+                        value_ty.assert_valid();
 
                         match self
                             .assign(&ty, &value_ty, v_span)
