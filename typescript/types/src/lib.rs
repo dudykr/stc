@@ -40,6 +40,8 @@ use stc_utils::panic_context;
 use stc_visit::Visit;
 use stc_visit::Visitable;
 use std::borrow::Cow;
+use std::fmt;
+use std::fmt::Formatter;
 use std::{
     fmt::Debug,
     iter::FusedIterator,
@@ -426,7 +428,7 @@ pub struct IndexedAccessType {
 
 assert_eq_size!(IndexedAccessType, [u8; 32]);
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Ref {
     pub span: Span,
     /// Id of the module where the ref is used in.
@@ -437,6 +439,16 @@ pub struct Ref {
 }
 
 assert_eq_size!(Ref, [u8; 64]);
+
+impl Debug for Ref {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
+        if let Some(type_args) = &self.type_args {
+            write!(f, "{:?}<{:?}>", self.type_name, type_args)
+        } else {
+            write!(f, "{:?}", self.type_name)
+        }
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct InferType {
