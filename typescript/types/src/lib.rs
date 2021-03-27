@@ -906,7 +906,7 @@ impl Type {
 
         let mut span = DUMMY_SP;
 
-        let mut tys = vec![];
+        let mut elements = vec![];
 
         for ty in iter {
             let sp = ty.span();
@@ -921,25 +921,38 @@ impl Type {
             if ty.normalize().is_union_type() {
                 let types = ty.foldable().union_type().unwrap().types;
                 for new in types {
-                    if tys.iter().any(|prev: &Type| prev.type_eq(&new)) {
+                    if elements.iter().any(|prev: &Type| prev.type_eq(&new)) {
                         continue;
                     }
-                    tys.push(new)
+                    elements.push(new)
                 }
             } else {
-                if tys.iter().any(|prev: &Type| prev.type_eq(&ty)) {
+                if elements.iter().any(|prev: &Type| prev.type_eq(&ty)) {
                     continue;
                 }
-                tys.push(ty)
+                elements.push(ty)
+            }
+        }
+        // Drop `never`s.
+        elements.retain(|ty| !ty.is_never());
+
+        {
+            // Drop `null`s and `undefined`s.
+            let has_other = elements.iter().any(|ty| {
+                !ty.is_kwd(TsKeywordTypeKind::TsNullKeyword) && !ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
+            });
+
+            if has_other {
+                elements.retain(|ty| {
+                    !ty.is_kwd(TsKeywordTypeKind::TsNullKeyword) && !ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
+                });
             }
         }
 
-        tys.retain(|ty| !ty.is_never());
-
-        let ty = match tys.len() {
+        let ty = match elements.len() {
             0 => Type::never(span),
-            1 => tys.into_iter().next().unwrap(),
-            _ => Type::Union(Union { span, types: tys }),
+            1 => elements.into_iter().next().unwrap(),
+            _ => Type::Union(Union { span, types: elements }),
         };
         ty.assert_valid();
         ty
