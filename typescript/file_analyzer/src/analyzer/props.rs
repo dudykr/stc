@@ -258,7 +258,11 @@ impl Analyzer<'_, '_> {
             })
             | Type::EnumVariant(..) => true,
 
-            Type::Union(u) => u.types.iter().all(|ty| self.is_type_valid_for_computed_key(span, ty)),
+            Type::Union(u) => u.types.iter().all(|ty| {
+                ty.is_kwd(TsKeywordTypeKind::TsNullKeyword)
+                    || ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
+                    || self.is_type_valid_for_computed_key(span, ty)
+            }),
 
             _ => false,
         }
