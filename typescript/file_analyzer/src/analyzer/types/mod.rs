@@ -550,9 +550,12 @@ impl Analyzer<'_, '_> {
                 let ty = self
                     .normalize(ty, Default::default())
                     .context("tried to normalize a type to convert it to type literal")?;
-                return self
+                let ty = self
                     .type_to_type_lit(span, &ty)
-                    .context("tried to convert a normalized type to type liteal");
+                    .context("tried to convert a normalized type to type liteal")?
+                    .map(Cow::into_owned)
+                    .map(Cow::Owned);
+                return Ok(ty);
             }
 
             _ => {
