@@ -5,7 +5,6 @@ use stc_ts_types::Intersection;
 use stc_ts_types::Type;
 use stc_ts_types::Union;
 use swc_common::TypeEq;
-use swc_ecma_ast::TsKeywordTypeKind;
 
 pub trait Fix: Sized {
     fn fix(&mut self);
