@@ -25,6 +25,7 @@ use stc_ts_errors::DebugExt;
 use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
 use stc_ts_generics::type_param::remover::TypeParamRemover;
 use stc_ts_generics::type_param::renamer::TypeParamRenamer;
+use stc_ts_type_ops::Fix;
 use stc_ts_types::Array;
 use stc_ts_types::FnParam;
 use stc_ts_types::Function;
@@ -1854,10 +1855,13 @@ impl Analyzer<'_, '_> {
                 "renaming type parameters based on type annotation provided by user\ntype_ann = {:?}",
                 type_ann
             );
-            return Ok(ty.foldable().fold_with(&mut TypeParamRenamer {
-                inferred: inferred.type_params,
-                declared: Default::default(),
-            }));
+            return Ok(ty
+                .foldable()
+                .fold_with(&mut TypeParamRenamer {
+                    inferred: inferred.type_params,
+                    declared: Default::default(),
+                })
+                .fixed());
         }
 
         let decl = Some(TypeParamDecl {
@@ -1873,7 +1877,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        Ok(ty.fold_with(&mut TypeParamRemover::new()))
+        Ok(ty.fold_with(&mut TypeParamRemover::new()).fixed())
     }
 }
 
