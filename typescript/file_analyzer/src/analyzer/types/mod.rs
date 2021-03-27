@@ -546,6 +546,15 @@ impl Analyzer<'_, '_> {
                 }
             }
 
+            Type::Query(..) => {
+                let ty = self
+                    .normalize(ty, NormalizeTypeOpts {})
+                    .context("tried to normalize a type to convert it to type literal")?;
+                return self
+                    .type_to_type_lit(span, &ty)
+                    .context("tried to convert a normalized type to type liteal");
+            }
+
             _ => {
                 slog::error!(self.logger, "unimplemented: type_to_type_lit: {:?}", ty);
                 return Ok(None);
