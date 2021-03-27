@@ -192,13 +192,15 @@ impl Analyzer<'_, '_> {
                 for (idx, rm) in rt.members.iter().enumerate() {
                     match rm {
                         TypeElement::Constructor(rc) => {
-                            if let Err(err) = self.assign_params(opts, &l.params, &rc.params, true).with_context(|| {
-                                format!(
-                                    "tried to assign parameters of a constructor to them of another constructor ({}th \
-                                     element)",
-                                    idx
-                                )
-                            }) {
+                            if let Err(err) =
+                                self.assign_params(opts, &l.params, &rc.params, false).with_context(|| {
+                                    format!(
+                                        "tried to assign parameters of a constructor to them of another constructor \
+                                         ({}th element)",
+                                        idx
+                                    )
+                                })
+                            {
                                 errors.push(err);
                                 continue;
                             }
