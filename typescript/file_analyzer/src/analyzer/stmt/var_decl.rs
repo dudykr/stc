@@ -335,13 +335,10 @@ impl Analyzer<'_, '_> {
                                         types.retain(|ty| !ty.is_null_or_undefined());
                                     }
 
-                                    Type::Array(
-                                        Array {
-                                            span: tuple.span,
-                                            elem_type: box Type::union(types),
-                                        }
-                                        .fixed(),
-                                    )
+                                    Type::Array(Array {
+                                        span: tuple.span,
+                                        elem_type: box Type::union(types),
+                                    })
                                 }
 
                                 _ => ty,

@@ -746,6 +746,11 @@ impl VisitMut<Type> for TupleNormalizer {
                     .collect::<Vec<_>>();
                 types.dedup_type();
 
+                let has_other = types.iter().any(|ty| !ty.is_null_or_undefined());
+                if has_other {
+                    types.retain(|ty| !ty.is_null_or_undefined())
+                }
+
                 *ty = Type::Array(Array {
                     span,
                     elem_type: box Type::union(types),
