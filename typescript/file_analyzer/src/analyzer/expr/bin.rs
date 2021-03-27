@@ -992,6 +992,7 @@ impl Analyzer<'_, '_> {
                                 },
                                 &lm.params,
                                 &rm.params,
+                                true,
                             );
 
                             if params_res.is_err() {
