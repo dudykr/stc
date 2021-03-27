@@ -33,32 +33,6 @@ impl_fix!(Intersection);
 
 struct Fixer;
 
-impl VisitMut<Array> for Fixer {
-    fn visit_mut(&mut self, arr: &mut Array) {
-        arr.visit_mut_children_with(self);
-
-        if arr.elem_type.normalize().is_union_type() {
-            match arr.elem_type.normalize_mut() {
-                Type::Union(u) => {
-                    // Drop `null`s and `undefined`s.
-                    let has_other = u.types.iter().any(|ty| {
-                        !ty.is_kwd(TsKeywordTypeKind::TsNullKeyword)
-                            && !ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
-                    });
-
-                    if has_other {
-                        u.types.retain(|ty| {
-                            !ty.is_kwd(TsKeywordTypeKind::TsNullKeyword)
-                                && !ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
-                        });
-                    }
-                }
-                _ => {}
-            }
-        }
-    }
-}
-
 impl VisitMut<Union> for Fixer {
     fn visit_mut(&mut self, u: &mut Union) {
         let mut new: Vec<Type> = Vec::with_capacity(u.types.capacity());
