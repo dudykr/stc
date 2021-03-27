@@ -33,6 +33,8 @@ use swc_ecma_ast::TsKeywordTypeKind;
 use swc_ecma_ast::VarDeclKind;
 use ty::TypeExt;
 
+mod return_type;
+
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, f: &RFunction) -> ValidationResult<ty::Function> {
@@ -99,6 +101,10 @@ impl Analyzer<'_, '_> {
             }
 
             let mut declared_ret_ty = try_opt!(f.return_type.validate_with(child));
+
+            if let Some(ty) = &mut declared_ret_ty {
+                self.expand_return_type_of_fn(ty).report(&mut self.storage);
+            }
 
             if let Some(ret_ty) = declared_ret_ty {
                 let span = ret_ty.span();
