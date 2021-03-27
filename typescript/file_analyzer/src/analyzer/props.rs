@@ -170,7 +170,10 @@ impl Analyzer<'_, '_> {
         } {
             if !is_symbol_access {
                 if !self.is_type_valid_for_computed_key(span, &ty) {
-                    self.storage.report(Error::TS2464 { span });
+                    self.storage.report(Error::TS2464 {
+                        span,
+                        ty: box ty.clone(),
+                    });
                 }
             }
         }

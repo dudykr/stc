@@ -572,6 +572,7 @@ pub enum Error {
 
     TS2464 {
         span: Span,
+        ty: Box<Type>,
     },
 
     TS2356 {
