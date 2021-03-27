@@ -548,7 +548,7 @@ impl Analyzer<'_, '_> {
 
             Type::Query(..) => {
                 let ty = self
-                    .normalize(ty, NormalizeTypeOpts {})
+                    .normalize(ty, Default::default())
                     .context("tried to normalize a type to convert it to type literal")?;
                 return self
                     .type_to_type_lit(span, &ty)
