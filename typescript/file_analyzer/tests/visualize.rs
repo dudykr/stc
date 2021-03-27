@@ -81,7 +81,9 @@ fn run_test(file_name: PathBuf, for_error: bool) {
                     let value = line["strict:".len()..].parse::<bool>().unwrap();
                     rule.strict_function_types = value;
                     rule.strict_null_checks = value;
+                    continue;
                 }
+
                 panic!("Invalid directive: {:?}", line)
             }
 
