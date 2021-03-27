@@ -329,6 +329,12 @@ impl Analyzer<'_, '_> {
                                 {
                                     let mut types = tuple.elems.iter().map(|e| *e.ty.clone()).collect::<Vec<_>>();
                                     types.dedup_type();
+
+                                    let has_other = types.iter().any(|ty| !ty.is_null_or_undefined());
+                                    if has_other {
+                                        types.retain(|ty| !ty.is_null_or_undefined());
+                                    }
+
                                     Type::Array(
                                         Array {
                                             span: tuple.span,

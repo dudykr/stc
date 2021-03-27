@@ -1031,6 +1031,18 @@ impl Type {
         }
     }
 
+    pub fn is_null(&self) -> bool {
+        self.is_kwd(TsKeywordTypeKind::TsNullKeyword)
+    }
+
+    pub fn is_undefined(&self) -> bool {
+        self.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
+    }
+
+    pub fn is_null_or_undefined(&self) -> bool {
+        self.is_null() || self.is_undefined()
+    }
+
     pub fn is_kwd(&self, k: TsKeywordTypeKind) -> bool {
         match *self.normalize() {
             Type::Keyword(RTsKeywordType { kind, .. }) if kind == k => true,
