@@ -19,6 +19,7 @@ use stc_ts_ast_rnode::RNumber;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
+use stc_ts_type_ops::Fix;
 use stc_ts_types::Array;
 use stc_ts_types::ComputedKey;
 use stc_ts_types::Intersection;
@@ -155,10 +156,13 @@ impl Analyzer<'_, '_> {
                 types.push(Type::any(span));
             }
 
-            let mut ty = Type::Array(Array {
-                span,
-                elem_type: box Type::union(types),
-            });
+            let mut ty = Type::Array(
+                Array {
+                    span,
+                    elem_type: box Type::union(types),
+                }
+                .fixed(),
+            );
             self.normalize_union(&mut ty, false);
 
             return Ok(ty);

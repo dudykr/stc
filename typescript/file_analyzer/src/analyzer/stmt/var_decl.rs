@@ -323,10 +323,13 @@ impl Analyzer<'_, '_> {
                                 {
                                     let mut types = tuple.elems.iter().map(|e| *e.ty.clone()).collect::<Vec<_>>();
                                     types.dedup_type();
-                                    Type::Array(Array {
-                                        span: tuple.span,
-                                        elem_type: box Type::union(types),
-                                    })
+                                    Type::Array(
+                                        Array {
+                                            span: tuple.span,
+                                            elem_type: box Type::union(types),
+                                        }
+                                        .fix(),
+                                    )
                                 }
 
                                 _ => ty,
