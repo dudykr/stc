@@ -73,11 +73,15 @@ fn run_test(file_name: PathBuf, for_error: bool) {
             };
 
             for line in fm.src.lines() {
+                if !line.starts_with("//@") {
+                    continue;
+                }
                 if line.starts_with("//@strict:") {
                     let value = line["//@strict:".len()..].parse::<bool>().unwrap();
                     rule.strict_function_types = value;
                     rule.strict_null_checks = value;
                 }
+                panic!("Invalid directive: {:?}", line)
             }
 
             let env = Env::simple(rule, JscTarget::Es2020, &libs);
