@@ -936,19 +936,6 @@ impl Type {
         // Drop `never`s.
         elements.retain(|ty| !ty.is_never());
 
-        {
-            // Drop `null`s and `undefined`s.
-            let has_other = elements.iter().any(|ty| {
-                !ty.is_kwd(TsKeywordTypeKind::TsNullKeyword) && !ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
-            });
-
-            if has_other {
-                elements.retain(|ty| {
-                    !ty.is_kwd(TsKeywordTypeKind::TsNullKeyword) && !ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
-                });
-            }
-        }
-
         let ty = match elements.len() {
             0 => Type::never(span),
             1 => elements.into_iter().next().unwrap(),
