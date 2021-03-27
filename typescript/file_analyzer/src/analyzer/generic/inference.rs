@@ -343,7 +343,17 @@ impl Analyzer<'_, '_> {
                         continue;
                     }
 
-                    (TypeElement::Call(..), TypeElement::Call(..)) => {}
+                    (TypeElement::Call(p), TypeElement::Call(a)) => {
+                        self.infer_type_of_fn_params(span, inferred, &p.params, &a.params)?;
+
+                        if let Some(p_ret) = &p.ret_ty {
+                            if let Some(a_ret) = &a.ret_ty {
+                                self.infer_type(span, inferred, &p_ret, &a_ret)?;
+                            }
+                        }
+
+                        continue;
+                    }
 
                     (TypeElement::Call(..), _) | (TypeElement::Constructor(..), _) => {
                         // Prevent log
