@@ -1692,13 +1692,20 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
 
-                let obj = self
+                let expanded = self
                     .expand_mapped(span, m)
                     .context("tried to expand a mapped type to access property")?;
 
-                if let Some(obj) = obj {
+                if let Some(obj) = expanded {
                     return self.access_property_inner(span, obj, prop, type_mode, id_ctx);
                 }
+
+                return Ok(Type::IndexedAccessType(IndexedAccessType {
+                    span,
+                    readonly: false,
+                    obj_type: box obj,
+                    index_type: box prop.ty().into_owned(),
+                }));
             }
 
             Type::Ref(r) => {
