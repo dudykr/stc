@@ -1584,6 +1584,22 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                // Classes extends prototype of `Function` (global interface)
+                if let Ok(ty) = self.access_property(
+                    span,
+                    Type::Ref(Ref {
+                        span: span.with_ctxt(Default::default()),
+                        ctxt: ModuleId::builtin(),
+                        type_name: RTsEntityName::Ident(RIdent::new(js_word!("Function"), DUMMY_SP)),
+                        type_args: None,
+                    }),
+                    prop,
+                    type_mode,
+                    id_ctx,
+                ) {
+                    return Ok(ty);
+                }
+
                 return Err(Error::NoSuchPropertyInClass {
                     span,
                     class_name: cls.name.clone(),
