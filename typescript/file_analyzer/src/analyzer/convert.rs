@@ -2,6 +2,7 @@ use super::props::ComputedPropMode;
 use super::Analyzer;
 use super::Ctx;
 use super::ScopeKind;
+use crate::analyzer::util::ResultExt;
 use crate::util::contains_infer_type;
 use crate::util::type_ext::TypeVecExt;
 use crate::validator;
@@ -495,7 +496,9 @@ impl Analyzer<'_, '_> {
 
         let mut params: Vec<_> = t.params.validate_with(self)?;
 
-        let ret_ty = box t.type_ann.validate_with(self)?;
+        let mut ret_ty = box t.type_ann.validate_with(self)?;
+
+        self.expand_return_type_of_fn(&mut ret_ty).report(&mut self.storage);
 
         Ok(stc_ts_types::Function {
             span: t.span,

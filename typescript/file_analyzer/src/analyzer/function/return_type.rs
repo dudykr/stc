@@ -9,7 +9,7 @@ use stc_ts_types::QueryType;
 use stc_ts_types::Type;
 
 impl Analyzer<'_, '_> {
-    pub(super) fn expand_return_type_of_fn(&mut self, ret_ty: &mut Type) -> ValidationResult<()> {
+    pub(crate) fn expand_return_type_of_fn(&mut self, ret_ty: &mut Type) -> ValidationResult<()> {
         ret_ty.visit_mut_with(&mut FnReturnTypeHandler { analyzer: self });
         Ok(())
     }
