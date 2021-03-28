@@ -121,6 +121,9 @@ impl Analyzer<'_, '_> {
 
         match rhs.normalize() {
             Type::Mapped(m) => {
+                // { [P in keyof K]: T[P]; }
+                // =>
+                // Extract<keyof K, string>
                 if let Some(
                     contraint
                     @
