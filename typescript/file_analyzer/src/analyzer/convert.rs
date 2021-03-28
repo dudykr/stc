@@ -489,30 +489,33 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsFnType) -> ValidationResult<stc_ts_types::Function> {
-        let type_params = try_opt!(t.type_params.validate_with(self));
+        self.with_scope_for_type_params(|child: &mut Analyzer| {
+            let type_params = try_opt!(t.type_params.validate_with(child));
 
-        for param in &t.params {
-            self.default_any_param(&param);
-        }
-
-        let mut params: Vec<_> = t.params.validate_with(self)?;
-
-        let mut ret_ty = box t.type_ann.validate_with(self)?;
-
-        if !self.is_builtin {
-            for param in params.iter() {
-                self.declare_complex_vars(VarDeclKind::Let, &param.pat, *param.ty.clone(), None)
-                    .report(&mut self.storage);
+            for param in &t.params {
+                self.default_any_param(&param);
             }
-        }
 
-        self.expand_return_type_of_fn(&mut ret_ty).report(&mut self.storage);
+            let mut params: Vec<_> = t.params.validate_with(child)?;
 
-        Ok(stc_ts_types::Function {
-            span: t.span,
-            type_params,
-            params,
-            ret_ty,
+            let mut ret_ty = box t.type_ann.validate_with(child)?;
+
+            if !self.is_builtin {
+                for param in params.iter() {
+                    child
+                        .declare_complex_vars(VarDeclKind::Let, &param.pat, *param.ty.clone(), None)
+                        .report(&mut child.storage);
+                }
+            }
+
+            child.expand_return_type_of_fn(&mut ret_ty).report(&mut child.storage);
+
+            Ok(stc_ts_types::Function {
+                span: t.span,
+                type_params,
+                params,
+                ret_ty,
+            })
         })
     }
 }
