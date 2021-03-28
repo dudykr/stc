@@ -98,6 +98,7 @@ use stc_ts_utils::PatExt;
 use swc_atoms::js_word;
 use swc_common::Spanned;
 use swc_common::DUMMY_SP;
+use swc_ecma_ast::VarDeclKind;
 
 /// We analyze dependencies between type parameters, and fold parameter in
 /// topological order.
@@ -497,6 +498,13 @@ impl Analyzer<'_, '_> {
         let mut params: Vec<_> = t.params.validate_with(self)?;
 
         let mut ret_ty = box t.type_ann.validate_with(self)?;
+
+        if !self.is_builtin {
+            for param in params.iter() {
+                self.declare_complex_vars(VarDeclKind::Let, &param.pat, *param.ty.clone(), None)
+                    .report(&mut self.storage);
+            }
+        }
 
         self.expand_return_type_of_fn(&mut ret_ty).report(&mut self.storage);
 
