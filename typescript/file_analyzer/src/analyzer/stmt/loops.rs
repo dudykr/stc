@@ -10,7 +10,9 @@ use stc_ts_ast_rnode::RDoWhileStmt;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RForInStmt;
 use stc_ts_ast_rnode::RForOfStmt;
+use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RStmt;
+use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RVarDeclOrPat;
 use stc_ts_ast_rnode::RWhileStmt;
@@ -18,11 +20,17 @@ use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::Id;
+use stc_ts_types::ModuleId;
+use stc_ts_types::Operator;
+use stc_ts_types::Ref;
+use stc_ts_types::TypeParamInstantiation;
 use stc_ts_utils::find_ids_in_pat;
 use std::borrow::Cow;
 use swc_common::Span;
 use swc_common::Spanned;
+use swc_common::DUMMY_SP;
 use swc_ecma_ast::TsKeywordTypeKind;
+use swc_ecma_ast::TsTypeOperatorOp;
 
 #[derive(Clone, Copy)]
 enum ForHeadKind {
@@ -113,8 +121,35 @@ impl Analyzer<'_, '_> {
 
         match rhs.normalize() {
             Type::Mapped(m) => {
+                if let Some(
+                    contraint
+                    @
+                    Type::Operator(Operator {
+                        op: TsTypeOperatorOp::KeyOf,
+                        ..
+                    }),
+                ) = m.type_param.constraint.as_deref().map(|ty| ty.normalize())
+                {
+                    // Extract<keyof T
+                    return Ok(Type::Ref(Ref {
+                        span: m.span,
+                        ctxt: ModuleId::builtin(),
+                        type_name: RTsEntityName::Ident(RIdent::new("Extract".into(), DUMMY_SP)),
+                        type_args: Some(box TypeParamInstantiation {
+                            span: DUMMY_SP,
+                            params: vec![
+                                contraint.clone(),
+                                Type::Keyword(RTsKeywordType {
+                                    span: rhs.span(),
+                                    kind: TsKeywordTypeKind::TsStringKeyword,
+                                }),
+                            ],
+                        }),
+                    }));
+                }
+
                 // { [P in K]: T[P]; }
-                if let Some(constraint) = m.type_param.constraint.as_deref() {
+                if let Some(..) = m.type_param.constraint.as_deref() {
                     return Ok(Type::Param(m.type_param.clone()));
                 }
             }

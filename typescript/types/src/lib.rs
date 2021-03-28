@@ -673,6 +673,8 @@ pub struct TsExpr {
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct TypeParamInstantiation {
     pub span: Span,
+
+    /// TODO: Rename to `args`.
     pub params: Vec<Type>,
 }
 
