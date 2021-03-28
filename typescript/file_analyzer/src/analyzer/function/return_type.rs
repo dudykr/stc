@@ -10,6 +10,10 @@ use stc_ts_types::Type;
 
 impl Analyzer<'_, '_> {
     pub(crate) fn expand_return_type_of_fn(&mut self, ret_ty: &mut Type) -> ValidationResult<()> {
+        if self.is_builtin {
+            return Ok(());
+        }
+
         ret_ty.visit_mut_with(&mut FnReturnTypeHandler { analyzer: self });
         Ok(())
     }
