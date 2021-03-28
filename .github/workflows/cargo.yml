@@ -80,7 +80,6 @@ jobs:
     # runs-on: ubuntu-latest
     runs-on: [self-hosted, docker]
     strategy:
-      fail-fast: false
       matrix:
         crate:
           - node-stc
