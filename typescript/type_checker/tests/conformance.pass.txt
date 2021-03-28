@@ -234,6 +234,7 @@ controlFlow/controlFlowElementAccess.ts
 controlFlow/controlFlowForInStatement.ts
 controlFlow/controlFlowIfStatement.ts
 controlFlow/controlFlowInstanceOfGuardPrimitives.ts
+controlFlow/controlFlowInstanceofExtendsFunction.ts
 controlFlow/controlFlowIteration.ts
 controlFlow/controlFlowStringIndex.ts
 controlFlow/controlFlowSuperPropertyAccess.ts
