@@ -103,7 +103,7 @@ impl Analyzer<'_, '_> {
             let mut declared_ret_ty = try_opt!(f.return_type.validate_with(child));
 
             if let Some(ty) = &mut declared_ret_ty {
-                self.expand_return_type_of_fn(ty).report(&mut self.storage);
+                child.expand_return_type_of_fn(ty).report(&mut child.storage);
             }
 
             if let Some(ret_ty) = declared_ret_ty {
