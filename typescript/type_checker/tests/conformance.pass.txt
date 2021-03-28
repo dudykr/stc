@@ -241,6 +241,7 @@ controlFlow/controlFlowTruthiness.ts
 controlFlow/controlFlowWithTemplateLiterals.ts
 controlFlow/switchWithConstrainedTypeVariable.ts
 controlFlow/typeGuardsAsAssertions.ts
+controlFlow/typeGuardsTypeParameters.ts
 declarationEmit/classDoesNotDependOnPrivateMember.ts
 declarationEmit/declarationEmitWorkWithInlineComments.ts
 declarationEmit/typePredicates/declarationEmitIdentifierPredicates01.ts
@@ -1612,6 +1613,7 @@ types/contextualTypes/partiallyAnnotatedFunction/partiallyAnnotatedFunctionWitou
 types/intersection/intersectionOfUnionOfUnitTypes.ts
 types/intersection/intersectionTypeEquivalence.ts
 types/intersection/intersectionTypeInference.ts
+types/keyof/keyofAndForIn.ts
 types/keyof/keyofIntersection.ts
 types/literal/booleanLiteralTypes1.ts
 types/literal/booleanLiteralTypes2.ts
@@ -1639,6 +1641,7 @@ types/localTypes/localTypes2.ts
 types/localTypes/localTypes3.ts
 types/localTypes/localTypes5.ts
 types/mapped/mappedTypes1.ts
+types/mapped/mappedTypes4.ts
 types/members/classWithProtectedProperty.ts
 types/members/classWithPublicProperty.ts
 types/members/objectTypeHidingMembersOfObject.ts
