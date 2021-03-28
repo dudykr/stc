@@ -493,14 +493,14 @@ impl Analyzer<'_, '_> {
             let type_params = try_opt!(t.type_params.validate_with(child));
 
             for param in &t.params {
-                self.default_any_param(&param);
+                child.default_any_param(&param);
             }
 
             let mut params: Vec<_> = t.params.validate_with(child)?;
 
             let mut ret_ty = box t.type_ann.validate_with(child)?;
 
-            if !self.is_builtin {
+            if !child.is_builtin {
                 for param in params.iter() {
                     child
                         .declare_complex_vars(VarDeclKind::Let, &param.pat, *param.ty.clone(), None)
