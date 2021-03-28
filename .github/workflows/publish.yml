@@ -21,7 +21,6 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly
 
       # This consumes too much time needlessly.
       # - name: Build binaries

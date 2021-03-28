@@ -37,7 +37,6 @@ jobs:
       - name: Install rust
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly
           profile: minimal
           components: rustfmt
 
@@ -56,7 +55,6 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly
 
       - uses: actions/setup-node@v2
         with:
@@ -116,7 +114,6 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly
 
       - uses: actions/setup-node@v2
         with:
