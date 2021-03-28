@@ -16,6 +16,7 @@ use stc_ts_types::ClassDef;
 use stc_ts_types::ClassMember;
 use stc_ts_types::MethodSignature;
 use stc_ts_types::ModuleId;
+use stc_ts_types::Operator;
 use stc_ts_types::PropertySignature;
 use stc_ts_types::Ref;
 use stc_ts_types::Tuple;
@@ -32,6 +33,7 @@ use swc_common::TypeEq;
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::Accessibility;
 use swc_ecma_ast::TsKeywordTypeKind;
+use swc_ecma_ast::TsTypeOperatorOp;
 
 impl Analyzer<'_, '_> {
     /// This method is called when lhs of assignment is interface or type
@@ -356,6 +358,36 @@ impl Analyzer<'_, '_> {
                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
                     ..
                 }) => return Ok(()),
+
+                Type::Mapped(r_mapped) => {
+                    for l_el in lhs {
+                        match l_el {
+                            TypeElement::Call(_) => {}
+                            TypeElement::Constructor(_) => {}
+                            TypeElement::Property(_) => {}
+                            TypeElement::Method(_) => {}
+                            TypeElement::Index(l_index) => {
+                                if let Some(Type::Operator(Operator {
+                                    op: TsTypeOperatorOp::KeyOf,
+                                    ty: r_constraint,
+                                    ..
+                                })) = r_mapped.type_param.constraint.as_deref().map(|ty| ty.normalize())
+                                {
+                                    if let Ok(()) = self.assign_with_opts(opts, &l_index.params[0].ty, &&r_constraint) {
+                                        if let Some(l_type_ann) = &l_index.type_ann {
+                                            if let Some(r_ty) = &r_mapped.ty {
+                                                self.assign_with_opts(opts, &l_type_ann, &r_ty)
+                                                    .context("tried to assign a mapped type to an index signature")?;
+                                            }
+                                        }
+
+                                        return Ok(());
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
 
                 _ => {
                     return Err(Error::Unimplemented {
