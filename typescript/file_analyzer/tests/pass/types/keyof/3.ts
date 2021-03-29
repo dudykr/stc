@@ -10,4 +10,6 @@ export type Keys = keyof (A | any)
 
 declare var keys: Keys
 
-keys
+declare let foo: string | number | symbol
+
+foo = keys
