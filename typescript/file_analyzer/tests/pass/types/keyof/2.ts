@@ -13,7 +13,9 @@ class B {
 
 export type Keys = keyof (A | B)
 
-
+declare let c: 'c'
 declare var keys: Keys
+
+c = keys
 
 keys
