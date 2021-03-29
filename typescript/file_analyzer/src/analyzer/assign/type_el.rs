@@ -389,6 +389,11 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsObjectKeyword,
+                    ..
+                }) => return Ok(()),
+
                 _ => {
                     return Err(Error::Unimplemented {
                         span,
