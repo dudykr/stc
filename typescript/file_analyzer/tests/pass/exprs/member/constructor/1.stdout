@@ -1,0 +1,48 @@
+warning: Type
+ --> $DIR/tests/pass/exprs/member/constructor/1.ts:4:9
+  |
+4 | var r = x[1];
+  |         ^
+  |
+  = note: new () => string[]
+
+warning: Type
+ --> $DIR/tests/pass/exprs/member/constructor/1.ts:4:9
+  |
+4 | var r = x[1];
+  |         ^^^^
+  |
+  = note: any
+
+warning: Type
+ --> $DIR/tests/pass/exprs/member/constructor/1.ts:5:14
+  |
+5 | var r2 = new r();
+  |              ^
+  |
+  = note: any
+
+warning: Type
+ --> $DIR/tests/pass/exprs/member/constructor/1.ts:5:10
+  |
+5 | var r2 = new r();
+  |          ^^^^^^^
+  |
+  = note: any
+
+warning: Type
+ --> $DIR/tests/pass/exprs/member/constructor/1.ts:6:11
+  |
+6 | var r2b = r();
+  |           ^
+  |
+  = note: any
+
+warning: Type
+ --> $DIR/tests/pass/exprs/member/constructor/1.ts:6:11
+  |
+6 | var r2b = r();
+  |           ^^^
+  |
+  = note: any
+
