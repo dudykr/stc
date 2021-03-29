@@ -1,0 +1,24 @@
+warning: Type
+  --> $DIR/tests/pass/types/keyof/2.ts:19:5
+   |
+19 | c = keys
+   |     ^^^^
+   |
+   = note: Keys
+
+warning: Type
+  --> $DIR/tests/pass/types/keyof/2.ts:19:1
+   |
+19 | c = keys
+   | ^^^^^^^^
+   |
+   = note: Keys
+
+warning: Type
+  --> $DIR/tests/pass/types/keyof/2.ts:21:1
+   |
+21 | keys
+   | ^^^^
+   |
+   = note: Keys
+
