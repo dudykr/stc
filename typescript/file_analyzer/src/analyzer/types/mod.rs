@@ -328,7 +328,7 @@ impl Analyzer<'_, '_> {
     pub(crate) fn intersection(&mut self, span: Span, types: Vec<Type>) -> ValidationResult<Type> {
         let mut actual = vec![];
 
-        let all_known = types.iter().all(|ty| match ty {
+        let all_known = types.iter().flat_map(|ty| ty.iter_union()).all(|ty| match ty {
             Type::Lit(..) | Type::Keyword(..) => true,
             _ => false,
         });
@@ -337,9 +337,10 @@ impl Analyzer<'_, '_> {
             return Ok(Type::Intersection(Intersection { span, types }));
         }
 
-        for ty in &types {
-            let in_all = types.iter().all(|ty| {
-                ty.iter_union()
+        for ty in types.iter().flat_map(|ty| ty.iter_union()) {
+            let in_all = types.iter().all(|candidates| {
+                candidates
+                    .iter_union()
                     .flat_map(|ty| ty.iter_union())
                     .any(|pred| pred.type_eq(ty))
             });
