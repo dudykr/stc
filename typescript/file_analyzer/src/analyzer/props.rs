@@ -256,7 +256,8 @@ impl Analyzer<'_, '_> {
                     }),
                 ..
             })
-            | Type::EnumVariant(..) => true,
+            | Type::EnumVariant(..)
+            | Type::Symbol(..) => true,
 
             Type::Union(u) => u.types.iter().all(|ty| {
                 ty.is_kwd(TsKeywordTypeKind::TsNullKeyword)
