@@ -17,5 +17,4 @@ declare let c: 'c'
 declare var keys: Keys
 
 c = keys
-
-keys
+keys = c
