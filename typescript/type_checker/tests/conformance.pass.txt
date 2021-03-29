@@ -1733,6 +1733,7 @@ types/spread/objectSpreadRepeatedComplexity.ts
 types/spread/objectSpreadRepeatedNullCheckPerf.ts
 types/spread/spreadContextualTypedBindingPattern.ts
 types/spread/spreadExcessProperty.ts
+types/spread/spreadNonPrimitive.ts
 types/spread/spreadOverwritesProperty.ts
 types/spread/spreadUnion.ts
 types/stringLiteral/stringLiteralCheckedInIf01.ts
