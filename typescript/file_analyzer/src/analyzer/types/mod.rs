@@ -338,12 +338,9 @@ impl Analyzer<'_, '_> {
         }
 
         for ty in types.iter().flat_map(|ty| ty.iter_union()) {
-            let in_all = types.iter().all(|candidates| {
-                candidates
-                    .iter_union()
-                    .flat_map(|ty| ty.iter_union())
-                    .any(|pred| pred.type_eq(ty))
-            });
+            let in_all = types
+                .iter()
+                .all(|candidates| candidates.iter_union().any(|pred| pred.type_eq(ty)));
 
             if !in_all {
                 continue;
