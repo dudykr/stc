@@ -351,8 +351,9 @@ impl Analyzer<'_, '_> {
 
             actual.push(ty.clone());
         }
+        actual.dedup_type();
 
-        Ok(Type::Intersection(Intersection { span, types: actual }))
+        Ok(Type::intersection(span, actual))
     }
 
     /// Note: `span` is only used while expanding type (to prevent panic) in the
