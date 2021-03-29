@@ -33,6 +33,7 @@ use stc_ts_errors::Errors;
 use stc_ts_types::ComputedKey;
 use stc_ts_types::Key;
 use stc_ts_types::PrivateName;
+use stc_ts_types::TypeParam;
 use stc_ts_utils::PatExt;
 use swc_atoms::js_word;
 use swc_common::Span;
@@ -258,6 +259,20 @@ impl Analyzer<'_, '_> {
             })
             | Type::EnumVariant(..)
             | Type::Symbol(..) => true,
+
+            Type::Param(TypeParam {
+                constraint: Some(ty), ..
+            }) => {
+                match ty.normalize() {
+                    Type::Operator(Operator {
+                        op: TsTypeOperatorOp::KeyOf,
+                        ..
+                    }) => return true,
+                    _ => {}
+                }
+
+                false
+            }
 
             Type::Union(u) => u.types.iter().all(|ty| {
                 ty.is_kwd(TsKeywordTypeKind::TsNullKeyword)
