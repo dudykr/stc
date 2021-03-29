@@ -1,0 +1,38 @@
+warning: Type
+ --> $DIR/tests/pass/exprs/member/constructor/3.ts:6:10
+  |
+6 | var r5 = x2[1];
+  |          ^^
+  |
+  = note: {
+              constructor();
+          }[]
+
+warning: Type
+ --> $DIR/tests/pass/exprs/member/constructor/3.ts:6:10
+  |
+6 | var r5 = x2[1];
+  |          ^^^^^
+  |
+  = note: {
+              constructor();
+          }
+
+warning: Type
+ --> $DIR/tests/pass/exprs/member/constructor/3.ts:7:14
+  |
+7 | var r6 = new r5();
+  |              ^^
+  |
+  = note: {
+              constructor();
+          }
+
+warning: Type
+ --> $DIR/tests/pass/exprs/member/constructor/3.ts:7:10
+  |
+7 | var r6 = new r5();
+  |          ^^^^^^^^
+  |
+  = note: string
+
