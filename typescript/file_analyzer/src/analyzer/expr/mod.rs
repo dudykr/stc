@@ -1811,6 +1811,11 @@ impl Analyzer<'_, '_> {
                 return self.access_property(span, interface, prop, type_mode, id_ctx);
             }
 
+            Type::Constructor(c) => match prop {
+                Key::Num(_) | Key::BigInt(_) => return Ok(Type::any(span)),
+                _ => {}
+            },
+
             _ => {}
         }
 
