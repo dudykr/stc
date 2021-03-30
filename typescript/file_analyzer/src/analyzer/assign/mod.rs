@@ -690,7 +690,7 @@ impl Analyzer<'_, '_> {
                 if errors.is_empty() {
                     return Ok(());
                 }
-                return Err(Error::Errors { span, errors });
+                return Err(Error::Errors { span, errors }.context("tried to assign a union to other type"));
             }
 
             Type::Keyword(RTsKeywordType {
@@ -882,7 +882,7 @@ impl Analyzer<'_, '_> {
                         right: box rhs.clone(),
                     });
                 } else {
-                    return Err(Error::Errors { span, errors });
+                    return Err(Error::Errors { span, errors }.context("tried to a type to a union type"));
                 }
             }
 
