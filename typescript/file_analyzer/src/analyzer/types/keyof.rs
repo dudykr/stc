@@ -60,7 +60,8 @@ impl Analyzer<'_, '_> {
                 TsKeywordTypeKind::TsVoidKeyword
                 | TsKeywordTypeKind::TsUndefinedKeyword
                 | TsKeywordTypeKind::TsNullKeyword
-                | TsKeywordTypeKind::TsUnknownKeyword => {
+                | TsKeywordTypeKind::TsUnknownKeyword
+                | TsKeywordTypeKind::TsObjectKeyword => {
                     return Ok(Type::Keyword(RTsKeywordType {
                         span,
                         kind: TsKeywordTypeKind::TsNeverKeyword,
@@ -94,7 +95,6 @@ impl Analyzer<'_, '_> {
                         .context("tried to get keys of builitin interface types");
                 }
 
-                TsKeywordTypeKind::TsObjectKeyword => {}
                 TsKeywordTypeKind::TsBigIntKeyword => {}
                 TsKeywordTypeKind::TsSymbolKeyword => {}
                 TsKeywordTypeKind::TsNeverKeyword => {
