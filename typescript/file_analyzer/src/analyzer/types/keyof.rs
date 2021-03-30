@@ -39,9 +39,21 @@ impl Analyzer<'_, '_> {
         match ty.normalize() {
             Type::Keyword(RTsKeywordType { kind, .. }) => match kind {
                 TsKeywordTypeKind::TsAnyKeyword => {
-                    return Ok(Type::Keyword(RTsKeywordType {
+                    let string = Type::Keyword(RTsKeywordType {
                         span,
                         kind: TsKeywordTypeKind::TsStringKeyword,
+                    });
+                    let number = Type::Keyword(RTsKeywordType {
+                        span,
+                        kind: TsKeywordTypeKind::TsNumberKeyword,
+                    });
+                    let symbol = Type::Keyword(RTsKeywordType {
+                        span,
+                        kind: TsKeywordTypeKind::TsSymbolKeyword,
+                    });
+                    return Ok(Type::Union(Union {
+                        span,
+                        types: vec![string, number, symbol],
                     }));
                 }
                 TsKeywordTypeKind::TsVoidKeyword
