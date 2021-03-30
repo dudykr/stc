@@ -232,7 +232,7 @@ impl Analyzer<'_, '_> {
                     })
                     .collect::<Result<Vec<_>, _>>()?;
 
-                return self.intersection(span, key_types);
+                return Ok(self.intersection(span, key_types));
             }
 
             Type::Param(..) => {

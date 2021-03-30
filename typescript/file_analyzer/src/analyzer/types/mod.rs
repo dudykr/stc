@@ -14,7 +14,6 @@ use stc_ts_types::Array;
 use stc_ts_types::ClassDef;
 use stc_ts_types::ClassMember;
 use stc_ts_types::ConstructorSignature;
-use stc_ts_types::Intersection;
 use stc_ts_types::Key;
 use stc_ts_types::MethodSignature;
 use stc_ts_types::Operator;
@@ -325,7 +324,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    pub(crate) fn intersection(&mut self, span: Span, types: Vec<Type>) -> ValidationResult<Type> {
+    pub(crate) fn intersection(&mut self, span: Span, types: Vec<Type>) -> Type {
         let mut actual = vec![];
 
         let all_known = types.iter().all(|ty| ty.normalize().is_union_type())
@@ -335,7 +334,7 @@ impl Analyzer<'_, '_> {
             });
 
         if !all_known {
-            return Ok(Type::Intersection(Intersection { span, types }));
+            return Type::intersection(span, types);
         }
 
         for ty in types.iter().flat_map(|ty| ty.iter_union()) {
@@ -351,7 +350,7 @@ impl Analyzer<'_, '_> {
         }
         actual.dedup_type();
 
-        Ok(Type::intersection(span, actual))
+        Type::intersection(span, actual)
     }
 
     /// Note: `span` is only used while expanding type (to prevent panic) in the
