@@ -328,10 +328,11 @@ impl Analyzer<'_, '_> {
     pub(crate) fn intersection(&mut self, span: Span, types: Vec<Type>) -> ValidationResult<Type> {
         let mut actual = vec![];
 
-        let all_known = types.iter().flat_map(|ty| ty.iter_union()).all(|ty| match ty {
-            Type::Lit(..) | Type::Keyword(..) => true,
-            _ => false,
-        });
+        let all_known = types.iter().all(|ty| ty.normalize().is_union_type())
+            && types.iter().flat_map(|ty| ty.iter_union()).all(|ty| match ty {
+                Type::Lit(..) | Type::Keyword(..) => true,
+                _ => false,
+            });
 
         if !all_known {
             return Ok(Type::Intersection(Intersection { span, types }));
