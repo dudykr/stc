@@ -1,0 +1,21 @@
+warning: Type
+ --> $DIR/tests/pass/exprs/object/key/1.ts:6:10
+  |
+6 |     get [s]() { return 0; },
+  |          ^
+  |
+  = note: string
+
+warning: Type
+ --> $DIR/tests/pass/exprs/object/key/1.ts:5:9
+  |
+5 |   var v = {
+  |  _________^
+6 | |     get [s]() { return 0; },
+7 | | }
+  | |_^
+  |
+  = note: {
+              readonly [s]: 0;
+          }
+

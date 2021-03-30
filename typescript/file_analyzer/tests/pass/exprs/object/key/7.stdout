@@ -1,0 +1,13 @@
+warning: Type
+ --> $DIR/tests/pass/exprs/object/key/7.ts:5:9
+  |
+5 |   var v = {
+  |  _________^
+6 | |     get [0]() { return 0; },
+7 | | }
+  | |_^
+  |
+  = note: {
+              readonly [0]: 0;
+          }
+

@@ -1,0 +1,21 @@
+warning: Type
+ --> $DIR/tests/pass/exprs/object/key/10.ts:6:10
+  |
+6 |     set [`hello bye`](v) { },
+  |          ^^^^^^^^^^^
+  |
+  = note: "hello bye"
+
+warning: Type
+ --> $DIR/tests/pass/exprs/object/key/10.ts:5:9
+  |
+5 |   var v = {
+  |  _________^
+6 | |     set [`hello bye`](v) { },
+7 | | }
+  | |_^
+  |
+  = note: {
+              [`hello bye`]: any;
+          }
+
