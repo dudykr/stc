@@ -16,6 +16,7 @@ use rnode::Visit;
 use rnode::VisitWith;
 use slog::Logger;
 use stc_ts_ast_rnode::RIdent;
+use stc_ts_ast_rnode::RLabeledStmt;
 use stc_ts_ast_rnode::RMemberExpr;
 use stc_ts_ast_rnode::RModule;
 use stc_ts_dts::apply_mutations;
@@ -437,6 +438,12 @@ impl Visit<RMemberExpr> for AssertNoEmptyCtxt {
         if e.computed {
             e.prop.visit_with(self);
         }
+    }
+}
+
+impl Visit<RLabeledStmt> for AssertNoEmptyCtxt {
+    fn visit(&mut self, s: &RLabeledStmt) {
+        s.body.visit_with(self);
     }
 }
 
