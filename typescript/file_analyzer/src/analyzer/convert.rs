@@ -263,6 +263,12 @@ impl Analyzer<'_, '_> {
             RTsTypeElement::TsIndexSignature(d) => TypeElement::Index(d.validate_with(self)?),
             RTsTypeElement::TsMethodSignature(d) => TypeElement::Method(d.validate_with(self)?),
             RTsTypeElement::TsPropertySignature(d) => TypeElement::Property(d.validate_with(self)?),
+            RTsTypeElement::TsGetterSignature(_) => {
+                unimplemented!()
+            }
+            RTsTypeElement::TsSetterSignature(_) => {
+                unimplemented!()
+            }
         })
     }
 }

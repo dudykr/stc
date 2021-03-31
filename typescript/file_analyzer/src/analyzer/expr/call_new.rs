@@ -178,7 +178,13 @@ impl Analyzer<'_, '_> {
         };
         let mut args = vec![tpl_str_arg];
 
-        args.extend(e.exprs.iter().cloned().map(|expr| RExprOrSpread { spread: None, expr }));
+        args.extend(
+            e.tpl
+                .exprs
+                .iter()
+                .cloned()
+                .map(|expr| RExprOrSpread { spread: None, expr }),
+        );
 
         let res = self.with_child(ScopeKind::Call, Default::default(), |analyzer: &mut Analyzer| {
             analyzer.extract_call_new_expr_member(
