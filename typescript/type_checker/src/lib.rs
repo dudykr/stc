@@ -1,7 +1,5 @@
 //! Full type checker with dependency support.
 #![feature(box_syntax)]
-#![feature(specialization)]
-#![allow(incomplete_features)]
 
 use dashmap::DashMap;
 use dashmap::DashSet;
@@ -12,12 +10,8 @@ use parking_lot::Mutex;
 use parking_lot::RwLock;
 use rnode::NodeIdGenerator;
 use rnode::RNode;
-use rnode::Visit;
 use rnode::VisitWith;
 use slog::Logger;
-use stc_ts_ast_rnode::RIdent;
-use stc_ts_ast_rnode::RLabeledStmt;
-use stc_ts_ast_rnode::RMemberExpr;
 use stc_ts_ast_rnode::RModule;
 use stc_ts_dts::apply_mutations;
 use stc_ts_dts::cleanup_module_for_dts;
@@ -48,11 +42,14 @@ use swc_atoms::JsWord;
 use swc_common::errors::Handler;
 use swc_common::SourceMap;
 use swc_common::Spanned;
-use swc_common::SyntaxContext;
 use swc_ecma_ast::Module;
 use swc_ecma_parser::TsConfig;
 use swc_ecma_transforms::resolver::ts_resolver;
 use swc_ecma_visit::FoldWith;
+
+use self::swc::assert_no_empty_ctxt_ident;
+
+mod swc;
 
 /// Onc instance per swc::Compiler
 pub struct Checker {
@@ -203,14 +200,12 @@ impl Checker {
                             .iter()
                             .map(|&id| self.module_graph.clone_module(id))
                             .map(|module| {
+                                assert_no_empty_ctxt_ident(&module);
+
                                 RModule::from_orig(
                                     &mut node_id_gen,
                                     module.fold_with(&mut ts_resolver(self.env.shared().marks().top_level_mark())),
                                 )
-                            })
-                            .map(|module| {
-                                assert_no_empty_ctxt_ident(&module);
-                                module
                             })
                             .collect::<Vec<_>>();
                         let mut mutations;
@@ -320,8 +315,8 @@ impl Checker {
             let mut node_id_gen = NodeIdGenerator::default();
             let mut module = self.module_graph.clone_module(id);
             module = module.fold_with(&mut ts_resolver(self.env.shared().marks().top_level_mark()));
-            let mut module = RModule::from_orig(&mut node_id_gen, module);
             assert_no_empty_ctxt_ident(&module);
+            let mut module = RModule::from_orig(&mut node_id_gen, module);
 
             let mut storage = Single {
                 parent: None,
@@ -418,39 +413,5 @@ impl Load for Checker {
         let path = self.module_graph.resolve(&base, src).unwrap();
         let id = self.module_graph.id(&path);
         id
-    }
-}
-
-fn assert_no_empty_ctxt_ident(m: &RModule) {
-    if !cfg!(debug_assertions) {
-        return;
-    }
-
-    m.visit_with(&mut AssertNoEmptyCtxt);
-}
-
-struct AssertNoEmptyCtxt;
-
-impl Visit<RMemberExpr> for AssertNoEmptyCtxt {
-    fn visit(&mut self, e: &RMemberExpr) {
-        e.obj.visit_with(self);
-
-        if e.computed {
-            e.prop.visit_with(self);
-        }
-    }
-}
-
-impl Visit<RLabeledStmt> for AssertNoEmptyCtxt {
-    fn visit(&mut self, s: &RLabeledStmt) {
-        s.body.visit_with(self);
-    }
-}
-
-impl Visit<RIdent> for AssertNoEmptyCtxt {
-    fn visit(&mut self, i: &RIdent) {
-        if i.span.ctxt == SyntaxContext::empty() {
-            unreachable!("ts_resolver has a bug")
-        }
     }
 }
