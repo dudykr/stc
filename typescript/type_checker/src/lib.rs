@@ -16,6 +16,7 @@ use rnode::Visit;
 use rnode::VisitWith;
 use slog::Logger;
 use stc_ts_ast_rnode::RIdent;
+use stc_ts_ast_rnode::RMemberExpr;
 use stc_ts_ast_rnode::RModule;
 use stc_ts_dts::apply_mutations;
 use stc_ts_dts::cleanup_module_for_dts;
@@ -428,6 +429,16 @@ fn assert_no_empty_ctxt_ident(m: &RModule) {
 }
 
 struct AssertNoEmptyCtxt;
+
+impl Visit<RMemberExpr> for AssertNoEmptyCtxt {
+    fn visit(&mut self, e: &RMemberExpr) {
+        e.obj.visit_with(self);
+
+        if e.computed {
+            e.prop.visit_with(self);
+        }
+    }
+}
 
 impl Visit<RIdent> for AssertNoEmptyCtxt {
     fn visit(&mut self, i: &RIdent) {
