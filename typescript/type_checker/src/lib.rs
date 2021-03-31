@@ -319,6 +319,7 @@ impl Checker {
             let mut module = self.module_graph.clone_module(id);
             module = module.fold_with(&mut ts_resolver(self.env.shared().marks().top_level_mark()));
             let mut module = RModule::from_orig(&mut node_id_gen, module);
+            assert_no_empty_ctxt_ident(&module);
 
             let mut storage = Single {
                 parent: None,
