@@ -16,6 +16,13 @@ pub fn assert_no_empty_ctxt_ident(m: &Module) {
 struct AssertNoEmptyCtxt;
 
 impl Visit for AssertNoEmptyCtxt {
+    fn visit_member_expr(&mut self, n: &MemberExpr, _: &dyn Node) {
+        n.obj.visit_with(n, self);
+        if n.computed {
+            n.prop.visit_with(n, self);
+        }
+    }
+
     fn visit_expr(&mut self, n: &Expr, _: &dyn Node) {
         n.visit_children_with(self);
 
