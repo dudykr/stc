@@ -1,5 +1,7 @@
 //! Full type checker with dependency support.
 #![feature(box_syntax)]
+#![feature(specialization)]
+#![allow(incomplete_features)]
 
 use dashmap::DashMap;
 use dashmap::DashSet;
@@ -10,8 +12,10 @@ use parking_lot::Mutex;
 use parking_lot::RwLock;
 use rnode::NodeIdGenerator;
 use rnode::RNode;
+use rnode::Visit;
 use rnode::VisitWith;
 use slog::Logger;
+use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RModule;
 use stc_ts_dts::apply_mutations;
 use stc_ts_dts::cleanup_module_for_dts;
@@ -42,6 +46,7 @@ use swc_atoms::JsWord;
 use swc_common::errors::Handler;
 use swc_common::SourceMap;
 use swc_common::Spanned;
+use swc_common::SyntaxContext;
 use swc_ecma_ast::Module;
 use swc_ecma_parser::TsConfig;
 use swc_ecma_transforms::resolver::ts_resolver;
@@ -200,6 +205,10 @@ impl Checker {
                                     &mut node_id_gen,
                                     module.fold_with(&mut ts_resolver(self.env.shared().marks().top_level_mark())),
                                 )
+                            })
+                            .map(|module| {
+                                assert_no_empty_ctxt_ident(&module);
+                                module
                             })
                             .collect::<Vec<_>>();
                         let mut mutations;
@@ -406,5 +415,23 @@ impl Load for Checker {
         let path = self.module_graph.resolve(&base, src).unwrap();
         let id = self.module_graph.id(&path);
         id
+    }
+}
+
+fn assert_no_empty_ctxt_ident(m: &RModule) {
+    if !cfg!(debug_assertions) {
+        return;
+    }
+
+    m.visit_with(&mut AssertNoEmptyCtxt);
+}
+
+struct AssertNoEmptyCtxt;
+
+impl Visit<RIdent> for AssertNoEmptyCtxt {
+    fn visit(&mut self, i: &RIdent) {
+        if i.span.ctxt == SyntaxContext::empty() {
+            unreachable!("ts_resolver has a bug")
+        }
     }
 }
