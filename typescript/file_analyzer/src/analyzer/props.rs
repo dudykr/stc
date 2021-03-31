@@ -358,7 +358,7 @@ impl Analyzer<'_, '_> {
                     RPropName::Computed(_) => true,
                     _ => false,
                 };
-                let parma_span = p.param.span();
+                let param_span = p.param.span();
                 let mut param = &p.param;
 
                 self.with_child(ScopeKind::Method, Default::default(), {
@@ -369,7 +369,7 @@ impl Analyzer<'_, '_> {
                             params: vec![param.validate_with(child)?],
                             optional: false,
                             readonly: false,
-                            type_ann: Some(box Type::any(parma_span)),
+                            type_ann: Some(box Type::any(param_span)),
                             type_params: Default::default(),
                         }
                         .into())
@@ -495,8 +495,6 @@ impl Analyzer<'_, '_> {
 
         let type_ann = self
             .with_child(ScopeKind::Method, Default::default(), |child| {
-                n.key.visit_with(child);
-
                 if let Some(body) = &n.body {
                     let ret_ty = child.visit_stmts_for_return(n.span, false, false, &body.stmts)?;
                     if let None = ret_ty {
