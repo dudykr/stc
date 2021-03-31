@@ -47,10 +47,6 @@ use swc_ecma_parser::TsConfig;
 use swc_ecma_transforms::resolver::ts_resolver;
 use swc_ecma_visit::FoldWith;
 
-use self::swc::assert_no_empty_ctxt_ident;
-
-mod swc;
-
 /// Onc instance per swc::Compiler
 pub struct Checker {
     logger: Logger,
@@ -200,8 +196,6 @@ impl Checker {
                             .iter()
                             .map(|&id| self.module_graph.clone_module(id))
                             .map(|module| {
-                                assert_no_empty_ctxt_ident(&module);
-
                                 RModule::from_orig(
                                     &mut node_id_gen,
                                     module.fold_with(&mut ts_resolver(self.env.shared().marks().top_level_mark())),
@@ -315,7 +309,6 @@ impl Checker {
             let mut node_id_gen = NodeIdGenerator::default();
             let mut module = self.module_graph.clone_module(id);
             module = module.fold_with(&mut ts_resolver(self.env.shared().marks().top_level_mark()));
-            assert_no_empty_ctxt_ident(&module);
             let mut module = RModule::from_orig(&mut node_id_gen, module);
 
             let mut storage = Single {
