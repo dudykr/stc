@@ -474,7 +474,6 @@ impl Analyzer<'_, '_> {
 
                 let params = c.function.params.validate_with(child)?;
 
-                c.key.visit_with(child);
                 // c.function.visit_children_with(child);
 
                 // if child.ctx.in_declare && c.function.body.is_some() {
