@@ -157,7 +157,7 @@ impl Analyzer<'_, '_> {
                         ScopeKind::Module => true,
                         _ => false,
                     } || (self.ctx.in_computed_prop_name
-                        && match self.scope.parent().map(|parent| parent.kind()) {
+                        && match self.scope.scope_of_computed_props().map(|s| s.kind()) {
                             Some(ScopeKind::Module) => true,
                             _ => false,
                         });
@@ -173,8 +173,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     let scope = if self.ctx.in_computed_prop_name {
-                        // We use parent scope in this case.
-                        self.scope.parent()
+                        self.scope.scope_of_computed_props()
                     } else {
                         Some(&self.scope)
                     };
@@ -1041,7 +1040,7 @@ impl Analyzer<'_, '_> {
         match obj.normalize() {
             Type::This(..) => {
                 let scope = if self.ctx.in_computed_prop_name {
-                    self.scope.parent()
+                    self.scope.scope_of_computed_props()
                 } else {
                     Some(&self.scope)
                 };
@@ -1668,11 +1667,28 @@ impl Analyzer<'_, '_> {
             }
 
             Type::This(..) => {
+                // TODO: Use parent scope in computed property names.
                 if let Some(this) = self.scope.this().map(|this| this.into_owned()) {
                     return self.access_property(span, this, prop, type_mode, id_ctx);
                 } else if self.ctx.in_argument {
                     // We will adjust `this` using information from callee.
                     return Ok(Type::any(span));
+                }
+
+                let scope = if self.ctx.in_computed_prop_name {
+                    self.scope.scope_of_computed_props()
+                } else {
+                    Some(&self.scope)
+                };
+
+                match scope.map(|scope| scope.kind()) {
+                    Some(ScopeKind::Fn) => {
+                        // TODO
+                        return Ok(Type::any(span));
+                    }
+                    kind => {
+                        unimplemented!("access property of this to {:?}", kind)
+                    }
                 }
             }
 

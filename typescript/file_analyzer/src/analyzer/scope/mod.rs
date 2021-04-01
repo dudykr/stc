@@ -124,6 +124,20 @@ impl Scope<'_> {
         self.parent
     }
 
+    pub fn scope_of_computed_props(&self) -> Option<&Self> {
+        match self.kind {
+            ScopeKind::Fn
+            | ScopeKind::Method
+            | ScopeKind::ArrowFn
+            | ScopeKind::Class
+            | ScopeKind::ObjectLit
+            | ScopeKind::Module
+            | ScopeKind::Call => Some(self),
+            ScopeKind::LoopBody => self.parent()?.scope_of_computed_props(),
+            ScopeKind::Block | ScopeKind::Flow | ScopeKind::TypeParams => self.parent()?.scope_of_computed_props(),
+        }
+    }
+
     pub fn get_type_facts(&self, name: &Name) -> TypeFacts {
         if let Some(&f) = self.facts.facts.get(name) {
             return f;
