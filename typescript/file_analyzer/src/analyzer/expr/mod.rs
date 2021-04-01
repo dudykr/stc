@@ -1040,7 +1040,12 @@ impl Analyzer<'_, '_> {
 
         match obj.normalize() {
             Type::This(..) => {
-                if let Some(this) = self.scope.this().map(Cow::into_owned) {
+                let scope = if self.ctx.in_computed_prop_name {
+                    self.scope.parent()
+                } else {
+                    Some(&self.scope)
+                };
+                if let Some(this) = scope.and_then(|scope| scope.this().map(Cow::into_owned)) {
                     return self
                         .access_property(span, this, prop, type_mode, id_ctx)
                         .context("tried to access property of `this`");
