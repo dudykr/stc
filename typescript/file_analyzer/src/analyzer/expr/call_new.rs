@@ -472,6 +472,15 @@ impl Analyzer<'_, '_> {
                     return Ok(Type::any(span));
                 }
 
+                Type::This(..) => {
+                    if self.ctx.in_computed_prop_name {
+                        self.storage
+                            .report(Error::CannotReferenceThisInComputedPropName { span });
+                        // Return any to prevent other errors
+                        return Ok(Type::any(span));
+                    }
+                }
+
                 Type::Array(obj) => {
                     let obj = Type::Ref(Ref {
                         span,
