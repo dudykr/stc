@@ -1045,9 +1045,6 @@ impl Analyzer<'_, '_> {
                     Some(&self.scope)
                 };
                 if let Some(this) = scope.and_then(|scope| scope.this().map(Cow::into_owned)) {
-                    if this.normalize().is_this() {
-                        unreachable!("this() should not be `this`")
-                    }
                     return self
                         .access_property(span, this, prop, type_mode, id_ctx)
                         .context("tried to access property of `this`");

@@ -125,7 +125,7 @@ impl Scope<'_> {
     }
 
     pub fn scope_of_computed_props(&self) -> Option<&Self> {
-        self.parent()?.scope_of_computed_props_inner()
+        self.scope_of_computed_props_inner()?.parent()
     }
 
     fn scope_of_computed_props_inner(&self) -> Option<&Self> {
@@ -463,6 +463,9 @@ impl Scope<'_> {
 
     pub fn this(&self) -> Option<Cow<Type>> {
         if let Some(ref this) = self.this {
+            if this.normalize().is_this() {
+                unreachable!("this() should not be `this`")
+            }
             return Some(Cow::Borrowed(this));
         }
 
