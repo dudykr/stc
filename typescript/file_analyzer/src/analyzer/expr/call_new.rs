@@ -460,6 +460,10 @@ impl Analyzer<'_, '_> {
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
     ) -> ValidationResult {
+        if this.normalize().is_this() {
+            unreachable!("this() should not be `this`")
+        }
+
         let old_this = self.scope.this.take();
         self.scope.this = Some(this.clone());
 
