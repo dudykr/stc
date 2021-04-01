@@ -881,6 +881,8 @@ impl Analyzer<'_, '_> {
         let computed = prop.is_computed();
 
         if id_ctx == IdCtx::Var {
+            // TODO: Use parent scope
+
             // Recursive method call
             if !computed
                 && obj.is_this()
@@ -895,7 +897,7 @@ impl Analyzer<'_, '_> {
             }
 
             match &obj {
-                Type::This(this) if self.scope.is_this_ref_to_object_lit() => {
+                Type::This(this) if !self.ctx.in_computed_prop_name && self.scope.is_this_ref_to_object_lit() => {
                     if let Key::Computed(prop) = prop {
                         //
                         match &*prop.expr {
@@ -916,7 +918,7 @@ impl Analyzer<'_, '_> {
                     return Ok(Type::any(span));
                 }
 
-                Type::This(this) if self.scope.is_this_ref_to_class() => {
+                Type::This(this) if !self.ctx.in_computed_prop_name && self.scope.is_this_ref_to_class() => {
                     if !computed {
                         // We are currently declaring a class.
                         for (_, member) in self.scope.class_members() {
