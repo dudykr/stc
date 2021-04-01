@@ -494,7 +494,7 @@ impl Analyzer<'_, '_> {
         let computed = key.is_computed();
 
         let type_ann = self
-            .with_child(ScopeKind::Method, Default::default(), |child| {
+            .with_child(ScopeKind::Method, Default::default(), |child: &mut Analyzer| {
                 if let Some(body) = &n.body {
                     let ret_ty = child.visit_stmts_for_return(n.span, false, false, &body.stmts)?;
                     if let None = ret_ty {
