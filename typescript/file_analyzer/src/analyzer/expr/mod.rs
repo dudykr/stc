@@ -171,8 +171,17 @@ impl Analyzer<'_, '_> {
                             kind: TsKeywordTypeKind::TsUndefinedKeyword,
                         }));
                     }
-                    if let Some(ty) = self.scope.this() {
-                        return Ok(ty.into_owned());
+
+                    let scope = if self.ctx.in_computed_prop_name {
+                        // We use parent scope in this case.
+                        self.scope.parent()
+                    } else {
+                        Some(&self.scope)
+                    };
+                    if let Some(scope) = scope {
+                        if let Some(ty) = scope.this() {
+                            return Ok(ty.into_owned());
+                        }
                     }
                     return Ok(Type::from(RTsThisType { span }));
                 }
