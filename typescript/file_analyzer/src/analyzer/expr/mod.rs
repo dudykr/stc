@@ -1683,6 +1683,10 @@ impl Analyzer<'_, '_> {
                         // TODO
                         return Ok(Type::any(span));
                     }
+                    None => {
+                        // Global this
+                        return Ok(Type::any(span));
+                    }
                     kind => {
                         unimplemented!("access property of this to {:?}", kind)
                     }
