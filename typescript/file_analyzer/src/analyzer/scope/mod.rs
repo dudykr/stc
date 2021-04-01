@@ -469,10 +469,7 @@ impl Scope<'_> {
             return Some(Cow::Borrowed(this));
         }
 
-        match self.parent {
-            Some(ref parent) => parent.this(),
-            None => None,
-        }
+        self.parent?.this()
     }
 
     pub fn get_var(&self, sym: &Id) -> Option<&VarInfo> {
