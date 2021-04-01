@@ -54,6 +54,7 @@ use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::Class;
 use stc_ts_types::ClassDef;
 use stc_ts_types::ClassProperty;
+use stc_ts_types::ComputedKey;
 use stc_ts_types::ConstructorSignature;
 use stc_ts_types::FnParam;
 use stc_ts_types::Id;
@@ -1060,8 +1061,8 @@ impl Analyzer<'_, '_> {
                     // Remove class members with const EnumVariant keys.
                     c.body.iter().for_each(|v| match v {
                         RClassMember::Method(method) => match &method.key {
-                            RPropName::Computed(c) => match c.expr.validate_with_default(child) {
-                                Ok(ty) => match ty {
+                            RPropName::Computed(c) => match c.validate_with(child) {
+                                Ok(Key::Computed(ComputedKey { ty, .. })) => match ty.normalize() {
                                     Type::EnumVariant(e) => {
                                         //
                                         if let Some(m) = &mut child.mutations {
@@ -1070,9 +1071,7 @@ impl Analyzer<'_, '_> {
                                     }
                                     _ => {}
                                 },
-                                Err(err) => {
-                                    child.storage.report(err);
-                                }
+                                _ => {}
                             },
                             _ => {}
                         },
