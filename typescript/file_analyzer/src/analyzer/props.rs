@@ -86,10 +86,13 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RComputedPropName) -> ValidationResult<Key> {
         self.record(node);
-        let span = node.span;
+        let ctx = Ctx {
+            in_computed_prop_name: true,
+            ..self.ctx
+        };
 
-        let mode = self.ctx.computed_prop_mode;
         let span = node.span;
+        let mode = self.ctx.computed_prop_mode;
 
         let is_symbol_access = match *node.expr {
             RExpr::Member(RMemberExpr {
@@ -102,106 +105,111 @@ impl Analyzer<'_, '_> {
             }) => true,
             _ => false,
         };
-        let mut check_for_symbol_form = true;
 
-        let mut errors = Errors::default();
+        self.with_ctx(ctx).with(|analyzer: &mut Analyzer| {
+            let mut check_for_symbol_form = true;
 
-        let ty = match node.expr.validate_with_default(self) {
-            Ok(ty) => ty,
-            Err(err) => {
-                check_for_symbol_form = false;
-                match err {
-                    Error::TS2585 { span } => Err(Error::TS2585 { span })?,
-                    _ => {}
+            let mut errors = Errors::default();
+
+            let ty = match node.expr.validate_with_default(analyzer) {
+                Ok(ty) => ty,
+                Err(err) => {
+                    check_for_symbol_form = false;
+                    match err {
+                        Error::TS2585 { span } => Err(Error::TS2585 { span })?,
+                        _ => {}
+                    }
+
+                    errors.push(err);
+                    // TODO: Change this to something else (maybe any)
+                    Type::unknown(span)
                 }
+            };
 
-                errors.push(err);
-                // TODO: Change this to something else (maybe any)
-                Type::unknown(span)
-            }
-        };
-
-        if check_for_symbol_form && is_symbol_access {
-            match ty.normalize() {
-                Type::Keyword(RTsKeywordType {
-                    kind: TsKeywordTypeKind::TsSymbolKeyword,
-                    ..
-                }) => {}
-                Type::Operator(Operator {
-                    op: TsTypeOperatorOp::Unique,
-                    ty,
-                    ..
-                }) if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) => {}
-                _ => {
-                    //
-                    self.storage.report(Error::NonSymbolComputedPropInFormOfSymbol { span });
-                }
-            }
-        }
-
-        match mode {
-            ComputedPropMode::Class { .. } | ComputedPropMode::Interface => {
-                let is_valid_key = is_valid_computed_key(&node.expr);
-
-                let ty = self.expand(node.span, ty.clone()).report(&mut self.storage);
-
-                if let Some(ref ty) = ty {
-                    // TODO: Add support for expressions like '' + ''.
-                    match ty.normalize() {
-                        _ if is_valid_key => {}
-                        Type::Lit(..) => {}
-                        Type::EnumVariant(..) => {}
-                        _ if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) || ty.is_unique_symbol() => {}
-                        _ => match mode {
-                            ComputedPropMode::Interface => errors.push(Error::TS1169 { span: node.span }),
-                            _ => {}
-                        },
+            if check_for_symbol_form && is_symbol_access {
+                match ty.normalize() {
+                    Type::Keyword(RTsKeywordType {
+                        kind: TsKeywordTypeKind::TsSymbolKeyword,
+                        ..
+                    }) => {}
+                    Type::Operator(Operator {
+                        op: TsTypeOperatorOp::Unique,
+                        ty,
+                        ..
+                    }) if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) => {}
+                    _ => {
+                        //
+                        analyzer
+                            .storage
+                            .report(Error::NonSymbolComputedPropInFormOfSymbol { span });
                     }
                 }
             }
 
-            _ => {}
-        }
+            match mode {
+                ComputedPropMode::Class { .. } | ComputedPropMode::Interface => {
+                    let is_valid_key = is_valid_computed_key(&node.expr);
 
-        if match mode {
-            ComputedPropMode::Class { has_body } => errors.is_empty(),
-            ComputedPropMode::Object => errors.is_empty(),
-            // TODO:
-            ComputedPropMode::Interface => errors.is_empty(),
-        } {
-            if !is_symbol_access {
-                if !self.is_type_valid_for_computed_key(span, &ty) {
-                    self.storage.report(Error::TS2464 {
-                        span,
-                        ty: box ty.clone(),
-                    });
+                    let ty = analyzer.expand(node.span, ty.clone()).report(&mut analyzer.storage);
+
+                    if let Some(ref ty) = ty {
+                        // TODO: Add support for expressions like '' + ''.
+                        match ty.normalize() {
+                            _ if is_valid_key => {}
+                            Type::Lit(..) => {}
+                            Type::EnumVariant(..) => {}
+                            _ if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) || ty.is_unique_symbol() => {}
+                            _ => match mode {
+                                ComputedPropMode::Interface => errors.push(Error::TS1169 { span: node.span }),
+                                _ => {}
+                            },
+                        }
+                    }
+                }
+
+                _ => {}
+            }
+
+            if match mode {
+                ComputedPropMode::Class { has_body } => errors.is_empty(),
+                ComputedPropMode::Object => errors.is_empty(),
+                // TODO:
+                ComputedPropMode::Interface => errors.is_empty(),
+            } {
+                if !is_symbol_access {
+                    if !analyzer.is_type_valid_for_computed_key(span, &ty) {
+                        analyzer.storage.report(Error::TS2464 {
+                            span,
+                            ty: box ty.clone(),
+                        });
+                    }
                 }
             }
-        }
-        if !errors.is_empty() {
-            self.storage.report_all(errors);
-        }
+            if !errors.is_empty() {
+                analyzer.storage.report_all(errors);
+            }
 
-        // match *ty {
-        //     Type::Lit(RTsLitType {
-        //         lit: RTsLit::Number(n), ..
-        //     }) => return Ok(Key::Num(n)),
-        //     Type::Lit(RTsLitType {
-        //         lit: RTsLit::Str(s), ..
-        //     }) => {
-        //         return Ok(Key::Normal {
-        //             span: s.span,
-        //             sym: s.value,
-        //         })
-        //     }
-        //     _ => {}
-        // }
+            // match *ty {
+            //     Type::Lit(RTsLitType {
+            //         lit: RTsLit::Number(n), ..
+            //     }) => return Ok(Key::Num(n)),
+            //     Type::Lit(RTsLitType {
+            //         lit: RTsLit::Str(s), ..
+            //     }) => {
+            //         return Ok(Key::Normal {
+            //             span: s.span,
+            //             sym: s.value,
+            //         })
+            //     }
+            //     _ => {}
+            // }
 
-        Ok(Key::Computed(ComputedKey {
-            span,
-            expr: node.expr.clone(),
-            ty: box ty,
-        }))
+            Ok(Key::Computed(ComputedKey {
+                span,
+                expr: node.expr.clone(),
+                ty: box ty,
+            }))
+        })
     }
 }
 

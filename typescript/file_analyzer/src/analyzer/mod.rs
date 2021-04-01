@@ -111,6 +111,8 @@ pub(crate) struct Ctx {
     should_store_truthy_for_access: bool,
     in_switch_case_test: bool,
 
+    in_computed_prop_name: bool,
+
     in_opt_chain: bool,
 
     in_declare: bool,
@@ -385,6 +387,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 in_cond: false,
                 should_store_truthy_for_access: false,
                 in_switch_case_test: false,
+                in_computed_prop_name: false,
                 in_opt_chain: false,
                 in_declare: false,
                 in_fn_without_body: false,
