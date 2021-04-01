@@ -125,6 +125,10 @@ impl Scope<'_> {
     }
 
     pub fn scope_of_computed_props(&self) -> Option<&Self> {
+        self.parent()?.scope_of_computed_props_inner()
+    }
+
+    fn scope_of_computed_props_inner(&self) -> Option<&Self> {
         match self.kind {
             ScopeKind::Fn
             | ScopeKind::Method
