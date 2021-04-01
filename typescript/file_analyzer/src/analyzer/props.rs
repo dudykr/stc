@@ -164,7 +164,7 @@ impl Analyzer<'_, '_> {
         }
 
         if match mode {
-            ComputedPropMode::Class { has_body } => !has_body,
+            ComputedPropMode::Class { has_body } => errors.is_empty(),
             ComputedPropMode::Object => errors.is_empty(),
             // TODO:
             ComputedPropMode::Interface => errors.is_empty(),
