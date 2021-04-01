@@ -62,6 +62,11 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2465
+    CannotReferenceThisInComputedPropName {
+        span: Span,
+    },
+
     /// TS2331
     ThisRefToModuleOrNamespace {
         span: Span,
@@ -994,6 +999,8 @@ impl Error {
             Error::ReturnRequired { .. } => 2355,
 
             Error::ThisRefToModuleOrNamespace { .. } => 2331,
+
+            Error::CannotReferenceThisInComputedPropName { .. } => 2465,
 
             _ => 0,
         }

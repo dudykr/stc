@@ -1670,6 +1670,13 @@ impl Analyzer<'_, '_> {
             Type::This(..) => {
                 // TODO: Use parent scope in computed property names.
                 if let Some(this) = self.scope.this().map(|this| this.into_owned()) {
+                    if self.ctx.in_computed_prop_name {
+                        self.storage
+                            .report(Error::CannotReferenceThisInComputedPropName { span });
+                        // Return any to prevent other errors
+                        return Ok(Type::any(span));
+                    }
+
                     if this.normalize().is_this() {
                         unreachable!("this() should not be `this`")
                     }
