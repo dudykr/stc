@@ -322,7 +322,7 @@ impl Analyzer<'_, '_> {
                 // Handle member expression
                 let obj_type = obj.validate_with_default(self)?.generalize_lit();
 
-                let obj_type = match *obj_type.normalize() {
+                let mut obj_type = match *obj_type.normalize() {
                     Type::Keyword(RTsKeywordType {
                         kind: TsKeywordTypeKind::TsNumberKeyword,
                         ..
@@ -460,10 +460,6 @@ impl Analyzer<'_, '_> {
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
     ) -> ValidationResult {
-        if this.normalize().is_this() {
-            unreachable!("this() should not be `this`")
-        }
-
         let old_this = self.scope.this.take();
         self.scope.this = Some(this.clone());
 

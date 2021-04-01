@@ -1045,6 +1045,10 @@ impl Analyzer<'_, '_> {
                     Some(&self.scope)
                 };
                 if let Some(this) = scope.and_then(|scope| scope.this().map(Cow::into_owned)) {
+                    if this.normalize().is_this() {
+                        unreachable!("this() should not be `this`")
+                    }
+
                     return self
                         .access_property(span, this, prop, type_mode, id_ctx)
                         .context("tried to access property of `this`");
@@ -1666,6 +1670,10 @@ impl Analyzer<'_, '_> {
             Type::This(..) => {
                 // TODO: Use parent scope in computed property names.
                 if let Some(this) = self.scope.this().map(|this| this.into_owned()) {
+                    if this.normalize().is_this() {
+                        unreachable!("this() should not be `this`")
+                    }
+
                     return self.access_property(span, this, prop, type_mode, id_ctx);
                 } else if self.ctx.in_argument {
                     // We will adjust `this` using information from callee.
