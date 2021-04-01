@@ -884,6 +884,7 @@ impl Analyzer<'_, '_> {
             // Recursive method call
             if !computed
                 && obj.is_this()
+                && !self.ctx.in_computed_prop_name
                 && (self.scope.is_this_ref_to_object_lit() || self.scope.is_this_ref_to_class())
             {
                 if let Some(declaring) = &self.scope.declaring_prop() {
