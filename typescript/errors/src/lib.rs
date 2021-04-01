@@ -62,6 +62,11 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2331
+    ThisRefToModuleOrNamespace {
+        span: Span,
+    },
+
     SuperInClassWithoutSuper {
         span: Span,
     },
@@ -987,6 +992,8 @@ impl Error {
             Error::Unknown { .. } => 2571,
 
             Error::ReturnRequired { .. } => 2355,
+
+            Error::ThisRefToModuleOrNamespace { .. } => 2331,
 
             _ => 0,
         }

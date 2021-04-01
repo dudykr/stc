@@ -1,5 +1,6 @@
 use self::bin::extract_name_for_assignment;
 use super::{marks::MarkExt, Analyzer};
+use crate::analyzer::scope::ScopeKind;
 use crate::analyzer::util::ResultExt;
 use crate::util::type_ext::TypeVecExt;
 use crate::util::RemoveTypes;
@@ -150,13 +151,25 @@ impl Analyzer<'_, '_> {
                 RExpr::Unary(e) => e.validate_with(self),
 
                 RExpr::This(RThisExpr { span, .. }) => {
+                    let span = *span;
                     if !self.scope.is_this_defined() {
+                        let is_ref_to_module = match self.scope.kind() {
+                            ScopeKind::Module => true,
+                            _ => false,
+                        } || (self.ctx.in_computed_prop_name
+                            && match self.scope.parent().map(|parent| parent.kind()) {
+                                Some(ScopeKind::Module) => true,
+                                _ => false,
+                            });
+                        if is_ref_to_module {
+                            self.storage.report(Error::ThisRefToModuleOrNamespace { span })
+                        }
+
                         return Ok(Type::Keyword(RTsKeywordType {
-                            span: *span,
+                            span,
                             kind: TsKeywordTypeKind::TsUndefinedKeyword,
                         }));
                     }
-                    let span = *span;
                     if let Some(ty) = self.scope.this() {
                         return Ok(ty.into_owned());
                     }
