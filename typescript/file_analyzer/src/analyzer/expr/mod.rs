@@ -152,19 +152,20 @@ impl Analyzer<'_, '_> {
 
                 RExpr::This(RThisExpr { span, .. }) => {
                     let span = *span;
-                    if !self.scope.is_this_defined() {
-                        let is_ref_to_module = match self.scope.kind() {
-                            ScopeKind::Module => true,
-                            _ => false,
-                        } || (self.ctx.in_computed_prop_name
-                            && match self.scope.parent().map(|parent| parent.kind()) {
-                                Some(ScopeKind::Module) => true,
-                                _ => false,
-                            });
-                        if is_ref_to_module {
-                            self.storage.report(Error::ThisRefToModuleOrNamespace { span })
-                        }
 
+                    let is_ref_to_module = match self.scope.kind() {
+                        ScopeKind::Module => true,
+                        _ => false,
+                    } || (self.ctx.in_computed_prop_name
+                        && match self.scope.parent().map(|parent| parent.kind()) {
+                            Some(ScopeKind::Module) => true,
+                            _ => false,
+                        });
+                    if is_ref_to_module {
+                        self.storage.report(Error::ThisRefToModuleOrNamespace { span })
+                    }
+
+                    if !self.scope.is_this_defined() {
                         return Ok(Type::Keyword(RTsKeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsUndefinedKeyword,
