@@ -2359,12 +2359,12 @@ impl Analyzer<'_, '_> {
                             | ScopeKind::Flow
                             | ScopeKind::Call
                             | ScopeKind::Block
-                            | ScopeKind::LoopBody => false,
+                            | ScopeKind::LoopBody
+                            | ScopeKind::ObjectLit => false,
                             ScopeKind::Fn
                             | ScopeKind::Method
                             | ScopeKind::ArrowFn
                             | ScopeKind::Class
-                            | ScopeKind::ObjectLit
                             | ScopeKind::Module => true,
                         })
                         .map(|scope| scope.kind())
