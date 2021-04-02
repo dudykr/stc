@@ -27,6 +27,7 @@ use rnode::FoldWith;
 use rnode::NodeId;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
+use rnode::VisitWith;
 use stc_ts_ast_rnode::RBindingIdent;
 use stc_ts_ast_rnode::RCallExpr;
 use stc_ts_ast_rnode::RExpr;
@@ -55,6 +56,7 @@ use stc_ts_errors::debug::print_type;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
+use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
 use stc_ts_type_ops::is_str_lit_or_union;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::Class;
@@ -240,6 +242,12 @@ impl Analyzer<'_, '_> {
             }
             None => None,
         };
+
+        if let Some(type_args) = &type_args {
+            let mut v = TypeParamUsageFinder::default();
+            type_args.visit_with(&mut v);
+            self.report_error_for_usage_of_type_param_of_declaring_class(&v.params, span);
+        }
 
         let arg_types = self.validate_args(args)?;
         let spread_arg_types = self
