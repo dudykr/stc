@@ -2487,15 +2487,17 @@ impl Analyzer<'_, '_> {
                 | ScopeKind::Call
                 | ScopeKind::Block
                 | ScopeKind::LoopBody
-                | ScopeKind::ObjectLit
-                | ScopeKind::ArrowFn => false,
-                ScopeKind::Fn | ScopeKind::Method | ScopeKind::Class | ScopeKind::Module | ScopeKind::Constructor => {
-                    true
-                }
+                | ScopeKind::ObjectLit => false,
+                ScopeKind::Fn
+                | ScopeKind::Method
+                | ScopeKind::Class
+                | ScopeKind::Module
+                | ScopeKind::Constructor
+                | ScopeKind::ArrowFn => true,
             })
             .map(|scope| scope.kind())
         {
-            Some(ScopeKind::Class) | Some(ScopeKind::Constructor) => {
+            Some(ScopeKind::Class) | Some(ScopeKind::ArrowFn) => {
                 // Using proerties of super class in class property names are not allowed.
                 self.storage
                     .report(Error::CannotReferenceSuperInComputedPropName { span })
