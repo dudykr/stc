@@ -2344,7 +2344,7 @@ impl Analyzer<'_, '_> {
             }
 
             RExprOrSuper::Super(RSuper { span, .. }) => {
-                self.report_error_for_super_reference(span);
+                self.report_error_for_super_reference(span, false);
 
                 if let Some(v) = self.scope.get_super_class() {
                     v.clone()
@@ -2474,7 +2474,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    pub(crate) fn report_error_for_super_reference(&mut self, span: Span) {
+    pub(crate) fn report_error_for_super_reference(&mut self, span: Span, is_super_call: bool) {
         if !self.ctx.in_computed_prop_name {
             return;
         }
@@ -2497,11 +2497,21 @@ impl Analyzer<'_, '_> {
             })
             .map(|scope| scope.kind())
         {
-            Some(ScopeKind::Class) | Some(ScopeKind::ArrowFn) => {
+            Some(ScopeKind::Class) => {
                 // Using proerties of super class in class property names are not allowed.
                 self.storage
                     .report(Error::CannotReferenceSuperInComputedPropName { span })
             }
+
+            Some(ScopeKind::ArrowFn) => {
+                if !is_super_call {
+                    return;
+                }
+
+                self.storage
+                    .report(Error::CannotReferenceSuperInComputedPropName { span })
+            }
+
             kind => {
                 dbg!(kind);
             }
