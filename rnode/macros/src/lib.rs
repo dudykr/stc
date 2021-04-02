@@ -678,10 +678,7 @@ fn handle_field(nodes_to_convert: &[String], attrs: &[Attribute], match_binding:
                             qself: None,
                         }),
                         from_orig: q!(
-                            Vars {
-                                RNodeType: &rnode_name,
-                                match_binding
-                            },
+                            Vars { match_binding },
                             ({
                                 use rnode::IntoRNode;
                                 match_binding.into_rnode(id_gen)
