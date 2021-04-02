@@ -524,7 +524,7 @@ impl Analyzer<'_, '_> {
         lhs: &[TypeElement],
         rhs: &[TypeElement],
     ) -> ValidationResult<()> {
-        // TODO: Index signature can eat multiple rhs.
+        let span = opts.span;
 
         for (i, m) in lhs.into_iter().enumerate().filter(|(_, m)| m.key().is_some()) {
             let res = self
@@ -545,6 +545,8 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        let mut errors = vec![];
+
         // Index signature can eat multiple rhs.
         for m in lhs.iter().filter(|m| m.key().is_none()) {
             for r in rhs {
@@ -555,7 +557,10 @@ impl Analyzer<'_, '_> {
                 let success = match res {
                     Ok(()) => true,
                     Err(Error::Errors { ref errors, .. }) if errors.is_empty() => true,
-                    Err(..) => false,
+                    Err(err) => {
+                        errors.push(err);
+                        false
+                    }
                 };
 
                 if success {
@@ -564,6 +569,10 @@ impl Analyzer<'_, '_> {
                     }
                 }
             }
+        }
+
+        if !errors.is_empty() {
+            return Err(Error::Errors { span, errors });
         }
 
         Ok(())
