@@ -21,7 +21,6 @@ use rnode::NodeId;
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RAssignExpr;
 use stc_ts_ast_rnode::RBindingIdent;
-use stc_ts_ast_rnode::RCallExpr;
 use stc_ts_ast_rnode::RClassExpr;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RExprOrSuper;
