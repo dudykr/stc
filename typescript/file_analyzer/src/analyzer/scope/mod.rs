@@ -142,6 +142,8 @@ impl Scope<'_> {
         self.first(|scope| filter(scope.kind))
     }
 
+    /// Get scope of computed property names.
+
     pub fn scope_of_computed_props(&self) -> Option<&Self> {
         self.scope_of_computed_props_inner()?.parent()
     }
@@ -154,7 +156,8 @@ impl Scope<'_> {
             | ScopeKind::Class
             | ScopeKind::ObjectLit
             | ScopeKind::Module
-            | ScopeKind::Call => Some(self),
+            | ScopeKind::Call
+            | ScopeKind::Constructor => Some(self),
             ScopeKind::LoopBody => self.parent()?.scope_of_computed_props(),
             ScopeKind::Block | ScopeKind::Flow | ScopeKind::TypeParams => self.parent()?.scope_of_computed_props(),
         }
@@ -1420,6 +1423,7 @@ impl<'a> Scope<'a> {
             ScopeKind::TypeParams
             | ScopeKind::Call
             | ScopeKind::Method
+            | ScopeKind::Constructor
             | ScopeKind::Flow
             | ScopeKind::Block
             | ScopeKind::Module
@@ -1448,6 +1452,7 @@ impl<'a> Scope<'a> {
             ScopeKind::TypeParams
             | ScopeKind::Call
             | ScopeKind::Method
+            | ScopeKind::Constructor
             | ScopeKind::Flow
             | ScopeKind::Block
             | ScopeKind::LoopBody => {}
@@ -1552,6 +1557,10 @@ pub(crate) enum ScopeKind {
     Fn,
     /// This does not affect `this`.
     Method,
+    /// This is different from method because of `super`.
+    ///
+    /// See: computedPropertyNames30_ES5.ts
+    Constructor,
     ArrowFn,
     /// This variant is related to handling of `this.foo()` in class methods.
     Class,

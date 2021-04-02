@@ -180,7 +180,7 @@ impl Analyzer<'_, '_> {
 
         let c_span = c.span();
 
-        self.with_child(ScopeKind::Method, Default::default(), |child: &mut Analyzer| {
+        self.with_child(ScopeKind::Constructor, Default::default(), |child: &mut Analyzer| {
             let RConstructor { ref params, .. } = *c;
 
             {
