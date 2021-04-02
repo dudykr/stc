@@ -7,7 +7,6 @@ use crate::{
     validator::ValidateWith,
     ValidationResult,
 };
-use fxhash::FxHashSet;
 use itertools::EitherOrBoth;
 use itertools::Itertools;
 use rnode::Visit;
@@ -242,7 +241,7 @@ impl Analyzer<'_, '_> {
     #[extra_validator]
     pub(crate) fn report_error_for_usage_of_type_param_of_declaring_class(
         &mut self,
-        used_type_params: &FxHashSet<TypeParam>,
+        used_type_params: &[TypeParam],
         span: Span,
     ) {
         if !self.ctx.in_computed_prop_name {
