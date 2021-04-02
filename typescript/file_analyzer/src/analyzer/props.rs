@@ -314,6 +314,10 @@ impl Analyzer<'_, '_> {
             Type::Param(TypeParam {
                 constraint: Some(ty), ..
             }) => {
+                if self.is_type_valid_for_computed_key(span, ty) {
+                    return true;
+                }
+
                 match ty.normalize() {
                     Type::Operator(Operator {
                         op: TsTypeOperatorOp::KeyOf,
