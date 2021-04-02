@@ -181,7 +181,7 @@ impl Analyzer<'_, '_> {
         let c_span = c.span();
 
         self.with_child(ScopeKind::Constructor, Default::default(), |child: &mut Analyzer| {
-            let RConstructor { ref params, .. } = *c;
+            let RConstructor { params, body, .. } = c;
 
             {
                 // Validate params
@@ -281,6 +281,8 @@ impl Analyzer<'_, '_> {
 
                 child.scope.remove_declaring(names);
             }
+
+            body.visit_with(child);
 
             Ok(ConstructorSignature {
                 span: c.span,
