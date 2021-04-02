@@ -101,7 +101,11 @@ impl Analyzer<'_, '_> {
         } = *e;
 
         let callee = match callee {
-            RExprOrSuper::Super(..) => return Ok(Type::any(span)),
+            RExprOrSuper::Super(..) => {
+                self.report_error_for_super_reference(span);
+
+                return Ok(Type::any(span));
+            }
             RExprOrSuper::Expr(callee) => callee,
         };
 

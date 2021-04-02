@@ -2351,32 +2351,7 @@ impl Analyzer<'_, '_> {
             }
 
             RExprOrSuper::Super(RSuper { span, .. }) => {
-                if self.ctx.in_computed_prop_name {
-                    match self
-                        .scope
-                        .first_kind(|kind| match kind {
-                            ScopeKind::TypeParams
-                            | ScopeKind::Flow
-                            | ScopeKind::Call
-                            | ScopeKind::Block
-                            | ScopeKind::LoopBody
-                            | ScopeKind::ObjectLit => false,
-                            ScopeKind::Fn
-                            | ScopeKind::Method
-                            | ScopeKind::ArrowFn
-                            | ScopeKind::Class
-                            | ScopeKind::Module => true,
-                        })
-                        .map(|scope| scope.kind())
-                    {
-                        Some(ScopeKind::Class) => {
-                            // Using proerties of super class in class property names are not allowed.
-                            self.storage
-                                .report(Error::CannotReferenceSuperInComputedPropName { span })
-                        }
-                        _ => {}
-                    }
-                }
+                self.report_error_for_super_reference(span);
 
                 if let Some(v) = self.scope.get_super_class() {
                     v.clone()
@@ -2503,6 +2478,33 @@ impl Analyzer<'_, '_> {
                 //
             }
             _ => false,
+        }
+    }
+
+    pub(crate) fn report_error_for_super_reference(&mut self, span: Span) {
+        if !self.ctx.in_computed_prop_name {
+            return;
+        }
+
+        match self
+            .scope
+            .first_kind(|kind| match kind {
+                ScopeKind::TypeParams
+                | ScopeKind::Flow
+                | ScopeKind::Call
+                | ScopeKind::Block
+                | ScopeKind::LoopBody
+                | ScopeKind::ObjectLit => false,
+                ScopeKind::Fn | ScopeKind::Method | ScopeKind::ArrowFn | ScopeKind::Class | ScopeKind::Module => true,
+            })
+            .map(|scope| scope.kind())
+        {
+            Some(ScopeKind::Class) => {
+                // Using proerties of super class in class property names are not allowed.
+                self.storage
+                    .report(Error::CannotReferenceSuperInComputedPropName { span })
+            }
+            _ => {}
         }
     }
 
