@@ -243,10 +243,12 @@ impl Analyzer<'_, '_> {
             None => None,
         };
 
-        if let Some(type_args) = &type_args {
-            let mut v = TypeParamUsageFinder::default();
-            type_args.visit_with(&mut v);
-            self.report_error_for_usage_of_type_param_of_declaring_class(&v.params, span);
+        if self.ctx.in_computed_prop_name {
+            if let Some(type_args) = &type_args {
+                let mut v = TypeParamUsageFinder::default();
+                type_args.visit_with(&mut v);
+                self.report_error_for_usage_of_type_param_of_declaring_class(&v.params, span);
+            }
         }
 
         let arg_types = self.validate_args(args)?;
