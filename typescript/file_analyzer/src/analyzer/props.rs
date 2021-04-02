@@ -244,21 +244,20 @@ impl Analyzer<'_, '_> {
         used_type_params: &[TypeParam],
         span: Span,
     ) {
-        if !self.ctx.in_computed_prop_name {
-            return;
-        }
+        debug_assert!(self.ctx.in_computed_prop_name);
 
         for used in used_type_params {
             let scope = self.scope.first_kind(|kind| match kind {
                 ScopeKind::Fn
                 | ScopeKind::Method
-                | ScopeKind::Call
                 | ScopeKind::Module
                 | ScopeKind::Constructor
                 | ScopeKind::ArrowFn
                 | ScopeKind::Class
                 | ScopeKind::ObjectLit => true,
-                ScopeKind::LoopBody | ScopeKind::Block | ScopeKind::Flow | ScopeKind::TypeParams => false,
+                ScopeKind::LoopBody | ScopeKind::Block | ScopeKind::Flow | ScopeKind::TypeParams | ScopeKind::Call => {
+                    false
+                }
             });
             if let Some(scope) = scope {
                 match scope.kind() {
