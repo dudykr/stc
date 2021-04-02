@@ -124,6 +124,24 @@ impl Scope<'_> {
         self.parent
     }
 
+    pub fn first<F>(&self, mut filter: F) -> Option<&Self>
+    where
+        F: FnMut(&Scope) -> bool,
+    {
+        if filter(&self) {
+            return Some(self);
+        }
+
+        self.parent?.first(filter)
+    }
+
+    pub fn first_kind<F>(&self, mut filter: F) -> Option<&Self>
+    where
+        F: FnMut(ScopeKind) -> bool,
+    {
+        self.first(|scope| filter(scope.kind))
+    }
+
     pub fn scope_of_computed_props(&self) -> Option<&Self> {
         self.scope_of_computed_props_inner()?.parent()
     }
