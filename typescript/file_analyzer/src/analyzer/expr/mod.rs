@@ -2351,6 +2351,11 @@ impl Analyzer<'_, '_> {
             }
 
             RExprOrSuper::Super(RSuper { span, .. }) => {
+                if self.ctx.in_computed_prop_name {
+                    self.storage
+                        .report(Error::CannotReferenceSuperInComputedPropName { span })
+                }
+
                 if let Some(v) = self.scope.get_super_class() {
                     v.clone()
                 } else {

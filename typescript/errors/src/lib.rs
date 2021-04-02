@@ -67,6 +67,11 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2466
+    CannotReferenceSuperInComputedPropName {
+        span: Span,
+    },
+
     /// TS2331
     ThisRefToModuleOrNamespace {
         span: Span,
@@ -1001,6 +1006,7 @@ impl Error {
             Error::ThisRefToModuleOrNamespace { .. } => 2331,
 
             Error::CannotReferenceThisInComputedPropName { .. } => 2465,
+            Error::CannotReferenceSuperInComputedPropName { .. } => 2466,
 
             _ => 0,
         }
