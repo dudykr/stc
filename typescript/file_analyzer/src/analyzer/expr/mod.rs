@@ -2489,7 +2489,7 @@ impl Analyzer<'_, '_> {
                 | ScopeKind::LoopBody
                 | ScopeKind::ObjectLit => false,
                 ScopeKind::Fn
-                | ScopeKind::Method
+                | ScopeKind::Method { .. }
                 | ScopeKind::Class
                 | ScopeKind::Module
                 | ScopeKind::Constructor

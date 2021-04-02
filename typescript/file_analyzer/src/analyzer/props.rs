@@ -249,7 +249,7 @@ impl Analyzer<'_, '_> {
         for used in used_type_params {
             let scope = self.scope.first_kind(|kind| match kind {
                 ScopeKind::Fn
-                | ScopeKind::Method
+                | ScopeKind::Method { .. }
                 | ScopeKind::Module
                 | ScopeKind::Constructor
                 | ScopeKind::ArrowFn
@@ -412,7 +412,7 @@ impl Analyzer<'_, '_> {
                 let param_span = p.param.span();
                 let mut param = &p.param;
 
-                self.with_child(ScopeKind::Method, Default::default(), {
+                self.with_child(ScopeKind::Method { is_static: false }, Default::default(), {
                     |child| -> ValidationResult<_> {
                         Ok(PropertySignature {
                             span,
@@ -439,7 +439,7 @@ impl Analyzer<'_, '_> {
                         .ok()
                 });
 
-                self.with_child(ScopeKind::Method, Default::default(), {
+                self.with_child(ScopeKind::Method { is_static: false }, Default::default(), {
                     |child: &mut Analyzer| -> ValidationResult<_> {
                         match method_type_ann.as_ref().map(|ty| ty.normalize()) {
                             Some(Type::Function(ty)) => {
@@ -545,19 +545,23 @@ impl Analyzer<'_, '_> {
         let computed = key.is_computed();
 
         let type_ann = self
-            .with_child(ScopeKind::Method, Default::default(), |child: &mut Analyzer| {
-                if let Some(body) = &n.body {
-                    let ret_ty = child.visit_stmts_for_return(n.span, false, false, &body.stmts)?;
-                    if let None = ret_ty {
-                        // getter property must have return statements.
-                        child.storage.report(Error::TS2378 { span: n.key.span() });
+            .with_child(
+                ScopeKind::Method { is_static: false },
+                Default::default(),
+                |child: &mut Analyzer| {
+                    if let Some(body) = &n.body {
+                        let ret_ty = child.visit_stmts_for_return(n.span, false, false, &body.stmts)?;
+                        if let None = ret_ty {
+                            // getter property must have return statements.
+                            child.storage.report(Error::TS2378 { span: n.key.span() });
+                        }
+
+                        return Ok(ret_ty);
                     }
 
-                    return Ok(ret_ty);
-                }
-
-                Ok(None)
-            })
+                    Ok(None)
+                },
+            )
             .report(&mut self.storage)
             .flatten();
 

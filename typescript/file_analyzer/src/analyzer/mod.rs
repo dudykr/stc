@@ -516,7 +516,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         // Move return types from child to parent
         match kind {
             // These kinds of scope eats return statements
-            ScopeKind::Module | ScopeKind::Method | ScopeKind::ArrowFn | ScopeKind::Fn => {}
+            ScopeKind::Module | ScopeKind::Method { .. } | ScopeKind::ArrowFn | ScopeKind::Fn => {}
             _ => {
                 self.scope.return_values += child_scope.return_values;
             }

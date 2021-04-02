@@ -14,6 +14,7 @@ use stc_ts_ast_rnode::RArrayPat;
 use stc_ts_ast_rnode::RAssignPatProp;
 use stc_ts_ast_rnode::RBindingIdent;
 use stc_ts_ast_rnode::RComputedPropName;
+use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RObjectPat;
 use stc_ts_ast_rnode::RObjectPatProp;
 use stc_ts_ast_rnode::RPat;
@@ -572,6 +573,8 @@ impl Analyzer<'_, '_> {
             }
 
             RTsEntityName::Ident(ref i) => {
+                self.report_error_for_type_param_usages_in_static_members(&i);
+
                 if let Some(types) = self.find_type(self.ctx.module_id, &i.into())? {
                     let mut found = false;
                     for ty in types {
@@ -778,6 +781,35 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
+    #[extra_validator]
+    fn report_error_for_type_param_usages_in_static_members(&mut self, i: &RIdent) {
+        let span = i.span;
+        let id = i.into();
+        let static_method = self.scope.first(|scope| {
+            let parent = scope.parent();
+            let parent = match parent {
+                Some(v) => v,
+                None => return false,
+            };
+            if parent.kind() != ScopeKind::Class {
+                return false;
+            }
+            if !parent.declaring_type_params.contains(&id) {
+                return false;
+            }
+
+            match scope.kind() {
+                ScopeKind::Method { is_static: true, .. } => true,
+                _ => false,
+            }
+        });
+
+        if static_method.is_some() {
+            self.storage
+                .report(Error::StaticMethodCannotUseTypeParamOfClass { span })
+        }
+    }
+
     /// Handle implicit defaults.
     pub(crate) fn default_any_pat(&mut self, p: &RPat) {
         match p {

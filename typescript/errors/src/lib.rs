@@ -62,6 +62,11 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2302
+    StaticMethodCannotUseTypeParamOfClass {
+        span: Span,
+    },
+
     /// TS2467
     DeclaringTypeParamReferencedByComputedPropName {
         span: Span,
@@ -1013,6 +1018,8 @@ impl Error {
             Error::CannotReferenceThisInComputedPropName { .. } => 2465,
             Error::CannotReferenceSuperInComputedPropName { .. } => 2466,
             Error::DeclaringTypeParamReferencedByComputedPropName { .. } => 2467,
+
+            Error::StaticMethodCannotUseTypeParamOfClass { .. } => 2302,
 
             _ => 0,
         }

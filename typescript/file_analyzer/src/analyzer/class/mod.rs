@@ -359,7 +359,7 @@ impl Analyzer<'_, '_> {
         let key_span = key.span();
 
         let (type_params, params, ret_ty) = self.with_child(
-            ScopeKind::Method,
+            ScopeKind::Method { is_static: c.is_static },
             Default::default(),
             |child: &mut Analyzer| -> ValidationResult<_> {
                 let type_params = try_opt!(c.function.type_params.validate_with(child));
@@ -422,7 +422,7 @@ impl Analyzer<'_, '_> {
         let key_span = c.key.span();
 
         let (params, type_params, declared_ret_ty, inferred_ret_ty) = self.with_child(
-            ScopeKind::Method,
+            ScopeKind::Method { is_static: c.is_static },
             Default::default(),
             |child: &mut Analyzer| -> ValidationResult<_> {
                 child.scope.declaring_prop = match &key {

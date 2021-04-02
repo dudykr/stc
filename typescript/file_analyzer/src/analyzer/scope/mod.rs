@@ -153,7 +153,7 @@ impl Scope<'_> {
     fn scope_of_computed_props_inner(&self) -> Option<&Self> {
         match self.kind {
             ScopeKind::Fn
-            | ScopeKind::Method
+            | ScopeKind::Method { .. }
             | ScopeKind::ArrowFn
             | ScopeKind::Class
             | ScopeKind::ObjectLit
@@ -215,7 +215,7 @@ impl Scope<'_> {
         }
 
         match self.kind {
-            ScopeKind::Fn | ScopeKind::Method | ScopeKind::Class | ScopeKind::ObjectLit => return true,
+            ScopeKind::Fn | ScopeKind::Method { .. } | ScopeKind::Class | ScopeKind::ObjectLit => return true,
             _ => {}
         }
 
@@ -340,7 +340,7 @@ impl Scope<'_> {
     pub fn move_vars_from_child(&mut self, child: &mut Scope) {
         match child.kind {
             // We don't copy variable information from nested function.
-            ScopeKind::Module | ScopeKind::Method | ScopeKind::Fn | ScopeKind::ArrowFn => return,
+            ScopeKind::Module | ScopeKind::Method { .. } | ScopeKind::Fn | ScopeKind::ArrowFn => return,
             _ => {}
         }
 
@@ -1425,7 +1425,7 @@ impl<'a> Scope<'a> {
             ScopeKind::Class => return false,
             ScopeKind::TypeParams
             | ScopeKind::Call
-            | ScopeKind::Method
+            | ScopeKind::Method { .. }
             | ScopeKind::Constructor
             | ScopeKind::Flow
             | ScopeKind::Block
@@ -1454,7 +1454,7 @@ impl<'a> Scope<'a> {
             ScopeKind::Class => return true,
             ScopeKind::TypeParams
             | ScopeKind::Call
-            | ScopeKind::Method
+            | ScopeKind::Method { .. }
             | ScopeKind::Constructor
             | ScopeKind::Flow
             | ScopeKind::Block
@@ -1560,7 +1560,9 @@ pub(crate) enum ScopeKind {
     Block,
     Fn,
     /// This does not affect `this`.
-    Method,
+    Method {
+        is_static: bool,
+    },
     /// This is different from method because of `super`.
     ///
     /// See: computedPropertyNames30_ES5.ts
