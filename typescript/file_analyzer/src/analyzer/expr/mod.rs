@@ -131,12 +131,6 @@ impl Analyzer<'_, '_> {
 
         let mut ty = (|| -> ValidationResult {
             match e {
-                // super() returns any
-                RExpr::Call(RCallExpr {
-                    callee: RExprOrSuper::Super(..),
-                    ..
-                }) => Ok(Type::any(span)),
-
                 RExpr::TaggedTpl(e) => e.validate_with(self),
 
                 RExpr::Bin(e) => e.validate_with_args(self, type_ann),
@@ -534,7 +528,7 @@ impl Analyzer<'_, '_> {
                     Err(Error::ReferencedInInit { .. }) => {
                         is_any = true;
                     }
-                    Err(..) => {}
+                    Err(err) => self.storage.report(err),
                 }
             }
         }
@@ -2504,7 +2498,9 @@ impl Analyzer<'_, '_> {
                 self.storage
                     .report(Error::CannotReferenceSuperInComputedPropName { span })
             }
-            _ => {}
+            kind => {
+                dbg!(kind);
+            }
         }
     }
 
