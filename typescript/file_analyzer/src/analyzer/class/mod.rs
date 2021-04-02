@@ -872,6 +872,13 @@ impl Analyzer<'_, '_> {
             ScopeKind::Class,
             Default::default(),
             |child: &mut Analyzer| -> ValidationResult<_> {
+                child.scope.declaring_type_params.extend(
+                    c.type_params
+                        .iter()
+                        .flat_map(|decl| &decl.params)
+                        .map(|param| param.name.clone().into()),
+                );
+
                 // We handle type parameters first.
                 let type_params = try_opt!(c.type_params.validate_with(child));
                 child.resolve_parent_interfaces(&c.implements);

@@ -12,6 +12,7 @@ use itertools::Itertools;
 use rnode::Visit;
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RAssignProp;
+use stc_ts_ast_rnode::RCallExpr;
 use stc_ts_ast_rnode::RComputedPropName;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RExprOrSuper;
@@ -30,10 +31,13 @@ use stc_ts_ast_rnode::RStr;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
+use stc_ts_file_analyzer_macros::extra_validator;
+use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
 use stc_ts_types::ComputedKey;
 use stc_ts_types::Key;
 use stc_ts_types::PrivateName;
 use stc_ts_types::TypeParam;
+use stc_ts_types::TypeParamInstantiation;
 use stc_ts_utils::PatExt;
 use swc_atoms::js_word;
 use swc_common::Span;
@@ -185,6 +189,9 @@ impl Analyzer<'_, '_> {
                     }
                 }
             }
+
+            analyzer.report_error_for_usage_of_type_param_of_declaring_class(&node.expr, span);
+
             if !errors.is_empty() {
                 analyzer.storage.report_all(errors);
             }
@@ -232,6 +239,58 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
+    /// Computed properties should not use type parameters defined by the
+    /// declaring class.
+    ///
+    /// See: `computedPropertyNames32_ES5.ts`
+    #[extra_validator]
+    fn report_error_for_usage_of_type_param_of_declaring_class(&mut self, expr: &RExpr, span: Span) {
+        debug_assert!(self.ctx.in_computed_prop_name);
+
+        match expr {
+            RExpr::Call(RCallExpr {
+                type_args: Some(type_args),
+                ..
+            }) => {
+                let type_args: TypeParamInstantiation = type_args.validate_with(self)?;
+
+                for param in &type_args.params {
+                    let mut v = TypeParamUsageFinder::default();
+                    param.visit_with(&mut v);
+
+                    for used in v.params {
+                        let scope = self.scope.first_kind(|kind| match kind {
+                            ScopeKind::Fn
+                            | ScopeKind::Method
+                            | ScopeKind::Call
+                            | ScopeKind::Module
+                            | ScopeKind::Constructor
+                            | ScopeKind::ArrowFn
+                            | ScopeKind::Class
+                            | ScopeKind::ObjectLit => true,
+                            ScopeKind::LoopBody | ScopeKind::Block | ScopeKind::Flow | ScopeKind::TypeParams => false,
+                        });
+                        if let Some(scope) = scope {
+                            match scope.kind() {
+                                ScopeKind::Class => {
+                                    if scope.declaring_type_params.contains(&used.name) {
+                                        self.storage
+                                            .report(Error::DeclaringTypeParamReferencedByComputedPropName { span });
+                                    }
+                                }
+                                _ => {
+                                    dbg!(scope.kind());
+                                }
+                            }
+                        }
+                    }
+                    // TODO:
+                }
+            }
+            _ => {}
+        }
+    }
+
     fn is_type_valid_for_computed_key(&mut self, span: Span, ty: &Type) -> bool {
         let ty = ty.clone().generalize_lit();
         let ty = self.normalize(&ty, Default::default());

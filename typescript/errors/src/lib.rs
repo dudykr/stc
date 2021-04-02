@@ -62,6 +62,11 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2467
+    DeclaringTypeParamReferencedByComputedPropName {
+        span: Span,
+    },
+
     /// TS2465
     CannotReferenceThisInComputedPropName {
         span: Span,
@@ -1007,6 +1012,7 @@ impl Error {
 
             Error::CannotReferenceThisInComputedPropName { .. } => 2465,
             Error::CannotReferenceSuperInComputedPropName { .. } => 2466,
+            Error::DeclaringTypeParamReferencedByComputedPropName { .. } => 2467,
 
             _ => 0,
         }
