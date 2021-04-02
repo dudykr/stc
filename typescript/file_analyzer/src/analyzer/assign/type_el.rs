@@ -574,17 +574,17 @@ impl Analyzer<'_, '_> {
         &mut self,
         opts: AssignOpts,
         missing_fields: &mut Vec<TypeElement>,
-        m: &TypeElement,
+        lm: &TypeElement,
         rhs_members: &[TypeElement],
     ) -> ValidationResult<()> {
         let span = opts.span;
         // We need this to show error if not all of rhs_member is matched
 
-        if let Some(l_key) = m.key() {
+        if let Some(l_key) = lm.key() {
             for rm in rhs_members {
                 if let Some(r_key) = rm.key() {
                     if l_key.type_eq(&*r_key) {
-                        match m {
+                        match lm {
                             TypeElement::Property(ref lp) => match rm {
                                 TypeElement::Property(ref r_el) => {
                                     self.assign_inner(
@@ -644,16 +644,16 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            match m {
+            match lm {
                 TypeElement::Property(PropertySignature { optional: true, .. })
                 | TypeElement::Method(MethodSignature { optional: true, .. }) => {}
                 _ => {
                     // No property with `key` found.
-                    missing_fields.push(m.clone());
+                    missing_fields.push(lm.clone());
                 }
             }
         } else {
-            match m {
+            match lm {
                 // TODO: Check type of the index.
                 TypeElement::Index(..) => {
                     // TODO: Verify
@@ -669,7 +669,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    missing_fields.push(m.clone());
+                    missing_fields.push(lm.clone());
                 }
                 _ => {}
             }
