@@ -1211,9 +1211,6 @@ impl Analyzer<'_, '_> {
                                 RParamOrTsParamProp::Param(..) => {}
                             }
                         }
-
-                        let member = constructor.validate_with(child)?;
-                        child.scope.this_class_members.push((index, member.into()));
                     }
 
                     // Handle properties
@@ -1230,6 +1227,14 @@ impl Analyzer<'_, '_> {
                             }
                             _ => {}
                         }
+                    }
+
+                    for (index, constructor) in c.body.iter().enumerate().filter_map(|(i, member)| match member {
+                        RClassMember::Constructor(c) => Some((i, c)),
+                        _ => None,
+                    }) {
+                        let member = constructor.validate_with(child)?;
+                        child.scope.this_class_members.push((index, member.into()));
                     }
 
                     // Handle user-declared method signatures.
