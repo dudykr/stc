@@ -359,12 +359,12 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
                 let libs = if specified && libs == vec![Lib::Es5, Lib::Dom] {
                     match target {
                         JscTarget::Es3 | JscTarget::Es5 => vec![Lib::Es5],
-                        JscTarget::Es2015 => Lib::load("es2015"),
-                        JscTarget::Es2016 => Lib::load("es2016"),
-                        JscTarget::Es2017 => Lib::load("es2017"),
-                        JscTarget::Es2018 => Lib::load("es2018"),
-                        JscTarget::Es2019 => Lib::load("es2019"),
-                        JscTarget::Es2020 => Lib::load("es2020"),
+                        JscTarget::Es2015 => Lib::load("es2015.full"),
+                        JscTarget::Es2016 => Lib::load("es2016.full"),
+                        JscTarget::Es2017 => Lib::load("es2017.full"),
+                        JscTarget::Es2018 => Lib::load("es2018.full"),
+                        JscTarget::Es2019 => Lib::load("es2019.full"),
+                        JscTarget::Es2020 => Lib::load("es2020.full"),
                     }
                 } else {
                     libs.clone()
