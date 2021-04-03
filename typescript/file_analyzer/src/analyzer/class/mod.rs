@@ -254,27 +254,9 @@ impl Analyzer<'_, '_> {
                             }
                         }
                     }
-                    RParamOrTsParamProp::TsParamProp(ref param) => match param.param {
-                        RTsParamPropParam::Ident(ref i)
-                        | RTsParamPropParam::Assign(RAssignPat {
-                            left: box RPat::Ident(ref i),
-                            ..
-                        }) => match child.declare_var(
-                            i.id.span,
-                            VarDeclKind::Let,
-                            i.id.clone().into(),
-                            Some(*p.ty.clone()),
-                            None,
-                            true,
-                            false,
-                        ) {
-                            Ok(()) => {}
-                            Err(err) => {
-                                child.storage.report(err);
-                            }
-                        },
-                        _ => unreachable!(),
-                    },
+                    RParamOrTsParamProp::TsParamProp(ref param) => {
+                        // param.visit_with(child);
+                    }
                 }
 
                 ps.push(p);
@@ -282,7 +264,7 @@ impl Analyzer<'_, '_> {
                 child.scope.remove_declaring(names);
             }
 
-            body.visit_with(child);
+            c.body.visit_with(child);
 
             Ok(ConstructorSignature {
                 span: c.span,
@@ -291,6 +273,24 @@ impl Analyzer<'_, '_> {
                 type_params: None,
             })
         })
+    }
+}
+
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, p: &RTsParamProp) -> ValidationResult<()> {
+        match &p.param {
+            RTsParamPropParam::Ident(ref i)
+            | RTsParamPropParam::Assign(RAssignPat {
+                left: box RPat::Ident(ref i),
+                ..
+            }) => {
+                let ty = i.type_ann.validate_with(self).try_opt()?;
+
+                self.declare_var(i.id.span, VarDeclKind::Let, i.id.clone().into(), ty, None, true, false)
+            }
+            _ => unreachable!(),
+        }
     }
 }
 
@@ -1059,6 +1059,15 @@ impl Analyzer<'_, '_> {
                                 }
 
                                 constructor_spans.push(cons.span);
+
+                                for param in &cons.params {
+                                    match param {
+                                        RParamOrTsParamProp::TsParamProp(p) => {
+                                            p.validate_with(child).report(&mut child.storage);
+                                        }
+                                        RParamOrTsParamProp::Param(_) => {}
+                                    }
+                                }
                             }
 
                             _ => {}
@@ -1205,6 +1214,8 @@ impl Analyzer<'_, '_> {
 
                         let member = constructor.validate_with(child)?;
                         child.scope.this_class_members.push((index, member.into()));
+
+                        constructor.visit_with(child);
                     }
 
                     // Handle properties
