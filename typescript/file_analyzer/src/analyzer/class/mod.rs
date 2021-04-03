@@ -1214,8 +1214,6 @@ impl Analyzer<'_, '_> {
 
                         let member = constructor.validate_with(child)?;
                         child.scope.this_class_members.push((index, member.into()));
-
-                        constructor.visit_with(child);
                     }
 
                     // Handle properties
