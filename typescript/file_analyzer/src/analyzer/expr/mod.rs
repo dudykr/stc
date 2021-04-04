@@ -582,6 +582,9 @@ impl Analyzer<'_, '_> {
 
                 RExpr::Lit(RLit::Num(n)) => Ok(Key::Num(n.clone())),
                 RExpr::Lit(RLit::BigInt(n)) => Ok(Key::BigInt(n.clone())),
+
+                RExpr::PrivateName(p) => Ok(Key::Private(p.clone().into())),
+
                 _ => unreachable!("non-computed-key: {:?}", prop),
             }
         }
