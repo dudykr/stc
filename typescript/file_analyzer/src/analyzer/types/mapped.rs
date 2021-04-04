@@ -57,11 +57,12 @@ impl Analyzer<'_, '_> {
                         .into_iter()
                         .map(|key| PropertySignature {
                             span: key.span(),
-                            key,
-                            type_ann: m.ty.clone(),
+                            accessibility: None,
                             readonly: false,
+                            key,
                             optional: false,
                             params: Default::default(),
+                            type_ann: m.ty.clone(),
                             type_params: Default::default(),
                         })
                         .map(TypeElement::Property)
@@ -87,11 +88,12 @@ impl Analyzer<'_, '_> {
                                 .into_iter()
                                 .map(|key| PropertySignature {
                                     span: key.span(),
-                                    key,
-                                    type_ann: m.ty.clone(),
+                                    accessibility: None,
                                     readonly: false,
+                                    key,
                                     optional: false,
                                     params: Default::default(),
+                                    type_ann: m.ty.clone(),
                                     type_params: Default::default(),
                                 })
                                 .map(TypeElement::Property)

@@ -718,10 +718,10 @@ pub struct CallSignature {
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct ConstructorSignature {
+    pub span: Span,
     /// Only for synthesized type elements.
     #[use_eq]
     pub accessibility: Option<Accessibility>,
-    pub span: Span,
     pub params: Vec<FnParam>,
     pub ret_ty: Option<Box<Type>>,
     pub type_params: Option<TypeParamDecl>,

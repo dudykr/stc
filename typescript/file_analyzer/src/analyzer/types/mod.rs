@@ -239,12 +239,13 @@ impl Analyzer<'_, '_> {
                     //
                     members.push(TypeElement::Property(PropertySignature {
                         span: p.span,
+                        accessibility: None,
+                        readonly: p.readonly,
                         key: p.key.clone(),
                         optional: p.is_optional,
-                        readonly: p.readonly,
                         params: Default::default(),
-                        type_params: Default::default(),
                         type_ann,
+                        type_params: Default::default(),
                     }))
                 }
                 ClassMember::IndexSignature(_) => {}
@@ -465,6 +466,7 @@ impl Analyzer<'_, '_> {
             Type::Constructor(ty) => {
                 let el = TypeElement::Constructor(ConstructorSignature {
                     span: ty.span,
+                    accessibility: None,
                     params: ty.params.clone(),
                     ret_ty: Some(ty.type_ann.clone()),
                     type_params: ty.type_params.clone(),
@@ -495,33 +497,35 @@ impl Analyzer<'_, '_> {
                 for (idx, e) in ty.elems.iter().enumerate() {
                     members.push(TypeElement::Property(PropertySignature {
                         span: e.span,
+                        accessibility: None,
+                        readonly: false,
                         key: Key::Num(RNumber {
                             span: e.span,
                             value: idx as f64,
                         }),
-                        readonly: false,
                         optional: false,
                         params: Default::default(),
-                        type_params: Default::default(),
                         type_ann: Some(e.ty.clone()),
+                        type_params: Default::default(),
                     }));
                 }
 
                 // length
                 members.push(TypeElement::Property(PropertySignature {
                     span: ty.span,
+                    accessibility: None,
+                    readonly: true,
                     key: Key::Normal {
                         span: ty.span.with_ctxt(SyntaxContext::empty()),
                         sym: "length".into(),
                     },
-                    readonly: true,
                     optional: false,
                     params: Default::default(),
-                    type_params: Default::default(),
                     type_ann: Some(box Type::Keyword(RTsKeywordType {
                         span: ty.span,
                         kind: TsKeywordTypeKind::TsNumberKeyword,
                     })),
+                    type_params: Default::default(),
                 }));
 
                 Cow::Owned(TypeLit {
