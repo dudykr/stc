@@ -183,13 +183,16 @@ classes/members/inheritanceAndOverriding/derivedClassOverridesWithoutSubtype.ts
 classes/members/instanceAndStaticMembers/typeOfThisInStaticMembers.ts
 classes/members/privateNames/privateNameAndStaticInitializer.ts
 classes/members/privateNames/privateNameBadSuperUseDefineForClassFields.ts
+classes/members/privateNames/privateNameConstructorSignature.ts
 classes/members/privateNames/privateNameDeclaration.ts
+classes/members/privateNames/privateNameDeclarationMerging.ts
 classes/members/privateNames/privateNameES5Ban.ts
 classes/members/privateNames/privateNameField.ts
 classes/members/privateNames/privateNameFieldAccess.ts
 classes/members/privateNames/privateNameFieldAssignment.ts
 classes/members/privateNames/privateNameFieldClassExpression.ts
 classes/members/privateNames/privateNameFieldInitializer.ts
+classes/members/privateNames/privateNameFieldUnaryMutation.ts
 classes/members/privateNames/privateNameNestedClassNameConflict.ts
 classes/members/privateNames/privateNamesAndFields.ts
 classes/members/privateNames/privateNamesAndkeyof.ts
