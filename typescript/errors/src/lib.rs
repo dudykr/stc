@@ -417,6 +417,11 @@ pub enum Error {
         cause: Vec<Error>,
     },
 
+    /// TS2322
+    AssignFailedDueToAccessibility {
+        span: Span,
+    },
+
     ObjectAssignFailed {
         span: Span,
         errors: Vec<Error>,
@@ -902,6 +907,7 @@ impl Error {
             Error::TS2704 { .. } => 2704,
 
             Error::AssignFailed { .. }
+            | Error::AssignFailedDueToAccessibility { .. }
             | Error::ObjectAssignFailed { .. }
             | Error::SimpleAssignFailed { .. }
             | Error::SimpleAssignFailedWithCause { .. }

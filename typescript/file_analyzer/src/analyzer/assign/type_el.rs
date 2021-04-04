@@ -596,6 +596,14 @@ impl Analyzer<'_, '_> {
                         match lm {
                             TypeElement::Property(ref lp) => match rm {
                                 TypeElement::Property(ref r_el) => {
+                                    if lp.accessibility != r_el.accessibility {
+                                        if lp.accessibility == Some(Accessibility::Private)
+                                            || r_el.accessibility == Some(Accessibility::Private)
+                                        {
+                                            return Err(Error::AssignFailedDueToAccessibility { span });
+                                        }
+                                    }
+
                                     self.assign_inner(
                                         lp.type_ann.as_deref().unwrap_or(&Type::any(span)),
                                         r_el.type_ann.as_deref().unwrap_or(&Type::any(span)),
