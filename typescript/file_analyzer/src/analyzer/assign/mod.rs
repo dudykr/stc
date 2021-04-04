@@ -14,7 +14,6 @@ use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::debug::print_backtrace;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
-use stc_ts_errors::Errors;
 use stc_ts_types::Key;
 use stc_ts_types::Mapped;
 use stc_ts_types::Operator;
@@ -553,12 +552,43 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Intersection(ref i) => {
-                let mut errors = Errors::default();
+                let mut errors = vec![];
+
+                // TODO: Optimize unknown rhs handling
 
                 for ty in &i.types {
-                    match self.assign_inner(&ty, rhs, opts) {
+                    match self
+                        .assign_with_opts(
+                            AssignOpts {
+                                allow_unknown_rhs: true,
+                                ..opts
+                            },
+                            &ty,
+                            rhs,
+                        )
+                        .context("tried to assign to an element of an intersection type")
+                    {
                         Ok(..) => {}
                         Err(err) => errors.push(err),
+                    }
+                }
+
+                if !opts.allow_unknown_rhs {
+                    let lhs = self.type_to_type_lit(span, to)?;
+                    if let Some(lhs) = lhs {
+                        self.assign_to_type_elements(opts, lhs.span, &lhs.members, &rhs, lhs.metadata)
+                            .with_context(|| {
+                                format!(
+                                    "tried to check if unknown rhs exists while assigning to an intersection \
+                                     type:\nLHS: {}",
+                                    dump_type_as_string(&self.cm, &Type::TypeLit(lhs.into_owned()))
+                                )
+                            })?;
+
+                        errors.retain(|err| match err.actual() {
+                            Error::UnknownPropertyInObjectLiteralAssignment { .. } => false,
+                            _ => true,
+                        });
                     }
                 }
 
@@ -566,10 +596,7 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
-                return Err(Error::Errors {
-                    span,
-                    errors: errors.into(),
-                });
+                return Err(Error::Errors { span, errors });
             }
 
             Type::Class(l) => match rhs {
@@ -1139,6 +1166,8 @@ impl Analyzer<'_, '_> {
             Type::Interface(Interface {
                 ref body, ref extends, ..
             }) => {
+                // TODO: Optimize handling of unknown rhs
+
                 self.assign_to_type_elements(
                     AssignOpts {
                         allow_unknown_rhs: true,
@@ -1207,6 +1236,21 @@ impl Analyzer<'_, '_> {
                         right: box rhs.clone(),
                         cause: errors,
                     });
+                }
+
+                // We should check for unknown rhs, while allowing assignment to parent
+                // interfaces.
+                if !opts.allow_unknown_rhs {
+                    let lhs = self.type_to_type_lit(span, to)?;
+                    if let Some(lhs) = lhs {
+                        self.assign_to_type_elements(opts, span, &lhs.members, rhs, Default::default())
+                            .with_context(|| {
+                                format!(
+                                    "tried to assign a type to an interface to check if unknown rhs exists\nLHS: {}",
+                                    dump_type_as_string(&self.cm, &Type::TypeLit(lhs.into_owned()))
+                                )
+                            })?;
+                    }
                 }
 
                 return Ok(());
