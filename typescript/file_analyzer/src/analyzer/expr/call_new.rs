@@ -913,6 +913,7 @@ impl Analyzer<'_, '_> {
                             ..
                         }) => candidates.push(MethodSignature {
                             span: p.span,
+                            accessibility: None,
                             readonly: p.readonly,
                             key: p.key.clone(),
                             optional: p.optional,
@@ -925,6 +926,7 @@ impl Analyzer<'_, '_> {
                         Type::Function(f) => {
                             candidates.push(MethodSignature {
                                 span: f.span,
+                                accessibility: None,
                                 readonly: p.readonly,
                                 key: p.key.clone(),
                                 optional: p.optional,

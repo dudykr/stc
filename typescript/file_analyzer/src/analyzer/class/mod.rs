@@ -267,6 +267,7 @@ impl Analyzer<'_, '_> {
             c.body.visit_with(child);
 
             Ok(ConstructorSignature {
+                accessibility: c.accessibility,
                 span: c.span,
                 params: ps,
                 ret_ty: None,

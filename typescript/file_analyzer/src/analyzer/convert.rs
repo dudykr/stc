@@ -279,6 +279,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, d: &RTsConstructSignatureDecl) -> ValidationResult<ConstructorSignature> {
         let type_params = try_opt!(d.type_params.validate_with(self));
         Ok(ConstructorSignature {
+            accessibility: None,
             span: d.span,
             params: d.params.validate_with(self)?,
             type_params,
@@ -314,6 +315,7 @@ impl Analyzer<'_, '_> {
             }
 
             Ok(MethodSignature {
+                accessibility: None,
                 span: d.span,
                 readonly: d.readonly,
                 key,
@@ -354,6 +356,7 @@ impl Analyzer<'_, '_> {
         }
 
         Ok(PropertySignature {
+            accessibility: None,
             span: d.span,
             key,
             optional: d.optional,
@@ -935,6 +938,7 @@ impl Analyzer<'_, '_> {
 
                     members.push(TypeElement::Property(PropertySignature {
                         span: DUMMY_SP,
+                        accessibility: None,
                         readonly: false,
                         key,
                         optional: false,
@@ -950,6 +954,7 @@ impl Analyzer<'_, '_> {
                     };
                     members.push(TypeElement::Property(PropertySignature {
                         span: DUMMY_SP,
+                        accessibility: None,
                         readonly: false,
                         key,
                         optional: false,
