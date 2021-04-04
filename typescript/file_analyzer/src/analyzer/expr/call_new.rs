@@ -1439,6 +1439,7 @@ impl Analyzer<'_, '_> {
                     params,
                     ret_ty,
                     type_params,
+                    ..
                 }) if kind == ExtractKind::New => Some((span, params, type_params, ret_ty)),
                 _ => None,
             })

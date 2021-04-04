@@ -303,6 +303,7 @@ impl Fold<Type> for Simplifier<'_> {
                     .map(|key| {
                         TypeElement::Property(PropertySignature {
                             span,
+                            accessibility: None,
                             // TODO:
                             readonly: false,
                             key: Key::Normal {

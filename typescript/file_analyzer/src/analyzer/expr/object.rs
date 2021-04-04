@@ -363,6 +363,7 @@ impl UnionNormalizer<'_, '_, '_> {
                         if !has_key {
                             ty.members.push(TypeElement::Property(PropertySignature {
                                 span: DUMMY_SP,
+                                accessibility: None,
                                 readonly: false,
                                 key: Key::Normal {
                                     span: DUMMY_SP,
