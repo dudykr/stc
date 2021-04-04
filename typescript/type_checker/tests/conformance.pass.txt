@@ -376,7 +376,6 @@ es6/classExpressions/classExpressionES63.ts
 es6/classExpressions/typeArgumentInferenceWithClassExpression1.ts
 es6/classExpressions/typeArgumentInferenceWithClassExpression2.ts
 es6/classExpressions/typeArgumentInferenceWithClassExpression3.ts
-es6/computedProperties/
 es6/computedProperties/computedPropertyNames10_ES5.ts
 es6/computedProperties/computedPropertyNames10_ES6.ts
 es6/computedProperties/computedPropertyNames11_ES5.ts
