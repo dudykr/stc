@@ -466,11 +466,11 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                                                 TypeElement::Method(method) => {
                                                     members.push(TypeElement::Property(PropertySignature {
                                                         span: method.span,
+                                                        accessibility: None,
+                                                        readonly: method.readonly,
                                                         key: method.key.clone(),
                                                         optional: method.optional,
-                                                        readonly: method.readonly,
                                                         params: Default::default(),
-                                                        type_params: Default::default(),
                                                         type_ann: m.ty.clone().fold_with(&mut MappedHandler {
                                                             analyzer: self.analyzer,
                                                             key: &method.key,
@@ -485,6 +485,7 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                                                                     .unwrap_or_else(|| box Type::any(method.span)),
                                                             }),
                                                         }),
+                                                        type_params: Default::default(),
                                                     }))
                                                 }
                                                 _ => {}
@@ -624,6 +625,7 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                                         TypeElement::Method(method) => {
                                             new_members.push(TypeElement::Property(PropertySignature {
                                                 span: method.span,
+                                                accessibility: None,
                                                 readonly: method.readonly,
                                                 key: method.key.clone(),
                                                 optional: method.optional,

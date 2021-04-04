@@ -375,10 +375,11 @@ impl Analyzer<'_, '_> {
                 };
                 PropertySignature {
                     span: prop.span(),
-                    key,
-                    params: Default::default(),
-                    optional: false,
+                    accessibility: None,
                     readonly: false,
+                    key,
+                    optional: false,
+                    params: Default::default(),
                     type_ann: shorthand_type_ann,
                     type_params: Default::default(),
                 }
@@ -395,10 +396,11 @@ impl Analyzer<'_, '_> {
 
                 PropertySignature {
                     span,
-                    key,
-                    params: Default::default(),
-                    optional: false,
+                    accessibility: None,
                     readonly: false,
+                    key,
+                    optional: false,
+                    params: Default::default(),
                     type_ann: Some(box ty),
                     type_params: Default::default(),
                 }
@@ -420,10 +422,11 @@ impl Analyzer<'_, '_> {
                     |child| -> ValidationResult<_> {
                         Ok(PropertySignature {
                             span,
-                            key,
-                            params: vec![param.validate_with(child)?],
-                            optional: false,
+                            accessibility: None,
                             readonly: false,
+                            key,
+                            optional: false,
+                            params: vec![param.validate_with(child)?],
                             type_ann: Some(box Type::any(param_span)),
                             type_params: Default::default(),
                         }
@@ -525,6 +528,7 @@ impl Analyzer<'_, '_> {
 
                         Ok(MethodSignature {
                             span,
+                            accessibility: None,
                             readonly: false,
                             key,
                             optional: false,
@@ -571,10 +575,11 @@ impl Analyzer<'_, '_> {
 
         Ok(PropertySignature {
             span: n.span(),
-            key,
-            params: Default::default(),
-            optional: false,
+            accessibility: None,
             readonly: true,
+            key,
+            optional: false,
+            params: Default::default(),
             type_ann: if computed {
                 type_ann.map(Box::new)
             } else {

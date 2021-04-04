@@ -1277,12 +1277,13 @@ impl Analyzer<'_, '_> {
 
                                     new_members.push(TypeElement::Property(PropertySignature {
                                         span: arg_method.span,
-                                        key: arg_method.key.clone(),
-                                        params: Default::default(),
-                                        type_params: Default::default(),
-                                        optional: calc_true_plus_minus_in_param(optional, arg_method.optional),
+                                        accessibility: None,
                                         readonly: calc_true_plus_minus_in_param(readonly, arg_method.readonly),
+                                        key: arg_method.key.clone(),
+                                        optional: calc_true_plus_minus_in_param(optional, arg_method.optional),
+                                        params: Default::default(),
                                         type_ann,
+                                        type_params: Default::default(),
                                     }));
                                 }
 
