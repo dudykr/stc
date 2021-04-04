@@ -718,6 +718,9 @@ pub struct CallSignature {
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct ConstructorSignature {
+    /// Only for synthesized type elements.
+    #[use_eq]
+    pub accessibility: Option<Accessibility>,
     pub span: Span,
     pub params: Vec<FnParam>,
     pub ret_ty: Option<Box<Type>>,
@@ -727,6 +730,9 @@ pub struct ConstructorSignature {
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct PropertySignature {
     pub span: Span,
+    /// Only for synthesized type elements.
+    #[use_eq]
+    pub accessibility: Option<Accessibility>,
     pub readonly: bool,
     pub key: Key,
     pub optional: bool,
@@ -738,6 +744,9 @@ pub struct PropertySignature {
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct MethodSignature {
     pub span: Span,
+    /// Only for synthesized type elements.
+    #[use_eq]
+    pub accessibility: Option<Accessibility>,
     pub readonly: bool,
     pub key: Key,
     pub optional: bool,
