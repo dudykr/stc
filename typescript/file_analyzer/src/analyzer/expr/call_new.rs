@@ -2223,13 +2223,27 @@ impl Analyzer<'_, '_> {
                             &param.ty,
                             &arg.ty,
                         ) {
-                            let err = err.convert(|err| match err {
-                                Error::TupleAssignError { span, errors } => Error::Errors { span, errors },
-                                Error::ObjectAssignFailed { span, errors } => Error::Errors { span, errors },
-                                _ => Error::WrongArgType {
+                            let err = err.convert(|err| {
+                                match err {
+                                    Error::TupleAssignError { span, errors } => return Error::Errors { span, errors },
+                                    Error::ObjectAssignFailed { span, errors } => {
+                                        return Error::Errors { span, errors }
+                                    }
+                                    Error::Errors { span, ref errors } => {
+                                        if errors.iter().all(|err| match err.actual() {
+                                            Error::UnknownPropertyInObjectLiteralAssignment { span } => true,
+                                            _ => false,
+                                        }) {
+                                            return err;
+                                        }
+                                    }
+                                    _ => {}
+                                }
+
+                                Error::WrongArgType {
                                     span: arg.span(),
                                     inner: box err,
-                                },
+                                }
                             });
                             self.storage.report(err);
                         }
