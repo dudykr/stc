@@ -38,6 +38,8 @@ mod query;
 mod type_el;
 
 /// Context used for `=` assignments.
+///
+/// TODO: Extract span to other field and implement Default for the struct.
 #[derive(Clone, Copy)]
 pub(crate) struct AssignOpts {
     pub span: Span,
