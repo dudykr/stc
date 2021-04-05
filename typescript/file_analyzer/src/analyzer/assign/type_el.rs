@@ -171,7 +171,8 @@ impl Analyzer<'_, '_> {
 
                 Type::Array(r_arr) => {
                     if lhs.iter().any(|member| match member {
-                        TypeElement::Property(_) | TypeElement::Method(_) => true,
+                        TypeElement::Property(PropertySignature { optional: true, .. })
+                        | TypeElement::Method(MethodSignature { optional: true, .. }) => true,
                         _ => false,
                     }) {
                         return Err(Error::SimpleAssignFailed { span });
