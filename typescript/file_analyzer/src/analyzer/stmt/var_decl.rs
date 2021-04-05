@@ -1,4 +1,5 @@
 use super::super::{pat::PatMode, Analyzer, Ctx};
+use crate::analyzer::assign::AssignOpts;
 use crate::analyzer::util::instantiate_class;
 use crate::util::type_ext::TypeVecExt;
 use crate::{
@@ -246,8 +247,21 @@ impl Analyzer<'_, '_> {
                         value_ty = self.rename_type_params(span, value_ty, Some(&ty))?;
                         value_ty.assert_valid();
 
+                        let opts = AssignOpts {
+                            span: v_span,
+                            allow_unknown_rhs: match &**init {
+                                RExpr::Ident(..)
+                                | RExpr::Member(..)
+                                | RExpr::MetaProp(..)
+                                | RExpr::New(..)
+                                _ => false,
+                            },
+                            allow_unknown_type: false,
+                            allow_assignment_to_param: false,
+                        };
+
                         match self
-                            .assign(&ty, &value_ty, v_span)
+                            .assign_with_opts(opts, &ty, &value_ty)
                             .context("tried to assign from var decl")
                         {
                             Ok(()) => {
