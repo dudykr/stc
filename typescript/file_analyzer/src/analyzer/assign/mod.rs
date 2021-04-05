@@ -701,7 +701,16 @@ impl Analyzer<'_, '_> {
                     Type::Union(..) => {
                         types
                             .iter()
-                            .map(|rhs| self.assign_with_opts(opts, to, rhs))
+                            .map(|rhs| {
+                                self.assign_with_opts(
+                                    AssignOpts {
+                                        allow_unknown_rhs: true,
+                                        ..opts
+                                    },
+                                    to,
+                                    rhs,
+                                )
+                            })
                             .collect::<Result<_, _>>()
                             .context("tried to assign an union type to another one")?;
 
@@ -891,8 +900,15 @@ impl Analyzer<'_, '_> {
                 let results = types
                     .iter()
                     .map(|to| {
-                        self.assign_inner(&to, rhs, opts)
-                            .context("tried to assign a type to a union")
+                        self.assign_with_opts(
+                            AssignOpts {
+                                allow_unknown_rhs: true,
+                                ..opts
+                            },
+                            &to,
+                            rhs,
+                        )
+                        .context("tried to assign a type to a union")
                     })
                     .collect::<Vec<_>>();
                 if results.iter().any(Result::is_ok) {
