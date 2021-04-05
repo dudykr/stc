@@ -1975,12 +1975,15 @@ impl Analyzer<'_, '_> {
                 }
             }
         }
-
-        ty = self.apply_type_facts(&name, ty);
+        if !self.is_builtin {
+            ty = self.apply_type_facts(&name, ty);
+        }
 
         ty = self.type_to_query_if_required(span, i, ty);
 
-        self.exclude_types_using_fact(&name, &mut ty);
+        if !self.is_builtin {
+            self.exclude_types_using_fact(&name, &mut ty);
+        }
 
         if !modules.is_empty() {
             modules.push(ty);
