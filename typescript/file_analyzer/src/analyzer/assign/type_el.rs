@@ -7,6 +7,7 @@ use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
+use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
@@ -170,6 +171,13 @@ impl Analyzer<'_, '_> {
                 Type::Array(..) if lhs.is_empty() => return Ok(()),
 
                 Type::Array(r_arr) => {
+                    if lhs.iter().any(|member| match member {
+                        TypeElement::Property(_) | TypeElement::Method(_) => true,
+                        _ => false,
+                    }) {
+                        return Err(Error::SimpleAssignFailed { span });
+                    }
+
                     //
                     let r_arr = Type::Ref(Ref {
                         span,
