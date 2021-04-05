@@ -370,7 +370,7 @@ impl Analyzer<'_, '_> {
         if let Ok(()) = self.assign_with_opts(
             AssignOpts {
                 span,
-                allow_unknown_rhs: true,
+                allow_unknown_rhs: false,
                 allow_unknown_type: false,
                 allow_assignment_to_param: false,
             },
