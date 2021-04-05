@@ -250,10 +250,7 @@ impl Analyzer<'_, '_> {
                         let opts = AssignOpts {
                             span: v_span,
                             allow_unknown_rhs: match &**init {
-                                RExpr::Ident(..)
-                                | RExpr::Member(..)
-                                | RExpr::MetaProp(..)
-                                | RExpr::New(..)
+                                RExpr::Ident(..) | RExpr::Member(..) | RExpr::MetaProp(..) | RExpr::New(..) => true,
                                 _ => false,
                             },
                             allow_unknown_type: false,
