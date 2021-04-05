@@ -711,7 +711,7 @@ impl Analyzer<'_, '_> {
                 }
                 let errors = types
                     .iter()
-                    .filter_map(|rhs| match self.assign_inner(to, rhs, opts) {
+                    .filter_map(|rhs| match self.assign_with_opts(opts, to, rhs) {
                         Ok(()) => None,
                         Err(err) => Some(err),
                     })
