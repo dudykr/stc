@@ -778,6 +778,12 @@ impl Analyzer<'_, '_> {
         }
     }
 
+    fn validate_inherited_members_from_interfaces(&mut self, name: Option<Span>, class: &ClassDef) {
+        if class.is_abstract || self.ctx.in_declare {
+            return;
+        }
+    }
+
     /// Should be called only from `Validate<Class>`.
     fn validate_inherited_members_from_super_class(&mut self, name: Option<Span>, class: &ClassDef) {
         if class.is_abstract || self.ctx.in_declare {
@@ -1351,6 +1357,7 @@ impl Analyzer<'_, '_> {
                 };
 
                 child.validate_inherited_members_from_super_class(None, &class);
+                child.validate_inherited_members_from_interfaces(None, &class);
 
                 Ok(class)
             },
