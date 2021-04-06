@@ -536,20 +536,13 @@ impl Analyzer<'_, '_> {
 
         for (i, m) in lhs.into_iter().enumerate().filter(|(_, m)| m.key().is_some()) {
             let res = self
-                .assign_type_elements_to_type_element(opts, missing_fields, m, rhs)
+                .assign_type_elements_to_type_element(opts, missing_fields, unhandled_rhs, m, rhs)
                 .with_context(|| format!("tried to assign to {}th element: {:?}", i, m.key()));
 
-            let success = match res {
-                Ok(()) => true,
-                Err(Error::Errors { ref errors, .. }) if errors.is_empty() => true,
+            match res {
+                Ok(()) => {}
+                Err(Error::Errors { ref errors, .. }) if errors.is_empty() => {}
                 Err(err) => return Err(err),
-            };
-            if success && rhs.len() > i {
-                if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rhs[i].span()) {
-                    unhandled_rhs.remove(pos);
-                } else {
-                    // panic!("it should be removable")
-                }
             }
         }
 
@@ -559,23 +552,10 @@ impl Analyzer<'_, '_> {
         for m in lhs.iter().filter(|m| m.key().is_none()) {
             for r in rhs {
                 let res = self
-                    .assign_type_elements_to_type_element(opts, missing_fields, m, &[r.clone()])
+                    .assign_type_elements_to_type_element(opts, missing_fields, unhandled_rhs, m, &[r.clone()])
                     .with_context(|| format!("tried to assign to an element (not a key-based)"));
 
-                let success = match res {
-                    Ok(()) => true,
-                    Err(Error::Errors { ref errors, .. }) if errors.is_empty() => true,
-                    Err(err) => {
-                        errors.push(err);
-                        false
-                    }
-                };
-
-                if success {
-                    if let Some(pos) = unhandled_rhs.iter().position(|span| *span == r.span()) {
-                        unhandled_rhs.remove(pos);
-                    }
-                }
+                errors.extend(res.err());
             }
         }
 
@@ -591,6 +571,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         opts: AssignOpts,
         missing_fields: &mut Vec<TypeElement>,
+        unhandled_rhs: &mut Vec<Span>,
         lm: &TypeElement,
         rhs_members: &[TypeElement],
     ) -> ValidationResult<()> {
@@ -617,6 +598,9 @@ impl Analyzer<'_, '_> {
                                         r_el.type_ann.as_deref().unwrap_or(&Type::any(span)),
                                         opts,
                                     )?;
+                                    if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
+                                        unhandled_rhs.remove(pos);
+                                    }
                                     return Ok(());
                                 }
                                 TypeElement::Method(rm) => {
@@ -629,6 +613,10 @@ impl Analyzer<'_, '_> {
 
                                             // TODO: Return type
                                         }
+                                    }
+
+                                    if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
+                                        unhandled_rhs.remove(pos);
                                     }
                                     return Ok(());
                                 }
@@ -644,6 +632,10 @@ impl Analyzer<'_, '_> {
 
                                     // TODO: Return type
 
+                                    if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
+                                        unhandled_rhs.remove(pos);
+                                    }
+
                                     return Ok(());
                                 }
 
@@ -658,6 +650,9 @@ impl Analyzer<'_, '_> {
 
                                             // TODO: Return type
                                         }
+                                    }
+                                    if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
+                                        unhandled_rhs.remove(pos);
                                     }
                                     return Ok(());
                                 }

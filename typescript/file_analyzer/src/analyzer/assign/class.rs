@@ -94,7 +94,7 @@ impl Analyzer<'_, '_> {
                             continue;
                         }
                     };
-                    self.assign_type_elements_to_type_element(opts, &mut vec![], &lm, &rhs.members)
+                    self.assign_type_elements_to_type_element(opts, &mut vec![], &mut vec![], &lm, &rhs.members)
                         .context("tried to assign type elements to a class member")?;
                 }
 
@@ -186,7 +186,7 @@ impl Analyzer<'_, '_> {
                             continue;
                         }
                     };
-                    self.assign_type_elements_to_type_element(opts, &mut vec![], &lm, &rhs.body)
+                    self.assign_type_elements_to_type_element(opts, &mut vec![], &mut vec![], &lm, &rhs.body)
                         .context("tried to assign type elements to a class member")?;
                 }
 
@@ -204,7 +204,7 @@ impl Analyzer<'_, '_> {
                             continue;
                         }
                     };
-                    self.assign_type_elements_to_type_element(opts, &mut vec![], &lm, &rhs.members)
+                    self.assign_type_elements_to_type_element(opts, &mut vec![], &mut vec![], &lm, &rhs.members)
                         .context("tried to assign type elements to a class member")?;
                 }
 
@@ -224,7 +224,7 @@ impl Analyzer<'_, '_> {
                                 continue;
                             }
                         };
-                        self.assign_type_elements_to_type_element(opts, &mut vec![], &lm, &rhs.members)
+                        self.assign_type_elements_to_type_element(opts, &mut vec![], &mut vec![], &lm, &rhs.members)
                             .context("tried to assign type elements to a class member")?;
                     }
 
