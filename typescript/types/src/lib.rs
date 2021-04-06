@@ -532,7 +532,7 @@ pub struct ClassDef {
     pub super_class: Option<Box<Type>>,
     pub body: Vec<ClassMember>,
     pub type_params: Option<TypeParamDecl>,
-    pub implements: Option<Box<Vec<TsExpr>>>,
+    pub implements: Box<Vec<TsExpr>>,
 }
 
 assert_eq_size!(ClassDef, [u8; 112]);

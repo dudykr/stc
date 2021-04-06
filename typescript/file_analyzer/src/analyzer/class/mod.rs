@@ -1003,7 +1003,7 @@ impl Analyzer<'_, '_> {
                     }
                 };
 
-                c.implements.visit_with(child);
+                let implements = c.implements.validate_with(child).map(Box::new)?;
 
                 // TODO: Check for implements
 
@@ -1354,6 +1354,7 @@ impl Analyzer<'_, '_> {
                     super_class,
                     type_params,
                     body: body.into_iter().map(|v| v.1).collect(),
+                    implements,
                 };
 
                 child.validate_inherited_members_from_super_class(None, &class);
