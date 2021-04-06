@@ -708,7 +708,13 @@ impl Analyzer<'_, '_> {
                         match rm {
                             // TODO: Check type of parameters
                             // TODO: Check return type
-                            TypeElement::Call(..) => return Ok(()),
+                            TypeElement::Call(..) => {
+                                if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
+                                    unhandled_rhs.remove(pos);
+                                }
+
+                                return Ok(());
+                            }
                             _ => {}
                         }
                     }
@@ -718,6 +724,8 @@ impl Analyzer<'_, '_> {
                 _ => {}
             }
         }
+
+        unhandled_rhs.clear();
 
         Ok(())
     }
