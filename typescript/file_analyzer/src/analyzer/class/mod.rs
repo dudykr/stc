@@ -779,7 +779,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Should be called only from `Validate<Class>`.
-    fn validate_inherited_members(&mut self, name: Option<Span>, class: &ClassDef) {
+    fn validate_inherited_members_from_super_class(&mut self, name: Option<Span>, class: &ClassDef) {
         if class.is_abstract || self.ctx.in_declare {
             return;
         }
@@ -1350,7 +1350,7 @@ impl Analyzer<'_, '_> {
                     body: body.into_iter().map(|v| v.1).collect(),
                 };
 
-                child.validate_inherited_members(None, &class);
+                child.validate_inherited_members_from_super_class(None, &class);
 
                 Ok(class)
             },
