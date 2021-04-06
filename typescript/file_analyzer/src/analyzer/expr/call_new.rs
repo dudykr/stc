@@ -2234,7 +2234,16 @@ impl Analyzer<'_, '_> {
                                             Error::UnknownPropertyInObjectLiteralAssignment { span } => true,
                                             _ => false,
                                         }) {
-                                            return Error::WrongArgType { span, inner: box err };
+                                            return Error::Errors {
+                                                span,
+                                                errors: errors
+                                                    .iter()
+                                                    .map(|err| Error::WrongArgType {
+                                                        span: err.span(),
+                                                        inner: box err.clone(),
+                                                    })
+                                                    .collect(),
+                                            };
                                         }
                                     }
                                     _ => {}
