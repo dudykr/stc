@@ -1300,6 +1300,7 @@ parser/ecmascript5/ArrayLiteralExpressions/parserArrayLiteralExpression9.ts
 parser/ecmascript5/ArrowFunctionExpressions/parserArrowFunctionExpression5.ts
 parser/ecmascript5/ArrowFunctionExpressions/parserArrowFunctionExpression6.ts
 parser/ecmascript5/ArrowFunctionExpressions/parserArrowFunctionExpression7.ts
+parser/ecmascript5/ClassDeclarations/parserClass1.ts
 parser/ecmascript5/ClassDeclarations/parserClassDeclaration12.ts
 parser/ecmascript5/ClassDeclarations/parserClassDeclaration13.ts
 parser/ecmascript5/ClassDeclarations/parserClassDeclaration15.ts
