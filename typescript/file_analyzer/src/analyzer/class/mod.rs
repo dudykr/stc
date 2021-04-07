@@ -1,3 +1,4 @@
+use super::assign::AssignOpts;
 use super::expr::TypeOfMode;
 use super::props::ComputedPropMode;
 use super::util::instantiate_class;
@@ -48,6 +49,7 @@ use stc_ts_ast_rnode::RTsTypeAliasDecl;
 use stc_ts_ast_rnode::RTsTypeAnn;
 use stc_ts_ast_rnode::RVarDecl;
 use stc_ts_ast_rnode::RVarDeclarator;
+use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_file_analyzer_macros::extra_validator;
@@ -783,6 +785,11 @@ impl Analyzer<'_, '_> {
             return;
         }
 
+        let class_ty = Type::Class(Class {
+            span: class.span,
+            def: box class.clone(),
+        });
+
         for parent in &*class.implements {
             let res: ValidationResult<_> = try {
                 let parent = self.type_of_ts_entity_name(
@@ -791,6 +798,28 @@ impl Analyzer<'_, '_> {
                     &parent.expr,
                     parent.type_args.as_deref(),
                 )?;
+
+                self.assign_with_opts(
+                    AssignOpts {
+                        span: parent.span(),
+                        allow_unknown_rhs: true,
+                        allow_unknown_type: false,
+                        allow_assignment_to_param: false,
+                    },
+                    &parent,
+                    &class_ty,
+                )
+                .context("tried to assign a class to parent interface")
+                .convert_err(|err| {
+                    if err.code() == 2322 {
+                        Error::InvalidImplOfInterface {
+                            span: err.span(),
+                            cause: box err,
+                        }
+                    } else {
+                        err
+                    }
+                })?;
             };
 
             res.report(&mut self.storage);

@@ -62,6 +62,12 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2416
+    InvalidImplOfInterface {
+        span: Span,
+        cause: Box<Error>,
+    },
+
     /// TS2302
     StaticMethodCannotUseTypeParamOfClass {
         span: Span,
@@ -870,7 +876,7 @@ impl Error {
     }
 
     /// TypeScript error code.
-    fn code(&self) -> usize {
+    pub fn code(&self) -> usize {
         match self {
             Error::TS1016 { .. } => 1016,
             Error::TS1063 { .. } => 1063,
@@ -1026,6 +1032,8 @@ impl Error {
             Error::DeclaringTypeParamReferencedByComputedPropName { .. } => 2467,
 
             Error::StaticMethodCannotUseTypeParamOfClass { .. } => 2302,
+
+            Error::InvalidImplOfInterface { .. } => 2416,
 
             _ => 0,
         }
