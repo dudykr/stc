@@ -782,6 +782,19 @@ impl Analyzer<'_, '_> {
         if class.is_abstract || self.ctx.in_declare {
             return;
         }
+
+        for parent in &*class.implements {
+            let res: ValidationResult<_> = try {
+                let parent = self.type_of_ts_entity_name(
+                    parent.span(),
+                    self.ctx.module_id,
+                    &parent.expr,
+                    parent.type_args.as_deref(),
+                )?;
+            };
+
+            res.report(&mut self.storage);
+        }
     }
 
     /// Should be called only from `Validate<Class>`.
