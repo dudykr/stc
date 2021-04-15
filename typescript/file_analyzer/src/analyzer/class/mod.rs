@@ -832,7 +832,15 @@ impl Analyzer<'_, '_> {
                                 .collect(),
                         }
                     } else {
-                        err
+                        err.convert_all(|err| {
+                            match err {
+                                Error::MissingFields { .. } => {
+                                    return Error::ClassIncorrectlyImplementsInterface { span: parent.span() }
+                                }
+                                _ => {}
+                            }
+                            err
+                        })
                     }
                 })?;
             };

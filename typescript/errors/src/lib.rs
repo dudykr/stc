@@ -58,6 +58,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2420
+    ClassIncorrectlyImplementsInterface {
+        span: Span,
+    },
+
     StackOverlfow {
         span: Span,
     },
@@ -1061,6 +1066,8 @@ impl Error {
             Error::StaticMethodCannotUseTypeParamOfClass { .. } => 2302,
 
             Error::InvalidImplOfInterface { .. } => 2416,
+
+            Error::ClassIncorrectlyImplementsInterface { .. } => 2420,
 
             _ => 0,
         }
