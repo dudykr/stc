@@ -611,7 +611,12 @@ impl Analyzer<'_, '_> {
                                                  a property with callable type",
                                             )?;
 
-                                            // TODO: Return type
+                                            if let Some(r_ret_ty) = &rm.ret_ty {
+                                                self.assign_with_opts(opts, &lp_ty.ret_ty, &r_ret_ty).context(
+                                                    "tried to assign return type of a method property to the return \
+                                                     type of a property with callable type",
+                                                )?;
+                                            }
                                         }
                                     }
 
