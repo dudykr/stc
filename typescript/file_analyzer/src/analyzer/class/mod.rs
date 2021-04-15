@@ -820,7 +820,10 @@ impl Analyzer<'_, '_> {
                                 .into_iter()
                                 .map(|err| {
                                     err.convert(|err| Error::InvalidImplOfInterface {
-                                        span: err.span(),
+                                        span: match err {
+                                            Error::AssignFailed { right, .. } => right.span(),
+                                            _ => err.span(),
+                                        },
                                         cause: box err,
                                     })
                                 })
