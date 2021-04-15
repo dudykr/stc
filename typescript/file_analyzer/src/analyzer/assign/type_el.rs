@@ -581,6 +581,10 @@ impl Analyzer<'_, '_> {
         if let Some(l_key) = lm.key() {
             for rm in rhs_members {
                 if let Some(r_key) = rm.key() {
+                    let opts = AssignOpts {
+                        right_ident_span: Some(r_key.span()),
+                        ..opts
+                    };
                     if l_key.type_eq(&*r_key) {
                         match lm {
                             TypeElement::Property(ref lp) => match rm {
