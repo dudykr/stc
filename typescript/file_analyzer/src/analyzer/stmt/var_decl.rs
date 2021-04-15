@@ -253,8 +253,7 @@ impl Analyzer<'_, '_> {
                                 RExpr::Ident(..) | RExpr::Member(..) | RExpr::MetaProp(..) | RExpr::New(..) => true,
                                 _ => false,
                             },
-                            allow_unknown_type: false,
-                            allow_assignment_to_param: false,
+                            ..Default::default()
                         };
 
                         match self

@@ -38,11 +38,11 @@ mod query;
 mod type_el;
 
 /// Context used for `=` assignments.
-///
-/// TODO: Extract span to other field and implement Default for the struct.
 #[derive(Clone, Copy)]
 pub(crate) struct AssignOpts {
+    /// This field should be overrided by caller.
     pub span: Span,
+    pub right_ident_span: Option<Span>,
     pub allow_unknown_rhs: bool,
     /// Allow assigning `unknown` type to other types. This should be `true` for
     /// parameters because the following is valid.
@@ -61,6 +61,18 @@ pub(crate) struct AssignOpts {
     /// ```
     pub allow_unknown_type: bool,
     pub allow_assignment_to_param: bool,
+}
+
+impl Default for AssignOpts {
+    fn default() -> Self {
+        Self {
+            span: DUMMY_SP,
+            right_ident_span: None,
+            allow_assignment_to_param: false,
+            allow_unknown_rhs: false,
+            allow_unknown_type: false,
+        }
+    }
 }
 
 impl Analyzer<'_, '_> {
@@ -158,9 +170,7 @@ impl Analyzer<'_, '_> {
         self.assign_with_opts(
             AssignOpts {
                 span,
-                allow_unknown_rhs: false,
-                allow_assignment_to_param: false,
-                allow_unknown_type: false,
+                ..Default::default()
             },
             left,
             right,
@@ -197,6 +207,7 @@ impl Analyzer<'_, '_> {
                     span: opts.span,
                     left: box left.clone(),
                     right: box right.clone(),
+                    right_ident: opts.right_ident_span,
                     cause: vec![err],
                 },
             })
@@ -305,6 +316,7 @@ impl Analyzer<'_, '_> {
                     span,
                     left: box to.clone(),
                     right: box rhs.clone(),
+                    right_ident: opts.right_ident_span,
                     cause: vec![],
                 });
             }};
@@ -925,6 +937,7 @@ impl Analyzer<'_, '_> {
                         cause: errors,
                         left: box to.clone(),
                         right: box rhs.clone(),
+                        right_ident: opts.right_ident_span,
                     });
                 } else {
                     return Err(Error::Errors { span, errors }.context("tried to a type to a union type"));
@@ -1252,6 +1265,7 @@ impl Analyzer<'_, '_> {
                         span,
                         left: box to.clone(),
                         right: box rhs.clone(),
+                        right_ident: opts.right_ident_span,
                         cause: errors,
                     });
                 }

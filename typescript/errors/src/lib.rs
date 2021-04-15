@@ -419,6 +419,7 @@ pub enum Error {
     AssignFailed {
         span: Span,
         left: Box<Type>,
+        right_ident: Option<Span>,
         right: Box<Type>,
         cause: Vec<Error>,
     },

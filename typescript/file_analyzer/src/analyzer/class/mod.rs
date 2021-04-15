@@ -803,8 +803,7 @@ impl Analyzer<'_, '_> {
                     AssignOpts {
                         span: parent.span(),
                         allow_unknown_rhs: true,
-                        allow_unknown_type: false,
-                        allow_assignment_to_param: false,
+                        ..Default::default()
                     },
                     &parent,
                     &class_ty,
@@ -821,6 +820,9 @@ impl Analyzer<'_, '_> {
                                 .map(|err| {
                                     err.convert(|err| Error::InvalidImplOfInterface {
                                         span: match &err {
+                                            Error::AssignFailed {
+                                                right_ident: Some(s), ..
+                                            } => *s,
                                             Error::AssignFailed { right, .. } => right.span(),
                                             _ => err.span(),
                                         },

@@ -157,8 +157,7 @@ impl Analyzer<'_, '_> {
                                     AssignOpts {
                                         span,
                                         allow_unknown_rhs: true,
-                                        allow_assignment_to_param: false,
-                                        allow_unknown_type: false,
+                                        ..Default::default()
                                     },
                                     &declared,
                                     &inferred_return_type,

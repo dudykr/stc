@@ -986,9 +986,7 @@ impl Analyzer<'_, '_> {
                             let params_res = self.assign_params(
                                 AssignOpts {
                                     span,
-                                    allow_unknown_rhs: false,
-                                    allow_assignment_to_param: false,
-                                    allow_unknown_type: false,
+                                    ..Default::default()
                                 },
                                 &lm.params,
                                 &rm.params,
@@ -1004,8 +1002,7 @@ impl Analyzer<'_, '_> {
                                     AssignOpts {
                                         span,
                                         allow_unknown_rhs: true,
-                                        allow_assignment_to_param: false,
-                                        allow_unknown_type: false,
+                                        ..Default::default()
                                     },
                                     &lt,
                                     &rt,
