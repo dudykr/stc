@@ -875,6 +875,32 @@ impl Error {
         })
     }
 
+    /// Split error into causes.
+    pub fn into_causes(self) -> Vec<Self> {
+        match self {
+            Self::AssignFailed { cause, .. } => cause,
+            Self::ObjectAssignFailed { errors, .. } => errors,
+            Self::DebugContext(c) => {
+                let DebugContext { span, context, .. } = c;
+
+                c.inner
+                    .into_causes()
+                    .into_iter()
+                    .map(|err| {
+                        Error::DebugContext(DebugContext {
+                            span,
+                            inner: box err,
+                            context: context.clone(),
+                        })
+                    })
+                    .collect()
+            }
+            _ => {
+                vec![self]
+            }
+        }
+    }
+
     /// TypeScript error code.
     pub fn code(&self) -> usize {
         match self {

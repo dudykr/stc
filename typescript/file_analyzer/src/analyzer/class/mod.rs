@@ -811,10 +811,20 @@ impl Analyzer<'_, '_> {
                 )
                 .context("tried to assign a class to parent interface")
                 .convert_err(|err| {
+                    let span = err.span();
                     if err.code() == 2322 {
-                        Error::InvalidImplOfInterface {
-                            span: err.span(),
-                            cause: box err,
+                        Error::Errors {
+                            span,
+                            errors: err
+                                .into_causes()
+                                .into_iter()
+                                .map(|err| {
+                                    err.convert(|err| Error::InvalidImplOfInterface {
+                                        span: err.span(),
+                                        cause: box err,
+                                    })
+                                })
+                                .collect(),
                         }
                     } else {
                         err
