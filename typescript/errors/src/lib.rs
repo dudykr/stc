@@ -608,6 +608,7 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2391
     FnImplMissingOrNotFollowedByDecl {
         span: Span,
     },
