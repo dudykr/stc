@@ -19,6 +19,7 @@ use stc_ts_ast_rnode::RNumber;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
+use stc_ts_type_ops::Fix;
 use stc_ts_types::Array;
 use stc_ts_types::ComputedKey;
 use stc_ts_types::Intersection;
@@ -46,16 +47,26 @@ impl Analyzer<'_, '_> {
         let span = arr.span;
         let elems = &arr.elems;
 
-        let prefer_tuple = self.prefer_tuple(type_ann);
+        let type_ann = self.expand_type_ann(type_ann)?;
+
+        let iterator = type_ann
+            .as_deref()
+            .and_then(|ty| self.get_iterator(span, Cow::Borrowed(ty)).ok());
+
+        let prefer_tuple = self.prefer_tuple(type_ann.as_deref());
         let mut can_be_tuple = true;
         let mut elements = Vec::with_capacity(elems.len());
 
-        for elem in elems.iter() {
+        for (idx, elem) in elems.iter().enumerate() {
             let span = elem.span();
             let ty = match elem {
                 Some(RExprOrSpread { spread: None, ref expr }) => {
-                    let ty = expr.validate_with_default(self)?;
-                    match &ty {
+                    let elem_type_ann = iterator
+                        .as_deref()
+                        .and_then(|iterator| self.get_element_from_iterator(span, Cow::Borrowed(iterator), idx).ok());
+
+                    let ty = expr.validate_with_args(self, (mode, type_args, elem_type_ann.as_deref()))?;
+                    match ty.normalize() {
                         Type::TypeLit(..) | Type::Function(..) => {
                             can_be_tuple = false;
                         }
@@ -132,16 +143,39 @@ impl Analyzer<'_, '_> {
         }
 
         if !can_be_tuple {
+            elements.retain(|el| {
+                if el.ty.is_kwd(TsKeywordTypeKind::TsNullKeyword) || el.ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
+                {
+                    return false;
+                }
+                true
+            });
             let mut types: Vec<_> = elements.into_iter().map(|element| *element.ty).collect();
             types.dedup_type();
+            if types.is_empty() {
+                types.push(Type::any(span));
+            }
 
-            let mut ty = Type::Array(Array {
-                span,
-                elem_type: box Type::union(types),
-            });
+            let mut ty = Type::Array(
+                Array {
+                    span,
+                    elem_type: box Type::union(types),
+                }
+                .fixed(),
+            );
             self.normalize_union(&mut ty, false);
 
             return Ok(ty);
+        }
+
+        let should_be_any = elements.iter().all(|el| {
+            el.ty.is_kwd(TsKeywordTypeKind::TsNullKeyword) || el.ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
+        });
+
+        if should_be_any {
+            elements.iter_mut().for_each(|el| {
+                el.ty = box Type::any(el.ty.span());
+            });
         }
 
         return Ok(Type::Tuple(Tuple { span, elems: elements }));

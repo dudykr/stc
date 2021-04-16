@@ -56,6 +56,7 @@ use stc_ts_ast_rnode::RTsIntersectionType;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsMappedType;
 use stc_ts_ast_rnode::RTsMethodSignature;
+use stc_ts_ast_rnode::RTsModuleName;
 use stc_ts_ast_rnode::RTsOptionalType;
 use stc_ts_ast_rnode::RTsParenthesizedType;
 use stc_ts_ast_rnode::RTsPropertySignature;
@@ -514,8 +515,18 @@ impl From<Alias> for RTsType {
 }
 
 impl From<super::Module> for RTsType {
-    fn from(_: super::Module) -> Self {
-        unreachable!("super::Module should be handled before converting to RTsType")
+    fn from(m: super::Module) -> Self {
+        RTsType::TsTypeRef(RTsTypeRef {
+            node_id: NodeId::invalid(),
+            span: m.span,
+            type_params: None,
+            type_name: RTsEntityName::Ident(match m.name {
+                RTsModuleName::Ident(i) => i,
+                RTsModuleName::Str(..) => {
+                    unimplemented!("converting stringly-named module type to ast")
+                }
+            }),
+        })
     }
 }
 

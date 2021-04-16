@@ -1,0 +1,80 @@
+warning: Type
+ --> $DIR/tests/pass/exprs/typeAssertion/7.ts:6:16
+  |
+6 |     if (typeof x === "string" && typeof x === "number") {
+  |                ^
+  |
+  = note: string | number
+
+warning: Type
+ --> $DIR/tests/pass/exprs/typeAssertion/7.ts:6:9
+  |
+6 |     if (typeof x === "string" && typeof x === "number") {
+  |         ^^^^^^^^
+  |
+  = note: string
+
+warning: Type
+ --> $DIR/tests/pass/exprs/typeAssertion/7.ts:6:9
+  |
+6 |     if (typeof x === "string" && typeof x === "number") {
+  |         ^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: boolean
+
+warning: Type
+ --> $DIR/tests/pass/exprs/typeAssertion/7.ts:6:41
+  |
+6 |     if (typeof x === "string" && typeof x === "number") {
+  |                                         ^
+  |
+  = note: string
+
+warning: Type
+ --> $DIR/tests/pass/exprs/typeAssertion/7.ts:6:34
+  |
+6 |     if (typeof x === "string" && typeof x === "number") {
+  |                                  ^^^^^^^^
+  |
+  = note: string
+
+warning: Type
+ --> $DIR/tests/pass/exprs/typeAssertion/7.ts:6:34
+  |
+6 |     if (typeof x === "string" && typeof x === "number") {
+  |                                  ^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: boolean
+
+warning: Type
+ --> $DIR/tests/pass/exprs/typeAssertion/7.ts:6:9
+  |
+6 |     if (typeof x === "string" && typeof x === "number") {
+  |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: boolean
+
+warning: Type
+ --> $DIR/tests/pass/exprs/typeAssertion/7.ts:7:9
+  |
+7 |         x;  // number (guard as assertion)
+  |         ^
+  |
+  = note: never
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/7.ts:10:9
+   |
+10 |         x;  // string | number
+   |         ^
+   |
+   = note: string | number
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/7.ts:12:5
+   |
+12 |     x;  // string | number
+   |     ^
+   |
+   = note: string | number
+

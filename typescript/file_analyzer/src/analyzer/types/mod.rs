@@ -16,6 +16,7 @@ use stc_ts_types::ClassMember;
 use stc_ts_types::ConstructorSignature;
 use stc_ts_types::Key;
 use stc_ts_types::MethodSignature;
+use stc_ts_types::Operator;
 use stc_ts_types::PropertySignature;
 use stc_ts_types::QueryExpr;
 use stc_ts_types::Type;
@@ -30,9 +31,12 @@ use swc_common::Span;
 use swc_common::Spanned;
 use swc_common::SyntaxContext;
 use swc_common::TypeEq;
+use swc_common::DUMMY_SP;
 use swc_ecma_ast::MethodKind;
 use swc_ecma_ast::TsKeywordTypeKind;
+use swc_ecma_ast::TsTypeOperatorOp;
 
+mod keyof;
 mod mapped;
 mod narrowing;
 mod type_param;
@@ -72,6 +76,9 @@ impl Analyzer<'_, '_> {
         mut opts: NormalizeTypeOpts,
     ) -> ValidationResult<Cow<'a, Type>> {
         let span = ty.span();
+        if !self.is_builtin {
+            debug_assert_ne!(span, DUMMY_SP, "Cannot normalize a type with dummy span\n{:?}", ty);
+        }
 
         opts.lefting_stack -= 1;
         if opts.lefting_stack == 0 {
@@ -91,11 +98,13 @@ impl Analyzer<'_, '_> {
             Type::Mapped(m) => {
                 if !opts.preserve_mapped {
                     let ty = self.expand_mapped(span, m)?;
-                    return Ok(Cow::Owned(
-                        self.normalize(&ty, opts)
-                            .context("tried to expand a mapped type as a part of normalization")?
-                            .into_owned(),
-                    ));
+                    if let Some(ty) = ty {
+                        return Ok(Cow::Owned(
+                            self.normalize(&ty, opts)
+                                .context("tried to expand a mapped type as a part of normalization")?
+                                .into_owned(),
+                        ));
+                    }
                 }
             }
 
@@ -133,8 +142,13 @@ impl Analyzer<'_, '_> {
             // Maybe it can be changed in future, but currently noop
             Type::Union(_) | Type::Intersection(_) => {}
 
-            Type::Conditional(_) => {
-                // TODO
+            Type::Conditional(c) => {
+                if let Some(v) = self.extends(ty.span(), &c.check_type, &c.extends_type) {
+                    let ty = if v { &c.true_type } else { &c.false_type };
+                    return self
+                        .normalize(&ty, opts)
+                        .context("tried to normalize the calculated type of a conditional type");
+                }
             }
 
             Type::Query(q) => {
@@ -167,6 +181,17 @@ impl Analyzer<'_, '_> {
                 // TODO:
             }
 
+            Type::Operator(Operator {
+                op: TsTypeOperatorOp::KeyOf,
+                ty,
+                ..
+            }) => {
+                let keys_ty = self
+                    .keyof(span, &ty)
+                    .context("tried to get keys of a type as a part of normalization")?;
+                return Ok(Cow::Owned(keys_ty));
+            }
+
             Type::Operator(_) => {
                 // TODO:
             }
@@ -174,7 +199,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        Ok(Cow::Borrowed(ty))
+        Ok(Cow::Borrowed(ty.normalize()))
     }
 
     pub(crate) fn expand_type_ann<'a>(&mut self, ty: Option<&'a Type>) -> ValidationResult<Option<Cow<'a, Type>>> {
@@ -214,12 +239,13 @@ impl Analyzer<'_, '_> {
                     //
                     members.push(TypeElement::Property(PropertySignature {
                         span: p.span,
+                        accessibility: None,
+                        readonly: p.readonly,
                         key: p.key.clone(),
                         optional: p.is_optional,
-                        readonly: p.readonly,
                         params: Default::default(),
-                        type_params: Default::default(),
                         type_ann,
+                        type_params: Default::default(),
                     }))
                 }
                 ClassMember::IndexSignature(_) => {}
@@ -298,6 +324,36 @@ impl Analyzer<'_, '_> {
             }
         }
     }
+
+    pub(crate) fn intersection(&mut self, span: Span, types: Vec<Type>) -> Type {
+        let mut actual = vec![];
+
+        let all_known = types.iter().all(|ty| ty.normalize().is_union_type())
+            && types.iter().flat_map(|ty| ty.iter_union()).all(|ty| match ty {
+                Type::Lit(..) | Type::Keyword(..) => true,
+                _ => false,
+            });
+
+        if !all_known {
+            return Type::intersection(span, types);
+        }
+
+        for ty in types.iter().flat_map(|ty| ty.iter_union()) {
+            let in_all = types
+                .iter()
+                .all(|candidates| candidates.iter_union().any(|pred| pred.type_eq(ty)));
+
+            if !in_all {
+                continue;
+            }
+
+            actual.push(ty.clone());
+        }
+        actual.dedup_type();
+
+        Type::intersection(span, actual)
+    }
+
     /// Note: `span` is only used while expanding type (to prevent panic) in the
     /// case of [Type::Ref].
     pub(crate) fn type_to_type_lit<'a>(
@@ -410,6 +466,7 @@ impl Analyzer<'_, '_> {
             Type::Constructor(ty) => {
                 let el = TypeElement::Constructor(ConstructorSignature {
                     span: ty.span,
+                    accessibility: None,
                     params: ty.params.clone(),
                     ret_ty: Some(ty.type_ann.clone()),
                     type_params: ty.type_params.clone(),
@@ -440,33 +497,35 @@ impl Analyzer<'_, '_> {
                 for (idx, e) in ty.elems.iter().enumerate() {
                     members.push(TypeElement::Property(PropertySignature {
                         span: e.span,
+                        accessibility: None,
+                        readonly: false,
                         key: Key::Num(RNumber {
                             span: e.span,
                             value: idx as f64,
                         }),
-                        readonly: false,
                         optional: false,
                         params: Default::default(),
-                        type_params: Default::default(),
                         type_ann: Some(e.ty.clone()),
+                        type_params: Default::default(),
                     }));
                 }
 
                 // length
                 members.push(TypeElement::Property(PropertySignature {
                     span: ty.span,
+                    accessibility: None,
+                    readonly: true,
                     key: Key::Normal {
                         span: ty.span.with_ctxt(SyntaxContext::empty()),
                         sym: "length".into(),
                     },
-                    readonly: true,
                     optional: false,
                     params: Default::default(),
-                    type_params: Default::default(),
                     type_ann: Some(box Type::Keyword(RTsKeywordType {
                         span: ty.span,
                         kind: TsKeywordTypeKind::TsNumberKeyword,
                     })),
+                    type_params: Default::default(),
                 }));
 
                 Cow::Owned(TypeLit {
@@ -478,7 +537,27 @@ impl Analyzer<'_, '_> {
 
             Type::Mapped(m) => {
                 let ty = self.expand_mapped(span, m)?;
-                let ty = self.type_to_type_lit(span, &ty)?.map(Cow::into_owned).map(Cow::Owned);
+                if let Some(ty) = ty {
+                    let ty = self.type_to_type_lit(span, &ty)?.map(Cow::into_owned).map(Cow::Owned);
+
+                    match ty {
+                        Some(v) => v,
+                        None => return Ok(None),
+                    }
+                } else {
+                    return Ok(None);
+                }
+            }
+
+            Type::Query(..) => {
+                let ty = self
+                    .normalize(ty, Default::default())
+                    .context("tried to normalize a type to convert it to type literal")?;
+                let ty = self
+                    .type_to_type_lit(span, &ty)
+                    .context("tried to convert a normalized type to type liteal")?
+                    .map(Cow::into_owned)
+                    .map(Cow::Owned);
                 return Ok(ty);
             }
 
@@ -527,22 +606,24 @@ impl Analyzer<'_, '_> {
                 match m.kind {
                     MethodKind::Method => TypeElement::Method(MethodSignature {
                         span: m.span,
-                        key: m.key.clone(),
-                        type_params: m.type_params.clone(),
-                        params: m.params.clone(),
-                        optional: m.is_optional,
-                        ret_ty: Some(m.ret_ty.clone()),
+                        accessibility: m.accessibility,
                         readonly: false,
+                        key: m.key.clone(),
+                        optional: m.is_optional,
+                        params: m.params.clone(),
+                        ret_ty: Some(m.ret_ty.clone()),
+                        type_params: m.type_params.clone(),
                     }),
                     MethodKind::Getter => TypeElement::Property(PropertySignature {
                         span: m.span,
-                        key: m.key.clone(),
-                        params: vec![],
-                        optional: m.is_optional,
-                        type_params: None,
-                        // TODO: Check for setter property with same key.
+                        accessibility: m.accessibility,
                         readonly: false,
+                        key: m.key.clone(),
+                        optional: m.is_optional,
+                        params: vec![],
+                        // TODO: Check for setter property with same key.
                         type_ann: Some(m.ret_ty.clone()),
+                        type_params: None,
                     }),
                     MethodKind::Setter => return Ok(None),
                 }
@@ -554,12 +635,13 @@ impl Analyzer<'_, '_> {
 
                 TypeElement::Property(PropertySignature {
                     span: p.span,
-                    key: p.key.clone(),
-                    params: vec![],
-                    optional: p.is_optional,
-                    type_params: None,
+                    accessibility: p.accessibility,
                     readonly: p.readonly,
+                    key: p.key.clone(),
+                    optional: p.is_optional,
+                    params: vec![],
                     type_ann: p.value.clone(),
+                    type_params: None,
                 })
             }
             ClassMember::IndexSignature(i) => TypeElement::Index(i.clone()),
@@ -681,6 +763,11 @@ impl VisitMut<Type> for TupleNormalizer {
                     .map(|elem| *elem.ty)
                     .collect::<Vec<_>>();
                 types.dedup_type();
+
+                let has_other = types.iter().any(|ty| !ty.is_null_or_undefined());
+                if has_other {
+                    types.retain(|ty| !ty.is_null_or_undefined())
+                }
 
                 *ty = Type::Array(Array {
                     span,

@@ -55,26 +55,39 @@ fn run_test(file_name: PathBuf, for_error: bool) {
             }
             libs.sort();
             libs.dedup();
-            let env = Env::simple(
-                Rule {
-                    allow_unreachable_code: true,
-                    always_strict: false,
-                    no_implicit_any: true,
-                    allow_unused_labels: true,
-                    no_fallthrough_cases_in_switch: false,
-                    no_implicit_returns: false,
-                    no_implicit_this: false,
-                    no_strict_generic_checks: false,
-                    no_unused_locals: false,
-                    no_unused_parameters: false,
-                    strict_function_types: false,
-                    strict_null_checks: true,
-                    suppress_excess_property_errors: false,
-                    suppress_implicit_any_index_errors: false,
-                },
-                JscTarget::Es2020,
-                &libs,
-            );
+            let mut rule = Rule {
+                allow_unreachable_code: true,
+                always_strict: false,
+                no_implicit_any: true,
+                allow_unused_labels: true,
+                no_fallthrough_cases_in_switch: false,
+                no_implicit_returns: false,
+                no_implicit_this: false,
+                no_strict_generic_checks: false,
+                no_unused_locals: false,
+                no_unused_parameters: false,
+                strict_function_types: false,
+                strict_null_checks: true,
+                suppress_excess_property_errors: false,
+                suppress_implicit_any_index_errors: false,
+            };
+
+            for line in fm.src.lines() {
+                if !line.starts_with("//@") {
+                    continue;
+                }
+                let line = &line["//@".len()..];
+                if line.starts_with("strict:") {
+                    let value = line["strict:".len()..].parse::<bool>().unwrap();
+                    rule.strict_function_types = value;
+                    rule.strict_null_checks = value;
+                    continue;
+                }
+
+                panic!("Invalid directive: {:?}", line)
+            }
+
+            let env = Env::simple(rule, JscTarget::Es2020, &libs);
             let stable_env = env.shared().clone();
             let generator = module_id::Generator::default();
             let path = Arc::new(file_name.clone());
@@ -145,7 +158,7 @@ fn run_test(file_name: PathBuf, for_error: bool) {
             return;
         }
 
-        panic!("Failed to validate `{}`:\n{}", file_name.display(), res)
+        panic!("Failed to validate.\n{}\n{}", res, file_name.display())
     } else {
         res.compare_to_file(&file_name.with_extension("stdout")).unwrap();
     }

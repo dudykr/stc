@@ -1,6 +1,5 @@
 use self::return_type::LoopBreakerFinder;
 use super::Analyzer;
-use super::Ctx;
 use crate::{
     analyzer::{scope::ScopeKind, util::ResultExt},
     validator,
@@ -10,13 +9,11 @@ use rnode::NodeId;
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RBlockStmt;
 use stc_ts_ast_rnode::RBool;
-use stc_ts_ast_rnode::RDoWhileStmt;
 use stc_ts_ast_rnode::RForStmt;
 use stc_ts_ast_rnode::RStmt;
 use stc_ts_ast_rnode::RTsExprWithTypeArgs;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
-use stc_ts_ast_rnode::RWhileStmt;
 use stc_ts_ast_rnode::RWithStmt;
 use stc_ts_types::Type;
 use swc_common::DUMMY_SP;
@@ -63,36 +60,6 @@ impl Analyzer<'_, '_> {
                 }
             }
         }
-    }
-}
-
-#[validator]
-impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &RWhileStmt) {
-        let test = {
-            let ctx = Ctx {
-                in_cond: true,
-                ..self.ctx
-            };
-            node.test.validate_with_default(&mut *self.with_ctx(ctx))?
-        };
-        self.check_for_inifinite_loop(&test, &node.body);
-
-        node.body.visit_with(self);
-
-        Ok(())
-    }
-}
-
-#[validator]
-impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &RDoWhileStmt) {
-        node.body.visit_with(self);
-
-        let test = node.test.validate_with_default(self)?;
-        self.check_for_inifinite_loop(&test, &node.body);
-
-        Ok(())
     }
 }
 

@@ -47,6 +47,14 @@ warning: Type
    = note: typeof C
 
 warning: Type
+  --> $DIR/tests/pass/class/super/infer/super-arg-1.ts:13:9
+   |
+13 |         super();
+   |         ^^^^^^^
+   |
+   = note: any
+
+warning: Type
   --> $DIR/tests/pass/class/super/infer/super-arg-1.ts:17:9
    |
 17 |         super.foo();

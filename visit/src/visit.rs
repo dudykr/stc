@@ -1,6 +1,7 @@
 use crate::Visitable;
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::sync::Arc;
 use swc_common::Span;
 
 pub trait Visit<T: ?Sized + Visitable> {
@@ -78,6 +79,16 @@ where
 }
 
 impl<T, V> VisitWith<V> for Rc<T>
+where
+    T: Visitable,
+    V: ?Sized + Visit<T>,
+{
+    fn visit_children_with(&self, visitor: &mut V) {
+        visitor.visit(&**self)
+    }
+}
+
+impl<T, V> VisitWith<V> for Arc<T>
 where
     T: Visitable,
     V: ?Sized + Visit<T>,

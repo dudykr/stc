@@ -19,11 +19,10 @@ pub enum Enum {
 define_rnode!({
     pub struct Struct {
         pub span: Span,
-        #[rc]
+        #[arc]
         pub boxed: Box<Enum>,
-        #[refcell]
         pub items: Vec<Enum>,
-        #[rc]
+        #[arc]
         pub vec_opt_items: Vec<Option<Enum>>,
         pub opt_item: Option<Box<Enum>>,
     }

@@ -261,6 +261,13 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        match p {
+            RPat::Ident(i) if i.id.sym == *"this" => {
+                self.scope.this = Some(ty.clone());
+            }
+            _ => {}
+        }
+
         Ok(ty::FnParam {
             span: p.span(),
             pat: p.clone(),

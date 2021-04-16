@@ -1,5 +1,6 @@
 use self::bin::extract_name_for_assignment;
 use super::{marks::MarkExt, Analyzer};
+use crate::analyzer::scope::ScopeKind;
 use crate::analyzer::util::ResultExt;
 use crate::util::type_ext::TypeVecExt;
 use crate::util::RemoveTypes;
@@ -8,10 +9,9 @@ use crate::{
     ty,
     ty::{
         Array, EnumVariant, IndexSignature, IndexedAccessType, Interface, Intersection, Ref, Tuple, Type, TypeElement,
-        TypeLit, TypeParam, TypeParamInstantiation, Union,
+        TypeLit, TypeParam, TypeParamInstantiation,
     },
     type_facts::TypeFacts,
-    util::is_str_lit_or_union,
     validator,
     validator::ValidateWith,
     ValidationResult,
@@ -21,11 +21,9 @@ use rnode::NodeId;
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RAssignExpr;
 use stc_ts_ast_rnode::RBindingIdent;
-use stc_ts_ast_rnode::RCallExpr;
 use stc_ts_ast_rnode::RClassExpr;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RExprOrSuper;
-use stc_ts_ast_rnode::RFnExpr;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RLit;
 use stc_ts_ast_rnode::RMemberExpr;
@@ -50,15 +48,18 @@ use stc_ts_errors::debug::print_backtrace;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
+use stc_ts_type_ops::is_str_lit_or_union;
 use stc_ts_types::name::Name;
 use stc_ts_types::Alias;
 use stc_ts_types::Class;
 use stc_ts_types::ClassDef;
 use stc_ts_types::ClassMember;
 use stc_ts_types::ComputedKey;
+pub use stc_ts_types::IdCtx;
 use stc_ts_types::Key;
 use stc_ts_types::PropertySignature;
 use stc_ts_types::{ClassProperty, Id, Method, ModuleId, Operator, QueryExpr, QueryType, StaticThis};
+use stc_utils::panic_context;
 use std::borrow::Cow;
 use std::convert::TryFrom;
 use std::convert::TryInto;
@@ -82,12 +83,6 @@ mod optional_chaining;
 mod type_cast;
 mod unary;
 mod update;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum IdCtx {
-    Var,
-    Type,
-}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TypeOfMode {
@@ -123,6 +118,8 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult {
         self.record(e);
 
+        let _panic = panic_context::enter(format!("{:?}", e));
+
         let span = e.span();
         let need_type_param_handling = match e {
             RExpr::Member(..) => true,
@@ -133,12 +130,6 @@ impl Analyzer<'_, '_> {
 
         let mut ty = (|| -> ValidationResult {
             match e {
-                // super() returns any
-                RExpr::Call(RCallExpr {
-                    callee: RExprOrSuper::Super(..),
-                    ..
-                }) => Ok(Type::any(span)),
-
                 RExpr::TaggedTpl(e) => e.validate_with(self),
 
                 RExpr::Bin(e) => e.validate_with_args(self, type_ann),
@@ -153,15 +144,36 @@ impl Analyzer<'_, '_> {
                 RExpr::Unary(e) => e.validate_with(self),
 
                 RExpr::This(RThisExpr { span, .. }) => {
+                    let span = *span;
+
+                    let is_ref_to_module = match self.scope.kind() {
+                        ScopeKind::Module => true,
+                        _ => false,
+                    } || (self.ctx.in_computed_prop_name
+                        && match self.scope.scope_of_computed_props().map(|s| s.kind()) {
+                            Some(ScopeKind::Module) => true,
+                            _ => false,
+                        });
+                    if is_ref_to_module {
+                        self.storage.report(Error::ThisRefToModuleOrNamespace { span })
+                    }
+
                     if !self.scope.is_this_defined() {
                         return Ok(Type::Keyword(RTsKeywordType {
-                            span: *span,
+                            span,
                             kind: TsKeywordTypeKind::TsUndefinedKeyword,
                         }));
                     }
-                    let span = *span;
-                    if let Some(ty) = self.scope.this() {
-                        return Ok(ty.into_owned());
+
+                    let scope = if self.ctx.in_computed_prop_name {
+                        self.scope.scope_of_computed_props()
+                    } else {
+                        Some(&self.scope)
+                    };
+                    if let Some(scope) = scope {
+                        if let Some(ty) = scope.this() {
+                            return Ok(ty.into_owned());
+                        }
                     }
                     return Ok(Type::from(RTsThisType { span }));
                 }
@@ -277,8 +289,8 @@ impl Analyzer<'_, '_> {
 
                 RExpr::Arrow(ref e) => return Ok(e.validate_with_args(self, type_ann)?.into()),
 
-                RExpr::Fn(RFnExpr { ref function, .. }) => {
-                    return Ok(function.validate_with(self)?.into());
+                RExpr::Fn(f) => {
+                    return Ok(f.validate_with(self)?.into());
                 }
 
                 RExpr::Member(ref expr) => {
@@ -316,8 +328,31 @@ impl Analyzer<'_, '_> {
             }
         })()?;
 
+        if self.is_builtin {
+            // `Symbol.iterator` is defined multiple times, and it results in union of
+            // `symbol`s.
+            match &mut ty {
+                Type::Union(u) => {
+                    u.types.dedup_type();
+                }
+                _ => {}
+            }
+        }
+
+        ty.assert_valid();
+
         if need_type_param_handling {
             self.replace_invalid_type_params(&mut ty);
+        }
+
+        if !self.is_builtin {
+            debug_assert_ne!(
+                ty.span(),
+                DUMMY_SP,
+                "Found dummy span generated by validating an expresssion:\n{:?}\n{:?}",
+                e,
+                ty
+            )
         }
 
         // Exclude literals
@@ -327,9 +362,7 @@ impl Analyzer<'_, '_> {
                 _ => true,
             }
         {
-            if let Some(debugger) = &self.debugger {
-                debugger.dump_type(span, &ty);
-            }
+            self.dump_type(span, &ty);
         }
 
         Ok(ty)
@@ -494,7 +527,7 @@ impl Analyzer<'_, '_> {
                     Err(Error::ReferencedInInit { .. }) => {
                         is_any = true;
                     }
-                    Err(..) => {}
+                    Err(err) => self.storage.report(err),
                 }
             }
         }
@@ -549,6 +582,9 @@ impl Analyzer<'_, '_> {
 
                 RExpr::Lit(RLit::Num(n)) => Ok(Key::Num(n.clone())),
                 RExpr::Lit(RLit::BigInt(n)) => Ok(Key::BigInt(n.clone())),
+
+                RExpr::PrivateName(p) => Ok(Key::Private(p.clone().into())),
+
                 _ => unreachable!("non-computed-key: {:?}", prop),
             }
         }
@@ -721,8 +757,8 @@ impl Analyzer<'_, '_> {
             return Ok(matching_elements.pop());
         }
 
+        let mut has_index_signature = false;
         for el in members.iter() {
-            if prop.is_computed() {}
             match el {
                 TypeElement::Index(IndexSignature {
                     ref params,
@@ -730,6 +766,8 @@ impl Analyzer<'_, '_> {
                     readonly,
                     ..
                 }) => {
+                    has_index_signature = true;
+
                     if params.len() != 1 {
                         unimplemented!("Index signature with multiple parameters")
                     }
@@ -755,6 +793,10 @@ impl Analyzer<'_, '_> {
                         return Ok(Some(Type::any(span)));
                     }
 
+                    if (&**index_ty).type_eq(&*prop_ty) {
+                        return Ok(Some(type_ann.clone().map(|v| *v).unwrap_or_else(|| Type::any(span))));
+                    }
+
                     match prop_ty.normalize() {
                         // TODO: Only string or number
                         Type::EnumVariant(..) => {
@@ -764,26 +806,30 @@ impl Analyzer<'_, '_> {
 
                         _ => {}
                     }
-
-                    // This check exists to prefer a specific property over generic index signature.
-                    if prop.is_computed() || matching_elements.is_empty() {
-                        let ty = Type::IndexedAccessType(IndexedAccessType {
-                            span,
-                            obj_type: box obj.clone(),
-                            index_type: box prop_ty.into_owned(),
-                            readonly: *readonly,
-                        });
-
-                        return Ok(Some(ty));
-                    }
                 }
                 _ => {}
+            }
+        }
+
+        if has_index_signature {
+            // This check exists to prefer a specific property over generic index signature.
+            if prop.is_computed() || matching_elements.is_empty() {
+                let ty = Type::IndexedAccessType(IndexedAccessType {
+                    span,
+                    obj_type: box obj.clone(),
+                    index_type: box prop.ty().into_owned(),
+                    readonly: false,
+                });
+
+                return Ok(Some(ty));
             }
         }
 
         if matching_elements.len() == 0 {
             return Ok(None);
         }
+
+        matching_elements.dedup_type();
 
         Ok(Some(Type::union(matching_elements)))
     }
@@ -830,9 +876,12 @@ impl Analyzer<'_, '_> {
         let computed = prop.is_computed();
 
         if id_ctx == IdCtx::Var {
+            // TODO: Use parent scope
+
             // Recursive method call
             if !computed
                 && obj.is_this()
+                && !self.ctx.in_computed_prop_name
                 && (self.scope.is_this_ref_to_object_lit() || self.scope.is_this_ref_to_class())
             {
                 if let Some(declaring) = &self.scope.declaring_prop() {
@@ -843,7 +892,7 @@ impl Analyzer<'_, '_> {
             }
 
             match &obj {
-                Type::This(this) if self.scope.is_this_ref_to_object_lit() => {
+                Type::This(this) if !self.ctx.in_computed_prop_name && self.scope.is_this_ref_to_object_lit() => {
                     if let Key::Computed(prop) = prop {
                         //
                         match &*prop.expr {
@@ -860,9 +909,11 @@ impl Analyzer<'_, '_> {
                         self.marks().infected_by_this_in_object_literal.apply_to_type(&mut v);
                         return Ok(v);
                     }
+
+                    return Ok(Type::any(span));
                 }
 
-                Type::This(this) if self.scope.is_this_ref_to_class() => {
+                Type::This(this) if !self.ctx.in_computed_prop_name && self.scope.is_this_ref_to_class() => {
                     if !computed {
                         // We are currently declaring a class.
                         for (_, member) in self.scope.class_members() {
@@ -980,6 +1031,26 @@ impl Analyzer<'_, '_> {
 
                 _ => {}
             }
+        }
+
+        match obj.normalize() {
+            Type::This(..) => {
+                let scope = if self.ctx.in_computed_prop_name {
+                    self.scope.scope_of_computed_props()
+                } else {
+                    Some(&self.scope)
+                };
+                if let Some(this) = scope.and_then(|scope| scope.this().map(Cow::into_owned)) {
+                    if this.normalize().is_this() {
+                        unreachable!("this() should not be `this`")
+                    }
+
+                    return self
+                        .access_property(span, this, prop, type_mode, id_ctx)
+                        .context("tried to access property of `this`");
+                }
+            }
+            _ => {}
         }
 
         let ctx = Ctx {
@@ -1440,8 +1511,12 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                tys.dedup_type();
+
                 // TODO: Validate that the ty has same type instead of returning union.
-                return Ok(Type::union(tys));
+                let ty = Type::union(tys);
+                ty.assert_valid();
+                return Ok(ty);
             }
 
             Type::Tuple(Tuple { ref elems, .. }) => match prop {
@@ -1539,6 +1614,22 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                // Classes extends prototype of `Function` (global interface)
+                if let Ok(ty) = self.access_property(
+                    span,
+                    Type::Ref(Ref {
+                        span: span.with_ctxt(Default::default()),
+                        ctxt: ModuleId::builtin(),
+                        type_name: RTsEntityName::Ident(RIdent::new(js_word!("Function"), DUMMY_SP)),
+                        type_args: None,
+                    }),
+                    prop,
+                    type_mode,
+                    id_ctx,
+                ) {
+                    return Ok(ty);
+                }
+
                 return Err(Error::NoSuchPropertyInClass {
                     span,
                     class_name: cls.name.clone(),
@@ -1573,11 +1664,43 @@ impl Analyzer<'_, '_> {
             }
 
             Type::This(..) => {
+                // TODO: Use parent scope in computed property names.
                 if let Some(this) = self.scope.this().map(|this| this.into_owned()) {
+                    if self.ctx.in_computed_prop_name {
+                        self.storage
+                            .report(Error::CannotReferenceThisInComputedPropName { span });
+                        // Return any to prevent other errors
+                        return Ok(Type::any(span));
+                    }
+
+                    if this.normalize().is_this() {
+                        unreachable!("this() should not be `this`")
+                    }
+
                     return self.access_property(span, this, prop, type_mode, id_ctx);
                 } else if self.ctx.in_argument {
                     // We will adjust `this` using information from callee.
                     return Ok(Type::any(span));
+                }
+
+                let scope = if self.ctx.in_computed_prop_name {
+                    self.scope.scope_of_computed_props()
+                } else {
+                    Some(&self.scope)
+                };
+
+                match scope.map(|scope| scope.kind()) {
+                    Some(ScopeKind::Fn) => {
+                        // TODO
+                        return Ok(Type::any(span));
+                    }
+                    None => {
+                        // Global this
+                        return Ok(Type::any(span));
+                    }
+                    kind => {
+                        unimplemented!("access property of this to {:?}", kind)
+                    }
                 }
             }
 
@@ -1606,7 +1729,11 @@ impl Analyzer<'_, '_> {
                     return Ok(new.into_iter().next().unwrap());
                 }
 
-                return Ok(Type::Union(Union { span, types: new }));
+                new.dedup_type();
+
+                let mut ty = Type::union(new);
+                ty.respan(span);
+                return Ok(ty);
             }
 
             Type::Mapped(m) => {
@@ -1643,11 +1770,20 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
 
-                let obj = self
+                let expanded = self
                     .expand_mapped(span, m)
                     .context("tried to expand a mapped type to access property")?;
 
-                return self.access_property_inner(span, obj, prop, type_mode, id_ctx);
+                if let Some(obj) = expanded {
+                    return self.access_property_inner(span, obj, prop, type_mode, id_ctx);
+                }
+
+                return Ok(Type::IndexedAccessType(IndexedAccessType {
+                    span,
+                    readonly: false,
+                    obj_type: box obj,
+                    index_type: box prop.ty().into_owned(),
+                }));
             }
 
             Type::Ref(r) => {
@@ -1736,6 +1872,11 @@ impl Analyzer<'_, '_> {
 
                 return self.access_property(span, interface, prop, type_mode, id_ctx);
             }
+
+            Type::Constructor(c) => match prop {
+                Key::Num(_) | Key::BigInt(_) => return Ok(Type::any(span)),
+                _ => {}
+            },
 
             _ => {}
         }
@@ -1834,12 +1975,15 @@ impl Analyzer<'_, '_> {
                 }
             }
         }
-
-        ty = self.apply_type_facts(&name, ty);
+        if !self.is_builtin {
+            ty = self.apply_type_facts(&name, ty);
+        }
 
         ty = self.type_to_query_if_required(span, i, ty);
 
-        self.exclude_types_using_fact(&name, &mut ty);
+        if !self.is_builtin {
+            self.exclude_types_using_fact(&name, &mut ty);
+        }
 
         if !modules.is_empty() {
             modules.push(ty);
@@ -1851,6 +1995,8 @@ impl Analyzer<'_, '_> {
         }
 
         slog::debug!(self.logger, "type_of_var({:?}): {:?}", id, ty);
+
+        ty.reposition(i.span);
 
         Ok(ty)
     }
@@ -2204,6 +2350,8 @@ impl Analyzer<'_, '_> {
             }
 
             RExprOrSuper::Super(RSuper { span, .. }) => {
+                self.report_error_for_super_reference(span, false);
+
                 if let Some(v) = self.scope.get_super_class() {
                     v.clone()
                 } else {
@@ -2329,6 +2477,50 @@ impl Analyzer<'_, '_> {
                 //
             }
             _ => false,
+        }
+    }
+
+    pub(crate) fn report_error_for_super_reference(&mut self, span: Span, is_super_call: bool) {
+        if !self.ctx.in_computed_prop_name {
+            return;
+        }
+
+        match self
+            .scope
+            .first_kind(|kind| match kind {
+                ScopeKind::TypeParams
+                | ScopeKind::Flow
+                | ScopeKind::Call
+                | ScopeKind::Block
+                | ScopeKind::LoopBody
+                | ScopeKind::ObjectLit => false,
+                ScopeKind::Fn
+                | ScopeKind::Method { .. }
+                | ScopeKind::Class
+                | ScopeKind::Module
+                | ScopeKind::Constructor
+                | ScopeKind::ArrowFn => true,
+            })
+            .map(|scope| scope.kind())
+        {
+            Some(ScopeKind::Class) => {
+                // Using proerties of super class in class property names are not allowed.
+                self.storage
+                    .report(Error::CannotReferenceSuperInComputedPropName { span })
+            }
+
+            Some(ScopeKind::ArrowFn) => {
+                if !is_super_call {
+                    return;
+                }
+
+                self.storage
+                    .report(Error::CannotReferenceSuperInComputedPropName { span })
+            }
+
+            kind => {
+                dbg!(kind);
+            }
         }
     }
 

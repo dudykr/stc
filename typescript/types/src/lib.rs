@@ -36,9 +36,12 @@ use stc_ts_ast_rnode::RTsModuleName;
 use stc_ts_ast_rnode::RTsNamespaceDecl;
 use stc_ts_ast_rnode::RTsThisType;
 use stc_ts_ast_rnode::RTsThisTypeOrIdent;
+use stc_utils::panic_context;
 use stc_visit::Visit;
 use stc_visit::Visitable;
 use std::borrow::Cow;
+use std::fmt;
+use std::fmt::Formatter;
 use std::{
     fmt::Debug,
     iter::FusedIterator,
@@ -65,6 +68,12 @@ pub mod macros;
 mod metadata;
 pub mod module_id;
 pub mod name;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum IdCtx {
+    Var,
+    Type,
+}
 
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct ModuleTypeData {
@@ -326,7 +335,7 @@ impl Key {
                 span: n.span,
                 lit: RTsLit::BigInt(n.clone()),
             })),
-            Key::Private(..) => todo!("access to type elements using private name"),
+            Key::Private(..) => unimplemented!("access to type elements using private name"),
         }
     }
 }
@@ -419,7 +428,7 @@ pub struct IndexedAccessType {
 
 assert_eq_size!(IndexedAccessType, [u8; 32]);
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Ref {
     pub span: Span,
     /// Id of the module where the ref is used in.
@@ -430,6 +439,16 @@ pub struct Ref {
 }
 
 assert_eq_size!(Ref, [u8; 64]);
+
+impl Debug for Ref {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
+        if let Some(type_args) = &self.type_args {
+            write!(f, "{:?}<{:?}>", self.type_name, type_args)
+        } else {
+            write!(f, "{:?}", self.type_name)
+        }
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct InferType {
@@ -513,9 +532,10 @@ pub struct ClassDef {
     pub super_class: Option<Box<Type>>,
     pub body: Vec<ClassMember>,
     pub type_params: Option<TypeParamDecl>,
+    pub implements: Box<Vec<TsExpr>>,
 }
 
-assert_eq_size!(ClassDef, [u8; 104]);
+assert_eq_size!(ClassDef, [u8; 112]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit)]
 pub enum ClassMember {
@@ -654,6 +674,8 @@ pub struct TsExpr {
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct TypeParamInstantiation {
     pub span: Span,
+
+    /// TODO: Rename to `args`.
     pub params: Vec<Type>,
 }
 
@@ -698,6 +720,9 @@ pub struct CallSignature {
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct ConstructorSignature {
     pub span: Span,
+    /// Only for synthesized type elements.
+    #[use_eq]
+    pub accessibility: Option<Accessibility>,
     pub params: Vec<FnParam>,
     pub ret_ty: Option<Box<Type>>,
     pub type_params: Option<TypeParamDecl>,
@@ -706,6 +731,9 @@ pub struct ConstructorSignature {
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct PropertySignature {
     pub span: Span,
+    /// Only for synthesized type elements.
+    #[use_eq]
+    pub accessibility: Option<Accessibility>,
     pub readonly: bool,
     pub key: Key,
     pub optional: bool,
@@ -717,6 +745,9 @@ pub struct PropertySignature {
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct MethodSignature {
     pub span: Span,
+    /// Only for synthesized type elements.
+    #[use_eq]
+    pub accessibility: Option<Accessibility>,
     pub readonly: bool,
     pub key: Key,
     pub optional: bool,
@@ -750,6 +781,27 @@ pub struct Union {
 }
 
 assert_eq_size!(Union, [u8; 40]);
+
+impl Union {
+    pub fn assert_valid(&self) {
+        if !cfg!(debug_assertions) {
+            return;
+        }
+
+        self.types.iter().for_each(|ty| ty.assert_valid());
+
+        for (i, t1) in self.types.iter().enumerate() {
+            for (j, t2) in self.types.iter().enumerate() {
+                if i == j {
+                    continue;
+                }
+                if t1.type_eq(t2) {
+                    panic!("A union type has duplicate elements: ({:?})", t1)
+                }
+            }
+        }
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct FnParam {
@@ -804,6 +856,7 @@ pub struct Constructor {
     pub span: Span,
     pub type_params: Option<TypeParamDecl>,
     pub params: Vec<FnParam>,
+    /// The return type.
     pub type_ann: Box<Type>,
     pub is_abstract: bool,
 }
@@ -872,10 +925,12 @@ impl Type {
     /// Note:
     ///
     ///  - never types are excluded.
-    pub fn union<I: IntoIterator<Item = Self>>(iter: I) -> Self {
+    pub fn union<I: IntoIterator<Item = Self> + Debug>(iter: I) -> Self {
+        let _panic = panic_context::enter(format!("Iterator: {:?}", iter));
+
         let mut span = DUMMY_SP;
 
-        let mut tys = vec![];
+        let mut elements = vec![];
 
         for ty in iter {
             let sp = ty.span();
@@ -887,23 +942,31 @@ impl Type {
                 span = span.with_hi(sp.hi());
             }
 
-            match ty {
-                Type::Union(Union { types, .. }) => {
-                    assert_ne!(types, vec![]);
-                    tys.extend(types);
+            if ty.normalize().is_union_type() {
+                let types = ty.foldable().union_type().unwrap().types;
+                for new in types {
+                    if elements.iter().any(|prev: &Type| prev.type_eq(&new)) {
+                        continue;
+                    }
+                    elements.push(new)
                 }
-
-                _ => tys.push(ty),
+            } else {
+                if elements.iter().any(|prev: &Type| prev.type_eq(&ty)) {
+                    continue;
+                }
+                elements.push(ty)
             }
         }
+        // Drop `never`s.
+        elements.retain(|ty| !ty.is_never());
 
-        tys.retain(|ty| !ty.is_never());
-
-        match tys.len() {
+        let ty = match elements.len() {
             0 => Type::never(span),
-            1 => tys.into_iter().next().unwrap(),
-            _ => Type::Union(Union { span, types: tys }),
-        }
+            1 => elements.into_iter().next().unwrap(),
+            _ => Type::Union(Union { span, types: elements }),
+        };
+        ty.assert_valid();
+        ty
     }
 
     pub fn contains_void(&self) -> bool {
@@ -978,6 +1041,18 @@ impl Type {
 
             _ => false,
         }
+    }
+
+    pub fn is_null(&self) -> bool {
+        self.is_kwd(TsKeywordTypeKind::TsNullKeyword)
+    }
+
+    pub fn is_undefined(&self) -> bool {
+        self.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
+    }
+
+    pub fn is_null_or_undefined(&self) -> bool {
+        self.is_null() || self.is_undefined()
     }
 
     pub fn is_kwd(&self, k: TsKeywordTypeKind) -> bool {
@@ -1119,6 +1194,27 @@ impl Type {
             Type::StaticThis(ty) => ty.span = span,
 
             Type::Instance(ty) => ty.span = span,
+        }
+    }
+}
+
+impl Type {
+    /// Panics if type is invalid.
+    ///
+    /// # Validity
+    ///
+    /// For example, `any | any` is invalid because
+    /// union should not have duplicate elements.
+    pub fn assert_valid(&self) {
+        if !cfg!(debug_assertions) {
+            return;
+        }
+
+        let _panic = panic_context::enter(format!("{:?}", self));
+
+        match self.normalize() {
+            Type::Union(ty) => ty.assert_valid(),
+            _ => {}
         }
     }
 }

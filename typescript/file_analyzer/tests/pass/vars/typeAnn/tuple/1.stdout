@@ -1,0 +1,8 @@
+warning: Type
+ --> $DIR/tests/pass/vars/typeAnn/tuple/1.ts:1:38
+  |
+1 | export var tuple: [number, string] = [2, "3"]
+  |                                      ^^^^^^^^
+  |
+  = note: [2, "3"]
+

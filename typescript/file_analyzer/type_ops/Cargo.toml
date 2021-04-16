@@ -1,0 +1,15 @@
+[package]
+authors = ["강동윤 <kdy1@dudy.kr>"]
+edition = "2018"
+name = "stc_ts_type_ops"
+publish = false
+version = "0.1.0"
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+rnode = {path = "../../../rnode"}
+stc_ts_ast_rnode = {path = "../../ast_rnode"}
+stc_ts_types = {path = "../../types"}
+stc_ts_utils = {path = "../../utils"}
+swc_common = "0.10.13"
+swc_ecma_ast = "0.42.0"

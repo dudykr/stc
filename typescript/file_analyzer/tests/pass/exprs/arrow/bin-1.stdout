@@ -52,7 +52,7 @@ warning: Type
 3 | let g = f || (abc => { void abc.toLowerCase() })
   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   |
-  = note: (x: string) => void | (abc: string) => void
+  = note: (x: string) => void
 
 warning: Type
  --> $DIR/tests/pass/exprs/arrow/bin-1.ts:4:10

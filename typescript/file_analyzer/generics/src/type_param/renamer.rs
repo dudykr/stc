@@ -40,6 +40,7 @@ impl Fold<MethodSignature> for TypeParamRenamer {
         let ret_ty = m.ret_ty.fold_with(self);
 
         MethodSignature {
+            accessibility: m.accessibility,
             span: m.span,
             readonly: m.readonly,
             key,

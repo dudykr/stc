@@ -1,4 +1,5 @@
 use std::cell::RefCell;
+use std::sync::Arc;
 use swc_common::Span;
 
 use crate::Visitable;
@@ -35,6 +36,15 @@ where
     fn visit_mut_children_with(&mut self, v: &mut V) {
         v.visit_mut(self)
     }
+}
+
+/// Noop.
+impl<T, V> VisitMutWith<V> for Arc<T>
+where
+    T: Visitable,
+    V: ?Sized + VisitMut<T>,
+{
+    fn visit_mut_children_with(&mut self, _: &mut V) {}
 }
 
 impl<T, V> VisitMutWith<V> for RefCell<T>

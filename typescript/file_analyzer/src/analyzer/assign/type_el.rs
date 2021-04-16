@@ -14,8 +14,9 @@ use stc_ts_types::Array;
 use stc_ts_types::Class;
 use stc_ts_types::ClassDef;
 use stc_ts_types::ClassMember;
-use stc_ts_types::Interface;
 use stc_ts_types::MethodSignature;
+use stc_ts_types::ModuleId;
+use stc_ts_types::Operator;
 use stc_ts_types::PropertySignature;
 use stc_ts_types::Ref;
 use stc_ts_types::Tuple;
@@ -23,13 +24,16 @@ use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
 use stc_ts_types::TypeLitMetadata;
+use stc_ts_types::TypeParamInstantiation;
 use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::Span;
 use swc_common::Spanned;
 use swc_common::TypeEq;
+use swc_common::DUMMY_SP;
 use swc_ecma_ast::Accessibility;
 use swc_ecma_ast::TsKeywordTypeKind;
+use swc_ecma_ast::TsTypeOperatorOp;
 
 impl Analyzer<'_, '_> {
     /// This method is called when lhs of assignment is interface or type
@@ -149,30 +153,57 @@ impl Analyzer<'_, '_> {
                     .store(&mut errors);
                 }
 
-                Type::Interface(Interface { body, .. }) => {
-                    if !opts.allow_unknown_rhs {
-                        for r in body {
-                            unhandled_rhs.push(r.span());
-                        }
+                Type::Interface(..) => {
+                    if let Some(rty) = self
+                        .type_to_type_lit(span, &rhs)?
+                        .map(Cow::into_owned)
+                        .map(Type::TypeLit)
+                    {
+                        return self.assign_to_type_elements(opts, lhs_span, lhs, &rty, lhs_metadata);
                     }
-                    // TODO: Check parent interface
 
-                    self.handle_assignment_of_type_elements_to_type_elements(
-                        opts,
-                        &mut missing_fields,
-                        &mut unhandled_rhs,
-                        lhs,
-                        body,
-                    )
-                    .context("tried assignment of an interface to a type literal")
-                    .store(&mut errors);
+                    return Err(Error::SimpleAssignFailed { span });
                 }
 
                 Type::Tuple(..) if lhs.is_empty() => return Ok(()),
 
                 Type::Array(..) if lhs.is_empty() => return Ok(()),
 
-                Type::Array(..) => return Err(Error::InvalidAssignmentOfArray { span }),
+                Type::Array(r_arr) => {
+                    if lhs.iter().any(|member| match member {
+                        TypeElement::Property(PropertySignature { optional: true, .. })
+                        | TypeElement::Method(MethodSignature { optional: true, .. }) => true,
+                        _ => false,
+                    }) {
+                        return Err(Error::SimpleAssignFailed { span });
+                    }
+
+                    //
+                    let r_arr = Type::Ref(Ref {
+                        span,
+                        ctxt: ModuleId::builtin(),
+                        type_name: RTsEntityName::Ident(RIdent::new("Array".into(), DUMMY_SP)),
+                        type_args: Some(box TypeParamInstantiation {
+                            span: DUMMY_SP,
+                            params: vec![*r_arr.elem_type.clone()],
+                        }),
+                    });
+
+                    let rhs = self.normalize(&r_arr, Default::default())?;
+
+                    return self
+                        .assign_to_type_elements(
+                            AssignOpts {
+                                allow_unknown_rhs: true,
+                                ..opts
+                            },
+                            lhs_span,
+                            lhs,
+                            &rhs,
+                            lhs_metadata,
+                        )
+                        .context("tried to assign an array as interface to type elements");
+                }
 
                 Type::Tuple(rhs) => {
                     // Handle { 0: nubmer } = [1]
@@ -194,7 +225,7 @@ impl Analyzer<'_, '_> {
 
                 Type::ClassDef(rhs_cls) => {
                     let rhs = self
-                        .type_to_type_lit(span, rhs)
+                        .type_to_type_lit(span, &rhs)
                         .context("tried to convert a class definition into a type literal for assignment")?
                         .map(Cow::into_owned)
                         .map(Type::TypeLit)
@@ -231,7 +262,7 @@ impl Analyzer<'_, '_> {
                     // }
 
                     let rhs = self
-                        .type_to_type_lit(span, rhs)
+                        .type_to_type_lit(span, &rhs)
                         .context("tried to convert a class into type literal for assignment")?
                         .map(Cow::into_owned)
                         .map(Type::TypeLit)
@@ -265,7 +296,12 @@ impl Analyzer<'_, '_> {
                 })
                 | Type::Lit(RTsLitType {
                     lit: RTsLit::Str(..), ..
-                }) if lhs.is_empty() => return Ok(()),
+                })
+                | Type::Mapped(..)
+                    if lhs.is_empty() =>
+                {
+                    return Ok(())
+                }
 
                 Type::Enum(r) => {
                     let rhs = self.enum_to_type_lit(r).map(Type::TypeLit)?;
@@ -285,7 +321,7 @@ impl Analyzer<'_, '_> {
 
                 Type::Function(..) | Type::Constructor(..) => {
                     let rhs = self
-                        .type_to_type_lit(span, rhs)
+                        .type_to_type_lit(span, &rhs)
                         .context("tried to convert a function to a type literal for asssignment")?
                         .map(Cow::into_owned)
                         .map(Type::TypeLit)
@@ -328,6 +364,41 @@ impl Analyzer<'_, '_> {
                 // TODO: Strict mode
                 Type::Keyword(RTsKeywordType {
                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                    ..
+                }) => return Ok(()),
+
+                Type::Mapped(r_mapped) => {
+                    for l_el in lhs {
+                        match l_el {
+                            TypeElement::Call(_) => {}
+                            TypeElement::Constructor(_) => {}
+                            TypeElement::Property(_) => {}
+                            TypeElement::Method(_) => {}
+                            TypeElement::Index(l_index) => {
+                                if let Some(Type::Operator(Operator {
+                                    op: TsTypeOperatorOp::KeyOf,
+                                    ty: r_constraint,
+                                    ..
+                                })) = r_mapped.type_param.constraint.as_deref().map(|ty| ty.normalize())
+                                {
+                                    if let Ok(()) = self.assign_with_opts(opts, &l_index.params[0].ty, &&r_constraint) {
+                                        if let Some(l_type_ann) = &l_index.type_ann {
+                                            if let Some(r_ty) = &r_mapped.ty {
+                                                self.assign_with_opts(opts, &l_type_ann, &r_ty)
+                                                    .context("tried to assign a mapped type to an index signature")?;
+                                            }
+                                        }
+
+                                        return Ok(());
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsObjectKeyword,
                     ..
                 }) => return Ok(()),
 
@@ -461,46 +532,35 @@ impl Analyzer<'_, '_> {
         lhs: &[TypeElement],
         rhs: &[TypeElement],
     ) -> ValidationResult<()> {
-        // TODO: Index signature can eat multiple rhs.
+        let span = opts.span;
 
         for (i, m) in lhs.into_iter().enumerate().filter(|(_, m)| m.key().is_some()) {
             let res = self
-                .assign_type_elements_to_type_element(opts, missing_fields, m, rhs)
+                .assign_type_elements_to_type_element(opts, missing_fields, unhandled_rhs, m, rhs)
                 .with_context(|| format!("tried to assign to {}th element: {:?}", i, m.key()));
 
-            let success = match res {
-                Ok(()) => true,
-                Err(Error::Errors { ref errors, .. }) if errors.is_empty() => true,
+            match res {
+                Ok(()) => {}
+                Err(Error::Errors { ref errors, .. }) if errors.is_empty() => {}
                 Err(err) => return Err(err),
-            };
-            if success && rhs.len() > i {
-                if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rhs[i].span()) {
-                    unhandled_rhs.remove(pos);
-                } else {
-                    // panic!("it should be removable")
-                }
             }
         }
+
+        let mut errors = vec![];
 
         // Index signature can eat multiple rhs.
         for m in lhs.iter().filter(|m| m.key().is_none()) {
             for r in rhs {
                 let res = self
-                    .assign_type_elements_to_type_element(opts, missing_fields, m, &[r.clone()])
+                    .assign_type_elements_to_type_element(opts, missing_fields, unhandled_rhs, m, &[r.clone()])
                     .with_context(|| format!("tried to assign to an element (not a key-based)"));
 
-                let success = match res {
-                    Ok(()) => true,
-                    Err(Error::Errors { ref errors, .. }) if errors.is_empty() => true,
-                    Err(..) => false,
-                };
-
-                if success {
-                    if let Some(pos) = unhandled_rhs.iter().position(|span| *span == r.span()) {
-                        unhandled_rhs.remove(pos);
-                    }
-                }
+                errors.extend(res.err());
             }
+        }
+
+        if !errors.is_empty() {
+            return Err(Error::Errors { span, errors });
         }
 
         Ok(())
@@ -511,39 +571,63 @@ impl Analyzer<'_, '_> {
         &mut self,
         opts: AssignOpts,
         missing_fields: &mut Vec<TypeElement>,
-        m: &TypeElement,
+        unhandled_rhs: &mut Vec<Span>,
+        lm: &TypeElement,
         rhs_members: &[TypeElement],
     ) -> ValidationResult<()> {
         let span = opts.span;
         // We need this to show error if not all of rhs_member is matched
 
-        if let Some(l_key) = m.key() {
+        if let Some(l_key) = lm.key() {
             for rm in rhs_members {
                 if let Some(r_key) = rm.key() {
+                    let opts = AssignOpts {
+                        right_ident_span: Some(r_key.span()),
+                        ..opts
+                    };
                     if l_key.type_eq(&*r_key) {
-                        match m {
+                        match lm {
                             TypeElement::Property(ref lp) => match rm {
                                 TypeElement::Property(ref r_el) => {
+                                    if lp.accessibility != r_el.accessibility {
+                                        if lp.accessibility == Some(Accessibility::Private)
+                                            || r_el.accessibility == Some(Accessibility::Private)
+                                        {
+                                            return Err(Error::AssignFailedDueToAccessibility { span });
+                                        }
+                                    }
+
                                     self.assign_inner(
                                         lp.type_ann.as_deref().unwrap_or(&Type::any(span)),
                                         r_el.type_ann.as_deref().unwrap_or(&Type::any(span)),
                                         opts,
                                     )?;
+                                    if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
+                                        unhandled_rhs.remove(pos);
+                                    }
                                     return Ok(());
                                 }
                                 TypeElement::Method(rm) => {
                                     if let Some(lp_ty) = &lp.type_ann {
                                         if let Type::Function(lp_ty) = lp_ty.normalize() {
-                                            self.assign_params(opts, &lp_ty.params, &rm.params).context(
+                                            self.assign_params(opts, &lp_ty.params, &rm.params, true).context(
                                                 "tried to assign parameters of a method property to the parameters of \
                                                  a property with callable type",
                                             )?;
 
-                                            // TODO: Return type
-
-                                            return Ok(());
+                                            if let Some(r_ret_ty) = &rm.ret_ty {
+                                                self.assign_with_opts(opts, &lp_ty.ret_ty, &r_ret_ty).context(
+                                                    "tried to assign return type of a method property to the return \
+                                                     type of a property with callable type",
+                                                )?;
+                                            }
                                         }
                                     }
+
+                                    if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
+                                        unhandled_rhs.remove(pos);
+                                    }
+                                    return Ok(());
                                 }
                                 _ => {}
                             },
@@ -553,9 +637,13 @@ impl Analyzer<'_, '_> {
                                 TypeElement::Method(ref rm) => {
                                     //
 
-                                    self.assign_params(opts, &lm.params, &rm.params)?;
+                                    self.assign_params(opts, &lm.params, &rm.params, true)?;
 
                                     // TODO: Return type
+
+                                    if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
+                                        unhandled_rhs.remove(pos);
+                                    }
 
                                     return Ok(());
                                 }
@@ -564,16 +652,18 @@ impl Analyzer<'_, '_> {
                                     // Allow assigning property with callable type to methods.
                                     if let Some(rp_ty) = &rp.type_ann {
                                         if let Type::Function(rp_ty) = rp_ty.normalize() {
-                                            self.assign_params(opts, &lm.params, &rp_ty.params).context(
+                                            self.assign_params(opts, &lm.params, &rp_ty.params, true).context(
                                                 "tried to assign parameters of a property with callable type to a \
                                                  method parameters",
                                             )?;
 
                                             // TODO: Return type
-
-                                            return Ok(());
                                         }
                                     }
+                                    if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
+                                        unhandled_rhs.remove(pos);
+                                    }
+                                    return Ok(());
                                 }
                                 _ => {}
                             },
@@ -583,19 +673,43 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            match m {
+            match lm {
                 TypeElement::Property(PropertySignature { optional: true, .. })
                 | TypeElement::Method(MethodSignature { optional: true, .. }) => {}
                 _ => {
                     // No property with `key` found.
-                    missing_fields.push(m.clone());
+                    missing_fields.push(lm.clone());
                 }
             }
         } else {
-            match m {
+            match lm {
                 // TODO: Check type of the index.
-                TypeElement::Index(..) => {
+                TypeElement::Index(l_index) => {
                     // TODO: Verify
+                    for rm in rhs_members {
+                        match rm {
+                            TypeElement::Call(_) | TypeElement::Constructor(_) => continue,
+
+                            TypeElement::Property(r_prop) => {
+                                if let Ok(()) = self.assign(&l_index.params[0].ty, &r_prop.key.ty(), span) {
+                                    if let Some(l_index_ret_ty) = &l_index.type_ann {
+                                        if let Some(r_prop_ty) = &r_prop.type_ann {
+                                            self.assign_with_opts(opts, &l_index_ret_ty, &&r_prop_ty).context(
+                                                "tried to assign a type of property to thr type of an index signature",
+                                            )?;
+                                        }
+                                    }
+                                }
+                            }
+
+                            TypeElement::Method(_) => {
+                                slog::error!(self.logger, "unimplemented: Index = Method");
+                            }
+                            TypeElement::Index(_) => {
+                                slog::error!(self.logger, "unimplemented: Index = Index");
+                            }
+                        }
+                    }
                 }
                 TypeElement::Call(..) => {
                     //
@@ -603,16 +717,24 @@ impl Analyzer<'_, '_> {
                         match rm {
                             // TODO: Check type of parameters
                             // TODO: Check return type
-                            TypeElement::Call(..) => return Ok(()),
+                            TypeElement::Call(..) => {
+                                if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
+                                    unhandled_rhs.remove(pos);
+                                }
+
+                                return Ok(());
+                            }
                             _ => {}
                         }
                     }
 
-                    missing_fields.push(m.clone());
+                    missing_fields.push(lm.clone());
                 }
                 _ => {}
             }
         }
+
+        unhandled_rhs.clear();
 
         Ok(())
     }

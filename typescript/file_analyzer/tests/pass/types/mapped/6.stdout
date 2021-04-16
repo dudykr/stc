@@ -1,0 +1,20 @@
+warning: Type
+ --> $DIR/tests/pass/types/mapped/6.ts:3:17
+  |
+3 | export let x4 = f4();
+  |                 ^^
+  |
+  = note: <T1 extends Number>() => {
+              [P in keyof T1]: void;
+          }
+
+warning: Type
+ --> $DIR/tests/pass/types/mapped/6.ts:3:17
+  |
+3 | export let x4 = f4();
+  |                 ^^^^
+  |
+  = note: {
+              [P in keyof Number]: void;
+          }
+

@@ -10,6 +10,24 @@ defaults:
     shell: bash
 
 jobs:
+  check-license:
+    name: Check license
+    runs-on: [self-hosted, docker]
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+
+      - name: Install required tools
+        run: |
+          cargo install cargo-deny
+
+      - name: Check licenses
+        run: |
+          cargo deny check
   fmt:
     name: Formatting
     runs-on: [self-hosted, docker]
@@ -19,7 +37,6 @@ jobs:
       - name: Install rust
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly
           profile: minimal
           components: rustfmt
 
@@ -38,7 +55,6 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly
 
       - uses: actions/setup-node@v2
         with:
@@ -98,7 +114,6 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly
 
       - uses: actions/setup-node@v2
         with:

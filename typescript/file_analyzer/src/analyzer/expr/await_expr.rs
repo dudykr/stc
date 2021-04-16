@@ -11,24 +11,30 @@ use swc_atoms::js_word;
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RAwaitExpr) -> ValidationResult {
-        let arg_ty = e.arg.validate_with_default(self)?;
+        self.with(|a: &mut Analyzer| -> ValidationResult<_> {
+            let arg_ty = e.arg.validate_with_default(a)?;
 
-        // TODO: Check if the `Promise` is that of global.
-        match &arg_ty {
-            Type::Ref(Ref {
-                type_name: RTsEntityName::Ident(i),
-                type_args: Some(type_args),
-                ..
-            }) => {
-                if i.sym == js_word!("Promise") {
-                    if !type_args.params.is_empty() {
-                        return Ok(type_args.params[0].clone());
+            // TODO: Check if the `Promise` is that of global.
+            match &arg_ty {
+                Type::Ref(Ref {
+                    type_name: RTsEntityName::Ident(i),
+                    type_args: Some(type_args),
+                    ..
+                }) => {
+                    if i.sym == js_word!("Promise") {
+                        if !type_args.params.is_empty() {
+                            return Ok(type_args.params[0].clone());
+                        }
                     }
                 }
+                _ => {}
             }
-            _ => {}
-        }
 
-        Ok(arg_ty)
+            Ok(arg_ty)
+        })
+        .map(|mut ty| {
+            ty.reposition(e.span);
+            ty
+        })
     }
 }

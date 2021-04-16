@@ -1,0 +1,32 @@
+warning: Type
+ --> $DIR/tests/pass/exprs/arrow/contextualTyping/iterable/1.ts:1:58
+  |
+1 | export var iter: Iterable<(x: string) => number> = [s => s.length];
+  |                                                          ^
+  |
+  = note: string
+
+warning: Type
+ --> $DIR/tests/pass/exprs/arrow/contextualTyping/iterable/1.ts:1:58
+  |
+1 | export var iter: Iterable<(x: string) => number> = [s => s.length];
+  |                                                          ^^^^^^^^
+  |
+  = note: number
+
+warning: Type
+ --> $DIR/tests/pass/exprs/arrow/contextualTyping/iterable/1.ts:1:53
+  |
+1 | export var iter: Iterable<(x: string) => number> = [s => s.length];
+  |                                                     ^^^^^^^^^^^^^
+  |
+  = note: (s: string) => number
+
+warning: Type
+ --> $DIR/tests/pass/exprs/arrow/contextualTyping/iterable/1.ts:1:52
+  |
+1 | export var iter: Iterable<(x: string) => number> = [s => s.length];
+  |                                                    ^^^^^^^^^^^^^^^
+  |
+  = note: (s: string) => number[]
+

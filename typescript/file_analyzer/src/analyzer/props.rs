@@ -28,12 +28,13 @@ use stc_ts_ast_rnode::RPropName;
 use stc_ts_ast_rnode::RSetterProp;
 use stc_ts_ast_rnode::RStr;
 use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
+use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::ComputedKey;
 use stc_ts_types::Key;
 use stc_ts_types::PrivateName;
+use stc_ts_types::TypeParam;
 use stc_ts_utils::PatExt;
 use swc_atoms::js_word;
 use swc_common::Span;
@@ -86,10 +87,13 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RComputedPropName) -> ValidationResult<Key> {
         self.record(node);
-        let span = node.span;
+        let ctx = Ctx {
+            in_computed_prop_name: true,
+            ..self.ctx
+        };
 
-        let mode = self.ctx.computed_prop_mode;
         let span = node.span;
+        let mode = self.ctx.computed_prop_mode;
 
         let is_symbol_access = match *node.expr {
             RExpr::Member(RMemberExpr {
@@ -102,103 +106,112 @@ impl Analyzer<'_, '_> {
             }) => true,
             _ => false,
         };
-        let mut check_for_symbol_form = true;
 
-        let mut errors = Errors::default();
+        self.with_ctx(ctx).with(|analyzer: &mut Analyzer| {
+            let mut check_for_symbol_form = true;
 
-        let ty = match node.expr.validate_with_default(self) {
-            Ok(ty) => ty,
-            Err(err) => {
-                check_for_symbol_form = false;
-                match err {
-                    Error::TS2585 { span } => Err(Error::TS2585 { span })?,
-                    _ => {}
+            let mut errors = Errors::default();
+
+            let ty = match node.expr.validate_with_default(analyzer) {
+                Ok(ty) => ty,
+                Err(err) => {
+                    check_for_symbol_form = false;
+                    match err {
+                        Error::TS2585 { span } => Err(Error::TS2585 { span })?,
+                        _ => {}
+                    }
+
+                    errors.push(err);
+                    // TODO: Change this to something else (maybe any)
+                    Type::unknown(span)
                 }
+            };
 
-                errors.push(err);
-                // TODO: Change this to something else (maybe any)
-                Type::unknown(span)
-            }
-        };
-
-        if check_for_symbol_form && is_symbol_access {
-            match ty.normalize() {
-                Type::Keyword(RTsKeywordType {
-                    kind: TsKeywordTypeKind::TsSymbolKeyword,
-                    ..
-                }) => {}
-                Type::Operator(Operator {
-                    op: TsTypeOperatorOp::Unique,
-                    ty,
-                    ..
-                }) if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) => {}
-                _ => {
-                    //
-                    self.storage.report(Error::NonSymbolComputedPropInFormOfSymbol { span });
-                }
-            }
-        }
-
-        match mode {
-            ComputedPropMode::Class { .. } | ComputedPropMode::Interface => {
-                let is_valid_key = is_valid_computed_key(&node.expr);
-
-                let ty = self.expand(node.span, ty.clone()).report(&mut self.storage);
-
-                if let Some(ref ty) = ty {
-                    // TODO: Add support for expressions like '' + ''.
-                    match ty.normalize() {
-                        _ if is_valid_key => {}
-                        Type::Lit(..) => {}
-                        Type::EnumVariant(..) => {}
-                        _ if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) || ty.is_unique_symbol() => {}
-                        _ => match mode {
-                            ComputedPropMode::Interface => errors.push(Error::TS1169 { span: node.span }),
-                            _ => {}
-                        },
+            if check_for_symbol_form && is_symbol_access {
+                match ty.normalize() {
+                    Type::Keyword(RTsKeywordType {
+                        kind: TsKeywordTypeKind::TsSymbolKeyword,
+                        ..
+                    }) => {}
+                    Type::Operator(Operator {
+                        op: TsTypeOperatorOp::Unique,
+                        ty,
+                        ..
+                    }) if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) => {}
+                    _ => {
+                        //
+                        analyzer
+                            .storage
+                            .report(Error::NonSymbolComputedPropInFormOfSymbol { span });
                     }
                 }
             }
 
-            _ => {}
-        }
+            match mode {
+                ComputedPropMode::Class { .. } | ComputedPropMode::Interface => {
+                    let is_valid_key = is_valid_computed_key(&node.expr);
 
-        if match mode {
-            ComputedPropMode::Class { has_body } => !has_body,
-            ComputedPropMode::Object => errors.is_empty(),
-            // TODO:
-            ComputedPropMode::Interface => errors.is_empty(),
-        } {
-            if !is_symbol_access {
-                if !self.is_type_valid_for_computed_key(span, &ty) {
-                    self.storage.report(Error::TS2464 { span });
+                    let ty = analyzer.expand(node.span, ty.clone()).report(&mut analyzer.storage);
+
+                    if let Some(ref ty) = ty {
+                        // TODO: Add support for expressions like '' + ''.
+                        match ty.normalize() {
+                            _ if is_valid_key => {}
+                            Type::Lit(..) => {}
+                            Type::EnumVariant(..) => {}
+                            _ if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) || ty.is_unique_symbol() => {}
+                            _ => match mode {
+                                ComputedPropMode::Interface => errors.push(Error::TS1169 { span: node.span }),
+                                _ => {}
+                            },
+                        }
+                    }
+                }
+
+                _ => {}
+            }
+
+            if match mode {
+                ComputedPropMode::Class { has_body } => errors.is_empty(),
+                ComputedPropMode::Object => errors.is_empty(),
+                // TODO:
+                ComputedPropMode::Interface => errors.is_empty(),
+            } {
+                if !is_symbol_access {
+                    if !analyzer.is_type_valid_for_computed_key(span, &ty) {
+                        analyzer.storage.report(Error::TS2464 {
+                            span,
+                            ty: box ty.clone(),
+                        });
+                    }
                 }
             }
-        }
-        if !errors.is_empty() {
-            self.storage.report_all(errors);
-        }
 
-        // match *ty {
-        //     Type::Lit(RTsLitType {
-        //         lit: RTsLit::Number(n), ..
-        //     }) => return Ok(Key::Num(n)),
-        //     Type::Lit(RTsLitType {
-        //         lit: RTsLit::Str(s), ..
-        //     }) => {
-        //         return Ok(Key::Normal {
-        //             span: s.span,
-        //             sym: s.value,
-        //         })
-        //     }
-        //     _ => {}
-        // }
+            if !errors.is_empty() {
+                analyzer.storage.report_all(errors);
+            }
 
-        Ok(Key::Computed(ComputedKey {
-            span,
-            expr: node.expr.clone(),
-            ty: box ty,
-        }))
+            // match *ty {
+            //     Type::Lit(RTsLitType {
+            //         lit: RTsLit::Number(n), ..
+            //     }) => return Ok(Key::Num(n)),
+            //     Type::Lit(RTsLitType {
+            //         lit: RTsLit::Str(s), ..
+            //     }) => {
+            //         return Ok(Key::Normal {
+            //             span: s.span,
+            //             sym: s.value,
+            //         })
+            //     }
+            //     _ => {}
+            // }
+
+            Ok(Key::Computed(ComputedKey {
+                span,
+                expr: node.expr.clone(),
+                ty: box ty,
+            }))
+        })
     }
 }
 
@@ -221,6 +234,47 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
+    /// Computed properties should not use type parameters defined by the
+    /// declaring class.
+    ///
+    /// See: `computedPropertyNames32_ES5.ts`
+    #[extra_validator]
+    pub(crate) fn report_error_for_usage_of_type_param_of_declaring_class(
+        &mut self,
+        used_type_params: &[TypeParam],
+        span: Span,
+    ) {
+        debug_assert!(self.ctx.in_computed_prop_name);
+
+        for used in used_type_params {
+            let scope = self.scope.first_kind(|kind| match kind {
+                ScopeKind::Fn
+                | ScopeKind::Method { .. }
+                | ScopeKind::Module
+                | ScopeKind::Constructor
+                | ScopeKind::ArrowFn
+                | ScopeKind::Class
+                | ScopeKind::ObjectLit => true,
+                ScopeKind::LoopBody | ScopeKind::Block | ScopeKind::Flow | ScopeKind::TypeParams | ScopeKind::Call => {
+                    false
+                }
+            });
+            if let Some(scope) = scope {
+                match scope.kind() {
+                    ScopeKind::Class => {
+                        if scope.declaring_type_params.contains(&used.name) {
+                            self.storage
+                                .report(Error::DeclaringTypeParamReferencedByComputedPropName { span });
+                        }
+                    }
+                    _ => {
+                        dbg!(scope.kind());
+                    }
+                }
+            }
+        }
+    }
+
     fn is_type_valid_for_computed_key(&mut self, span: Span, ty: &Type) -> bool {
         let ty = ty.clone().generalize_lit();
         let ty = self.normalize(&ty, Default::default());
@@ -254,9 +308,32 @@ impl Analyzer<'_, '_> {
                     }),
                 ..
             })
-            | Type::EnumVariant(..) => true,
+            | Type::EnumVariant(..)
+            | Type::Symbol(..) => true,
 
-            Type::Union(u) => u.types.iter().all(|ty| self.is_type_valid_for_computed_key(span, ty)),
+            Type::Param(TypeParam {
+                constraint: Some(ty), ..
+            }) => {
+                if self.is_type_valid_for_computed_key(span, ty) {
+                    return true;
+                }
+
+                match ty.normalize() {
+                    Type::Operator(Operator {
+                        op: TsTypeOperatorOp::KeyOf,
+                        ..
+                    }) => return true,
+                    _ => {}
+                }
+
+                false
+            }
+
+            Type::Union(u) => u.types.iter().all(|ty| {
+                ty.is_kwd(TsKeywordTypeKind::TsNullKeyword)
+                    || ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
+                    || self.is_type_valid_for_computed_key(span, ty)
+            }),
 
             _ => false,
         }
@@ -298,10 +375,11 @@ impl Analyzer<'_, '_> {
                 };
                 PropertySignature {
                     span: prop.span(),
-                    key,
-                    params: Default::default(),
-                    optional: false,
+                    accessibility: None,
                     readonly: false,
+                    key,
+                    optional: false,
+                    params: Default::default(),
                     type_ann: shorthand_type_ann,
                     type_params: Default::default(),
                 }
@@ -318,10 +396,11 @@ impl Analyzer<'_, '_> {
 
                 PropertySignature {
                     span,
-                    key,
-                    params: Default::default(),
-                    optional: false,
+                    accessibility: None,
                     readonly: false,
+                    key,
+                    optional: false,
+                    params: Default::default(),
                     type_ann: Some(box ty),
                     type_params: Default::default(),
                 }
@@ -336,18 +415,19 @@ impl Analyzer<'_, '_> {
                     RPropName::Computed(_) => true,
                     _ => false,
                 };
-                let parma_span = p.param.span();
+                let param_span = p.param.span();
                 let mut param = &p.param;
 
-                self.with_child(ScopeKind::Method, Default::default(), {
+                self.with_child(ScopeKind::Method { is_static: false }, Default::default(), {
                     |child| -> ValidationResult<_> {
                         Ok(PropertySignature {
                             span,
-                            key,
-                            params: vec![param.validate_with(child)?],
-                            optional: false,
+                            accessibility: None,
                             readonly: false,
-                            type_ann: Some(box Type::any(parma_span)),
+                            key,
+                            optional: false,
+                            params: vec![param.validate_with(child)?],
+                            type_ann: Some(box Type::any(param_span)),
                             type_params: Default::default(),
                         }
                         .into())
@@ -363,11 +443,10 @@ impl Analyzer<'_, '_> {
                 };
                 let method_type_ann = object_type.and_then(|obj| {
                     self.access_property(span, obj.clone(), &key, TypeOfMode::RValue, IdCtx::Var)
-                        .context("tried to get type of a property for a method property")
-                        .report(&mut self.storage)
+                        .ok()
                 });
 
-                self.with_child(ScopeKind::Method, Default::default(), {
+                self.with_child(ScopeKind::Method { is_static: false }, Default::default(), {
                     |child: &mut Analyzer| -> ValidationResult<_> {
                         match method_type_ann.as_ref().map(|ty| ty.normalize()) {
                             Some(Type::Function(ty)) => {
@@ -449,6 +528,7 @@ impl Analyzer<'_, '_> {
 
                         Ok(MethodSignature {
                             span,
+                            accessibility: None,
                             readonly: false,
                             key,
                             optional: false,
@@ -473,30 +553,33 @@ impl Analyzer<'_, '_> {
         let computed = key.is_computed();
 
         let type_ann = self
-            .with_child(ScopeKind::Method, Default::default(), |child| {
-                n.key.visit_with(child);
+            .with_child(
+                ScopeKind::Method { is_static: false },
+                Default::default(),
+                |child: &mut Analyzer| {
+                    if let Some(body) = &n.body {
+                        let ret_ty = child.visit_stmts_for_return(n.span, false, false, &body.stmts)?;
+                        if let None = ret_ty {
+                            // getter property must have return statements.
+                            child.storage.report(Error::TS2378 { span: n.key.span() });
+                        }
 
-                if let Some(body) = &n.body {
-                    let ret_ty = child.visit_stmts_for_return(n.span, false, false, &body.stmts)?;
-                    if let None = ret_ty {
-                        // getter property must have return statements.
-                        child.storage.report(Error::TS2378 { span: n.key.span() });
+                        return Ok(ret_ty);
                     }
 
-                    return Ok(ret_ty);
-                }
-
-                Ok(None)
-            })
+                    Ok(None)
+                },
+            )
             .report(&mut self.storage)
             .flatten();
 
         Ok(PropertySignature {
             span: n.span(),
-            key,
-            params: Default::default(),
-            optional: false,
+            accessibility: None,
             readonly: true,
+            key,
+            optional: false,
+            params: Default::default(),
             type_ann: if computed {
                 type_ann.map(Box::new)
             } else {

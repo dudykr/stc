@@ -1,0 +1,178 @@
+warning: Type
+ --> $DIR/tests/pass/exprs/typeAssertion/10.ts:7:27
+  |
+7 | export const none: None = { none: '' };
+  |                           ^^^^^^^^^^^^
+  |
+  = note: {
+              none: '';
+          }
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/10.ts:10:22
+   |
+10 |     return 'some' in value;
+   |                      ^^^^^
+   |
+   = note: Optional<a>
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/10.ts:10:12
+   |
+10 |     return 'some' in value;
+   |            ^^^^^^^^^^^^^^^
+   |
+   = note: boolean
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/10.ts:14:12
+   |
+14 |     return { some };
+   |            ^^^^^^^^
+   |
+   = note: {
+               some: a;
+           }
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/10.ts:18:31
+   |
+18 |     let result: Optional<r> = none;
+   |                               ^^^^
+   |
+   = note: None
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/10.ts:19:5
+   |
+19 |     result;  // None
+   |     ^^^^^^
+   |
+   = note: None
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/10.ts:20:12
+   |
+20 |     while (cond) {
+   |            ^^^^
+   |
+   = note: boolean
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/10.ts:21:9
+   |
+21 |         result;  // Some<r> | None
+   |         ^^^^^^
+   |
+   = note: None
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/10.ts:22:34
+   |
+22 |         result = someFrom(isSome(result) ? result.some : makeSome());
+   |                                  ^^^^^^
+   |
+   = note: Optional<r>
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/10.ts:22:27
+   |
+22 |         result = someFrom(isSome(result) ? result.some : makeSome());
+   |                           ^^^^^^
+   |
+   = note: <a>(value: Optional<a>) => value is Some<a>
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/10.ts:22:27
+   |
+22 |         result = someFrom(isSome(result) ? result.some : makeSome());
+   |                           ^^^^^^^^^^^^^^
+   |
+   = note: value is Some<r>
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/10.ts:22:44
+   |
+22 |         result = someFrom(isSome(result) ? result.some : makeSome());
+   |                                            ^^^^^^
+   |
+   = note: Some<r>
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/10.ts:22:44
+   |
+22 |         result = someFrom(isSome(result) ? result.some : makeSome());
+   |                                            ^^^^^^^^^^^
+   |
+   = note: r
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/10.ts:22:58
+   |
+22 |         result = someFrom(isSome(result) ? result.some : makeSome());
+   |                                                          ^^^^^^^^
+   |
+   = note: () => r
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/10.ts:22:58
+   |
+22 |         result = someFrom(isSome(result) ? result.some : makeSome());
+   |                                                          ^^^^^^^^^^
+   |
+   = note: r
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/10.ts:22:27
+   |
+22 |         result = someFrom(isSome(result) ? result.some : makeSome());
+   |                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: r
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/10.ts:22:18
+   |
+22 |         result = someFrom(isSome(result) ? result.some : makeSome());
+   |                  ^^^^^^^^
+   |
+   = note: <a>(some: a) => {
+               some: a;
+           }
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/10.ts:22:18
+   |
+22 |         result = someFrom(isSome(result) ? result.some : makeSome());
+   |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: {
+               some: r;
+           }
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/10.ts:22:9
+   |
+22 |         result = someFrom(isSome(result) ? result.some : makeSome());
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: {
+               some: r;
+           }
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/10.ts:23:9
+   |
+23 |         result;  // Some<r>
+   |         ^^^^^^
+   |
+   = note: Some
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/10.ts:21:9
+   |
+21 |         result;  // Some<r> | None
+   |         ^^^^^^
+   |
+   = note: Some | None
+

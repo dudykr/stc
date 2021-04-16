@@ -161,6 +161,20 @@ impl Fold<RTsKeywordType> for TypeFactsHandler<'_, '_, '_> {
             }
         }
 
+        if ty.kind == TsKeywordTypeKind::TsNullKeyword && self.facts.contains(TypeFacts::NENull) {
+            return RTsKeywordType {
+                kind: TsKeywordTypeKind::TsNeverKeyword,
+                ..ty
+            };
+        }
+
+        if ty.kind == TsKeywordTypeKind::TsUndefinedKeyword && self.facts.contains(TypeFacts::NEUndefined) {
+            return RTsKeywordType {
+                kind: TsKeywordTypeKind::TsNeverKeyword,
+                ..ty
+            };
+        }
+
         let keyword_types = &[
             (TypeFacts::TypeofNEString, TsKeywordTypeKind::TsStringKeyword),
             (TypeFacts::TypeofNENumber, TsKeywordTypeKind::TsNumberKeyword),

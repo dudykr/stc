@@ -87,8 +87,22 @@ mod util;
 mod visit_mut;
 
 #[derive(Debug, Clone, Copy)]
+pub(crate) enum Phase {
+    HoistingVars,
+    Reporting,
+}
+
+impl Default for Phase {
+    fn default() -> Self {
+        Self::HoistingVars
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct Ctx {
     module_id: ModuleId,
+
+    phase: Phase,
 
     allow_module_var: bool,
 
@@ -96,6 +110,8 @@ pub(crate) struct Ctx {
     in_cond: bool,
     should_store_truthy_for_access: bool,
     in_switch_case_test: bool,
+
+    in_computed_prop_name: bool,
 
     in_opt_chain: bool,
 
@@ -366,10 +382,12 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             scope,
             ctx: Ctx {
                 module_id: ModuleId::builtin(),
+                phase: Default::default(),
                 allow_module_var: false,
                 in_cond: false,
                 should_store_truthy_for_access: false,
                 in_switch_case_test: false,
+                in_computed_prop_name: false,
                 in_opt_chain: false,
                 in_declare: false,
                 in_fn_without_body: false,
@@ -498,7 +516,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         // Move return types from child to parent
         match kind {
             // These kinds of scope eats return statements
-            ScopeKind::Module | ScopeKind::Method | ScopeKind::ArrowFn | ScopeKind::Fn => {}
+            ScopeKind::Module | ScopeKind::Method { .. } | ScopeKind::ArrowFn | ScopeKind::Fn => {}
             _ => {
                 self.scope.return_values += child_scope.return_values;
             }
@@ -686,7 +704,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, decl: &RTsNamespaceDecl) {
-        todo!("namespace is not supported yet")
+        unimplemented!("namespace is not supported yet")
     }
 }
 

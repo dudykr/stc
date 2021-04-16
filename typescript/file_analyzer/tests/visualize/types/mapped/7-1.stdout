@@ -1,0 +1,130 @@
+warning: Type
+  --> $DIR/tests/visualize/types/mapped/7-1.ts:12:16
+   |
+12 |         return this.x;
+   |                ^^^^
+   |
+   = note: this
+
+warning: Type
+  --> $DIR/tests/visualize/types/mapped/7-1.ts:12:16
+   |
+12 |         return this.x;
+   |                ^^^^^^
+   |
+   = note: any
+
+warning: Type
+  --> $DIR/tests/visualize/types/mapped/7-1.ts:14:12
+   |
+14 |       hello: {
+   |  ____________^
+15 | |         get() {
+16 | |             return "hi";
+17 | |         },
+18 | |         set(value: string) {
+19 | |         }
+20 | |     }
+   | |_____^
+   |
+   = note: {
+               get(): "hi";
+               set(value: string): void;
+           }
+
+warning: Type
+  --> $DIR/tests/visualize/types/mapped/7-1.ts:10:19
+   |
+10 |   let vue = new Vue({
+   |  ___________________^
+11 | |     test(): number {
+12 | |         return this.x;
+13 | |     },
+...  |
+20 | |     }
+21 | | });
+   | |_^
+   |
+   = note: {
+               test(): number;
+               hello: {
+                   get(): "hi";
+                   set(value: string): void;
+               };
+           }
+
+warning: Type
+  --> $DIR/tests/visualize/types/mapped/7-1.ts:10:15
+   |
+10 | let vue = new Vue({
+   |               ^^^
+   |
+   = note: new <P>(options: Accessors<P>) => P
+
+warning: Type
+  --> $DIR/tests/visualize/types/mapped/7-1.ts:10:11
+   |
+10 |   let vue = new Vue({
+   |  ___________^
+11 | |     test(): number {
+12 | |         return this.x;
+13 | |     },
+...  |
+20 | |     }
+21 | | });
+   | |__^
+   |
+   = note: {
+               test: number;
+               hello: string;
+           }
+
+warning: Type
+  --> $DIR/tests/visualize/types/mapped/7-1.ts:23:1
+   |
+23 | vue;
+   | ^^^
+   |
+   = note: {
+               test: number;
+               hello: string;
+           }
+
+warning: Type
+  --> $DIR/tests/visualize/types/mapped/7-1.ts:24:1
+   |
+24 | vue.test;
+   | ^^^
+   |
+   = note: {
+               test: number;
+               hello: string;
+           }
+
+warning: Type
+  --> $DIR/tests/visualize/types/mapped/7-1.ts:24:1
+   |
+24 | vue.test;
+   | ^^^^^^^^
+   |
+   = note: number
+
+warning: Type
+  --> $DIR/tests/visualize/types/mapped/7-1.ts:25:1
+   |
+25 | vue.hello;
+   | ^^^
+   |
+   = note: {
+               test: number;
+               hello: string;
+           }
+
+warning: Type
+  --> $DIR/tests/visualize/types/mapped/7-1.ts:25:1
+   |
+25 | vue.hello;
+   | ^^^^^^^^^
+   |
+   = note: string
+

@@ -22,13 +22,3 @@ warning: Type
   |
   = note: (a: TemplateStringsArray, b: string) => TemplateStringsArray
 
-warning: Type
- --> $DIR/tests/pass/exprs/taggedTpl/test-1.ts:6:18
-  |
-6 | export const a = foo`my${'test'}`
-  |                  ^^^^^^^^^^^^^^^^
-  |
-  = note: {
-              readonly raw: readonly string[];
-          }
-

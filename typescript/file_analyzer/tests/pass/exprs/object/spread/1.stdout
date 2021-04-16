@@ -1,0 +1,16 @@
+warning: Type
+ --> $DIR/tests/pass/exprs/object/spread/1.ts:2:55
+  |
+2 | export const x: { a: number, b: number } = { a: 1, ...o, b: 2 };
+  |                                                       ^
+  |
+  = note: object
+
+warning: Type
+ --> $DIR/tests/pass/exprs/object/spread/1.ts:2:44
+  |
+2 | export const x: { a: number, b: number } = { a: 1, ...o, b: 2 };
+  |                                            ^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: object
+

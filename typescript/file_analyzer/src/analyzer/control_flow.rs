@@ -9,7 +9,7 @@ use super::{
 use crate::analyzer::expr::IdCtx;
 use crate::util::type_ext::TypeVecExt;
 use crate::{
-    ty::{Tuple, Type, TypeElement, TypeLit},
+    ty::{Tuple, Type},
     type_facts::TypeFacts,
     util::EndsWithRet,
     validator,
@@ -20,6 +20,7 @@ use fxhash::FxHashMap;
 use rnode::NodeId;
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RBinExpr;
+use stc_ts_ast_rnode::RBindingIdent;
 use stc_ts_ast_rnode::RCondExpr;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RIfStmt;
@@ -298,7 +299,7 @@ impl Analyzer<'_, '_> {
         }
 
         if ends_with_ret {
-            self.scope.facts.extend(false_facts);
+            self.cur_facts.true_facts += false_facts;
         }
 
         Ok(())
@@ -543,18 +544,11 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn try_assign_pat(&mut self, span: Span, lhs: &RPat, ty: &Type) -> ValidationResult<()> {
-        match ty {
-            Type::Ref(..) => {
-                let ty = self
-                    .expand_top_ref(span, Cow::Borrowed(ty))
-                    .context("tried to expand reference to assign it to a pattern")?;
-
-                return self
-                    .try_assign_pat(span, lhs, &ty)
-                    .context("tried to assign expanded type to a pattern");
-            }
-            _ => {}
-        }
+        let is_in_loop = self.scope.is_in_loop_body();
+        let ty = self
+            .normalize(ty, Default::default())
+            .context("tried to normalize a type to assign it to a pattern")?;
+        let ty = ty.normalize();
 
         // Update variable's type
         match lhs {
@@ -564,7 +558,7 @@ impl Analyzer<'_, '_> {
             RPat::Assign(assign) => {
                 let ids: Vec<Id> = find_ids_in_pat(&assign.left);
 
-                self.try_assign_pat(span, &assign.left, ty)?;
+                self.try_assign_pat(span, &assign.left, &ty)?;
 
                 let prev_len = self.scope.declaring.len();
                 self.scope.declaring.extend(ids);
@@ -584,7 +578,7 @@ impl Analyzer<'_, '_> {
                 // Verify using immutable references.
                 if let Some(var_info) = self.scope.get_var(&i.id.clone().into()) {
                     if let Some(var_ty) = var_info.ty.clone() {
-                        self.assign(&var_ty, ty, i.id.span)?;
+                        self.assign(&var_ty, &ty, i.id.span)?;
                     }
                 }
 
@@ -595,10 +589,20 @@ impl Analyzer<'_, '_> {
                     .or_else(|| self.scope.search_parent(&i.id.clone().into()))
                 {
                     if let Some(declared_ty) = &var_info.ty {
-                        if declared_ty.is_any() {
+                        if declared_ty.is_any()
+                            || ty.is_kwd(TsKeywordTypeKind::TsNullKeyword)
+                            || ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
+                        {
                             return Ok(());
                         }
+
                         let declared_ty = declared_ty.clone();
+
+                        let ty = ty.clone();
+                        let ty = self.apply_type_facts_to_type(TypeFacts::NEUndefined | TypeFacts::NENull, ty);
+                        if ty.is_never() {
+                            return Ok(());
+                        }
 
                         actual_ty = Some(self.narrowed_type_of_assignment(span, declared_ty, &ty)?);
                     }
@@ -612,6 +616,7 @@ impl Analyzer<'_, '_> {
 
                 // Update actual types.
                 if let Some(var_info) = self.scope.get_var_mut(&i.id.clone().into()) {
+                    var_info.is_actual_type_modified_in_loop |= is_in_loop;
                     var_info.actual_ty = Some(actual_ty.unwrap_or_else(|| ty.clone()));
                     return Ok(());
                 }
@@ -660,7 +665,7 @@ impl Analyzer<'_, '_> {
 
             RPat::Array(ref arr) => {
                 let ty = self
-                    .get_iterator(span, Cow::Borrowed(ty))
+                    .get_iterator(span, Cow::Borrowed(&ty))
                     .context("tried to convert a type to an iterator to assign with an array pattern")?;
                 //
                 for (i, elem) in arr.elems.iter().enumerate() {
@@ -693,49 +698,45 @@ impl Analyzer<'_, '_> {
             RPat::Object(ref obj) => {
                 //
                 for prop in obj.props.iter() {
-                    match ty.normalize() {
-                        ty if ty.is_any() => {
-                            let lhs = match prop {
-                                RObjectPatProp::KeyValue(kv) => &kv.value,
-                                RObjectPatProp::Assign(a) => {
-                                    // if a.key.type_ann.is_none() {
-                                    //     if let Some(m) = &mut self.mutations {
-                                    //         m.for_pats.entry(a.key.node_id).or_default().ty =
-                                    // Some(Type::any(span));     }
-                                    // }
-                                    continue;
-                                }
-                                RObjectPatProp::Rest(r) => {
-                                    if r.type_ann.is_none() {
-                                        if let Some(m) = &mut self.mutations {
-                                            m.for_pats.entry(r.node_id).or_default().ty = Some(Type::any(span));
-                                        }
-                                    }
-                                    continue;
-                                }
-                            };
-                            self.try_assign_pat(span, lhs, &Type::any(ty.span()))?;
-                        }
+                    match prop {
+                        RObjectPatProp::KeyValue(kv) => {
+                            let key = kv.key.validate_with(self)?;
+                            let prop_ty = self
+                                .access_property(span, ty.clone(), &key, TypeOfMode::RValue, IdCtx::Var)
+                                .unwrap_or_else(|_| Type::any(span));
 
-                        Type::TypeLit(TypeLit { span, ref members, .. }) => {
-                            // Iterate over members, and assign if key matches.
-                            for member in members {
-                                match member {
-                                    TypeElement::Call(_) => unimplemented!(),
-                                    TypeElement::Constructor(_) => unimplemented!(),
-                                    TypeElement::Property(p) => match prop {
-                                        RObjectPatProp::KeyValue(prop) => {
-                                            //
-                                        }
-                                        RObjectPatProp::Assign(_) => {}
-                                        RObjectPatProp::Rest(_) => {}
-                                    },
-                                    TypeElement::Method(_) => unimplemented!(),
-                                    TypeElement::Index(_) => unimplemented!(),
+                            self.try_assign_pat(span, &kv.value, &prop_ty).report(&mut self.storage);
+                        }
+                        RObjectPatProp::Assign(a) => {
+                            let key = Key::Normal {
+                                span: a.key.span,
+                                sym: a.key.sym.clone(),
+                            };
+                            let prop_ty = self
+                                .access_property(span, ty.clone(), &key, TypeOfMode::RValue, IdCtx::Var)
+                                .unwrap_or_else(|_| Type::any(span));
+
+                            self.try_assign_pat(
+                                span,
+                                &RPat::Ident(RBindingIdent {
+                                    node_id: NodeId::invalid(),
+                                    id: a.key.clone(),
+                                    type_ann: None,
+                                }),
+                                &prop_ty,
+                            )
+                            .report(&mut self.storage);
+                        }
+                        RObjectPatProp::Rest(r) => {
+                            if r.type_ann.is_none() {
+                                if let Some(m) = &mut self.mutations {
+                                    m.for_pats.entry(r.node_id).or_default().ty = Some(Type::any(span));
                                 }
                             }
+                            // TODO
+                            // self.try_assign_pat(span, lhs,
+                            // &prop_ty).report(&mut self.storage);
                         }
-                        _ => unimplemented!("assignment with object pattern\nPat: {:?}\nType: {:?}", lhs, ty),
                     }
                 }
 
@@ -756,7 +757,7 @@ impl Analyzer<'_, '_> {
                     .validate_with_args(self, (TypeOfMode::LValue, None, None))
                     .context("tried to validate type of the expression in lhs of assignment")?;
 
-                self.assign(&lhs_ty, ty, span)?;
+                self.assign(&lhs_ty, &ty, span)?;
                 return Ok(());
             }
         }
@@ -948,7 +949,9 @@ impl Analyzer<'_, '_> {
         }
 
         let new_types = self.adjust_ternary_type(span, vec![cons, alt])?;
-        Ok(Type::union(new_types))
+        let mut ty = Type::union(new_types);
+        ty.reposition(span);
+        Ok(ty)
     }
 }
 

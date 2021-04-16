@@ -14,6 +14,7 @@ use std::sync::Arc;
 use swc_atoms::JsWord;
 use swc_common::iter::IdentifyLast;
 use swc_common::Span;
+use swc_common::TypeEq;
 use swc_common::DUMMY_SP;
 
 #[derive(Debug, Default)]
@@ -172,6 +173,10 @@ impl TypeStore for Single<'_> {
 
         match self.info.exports.private_vars.entry(id) {
             Entry::Occupied(e) => {
+                if e.get().type_eq(&ty) {
+                    return;
+                }
+
                 let (id, prev_ty) = e.remove_entry();
                 self.info
                     .exports

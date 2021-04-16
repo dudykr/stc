@@ -1,0 +1,95 @@
+warning: Type
+ --> $DIR/tests/pass/types/generic/extends/1.ts:4:12
+  |
+4 |     return x;
+  |            ^
+  |
+  = note: T
+
+warning: Type
+  --> $DIR/tests/pass/types/generic/extends/1.ts:12:18
+   |
+12 |     var r2 = foo(b);
+   |                  ^
+   |
+   = note: {
+               [x: string]: Object;
+               [x: number]: T;
+           }
+
+warning: Type
+  --> $DIR/tests/pass/types/generic/extends/1.ts:12:14
+   |
+12 |     var r2 = foo(b);
+   |              ^^^
+   |
+   = note: <T>(x: T) => T
+
+warning: Type
+  --> $DIR/tests/pass/types/generic/extends/1.ts:12:14
+   |
+12 |     var r2 = foo(b);
+   |              ^^^^^^
+   |
+   = note: {
+               [x: string]: Object;
+               [x: number]: T;
+           }
+
+warning: Type
+  --> $DIR/tests/pass/types/generic/extends/1.ts:13:13
+   |
+13 |     var d = r2[1];
+   |             ^^
+   |
+   = note: {
+               [x: string]: Object;
+               [x: number]: T;
+           }
+
+warning: Type
+  --> $DIR/tests/pass/types/generic/extends/1.ts:13:13
+   |
+13 |     var d = r2[1];
+   |             ^^^^^
+   |
+   = note: T
+
+warning: Type
+  --> $DIR/tests/pass/types/generic/extends/1.ts:14:13
+   |
+14 |     var e = r2['1'];
+   |             ^^
+   |
+   = note: {
+               [x: string]: Object;
+               [x: number]: T;
+           }
+
+warning: Type
+  --> $DIR/tests/pass/types/generic/extends/1.ts:14:13
+   |
+14 |     var e = r2['1'];
+   |             ^^^^^^^
+   |
+   = note: Object
+
+warning: Type
+  --> $DIR/tests/pass/types/generic/extends/1.ts:15:16
+   |
+15 |     var u: U = r2[1]; // ok
+   |                ^^
+   |
+   = note: {
+               [x: string]: Object;
+               [x: number]: T;
+           }
+
+warning: Type
+  --> $DIR/tests/pass/types/generic/extends/1.ts:15:16
+   |
+15 |     var u: U = r2[1]; // ok
+   |                ^^^^^
+   |
+   = note: T
+

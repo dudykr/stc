@@ -2,7 +2,9 @@ use super::props::ComputedPropMode;
 use super::Analyzer;
 use super::Ctx;
 use super::ScopeKind;
+use crate::analyzer::util::ResultExt;
 use crate::util::contains_infer_type;
+use crate::util::type_ext::TypeVecExt;
 use crate::validator;
 use crate::validator::ValidateWith;
 use crate::ValidationResult;
@@ -12,6 +14,7 @@ use stc_ts_ast_rnode::RArrayPat;
 use stc_ts_ast_rnode::RAssignPatProp;
 use stc_ts_ast_rnode::RBindingIdent;
 use stc_ts_ast_rnode::RComputedPropName;
+use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RObjectPat;
 use stc_ts_ast_rnode::RObjectPatProp;
 use stc_ts_ast_rnode::RPat;
@@ -96,6 +99,7 @@ use stc_ts_utils::PatExt;
 use swc_atoms::js_word;
 use swc_common::Spanned;
 use swc_common::DUMMY_SP;
+use swc_ecma_ast::VarDeclKind;
 
 /// We analyze dependencies between type parameters, and fold parameter in
 /// topological order.
@@ -260,6 +264,12 @@ impl Analyzer<'_, '_> {
             RTsTypeElement::TsIndexSignature(d) => TypeElement::Index(d.validate_with(self)?),
             RTsTypeElement::TsMethodSignature(d) => TypeElement::Method(d.validate_with(self)?),
             RTsTypeElement::TsPropertySignature(d) => TypeElement::Property(d.validate_with(self)?),
+            RTsTypeElement::TsGetterSignature(_) => {
+                unimplemented!()
+            }
+            RTsTypeElement::TsSetterSignature(_) => {
+                unimplemented!()
+            }
         })
     }
 }
@@ -269,6 +279,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, d: &RTsConstructSignatureDecl) -> ValidationResult<ConstructorSignature> {
         let type_params = try_opt!(d.type_params.validate_with(self));
         Ok(ConstructorSignature {
+            accessibility: None,
             span: d.span,
             params: d.params.validate_with(self)?,
             type_params,
@@ -304,6 +315,7 @@ impl Analyzer<'_, '_> {
             }
 
             Ok(MethodSignature {
+                accessibility: None,
                 span: d.span,
                 readonly: d.readonly,
                 key,
@@ -344,6 +356,7 @@ impl Analyzer<'_, '_> {
         }
 
         Ok(PropertySignature {
+            accessibility: None,
             span: d.span,
             key,
             optional: d.optional,
@@ -465,10 +478,11 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, u: &RTsUnionType) -> ValidationResult<Union> {
-        Ok(Union {
-            span: u.span,
-            types: u.types.validate_with(self)?,
-        })
+        let mut types = u.types.validate_with(self)?;
+
+        types.dedup_type();
+
+        Ok(Union { span: u.span, types })
     }
 }
 
@@ -485,21 +499,33 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsFnType) -> ValidationResult<stc_ts_types::Function> {
-        let type_params = try_opt!(t.type_params.validate_with(self));
+        self.with_scope_for_type_params(|child: &mut Analyzer| {
+            let type_params = try_opt!(t.type_params.validate_with(child));
 
-        for param in &t.params {
-            self.default_any_param(&param);
-        }
+            for param in &t.params {
+                child.default_any_param(&param);
+            }
 
-        let mut params: Vec<_> = t.params.validate_with(self)?;
+            let mut params: Vec<_> = t.params.validate_with(child)?;
 
-        let ret_ty = box t.type_ann.validate_with(self)?;
+            let mut ret_ty = box t.type_ann.validate_with(child)?;
 
-        Ok(stc_ts_types::Function {
-            span: t.span,
-            type_params,
-            params,
-            ret_ty,
+            if !child.is_builtin {
+                for param in params.iter() {
+                    child
+                        .declare_complex_vars(VarDeclKind::Let, &param.pat, *param.ty.clone(), None)
+                        .report(&mut child.storage);
+                }
+            }
+
+            child.expand_return_type_of_fn(&mut ret_ty).report(&mut child.storage);
+
+            Ok(stc_ts_types::Function {
+                span: t.span,
+                type_params,
+                params,
+                ret_ty,
+            })
         })
     }
 }
@@ -550,6 +576,8 @@ impl Analyzer<'_, '_> {
             }
 
             RTsEntityName::Ident(ref i) => {
+                self.report_error_for_type_param_usages_in_static_members(&i);
+
                 if let Some(types) = self.find_type(self.ctx.module_id, &i.into())? {
                     let mut found = false;
                     for ty in types {
@@ -748,11 +776,43 @@ impl Analyzer<'_, '_> {
             RTsType::TsTypePredicate(ty) => Type::Predicate(ty.validate_with(self)?),
             RTsType::TsImportType(ty) => Type::Import(ty.validate_with(self)?),
         };
+
+        ty.assert_valid();
+
         Ok(ty.cheap())
     }
 }
 
 impl Analyzer<'_, '_> {
+    #[extra_validator]
+    fn report_error_for_type_param_usages_in_static_members(&mut self, i: &RIdent) {
+        let span = i.span;
+        let id = i.into();
+        let static_method = self.scope.first(|scope| {
+            let parent = scope.parent();
+            let parent = match parent {
+                Some(v) => v,
+                None => return false,
+            };
+            if parent.kind() != ScopeKind::Class {
+                return false;
+            }
+            if !parent.declaring_type_params.contains(&id) {
+                return false;
+            }
+
+            match scope.kind() {
+                ScopeKind::Method { is_static: true, .. } => true,
+                _ => false,
+            }
+        });
+
+        if static_method.is_some() {
+            self.storage
+                .report(Error::StaticMethodCannotUseTypeParamOfClass { span })
+        }
+    }
+
     /// Handle implicit defaults.
     pub(crate) fn default_any_pat(&mut self, p: &RPat) {
         match p {
@@ -878,6 +938,7 @@ impl Analyzer<'_, '_> {
 
                     members.push(TypeElement::Property(PropertySignature {
                         span: DUMMY_SP,
+                        accessibility: None,
                         readonly: false,
                         key,
                         optional: false,
@@ -893,6 +954,7 @@ impl Analyzer<'_, '_> {
                     };
                     members.push(TypeElement::Property(PropertySignature {
                         span: DUMMY_SP,
+                        accessibility: None,
                         readonly: false,
                         key,
                         optional: false,

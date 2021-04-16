@@ -1,0 +1,21 @@
+warning: Type
+ --> $DIR/tests/pass/exprs/object/key/8.ts:6:10
+  |
+6 |     set [a](v) { },
+  |          ^
+  |
+  = note: any
+
+warning: Type
+ --> $DIR/tests/pass/exprs/object/key/8.ts:5:9
+  |
+5 |   var v = {
+  |  _________^
+6 | |     set [a](v) { },
+7 | | }
+  | |_^
+  |
+  = note: {
+              [a]: any;
+          }
+

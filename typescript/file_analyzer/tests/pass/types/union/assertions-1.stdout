@@ -1,5 +1,5 @@
 warning: Type
- --> $DIR/tests/visualize/types/cast/union/assertions-1.ts:9:16
+ --> $DIR/tests/pass/types/union/assertions-1.ts:9:16
   |
 9 | export var x = { p1: 10, p2: 20 };
   |                ^^^^^^^^^^^^^^^^^^
@@ -10,7 +10,7 @@ warning: Type
           }
 
 warning: Type
-  --> $DIR/tests/visualize/types/cast/union/assertions-1.ts:10:29
+  --> $DIR/tests/pass/types/union/assertions-1.ts:10:29
    |
 10 | export var y: number | I2 = x;
    |                             ^
@@ -21,7 +21,7 @@ warning: Type
            }
 
 warning: Type
-  --> $DIR/tests/visualize/types/cast/union/assertions-1.ts:11:20
+  --> $DIR/tests/pass/types/union/assertions-1.ts:11:20
    |
 11 | export var z: I1 = x;
    |                    ^
@@ -32,7 +32,7 @@ warning: Type
            }
 
 warning: Type
-  --> $DIR/tests/visualize/types/cast/union/assertions-1.ts:13:1
+  --> $DIR/tests/pass/types/union/assertions-1.ts:13:1
    |
 13 | x;
    | ^
@@ -43,7 +43,7 @@ warning: Type
            }
 
 warning: Type
-  --> $DIR/tests/visualize/types/cast/union/assertions-1.ts:14:1
+  --> $DIR/tests/pass/types/union/assertions-1.ts:14:1
    |
 14 | y;
    | ^
@@ -51,7 +51,7 @@ warning: Type
    = note: I2
 
 warning: Type
-  --> $DIR/tests/visualize/types/cast/union/assertions-1.ts:15:1
+  --> $DIR/tests/pass/types/union/assertions-1.ts:15:1
    |
 15 | z;
    | ^
@@ -59,7 +59,7 @@ warning: Type
    = note: I1
 
 warning: Type
-  --> $DIR/tests/visualize/types/cast/union/assertions-1.ts:17:29
+  --> $DIR/tests/pass/types/union/assertions-1.ts:17:29
    |
 17 | export var a = <number | I2>z;
    |                             ^
@@ -67,7 +67,7 @@ warning: Type
    = note: I1
 
 warning: Type
-  --> $DIR/tests/visualize/types/cast/union/assertions-1.ts:17:16
+  --> $DIR/tests/pass/types/union/assertions-1.ts:17:16
    |
 17 | export var a = <number | I2>z;
    |                ^^^^^^^^^^^^^^
@@ -75,7 +75,7 @@ warning: Type
    = note: number | I2
 
 warning: Type
-  --> $DIR/tests/visualize/types/cast/union/assertions-1.ts:18:20
+  --> $DIR/tests/pass/types/union/assertions-1.ts:18:20
    |
 18 | export var c = <I2>z;
    |                    ^
@@ -83,7 +83,7 @@ warning: Type
    = note: I1
 
 warning: Type
-  --> $DIR/tests/visualize/types/cast/union/assertions-1.ts:18:16
+  --> $DIR/tests/pass/types/union/assertions-1.ts:18:16
    |
 18 | export var c = <I2>z;
    |                ^^^^^
@@ -91,7 +91,7 @@ warning: Type
    = note: I2
 
 warning: Type
-  --> $DIR/tests/visualize/types/cast/union/assertions-1.ts:19:20
+  --> $DIR/tests/pass/types/union/assertions-1.ts:19:20
    |
 19 | export var d = <I1>y;
    |                    ^
@@ -99,7 +99,7 @@ warning: Type
    = note: I2
 
 warning: Type
-  --> $DIR/tests/visualize/types/cast/union/assertions-1.ts:19:16
+  --> $DIR/tests/pass/types/union/assertions-1.ts:19:16
    |
 19 | export var d = <I1>y;
    |                ^^^^^
@@ -107,7 +107,7 @@ warning: Type
    = note: I1
 
 warning: Type
-  --> $DIR/tests/visualize/types/cast/union/assertions-1.ts:21:1
+  --> $DIR/tests/pass/types/union/assertions-1.ts:21:1
    |
 21 | a;
    | ^
@@ -115,7 +115,7 @@ warning: Type
    = note: number | I2
 
 warning: Type
-  --> $DIR/tests/visualize/types/cast/union/assertions-1.ts:22:1
+  --> $DIR/tests/pass/types/union/assertions-1.ts:22:1
    |
 22 | c;
    | ^
@@ -123,7 +123,7 @@ warning: Type
    = note: I2
 
 warning: Type
-  --> $DIR/tests/visualize/types/cast/union/assertions-1.ts:23:1
+  --> $DIR/tests/pass/types/union/assertions-1.ts:23:1
    |
 23 | d;
    | ^
