@@ -1,0 +1,30 @@
+warning: Type
+ --> $DIR/tests/visualize/types/typeLit/1.ts:6:18
+  |
+6 | let data: Data = { foo: 'test', bar: null }
+  |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: {
+              foo: 'test';
+              bar: null;
+          }
+
+warning: Type
+ --> $DIR/tests/visualize/types/typeLit/1.ts:7:1
+  |
+7 | data.bar
+  | ^^^^
+  |
+  = note: {
+              foo: string;
+              bar: string | null;
+          }
+
+warning: Type
+ --> $DIR/tests/visualize/types/typeLit/1.ts:7:1
+  |
+7 | data.bar
+  | ^^^^^^^^
+  |
+  = note: string | null
+

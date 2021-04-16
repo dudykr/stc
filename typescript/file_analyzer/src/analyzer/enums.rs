@@ -335,14 +335,14 @@ impl Analyzer<'_, '_> {
 
             members.push(TypeElement::Property(PropertySignature {
                 span: m.span,
+                accessibility: None,
+                readonly: true,
                 key: Key::Normal {
                     span: key.span,
                     sym: key.sym.clone(),
                 },
                 optional: false,
                 params: Default::default(),
-                readonly: true,
-                type_params: Default::default(),
                 type_ann: Some(box Type::EnumVariant(EnumVariant {
                     span: m.span,
                     // TODO: Store context in `Enum`
@@ -350,6 +350,7 @@ impl Analyzer<'_, '_> {
                     enum_name: e.id.clone().into(),
                     name: key.sym,
                 })),
+                type_params: Default::default(),
             }))
         }
         {
@@ -469,7 +470,7 @@ impl Analyzer<'_, '_> {
                     lit: RTsLit::Number(lit.clone()),
                 })),
                 _ => {
-                    todo!("Handle enum with value other than string literal or numeric literals")
+                    unimplemented!("Handle enum with value other than string literal or numeric literals")
                 }
             }
         }

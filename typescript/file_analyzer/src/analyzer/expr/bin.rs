@@ -9,7 +9,7 @@ use crate::{
     analyzer::{Ctx, ScopeKind},
     ty::{Operator, Type, TypeExt},
     type_facts::TypeFacts,
-    util::{is_str_lit_or_union, is_str_or_union, RemoveTypes},
+    util::{is_str_or_union, RemoveTypes},
     validator,
     validator::ValidateWith,
     ValidationResult,
@@ -33,6 +33,7 @@ use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_file_analyzer_macros::extra_validator;
+use stc_ts_type_ops::is_str_lit_or_union;
 use stc_ts_types::name::Name;
 use stc_ts_types::Class;
 use stc_ts_types::Intersection;
@@ -375,7 +376,7 @@ impl Analyzer<'_, '_> {
                                 .cheap();
 
                             // TODO(kdy1): Maybe we need to check for intersection or union
-                            if orig_ty.is_type_param() {
+                            if orig_ty.normalize().is_type_param() {
                                 self.cur_facts.true_facts.vars.insert(
                                     Name::from(i),
                                     Type::Intersection(Intersection {
@@ -756,8 +757,8 @@ impl Analyzer<'_, '_> {
         let orig_ty = orig_ty.normalize();
 
         match orig_ty {
-            Type::Ref(..) => {
-                let orig_ty = self.expand_top_ref(span, Cow::Borrowed(orig_ty))?;
+            Type::Ref(..) | Type::Query(..) => {
+                let orig_ty = self.normalize(orig_ty, Default::default())?;
                 return self.narrow_with_instanceof(span, ty, &orig_ty);
             }
 
@@ -985,12 +986,11 @@ impl Analyzer<'_, '_> {
                             let params_res = self.assign_params(
                                 AssignOpts {
                                     span,
-                                    allow_unknown_rhs: false,
-                                    allow_assignment_to_param: false,
-                                    allow_unknown_type: false,
+                                    ..Default::default()
                                 },
                                 &lm.params,
                                 &rm.params,
+                                true,
                             );
 
                             if params_res.is_err() {
@@ -1002,8 +1002,7 @@ impl Analyzer<'_, '_> {
                                     AssignOpts {
                                         span,
                                         allow_unknown_rhs: true,
-                                        allow_assignment_to_param: false,
-                                        allow_unknown_type: false,
+                                        ..Default::default()
                                     },
                                     &lt,
                                     &rt,

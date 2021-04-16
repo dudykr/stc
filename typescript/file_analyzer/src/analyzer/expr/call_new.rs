@@ -11,10 +11,10 @@ use crate::{
     },
     ty,
     ty::{
-        CallSignature, ConstructorSignature, FnParam, Method, MethodSignature, QueryExpr, QueryType, Type, TypeElement,
-        TypeOrSpread, TypeParam, TypeParamInstantiation,
+        CallSignature, ConstructorSignature, FnParam, Method, MethodSignature, Type, TypeElement, TypeOrSpread,
+        TypeParam, TypeParamInstantiation,
     },
-    util::{is_str_lit_or_union, type_ext::TypeVecExt},
+    util::type_ext::TypeVecExt,
     validator,
     validator::ValidateWith,
     ValidationResult,
@@ -27,6 +27,7 @@ use rnode::FoldWith;
 use rnode::NodeId;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
+use rnode::VisitWith;
 use stc_ts_ast_rnode::RBindingIdent;
 use stc_ts_ast_rnode::RCallExpr;
 use stc_ts_ast_rnode::RExpr;
@@ -55,6 +56,9 @@ use stc_ts_errors::debug::print_type;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
+use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
+use stc_ts_type_ops::is_str_lit_or_union;
+use stc_ts_type_ops::Fix;
 use stc_ts_types::Class;
 use stc_ts_types::ClassDef;
 use stc_ts_types::ClassProperty;
@@ -99,7 +103,11 @@ impl Analyzer<'_, '_> {
         } = *e;
 
         let callee = match callee {
-            RExprOrSuper::Super(..) => return Ok(Type::any(span)),
+            RExprOrSuper::Super(..) => {
+                self.report_error_for_super_reference(span, true);
+
+                return Ok(Type::any(span));
+            }
             RExprOrSuper::Expr(callee) => callee,
         };
 
@@ -176,7 +184,13 @@ impl Analyzer<'_, '_> {
         };
         let mut args = vec![tpl_str_arg];
 
-        args.extend(e.exprs.iter().cloned().map(|expr| RExprOrSpread { spread: None, expr }));
+        args.extend(
+            e.tpl
+                .exprs
+                .iter()
+                .cloned()
+                .map(|expr| RExprOrSpread { spread: None, expr }),
+        );
 
         let res = self.with_child(ScopeKind::Call, Default::default(), |analyzer: &mut Analyzer| {
             analyzer.extract_call_new_expr_member(
@@ -228,6 +242,14 @@ impl Analyzer<'_, '_> {
             }
             None => None,
         };
+
+        if self.ctx.in_computed_prop_name {
+            if let Some(type_args) = &type_args {
+                let mut v = TypeParamUsageFinder::default();
+                type_args.visit_with(&mut v);
+                self.report_error_for_usage_of_type_param_of_declaring_class(&v.params, span);
+            }
+        }
 
         let arg_types = self.validate_args(args)?;
         let spread_arg_types = self
@@ -314,7 +336,7 @@ impl Analyzer<'_, '_> {
                 // Handle member expression
                 let obj_type = obj.validate_with_default(self)?.generalize_lit();
 
-                let obj_type = match *obj_type.normalize() {
+                let mut obj_type = match *obj_type.normalize() {
                     Type::Keyword(RTsKeywordType {
                         kind: TsKeywordTypeKind::TsNumberKeyword,
                         ..
@@ -462,6 +484,15 @@ impl Analyzer<'_, '_> {
                     ..
                 }) => {
                     return Ok(Type::any(span));
+                }
+
+                Type::This(..) => {
+                    if self.ctx.in_computed_prop_name {
+                        self.storage
+                            .report(Error::CannotReferenceThisInComputedPropName { span });
+                        // Return any to prevent other errors
+                        return Ok(Type::any(span));
+                    }
                 }
 
                 Type::Array(obj) => {
@@ -882,6 +913,7 @@ impl Analyzer<'_, '_> {
                             ..
                         }) => candidates.push(MethodSignature {
                             span: p.span,
+                            accessibility: None,
                             readonly: p.readonly,
                             key: p.key.clone(),
                             optional: p.optional,
@@ -894,6 +926,7 @@ impl Analyzer<'_, '_> {
                         Type::Function(f) => {
                             candidates.push(MethodSignature {
                                 span: f.span,
+                                accessibility: None,
                                 readonly: p.readonly,
                                 key: p.key.clone(),
                                 optional: p.optional,
@@ -1085,26 +1118,8 @@ impl Analyzer<'_, '_> {
         type_ann: Option<&Type>,
     ) -> ValidationResult {
         match ty.normalize() {
-            Type::Ref(..) => {
-                let ty = self.expand_top_ref(span, Cow::Borrowed(ty))?;
-                return self.extract(
-                    span,
-                    expr,
-                    &ty,
-                    kind,
-                    args,
-                    arg_types,
-                    spread_arg_types,
-                    type_args,
-                    type_ann,
-                );
-            }
-
-            Type::Query(QueryType {
-                expr: box QueryExpr::TsEntityName(name),
-                ..
-            }) => {
-                let ty = self.resolve_typeof(span, name)?;
+            Type::Ref(..) | Type::Query(..) => {
+                let ty = self.normalize(ty, Default::default())?;
                 return self.extract(
                     span,
                     expr,
@@ -1424,6 +1439,7 @@ impl Analyzer<'_, '_> {
                     params,
                     ret_ty,
                     type_params,
+                    ..
                 }) if kind == ExtractKind::New => Some((span, params, type_params, ret_ty)),
                 _ => None,
             })
@@ -1899,7 +1915,8 @@ impl Analyzer<'_, '_> {
                 expanded_params = params
                     .into_iter()
                     .map(|v| -> ValidationResult<_> {
-                        let ty = box self.expand_type_params(&map, *v.ty)?;
+                        let mut ty = box self.expand_type_params(&map, *v.ty)?;
+                        ty.fix();
 
                         Ok(FnParam { ty, ..v })
                     })
@@ -1914,7 +1931,8 @@ impl Analyzer<'_, '_> {
             let expanded_param_types = params
                 .into_iter()
                 .map(|v| -> ValidationResult<_> {
-                    let ty = box self.expand_type_params(&inferred, *v.ty)?;
+                    let mut ty = box self.expand_type_params(&inferred, *v.ty)?;
+                    ty.fix();
 
                     Ok(FnParam { ty, ..v })
                 })
@@ -2199,19 +2217,41 @@ impl Analyzer<'_, '_> {
                             AssignOpts {
                                 span: arg.span(),
                                 allow_unknown_rhs,
-                                allow_assignment_to_param: false,
-                                allow_unknown_type: false,
+                                ..Default::default()
                             },
                             &param.ty,
                             &arg.ty,
                         ) {
-                            let err = err.convert(|err| match err {
-                                Error::TupleAssignError { span, errors } => Error::Errors { span, errors },
-                                Error::ObjectAssignFailed { span, errors } => Error::Errors { span, errors },
-                                _ => Error::WrongArgType {
+                            let err = err.convert(|err| {
+                                match err {
+                                    Error::TupleAssignError { span, errors } => return Error::Errors { span, errors },
+                                    Error::ObjectAssignFailed { span, errors } => {
+                                        return Error::Errors { span, errors }
+                                    }
+                                    Error::Errors { span, ref errors } => {
+                                        if errors.iter().all(|err| match err.actual() {
+                                            Error::UnknownPropertyInObjectLiteralAssignment { span } => true,
+                                            _ => false,
+                                        }) {
+                                            return Error::Errors {
+                                                span,
+                                                errors: errors
+                                                    .iter()
+                                                    .map(|err| Error::WrongArgType {
+                                                        span: err.span(),
+                                                        inner: box err.clone(),
+                                                    })
+                                                    .collect(),
+                                            };
+                                        }
+                                    }
+                                    _ => {}
+                                }
+
+                                Error::WrongArgType {
                                     span: arg.span(),
                                     inner: box err,
-                                },
+                                }
                             });
                             self.storage.report(err);
                         }
@@ -2440,7 +2480,7 @@ impl Analyzer<'_, '_> {
                                     span,
                                     allow_unknown_rhs: true,
                                     allow_assignment_to_param: true,
-                                    allow_unknown_type: false,
+                                    ..Default::default()
                                 },
                                 &param.ty,
                                 &arg.ty,

@@ -1,0 +1,8 @@
+warning: Type
+ --> $DIR/tests/pass/types/keyof/object/never.ts:6:1
+  |
+6 | keys
+  | ^^^^
+  |
+  = note: Keys
+

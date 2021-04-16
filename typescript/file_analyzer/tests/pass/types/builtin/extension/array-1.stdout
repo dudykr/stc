@@ -1,5 +1,5 @@
 warning: Type
- --> $DIR/tests/visualize/types/builtin/extension/array-1.ts:7:9
+ --> $DIR/tests/pass/types/builtin/extension/array-1.ts:7:9
   |
 7 | let x = a.equalsShallow();
   |         ^
@@ -7,7 +7,7 @@ warning: Type
   = note: (string | number)[]
 
 warning: Type
- --> $DIR/tests/visualize/types/builtin/extension/array-1.ts:7:9
+ --> $DIR/tests/pass/types/builtin/extension/array-1.ts:7:9
   |
 7 | let x = a.equalsShallow();
   |         ^^^^^^^^^^^^^^^^^

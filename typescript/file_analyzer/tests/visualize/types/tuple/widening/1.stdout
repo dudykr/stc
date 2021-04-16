@@ -12,7 +12,7 @@ warning: Type
 3 | export var b = a = [undefined, null];
   |                    ^^^^^^^^^^^^^^^^^
   |
-  = note: [undefined, null]
+  = note: [any, any]
 
 warning: Type
  --> $DIR/tests/visualize/types/tuple/widening/1.ts:3:16
@@ -20,5 +20,5 @@ warning: Type
 3 | export var b = a = [undefined, null];
   |                ^^^^^^^^^^^^^^^^^^^^^
   |
-  = note: [undefined, null]
+  = note: [any, any]
 

@@ -46,7 +46,7 @@ warning: Type
 3 | o4.b?.["c"].d?.e;
   | ^^^^^^^^^^^^^
   |
-  = note: undefined | undefined | {
+  = note: undefined | {
               e: string;
           }
 
@@ -106,7 +106,7 @@ warning: Type
 4 | o4.b?.["c"].d?.["e"];
   | ^^^^^^^^^^^^^
   |
-  = note: undefined | undefined | {
+  = note: undefined | {
               e: string;
           }
 

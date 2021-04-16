@@ -1,4 +1,5 @@
 use super::super::{pat::PatMode, Analyzer, Ctx};
+use crate::analyzer::assign::AssignOpts;
 use crate::analyzer::util::instantiate_class;
 use crate::util::type_ext::TypeVecExt;
 use crate::{
@@ -233,16 +234,30 @@ impl Analyzer<'_, '_> {
                             }
                         };
                         let ty = self.expand(span, ty)?;
+                        ty.assert_valid();
                         let ty = instantiate_class(self.ctx.module_id, ty);
+                        ty.assert_valid();
                         self.check_rvalue(span, &ty);
 
                         self.scope.this = Some(ty.clone().remove_falsy());
                         let mut value_ty = get_value_ty!(Some(&ty));
+                        value_ty.assert_valid();
                         value_ty = self.expand(span, value_ty)?;
+                        value_ty.assert_valid();
                         value_ty = self.rename_type_params(span, value_ty, Some(&ty))?;
+                        value_ty.assert_valid();
+
+                        let opts = AssignOpts {
+                            span: v_span,
+                            allow_unknown_rhs: match &**init {
+                                RExpr::Ident(..) | RExpr::Member(..) | RExpr::MetaProp(..) | RExpr::New(..) => true,
+                                _ => false,
+                            },
+                            ..Default::default()
+                        };
 
                         match self
-                            .assign(&ty, &value_ty, v_span)
+                            .assign_with_opts(opts, &ty, &value_ty)
                             .context("tried to assign from var decl")
                         {
                             Ok(()) => {
@@ -323,6 +338,12 @@ impl Analyzer<'_, '_> {
                                 {
                                     let mut types = tuple.elems.iter().map(|e| *e.ty.clone()).collect::<Vec<_>>();
                                     types.dedup_type();
+
+                                    let has_other = types.iter().any(|ty| !ty.is_null_or_undefined());
+                                    if has_other {
+                                        types.retain(|ty| !ty.is_null_or_undefined());
+                                    }
+
                                     Type::Array(Array {
                                         span: tuple.span,
                                         elem_type: box Type::union(types),
@@ -459,7 +480,15 @@ impl Analyzer<'_, '_> {
                         match ty.normalize() {
                             Type::Ref(..) => {}
                             _ => {
-                                ty = self.expand(span, ty)?;
+                                let ctx = Ctx {
+                                    preserve_ref: true,
+                                    ignore_expand_prevention_for_all: false,
+                                    ignore_expand_prevention_for_top: false,
+                                    preserve_params: true,
+                                    preserve_ret_ty: true,
+                                    ..self.ctx
+                                };
+                                ty = self.with_ctx(ctx).expand(span, ty)?;
                             }
                         }
                         self.check_rvalue(span, &ty);

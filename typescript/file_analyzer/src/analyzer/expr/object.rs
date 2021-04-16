@@ -20,6 +20,7 @@ use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_errors::DebugExt;
 use stc_ts_file_analyzer_macros::validator;
 use stc_ts_generics::type_param::replacer::TypeParamReplacer;
+use stc_ts_type_ops::Fix;
 use stc_ts_types::CallSignature;
 use stc_ts_types::FnParam;
 use stc_ts_types::Function;
@@ -362,6 +363,7 @@ impl UnionNormalizer<'_, '_, '_> {
                         if !has_key {
                             ty.members.push(TypeElement::Property(PropertySignature {
                                 span: DUMMY_SP,
+                                accessibility: None,
                                 readonly: false,
                                 key: Key::Normal {
                                     span: DUMMY_SP,
@@ -490,28 +492,34 @@ impl Analyzer<'_, '_> {
                         return Ok(to);
                     }
                     Type::Union(rhs) => {
-                        return Ok(Type::Union(Union {
-                            span: lit.span,
-                            types: rhs
-                                .types
-                                .into_iter()
-                                .map(|rhs| self.append_type(to.clone(), rhs))
-                                .collect::<Result<_, _>>()?,
-                        }))
+                        return Ok(Type::Union(
+                            Union {
+                                span: lit.span,
+                                types: rhs
+                                    .types
+                                    .into_iter()
+                                    .map(|rhs| self.append_type(to.clone(), rhs))
+                                    .collect::<Result<_, _>>()?,
+                            }
+                            .fixed(),
+                        ))
                     }
                     _ => {}
                 }
             }
 
             Type::Union(to) => {
-                return Ok(Type::Union(Union {
-                    span: to.span,
-                    types: to
-                        .types
-                        .into_iter()
-                        .map(|to| self.append_type(to, rhs.clone()))
-                        .collect::<Result<_, _>>()?,
-                }))
+                return Ok(Type::Union(
+                    Union {
+                        span: to.span,
+                        types: to
+                            .types
+                            .into_iter()
+                            .map(|to| self.append_type(to, rhs.clone()))
+                            .collect::<Result<_, _>>()?,
+                    }
+                    .fixed(),
+                ))
             }
 
             _ => {}
@@ -532,7 +540,7 @@ impl Analyzer<'_, '_> {
             match key {
                 Key::Computed(..) => to.foldable(),
                 _ => self
-                    .exclude_props(&to, &[key.clone()])
+                    .exclude_props(rhs.span(), &to, &[key.clone()])
                     .context("tried to exclude properties before appending a type element")?,
             }
         } else {
@@ -546,14 +554,17 @@ impl Analyzer<'_, '_> {
                 lit.members.push(rhs);
                 Ok(to)
             }
-            Type::Union(to) => Ok(Type::Union(Union {
-                span: to.span,
-                types: to
-                    .types
-                    .into_iter()
-                    .map(|to| self.append_type_element(to, rhs.clone()))
-                    .collect::<Result<_, _>>()?,
-            })),
+            Type::Union(to) => Ok(Type::Union(
+                Union {
+                    span: to.span,
+                    types: to
+                        .types
+                        .into_iter()
+                        .map(|to| self.append_type_element(to, rhs.clone()))
+                        .collect::<Result<_, _>>()?,
+                }
+                .fixed(),
+            )),
             _ => {
                 unimplemented!("append_type_element\n{:?}\n{:?}", to, rhs)
             }

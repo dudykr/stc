@@ -1,10 +1,5 @@
 use crate::util::type_ext::TypeVecExt;
-use crate::{
-    analyzer::Analyzer,
-    env::Env,
-    ty::Type,
-    util::{is_str_lit_or_union, Marker},
-};
+use crate::{analyzer::Analyzer, env::Env, ty::Type, util::Marker};
 use rnode::Fold;
 use rnode::FoldWith;
 use rnode::NodeId;
@@ -15,6 +10,7 @@ use stc_ts_ast_rnode::RStr;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
+use stc_ts_type_ops::is_str_lit_or_union;
 use stc_ts_types::ClassDef;
 use stc_ts_types::Key;
 use stc_ts_types::TypeLitMetadata;
@@ -307,6 +303,7 @@ impl Fold<Type> for Simplifier<'_> {
                     .map(|key| {
                         TypeElement::Property(PropertySignature {
                             span,
+                            accessibility: None,
                             // TODO:
                             readonly: false,
                             key: Key::Normal {

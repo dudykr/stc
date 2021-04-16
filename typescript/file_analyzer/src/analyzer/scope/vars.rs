@@ -6,6 +6,7 @@ use crate::analyzer::Analyzer;
 use crate::ty::TypeExt;
 use crate::validator::ValidateWith;
 use crate::ValidationResult;
+use itertools::Itertools;
 use rnode::NodeId;
 use stc_ts_ast_rnode::RArrayPat;
 use stc_ts_ast_rnode::RBindingIdent;
@@ -16,12 +17,16 @@ use stc_ts_ast_rnode::RObjectPat;
 use stc_ts_ast_rnode::RObjectPatProp;
 use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RRestPat;
+use stc_ts_ast_rnode::RStr;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
+use stc_ts_ast_rnode::RTsLit;
+use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_types::Id;
 use stc_ts_types::Key;
+use stc_ts_types::ModuleId;
 use stc_ts_types::Ref;
 use stc_ts_types::Type;
 use stc_ts_types::TypeLit;
@@ -30,13 +35,14 @@ use stc_ts_types::Union;
 use stc_ts_utils::OptionExt;
 use stc_ts_utils::PatExt;
 use std::borrow::Cow;
+use swc_common::Span;
 use swc_common::Spanned;
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::TsKeywordTypeKind;
 use swc_ecma_ast::VarDeclKind;
 
 impl Analyzer<'_, '_> {
-    pub(crate) fn exclude_props(&mut self, ty: &Type, keys: &[Key]) -> ValidationResult<Type> {
+    pub(crate) fn exclude_props(&mut self, span: Span, ty: &Type, keys: &[Key]) -> ValidationResult<Type> {
         let ty = self.normalize(
             &ty,
             NormalizeTypeOpts {
@@ -45,13 +51,17 @@ impl Analyzer<'_, '_> {
             },
         )?;
 
+        if ty.is_any() || ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword) {
+            return Ok(ty.into_owned());
+        }
+
         match ty.normalize() {
             Type::TypeLit(lit) => {
                 let mut new_members = vec![];
                 'outer: for m in &lit.members {
                     if let Some(key) = m.key() {
                         for prop in keys {
-                            if self.key_matches(ty.span(), &key, prop, false) {
+                            if self.key_matches(span, &key, prop, false) {
                                 continue 'outer;
                             }
                         }
@@ -71,7 +81,7 @@ impl Analyzer<'_, '_> {
                 let types = u
                     .types
                     .iter()
-                    .map(|ty| self.exclude_props(ty, keys))
+                    .map(|ty| self.exclude_props(span, ty, keys))
                     .collect::<Result<_, _>>()?;
 
                 return Ok(Type::Union(Union { span: u.span, types }));
@@ -83,7 +93,7 @@ impl Analyzer<'_, '_> {
                     .map(Cow::into_owned)
                     .map(Type::TypeLit);
                 if let Some(ty) = ty {
-                    return self.exclude_props(&ty, keys);
+                    return self.exclude_props(span, &ty, keys);
                 }
             }
             // TODO
@@ -94,7 +104,52 @@ impl Analyzer<'_, '_> {
                     metadata: Default::default(),
                 }))
             }
-            Type::Param(..) => return Ok(ty.into_owned()),
+
+            // Create Omit<T, 'foo' | 'bar'>
+            Type::Param(..) => {
+                let mut key_types = keys
+                    .iter()
+                    .filter_map(|key| match key {
+                        Key::BigInt(v) => Some(Type::Lit(RTsLitType {
+                            node_id: NodeId::invalid(),
+                            span: v.span,
+                            lit: RTsLit::BigInt(v.clone()),
+                        })),
+                        Key::Num(v) => Some(Type::Lit(RTsLitType {
+                            node_id: NodeId::invalid(),
+                            span: v.span,
+                            lit: RTsLit::Number(v.clone()),
+                        })),
+                        Key::Normal { span, sym } => Some(Type::Lit(RTsLitType {
+                            node_id: NodeId::invalid(),
+                            span: *span,
+                            lit: RTsLit::Str(RStr {
+                                span: *span,
+                                value: sym.clone(),
+                                has_escape: false,
+                                kind: Default::default(),
+                            }),
+                        })),
+
+                        // TODO
+                        _ => None,
+                    })
+                    .collect_vec();
+                if key_types.is_empty() {
+                    return Ok(ty.into_owned());
+                }
+                let keys = Type::Union(Union { span, types: key_types });
+
+                return Ok(Type::Ref(Ref {
+                    span,
+                    ctxt: ModuleId::builtin(),
+                    type_name: RTsEntityName::Ident(RIdent::new("Omit".into(), DUMMY_SP)),
+                    type_args: Some(box TypeParamInstantiation {
+                        span,
+                        params: vec![ty.clone().into_owned(), keys],
+                    }),
+                }));
+            }
             _ => {}
         }
 
@@ -113,6 +168,13 @@ impl Analyzer<'_, '_> {
         ty: Option<Type>,
         actual_ty: Option<Type>,
     ) -> ValidationResult<()> {
+        match &ty {
+            Some(ty) => {
+                ty.assert_valid();
+            }
+            _ => {}
+        }
+
         let span = ty
             .as_ref()
             .map(|v| v.span())
@@ -362,7 +424,7 @@ impl Analyzer<'_, '_> {
                         RObjectPatProp::Rest(pat) => match ty {
                             Some(ty) => {
                                 let rest_ty = self
-                                    .exclude_props(&ty, &used_keys)
+                                    .exclude_props(pat.span(), &ty, &used_keys)
                                     .context("tried to exclude keys for declare vars with a object rest pattern")?;
 
                                 return self

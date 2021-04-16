@@ -9,6 +9,8 @@ use rnode::FoldWith;
 use slog::Logger;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
+use stc_ts_errors::debug::dump_type_as_string;
+use stc_ts_types::Function;
 use stc_ts_types::Interface;
 use stc_ts_types::Key;
 use stc_ts_types::TypeParamDecl;
@@ -40,7 +42,7 @@ impl Analyzer<'_, '_> {
                     let default = default.clone().cheap();
                     params.insert(param.name.clone(), default.clone());
                 } else {
-                    todo!(
+                    unimplemented!(
                         "Reporting errors when type parameter count and type argument count \
                          difffers\nParams={:#?}\nArgs: {:#?}",
                         type_params,
@@ -364,7 +366,12 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                 }
 
                 if let Some(ty) = self.params.get(&param.name) {
-                    slog::info!(self.logger, "generic_expand: Expanding type parameter `{}`", param.name);
+                    slog::info!(
+                        self.logger,
+                        "generic_expand: Expanding type parameter `{}` => {}",
+                        param.name,
+                        dump_type_as_string(&self.analyzer.cm, &ty)
+                    );
 
                     // If it's not self-referential, we fold it again.
 
@@ -434,7 +441,7 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                                 match ty.normalize() {
                                     Type::TypeLit(ty)
                                         if ty.members.iter().all(|element| match element {
-                                            TypeElement::Property(..) => true,
+                                            TypeElement::Property(..) | TypeElement::Method(..) => true,
                                             _ => false,
                                         }) =>
                                     {
@@ -454,6 +461,31 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                                                                 .unwrap_or_else(|| box Type::any(p.span)),
                                                         }),
                                                         ..p.clone()
+                                                    }))
+                                                }
+                                                TypeElement::Method(method) => {
+                                                    members.push(TypeElement::Property(PropertySignature {
+                                                        span: method.span,
+                                                        accessibility: None,
+                                                        readonly: method.readonly,
+                                                        key: method.key.clone(),
+                                                        optional: method.optional,
+                                                        params: Default::default(),
+                                                        type_ann: m.ty.clone().fold_with(&mut MappedHandler {
+                                                            analyzer: self.analyzer,
+                                                            key: &method.key,
+                                                            param_name: &param.name,
+                                                            prop_ty: &Type::Function(Function {
+                                                                span: method.span,
+                                                                type_params: method.type_params.clone(),
+                                                                params: method.params.clone(),
+                                                                ret_ty: method
+                                                                    .ret_ty
+                                                                    .clone()
+                                                                    .unwrap_or_else(|| box Type::any(method.span)),
+                                                            }),
+                                                        }),
+                                                        type_params: Default::default(),
                                                     }))
                                                 }
                                                 _ => {}
@@ -536,15 +568,15 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                                 ..
                             }) if members.iter().all(|m| match m {
                                 TypeElement::Property(_) => true,
+                                TypeElement::Method(_) => true,
                                 _ => false,
                             }) =>
                             {
                                 let mut new_members = Vec::with_capacity(members.len());
                                 for m in members {
                                     match m {
-                                        TypeElement::Property(p) => {
-                                            //
-                                            new_members.push(TypeElement::Property(p));
+                                        TypeElement::Property(..) | TypeElement::Method(..) => {
+                                            new_members.push(m);
                                         }
                                         _ => unreachable!(),
                                     }
@@ -593,6 +625,7 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                                         TypeElement::Method(method) => {
                                             new_members.push(TypeElement::Property(PropertySignature {
                                                 span: method.span,
+                                                accessibility: None,
                                                 readonly: method.readonly,
                                                 key: method.key.clone(),
                                                 optional: method.optional,

@@ -1,3 +1,4 @@
+use crate::analyzer::assign::AssignOpts;
 use crate::analyzer::Analyzer;
 use crate::util::type_ext::TypeVecExt;
 use crate::ValidationResult;
@@ -80,7 +81,15 @@ impl Analyzer<'_, '_> {
                 }))
             }
             _ => {
-                if let Ok(()) = self.assign(&declared, &actual, span) {
+                if let Ok(()) = self.assign_with_opts(
+                    AssignOpts {
+                        span,
+                        allow_unknown_rhs: true,
+                        ..Default::default()
+                    },
+                    &declared,
+                    &actual,
+                ) {
                     return Ok(declared);
                 }
 

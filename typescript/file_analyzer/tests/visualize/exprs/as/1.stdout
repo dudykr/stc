@@ -1,0 +1,32 @@
+warning: Type
+ --> $DIR/tests/visualize/exprs/as/1.ts:1:22
+  |
+1 | export var x = (v => v) as (x: number) => string;
+  |                      ^
+  |
+  = note: number
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/as/1.ts:1:17
+  |
+1 | export var x = (v => v) as (x: number) => string;
+  |                 ^^^^^^
+  |
+  = note: (v: number) => number
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/as/1.ts:1:16
+  |
+1 | export var x = (v => v) as (x: number) => string;
+  |                ^^^^^^^^
+  |
+  = note: (v: number) => number
+
+warning: Type
+ --> $DIR/tests/visualize/exprs/as/1.ts:1:16
+  |
+1 | export var x = (v => v) as (x: number) => string;
+  |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: (x: number) => string
+

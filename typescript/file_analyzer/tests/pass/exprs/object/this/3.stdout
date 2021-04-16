@@ -1,0 +1,78 @@
+warning: Type
+ --> $DIR/tests/pass/exprs/object/this/3.ts:4:16
+  |
+4 |         return this.foo.length;
+  |                ^^^^
+  |
+  = note: this
+
+warning: Type
+ --> $DIR/tests/pass/exprs/object/this/3.ts:4:16
+  |
+4 |         return this.foo.length;
+  |                ^^^^^^^^
+  |
+  = note: any
+
+warning: Type
+ --> $DIR/tests/pass/exprs/object/this/3.ts:4:16
+  |
+4 |         return this.foo.length;
+  |                ^^^^^^^^^^^^^^^
+  |
+  = note: any
+
+warning: Type
+ --> $DIR/tests/pass/exprs/object/this/3.ts:7:16
+  |
+7 |         return this.d.length;
+  |                ^^^^
+  |
+  = note: this
+
+warning: Type
+ --> $DIR/tests/pass/exprs/object/this/3.ts:7:16
+  |
+7 |         return this.d.length;
+  |                ^^^^^^
+  |
+  = note: any
+
+warning: Type
+ --> $DIR/tests/pass/exprs/object/this/3.ts:7:16
+  |
+7 |         return this.d.length;
+  |                ^^^^^^^^^^^^^
+  |
+  = note: any
+
+warning: Type
+ --> $DIR/tests/pass/exprs/object/this/3.ts:6:8
+  |
+6 |       f: function () {
+  |  ________^
+7 | |         return this.d.length;
+8 | |     }
+  | |_____^
+  |
+  = note: () => any
+
+warning: Type
+ --> $DIR/tests/pass/exprs/object/this/3.ts:1:16
+  |
+1 |   export let o = {
+  |  ________________^
+2 | |     d: "bar",
+3 | |     m() {
+4 | |         return this.foo.length;
+... |
+8 | |     }
+9 | | }
+  | |_^
+  |
+  = note: {
+              d: "bar";
+              m(): any;
+              f: () => any;
+          }
+

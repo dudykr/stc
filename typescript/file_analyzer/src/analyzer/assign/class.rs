@@ -94,7 +94,7 @@ impl Analyzer<'_, '_> {
                             continue;
                         }
                     };
-                    self.assign_type_elements_to_type_element(opts, &mut vec![], &lm, &rhs.members)
+                    self.assign_type_elements_to_type_element(opts, &mut vec![], &mut vec![], &lm, &rhs.members)
                         .context("tried to assign type elements to a class member")?;
                 }
 
@@ -186,7 +186,7 @@ impl Analyzer<'_, '_> {
                             continue;
                         }
                     };
-                    self.assign_type_elements_to_type_element(opts, &mut vec![], &lm, &rhs.body)
+                    self.assign_type_elements_to_type_element(opts, &mut vec![], &mut vec![], &lm, &rhs.body)
                         .context("tried to assign type elements to a class member")?;
                 }
 
@@ -204,7 +204,7 @@ impl Analyzer<'_, '_> {
                             continue;
                         }
                     };
-                    self.assign_type_elements_to_type_element(opts, &mut vec![], &lm, &rhs.members)
+                    self.assign_type_elements_to_type_element(opts, &mut vec![], &mut vec![], &lm, &rhs.members)
                         .context("tried to assign type elements to a class member")?;
                 }
 
@@ -224,7 +224,7 @@ impl Analyzer<'_, '_> {
                                 continue;
                             }
                         };
-                        self.assign_type_elements_to_type_element(opts, &mut vec![], &lm, &rhs.members)
+                        self.assign_type_elements_to_type_element(opts, &mut vec![], &mut vec![], &lm, &rhs.members)
                             .context("tried to assign type elements to a class member")?;
                     }
 
@@ -251,7 +251,7 @@ impl Analyzer<'_, '_> {
         }
 
         match r {
-            Type::Lit(..) => return Err(Error::SimpleAssignFailed { span: opts.span }),
+            Type::Lit(..) | Type::Keyword(..) => return Err(Error::SimpleAssignFailed { span: opts.span }),
             _ => {}
         }
 
@@ -274,7 +274,7 @@ impl Analyzer<'_, '_> {
                 for rm in r {
                     match rm {
                         ClassMember::Constructor(rc) => {
-                            self.assign_params(opts, &lc.params, &rc.params)?;
+                            self.assign_params(opts, &lc.params, &rc.params, true)?;
                             // TODO: Validate parameters and etc..
                             return Ok(());
                         }

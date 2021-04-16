@@ -142,17 +142,6 @@ impl VisitMut<Type> for Marker {
     }
 }
 
-/// TODO: Rename: `is_all_str_lit`
-pub(crate) fn is_str_lit_or_union(t: &Type) -> bool {
-    match t {
-        Type::Lit(RTsLitType {
-            lit: RTsLit::Str(..), ..
-        }) => true,
-        Type::Union(Union { ref types, .. }) => types.iter().all(|ty| is_str_lit_or_union(&ty)),
-        _ => false,
-    }
-}
-
 pub(crate) fn is_str_or_union(t: &Type) -> bool {
     match t {
         Type::Lit(RTsLitType {
@@ -164,30 +153,6 @@ pub(crate) fn is_str_or_union(t: &Type) -> bool {
         }) => true,
         Type::Union(Union { ref types, .. }) => types.iter().all(|ty| is_str_or_union(&ty)),
         _ => false,
-    }
-}
-
-pub(crate) trait AsModuleDecl {
-    const IS_MODULE_ITEM: bool;
-    fn as_module_decl(&self) -> Result<&RModuleDecl, &RStmt>;
-}
-
-impl AsModuleDecl for RStmt {
-    const IS_MODULE_ITEM: bool = false;
-
-    fn as_module_decl(&self) -> Result<&RModuleDecl, &RStmt> {
-        Err(self)
-    }
-}
-
-impl AsModuleDecl for RModuleItem {
-    const IS_MODULE_ITEM: bool = true;
-
-    fn as_module_decl(&self) -> Result<&RModuleDecl, &RStmt> {
-        match self {
-            RModuleItem::ModuleDecl(decl) => Ok(decl),
-            RModuleItem::Stmt(stmt) => Err(stmt),
-        }
     }
 }
 

@@ -322,8 +322,7 @@ define_rnode!({
     pub struct TaggedTpl {
         pub span: Span,
         pub tag: Box<Expr>,
-        pub exprs: Vec<Box<Expr>>,
-        pub quasis: Vec<TplElement>,
+        pub tpl: Tpl,
         pub type_params: Option<TsTypeParamInstantiation>,
     }
     pub struct TplElement {
@@ -922,6 +921,8 @@ define_rnode!({
         TsCallSignatureDecl(TsCallSignatureDecl),
         TsConstructSignatureDecl(TsConstructSignatureDecl),
         TsPropertySignature(TsPropertySignature),
+        TsGetterSignature(TsGetterSignature),
+        TsSetterSignature(TsSetterSignature),
         TsMethodSignature(TsMethodSignature),
         TsIndexSignature(TsIndexSignature),
     }
@@ -948,6 +949,25 @@ define_rnode!({
         pub type_ann: Option<TsTypeAnn>,
         pub type_params: Option<TsTypeParamDecl>,
     }
+
+    pub struct TsGetterSignature {
+        pub span: Span,
+        pub readonly: bool,
+        pub key: Box<Expr>,
+        pub computed: bool,
+        pub optional: bool,
+        pub type_ann: Option<TsTypeAnn>,
+    }
+
+    pub struct TsSetterSignature {
+        pub span: Span,
+        pub readonly: bool,
+        pub key: Box<Expr>,
+        pub computed: bool,
+        pub optional: bool,
+        pub param: TsFnParam,
+    }
+
     pub struct TsMethodSignature {
         pub span: Span,
         pub readonly: bool,

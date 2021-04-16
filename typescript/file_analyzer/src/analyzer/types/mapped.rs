@@ -1,8 +1,8 @@
 use crate::analyzer::Analyzer;
 use crate::ValidationResult;
+use stc_ts_ast_rnode::RTsEnumMemberId;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
-use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::DebugExt;
 use stc_ts_types::Key;
 use stc_ts_types::Mapped;
@@ -25,7 +25,7 @@ impl Analyzer<'_, '_> {
     /// ```ts
     /// declare const a: Partial<Foo>;
     /// ```
-    pub(crate) fn expand_mapped(&mut self, span: Span, m: &Mapped) -> ValidationResult {
+    pub(crate) fn expand_mapped(&mut self, span: Span, m: &Mapped) -> ValidationResult<Option<Type>> {
         match m.type_param.constraint.as_deref().map(|v| v.normalize()) {
             Some(Type::Operator(Operator {
                 op: TsTypeOperatorOp::KeyOf,
@@ -45,23 +45,24 @@ impl Analyzer<'_, '_> {
                                 self.apply_mapped_flags(member, m.optional, m.readonly);
                             }
 
-                            return Ok(Type::TypeLit(new));
+                            return Ok(Some(Type::TypeLit(new)));
                         }
                     }
                 }
 
                 // TODO: Verify that m.ty does not contain key type.
-                let keys = self.get_keys(span, ty)?;
+                let keys = self.get_property_names(span, ty)?;
                 if let Some(keys) = keys {
                     let members = keys
                         .into_iter()
                         .map(|key| PropertySignature {
                             span: key.span(),
-                            key,
-                            type_ann: m.ty.clone(),
+                            accessibility: None,
                             readonly: false,
+                            key,
                             optional: false,
                             params: Default::default(),
+                            type_ann: m.ty.clone(),
                             type_params: Default::default(),
                         })
                         .map(TypeElement::Property)
@@ -71,11 +72,11 @@ impl Analyzer<'_, '_> {
                         })
                         .collect();
 
-                    return Ok(Type::TypeLit(TypeLit {
+                    return Ok(Some(Type::TypeLit(TypeLit {
                         span: m.span,
                         members,
                         metadata: Default::default(),
-                    }));
+                    })));
                 }
             }
             _ => {
@@ -87,11 +88,12 @@ impl Analyzer<'_, '_> {
                                 .into_iter()
                                 .map(|key| PropertySignature {
                                     span: key.span(),
-                                    key,
-                                    type_ann: m.ty.clone(),
+                                    accessibility: None,
                                     readonly: false,
+                                    key,
                                     optional: false,
                                     params: Default::default(),
+                                    type_ann: m.ty.clone(),
                                     type_params: Default::default(),
                                 })
                                 .map(TypeElement::Property)
@@ -101,11 +103,11 @@ impl Analyzer<'_, '_> {
                                 })
                                 .collect();
 
-                            return Ok(Type::TypeLit(TypeLit {
+                            return Ok(Some(Type::TypeLit(TypeLit {
                                 span: m.span,
                                 members,
                                 metadata: Default::default(),
-                            }));
+                            })));
                         }
                     }
                     None => {}
@@ -113,10 +115,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        unimplemented!(
-            "expand_mapped: {}",
-            dump_type_as_string(&self.cm, &Type::Mapped(m.clone()))
-        )
+        Ok(None)
     }
 
     /// Evaluate a type and convert it to keys.
@@ -177,14 +176,17 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    /// Evaluates `keyof` operator.
-    fn get_keys(&mut self, span: Span, ty: &Type) -> ValidationResult<Option<Vec<Key>>> {
+    /// Get keys of `ty` as a proerty name.
+    fn get_property_names(&mut self, span: Span, ty: &Type) -> ValidationResult<Option<Vec<Key>>> {
         let ty = self
             .normalize(ty, Default::default())
             .context("tried to normalize a type to get keys from it")?;
-        let ty = ty.normalize();
 
-        match ty {
+        if ty.is_any() {
+            return Ok(None);
+        }
+
+        match ty.normalize() {
             Type::TypeLit(ty) => {
                 let mut keys = vec![];
                 for m in &ty.members {
@@ -226,16 +228,33 @@ impl Analyzer<'_, '_> {
                         &parent.expr,
                         parent.type_args.as_deref(),
                     )?;
-                    if let Some(parent_keys) = self.get_keys(span, &parent)? {
+                    if let Some(parent_keys) = self.get_property_names(span, &parent)? {
                         keys.extend(parent_keys);
                     }
                 }
 
                 return Ok(Some(keys));
             }
+            Type::Enum(e) => {
+                let mut keys = vec![];
+                for member in &e.members {
+                    keys.push(match &member.id {
+                        RTsEnumMemberId::Ident(i) => Key::Normal {
+                            span: i.span,
+                            sym: i.sym.clone(),
+                        },
+                        RTsEnumMemberId::Str(s) => Key::Normal {
+                            span: s.span,
+                            sym: s.value.clone(),
+                        },
+                    })
+                }
+
+                return Ok(Some(keys));
+            }
             Type::Param(..) => Ok(None),
             _ => {
-                unimplemented!("extract_keys_as_keys: {:#?}", ty);
+                unimplemented!("get_property_names: {:#?}", ty);
             }
         }
     }

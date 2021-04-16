@@ -1,3 +1,7 @@
+function foo<T>(x: T) {
+    return x;
+}
+
 export function other3<T extends U, U extends Date>(arg: T) {
     var b: {
         [x: string]: Object;

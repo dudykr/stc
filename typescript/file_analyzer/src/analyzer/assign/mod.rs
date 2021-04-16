@@ -14,8 +14,6 @@ use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::debug::print_backtrace;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
-use stc_ts_errors::Errors;
-use stc_ts_types::ClassDef;
 use stc_ts_types::Key;
 use stc_ts_types::Mapped;
 use stc_ts_types::Operator;
@@ -28,6 +26,7 @@ use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::EqIgnoreSpan;
 use swc_common::TypeEq;
+use swc_common::DUMMY_SP;
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::*;
 
@@ -41,7 +40,9 @@ mod type_el;
 /// Context used for `=` assignments.
 #[derive(Clone, Copy)]
 pub(crate) struct AssignOpts {
+    /// This field should be overrided by caller.
     pub span: Span,
+    pub right_ident_span: Option<Span>,
     pub allow_unknown_rhs: bool,
     /// Allow assigning `unknown` type to other types. This should be `true` for
     /// parameters because the following is valid.
@@ -60,6 +61,18 @@ pub(crate) struct AssignOpts {
     /// ```
     pub allow_unknown_type: bool,
     pub allow_assignment_to_param: bool,
+}
+
+impl Default for AssignOpts {
+    fn default() -> Self {
+        Self {
+            span: DUMMY_SP,
+            right_ident_span: None,
+            allow_assignment_to_param: false,
+            allow_unknown_rhs: false,
+            allow_unknown_type: false,
+        }
+    }
 }
 
 impl Analyzer<'_, '_> {
@@ -157,9 +170,7 @@ impl Analyzer<'_, '_> {
         self.assign_with_opts(
             AssignOpts {
                 span,
-                allow_unknown_rhs: false,
-                allow_assignment_to_param: false,
-                allow_unknown_type: false,
+                ..Default::default()
             },
             left,
             right,
@@ -196,6 +207,7 @@ impl Analyzer<'_, '_> {
                     span: opts.span,
                     left: box left.clone(),
                     right: box right.clone(),
+                    right_ident: opts.right_ident_span,
                     cause: vec![err],
                 },
             })
@@ -207,6 +219,8 @@ impl Analyzer<'_, '_> {
     /// - Not a reference
     /// - Not a type parameter declared on child scope.
     fn verify_before_assign(&self, ctx: &'static str, ty: &Type) {
+        ty.assert_valid();
+
         match ty.normalize() {
             Type::Ref(ref r) => {
                 print_backtrace();
@@ -220,7 +234,9 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn normalize_for_assign<'a>(&mut self, ty: &'a Type) -> Cow<'a, Type> {
+    fn normalize_for_assign<'a>(&mut self, ty: &'a Type) -> ValidationResult<Cow<'a, Type>> {
+        ty.assert_valid();
+
         let ty = ty.normalize();
 
         match ty {
@@ -231,20 +247,33 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {
                 // TODO: Check if ref points global.
-                return Cow::Owned(Type::Keyword(RTsKeywordType {
+                return Ok(Cow::Owned(Type::Keyword(RTsKeywordType {
                     span: *span,
                     kind: match type_name.sym {
                         js_word!("Boolean") => TsKeywordTypeKind::TsBooleanKeyword,
                         js_word!("Number") => TsKeywordTypeKind::TsNumberKeyword,
                         js_word!("String") => TsKeywordTypeKind::TsStringKeyword,
-                        _ => return Cow::Borrowed(ty),
+                        _ => return Ok(Cow::Borrowed(ty)),
                     },
-                }));
+                })));
+            }
+            Type::Conditional(..)
+            | Type::Alias(..)
+            | Type::Operator(Operator {
+                op: TsTypeOperatorOp::KeyOf,
+                ..
+            }) => {
+                let ty = self
+                    .normalize(&ty, Default::default())
+                    .context("tried to normalize a type for assignment")?
+                    .into_owned();
+
+                return Ok(Cow::Owned(ty));
             }
             _ => {}
         }
 
-        Cow::Borrowed(ty)
+        Ok(Cow::Borrowed(ty))
     }
 
     fn assign_inner(&mut self, to: &Type, rhs: &Type, opts: AssignOpts) -> ValidationResult<()> {
@@ -253,7 +282,7 @@ impl Analyzer<'_, '_> {
             let l = dump_type_as_string(&self.cm, &to);
             let r = dump_type_as_string(&self.cm, &rhs);
 
-            format!("lhs = {}rhs = {}", l, r)
+            format!("\nlhs = {}\nrhs = {}", l, r)
         })
     }
 
@@ -275,8 +304,8 @@ impl Analyzer<'_, '_> {
         }
 
         // debug_assert!(!span.is_dummy(), "\n\t{:?}\n<-\n\t{:?}", to, rhs);
-        let to = self.normalize_for_assign(to);
-        let rhs = self.normalize_for_assign(rhs);
+        let to = self.normalize_for_assign(to)?;
+        let rhs = self.normalize_for_assign(rhs)?;
 
         let to = to.normalize();
         let rhs = rhs.normalize();
@@ -287,6 +316,7 @@ impl Analyzer<'_, '_> {
                     span,
                     left: box to.clone(),
                     right: box rhs.clone(),
+                    right_ident: opts.right_ident_span,
                     cause: vec![],
                 });
             }};
@@ -536,12 +566,43 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Intersection(ref i) => {
-                let mut errors = Errors::default();
+                let mut errors = vec![];
+
+                // TODO: Optimize unknown rhs handling
 
                 for ty in &i.types {
-                    match self.assign_inner(&ty, rhs, opts) {
+                    match self
+                        .assign_with_opts(
+                            AssignOpts {
+                                allow_unknown_rhs: true,
+                                ..opts
+                            },
+                            &ty,
+                            rhs,
+                        )
+                        .context("tried to assign to an element of an intersection type")
+                    {
                         Ok(..) => {}
                         Err(err) => errors.push(err),
+                    }
+                }
+
+                if !opts.allow_unknown_rhs {
+                    let lhs = self.type_to_type_lit(span, to)?;
+                    if let Some(lhs) = lhs {
+                        self.assign_to_type_elements(opts, lhs.span, &lhs.members, &rhs, lhs.metadata)
+                            .with_context(|| {
+                                format!(
+                                    "tried to check if unknown rhs exists while assigning to an intersection \
+                                     type:\nLHS: {}",
+                                    dump_type_as_string(&self.cm, &Type::TypeLit(lhs.into_owned()))
+                                )
+                            })?;
+
+                        errors.retain(|err| match err.actual() {
+                            Error::UnknownPropertyInObjectLiteralAssignment { .. } => false,
+                            _ => true,
+                        });
                     }
                 }
 
@@ -549,10 +610,7 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
-                return Err(Error::Errors {
-                    span,
-                    errors: errors.into(),
-                });
+                return Err(Error::Errors { span, errors });
             }
 
             Type::Class(l) => match rhs {
@@ -560,6 +618,7 @@ impl Analyzer<'_, '_> {
                 | Type::Ref(..)
                 | Type::TypeLit(..)
                 | Type::Lit(..)
+                | Type::Keyword(..)
                 | Type::Class(..)
                 | Type::Predicate(..) => {
                     return self
@@ -654,7 +713,16 @@ impl Analyzer<'_, '_> {
                     Type::Union(..) => {
                         types
                             .iter()
-                            .map(|rhs| self.assign_with_opts(opts, to, rhs))
+                            .map(|rhs| {
+                                self.assign_with_opts(
+                                    AssignOpts {
+                                        allow_unknown_rhs: true,
+                                        ..opts
+                                    },
+                                    to,
+                                    rhs,
+                                )
+                            })
                             .collect::<Result<_, _>>()
                             .context("tried to assign an union type to another one")?;
 
@@ -664,7 +732,7 @@ impl Analyzer<'_, '_> {
                 }
                 let errors = types
                     .iter()
-                    .filter_map(|rhs| match self.assign_inner(to, rhs, opts) {
+                    .filter_map(|rhs| match self.assign_with_opts(opts, to, rhs) {
                         Ok(()) => None,
                         Err(err) => Some(err),
                     })
@@ -672,7 +740,7 @@ impl Analyzer<'_, '_> {
                 if errors.is_empty() {
                     return Ok(());
                 }
-                return Err(Error::Errors { span, errors });
+                return Err(Error::Errors { span, errors }.context("tried to assign a union to other type"));
             }
 
             Type::Keyword(RTsKeywordType {
@@ -844,8 +912,15 @@ impl Analyzer<'_, '_> {
                 let results = types
                     .iter()
                     .map(|to| {
-                        self.assign_inner(&to, rhs, opts)
-                            .context("tried to assign a type to a union")
+                        self.assign_with_opts(
+                            AssignOpts {
+                                allow_unknown_rhs: true,
+                                ..opts
+                            },
+                            &to,
+                            rhs,
+                        )
+                        .context("tried to assign a type to a union")
                     })
                     .collect::<Vec<_>>();
                 if results.iter().any(Result::is_ok) {
@@ -862,9 +937,10 @@ impl Analyzer<'_, '_> {
                         cause: errors,
                         left: box to.clone(),
                         right: box rhs.clone(),
+                        right_ident: opts.right_ident_span,
                     });
                 } else {
-                    return Err(Error::Errors { span, errors });
+                    return Err(Error::Errors { span, errors }.context("tried to a type to a union type"));
                 }
             }
 
@@ -882,30 +958,6 @@ impl Analyzer<'_, '_> {
                 }
 
                 return Ok(());
-            }
-
-            Type::Keyword(RTsKeywordType {
-                kind: TsKeywordTypeKind::TsObjectKeyword,
-                ..
-            }) => {
-                // let a: object = {};
-                match *rhs {
-                    Type::Keyword(RTsKeywordType {
-                        kind: TsKeywordTypeKind::TsNumberKeyword,
-                        ..
-                    })
-                    | Type::Keyword(RTsKeywordType {
-                        kind: TsKeywordTypeKind::TsStringKeyword,
-                        ..
-                    })
-                    | Type::Function(..)
-                    | Type::Constructor(..)
-                    | Type::Enum(..)
-                    | Type::Class(..)
-                    | Type::TypeLit(..) => return Ok(()),
-
-                    _ => {}
-                }
             }
 
             // Handle same keyword type.
@@ -948,7 +1000,6 @@ impl Analyzer<'_, '_> {
                         Type::Lit(RTsLitType {
                             lit: RTsLit::Str(..), ..
                         }) => return Ok(()),
-                        Type::Lit(..) => fail!(),
                         _ => {}
                     },
 
@@ -957,7 +1008,6 @@ impl Analyzer<'_, '_> {
                             lit: RTsLit::Number(..),
                             ..
                         }) => return Ok(()),
-                        Type::Lit(..) => fail!(),
 
                         Type::EnumVariant(ref v) => {
                             // Allow assigning enum with numeric values to
@@ -985,8 +1035,7 @@ impl Analyzer<'_, '_> {
                         Type::Lit(RTsLitType {
                             lit: RTsLit::Bool(..), ..
                         }) => return Ok(()),
-                        Type::Lit(..) => fail!(),
-                        _ => return Ok(()),
+                        _ => {}
                     },
 
                     TsKeywordTypeKind::TsVoidKeyword | TsKeywordTypeKind::TsUndefinedKeyword => {
@@ -1022,6 +1071,68 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
+                    TsKeywordTypeKind::TsObjectKeyword => {
+                        match *rhs {
+                            Type::Keyword(RTsKeywordType {
+                                kind: TsKeywordTypeKind::TsNumberKeyword,
+                                ..
+                            })
+                            | Type::Keyword(RTsKeywordType {
+                                kind: TsKeywordTypeKind::TsStringKeyword,
+                                ..
+                            })
+                            | Type::Keyword(RTsKeywordType {
+                                kind: TsKeywordTypeKind::TsBooleanKeyword,
+                                ..
+                            })
+                            | Type::Keyword(RTsKeywordType {
+                                kind: TsKeywordTypeKind::TsBigIntKeyword,
+                                ..
+                            })
+                            | Type::Keyword(RTsKeywordType {
+                                kind: TsKeywordTypeKind::TsVoidKeyword,
+                                ..
+                            })
+                            | Type::Keyword(RTsKeywordType {
+                                kind: TsKeywordTypeKind::TsNullKeyword,
+                                ..
+                            })
+                            | Type::Keyword(RTsKeywordType {
+                                kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                                ..
+                            })
+                            | Type::Lit(..) => {
+                                fail!()
+                            }
+
+                            // let a: object = {};
+                            Type::Function(..)
+                            | Type::Constructor(..)
+                            | Type::Enum(..)
+                            | Type::Interface(..)
+                            | Type::Class(..)
+                            | Type::TypeLit(..) => return Ok(()),
+
+                            _ => {}
+                        }
+                    }
+                    _ => {}
+                }
+
+                match kind {
+                    TsKeywordTypeKind::TsStringKeyword
+                    | TsKeywordTypeKind::TsBigIntKeyword
+                    | TsKeywordTypeKind::TsNumberKeyword
+                    | TsKeywordTypeKind::TsBooleanKeyword
+                    | TsKeywordTypeKind::TsNullKeyword
+                    | TsKeywordTypeKind::TsUndefinedKeyword => match rhs {
+                        Type::Lit(..)
+                        | Type::Interface(..)
+                        | Type::TypeLit(..)
+                        | Type::Function(..)
+                        | Type::Constructor(..) => fail!(),
+                        _ => {}
+                    },
                     _ => {}
                 }
             }
@@ -1086,6 +1197,8 @@ impl Analyzer<'_, '_> {
             Type::Interface(Interface {
                 ref body, ref extends, ..
             }) => {
+                // TODO: Optimize handling of unknown rhs
+
                 self.assign_to_type_elements(
                     AssignOpts {
                         allow_unknown_rhs: true,
@@ -1152,8 +1265,24 @@ impl Analyzer<'_, '_> {
                         span,
                         left: box to.clone(),
                         right: box rhs.clone(),
+                        right_ident: opts.right_ident_span,
                         cause: errors,
                     });
+                }
+
+                // We should check for unknown rhs, while allowing assignment to parent
+                // interfaces.
+                if !opts.allow_unknown_rhs {
+                    let lhs = self.type_to_type_lit(span, to)?;
+                    if let Some(lhs) = lhs {
+                        self.assign_to_type_elements(opts, span, &lhs.members, rhs, Default::default())
+                            .with_context(|| {
+                                format!(
+                                    "tried to assign a type to an interface to check if unknown rhs exists\nLHS: {}",
+                                    dump_type_as_string(&self.cm, &Type::TypeLit(lhs.into_owned()))
+                                )
+                            })?;
+                    }
                 }
 
                 return Ok(());
@@ -1192,15 +1321,32 @@ impl Analyzer<'_, '_> {
             },
 
             Type::Function(lf) => match rhs {
-                Type::Function(..) | Type::Lit(..) => {
+                Type::Function(..) | Type::Lit(..) | Type::TypeLit(..) | Type::Interface(..) => {
                     return self
                         .assign_to_function(opts, to, lf, rhs)
-                        .context("tried to assign a function to a function")
+                        .context("tried to assign to a function type")
                 }
                 Type::Keyword(RTsKeywordType {
                     kind: TsKeywordTypeKind::TsVoidKeyword,
                     ..
-                }) => {
+                })
+                | Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsNumberKeyword,
+                    ..
+                })
+                | Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsStringKeyword,
+                    ..
+                })
+                | Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsBigIntKeyword,
+                    ..
+                })
+                | Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsBooleanKeyword,
+                    ..
+                })
+                | Type::Constructor(..) => {
                     fail!()
                 }
                 _ => {}
@@ -1240,8 +1386,10 @@ impl Analyzer<'_, '_> {
 
                         return Ok(());
                     }
-                    Type::Interface(..)
+                    Type::Lit(..)
+                    | Type::Interface(..)
                     | Type::TypeLit(..)
+                    | Type::Keyword(..)
                     | Type::Array(..)
                     | Type::Class(..)
                     | Type::ClassDef(..) => {
@@ -1252,26 +1400,11 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            //Type::Simple(ref s) => match **s {
-            //    RTsType::TsTypePredicate(..) => match *rhs.normalize() {
-            //        Type::Keyword(RTsKeywordType {
-            //            kind: TsKeywordTypeKind::TsBooleanKeyword,
-            //            ..
-            //        })
-            //        | Type::Lit(RTsLitType {
-            //            lit: RTsLit::Bool(..),
-            //            ..
-            //        }) => return Ok(()),
-            //        _ => {}
-            //    },
-            //
-            //    _ => {}
-            //},
-            Type::Constructor(ref lc) => match *rhs.normalize() {
-                Type::Lit(..) => fail!(),
-                Type::ClassDef(ClassDef { is_abstract: true, .. }) => fail!(),
-                _ => {}
-            },
+            Type::Constructor(ref lc) => {
+                return self
+                    .assign_to_constructor(opts, to, &lc, rhs)
+                    .context("tried to assign to a constructor type")
+            }
 
             _ => {}
         }
@@ -1309,8 +1442,49 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        if to.is_kwd(TsKeywordTypeKind::TsNeverKeyword) {
-            fail!();
+        match to {
+            // Handle symbol assignments
+            Type::Operator(Operator {
+                op: TsTypeOperatorOp::Unique,
+                ty,
+                ..
+            }) if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) => {
+                if rhs.is_symbol() {
+                    return Ok(());
+                }
+            }
+
+            Type::Predicate(..) => {
+                if rhs.is_kwd(TsKeywordTypeKind::TsBooleanKeyword) {
+                    return Ok(());
+                }
+            }
+
+            Type::Operator(Operator {
+                op: TsTypeOperatorOp::KeyOf,
+                ty,
+                ..
+            }) if ty.normalize().is_type_param() => {
+                return self
+                    .assign_with_opts(
+                        opts,
+                        &Type::Keyword(RTsKeywordType {
+                            span: DUMMY_SP,
+                            kind: TsKeywordTypeKind::TsStringKeyword,
+                        }),
+                        rhs,
+                    )
+                    .context("tried to assign a type to a `keyof TypeParam`")
+            }
+
+            _ => {}
+        }
+
+        if to.is_symbol()
+            || to.is_kwd(TsKeywordTypeKind::TsNeverKeyword)
+            || rhs.is_kwd(TsKeywordTypeKind::TsVoidKeyword)
+        {
+            fail!()
         }
 
         // TODO: Implement full type checker
@@ -1372,8 +1546,6 @@ impl Analyzer<'_, '_> {
         self.assign_with_opts(opts, &keys, &rhs_keys)
     }
 
-    /// Returns `Ok(true)` if assignment was successfult and returns `Ok(false)`
-    /// if the method doesn't know the way to handle assignment.
     fn assign_to_mapped(&mut self, opts: AssignOpts, to: &Mapped, rhs: &Type) -> ValidationResult<()> {
         let rhs = rhs.normalize();
 

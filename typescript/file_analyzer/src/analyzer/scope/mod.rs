@@ -24,16 +24,15 @@ use rnode::VisitMutWith;
 use rnode::VisitWith;
 use slog::Logger;
 use stc_ts_ast_rnode::RArrayPat;
-use stc_ts_ast_rnode::RAssignPatProp;
 use stc_ts_ast_rnode::RBindingIdent;
 use stc_ts_ast_rnode::RObjectPat;
 use stc_ts_ast_rnode::RObjectPatProp;
 use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RPropName;
-use stc_ts_ast_rnode::RRestPat;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsQualifiedName;
+use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::debug::print_backtrace;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
@@ -43,13 +42,11 @@ use stc_ts_types::Class;
 use stc_ts_types::ClassDef;
 use stc_ts_types::Intersection;
 use stc_ts_types::Key;
-use stc_ts_types::TypeLitMetadata;
 use stc_ts_types::TypeParamInstantiation;
 use stc_ts_types::{
     Conditional, FnParam, Id, IndexedAccessType, Mapped, ModuleId, Operator, QueryExpr, QueryType, StaticThis,
     TypeParam,
 };
-use stc_utils::TryOpt;
 use std::mem::replace;
 use std::mem::take;
 use std::{borrow::Cow, collections::hash_map::Entry, fmt::Debug, iter, slice};
@@ -78,6 +75,8 @@ pub(crate) struct Scope<'a> {
     parent: Option<&'a Scope<'a>>,
     kind: ScopeKind,
     pub declaring: Vec<Id>,
+
+    pub declaring_type_params: FxHashSet<Id>,
 
     pub(super) vars: FxHashMap<Id, VarInfo>,
     types: FxHashMap<Id, Type>,
@@ -125,6 +124,45 @@ pub(crate) struct Scope<'a> {
 impl Scope<'_> {
     pub fn parent(&self) -> Option<&Self> {
         self.parent
+    }
+
+    pub fn first<F>(&self, mut filter: F) -> Option<&Self>
+    where
+        F: FnMut(&Scope) -> bool,
+    {
+        if filter(&self) {
+            return Some(self);
+        }
+
+        self.parent?.first(filter)
+    }
+
+    pub fn first_kind<F>(&self, mut filter: F) -> Option<&Self>
+    where
+        F: FnMut(ScopeKind) -> bool,
+    {
+        self.first(|scope| filter(scope.kind))
+    }
+
+    /// Get scope of computed property names.
+
+    pub fn scope_of_computed_props(&self) -> Option<&Self> {
+        self.scope_of_computed_props_inner()?.parent()
+    }
+
+    fn scope_of_computed_props_inner(&self) -> Option<&Self> {
+        match self.kind {
+            ScopeKind::Fn
+            | ScopeKind::Method { .. }
+            | ScopeKind::ArrowFn
+            | ScopeKind::Class
+            | ScopeKind::ObjectLit
+            | ScopeKind::Module
+            | ScopeKind::Call
+            | ScopeKind::Constructor => Some(self),
+            ScopeKind::LoopBody => self.parent()?.scope_of_computed_props(),
+            ScopeKind::Block | ScopeKind::Flow | ScopeKind::TypeParams => self.parent()?.scope_of_computed_props(),
+        }
     }
 
     pub fn get_type_facts(&self, name: &Name) -> TypeFacts {
@@ -177,7 +215,7 @@ impl Scope<'_> {
         }
 
         match self.kind {
-            ScopeKind::Fn | ScopeKind::Method | ScopeKind::Class | ScopeKind::ObjectLit => return true,
+            ScopeKind::Fn | ScopeKind::Method { .. } | ScopeKind::Class | ScopeKind::ObjectLit => return true,
             _ => {}
         }
 
@@ -212,6 +250,19 @@ impl Scope<'_> {
 
         match self.parent {
             Some(v) => v.is_in_call(),
+            None => false,
+        }
+    }
+
+    pub fn is_in_loop_body(&self) -> bool {
+        match self.kind {
+            ScopeKind::LoopBody => return true,
+            ScopeKind::Module | ScopeKind::ArrowFn | ScopeKind::Fn | ScopeKind::Class => return false,
+            _ => {}
+        }
+
+        match self.parent {
+            Some(v) => v.is_in_loop_body(),
             None => false,
         }
     }
@@ -258,6 +309,7 @@ impl Scope<'_> {
             parent: None,
             kind: self.kind,
             declaring: self.declaring,
+            declaring_type_params: self.declaring_type_params,
             vars: self.vars,
             types: self.types,
             facts: self.facts,
@@ -268,8 +320,8 @@ impl Scope<'_> {
             this_class_members: self.this_class_members,
             this_object_members: self.this_object_members,
             super_class: self.super_class,
-            expand_triage_depth: self.expand_triage_depth,
             return_values: self.return_values,
+            expand_triage_depth: self.expand_triage_depth,
             is_call_arg_count_unknown: self.is_call_arg_count_unknown,
             type_params: self.type_params,
             cur_module_name: self.cur_module_name,
@@ -288,7 +340,7 @@ impl Scope<'_> {
     pub fn move_vars_from_child(&mut self, child: &mut Scope) {
         match child.kind {
             // We don't copy variable information from nested function.
-            ScopeKind::Module | ScopeKind::Method | ScopeKind::Fn | ScopeKind::ArrowFn => return,
+            ScopeKind::Module | ScopeKind::Method { .. } | ScopeKind::Fn | ScopeKind::ArrowFn => return,
             _ => {}
         }
 
@@ -296,11 +348,38 @@ impl Scope<'_> {
             if var.copied {
                 match self.vars.entry(name.clone()) {
                     Entry::Occupied(mut e) => {
+                        e.get_mut().is_actual_type_modified_in_loop |= var.is_actual_type_modified_in_loop;
+                        let is_actual_type_modified_in_loop = e.get().is_actual_type_modified_in_loop;
+
                         if let Some(actual_ty) = var.actual_ty {
-                            e.get_mut().actual_ty = Some(actual_ty);
+                            let new_actual_type = if is_actual_type_modified_in_loop {
+                                let mut types = vec![];
+
+                                if let Some(prev) = &e.get().actual_ty {
+                                    if !actual_ty.type_eq(prev) {
+                                        types.push(actual_ty);
+                                    }
+                                } else {
+                                    types.push(actual_ty);
+                                }
+
+                                types.extend(e.get().actual_ty.clone());
+
+                                if types.len() == 1 {
+                                    types.into_iter().next().unwrap()
+                                } else {
+                                    Type::Union(Union { span: DUMMY_SP, types })
+                                }
+                            } else {
+                                actual_ty
+                            };
+
+                            e.get_mut().actual_ty = Some(new_actual_type);
                         }
                     }
-                    Entry::Vacant(..) => {}
+                    Entry::Vacant(e) => {
+                        e.insert(var);
+                    }
                 }
             } else if var.kind == VarDeclKind::Var {
                 self.vars.insert(name, var);
@@ -335,6 +414,8 @@ impl Scope<'_> {
 
     /// Add a type to the scope.
     fn register_type(&mut self, name: Id, ty: Type) {
+        ty.assert_valid();
+
         let ty = ty.cheap();
         match ty.normalize() {
             Type::Param(..) => {
@@ -409,10 +490,7 @@ impl Scope<'_> {
             return Some(Cow::Borrowed(this));
         }
 
-        match self.parent {
-            Some(ref parent) => parent.this(),
-            None => None,
-        }
+        self.parent?.this()
     }
 
     pub fn get_var(&self, sym: &Id) -> Option<&VarInfo> {
@@ -610,12 +688,12 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn resolve_typeof(&mut self, span: Span, name: &RTsEntityName) -> ValidationResult {
-        match name {
+        let mut ty = match name {
             RTsEntityName::Ident(i) => {
                 if i.sym == js_word!("undefined") {
                     return Ok(Type::any(span));
                 }
-                return self.type_of_var(i, TypeOfMode::RValue, None);
+                self.type_of_var(i, TypeOfMode::RValue, None)?
             }
             RTsEntityName::TsQualifiedName(n) => {
                 let ctx = Ctx {
@@ -637,9 +715,11 @@ impl Analyzer<'_, '_> {
                     },
                     TypeOfMode::RValue,
                     IdCtx::Var,
-                )
+                )?
             }
-        }
+        };
+        ty.reposition(span);
+        Ok(ty)
     }
 
     #[inline(never)]
@@ -650,6 +730,7 @@ impl Analyzer<'_, '_> {
             kind: VarDeclKind::Const,
             initialized: true,
             copied: false,
+            is_actual_type_modified_in_loop: false,
         });
 
         let mut scope = Some(&self.scope);
@@ -845,6 +926,7 @@ impl Analyzer<'_, '_> {
             ty: ty.clone(),
             actual_ty: ty,
             copied: true,
+            is_actual_type_modified_in_loop: false,
         }))
     }
 
@@ -859,6 +941,12 @@ impl Analyzer<'_, '_> {
         allow_multiple: bool,
     ) -> ValidationResult<()> {
         let ty = ty.map(|ty| ty.cheap());
+
+        if let Some(actual_ty) = &actual_ty {
+            if actual_ty.is_never() {
+                print_backtrace();
+            }
+        }
         let actual_ty = actual_ty
             .and_then(|ty| {
                 if ty.is_any()
@@ -949,7 +1037,11 @@ impl Analyzer<'_, '_> {
                                 }
                             }
                         }
-                        Type::union(vec![var_ty, ty])
+                        if var_ty.type_eq(&ty) {
+                            var_ty
+                        } else {
+                            Type::union(vec![var_ty, ty])
+                        }
                     } else {
                         ty
                     })
@@ -974,6 +1066,7 @@ impl Analyzer<'_, '_> {
                     actual_ty: actual_ty.or_else(|| ty.clone()),
                     initialized,
                     copied: false,
+                    is_actual_type_modified_in_loop: false,
                 };
                 e.insert(info);
             }
@@ -1082,204 +1175,115 @@ impl Analyzer<'_, '_> {
                 }
 
                 // TODO: Normalize static
-                match ty.normalize() {
-                    Type::Keyword(RTsKeywordType {
-                        kind: TsKeywordTypeKind::TsAnyKeyword,
-                        ..
-                    }) => {
-                        for p in props.iter() {
-                            match p {
-                                RObjectPatProp::KeyValue(ref kv) => {
-                                    self.declare_complex_vars(
-                                        kind,
-                                        &kv.value,
-                                        Type::any(kv.span()),
-                                        Some(Type::any(kv.span())),
-                                    )?;
+                //
+                let mut used_keys = vec![];
+
+                for prop in props {
+                    match prop {
+                        RObjectPatProp::KeyValue(prop) => {
+                            let mut key = prop.key.validate_with(self)?;
+                            used_keys.push(key.clone());
+
+                            let prop_ty = self.access_property(span, ty.clone(), &key, TypeOfMode::RValue, IdCtx::Var);
+
+                            match prop_ty {
+                                Ok(ty) => {
+                                    // TODO: actual_ty
+                                    self.declare_complex_vars(kind, &prop.value, ty, None)?;
                                 }
 
-                                RObjectPatProp::Assign(RAssignPatProp { span, key, value, .. }) => {
-                                    let ty = value.validate_with_default(self).try_opt()?;
-
-                                    self.declare_complex_vars(
-                                        kind,
-                                        &RPat::Ident(RBindingIdent {
-                                            node_id: NodeId::invalid(),
-                                            id: key.clone(),
-                                            type_ann: None,
-                                        }),
-                                        Type::any(*span),
-                                        Some(Type::any(*span)),
-                                    )?;
+                                Err(err) => {
+                                    self.storage.report(err.convert(|err| match err {
+                                        Error::NoSuchProperty { span, .. }
+                                        | Error::NoSuchPropertyInClass { span, .. } => {
+                                            Error::NoInitAndNoDefault { span }
+                                        }
+                                        _ => err,
+                                    }));
                                 }
-
-                                _ => unimplemented!("handle_elems({:#?})", p),
                             }
                         }
-
-                        return Ok(());
-                    }
-
-                    Type::Keyword(RTsKeywordType {
-                        kind: TsKeywordTypeKind::TsUnknownKeyword,
-                        ..
-                    }) => {
-                        // TODO: Somehow get precise logic of determining span.
-                        //
-                        // let { ...a } = x;
-                        //          ^
-                        //
-
-                        // WTF...
-                        for p in props.iter().rev() {
-                            let span = match p {
-                                RObjectPatProp::Rest(RRestPat { ref arg, .. }) => arg.span(),
-                                _ => p.span(),
+                        RObjectPatProp::Assign(prop) => {
+                            let mut key = Key::Normal {
+                                span: prop.key.span,
+                                sym: prop.key.sym.clone(),
                             };
-                            debug_assert!(!span.is_dummy());
+                            used_keys.push(key.clone());
 
-                            return Err(Error::Unknown { span });
-                        }
+                            let prop_ty = self.access_property(span, ty.clone(), &key, TypeOfMode::RValue, IdCtx::Var);
 
-                        debug_assert!(!span.is_dummy());
-                        return Err(Error::Unknown { span });
-                    }
+                            match prop_ty {
+                                Ok(prop_ty) => {
+                                    let prop_ty = prop_ty.cheap();
 
-                    Type::Ref(..) => {
-                        return self.declare_complex_vars(kind, pat, ty, actual_ty);
-                    }
+                                    match &prop.value {
+                                        Some(default) => {
+                                            self.declare_complex_vars(
+                                                kind,
+                                                &RPat::Ident(RBindingIdent {
+                                                    node_id: NodeId::invalid(),
+                                                    id: prop.key.clone(),
+                                                    type_ann: None,
+                                                }),
+                                                prop_ty.clone(),
+                                                None,
+                                            )?;
 
-                    // TODO: Check if allowing class is same (I mean static vs instance method
-                    // issue)
-                    Type::Class(..)
-                    | Type::Array(..)
-                    | Type::This(..)
-                    | Type::TypeLit(..)
-                    | Type::Interface(..)
-                    | Type::Keyword(RTsKeywordType {
-                        kind: TsKeywordTypeKind::TsVoidKeyword,
-                        ..
-                    }) => {
-                        //
-                        let mut used_keys = vec![];
+                                            let default_value_type = default
+                                                .validate_with_default(self)
+                                                .context("tried to validate default value of an assignment pattern")?;
 
-                        for prop in props {
-                            match prop {
-                                RObjectPatProp::KeyValue(prop) => {
-                                    let mut key = prop.key.validate_with(self)?;
-                                    used_keys.push(key.clone());
-
-                                    let prop_ty =
-                                        self.access_property(span, ty.clone(), &key, TypeOfMode::RValue, IdCtx::Var);
-
-                                    match prop_ty {
-                                        Ok(ty) => {
+                                            self.try_assign_pat(
+                                                span,
+                                                &RPat::Ident(RBindingIdent {
+                                                    node_id: NodeId::invalid(),
+                                                    id: prop.key.clone(),
+                                                    type_ann: None,
+                                                }),
+                                                &prop_ty,
+                                            )
+                                            .context("tried to assign default values")
+                                            .report(&mut self.storage);
+                                        }
+                                        None => {
                                             // TODO: actual_ty
-                                            self.declare_complex_vars(kind, &prop.value, ty, None)?;
-                                        }
-
-                                        Err(err) => {
-                                            self.storage.report(err.convert(|err| match err {
-                                                Error::NoSuchProperty { span, .. }
-                                                | Error::NoSuchPropertyInClass { span, .. } => {
-                                                    Error::NoInitAndNoDefault { span }
-                                                }
-                                                _ => err,
-                                            }));
-                                        }
-                                    }
-                                }
-                                RObjectPatProp::Assign(prop) => {
-                                    let mut key = Key::Normal {
-                                        span: prop.key.span,
-                                        sym: prop.key.sym.clone(),
-                                    };
-                                    used_keys.push(key.clone());
-
-                                    let prop_ty =
-                                        self.access_property(span, ty.clone(), &key, TypeOfMode::RValue, IdCtx::Var);
-
-                                    match prop_ty {
-                                        Ok(prop_ty) => {
-                                            let prop_ty = prop_ty.cheap();
-
-                                            match &prop.value {
-                                                Some(default) => {
-                                                    self.declare_complex_vars(
-                                                        kind,
-                                                        &RPat::Ident(RBindingIdent {
-                                                            node_id: NodeId::invalid(),
-                                                            id: prop.key.clone(),
-                                                            type_ann: None,
-                                                        }),
-                                                        prop_ty.clone(),
-                                                        None,
-                                                    )?;
-
-                                                    let default_value_type =
-                                                        default.validate_with_default(self).context(
-                                                            "tried to validate default value of an assignment pattern",
-                                                        )?;
-
-                                                    self.try_assign_pat(
-                                                        span,
-                                                        &RPat::Ident(RBindingIdent {
-                                                            node_id: NodeId::invalid(),
-                                                            id: prop.key.clone(),
-                                                            type_ann: None,
-                                                        }),
-                                                        &prop_ty,
-                                                    )
-                                                    .context("tried to assign default values")
-                                                    .report(&mut self.storage);
-                                                }
-                                                None => {
-                                                    // TODO: actual_ty
-                                                    self.declare_complex_vars(
-                                                        kind,
-                                                        &RPat::Ident(RBindingIdent {
-                                                            node_id: NodeId::invalid(),
-                                                            id: prop.key.clone(),
-                                                            type_ann: None,
-                                                        }),
-                                                        prop_ty,
-                                                        None,
-                                                    )?;
-                                                }
-                                            }
-                                        }
-                                        Err(err) => {
-                                            self.storage.report(err.convert(|err| match err {
-                                                Error::NoSuchProperty { span, .. }
-                                                | Error::NoSuchPropertyInClass { span, .. } => {
-                                                    Error::NoInitAndNoDefault { span }
-                                                }
-                                                _ => err,
-                                            }));
+                                            self.declare_complex_vars(
+                                                kind,
+                                                &RPat::Ident(RBindingIdent {
+                                                    node_id: NodeId::invalid(),
+                                                    id: prop.key.clone(),
+                                                    type_ann: None,
+                                                }),
+                                                prop_ty,
+                                                None,
+                                            )?;
                                         }
                                     }
                                 }
-                                RObjectPatProp::Rest(pat) => {
-                                    let rest_ty = self
-                                        .exclude_props(&ty, &used_keys)
-                                        .context("tried to exclude keys for assignment with a object rest pattern")?;
-
-                                    return self
-                                        .declare_complex_vars(kind, &pat.arg, rest_ty, None)
-                                        .context("tried to assign to an object rest pattern");
+                                Err(err) => {
+                                    self.storage.report(err.convert(|err| match err {
+                                        Error::NoSuchProperty { span, .. }
+                                        | Error::NoSuchPropertyInClass { span, .. } => {
+                                            Error::NoInitAndNoDefault { span }
+                                        }
+                                        _ => err,
+                                    }));
                                 }
                             }
                         }
+                        RObjectPatProp::Rest(pat) => {
+                            let rest_ty = self
+                                .exclude_props(pat.span(), &ty, &used_keys)
+                                .context("tried to exclude keys for assignment with a object rest pattern")?;
 
-                        return Ok(());
-                    }
-
-                    _ => {
-                        print_backtrace();
-
-                        unimplemented!("declare_complex_vars({:#?}, {:#?})", pat, ty)
+                            return self
+                                .declare_complex_vars(kind, &pat.arg, rest_ty, None)
+                                .context("tried to assign to an object rest pattern");
+                        }
                     }
                 }
+
+                return Ok(());
             }
 
             RPat::Rest(pat) => {
@@ -1402,6 +1406,10 @@ pub(crate) struct VarInfo {
     /// Copied from parent scope. If this is true, it's not a variable
     /// declaration.
     pub copied: bool,
+
+    /// If this is true, types will become union while moving variables to
+    /// parent scope.
+    pub is_actual_type_modified_in_loop: bool,
 }
 
 impl<'a> Scope<'a> {
@@ -1413,7 +1421,7 @@ impl<'a> Scope<'a> {
     /// literal.
     pub fn is_this_ref_to_object_lit(&self) -> bool {
         match self.kind {
-            ScopeKind::Fn => return false,
+            ScopeKind::Fn => {}
             // An arrow function does not modified `this.`
             ScopeKind::ArrowFn => {}
 
@@ -1423,10 +1431,12 @@ impl<'a> Scope<'a> {
             ScopeKind::Class => return false,
             ScopeKind::TypeParams
             | ScopeKind::Call
-            | ScopeKind::Method
+            | ScopeKind::Method { .. }
+            | ScopeKind::Constructor
             | ScopeKind::Flow
             | ScopeKind::Block
-            | ScopeKind::Module => {}
+            | ScopeKind::Module
+            | ScopeKind::LoopBody => {}
         }
 
         match self.parent {
@@ -1448,7 +1458,13 @@ impl<'a> Scope<'a> {
             ScopeKind::ObjectLit => return false,
 
             ScopeKind::Class => return true,
-            ScopeKind::TypeParams | ScopeKind::Call | ScopeKind::Method | ScopeKind::Flow | ScopeKind::Block => {}
+            ScopeKind::TypeParams
+            | ScopeKind::Call
+            | ScopeKind::Method { .. }
+            | ScopeKind::Constructor
+            | ScopeKind::Flow
+            | ScopeKind::Block
+            | ScopeKind::LoopBody => {}
         }
 
         match self.parent {
@@ -1472,6 +1488,7 @@ impl<'a> Scope<'a> {
 
             kind,
             declaring: Default::default(),
+            declaring_type_params: Default::default(),
             vars: Default::default(),
             types: Default::default(),
             facts,
@@ -1482,8 +1499,8 @@ impl<'a> Scope<'a> {
             this_class_members: Default::default(),
             this_object_members: Default::default(),
             super_class: None,
-            expand_triage_depth: 0,
             return_values: Default::default(),
+            expand_triage_depth: 0,
             is_call_arg_count_unknown: false,
             type_params: Default::default(),
             cur_module_name: None,
@@ -1549,7 +1566,13 @@ pub(crate) enum ScopeKind {
     Block,
     Fn,
     /// This does not affect `this`.
-    Method,
+    Method {
+        is_static: bool,
+    },
+    /// This is different from method because of `super`.
+    ///
+    /// See: computedPropertyNames30_ES5.ts
+    Constructor,
     ArrowFn,
     /// This variant is related to handling of `this.foo()` in class methods.
     Class,
@@ -1563,6 +1586,8 @@ pub(crate) enum ScopeKind {
     /// Type parameters are stored in this scope.
     Call,
     Module,
+    /// Used to capture type facts created by loop bodies.
+    LoopBody,
 }
 
 impl ScopeKind {
@@ -1705,7 +1730,15 @@ impl Expander<'_, '_, '_> {
                                         self.analyzer.allow_expansion(ty);
                                     });
 
+                                    let before = dump_type_as_string(&self.analyzer.cm, &ty);
                                     let mut ty = self.analyzer.expand_type_params(&inferred, ty.foldable())?;
+                                    let after = dump_type_as_string(&self.analyzer.cm, &ty);
+                                    slog::debug!(
+                                        &self.analyzer.logger,
+                                        "[expand] Expanded generics: {} => {}",
+                                        before,
+                                        after
+                                    );
 
                                     match ty {
                                         Type::ClassDef(def) => {
@@ -1837,41 +1870,22 @@ impl Expander<'_, '_, '_> {
             return Ok(None);
         }
 
-        self.expand_ts_entity_name(
+        let mut ty = self.expand_ts_entity_name(
             span,
             ctxt,
             &type_name,
             type_args.as_deref(),
             was_top_level,
             trying_primitive_expansion,
-        )
-    }
-}
-
-impl Fold<ty::Function> for Expander<'_, '_, '_> {
-    fn fold(&mut self, mut f: ty::Function) -> ty::Function {
-        f.type_params = f.type_params.fold_with(self);
-        f.params = f.params.fold_with(self);
-        if self.analyzer.ctx.preserve_ret_ty {
-            f.ret_ty = f.ret_ty.fold_with(self);
+        )?;
+        if let Some(ty) = &mut ty {
+            ty.reposition(r_span);
         }
 
-        f
+        Ok(ty)
     }
-}
 
-impl Fold<FnParam> for Expander<'_, '_, '_> {
-    fn fold(&mut self, param: FnParam) -> FnParam {
-        if self.analyzer.ctx.preserve_params {
-            return param;
-        }
-
-        param.fold_children_with(self)
-    }
-}
-
-impl Fold<Type> for Expander<'_, '_, '_> {
-    fn fold(&mut self, mut ty: Type) -> Type {
+    fn expand_type(&mut self, mut ty: Type) -> Type {
         match ty {
             Type::Keyword(..) | Type::Lit(..) => return ty,
             Type::Arc(..) => {
@@ -1879,8 +1893,6 @@ impl Fold<Type> for Expander<'_, '_, '_> {
             }
             _ => {}
         }
-
-        slog::debug!(self.logger, "Expanding type: {:?}", ty);
 
         self.full |= match ty {
             Type::Mapped(..) => true,
@@ -2149,18 +2161,6 @@ impl Fold<Type> for Expander<'_, '_, '_> {
                     return ty;
                 }
 
-                Type::Interface(i) => {
-                    // TODO: Handle type params
-                    return Type::TypeLit(TypeLit {
-                        span,
-                        members: i.body,
-                        metadata: TypeLitMetadata {
-                            inexact: true,
-                            ..Default::default()
-                        },
-                    });
-                }
-
                 Type::Union(Union { span, types }) => {
                     return Type::union(types);
                 }
@@ -2236,6 +2236,50 @@ impl Fold<Type> for Expander<'_, '_, '_> {
         }
 
         ty
+    }
+}
+
+impl Fold<ty::Function> for Expander<'_, '_, '_> {
+    fn fold(&mut self, mut f: ty::Function) -> ty::Function {
+        f.type_params = f.type_params.fold_with(self);
+        f.params = f.params.fold_with(self);
+        if self.analyzer.ctx.preserve_ret_ty {
+            f.ret_ty = f.ret_ty.fold_with(self);
+        }
+
+        f
+    }
+}
+
+impl Fold<FnParam> for Expander<'_, '_, '_> {
+    fn fold(&mut self, param: FnParam) -> FnParam {
+        if self.analyzer.ctx.preserve_params {
+            return param;
+        }
+
+        param.fold_children_with(self)
+    }
+}
+
+impl Fold<Type> for Expander<'_, '_, '_> {
+    fn fold(&mut self, mut ty: Type) -> Type {
+        match ty {
+            Type::Keyword(..) | Type::Lit(..) => return ty,
+            Type::Arc(..) => {
+                return ty.foldable().fold_with(self);
+            }
+            _ => {}
+        }
+        let before = dump_type_as_string(&self.analyzer.cm, &ty);
+        let expanded = self.expand_type(ty);
+        slog::debug!(
+            self.logger,
+            "[expand]: {} => {}",
+            before,
+            dump_type_as_string(&self.analyzer.cm, &expanded)
+        );
+
+        expanded
     }
 }
 

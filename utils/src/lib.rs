@@ -1,6 +1,8 @@
 use once_cell::sync::Lazy;
 use std::env;
 
+pub mod panic_context;
+
 #[cfg(all(unix, not(target_env = "musl")))]
 #[global_allocator]
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;

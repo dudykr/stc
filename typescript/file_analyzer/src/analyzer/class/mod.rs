@@ -1,3 +1,4 @@
+use super::assign::AssignOpts;
 use super::expr::TypeOfMode;
 use super::props::ComputedPropMode;
 use super::util::instantiate_class;
@@ -48,12 +49,14 @@ use stc_ts_ast_rnode::RTsTypeAliasDecl;
 use stc_ts_ast_rnode::RTsTypeAnn;
 use stc_ts_ast_rnode::RVarDecl;
 use stc_ts_ast_rnode::RVarDeclarator;
+use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::Class;
 use stc_ts_types::ClassDef;
 use stc_ts_types::ClassProperty;
+use stc_ts_types::ComputedKey;
 use stc_ts_types::ConstructorSignature;
 use stc_ts_types::FnParam;
 use stc_ts_types::Id;
@@ -179,8 +182,8 @@ impl Analyzer<'_, '_> {
 
         let c_span = c.span();
 
-        self.with_child(ScopeKind::Method, Default::default(), |child: &mut Analyzer| {
-            let RConstructor { ref params, .. } = *c;
+        self.with_child(ScopeKind::Constructor, Default::default(), |child: &mut Analyzer| {
+            let RConstructor { params, body, .. } = c;
 
             {
                 // Validate params
@@ -253,27 +256,9 @@ impl Analyzer<'_, '_> {
                             }
                         }
                     }
-                    RParamOrTsParamProp::TsParamProp(ref param) => match param.param {
-                        RTsParamPropParam::Ident(ref i)
-                        | RTsParamPropParam::Assign(RAssignPat {
-                            left: box RPat::Ident(ref i),
-                            ..
-                        }) => match child.declare_var(
-                            i.id.span,
-                            VarDeclKind::Let,
-                            i.id.clone().into(),
-                            Some(*p.ty.clone()),
-                            None,
-                            true,
-                            false,
-                        ) {
-                            Ok(()) => {}
-                            Err(err) => {
-                                child.storage.report(err);
-                            }
-                        },
-                        _ => unreachable!(),
-                    },
+                    RParamOrTsParamProp::TsParamProp(ref param) => {
+                        // param.visit_with(child);
+                    }
                 }
 
                 ps.push(p);
@@ -281,13 +266,34 @@ impl Analyzer<'_, '_> {
                 child.scope.remove_declaring(names);
             }
 
+            c.body.visit_with(child);
+
             Ok(ConstructorSignature {
+                accessibility: c.accessibility,
                 span: c.span,
                 params: ps,
                 ret_ty: None,
                 type_params: None,
             })
         })
+    }
+}
+
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, p: &RTsParamProp) -> ValidationResult<()> {
+        match &p.param {
+            RTsParamPropParam::Ident(ref i)
+            | RTsParamPropParam::Assign(RAssignPat {
+                left: box RPat::Ident(ref i),
+                ..
+            }) => {
+                let ty = i.type_ann.validate_with(self).try_opt()?;
+
+                self.declare_var(i.id.span, VarDeclKind::Let, i.id.clone().into(), ty, None, true, false)
+            }
+            _ => unreachable!(),
+        }
     }
 }
 
@@ -356,7 +362,7 @@ impl Analyzer<'_, '_> {
         let key_span = key.span();
 
         let (type_params, params, ret_ty) = self.with_child(
-            ScopeKind::Method,
+            ScopeKind::Method { is_static: c.is_static },
             Default::default(),
             |child: &mut Analyzer| -> ValidationResult<_> {
                 let type_params = try_opt!(c.function.type_params.validate_with(child));
@@ -419,7 +425,7 @@ impl Analyzer<'_, '_> {
         let key_span = c.key.span();
 
         let (params, type_params, declared_ret_ty, inferred_ret_ty) = self.with_child(
-            ScopeKind::Method,
+            ScopeKind::Method { is_static: c.is_static },
             Default::default(),
             |child: &mut Analyzer| -> ValidationResult<_> {
                 child.scope.declaring_prop = match &key {
@@ -474,7 +480,6 @@ impl Analyzer<'_, '_> {
 
                 let params = c.function.params.validate_with(child)?;
 
-                c.key.visit_with(child);
                 // c.function.visit_children_with(child);
 
                 // if child.ctx.in_declare && c.function.body.is_some() {
@@ -775,8 +780,77 @@ impl Analyzer<'_, '_> {
         }
     }
 
+    fn validate_inherited_members_from_interfaces(&mut self, name: Option<Span>, class: &ClassDef) {
+        if class.is_abstract || self.ctx.in_declare {
+            return;
+        }
+
+        let class_ty = Type::Class(Class {
+            span: class.span,
+            def: box class.clone(),
+        });
+
+        for parent in &*class.implements {
+            let res: ValidationResult<_> = try {
+                let parent = self.type_of_ts_entity_name(
+                    parent.span(),
+                    self.ctx.module_id,
+                    &parent.expr,
+                    parent.type_args.as_deref(),
+                )?;
+
+                self.assign_with_opts(
+                    AssignOpts {
+                        span: parent.span(),
+                        allow_unknown_rhs: true,
+                        ..Default::default()
+                    },
+                    &parent,
+                    &class_ty,
+                )
+                .context("tried to assign a class to parent interface")
+                .convert_err(|err| {
+                    let span = err.span();
+                    if err.code() == 2322 {
+                        Error::Errors {
+                            span,
+                            errors: err
+                                .into_causes()
+                                .into_iter()
+                                .map(|err| {
+                                    err.convert(|err| Error::InvalidImplOfInterface {
+                                        span: match &err {
+                                            Error::AssignFailed {
+                                                right_ident: Some(s), ..
+                                            } => *s,
+                                            Error::AssignFailed { right, .. } => right.span(),
+                                            _ => err.span(),
+                                        },
+                                        cause: box err,
+                                    })
+                                })
+                                .collect(),
+                        }
+                    } else {
+                        err.convert_all(|err| {
+                            match err {
+                                Error::MissingFields { .. } => {
+                                    return Error::ClassIncorrectlyImplementsInterface { span: parent.span() }
+                                }
+                                _ => {}
+                            }
+                            err
+                        })
+                    }
+                })?;
+            };
+
+            res.report(&mut self.storage);
+        }
+    }
+
     /// Should be called only from `Validate<Class>`.
-    fn validate_inherited_members(&mut self, name: Option<Span>, class: &ClassDef) {
+    fn validate_inherited_members_from_super_class(&mut self, name: Option<Span>, class: &ClassDef) {
         if class.is_abstract || self.ctx.in_declare {
             return;
         }
@@ -860,7 +934,6 @@ impl Analyzer<'_, '_> {
         };
 
         c.decorators.visit_with(self);
-        self.resolve_parent_interfaces(&c.implements);
         let name = self.scope.this_class_name.take();
 
         let mut types_to_register: Vec<(Id, _)> = vec![];
@@ -871,8 +944,16 @@ impl Analyzer<'_, '_> {
             ScopeKind::Class,
             Default::default(),
             |child: &mut Analyzer| -> ValidationResult<_> {
+                child.scope.declaring_type_params.extend(
+                    c.type_params
+                        .iter()
+                        .flat_map(|decl| &decl.params)
+                        .map(|param| param.name.clone().into()),
+                );
+
                 // We handle type parameters first.
                 let type_params = try_opt!(c.type_params.validate_with(child));
+                child.resolve_parent_interfaces(&c.implements);
 
                 let super_class = {
                     // Then, we can expand super class
@@ -987,7 +1068,7 @@ impl Analyzer<'_, '_> {
                     }
                 };
 
-                c.implements.visit_with(child);
+                let implements = c.implements.validate_with(child).map(Box::new)?;
 
                 // TODO: Check for implements
 
@@ -1050,6 +1131,15 @@ impl Analyzer<'_, '_> {
                                 }
 
                                 constructor_spans.push(cons.span);
+
+                                for param in &cons.params {
+                                    match param {
+                                        RParamOrTsParamProp::TsParamProp(p) => {
+                                            p.validate_with(child).report(&mut child.storage);
+                                        }
+                                        RParamOrTsParamProp::Param(_) => {}
+                                    }
+                                }
                             }
 
                             _ => {}
@@ -1061,8 +1151,8 @@ impl Analyzer<'_, '_> {
                     // Remove class members with const EnumVariant keys.
                     c.body.iter().for_each(|v| match v {
                         RClassMember::Method(method) => match &method.key {
-                            RPropName::Computed(c) => match c.expr.validate_with_default(child) {
-                                Ok(ty) => match ty {
+                            RPropName::Computed(c) => match c.validate_with(child) {
+                                Ok(Key::Computed(ComputedKey { ty, .. })) => match ty.normalize() {
                                     Type::EnumVariant(e) => {
                                         //
                                         if let Some(m) = &mut child.mutations {
@@ -1071,9 +1161,7 @@ impl Analyzer<'_, '_> {
                                     }
                                     _ => {}
                                 },
-                                Err(err) => {
-                                    child.storage.report(err);
-                                }
+                                _ => {}
                             },
                             _ => {}
                         },
@@ -1195,9 +1283,6 @@ impl Analyzer<'_, '_> {
                                 RParamOrTsParamProp::Param(..) => {}
                             }
                         }
-
-                        let member = constructor.validate_with(child)?;
-                        child.scope.this_class_members.push((index, member.into()));
                     }
 
                     // Handle properties
@@ -1214,6 +1299,14 @@ impl Analyzer<'_, '_> {
                             }
                             _ => {}
                         }
+                    }
+
+                    for (index, constructor) in c.body.iter().enumerate().filter_map(|(i, member)| match member {
+                        RClassMember::Constructor(c) => Some((i, c)),
+                        _ => None,
+                    }) {
+                        let member = constructor.validate_with(child)?;
+                        child.scope.this_class_members.push((index, member.into()));
                     }
 
                     // Handle user-declared method signatures.
@@ -1326,9 +1419,11 @@ impl Analyzer<'_, '_> {
                     super_class,
                     type_params,
                     body: body.into_iter().map(|v| v.1).collect(),
+                    implements,
                 };
 
-                child.validate_inherited_members(None, &class);
+                child.validate_inherited_members_from_super_class(None, &class);
+                child.validate_inherited_members_from_interfaces(None, &class);
 
                 Ok(class)
             },

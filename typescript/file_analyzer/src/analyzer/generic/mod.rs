@@ -25,8 +25,10 @@ use stc_ts_errors::DebugExt;
 use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
 use stc_ts_generics::type_param::remover::TypeParamRemover;
 use stc_ts_generics::type_param::renamer::TypeParamRenamer;
+use stc_ts_type_ops::Fix;
 use stc_ts_types::Array;
 use stc_ts_types::FnParam;
+use stc_ts_types::Function;
 use stc_ts_types::Id;
 use stc_ts_types::IndexSignature;
 use stc_ts_types::IndexedAccessType;
@@ -38,7 +40,6 @@ use stc_ts_types::Operator;
 use stc_ts_types::OptionalType;
 use stc_ts_types::PropertySignature;
 use stc_ts_types::Ref;
-use stc_ts_types::RestType;
 use stc_ts_types::Tuple;
 use stc_ts_types::TupleElement;
 use stc_ts_types::Type;
@@ -1144,6 +1145,12 @@ impl Analyzer<'_, '_> {
                 key_name,
             }) = matches(param)
             {
+                slog::debug!(
+                    self.logger,
+                    "[generic/inference] Found form of `P in keyof T` where T = {}, P = {}",
+                    name,
+                    key_name
+                );
                 match arg {
                     Type::TypeLit(arg) => {
                         // We should make a new type literal, based on the information.
@@ -1176,6 +1183,13 @@ impl Analyzer<'_, '_> {
                                             kind: Default::default(),
                                         }),
                                     })),
+                                    Key::Num(n) => {
+                                        key_types.push(Type::Lit(RTsLitType {
+                                            node_id: NodeId::invalid(),
+                                            span: param.span,
+                                            lit: RTsLit::Number(n.clone()),
+                                        }));
+                                    }
                                     _ => {
                                         unimplemented!("Inference of keys except ident in mapped type.\nKey: {:?}", key)
                                     }
@@ -1212,6 +1226,7 @@ impl Analyzer<'_, '_> {
                                         ..arg_prop.clone()
                                     }));
                                 }
+
                                 TypeElement::Index(i) => {
                                     let type_ann = if let Some(arg_prop_ty) = &i.type_ann {
                                         if let Some(param_ty) = &param.ty {
@@ -1231,6 +1246,45 @@ impl Analyzer<'_, '_> {
                                         Some(box Type::any(i.span))
                                     };
                                     new_members.push(TypeElement::Index(IndexSignature { type_ann, ..i.clone() }));
+                                }
+
+                                TypeElement::Method(arg_method) => {
+                                    let arg_prop_ty = Type::Function(Function {
+                                        span: arg_method.span,
+                                        type_params: arg_method.type_params.clone(),
+                                        params: arg_method.params.clone(),
+                                        ret_ty: arg_method
+                                            .ret_ty
+                                            .clone()
+                                            .unwrap_or_else(|| box Type::any(arg_method.span)),
+                                    });
+                                    let type_ann = if let Some(param_ty) = param.ty.as_ref() {
+                                        let old = take(&mut self.mapped_type_param_name);
+                                        self.mapped_type_param_name = vec![name.clone()];
+
+                                        let mut data = InferData::default();
+                                        self.infer_type(span, &mut data, &param_ty, &arg_prop_ty)?;
+                                        let inferred_ty = data.type_params.remove(&name);
+
+                                        self.mapped_type_param_name = old;
+
+                                        inferred_ty.or_else(|| data.defaults.remove(&name))
+                                    } else {
+                                        None
+                                    };
+                                    let type_ann =
+                                        type_ann.map(Box::new).or_else(|| Some(box Type::any(arg_method.span)));
+
+                                    new_members.push(TypeElement::Property(PropertySignature {
+                                        span: arg_method.span,
+                                        accessibility: None,
+                                        readonly: calc_true_plus_minus_in_param(readonly, arg_method.readonly),
+                                        key: arg_method.key.clone(),
+                                        optional: calc_true_plus_minus_in_param(optional, arg_method.optional),
+                                        params: Default::default(),
+                                        type_ann,
+                                        type_params: Default::default(),
+                                    }));
                                 }
 
                                 _ => {
@@ -1300,78 +1354,6 @@ impl Analyzer<'_, '_> {
                         return Ok(true);
                     }
 
-                    // TODO: Handle array
-                    Type::Tuple(arg) => {
-                        let mut new_elements = vec![];
-
-                        for element in &arg.elems {
-                            let new_ty = if let Some(param_ty) = &param.ty {
-                                let old = take(&mut self.mapped_type_param_name);
-                                self.mapped_type_param_name = vec![name.clone()];
-
-                                let mut data = InferData::default();
-                                let rest = match &*element.ty {
-                                    Type::Rest(RestType {
-                                        span: rest_span,
-                                        ty: box Type::Array(arr),
-                                    }) => {
-                                        self.infer_type(span, &mut data, &param_ty, &arr.elem_type)?;
-                                        Some(*rest_span)
-                                    }
-                                    _ => {
-                                        self.infer_type(span, &mut data, &param_ty, &element.ty)?;
-                                        None
-                                    }
-                                };
-                                let mut inferred_ty = data.type_params.remove(&name);
-
-                                match &mut inferred_ty {
-                                    Some(ty) => {
-                                        handle_optional_for_element(ty, optional);
-                                    }
-                                    None => {}
-                                }
-
-                                self.mapped_type_param_name = old;
-
-                                if let Some(rest) = rest {
-                                    if let Some(elem_type) = inferred_ty {
-                                        Some(Type::Rest(RestType {
-                                            span: rest,
-                                            ty: box Type::Array(Array {
-                                                // TODO
-                                                span: DUMMY_SP,
-                                                elem_type: box elem_type,
-                                            }),
-                                        }))
-                                    } else {
-                                        None
-                                    }
-                                } else {
-                                    inferred_ty
-                                }
-                            } else {
-                                None
-                            };
-
-                            new_elements.push(TupleElement {
-                                ty: box new_ty.unwrap_or_else(|| Type::any(arg.span)),
-                                ..element.clone()
-                            });
-                        }
-
-                        self.insert_inferred(
-                            inferred,
-                            name.clone(),
-                            Type::Tuple(Tuple {
-                                span: arg.span,
-                                elems: new_elements,
-                            }),
-                        )?;
-
-                        return Ok(true);
-                    }
-
                     _ => {
                         dbg!();
                     }
@@ -1389,6 +1371,13 @@ impl Analyzer<'_, '_> {
             match &param.type_param.constraint {
                 Some(constraint) => match constraint.normalize() {
                     Type::Param(type_param) => {
+                        slog::debug!(
+                            self.logger,
+                            "[generic/inference] Found form of `P in T` where T = {}, P = {}",
+                            type_param.name,
+                            param.type_param.name
+                        );
+
                         match arg {
                             Type::TypeLit(arg) => {
                                 let key_ty = arg.members.iter().filter_map(|element| match element {
@@ -1837,6 +1826,10 @@ impl Analyzer<'_, '_> {
             ty
         );
 
+        if ty.normalize().is_intersection_type() {
+            return Ok(ty);
+        }
+
         // ty = self.expand(span, ty)?;
 
         let mut usage_visitor = TypeParamUsageFinder::default();
@@ -1863,10 +1856,13 @@ impl Analyzer<'_, '_> {
                 "renaming type parameters based on type annotation provided by user\ntype_ann = {:?}",
                 type_ann
             );
-            return Ok(ty.foldable().fold_with(&mut TypeParamRenamer {
-                inferred: inferred.type_params,
-                declared: Default::default(),
-            }));
+            return Ok(ty
+                .foldable()
+                .fold_with(&mut TypeParamRenamer {
+                    inferred: inferred.type_params,
+                    declared: Default::default(),
+                })
+                .fixed());
         }
 
         let decl = Some(TypeParamDecl {
@@ -1882,7 +1878,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        Ok(ty.fold_with(&mut TypeParamRemover::new()))
+        Ok(ty.fold_with(&mut TypeParamRemover::new()).fixed())
     }
 }
 

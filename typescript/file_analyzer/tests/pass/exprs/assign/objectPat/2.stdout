@@ -1,0 +1,56 @@
+warning: Type
+ --> $DIR/tests/pass/exprs/assign/objectPat/2.ts:2:12
+  |
+2 | const sa = Symbol();
+  |            ^^^^^^^^
+  |
+  = note: symbol
+
+warning: Type
+ --> $DIR/tests/pass/exprs/assign/objectPat/2.ts:3:12
+  |
+3 | const sb = Symbol();
+  |            ^^^^^^^^
+  |
+  = note: symbol
+
+warning: Type
+ --> $DIR/tests/pass/exprs/assign/objectPat/2.ts:5:26
+  |
+5 | function f2<T extends { [sa]: string, [sb]: number }>(obj: T) {
+  |                          ^^
+  |
+  = note: symbol
+
+warning: Type
+ --> $DIR/tests/pass/exprs/assign/objectPat/2.ts:5:40
+  |
+5 | function f2<T extends { [sa]: string, [sb]: number }>(obj: T) {
+  |                                        ^^
+  |
+  = note: symbol
+
+warning: Type
+ --> $DIR/tests/pass/exprs/assign/objectPat/2.ts:6:41
+  |
+6 |     let { [sa]: a1, [sb]: b1, ...r1 } = obj;
+  |                                         ^^^
+  |
+  = note: T
+
+warning: Type
+ --> $DIR/tests/pass/exprs/assign/objectPat/2.ts:6:12
+  |
+6 |     let { [sa]: a1, [sb]: b1, ...r1 } = obj;
+  |            ^^
+  |
+  = note: symbol
+
+warning: Type
+ --> $DIR/tests/pass/exprs/assign/objectPat/2.ts:6:22
+  |
+6 |     let { [sa]: a1, [sb]: b1, ...r1 } = obj;
+  |                      ^^
+  |
+  = note: symbol
+

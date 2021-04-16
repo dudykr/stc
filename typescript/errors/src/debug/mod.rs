@@ -71,7 +71,8 @@ pub fn dump_type_as_string(cm: &Lrc<SourceMap>, t: &Type) -> String {
             })
             .unwrap();
     }
-    let s = String::from_utf8_lossy(&buf);
+    let s = String::from_utf8_lossy(&buf).replace("TYPE as", "");
+    let s = s.trim();
 
     s.to_string()
 }

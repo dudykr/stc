@@ -58,7 +58,43 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2420
+    ClassIncorrectlyImplementsInterface {
+        span: Span,
+    },
+
     StackOverlfow {
+        span: Span,
+    },
+
+    /// TS2416
+    InvalidImplOfInterface {
+        span: Span,
+        cause: Box<Error>,
+    },
+
+    /// TS2302
+    StaticMethodCannotUseTypeParamOfClass {
+        span: Span,
+    },
+
+    /// TS2467
+    DeclaringTypeParamReferencedByComputedPropName {
+        span: Span,
+    },
+
+    /// TS2465
+    CannotReferenceThisInComputedPropName {
+        span: Span,
+    },
+
+    /// TS2466
+    CannotReferenceSuperInComputedPropName {
+        span: Span,
+    },
+
+    /// TS2331
+    ThisRefToModuleOrNamespace {
         span: Span,
     },
 
@@ -173,6 +209,9 @@ pub enum Error {
         id: Id,
     },
     ExportAllFailed {
+        span: Span,
+    },
+    NoSuchPropertyInThis {
         span: Span,
     },
     NoSuchPropertyInClass {
@@ -385,8 +424,14 @@ pub enum Error {
     AssignFailed {
         span: Span,
         left: Box<Type>,
+        right_ident: Option<Span>,
         right: Box<Type>,
         cause: Vec<Error>,
+    },
+
+    /// TS2322
+    AssignFailedDueToAccessibility {
+        span: Span,
     },
 
     ObjectAssignFailed {
@@ -396,6 +441,11 @@ pub enum Error {
 
     SimpleAssignFailed {
         span: Span,
+    },
+
+    SimpleAssignFailedWithCause {
+        span: Span,
+        cause: Vec<Error>,
     },
 
     InvalidAssignmentOfArray {
@@ -558,12 +608,14 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2391
     FnImplMissingOrNotFollowedByDecl {
         span: Span,
     },
 
     TS2464 {
         span: Span,
+        ty: Box<Type>,
     },
 
     TS2356 {
@@ -830,8 +882,34 @@ impl Error {
         })
     }
 
+    /// Split error into causes.
+    pub fn into_causes(self) -> Vec<Self> {
+        match self {
+            Self::AssignFailed { cause, .. } => cause,
+            Self::ObjectAssignFailed { errors, .. } => errors,
+            Self::DebugContext(c) => {
+                let DebugContext { span, context, .. } = c;
+
+                c.inner
+                    .into_causes()
+                    .into_iter()
+                    .map(|err| {
+                        Error::DebugContext(DebugContext {
+                            span,
+                            inner: box err,
+                            context: context.clone(),
+                        })
+                    })
+                    .collect()
+            }
+            _ => {
+                vec![self]
+            }
+        }
+    }
+
     /// TypeScript error code.
-    fn code(&self) -> usize {
+    pub fn code(&self) -> usize {
         match self {
             Error::TS1016 { .. } => 1016,
             Error::TS1063 { .. } => 1063,
@@ -868,8 +946,10 @@ impl Error {
             Error::TS2704 { .. } => 2704,
 
             Error::AssignFailed { .. }
+            | Error::AssignFailedDueToAccessibility { .. }
             | Error::ObjectAssignFailed { .. }
             | Error::SimpleAssignFailed { .. }
+            | Error::SimpleAssignFailedWithCause { .. }
             | Error::InvalidAssignmentOfArray { .. }
             | Error::UnknownPropertyInObjectLiteralAssignment { .. }
             | Error::InvalidOpAssign { .. }
@@ -879,7 +959,9 @@ impl Error {
 
             Error::SuperInClassWithoutSuper { .. } => 2335,
 
-            Error::NoSuchProperty { .. } | Error::NoSuchPropertyInClass { .. } => 2339,
+            Error::NoSuchProperty { .. } | Error::NoSuchPropertyInThis { .. } | Error::NoSuchPropertyInClass { .. } => {
+                2339
+            }
             Error::AssignOpCannotBeApplied { .. } => 2365,
             Error::NonSymbolComputedPropInFormOfSymbol { .. } => 2471,
             Error::TypeUsedAsVar { .. } => 2585,
@@ -975,6 +1057,18 @@ impl Error {
             Error::Unknown { .. } => 2571,
 
             Error::ReturnRequired { .. } => 2355,
+
+            Error::ThisRefToModuleOrNamespace { .. } => 2331,
+
+            Error::CannotReferenceThisInComputedPropName { .. } => 2465,
+            Error::CannotReferenceSuperInComputedPropName { .. } => 2466,
+            Error::DeclaringTypeParamReferencedByComputedPropName { .. } => 2467,
+
+            Error::StaticMethodCannotUseTypeParamOfClass { .. } => 2302,
+
+            Error::InvalidImplOfInterface { .. } => 2416,
+
+            Error::ClassIncorrectlyImplementsInterface { .. } => 2420,
 
             _ => 0,
         }
