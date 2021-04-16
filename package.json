@@ -18,5 +18,9 @@
   "bugs": {
     "url": "https://github.com/swc-project/stc/issues"
   },
-  "homepage": "https://swc.rs"
+  "homepage": "https://swc.rs",
+  "funding": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/<YOUR-COLLECTIVE-SLUG>"
+  }
 }
