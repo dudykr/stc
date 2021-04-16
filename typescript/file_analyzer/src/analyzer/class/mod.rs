@@ -67,6 +67,7 @@ use stc_ts_types::Operator;
 use stc_ts_types::QueryExpr;
 use stc_ts_types::QueryType;
 use stc_ts_types::Ref;
+use stc_ts_types::TsExpr;
 use stc_ts_types::Type;
 use stc_ts_utils::PatExt;
 use stc_utils::TryOpt;
@@ -780,6 +781,8 @@ impl Analyzer<'_, '_> {
         }
     }
 
+    fn validate_interface_conflicts(&mut self, interfaces: &[TsExpr]) {}
+
     fn validate_inherited_members_from_interfaces(&mut self, name: Option<Span>, class: &ClassDef) {
         if class.is_abstract || self.ctx.in_declare {
             return;
@@ -1424,6 +1427,7 @@ impl Analyzer<'_, '_> {
 
                 child.validate_inherited_members_from_super_class(None, &class);
                 child.validate_inherited_members_from_interfaces(None, &class);
+                child.validate_interface_conflicts(&class.implements);
 
                 Ok(class)
             },
