@@ -273,7 +273,6 @@ es2019/globalThisTypeIndexAccess.ts
 es2020/bigintMissingES2019.ts
 es2020/bigintMissingES2020.ts
 es2020/bigintMissingESNext.ts
-es6/Symbols/
 es6/Symbols/symbolDeclarationEmit1.ts
 es6/Symbols/symbolDeclarationEmit10.ts
 es6/Symbols/symbolDeclarationEmit11.ts
