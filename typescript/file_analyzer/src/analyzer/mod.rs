@@ -66,6 +66,7 @@ mod assign;
 mod class;
 mod control_flow;
 mod convert;
+mod decl_merging;
 mod enums;
 mod export;
 mod expr;
