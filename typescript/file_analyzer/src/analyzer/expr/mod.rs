@@ -2260,8 +2260,12 @@ impl Analyzer<'_, '_> {
                             Type::Conditional(_) => {}
                             Type::Tuple(_) => {}
                             Type::Array(_) => {}
-                            Type::Union(_) => {}
-                            Type::Intersection(_) => {}
+                            Type::Union(ty) => {
+                                // TODO: Expand types
+                            }
+                            Type::Intersection(ty) => {
+                                // TODO: Expand types
+                            }
                             Type::Operator(_) => {}
                             Type::Mapped(_) => {}
                             Type::Alias(_) => {}
