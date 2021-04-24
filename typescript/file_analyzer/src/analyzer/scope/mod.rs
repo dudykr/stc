@@ -666,7 +666,7 @@ impl Analyzer<'_, '_> {
 
             if (self.scope.is_root() || self.scope.is_module()) && !ty.normalize().is_type_param() {
                 self.storage
-                    .store_private_type(self.ctx.module_id, name.clone(), ty.clone());
+                    .store_private_type(self.ctx.module_id, name.clone(), ty.clone(), should_override);
 
                 match *name.sym() {
                     js_word!("Array") | js_word!("Number") | js_word!("Boolean") | js_word!("String") => {
