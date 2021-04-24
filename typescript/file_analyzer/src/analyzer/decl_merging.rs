@@ -1,5 +1,6 @@
 use super::Analyzer;
 use crate::ValidationResult;
+use fxhash::FxHashMap;
 use stc_ts_errors::DebugExt;
 use stc_ts_types::ClassDef;
 use stc_ts_types::ClassMember;
@@ -9,6 +10,7 @@ use stc_ts_types::Interface;
 use stc_ts_types::Method;
 use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
+use stc_ts_types::TypeParam;
 use swc_common::Spanned;
 
 impl Analyzer<'_, '_> {
@@ -52,8 +54,25 @@ impl Analyzer<'_, '_> {
         debug_assert!(b.is_clone_cheap());
 
         match (a.normalize(), b.normalize()) {
-            (Type::ClassDef(a), Type::Interface(..)) => {
-                // TOOD: Handle type parameters.
+            (Type::ClassDef(a), Type::Interface(bi)) => {
+                // TOOD: Handle the number of type parameters.
+                let mut type_params = FxHashMap::default();
+                if let Some(b_tps) = &bi.type_params {
+                    if let Some(a_tp) = &a.type_params {
+                        for (idx, b_tp) in b_tps.params.iter().enumerate() {
+                            type_params.insert(
+                                b_tp.name.clone(),
+                                Type::Param(TypeParam {
+                                    span: a_tp.span,
+                                    name: a_tp.params[idx].name.clone(),
+                                    constraint: None,
+                                    default: None,
+                                }),
+                            );
+                        }
+                    }
+                }
+                let b = self.expand_type_params(&type_params, b)?;
 
                 let mut new_members = a.body.clone();
 
@@ -72,8 +91,25 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            (Type::Interface(a), Type::Interface(..)) => {
-                // TOOD: Handle type parameters.
+            (Type::Interface(a), Type::Interface(bi)) => {
+                // TOOD: Handle the number of type parameters.
+                let mut type_params = FxHashMap::default();
+                if let Some(b_tps) = &bi.type_params {
+                    if let Some(a_tp) = &a.type_params {
+                        for (idx, b_tp) in b_tps.params.iter().enumerate() {
+                            type_params.insert(
+                                b_tp.name.clone(),
+                                Type::Param(TypeParam {
+                                    span: a_tp.span,
+                                    name: a_tp.params[idx].name.clone(),
+                                    constraint: None,
+                                    default: None,
+                                }),
+                            );
+                        }
+                    }
+                }
+                let b = self.expand_type_params(&type_params, b)?;
 
                 let mut new_members = a.body.clone();
 
