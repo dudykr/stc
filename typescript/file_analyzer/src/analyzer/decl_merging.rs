@@ -42,6 +42,10 @@ impl Analyzer<'_, '_> {
     }
 
     fn merge_from_to(&mut self, a: Type, b: Type) -> ValidationResult<Option<Type>> {
+        if self.is_builtin {
+            return Ok(None);
+        }
+
         debug_assert!(a.is_clone_cheap());
         debug_assert!(b.is_clone_cheap());
 
@@ -90,6 +94,8 @@ impl Analyzer<'_, '_> {
 
         let orig = orig.next().unwrap().into_owned();
 
-        self.merge_types(orig, new)
+        let new = self.merge_types(orig, new)?;
+
+        Ok(new)
     }
 }
