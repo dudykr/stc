@@ -413,7 +413,7 @@ impl Scope<'_> {
     }
 
     /// Add a type to the scope.
-    fn register_type(&mut self, name: Id, ty: Type) {
+    fn register_type(&mut self, name: Id, ty: Type, should_override: bool) {
         ty.assert_valid();
 
         let ty = ty.cheap();
@@ -472,11 +472,15 @@ impl Scope<'_> {
                     prev.make_cheap();
                 } else {
                     let prev_ty = replace(prev, Type::any(DUMMY_SP));
-                    *prev = Type::Intersection(Intersection {
-                        span: DUMMY_SP,
-                        types: vec![prev_ty, ty],
-                    })
-                    .cheap();
+                    *prev = if should_override {
+                        ty
+                    } else {
+                        Type::Intersection(Intersection {
+                            span: DUMMY_SP,
+                            types: vec![prev_ty, ty],
+                        })
+                        .cheap()
+                    };
                 }
             }
             Entry::Vacant(e) => {
@@ -649,14 +653,15 @@ impl Analyzer<'_, '_> {
 
             self.storage
                 .store_private_type(ModuleId::builtin(), name.clone(), ty.clone());
-            self.scope.register_type(name, ty);
+            self.scope.register_type(name, ty, false);
         } else {
             let ty = ty.cheap();
-            let ty = self
+            let (ty, should_override) = self
                 .merge_decl_with_name(name.clone(), ty.clone())
+                .map(|ty| (ty, true))
                 .unwrap_or_else(|err| {
                     self.storage.report(err);
-                    ty
+                    (ty, false)
                 });
 
             if (self.scope.is_root() || self.scope.is_module()) && !ty.normalize().is_type_param() {
@@ -671,7 +676,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            self.scope.register_type(name, ty);
+            self.scope.register_type(name, ty, should_override);
         }
     }
 
