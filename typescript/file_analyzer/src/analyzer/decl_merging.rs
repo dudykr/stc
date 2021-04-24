@@ -1,11 +1,13 @@
 use super::Analyzer;
 use crate::ValidationResult;
+use stc_ts_types::ClassDef;
 use stc_ts_types::ClassMember;
 use stc_ts_types::ClassProperty;
 use stc_ts_types::Id;
 use stc_ts_types::Method;
 use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
+use swc_common::Spanned;
 
 impl Analyzer<'_, '_> {
     fn type_element_to_class_member(&mut self, el: &TypeElement) -> ValidationResult<Option<ClassMember>> {
@@ -44,7 +46,21 @@ impl Analyzer<'_, '_> {
         debug_assert!(b.is_clone_cheap());
 
         match (a.normalize(), b.normalize()) {
-            (Type::ClassDef(a), Type::Interface(b)) => {}
+            (Type::ClassDef(a), Type::Interface(..)) => {
+                let mut new_members = a.body.clone();
+
+                let b = self.type_to_type_lit(b.span(), &b)?;
+                if let Some(b) = b {
+                    for el in &b.members {
+                        new_members.extend(self.type_element_to_class_member(el)?);
+                    }
+                }
+
+                return Ok(Some(Type::ClassDef(ClassDef {
+                    body: new_members,
+                    ..a.clone()
+                })));
+            }
             _ => {}
         }
 
