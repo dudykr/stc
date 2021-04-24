@@ -1,6 +1,7 @@
 use super::Analyzer;
 use crate::ValidationResult;
 use fxhash::FxHashMap;
+use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::DebugExt;
 use stc_ts_types::ClassDef;
 use stc_ts_types::ClassMember;
@@ -157,7 +158,12 @@ impl Analyzer<'_, '_> {
         let orig = orig.next().unwrap().into_owned();
 
         let new = self.merge_types(orig, new)?;
-        slog::info!(self.logger, "Merging declaration {} with type {:?}", name, new);
+        slog::info!(
+            self.logger,
+            "Merging declaration {} with type {}",
+            name,
+            dump_type_as_string(new)
+        );
 
         Ok(new)
     }
