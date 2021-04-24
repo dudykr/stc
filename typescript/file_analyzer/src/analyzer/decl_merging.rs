@@ -1,4 +1,7 @@
 use super::Analyzer;
+use crate::ValidationResult;
+use stc_ts_types::Id;
+use stc_ts_types::Type;
 
 impl Analyzer<'_, '_> {
     fn merge_from_to(&mut self, a: Type, b: Type) -> ValidationResult<Option<Type>> {
