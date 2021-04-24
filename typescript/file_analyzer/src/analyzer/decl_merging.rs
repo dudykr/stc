@@ -4,6 +4,7 @@ use stc_ts_types::ClassDef;
 use stc_ts_types::ClassMember;
 use stc_ts_types::ClassProperty;
 use stc_ts_types::Id;
+use stc_ts_types::Interface;
 use stc_ts_types::Method;
 use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
@@ -58,13 +59,27 @@ impl Analyzer<'_, '_> {
                     for el in &b.members {
                         new_members.extend(self.type_element_to_class_member(el)?);
                     }
-                }
 
-                return Ok(Some(Type::ClassDef(ClassDef {
-                    body: new_members,
-                    ..a.clone()
-                })));
+                    return Ok(Some(Type::ClassDef(ClassDef {
+                        body: new_members,
+                        ..a.clone()
+                    })));
+                }
             }
+
+            (Type::Interface(a), Type::Interface(..)) => {
+                let mut new_members = a.body.clone();
+                // Convert to a type literal first.
+                if let Some(b) = self.type_to_type_lit(b.span(), &b)? {
+                    new_members.extend(b.into_owned().members);
+
+                    return Ok(Some(Type::Interface(Interface {
+                        body: new_members,
+                        ..a.clone()
+                    })));
+                }
+            }
+
             _ => {}
         }
 
