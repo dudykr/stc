@@ -1,5 +1,6 @@
 use super::Analyzer;
 use crate::ValidationResult;
+use stc_ts_errors::DebugExt;
 use stc_ts_types::ClassDef;
 use stc_ts_types::ClassMember;
 use stc_ts_types::ClassProperty;
@@ -54,7 +55,9 @@ impl Analyzer<'_, '_> {
             (Type::ClassDef(a), Type::Interface(..)) => {
                 let mut new_members = a.body.clone();
 
-                let b = self.type_to_type_lit(b.span(), &b)?;
+                let b = self
+                    .type_to_type_lit(b.span(), &b)
+                    .context("tried to convert an interface to a type literal to merge with a class definition")?;
                 if let Some(b) = b {
                     for el in &b.members {
                         new_members.extend(self.type_element_to_class_member(el)?);
@@ -70,7 +73,10 @@ impl Analyzer<'_, '_> {
             (Type::Interface(a), Type::Interface(..)) => {
                 let mut new_members = a.body.clone();
                 // Convert to a type literal first.
-                if let Some(b) = self.type_to_type_lit(b.span(), &b)? {
+                if let Some(b) = self
+                    .type_to_type_lit(b.span(), &b)
+                    .context("tried to convert an interface to a type literal to merge with another interface")?
+                {
                     new_members.extend(b.into_owned().members);
 
                     return Ok(Some(Type::Interface(Interface {
