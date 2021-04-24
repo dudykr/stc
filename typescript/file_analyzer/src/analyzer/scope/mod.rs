@@ -634,7 +634,7 @@ impl Analyzer<'_, '_> {
 
     fn merge_decl_with_name(&mut self, name: Id, new: Type) -> ValidationResult<Type> {
         let orig = self.find_type(self.ctx.module_id, &name)?;
-        let orig = match orig {
+        let mut orig = match orig {
             Some(v) => v,
             None => return Ok(new),
         };
@@ -690,10 +690,12 @@ impl Analyzer<'_, '_> {
             self.scope.register_type(name, ty);
         } else {
             let ty = ty.cheap();
-            let ty = self.merge_decl_with_name(name, ty).unwrap_or_else(|err| {
-                self.storage.report(err);
-                ty.clone()
-            });
+            let ty = self
+                .merge_decl_with_name(name.clone(), ty.clone())
+                .unwrap_or_else(|err| {
+                    self.storage.report(err);
+                    ty
+                });
 
             if (self.scope.is_root() || self.scope.is_module()) && !ty.normalize().is_type_param() {
                 self.storage
