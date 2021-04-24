@@ -781,9 +781,17 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn validate_interface_conflicts(&mut self, interfaces: &[TsExpr]) {}
+    fn validate_interface_conflicts(&mut self, interfaces: &[TsExpr]) {
+        if self.is_builtin {
+            return;
+        }
+    }
 
     fn validate_inherited_members_from_interfaces(&mut self, name: Option<Span>, class: &ClassDef) {
+        if self.is_builtin {
+            return;
+        }
+
         if class.is_abstract || self.ctx.in_declare {
             return;
         }
