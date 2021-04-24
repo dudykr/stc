@@ -156,8 +156,8 @@ impl Analyzer<'_, '_> {
 
         let orig = orig.next().unwrap().into_owned();
 
-        slog::info!(self.logger, "Merging declaration {} with type {:?}", name, new);
         let new = self.merge_types(orig, new)?;
+        slog::info!(self.logger, "Merging declaration {} with type {:?}", name, new);
 
         Ok(new)
     }
