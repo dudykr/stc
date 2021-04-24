@@ -53,6 +53,8 @@ impl Analyzer<'_, '_> {
 
         match (a.normalize(), b.normalize()) {
             (Type::ClassDef(a), Type::Interface(..)) => {
+                // TOOD: Handle type parameters.
+
                 let mut new_members = a.body.clone();
 
                 let b = self
@@ -71,7 +73,10 @@ impl Analyzer<'_, '_> {
             }
 
             (Type::Interface(a), Type::Interface(..)) => {
+                // TOOD: Handle type parameters.
+
                 let mut new_members = a.body.clone();
+
                 // Convert to a type literal first.
                 if let Some(b) = self
                     .type_to_type_lit(b.span(), &b)
