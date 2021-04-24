@@ -162,7 +162,7 @@ impl Analyzer<'_, '_> {
             self.logger,
             "Merging declaration {} with type {}",
             name,
-            dump_type_as_string(new)
+            dump_type_as_string(&self.cm, new)
         );
 
         Ok(new)
