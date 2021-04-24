@@ -2262,9 +2262,15 @@ impl Analyzer<'_, '_> {
                             Type::Array(_) => {}
                             Type::Union(ty) => {
                                 // TODO: Expand types
+                                if !self.is_builtin {
+                                    dbg!(&ty);
+                                }
                             }
                             Type::Intersection(ty) => {
                                 // TODO: Expand types
+                                if !self.is_builtin {
+                                    dbg!(&ty);
+                                }
                             }
                             Type::Operator(_) => {}
                             Type::Mapped(_) => {}
