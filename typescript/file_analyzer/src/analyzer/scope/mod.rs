@@ -652,7 +652,7 @@ impl Analyzer<'_, '_> {
             let ty = ty.cheap();
 
             self.storage
-                .store_private_type(ModuleId::builtin(), name.clone(), ty.clone());
+                .store_private_type(ModuleId::builtin(), name.clone(), ty.clone(), false);
             self.scope.register_type(name, ty, false);
         } else {
             let ty = ty.cheap();

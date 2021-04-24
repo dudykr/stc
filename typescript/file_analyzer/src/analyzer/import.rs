@@ -100,7 +100,7 @@ impl Analyzer<'_, '_> {
                 if orig.sym() == i {
                     for ty in types {
                         did_work = true;
-                        self.storage.store_private_type(ctxt, id.clone(), ty.clone());
+                        self.storage.store_private_type(ctxt, id.clone(), ty.clone(), false);
                     }
                 }
             }

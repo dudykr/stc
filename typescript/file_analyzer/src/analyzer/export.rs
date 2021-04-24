@@ -180,9 +180,8 @@ impl Analyzer<'_, '_> {
                     .map(Type::from)
                     .map(|ty| ty.cheap());
                 let ty = ty.unwrap_or_else(|| Type::any(span));
+                self.register_type(e.id.clone().into(), ty);
 
-                self.storage
-                    .store_private_type(self.ctx.module_id, e.id.clone().into(), ty);
                 self.storage.export_type(span, self.ctx.module_id, e.id.clone().into());
             }
             RDecl::TsModule(module) => {
@@ -312,7 +311,8 @@ impl Analyzer<'_, '_> {
             .collect::<Vec<_>>();
 
         for ty in iter {
-            self.storage.store_private_type(self.ctx.module_id, name.clone(), ty);
+            self.storage
+                .store_private_type(self.ctx.module_id, name.clone(), ty, false);
         }
 
         self.storage.export_type(span, self.ctx.module_id, name);
