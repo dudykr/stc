@@ -51,6 +51,7 @@ use stc_ts_types::TypeParamDecl;
 use stc_ts_types::TypeParamInstantiation;
 use stc_ts_types::Union;
 use stc_ts_utils::MapWithMut;
+use stc_utils::panic_context;
 use std::borrow::Cow;
 use std::collections::hash_map::Entry;
 use std::mem::take;
@@ -392,6 +393,12 @@ impl Analyzer<'_, '_> {
         if self.is_builtin {
             return Ok(());
         }
+
+        let _panic = panic_context::enter(format!(
+            "infer_type()\nParam: {}\nArg: {}",
+            dump_type_as_string(&self.cm, &param),
+            dump_type_as_string(&self.cm, &arg)
+        ));
 
         print_type(&self.logger, "param", &self.cm, &param);
         print_type(&self.logger, "arg", &self.cm, &arg);
