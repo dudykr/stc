@@ -148,11 +148,11 @@ impl Analyzer<'_, '_> {
         Ok(new)
     }
 
-    pub(crate) fn merge_decl_with_name(&mut self, name: Id, new: Type) -> ValidationResult<Type> {
+    pub(crate) fn merge_decl_with_name(&mut self, name: Id, new: Type) -> ValidationResult<(Type, bool)> {
         let orig = self.find_type(self.ctx.module_id, &name)?;
         let mut orig = match orig {
             Some(v) => v,
-            None => return Ok(new),
+            None => return Ok((new, false)),
         };
 
         let orig = orig.next().unwrap().into_owned();
@@ -165,6 +165,6 @@ impl Analyzer<'_, '_> {
             dump_type_as_string(&self.cm, &new)
         );
 
-        Ok(new)
+        Ok((new, true))
     }
 }
