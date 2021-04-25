@@ -425,15 +425,21 @@ impl Analyzer<'_, '_> {
     }
 }
 
+/// Order of evaluation is important to handle infer types correctly.
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsConditionalType) -> ValidationResult<Conditional> {
+        let check_type = box t.check_type.validate_with(self)?;
+        let extends_type = box t.extends_type.validate_with(self)?;
+        let true_type = box t.true_type.validate_with(self)?;
+        let false_type = box t.false_type.validate_with(self)?;
+
         Ok(Conditional {
             span: t.span,
-            check_type: box t.check_type.validate_with(self)?,
-            extends_type: box t.extends_type.validate_with(self)?,
-            true_type: box t.true_type.validate_with(self)?,
-            false_type: box t.false_type.validate_with(self)?,
+            check_type,
+            extends_type,
+            true_type,
+            false_type,
         })
     }
 }
