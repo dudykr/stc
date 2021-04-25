@@ -149,6 +149,7 @@ classes/classDeclarations/classInsideBlock.ts
 classes/classDeclarations/classWithSemicolonClassElement1.ts
 classes/classDeclarations/classWithSemicolonClassElement2.ts
 classes/classDeclarations/mergeClassInterfaceAndModule.ts
+classes/classDeclarations/mergedInheritedClassInterface.ts
 classes/classDeclarations/modifierOnClassDeclarationMemberInFunction.ts
 classes/classExpression.ts
 classes/classExpressions/classExpression1.ts
