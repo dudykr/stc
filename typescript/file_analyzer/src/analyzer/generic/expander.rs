@@ -702,10 +702,13 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                     None => return Type::IndexedAccessType(ty),
                 };
 
-                if let Ok(prop_ty) =
-                    self.analyzer
-                        .access_property(ty.span, *ty.obj_type.clone(), &key, TypeOfMode::RValue, IdCtx::Var)
-                {
+                if let Ok(prop_ty) = self.analyzer.access_property(
+                    key.span(),
+                    *ty.obj_type.clone(),
+                    &key,
+                    TypeOfMode::RValue,
+                    IdCtx::Var,
+                ) {
                     return prop_ty;
                 }
 
