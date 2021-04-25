@@ -25,6 +25,7 @@ use stc_ts_types::TypeLit;
 use stc_ts_types::TypeLitMetadata;
 use stc_ts_types::TypeParam;
 use stc_ts_utils::MapWithMut;
+use stc_utils::panic_context;
 use stc_utils::TryOpt;
 use std::borrow::Cow;
 use swc_common::Span;
@@ -361,6 +362,8 @@ impl Analyzer<'_, '_> {
         span: Span,
         ty: &'a Type,
     ) -> ValidationResult<Option<Cow<'a, TypeLit>>> {
+        let _panic = panic_context::enter(format!("type_to_type_lit: {:?}", ty));
+
         debug_assert!(!span.is_dummy(), "type_to_type_lit: `span` should not be dummy");
 
         let ty = ty.normalize();
