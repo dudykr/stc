@@ -1729,7 +1729,9 @@ impl Analyzer<'_, '_> {
 
                 // print_backtrace();
                 if new.len() == 1 {
-                    return Ok(new.into_iter().next().unwrap());
+                    let mut ty = new.into_iter().next().unwrap();
+                    ty.respan(span);
+                    return Ok(ty);
                 }
 
                 new.dedup_type();
