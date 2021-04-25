@@ -1663,6 +1663,7 @@ types/intersection/contextualIntersectionType.ts
 types/intersection/intersectionOfUnionOfUnitTypes.ts
 types/intersection/intersectionTypeEquivalence.ts
 types/intersection/intersectionTypeInference.ts
+types/intersection/intersectionTypeInference3.ts
 types/keyof/keyofAndForIn.ts
 types/keyof/keyofIntersection.ts
 types/literal/booleanLiteralTypes1.ts
