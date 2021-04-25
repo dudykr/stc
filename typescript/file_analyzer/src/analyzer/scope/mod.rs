@@ -669,6 +669,7 @@ impl Analyzer<'_, '_> {
             let ty = ty.cheap();
             let (ty, should_override) = self
                 .merge_decl_with_name(name.clone(), ty.clone())
+                .map(|(ty, should_override)| (ty.cheap(), should_override))
                 .unwrap_or_else(|err| {
                     self.storage.report(err);
                     (ty, false)
