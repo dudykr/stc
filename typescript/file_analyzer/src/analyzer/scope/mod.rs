@@ -530,7 +530,7 @@ impl Scope<'_> {
 }
 
 impl Analyzer<'_, '_> {
-    /// Overrides a variable. Used for removing lazily-typed stuffs.
+    /// Overrides a variable. Used for updating types.
     pub(super) fn override_var(&mut self, kind: VarDeclKind, name: Id, ty: Type) -> ValidationResult<()> {
         self.declare_var(ty.span(), kind, name, Some(ty), None, true, true, true)?;
 
@@ -960,6 +960,8 @@ impl Analyzer<'_, '_> {
         }))
     }
 
+    /// If `allow_multiple` is true and `is_override` is false, the value type
+    /// is updated only if it's temporary type (like `typeof foo` while validating `foo`).
     pub fn declare_var(
         &mut self,
         span: Span,

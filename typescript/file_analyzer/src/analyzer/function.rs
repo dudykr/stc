@@ -404,7 +404,16 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, f: &RFnDecl) {
         let fn_ty = self.visit_fn(Some(&f.ident), &f.function).cheap();
 
-        match self.override_var(VarDeclKind::Var, f.ident.clone().into(), fn_ty) {
+        match self.declare_var(
+            f.span(),
+            VarDeclKind::Var,
+            f.ident.clone().into(),
+            Some(fn_ty),
+            None,
+            true,
+            true,
+            false,
+        ) {
             Ok(()) => {}
             Err(err) => {
                 self.storage.report(err);
