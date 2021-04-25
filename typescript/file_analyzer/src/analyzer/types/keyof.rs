@@ -36,6 +36,10 @@ impl Analyzer<'_, '_> {
     pub(super) fn keyof(&mut self, span: Span, ty: &Type) -> ValidationResult<Type> {
         let _panic = panic_context::enter(format!("keyof: {}", dump_type_as_string(&self.cm, ty)));
 
+        if !self.is_builtin {
+            debug_assert!(span.is_dummy(), "Cannot perform `keyof` operation with dummy span");
+        }
+
         let ty = self
             .normalize(ty, NormalizeTypeOpts { ..Default::default() })
             .context("tried to normalize")?;
