@@ -1938,6 +1938,7 @@ impl Analyzer<'_, '_> {
                 .map(|v| -> ValidationResult<_> {
                     let mut ty = box self.expand_type_params(&inferred, *v.ty)?;
                     ty.fix();
+                    ty.assert_valid();
 
                     Ok(FnParam { ty, ..v })
                 })
