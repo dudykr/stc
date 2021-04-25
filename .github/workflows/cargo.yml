@@ -12,7 +12,7 @@ defaults:
 jobs:
   check-license:
     name: Check license
-    runs-on: [self-hosted, docker]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
 
@@ -30,7 +30,7 @@ jobs:
           cargo deny check
   fmt:
     name: Formatting
-    runs-on: [self-hosted, docker]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
 
@@ -45,7 +45,7 @@ jobs:
 
   check:
     name: Check
-    runs-on: [self-hosted, docker]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
         with:
