@@ -322,7 +322,10 @@ impl Analyzer<'_, '_> {
 
                 let ty = match ty {
                     None => try_opt!(type_ann.as_ref().map(|v| v.type_ann.validate_with(self))),
-                    Some(ty) => Some(ty),
+                    Some(mut ty) => {
+                        ty.respan(span);
+                        Some(ty)
+                    }
                 };
 
                 if type_ann.is_none() {
