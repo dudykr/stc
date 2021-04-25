@@ -4,7 +4,7 @@ warning: Type
 13 | class Grandchild extends ChildNoBaseClass {
    |                          ^^^^^^^^^^^^^^^^
    |
-   = note: ChildNoBaseClass
+   = note: typeof ChildNoBaseClass
 
 warning: Type
   --> $DIR/tests/pass/class/member/interface/merging/2.ts:17:1
