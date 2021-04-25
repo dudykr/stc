@@ -1476,7 +1476,7 @@ impl Analyzer<'_, '_> {
         let c = self
             .with_child(ScopeKind::Block, Default::default(), |analyzer| {
                 if let Some(ref i) = c.ident {
-                    analyzer.register_type(i.into(), ty.clone());
+                    let ty = analyzer.register_type(i.into(), ty);
 
                     match analyzer.declare_var(
                         ty.span(),
@@ -1552,7 +1552,7 @@ impl Analyzer<'_, '_> {
         let old_this = self.scope.this.take();
         // self.scope.this = Some(ty.clone());
 
-        self.register_type(c.ident.clone().into(), ty.clone().into());
+        let ty = self.register_type(c.ident.clone().into(), ty.clone().into());
 
         match self.declare_var(
             ty.span(),

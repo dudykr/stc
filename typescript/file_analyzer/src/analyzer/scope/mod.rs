@@ -619,7 +619,7 @@ impl Analyzer<'_, '_> {
             .map(Cow::Owned)
     }
 
-    pub(super) fn register_type(&mut self, name: Id, ty: Type) {
+    pub(super) fn register_type(&mut self, name: Id, ty: Type) -> Type {
         slog::debug!(self.logger, "Registering: {:?}", name);
 
         if self.ctx.in_global {
@@ -662,7 +662,9 @@ impl Analyzer<'_, '_> {
 
             self.storage
                 .store_private_type(ModuleId::builtin(), name.clone(), ty.clone(), false);
-            self.scope.register_type(name, ty, false);
+            self.scope.register_type(name, ty.clone(), false);
+
+            ty
         } else {
             let ty = ty.cheap();
             let (ty, should_override) = self
@@ -690,7 +692,9 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            self.scope.register_type(name, ty, should_override);
+            self.scope.register_type(name, ty.clone(), should_override);
+
+            ty
         }
     }
 
