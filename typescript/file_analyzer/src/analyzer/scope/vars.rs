@@ -181,7 +181,7 @@ impl Analyzer<'_, '_> {
             .and_then(|span| if span.is_dummy() { None } else { Some(span) })
             .unwrap_or_else(|| pat.span());
         if !self.is_builtin {
-            assert_ne!(span, DUMMY_SP);
+            debug_assert!(!span.is_dummy(), "Cannot declare a variable with a dummy span")
         }
 
         match &*pat {
@@ -425,7 +425,7 @@ impl Analyzer<'_, '_> {
                         RObjectPatProp::Rest(pat) => match ty {
                             Some(ty) => {
                                 let rest_ty = self
-                                    .exclude_props(pat.span(), &ty, &used_keys)
+                                    .exclude_props(span, &ty, &used_keys)
                                     .context("tried to exclude keys for declare vars with a object rest pattern")?;
 
                                 return self
