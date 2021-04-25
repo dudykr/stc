@@ -61,7 +61,10 @@ impl Analyzer<'_, '_> {
         Ok(params)
     }
 
-    pub(in super::super) fn expand_type_params(&mut self, params: &FxHashMap<Id, Type>, ty: Type) -> ValidationResult {
+    pub(in super::super) fn expand_type_params<T>(&mut self, params: &FxHashMap<Id, Type>, ty: T) -> ValidationResult<T>
+    where
+        T: for<'aa, 'bb, 'cc, 'dd> FoldWith<GenericExpander<'aa, 'bb, 'cc, 'dd>>,
+    {
         let ty = self.expand_type_params_inner(params, ty, false)?;
         Ok(ty)
     }
@@ -82,7 +85,10 @@ impl Analyzer<'_, '_> {
     ///z     T extends {
     ///          x: infer P extends number ? infer P : string;
     ///      } ? P : never
-    fn expand_type_params_inner(&mut self, params: &FxHashMap<Id, Type>, ty: Type, fully: bool) -> ValidationResult {
+    fn expand_type_params_inner<T>(&mut self, params: &FxHashMap<Id, Type>, ty: T, fully: bool) -> ValidationResult<T>
+    where
+        T: for<'aa, 'bb, 'cc, 'dd> FoldWith<GenericExpander<'aa, 'bb, 'cc, 'dd>>,
+    {
         let ty = ty.fold_with(&mut GenericExpander {
             logger: self.logger.clone(),
             analyzer: self,
@@ -276,7 +282,7 @@ impl Analyzer<'_, '_> {
 
 /// This struct does not expands ref to other thpe. See Analyzer.expand to do
 /// such operation.
-struct GenericExpander<'a, 'b, 'c, 'd> {
+pub(crate) struct GenericExpander<'a, 'b, 'c, 'd> {
     logger: Logger,
     analyzer: &'a mut Analyzer<'b, 'c>,
     params: &'d FxHashMap<Id, Type>,
