@@ -2,6 +2,7 @@ use once_cell::sync::Lazy;
 use std::env;
 
 pub mod panic_context;
+pub mod stack;
 
 #[cfg(all(unix, not(target_env = "musl")))]
 #[global_allocator]
