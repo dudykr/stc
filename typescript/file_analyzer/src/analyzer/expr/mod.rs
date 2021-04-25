@@ -61,6 +61,7 @@ use stc_ts_types::PropertySignature;
 use stc_ts_types::{ClassProperty, Id, Method, ModuleId, Operator, QueryExpr, QueryType, StaticThis};
 use stc_utils::panic_context;
 use std::borrow::Cow;
+use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::convert::TryInto;
 use swc_atoms::js_word;
@@ -1914,6 +1915,38 @@ impl Analyzer<'_, '_> {
         }
     }
 
+    pub(crate) fn expand_type_args(
+        &mut self,
+        span: Span,
+        ty: Type,
+        type_args: &TypeParamInstantiation,
+    ) -> ValidationResult<Type> {
+        match ty.normalize() {
+            Type::Interface(Interface { type_params, .. })
+            | Type::Alias(Alias { type_params, .. })
+            | Type::Class(Class {
+                def: box ClassDef { type_params, .. },
+                ..
+            })
+            | Type::ClassDef(ClassDef { type_params, .. }) => {
+                if let Some(type_params) = type_params {
+                    let mut params = HashMap::default();
+
+                    for (param, arg) in type_params.params.iter().zip(type_args.params.iter()) {
+                        params.insert(param.name.clone(), arg.clone());
+                    }
+
+                    return self.expand_type_params(&params, ty.clone());
+                }
+            }
+            _ => {
+                // TODO: Report an error.
+            }
+        }
+
+        Ok(ty)
+    }
+
     /// Returned type reflects conditional type facts.
     pub(super) fn type_of_var(
         &mut self,
@@ -1935,7 +1968,10 @@ impl Analyzer<'_, '_> {
         }
 
         let mut modules = vec![];
-        let mut ty = self.type_of_raw_var(i, type_mode, type_args)?;
+        let mut ty = self.type_of_raw_var(i, type_mode)?;
+        if let Some(type_args) = type_args {
+            ty = self.expand_type_args(span, ty, type_args)?;
+        }
         let mut need_intersection = true;
 
         // TODO: Change return type of type_of_raw_var to Option and inject module from
@@ -2008,12 +2044,7 @@ impl Analyzer<'_, '_> {
 
     /// Returned type does not reflects conditional type facts. (like Truthy /
     /// exclusion)
-    fn type_of_raw_var(
-        &mut self,
-        i: &RIdent,
-        type_mode: TypeOfMode,
-        type_args: Option<&TypeParamInstantiation>,
-    ) -> ValidationResult {
+    fn type_of_raw_var(&mut self, i: &RIdent, type_mode: TypeOfMode) -> ValidationResult {
         slog::info!(self.logger, "({}) type_of_raw_var({})", self.scope.depth(), Id::from(i));
 
         // See documentation on Analyzer.cur_module_name to understand what we are doing
@@ -2320,6 +2351,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
+    /// TODO: Expand type arguments if provided.
     fn type_of_member_expr(&mut self, expr: &RMemberExpr, type_mode: TypeOfMode) -> ValidationResult {
         let RMemberExpr {
             ref obj,
