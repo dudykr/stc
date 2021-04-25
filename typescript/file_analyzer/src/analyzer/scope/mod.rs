@@ -338,6 +338,14 @@ impl Scope<'_> {
         self.parent?.current_module_name()
     }
 
+    pub fn move_types_from_child(&mut self, child: &mut Scope) {
+        for (name, ty) in child.types.drain() {
+            if ty.normalize().is_type_param() {
+                self.register_type(name, ty, false);
+            }
+        }
+    }
+
     pub fn move_vars_from_child(&mut self, child: &mut Scope) {
         match child.kind {
             // We don't copy variable information from nested function.
