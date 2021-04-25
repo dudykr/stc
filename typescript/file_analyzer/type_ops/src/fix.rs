@@ -34,6 +34,8 @@ struct Fixer;
 
 impl VisitMut<Union> for Fixer {
     fn visit_mut(&mut self, u: &mut Union) {
+        u.visit_mut_children_with(self);
+
         let mut new: Vec<Type> = Vec::with_capacity(u.types.capacity());
         for ty in u.types.drain(..) {
             if new.iter().any(|stored| stored.type_eq(&ty)) {
