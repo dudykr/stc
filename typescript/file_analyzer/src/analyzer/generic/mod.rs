@@ -714,6 +714,12 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                Type::Interface(..) | Type::Enum(..) | Type::Alias(..) => {
+                    if let Some(arg) = self.type_to_type_lit(span, arg)? {
+                        return self.infer_type_using_type_lit_and_type_lit(span, inferred, param, &arg);
+                    }
+                }
+
                 _ => {
                     dbg!();
                 }
