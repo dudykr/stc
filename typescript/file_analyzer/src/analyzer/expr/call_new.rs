@@ -1117,6 +1117,8 @@ impl Analyzer<'_, '_> {
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
     ) -> ValidationResult {
+        ty.assert_valid();
+
         match ty.normalize() {
             Type::Ref(..) | Type::Query(..) => {
                 let ty = self.normalize(ty, Default::default())?;
