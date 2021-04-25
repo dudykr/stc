@@ -457,9 +457,16 @@ impl Scope<'_> {
             }
             _ => {}
         }
-        match self.types.entry(name) {
+        match self.types.entry(name.clone()) {
             Entry::Occupied(mut e) => {
                 let prev = e.get_mut();
+                slog::debug!(
+                    self.logger,
+                    "Scope.register_type({}): override = {:?}; prev = {:?}",
+                    name,
+                    should_override,
+                    &prev
+                );
                 if prev.normalize().is_intersection_type() {
                     match prev.normalize_mut() {
                         Type::Intersection(prev) => {
@@ -484,6 +491,7 @@ impl Scope<'_> {
                 }
             }
             Entry::Vacant(e) => {
+                slog::debug!(self.logger, "Scope.register_type({}): {:?}", name, should_override);
                 e.insert(ty);
             }
         }
