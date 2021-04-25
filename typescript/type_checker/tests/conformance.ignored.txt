@@ -40,3 +40,4 @@ types.asyncGenerators.es2018.2.ts
 callSignatureWithoutReturnTypeAnnotationInference.ts
 typeParameterAsTypeArgument.ts
 circularTypeofWithVarOrFunc.ts
+mappedTypesArraysTuples.ts
