@@ -153,7 +153,7 @@ impl Analyzer<'_, '_> {
                     .store(&mut errors);
                 }
 
-                Type::Interface(..) => {
+                Type::Interface(..) | Type::Intersection(..) => {
                     if let Some(rty) = self
                         .type_to_type_lit(span, &rhs)?
                         .map(Cow::into_owned)
