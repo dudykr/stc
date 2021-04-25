@@ -524,7 +524,7 @@ pub struct Class {
 
 assert_eq_size!(Class, [u8; 24]);
 
-#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct ClassDef {
     pub span: Span,
     pub is_abstract: bool,
@@ -536,26 +536,6 @@ pub struct ClassDef {
 }
 
 assert_eq_size!(ClassDef, [u8; 112]);
-
-impl Debug for ClassDef {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "class {:?} ", self.name)?;
-
-        if let Some(extends) = &self.super_class {
-            write!(f, "extends {:?}", extends)?;
-        }
-
-        writeln!(f, "{{")?;
-
-        for member in &self.body {
-            writeln!(f, "\t{:?}", member)?;
-        }
-
-        writeln!(f, "}}")?;
-
-        Ok(())
-    }
-}
 
 #[derive(Debug, Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit)]
 pub enum ClassMember {
