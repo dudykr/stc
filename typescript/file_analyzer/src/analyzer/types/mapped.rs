@@ -4,6 +4,7 @@ use stc_ts_ast_rnode::RTsEnumMemberId;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_errors::DebugExt;
+use stc_ts_types::Id;
 use stc_ts_types::Key;
 use stc_ts_types::Mapped;
 use stc_ts_types::Operator;
@@ -12,6 +13,7 @@ use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
 use std::borrow::Cow;
+use std::collections::HashMap;
 use swc_common::Span;
 use swc_common::Spanned;
 use swc_common::TypeEq;
@@ -50,27 +52,35 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                // TODO: Verify that m.ty does not contain key type.
                 let keys = self.get_property_names(span, ty)?;
                 if let Some(keys) = keys {
                     let members = keys
                         .into_iter()
-                        .map(|key| PropertySignature {
-                            span: key.span(),
-                            accessibility: None,
-                            readonly: false,
-                            key,
-                            optional: false,
-                            params: Default::default(),
-                            type_ann: m.ty.clone(),
-                            type_params: Default::default(),
-                        })
-                        .map(TypeElement::Property)
-                        .map(|mut el| {
+                        .map(|key| -> ValidationResult<_> {
+                            let ty = match &m.ty {
+                                Some(mapped_ty) => self
+                                    .expand_key_in_mapped(m.type_param.name.clone(), &mapped_ty, &key)
+                                    .map(Box::new)
+                                    .map(Some)?,
+                                None => None,
+                            };
+
+                            let p = PropertySignature {
+                                span: key.span(),
+                                accessibility: None,
+                                readonly: false,
+                                key,
+                                optional: false,
+                                params: Default::default(),
+                                type_ann: ty,
+                                type_params: Default::default(),
+                            };
+                            let mut el = TypeElement::Property(p);
+
                             self.apply_mapped_flags(&mut el, m.optional, m.readonly);
-                            el
+                            Ok(el)
                         })
-                        .collect();
+                        .collect::<Result<_, _>>()?;
 
                     return Ok(Some(Type::TypeLit(TypeLit {
                         span: m.span,
@@ -79,43 +89,56 @@ impl Analyzer<'_, '_> {
                     })));
                 }
             }
-            _ => {
-                match m.type_param.constraint.as_deref() {
-                    Some(constraint) => {
-                        if let Some(keys) = self.convert_type_to_keys(span, constraint)? {
-                            // TODO: Verify that m.ty does not contain key type.
-                            let members = keys
-                                .into_iter()
-                                .map(|key| PropertySignature {
+            _ => match m.type_param.constraint.as_deref() {
+                Some(constraint) => {
+                    if let Some(keys) = self.convert_type_to_keys(span, constraint)? {
+                        let members = keys
+                            .into_iter()
+                            .map(|key| -> ValidationResult<_> {
+                                let ty = match &m.ty {
+                                    Some(mapped_ty) => self
+                                        .expand_key_in_mapped(m.type_param.name.clone(), &mapped_ty, &key)
+                                        .map(Box::new)
+                                        .map(Some)?,
+                                    None => None,
+                                };
+                                let p = PropertySignature {
                                     span: key.span(),
                                     accessibility: None,
                                     readonly: false,
                                     key,
                                     optional: false,
                                     params: Default::default(),
-                                    type_ann: m.ty.clone(),
+                                    type_ann: ty,
                                     type_params: Default::default(),
-                                })
-                                .map(TypeElement::Property)
-                                .map(|mut el| {
-                                    self.apply_mapped_flags(&mut el, m.optional, m.readonly);
-                                    el
-                                })
-                                .collect();
+                                };
+                                let mut el = TypeElement::Property(p);
+                                self.apply_mapped_flags(&mut el, m.optional, m.readonly);
 
-                            return Ok(Some(Type::TypeLit(TypeLit {
-                                span: m.span,
-                                members,
-                                metadata: Default::default(),
-                            })));
-                        }
+                                Ok(el)
+                            })
+                            .collect::<Result<_, _>>()?;
+
+                        return Ok(Some(Type::TypeLit(TypeLit {
+                            span: m.span,
+                            members,
+                            metadata: Default::default(),
+                        })));
                     }
-                    None => {}
                 }
-            }
+                None => {}
+            },
         }
 
         Ok(None)
+    }
+
+    /// TODO: Optimize
+    fn expand_key_in_mapped(&mut self, mapped_type_param: Id, mapped_ty: &Type, key: &Key) -> ValidationResult<Type> {
+        let mapped_ty = mapped_ty.clone();
+        let mut type_params = HashMap::default();
+        type_params.insert(mapped_type_param, key.ty().into_owned());
+        self.expand_type_params(&type_params, mapped_ty)
     }
 
     /// Evaluate a type and convert it to keys.
