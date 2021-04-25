@@ -291,7 +291,16 @@ impl Analyzer<'_, '_> {
             }) => {
                 let ty = i.type_ann.validate_with(self).try_opt()?;
 
-                self.declare_var(i.id.span, VarDeclKind::Let, i.id.clone().into(), ty, None, true, false)
+                self.declare_var(
+                    i.id.span,
+                    VarDeclKind::Let,
+                    i.id.clone().into(),
+                    ty,
+                    None,
+                    true,
+                    false,
+                    false,
+                )
             }
             _ => unreachable!(),
         }
@@ -1479,6 +1488,7 @@ impl Analyzer<'_, '_> {
                         true,
                         // declare Class does not allow multiple declarations.
                         false,
+                        false,
                     ) {
                         Ok(()) => {}
                         Err(err) => {
@@ -1553,6 +1563,7 @@ impl Analyzer<'_, '_> {
             // initialized = true
             true,
             // declare Class does not allow multiple declarations.
+            false,
             false,
         ) {
             Ok(()) => {}

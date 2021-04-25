@@ -532,7 +532,7 @@ impl Scope<'_> {
 impl Analyzer<'_, '_> {
     /// Overrides a variable. Used for removing lazily-typed stuffs.
     pub(super) fn override_var(&mut self, kind: VarDeclKind, name: Id, ty: Type) -> ValidationResult<()> {
-        self.declare_var(ty.span(), kind, name, Some(ty), None, true, true)?;
+        self.declare_var(ty.span(), kind, name, Some(ty), None, true, true, true)?;
 
         Ok(())
     }
@@ -674,9 +674,8 @@ impl Analyzer<'_, '_> {
 
             // Override class definitions.
             if should_override {
-                if let Some(var) = self.scope.vars.get_mut(&name) {
-                    var.ty = Some(ty.clone());
-                }
+                self.override_var(VarDeclKind::Let, name.clone(), ty.clone())
+                    .report(&mut self.storage);
             }
 
             if (self.scope.is_root() || self.scope.is_module()) && !ty.normalize().is_type_param() {
@@ -965,6 +964,7 @@ impl Analyzer<'_, '_> {
         actual_ty: Option<Type>,
         initialized: bool,
         allow_multiple: bool,
+        is_override: bool,
     ) -> ValidationResult<()> {
         let ty = ty.map(|ty| ty.cheap());
 
@@ -1014,6 +1014,11 @@ impl Analyzer<'_, '_> {
                     () => {{
                         self.scope.vars.insert(k, v);
                     }};
+                }
+
+                if is_override {
+                    v.ty = ty;
+                    return Ok(());
                 }
 
                 v.ty = if let Some(ty) = ty {
@@ -1143,6 +1148,7 @@ impl Analyzer<'_, '_> {
                     // let/const declarations does not allow multiple declarations with
                     // same name
                     kind == VarDeclKind::Var,
+                    false,
                 )?;
                 Ok(())
             }

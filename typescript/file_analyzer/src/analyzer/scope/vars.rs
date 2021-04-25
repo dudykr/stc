@@ -204,6 +204,7 @@ impl Analyzer<'_, '_> {
                     true,
                     // allow_multiple
                     kind == VarDeclKind::Var,
+                    false,
                 )?;
                 if export {
                     self.storage.store_private_var(

@@ -147,6 +147,7 @@ impl Analyzer<'_, '_> {
             None,
             true,
             true,
+            false,
         )
         .report(&mut self.storage);
 

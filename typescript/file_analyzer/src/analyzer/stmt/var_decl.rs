@@ -609,6 +609,7 @@ impl Analyzer<'_, '_> {
                             false,
                             // allow_multiple
                             kind == VarDeclKind::Var,
+                            false,
                         ) {
                             Ok(()) => {}
                             Err(err) => {
