@@ -118,7 +118,7 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult {
         self.record(e);
 
-        let _panic = panic_context::enter(format!("{:?}", e));
+        let _panic = panic_context::enter(format!("validate\nExpr: {:?}", e));
 
         let span = e.span();
         let need_type_param_handling = match e {
