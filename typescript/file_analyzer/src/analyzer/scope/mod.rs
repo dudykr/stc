@@ -550,6 +550,8 @@ impl Analyzer<'_, '_> {
             );
         }
 
+        let _panic = panic_context::enter(format!("expand: {}", dump_type_as_string(&self.cm, &ty)));
+
         let mut v = Expander {
             logger: self.logger.clone(),
             span,
@@ -578,6 +580,8 @@ impl Analyzer<'_, '_> {
                 ty
             );
         }
+
+        let _panic = panic_context::enter(format!("expand_fully: {}", dump_type_as_string(&self.cm, &ty)));
 
         let mut v = Expander {
             logger: self.logger.clone(),
