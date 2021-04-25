@@ -1,3 +1,4 @@
+use crate::analyzer::expr::TypeOfMode;
 use crate::{
     analyzer::{Analyzer, Ctx},
     ty::{Array, IndexedAccessType, Mapped, Operator, PropertySignature, Ref, Type, TypeElement, TypeLit},
@@ -6,11 +7,16 @@ use crate::{
 use fxhash::{FxHashMap, FxHashSet};
 use rnode::Fold;
 use rnode::FoldWith;
+use rnode::VisitWith;
 use slog::Logger;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
+use stc_ts_ast_rnode::RTsLit;
+use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_errors::debug::dump_type_as_string;
+use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
 use stc_ts_types::Function;
+use stc_ts_types::IdCtx;
 use stc_ts_types::Interface;
 use stc_ts_types::Key;
 use stc_ts_types::TypeParamDecl;
@@ -287,6 +293,15 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
             _ => false,
         };
         let span = ty.span();
+
+        {
+            let mut v = TypeParamUsageFinder::default();
+            ty.visit_with(&mut v);
+            let will_expand = v.params.iter().any(|param| self.params.contains_key(&param.name));
+            if !will_expand {
+                return ty;
+            }
+        }
 
         slog::trace!(self.logger, "generic_expand: {:?}", &ty);
         let ty = ty.foldable();
@@ -666,6 +681,37 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                 return ty.fold_children_with(self)
             }
 
+            Type::IndexedAccessType(ty) => {
+                let ty = ty.fold_with(self);
+
+                let key = match ty.index_type.normalize() {
+                    Type::Lit(RTsLitType {
+                        lit: RTsLit::Str(s), ..
+                    }) => Some(Key::Normal {
+                        span: s.span,
+                        sym: s.value.clone(),
+                    }),
+                    Type::Lit(RTsLitType {
+                        lit: RTsLit::Number(v), ..
+                    }) => Some(Key::Num(v.clone())),
+                    _ => None,
+                };
+
+                let key = match key {
+                    Some(v) => v,
+                    None => return Type::IndexedAccessType(ty),
+                };
+
+                if let Ok(prop_ty) =
+                    self.analyzer
+                        .access_property(ty.span, *ty.obj_type.clone(), &key, TypeOfMode::RValue, IdCtx::Var)
+                {
+                    return prop_ty;
+                }
+
+                Type::IndexedAccessType(ty)
+            }
+
             Type::Query(..)
             | Type::Operator(..)
             | Type::Tuple(..)
@@ -684,7 +730,6 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
             | Type::ClassDef(..)
             | Type::Optional(..)
             | Type::Rest(..)
-            | Type::IndexedAccessType(..)
             | Type::Mapped(..) => return ty.fold_children_with(self),
 
             Type::Arc(a) => return (*a.ty).clone().fold_with(self),
