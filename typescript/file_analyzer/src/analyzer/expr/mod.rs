@@ -1428,6 +1428,10 @@ impl Analyzer<'_, '_> {
                         super_ty.type_args.as_deref(),
                     )?;
 
+                    let obj = self
+                        .instantiate_class(span, &obj)
+                        .context("tried to instantiate parents of an interface to access property")?;
+
                     // TODO: Check if multiple interface has same property.
                     if let Ok(ty) = self.access_property(span, obj, prop, type_mode, id_ctx) {
                         return Ok(ty);
