@@ -673,7 +673,7 @@ impl Analyzer<'_, '_> {
                 });
 
             // Override class definitions.
-            if should_override {
+            if should_override && self.scope.get_var(&name).is_some() {
                 self.override_var(VarDeclKind::Let, name.clone(), ty.clone())
                     .report(&mut self.storage);
             }
