@@ -12,6 +12,7 @@ use stc_ts_types::Method;
 use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeParam;
+use swc_common::Span;
 use swc_common::Spanned;
 
 impl Analyzer<'_, '_> {
@@ -46,7 +47,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn merge_from_to(&mut self, a: Type, b: Type) -> ValidationResult<Option<Type>> {
+    fn merge_from_to(&mut self, span: Span, a: Type, b: Type) -> ValidationResult<Option<Type>> {
         if self.is_builtin {
             return Ok(None);
         }
@@ -78,7 +79,7 @@ impl Analyzer<'_, '_> {
                 let mut new_members = a.body.clone();
 
                 let b = self
-                    .type_to_type_lit(b.span(), &b)
+                    .type_to_type_lit(span, &b)
                     .context("tried to convert an interface to a type literal to merge with a class definition")?;
                 if let Some(b) = b {
                     for el in &b.members {
@@ -116,7 +117,7 @@ impl Analyzer<'_, '_> {
 
                 // Convert to a type literal first.
                 if let Some(b) = self
-                    .type_to_type_lit(b.span(), &b)
+                    .type_to_type_lit(span, &b)
                     .context("tried to convert an interface to a type literal to merge with another interface")?
                 {
                     new_members.extend(b.into_owned().members);
@@ -134,14 +135,14 @@ impl Analyzer<'_, '_> {
         Ok(None)
     }
 
-    fn merge_types(&mut self, orig: Type, new: Type) -> ValidationResult<Type> {
+    fn merge_types(&mut self, span: Span, orig: Type, new: Type) -> ValidationResult<Type> {
         debug_assert!(orig.is_clone_cheap());
         debug_assert!(new.is_clone_cheap());
 
-        if let Some(new_ty) = self.merge_from_to(orig.clone(), new.clone())? {
+        if let Some(new_ty) = self.merge_from_to(span, orig.clone(), new.clone())? {
             return Ok(new_ty);
         }
-        if let Some(new_ty) = self.merge_from_to(new.clone(), orig)? {
+        if let Some(new_ty) = self.merge_from_to(span, new.clone(), orig)? {
             return Ok(new_ty);
         }
 
@@ -157,7 +158,7 @@ impl Analyzer<'_, '_> {
 
         let orig = orig.next().unwrap().into_owned();
 
-        let new = self.merge_types(orig, new)?;
+        let new = self.merge_types(new.span(), orig, new)?;
         slog::info!(
             self.logger,
             "Merging declaration {} with type {}",
