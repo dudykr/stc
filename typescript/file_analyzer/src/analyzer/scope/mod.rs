@@ -731,6 +731,10 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn resolve_typeof(&mut self, span: Span, name: &RTsEntityName) -> ValidationResult {
+        if !self.is_builtin {
+            debug_assert!(!span.is_dummy(), "Cannot resolve `typeof` with a dummy span");
+        }
+
         let mut ty = match name {
             RTsEntityName::Ident(i) => {
                 if i.sym == js_word!("undefined") {
