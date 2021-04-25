@@ -2256,7 +2256,7 @@ impl Expander<'_, '_, '_> {
                 // We need to handle infer type.
                 let type_params = self
                     .analyzer
-                    .infer_ts_infer_types(span, &extends_type, &check_type)
+                    .infer_ts_infer_types(self.span, &extends_type, &check_type)
                     .ok();
 
                 if let Some(type_params) = type_params {
