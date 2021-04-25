@@ -42,3 +42,4 @@ typeParameterAsTypeArgument.ts
 circularTypeofWithVarOrFunc.ts
 mappedTypesArraysTuples.ts
 circularIndexedAccessErrors.ts
+isomorphicMappedTypeInference.ts
