@@ -400,6 +400,8 @@ impl Analyzer<'_, '_> {
             dump_type_as_string(&self.cm, &arg)
         ));
 
+        debug_assert!(!span.is_dummy(), "infer_type: `span` should not be dummy");
+
         print_type(&self.logger, "param", &self.cm, &param);
         print_type(&self.logger, "arg", &self.cm, &arg);
 
