@@ -672,6 +672,13 @@ impl Analyzer<'_, '_> {
                     (ty, false)
                 });
 
+            // Override class definitions.
+            if should_override {
+                if let Some(var) = self.scope.vars.get_mut(&name) {
+                    var.ty = Some(ty.clone());
+                }
+            }
+
             if (self.scope.is_root() || self.scope.is_module()) && !ty.normalize().is_type_param() {
                 self.storage
                     .store_private_type(self.ctx.module_id, name.clone(), ty.clone(), should_override);
