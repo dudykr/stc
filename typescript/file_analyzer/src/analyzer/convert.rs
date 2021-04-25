@@ -215,8 +215,6 @@ impl Analyzer<'_, '_> {
             };
             child.prevent_expansion(&mut ty.body);
 
-            child.register_type(d.id.clone().into(), ty.clone().into());
-
             child.resolve_parent_interfaces(&d.extends);
 
             Ok(ty)
