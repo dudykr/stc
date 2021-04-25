@@ -47,6 +47,7 @@ use stc_ts_types::{
     Conditional, FnParam, Id, IndexedAccessType, Mapped, ModuleId, Operator, QueryExpr, QueryType, StaticThis,
     TypeParam,
 };
+use stc_utils::panic_context;
 use std::mem::replace;
 use std::mem::take;
 use std::{borrow::Cow, collections::hash_map::Entry, fmt::Debug, iter, slice};
@@ -961,7 +962,8 @@ impl Analyzer<'_, '_> {
     }
 
     /// If `allow_multiple` is true and `is_override` is false, the value type
-    /// is updated only if it's temporary type (like `typeof foo` while validating `foo`).
+    /// is updated only if it's temporary type (like `typeof foo` while
+    /// validating `foo`).
     pub fn declare_var(
         &mut self,
         span: Span,
@@ -2232,6 +2234,11 @@ impl Expander<'_, '_, '_> {
                 return Type::any(span);
             }
         };
+
+        let _panic = panic_context::enter(format!(
+            "Expander.expand_type: {}",
+            dump_type_as_string(&self.analyzer.cm, &ty)
+        ));
 
         match ty {
             Type::Conditional(Conditional {
