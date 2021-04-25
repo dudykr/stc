@@ -1651,6 +1651,7 @@ types/any/anyAsFunctionCall.ts
 types/any/anyAsGenericFunctionCall.ts
 types/any/anyPropertyAccess.ts
 types/any/assignEveryTypeToAny.ts
+types/conditional/
 types/conditional/inferTypes2.ts
 types/contextualTypes/commaOperator/contextuallyTypeCommaOperator01.ts
 types/contextualTypes/commaOperator/contextuallyTypeCommaOperator02.ts
