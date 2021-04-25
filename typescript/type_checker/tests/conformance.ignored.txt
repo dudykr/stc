@@ -41,3 +41,4 @@ callSignatureWithoutReturnTypeAnnotationInference.ts
 typeParameterAsTypeArgument.ts
 circularTypeofWithVarOrFunc.ts
 mappedTypesArraysTuples.ts
+circularIndexedAccessErrors.ts
