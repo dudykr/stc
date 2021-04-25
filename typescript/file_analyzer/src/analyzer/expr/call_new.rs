@@ -1180,7 +1180,7 @@ impl Analyzer<'_, '_> {
                             span,
                             kind,
                             expr,
-                            cls.type_params.as_ref().map(|v| &*v.params),
+                            Some(&type_params.params),
                             &[],
                             Type::Class(Class {
                                 span,
@@ -1192,6 +1192,7 @@ impl Analyzer<'_, '_> {
                             spread_arg_types,
                             type_ann,
                         )?;
+
                         return Ok(ret_ty);
                     }
 
