@@ -462,10 +462,11 @@ impl Scope<'_> {
                 let prev = e.get_mut();
                 slog::debug!(
                     self.logger,
-                    "Scope.register_type({}): override = {:?}; prev = {:?}",
+                    "Scope.register_type({}): override = {:?}; prev = {:?}; new_ty = {:?}",
                     name,
                     should_override,
-                    &prev
+                    prev,
+                    ty,
                 );
                 if prev.normalize().is_intersection_type() {
                     match prev.normalize_mut() {
