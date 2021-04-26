@@ -202,7 +202,11 @@ impl Analyzer<'_, '_> {
                 let mut prev = None;
 
                 for parent in &parent.types {
-                    let res = self.extends(span, child, parent)?;
+                    let res = self.extends(span, child, parent);
+                    let res = match res {
+                        Some(v) => v,
+                        None => continue,
+                    };
 
                     match prev {
                         Some(v) => {
