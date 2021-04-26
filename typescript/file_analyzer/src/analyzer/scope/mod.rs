@@ -1954,7 +1954,14 @@ impl Expander<'_, '_, '_> {
 
         let _stack = match stack::track(self.span) {
             Ok(v) => v,
-            Err(..) => return ty,
+            Err(..) => {
+                slog::error!(
+                    self.logger,
+                    "[expander] Stack overflow: {}",
+                    dump_type_as_string(&self.analyzer.cm, &ty)
+                );
+                return ty;
+            }
         };
 
         self.full |= match ty {
@@ -2342,7 +2349,7 @@ impl Fold<Type> for Expander<'_, '_, '_> {
         let expanded = self.expand_type(ty);
         slog::debug!(
             self.logger,
-            "[expand]: {} => {}",
+            "[expander]: {} => {}",
             before,
             dump_type_as_string(&self.analyzer.cm, &expanded)
         );
