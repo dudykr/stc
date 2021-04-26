@@ -1954,6 +1954,12 @@ impl Analyzer<'_, '_> {
                 let arg_ty = &arg_types[idx];
                 print_type(
                     &self.logger,
+                    &format!("Expanded parameter at {}", idx),
+                    &self.cm,
+                    &param.ty,
+                );
+                print_type(
+                    &self.logger,
                     &format!("Original argument at {}", idx),
                     &self.cm,
                     &arg_ty.ty,
