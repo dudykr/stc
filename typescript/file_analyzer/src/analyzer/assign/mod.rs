@@ -183,8 +183,6 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        let _stack = stack::track(opts.span)?;
-
         // if cfg!(debug_assertions) && span.is_dummy() {
         //     print_backtrace();
         //     debug_assert!(!span.is_dummy());
@@ -280,6 +278,8 @@ impl Analyzer<'_, '_> {
     }
 
     fn assign_inner(&mut self, to: &Type, rhs: &Type, opts: AssignOpts) -> ValidationResult<()> {
+        let _stack = stack::track(opts.span)?;
+
         self.assign_without_wrapping(to, rhs, opts).with_context(|| {
             //
             let l = dump_type_as_string(&self.cm, &to);
