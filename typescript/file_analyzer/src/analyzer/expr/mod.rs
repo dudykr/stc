@@ -1840,23 +1840,13 @@ impl Analyzer<'_, '_> {
 
             Type::IndexedAccessType(..) => {
                 let index_type = match prop {
-                    Key::Normal { sym, .. } => {
-                        let mut prop_ty = box Type::Lit(RTsLitType {
-                            node_id: NodeId::invalid(),
-                            span: DUMMY_SP,
-                            lit: RTsLit::Str(RStr {
-                                span: DUMMY_SP,
-                                value: sym.clone(),
-                                has_escape: false,
-                                kind: Default::default(),
-                            }),
-                        });
+                    Key::Computed(c) => c.ty.clone(),
+                    _ => {
+                        let mut prop_ty = box prop.ty().into_owned();
                         self.prevent_generalize(&mut prop_ty);
 
                         prop_ty
                     }
-                    Key::Computed(c) => c.ty.clone(),
-                    _ => unreachable!(),
                 };
 
                 let ty = Type::IndexedAccessType(IndexedAccessType {
