@@ -450,7 +450,9 @@ impl Analyzer<'_, '_> {
                 }
 
                 let to = self.expand_top_ref(span, Cow::Borrowed(to))?;
-                return self.assign_inner(&to, rhs, opts);
+                return self
+                    .assign_inner(&to, rhs, opts)
+                    .context("tried to assign a type created from a reference");
             }
 
             _ => {}
@@ -677,7 +679,7 @@ impl Analyzer<'_, '_> {
                 let rhs = self.expand_top_ref(span, Cow::Borrowed(rhs))?;
                 return self
                     .assign_inner(to, &rhs, opts)
-                    .context("tried to assign an expanded type to another type");
+                    .context("tried to assign a type expanded from a reference to another type");
             }
 
             Type::Query(rhs) => {
