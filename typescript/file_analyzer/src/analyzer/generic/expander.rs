@@ -343,7 +343,14 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
     fn fold(&mut self, ty: Type) -> Type {
         let _stack = match stack::track(ty.span()) {
             Ok(v) => v,
-            _ => return ty,
+            _ => {
+                slog::error!(
+                    self.logger,
+                    "[generic/expander] Stack overflow: {}",
+                    dump_type_as_string(&self.analyzer.cm, &ty)
+                );
+                return ty;
+            }
         };
 
         let old_fully = self.fully;
