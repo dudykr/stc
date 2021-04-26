@@ -152,6 +152,7 @@ impl Analyzer<'_, '_> {
                     .normalize(&c.extends_type, Default::default())
                     .context("tried to normalize the `extends` type of a conditional type")?;
 
+                // If we can calculate type using constraints, do so.
                 match check_type.normalize() {
                     Type::Param(TypeParam {
                         constraint: Some(check_type),
