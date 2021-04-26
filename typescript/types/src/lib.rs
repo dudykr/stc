@@ -36,7 +36,7 @@ use stc_ts_ast_rnode::RTsModuleName;
 use stc_ts_ast_rnode::RTsNamespaceDecl;
 use stc_ts_ast_rnode::RTsThisType;
 use stc_ts_ast_rnode::RTsThisTypeOrIdent;
-use stc_utils::panic_context;
+use stc_utils::error::context;
 use stc_visit::Visit;
 use stc_visit::Visitable;
 use std::borrow::Cow;
@@ -926,7 +926,7 @@ impl Type {
     ///
     ///  - never types are excluded.
     pub fn union<I: IntoIterator<Item = Self> + Debug>(iter: I) -> Self {
-        let _panic = panic_context::enter(format!("Iterator: {:?}", iter));
+        let _ctx = context(format!("Iterator: {:?}", iter));
 
         let mut span = DUMMY_SP;
 
@@ -1210,7 +1210,7 @@ impl Type {
             return;
         }
 
-        let _panic = panic_context::enter(format!("{:?}", self));
+        let _ctx = context(format!("{:?}", self));
 
         match self.normalize() {
             Type::Union(ty) => ty.assert_valid(),

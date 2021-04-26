@@ -26,7 +26,7 @@ use stc_ts_types::TypeLitMetadata;
 use stc_ts_types::TypeParam;
 use stc_ts_types::Union;
 use stc_ts_utils::MapWithMut;
-use stc_utils::panic_context;
+use stc_utils::error::context;
 use stc_utils::TryOpt;
 use std::borrow::Cow;
 use std::collections::HashMap;
@@ -432,7 +432,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         ty: &'a Type,
     ) -> ValidationResult<Option<Cow<'a, TypeLit>>> {
-        let _panic = panic_context::enter(format!("type_to_type_lit: {:?}", ty));
+        let _ctx = context(format!("type_to_type_lit: {:?}", ty));
 
         debug_assert!(!span.is_dummy(), "type_to_type_lit: `span` should not be dummy");
 

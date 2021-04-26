@@ -47,7 +47,7 @@ use stc_ts_types::{
     Conditional, FnParam, Id, IndexedAccessType, Mapped, ModuleId, Operator, QueryExpr, QueryType, StaticThis,
     TypeParam,
 };
-use stc_utils::panic_context;
+use stc_utils::error::context;
 use std::mem::replace;
 use std::mem::take;
 use std::{borrow::Cow, collections::hash_map::Entry, fmt::Debug, iter, slice};
@@ -558,7 +558,7 @@ impl Analyzer<'_, '_> {
             );
         }
 
-        let _panic = panic_context::enter(format!("expand: {}", dump_type_as_string(&self.cm, &ty)));
+        let _ctx = context(format!("expand: {}", dump_type_as_string(&self.cm, &ty)));
 
         let mut v = Expander {
             logger: self.logger.clone(),
@@ -589,7 +589,7 @@ impl Analyzer<'_, '_> {
             );
         }
 
-        let _panic = panic_context::enter(format!("expand_fully: {}", dump_type_as_string(&self.cm, &ty)));
+        let _ctx = context(format!("expand_fully: {}", dump_type_as_string(&self.cm, &ty)));
 
         let mut v = Expander {
             logger: self.logger.clone(),
@@ -2251,7 +2251,7 @@ impl Expander<'_, '_, '_> {
             }
         };
 
-        let _panic = panic_context::enter(format!(
+        let _ctx = context(format!(
             "Expander.expand_type: {}",
             dump_type_as_string(&self.analyzer.cm, &ty)
         ));

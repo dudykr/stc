@@ -59,7 +59,7 @@ pub use stc_ts_types::IdCtx;
 use stc_ts_types::Key;
 use stc_ts_types::PropertySignature;
 use stc_ts_types::{ClassProperty, Id, Method, ModuleId, Operator, QueryExpr, QueryType, StaticThis};
-use stc_utils::panic_context;
+use stc_utils::error::context;
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::convert::TryFrom;
@@ -119,7 +119,7 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult {
         self.record(e);
 
-        let _panic = panic_context::enter(format!("validate\nExpr: {:?}", e));
+        let _ctx = context(format!("validate\nExpr: {:?}", e));
 
         let span = e.span();
         let need_type_param_handling = match e {

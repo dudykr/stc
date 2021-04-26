@@ -1,6 +1,7 @@
 use once_cell::sync::Lazy;
 use std::env;
 
+pub mod error;
 pub mod panic_context;
 pub mod stack;
 
