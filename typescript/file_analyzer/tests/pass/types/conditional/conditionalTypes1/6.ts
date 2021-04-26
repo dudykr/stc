@@ -1,3 +1,10 @@
+interface Part {
+    id: number;
+    name: string;
+    subparts: Part[];
+    updatePart(newName: string): void;
+}
+
 type DeepReadonly<T> =
     T extends any[] ? DeepReadonlyArray<T[number]> :
     T extends object ? DeepReadonlyObject<T> :
