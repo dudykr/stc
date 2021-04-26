@@ -481,7 +481,11 @@ impl Analyzer<'_, '_> {
             }) => {
                 let constraint = constraint.as_ref().map(|ty| ty.normalize());
                 if let Some(prev) = inferred.type_params.get(name).cloned() {
-                    self.infer_type(span, inferred, &prev, arg)?;
+                    let ctx = Ctx {
+                        skip_identical_while_inferencing: true,
+                        ..self.ctx
+                    };
+                    self.with_ctx(ctx).infer_type(span, inferred, &prev, arg)?;
                 }
 
                 slog::trace!(self.logger, "infer_type: type parameter: {} = {:?}", name, constraint);
@@ -513,6 +517,17 @@ impl Analyzer<'_, '_> {
                             Type::TypeLit(..) | Type::Interface(..) | Type::Class(..) => return Ok(()),
                             _ => {}
                         }
+                    }
+                }
+
+                if self.ctx.skip_identical_while_inferencing {
+                    match arg {
+                        Type::Param(arg) => {
+                            if *name == arg.name {
+                                return Ok(());
+                            }
+                        }
+                        _ => {}
                     }
                 }
 
