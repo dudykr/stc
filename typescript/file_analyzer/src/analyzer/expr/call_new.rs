@@ -1952,6 +1952,13 @@ impl Analyzer<'_, '_> {
             let mut new_args = vec![];
             for (idx, (arg, param)) in args.into_iter().zip(expanded_param_types.iter()).enumerate() {
                 let arg_ty = &arg_types[idx];
+                print_type(
+                    &self.logger,
+                    &format!("Original argument at {}", idx),
+                    &self.cm,
+                    &arg_ty.ty,
+                );
+
                 let (type_param_decl, actual_params) = match &*param.ty {
                     Type::Function(f) => (&f.type_params, &f.params),
                     _ => {
@@ -2027,7 +2034,12 @@ impl Analyzer<'_, '_> {
                     }
                     _ => arg_ty.ty.clone(),
                 };
-                print_type(&logger, "mapped", &self.cm, &ty);
+                print_type(
+                    &self.logger,
+                    &format!("Mapped argument at {}", idx),
+                    &self.cm,
+                    &arg_ty.ty,
+                );
 
                 let new_arg = TypeOrSpread { ty, ..arg_ty.clone() };
 
