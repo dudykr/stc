@@ -1931,6 +1931,7 @@ impl Analyzer<'_, '_> {
                 params
             };
 
+            slog::debug!(self.logger, "Inferring arg types for a call");
             let inferred = self.infer_arg_types(span, type_args, type_params, &params, &spread_arg_types, None)?;
 
             let expanded_param_types = params
@@ -2034,6 +2035,7 @@ impl Analyzer<'_, '_> {
             }
 
             if !self.ctx.reevaluating_call_or_new {
+                slog::debug!(self.logger, "Reevaluating a call");
                 let ctx = Ctx {
                     reevaluating_call_or_new: true,
                     ..self.ctx
