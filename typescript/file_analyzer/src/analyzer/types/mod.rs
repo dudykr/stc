@@ -143,7 +143,15 @@ impl Analyzer<'_, '_> {
             Type::Union(_) | Type::Intersection(_) => {}
 
             Type::Conditional(c) => {
-                if let Some(v) = self.extends(ty.span(), &c.check_type, &c.extends_type) {
+                let check_type = self
+                    .normalize(&c.check_type, Default::default())
+                    .context("tried to normalize the `check` type of a conditional type")?;
+
+                let extends_type = self
+                    .normalize(&c.extends_type, Default::default())
+                    .context("tried to normalize the `extends` type of a conditional type")?;
+
+                if let Some(v) = self.extends(ty.span(), &check_type, &extends_type) {
                     let ty = if v { &c.true_type } else { &c.false_type };
                     return self
                         .normalize(&ty, opts)
