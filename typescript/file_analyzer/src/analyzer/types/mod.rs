@@ -25,6 +25,7 @@ use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
 use stc_ts_types::TypeLitMetadata;
 use stc_ts_types::TypeParam;
+use stc_ts_types::Union;
 use stc_ts_utils::MapWithMut;
 use stc_utils::panic_context;
 use stc_utils::TryOpt;
@@ -144,41 +145,71 @@ impl Analyzer<'_, '_> {
             Type::Union(_) | Type::Intersection(_) => {}
 
             Type::Conditional(c) => {
-                let check_type = self
+                let mut check_type = self
                     .normalize(&c.check_type, Default::default())
-                    .context("tried to normalize the `check` type of a conditional type")?;
+                    .context("tried to normalize the `check` type of a conditional type")?
+                    .into_owned();
 
-                let extends_type = self
-                    .normalize(&c.extends_type, Default::default())
-                    .context("tried to normalize the `extends` type of a conditional type")?;
-
-                // If we can calculate type using constraints, do so.
-                match check_type.normalize() {
-                    Type::Param(TypeParam {
-                        constraint: Some(check_type),
-                        ..
-                    }) => {
-                        let ty = Type::Conditional(Conditional {
-                            check_type: check_type.clone(),
-                            ..c.clone()
-                        });
-                        let ty = self.normalize(&ty, Default::default())?;
-                        let is_unchanged = match ty.normalize() {
-                            Type::Conditional(ty) => ty.check_type.type_eq(check_type),
-                            _ => false,
-                        };
-                        if !is_unchanged {
-                            return Ok(Cow::Owned(ty.into_owned()));
-                        }
-                    }
-                    _ => {}
-                }
+                let extends_type = if c.extends_type.span().is_dummy() {
+                    Cow::Borrowed(&*c.extends_type)
+                } else {
+                    self.normalize(&c.extends_type, Default::default())
+                        .context("tried to normalize the `extends` type of a conditional type")?
+                };
 
                 if let Some(v) = self.extends(ty.span(), &check_type, &extends_type) {
                     let ty = if v { &c.true_type } else { &c.false_type };
                     return self
                         .normalize(&ty, opts)
                         .context("tried to normalize the calculated type of a conditional type");
+                }
+
+                // TOOD: Optimize
+                // If we can calculate type using constraints, do so.
+                match check_type.normalize_mut() {
+                    Type::Param(TypeParam {
+                        constraint: Some(check_type_contraint),
+                        ..
+                    }) => {
+                        dbg!(&check_type_contraint);
+
+                        // We removes unmatchable constraints.
+                        // It means, for
+                        //
+                        // T: a type param extends string | undefined
+                        // A: T extends null | undefined ? never : T
+                        //
+                        // We removes `undefined` from parents of T.
+
+                        match check_type_contraint.normalize() {
+                            Type::Union(check_type_union) => {
+                                let mut all = true;
+                                let mut types = vec![];
+                                for check_type in &check_type_union.types {
+                                    if let Some(v) = self.extends(ty.span(), &check_type, &extends_type) {
+                                        types.push(check_type.clone());
+                                    } else {
+                                        all = false;
+                                        break;
+                                    }
+                                }
+
+                                if all {
+                                    types.dedup_type();
+                                    let new = Type::Union(Union { span, types });
+
+                                    *check_type_contraint = box new;
+
+                                    return Ok(Cow::Owned(Type::Conditional(Conditional {
+                                        check_type: box check_type,
+                                        ..c.clone()
+                                    })));
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                    _ => {}
                 }
             }
 
