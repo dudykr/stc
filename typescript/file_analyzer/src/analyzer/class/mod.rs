@@ -55,6 +55,7 @@ use stc_ts_errors::Errors;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::Class;
 use stc_ts_types::ClassDef;
+use stc_ts_types::ClassMember;
 use stc_ts_types::ClassProperty;
 use stc_ts_types::ComputedKey;
 use stc_ts_types::ConstructorSignature;
@@ -426,7 +427,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, c: &RClassMethod) -> ValidationResult<Method> {
+    fn validate(&mut self, c: &RClassMethod) -> ValidationResult<ClassMember> {
         self.record(c);
 
         let key = c.key.validate_with(self)?;
@@ -556,7 +557,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        Ok(Method {
+        Ok(ClassMember::Method(Method {
             span: c_span,
             key,
             accessibility: c.accessibility,
@@ -567,19 +568,19 @@ impl Analyzer<'_, '_> {
             params,
             ret_ty,
             kind: c.kind,
-        })
+        }))
     }
 }
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, m: &RClassMember) -> ValidationResult<Option<stc_ts_types::ClassMember>> {
+    fn validate(&mut self, m: &RClassMember) -> ValidationResult<Option<ClassMember>> {
         Ok(match m {
             RClassMember::PrivateMethod(m) => Some(m.validate_with(self).map(From::from)?),
             RClassMember::PrivateProp(m) => Some(m.validate_with(self).map(From::from)?),
             RClassMember::Empty(..) => None,
 
-            RClassMember::Constructor(v) => Some(stc_ts_types::ClassMember::Constructor(v.validate_with(self)?)),
+            RClassMember::Constructor(v) => Some(ClassMember::Constructor(v.validate_with(self)?)),
             RClassMember::Method(method) => {
                 let v = method.validate_with(self)?;
 
@@ -590,12 +591,10 @@ impl Analyzer<'_, '_> {
                     };
                 }
 
-                Some(stc_ts_types::ClassMember::Method(v))
+                Some(v)
             }
-            RClassMember::ClassProp(v) => Some(stc_ts_types::ClassMember::Property(v.validate_with(self)?)),
-            RClassMember::TsIndexSignature(v) => {
-                Some(stc_ts_types::ClassMember::IndexSignature(v.validate_with(self)?))
-            }
+            RClassMember::ClassProp(v) => Some(ClassMember::Property(v.validate_with(self)?)),
+            RClassMember::TsIndexSignature(v) => Some(ClassMember::IndexSignature(v.validate_with(self)?)),
         })
     }
 }
@@ -887,7 +886,7 @@ impl Analyzer<'_, '_> {
                     Type::ClassDef(sc) => {
                         'outer: for sm in &sc.body {
                             match sm {
-                                stc_ts_types::ClassMember::Method(sm) => {
+                                ClassMember::Method(sm) => {
                                     if sm.is_optional || !sm.is_abstract {
                                         // TODO: Validate parameters
 
@@ -897,7 +896,7 @@ impl Analyzer<'_, '_> {
 
                                     for m in &class.body {
                                         match m {
-                                            stc_ts_types::ClassMember::Method(ref m) => {
+                                            ClassMember::Method(ref m) => {
                                                 if !&m.key.type_eq(&sm.key) {
                                                     continue;
                                                 }
@@ -1284,7 +1283,7 @@ impl Analyzer<'_, '_> {
 
                                     child.scope.this_class_members.push((
                                         index,
-                                        stc_ts_types::ClassMember::Property(stc_ts_types::ClassProperty {
+                                        ClassMember::Property(stc_ts_types::ClassProperty {
                                             span: p.span,
                                             key: Key::Normal {
                                                 span: i.id.span,
@@ -1368,27 +1367,25 @@ impl Analyzer<'_, '_> {
 
                     for (_, m) in body.iter_mut() {
                         match m {
-                            stc_ts_types::ClassMember::IndexSignature(_)
-                            | stc_ts_types::ClassMember::Constructor(_) => continue,
+                            ClassMember::IndexSignature(_) | ClassMember::Constructor(_) => continue,
 
-                            stc_ts_types::ClassMember::Method(m) => match m.kind {
+                            ClassMember::Method(m) => match m.kind {
                                 MethodKind::Getter => {
                                     prop_types.insert(m.key.clone(), m.ret_ty.clone());
                                 }
                                 _ => {}
                             },
 
-                            stc_ts_types::ClassMember::Property(_) => {}
+                            ClassMember::Property(_) => {}
                         }
                     }
 
                     for (index, m) in body.iter_mut() {
                         let orig = &c.body[*index];
                         match m {
-                            stc_ts_types::ClassMember::IndexSignature(_)
-                            | stc_ts_types::ClassMember::Constructor(_) => continue,
+                            ClassMember::IndexSignature(_) | ClassMember::Constructor(_) => continue,
 
-                            stc_ts_types::ClassMember::Method(m) => match m.kind {
+                            ClassMember::Method(m) => match m.kind {
                                 MethodKind::Setter => {
                                     if let Some(param) = m.params.first_mut() {
                                         if param.ty.is_any() {
@@ -1415,7 +1412,7 @@ impl Analyzer<'_, '_> {
                                 MethodKind::Getter => {}
                             },
 
-                            stc_ts_types::ClassMember::Property(_) => {}
+                            ClassMember::Property(_) => {}
                         }
                     }
                 }
