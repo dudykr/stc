@@ -397,7 +397,7 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    pub(super) fn infer_class(
+    pub(super) fn infer_types_using_class(
         &mut self,
         span: Span,
         inferred: &mut InferData,

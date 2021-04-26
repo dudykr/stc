@@ -909,7 +909,7 @@ impl Analyzer<'_, '_> {
             },
 
             Type::Class(param) => match arg {
-                Type::Class(arg) => return self.infer_class(span, inferred, param, arg),
+                Type::Class(arg) => return self.infer_types_using_class(span, inferred, param, arg),
                 _ => {}
             },
 
