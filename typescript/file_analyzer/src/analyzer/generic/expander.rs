@@ -22,6 +22,7 @@ use stc_ts_types::Key;
 use stc_ts_types::TypeParamDecl;
 use stc_ts_types::TypeParamInstantiation;
 use stc_ts_types::{Id, TypeParam};
+use stc_utils::stack;
 use swc_atoms::js_word;
 use swc_common::Span;
 use swc_common::Spanned;
@@ -340,6 +341,11 @@ pub(crate) struct GenericExpander<'a, 'b, 'c, 'd> {
 
 impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
     fn fold(&mut self, ty: Type) -> Type {
+        let _stack = match stack::track(ty.span()) {
+            Ok(v) => v,
+            _ => return ty,
+        };
+
         let old_fully = self.fully;
         self.fully |= match ty.normalize() {
             Type::Mapped(..) => true,
