@@ -516,15 +516,6 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                match arg {
-                    Type::Param(arg) => {
-                        if *name == arg.name {
-                            return Ok(());
-                        }
-                    }
-                    _ => {}
-                }
-
                 if arg.is_any() && self.is_implicitly_typed(&arg) {
                     if inferred.type_params.contains_key(&name.clone()) {
                         return Ok(());
