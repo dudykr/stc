@@ -21,6 +21,7 @@ use stc_ts_types::Interface;
 use stc_ts_types::Key;
 use stc_ts_types::TypeParamDecl;
 use stc_ts_types::TypeParamInstantiation;
+use stc_ts_types::Union;
 use stc_ts_types::{Id, TypeParam};
 use stc_utils::stack;
 use swc_atoms::js_word;
@@ -807,6 +808,22 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
 
             Type::Arc(a) => return (*a.ty).clone().fold_with(self),
         }
+    }
+}
+
+/// Override to handle some edge cases.
+///
+/// For inputs like `T | PromiseLike<T>` where `T` = `T | PromiseLike<T>`, we
+/// should expand it to `T | PromiseLike<T>`.
+impl Fold<Union> for GenericExpander<'_, '_, '_, '_> {
+    fn fold(&mut self, u: Union) -> Union {
+        let u = u.fold_children_with(self);
+
+        {
+            // TODO: Handle recursive types.
+        }
+
+        u
     }
 }
 
