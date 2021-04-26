@@ -22,6 +22,7 @@ use stc_ts_types::Ref;
 use stc_ts_types::{
     Array, EnumVariant, FnParam, Interface, Intersection, Tuple, Type, TypeElement, TypeLit, TypeParam, Union,
 };
+use stc_utils::stack;
 use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::EqIgnoreSpan;
@@ -181,6 +182,8 @@ impl Analyzer<'_, '_> {
         if self.is_builtin {
             return Ok(());
         }
+
+        let _stack = stack::track(opts.span)?;
 
         // if cfg!(debug_assertions) && span.is_dummy() {
         //     print_backtrace();
