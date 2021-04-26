@@ -1060,6 +1060,10 @@ impl Analyzer<'_, '_> {
             preserve_params: true,
             ..self.ctx
         };
+        let obj = match obj.normalize() {
+            Type::Conditional(..) => self.normalize(&obj, Default::default())?.into_owned(),
+            _ => obj,
+        };
         let obj = self.with_ctx(ctx).expand(span, obj)?.generalize_lit();
 
         match obj.normalize() {
