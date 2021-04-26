@@ -171,8 +171,6 @@ impl Analyzer<'_, '_> {
                         constraint: Some(check_type_contraint),
                         ..
                     }) => {
-                        dbg!(&check_type_contraint);
-
                         // We removes unmatchable constraints.
                         // It means, for
                         //
@@ -186,8 +184,17 @@ impl Analyzer<'_, '_> {
                                 let mut all = true;
                                 let mut types = vec![];
                                 for check_type in &check_type_union.types {
-                                    if let Some(v) = self.extends(ty.span(), &check_type, &extends_type) {
-                                        types.push(check_type.clone());
+                                    let res = self.extends(ty.span(), &check_type, &extends_type);
+                                    if let Some(v) = res {
+                                        if v {
+                                            if !c.true_type.is_never() {
+                                                types.push(check_type.clone());
+                                            }
+                                        } else {
+                                            if !c.false_type.is_never() {
+                                                types.push(check_type.clone());
+                                            }
+                                        }
                                     } else {
                                         all = false;
                                         break;
