@@ -144,6 +144,27 @@ impl Analyzer<'_, '_> {
                 return self.extends(span, &child, parent);
             }
 
+            Type::Union(child) => {
+                let mut prev = None;
+
+                for child in &child.types {
+                    let res = self.extends(span, child, parent)?;
+
+                    match prev {
+                        Some(v) => {
+                            if v != res {
+                                return None;
+                            }
+                        }
+                        None => {
+                            prev = Some(res);
+                        }
+                    }
+                }
+
+                return prev;
+            }
+
             _ => {}
         }
 
