@@ -1888,6 +1888,17 @@ impl Analyzer<'_, '_> {
                 _ => {}
             },
 
+            Type::Conditional(..) => match prop {
+                Key::Num(..) => {
+                    return Ok(Type::TypeLit(TypeLit {
+                        span,
+                        members: Default::default(),
+                        metadata: Default::default(),
+                    }))
+                }
+                _ => {}
+            },
+
             _ => {}
         }
 
