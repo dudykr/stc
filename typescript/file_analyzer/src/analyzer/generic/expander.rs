@@ -199,13 +199,24 @@ impl Analyzer<'_, '_> {
                 ..
             }) => return Some(false),
             Type::Union(parent) => {
-                for res in parent.types.iter().map(|parent| self.extends(span, child, &parent)) {
-                    if res != Some(true) {
-                        return Some(false);
+                let mut prev = None;
+
+                for parent in &parent.types {
+                    let res = self.extends(span, child, parent)?;
+
+                    match prev {
+                        Some(v) => {
+                            if v != res {
+                                return None;
+                            }
+                        }
+                        None => {
+                            prev = Some(res);
+                        }
                     }
                 }
 
-                return Some(true);
+                return prev;
             }
 
             Type::Interface(Interface { name, .. }) if *name.sym() == *"ObjectConstructor" => match child {
