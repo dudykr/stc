@@ -13,7 +13,6 @@ use stc_ts_types::name::Name;
 use stc_ts_types::Array;
 use stc_ts_types::ClassDef;
 use stc_ts_types::ClassMember;
-use stc_ts_types::Conditional;
 use stc_ts_types::ConstructorSignature;
 use stc_ts_types::Key;
 use stc_ts_types::MethodSignature;
@@ -30,6 +29,7 @@ use stc_ts_utils::MapWithMut;
 use stc_utils::panic_context;
 use stc_utils::TryOpt;
 use std::borrow::Cow;
+use std::collections::HashMap;
 use swc_common::Span;
 use swc_common::Spanned;
 use swc_common::SyntaxContext;
@@ -168,6 +168,7 @@ impl Analyzer<'_, '_> {
                 // If we can calculate type using constraints, do so.
                 match check_type.normalize_mut() {
                     Type::Param(TypeParam {
+                        name,
                         constraint: Some(check_type_contraint),
                         ..
                     }) => {
@@ -207,10 +208,11 @@ impl Analyzer<'_, '_> {
 
                                     *check_type_contraint = box new;
 
-                                    return Ok(Cow::Owned(Type::Conditional(Conditional {
-                                        check_type: box check_type,
-                                        ..c.clone()
-                                    })));
+                                    let mut params = HashMap::default();
+                                    params.insert(name.clone(), check_type);
+                                    let c = self.expand_type_params(&params, c.clone())?;
+
+                                    return Ok(Cow::Owned(Type::Conditional(c)));
                                 }
                             }
                             _ => {}
