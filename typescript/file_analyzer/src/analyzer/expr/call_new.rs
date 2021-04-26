@@ -2136,6 +2136,8 @@ impl Analyzer<'_, '_> {
     }
 
     fn validate_arg_types(&mut self, params: &[FnParam], spread_arg_types: &[TypeOrSpread]) {
+        slog::debug!(self.logger, "Validating arguments");
+
         let rest_idx = {
             let mut rest_idx = None;
             let mut shift = 0;
