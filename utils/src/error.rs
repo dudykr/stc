@@ -18,7 +18,7 @@ impl Drop for ContextGuard {
 #[inline(always)]
 pub fn context(_: impl Display) -> () {}
 
-/// Add a context to created errors.
+/// Add a context to created errors and configures a context for panic.
 #[cfg(debug_assertions)]
 pub fn context(msg: impl Display) -> ContextGuard {
     let msg = msg.to_string();
