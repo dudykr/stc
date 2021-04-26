@@ -404,10 +404,10 @@ impl Analyzer<'_, '_> {
         param: &Class,
         arg: &Class,
     ) -> ValidationResult<()> {
-        self.infer_class_def(span, inferred, &param.def, &arg.def)
+        self.infer_types_using_class_def(span, inferred, &param.def, &arg.def)
     }
 
-    pub(super) fn infer_class_def(
+    pub(super) fn infer_types_using_class_def(
         &mut self,
         span: Span,
         inferred: &mut InferData,

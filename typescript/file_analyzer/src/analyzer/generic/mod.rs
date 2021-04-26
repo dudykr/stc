@@ -914,7 +914,7 @@ impl Analyzer<'_, '_> {
             },
 
             Type::ClassDef(param) => match arg {
-                Type::ClassDef(arg) => return self.infer_class_def(span, inferred, param, arg),
+                Type::ClassDef(arg) => return self.infer_types_using_class_def(span, inferred, param, arg),
                 _ => {}
             },
 
