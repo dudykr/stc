@@ -280,6 +280,12 @@ impl Analyzer<'_, '_> {
     fn assign_inner(&mut self, to: &Type, rhs: &Type, opts: AssignOpts) -> ValidationResult<()> {
         let _stack = stack::track(opts.span)?;
 
+        {
+            let l = dump_type_as_string(&self.cm, &to);
+            let r = dump_type_as_string(&self.cm, &rhs);
+            slog::debug!(&self.logger, "[assign] {} = {}", l, r);
+        }
+
         self.assign_without_wrapping(to, rhs, opts).with_context(|| {
             //
             let l = dump_type_as_string(&self.cm, &to);
