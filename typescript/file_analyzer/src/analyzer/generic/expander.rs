@@ -110,6 +110,18 @@ impl Analyzer<'_, '_> {
         }
 
         match child {
+            Type::Param(TypeParam {
+                constraint: Some(child),
+                ..
+            }) => {
+                if let Some(v) = self.extends(span, child, parent) {
+                    return Some(v);
+                }
+            }
+            _ => {}
+        }
+
+        match child {
             Type::Param(..) | Type::Infer(..) => return None,
             Type::Ref(..) => {
                 let ctx = Ctx {
