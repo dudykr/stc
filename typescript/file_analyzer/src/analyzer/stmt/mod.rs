@@ -10,12 +10,14 @@ use rnode::VisitWith;
 use stc_ts_ast_rnode::RBlockStmt;
 use stc_ts_ast_rnode::RBool;
 use stc_ts_ast_rnode::RForStmt;
+use stc_ts_ast_rnode::RModuleItem;
 use stc_ts_ast_rnode::RStmt;
 use stc_ts_ast_rnode::RTsExprWithTypeArgs;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_ast_rnode::RWithStmt;
 use stc_ts_types::Type;
+use stc_utils::stack;
 use swc_common::DUMMY_SP;
 use swc_ecma_utils::Value::Known;
 
@@ -24,6 +26,17 @@ mod loops;
 pub(crate) mod return_type;
 mod try_catch;
 mod var_decl;
+
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, i: &RModuleItem) {
+        let _stack = stack::start(300);
+
+        i.visit_children_with(self);
+
+        Ok(())
+    }
+}
 
 #[validator]
 impl Analyzer<'_, '_> {

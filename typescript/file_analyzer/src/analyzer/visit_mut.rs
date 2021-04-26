@@ -109,6 +109,7 @@ forward!(visit_mut_ts_type_alias_decl, RTsTypeAliasDecl);
 forward!(visit_mut_ts_module_decl, RTsModuleDecl);
 forward!(visit_mut_class_member, RClassMember);
 forward!(visit_mut_stmts, Vec<RStmt>);
+forward!(visit_mut_module_item, RModuleItem);
 forward!(visit_mut_module_items, Vec<RModuleItem>);
 forward!(visit_mut_class, RClass);
 forward!(visit_mut_class_decl, RClassDecl);

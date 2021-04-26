@@ -875,6 +875,8 @@ impl Analyzer<'_, '_> {
             slog::debug!(&self.logger, "access_property");
         }
 
+        let _stack = stack::track(span)?;
+
         let computed = prop.is_computed();
 
         if id_ctx == IdCtx::Var {
