@@ -60,6 +60,7 @@ use stc_ts_types::Key;
 use stc_ts_types::PropertySignature;
 use stc_ts_types::{ClassProperty, Id, Method, ModuleId, Operator, QueryExpr, QueryType, StaticThis};
 use stc_utils::error::context;
+use stc_utils::stack;
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::convert::TryFrom;
@@ -119,6 +120,7 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult {
         self.record(e);
 
+        let _stack = stack::start(100);
         let _ctx = context(format!("validate\nExpr: {:?}", e));
 
         let span = e.span();

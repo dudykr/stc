@@ -25,7 +25,9 @@ pub fn start(max: usize) -> StartGuard {
     StartGuard { prev }
 }
 
-pub struct TrackGuard;
+pub struct TrackGuard {
+    _priv: (),
+}
 
 impl Drop for TrackGuard {
     fn drop(&mut self) {
@@ -34,7 +36,7 @@ impl Drop for TrackGuard {
 }
 
 /// Should be stored as a variable like `let _stack = stack::track(span);`.
-pub fn track(span: Span) -> Result<(), StackOverflowError> {
+pub fn track(span: Span) -> Result<TrackGuard, StackOverflowError> {
     with_ctx(|v| {
         if *v == 0 {
             return Err(StackOverflowError { span });
@@ -42,7 +44,7 @@ pub fn track(span: Span) -> Result<(), StackOverflowError> {
 
         *v -= 1;
 
-        Ok(())
+        Ok(TrackGuard { _priv: () })
     })
 }
 

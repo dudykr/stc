@@ -13,6 +13,7 @@ use stc_ts_types::ModuleId;
 use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeParamInstantiation;
+use stc_utils::stack::StackOverflowError;
 use std::borrow::Cow;
 use std::fmt;
 use std::fmt::Debug;
@@ -1215,5 +1216,11 @@ impl Extend<Error> for Errors {
         } else {
             self.0.extend(iter)
         }
+    }
+}
+
+impl From<StackOverflowError> for Error {
+    fn from(e: StackOverflowError) -> Self {
+        Error::StackOverlfow { span: e.span }
     }
 }

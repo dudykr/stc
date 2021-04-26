@@ -8,7 +8,6 @@ use rnode::VisitMutWith;
 use stc_ts_ast_rnode::RNumber;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_errors::DebugExt;
-use stc_ts_errors::Error;
 use stc_ts_types::name::Name;
 use stc_ts_types::Array;
 use stc_ts_types::ClassDef;
@@ -27,6 +26,7 @@ use stc_ts_types::TypeParam;
 use stc_ts_types::Union;
 use stc_ts_utils::MapWithMut;
 use stc_utils::error::context;
+use stc_utils::stack;
 use stc_utils::TryOpt;
 use std::borrow::Cow;
 use std::collections::HashMap;
@@ -47,10 +47,6 @@ mod type_param;
 pub(crate) struct NormalizeTypeOpts {
     pub preserve_mapped: bool,
     pub preserve_typeof: bool,
-    /// Used to prevent infinite recursion.
-    ///
-    /// 64 by default.
-    pub lefting_stack: u16,
 }
 
 impl Default for NormalizeTypeOpts {
@@ -58,7 +54,6 @@ impl Default for NormalizeTypeOpts {
         Self {
             preserve_mapped: false,
             preserve_typeof: false,
-            lefting_stack: 64,
         }
     }
 }
@@ -82,10 +77,7 @@ impl Analyzer<'_, '_> {
             debug_assert!(!span.is_dummy(), "Cannot normalize a type with dummy span\n{:?}", ty);
         }
 
-        opts.lefting_stack -= 1;
-        if opts.lefting_stack == 0 {
-            return Err(Error::StackOverlfow { span });
-        }
+        let _stack = stack::track(span)?;
 
         let ty = ty.normalize();
 
