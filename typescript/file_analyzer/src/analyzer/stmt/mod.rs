@@ -30,7 +30,7 @@ mod var_decl;
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, i: &RModuleItem) {
-        let _stack = stack::start(300);
+        let _stack = stack::start(100);
 
         i.visit_children_with(self);
 

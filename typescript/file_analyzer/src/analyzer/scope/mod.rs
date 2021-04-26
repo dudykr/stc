@@ -48,6 +48,7 @@ use stc_ts_types::{
     TypeParam,
 };
 use stc_utils::error::context;
+use stc_utils::stack;
 use std::mem::replace;
 use std::mem::take;
 use std::{borrow::Cow, collections::hash_map::Entry, fmt::Debug, iter, slice};
@@ -1950,6 +1951,11 @@ impl Expander<'_, '_, '_> {
             }
             _ => {}
         }
+
+        let _stack = match stack::track(self.span) {
+            Ok(v) => v,
+            Err(..) => return ty,
+        };
 
         self.full |= match ty {
             Type::Mapped(..) => true,

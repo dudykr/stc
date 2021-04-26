@@ -120,7 +120,7 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult {
         self.record(e);
 
-        let _stack = stack::start(100);
+        let _stack = stack::start(64);
         let _ctx = context(format!("validate\nExpr: {:?}", e));
 
         let span = e.span();
