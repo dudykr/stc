@@ -504,6 +504,18 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        match rhs {
+            Type::Conditional(rhs) => {
+                self.assign_with_opts(opts, to, &rhs.true_type)
+                    .context("tried to assign the true type of a conditional type to lhs")?;
+                self.assign_with_opts(opts, to, &rhs.false_type)
+                    .context("tried to assign the false type of a conditional type to lhs")?;
+
+                return Ok(());
+            }
+            _ => {}
+        }
+
         match to {
             // let a: any = 'foo'
             Type::Keyword(RTsKeywordType {
