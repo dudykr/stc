@@ -13,6 +13,7 @@ use stc_ts_types::name::Name;
 use stc_ts_types::Array;
 use stc_ts_types::ClassDef;
 use stc_ts_types::ClassMember;
+use stc_ts_types::Conditional;
 use stc_ts_types::ConstructorSignature;
 use stc_ts_types::Key;
 use stc_ts_types::MethodSignature;
@@ -150,6 +151,27 @@ impl Analyzer<'_, '_> {
                 let extends_type = self
                     .normalize(&c.extends_type, Default::default())
                     .context("tried to normalize the `extends` type of a conditional type")?;
+
+                match check_type.normalize() {
+                    Type::Param(TypeParam {
+                        constraint: Some(check_type),
+                        ..
+                    }) => {
+                        let ty = Type::Conditional(Conditional {
+                            check_type: check_type.clone(),
+                            ..c.clone()
+                        });
+                        let ty = self.normalize(&ty, Default::default())?;
+                        let is_unchanged = match ty.normalize() {
+                            Type::Conditional(ty) => ty.check_type.type_eq(check_type),
+                            _ => false,
+                        };
+                        if !is_unchanged {
+                            return Ok(Cow::Owned(ty.into_owned()));
+                        }
+                    }
+                    _ => {}
+                }
 
                 if let Some(v) = self.extends(ty.span(), &check_type, &extends_type) {
                     let ty = if v { &c.true_type } else { &c.false_type };
