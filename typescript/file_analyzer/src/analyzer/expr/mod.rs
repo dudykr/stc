@@ -71,6 +71,7 @@ use swc_common::SyntaxContext;
 use swc_common::TypeEq;
 use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::op;
+use swc_ecma_ast::TruePlusMinus;
 use swc_ecma_ast::TsKeywordTypeKind;
 use swc_ecma_ast::TsTypeOperatorOp;
 use ty::TypeExt;
@@ -1797,7 +1798,26 @@ impl Analyzer<'_, '_> {
                         //     [P in string]: number;
                         // };
                         if let Ok(()) = self.assign(&index, &prop.ty(), span) {
-                            return Ok(m.ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(span)));
+                            // We handle `Partial<string>` at here.
+                            let ty = m.ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(span));
+
+                            let ty = match m.optional {
+                                Some(TruePlusMinus::Plus) | Some(TruePlusMinus::True) => {
+                                    let undefined = Type::Keyword(RTsKeywordType {
+                                        span,
+                                        kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                                    });
+                                    let mut types = vec![undefined, ty];
+                                    types.dedup_type();
+
+                                    Type::union(types)
+                                }
+                                Some(TruePlusMinus::Minus) => {
+                                    self.apply_type_facts_to_type(TypeFacts::NEUndefined | TypeFacts::NENull, ty)
+                                }
+                                _ => ty,
+                            };
+                            return Ok(ty);
                         }
                     }
 
