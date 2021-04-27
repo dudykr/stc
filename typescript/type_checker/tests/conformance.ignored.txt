@@ -40,3 +40,4 @@ types.asyncGenerators.es2018.2.ts
 callSignatureWithoutReturnTypeAnnotationInference.ts
 circularIndexedAccessErrors.ts
 isomorphicMappedTypeInference.ts
+privateNamesInNestedClasses-1.ts
