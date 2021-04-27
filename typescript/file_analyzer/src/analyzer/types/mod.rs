@@ -163,21 +163,18 @@ impl Analyzer<'_, '_> {
 
             Type::Conditional(c) => {
                 let mut check_type = self
-                    .normalize(&c.check_type, Default::default())
+                    .normalize(span, &c.check_type, Default::default())
                     .context("tried to normalize the `check` type of a conditional type")?
                     .into_owned();
 
-                let extends_type = if c.extends_type.span().is_dummy() {
-                    Cow::Borrowed(&*c.extends_type)
-                } else {
-                    self.normalize(&c.extends_type, Default::default())
-                        .context("tried to normalize the `extends` type of a conditional type")?
-                };
+                let extends_type = self
+                    .normalize(span, &c.extends_type, Default::default())
+                    .context("tried to normalize the `extends` type of a conditional type")?;
 
                 if let Some(v) = self.extends(ty.span(), &check_type, &extends_type) {
                     let ty = if v { &c.true_type } else { &c.false_type };
                     return self
-                        .normalize(&ty, opts)
+                        .normalize(span, &ty, opts)
                         .context("tried to normalize the calculated type of a conditional type");
                 }
 
@@ -251,7 +248,7 @@ impl Analyzer<'_, '_> {
                                 .context("tried to resolve typeof as a part of normalization")?;
 
                             return Ok(Cow::Owned(
-                                self.normalize(&ty, opts)
+                                self.normalize(span, &ty, opts)
                                     .context("tried to normalize the type returned from typeof")?
                                     .into_owned(),
                             ));
@@ -299,7 +296,7 @@ impl Analyzer<'_, '_> {
             None => return Ok(None),
         };
 
-        let ty = self.normalize(ty, Default::default())?;
+        let ty = self.normalize(None, ty, Default::default())?;
 
         Ok(Some(ty))
     }
@@ -644,7 +641,7 @@ impl Analyzer<'_, '_> {
 
             Type::Query(..) => {
                 let ty = self
-                    .normalize(ty, Default::default())
+                    .normalize(None, ty, Default::default())
                     .context("tried to normalize a type to convert it to type literal")?;
                 let ty = self
                     .type_to_type_lit(span, &ty)
