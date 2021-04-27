@@ -246,6 +246,7 @@ controlFlow/controlFlowTruthiness.ts
 controlFlow/controlFlowWithTemplateLiterals.ts
 controlFlow/switchWithConstrainedTypeVariable.ts
 controlFlow/typeGuardsAsAssertions.ts
+controlFlow/typeGuardsNestedAssignments.ts
 controlFlow/typeGuardsTypeParameters.ts
 declarationEmit/classDoesNotDependOnPrivateMember.ts
 declarationEmit/declarationEmitWorkWithInlineComments.ts
@@ -269,6 +270,7 @@ es2017/useSharedArrayBuffer2.ts
 es2017/useSharedArrayBuffer3.ts
 es2017/useSharedArrayBuffer4.ts
 es2017/useSharedArrayBuffer5.ts
+es2018/usePromiseFinally.ts
 es2018/useRegexpGroups.ts
 es2019/globalThisTypeIndexAccess.ts
 es2020/bigintMissingES2019.ts
