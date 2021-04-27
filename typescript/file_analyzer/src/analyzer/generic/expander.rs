@@ -24,6 +24,7 @@ use stc_ts_types::TypeParamInstantiation;
 use stc_ts_types::Union;
 use stc_ts_types::{Id, TypeParam};
 use stc_utils::error::context;
+use stc_utils::ext::SpanExt;
 use stc_utils::stack;
 use swc_atoms::js_word;
 use swc_common::Span;
@@ -794,6 +795,8 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                     Some(v) => v,
                     None => return Type::IndexedAccessType(ty),
                 };
+
+                let span = key.span().or_else(|| ty.obj_type.span()).or_else(|| ty.span());
 
                 if let Ok(prop_ty) = self.analyzer.access_property(
                     key.span(),
