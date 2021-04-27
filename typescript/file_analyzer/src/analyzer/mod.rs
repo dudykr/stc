@@ -533,6 +533,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         self.scope.move_vars_from_child(&mut child_scope);
         self.prepend_stmts.extend(prepend_stmts);
         self.append_stmts.extend(append_stmts);
+        self.data = data;
 
         // Move return types from child to parent
         match kind {
