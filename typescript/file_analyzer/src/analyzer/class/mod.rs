@@ -681,8 +681,12 @@ impl Analyzer<'_, '_> {
                             name = None;
                             spans.clear();
                         } else {
-                            name = Some(&m.key);
+                            if name.is_some() && is_prop_name_eq_include_computed(&name.unwrap(), &m.key) {
+                                spans.clear();
+                            }
                             spans.push(m.key.span());
+
+                            name = Some(&m.key);
                         }
                     } else {
                         if name.is_none() || is_prop_name_eq_include_computed(&name.unwrap(), &m.key) {
