@@ -753,6 +753,17 @@ impl Analyzer<'_, '_> {
     /// error.
     ///
     /// TODO: Use Cow
+    ///
+    /// # Related tests
+    ///
+    /// ## narrowingConstrainedTypeVaraible.ts
+    ///
+    /// In the test, there's `function f2<T extends C, U extends D>(v: T | U)
+    /// {}`.
+    ///
+    /// If we apply `instanceof C` to `v`, `v` becomes `T`.
+    /// Note that `C extends D` and `D extends C` are true because both of `C`
+    /// and `D` are empty classes.
     fn narrow_with_instanceof(&mut self, span: Span, ty: Type, orig_ty: &Type) -> ValidationResult {
         let orig_ty = orig_ty.normalize();
 
