@@ -127,6 +127,9 @@ impl Analyzer<'_, '_> {
                 }
             };
 
+            // TODO: Check for string | number | symbol
+            // TODO: Ignore the code beloe if check failed.
+
             match mode {
                 ComputedPropMode::Class { .. } | ComputedPropMode::Interface => {
                     let is_valid_key = is_valid_computed_key(&node.expr);
