@@ -36,6 +36,7 @@ use std::borrow::Cow;
 use std::iter::repeat;
 use swc_atoms::JsWord;
 use swc_common::Spanned;
+use swc_common::TypeEq;
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::TsKeywordTypeKind;
 
@@ -51,8 +52,9 @@ impl Analyzer<'_, '_> {
                 metadata: Default::default(),
             });
 
+            let mut known_keys = vec![];
             for prop in node.props.iter() {
-                ret = a.append_prop_or_spread_to_type(ret, prop, type_ann.as_deref())?;
+                ret = a.append_prop_or_spread_to_type(&mut known_keys, ret, prop, type_ann.as_deref())?;
             }
 
             Ok(ret)
@@ -426,6 +428,7 @@ impl Analyzer<'_, '_> {
 
     fn append_prop_or_spread_to_type(
         &mut self,
+        known_keys: &mut Vec<Key>,
         to: Type,
         prop: &RPropOrSpread,
         object_type: Option<&Type>,
@@ -437,6 +440,30 @@ impl Analyzer<'_, '_> {
             }
             RPropOrSpread::Prop(prop) => {
                 let p: TypeElement = prop.validate_with_args(self, object_type)?;
+
+                if let Some(key) = p.key() {
+                    let span = key.span();
+
+                    // Check if duplicate key exists.
+                    // We show errors on the second key and latters.
+                    //
+                    // See: es6/Symbols/symbolProperty36.ts
+
+                    if known_keys.iter().any(|prev_key| {
+                        // TODO: Use
+                        // self.key_matches(span, prev_key, key, false)
+                        prev_key.type_eq(&key)
+                    }) {
+                        // TODO: Uncomment this after implementing getter /
+                        // setter distingtion
+
+                        // self.storage.report(Error::DuplicateProperty { span
+                        // })
+                    }
+
+                    known_keys.push(key.clone());
+                }
+
                 self.append_type_element(to, p)
             }
         }

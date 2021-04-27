@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2300
+    DuplicateProperty {
+        span: Span,
+    },
+
     /// TS2661
     CannotExportNonLocalVar {
         span: Span,
@@ -1104,6 +1109,8 @@ impl Error {
             Error::StaticPropertyCannotBeNamedProptotype { .. } => 2699,
 
             Error::CannotExportNonLocalVar { .. } => 2661,
+
+            Error::DuplicateProperty { .. } => 2300,
 
             _ => 0,
         }
