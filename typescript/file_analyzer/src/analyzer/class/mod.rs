@@ -882,6 +882,8 @@ impl Analyzer<'_, '_> {
 
         let res: ValidationResult<()> = try {
             if let Some(ref super_ty) = class.super_class {
+                self.validate_super_class(super_ty);
+
                 match super_ty.normalize() {
                     Type::ClassDef(sc) => {
                         'outer: for sm in &sc.body {
@@ -1522,6 +1524,23 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
+    fn validate_super_class(&mut self, ty: &Type) {
+        if self.is_builtin {
+            return;
+        }
+
+        let res: ValidationResult<_> = try {
+            let ty = self.normalize(None, ty, Default::default())?;
+
+            match ty.normalize() {
+                Type::Function(..) => Err(Error::NotConstructorType { span: ty.span() })?,
+                _ => {}
+            }
+        };
+
+        res.report(&mut self.storage);
+    }
+
     /// TODO: Instantate fully
     pub(crate) fn instantiate_class(&mut self, span: Span, ty: &Type) -> ValidationResult {
         Ok(match ty.normalize() {

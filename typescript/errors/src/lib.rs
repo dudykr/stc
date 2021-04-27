@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2507
+    NotConstructorType {
+        span: Span,
+    },
+
     /// TS2395
     ExportMixedWithLocal {
         span: Span,
@@ -1076,6 +1081,8 @@ impl Error {
             Error::ClassIncorrectlyImplementsInterface { .. } => 2420,
 
             Error::ExportMixedWithLocal { .. } => 2395,
+
+            Error::NotConstructorType { .. } => 2507,
 
             _ => 0,
         }
