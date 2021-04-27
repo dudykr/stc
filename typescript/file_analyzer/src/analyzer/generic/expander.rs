@@ -23,6 +23,7 @@ use stc_ts_types::TypeParamDecl;
 use stc_ts_types::TypeParamInstantiation;
 use stc_ts_types::Union;
 use stc_ts_types::{Id, TypeParam};
+use stc_utils::error::context;
 use stc_utils::stack;
 use swc_atoms::js_word;
 use swc_common::Span;
@@ -353,6 +354,10 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                 return ty;
             }
         };
+        let _context = context(format!(
+            "Expanding generics of {}",
+            dump_type_as_string(&self.analyzer.cm, &ty)
+        ));
 
         let old_fully = self.fully;
         self.fully |= match ty.normalize() {
