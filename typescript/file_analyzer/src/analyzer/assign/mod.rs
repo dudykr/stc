@@ -39,7 +39,7 @@ mod query;
 mod type_el;
 
 /// Context used for `=` assignments.
-#[derive(Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default)]
 pub(crate) struct AssignOpts {
     /// This field should be overrided by caller.
     pub span: Span,
