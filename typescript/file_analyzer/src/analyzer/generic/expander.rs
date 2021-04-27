@@ -32,6 +32,23 @@ use swc_common::Spanned;
 use swc_common::TypeEq;
 use swc_ecma_ast::*;
 
+/// All fields default to false.
+#[derive(Debug, Clone, Copy, Default)]
+pub(crate) struct ExtendsOpts {
+    /// If true, different classes are treated as not extending each other even
+    /// though those are empty.
+    ///
+    /// `false` by default because the type `Foo` in code below is 1.
+    ///
+    /// ```ts
+    /// class C {}
+    /// class D {}
+    ///
+    /// type Foo = C extends D ? 1 : 0
+    /// ```
+    pub disallow_different_classes: bool,
+}
+
 /// Generic expander.
 impl Analyzer<'_, '_> {
     pub(in super::super) fn instantiate_type_params_using_args(
