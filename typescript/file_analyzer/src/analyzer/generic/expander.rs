@@ -335,15 +335,9 @@ impl Analyzer<'_, '_> {
         }
         // dbg!(child, parent);
 
-        {
-            let ctx = Ctx {
-                fail_on_extra_fields: true,
-                ..self.ctx
-            };
-            match self.with_ctx(ctx).assign(parent, child, span) {
-                Ok(()) => Some(true),
-                _ => Some(false),
-            }
+        match self.assign(parent, child, span) {
+            Ok(()) => Some(true),
+            _ => Some(false),
         }
     }
 }
