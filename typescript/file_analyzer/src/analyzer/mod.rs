@@ -17,6 +17,7 @@ use crate::{
     DepInfo, Rule, ValidationResult,
 };
 use fxhash::FxHashMap;
+use fxhash::FxHashSet;
 use rnode::VisitWith;
 use slog::Logger;
 use stc_ts_ast_rnode::RDecorator;
@@ -140,6 +141,8 @@ pub(crate) struct Ctx {
     in_return_arg: bool,
     in_assign_rhs: bool,
 
+    in_export_decl: bool,
+
     preserve_ref: bool,
 
     /// Used before calling `access_property`, which does not accept `Ref` as an
@@ -214,7 +217,12 @@ pub struct Analyzer<'scope, 'b> {
     data: AnalyzerData,
 }
 #[derive(Debug, Default)]
-struct AnalyzerData {}
+struct AnalyzerData {
+    /// e.g. `A` for `type A = {}`
+    local_type_decls: FxHashSet<Id>,
+    /// e.g. `A` for `export type A = {}`
+    exported_type_decls: FxHashSet<Id>,
+}
 
 /// TODO
 const NO_DUP: bool = false;
@@ -412,6 +420,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 in_fn_with_return_type: false,
                 in_return_arg: false,
                 in_assign_rhs: false,
+                in_export_decl: false,
                 preserve_ref: false,
                 ignore_expand_prevention_for_top: false,
                 ignore_expand_prevention_for_all: false,

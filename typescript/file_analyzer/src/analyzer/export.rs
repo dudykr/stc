@@ -142,72 +142,78 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, export: &RExportDecl) {
-        let span = export.span;
+        let ctx = Ctx {
+            in_export_decl: true,
+            ..self.ctx
+        };
+        self.with_ctx(ctx).with(|a: &mut Analyzer| {
+            let span = export.span;
 
-        match &export.decl {
-            RDecl::Fn(ref f) => {
-                f.visit_with(self);
-                // self.export(f.span(), f.ident.clone().into(), None);
-                self.export_var(f.span(), f.ident.clone().into());
-            }
-            RDecl::TsInterface(ref i) => {
-                i.visit_with(self);
-
-                self.export(i.span(), i.id.clone().into(), None)
-            }
-
-            RDecl::Class(ref c) => {
-                c.visit_with(self);
-                self.export(c.span(), c.ident.clone().into(), None);
-                self.export_var(c.span(), c.ident.clone().into());
-            }
-            RDecl::Var(ref var) => {
-                let span = var.span;
-                var.visit_with(self);
-
-                let ids: Vec<Id> = find_ids_in_pat(&var.decls);
-
-                for id in ids {
-                    self.export_var(span, id)
+            match &export.decl {
+                RDecl::Fn(ref f) => {
+                    f.visit_with(a);
+                    // self.export(f.span(), f.ident.clone().into(), None);
+                    a.export_var(f.span(), f.ident.clone().into());
                 }
-            }
-            RDecl::TsEnum(ref e) => {
-                let span = e.span();
+                RDecl::TsInterface(ref i) => {
+                    i.visit_with(a);
 
-                let ty = e
-                    .validate_with(self)
-                    .report(&mut self.storage)
-                    .map(Type::from)
-                    .map(|ty| ty.cheap());
-                let ty = ty.unwrap_or_else(|| Type::any(span));
-                self.register_type(e.id.clone().into(), ty);
+                    a.export(i.span(), i.id.clone().into(), None)
+                }
 
-                self.storage.export_type(span, self.ctx.module_id, e.id.clone().into());
-            }
-            RDecl::TsModule(module) => {
-                module.visit_with(self);
+                RDecl::Class(ref c) => {
+                    c.visit_with(a);
+                    a.export(c.span(), c.ident.clone().into(), None);
+                    a.export_var(c.span(), c.ident.clone().into());
+                }
+                RDecl::Var(ref var) => {
+                    let span = var.span;
+                    var.visit_with(a);
 
-                match &module.id {
-                    RTsModuleName::Ident(id) => {
-                        self.storage.export_type(span, self.ctx.module_id, id.clone().into());
-                    }
-                    RTsModuleName::Str(_) => {
-                        unimplemented!("export module with string name")
+                    let ids: Vec<Id> = find_ids_in_pat(&var.decls);
+
+                    for id in ids {
+                        a.export_var(span, id)
                     }
                 }
+                RDecl::TsEnum(ref e) => {
+                    let span = e.span();
+
+                    let ty = e
+                        .validate_with(a)
+                        .report(&mut a.storage)
+                        .map(Type::from)
+                        .map(|ty| ty.cheap());
+                    let ty = ty.unwrap_or_else(|| Type::any(span));
+                    a.register_type(e.id.clone().into(), ty);
+
+                    a.storage.export_type(span, a.ctx.module_id, e.id.clone().into());
+                }
+                RDecl::TsModule(module) => {
+                    module.visit_with(a);
+
+                    match &module.id {
+                        RTsModuleName::Ident(id) => {
+                            a.storage.export_type(span, a.ctx.module_id, id.clone().into());
+                        }
+                        RTsModuleName::Str(_) => {
+                            unimplemented!("export module with string name")
+                        }
+                    }
+                }
+                RDecl::TsTypeAlias(ref decl) => {
+                    decl.visit_with(a);
+                    // export type Foo = 'a' | 'b';
+                    // export type Foo = {};
+
+                    // TODO: Handle type parameters.
+
+                    a.export(span, decl.id.clone().into(), None)
+                }
             }
-            RDecl::TsTypeAlias(ref decl) => {
-                decl.visit_with(self);
-                // export type Foo = 'a' | 'b';
-                // export type Foo = {};
 
-                // TODO: Handle type parameters.
-
-                self.export(span, decl.id.clone().into(), None)
-            }
-        }
-
-        Ok(())
+            Ok(())
+        })
     }
 }
 
