@@ -17,7 +17,6 @@ use crate::{
     DepInfo, Rule, ValidationResult,
 };
 use fxhash::FxHashMap;
-use fxhash::FxHashSet;
 use rnode::VisitWith;
 use slog::Logger;
 use stc_ts_ast_rnode::RDecorator;
@@ -219,9 +218,9 @@ pub struct Analyzer<'scope, 'b> {
 #[derive(Debug, Default)]
 struct AnalyzerData {
     /// e.g. `A` for `type A = {}`
-    local_type_decls: FxHashSet<Id>,
+    local_type_decls: FxHashMap<Id, Vec<Span>>,
     /// e.g. `A` for `export type A = {}`
-    exported_type_decls: FxHashSet<Id>,
+    exported_type_decls: FxHashMap<Id, Vec<Span>>,
 }
 
 /// TODO

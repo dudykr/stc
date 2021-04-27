@@ -636,6 +636,35 @@ impl Analyzer<'_, '_> {
     pub(super) fn register_type(&mut self, name: Id, ty: Type) -> Type {
         slog::debug!(self.logger, "Registering: {:?}", name);
 
+        if self.ctx.in_export_decl {
+            self.data
+                .exported_type_decls
+                .entry(name.clone())
+                .or_default()
+                .push(ty.span());
+
+            if let Some(spans) = self.data.local_type_decls.get(&name) {
+                self.storage.report(Error::ExportMixedWithLocal { span: ty.span() });
+                for span in spans.iter().copied() {
+                    self.storage.report(Error::ExportMixedWithLocal { span })
+                }
+            }
+        } else {
+            self.data
+                .local_type_decls
+                .entry(name.clone())
+                .or_default()
+                .push(ty.span());
+
+            if let Some(spans) = self.data.exported_type_decls.get(&name) {
+                self.storage.report(Error::ExportMixedWithLocal { span: ty.span() });
+
+                for span in spans.iter().copied() {
+                    self.storage.report(Error::ExportMixedWithLocal { span })
+                }
+            }
+        }
+
         if self.ctx.in_global {
             if !ty.normalize().is_type_param() {
                 self.env.declare_global_type(name.sym().clone(), ty.clone());

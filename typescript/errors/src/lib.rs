@@ -59,6 +59,10 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2395
+    ExportMixedWithLocal {
+        span: Span,
+    },
     /// TS2420
     ClassIncorrectlyImplementsInterface {
         span: Span,
@@ -1070,6 +1074,8 @@ impl Error {
             Error::InvalidImplOfInterface { .. } => 2416,
 
             Error::ClassIncorrectlyImplementsInterface { .. } => 2420,
+
+            Error::ExportMixedWithLocal { .. } => 2395,
 
             _ => 0,
         }
