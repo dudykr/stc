@@ -44,6 +44,7 @@ use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_ast_rnode::RTsNonNullExpr;
 use stc_ts_ast_rnode::RTsThisType;
 use stc_ts_ast_rnode::RUnaryExpr;
+use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::debug::print_backtrace;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
@@ -857,12 +858,22 @@ impl Analyzer<'_, '_> {
             debug_assert_ne!(span, DUMMY_SP, "access_property: called with a dummy span");
         }
 
+        let obj_str = dump_type_as_string(&self.cm, &obj);
+
         // We use child scope to store type parameters.
         let mut ty = self.with_scope_for_type_params(|analyzer: &mut Analyzer| -> ValidationResult<_> {
             let mut ty = analyzer.access_property_inner(span, obj, prop, type_mode, id_ctx)?;
             ty = analyzer.expand_type_params_using_scope(ty)?;
             Ok(ty)
         })?;
+
+        let ty_str = dump_type_as_string(&self.cm, &ty);
+        slog::debug!(
+            self.logger,
+            "[expr] Accessed property:\nObject: {}\nResult: {}",
+            obj_str,
+            ty_str
+        );
 
         if !self.is_builtin && ty.span().is_dummy() && !span.is_dummy() {
             ty.reposition(span);
