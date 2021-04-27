@@ -1,3 +1,4 @@
+use super::expr::TypeOfMode;
 use super::{Analyzer, Ctx};
 use crate::{analyzer::util::ResultExt, ty::Type, validator, validator::ValidateWith, ValidationResult};
 use rnode::NodeId;
@@ -9,6 +10,7 @@ use stc_ts_ast_rnode::RExportAll;
 use stc_ts_ast_rnode::RExportDecl;
 use stc_ts_ast_rnode::RExportDefaultDecl;
 use stc_ts_ast_rnode::RExportDefaultExpr;
+use stc_ts_ast_rnode::RExportNamedSpecifier;
 use stc_ts_ast_rnode::RExportSpecifier;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RIdent;
@@ -393,6 +395,25 @@ impl Analyzer<'_, '_> {
         };
         self.with_ctx(ctx)
             .export_expr(Id::word(js_word!("default")), node.node_id, &node.expr)?;
+
+        Ok(())
+    }
+}
+
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, node: &RExportNamedSpecifier) {
+        let ctx = Ctx {
+            report_error_for_non_local_export: true,
+            ..self.ctx
+        };
+        self.with_ctx(ctx).validate_with(|a| {
+            a.type_of_var(&node.orig, TypeOfMode::RValue, None)?;
+
+            Ok(())
+        });
+
+        // TODO: Add an export
 
         Ok(())
     }

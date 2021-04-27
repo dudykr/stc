@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2661
+    CannotExportNonLocalVar {
+        span: Span,
+    },
+
     /// TS2699
     StaticPropertyCannotBeNamedProptotype {
         span: Span,
@@ -1097,6 +1102,8 @@ impl Error {
             Error::SelfReferentialSuperClass { .. } => 2506,
 
             Error::StaticPropertyCannotBeNamedProptotype { .. } => 2699,
+
+            Error::CannotExportNonLocalVar { .. } => 2661,
 
             _ => 0,
         }

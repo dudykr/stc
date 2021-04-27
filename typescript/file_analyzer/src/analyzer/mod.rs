@@ -129,6 +129,10 @@ pub(crate) struct Ctx {
     /// references are error.
     in_actual_type: bool,
 
+    /// If true, `type_of_raw_var` should report an error if the referenced
+    /// variable is global.
+    report_error_for_non_local_export: bool,
+
     reevaluating_call_or_new: bool,
 
     var_kind: VarDeclKind,
@@ -410,6 +414,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 in_export_default_expr: false,
                 is_calling_iife: false,
                 in_actual_type: false,
+                report_error_for_non_local_export: false,
                 reevaluating_call_or_new: false,
                 var_kind: VarDeclKind::Var,
                 pat_mode: PatMode::Assign,
@@ -545,6 +550,19 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         }
 
         ret
+    }
+
+    fn validate_with<F>(&mut self, op: F)
+    where
+        F: FnOnce(&mut Analyzer) -> ValidationResult<()>,
+    {
+        let res = op(self);
+        match res {
+            Ok(()) => {}
+            Err(err) => {
+                self.storage.report(err);
+            }
+        }
     }
 
     fn with_ctx(&mut self, ctx: Ctx) -> WithCtx<'_, 'scope, 'b> {

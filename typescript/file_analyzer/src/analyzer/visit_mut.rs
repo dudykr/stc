@@ -19,6 +19,7 @@ use stc_ts_ast_rnode::RExportAll;
 use stc_ts_ast_rnode::RExportDecl;
 use stc_ts_ast_rnode::RExportDefaultDecl;
 use stc_ts_ast_rnode::RExportDefaultExpr;
+use stc_ts_ast_rnode::RExportNamedSpecifier;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RFnDecl;
 use stc_ts_ast_rnode::RFnExpr;
@@ -90,6 +91,7 @@ macro_rules! use_visit_mut {
 
 use_visit_mut!(RModule);
 
+forward!(visit_mut_export_named_specifier, RExportNamedSpecifier);
 forward!(visit_mut_expr, RExpr);
 forward!(visit_mut_seq_expr, RSeqExpr);
 forward!(visit_mut_block_stmt, RBlockStmt);
