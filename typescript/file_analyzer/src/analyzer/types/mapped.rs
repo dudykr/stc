@@ -3,6 +3,7 @@ use crate::ValidationResult;
 use stc_ts_ast_rnode::RTsEnumMemberId;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
+use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::DebugExt;
 use stc_ts_types::Id;
 use stc_ts_types::Key;
@@ -28,6 +29,19 @@ impl Analyzer<'_, '_> {
     /// declare const a: Partial<Foo>;
     /// ```
     pub(crate) fn expand_mapped(&mut self, span: Span, m: &Mapped) -> ValidationResult<Option<Type>> {
+        let orig = dump_type_as_string(&self.cm, &Type::Mapped(m.clone()));
+
+        let ty = self.expand_mapped_inner(span, m)?;
+        if let Some(ty) = &ty {
+            let expanded = dump_type_as_string(&self.cm, &Type::Mapped(m.clone()));
+
+            slog::debug!(self.logger, "[types/mapped]: Expanded {} as {}", orig, expanded);
+        }
+
+        Ok(ty)
+    }
+
+    fn expand_mapped_inner(&mut self, span: Span, m: &Mapped) -> ValidationResult<Option<Type>> {
         match m.type_param.constraint.as_deref().map(|v| v.normalize()) {
             Some(Type::Operator(Operator {
                 op: TsTypeOperatorOp::KeyOf,
