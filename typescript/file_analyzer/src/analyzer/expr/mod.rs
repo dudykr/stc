@@ -600,6 +600,15 @@ impl Analyzer<'_, '_> {
     ///
     /// - `declared`: Key of declared property.
     pub(crate) fn key_matches(&mut self, span: Span, declared: &Key, cur: &Key, allow_union: bool) -> bool {
+        match declared {
+            Key::Computed(..) => {}
+            _ => {
+                if declared.type_eq(cur) {
+                    return true;
+                }
+            }
+        }
+
         match (declared, cur) {
             (
                 Key::Num(RNumber {
@@ -636,6 +645,8 @@ impl Analyzer<'_, '_> {
                     return true;
                 }
             }
+
+            Key::Normal { .. } => return false,
             _ => {}
         }
 
