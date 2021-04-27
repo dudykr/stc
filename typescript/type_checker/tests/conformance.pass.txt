@@ -1696,6 +1696,7 @@ types/localTypes/localTypes3.ts
 types/localTypes/localTypes5.ts
 types/mapped/mappedTypes1.ts
 types/mapped/mappedTypes4.ts
+types/mapped/mappedTypesAndObjects.ts
 types/members/classWithProtectedProperty.ts
 types/members/classWithPublicProperty.ts
 types/members/objectTypeHidingMembersOfObject.ts
