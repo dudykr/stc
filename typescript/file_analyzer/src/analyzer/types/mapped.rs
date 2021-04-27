@@ -298,7 +298,7 @@ impl Analyzer<'_, '_> {
 
     /// TODO(kdy1): I don't know well about TruePlusMinus currently.
     /// I have to search for it.
-    fn apply_mapped_flags(
+    pub(crate) fn apply_mapped_flags(
         &self,
         el: &mut TypeElement,
         optional: Option<TruePlusMinus>,

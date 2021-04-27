@@ -578,6 +578,10 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                                             }
                                         }
 
+                                        for member in &mut members {
+                                            self.analyzer.apply_mapped_flags(member, m.optional, m.readonly);
+                                        }
+
                                         return Type::TypeLit(TypeLit {
                                             span: ty.span,
                                             members,
@@ -608,7 +612,7 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                     Some(box Type::TypeLit(lit)) => {
                         let ty = m.ty.clone();
 
-                        let members = lit
+                        let mut members = lit
                             .members
                             .into_iter()
                             .map(|mut v| match v {
@@ -620,6 +624,11 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                                 _ => todo!("type element other than property in a mapped type"),
                             })
                             .collect();
+
+                        for member in &mut members {
+                            self.analyzer.apply_mapped_flags(member, m.optional, m.readonly);
+                        }
+
                         return Type::TypeLit(TypeLit {
                             span,
                             members,
@@ -668,6 +677,10 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                                     }
                                 }
 
+                                for member in &mut new_members {
+                                    self.analyzer.apply_mapped_flags(member, m.optional, m.readonly);
+                                }
+
                                 return Type::TypeLit(TypeLit {
                                     span,
                                     members: new_members,
@@ -693,7 +706,7 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                             op: TsTypeOperatorOp::KeyOf,
                             ty,
                         }) => match ty.normalize() {
-                            Type::Keyword(..) => return *ty.clone(),
+                            Type::Keyword(..) if m.optional == None && m.readonly == None => return *ty.clone(),
                             Type::TypeLit(TypeLit {
                                 span,
                                 members,
@@ -730,6 +743,10 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                                         }
                                         _ => unreachable!(),
                                     }
+                                }
+
+                                for member in &mut new_members {
+                                    self.analyzer.apply_mapped_flags(member, m.optional, m.readonly);
                                 }
 
                                 return Type::TypeLit(TypeLit {
