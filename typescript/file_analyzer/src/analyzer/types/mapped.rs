@@ -219,6 +219,7 @@ impl Analyzer<'_, '_> {
     fn get_property_names(&mut self, span: Span, ty: &Type) -> ValidationResult<Option<Vec<Key>>> {
         let ty = self
             .normalize(
+                None,
                 ty,
                 NormalizeTypeOpts {
                     normalize_keywords: true,

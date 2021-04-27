@@ -758,7 +758,7 @@ impl Analyzer<'_, '_> {
 
         match orig_ty {
             Type::Ref(..) | Type::Query(..) => {
-                let orig_ty = self.normalize(orig_ty, Default::default())?;
+                let orig_ty = self.normalize(None, orig_ty, Default::default())?;
                 return self.narrow_with_instanceof(span, ty, &orig_ty);
             }
 

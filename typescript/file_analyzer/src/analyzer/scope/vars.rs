@@ -44,6 +44,7 @@ use swc_ecma_ast::VarDeclKind;
 impl Analyzer<'_, '_> {
     pub(crate) fn exclude_props(&mut self, span: Span, ty: &Type, keys: &[Key]) -> ValidationResult<Type> {
         let ty = self.normalize(
+            None,
             &ty,
             NormalizeTypeOpts {
                 preserve_mapped: false,

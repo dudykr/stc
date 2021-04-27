@@ -1123,7 +1123,7 @@ impl Analyzer<'_, '_> {
 
         match ty.normalize() {
             Type::Ref(..) | Type::Query(..) => {
-                let ty = self.normalize(ty, Default::default())?;
+                let ty = self.normalize(None, ty, Default::default())?;
                 return self.extract(
                     span,
                     expr,

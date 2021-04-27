@@ -103,6 +103,7 @@ impl Analyzer<'_, '_> {
     fn get_element_type_of_for_in(&mut self, rhs: &Type) -> ValidationResult {
         let rhs = self
             .normalize(
+                None,
                 rhs,
                 NormalizeTypeOpts {
                     preserve_mapped: true,

@@ -595,7 +595,7 @@ impl Analyzer<'_, '_> {
                         if !self.is_builtin {
                             // Report error if type is not found.
                             if let Some(ty) = &ty {
-                                self.normalize(&ty, Default::default()).report(&mut self.storage);
+                                self.normalize(None, &ty, Default::default()).report(&mut self.storage);
                             }
                         }
 

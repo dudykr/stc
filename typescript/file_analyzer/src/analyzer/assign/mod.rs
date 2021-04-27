@@ -235,7 +235,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn normalize_for_assign<'a>(&mut self, ty: &'a Type) -> ValidationResult<Cow<'a, Type>> {
+    fn normalize_for_assign<'a>(&mut self, span: Span, ty: &'a Type) -> ValidationResult<Cow<'a, Type>> {
         ty.assert_valid();
 
         let ty = ty.normalize();
@@ -265,7 +265,7 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {
                 let ty = self
-                    .normalize(&ty, Default::default())
+                    .normalize(Some(span), &ty, Default::default())
                     .context("tried to normalize a type for assignment")?
                     .into_owned();
 
@@ -313,8 +313,8 @@ impl Analyzer<'_, '_> {
         }
 
         // debug_assert!(!span.is_dummy(), "\n\t{:?}\n<-\n\t{:?}", to, rhs);
-        let to = self.normalize_for_assign(to)?;
-        let rhs = self.normalize_for_assign(rhs)?;
+        let to = self.normalize_for_assign(span, to)?;
+        let rhs = self.normalize_for_assign(span, rhs)?;
 
         let to = to.normalize();
         let rhs = rhs.normalize();

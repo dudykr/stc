@@ -63,26 +63,37 @@ impl Analyzer<'_, '_> {
     ///  - [Type::Alias]
     ///
     /// TOOD: Accept [Cow] to optimize performance
+
+    ///
+    /// # Span
+    ///
+    /// If `span` is provided, it will be used for types **created** by the
+    /// method. Otherwise the span of the original type is used.
     pub(crate) fn normalize<'a>(
         &mut self,
+        span: Option<Span>,
         ty: &'a Type,
         mut opts: NormalizeTypeOpts,
     ) -> ValidationResult<Cow<'a, Type>> {
-        let span = ty.span();
+        let actual_span = ty.span();
         if !self.is_builtin {
-            debug_assert!(!span.is_dummy(), "Cannot normalize a type with dummy span\n{:?}", ty);
+            debug_assert!(
+                !actual_span.is_dummy(),
+                "Cannot normalize a type with dummy span\n{:?}",
+                ty
+            );
         }
 
-        let _stack = stack::track(span)?;
+        let _stack = stack::track(actual_span)?;
 
         let ty = ty.normalize();
 
         match ty {
             Type::Ref(_) => {
                 let ty = self
-                    .expand_top_ref(span, Cow::Borrowed(ty))
+                    .expand_top_ref(actual_span, Cow::Borrowed(ty))
                     .context("tried to expand a ref type as a part of normalization")?;
-                return Ok(Cow::Owned(self.normalize(&ty, opts)?.into_owned()));
+                return Ok(Cow::Owned(self.normalize(span, &ty, opts)?.into_owned()));
             }
 
             Type::Keyword(k) => {
@@ -97,7 +108,7 @@ impl Analyzer<'_, '_> {
                     };
 
                     if let Some(name) = name {
-                        let global = self.env.get_global_type(k.span, &name)?;
+                        let global = self.env.get_global_type(actual_span, &name)?;
 
                         return Ok(Cow::Owned(global));
                     }
@@ -106,10 +117,10 @@ impl Analyzer<'_, '_> {
 
             Type::Mapped(m) => {
                 if !opts.preserve_mapped {
-                    let ty = self.expand_mapped(span, m)?;
+                    let ty = self.expand_mapped(actual_span, m)?;
                     if let Some(ty) = ty {
                         return Ok(Cow::Owned(
-                            self.normalize(&ty, opts)
+                            self.normalize(span, &ty, opts)
                                 .context("tried to expand a mapped type as a part of normalization")?
                                 .into_owned(),
                         ));
@@ -117,12 +128,12 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            Type::Alias(a) => return Ok(Cow::Owned(self.normalize(&a.ty, opts)?.into_owned())),
+            Type::Alias(a) => return Ok(Cow::Owned(self.normalize(None, &a.ty, opts)?.into_owned())),
 
             // Leaf types.
             Type::Array(arr) => {
                 let elem_type = box self
-                    .normalize(&arr.elem_type, opts)
+                    .normalize(None, &arr.elem_type, opts)
                     .context("tried to normalize the type of the element of an array type")?
                     .into_owned();
                 return Ok(Cow::Owned(Type::Array(Array {
@@ -210,7 +221,10 @@ impl Analyzer<'_, '_> {
 
                                 if all {
                                     types.dedup_type();
-                                    let new = Type::Union(Union { span, types });
+                                    let new = Type::Union(Union {
+                                        span: actual_span,
+                                        types,
+                                    });
 
                                     *check_type_contraint = box new;
 
@@ -233,7 +247,7 @@ impl Analyzer<'_, '_> {
                     match &*q.expr {
                         QueryExpr::TsEntityName(e) => {
                             let ty = self
-                                .resolve_typeof(span, e)
+                                .resolve_typeof(actual_span, e)
                                 .context("tried to resolve typeof as a part of normalization")?;
 
                             return Ok(Cow::Owned(
@@ -264,7 +278,7 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {
                 let keys_ty = self
-                    .keyof(span, &ty)
+                    .keyof(actual_span, &ty)
                     .context("tried to get keys of a type as a part of normalization")?;
                 return Ok(Cow::Owned(keys_ty));
             }

@@ -546,7 +546,7 @@ impl Analyzer<'_, '_> {
     pub(super) fn try_assign_pat(&mut self, span: Span, lhs: &RPat, ty: &Type) -> ValidationResult<()> {
         let is_in_loop = self.scope.is_in_loop_body();
         let ty = self
-            .normalize(ty, Default::default())
+            .normalize(None, ty, Default::default())
             .context("tried to normalize a type to assign it to a pattern")?;
         let ty = ty.normalize();
 
