@@ -294,6 +294,14 @@ impl Analyzer<'_, '_> {
     fn export(&mut self, span: Span, name: Id, orig_name: Option<Id>) {
         let orig_name = orig_name.unwrap_or_else(|| name.clone());
 
+        {
+            // A module can export only local declarations.
+            // As we store local declarations on Analyzer.data.local_type_decls
+            if !self.data.local_type_decls.contains_key(&orig_name) {
+                self.storage.report(Error::CannotExportNonLocalType { span })
+            }
+        }
+
         let types = match self.find_type(self.ctx.module_id, &orig_name) {
             Ok(v) => v,
             Err(err) => {
