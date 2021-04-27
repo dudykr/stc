@@ -21,6 +21,8 @@ use swc_common::TypeEq;
 use swc_ecma_ast::TruePlusMinus;
 use swc_ecma_ast::TsTypeOperatorOp;
 
+use super::NormalizeTypeOpts;
+
 impl Analyzer<'_, '_> {
     /// Required because mapped type can specified by user, like
 
@@ -216,7 +218,13 @@ impl Analyzer<'_, '_> {
     /// Get keys of `ty` as a proerty name.
     fn get_property_names(&mut self, span: Span, ty: &Type) -> ValidationResult<Option<Vec<Key>>> {
         let ty = self
-            .normalize(ty, Default::default())
+            .normalize(
+                ty,
+                NormalizeTypeOpts {
+                    normalize_keywords: true,
+                    ..Default::default()
+                },
+            )
             .context("tried to normalize a type to get keys from it")?;
 
         if ty.is_any() {

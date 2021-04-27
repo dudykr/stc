@@ -30,6 +30,7 @@ use stc_utils::stack;
 use stc_utils::TryOpt;
 use std::borrow::Cow;
 use std::collections::HashMap;
+use swc_atoms::js_word;
 use swc_common::Span;
 use swc_common::Spanned;
 use swc_common::SyntaxContext;
@@ -43,19 +44,13 @@ mod mapped;
 mod narrowing;
 mod type_param;
 
-#[derive(Debug, Clone, Copy)]
+/// All fields defaults to false.
+#[derive(Debug, Default, Clone, Copy)]
 pub(crate) struct NormalizeTypeOpts {
     pub preserve_mapped: bool,
     pub preserve_typeof: bool,
-}
-
-impl Default for NormalizeTypeOpts {
-    fn default() -> Self {
-        Self {
-            preserve_mapped: false,
-            preserve_typeof: false,
-        }
-    }
+    /// Should we normalize keywords as interfaces?
+    pub normalize_keywords: bool,
 }
 
 impl Analyzer<'_, '_> {
@@ -66,7 +61,8 @@ impl Analyzer<'_, '_> {
     ///  - [Type::Ref]
     ///  - [Type::Mapped]
     ///  - [Type::Alias]
-
+    ///
+    /// TOOD: Accept [Cow] to optimize performance
     pub(crate) fn normalize<'a>(
         &mut self,
         ty: &'a Type,
@@ -87,6 +83,25 @@ impl Analyzer<'_, '_> {
                     .expand_top_ref(span, Cow::Borrowed(ty))
                     .context("tried to expand a ref type as a part of normalization")?;
                 return Ok(Cow::Owned(self.normalize(&ty, opts)?.into_owned()));
+            }
+
+            Type::Keyword(k) => {
+                if opts.normalize_keywords {
+                    let name = match k.kind {
+                        TsKeywordTypeKind::TsNumberKeyword => Some(js_word!("Number")),
+                        TsKeywordTypeKind::TsObjectKeyword => Some(js_word!("Number")),
+                        TsKeywordTypeKind::TsBooleanKeyword => Some(js_word!("Boolean")),
+                        TsKeywordTypeKind::TsStringKeyword => Some(js_word!("String")),
+                        TsKeywordTypeKind::TsSymbolKeyword => Some(js_word!("Symbol")),
+                        _ => None,
+                    };
+
+                    if let Some(name) = name {
+                        let global = self.env.get_global_type(k.span, &name)?;
+
+                        return Ok(Cow::Owned(global));
+                    }
+                }
             }
 
             Type::Mapped(m) => {
@@ -121,7 +136,6 @@ impl Analyzer<'_, '_> {
             | Type::Interface(..)
             | Type::Class(..)
             | Type::ClassDef(..)
-            | Type::Keyword(..)
             | Type::Tuple(..)
             | Type::Function(..)
             | Type::Constructor(..)
