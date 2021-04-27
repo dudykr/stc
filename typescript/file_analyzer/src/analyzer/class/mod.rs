@@ -116,6 +116,18 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, p: &RClassProp) -> ValidationResult<ClassProperty> {
         self.record(p);
 
+        if !p.computed && p.is_static {
+            match &*p.key {
+                RExpr::Ident(i) => {
+                    if &*i.sym == "prototype" {
+                        self.storage
+                            .report(Error::StaticPropertyCannotBeNamedProptotype { span: i.span })
+                    }
+                }
+                _ => {}
+            }
+        }
+
         // Verify key if key is computed
         if p.computed {
             self.validate_computed_prop_key(p.span, &p.key);

@@ -59,10 +59,16 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2699
+    StaticPropertyCannotBeNamedProptotype {
+        span: Span,
+    },
+
     /// TS2506
     SelfReferentialSuperClass {
         span: Span,
     },
+
     /// TS2507
     NotConstructorType {
         span: Span,
@@ -1089,6 +1095,8 @@ impl Error {
             Error::NotConstructorType { .. } => 2507,
 
             Error::SelfReferentialSuperClass { .. } => 2506,
+
+            Error::StaticPropertyCannotBeNamedProptotype { .. } => 2699,
 
             _ => 0,
         }
