@@ -210,7 +210,11 @@ pub struct Analyzer<'scope, 'b> {
     mapped_type_param_name: Vec<Id>,
 
     debugger: Option<Debugger>,
+
+    data: AnalyzerData,
 }
+#[derive(Debug, Default)]
+struct AnalyzerData {}
 
 /// TODO
 const NO_DUP: bool = false;
@@ -269,7 +273,7 @@ impl Analyzer<'_, '_> {
         let span = node.span;
 
         let (errors, data) = {
-            let mut new = self.new(Scope::root(self.logger.clone()));
+            let mut new = self.new(Scope::root(self.logger.clone()), Default::default());
             {
                 node.visit_children_with(&mut new);
             }
@@ -321,6 +325,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             false,
             Default::default(),
             debugger,
+            Default::default(),
         )
     }
 
@@ -338,10 +343,11 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             true,
             Default::default(),
             None,
+            Default::default(),
         )
     }
 
-    fn new(&'b self, scope: Scope<'scope>) -> Self {
+    fn new(&'b self, scope: Scope<'scope>, data: AnalyzerData) -> Self {
         Self::new_inner(
             self.logger.clone(),
             self.env.clone(),
@@ -353,6 +359,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             self.is_builtin,
             self.symbols.clone(),
             self.debugger.clone(),
+            data,
         )
     }
 
@@ -367,6 +374,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         is_builtin: bool,
         symbols: Arc<SymbolIdGenerator>,
         debugger: Option<Debugger>,
+        data: AnalyzerData,
     ) -> Self {
         Self {
             logger,
@@ -421,6 +429,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             mapped_type_param_name: vec![],
             imports_by_id: Default::default(),
             debugger,
+            data,
         }
     }
 
@@ -453,6 +462,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         let imports_by_id = take(&mut self.imports_by_id);
         let mutations = self.mutations.take();
         let cur_facts = take(&mut self.cur_facts);
+        let data = take(&mut self.data);
 
         let child_scope = Scope::new(&self.scope, kind, facts);
         let (
@@ -466,8 +476,9 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             prepend_stmts,
             append_stmts,
             mutations,
+            data,
         ) = {
-            let mut child = self.new(child_scope);
+            let mut child = self.new(child_scope, data);
             child.imports = imports;
             child.imports_by_id = imports_by_id;
             child.mutations = mutations;
@@ -487,6 +498,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 child.prepend_stmts,
                 child.append_stmts,
                 child.mutations.take(),
+                take(&mut child.data),
             )
         };
         self.storage.report_all(errors);
