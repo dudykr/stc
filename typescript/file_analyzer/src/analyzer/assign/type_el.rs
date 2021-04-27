@@ -25,6 +25,7 @@ use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
 use stc_ts_types::TypeLitMetadata;
 use stc_ts_types::TypeParamInstantiation;
+use stc_utils::ext::SpanExt;
 use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::Span;
@@ -87,10 +88,11 @@ impl Analyzer<'_, '_> {
                             numeric_keyed_ty,
                             &el.ty,
                             AssignOpts {
-                                span: if el.span().is_dummy() { span } else { el.span() },
+                                span: el.span().or_else(|| span),
                                 ..opts
                             },
                         )
+                        .context("tried to assign an element of tuple to numerically keyed type")
                         .store(&mut errors);
                     }
                     return if errors.is_empty() {
