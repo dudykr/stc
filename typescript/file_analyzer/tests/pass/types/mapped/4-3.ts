@@ -12,5 +12,6 @@ export interface E3<T> extends Base {
 
 declare var ee: E3<string>
 ee.foo
+ee.foo.substring
 ee.bar
 ee.baz
