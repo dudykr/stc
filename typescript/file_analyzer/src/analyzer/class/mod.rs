@@ -972,6 +972,9 @@ impl Analyzer<'_, '_> {
                         .map(|param| param.name.clone().into()),
                 );
 
+                // Register the class.
+                child.scope.this_class_name = name.clone();
+
                 // We handle type parameters first.
                 let type_params = try_opt!(c.type_params.validate_with(child));
                 child.resolve_parent_interfaces(&c.implements);
@@ -1092,9 +1095,6 @@ impl Analyzer<'_, '_> {
                 let implements = c.implements.validate_with(child).map(Box::new)?;
 
                 // TODO: Check for implements
-
-                // Register the class.
-                child.scope.this_class_name = name.clone();
 
                 child.check_ambient_methods(c, false)?;
 
@@ -1530,10 +1530,25 @@ impl Analyzer<'_, '_> {
         }
 
         let res: ValidationResult<_> = try {
+            match ty.normalize() {
+                Type::Ref(Ref {
+                    type_name: RTsEntityName::Ident(i),
+                    ..
+                }) => {
+                    if let Some(name) = &self.scope.this_class_name {
+                        if *name == i {
+                            Err(Error::SelfReferentialSuperClass { span: i.span })?
+                        }
+                    }
+                }
+                _ => {}
+            }
+
             let ty = self.normalize(None, ty, Default::default())?;
 
             match ty.normalize() {
                 Type::Function(..) => Err(Error::NotConstructorType { span: ty.span() })?,
+
                 _ => {}
             }
         };

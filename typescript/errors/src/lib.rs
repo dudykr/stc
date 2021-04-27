@@ -59,6 +59,10 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2506
+    SelfReferentialSuperClass {
+        span: Span,
+    },
     /// TS2507
     NotConstructorType {
         span: Span,
@@ -1083,6 +1087,8 @@ impl Error {
             Error::ExportMixedWithLocal { .. } => 2395,
 
             Error::NotConstructorType { .. } => 2507,
+
+            Error::SelfReferentialSuperClass { .. } => 2506,
 
             _ => 0,
         }

@@ -91,7 +91,8 @@ pub(crate) struct Scope<'a> {
 
     pub(super) this: Option<Type>,
 
-    /// Used while validating static class properties. Otherwise [None].
+    /// Used while validating super class and static class properties. Otherwise
+    /// [None].
     ///
     /// Required to handle static properies.
     pub(super) this_class_name: Option<Id>,
