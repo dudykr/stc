@@ -1050,6 +1050,7 @@ expressions/conditonalOperator/conditionalOperatorConditionIsNumberType.ts
 expressions/conditonalOperator/conditionalOperatorConditoinIsAnyType.ts
 expressions/conditonalOperator/conditionalOperatorConditoinIsStringType.ts
 expressions/conditonalOperator/conditionalOperatorWithIdenticalBCT.ts
+expressions/conditonalOperator/conditionalOperatorWithoutIdenticalBCT.ts
 expressions/contextualTyping/arrayLiteralExpressionContextualTyping.ts
 expressions/contextualTyping/functionExpressionContextualTyping3.ts
 expressions/contextualTyping/generatedContextualTyping.ts
@@ -1630,10 +1631,12 @@ statements/for-ofStatements/ES5For-of24.ts
 statements/for-ofStatements/ES5For-of25.ts
 statements/for-ofStatements/ES5For-of3.ts
 statements/for-ofStatements/ES5For-of33.ts
+statements/for-ofStatements/ES5For-of34.ts
 statements/for-ofStatements/ES5For-of37.ts
 statements/for-ofStatements/ES5For-of4.ts
 statements/for-ofStatements/ES5For-of5.ts
 statements/for-ofStatements/ES5For-of6.ts
+statements/for-ofStatements/ES5For-of8.ts
 statements/for-ofStatements/ES5For-of9.ts
 statements/for-ofStatements/ES5For-ofTypeCheck1.ts
 statements/for-ofStatements/ES5For-ofTypeCheck11.ts
@@ -1642,6 +1645,7 @@ statements/for-ofStatements/ES5For-ofTypeCheck3.ts
 statements/for-ofStatements/ES5For-ofTypeCheck4.ts
 statements/for-ofStatements/ES5For-ofTypeCheck5.ts
 statements/for-ofStatements/ES5For-ofTypeCheck6.ts
+statements/for-ofStatements/ES5For-ofTypeCheck8.ts
 statements/for-ofStatements/ES5for-of32.ts
 statements/ifDoWhileStatements/ifDoWhileStatements.ts
 statements/returnStatements/returnStatements.ts
