@@ -732,27 +732,25 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Union(Union { ref types, .. }) => {
-                match to {
-                    Type::Union(..) => {
-                        types
-                            .iter()
-                            .map(|rhs| {
-                                self.assign_with_opts(
-                                    AssignOpts {
-                                        allow_unknown_rhs: true,
-                                        ..opts
-                                    },
-                                    to,
-                                    rhs,
-                                )
-                            })
-                            .collect::<Result<_, _>>()
-                            .context("tried to assign an union type to another one")?;
+                if self.should_use_union_assignment(span, rhs)? {
+                    types
+                        .iter()
+                        .map(|rhs| {
+                            self.assign_with_opts(
+                                AssignOpts {
+                                    allow_unknown_rhs: true,
+                                    ..opts
+                                },
+                                to,
+                                rhs,
+                            )
+                        })
+                        .collect::<Result<_, _>>()
+                        .context("tried to assign an union type to another one")?;
 
-                        return Ok(());
-                    }
-                    _ => {}
+                    return Ok(());
                 }
+
                 let errors = types
                     .iter()
                     .filter_map(|rhs| match self.assign_with_opts(opts, to, rhs) {
@@ -1611,6 +1609,33 @@ impl Analyzer<'_, '_> {
             span: opts.span,
             msg: format!("Assignment to mapped type"),
         })
+    }
+
+    /// Returns true for `A | B | | C = A | B` and simillar cases.
+    ///
+    /// Should be called iff lhs is a union type.
+    fn should_use_union_assignment(&mut self, span: Span, r: &Type) -> ValidationResult<bool> {
+        match r.normalize() {
+            Type::Union(..) => return Ok(true),
+            Type::TypeLit(r) => {
+                if r.members.iter().all(|el| match el {
+                    TypeElement::Call(..) => true,
+                    _ => false,
+                }) {
+                    return Ok(true);
+                }
+
+                if r.members.iter().all(|el| match el {
+                    TypeElement::Constructor(..) => true,
+                    _ => false,
+                }) {
+                    return Ok(true);
+                }
+            }
+            _ => {}
+        }
+
+        Ok(false)
     }
 }
 
