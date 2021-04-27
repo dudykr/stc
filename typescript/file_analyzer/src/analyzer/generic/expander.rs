@@ -1,3 +1,4 @@
+use crate::analyzer::assign::AssignOpts;
 use crate::analyzer::expr::TypeOfMode;
 use crate::{
     analyzer::{Analyzer, Ctx},
@@ -335,7 +336,15 @@ impl Analyzer<'_, '_> {
         }
         // dbg!(child, parent);
 
-        match self.assign(parent, child, span) {
+        match self.assign_with_opts(
+            AssignOpts {
+                span,
+                disallow_different_classes: opts.disallow_different_classes,
+                ..Default::default()
+            },
+            parent,
+            child,
+        ) {
             Ok(()) => Some(true),
             _ => Some(false),
         }

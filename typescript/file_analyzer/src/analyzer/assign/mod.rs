@@ -39,7 +39,7 @@ mod query;
 mod type_el;
 
 /// Context used for `=` assignments.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 pub(crate) struct AssignOpts {
     /// This field should be overrided by caller.
     pub span: Span,
@@ -62,18 +62,10 @@ pub(crate) struct AssignOpts {
     /// ```
     pub allow_unknown_type: bool,
     pub allow_assignment_to_param: bool,
-}
 
-impl Default for AssignOpts {
-    fn default() -> Self {
-        Self {
-            span: DUMMY_SP,
-            right_ident_span: None,
-            allow_assignment_to_param: false,
-            allow_unknown_rhs: false,
-            allow_unknown_type: false,
-        }
-    }
+    /// If true, assignment of a class to another class without inheritance
+    /// relation will fail, even if the class is empty.
+    pub disallow_different_classes: bool,
 }
 
 impl Analyzer<'_, '_> {

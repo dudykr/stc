@@ -165,6 +165,10 @@ impl Analyzer<'_, '_> {
                         })?;
                 }
 
+                if opts.disallow_different_classes {
+                    return Err(Error::SimpleAssignFailed { span: opts.span });
+                }
+
                 return Ok(());
             }
             Type::Interface(rhs) => {
