@@ -724,12 +724,21 @@ impl Analyzer<'_, '_> {
 
                         TypeElement::Method(ref m) => {
                             //
-                            matching_elements.push(Type::Function(ty::Function {
+                            let prop_ty = Type::Function(ty::Function {
                                 span,
                                 type_params: m.type_params.clone(),
                                 params: m.params.clone(),
                                 ret_ty: m.ret_ty.clone().unwrap_or_else(|| box Type::any(span)),
-                            }));
+                            });
+
+                            if m.optional {
+                                let mut types = vec![Type::undefined(span), prop_ty.clone()];
+                                types.dedup_type();
+                                matching_elements.push(Type::union(types));
+                            } else {
+                                matching_elements.push(prop_ty.clone());
+                            }
+
                             continue;
                         }
 
