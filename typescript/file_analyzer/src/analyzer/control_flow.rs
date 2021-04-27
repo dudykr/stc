@@ -366,7 +366,7 @@ impl Analyzer<'_, '_> {
                         break;
                     }
 
-                    match self.extends(span, &b, ty) {
+                    match self.extends(span, Default::default(), &b, ty) {
                         Some(true) => {
                             // Remove ty.
                             continue 'outer;
@@ -397,7 +397,7 @@ impl Analyzer<'_, '_> {
                     continue;
                 }
 
-                match self.extends(span, &ty, b) {
+                match self.extends(span, Default::default(), &ty, b) {
                     Some(true) => {
                         // Remove ty.
                         continue 'outer;

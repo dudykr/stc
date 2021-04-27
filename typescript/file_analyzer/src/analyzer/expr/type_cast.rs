@@ -185,10 +185,10 @@ impl Analyzer<'_, '_> {
         // console.log(p as P)
         //
         // We can cast P to C
-        if let Some(true) = self.extends(span, orig, casted) {
+        if let Some(true) = self.extends(span, Default::default(), orig, casted) {
             return Ok(());
         }
-        if let Some(true) = self.extends(span, casted, orig) {
+        if let Some(true) = self.extends(span, Default::default(), casted, orig) {
             return Ok(());
         }
 

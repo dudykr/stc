@@ -171,7 +171,7 @@ impl Analyzer<'_, '_> {
                     .normalize(span, &c.extends_type, Default::default())
                     .context("tried to normalize the `extends` type of a conditional type")?;
 
-                if let Some(v) = self.extends(ty.span(), &check_type, &extends_type) {
+                if let Some(v) = self.extends(ty.span(), Default::default(), &check_type, &extends_type) {
                     let ty = if v { &c.true_type } else { &c.false_type };
                     return self
                         .normalize(span, &ty, opts)
@@ -199,7 +199,7 @@ impl Analyzer<'_, '_> {
                                 let mut all = true;
                                 let mut types = vec![];
                                 for check_type in &check_type_union.types {
-                                    let res = self.extends(ty.span(), &check_type, &extends_type);
+                                    let res = self.extends(ty.span(), Default::default(), &check_type, &extends_type);
                                     if let Some(v) = res {
                                         if v {
                                             if !c.true_type.is_never() {

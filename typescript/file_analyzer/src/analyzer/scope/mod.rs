@@ -2182,7 +2182,10 @@ impl Expander<'_, '_, '_> {
                                 .cloned()
                                 .enumerate()
                                 .map(|(idx, mut element)| {
-                                    if let Some(v) = self.analyzer.extends(span, &element.ty, &extends_type) {
+                                    if let Some(v) =
+                                        self.analyzer
+                                            .extends(span, Default::default(), &element.ty, &extends_type)
+                                    {
                                         let ty = if v { true_type } else { false_type };
 
                                         let (unwrapped, ty) = unwrap_type(&ty);
@@ -2216,7 +2219,10 @@ impl Expander<'_, '_, '_> {
                         _ => {}
                     }
 
-                    if let Some(v) = self.analyzer.extends(span, &obj_type, &extends_type) {
+                    if let Some(v) = self
+                        .analyzer
+                        .extends(span, Default::default(), &obj_type, &extends_type)
+                    {
                         let ty = if v { true_type } else { false_type };
                         let (_, mut ty) = unwrap_type(&**ty);
 

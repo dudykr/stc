@@ -1,3 +1,4 @@
+pub(crate) use self::expander::ExtendsOpts;
 use super::Analyzer;
 use super::Ctx;
 use crate::util::RemoveTypes;

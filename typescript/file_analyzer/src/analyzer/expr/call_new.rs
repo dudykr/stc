@@ -2357,7 +2357,7 @@ impl Analyzer<'_, '_> {
                         return self.narrow_with_predicate(span, &orig_ty, new_ty);
                     }
                     _ => {
-                        if let Some(v) = self.extends(span, orig_ty, &new_ty) {
+                        if let Some(v) = self.extends(span, Default::default(), orig_ty, &new_ty) {
                             if v {
                                 match orig_ty.normalize() {
                                     Type::ClassDef(def) => {
@@ -2380,7 +2380,7 @@ impl Analyzer<'_, '_> {
 
                 let mut upcasted = false;
                 for ty in orig_ty.iter_union().flat_map(|ty| ty.iter_union()) {
-                    match self.extends(span, &new_ty, &ty) {
+                    match self.extends(span, Default::default(), &new_ty, &ty) {
                         Some(true) => {
                             upcasted = true;
                             new_types.push(ty.clone());

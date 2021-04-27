@@ -4,6 +4,7 @@ use super::super::{
 };
 use super::TypeOfMode;
 use crate::analyzer::assign::AssignOpts;
+use crate::analyzer::generic::ExtendsOpts;
 use crate::util::type_ext::TypeVecExt;
 use crate::{
     analyzer::{Ctx, ScopeKind},
@@ -816,7 +817,15 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        if let Some(v) = self.extends(span, orig_ty, &ty) {
+        if let Some(v) = self.extends(
+            span,
+            ExtendsOpts {
+                disallow_different_classes: true,
+                ..Default::default()
+            },
+            orig_ty,
+            &ty,
+        ) {
             if v {
                 match orig_ty.normalize() {
                     Type::ClassDef(def) => {
