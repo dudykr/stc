@@ -127,6 +127,33 @@ impl Analyzer<'_, '_> {
                 }
             };
 
+            match mode {
+                ComputedPropMode::Class { .. } | ComputedPropMode::Interface => {
+                    let is_valid_key = is_valid_computed_key(&node.expr);
+
+                    let ty = analyzer.expand(node.span, ty.clone()).report(&mut analyzer.storage);
+
+                    if let Some(ref ty) = ty {
+                        // TODO: Add support for expressions like '' + ''.
+                        match ty.normalize() {
+                            _ if is_valid_key => {}
+                            Type::Lit(..) => {}
+                            Type::EnumVariant(..) => {}
+                            _ if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) || ty.is_unique_symbol() => {}
+                            _ => match mode {
+                                ComputedPropMode::Interface => {
+                                    errors.push(Error::TS1169 { span: node.span });
+                                    check_for_symbol_form = false;
+                                }
+                                _ => {}
+                            },
+                        }
+                    }
+                }
+
+                _ => {}
+            }
+
             if check_for_symbol_form && is_symbol_access {
                 match ty.normalize() {
                     Type::Keyword(RTsKeywordType {
@@ -145,30 +172,6 @@ impl Analyzer<'_, '_> {
                             .report(Error::NonSymbolComputedPropInFormOfSymbol { span });
                     }
                 }
-            }
-
-            match mode {
-                ComputedPropMode::Class { .. } | ComputedPropMode::Interface => {
-                    let is_valid_key = is_valid_computed_key(&node.expr);
-
-                    let ty = analyzer.expand(node.span, ty.clone()).report(&mut analyzer.storage);
-
-                    if let Some(ref ty) = ty {
-                        // TODO: Add support for expressions like '' + ''.
-                        match ty.normalize() {
-                            _ if is_valid_key => {}
-                            Type::Lit(..) => {}
-                            Type::EnumVariant(..) => {}
-                            _ if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) || ty.is_unique_symbol() => {}
-                            _ => match mode {
-                                ComputedPropMode::Interface => errors.push(Error::TS1169 { span: node.span }),
-                                _ => {}
-                            },
-                        }
-                    }
-                }
-
-                _ => {}
             }
 
             if match mode {
