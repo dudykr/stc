@@ -2232,7 +2232,7 @@ impl Expander<'_, '_, '_> {
                 }
 
                 Type::Union(Union { span, types }) => {
-                    return Type::union(types);
+                    return Type::Union(Union { span, types });
                 }
 
                 Type::Function(ty::Function {
