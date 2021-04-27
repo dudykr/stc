@@ -309,7 +309,9 @@ impl Analyzer<'_, '_> {
                     TruePlusMinus::True => {
                         m.optional = true;
                     }
-                    TruePlusMinus::Plus => {}
+                    TruePlusMinus::Plus => {
+                        m.optional = true;
+                    }
                     TruePlusMinus::Minus => {
                         m.optional = false;
                     }
