@@ -741,6 +741,7 @@ pub enum Error {
         op: AssignOp,
     },
 
+    /// TS2471
     NonSymbolComputedPropInFormOfSymbol {
         span: Span,
     },
