@@ -190,6 +190,9 @@ impl Analyzer<'_, '_> {
         iterator: Cow<'a, Type>,
         n: usize,
     ) -> ValidationResult<Cow<'a, Type>> {
+        if iterator.is_any() {
+            return Ok(iterator);
+        }
         match iterator.normalize() {
             Type::Ref(..) => {
                 let iterator = self

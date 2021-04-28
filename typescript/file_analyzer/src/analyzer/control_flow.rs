@@ -671,10 +671,6 @@ impl Analyzer<'_, '_> {
                 for (i, elem) in arr.elems.iter().enumerate() {
                     if let Some(elem) = elem {
                         match ty.normalize() {
-                            ty if ty.is_any() => {
-                                self.try_assign_pat(span, elem, ty)?;
-                            }
-
                             Type::Tuple(Tuple { elems, .. }) => {
                                 if elems.len() > i {
                                     self.try_assign_pat(span, elem, &elems[i].ty)?;
