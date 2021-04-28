@@ -2149,7 +2149,7 @@ impl Analyzer<'_, '_> {
         if self.env.target() <= EsVersion::Es5 {
             match i.sym {
                 js_word!("arguments") => {
-                    if !self.scope.is_arguments_defined() {
+                    if !self.scope.is_arguments_implicitly_defined() {
                         self.storage.report(Error::InvalidUseOfArgumentsInEs3OrEs5 { span })
                     }
 
@@ -2254,7 +2254,7 @@ impl Analyzer<'_, '_> {
         // At here, it cannot be a declared variable.
         match i.sym {
             js_word!("arguments") => {
-                if !self.scope.is_arguments_defined() {
+                if !self.scope.is_arguments_implicitly_defined() {
                     self.storage.report(Error::NoSuchVar { span, name: i.into() })
                 }
 

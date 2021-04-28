@@ -169,7 +169,7 @@ impl Scope<'_> {
         self.matches(|scope| filter(scope.kind))
     }
 
-    pub fn is_arguments_defined(&self) -> bool {
+    pub fn is_arguments_implicitly_defined(&self) -> bool {
         self.first(|scope| {
             if scope.is_root() {
                 return false;
