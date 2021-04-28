@@ -284,6 +284,30 @@ impl Analyzer<'_, '_> {
                 for (idx, elem) in elems.iter().enumerate() {
                     match elem {
                         Some(elem) => {
+                            match elem {
+                                RPat::Rest(elem) => {
+                                    // Rest element is special.
+                                    let type_for_rest_arg = match ty {
+                                        Some(ty) => self
+                                            .get_lefting_elements(Cow::Owned(ty), idx)
+                                            .context(
+                                                "tried to get lefting elements of an iterator to declare variables \
+                                                 using a rest pattern",
+                                            )
+                                            .map(Cow::into_owned)
+                                            .map(Some)?,
+                                        None => None,
+                                    };
+
+                                    self.declare_vars_inner_with_ty(kind, &elem.arg, export, type_for_rest_arg, None)
+                                        .context(
+                                            "tried to declare lefting elements to the arugment of a rest pattern",
+                                        )?;
+                                    break;
+                                }
+                                _ => {}
+                            }
+
                             let elem_ty = match &ty {
                                 Some(ty) => self
                                     .access_property(
