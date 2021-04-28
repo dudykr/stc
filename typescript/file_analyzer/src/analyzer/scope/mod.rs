@@ -147,6 +147,28 @@ impl Scope<'_> {
         self.first(|scope| filter(scope.kind))
     }
 
+    /// If `filter` returns [Some], this method returns it.
+    pub fn matches<F>(&self, mut filter: F) -> Option<bool>
+    where
+        F: FnMut(&Self) -> Option<bool>,
+    {
+        let res = filter(self);
+        match res {
+            Some(v) => return Some(v),
+            None => {}
+        }
+
+        self.parent?.matches(filter)
+    }
+
+    /// If `filter` returns [Some], this method returns it.
+    pub fn matches_kind<F>(&self, mut filter: F) -> Option<bool>
+    where
+        F: FnMut(ScopeKind) -> Option<bool>,
+    {
+        self.matches(|scope| filter(scope.kind))
+    }
+
     pub fn is_arguments_defined(&self) -> bool {
         self.first(|scope| {
             if scope.is_root() {
