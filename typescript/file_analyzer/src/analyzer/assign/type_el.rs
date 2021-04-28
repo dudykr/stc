@@ -1,9 +1,7 @@
 use super::AssignOpts;
 use crate::analyzer::util::ResultExt;
 use crate::analyzer::Analyzer;
-use crate::util::type_ext::TypeVecExt;
 use crate::ValidationResult;
-use itertools::Itertools;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
@@ -27,7 +25,6 @@ use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
 use stc_ts_types::TypeLitMetadata;
 use stc_ts_types::TypeParamInstantiation;
-use stc_ts_types::Union;
 use stc_utils::ext::SpanExt;
 use std::borrow::Cow;
 use swc_atoms::js_word;
@@ -174,7 +171,7 @@ impl Analyzer<'_, '_> {
 
                 Type::Array(..) if lhs.is_empty() => return Ok(()),
 
-                Type::Array(..) | Type::Tuple(..) => {
+                Type::Array(r_arr) => {
                     if lhs.iter().any(|member| match member {
                         TypeElement::Property(PropertySignature { optional: true, .. })
                         | TypeElement::Method(MethodSignature { optional: true, .. }) => true,
@@ -183,28 +180,6 @@ impl Analyzer<'_, '_> {
                         return Err(Error::SimpleAssignFailed { span });
                     }
 
-                    let r_elem_type = match rhs {
-                        Type::Array(arr) => Cow::Borrowed(&*arr.elem_type),
-
-                        Type::Tuple(tuple) => {
-                            if tuple.elems.is_empty() {
-                                Cow::Owned(Type::any(span))
-                            } else {
-                                let mut types = tuple.elems.iter().map(|el| *el.ty.clone()).collect_vec();
-                                types.dedup_type();
-
-                                Cow::Owned(Type::Union(Union {
-                                    span: tuple.span,
-                                    types,
-                                }))
-                            }
-                        }
-
-                        _ => {
-                            unreachable!()
-                        }
-                    };
-
                     //
                     let r_arr = Type::Ref(Ref {
                         span,
@@ -212,7 +187,7 @@ impl Analyzer<'_, '_> {
                         type_name: RTsEntityName::Ident(RIdent::new("Array".into(), DUMMY_SP)),
                         type_args: Some(box TypeParamInstantiation {
                             span: DUMMY_SP,
-                            params: vec![r_elem_type.into_owned().clone()],
+                            params: vec![*r_arr.elem_type.clone()],
                         }),
                     });
 
@@ -230,6 +205,24 @@ impl Analyzer<'_, '_> {
                             lhs_metadata,
                         )
                         .context("tried to assign an array as interface to type elements");
+                }
+
+                Type::Tuple(rhs) => {
+                    // Handle { 0: nubmer } = [1]
+                    let rhs_len = rhs.elems.len();
+
+                    // TODO: Check for literal properties
+
+                    // for el in lhs {
+                    //     match el {
+                    //         TypeElement::Property(l_el) => {
+                    //             match l
+                    //         }
+                    //         _ => {}
+                    //     }
+                    // }
+
+                    return Ok(());
                 }
 
                 Type::ClassDef(rhs_cls) => {
