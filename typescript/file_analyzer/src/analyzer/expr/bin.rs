@@ -370,7 +370,7 @@ impl Analyzer<'_, '_> {
                                 _ => false,
                             };
 
-                        if !cannot_narrow {
+                        if self.ctx.in_cond && !cannot_narrow {
                             let narrowed_ty = self
                                 .narrow_with_instanceof(span, ty.clone(), &orig_ty)
                                 .context("tried to narrow type with instanceof")?
