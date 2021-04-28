@@ -1741,7 +1741,7 @@ impl Analyzer<'_, '_> {
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
     ) -> ValidationResult<Option<Type>> {
-        let callable = candidates
+        let mut callable = candidates
             .iter()
             .map(|c| {
                 let res = self.check_call_args(
@@ -1756,17 +1756,14 @@ impl Analyzer<'_, '_> {
 
                 (c, res)
             })
-            .filter(|(_, res)| match res {
-                ArgCheckResult::Exact | ArgCheckResult::MayBe => true,
-                ArgCheckResult::ArgTypeMismatch | ArgCheckResult::WrongArgCount => false,
-            })
             .collect::<Vec<_>>();
+        callable.sort_by_key(|(_, res)| res.clone());
 
         if candidates.is_empty() {
             return Ok(None);
         }
 
-        let c = candidates.into_iter().next().unwrap();
+        let (c, _) = callable.into_iter().next().unwrap();
 
         if candidates.len() == 1 {
             return self
@@ -1800,7 +1797,6 @@ impl Analyzer<'_, '_> {
             type_ann,
         )
         .map(Some)
-        .map_err(|err| err.convert(|_| Error::NoMatchingOverload { span }))
     }
 
     /// Returns the return type of function. This method should be called only
