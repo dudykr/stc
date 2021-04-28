@@ -176,7 +176,7 @@ pub(crate) struct Ctx {
 
 /// Note: All methods named `validate_*` return [Err] iff it's not recoverable.
 pub struct Analyzer<'scope, 'b> {
-    logger: Logger,
+    pub(crate) logger: Logger,
     env: Env,
     pub(crate) cm: Arc<SourceMap>,
 
