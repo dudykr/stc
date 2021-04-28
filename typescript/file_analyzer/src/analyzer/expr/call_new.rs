@@ -2229,7 +2229,19 @@ impl Analyzer<'_, '_> {
                                 self.storage.report(err);
                                 continue;
                             }
-                            _ => {}
+                            _ => {
+                                if let Ok(()) = self.assign_with_opts(
+                                    AssignOpts {
+                                        span: arg.span(),
+                                        allow_iterable_on_rhs: true,
+                                        ..Default::default()
+                                    },
+                                    &param.ty,
+                                    &arg.ty,
+                                ) {
+                                    continue;
+                                }
+                            }
                         },
                         _ => {}
                     }

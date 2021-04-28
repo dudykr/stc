@@ -66,6 +66,9 @@ pub(crate) struct AssignOpts {
     /// If true, assignment of a class to another class without inheritance
     /// relation will fail, even if the class is empty.
     pub disallow_different_classes: bool,
+
+    /// If true, `assign` will try to assign by converting rhs to an iterable.
+    pub allow_iterable_on_rhs: bool,
 }
 
 impl Analyzer<'_, '_> {
