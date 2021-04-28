@@ -279,10 +279,11 @@ impl Analyzer<'_, '_> {
 
     pub(crate) fn get_lefting_elements<'a>(
         &mut self,
+        span: Option<Span>,
         iterator: Cow<'a, Type>,
         start_index: usize,
     ) -> ValidationResult<Cow<'a, Type>> {
-        let iterator = self.normalize(None, &iterator, NormalizeTypeOpts { ..Default::default() })?;
+        let iterator = self.normalize(span, &iterator, NormalizeTypeOpts { ..Default::default() })?;
 
         if iterator.is_tuple() {
             let ty = iterator.into_owned().foldable().tuple().unwrap();
