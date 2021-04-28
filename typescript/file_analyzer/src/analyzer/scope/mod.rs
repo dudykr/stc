@@ -148,9 +148,15 @@ impl Scope<'_> {
     }
 
     pub fn is_arguments_defined(&self) -> bool {
-        self.first_kind(|kind| match kind {
-            ScopeKind::Fn | ScopeKind::Method { .. } => true,
-            _ => false,
+        self.first(|scope| {
+            if scope.is_root() {
+                return false;
+            }
+
+            match scope.kind {
+                ScopeKind::Fn | ScopeKind::Method { .. } => true,
+                _ => false,
+            }
         })
         .is_some()
     }
@@ -1585,7 +1591,7 @@ impl<'a> Scope<'a> {
     }
 
     pub fn root(logger: Logger) -> Self {
-        Self::new_inner(logger, None, ScopeKind::Module, Default::default())
+        Self::new_inner(logger, None, ScopeKind::Fn, Default::default())
     }
 
     fn new_inner(logger: Logger, parent: Option<&'a Scope<'a>>, kind: ScopeKind, facts: CondFacts) -> Self {
