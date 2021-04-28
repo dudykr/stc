@@ -151,6 +151,12 @@ impl Analyzer<'_, '_> {
                                 .storage
                                 .report(Error::GeneratorCannotHaveVoidAsReturnType { span: declared.span() })
                         } else {
+                            if f.is_async || f.is_generator {
+                                // TODO: Assign the inferred type to the
+                                // declared type and assign
+                                // the declared type to Promise / Generator
+                            }
+
                             // It's okay to return more properties than declared.
                             child
                                 .assign_with_opts(
