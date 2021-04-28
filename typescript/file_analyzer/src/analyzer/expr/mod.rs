@@ -2149,7 +2149,20 @@ impl Analyzer<'_, '_> {
         if self.env.target() <= EsVersion::Es5 {
             match i.sym {
                 js_word!("arguments") => {
-                    if !self.scope.is_arguments_implicitly_defined() {
+                    let arguments_point_to_arrow = Some(true)
+                        == self.scope.matches(|scope| {
+                            if scope.is_root() {
+                                return Some(false);
+                            }
+
+                            match scope.kind() {
+                                ScopeKind::ArrowFn => Some(true),
+                                ScopeKind::Fn | ScopeKind::Constructor | ScopeKind::Method { .. } => Some(false),
+                                _ => None,
+                            }
+                        });
+
+                    if !self.scope.is_arguments_implicitly_defined() || arguments_point_to_arrow {
                         self.storage.report(Error::InvalidUseOfArgumentsInEs3OrEs5 { span })
                     }
 
