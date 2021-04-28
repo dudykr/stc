@@ -55,6 +55,10 @@ es6::for-ofStatements::for-of52.ts
 es6::for-ofStatements::for-of54.ts
 es6::for-ofStatements::for-of55.ts
 es6::modules::importEmptyFromModuleNotExisted.ts
+es6::yieldExpressions::YieldExpression6_es6.ts
+es6::yieldExpressions::YieldStarExpression1_es6.ts
+es6::yieldExpressions::generatorTypeCheck8.ts
+
 
 es6::templates::taggedTemplateUntypedTagCall01.ts
 es6::templates::templateStringWithEmbeddedInstanceOf.ts
