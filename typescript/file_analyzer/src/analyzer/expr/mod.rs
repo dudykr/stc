@@ -71,6 +71,7 @@ use swc_common::SyntaxContext;
 use swc_common::TypeEq;
 use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::op;
+use swc_ecma_ast::EsVersion;
 use swc_ecma_ast::TruePlusMinus;
 use swc_ecma_ast::TsKeywordTypeKind;
 use swc_ecma_ast::TsTypeOperatorOp;
@@ -2147,7 +2148,11 @@ impl Analyzer<'_, '_> {
         match i.sym {
             js_word!("arguments") => {
                 if !self.scope.is_arguments_defined() {
-                    self.storage.report(Error::InvalidUseOfArguments { span })
+                    if self.env.target() <= EsVersion::Es5 {
+                        self.storage.report(Error::InvalidUseOfArguments { span })
+                    } else {
+                        self.storage.report(Error::NoSuchVar { span, name: i.into() })
+                    }
                 }
 
                 return Ok(Type::any(span));
