@@ -7,6 +7,7 @@ use rnode::VisitMut;
 use rnode::VisitMutWith;
 use stc_ts_ast_rnode::RNumber;
 use stc_ts_ast_rnode::RTsKeywordType;
+use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::DebugExt;
 use stc_ts_types::name::Name;
 use stc_ts_types::Array;
@@ -369,7 +370,11 @@ impl Analyzer<'_, '_> {
                 .flatten(),
         );
 
+        let before = dump_type_as_string(&self.cm, &ty);
         self.exclude_types(ty, Some(types_to_exclude));
+        let after = dump_type_as_string(&self.cm, &ty);
+
+        slog::debug!(self.logger, "[types/facts] Excluded types: {} => {}", before, after);
     }
 
     pub(crate) fn apply_type_facts(&mut self, name: &Name, ty: Type) -> Type {
