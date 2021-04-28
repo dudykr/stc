@@ -351,6 +351,11 @@ pub enum Error {
         name: Id,
     },
 
+    /// TS2496
+    InvalidUseOfArguments {
+        span: Span,
+    },
+
     NoSuchVar {
         span: Span,
         name: Id,
@@ -1133,6 +1138,8 @@ impl Error {
             Error::CannotCallWithNewNonVoidFunction { .. } => 2350,
 
             Error::InvalidInterfaceName { .. } => 2427,
+
+            Error::InvalidUseOfArguments { .. } => 2496,
 
             _ => 0,
         }

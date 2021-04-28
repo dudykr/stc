@@ -2147,7 +2147,7 @@ impl Analyzer<'_, '_> {
         match i.sym {
             js_word!("arguments") => {
                 if !self.scope.is_arguments_defined() {
-                    self.storage.report(Error::NoSuchVar { span, name: i.into() })
+                    self.storage.report(Error::InvalidUseOfArguments { span })
                 }
 
                 return Ok(Type::any(span));
