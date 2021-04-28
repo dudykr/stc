@@ -71,7 +71,12 @@ impl Analyzer<'_, '_> {
         match res {
             Ok(ty) => ty,
             Err(err) => {
-                self.storage.report(err);
+                match err.actual() {
+                    Error::NoNewSignature { .. } => {}
+                    _ => {
+                        self.storage.report(err);
+                    }
+                }
                 ty.clone()
             }
         }
