@@ -107,6 +107,9 @@ pub(crate) struct Ctx {
 
     allow_module_var: bool,
 
+    /// If `true`, expression validator will not emit tuple.
+    cannot_be_tuple: bool,
+
     /// `true` for condition of conditional expression or of an if statement.
     in_cond: bool,
     should_store_truthy_for_access: bool,
@@ -403,6 +406,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 module_id: ModuleId::builtin(),
                 phase: Default::default(),
                 allow_module_var: false,
+                cannot_be_tuple: false,
                 in_cond: false,
                 should_store_truthy_for_access: false,
                 in_switch_case_test: false,

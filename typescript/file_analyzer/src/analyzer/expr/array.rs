@@ -55,7 +55,7 @@ impl Analyzer<'_, '_> {
             .and_then(|ty| self.get_iterator(span, Cow::Borrowed(ty)).ok());
 
         let prefer_tuple = self.prefer_tuple(type_ann.as_deref());
-        let mut can_be_tuple = true;
+        let mut can_be_tuple = !self.ctx.cannot_be_tuple;
         let mut elements = Vec::with_capacity(elems.len());
 
         for (idx, elem) in elems.iter().enumerate() {
