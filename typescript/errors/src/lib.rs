@@ -59,6 +59,12 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS18004
+    NoSuchVarForShorthand {
+        span: Span,
+        name: Id,
+    },
+
     /// TS2769
     NoMatchingOverload {
         span: Span,
@@ -1147,6 +1153,8 @@ impl Error {
             Error::InvalidUseOfArgumentsInEs3OrEs5 { .. } => 2496,
 
             Error::NoMatchingOverload { .. } => 2769,
+
+            Error::NoSuchVarForShorthand { .. } => 18004,
 
             _ => 0,
         }
