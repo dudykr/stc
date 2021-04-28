@@ -147,7 +147,8 @@ impl Scope<'_> {
         self.first(|scope| filter(scope.kind))
     }
 
-    /// If `filter` returns [Some], this method returns it.
+    /// If `filter` returns [Some], this method stops calling filter and returns
+    /// the last value from filter.
     pub fn matches<F>(&self, mut filter: F) -> Option<bool>
     where
         F: FnMut(&Self) -> Option<bool>,
@@ -167,20 +168,6 @@ impl Scope<'_> {
         F: FnMut(ScopeKind) -> Option<bool>,
     {
         self.matches(|scope| filter(scope.kind))
-    }
-
-    pub fn is_arguments_defined(&self) -> bool {
-        self.first(|scope| {
-            if scope.is_root() {
-                return false;
-            }
-
-            match scope.kind {
-                ScopeKind::Fn | ScopeKind::Method { .. } => true,
-                _ => false,
-            }
-        })
-        .is_some()
     }
 
     /// Get scope of computed property names.

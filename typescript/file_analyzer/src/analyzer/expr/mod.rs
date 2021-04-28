@@ -2145,6 +2145,31 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        let cannot_use_arguments = Some(true)
+            == self.scope.matches(|scope| {
+                if scope.is_root() {
+                    return None;
+                }
+                match scope.kind() {
+                    ScopeKind::ArrowFn => Some(true),
+                    ScopeKind::Fn => Some(false),
+                    _ => None,
+                }
+            });
+
+        if self.env.target() <= EsVersion::Es5 {
+            match i.sym {
+                js_word!("arguments") => {
+                    if !cannot_use_arguments {
+                        self.storage.report(Error::InvalidUseOfArgumentsInEs3OrEs5 { span })
+                    }
+
+                    return Ok(Type::any(span));
+                }
+                _ => {}
+            }
+        }
+
         match i.sym {
             js_word!("undefined") => return Ok(Type::undefined(span)),
             js_word!("void") => return Ok(Type::any(span)),
@@ -2240,12 +2265,8 @@ impl Analyzer<'_, '_> {
         // At here, it cannot be a declared variable.
         match i.sym {
             js_word!("arguments") => {
-                if !self.scope.is_arguments_defined() {
-                    if self.env.target() <= EsVersion::Es5 {
-                        self.storage.report(Error::InvalidUseOfArguments { span })
-                    } else {
-                        self.storage.report(Error::NoSuchVar { span, name: i.into() })
-                    }
+                if cannot_use_arguments {
+                    self.storage.report(Error::NoSuchVar { span, name: i.into() })
                 }
 
                 return Ok(Type::any(span));
