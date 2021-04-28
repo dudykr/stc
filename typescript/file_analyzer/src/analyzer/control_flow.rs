@@ -695,8 +695,16 @@ impl Analyzer<'_, '_> {
                                     "tried to get lefting elements of an iterator to assign using a rest pattern",
                                 )?;
 
-                                self.try_assign_pat_with_opts(span, &elem.arg, &type_for_rest_arg, opts)
-                                    .context("tried to assign lefting elements to the arugment of a rest pattern")?;
+                                self.try_assign_pat_with_opts(
+                                    span,
+                                    &elem.arg,
+                                    &type_for_rest_arg,
+                                    AssignOpts {
+                                        allow_iterable_on_rhs: true,
+                                        ..opts
+                                    },
+                                )
+                                .context("tried to assign lefting elements to the arugment of a rest pattern")?;
                                 break;
                             }
                             _ => {}
