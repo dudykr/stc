@@ -226,7 +226,6 @@ classes/members/constructorFunctionTypes/classWithNoConstructorOrBaseClass.ts
 classes/members/constructorFunctionTypes/constructorHasPrototypeProperty.ts
 classes/members/inheritanceAndOverriding/derivedClassOverridesIndexersWithAssignmentCompatibility.ts
 classes/members/inheritanceAndOverriding/derivedClassOverridesProtectedMembers.ts
-classes/members/inheritanceAndOverriding/derivedClassOverridesProtectedMembers2.ts
 classes/members/inheritanceAndOverriding/derivedClassOverridesWithoutSubtype.ts
 classes/members/instanceAndStaticMembers/typeOfThisInStaticMembers.ts
 classes/members/privateNames/privateNameAndStaticInitializer.ts
@@ -372,7 +371,6 @@ es6/Symbols/symbolProperty26.ts
 es6/Symbols/symbolProperty27.ts
 es6/Symbols/symbolProperty28.ts
 es6/Symbols/symbolProperty3.ts
-es6/Symbols/symbolProperty36.ts
 es6/Symbols/symbolProperty37.ts
 es6/Symbols/symbolProperty38.ts
 es6/Symbols/symbolProperty4.ts
@@ -386,7 +384,6 @@ es6/Symbols/symbolProperty5.ts
 es6/Symbols/symbolProperty50.ts
 es6/Symbols/symbolProperty51.ts
 es6/Symbols/symbolProperty52.ts
-es6/Symbols/symbolProperty54.ts
 es6/Symbols/symbolProperty55.ts
 es6/Symbols/symbolProperty59.ts
 es6/Symbols/symbolProperty6.ts
@@ -460,7 +457,6 @@ es6/classExpressions/classExpressionES61.ts
 es6/classExpressions/classExpressionES62.ts
 es6/classExpressions/classExpressionES63.ts
 es6/classExpressions/typeArgumentInferenceWithClassExpression1.ts
-es6/classExpressions/typeArgumentInferenceWithClassExpression2.ts
 es6/classExpressions/typeArgumentInferenceWithClassExpression3.ts
 es6/computedProperties/computedPropertyNames10_ES5.ts
 es6/computedProperties/computedPropertyNames10_ES6.ts
