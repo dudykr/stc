@@ -1239,7 +1239,12 @@ impl Analyzer<'_, '_> {
             RPat::Assign(p) => return self.declare_complex_vars(kind, &p.left, ty, actual_ty),
 
             RPat::Ident(ref i) => {
-                slog::debug!(&self.logger, "declare_complex_vars: declaring {}", i.id.sym);
+                slog::debug!(
+                    &self.logger,
+                    "declare_complex_vars: declaring {} as {}",
+                    i.id.sym,
+                    dump_type_as_string(&self.cm, &ty)
+                );
                 self.declare_var(
                     span,
                     kind,
