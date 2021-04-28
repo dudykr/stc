@@ -58,7 +58,7 @@ fn is_ignored(path: &Path) -> bool {
         content
             .lines()
             .filter(|v| !v.trim().is_empty())
-            .map(|v| v.to_string())
+            .map(|v| v.replace("::", "/"))
             .collect()
     });
 
