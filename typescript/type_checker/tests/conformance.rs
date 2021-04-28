@@ -280,13 +280,6 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
                         rule.always_strict = strict;
                         rule.strict_null_checks = strict;
                         rule.strict_function_types = strict;
-                    } else if s.starts_with("strict") {
-                        let strict = true;
-                        rule.no_implicit_any = strict;
-                        rule.no_implicit_this = strict;
-                        rule.always_strict = strict;
-                        rule.strict_null_checks = strict;
-                        rule.strict_function_types = strict;
                     } else if s.starts_with("noLib:") {
                         let v = s["noLib:".len()..].trim().parse().unwrap();
                         if v {
@@ -340,6 +333,13 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
                         || s.to_lowercase().starts_with("preserveconstenums")
                     {
                         // Ignored as we only checks type.
+                    } else if s.starts_with("strict") {
+                        let strict = true;
+                        rule.no_implicit_any = strict;
+                        rule.no_implicit_this = strict;
+                        rule.always_strict = strict;
+                        rule.strict_null_checks = strict;
+                        rule.strict_function_types = strict;
                     } else {
                         panic!("Comment is not handled: {}", s);
                     }
