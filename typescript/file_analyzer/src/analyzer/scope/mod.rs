@@ -1314,6 +1314,11 @@ impl Analyzer<'_, '_> {
                     return index_el;
                 }
 
+                let should_use_no_such_property = match ty.normalize() {
+                    Type::TypeLit(..) => false,
+                    _ => true,
+                };
+
                 // TODO: Normalize static
                 //
                 let mut used_keys = vec![];
@@ -1345,7 +1350,9 @@ impl Analyzer<'_, '_> {
                                 Err(err) => {
                                     self.storage.report(err.convert(|err| match err {
                                         Error::NoSuchProperty { span, .. }
-                                        | Error::NoSuchPropertyInClass { span, .. } => {
+                                        | Error::NoSuchPropertyInClass { span, .. }
+                                            if !should_use_no_such_property =>
+                                        {
                                             Error::NoInitAndNoDefault { span }
                                         }
                                         _ => err,
@@ -1423,7 +1430,9 @@ impl Analyzer<'_, '_> {
                                 Err(err) => {
                                     self.storage.report(err.convert(|err| match err {
                                         Error::NoSuchProperty { span, .. }
-                                        | Error::NoSuchPropertyInClass { span, .. } => {
+                                        | Error::NoSuchPropertyInClass { span, .. }
+                                            if !should_use_no_such_property =>
+                                        {
                                             Error::NoInitAndNoDefault { span }
                                         }
                                         _ => err,
