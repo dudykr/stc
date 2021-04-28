@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2427
+    InvalidInterfaceName {
+        span: Span,
+    },
+
     // TS2350
     CannotCallWithNewNonVoidFunction {
         span: Span,
@@ -1119,6 +1124,8 @@ impl Error {
             Error::DuplicateProperty { .. } => 2300,
 
             Error::CannotCallWithNewNonVoidFunction { .. } => 2350,
+
+            Error::InvalidInterfaceName { .. } => 2427,
 
             _ => 0,
         }
