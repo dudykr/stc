@@ -2250,7 +2250,7 @@ impl Analyzer<'_, '_> {
         }
 
         // Check `declaring` before checking variables.
-        if self.scope.declaring.contains(&i.into()) {
+        if self.scope.is_declaring(&i.into()) {
             println!("({}) reference in initialization: {}", self.scope.depth(), i.sym);
 
             if self.ctx.allow_ref_declaring {

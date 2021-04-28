@@ -183,6 +183,17 @@ impl Scope<'_> {
         .is_some()
     }
 
+    pub fn is_declaring(&self, id: &Id) -> bool {
+        if self.declaring.contains(id) {
+            return true;
+        }
+
+        match self.parent {
+            Some(s) => s.is_declaring(id),
+            None => false,
+        }
+    }
+
     /// Get scope of computed property names.
 
     pub fn scope_of_computed_props(&self) -> Option<&Self> {
