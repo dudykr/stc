@@ -886,7 +886,7 @@ impl Analyzer<'_, '_> {
                             if let Some(m) = &mut self.mutations {
                                 m.for_pats.entry(arr.node_id).or_default().ty.take().unwrap()
                             } else {
-                                Type::any(DUMMY_SP)
+                                unreachable!();
                             }
                         }
                         Some(RPat::Object(ref obj)) => {
@@ -895,7 +895,7 @@ impl Analyzer<'_, '_> {
                             if let Some(m) = &mut self.mutations {
                                 m.for_pats.entry(obj.node_id).or_default().ty.take().unwrap()
                             } else {
-                                Type::any(DUMMY_SP)
+                                unreachable!();
                             }
                         }
 
