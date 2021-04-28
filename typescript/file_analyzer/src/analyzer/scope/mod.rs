@@ -1324,7 +1324,17 @@ impl Analyzer<'_, '_> {
                             let mut key = prop.key.validate_with(self)?;
                             used_keys.push(key.clone());
 
-                            let prop_ty = self.access_property(span, ty.clone(), &key, TypeOfMode::RValue, IdCtx::Var);
+                            let ctx = Ctx {
+                                should_not_create_indexed_type_from_ty_els: true,
+                                ..self.ctx
+                            };
+                            let prop_ty = self.with_ctx(ctx).access_property(
+                                span,
+                                ty.clone(),
+                                &key,
+                                TypeOfMode::RValue,
+                                IdCtx::Var,
+                            );
 
                             match prop_ty {
                                 Ok(ty) => {
@@ -1350,7 +1360,17 @@ impl Analyzer<'_, '_> {
                             };
                             used_keys.push(key.clone());
 
-                            let prop_ty = self.access_property(span, ty.clone(), &key, TypeOfMode::RValue, IdCtx::Var);
+                            let ctx = Ctx {
+                                should_not_create_indexed_type_from_ty_els: true,
+                                ..self.ctx
+                            };
+                            let prop_ty = self.with_ctx(ctx).access_property(
+                                span,
+                                ty.clone(),
+                                &key,
+                                TypeOfMode::RValue,
+                                IdCtx::Var,
+                            );
 
                             match prop_ty {
                                 Ok(prop_ty) => {

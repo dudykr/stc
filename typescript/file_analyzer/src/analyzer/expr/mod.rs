@@ -865,7 +865,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if has_index_signature {
+        if has_index_signature && !self.ctx.should_not_create_indexed_type_from_ty_els {
             // This check exists to prefer a specific property over generic index signature.
             if prop.is_computed() || matching_elements.is_empty() {
                 let ty = Type::IndexedAccessType(IndexedAccessType {
