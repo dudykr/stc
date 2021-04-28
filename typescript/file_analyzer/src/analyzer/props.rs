@@ -173,7 +173,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            if check_for_symbol_form && is_symbol_access {
+            if check_for_validity && check_for_symbol_form && is_symbol_access {
                 match ty.normalize() {
                     Type::Keyword(RTsKeywordType {
                         kind: TsKeywordTypeKind::TsSymbolKeyword,
