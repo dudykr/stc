@@ -1102,7 +1102,8 @@ impl Analyzer<'_, '_> {
                         ..
                     }),
                 ..
-            }) => {
+            })
+            | Type::Symbol(..) => {
                 self.storage.report(Error::InvalidRhsInInstanceOf {
                     span,
                     ty: box ty.clone(),
@@ -1114,6 +1115,16 @@ impl Analyzer<'_, '_> {
                     span,
                     ty: box ty.clone(),
                 });
+            }
+
+            Type::Union(u) => {
+                let types = u
+                    .types
+                    .iter()
+                    .map(|ty| self.validate_rhs_of_instanceof(span, ty.clone()))
+                    .collect();
+
+                return Type::Union(Union { span: u.span, types });
             }
 
             // Ok
