@@ -719,6 +719,11 @@ pub enum Error {
         op: UnaryOp,
     },
 
+    /// TS2356
+    InvalidNumericOperand {
+        span: Span,
+    },
+
     /// `TS2469`
     UpdateOpToSymbol {
         /// Span of the argument.
@@ -1070,6 +1075,8 @@ impl Error {
             Error::InvalidRhsInInstanceOf { .. } => 2359,
 
             Error::NumericUnaryOpToSymbol { .. } => 2469,
+
+            Error::InvalidNumericOperand { .. } => 2356,
 
             Error::UpdateOpToSymbol { .. } => 2469,
 

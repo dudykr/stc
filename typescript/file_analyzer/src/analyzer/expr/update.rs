@@ -66,10 +66,7 @@ impl Analyzer<'_, '_> {
 
         if let Some(ty) = ty {
             if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) {
-                self.storage.report(Error::UpdateOpToSymbol {
-                    span: e.arg.span(),
-                    op: e.op,
-                })
+                self.storage.report(Error::InvalidNumericOperand { span: e.arg.span() })
             }
         }
 
