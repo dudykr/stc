@@ -348,7 +348,7 @@ impl Analyzer<'_, '_> {
                         let orig_ty = self.type_of_var(i, TypeOfMode::RValue, None)?;
 
                         //
-                        let ty = self.validate_rhs_of_instanceof(span, rt.clone());
+                        let ty = self.validate_rhs_of_instanceof(span, &rt, rt.clone());
 
                         // typeGuardsWithInstanceOfByConstructorSignature.ts
                         //
@@ -1069,7 +1069,7 @@ impl Analyzer<'_, '_> {
 
     /// The right operand to be of type Any or a subtype of the 'Function'
     /// interface type.
-    fn validate_rhs_of_instanceof(&mut self, span: Span, ty: Type) -> Type {
+    fn validate_rhs_of_instanceof(&mut self, span: Span, type_for_error: &Type, ty: Type) -> Type {
         if ty.is_any() {
             return ty;
         }
@@ -1106,14 +1106,14 @@ impl Analyzer<'_, '_> {
             | Type::Symbol(..) => {
                 self.storage.report(Error::InvalidRhsInInstanceOf {
                     span,
-                    ty: box ty.clone(),
+                    ty: box type_for_error.clone(),
                 });
             }
 
             Type::TypeLit(e) if e.members.is_empty() => {
                 self.storage.report(Error::InvalidRhsInInstanceOf {
                     span,
-                    ty: box ty.clone(),
+                    ty: box type_for_error.clone(),
                 });
             }
 
@@ -1121,7 +1121,7 @@ impl Analyzer<'_, '_> {
                 let types = u
                     .types
                     .iter()
-                    .map(|ty| self.validate_rhs_of_instanceof(span, ty.clone()))
+                    .map(|ty| self.validate_rhs_of_instanceof(span, type_for_error, ty.clone()))
                     .collect();
 
                 return Type::Union(Union { span: u.span, types });
@@ -1149,7 +1149,7 @@ impl Analyzer<'_, '_> {
                 ) {
                     self.storage.report(Error::InvalidRhsInInstanceOf {
                         span,
-                        ty: box ty.clone(),
+                        ty: box type_for_error.clone(),
                     });
                 }
             }
