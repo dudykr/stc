@@ -108,6 +108,7 @@ impl Analyzer<'_, '_> {
         };
 
         self.with_ctx(ctx).with(|analyzer: &mut Analyzer| {
+            let mut check_for_validity = true;
             let mut check_for_symbol_form = true;
 
             let mut errors = Errors::default();
@@ -127,34 +128,49 @@ impl Analyzer<'_, '_> {
                 }
             };
 
-            // TODO: Check for string | number | symbol
-            // TODO: Ignore the code beloe if check failed.
+            if match mode {
+                ComputedPropMode::Class { has_body } => errors.is_empty(),
+                ComputedPropMode::Object => errors.is_empty(),
+                // TODO:
+                ComputedPropMode::Interface => errors.is_empty(),
+            } {
+                if !analyzer.is_type_valid_for_computed_key(span, &ty) {
+                    check_for_validity = false;
 
-            match mode {
-                ComputedPropMode::Class { .. } | ComputedPropMode::Interface => {
-                    let is_valid_key = is_valid_computed_key(&node.expr);
+                    analyzer.storage.report(Error::TS2464 {
+                        span,
+                        ty: box ty.clone(),
+                    });
+                }
+            }
 
-                    let ty = analyzer.expand(node.span, ty.clone()).report(&mut analyzer.storage);
+            if check_for_validity {
+                match mode {
+                    ComputedPropMode::Class { .. } | ComputedPropMode::Interface => {
+                        let is_valid_key = is_valid_computed_key(&node.expr);
 
-                    if let Some(ref ty) = ty {
-                        // TODO: Add support for expressions like '' + ''.
-                        match ty.normalize() {
-                            _ if is_valid_key => {}
-                            Type::Lit(..) => {}
-                            Type::EnumVariant(..) => {}
-                            _ if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) || ty.is_unique_symbol() => {}
-                            _ => match mode {
-                                ComputedPropMode::Interface => {
-                                    errors.push(Error::TS1169 { span: node.span });
-                                    check_for_symbol_form = false;
-                                }
-                                _ => {}
-                            },
+                        let ty = analyzer.expand(node.span, ty.clone()).report(&mut analyzer.storage);
+
+                        if let Some(ref ty) = ty {
+                            // TODO: Add support for expressions like '' + ''.
+                            match ty.normalize() {
+                                _ if is_valid_key => {}
+                                Type::Lit(..) => {}
+                                Type::EnumVariant(..) => {}
+                                _ if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) || ty.is_unique_symbol() => {}
+                                _ => match mode {
+                                    ComputedPropMode::Interface => {
+                                        errors.push(Error::TS1169 { span: node.span });
+                                        check_for_symbol_form = false;
+                                    }
+                                    _ => {}
+                                },
+                            }
                         }
                     }
-                }
 
-                _ => {}
+                    _ => {}
+                }
             }
 
             if check_for_symbol_form && is_symbol_access {
@@ -173,22 +189,6 @@ impl Analyzer<'_, '_> {
                         analyzer
                             .storage
                             .report(Error::NonSymbolComputedPropInFormOfSymbol { span });
-                    }
-                }
-            }
-
-            if match mode {
-                ComputedPropMode::Class { has_body } => errors.is_empty(),
-                ComputedPropMode::Object => errors.is_empty(),
-                // TODO:
-                ComputedPropMode::Interface => errors.is_empty(),
-            } {
-                if !is_symbol_access {
-                    if !analyzer.is_type_valid_for_computed_key(span, &ty) {
-                        analyzer.storage.report(Error::TS2464 {
-                            span,
-                            ty: box ty.clone(),
-                        });
                     }
                 }
             }
