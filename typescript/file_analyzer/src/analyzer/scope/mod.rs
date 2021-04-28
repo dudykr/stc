@@ -147,6 +147,14 @@ impl Scope<'_> {
         self.first(|scope| filter(scope.kind))
     }
 
+    pub fn is_arguments_defined(&self) -> bool {
+        self.first_kind(|kind| match kind {
+            ScopeKind::Fn | ScopeKind::Method { .. } => true,
+            _ => false,
+        })
+        .is_some()
+    }
+
     /// Get scope of computed property names.
 
     pub fn scope_of_computed_props(&self) -> Option<&Self> {
@@ -1577,7 +1585,7 @@ impl<'a> Scope<'a> {
     }
 
     pub fn root(logger: Logger) -> Self {
-        Self::new_inner(logger, None, ScopeKind::Fn, Default::default())
+        Self::new_inner(logger, None, ScopeKind::Module, Default::default())
     }
 
     fn new_inner(logger: Logger, parent: Option<&'a Scope<'a>>, kind: ScopeKind, facts: CondFacts) -> Self {

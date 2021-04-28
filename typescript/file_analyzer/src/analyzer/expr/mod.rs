@@ -2145,7 +2145,13 @@ impl Analyzer<'_, '_> {
         }
 
         match i.sym {
-            js_word!("arguments") => return Ok(Type::any(span)),
+            js_word!("arguments") => {
+                if !self.scope.is_arguments_defined() {
+                    self.storage.report(Error::NoSuchVar { span, name: i.into() })
+                }
+
+                return Ok(Type::any(span));
+            }
             js_word!("undefined") => return Ok(Type::undefined(span)),
             js_word!("void") => return Ok(Type::any(span)),
             js_word!("eval") => match type_mode {
