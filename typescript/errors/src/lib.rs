@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2769
+    NoMatchingOverload {
+        span: Span,
+    },
+
     /// TS2427
     InvalidInterfaceName {
         span: Span,
@@ -1140,6 +1145,8 @@ impl Error {
             Error::InvalidInterfaceName { .. } => 2427,
 
             Error::InvalidUseOfArgumentsInEs3OrEs5 { .. } => 2496,
+
+            Error::NoMatchingOverload { .. } => 2769,
 
             _ => 0,
         }

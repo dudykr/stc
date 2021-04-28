@@ -804,7 +804,7 @@ impl Analyzer<'_, '_> {
                         candidates.push(CallCandidate {
                             type_params: type_params.as_ref().map(|v| v.params.clone()),
                             params: params.clone(),
-                            ret_ty: Cow::Borrowed(&ret_ty),
+                            ret_ty: *ret_ty.clone(),
                         });
                     }
                 }
@@ -882,7 +882,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         kind: ExtractKind,
-        candidates: &mut Vec<CallCandidate<'a>>,
+        candidates: &mut Vec<CallCandidate>,
         m: &'a TypeElement,
         prop: &Key,
     ) {
@@ -893,7 +893,7 @@ impl Analyzer<'_, '_> {
                     candidates.push(CallCandidate {
                         type_params: m.type_params.as_ref().map(|v| v.params.clone()),
                         params: m.params.clone(),
-                        ret_ty: Cow::Owned(m.ret_ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(m.span))),
+                        ret_ty: m.ret_ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(m.span)),
                     });
                 }
             }
@@ -910,14 +910,14 @@ impl Analyzer<'_, '_> {
                         }) => candidates.push(CallCandidate {
                             // TODO: Maybe we need Option<Vec<T>>.
                             params: Default::default(),
-                            ret_ty: Cow::Owned(Type::any(span)),
+                            ret_ty: Type::any(span),
                             type_params: Default::default(),
                         }),
 
                         Type::Function(f) => {
                             candidates.push(CallCandidate {
                                 params: f.params,
-                                ret_ty: Cow::Owned(*f.ret_ty),
+                                ret_ty: *f.ret_ty,
                                 type_params: f.type_params.clone().map(|v| v.params),
                             });
                         }
@@ -1397,7 +1397,7 @@ impl Analyzer<'_, '_> {
                 }) if kind == ExtractKind::Call => Some(CallCandidate {
                     params: params.clone(),
                     type_params: type_params.clone().map(|v| v.params),
-                    ret_ty: Cow::Owned(ret_ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(*span))),
+                    ret_ty: ret_ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(*span)),
                 }),
                 TypeElement::Constructor(ConstructorSignature {
                     span,
@@ -1408,7 +1408,7 @@ impl Analyzer<'_, '_> {
                 }) if kind == ExtractKind::New => Some(CallCandidate {
                     params: params.clone(),
                     type_params: type_params.clone().map(|v| v.params),
-                    ret_ty: Cow::Owned(ret_ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(*span))),
+                    ret_ty: ret_ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(*span)),
                 }),
                 _ => None,
             })
@@ -1466,12 +1466,12 @@ impl Analyzer<'_, '_> {
         )
     }
 
-    fn extract_callee_candidates<'a>(
+    fn extract_callee_candidates(
         &mut self,
         span: Span,
         kind: ExtractKind,
-        callee: &'a Type,
-    ) -> ValidationResult<Vec<CallCandidate<'a>>> {
+        callee: &Type,
+    ) -> ValidationResult<Vec<CallCandidate>> {
         let callee = callee.normalize();
 
         // TODO: Check if signature match.
@@ -1496,7 +1496,7 @@ impl Analyzer<'_, '_> {
                 let candidate = CallCandidate {
                     type_params: c.type_params.clone().map(|v| v.params),
                     params: c.params.clone(),
-                    ret_ty: Cow::Borrowed(&*c.type_ann),
+                    ret_ty: *c.type_ann.clone(),
                 };
                 return Ok(vec![candidate]);
             }
@@ -1505,7 +1505,7 @@ impl Analyzer<'_, '_> {
                 let candidate = CallCandidate {
                     type_params: f.type_params.clone().map(|v| v.params),
                     params: f.params.clone(),
-                    ret_ty: Cow::Borrowed(&*f.ret_ty),
+                    ret_ty: *f.ret_ty.clone(),
                 };
                 return Ok(vec![candidate]);
             }
@@ -1553,11 +1553,7 @@ impl Analyzer<'_, '_> {
                             candidates.push(CallCandidate {
                                 type_params: m.type_params.clone().map(|v| v.params),
                                 params: m.params.clone(),
-                                ret_ty: m
-                                    .ret_ty
-                                    .as_deref()
-                                    .map(Cow::Borrowed)
-                                    .unwrap_or_else(|| Cow::Owned(Type::any(m.span))),
+                                ret_ty: m.ret_ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(m.span)),
                             });
                         }
 
@@ -1565,11 +1561,7 @@ impl Analyzer<'_, '_> {
                             candidates.push(CallCandidate {
                                 type_params: m.type_params.clone().map(|v| v.params),
                                 params: m.params.clone(),
-                                ret_ty: m
-                                    .ret_ty
-                                    .as_deref()
-                                    .map(Cow::Borrowed)
-                                    .unwrap_or_else(|| Cow::Owned(Type::any(m.span))),
+                                ret_ty: m.ret_ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(m.span)),
                             });
                         }
                         _ => {}
@@ -1769,6 +1761,46 @@ impl Analyzer<'_, '_> {
                 ArgCheckResult::ArgTypeMismatch | ArgCheckResult::WrongArgCount => false,
             })
             .collect::<Vec<_>>();
+
+        if candidates.is_empty() {
+            return Ok(None);
+        }
+
+        let c = candidates.into_iter().next().unwrap();
+
+        if candidates.len() == 1 {
+            return self
+                .get_return_type(
+                    span,
+                    kind,
+                    expr,
+                    c.type_params.as_deref(),
+                    &c.params,
+                    c.ret_ty.clone(),
+                    type_args,
+                    args,
+                    arg_types,
+                    spread_arg_types,
+                    type_ann,
+                )
+                .map(Some);
+        }
+
+        self.get_return_type(
+            span,
+            kind,
+            expr,
+            c.type_params.as_deref(),
+            &c.params,
+            c.ret_ty.clone(),
+            type_args,
+            args,
+            arg_types,
+            spread_arg_types,
+            type_ann,
+        )
+        .map(Some)
+        .map_err(|err| err.convert(|_| Error::NoMatchingOverload { span }))
     }
 
     /// Returns the return type of function. This method should be called only
@@ -2768,8 +2800,8 @@ fn test_arg_check_result_order() {
 }
 
 /// TODO: Use cow
-struct CallCandidate<'a> {
+struct CallCandidate {
     pub type_params: Option<Vec<TypeParam>>,
     pub params: Vec<FnParam>,
-    pub ret_ty: Cow<'a, Type>,
+    pub ret_ty: Type,
 }
