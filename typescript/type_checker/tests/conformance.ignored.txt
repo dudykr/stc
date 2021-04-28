@@ -55,14 +55,12 @@ es6::for-ofStatements::for-of52.ts
 es6::for-ofStatements::for-of54.ts
 es6::for-ofStatements::for-of55.ts
 es6::modules::importEmptyFromModuleNotExisted.ts
+
 es6::templates::taggedTemplateUntypedTagCall01.ts
-es6::templates::taggedTemplateWithConstructableTag01.ts
 es6::templates::templateStringInNewExpression.ts
 es6::templates::templateStringInNewExpressionES6.ts
 es6::templates::templateStringInNewOperator.ts
 es6::templates::templateStringInNewOperatorES6.ts
-es6::templates::templateStringInTaggedTemplate.ts
-es6::templates::templateStringInTaggedTemplateES6.ts
 es6::templates::templateStringWithEmbeddedInstanceOf.ts
 es6::templates::templateStringWithEmbeddedInstanceOfES6.ts
 es6::templates::templateStringsWithTypeErrorInFunctionExpressionsInSubstitutionExpression.ts
