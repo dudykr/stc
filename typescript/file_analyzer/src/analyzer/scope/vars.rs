@@ -1,5 +1,6 @@
 use crate::analyzer::expr::IdCtx;
 use crate::analyzer::expr::TypeOfMode;
+use crate::analyzer::pat::PatMode;
 use crate::analyzer::types::NormalizeTypeOpts;
 use crate::analyzer::util::ResultExt;
 use crate::analyzer::Analyzer;
@@ -443,6 +444,13 @@ impl Analyzer<'_, '_> {
                             }
                         },
                     }
+                }
+
+                match self.ctx.pat_mode {
+                    PatMode::Decl => {
+                        // TODO: Report errors for unused properties
+                    }
+                    _ => {}
                 }
 
                 return Ok(());
