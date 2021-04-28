@@ -670,6 +670,20 @@ impl Analyzer<'_, '_> {
                 //
                 for (i, elem) in arr.elems.iter().enumerate() {
                     if let Some(elem) = elem {
+                        match elem {
+                            RPat::Rest(elem) => {
+                                // Rest element is special.
+                                let type_for_rest_arg = self.get_lefting_elements(ty, i).context(
+                                    "tried to get lefting elements of an iterator to assign using a rest pattern",
+                                )?;
+
+                                self.try_assign_pat(span, &elem.arg, &type_for_rest_arg)
+                                    .context("tried to assign lefting elements to the arugment of a rest pattern")?;
+                                break;
+                            }
+                            _ => {}
+                        }
+
                         match ty.normalize() {
                             Type::Tuple(Tuple { elems, .. }) => {
                                 if elems.len() > i {

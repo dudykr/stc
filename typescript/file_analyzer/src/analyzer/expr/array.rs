@@ -275,6 +275,15 @@ impl Analyzer<'_, '_> {
 
         Ok(Cow::Owned(elem_ty))
     }
+
+    pub(crate) fn get_lefting_elements<'a>(
+        &mut self,
+        iterator: Cow<'a, Type>,
+        start_index: usize,
+    ) -> ValidationResult<Cow<'a, Type>> {
+        Ok(iterator)
+    }
+
     pub(crate) fn get_iterator<'a>(&mut self, span: Span, ty: Cow<'a, Type>) -> ValidationResult<Cow<'a, Type>> {
         if ty.is_str() {
             return Ok(ty);
