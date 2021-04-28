@@ -1412,7 +1412,29 @@ impl Analyzer<'_, '_> {
                         fail!()
                     }
 
-                    _ => {}
+                    _ => {
+                        // Try to assign by converting rhs to an iterable.
+                        if opts.allow_iterable_on_rhs {
+                            let r = self
+                                .get_iterator(span, Cow::Borrowed(&rhs))
+                                .context("tried to convert a type to an iterator to assign to a tuple")?;
+                            //
+                            for (i, elem) in elems.iter().enumerate() {
+                                let r_ty = self
+                                    .get_element_from_iterator(span, Cow::Borrowed(&r), i)
+                                    .context("tried to get an element of type to assign to a tuple element")?;
+
+                                self.assign_with_opts(
+                                    AssignOpts {
+                                        allow_iterable_on_rhs: false,
+                                        ..opts
+                                    },
+                                    &elem.ty,
+                                    &r_ty,
+                                )?;
+                            }
+                        }
+                    }
                 }
             }
 
