@@ -386,11 +386,17 @@ impl Analyzer<'_, '_> {
         })
     }
 
-    // Check for constant enum in rvalue.
+    // Check for rvalue of assignments.
     pub(super) fn check_rvalue(&mut self, span: Span, rhs_ty: &Type) {
         match *rhs_ty.normalize() {
             Type::Enum(ref e) if e.is_const => {
                 self.storage.report(Error::InvalidUseOfConstEnum { span });
+            }
+            Type::Keyword(RTsKeywordType {
+                kind: TsKeywordTypeKind::TsVoidKeyword,
+                ..
+            }) => {
+                self.storage.report(Error::ObjectIsPossiblyUndefined { span });
             }
             _ => {}
         }
