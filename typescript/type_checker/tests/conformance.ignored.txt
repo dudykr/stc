@@ -61,9 +61,6 @@ es6::templates::templateStringWithEmbeddedInstanceOf.ts
 es6::templates::templateStringWithEmbeddedInstanceOfES6.ts
 es6::templates::templateStringsWithTypeErrorInFunctionExpressionsInSubstitutionExpression.ts
 es6::templates::templateStringsWithTypeErrorInFunctionExpressionsInSubstitutionExpressionES6.ts
-es6::yieldExpressions::YieldExpression6_es6.ts
-es6::yieldExpressions::YieldStarExpression1_es6.ts
-es6::yieldExpressions::generatorTypeCheck8.ts
 expressions::arrayLiterals::arrayLiterals.ts
 expressions::functionCalls::forgottenNew.ts
 expressions::typeAssertions::duplicatePropertiesInTypeAssertions01.ts
