@@ -789,7 +789,7 @@ impl Analyzer<'_, '_> {
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
     ) -> ValidationResult<Option<Type>> {
-        let mut candidates = vec![];
+        let mut candidates: Vec<CallCandidate> = vec![];
         for member in c.body.iter() {
             match member {
                 ty::ClassMember::Method(Method {
@@ -801,7 +801,11 @@ impl Analyzer<'_, '_> {
                     ..
                 }) if *is_static == is_static_call => {
                     if self.key_matches(span, key, prop, false) {
-                        candidates.push((type_params, params, ret_ty));
+                        candidates.push(CallCandidate {
+                            type_params: type_params.as_ref().map(|v| v.params.clone()),
+                            params: params.clone(),
+                            ret_ty: Cow::Borrowed(&ret_ty),
+                        });
                     }
                 }
                 ty::ClassMember::Property(ClassProperty {
@@ -833,34 +837,18 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        candidates.sort_by_cached_key(|(type_params, params, _)| {
-            self.check_call_args(
-                span,
-                type_params.as_ref().map(|v| &*v.params),
-                params,
-                type_args,
-                args,
-                arg_types,
-                spread_arg_types,
-            )
-        });
-
-        for (type_params, params, ret_ty) in candidates {
-            return self
-                .get_return_type(
-                    span,
-                    kind,
-                    expr,
-                    type_params.as_ref().map(|v| &*v.params),
-                    &params,
-                    *ret_ty.clone(),
-                    type_args,
-                    args,
-                    &arg_types,
-                    &spread_arg_types,
-                    type_ann,
-                )
-                .map(Some);
+        if let Some(v) = self.select_and_invoke(
+            span,
+            kind,
+            expr,
+            &candidates,
+            type_args,
+            args,
+            arg_types,
+            spread_arg_types,
+            type_ann,
+        )? {
+            return Ok(Some(v));
         }
 
         if let Some(ty) = &c.super_class {
@@ -890,19 +878,23 @@ impl Analyzer<'_, '_> {
         Ok(None)
     }
 
-    fn check_type_element_for_call(
+    fn check_type_element_for_call<'a>(
         &mut self,
         span: Span,
         kind: ExtractKind,
-        candidates: &mut Vec<MethodSignature>,
-        m: &TypeElement,
+        candidates: &mut Vec<CallCandidate<'a>>,
+        m: &'a TypeElement,
         prop: &Key,
     ) {
         match m {
             TypeElement::Method(m) if kind == ExtractKind::Call => {
                 // We are interested only on methods named `prop`
                 if let Ok(()) = self.assign(&m.key.ty(), &prop.ty(), span) {
-                    candidates.push(m.clone());
+                    candidates.push(CallCandidate {
+                        type_params: m.type_params.as_ref().map(|v| v.params.clone()),
+                        params: m.params.clone(),
+                        ret_ty: Cow::Owned(m.ret_ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(m.span))),
+                    });
                 }
             }
 
@@ -915,28 +907,18 @@ impl Analyzer<'_, '_> {
                         Type::Keyword(RTsKeywordType {
                             kind: TsKeywordTypeKind::TsAnyKeyword,
                             ..
-                        }) => candidates.push(MethodSignature {
-                            span: p.span,
-                            accessibility: None,
-                            readonly: p.readonly,
-                            key: p.key.clone(),
-                            optional: p.optional,
+                        }) => candidates.push(CallCandidate {
                             // TODO: Maybe we need Option<Vec<T>>.
                             params: Default::default(),
-                            ret_ty: Default::default(),
+                            ret_ty: Cow::Owned(Type::any(span)),
                             type_params: Default::default(),
                         }),
 
                         Type::Function(f) => {
-                            candidates.push(MethodSignature {
-                                span: f.span,
-                                accessibility: None,
-                                readonly: p.readonly,
-                                key: p.key.clone(),
-                                optional: p.optional,
+                            candidates.push(CallCandidate {
                                 params: f.params,
-                                ret_ty: Some(f.ret_ty),
-                                type_params: f.type_params,
+                                ret_ty: Cow::Owned(*f.ret_ty),
+                                type_params: f.type_params.clone().map(|v| v.params),
                             });
                         }
 
@@ -993,55 +975,25 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match candidates.len() {
-            0 => Err(Error::NoSuchProperty {
-                span,
-                obj: Some(box obj.clone()),
-                prop: Some(box prop.clone()),
-            }),
-            1 => {
-                // TODO:
-                return self.check_method_call(
-                    span,
-                    expr,
-                    &candidates.into_iter().next().unwrap(),
-                    type_args,
-                    args,
-                    &arg_types,
-                    spread_arg_types,
-                    type_ann,
-                );
-            }
-            _ => {
-                //
-                candidates.sort_by_cached_key(|method: &MethodSignature| {
-                    self.check_call_args(
-                        span,
-                        method.type_params.as_ref().map(|v| &*v.params),
-                        &method.params,
-                        type_args,
-                        args,
-                        arg_types,
-                        spread_arg_types,
-                    )
-                });
-
-                for c in candidates {
-                    return self.check_method_call(
-                        span,
-                        expr,
-                        &c,
-                        type_args,
-                        args,
-                        &arg_types,
-                        spread_arg_types,
-                        type_ann,
-                    );
-                }
-
-                unimplemented!("multiple methods with same name and same number of arguments")
-            }
+        if let Some(v) = self.select_and_invoke(
+            span,
+            kind,
+            expr,
+            &candidates,
+            type_args,
+            args,
+            arg_types,
+            spread_arg_types,
+            type_ann,
+        )? {
+            return Ok(v);
         }
+
+        Err(Error::NoSuchProperty {
+            span,
+            obj: Some(box obj.clone()),
+            prop: Some(box prop.clone()),
+        })
     }
 
     /// Returns `()`
@@ -1442,58 +1394,50 @@ impl Analyzer<'_, '_> {
                     params,
                     type_params,
                     ret_ty,
-                }) if kind == ExtractKind::Call => Some((span, params, type_params, ret_ty)),
+                }) if kind == ExtractKind::Call => Some(CallCandidate {
+                    params: params.clone(),
+                    type_params: type_params.clone().map(|v| v.params),
+                    ret_ty: Cow::Owned(ret_ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(*span))),
+                }),
                 TypeElement::Constructor(ConstructorSignature {
                     span,
                     params,
                     ret_ty,
                     type_params,
                     ..
-                }) if kind == ExtractKind::New => Some((span, params, type_params, ret_ty)),
+                }) if kind == ExtractKind::New => Some(CallCandidate {
+                    params: params.clone(),
+                    type_params: type_params.clone().map(|v| v.params),
+                    ret_ty: Cow::Owned(ret_ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(*span))),
+                }),
                 _ => None,
             })
             .collect::<Vec<_>>();
 
-        if candidates.is_empty() {
-            return match kind {
-                ExtractKind::Call => Err(Error::NoCallSignature {
-                    span,
-                    callee: box callee_ty.clone(),
-                }),
-                ExtractKind::New => Err(Error::NoNewSignature {
-                    span,
-                    callee: box callee_ty.clone(),
-                }),
-            };
-        }
-
-        candidates.sort_by_cached_key(|(_, params, type_params, _)| {
-            self.check_call_args(
-                span,
-                type_params.as_ref().map(|v| &*v.params),
-                params,
-                type_args,
-                args,
-                arg_types,
-                spread_arg_types,
-            )
-        });
-
-        let (_, params, type_params, ret_ty) = candidates.into_iter().next().unwrap();
-
-        return self.get_return_type(
+        if let Some(v) = self.select_and_invoke(
             span,
             kind,
             expr,
-            type_params.as_ref().map(|v| &*v.params),
-            params,
-            ret_ty.clone().map(|v| *v).unwrap_or(Type::any(span)),
+            &candidates,
             type_args,
             args,
             arg_types,
             spread_arg_types,
             type_ann,
-        );
+        )? {
+            return Ok(v);
+        }
+
+        match kind {
+            ExtractKind::Call => Err(Error::NoCallSignature {
+                span,
+                callee: box callee_ty.clone(),
+            }),
+            ExtractKind::New => Err(Error::NoNewSignature {
+                span,
+                callee: box callee_ty.clone(),
+            }),
+        }
     }
 
     fn check_method_call(
@@ -1527,7 +1471,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         kind: ExtractKind,
         callee: &'a Type,
-    ) -> ValidationResult<Vec<(Option<Cow<'a, [TypeParam]>>, Cow<'a, [FnParam]>, Option<Cow<'a, Type>>)>> {
+    ) -> ValidationResult<Vec<CallCandidate<'a>>> {
         let callee = callee.normalize();
 
         // TODO: Check if signature match.
@@ -1674,70 +1618,54 @@ impl Analyzer<'_, '_> {
 
         slog::info!(self.logger, "get_best_return_type: {} candidates", candidates.len());
 
-        if candidates.is_empty() {
-            dbg!();
-
-            match callee.normalize() {
-                Type::ClassDef(cls) if kind == ExtractKind::New => {
-                    let ret_ty = self.get_return_type(
-                        span,
-                        kind,
-                        expr,
-                        cls.type_params.as_ref().map(|v| &*v.params),
-                        &[],
-                        callee.clone(),
-                        type_args,
-                        args,
-                        arg_types,
-                        spread_arg_types,
-                        type_ann,
-                    )?;
-                    return Ok(ret_ty);
-                }
-                _ => {}
-            }
-
-            return Err(if kind == ExtractKind::Call {
-                print_backtrace();
-                Error::NoCallSignature {
-                    span,
-                    callee: box callee,
-                }
-            } else {
-                Error::NoNewSignature {
-                    span,
-                    callee: box callee,
-                }
-            });
-        }
-
-        candidates.sort_by_cached_key(|(type_params, params, ret_ty)| {
-            self.check_call_args(
-                span,
-                type_params.as_deref(),
-                &params,
-                type_args,
-                args,
-                arg_types,
-                spread_arg_types,
-            )
-        });
-
-        let (type_params, params, ret_ty) = candidates.into_iter().next().unwrap();
-
-        return self.get_return_type(
+        if let Some(v) = self.select_and_invoke(
             span,
             kind,
             expr,
-            type_params.as_deref(),
-            &params,
-            ret_ty.map(Cow::into_owned).unwrap_or_else(|| Type::any(span)),
+            &candidates,
             type_args,
             args,
             arg_types,
             spread_arg_types,
             type_ann,
-        );
+        ) {
+            return Ok(v);
+        }
+
+        dbg!();
+
+        match callee.normalize() {
+            Type::ClassDef(cls) if kind == ExtractKind::New => {
+                let ret_ty = self.get_return_type(
+                    span,
+                    kind,
+                    expr,
+                    cls.type_params.as_ref().map(|v| &*v.params),
+                    &[],
+                    callee.clone(),
+                    type_args,
+                    args,
+                    arg_types,
+                    spread_arg_types,
+                    type_ann,
+                )?;
+                return Ok(ret_ty);
+            }
+            _ => {}
+        }
+
+        return Err(if kind == ExtractKind::Call {
+            print_backtrace();
+            Error::NoCallSignature {
+                span,
+                callee: box callee,
+            }
+        } else {
+            Error::NoNewSignature {
+                span,
+                callee: box callee,
+            }
+        });
     }
 
     fn validate_arg_count(
@@ -1818,6 +1746,40 @@ impl Analyzer<'_, '_> {
                 max: max_param,
             });
         }
+    }
+
+    /// Returns [None] if nothing matched.
+    fn select_and_invoke(
+        &mut self,
+        span: Span,
+        kind: ExtractKind,
+        expr: ReevalMode,
+        candidates: &[CallCandidate],
+        type_args: Option<&TypeParamInstantiation>,
+        args: &[RExprOrSpread],
+        arg_types: &[TypeOrSpread],
+        spread_arg_types: &[TypeOrSpread],
+        type_ann: Option<&Type>,
+    ) -> ValidationResult<Option<Type>> {
+        let callable = candidates
+            .iter()
+            .map(|c| {
+                let res = self.check_call_args(
+                    span,
+                    c.type_params,
+                    c.params,
+                    type_args,
+                    args,
+                    arg_types,
+                    spread_arg_types,
+                );
+
+                (c, res)
+            })
+            .filter(|(_, res)| match res {
+                ArgCheckResult::Exact | ArgCheckResult::MayBe => true,
+                ArgCheckResult::ArgTypeMismatch | ArgCheckResult::WrongArgCount => false,
+            });
     }
 
     /// Returns the return type of function. This method should be called only
@@ -2814,4 +2776,11 @@ fn test_arg_check_result_order() {
     v.sort();
 
     assert_eq!(v, expected);
+}
+
+/// TODO: Use cow
+struct CallCandidate<'a> {
+    pub type_params: Option<Vec<TypeParam>>,
+    pub params: Vec<FnParam>,
+    pub ret_ty: Cow<'a, Type>,
 }
