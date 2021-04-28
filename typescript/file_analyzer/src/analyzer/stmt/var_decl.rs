@@ -34,6 +34,7 @@ use stc_ts_errors::Errors;
 use stc_ts_types::QueryExpr;
 use stc_ts_types::QueryType;
 use stc_ts_types::{Array, Id, Operator, Symbol};
+use stc_ts_utils::find_ids_in_pat;
 use stc_ts_utils::PatExt;
 use swc_atoms::js_word;
 use swc_common::Spanned;
@@ -113,6 +114,9 @@ impl Analyzer<'_, '_> {
             } else {
                 None
             };
+            let ids: Vec<Id> = find_ids_in_pat(&v.name);
+            let prev_declaring_len = self.scope.declaring.len();
+            self.scope.declaring.extend(ids);
 
             macro_rules! inject_any {
                 () => {
@@ -148,7 +152,7 @@ impl Analyzer<'_, '_> {
                             m.for_var_decls.entry(node_id).or_default().remove_init = true;
                         }
                     }
-
+                    self.scope.declaring.drain(prev_declaring_len..);
                     debug_assert_eq!(Some(self.scope.declaring.clone()), debug_declaring);
                 }};
             }
@@ -577,6 +581,7 @@ impl Analyzer<'_, '_> {
                 if let Some(var_ty) = var_ty {
                     self.declare_complex_vars(kind, &v.name, var_ty, None)
                         .report(&mut self.storage);
+                    remove_declaring!();
                     return Ok(());
                 }
 
