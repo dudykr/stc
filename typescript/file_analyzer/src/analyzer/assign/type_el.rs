@@ -207,9 +207,25 @@ impl Analyzer<'_, '_> {
                         .context("tried to assign an array as interface to type elements");
                 }
 
-                Type::Tuple(rhs) => {
-                    // Handle { 0: nubmer } = [1]
-                    let rhs_len = rhs.elems.len();
+                Type::Tuple(..) => {
+                    if let Some(rhs) = self
+                        .type_to_type_lit(span, rhs)?
+                        .map(Cow::into_owned)
+                        .map(Type::TypeLit)
+                    {
+                        return self
+                            .assign_to_type_elements(
+                                AssignOpts {
+                                    allow_unknown_rhs: true,
+                                    ..opts
+                                },
+                                lhs_span,
+                                lhs,
+                                &rhs,
+                                lhs_metadata,
+                            )
+                            .context("tried to assign a tuple as type literal to type elements");
+                    }
 
                     // TODO: Check for literal properties
 
