@@ -2149,8 +2149,26 @@ impl Analyzer<'_, '_> {
         if self.env.target() <= EsVersion::Es5 {
             match i.sym {
                 js_word!("arguments") => {
+                    // `arguments` cannot be used as implicit variable if target <= ES5
+                    let arguments_point_to_arrow = Some(true)
+                        == self.scope.matches(|scope| {
+                            if scope.is_root() {
+                                return Some(false);
+                            }
+
+                            match scope.kind() {
+                                ScopeKind::ArrowFn => Some(true),
+                                ScopeKind::Fn | ScopeKind::Constructor | ScopeKind::Method { .. } => Some(false),
+                                _ => None,
+                            }
+                        });
+                    let is_argument_defined_in_current_scope = self.scope.vars.contains_key(&i.clone().into());
+
                     if !self.scope.is_arguments_implicitly_defined() {
                         self.storage.report(Error::InvalidUseOfArgumentsInEs3OrEs5 { span })
+                    } else if arguments_point_to_arrow && !is_argument_defined_in_current_scope {
+                        self.storage.report(Error::InvalidUseOfArgumentsInEs3OrEs5 { span });
+                        return Ok(Type::any(span));
                     }
                 }
                 _ => {}
