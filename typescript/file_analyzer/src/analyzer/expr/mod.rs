@@ -2149,6 +2149,7 @@ impl Analyzer<'_, '_> {
         if self.env.target() <= EsVersion::Es5 {
             match i.sym {
                 js_word!("arguments") => {
+                    // `arguments` cannot be used as implicit variable if target <= ES5
                     let arguments_point_to_arrow = Some(true)
                         == self.scope.matches(|scope| {
                             if scope.is_root() {
