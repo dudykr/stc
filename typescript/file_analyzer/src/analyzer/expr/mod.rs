@@ -2242,7 +2242,7 @@ impl Analyzer<'_, '_> {
             js_word!("arguments") => {
                 if !self.scope.is_arguments_defined() {
                     if self.env.target() <= EsVersion::Es5 {
-                        self.storage.report(Error::InvalidUseOfArguments { span })
+                        self.storage.report(Error::InvalidUseOfArgumentsInEs3OrEs5 { span })
                     } else {
                         self.storage.report(Error::NoSuchVar { span, name: i.into() })
                     }
