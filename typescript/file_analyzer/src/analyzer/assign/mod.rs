@@ -1408,7 +1408,9 @@ impl Analyzer<'_, '_> {
                     | Type::Keyword(..)
                     | Type::Array(..)
                     | Type::Class(..)
-                    | Type::ClassDef(..) => {
+                    | Type::ClassDef(..)
+                        if !opts.allow_iterable_on_rhs =>
+                    {
                         fail!()
                     }
 
@@ -1433,6 +1435,8 @@ impl Analyzer<'_, '_> {
                                     &r_ty,
                                 )?;
                             }
+
+                            return Ok(());
                         }
                     }
                 }
