@@ -1511,9 +1511,7 @@ impl Analyzer<'_, '_> {
                 fail!()
             }
 
-            Type::IndexedAccessType(..) => {
-                fail!()
-            }
+            Type::IndexedAccessType(..) => return Err(Error::SimpleAssignFailed { span }),
 
             _ => {}
         }
