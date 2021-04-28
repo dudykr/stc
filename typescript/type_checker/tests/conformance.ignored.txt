@@ -47,7 +47,6 @@ ambient::ambientExternalModuleInsideNonAmbient.ts
 ambient::ambientExternalModuleInsideNonAmbientExternalModule.ts
 es2019::globalThisGlobalExportAsGlobal.ts
 es2020::modules::exportAsNamespace_nonExistent.ts
-es6::destructuring::nonIterableRestElement3.ts
 es6::destructuring::restElementWithBindingPattern2.ts
 es6::destructuring::restPropertyWithBindingPattern.ts
 es6::for-ofStatements::for-of3.ts
