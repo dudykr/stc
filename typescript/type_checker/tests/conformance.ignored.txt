@@ -55,7 +55,6 @@ es6::for-ofStatements::for-of52.ts
 es6::for-ofStatements::for-of54.ts
 es6::for-ofStatements::for-of55.ts
 es6::modules::importEmptyFromModuleNotExisted.ts
-es6::shorthandPropertyAssignment::objectLiteralShorthandPropertiesErrorFromNoneExistingIdentifier.ts
 es6::templates::taggedTemplateUntypedTagCall01.ts
 es6::templates::taggedTemplateWithConstructableTag01.ts
 es6::templates::templateStringInCallExpression.ts
