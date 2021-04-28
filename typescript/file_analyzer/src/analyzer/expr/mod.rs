@@ -2202,7 +2202,8 @@ impl Analyzer<'_, '_> {
         }
 
         if let Some(ty) = self.find_var_type(&i.into(), type_mode) {
-            slog::debug!(self.logger, "find_var_type returned a type");
+            let ty_str = dump_type_as_string(&self.cm, &ty);
+            slog::debug!(self.logger, "find_var_type returned a type: {}", ty_str);
             let mut span = span;
             let mut ty = ty.into_owned();
             if self.scope.kind().allows_respanning() {
