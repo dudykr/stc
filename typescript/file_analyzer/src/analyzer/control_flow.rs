@@ -1,3 +1,4 @@
+use super::assign::AssignOpts;
 use super::util::ResultExt;
 use super::Ctx;
 use super::{
@@ -544,6 +545,16 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn try_assign_pat(&mut self, span: Span, lhs: &RPat, ty: &Type) -> ValidationResult<()> {
+        self.try_assign_pat_with_opts(span, lhs, ty, Default::default())
+    }
+
+    fn try_assign_pat_with_opts(
+        &mut self,
+        span: Span,
+        lhs: &RPat,
+        ty: &Type,
+        opts: AssignOpts,
+    ) -> ValidationResult<()> {
         let is_in_loop = self.scope.is_in_loop_body();
         let ty = self
             .normalize(None, ty, Default::default())
@@ -558,7 +569,7 @@ impl Analyzer<'_, '_> {
             RPat::Assign(assign) => {
                 let ids: Vec<Id> = find_ids_in_pat(&assign.left);
 
-                self.try_assign_pat(span, &assign.left, &ty)?;
+                self.try_assign_pat_with_opts(span, &assign.left, &ty, opts)?;
 
                 let prev_len = self.scope.declaring.len();
                 self.scope.declaring.extend(ids);
@@ -571,14 +582,21 @@ impl Analyzer<'_, '_> {
 
                 self.scope.declaring.drain(prev_len..);
                 let default_value_type = res?;
-                return self.try_assign_pat(span, &assign.left, &default_value_type);
+                return self.try_assign_pat_with_opts(span, &assign.left, &default_value_type, opts);
             }
 
             RPat::Ident(i) => {
                 // Verify using immutable references.
                 if let Some(var_info) = self.scope.get_var(&i.id.clone().into()) {
                     if let Some(var_ty) = var_info.ty.clone() {
-                        self.assign(&var_ty, &ty, i.id.span)?;
+                        self.assign_with_opts(
+                            AssignOpts {
+                                span: i.id.span,
+                                ..opts
+                            },
+                            &var_ty,
+                            &ty,
+                        )?;
                     }
                 }
 
@@ -677,7 +695,7 @@ impl Analyzer<'_, '_> {
                                     "tried to get lefting elements of an iterator to assign using a rest pattern",
                                 )?;
 
-                                self.try_assign_pat(span, &elem.arg, &type_for_rest_arg)
+                                self.try_assign_pat_with_opts(span, &elem.arg, &type_for_rest_arg, opts)
                                     .context("tried to assign lefting elements to the arugment of a rest pattern")?;
                                 break;
                             }
@@ -687,7 +705,7 @@ impl Analyzer<'_, '_> {
                         match ty.normalize() {
                             Type::Tuple(Tuple { elems, .. }) => {
                                 if elems.len() > i {
-                                    self.try_assign_pat(span, elem, &elems[i].ty)?;
+                                    self.try_assign_pat_with_opts(span, elem, &elems[i].ty, opts)?;
                                 }
                             }
 
@@ -696,7 +714,7 @@ impl Analyzer<'_, '_> {
                                     .get_element_from_iterator(span, Cow::Borrowed(&ty), i)
                                     .context("tried to get an element of type to assign with an array pattern")?;
 
-                                self.try_assign_pat(span, elem, &elem_ty)
+                                self.try_assign_pat_with_opts(span, elem, &elem_ty, opts)
                                     .context("tried to assign an element of an array pattern")?;
                             }
                         }
@@ -715,7 +733,8 @@ impl Analyzer<'_, '_> {
                                 .access_property(span, ty.clone(), &key, TypeOfMode::RValue, IdCtx::Var)
                                 .unwrap_or_else(|_| Type::any(span));
 
-                            self.try_assign_pat(span, &kv.value, &prop_ty).report(&mut self.storage);
+                            self.try_assign_pat_with_opts(span, &kv.value, &prop_ty, opts)
+                                .report(&mut self.storage);
                         }
                         RObjectPatProp::Assign(a) => {
                             let key = Key::Normal {
@@ -726,7 +745,7 @@ impl Analyzer<'_, '_> {
                                 .access_property(span, ty.clone(), &key, TypeOfMode::RValue, IdCtx::Var)
                                 .unwrap_or_else(|_| Type::any(span));
 
-                            self.try_assign_pat(
+                            self.try_assign_pat_with_opts(
                                 span,
                                 &RPat::Ident(RBindingIdent {
                                     node_id: NodeId::invalid(),
@@ -734,6 +753,7 @@ impl Analyzer<'_, '_> {
                                     type_ann: None,
                                 }),
                                 &prop_ty,
+                                opts,
                             )
                             .report(&mut self.storage);
                         }
@@ -744,7 +764,7 @@ impl Analyzer<'_, '_> {
                                 }
                             }
                             // TODO
-                            // self.try_assign_pat(span, lhs,
+                            // self.try_assign_pat_with_opts(span, lhs,
                             // &prop_ty).report(&mut self.storage);
                         }
                     }
@@ -759,7 +779,7 @@ impl Analyzer<'_, '_> {
                     span,
                     elem_type: box ty.clone(),
                 });
-                return self.try_assign_pat(span, &rest.arg, &ty);
+                return self.try_assign_pat_with_opts(span, &rest.arg, &ty, opts);
             }
 
             RPat::Expr(lhs) => {
@@ -767,7 +787,7 @@ impl Analyzer<'_, '_> {
                     .validate_with_args(self, (TypeOfMode::LValue, None, None))
                     .context("tried to validate type of the expression in lhs of assignment")?;
 
-                self.assign(&lhs_ty, &ty, span)?;
+                self.assign_with_opts(AssignOpts { span, ..opts }, &lhs_ty, &ty)?;
                 return Ok(());
             }
         }
