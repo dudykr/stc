@@ -1156,6 +1156,8 @@ impl Error {
 
             Error::NoSuchVarForShorthand { .. } => 18004,
 
+            Error::NoCallSignature { .. } => 2349,
+
             _ => 0,
         }
     }
