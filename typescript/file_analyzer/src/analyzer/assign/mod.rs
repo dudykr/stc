@@ -900,6 +900,35 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
+                    // Try to assign by converting rhs to an iterable.
+                    if opts.allow_iterable_on_rhs {
+                        let res: ValidationResult<_> = try {
+                            let r = self
+                                .get_iterator(span, Cow::Borrowed(&rhs))
+                                .context("tried to convert a type to an iterator to assign to a tuple")?;
+                            //
+                            let rhs_el = self
+                                .get_iterator_element_type(span, r)
+                                .context("tried to get the element type of an iterator assignment")?;
+
+                            self.assign_with_opts(
+                                AssignOpts {
+                                    allow_iterable_on_rhs: false,
+                                    ..opts
+                                },
+                                elem_type,
+                                &rhs_el,
+                            )?;
+                        };
+
+                        match res {
+                            Ok(_) => return Ok(()),
+                            Err(_) => {
+                                // TODO: Log?
+                            }
+                        }
+                    }
+
                     fail!()
                 }
             },
