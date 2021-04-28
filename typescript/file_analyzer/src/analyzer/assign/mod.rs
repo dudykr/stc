@@ -278,7 +278,7 @@ impl Analyzer<'_, '_> {
         {
             let l = dump_type_as_string(&self.cm, &to);
             let r = dump_type_as_string(&self.cm, &rhs);
-            slog::debug!(&self.logger, "[assign] {:?} {} = {}", opts, l, r);
+            slog::debug!(&self.logger, "[assign] {} = {}\n{:?} ", l, r, opts);
         }
 
         self.assign_without_wrapping(to, rhs, opts).with_context(|| {
