@@ -1,6 +1,7 @@
 use super::call_new::ExtractKind;
 use super::IdCtx;
 use super::TypeOfMode;
+use crate::analyzer::types::NormalizeTypeOpts;
 use crate::analyzer::Analyzer;
 use crate::type_facts::TypeFacts;
 use crate::util::type_ext::TypeVecExt;
@@ -281,7 +282,32 @@ impl Analyzer<'_, '_> {
         iterator: Cow<'a, Type>,
         start_index: usize,
     ) -> ValidationResult<Cow<'a, Type>> {
-        Ok(iterator)
+        let iterator = self.normalize(None, &iterator, NormalizeTypeOpts { ..Default::default() })?;
+
+        if iterator.is_tuple() {
+            let ty = iterator.into_owned().foldable().tuple().unwrap();
+
+            return Ok(Cow::Owned(Type::Tuple(Tuple {
+                span: ty.span,
+                elems: ty.elems.into_iter().skip(start_index).collect(),
+            })));
+        }
+
+        match iterator.normalize() {
+            // TODO
+            Type::TypeLit(_) => {}
+
+            // TODO
+            Type::Union(_) => {}
+            // TODO
+            Type::Intersection(_) => {}
+            // TODO
+            Type::Rest(_) => {}
+
+            _ => {}
+        }
+
+        Ok(Cow::Owned(iterator.into_owned()))
     }
 
     pub(crate) fn get_iterator<'a>(&mut self, span: Span, ty: Cow<'a, Type>) -> ValidationResult<Cow<'a, Type>> {
