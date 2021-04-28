@@ -1510,6 +1510,11 @@ impl Analyzer<'_, '_> {
 
                 fail!()
             }
+
+            Type::IndexedAccessType(..) => {
+                fail!()
+            }
+
             _ => {}
         }
 
