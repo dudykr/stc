@@ -409,6 +409,22 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
+        match rhs {
+            Type::IndexedAccessType(rhs) => {
+                let err = Error::NoSuchProperty {
+                    span,
+                    obj: Some(rhs.obj_type.clone()),
+                    // TODO
+                    prop: None,
+                };
+                return Err(Error::Errors {
+                    span,
+                    errors: vec![err],
+                });
+            }
+            _ => {}
+        }
+
         match to {
             Type::Ref(Ref {
                 type_name:
@@ -1509,19 +1525,6 @@ impl Analyzer<'_, '_> {
                 }
 
                 fail!()
-            }
-
-            Type::IndexedAccessType(rhs) => {
-                let err = Error::NoSuchProperty {
-                    span,
-                    obj: Some(rhs.obj_type.clone()),
-                    // TODO
-                    prop: None,
-                };
-                return Err(Error::Errors {
-                    span,
-                    errors: vec![err],
-                });
             }
 
             _ => {}
