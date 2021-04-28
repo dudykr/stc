@@ -2146,17 +2146,6 @@ impl Analyzer<'_, '_> {
         }
 
         match i.sym {
-            js_word!("arguments") => {
-                if !self.scope.is_arguments_defined() {
-                    if self.env.target() <= EsVersion::Es5 {
-                        self.storage.report(Error::InvalidUseOfArguments { span })
-                    } else {
-                        self.storage.report(Error::NoSuchVar { span, name: i.into() })
-                    }
-                }
-
-                return Ok(Type::any(span));
-            }
             js_word!("undefined") => return Ok(Type::undefined(span)),
             js_word!("void") => return Ok(Type::any(span)),
             js_word!("eval") => match type_mode {
@@ -2246,6 +2235,22 @@ impl Analyzer<'_, '_> {
 
                 return Ok(ty);
             }
+        }
+
+        // At here, it cannot be a declared variable.
+        match i.sym {
+            js_word!("arguments") => {
+                if !self.scope.is_arguments_defined() {
+                    if self.env.target() <= EsVersion::Es5 {
+                        self.storage.report(Error::InvalidUseOfArguments { span })
+                    } else {
+                        self.storage.report(Error::NoSuchVar { span, name: i.into() })
+                    }
+                }
+
+                return Ok(Type::any(span));
+            }
+            _ => {}
         }
 
         if let Ok(Some(types)) = self.find_type(self.ctx.module_id, &i.into()) {
