@@ -396,7 +396,9 @@ impl Analyzer<'_, '_> {
                 kind: TsKeywordTypeKind::TsVoidKeyword,
                 ..
             }) => {
-                self.storage.report(Error::ObjectIsPossiblyUndefined { span });
+                if self.rule().strict_null_checks {
+                    self.storage.report(Error::ObjectIsPossiblyUndefined { span });
+                }
             }
             _ => {}
         }
