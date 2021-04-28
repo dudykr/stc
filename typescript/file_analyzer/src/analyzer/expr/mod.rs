@@ -438,8 +438,14 @@ impl Analyzer<'_, '_> {
             }
 
             let rhs_ty = match {
+                let cannot_be_tuple = match &e.left {
+                    RPatOrExpr::Pat(pat) => !analyzer.can_rhs_be_tuple(&pat),
+                    _ => false,
+                };
+
                 let ctx = Ctx {
                     in_assign_rhs: true,
+                    cannot_be_tuple,
                     ..analyzer.ctx
                 };
                 let mut analyzer = analyzer.with_ctx(ctx);
@@ -545,6 +551,29 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
+    /// Returns `true` if a rhs expression of the assignment expression can be
+    /// a tuple.
+    fn can_rhs_be_tuple(&mut self, left: &RPat) -> bool {
+        match left {
+            RPat::Array(l) => {
+                for elem in l.elems.iter() {
+                    match elem {
+                        Some(RPat::Rest(rest)) => match &*rest.arg {
+                            RPat::Object(..) => {
+                                return false;
+                            }
+                            _ => {}
+                        },
+                        _ => {}
+                    }
+                }
+            }
+            _ => {}
+        }
+
+        true
+    }
+
     pub(crate) fn validate_key(&mut self, prop: &RExpr, computed: bool) -> ValidationResult<Key> {
         if computed {
             match prop {
