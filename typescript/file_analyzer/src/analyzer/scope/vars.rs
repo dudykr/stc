@@ -317,9 +317,9 @@ impl Analyzer<'_, '_> {
                 node_id,
                 ..
             }) => {
-                if self.ctx.in_declare {
-                    self.storage.report(Error::DestructuringAssignInAmbientContext { span });
-                }
+                // if self.ctx.in_declare {
+                //     self.storage.report(Error::DestructuringAssignInAmbientContext { span });
+                // }
 
                 let ty = match ty {
                     None => try_opt!(type_ann.as_ref().map(|v| v.type_ann.validate_with(self))),
