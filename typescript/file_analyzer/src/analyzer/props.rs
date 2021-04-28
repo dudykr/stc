@@ -228,11 +228,15 @@ impl Analyzer<'_, '_> {
 
         let ctx = Ctx {
             computed_prop_mode: ComputedPropMode::Object,
+            in_shorthand: match prop {
+                RProp::Shorthand(..) => true,
+                _ => false,
+            },
             ..self.ctx
         };
 
         let old_this = self.scope.this.take();
-        let res = self.with_ctx(ctx).validate_prop_inner(prop, object_type);
+        let mut res = self.with_ctx(ctx).validate_prop_inner(prop, object_type);
         self.scope.this = old_this;
 
         res

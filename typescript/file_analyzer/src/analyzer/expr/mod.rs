@@ -2350,10 +2350,17 @@ impl Analyzer<'_, '_> {
                 })
             } else {
                 dbg!();
-                Err(Error::NoSuchVar {
-                    span,
-                    name: i.clone().into(),
-                })
+                if self.ctx.in_shorthand {
+                    Err(Error::NoSuchVarForShorthand {
+                        span,
+                        name: i.clone().into(),
+                    })
+                } else {
+                    Err(Error::NoSuchVar {
+                        span,
+                        name: i.clone().into(),
+                    })
+                }
             }
         }
     }
