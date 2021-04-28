@@ -1478,17 +1478,7 @@ impl Analyzer<'_, '_> {
         match callee {
             Type::Ref(..) => {
                 let callee = self.expand_top_ref(span, Cow::Borrowed(callee))?.into_owned();
-                return Ok(self
-                    .extract_callee_candidates(span, kind, &callee)?
-                    .into_iter()
-                    .map(|(tp, ps, re)| {
-                        (
-                            tp.map(Cow::into_owned).map(Cow::Owned),
-                            Cow::Owned(ps.into_owned()),
-                            re.map(Cow::into_owned).map(Cow::Owned),
-                        )
-                    })
-                    .collect());
+                return Ok(self.extract_callee_candidates(span, kind, &callee)?);
             }
 
             Type::Intersection(i) => {
@@ -1503,20 +1493,20 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Constructor(c) if kind == ExtractKind::New => {
-                let candidate = (
-                    c.type_params.as_ref().map(|v| &*v.params).map(Cow::Borrowed),
-                    Cow::Borrowed(&*c.params),
-                    Some(Cow::Borrowed(&*c.type_ann)),
-                );
+                let candidate = CallCandidate {
+                    type_params: c.type_params.clone().map(|v| v.params),
+                    params: c.params.clone(),
+                    ret_ty: Cow::Borrowed(&*c.type_ann),
+                };
                 return Ok(vec![candidate]);
             }
 
             Type::Function(f) if kind == ExtractKind::Call => {
-                let candidate = (
-                    f.type_params.as_ref().map(|v| &*v.params).map(Cow::Borrowed),
-                    Cow::Borrowed(&*f.params),
-                    Some(Cow::Borrowed(&*f.ret_ty)),
-                );
+                let candidate = CallCandidate {
+                    type_params: f.type_params.clone().map(|v| v.params),
+                    params: f.params.clone(),
+                    ret_ty: Cow::Borrowed(&*f.ret_ty),
+                };
                 return Ok(vec![candidate]);
             }
 
@@ -1550,17 +1540,7 @@ impl Analyzer<'_, '_> {
                     .map(Cow::into_owned)
                     .map(Type::TypeLit);
                 if let Some(callee) = callee {
-                    return Ok(self
-                        .extract_callee_candidates(span, kind, &callee)?
-                        .into_iter()
-                        .map(|(tp, ps, re)| {
-                            (
-                                tp.map(Cow::into_owned).map(Cow::Owned),
-                                Cow::Owned(ps.into_owned()),
-                                re.map(Cow::into_owned).map(Cow::Owned),
-                            )
-                        })
-                        .collect());
+                    return Ok(self.extract_callee_candidates(span, kind, &callee)?);
                 }
             }
 
@@ -1570,19 +1550,27 @@ impl Analyzer<'_, '_> {
                 for member in &ty.members {
                     match member {
                         TypeElement::Call(m) if kind == ExtractKind::Call => {
-                            candidates.push((
-                                m.type_params.as_ref().map(|v| &*v.params).map(Cow::Borrowed),
-                                Cow::Borrowed(&*m.params),
-                                m.ret_ty.as_deref().map(Cow::Borrowed),
-                            ));
+                            candidates.push(CallCandidate {
+                                type_params: m.type_params.clone().map(|v| v.params),
+                                params: m.params.clone(),
+                                ret_ty: m
+                                    .ret_ty
+                                    .as_deref()
+                                    .map(Cow::Borrowed)
+                                    .unwrap_or_else(|| Cow::Owned(Type::any(m.span))),
+                            });
                         }
 
                         TypeElement::Constructor(m) if kind == ExtractKind::New => {
-                            candidates.push((
-                                m.type_params.as_ref().map(|v| &*v.params).map(Cow::Borrowed),
-                                Cow::Borrowed(&*m.params),
-                                m.ret_ty.as_deref().map(Cow::Borrowed),
-                            ));
+                            candidates.push(CallCandidate {
+                                type_params: m.type_params.clone().map(|v| v.params),
+                                params: m.params.clone(),
+                                ret_ty: m
+                                    .ret_ty
+                                    .as_deref()
+                                    .map(Cow::Borrowed)
+                                    .unwrap_or_else(|| Cow::Owned(Type::any(m.span))),
+                            });
                         }
                         _ => {}
                     }
@@ -1628,7 +1616,7 @@ impl Analyzer<'_, '_> {
             arg_types,
             spread_arg_types,
             type_ann,
-        ) {
+        )? {
             return Ok(v);
         }
 
@@ -1766,8 +1754,8 @@ impl Analyzer<'_, '_> {
             .map(|c| {
                 let res = self.check_call_args(
                     span,
-                    c.type_params,
-                    c.params,
+                    c.type_params.as_deref(),
+                    &c.params,
                     type_args,
                     args,
                     arg_types,
@@ -1779,7 +1767,8 @@ impl Analyzer<'_, '_> {
             .filter(|(_, res)| match res {
                 ArgCheckResult::Exact | ArgCheckResult::MayBe => true,
                 ArgCheckResult::ArgTypeMismatch | ArgCheckResult::WrongArgCount => false,
-            });
+            })
+            .collect::<Vec<_>>();
     }
 
     /// Returns the return type of function. This method should be called only
