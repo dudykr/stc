@@ -590,7 +590,7 @@ impl Analyzer<'_, '_> {
 
                 Type::Interface(ref i) => {
                     // We check for body before parent to support overriding
-                    let err = match self.search_members_for_callable_prop(
+                    let err = match self.call_property_of_type_elements(
                         kind,
                         expr,
                         span,
@@ -633,7 +633,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::TypeLit(ref t) => {
-                    return self.search_members_for_callable_prop(
+                    return self.call_property_of_type_elements(
                         kind,
                         expr,
                         span,
@@ -949,7 +949,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn search_members_for_callable_prop(
+    fn call_property_of_type_elements(
         &mut self,
         kind: ExtractKind,
         expr: ReevalMode,
