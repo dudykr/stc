@@ -297,6 +297,10 @@ impl Analyzer<'_, '_> {
                 sym: js_word!("Symbol"),
                 ..
             }) => {
+                if kind == ExtractKind::New {
+                    self.storage.report(Error::CannotCallWithNewNonVoidFunction { span })
+                }
+
                 // Symbol uses special type
                 if !args.is_empty() {
                     unimplemented!("Error reporting for calling `Symbol` with arguments is not implemented yet")

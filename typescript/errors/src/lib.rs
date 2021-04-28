@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    // TS2350
+    CannotCallWithNewNonVoidFunction {
+        span: Span,
+    },
+
     /// TS2300
     DuplicateProperty {
         span: Span,
@@ -1112,6 +1117,8 @@ impl Error {
             Error::CannotExportNonLocalVar { .. } => 2661,
 
             Error::DuplicateProperty { .. } => 2300,
+
+            Error::CannotCallWithNewNonVoidFunction { .. } => 2350,
 
             _ => 0,
         }
