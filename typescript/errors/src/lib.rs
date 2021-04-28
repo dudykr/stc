@@ -352,7 +352,7 @@ pub enum Error {
     },
 
     /// TS2496
-    InvalidUseOfArgumentsInEs3OrEs5 {
+    InvalidUseOfArguments {
         span: Span,
     },
 
@@ -1139,7 +1139,7 @@ impl Error {
 
             Error::InvalidInterfaceName { .. } => 2427,
 
-            Error::InvalidUseOfArgumentsInEs3OrEs5 { .. } => 2496,
+            Error::InvalidUseOfArguments { .. } => 2496,
 
             _ => 0,
         }
