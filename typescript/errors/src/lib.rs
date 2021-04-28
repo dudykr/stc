@@ -544,11 +544,13 @@ pub enum Error {
         items: Vec<Id>,
     },
 
+    /// TS2351
     NoNewSignature {
         span: Span,
         callee: Box<Type>,
     },
 
+    /// TS2349
     NoCallSignature {
         span: Span,
         callee: Box<Type>,
@@ -1116,7 +1118,7 @@ impl Error {
 
             Error::NoSuchPropertyWhileDeclWithBidningPat { .. } => 2525,
 
-            Error::NoNewSignature { .. } => 2555,
+            Error::NoNewSignature { .. } => 2351,
 
             Error::Unknown { .. } => 2571,
 
