@@ -1,4 +1,3 @@
-Conformance dir: /Users/kdy1/projects/stc/typescript/type_checker/tests/conformance
 Symbols/ES5SymbolProperty1.ts
 Symbols/ES5SymbolProperty2.ts
 Symbols/ES5SymbolProperty3.ts
@@ -619,7 +618,6 @@ es6/destructuring/iterableArrayPattern10.ts
 es6/destructuring/iterableArrayPattern11.ts
 es6/destructuring/iterableArrayPattern12.ts
 es6/destructuring/iterableArrayPattern13.ts
-es6/destructuring/iterableArrayPattern14.ts
 es6/destructuring/iterableArrayPattern15.ts
 es6/destructuring/iterableArrayPattern17.ts
 es6/destructuring/iterableArrayPattern18.ts
