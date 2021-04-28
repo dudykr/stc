@@ -178,7 +178,7 @@ pub(crate) struct Ctx {
 pub struct Analyzer<'scope, 'b> {
     logger: Logger,
     env: Env,
-    cm: Arc<SourceMap>,
+    pub(crate) cm: Arc<SourceMap>,
 
     /// This is [None] only for `.d.ts` files.
     pub mutations: Option<Mutations>,

@@ -11,6 +11,7 @@ use stc_ts_ast_rnode::RRestPat;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
+use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_types::ClassMember;
 use stc_ts_types::Constructor;
 use stc_ts_types::FnParam;
@@ -44,6 +45,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        let before = dump_type_as_string(&self.cm, &ty);
         ty = ty.fold_with(&mut TypeFactsHandler { analyzer: self, facts });
 
         // Add `(...args: any) => any` for typeof foo === 'function'
@@ -89,6 +91,10 @@ impl Analyzer<'_, '_> {
                 }
             }
         }
+
+        let after = dump_type_as_string(&self.cm, &ty);
+
+        slog::debug!(self.logger, "[types/fact] {} => {}", before, after);
 
         ty
     }
