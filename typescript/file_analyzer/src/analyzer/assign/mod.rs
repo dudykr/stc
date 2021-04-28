@@ -1511,7 +1511,18 @@ impl Analyzer<'_, '_> {
                 fail!()
             }
 
-            Type::IndexedAccessType(..) => return Err(Error::SimpleAssignFailed { span }),
+            Type::IndexedAccessType(rhs) => {
+                let err = Error::NoSuchProperty {
+                    span,
+                    obj: Some(rhs.obj_type.clone()),
+                    // TODO
+                    prop: None,
+                };
+                return Err(Error::Errors {
+                    span,
+                    errors: vec![err],
+                });
+            }
 
             _ => {}
         }
