@@ -28,6 +28,7 @@ use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsTypeAssertion;
 use stc_ts_ast_rnode::RVarDecl;
 use stc_ts_ast_rnode::RVarDeclarator;
+use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
@@ -359,6 +360,12 @@ impl Analyzer<'_, '_> {
                             };
                         }
 
+                        slog::debug!(
+                            self.logger,
+                            "[vars]: Type after normalization: {}",
+                            dump_type_as_string(&self.cm, &ty)
+                        );
+
                         match ty.normalize() {
                             Type::Ref(..) => {
                                 let ctx = Ctx {
@@ -368,6 +375,12 @@ impl Analyzer<'_, '_> {
                                     ..self.ctx
                                 };
                                 ty = self.with_ctx(ctx).expand(span, ty)?;
+
+                                slog::debug!(
+                                    self.logger,
+                                    "[vars]: Type after expansion: {}",
+                                    dump_type_as_string(&self.cm, &ty)
+                                );
                             }
                             _ => {}
                         }
@@ -503,7 +516,7 @@ impl Analyzer<'_, '_> {
                         // Handle implicit any
 
                         match ty.normalize_mut() {
-                            Type::Tuple(Tuple { ref mut elems, .. }) => {
+                            Type::Tuple(Tuple { ref mut elems, .. }) if !elems.is_empty() => {
                                 for (i, element) in elems.iter_mut().enumerate() {
                                     let span = element.span();
 
