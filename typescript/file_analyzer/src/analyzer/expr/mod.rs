@@ -411,6 +411,17 @@ impl Analyzer<'_, '_> {
                 _ => (None, type_ann),
             };
 
+            match &e.left {
+                RPatOrExpr::Pat(..)
+                | RPatOrExpr::Expr(box RExpr::Ident(..))
+                | RPatOrExpr::Expr(box RExpr::Member(..)) => {}
+                _ => {
+                    analyzer
+                        .storage
+                        .report(Error::InvalidLhsOfAssign { span: e.left.span() });
+                }
+            }
+
             let mut errors = Errors::default();
 
             match &e.left {

@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2364
+    InvalidLhsOfAssign {
+        span: Span,
+    },
+
     /// TS7010
     ImplicitReturnType {
         span: Span,
@@ -1203,6 +1208,8 @@ impl Error {
             Error::ImcompatibleFnOverload { .. } => 2394,
 
             Error::ImplicitReturnType { .. } => 7010,
+
+            Error::InvalidLhsOfAssign { .. } => 2364,
 
             _ => 0,
         }
