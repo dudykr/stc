@@ -30,9 +30,8 @@ pub fn context(msg: impl Display) -> ContextGuard {
 
 #[cfg_attr(not(debug_assertions), inline(always))]
 pub fn current_context() -> Vec<String> {
-    if !cfg!(debug_assertions) {
-        return vec![];
-    }
+    #[cfg(not(debug_assertions))]
+    return vec![];
 
     #[cfg(debug_assertions)]
     with_ctx(|v| v.clone())
