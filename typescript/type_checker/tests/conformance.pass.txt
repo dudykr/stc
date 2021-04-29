@@ -2393,6 +2393,7 @@ types/namedTypes/classWithOnlyPublicMembersEquivalentToInterface2.ts
 types/namedTypes/classWithOptionalParameter.ts
 types/namedTypes/genericInstantiationEquivalentToObjectLiteral.ts
 types/namedTypes/optionalMethods.ts
+types/never/neverType.ts
 types/never/neverUnionIntersection.ts
 types/nonPrimitive/assignObjectToNonPrimitive.ts
 types/nonPrimitive/nonPrimitiveAsProperty.ts
@@ -2661,6 +2662,7 @@ types/typeRelationships/typeInference/genericCallWithConstraintsTypeArgumentInfe
 types/typeRelationships/typeInference/genericCallWithFunctionTypedArguments3.ts
 types/typeRelationships/typeInference/genericCallWithFunctionTypedArguments4.ts
 types/typeRelationships/typeInference/genericCallWithFunctionTypedArguments5.ts
+types/typeRelationships/typeInference/genericCallWithGenericSignatureArguments.ts
 types/typeRelationships/typeInference/genericCallWithNonSymmetricSubtypes.ts
 types/typeRelationships/typeInference/genericCallWithObjectTypeArgs2.ts
 types/typeRelationships/typeInference/genericCallWithObjectTypeArgsAndConstraints.ts
