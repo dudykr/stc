@@ -327,6 +327,12 @@ impl Analyzer<'_, '_> {
                             }
                         }
 
+                        slog::debug!(
+                            self.logger,
+                            "[vars]: Type after generalization: {}",
+                            dump_type_as_string(&self.cm, &ty)
+                        );
+
                         if should_generalize_fully {
                             self.normalize_tuples(&mut ty);
                             ty = match ty.normalize() {
