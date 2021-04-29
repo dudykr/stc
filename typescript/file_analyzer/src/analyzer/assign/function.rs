@@ -243,13 +243,16 @@ impl Analyzer<'_, '_> {
         Err(Error::SimpleAssignFailed { span })
     }
 
+    ///
     ///  - `string` is assignable to `...args: any[]`.
     fn assign_param(&mut self, l: &FnParam, r: &FnParam, opts: AssignOpts) -> ValidationResult<()> {
         match l.pat {
             RPat::Rest(..) => match l.ty.normalize() {
-                Type::Array(l_arr) => if let Ok(()) = self.assign_with_opts(opts, &l_arr.elem_type, &r.ty) {
-                    return Ok(())
-                },
+                Type::Array(l_arr) => {
+                    if let Ok(()) = self.assign_with_opts(opts, &l_arr.elem_type, &r.ty) {
+                        return Ok(());
+                    }
+                }
                 _ => {}
             },
             _ => {}
@@ -261,13 +264,38 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    /// ``ts
+    /// ## Rule 1
+    ///
+    /// ```ts
     /// declare let a: (parent: 'foo' | 'bar') => void
     /// declare let b: (parent: 'bar') => void
     ///
     /// a = b // error
     /// b = a // ok
     /// ```
+    ///
+    /// Valid assignment is `foo | bar` = `bar`, which is `a.param[0] =
+    /// b.param[0]`, but it doesn't match `b = a`.
+    ///
+    /// ## Rule 2
+    ///
+    /// ```ts
+    /// class Base {
+    ///     private foo!: string
+    /// }
+    /// class Derived extends Base {
+    ///     private bar!: string
+    /// }
+    ///
+    /// declare var a: (y: Derived) => any;
+    /// declare var b: (y: Base) => any
+    ///
+    /// a = b // ok
+    /// b = a // error
+    /// ```
+    ///
+    /// Valid assignment is `Derived = Base`, which is `a.params[0] =
+    /// b.param[0]` and it matches `a = b`.
     pub(crate) fn assign_params(
         &mut self,
         opts: AssignOpts,
@@ -325,7 +353,12 @@ impl Analyzer<'_, '_> {
                     ..opts
                 },
             )
-            .with_context(||format!("tried to assign a method parameter to a method parameter. reverse = {:?}",reverse))?;
+            .with_context(|| {
+                format!(
+                    "tried to assign a method parameter to a method parameter. reverse = {:?}",
+                    reverse
+                )
+            })?;
         }
 
         Ok(())
