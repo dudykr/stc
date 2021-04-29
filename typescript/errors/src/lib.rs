@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS7010
+    ImplicitReturnType {
+        span: Span,
+    },
+
     /// TS2394
     ImcompatibleFnOverload {
         span: Span,
@@ -1196,6 +1201,8 @@ impl Error {
             Error::InitializerDisallowedInAmbientContext { .. } => 2371,
 
             Error::ImcompatibleFnOverload { .. } => 2394,
+
+            Error::ImplicitReturnType { .. } => 7010,
 
             _ => 0,
         }
