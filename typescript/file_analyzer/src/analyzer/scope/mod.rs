@@ -640,6 +640,7 @@ impl Analyzer<'_, '_> {
         }
 
         let _ctx = context(format!("expand_fully: {}", dump_type_as_string(&self.cm, &ty)));
+        let orig = dump_type_as_string(&self.cm, &ty);
 
         let mut v = Expander {
             logger: self.logger.clone(),
@@ -652,6 +653,9 @@ impl Analyzer<'_, '_> {
         };
 
         let ty = ty.foldable().fold_with(&mut v);
+
+        let new = dump_type_as_string(&self.cm, &ty);
+        slog::debug!(self.logger, "[expander] expand_fully: {} => {}", orig, new);
 
         Ok(ty)
     }
