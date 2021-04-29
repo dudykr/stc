@@ -990,6 +990,15 @@ impl Analyzer<'_, '_> {
 
         c.decorators.visit_with(self);
         let name = self.scope.this_class_name.take();
+        match &name {
+            Some(i) => match &**i.sym() {
+                "any" | "void" | "never" => {
+                    self.storage.report(Error::InvalidClassName { span: c.span });
+                }
+                _ => {}
+            },
+            _ => {}
+        }
 
         let mut types_to_register: Vec<(Id, _)> = vec![];
         let mut additional_members = vec![];

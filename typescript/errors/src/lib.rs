@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2414
+    InvalidClassName {
+        span: Span,
+    },
+
     /// TS18004
     NoSuchVarForShorthand {
         span: Span,
@@ -1167,6 +1172,8 @@ impl Error {
             Error::NoSuchVarForShorthand { .. } => 18004,
 
             Error::NoCallSignature { .. } => 2349,
+
+            Error::InvalidClassName { .. } => 2414,
 
             _ => 0,
         }
