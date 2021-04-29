@@ -36,6 +36,7 @@ use stc_ts_ast_rnode::RSeqExpr;
 use stc_ts_ast_rnode::RStr;
 use stc_ts_ast_rnode::RSuper;
 use stc_ts_ast_rnode::RThisExpr;
+use stc_ts_ast_rnode::RTpl;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsEnumMemberId;
 use stc_ts_ast_rnode::RTsKeywordType;
@@ -254,20 +255,8 @@ impl Analyzer<'_, '_> {
 
                 RExpr::Paren(RParenExpr { ref expr, .. }) => expr.validate_with_args(self, (mode, type_args, type_ann)),
 
-                RExpr::Tpl(ref t) => {
-                    // Check if tpl is constant. If it is, it's type is string literal.
-                    if t.exprs.is_empty() {
-                        return Ok(Type::Lit(RTsLitType {
-                            node_id: NodeId::invalid(),
-                            span: t.span(),
-                            lit: RTsLit::Str(t.quasis[0].cooked.clone().unwrap_or_else(|| t.quasis[0].raw.clone())),
-                        }));
-                    }
-
-                    return Ok(Type::Keyword(RTsKeywordType {
-                        span,
-                        kind: TsKeywordTypeKind::TsStringKeyword,
-                    }));
+                RExpr::Tpl(ref e) => {
+                    return e.validate_with(self);
                 }
 
                 RExpr::TsNonNull(RTsNonNullExpr { ref expr, .. }) => Ok(expr
@@ -2759,5 +2748,17 @@ impl Analyzer<'_, '_> {
             TypeElement::Property(PropertySignature { key: Key::Num(..), .. }) => true,
             _ => false,
         })
+    }
+}
+
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, e: &RTpl) -> ValidationResult {
+        e.exprs.visit_with(self);
+
+        Ok(Type::Keyword(RTsKeywordType {
+            span: e.span,
+            kind: TsKeywordTypeKind::TsStringKeyword,
+        }))
     }
 }
