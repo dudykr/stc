@@ -62,6 +62,7 @@ pub enum Error {
     /// TS2394
     ImcompatibleFnOverload {
         span: Span,
+        cause: Box<Error>,
     },
 
     /// TS2371

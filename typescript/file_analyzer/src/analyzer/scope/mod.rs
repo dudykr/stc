@@ -1249,8 +1249,11 @@ impl Analyzer<'_, '_> {
                         .context("tried to validate signatures of overloaded functions")?;
                     };
 
-                    res.convert_err(|err| Error::ImcompatibleFnOverload { span: err.span() })
-                        .report(&mut self.storage);
+                    res.convert_err(|err| Error::ImcompatibleFnOverload {
+                        span: err.span(),
+                        cause: box err,
+                    })
+                    .report(&mut self.storage);
                 }
                 _ => {}
             }
