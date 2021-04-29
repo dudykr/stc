@@ -965,21 +965,32 @@ impl Analyzer<'_, '_> {
             ..
         } = *e;
 
-        {
+        self.validate_with(|a| {
             let ctx = Ctx {
                 in_cond: true,
                 should_store_truthy_for_access: true,
-                ..self.ctx
+                ..a.ctx
             };
-            test.validate_with_default(&mut *self.with_ctx(ctx))?;
-        }
+            test.validate_with_default(&mut *a.with_ctx(ctx))?;
+
+            Ok(())
+        });
+
         let true_facts = self.cur_facts.true_facts.take();
         let false_facts = self.cur_facts.false_facts.take();
-        let cons = self.with_child(ScopeKind::Flow, true_facts, |child| {
-            cons.validate_with_args(child, (mode, None, type_ann))
+        let cons = self.with_child(ScopeKind::Flow, true_facts, |child: &mut Analyzer| {
+            let ty = cons
+                .validate_with_args(child, (mode, None, type_ann))
+                .report(&mut child.storage);
+
+            Ok(ty.unwrap_or_else(|| Type::any(cons.span())))
         })?;
-        let alt = self.with_child(ScopeKind::Flow, false_facts, |child| {
-            alt.validate_with_args(child, (mode, None, type_ann))
+        let alt = self.with_child(ScopeKind::Flow, false_facts, |child: &mut Analyzer| {
+            let ty = alt
+                .validate_with_args(child, (mode, None, type_ann))
+                .report(&mut child.storage);
+
+            Ok(ty.unwrap_or_else(|| Type::any(alt.span())))
         })?;
 
         if cons.type_eq(&alt) {
