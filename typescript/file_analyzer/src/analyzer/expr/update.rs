@@ -22,7 +22,6 @@ impl Analyzer<'_, '_> {
 
         match &*e.arg {
             RExpr::New(..) => self.storage.report(Error::ExprInvalidForUpdateArg { span }),
-            RExpr::This(..) => self.storage.report(Error::TypeInvalidForUpdateArg { span }),
             _ => {}
         }
 
@@ -36,6 +35,10 @@ impl Analyzer<'_, '_> {
                 })
                 | Type::Keyword(RTsKeywordType {
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
+                    ..
+                })
+                | Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
                     ..
                 })
                 | Type::Lit(RTsLitType {
