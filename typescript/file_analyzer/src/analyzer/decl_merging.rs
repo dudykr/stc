@@ -1,11 +1,8 @@
-use super::assign::AssignOpts;
-use super::util::ResultExt;
 use super::Analyzer;
 use crate::ValidationResult;
 use fxhash::FxHashMap;
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::DebugExt;
-use stc_ts_errors::Error;
 use stc_ts_types::ClassDef;
 use stc_ts_types::ClassMember;
 use stc_ts_types::ClassProperty;
@@ -138,32 +135,6 @@ impl Analyzer<'_, '_> {
         Ok(None)
     }
 
-    fn validate_fn_overloads(&mut self, span: Span, orig: &Type, new: &Type) -> ValidationResult<()> {
-        for orig in orig.iter_union().flat_map(|ty| ty.iter_union()) {
-            match orig.normalize() {
-                Type::Function(..) => {
-                    let res: ValidationResult<_> = try {
-                        self.assign_with_opts(
-                            AssignOpts {
-                                span,
-                                ..Default::default()
-                            },
-                            &new,
-                            &orig,
-                        )
-                        .context("tried to validate signatures of overloaded functions")?;
-                    };
-
-                    res.convert_err(|err| Error::ImcompatibleFnOverload { span: err.span() })
-                        .report(&mut self.storage);
-                }
-                _ => {}
-            }
-        }
-
-        Ok(())
-    }
-
     fn merge_types(&mut self, span: Span, orig: Type, new: Type) -> ValidationResult<Type> {
         debug_assert!(orig.is_clone_cheap());
         debug_assert!(new.is_clone_cheap());
@@ -178,7 +149,6 @@ impl Analyzer<'_, '_> {
         Ok(new)
     }
 
-    /// Note: This method also validates function overloads.
     pub(crate) fn merge_decl_with_name(&mut self, name: Id, new: Type) -> ValidationResult<(Type, bool)> {
         let orig = self.find_type(self.ctx.module_id, &name)?;
         let mut orig = match orig {
@@ -187,8 +157,6 @@ impl Analyzer<'_, '_> {
         };
 
         let orig = orig.next().unwrap().into_owned();
-
-        self.validate_with(|a| a.validate_fn_overloads(new.span(), &orig, &new));
 
         let new = self.merge_types(new.span(), orig, new)?;
         slog::info!(

@@ -1,3 +1,4 @@
+use super::assign::AssignOpts;
 use super::{control_flow::CondFacts, expr::TypeOfMode, stmt::return_type::ReturnValues, Analyzer, Ctx};
 use crate::analyzer::expr::IdCtx;
 use crate::analyzer::ResultExt;
@@ -1135,6 +1136,12 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
+                if let Some(orig) = &v.ty {
+                    if let Some(ty) = &ty {
+                        self.validate_with(|a| a.validate_fn_overloads(span, orig, ty));
+                    }
+                }
+
                 v.ty = if let Some(ty) = ty {
                     Some(if let Some(var_ty) = v.ty {
                         match ty.normalize() {
@@ -1214,6 +1221,32 @@ impl Analyzer<'_, '_> {
                     is_actual_type_modified_in_loop: false,
                 };
                 e.insert(info);
+            }
+        }
+
+        Ok(())
+    }
+
+    fn validate_fn_overloads(&mut self, span: Span, orig: &Type, new: &Type) -> ValidationResult<()> {
+        for orig in orig.iter_union().flat_map(|ty| ty.iter_union()) {
+            match orig.normalize() {
+                Type::Function(..) => {
+                    let res: ValidationResult<_> = try {
+                        self.assign_with_opts(
+                            AssignOpts {
+                                span,
+                                ..Default::default()
+                            },
+                            &new,
+                            &orig,
+                        )
+                        .context("tried to validate signatures of overloaded functions")?;
+                    };
+
+                    res.convert_err(|err| Error::ImcompatibleFnOverload { span: err.span() })
+                        .report(&mut self.storage);
+                }
+                _ => {}
             }
         }
 
