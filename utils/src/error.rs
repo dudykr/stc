@@ -34,6 +34,7 @@ pub fn current_context() -> Vec<String> {
         return vec![];
     }
 
+    #[cfg(debug_assertions)]
     with_ctx(|v| v.clone())
 }
 
