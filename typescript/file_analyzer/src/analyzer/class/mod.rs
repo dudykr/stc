@@ -994,7 +994,7 @@ impl Analyzer<'_, '_> {
         let name = self.scope.this_class_name.take();
         match &name {
             Some(i) => match &**i.sym() {
-                "any" | "void" | "never" => {
+                "any" | "void" | "never" | "string" | "number" | "boolean" | "null" | "undefined" | "symbol" => {
                     self.storage.report(Error::InvalidClassName { span: c.span });
                 }
                 _ => {}
