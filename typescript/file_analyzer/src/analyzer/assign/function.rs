@@ -325,7 +325,7 @@ impl Analyzer<'_, '_> {
                     ..opts
                 },
             )
-            .context("tried to assign a method parameter to a method parameter")?;
+            .with_context(||format!("tried to assign a method parameter to a method parameter. reverse = {:?}",reverse))?;
         }
 
         Ok(())
