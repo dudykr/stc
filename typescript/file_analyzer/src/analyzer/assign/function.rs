@@ -315,6 +315,22 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
+    /// # Validation of parameter count
+    ///
+    /// A parameter named `this` is excluded.
+    ///
+    ///
+    /// ## Rule
+    ///
+    /// ```ts
+    /// declare var a: (x: string) => any;
+    /// declare var b: (x: string, y: number) => any
+    ///
+    /// a = b // error
+    /// b = a // ok
+    /// ```
+    ///
+    /// So, it's an error if `l.params.len() < r.params.len()`.
     pub(crate) fn assign_params(&mut self, opts: AssignOpts, l: &[FnParam], r: &[FnParam]) -> ValidationResult<()> {
         let span = opts.span;
 
