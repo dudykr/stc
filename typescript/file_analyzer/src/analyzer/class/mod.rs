@@ -451,6 +451,8 @@ impl Analyzer<'_, '_> {
             ScopeKind::Method { is_static: c.is_static },
             Default::default(),
             |child: &mut Analyzer| -> ValidationResult<_> {
+                child.ctx.in_declare |= c.function.body.is_none();
+
                 child.scope.declaring_prop = match &key {
                     Key::Normal { sym, .. } => Some(Id::word(sym.clone())),
                     _ => None,
