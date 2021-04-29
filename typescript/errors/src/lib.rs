@@ -182,10 +182,12 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2357
     ExprInvalidForUpdateArg {
         span: Span,
     },
 
+    /// TS2356
     TypeInvalidForUpdateArg {
         span: Span,
     },
