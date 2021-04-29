@@ -411,27 +411,10 @@ impl Analyzer<'_, '_> {
                 _ => (None, type_ann),
             };
 
-            match &e.left {
-                RPatOrExpr::Pat(pat) => match &**pat {
-                    RPat::Ident(_) => {}
-                    RPat::Array(_) => {}
-                    RPat::Rest(_) => {}
-                    RPat::Object(_) => {}
-                    RPat::Assign(_) => {}
-                    RPat::Invalid(_) => {}
-                    RPat::Expr(e) => match &**e {
-                        RExpr::Ident(..) | RExpr::Member(..) => {}
-                        _ => {
-                            analyzer.storage.report(Error::InvalidLhsOfAssign { span: e.span() });
-                        }
-                    },
-                },
-                RPatOrExpr::Expr(box RExpr::Ident(..)) | RPatOrExpr::Expr(box RExpr::Member(..)) => {}
-                _ => {
-                    analyzer
-                        .storage
-                        .report(Error::InvalidLhsOfAssign { span: e.left.span() });
-                }
+            if !is_valid_lhs(&e.left) {
+                analyzer
+                    .storage
+                    .report(Error::InvalidLhsOfAssign { span: e.left.span() });
             }
 
             let mut errors = Errors::default();
@@ -2783,5 +2766,23 @@ impl Analyzer<'_, '_> {
             span: e.span,
             kind: TsKeywordTypeKind::TsStringKeyword,
         }))
+    }
+}
+
+fn is_valid_lhs(l: &RPatOrExpr) -> bool {
+    fn is_valid_lhs_expr(e: &RExpr) -> bool {
+        match e {
+            RExpr::Ident(..) | RExpr::Member(..) => true,
+            RExpr::Paren(e) => is_valid_lhs_expr(&e.expr),
+            _ => false,
+        }
+    }
+
+    match l {
+        RPatOrExpr::Pat(pat) => match &**pat {
+            RPat::Expr(e) => is_valid_lhs_expr(&e),
+            _ => true,
+        },
+        RPatOrExpr::Expr(e) => is_valid_lhs_expr(&e),
     }
 }
