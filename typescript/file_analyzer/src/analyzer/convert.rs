@@ -143,11 +143,18 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, p: &RTsTypeParam) -> ValidationResult<TypeParam> {
         self.record(p);
 
+        let ctx = Ctx {
+            in_actual_type: true,
+            ..self.ctx
+        };
+        let constraint = try_opt!(p.constraint.validate_with(&mut *self.with_ctx(ctx))).map(Box::new);
+        let default = try_opt!(p.default.validate_with(&mut *self.with_ctx(ctx))).map(Box::new);
+
         let param = TypeParam {
             span: p.span,
             name: p.name.clone().into(),
-            constraint: try_opt!(p.constraint.validate_with(self)).map(Box::new),
-            default: try_opt!(p.default.validate_with(self)).map(Box::new),
+            constraint,
+            default,
         };
         self.register_type(param.name.clone().into(), param.clone().into());
 
