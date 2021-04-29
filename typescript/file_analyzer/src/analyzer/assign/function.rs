@@ -282,6 +282,11 @@ impl Analyzer<'_, '_> {
     ///
     ///  - `string` is assignable to `...args: any[]`.
     fn assign_param(&mut self, l: &FnParam, r: &FnParam, opts: AssignOpts) -> ValidationResult<()> {
+        debug_assert!(
+            !opts.span.is_dummy(),
+            "Cannot assign function parameters with dummy span"
+        );
+
         match l.pat {
             RPat::Rest(..) => match l.ty.normalize() {
                 Type::Array(l_arr) => {
