@@ -283,8 +283,6 @@ impl Analyzer<'_, '_> {
         }
 
         for (lp, rp) in li.zip(ri) {
-            let (lhs, rhs) = if reverse { (rp, lp) } else { (lp, rp) };
-
             // TODO: What should we do?
             if opts.allow_assignment_to_param {
                 if let Ok(()) = self.assign_inner(
@@ -298,6 +296,8 @@ impl Analyzer<'_, '_> {
                     continue;
                 }
             }
+
+            let (lhs, rhs) = if reverse { (rp, lp) } else { (lp, rp) };
 
             self.assign_inner(
                 &lhs.ty,
