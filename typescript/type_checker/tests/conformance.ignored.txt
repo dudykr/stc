@@ -58,14 +58,8 @@ es6::modules::importEmptyFromModuleNotExisted.ts
 es6::yieldExpressions::YieldExpression6_es6.ts
 es6::yieldExpressions::YieldStarExpression1_es6.ts
 es6::yieldExpressions::generatorTypeCheck8.ts
-
-
 es6::templates::taggedTemplateUntypedTagCall01.ts
-expressions::arrayLiterals::arrayLiterals.ts
 expressions::functionCalls::forgottenNew.ts
-expressions::typeAssertions::duplicatePropertiesInTypeAssertions01.ts
-expressions::typeAssertions::duplicatePropertiesInTypeAssertions02.ts
-expressions::typeGuards::typeGuardOfFormInstanceOf.ts
 externalModules::exportClassNameWithObjectAMD.ts
 externalModules::exportClassNameWithObjectCommonJS.ts
 externalModules::exportClassNameWithObjectSystem.ts
@@ -74,6 +68,11 @@ externalModules::exportDefaultClassNameWithObject.ts
 externalModules::exportNonLocalDeclarations.ts
 externalModules::multipleExportDefault4.ts
 externalModules::multipleExportDefault5.ts
+
+expressions::arrayLiterals::arrayLiterals.ts
+expressions::typeAssertions::duplicatePropertiesInTypeAssertions01.ts
+expressions::typeAssertions::duplicatePropertiesInTypeAssertions02.ts
+expressions::typeGuards::typeGuardOfFormInstanceOf.ts
 functions::functionOverloadCompatibilityWithVoid01.ts
 generators::generatorReturnTypeInference.ts
 parser::ecmascript5::ArrowFunctionExpressions::parserArrowFunctionExpression4.ts
