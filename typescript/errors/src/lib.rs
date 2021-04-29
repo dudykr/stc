@@ -369,6 +369,12 @@ pub enum Error {
         name: Id,
     },
 
+    /// TS2749
+    NoSuchTypeButVarExists {
+        span: Span,
+        name: Id,
+    },
+
     /// TS2496
     InvalidUseOfArgumentsInEs3OrEs5 {
         span: Span,
@@ -1059,6 +1065,7 @@ impl Error {
 
             Error::NoSuchVar { .. } => 2304,
             Error::NoSuchType { .. } => 2304,
+            Error::NoSuchTypeButVarExists { .. } => 2749,
             Error::NoSuchVarButThisHasSuchProperty { .. } => 2663,
 
             Error::CannotAssignAbstractConstructorToNonAbstractConstructor { .. } => 2322,

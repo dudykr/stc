@@ -605,11 +605,21 @@ impl Analyzer<'_, '_> {
                     }
 
                     if !self.is_builtin && !found && self.ctx.in_actual_type {
-                        self.storage.report(Error::NoSuchType { span, name: i.into() })
+                        if let Some(..) = self.scope.get_var(&i.into()) {
+                            self.storage
+                                .report(Error::NoSuchTypeButVarExists { span, name: i.into() })
+                        } else {
+                            self.storage.report(Error::NoSuchType { span, name: i.into() })
+                        }
                     }
                 } else {
                     if !self.is_builtin && self.ctx.in_actual_type {
-                        self.storage.report(Error::NoSuchType { span, name: i.into() })
+                        if let Some(..) = self.scope.get_var(&i.into()) {
+                            self.storage
+                                .report(Error::NoSuchTypeButVarExists { span, name: i.into() })
+                        } else {
+                            self.storage.report(Error::NoSuchType { span, name: i.into() })
+                        }
                     }
                 }
             }
