@@ -1307,6 +1307,7 @@ impl Analyzer<'_, '_> {
                     span,
                     expr,
                     &ty,
+                    i.type_params.as_ref().map(|v| &*v.params),
                     &i.body,
                     kind,
                     args,
@@ -1346,6 +1347,7 @@ impl Analyzer<'_, '_> {
                     span,
                     expr,
                     &ty,
+                    None,
                     &l.members,
                     kind,
                     args,
@@ -1376,6 +1378,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         expr: ReevalMode,
         callee_ty: &Type,
+        type_params_of_type: Option<&[TypeParam]>,
         members: &[TypeElement],
         kind: ExtractKind,
         args: &[RExprOrSpread],
@@ -1396,7 +1399,10 @@ impl Analyzer<'_, '_> {
                     ret_ty,
                 }) if kind == ExtractKind::Call => Some(CallCandidate {
                     params: params.clone(),
-                    type_params: type_params.clone().map(|v| v.params),
+                    type_params: type_params
+                        .clone()
+                        .map(|v| v.params)
+                        .or_else(|| type_params_of_type.map(|v| v.to_vec())),
                     ret_ty: ret_ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(*span)),
                 }),
                 TypeElement::Constructor(ConstructorSignature {
@@ -1407,7 +1413,10 @@ impl Analyzer<'_, '_> {
                     ..
                 }) if kind == ExtractKind::New => Some(CallCandidate {
                     params: params.clone(),
-                    type_params: type_params.clone().map(|v| v.params),
+                    type_params: type_params
+                        .clone()
+                        .map(|v| v.params)
+                        .or_else(|| type_params_of_type.clone().map(|v| v.to_vec())),
                     ret_ty: ret_ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(*span)),
                 }),
                 _ => None,
