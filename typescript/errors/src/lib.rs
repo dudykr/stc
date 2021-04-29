@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2371
+    InitializerDisallowedInAmbientContext {
+        span: Span,
+    },
+
     /// TS2414
     InvalidClassName {
         span: Span,
@@ -1181,6 +1186,8 @@ impl Error {
             Error::NoCallSignature { .. } => 2349,
 
             Error::InvalidClassName { .. } => 2414,
+
+            Error::InitializerDisallowedInAmbientContext { .. } => 2371,
 
             _ => 0,
         }
