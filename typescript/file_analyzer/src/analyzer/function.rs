@@ -408,7 +408,11 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     /// NOTE: This method **should not call f.fold_children_with(self)**
     fn validate(&mut self, f: &RFnDecl) {
-        let fn_ty = self.visit_fn(Some(&f.ident), &f.function).cheap();
+        let ctx = Ctx {
+            in_declare: self.ctx.in_declare || f.declare || f.function.body.is_none(),
+            ..self.ctx
+        };
+        let fn_ty = self.with_ctx(ctx).visit_fn(Some(&f.ident), &f.function).cheap();
 
         match self.declare_var(
             f.span(),
