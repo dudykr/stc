@@ -125,10 +125,6 @@ parser::ecmascript5::ModuleDeclarations::parserModuleDeclaration12.ts
 parser::ecmascript5::ModuleDeclarations::parserModuleDeclaration7.ts
 parser::ecmascript5::ModuleDeclarations::parserModuleDeclaration8.ts
 parser::ecmascript5::ModuleDeclarations::parserModuleDeclaration9.ts
-parser::ecmascript5::ParameterLists::parserParameterList14.ts
-parser::ecmascript5::ParameterLists::parserParameterList15.ts
-parser::ecmascript5::ParameterLists::parserParameterList16.ts
-parser::ecmascript5::ParameterLists::parserParameterList17.ts
 parser::ecmascript5::RegressionTests::parser509698.ts
 parser::ecmascript5::RegressionTests::parserTernaryAndCommaOperators1.ts
 parser::ecmascript5::RegularExpressions::parserRegularExpression4.ts
