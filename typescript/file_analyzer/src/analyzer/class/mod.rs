@@ -658,7 +658,7 @@ impl Analyzer<'_, '_> {
 
         for (idx, m) in c.body.iter().enumerate() {
             macro_rules! check {
-                ($m:expr, $body:expr) => {{
+                ($m:expr, $body:expr, $is_constructor:expr) => {{
                     let m = $m;
 
                     let computed = match m.key {
@@ -671,8 +671,12 @@ impl Analyzer<'_, '_> {
                             && !is_key_optional(&m.key)
                             && !is_prop_name_eq_include_computed(&name.unwrap(), &m.key)
                         {
-                            for span in replace(&mut spans, vec![]) {
-                                errors.push(Error::FnImplMissingOrNotFollowedByDecl { span });
+                            for (span, is_constructor) in replace(&mut spans, vec![]) {
+                                if is_constructor {
+                                    errors.push(Error::ConstructorImplMissingOrNotFollowedByDecl { span });
+                                } else {
+                                    errors.push(Error::FnImplMissingOrNotFollowedByDecl { span });
+                                }
                             }
                         }
 
@@ -684,7 +688,7 @@ impl Analyzer<'_, '_> {
                             if name.is_some() && is_prop_name_eq_include_computed(&name.unwrap(), &m.key) {
                                 spans.clear();
                             }
-                            spans.push(m.key.span());
+                            spans.push((m.key.span(), $is_constructor));
 
                             name = Some(&m.key);
                         }
@@ -704,12 +708,20 @@ impl Analyzer<'_, '_> {
                             let constructor_name = RPropName::Ident(RIdent::new(js_word!("constructor"), DUMMY_SP));
 
                             if is_prop_name_eq_include_computed(&name.unwrap(), &constructor_name) {
-                                for span in replace(&mut spans, vec![]) {
-                                    errors.push(Error::FnImplMissingOrNotFollowedByDecl { span });
+                                for (span, is_constructor) in replace(&mut spans, vec![]) {
+                                    if is_constructor {
+                                        errors.push(Error::ConstructorImplMissingOrNotFollowedByDecl { span });
+                                    } else {
+                                        errors.push(Error::FnImplMissingOrNotFollowedByDecl { span });
+                                    }
                                 }
                             } else if is_prop_name_eq_include_computed(&m.key, &constructor_name) {
-                                for span in replace(&mut spans, vec![]) {
-                                    errors.push(Error::FnImplMissingOrNotFollowedByDecl { span });
+                                for (span, is_constructor) in replace(&mut spans, vec![]) {
+                                    if is_constructor {
+                                        errors.push(Error::ConstructorImplMissingOrNotFollowedByDecl { span });
+                                    } else {
+                                        errors.push(Error::FnImplMissingOrNotFollowedByDecl { span });
+                                    }
                                 }
                             } else {
                                 spans = vec![];
@@ -729,15 +741,21 @@ impl Analyzer<'_, '_> {
             }
 
             match *m {
-                RClassMember::Constructor(ref m) => check!(m, m.body),
-                RClassMember::Method(ref m @ RClassMethod { is_abstract: false, .. }) => check!(m, m.function.body),
+                RClassMember::Constructor(ref m) => check!(m, m.body, true),
+                RClassMember::Method(ref m @ RClassMethod { is_abstract: false, .. }) => {
+                    check!(m, m.function.body, false)
+                }
                 _ => {}
             }
         }
 
         // Class definition ended with `foo();`
-        for span in replace(&mut spans, vec![]) {
-            errors.push(Error::FnImplMissingOrNotFollowedByDecl { span });
+        for (span, is_constructor) in replace(&mut spans, vec![]) {
+            if is_constructor {
+                errors.push(Error::ConstructorImplMissingOrNotFollowedByDecl { span });
+            } else {
+                errors.push(Error::FnImplMissingOrNotFollowedByDecl { span });
+            }
         }
 
         self.storage.report_all(errors);

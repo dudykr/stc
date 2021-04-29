@@ -668,6 +668,11 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2390
+    ConstructorImplMissingOrNotFollowedByDecl {
+        span: Span,
+    },
+
     /// TS2391
     FnImplMissingOrNotFollowedByDecl {
         span: Span,
@@ -998,6 +1003,7 @@ impl Error {
             Error::TS1166 { .. } => 1166,
             Error::TS1345 { .. } => 1345,
             Error::TS2353 { .. } => 2353,
+            Error::ConstructorImplMissingOrNotFollowedByDecl { .. } => 2390,
             Error::FnImplMissingOrNotFollowedByDecl { .. } => 2391,
             Error::TS2464 { .. } => 2464,
             Error::TS2356 { .. } => 2356,
