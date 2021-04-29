@@ -317,6 +317,7 @@ impl Analyzer<'_, '_> {
 
     pub(crate) fn assign_params(&mut self, opts: AssignOpts, l: &[FnParam], r: &[FnParam]) -> ValidationResult<()> {
         let span = opts.span;
+
         let li = l.iter().filter(|p| match p.pat {
             RPat::Ident(RBindingIdent {
                 id: RIdent {
@@ -336,8 +337,13 @@ impl Analyzer<'_, '_> {
             _ => true,
         });
 
+        let l_has_rest = l.iter().any(|p| match p.pat {
+            RPat::Rest(..) => true,
+            _ => false,
+        });
+
         // TODO: Consider optional parameters.
-        if li.clone().count() < ri.clone().count() {
+        if !l_has_rest && li.clone().count() < ri.clone().count() {
             return Err(Error::SimpleAssignFailed { span });
         }
 
