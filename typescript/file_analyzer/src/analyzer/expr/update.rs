@@ -20,6 +20,11 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RUpdateExpr) -> ValidationResult {
         let span = e.span;
 
+        match &*e.arg {
+            RExpr::New(..) | RExpr::Call(..) => self.storage.report(Error::ExprInvalidForUpdateArg { span }),
+            _ => {}
+        }
+
         let ty = e
             .arg
             .validate_with_args(self, (TypeOfMode::LValue, None, None))
