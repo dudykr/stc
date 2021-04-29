@@ -85,10 +85,6 @@ parser::ecmascript5::EnumDeclarations::parserEnum7.ts
 parser::ecmascript5::ErrorRecovery::ParameterLists::parserErrorRecovery_ParameterList6.ts
 parser::ecmascript5::Expressions::parserAssignmentExpression1.ts
 parser::ecmascript5::Expressions::parserConditionalExpression1.ts
-parser::ecmascript5::Expressions::parserUnaryExpression1.ts
-parser::ecmascript5::Expressions::parserUnaryExpression2.ts
-parser::ecmascript5::Expressions::parserUnaryExpression3.ts
-parser::ecmascript5::Expressions::parserUnaryExpression7.ts
 parser::ecmascript5::Generics::parserAmbiguityWithBinaryOperator4.ts
 parser::ecmascript5::Generics::parserConstructorAmbiguity4.ts
 parser::ecmascript5::Generics::parserGenericConstraint2.ts
