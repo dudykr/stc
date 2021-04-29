@@ -41,6 +41,8 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, s: &RStmt) {
+        slog::warn!(self.logger, "Statement start");
+
         let old_in_conditional = self.scope.return_values.in_conditional;
         self.scope.return_values.in_conditional |= match s {
             RStmt::If(_) => true,
