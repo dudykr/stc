@@ -71,6 +71,9 @@ pub(crate) struct AssignOpts {
 
     /// If true, `assign` will try to assign by converting rhs to an iterable.
     pub allow_iterable_on_rhs: bool,
+
+    /// If `true`, assignment will success if rhs is `void`.
+    pub allow_assignment_of_void: bool,
 }
 
 impl Analyzer<'_, '_> {
@@ -691,6 +694,12 @@ impl Analyzer<'_, '_> {
             }
 
             _ => {}
+        }
+
+        if opts.allow_assignment_of_void {
+            if rhs.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
+                return Ok(());
+            }
         }
 
         match rhs {

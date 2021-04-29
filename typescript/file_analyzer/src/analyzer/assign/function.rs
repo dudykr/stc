@@ -92,8 +92,15 @@ impl Analyzer<'_, '_> {
                 }
 
                 // TODO: Verify type parameters.
-                self.assign_inner(&l.ret_ty, r_ret_ty, opts)
-                    .context("tried to assign the return type of a function to the return type of another function")?;
+                self.assign_inner(
+                    &l.ret_ty,
+                    r_ret_ty,
+                    AssignOpts {
+                        allow_assignment_of_void: true,
+                        ..opts
+                    },
+                )
+                .context("tried to assign the return type of a function to the return type of another function")?;
 
                 return Ok(());
             }
@@ -300,6 +307,8 @@ impl Analyzer<'_, '_> {
             },
             _ => {}
         }
+
+        // TODO: Change this to extends call.
 
         let l_ty = self.normalize(Some(opts.span), &l.ty, Default::default())?;
         let r_ty = self.normalize(Some(opts.span), &r.ty, Default::default())?;
