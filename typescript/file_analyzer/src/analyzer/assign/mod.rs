@@ -1425,6 +1425,12 @@ impl Analyzer<'_, '_> {
             },
 
             Type::Tuple(Tuple { ref elems, .. }) => {
+                if elems.is_empty() {
+                    match rhs {
+                        Type::Array(..) | Type::Tuple(..) => return Ok(()),
+                        _ => {}
+                    }
+                }
                 //
                 match *rhs.normalize() {
                     Type::Tuple(Tuple {
