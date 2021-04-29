@@ -21,7 +21,7 @@ impl Analyzer<'_, '_> {
         let span = e.span;
 
         match &*e.arg {
-            RExpr::New(..) | RExpr::Call(..) => self.storage.report(Error::ExprInvalidForUpdateArg { span }),
+            RExpr::New(..) => self.storage.report(Error::ExprInvalidForUpdateArg { span }),
             _ => {}
         }
 
