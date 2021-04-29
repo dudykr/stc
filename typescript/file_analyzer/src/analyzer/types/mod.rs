@@ -846,7 +846,11 @@ impl VisitMut<Type> for TupleNormalizer {
         ty.visit_mut_children_with(self);
 
         match ty.normalize() {
-            Type::Tuple(..) => {
+            Type::Tuple(tuple) => {
+                if tuple.elems.is_empty() {
+                    return;
+                }
+
                 let span = ty.span();
                 let mut types = ty
                     .take()
