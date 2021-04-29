@@ -412,25 +412,27 @@ impl Analyzer<'_, '_> {
             in_declare: self.ctx.in_declare || f.declare || f.function.body.is_none(),
             ..self.ctx
         };
-        let fn_ty = self.with_ctx(ctx).visit_fn(Some(&f.ident), &f.function).cheap();
+        self.with_ctx(ctx).with(|a: &mut Analyzer| {
+            let fn_ty = a.visit_fn(Some(&f.ident), &f.function).cheap();
 
-        match self.declare_var(
-            f.span(),
-            VarDeclKind::Var,
-            f.ident.clone().into(),
-            Some(fn_ty),
-            None,
-            true,
-            true,
-            false,
-        ) {
-            Ok(()) => {}
-            Err(err) => {
-                self.storage.report(err);
+            match a.declare_var(
+                f.span(),
+                VarDeclKind::Var,
+                f.ident.clone().into(),
+                Some(fn_ty),
+                None,
+                true,
+                true,
+                false,
+            ) {
+                Ok(()) => {}
+                Err(err) => {
+                    a.storage.report(err);
+                }
             }
-        }
 
-        Ok(())
+            Ok(())
+        })
     }
 }
 

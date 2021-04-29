@@ -1228,6 +1228,12 @@ impl Analyzer<'_, '_> {
     }
 
     fn validate_fn_overloads(&mut self, span: Span, orig: &Type, new: &Type) -> ValidationResult<()> {
+        // We validates using the signature of implementing function.
+        // TODO: Validate using last element, when there's a no function decl with body.
+        if self.is_builtin || self.ctx.in_declare {
+            return Ok(());
+        }
+
         for orig in orig.iter_union().flat_map(|ty| ty.iter_union()) {
             match orig.normalize() {
                 Type::Function(..) => {
