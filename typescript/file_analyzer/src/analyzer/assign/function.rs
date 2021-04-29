@@ -301,8 +301,11 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        let reverse = match self.normalize(Some(opts.span), &r.ty, Default::default())?.normalize() {
-            Type::Union(..) => true,
+        let l_ty = self.normalize(Some(opts.span), &l.ty, Default::default())?;
+        let r_ty = self.normalize(Some(opts.span), &r.ty, Default::default())?;
+        let reverse = match (l_ty.normalize(), r_ty.normalize()) {
+            (Type::Union(..), Type::Union(..)) => false,
+            (_, Type::Union(..)) => true,
             _ => false,
         };
 
@@ -361,10 +364,15 @@ impl Analyzer<'_, '_> {
         });
 
         // TODO: Consider optional parameters.
-        if !opts.allow_param_count_mismatch {
-            if !l_has_rest && li.clone().count() < ri.clone().count() {
-                return Err(Error::SimpleAssignFailed { span });
+
+        if !l_has_rest && li.clone().count() < ri.clone().count() {
+            // I don't know why, but overload signature does not need to match overloaded
+            // signature.
+            if opts.allow_param_count_mismatch {
+                return Ok(());
             }
+
+            return Err(Error::SimpleAssignFailed { span });
         }
 
         for pair in li.zip_longest(ri) {
