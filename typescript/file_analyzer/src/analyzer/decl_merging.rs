@@ -135,6 +135,10 @@ impl Analyzer<'_, '_> {
         Ok(None)
     }
 
+    fn validate_fn_overloads(&mut self, span: Span, orig: &Type, new: &Type) -> ValidationResult<()> {
+        Ok(())
+    }
+
     fn merge_types(&mut self, span: Span, orig: Type, new: Type) -> ValidationResult<Type> {
         debug_assert!(orig.is_clone_cheap());
         debug_assert!(new.is_clone_cheap());
@@ -149,6 +153,7 @@ impl Analyzer<'_, '_> {
         Ok(new)
     }
 
+    /// Note: This method also validates function overloads.
     pub(crate) fn merge_decl_with_name(&mut self, name: Id, new: Type) -> ValidationResult<(Type, bool)> {
         let orig = self.find_type(self.ctx.module_id, &name)?;
         let mut orig = match orig {
@@ -157,6 +162,8 @@ impl Analyzer<'_, '_> {
         };
 
         let orig = orig.next().unwrap().into_owned();
+
+        self.validate_with(|a| a.validate_fn_overloads(new.span(), &orig, &new));
 
         let new = self.merge_types(new.span(), orig, new)?;
         slog::info!(
