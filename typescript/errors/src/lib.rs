@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2394
+    ImcompatibleFnOverload {
+        span: Span,
+    },
+
     /// TS2371
     InitializerDisallowedInAmbientContext {
         span: Span,
@@ -1188,6 +1193,8 @@ impl Error {
             Error::InvalidClassName { .. } => 2414,
 
             Error::InitializerDisallowedInAmbientContext { .. } => 2371,
+
+            Error::ImcompatibleFnOverload { .. } => 2394,
 
             _ => 0,
         }
