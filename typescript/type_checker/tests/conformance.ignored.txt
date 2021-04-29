@@ -101,7 +101,10 @@ statements::for-ofStatements::ES5For-ofTypeCheck12.ts
 statements::for-ofStatements::ES5For-ofTypeCheck14.ts
 statements::for-ofStatements::ES5For-ofTypeCheck7.ts
 statements::for-ofStatements::ES5For-ofTypeCheck9.ts
-
+parser::ecmascript5::ParameterLists::parserParameterList15.ts
+parser::ecmascript5::ParameterLists::parserParameterList16.ts
+parser::ecmascript5::ParameterLists::parserParameterList17.ts
+types::stringLiteral::stringLiteralTypesOverloads02.ts
 
 expressions::typeAssertions::duplicatePropertiesInTypeAssertions01.ts
 expressions::typeAssertions::duplicatePropertiesInTypeAssertions02.ts
@@ -145,11 +148,6 @@ types::rest::genericRestParameters2.ts
 types::specifyingTypes::typeQueries::typeofTypeParameter.ts
 types::spread::objectSpreadSetonlyAccessor.ts
 types::stringLiteral::stringLiteralTypesWithTemplateStrings01.ts
-types::tuple::emptyTuples::emptyTuplesTypeAssertion01.ts
-types::tuple::emptyTuples::emptyTuplesTypeAssertion02.ts
-types::tuple::wideningTuples3.ts
-types::tuple::wideningTuples5.ts
-types::tuple::wideningTuples7.ts
 types::typeParameters::typeArgumentLists::wrappedAndRecursiveConstraints4.ts
 types::typeRelationships::assignmentCompatibility::assignmentCompatWithObjectMembers3.ts
 types::typeRelationships::assignmentCompatibility::nullAssignedToUndefined.ts
