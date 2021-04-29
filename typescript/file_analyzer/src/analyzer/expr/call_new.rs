@@ -59,6 +59,7 @@ use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
 use stc_ts_type_ops::is_str_lit_or_union;
 use stc_ts_type_ops::Fix;
+use stc_ts_types::Array;
 use stc_ts_types::Class;
 use stc_ts_types::ClassDef;
 use stc_ts_types::ClassProperty;
@@ -1302,6 +1303,17 @@ impl Analyzer<'_, '_> {
             ),
 
             Type::Interface(ref i) => {
+                if kind == ExtractKind::New && &**i.name.sym() == "ArrayConstructor" {
+                    if let Some(type_args) = type_args {
+                        if type_args.params.len() == 1 {
+                            return Ok(Type::Array(Array {
+                                span,
+                                elem_type: box type_args.params.iter().cloned().next().unwrap(),
+                            }));
+                        }
+                    }
+                }
+
                 // Search for methods
                 match self.search_members_for_extract(
                     span,
