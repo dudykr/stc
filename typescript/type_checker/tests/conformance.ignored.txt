@@ -61,8 +61,6 @@ es6::yieldExpressions::generatorTypeCheck8.ts
 
 
 es6::templates::taggedTemplateUntypedTagCall01.ts
-es6::templates::templateStringWithEmbeddedInstanceOf.ts
-es6::templates::templateStringWithEmbeddedInstanceOfES6.ts
 es6::templates::templateStringsWithTypeErrorInFunctionExpressionsInSubstitutionExpression.ts
 es6::templates::templateStringsWithTypeErrorInFunctionExpressionsInSubstitutionExpressionES6.ts
 expressions::arrayLiterals::arrayLiterals.ts
