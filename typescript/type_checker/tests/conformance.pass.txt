@@ -190,6 +190,7 @@ classes/classDeclarations/classHeritageSpecification/constructorFunctionTypeIsAs
 classes/classDeclarations/classHeritageSpecification/constructorFunctionTypeIsAssignableToBaseType2.ts
 classes/classDeclarations/classHeritageSpecification/derivedTypeDoesNotRequireExtendsClause.ts
 classes/classDeclarations/classInsideBlock.ts
+classes/classDeclarations/classWithPredefinedTypesAsNames.ts
 classes/classDeclarations/classWithPredefinedTypesAsNames2.ts
 classes/classDeclarations/classWithSemicolonClassElement1.ts
 classes/classDeclarations/classWithSemicolonClassElement2.ts
@@ -2454,6 +2455,7 @@ types/rest/objectRestCatchES5.ts
 types/rest/objectRestForOf.ts
 types/rest/objectRestReadonly.ts
 types/rest/restElementMustBeLast.ts
+types/specifyingTypes/predefinedTypes/objectTypesWithPredefinedTypesAsName.ts
 types/specifyingTypes/predefinedTypes/objectTypesWithPredefinedTypesAsName2.ts
 types/specifyingTypes/typeLiterals/arrayLiteral.ts
 types/specifyingTypes/typeLiterals/arrayOfFunctionTypes3.ts
