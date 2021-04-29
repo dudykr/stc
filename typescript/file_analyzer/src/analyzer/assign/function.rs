@@ -294,8 +294,18 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        self.assign_with_opts(opts, &l.ty, &r.ty)
-            .context("tried to assign the type of a parameter to another")?;
+        let reverse = match self.normalize(Some(opts.span), &r.ty, Default::default())?.normalize() {
+            Type::Union(..) => true,
+            _ => false,
+        };
+
+        if reverse {
+            self.assign_with_opts(opts, &r.ty, &l.ty)
+                .context("tried to assign the type of a parameter to another (reversed)")?;
+        } else {
+            self.assign_with_opts(opts, &l.ty, &r.ty)
+                .context("tried to assign the type of a parameter to another")?;
+        }
 
         Ok(())
     }
