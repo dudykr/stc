@@ -283,6 +283,8 @@ impl Analyzer<'_, '_> {
         }
 
         for (lp, rp) in li.zip(ri) {
+            let (lhs, rhs) = if reverse { (rp, lp) } else { (lp, rp) };
+
             // TODO: What should we do?
             if opts.allow_assignment_to_param {
                 if let Ok(()) = self.assign_inner(
@@ -297,25 +299,14 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            if reverse {
-                self.assign_inner(
-                    &rp.ty,
-                    &lp.ty,
-                    AssignOpts {
-                        allow_unknown_type: true,
-                        ..opts
-                    },
-                )
-            } else {
-                self.assign_inner(
-                    &lp.ty,
-                    &rp.ty,
-                    AssignOpts {
-                        allow_unknown_type: true,
-                        ..opts
-                    },
-                )
-            }
+            self.assign_inner(
+                &lhs.ty,
+                &rhs.ty,
+                AssignOpts {
+                    allow_unknown_type: true,
+                    ..opts
+                },
+            )
             .context("tried to assign a method parameter to a method parameter")?;
         }
 
