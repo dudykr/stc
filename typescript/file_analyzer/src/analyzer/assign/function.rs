@@ -243,6 +243,24 @@ impl Analyzer<'_, '_> {
         Err(Error::SimpleAssignFailed { span })
     }
 
+    ///  - `string` is assignable to `...args: any[]`.
+    fn assign_param(&mut self, l: &FnParam, r: &FnParam, opts: AssignOpts) -> ValidationResult<()> {
+        match l.pat {
+            RPat::Rest(..) => match l.ty.normalize() {
+                Type::Array(l_arr) => if let Ok(()) = self.assign_with_opts(opts, &l_arr.elem_type, &r.ty) {
+                    return Ok(())
+                },
+                _ => {}
+            },
+            _ => {}
+        }
+
+        self.assign_with_opts(opts, &l.ty, &r.ty)
+            .context("tried to assign the type of a parameter to another")?;
+
+        Ok(())
+    }
+
     /// ``ts
     /// declare let a: (parent: 'foo' | 'bar') => void
     /// declare let b: (parent: 'bar') => void
@@ -285,9 +303,9 @@ impl Analyzer<'_, '_> {
         for (lp, rp) in li.zip(ri) {
             // TODO: What should we do?
             if opts.allow_assignment_to_param {
-                if let Ok(()) = self.assign_inner(
-                    &rp.ty,
-                    &lp.ty,
+                if let Ok(()) = self.assign_param(
+                    &rp,
+                    &lp,
                     AssignOpts {
                         allow_unknown_type: true,
                         ..opts
@@ -299,9 +317,9 @@ impl Analyzer<'_, '_> {
 
             let (lhs, rhs) = if reverse { (rp, lp) } else { (lp, rp) };
 
-            self.assign_inner(
-                &lhs.ty,
-                &rhs.ty,
+            self.assign_param(
+                lhs,
+                rhs,
                 AssignOpts {
                     allow_unknown_type: true,
                     ..opts
