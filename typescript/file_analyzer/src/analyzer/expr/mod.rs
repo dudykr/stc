@@ -412,9 +412,21 @@ impl Analyzer<'_, '_> {
             };
 
             match &e.left {
-                RPatOrExpr::Pat(..)
-                | RPatOrExpr::Expr(box RExpr::Ident(..))
-                | RPatOrExpr::Expr(box RExpr::Member(..)) => {}
+                RPatOrExpr::Pat(pat) => match &**pat {
+                    RPat::Ident(_) => {}
+                    RPat::Array(_) => {}
+                    RPat::Rest(_) => {}
+                    RPat::Object(_) => {}
+                    RPat::Assign(_) => {}
+                    RPat::Invalid(_) => {}
+                    RPat::Expr(e) => match &**e {
+                        RExpr::Ident(..) | RExpr::Member(..) => {}
+                        _ => {
+                            analyzer.storage.report(Error::InvalidLhsOfAssign { span: e.span() });
+                        }
+                    },
+                },
+                RPatOrExpr::Expr(box RExpr::Ident(..)) | RPatOrExpr::Expr(box RExpr::Member(..)) => {}
                 _ => {
                     analyzer
                         .storage
