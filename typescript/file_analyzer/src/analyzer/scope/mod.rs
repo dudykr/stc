@@ -1241,6 +1241,7 @@ impl Analyzer<'_, '_> {
                         self.assign_with_opts(
                             AssignOpts {
                                 span,
+                                allow_param_count_mismatch: true,
                                 ..Default::default()
                             },
                             &new,

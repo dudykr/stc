@@ -2,6 +2,8 @@ use super::AssignOpts;
 use crate::analyzer::Analyzer;
 use crate::ValidationResult;
 use fxhash::FxHashMap;
+use itertools::EitherOrBoth;
+use itertools::Itertools;
 use stc_ts_ast_rnode::RBindingIdent;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RPat;
@@ -359,34 +361,42 @@ impl Analyzer<'_, '_> {
         });
 
         // TODO: Consider optional parameters.
-        if !l_has_rest && li.clone().count() < ri.clone().count() {
-            return Err(Error::SimpleAssignFailed { span });
+        if !opts.allow_param_count_mismatch {
+            if !l_has_rest && li.clone().count() < ri.clone().count() {
+                return Err(Error::SimpleAssignFailed { span });
+            }
         }
 
-        for (lp, rp) in li.zip(ri) {
-            // TODO: What should we do?
-            if opts.allow_assignment_to_param {
-                if let Ok(()) = self.assign_param(
-                    &rp,
-                    &lp,
-                    AssignOpts {
-                        allow_unknown_type: true,
-                        ..opts
-                    },
-                ) {
-                    continue;
-                }
-            }
+        for pair in li.zip_longest(ri) {
+            match pair {
+                EitherOrBoth::Both(lp, rp) => {
+                    // TODO: What should we do?
+                    if opts.allow_assignment_to_param {
+                        if let Ok(()) = self.assign_param(
+                            &rp,
+                            &lp,
+                            AssignOpts {
+                                allow_unknown_type: true,
+                                ..opts
+                            },
+                        ) {
+                            continue;
+                        }
+                    }
 
-            self.assign_param(
-                lp,
-                rp,
-                AssignOpts {
-                    allow_unknown_type: true,
-                    ..opts
-                },
-            )
-            .with_context(|| format!("tried to assign a method parameter to a method parameter",))?;
+                    self.assign_param(
+                        lp,
+                        rp,
+                        AssignOpts {
+                            allow_unknown_type: true,
+                            ..opts
+                        },
+                    )
+                    .with_context(|| format!("tried to assign a method parameter to a method parameter",))?;
+                }
+                EitherOrBoth::Left(_) => {}
+                EitherOrBoth::Right(_) => {}
+            }
         }
 
         Ok(())
