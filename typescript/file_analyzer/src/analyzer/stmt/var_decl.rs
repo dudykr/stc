@@ -335,10 +335,11 @@ impl Analyzer<'_, '_> {
                                 }
 
                                 Type::Tuple(tuple)
-                                    if tuple.elems.iter().all(|e| match &*e.ty {
-                                        Type::Keyword(..) => true,
-                                        _ => false,
-                                    }) =>
+                                    if !tuple.elems.is_empty()
+                                        && tuple.elems.iter().all(|e| match &*e.ty {
+                                            Type::Keyword(..) => true,
+                                            _ => false,
+                                        }) =>
                                 {
                                     let mut types = tuple.elems.iter().map(|e| *e.ty.clone()).collect::<Vec<_>>();
                                     types.dedup_type();
