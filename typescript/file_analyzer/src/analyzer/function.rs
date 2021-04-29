@@ -171,6 +171,12 @@ impl Analyzer<'_, '_> {
                                 .report(&mut child.storage);
                         }
                     } else {
+                        if child.rule().no_implicit_any {
+                            if child.is_implicitly_typed(&inferred_return_type) {
+                                child.storage.report(Error::ImplicitReturnType { span })
+                            }
+                        }
+
                         if child.may_generalize(&inferred_return_type) {
                             inferred_return_type = inferred_return_type.generalize_lit();
                         }

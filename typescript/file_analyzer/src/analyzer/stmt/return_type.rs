@@ -202,6 +202,7 @@ impl Analyzer<'_, '_> {
         }
 
         actual.dedup_type();
+
         let ty = Type::union(actual);
         let ty = self.simplify(ty);
 
