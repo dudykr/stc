@@ -22,6 +22,7 @@ impl Analyzer<'_, '_> {
 
         match &*e.arg {
             RExpr::New(..) => self.storage.report(Error::ExprInvalidForUpdateArg { span }),
+            RExpr::This(..) => self.storage.report(Error::TypeInvalidForUpdateArg { span }),
             _ => {}
         }
 
@@ -44,7 +45,8 @@ impl Analyzer<'_, '_> {
                     lit: RTsLit::Bool(..), ..
                 })
                 | Type::TypeLit(..)
-                | Type::Array(..) => Err(Error::TypeInvalidForUpdateArg { span: e.arg.span() }),
+                | Type::Array(..)
+                | Type::This(..) => Err(Error::TypeInvalidForUpdateArg { span: e.arg.span() }),
 
                 Type::Enum(..) => Err(Error::CannotAssignToNonVariable { span: e.arg.span() }),
 
