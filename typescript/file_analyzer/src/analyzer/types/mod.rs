@@ -129,12 +129,12 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            Type::Alias(a) => return Ok(Cow::Owned(self.normalize(None, &a.ty, opts)?.into_owned())),
+            Type::Alias(a) => return Ok(Cow::Owned(self.normalize(span, &a.ty, opts)?.into_owned())),
 
             // Leaf types.
             Type::Array(arr) => {
                 let elem_type = box self
-                    .normalize(None, &arr.elem_type, opts)
+                    .normalize(span, &arr.elem_type, opts)
                     .context("tried to normalize the type of the element of an array type")?
                     .into_owned();
                 return Ok(Cow::Owned(Type::Array(Array {
