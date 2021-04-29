@@ -85,7 +85,7 @@ impl Analyzer<'_, '_> {
                 //
                 // So we check for length first.
                 if r_params.len() != 0 {
-                    self.assign_params(opts, &l.params, &r_params, true)
+                    self.assign_params(opts, &l.params, &r_params)
                         .context("tried to assign parameters of a function to parameters of another function")?;
                 }
 
@@ -100,7 +100,7 @@ impl Analyzer<'_, '_> {
                 for rm in &rt.members {
                     match rm {
                         TypeElement::Call(rm) => {
-                            if self.assign_params(opts, &l.params, &rm.params, true).is_err() {
+                            if self.assign_params(opts, &l.params, &rm.params).is_err() {
                                 continue;
                             }
 
@@ -173,7 +173,7 @@ impl Analyzer<'_, '_> {
                     _ => (&rc.params, &rc.type_ann),
                 };
 
-                self.assign_params(opts, &l.params, &r_params, true).context(
+                self.assign_params(opts, &l.params, &r_params).context(
                     "tried to assign the parameters of constructor to the parameters of another constructor",
                 )?;
 
@@ -192,15 +192,13 @@ impl Analyzer<'_, '_> {
                 for (idx, rm) in rt.members.iter().enumerate() {
                     match rm {
                         TypeElement::Constructor(rc) => {
-                            if let Err(err) =
-                                self.assign_params(opts, &l.params, &rc.params, false).with_context(|| {
-                                    format!(
-                                        "tried to assign parameters of a constructor to them of another constructor \
-                                         ({}th element)",
-                                        idx
-                                    )
-                                })
-                            {
+                            if let Err(err) = self.assign_params(opts, &l.params, &rc.params).with_context(|| {
+                                format!(
+                                    "tried to assign parameters of a constructor to them of another constructor ({}th \
+                                     element)",
+                                    idx
+                                )
+                            }) {
                                 errors.push(err);
                                 continue;
                             }
@@ -243,27 +241,10 @@ impl Analyzer<'_, '_> {
         Err(Error::SimpleAssignFailed { span })
     }
 
+    /// Assigns a parameter to another one.
+    /// It may assign in reverse direction because of the rule 1.
+    /// At the same time, it should not be reversed in some cases. (See rule 2)
     ///
-    ///  - `string` is assignable to `...args: any[]`.
-    fn assign_param(&mut self, l: &FnParam, r: &FnParam, opts: AssignOpts) -> ValidationResult<()> {
-        match l.pat {
-            RPat::Rest(..) => match l.ty.normalize() {
-                Type::Array(l_arr) => {
-                    if let Ok(()) = self.assign_with_opts(opts, &l_arr.elem_type, &r.ty) {
-                        return Ok(());
-                    }
-                }
-                _ => {}
-            },
-            _ => {}
-        }
-
-        self.assign_with_opts(opts, &l.ty, &r.ty)
-            .context("tried to assign the type of a parameter to another")?;
-
-        Ok(())
-    }
-
     /// ## Rule 1
     ///
     /// ```ts
@@ -296,13 +277,30 @@ impl Analyzer<'_, '_> {
     ///
     /// Valid assignment is `Derived = Base`, which is `a.params[0] =
     /// b.param[0]` and it matches `a = b`.
-    pub(crate) fn assign_params(
-        &mut self,
-        opts: AssignOpts,
-        l: &[FnParam],
-        r: &[FnParam],
-        reverse: bool,
-    ) -> ValidationResult<()> {
+    ///
+    /// # Notes
+    ///
+    ///  - `string` is assignable to `...args: any[]`.
+    fn assign_param(&mut self, l: &FnParam, r: &FnParam, opts: AssignOpts) -> ValidationResult<()> {
+        match l.pat {
+            RPat::Rest(..) => match l.ty.normalize() {
+                Type::Array(l_arr) => {
+                    if let Ok(()) = self.assign_with_opts(opts, &l_arr.elem_type, &r.ty) {
+                        return Ok(());
+                    }
+                }
+                _ => {}
+            },
+            _ => {}
+        }
+
+        self.assign_with_opts(opts, &l.ty, &r.ty)
+            .context("tried to assign the type of a parameter to another")?;
+
+        Ok(())
+    }
+
+    pub(crate) fn assign_params(&mut self, opts: AssignOpts, l: &[FnParam], r: &[FnParam]) -> ValidationResult<()> {
         let span = opts.span;
         let li = l.iter().filter(|p| match p.pat {
             RPat::Ident(RBindingIdent {
@@ -343,22 +341,15 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            let (lhs, rhs) = if reverse { (rp, lp) } else { (lp, rp) };
-
             self.assign_param(
-                lhs,
-                rhs,
+                lp,
+                rp,
                 AssignOpts {
                     allow_unknown_type: true,
                     ..opts
                 },
             )
-            .with_context(|| {
-                format!(
-                    "tried to assign a method parameter to a method parameter. reverse = {:?}",
-                    reverse
-                )
-            })?;
+            .with_context(|| format!("tried to assign a method parameter to a method parameter",))?;
         }
 
         Ok(())

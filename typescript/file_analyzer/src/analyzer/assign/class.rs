@@ -278,7 +278,7 @@ impl Analyzer<'_, '_> {
                 for rm in r {
                     match rm {
                         ClassMember::Constructor(rc) => {
-                            self.assign_params(opts, &lc.params, &rc.params, true)?;
+                            self.assign_params(opts, &lc.params, &rc.params)?;
                             // TODO: Validate parameters and etc..
                             return Ok(());
                         }

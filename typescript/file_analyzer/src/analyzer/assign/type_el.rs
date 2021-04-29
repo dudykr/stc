@@ -629,7 +629,7 @@ impl Analyzer<'_, '_> {
                                 TypeElement::Method(rm) => {
                                     if let Some(lp_ty) = &lp.type_ann {
                                         if let Type::Function(lp_ty) = lp_ty.normalize() {
-                                            self.assign_params(opts, &lp_ty.params, &rm.params, true).context(
+                                            self.assign_params(opts, &lp_ty.params, &rm.params).context(
                                                 "tried to assign parameters of a method property to the parameters of \
                                                  a property with callable type",
                                             )?;
@@ -656,7 +656,7 @@ impl Analyzer<'_, '_> {
                                 TypeElement::Method(ref rm) => {
                                     //
 
-                                    self.assign_params(opts, &lm.params, &rm.params, true)?;
+                                    self.assign_params(opts, &lm.params, &rm.params)?;
 
                                     // TODO: Return type
 
@@ -671,7 +671,7 @@ impl Analyzer<'_, '_> {
                                     // Allow assigning property with callable type to methods.
                                     if let Some(rp_ty) = &rp.type_ann {
                                         if let Type::Function(rp_ty) = rp_ty.normalize() {
-                                            self.assign_params(opts, &lm.params, &rp_ty.params, true).context(
+                                            self.assign_params(opts, &lm.params, &rp_ty.params).context(
                                                 "tried to assign parameters of a property with callable type to a \
                                                  method parameters",
                                             )?;
