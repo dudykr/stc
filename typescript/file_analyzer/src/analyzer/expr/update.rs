@@ -49,7 +49,9 @@ impl Analyzer<'_, '_> {
                 })
                 | Type::TypeLit(..)
                 | Type::Array(..)
-                | Type::This(..) => Err(Error::TypeInvalidForUpdateArg { span: e.arg.span() }),
+                | Type::Tuple(..)
+                | Type::This(..)
+                | Type::Function(..) => Err(Error::TypeInvalidForUpdateArg { span: e.arg.span() }),
 
                 Type::Enum(..) => Err(Error::CannotAssignToNonVariable { span: e.arg.span() }),
 
