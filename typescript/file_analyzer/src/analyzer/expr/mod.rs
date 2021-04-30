@@ -1981,6 +1981,13 @@ impl Analyzer<'_, '_> {
                 _ => {}
             },
 
+            Type::Rest(rest) => {
+                //
+                return self
+                    .access_property(span, *rest.ty.clone(), prop, type_mode, id_ctx)
+                    .context("tried to access property of a rest type");
+            }
+
             _ => {}
         }
 
