@@ -39,7 +39,6 @@ use stc_ts_errors::Error;
 use stc_ts_storage::Builtin;
 use stc_ts_storage::Info;
 use stc_ts_storage::Storage;
-use stc_ts_type_ops::Fix;
 use stc_ts_types::{Id, ModuleId, ModuleTypeData, SymbolIdGenerator};
 use std::mem::take;
 use std::{

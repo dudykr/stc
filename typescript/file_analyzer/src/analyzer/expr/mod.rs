@@ -907,6 +907,8 @@ impl Analyzer<'_, '_> {
             debug_assert_ne!(span, DUMMY_SP, "access_property: called with a dummy span");
         }
 
+        obj.assert_valid();
+
         let obj_str = dump_type_as_string(&self.cm, &obj);
 
         // We use child scope to store type parameters.
@@ -915,6 +917,7 @@ impl Analyzer<'_, '_> {
             ty = analyzer.expand_type_params_using_scope(ty)?;
             Ok(ty)
         })?;
+        ty.assert_valid();
 
         let ty_str = dump_type_as_string(&self.cm, &ty);
         slog::debug!(
@@ -2511,6 +2514,7 @@ impl Analyzer<'_, '_> {
             }
             RTsEntityName::TsQualifiedName(ref qname) => {
                 let obj_ty = self.type_of_ts_entity_name(span, ctxt, &qname.left, None)?;
+                obj_ty.assert_valid();
 
                 let ctx = Ctx {
                     preserve_ref: false,
@@ -2518,6 +2522,7 @@ impl Analyzer<'_, '_> {
                     ..self.ctx
                 };
                 let obj_ty = self.with_ctx(ctx).expand_fully(span, obj_ty, true)?;
+                obj_ty.assert_valid();
 
                 self.access_property(
                     span,
