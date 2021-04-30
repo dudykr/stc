@@ -179,6 +179,41 @@ impl Analyzer<'_, '_> {
                         .context("tried to normalize the calculated type of a conditional type");
                 }
 
+                match check_type.normalize() {
+                    Type::Union(check_type_union) => {
+                        let mut all = true;
+                        let mut types = vec![];
+                        for check_type in &check_type_union.types {
+                            let res = self.extends(ty.span(), Default::default(), &check_type, &extends_type);
+                            if let Some(v) = res {
+                                if v {
+                                    if !c.true_type.is_never() {
+                                        types.push(check_type.clone());
+                                    }
+                                } else {
+                                    if !c.false_type.is_never() {
+                                        types.push(check_type.clone());
+                                    }
+                                }
+                            } else {
+                                all = false;
+                                break;
+                            }
+                        }
+
+                        if all {
+                            types.dedup_type();
+                            let new = Type::Union(Union {
+                                span: actual_span,
+                                types,
+                            });
+
+                            return Ok(Cow::Owned(new));
+                        }
+                    }
+                    _ => {}
+                }
+
                 // TOOD: Optimize
                 // If we can calculate type using constraints, do so.
                 match check_type.normalize_mut() {
