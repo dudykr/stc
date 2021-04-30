@@ -1088,6 +1088,7 @@ impl Analyzer<'_, '_> {
         is_override: bool,
     ) -> ValidationResult<()> {
         if let Some(ty) = &ty {
+            ty.assert_valid();
             slog::debug!(
                 self.logger,
                 "[vars]: Declaring {} as {}",

@@ -2578,6 +2578,8 @@ impl Analyzer<'_, '_> {
                     }
                 };
 
+                obj_ty.assert_valid();
+
                 if is_obj_opt_chain {
                     should_be_optional = self.is_obj_optional(&obj_ty)?;
                 }
