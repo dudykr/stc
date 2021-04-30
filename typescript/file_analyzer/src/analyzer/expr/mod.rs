@@ -52,6 +52,7 @@ use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_type_ops::is_str_lit_or_union;
+use stc_ts_type_ops::Fix;
 use stc_ts_types::name::Name;
 use stc_ts_types::Alias;
 use stc_ts_types::Class;
@@ -913,7 +914,9 @@ impl Analyzer<'_, '_> {
 
         // We use child scope to store type parameters.
         let mut ty = self.with_scope_for_type_params(|analyzer: &mut Analyzer| -> ValidationResult<_> {
-            let mut ty = analyzer.access_property_inner(span, obj, prop, type_mode, id_ctx)?;
+            let mut ty = analyzer
+                .access_property_inner(span, obj, prop, type_mode, id_ctx)?
+                .fixed();
             ty.assert_valid();
             ty = analyzer.expand_type_params_using_scope(ty)?;
             ty.assert_valid();
