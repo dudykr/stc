@@ -37,6 +37,7 @@ use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::debug::print_backtrace;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
+use stc_ts_type_ops::Fix;
 use stc_ts_types::name::Name;
 use stc_ts_types::Array;
 use stc_ts_types::Class;
@@ -655,7 +656,7 @@ impl Analyzer<'_, '_> {
             is_looking_for_namespace: false,
         };
 
-        let ty = ty.foldable().fold_with(&mut v);
+        let ty = ty.foldable().fold_with(&mut v).fixed();
         ty.assert_valid();
 
         let new = dump_type_as_string(&self.cm, &ty);
