@@ -68,7 +68,8 @@ impl Visit<RFnDecl> for AmbientFunctionHandler<'_, '_> {
         if node.function.body.is_none() {
             if let Some(ref name) = self.last_ambient_name {
                 if node.ident.sym != name.sym {
-                    self.errors.report(Error::TS2389 { span: name.span });
+                    self.errors
+                        .report(Error::FnImplMissingOrNotFollowedByDecl { span: name.span });
                 }
             }
             self.last_ambient_name = Some(node.ident.clone());
