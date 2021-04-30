@@ -74,6 +74,7 @@ use swc_common::SyntaxContext;
 use swc_common::TypeEq;
 use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::op;
+use swc_ecma_ast::Accessibility;
 use swc_ecma_ast::EsVersion;
 use swc_ecma_ast::TruePlusMinus;
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -1295,7 +1296,7 @@ impl Analyzer<'_, '_> {
             Type::Class(ref c) => {
                 for v in c.def.body.iter() {
                     match v {
-                        ClassMember::Property(ref class_prop) => {
+                        ClassMember::Property(ref class_prop @ ClassProperty { is_static: false, .. }) => {
                             if let Some(declaring) = self.scope.declaring_prop.as_ref() {
                                 if class_prop.key == *declaring.sym() {
                                     return Err(Error::ReferencedInInit { span });
@@ -1310,7 +1311,7 @@ impl Analyzer<'_, '_> {
                                 });
                             }
                         }
-                        ClassMember::Method(ref mtd) => {
+                        ClassMember::Method(ref mtd @ Method { is_static: false, .. }) => {
                             if self.key_matches(span, &mtd.key, prop, false) {
                                 return Ok(Type::Function(stc_ts_types::Function {
                                     span: mtd.span,
@@ -1340,6 +1341,8 @@ impl Analyzer<'_, '_> {
                                 }
                             }
                         }
+
+                        _ => {}
                     }
                 }
 
