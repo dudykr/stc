@@ -53,11 +53,7 @@ impl Visit<RStmt> for AmbientFunctionHandler<'_, '_> {
         match node {
             RStmt::Decl(RDecl::Fn(..)) => {}
             _ => {
-                // .take() is same as self.last_ambient_name = None
-                if let Some(ref i) = self.last_ambient_name.take() {
-                    self.errors
-                        .report(Error::FnImplMissingOrNotFollowedByDecl { span: i.span });
-                }
+                self.handle_missing_impl();
             }
         }
     }
