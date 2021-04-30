@@ -292,6 +292,8 @@ impl Visit<RMemberExpr> for DepAnalyzer {
 
 impl Visit<RBindingIdent> for DepAnalyzer {
     fn visit(&mut self, value: &RBindingIdent) {
+        value.type_ann.visit_with(self);
+
         if self.in_var_decl {
             return;
         }
