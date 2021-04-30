@@ -87,6 +87,19 @@ impl VisitMut<Type> for Fixer {
                 }
                 _ => {}
             },
+
+            Type::Intersection(i) => match i.types.len() {
+                0 => {
+                    *ty = Type::any(i.span);
+                    return;
+                }
+                1 => {
+                    let elem = i.types.drain(..).next().unwrap();
+                    *ty = elem;
+                    return;
+                }
+                _ => {}
+            },
             _ => {}
         }
     }
