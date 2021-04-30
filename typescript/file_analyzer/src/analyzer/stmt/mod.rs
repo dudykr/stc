@@ -16,6 +16,7 @@ use stc_ts_ast_rnode::RTsExprWithTypeArgs;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_ast_rnode::RWithStmt;
+use stc_ts_errors::Error;
 use stc_ts_types::Type;
 use stc_utils::stack;
 use swc_common::DUMMY_SP;
@@ -105,6 +106,8 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, s: &RWithStmt) {
+        self.storage.report(Error::WithStmtNotSupported { span: s.span });
+
         s.obj.visit_with(self);
 
         Ok(())

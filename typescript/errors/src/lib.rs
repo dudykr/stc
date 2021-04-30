@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2410
+    WithStmtNotSupported {
+        span: Span,
+    },
+
     /// TS2503
     NamspaceNotFound {
         name: Box<Name>,
@@ -1227,6 +1232,8 @@ impl Error {
             Error::EnumMemberIdCannotBeNumber { .. } => 2452,
 
             Error::NamspaceNotFound { .. } => 2503,
+
+            Error::WithStmtNotSupported { .. } => 2410,
 
             _ => 0,
         }
