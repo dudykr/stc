@@ -336,7 +336,7 @@ impl Visit<RProp> for DepAnalyzer {
 
 impl Visit<RTsExprWithTypeArgs> for DepAnalyzer {
     fn visit(&mut self, e: &RTsExprWithTypeArgs) {
-        e.visit_with(self);
+        e.visit_children_with(self);
 
         let id = left(&e.expr);
         self.used.insert(TypedId {
