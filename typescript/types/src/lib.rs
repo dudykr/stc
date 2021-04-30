@@ -835,7 +835,7 @@ impl Intersection {
                     continue;
                 }
                 if t1.type_eq(t2) {
-                    panic!("A union type has duplicate elements: ({:?})", t1)
+                    panic!("An intersection type has duplicate elements: ({:?})", t1)
                 }
             }
         }
