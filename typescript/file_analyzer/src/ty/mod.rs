@@ -120,9 +120,12 @@ impl Fold<Class> for LitGeneralizer {
     }
 }
 
-impl Fold<ClassMember> for LitGeneralizer {
-    fn fold(&mut self, node: ClassMember) -> ClassMember {
-        node
+impl Fold<ClassProperty> for LitGeneralizer {
+    fn fold(&mut self, node: ClassProperty) -> ClassProperty {
+        if node.readonly {
+            return node;
+        }
+        node.fold_children_with(self)
     }
 }
 
