@@ -2532,6 +2532,7 @@ types/tuple/wideningTuples6.ts
 types/tuple/wideningTuples7.ts
 types/typeAliases/asiPreventsParsingAsTypeAlias01.ts
 types/typeAliases/asiPreventsParsingAsTypeAlias02.ts
+types/typeAliases/circularTypeAliasForUnionWithInterface.ts
 types/typeAliases/classDoesNotDependOnBaseTypes.ts
 types/typeAliases/typeAliases.ts
 types/typeAliases/typeAliasesDoNotMerge.ts
