@@ -51,6 +51,7 @@ use stc_ts_ast_rnode::RTsThisTypeOrIdent;
 use stc_ts_ast_rnode::RTsType;
 use stc_ts_ast_rnode::RTsTypeParamInstantiation;
 use stc_ts_ast_rnode::RTsTypeRef;
+use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::debug::print_backtrace;
 use stc_ts_errors::debug::print_type;
 use stc_ts_errors::DebugExt;
@@ -1096,6 +1097,12 @@ impl Analyzer<'_, '_> {
 
             _ => {}
         }
+
+        slog::debug!(
+            self.logger,
+            "[exprs/call] Calling {}",
+            dump_type_as_string(&self.cm, &ty)
+        );
 
         match kind {
             ExtractKind::New => match ty.normalize() {
