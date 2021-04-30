@@ -821,6 +821,27 @@ pub struct Intersection {
 
 assert_eq_size!(Intersection, [u8; 40]);
 
+impl Intersection {
+    pub fn assert_valid(&self) {
+        if !cfg!(debug_assertions) {
+            return;
+        }
+
+        self.types.iter().for_each(|ty| ty.assert_valid());
+
+        for (i, t1) in self.types.iter().enumerate() {
+            for (j, t2) in self.types.iter().enumerate() {
+                if i == j {
+                    continue;
+                }
+                if t1.type_eq(t2) {
+                    panic!("A union type has duplicate elements: ({:?})", t1)
+                }
+            }
+        }
+    }
+}
+
 /// A type parameter
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct TypeParam {
@@ -1214,6 +1235,7 @@ impl Type {
 
         match self.normalize() {
             Type::Union(ty) => ty.assert_valid(),
+            Type::Intersection(ty) => ty.assert_valid(),
             _ => {}
         }
     }
