@@ -131,6 +131,13 @@ impl Analyzer<'_, '_> {
             return Some(true);
         }
 
+        slog::debug!(
+            self.logger,
+            "[generic/extends] Checking if {} extends {}",
+            dump_type_as_string(&self.cm, &child),
+            dump_type_as_string(&self.cm, &parent),
+        );
+
         match child {
             Type::Param(TypeParam {
                 constraint: Some(child),
