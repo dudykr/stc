@@ -1046,6 +1046,23 @@ impl Analyzer<'_, '_> {
                             let super_ty =
                                 expr.validate_with_args(child, (TypeOfMode::RValue, super_type_params.as_ref(), None))?;
 
+                            child.validate_with(|a| match super_ty.normalize() {
+                                Type::Lit(..)
+                                | Type::Keyword(RTsKeywordType {
+                                    kind: TsKeywordTypeKind::TsStringKeyword,
+                                    ..
+                                })
+                                | Type::Keyword(RTsKeywordType {
+                                    kind: TsKeywordTypeKind::TsNumberKeyword,
+                                    ..
+                                })
+                                | Type::Keyword(RTsKeywordType {
+                                    kind: TsKeywordTypeKind::TsBooleanKeyword,
+                                    ..
+                                }) => Err(Error::InvalidSuperClass { span: super_ty.span() }),
+                                _ => Ok(()),
+                            });
+
                             match super_ty.normalize() {
                                 // We should handle mixin
                                 Type::Intersection(i) if need_base_class => {

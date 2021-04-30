@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2507
+    InvalidSuperClass {
+        span: Span,
+    },
+
     /// TS2410
     WithStmtNotSupported {
         span: Span,
@@ -1237,6 +1242,8 @@ impl Error {
             Error::NamspaceNotFound { .. } => 2503,
 
             Error::WithStmtNotSupported { .. } => 2410,
+
+            Error::InvalidSuperClass { .. } => 2507,
 
             _ => 0,
         }
