@@ -59,6 +59,14 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2503
+    NamspaceNotFound {
+        name: Box<Name>,
+        ctxt: ModuleId,
+        type_args: Option<Box<TypeParamInstantiation>>,
+        span: Span,
+    },
+
     /// TS2452
     EnumMemberIdCannotBeNumber {
         span: Span,
@@ -1217,6 +1225,8 @@ impl Error {
             Error::InvalidLhsOfAssign { .. } => 2364,
 
             Error::EnumMemberIdCannotBeNumber { .. } => 2452,
+
+            Error::NamspaceNotFound { .. } => 2503,
 
             _ => 0,
         }

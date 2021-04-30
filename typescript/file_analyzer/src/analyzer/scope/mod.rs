@@ -618,6 +618,7 @@ impl Analyzer<'_, '_> {
             full: false,
             expand_union: false,
             expand_top_level: true,
+            is_looking_for_namespace: false,
         };
         Ok(ty.foldable().fold_with(&mut v))
     }
@@ -650,6 +651,7 @@ impl Analyzer<'_, '_> {
             full: true,
             expand_union,
             expand_top_level: true,
+            is_looking_for_namespace: false,
         };
 
         let ty = ty.foldable().fold_with(&mut v);
@@ -1836,6 +1838,7 @@ struct Expander<'a, 'b, 'c> {
     expand_union: bool,
     /// Should we expand top level references?
     expand_top_level: bool,
+    is_looking_for_namespace: bool,
 }
 
 impl Expander<'_, '_, '_> {
@@ -2050,8 +2053,11 @@ impl Expander<'_, '_, '_> {
             //
             //  let a: StringEnum.Foo = x;
             RTsEntityName::TsQualifiedName(box RTsQualifiedName { left, ref right, .. }) => {
-                let left =
-                    self.expand_ts_entity_name(span, ctxt, left, None, was_top_level, trying_primitive_expansion)?;
+                let old = replace(&mut self.is_looking_for_namespace, false);
+                let res = self.expand_ts_entity_name(span, ctxt, left, None, was_top_level, trying_primitive_expansion);
+                self.is_looking_for_namespace = old;
+
+                let left = res?;
 
                 if let Some(left) = left {
                     let ty = self
@@ -2074,12 +2080,22 @@ impl Expander<'_, '_, '_> {
         }
 
         print_backtrace();
-        Err(Error::TypeNotFound {
-            name: box type_name.clone().into(),
-            ctxt,
-            type_args: type_args.cloned().map(Box::new),
-            span,
-        })
+
+        if self.is_looking_for_namespace {
+            Err(Error::NamspaceNotFound {
+                name: box type_name.clone().into(),
+                ctxt,
+                type_args: type_args.cloned().map(Box::new),
+                span,
+            })
+        } else {
+            Err(Error::TypeNotFound {
+                name: box type_name.clone().into(),
+                ctxt,
+                type_args: type_args.cloned().map(Box::new),
+                span,
+            })
+        }
     }
     fn expand_ref(&mut self, r: Ref, was_top_level: bool) -> ValidationResult<Option<Type>> {
         let trying_primitive_expansion = self.analyzer.scope.expand_triage_depth != 0;
