@@ -95,10 +95,13 @@ impl Analyzer<'_, '_> {
         value: &Option<Box<RExpr>>,
     ) -> ValidationResult<Option<Type>> {
         let mut ty = try_opt!(type_ann.validate_with(self));
-        let value_ty = try_opt!(value.validate_with_args(self, (TypeOfMode::RValue, None, ty.as_ref())));
+        let mut value_ty = try_opt!(value.validate_with_args(self, (TypeOfMode::RValue, None, ty.as_ref())));
 
         if readonly {
             if let Some(ty) = &mut ty {
+                self.prevent_generalize(ty);
+            }
+            if let Some(ty) = &mut value_ty {
                 self.prevent_generalize(ty);
             }
         }
