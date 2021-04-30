@@ -127,9 +127,6 @@ parser::ecmascript5::parserNoASIOnCallAfterFunctionExpression1.ts
 expressions::typeAssertions::duplicatePropertiesInTypeAssertions01.ts
 expressions::typeAssertions::duplicatePropertiesInTypeAssertions02.ts
 expressions::typeGuards::typeGuardOfFormInstanceOf.ts
-functions::functionOverloadCompatibilityWithVoid01.ts
-generators::generatorReturnTypeInference.ts
-statements::withStatements::withStatements.ts
 types::primitives::boolean::boolInsteadOfBoolean.ts
 types::rest::genericRestParameters2.ts
 types::specifyingTypes::typeQueries::typeofTypeParameter.ts
