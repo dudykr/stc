@@ -902,6 +902,7 @@ impl Error {
         self.convert_all_inner(&mut op)
     }
 
+    #[cfg_attr(not(debug_assertions), inline(always))]
     pub fn actual(&self) -> &Self {
         match self {
             Error::DebugContext(ctx) => ctx.inner.actual(),
@@ -1236,6 +1237,22 @@ impl Error {
             Error::WithStmtNotSupported { .. } => 2410,
 
             _ => 0,
+        }
+    }
+
+    pub fn is_var_not_found(&self) -> bool {
+        match self.actual() {
+            Self::NoSuchVar { .. }
+            | Self::NoSuchVarButThisHasSuchProperty { .. }
+            | Self::NoSuchVarForShorthand { .. } => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_type_not_found(&self) -> bool {
+        match self.actual() {
+            Self::NoSuchType { .. } | Self::NoSuchTypeButVarExists { .. } => true,
+            _ => false,
         }
     }
 
