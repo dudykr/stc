@@ -753,6 +753,15 @@ impl Analyzer<'_, '_> {
 
             let callee = self.expand_top_ref(span, Cow::Owned(callee))?.into_owned();
 
+            match callee.normalize() {
+                Type::ClassDef(cls) => {
+                    if cls.is_abstract {
+                        self.storage.report(Error::CannotCreateInstanceOfAbstractClass { span })
+                    }
+                }
+                _ => {}
+            }
+
             self.get_best_return_type(
                 span,
                 expr,
