@@ -149,6 +149,7 @@ fn load_expected_errors(ts_file: &Path) -> Result<Vec<RefError>, Error> {
 
         for err in &mut errors {
             match &*err.code {
+                // TS2304: Type not found.
                 // TS2552: Type not found with recommendation.
                 // TS2580: Type not found with recommendation for package to instsall.
                 // TS2581: Type not found with recommendation for jQuery.
@@ -160,16 +161,20 @@ fn load_expected_errors(ts_file: &Path) -> Result<Vec<RefError>, Error> {
                     err.code = "TS2304".to_string();
                 }
 
+                // TS2339: Property not found.
                 // TS2550: Property not found with a suggestion to change `lib`.
                 // TS2551: Property not found with a suggestion.
                 "TS2550" | "TS2551" => {
                     err.code = "TS2339".to_string();
                 }
 
+                // TS2693: Type used as a variable.
+                // TS2585: Type used as a variable with a suggestion to change 'lib',
+                "TS2585" => {
+                    err.code = "TS2693".to_string();
+                }
+
                 _ => {}
-            }
-            if err.code == "TS2552" || err.code == "TS2580" {
-                err.code = "TS2304".to_string();
             }
         }
 
