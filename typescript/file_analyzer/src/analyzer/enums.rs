@@ -404,7 +404,7 @@ impl Analyzer<'_, '_> {
     }
 
     // Check for rvalue of assignments.
-    pub(super) fn check_rvalue(&mut self, span: Span, rhs_ty: &Type) {
+    pub(super) fn check_rvalue(&mut self, span: Span, lhs: &RPat, rhs_ty: &Type) {
         match *rhs_ty.normalize() {
             Type::Enum(ref e) if e.is_const => {
                 self.storage.report(Error::InvalidUseOfConstEnum { span });
@@ -414,7 +414,12 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {
                 if self.rule().strict_null_checks {
-                    self.storage.report(Error::ObjectIsPossiblyUndefined { span });
+                    match lhs {
+                        RPat::Array(_) | RPat::Rest(_) | RPat::Object(_) => {
+                            self.storage.report(Error::ObjectIsPossiblyUndefined { span });
+                        }
+                        _ => {}
+                    }
                 }
             }
             _ => {}

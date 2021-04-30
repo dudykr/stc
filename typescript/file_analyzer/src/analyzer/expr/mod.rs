@@ -25,6 +25,7 @@ use stc_ts_ast_rnode::RClassExpr;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RExprOrSuper;
 use stc_ts_ast_rnode::RIdent;
+use stc_ts_ast_rnode::RInvalid;
 use stc_ts_ast_rnode::RLit;
 use stc_ts_ast_rnode::RMemberExpr;
 use stc_ts_ast_rnode::RNull;
@@ -447,7 +448,18 @@ impl Analyzer<'_, '_> {
                 e.right.validate_with_args(&mut *analyzer, (mode, None, type_ann))
             } {
                 Ok(rhs_ty) => {
-                    analyzer.check_rvalue(span, &rhs_ty);
+                    let lhs;
+                    analyzer.check_rvalue(
+                        span,
+                        match &e.left {
+                            RPatOrExpr::Expr(_) => {
+                                lhs = RPat::Invalid(RInvalid { span: DUMMY_SP });
+                                &lhs
+                            }
+                            RPatOrExpr::Pat(p) => &**p,
+                        },
+                        &rhs_ty,
+                    );
 
                     Ok(rhs_ty)
                 }
