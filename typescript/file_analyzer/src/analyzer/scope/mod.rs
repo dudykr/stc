@@ -2053,7 +2053,7 @@ impl Expander<'_, '_, '_> {
             //
             //  let a: StringEnum.Foo = x;
             RTsEntityName::TsQualifiedName(box RTsQualifiedName { left, ref right, .. }) => {
-                let old = replace(&mut self.is_looking_for_namespace, false);
+                let old = replace(&mut self.is_looking_for_namespace, true);
                 let res = self.expand_ts_entity_name(span, ctxt, left, None, was_top_level, trying_primitive_expansion);
                 self.is_looking_for_namespace = old;
 
