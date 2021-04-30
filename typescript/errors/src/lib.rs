@@ -424,6 +424,7 @@ pub enum Error {
         name: Id,
     },
 
+    /// TS2693
     TypeUsedAsVar {
         span: Span,
         name: Id,
@@ -1087,7 +1088,7 @@ impl Error {
             }
             Error::AssignOpCannotBeApplied { .. } => 2365,
             Error::NonSymbolComputedPropInFormOfSymbol { .. } => 2471,
-            Error::TypeUsedAsVar { .. } => 2585,
+            Error::TypeUsedAsVar { .. } => 2693,
             Error::TypeNotFound { .. } => 2304,
 
             Error::NoInitAndNoDefault { .. } => 2525,
