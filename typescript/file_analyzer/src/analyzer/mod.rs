@@ -738,17 +738,36 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RTsImportEqualsDecl) {
         self.record(node);
 
-        match node.module_ref {
-            RTsModuleRef::TsEntityName(ref e) => {
-                match self.type_of_ts_entity_name(node.span, self.ctx.module_id, e, None) {
-                    Ok(..) => {}
-                    Err(err) => self.storage.report(err),
-                }
-            }
-            _ => {}
-        }
+        let ctx = Ctx {
+            in_declare: self.ctx.in_declare || node.declare,
+            ..self.ctx
+        };
+        self.with_ctx(ctx).with(|analyzer: &mut Analyzer| {
+            match node.module_ref {
+                RTsModuleRef::TsEntityName(ref e) => {
+                    let ty = analyzer
+                        .type_of_ts_entity_name(node.span, analyzer.ctx.module_id, e, None)
+                        .unwrap_or_else(|err| {
+                            analyzer.storage.report(err);
+                            Type::any(node.span)
+                        });
 
-        Ok(())
+                    analyzer.declare_var(
+                        node.span,
+                        VarDeclKind::Const,
+                        node.id.clone().into(),
+                        Some(ty),
+                        None,
+                        true,
+                        false,
+                        false,
+                    )?;
+                }
+                _ => {}
+            }
+
+            Ok(())
+        })
     }
 }
 
