@@ -108,7 +108,20 @@ types::stringLiteral::stringLiteralTypesOverloads02.ts
 types::tuple::wideningTuples3.ts
 types::tuple::wideningTuples5.ts
 types::tuple::wideningTuples7.ts
-
+parser::ecmascript5::ArrowFunctionExpressions::parserArrowFunctionExpression4.ts
+parser::ecmascript5::ErrorRecovery::ParameterLists::parserErrorRecovery_ParameterList6.ts
+parser::ecmascript5::Expressions::parserConditionalExpression1.ts
+parser::ecmascript5::ModuleDeclarations::parserModuleDeclaration12.ts
+parser::ecmascript5::ModuleDeclarations::parserModuleDeclaration7.ts
+parser::ecmascript5::ModuleDeclarations::parserModuleDeclaration8.ts
+parser::ecmascript5::ModuleDeclarations::parserModuleDeclaration9.ts
+parser::ecmascript5::RegressionTests::parser509698.ts
+parser::ecmascript5::RegressionTests::parserTernaryAndCommaOperators1.ts
+parser::ecmascript5::RegularExpressions::parserRegularExpression4.ts
+parser::ecmascript5::RegularExpressions::parserRegularExpression5.ts
+parser::ecmascript5::SuperExpressions::parserSuperExpression2.ts
+parser::ecmascript5::parserImportDeclaration1.ts
+parser::ecmascript5::parserNoASIOnCallAfterFunctionExpression1.ts
 
 
 expressions::typeAssertions::duplicatePropertiesInTypeAssertions01.ts
@@ -117,11 +130,6 @@ expressions::typeGuards::typeGuardOfFormInstanceOf.ts
 functions::functionOverloadCompatibilityWithVoid01.ts
 generators::generatorReturnTypeInference.ts
 statements::withStatements::withStatements.ts
-types::intersection::commonTypeIntersection.ts
-types::intersection::intersectionMemberOfUnionNarrowsCorrectly.ts
-types::literal::templateLiteralTypesPatternsPrefixSuffixAssignability.ts
-types::objectTypeLiteral::methodSignatures::functionLiterals.ts
-types::objectTypeLiteral::methodSignatures::methodSignaturesWithOverloads2.ts
 types::primitives::boolean::boolInsteadOfBoolean.ts
 types::rest::genericRestParameters2.ts
 types::specifyingTypes::typeQueries::typeofTypeParameter.ts
