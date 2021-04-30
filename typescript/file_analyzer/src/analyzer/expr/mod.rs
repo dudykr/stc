@@ -74,7 +74,6 @@ use swc_common::SyntaxContext;
 use swc_common::TypeEq;
 use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::op;
-use swc_ecma_ast::Accessibility;
 use swc_ecma_ast::EsVersion;
 use swc_ecma_ast::TruePlusMinus;
 use swc_ecma_ast::TsKeywordTypeKind;
