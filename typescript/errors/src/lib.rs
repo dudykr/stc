@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2452
+    EnumMemberIdCannotBeNumber {
+        span: Span,
+    },
+
     /// TS2364
     InvalidLhsOfAssign {
         span: Span,
@@ -1210,6 +1215,8 @@ impl Error {
             Error::ImplicitReturnType { .. } => 7010,
 
             Error::InvalidLhsOfAssign { .. } => 2364,
+
+            Error::EnumMemberIdCannotBeNumber { .. } => 2452,
 
             _ => 0,
         }

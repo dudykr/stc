@@ -57,6 +57,10 @@ type EnumValues = FxHashMap<JsWord, RTsLit>;
 impl Analyzer<'_, '_> {
     #[inline(never)]
     fn validate(&mut self, e: &RTsEnumDecl) -> ValidationResult<Enum> {
+        for m in &e.members {
+            self.validate_with(|a| a.validate_enum_memeber_name(&m.id));
+        }
+
         let mut default = 0;
         let mut values = Default::default();
         let ty: Result<_, _> = try {
@@ -308,6 +312,19 @@ fn compute(
 }
 
 impl Analyzer<'_, '_> {
+    fn validate_enum_memeber_name(&mut self, e: &RTsEnumMemberId) -> ValidationResult<()> {
+        match e {
+            RTsEnumMemberId::Ident(i) => {}
+            RTsEnumMemberId::Str(s) => {
+                if s.value.starts_with(|c: char| c.is_digit(10)) {
+                    Err(Error::EnumMemberIdCannotBeNumber { span: s.span })?
+                }
+            }
+        }
+
+        Ok(())
+    }
+
     /// `enumBasics.ts` says
     ///
     /// > Enum object type is anonymous with properties of the enum type and
