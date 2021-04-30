@@ -76,7 +76,7 @@ fn vars_declared_by_var_decl(v: &RVarDecl) -> FxHashMap<TypedId, FxHashSet<Typed
         let vars = find_ids_in_pat(&decl.name);
 
         // Get deps of name.
-        let mut type_ids = deps_of(&decl.init);
+        let mut type_ids = deps_of(&decl.name);
 
         // Exclude the variables we are defining.
         for var in vars.iter().cloned() {
@@ -88,16 +88,15 @@ fn vars_declared_by_var_decl(v: &RVarDecl) -> FxHashMap<TypedId, FxHashSet<Typed
 
         let used_ids = deps_of(&decl.init);
         for id in vars {
-            map.entry(TypedId {
-                kind: IdCtx::Var,
-                id: id.clone(),
-            })
-            .or_default()
-            .extend(used_ids.clone());
+            let e = map
+                .entry(TypedId {
+                    kind: IdCtx::Var,
+                    id: id.clone(),
+                })
+                .or_default();
 
-            map.entry(TypedId { kind: IdCtx::Var, id })
-                .or_default()
-                .extend(type_ids.clone());
+            e.extend(used_ids.clone());
+            e.extend(type_ids.clone());
         }
     }
 
