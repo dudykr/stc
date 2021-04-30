@@ -1257,7 +1257,7 @@ impl Analyzer<'_, '_> {
                     };
 
                     res.convert_err(|err| Error::ImcompatibleFnOverload {
-                        span: err.span(),
+                        span: orig.span(),
                         cause: box err,
                     })
                     .report(&mut self.storage);
