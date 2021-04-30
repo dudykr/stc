@@ -128,12 +128,9 @@ types::objectTypeLiteral::methodSignatures::functionLiterals.ts
 types::objectTypeLiteral::methodSignatures::methodSignaturesWithOverloads2.ts
 types::stringLiteral::stringLiteralTypesWithTemplateStrings01.ts
 types::typeRelationships::typeInference::genericCallWithConstraintsTypeArgumentInference.ts
+classes::classDeclarations::classAndVariableWithSameName.ts
 
 
-classes::constructorDeclarations::classWithTwoConstructorDefinitions.ts
-classes::members::accessibility::privateStaticMemberAccessibility.ts
-classes::members::accessibility::privateStaticNotAccessibleInClodule.ts
-classes::members::instanceAndStaticMembers::typeOfThisInStaticMembers2.ts
 classes::members::privateNames::privateNameAmbientNoImplicitAny.ts
 classes::members::privateNames::privateNameBadSuper.ts
 classes::members::privateNames::privateNameCircularReference.ts
