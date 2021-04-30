@@ -1982,7 +1982,12 @@ impl Analyzer<'_, '_> {
             },
 
             Type::Rest(rest) => {
-                //
+                // I'm not sure if this impl is correct, so let's print a log for debugging.
+                slog::warn!(
+                    self.logger,
+                    "[expr] accessing property of rest type({})",
+                    dump_type_as_string(&self.cm, &rest.ty)
+                );
                 return self
                     .access_property(span, *rest.ty.clone(), prop, type_mode, id_ctx)
                     .context("tried to access property of a rest type");
