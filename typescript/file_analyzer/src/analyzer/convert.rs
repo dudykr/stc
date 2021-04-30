@@ -60,6 +60,7 @@ use stc_ts_ast_rnode::RTsUnionOrIntersectionType;
 use stc_ts_ast_rnode::RTsUnionType;
 use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
+use stc_ts_type_ops::Fix;
 use stc_ts_types::Alias;
 use stc_ts_types::Array;
 use stc_ts_types::CallSignature;
@@ -778,10 +779,10 @@ impl Analyzer<'_, '_> {
             RTsType::TsKeywordType(ty) => Type::Keyword(ty.clone()),
             RTsType::TsTupleType(ty) => Type::Tuple(ty.validate_with(self)?),
             RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsUnionType(u)) => {
-                Type::Union(u.validate_with(self)?)
+                Type::Union(u.validate_with(self)?.fixed())
             }
             RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsIntersectionType(i)) => {
-                Type::Intersection(i.validate_with(self)?)
+                Type::Intersection(i.validate_with(self)?.fixed())
             }
             RTsType::TsArrayType(arr) => Type::Array(arr.validate_with(self)?),
             RTsType::TsFnOrConstructorType(RTsFnOrConstructorType::TsFnType(f)) => {
