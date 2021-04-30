@@ -1087,6 +1087,41 @@ impl Analyzer<'_, '_> {
         allow_multiple: bool,
         is_override: bool,
     ) -> ValidationResult<()> {
+        if let Some(ty) = &ty {
+            slog::debug!(
+                self.logger,
+                "[vars]: Declaring {} as {}",
+                name,
+                dump_type_as_string(&self.cm, ty)
+            );
+        }
+
+        let ty = match &ty {
+            Some(t) => {
+                // If type is not found, we use `any`.
+                match self.expand_top_ref(ty.span(), Cow::Borrowed(t)) {
+                    Ok(new_ty) => {
+                        if new_ty.is_any() {
+                            Some(new_ty.into_owned())
+                        } else {
+                            ty
+                        }
+                    }
+                    Err(..) => Some(Type::any(ty.span())),
+                }
+            }
+            None => None,
+        };
+
+        if let Some(ty) = &ty {
+            slog::debug!(
+                self.logger,
+                "[vars]: Expanded {} as {}",
+                name,
+                dump_type_as_string(&self.cm, ty)
+            );
+        }
+
         let ty = ty.map(|ty| ty.cheap());
 
         if let Some(actual_ty) = &actual_ty {
