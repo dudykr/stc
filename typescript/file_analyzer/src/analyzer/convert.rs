@@ -779,10 +779,10 @@ impl Analyzer<'_, '_> {
             RTsType::TsKeywordType(ty) => Type::Keyword(ty.clone()),
             RTsType::TsTupleType(ty) => Type::Tuple(ty.validate_with(self)?),
             RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsUnionType(u)) => {
-                Type::Union(u.validate_with(self)?.fixed())
+                Type::Union(u.validate_with(self)?).fixed()
             }
             RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsIntersectionType(i)) => {
-                Type::Intersection(i.validate_with(self)?.fixed())
+                Type::Intersection(i.validate_with(self)?).fixed()
             }
             RTsType::TsArrayType(arr) => Type::Array(arr.validate_with(self)?),
             RTsType::TsFnOrConstructorType(RTsFnOrConstructorType::TsFnType(f)) => {

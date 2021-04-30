@@ -519,34 +519,30 @@ impl Analyzer<'_, '_> {
                         return Ok(to);
                     }
                     Type::Union(rhs) => {
-                        return Ok(Type::Union(
-                            Union {
-                                span: lit.span,
-                                types: rhs
-                                    .types
-                                    .into_iter()
-                                    .map(|rhs| self.append_type(to.clone(), rhs))
-                                    .collect::<Result<_, _>>()?,
-                            }
-                            .fixed(),
-                        ))
+                        return Ok(Type::Union(Union {
+                            span: lit.span,
+                            types: rhs
+                                .types
+                                .into_iter()
+                                .map(|rhs| self.append_type(to.clone(), rhs))
+                                .collect::<Result<_, _>>()?,
+                        })
+                        .fixed())
                     }
                     _ => {}
                 }
             }
 
             Type::Union(to) => {
-                return Ok(Type::Union(
-                    Union {
-                        span: to.span,
-                        types: to
-                            .types
-                            .into_iter()
-                            .map(|to| self.append_type(to, rhs.clone()))
-                            .collect::<Result<_, _>>()?,
-                    }
-                    .fixed(),
-                ))
+                return Ok(Type::Union(Union {
+                    span: to.span,
+                    types: to
+                        .types
+                        .into_iter()
+                        .map(|to| self.append_type(to, rhs.clone()))
+                        .collect::<Result<_, _>>()?,
+                })
+                .fixed())
             }
 
             _ => {}
@@ -581,17 +577,15 @@ impl Analyzer<'_, '_> {
                 lit.members.push(rhs);
                 Ok(to)
             }
-            Type::Union(to) => Ok(Type::Union(
-                Union {
-                    span: to.span,
-                    types: to
-                        .types
-                        .into_iter()
-                        .map(|to| self.append_type_element(to, rhs.clone()))
-                        .collect::<Result<_, _>>()?,
-                }
-                .fixed(),
-            )),
+            Type::Union(to) => Ok(Type::Union(Union {
+                span: to.span,
+                types: to
+                    .types
+                    .into_iter()
+                    .map(|to| self.append_type_element(to, rhs.clone()))
+                    .collect::<Result<_, _>>()?,
+            })
+            .fixed()),
             _ => {
                 unimplemented!("append_type_element\n{:?}\n{:?}", to, rhs)
             }
