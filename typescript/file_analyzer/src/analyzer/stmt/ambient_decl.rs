@@ -20,11 +20,7 @@ impl Analyzer<'_, '_> {
 
         nodes.visit_with(&mut visitor);
 
-        if visitor.last_ambient_name.is_some() {
-            visitor.errors.report(Error::FnImplMissingOrNotFollowedByDecl {
-                span: visitor.last_ambient_name.unwrap().span,
-            })
-        }
+        visitor.handle_missing_impl();
     }
 }
 
@@ -39,6 +35,15 @@ impl Analyzer<'_, '_> {
 struct AmbientFunctionHandler<'a, 'b> {
     last_ambient_name: Option<RIdent>,
     errors: &'a mut Storage<'b>,
+}
+
+impl AmbientFunctionHandler<'_, '_> {
+    pub fn handle_missing_impl(&mut self) {
+        if let Some(id) = self.last_ambient_name.take() {
+            self.errors
+                .report(Error::FnImplMissingOrNotFollowedByDecl { span: id.span })
+        }
+    }
 }
 
 impl Visit<RStmt> for AmbientFunctionHandler<'_, '_> {
