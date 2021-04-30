@@ -635,7 +635,7 @@ impl Analyzer<'_, '_> {
         if !self.is_builtin {
             debug_assert_ne!(
                 span, DUMMY_SP,
-                "expand: {:#?} cannot be expanded because it has empty span",
+                "expand: {:#?} cannot be expanded because it has dummy span",
                 ty
             );
         }
