@@ -120,6 +120,12 @@ impl Fold<Class> for LitGeneralizer {
     }
 }
 
+impl Fold<ClassMember> for LitGeneralizer {
+    fn fold(&mut self, node: ClassMember) -> ClassMember {
+        node
+    }
+}
+
 impl Fold<TypeLit> for LitGeneralizer {
     fn fold(&mut self, node: TypeLit) -> TypeLit {
         if node.metadata.specified {
