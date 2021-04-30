@@ -127,15 +127,5 @@ types::literal::templateLiteralTypesPatternsPrefixSuffixAssignability.ts
 types::objectTypeLiteral::methodSignatures::functionLiterals.ts
 types::objectTypeLiteral::methodSignatures::methodSignaturesWithOverloads2.ts
 types::stringLiteral::stringLiteralTypesWithTemplateStrings01.ts
+types::typeRelationships::typeInference::genericCallWithConstraintsTypeArgumentInference.ts
 
-expressions::typeAssertions::duplicatePropertiesInTypeAssertions01.ts
-expressions::typeAssertions::duplicatePropertiesInTypeAssertions02.ts
-expressions::typeGuards::typeGuardOfFormInstanceOf.ts
-types::primitives::boolean::boolInsteadOfBoolean.ts
-types::rest::genericRestParameters2.ts
-types::specifyingTypes::typeQueries::typeofTypeParameter.ts
-types::spread::objectSpreadSetonlyAccessor.ts
-types::typeParameters::typeArgumentLists::wrappedAndRecursiveConstraints4.ts
-types::typeRelationships::assignmentCompatibility::assignmentCompatWithObjectMembers3.ts
-types::typeRelationships::assignmentCompatibility::nullAssignedToUndefined.ts
-types::typeRelationships::bestCommonType::heterogeneousArrayLiterals.ts
