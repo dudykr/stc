@@ -766,6 +766,7 @@ pub enum Error {
         span: Span,
     },
 
+    /// Type used as a variable, but changing target library can fix the issue.
     TS2585 {
         span: Span,
     },
