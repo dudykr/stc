@@ -94,8 +94,14 @@ impl Analyzer<'_, '_> {
         type_ann: &Option<RTsTypeAnn>,
         value: &Option<Box<RExpr>>,
     ) -> ValidationResult<Option<Type>> {
-        let ty = try_opt!(type_ann.validate_with(self));
+        let mut ty = try_opt!(type_ann.validate_with(self));
         let value_ty = try_opt!(value.validate_with_args(self, (TypeOfMode::RValue, None, ty.as_ref())));
+
+        if readonly {
+            if let Some(ty) = &mut ty {
+                self.prevent_generalize(ty);
+            }
+        }
 
         Ok(ty.or_else(|| value_ty).map(|ty| match ty {
             Type::Symbol(..) if readonly && is_static => Type::Operator(Operator {
