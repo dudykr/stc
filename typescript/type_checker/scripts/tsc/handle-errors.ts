@@ -81,12 +81,13 @@ async function handleTestSuite(suiteName: string) {
             }
 
             const content = await fs.promises.readFile(errorFilePath, 'utf-8');
-            const errors = extract(content)
 
             console.log('----- ----- ----- ----- -----')
             console.log(p)
 
             console.log('Error refs:', errorFilePath)
+
+            const errors = extract(content)
             await fs.promises.writeFile(errorJsonPath, JSON.stringify(errors))
         }
     }
