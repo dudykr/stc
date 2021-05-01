@@ -590,5 +590,8 @@ fn libs_with_deps(libs: &[Lib]) -> Vec<Lib> {
         add(&mut all, *lib);
     }
 
+    all.sort();
+    all.dedup();
+
     all
 }
