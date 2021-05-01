@@ -1002,7 +1002,11 @@ impl Analyzer<'_, '_> {
             if let Ok(ty) = self.env.get_global_type(DUMMY_SP, name.sym()) {
                 debug_assert!(ty.is_clone_cheap(), "{:?}", ty);
 
-                slog::debug!(self.logger, "Using builtin / global type");
+                slog::debug!(
+                    self.logger,
+                    "Using builtin / global type: {}",
+                    dump_type_as_string(&self.cm, &ty)
+                );
                 src.push(ty.clone());
             }
         }
