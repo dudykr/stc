@@ -45,6 +45,7 @@ use stc_ts_types::ClassDef;
 use stc_ts_types::ClassProperty;
 use stc_ts_types::Intersection;
 use stc_ts_types::Key;
+use stc_ts_types::TypeElement;
 use stc_ts_types::TypeParamInstantiation;
 use stc_ts_types::{
     Conditional, FnParam, Id, IndexedAccessType, Mapped, ModuleId, Operator, QueryExpr, QueryType, StaticThis,
@@ -2582,6 +2583,12 @@ impl Fold<stc_ts_types::Class> for Expander<'_, '_, '_> {
 
 impl Fold<stc_ts_types::ClassMember> for Expander<'_, '_, '_> {
     fn fold(&mut self, node: stc_ts_types::ClassMember) -> stc_ts_types::ClassMember {
+        node
+    }
+}
+
+impl Fold<TypeElement> for Expander<'_, '_, '_> {
+    fn fold(&mut self, node: TypeElement) -> TypeElement {
         node
     }
 }
