@@ -1,19 +1,16 @@
-use std::sync::Arc;
-
 use stc_testing::logger;
 use stc_ts_builtin_types::Lib;
-use stc_ts_file_analyzer::analyzer::Analyzer;
 use stc_ts_file_analyzer::env::BuiltIn;
 use stc_ts_file_analyzer::env::Env;
 use stc_ts_file_analyzer::env::StableEnv;
-use stc_ts_storage::Builtin;
+use std::sync::Arc;
 use swc_common::Globals;
 use swc_common::DUMMY_SP;
 use swc_common::GLOBALS;
 
 #[test]
 pub fn builtin() {
-    testing::run_test2(false, |cm, handler| {
+    testing::run_test2(false, |_, _| {
         let globals = Arc::new(Globals::default());
 
         GLOBALS.set(&globals, || {
