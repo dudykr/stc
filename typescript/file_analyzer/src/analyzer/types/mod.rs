@@ -735,6 +735,10 @@ impl Analyzer<'_, '_> {
         type_name: &RTsEntityName,
         type_args: Option<&TypeParamInstantiation>,
     ) -> ValidationResult<()> {
+        if self.is_builtin {
+            return Ok(());
+        }
+
         let l = left(&type_name);
         let top_id: Id = l.into();
 
