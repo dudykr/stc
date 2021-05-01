@@ -14,6 +14,7 @@ use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RStmt;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
+use stc_ts_ast_rnode::RVarDecl;
 use stc_ts_ast_rnode::RVarDeclOrPat;
 use stc_ts_ast_rnode::RWhileStmt;
 use stc_ts_errors::DebugExt;
@@ -31,6 +32,7 @@ use swc_common::Spanned;
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::TsKeywordTypeKind;
 use swc_ecma_ast::TsTypeOperatorOp;
+use swc_ecma_ast::VarDeclKind;
 
 #[derive(Clone, Copy)]
 enum ForHeadKind {
@@ -186,6 +188,13 @@ impl Analyzer<'_, '_> {
                 };
                 debug_assert_eq!(child.scope.declaring, Vec::<Id>::new());
                 child.scope.declaring.extend(created_vars);
+
+                child.ctx.allow_ref_declaring = match left {
+                    RVarDeclOrPat::VarDecl(RVarDecl {
+                        kind: VarDeclKind::Var, ..
+                    }) => true,
+                    _ => false,
+                };
 
                 let rty = rhs
                     .validate_with_default(child)
