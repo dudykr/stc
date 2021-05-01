@@ -514,9 +514,13 @@ impl Analyzer<'_, '_> {
 
             if !is_last {
                 match **e {
+                    RExpr::Arrow(..) => {
+                        self.storage.report(Error::UselessSeqExpr {
+                            span: span.with_lo(first_span.lo()),
+                        });
+                    }
                     RExpr::Ident(..)
                     | RExpr::Lit(..)
-                    | RExpr::Arrow(..)
                     | RExpr::Unary(RUnaryExpr {
                         op: op!(unary, "-"), ..
                     })
