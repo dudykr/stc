@@ -380,7 +380,11 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
                         JscTarget::Es2020 => Lib::load("es2020.full"),
                     }
                 } else {
-                    libs.clone()
+                    if specified {
+                        libs_with_deps(&libs)
+                    } else {
+                        libs.clone()
+                    }
                 };
 
                 TestSpec {
@@ -556,4 +560,34 @@ impl Fold for Spanner {
     fn fold_span(&mut self, _: Span) -> Span {
         self.span
     }
+}
+
+fn libs_with_deps(libs: &[Lib]) -> Vec<Lib> {
+    fn add(libs: &mut Vec<Lib>, l: Lib) {
+        if libs.contains(&l) {
+            return;
+        }
+
+        match l {
+            Lib::Es2015 => add(libs, Lib::Es5Full),
+            Lib::Es2016 => add(libs, Lib::Es2015Full),
+            Lib::Es2017 => add(libs, Lib::Es2015Full),
+            Lib::Es2018 => add(libs, Lib::Es2015Full),
+            Lib::Es2019 => add(libs, Lib::Es2015Full),
+            Lib::Es2020 => add(libs, Lib::Es2015Full),
+            _ => {
+                for l in l.deps() {
+                    add(libs, l);
+                }
+            }
+        }
+    }
+
+    let mut all = vec![];
+
+    for lib in libs {
+        add(&mut all, *lib);
+    }
+
+    all
 }
