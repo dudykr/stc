@@ -153,3 +153,4 @@ conformance::es6::for-ofStatements::for-of29.ts
 conformance::es6::for-ofStatements::for-of33.ts
 conformance::es6::for-ofStatements::for-of39.ts
 conformance::es6::for-ofStatements::for-of46.ts
+conformance::es2019::globalThisReadonlyProperties.ts
