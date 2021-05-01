@@ -1078,6 +1078,7 @@ impl Analyzer<'_, '_> {
         }
 
         let ty = match &ty {
+            Some(..) if self.is_builtin => ty,
             Some(t) => {
                 // If type is not found, we use `any`.
                 match self.expand_top_ref(ty.span(), Cow::Borrowed(t)) {
