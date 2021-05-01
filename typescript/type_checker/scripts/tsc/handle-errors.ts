@@ -4,7 +4,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 
-async function* walk(dir: string): any {
+async function* walk(dir: string): AsyncGenerator<string> {
     for await (const d of await fs.promises.opendir(dir)) {
         const entry = path.join(dir, d.name);
         if (d.isDirectory()) yield* walk(entry);
@@ -57,6 +57,7 @@ function extract(content: string): ErrorRef[] {
         if (!p.endsWith('.ts') && !p.endsWith('.tsx')) continue;
         const dir = path.dirname(p);
         const fname = path.basename(p);
+        const testName = path.parse(p).name;
         const refName = path.parse(fname).name;
 
         for (const refFile of refFiles) {
@@ -64,7 +65,7 @@ function extract(content: string): ErrorRef[] {
                 continue;
             }
 
-            if (!refFile.startsWith(refName)) {
+            if (!refFile.startsWith(refName) || !testName.endsWith(refName)) {
                 continue;
             }
 
