@@ -54,7 +54,7 @@ where
             buf
         };
 
-        let test_name = file_name.replace("/", "::");
+        let test_name = format!("{}::{}", dir_name, file_name.replace("/", "::"));
         let test_fn = op(entry.path().to_path_buf());
         let (test_fn, ignore) = match test_fn {
             Some(v) => (v, false),
