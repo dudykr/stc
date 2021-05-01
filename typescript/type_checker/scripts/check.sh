@@ -17,7 +17,7 @@ TEST='' cargo test --test tsc \
 
 ./scripts/sort.sh
 
-if ! command -v osascript &> /dev/null
+if command -v osascript &> /dev/null
 then
     osascript -e 'display notification "Check done!"'
 fi
