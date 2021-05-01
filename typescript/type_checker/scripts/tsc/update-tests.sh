@@ -11,4 +11,4 @@ find ~/projects/TypeScript -name '*.errors.txt' -exec cp {} tests/reference/ \;
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-bash $DIR/handle-errors.sh
+ts-node $DIR/handle-errors.ts
