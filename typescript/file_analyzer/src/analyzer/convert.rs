@@ -644,12 +644,24 @@ impl Analyzer<'_, '_> {
                 self.data.all_local_type_names.contains(&top_id) || self.imports_by_id.contains_key(&top_id);
 
             if !is_resolved {
-                self.storage.report(Error::TypeNotFound {
-                    span: l.span,
-                    name: box t.type_name.clone().into(),
-                    ctxt: self.ctx.module_id,
-                    type_args: type_args.clone(),
-                })
+                match t.type_name {
+                    RTsEntityName::TsQualifiedName(_) => {
+                        self.storage.report(Error::NamspaceNotFound {
+                            name: box t.type_name.clone().into(),
+                            ctxt: self.ctx.module_id,
+                            type_args: type_args.clone(),
+                            span,
+                        });
+                    }
+                    RTsEntityName::Ident(_) => {
+                        self.storage.report(Error::TypeNotFound {
+                            span: l.span,
+                            name: box t.type_name.clone().into(),
+                            ctxt: self.ctx.module_id,
+                            type_args: type_args.clone(),
+                        });
+                    }
+                }
             }
         }
         let mut span = t.span;
