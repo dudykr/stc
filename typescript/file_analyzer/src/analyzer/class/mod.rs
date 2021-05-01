@@ -95,7 +95,13 @@ impl Analyzer<'_, '_> {
         value: &Option<Box<RExpr>>,
     ) -> ValidationResult<Option<Type>> {
         let mut ty = try_opt!(type_ann.validate_with(self));
-        let mut value_ty = try_opt!(value.validate_with_args(self, (TypeOfMode::RValue, None, ty.as_ref())));
+        let mut value_ty = {
+            let ctx = Ctx {
+                in_static_property_initializer: is_static,
+                ..self.ctx
+            };
+            try_opt!(value.validate_with_args(&mut *self.with_ctx(ctx), (TypeOfMode::RValue, None, ty.as_ref())))
+        };
 
         if readonly {
             if let Some(ty) = &mut ty {

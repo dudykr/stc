@@ -141,6 +141,8 @@ pub(crate) struct Ctx {
     /// variable is global.
     report_error_for_non_local_export: bool,
 
+    in_static_property_initializer: bool,
+
     reevaluating_call_or_new: bool,
 
     var_kind: VarDeclKind,
@@ -426,6 +428,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 is_calling_iife: false,
                 in_actual_type: false,
                 report_error_for_non_local_export: false,
+                in_static_property_initializer: false,
                 reevaluating_call_or_new: false,
                 var_kind: VarDeclKind::Var,
                 pat_mode: PatMode::Assign,
