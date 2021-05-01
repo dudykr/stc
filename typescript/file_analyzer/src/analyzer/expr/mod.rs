@@ -1032,9 +1032,12 @@ impl Analyzer<'_, '_> {
 
                                 ClassMember::Property(member @ ClassProperty { is_static: false, .. }) => {
                                     if member.key.type_eq(prop) {
-                                        let span = member.value.span();
                                         let ty = *member.value.clone().unwrap_or_else(|| box Type::any(span));
-                                        let ty = match self.expand_top_ref(span, Cow::Borrowed(&ty)) {
+                                        let ctx = Ctx {
+                                            use_any_for_type_not_found: true,
+                                            ..self.ctx
+                                        };
+                                        let ty = match self.with_ctx(ctx).expand_top_ref(span, Cow::Borrowed(&ty)) {
                                             Ok(new_ty) => {
                                                 if new_ty.is_any() {
                                                     new_ty.into_owned()

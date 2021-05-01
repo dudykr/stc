@@ -2106,6 +2106,9 @@ impl Expander<'_, '_, '_> {
                 span,
             })
         } else {
+            if self.analyzer.ctx.use_any_for_type_not_found {
+                return Ok(Some(Type::any(span)));
+            }
             Err(Error::TypeNotFound {
                 name: box type_name.clone().into(),
                 ctxt,
