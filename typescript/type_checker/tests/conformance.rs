@@ -26,6 +26,7 @@ use std::fs::read_to_string;
 use std::fs::File;
 use std::panic::catch_unwind;
 use std::path::Path;
+use std::path::PathBuf;
 use std::sync::Arc;
 use swc_common::errors::DiagnosticBuilder;
 use swc_common::errors::DiagnosticId;
@@ -65,10 +66,17 @@ fn is_ignored(path: &Path) -> bool {
     static IGNORED: Lazy<Vec<String>> = Lazy::new(|| {
         let mut v = load_list("tests/conformance.ignored.txt");
         v.extend(load_list("tests/conformance.multiresult.txt"));
+
+        v.extend(load_list("tests/compiler.ignored.txt"));
+
         v
     });
 
-    static PASS: Lazy<Vec<String>> = Lazy::new(|| load_list("tests/conformance.pass.txt"));
+    static PASS: Lazy<Vec<String>> = Lazy::new(|| {
+        let mut v = load_list("tests/conformance.pass.txt");
+        v.extend(load_list("tests/compiler.pass.txt"));
+        v
+    });
 
     if IGNORED.iter().any(|line| path.to_string_lossy().contains(line)) {
         return true;
@@ -84,55 +92,58 @@ fn is_ignored(path: &Path) -> bool {
 #[test]
 fn conformance() {
     let args: Vec<_> = env::args().collect();
-    let tests = load_fixtures("conformance", |path| {
-        if is_ignored(&path) {
-            return None;
-        }
+    let mut tests = load_fixtures("conformance", create_test);
+    tests.extend(load_fixtures("compiler", create_test));
+    test_main(&args, tests, Default::default());
+}
 
-        let str_name = path.display().to_string();
+fn create_test(path: PathBuf) -> Option<Box<dyn FnOnce() + Send + Sync>> {
+    if is_ignored(&path) {
+        return None;
+    }
 
-        // If parser returns error, ignore it for now.
+    let str_name = path.display().to_string();
 
-        let cm = SourceMap::default();
-        let fm = cm.load_file(&path).unwrap();
+    // If parser returns error, ignore it for now.
 
-        // Postpone multi-file tests.
-        if fm.src.to_lowercase().contains("@filename") || fm.src.contains("<reference path") {
-            return None;
-        }
+    let cm = SourceMap::default();
+    let fm = cm.load_file(&path).unwrap();
 
-        catch_unwind(|| {
-            let mut parser = Parser::new(
-                Syntax::Typescript(TsConfig {
-                    tsx: str_name.contains("tsx"),
-                    ..Default::default()
-                }),
-                SourceFileInput::from(&*fm),
-                None,
-            );
-            parser.parse_module().ok()
-        })
-        .ok()??;
+    // Postpone multi-file tests.
+    if fm.src.to_lowercase().contains("@filename") || fm.src.contains("<reference path") {
+        return None;
+    }
 
-        if let Ok(errors) = load_expected_errors(&path) {
-            for err in errors {
-                if err.code.starts_with("TS1") && err.code.len() == 6 {
-                    return None;
-                }
+    catch_unwind(|| {
+        let mut parser = Parser::new(
+            Syntax::Typescript(TsConfig {
+                tsx: str_name.contains("tsx"),
+                ..Default::default()
+            }),
+            SourceFileInput::from(&*fm),
+            None,
+        );
+        parser.parse_module().ok()
+    })
+    .ok()??;
 
-                // These are actually parser test.
-                match &*err.code {
-                    "TS2369" => return None,
-                    _ => {}
-                }
+    if let Ok(errors) = load_expected_errors(&path) {
+        for err in errors {
+            if err.code.starts_with("TS1") && err.code.len() == 6 {
+                return None;
+            }
+
+            // These are actually parser test.
+            match &*err.code {
+                "TS2369" => return None,
+                _ => {}
             }
         }
+    }
 
-        Some(box move || {
-            do_test(&path).unwrap();
-        })
-    });
-    test_main(&args, tests, Default::default());
+    Some(box move || {
+        do_test(&path).unwrap();
+    })
 }
 
 fn load_expected_errors(ts_file: &Path) -> Result<Vec<RefError>, Error> {
