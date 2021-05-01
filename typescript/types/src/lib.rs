@@ -538,7 +538,7 @@ pub struct ClassDef {
 
 assert_eq_size!(ClassDef, [u8; 112]);
 
-#[derive(Debug, Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit, Is)]
 pub enum ClassMember {
     Constructor(ConstructorSignature),
     Method(Method),
@@ -694,7 +694,7 @@ pub struct TypeParamInstantiation {
     pub params: Vec<Type>,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit, Is)]
 pub enum TypeElement {
     Call(CallSignature),
     Constructor(ConstructorSignature),
