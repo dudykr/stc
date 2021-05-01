@@ -1252,6 +1252,8 @@ impl Error {
 
             Error::ThisInStaticPropertyInitializer { .. } => 2334,
 
+            Error::ImplicitAny { .. } => 7008,
+
             _ => 0,
         }
     }
