@@ -50,14 +50,12 @@ function extract(content: string): ErrorRef[] {
     return errors;
 }
 
-
-
-(async function () {
+async function handleTestSuite(suiteName: string) {
     const multiResultTests = [];
 
     const refFiles = await fs.promises.readdir(path.join('tests', 'reference'));
 
-    for await (const p of walk('tests/conformance')) {
+    for await (const p of walk(`tests/${suiteName}`)) {
         if (!p.endsWith('.ts') && !p.endsWith('.tsx')) continue;
         const dir = path.dirname(p);
         const fname = path.basename(p);
@@ -79,7 +77,7 @@ function extract(content: string): ErrorRef[] {
             }
             const errorJsonPath = path.join(dir, refFile.replace('.txt', '.json'));
             if (errorJsonPath.includes('(')) {
-                multiResultTests.push(p.replace('tests/conformance/', ''));
+                multiResultTests.push(p.replace(`tests/${suiteName}`, ''));
             }
 
             const content = await fs.promises.readFile(errorFilePath, 'utf-8');
@@ -93,6 +91,11 @@ function extract(content: string): ErrorRef[] {
         }
     }
 
-    await fs.promises.writeFile(path.join('tests', 'conformance.multiresult.txt'), multiResultTests.join('\n'), 'utf8')
+    await fs.promises.writeFile(path.join('tests', `${suiteName}.multiresult.txt`), multiResultTests.join('\n'), 'utf8')
+}
+
+(async function () {
+    await handleTestSuite('conformance');
+    await handleTestSuite('compiler');
 })()
 

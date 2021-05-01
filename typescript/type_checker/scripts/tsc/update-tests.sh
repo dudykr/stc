@@ -3,6 +3,7 @@
 set -eu
 
 cp -R ~/projects/TypeScript/tests/cases/conformance/ ./tests/conformance/
+cp -R ~/projects/TypeScript/tests/cases/compiler/ ./tests/compiler/
 
 mkdir -p ~/projects/stc/typescript/checker/tests/reference/
 
