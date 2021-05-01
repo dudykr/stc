@@ -411,6 +411,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
         target,
     } in specs
     {
+        dbg!(&libs);
         for err in &mut expected_errors {
             // Typescript conformance test remove lines starting with @-directives.
             err.line += err_shift_n;
