@@ -48,7 +48,9 @@ where
 
         let input = {
             let mut buf = String::new();
-            File::open(entry.path()).unwrap().read_to_string(&mut buf).unwrap();
+            if File::open(entry.path()).unwrap().read_to_string(&mut buf).is_err() {
+                continue;
+            }
             buf
         };
 
