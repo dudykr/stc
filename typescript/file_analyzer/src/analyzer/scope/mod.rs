@@ -1080,8 +1080,12 @@ impl Analyzer<'_, '_> {
         let ty = match &ty {
             Some(..) if self.is_builtin => ty,
             Some(t) => {
+                let ctx = Ctx {
+                    use_any_for_type_not_found: true,
+                    ..self.ctx
+                };
                 // If type is not found, we use `any`.
-                match self.expand_top_ref(ty.span(), Cow::Borrowed(t)) {
+                match self.with_ctx(ctx).expand_top_ref(ty.span(), Cow::Borrowed(t)) {
                     Ok(new_ty) => {
                         if new_ty.is_any() {
                             Some(new_ty.into_owned())
