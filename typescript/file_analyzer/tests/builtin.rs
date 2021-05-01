@@ -16,7 +16,7 @@ pub fn builtin() {
         GLOBALS.set(&globals, || {
             let log = logger();
             let shared = StableEnv::new(log.logger, globals.clone());
-            let data = BuiltIn::from_ts_libs(&shared, &[Lib::Es5]);
+            let data = BuiltIn::from_ts_libs(&shared, &Lib::load("es2020.full"));
 
             let env = Env::new(
                 shared,
