@@ -42,6 +42,7 @@ circularIndexedAccessErrors.ts
 isomorphicMappedTypeInference.ts
 privateNamesInNestedClasses-1.ts
 
+# Delayed
 ambient::ambientDeclarationsPatterns_tooManyAsterisks.ts
 ambient::ambientExternalModuleInsideNonAmbient.ts
 ambient::ambientExternalModuleInsideNonAmbientExternalModule.ts
@@ -139,3 +140,11 @@ classes::propertyMemberDeclarations::propertyOverridesAccessors4.ts
 directives::ts-expect-error-nocheck.ts
 conformance::classes::members::privateNames::privateNameBadSuper.ts
 conformance::classes::members::privateNames::privateNameCircularReference.ts
+conformance::es6::Symbols::symbolProperty35.ts
+conformance::statements::for-ofStatements::ES5For-of17.ts
+conformance::statements::for-ofStatements::ES5For-of30.ts
+conformance::statements::for-ofStatements::ES5For-of31.ts
+conformance::statements::for-ofStatements::ES5For-of35.ts
+conformance::statements::for-ofStatements::ES5For-of36.ts
+conformance::statements::for-ofStatements::ES5For-of7.ts
+conformance::statements::for-ofStatements::ES5For-ofTypeCheck13.ts
