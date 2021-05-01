@@ -435,7 +435,13 @@ impl Analyzer<'_, '_> {
                         analyzer.mark_var_as_truthy(Id::from(&i.id))?;
                     }
                 }
-                _ => e.left.visit_with(analyzer),
+                RPatOrExpr::Expr(l) => {
+                    l.validate_with_args(analyzer, (TypeOfMode::LValue, None, type_ann))
+                        .report(&mut analyzer.storage);
+                }
+                _ => {
+                    e.left.visit_with(analyzer);
+                }
             }
 
             let rhs_ty = match {
