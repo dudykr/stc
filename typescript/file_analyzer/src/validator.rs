@@ -10,7 +10,7 @@ use stc_ts_ast_rnode::RTsTypeElement;
 use stc_ts_ast_rnode::RTsTypeParam;
 
 /// Visit with output
-pub(crate) trait Validate<'context, T: ?Sized>
+pub trait Validate<'context, T: ?Sized>
 where
     T: RNode,
 {
@@ -88,7 +88,7 @@ where
     }
 }
 
-pub(crate) trait ValidateWith<'c, V> {
+pub trait ValidateWith<'c, V> {
     type Output;
     type Context: 'c + Copy;
     fn validate_with(&self, v: &mut V) -> Self::Output
