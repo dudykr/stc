@@ -47,8 +47,6 @@ pub fn builtin() {
                 let function = f.foldable().interface().unwrap();
                 assert_eq!(function.extends, vec![]);
 
-                let expected_keys = vec!["apply", "call", "bind"];
-
                 for member in &function.body {
                     if let Some(key) = member.key() {
                         println!("Key: {:?}", key);
@@ -57,7 +55,7 @@ pub fn builtin() {
 
                 let keyed_item_count = function.body.iter().filter_map(|el| el.key()).count();
 
-                assert_eq!(keyed_item_count, expected_keys.len());
+                assert_eq!(keyed_item_count, 10);
             }
 
             Ok(())
