@@ -570,13 +570,63 @@ fn libs_with_deps(libs: &[Lib]) -> Vec<Lib> {
         libs.push(l);
 
         match l {
-            Lib::Es2015 | Lib::Es2015SymbolWellknown => add(libs, Lib::Es5Full),
-            Lib::Es2016 => add(libs, Lib::Es2015Full),
-            Lib::Es2017 | Lib::Es2017Sharedmemory => add(libs, Lib::Es2016Full),
-            Lib::Es2018 => add(libs, Lib::Es2017Full),
-            Lib::Es2019 => add(libs, Lib::Es2018Full),
-            Lib::Es2020 => add(libs, Lib::Es2019Full),
-            _ => {}
+            Lib::Es5 | Lib::Es5Full => {}
+            Lib::Es2015
+            | Lib::Es2015Core
+            | Lib::Es2015Full
+            | Lib::Es2015Collection
+            | Lib::Es2015SymbolWellknown
+            | Lib::Es2015Generator
+            | Lib::Es2015Iterable
+            | Lib::Es2015Promise
+            | Lib::Es2015Proxy
+            | Lib::Es2015Reflect
+            | Lib::Es2015Symbol => add(libs, Lib::Es5Full),
+            Lib::Es2016 | Lib::Es2016ArrayInclude | Lib::Es2016Full => add(libs, Lib::Es2015Full),
+            Lib::Es2017
+            | Lib::Es2017Sharedmemory
+            | Lib::Es2017Full
+            | Lib::Es2017Intl
+            | Lib::Es2017Object
+            | Lib::Es2017String
+            | Lib::Es2017Typedarrays => add(libs, Lib::Es2016Full),
+            Lib::Es2018
+            | Lib::Es2018Asyncgenerator
+            | Lib::Es2018Asynciterable
+            | Lib::Es2018Intl
+            | Lib::Es2018Promise
+            | Lib::Es2018Regexp
+            | Lib::Es2018Full => add(libs, Lib::Es2017Full),
+            Lib::Es2019
+            | Lib::Es2019Array
+            | Lib::Es2019Full
+            | Lib::Es2019Object
+            | Lib::Es2019String
+            | Lib::Es2019Symbol => add(libs, Lib::Es2018Full),
+            Lib::Es2020
+            | Lib::Es2020Bigint
+            | Lib::Es2020Full
+            | Lib::Es2020Intl
+            | Lib::Es2020Promise
+            | Lib::Es2020Sharedmemory
+            | Lib::Es2020String
+            | Lib::Es2020SymbolWellknown => add(libs, Lib::Es2019Full),
+
+            Lib::Esnext
+            | Lib::EsnextIntl
+            | Lib::EsnextPromise
+            | Lib::EsnextString
+            | Lib::EsnextWeakref
+            | Lib::EsnextFull => add(libs, Lib::Es2020Full),
+
+            Lib::Dom
+            | Lib::DomIterable
+            | Lib::DomIterableGenerated
+            | Lib::Header
+            | Lib::Scripthost
+            | Lib::WebworkerGenerated
+            | Lib::WebworkerImportscripts
+            | Lib::WebworkerIterableGenerated => {}
         }
 
         for l in l.deps() {
