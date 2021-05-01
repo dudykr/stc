@@ -435,7 +435,7 @@ impl Analyzer<'_, '_> {
                         analyzer.mark_var_as_truthy(Id::from(&i.id))?;
                     }
                 }
-                RPatOrExpr::Expr(l) => {
+                RPatOrExpr::Pat(box RPat::Expr(l)) | RPatOrExpr::Expr(l) => {
                     l.validate_with_args(analyzer, (TypeOfMode::LValue, None, type_ann))
                         .report(&mut analyzer.storage);
                 }
@@ -2035,7 +2035,7 @@ impl Analyzer<'_, '_> {
             Type::Function(f) if type_mode == TypeOfMode::RValue => {
                 // Use builtin type `Function`
                 let interface = self.env.get_global_type(f.span, &js_word!("Function"))?;
-
+                print_backtrace();
                 return self.access_property(span, interface, prop, type_mode, id_ctx);
             }
 
