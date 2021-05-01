@@ -42,6 +42,7 @@ use stc_ts_types::name::Name;
 use stc_ts_types::Array;
 use stc_ts_types::Class;
 use stc_ts_types::ClassDef;
+use stc_ts_types::ClassProperty;
 use stc_ts_types::Intersection;
 use stc_ts_types::Key;
 use stc_ts_types::TypeParamInstantiation;
@@ -2532,6 +2533,12 @@ impl Fold<ty::Function> for Expander<'_, '_, '_> {
         }
 
         f
+    }
+}
+
+impl Fold<ClassProperty> for Expander<'_, '_, '_> {
+    fn fold(&mut self, value: ClassProperty) -> ClassProperty {
+        value
     }
 }
 
