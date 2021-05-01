@@ -68,6 +68,7 @@ fn is_ignored(path: &Path) -> bool {
         v.extend(load_list("tests/conformance.multiresult.txt"));
 
         v.extend(load_list("tests/compiler.ignored.txt"));
+        v.extend(load_list("tests/compiler.multiresult.txt"));
 
         v
     });
