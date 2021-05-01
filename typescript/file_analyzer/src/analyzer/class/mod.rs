@@ -1276,6 +1276,8 @@ impl Analyzer<'_, '_> {
 
                 // Handle nodes in order described above
                 let mut body = {
+                    let mut declared_keys = vec![];
+
                     // Handle static properties
                     for (index, member) in c.body.iter().enumerate() {
                         match member {
@@ -1283,6 +1285,15 @@ impl Analyzer<'_, '_> {
                             | RClassMember::PrivateProp(RPrivateProp { is_static: true, .. }) => {
                                 let m = member.validate_with(child)?;
                                 if let Some(member) = m {
+                                    // Check for duplicate property names.
+                                    if let Some(key) = member.key() {
+                                        // TODO: Use better logic for testing key equality
+                                        if declared_keys.iter().any(|prev: &Key| prev.type_eq(&*key)) {
+                                            child.storage.report(Error::DuplicateProperty { span: key.span() })
+                                        }
+                                        declared_keys.push(key.into_owned());
+                                    }
+
                                     let member = member.fold_with(&mut LitGeneralizer);
                                     child.scope.this_class_members.push((index, member));
                                 }
