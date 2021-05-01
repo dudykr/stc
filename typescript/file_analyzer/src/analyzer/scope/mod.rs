@@ -528,6 +528,11 @@ impl Scope<'_> {
                     prev,
                     ty,
                 );
+                if should_override {
+                    *prev = ty;
+                    return Ok(());
+                };
+
                 if prev.normalize().is_intersection_type() {
                     match prev.normalize_mut() {
                         Type::Intersection(prev) => {
@@ -540,15 +545,11 @@ impl Scope<'_> {
                     prev.make_cheap();
                 } else {
                     let prev_ty = replace(prev, Type::any(DUMMY_SP));
-                    *prev = if should_override {
-                        ty
-                    } else {
-                        Type::Intersection(Intersection {
-                            span: DUMMY_SP,
-                            types: vec![prev_ty, ty],
-                        })
-                        .cheap()
-                    };
+                    *prev = Type::Intersection(Intersection {
+                        span: DUMMY_SP,
+                        types: vec![prev_ty, ty],
+                    })
+                    .cheap();
                 }
             }
             Entry::Vacant(e) => {
