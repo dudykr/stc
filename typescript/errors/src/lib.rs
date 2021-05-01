@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS18013
+    CannotAccessPrivatePropertyFromOutside {
+        span: Span,
+    },
+
     /// TS18011
     CannotDeletePrivateProperty {
         span: Span,
@@ -1274,6 +1279,8 @@ impl Error {
             Error::PrivateIdUsedAsMethodName { .. } => 18022,
 
             Error::CannotDeletePrivateProperty { .. } => 18011,
+
+            Error::CannotAccessPrivatePropertyFromOutside { .. } => 18013,
 
             _ => 0,
         }

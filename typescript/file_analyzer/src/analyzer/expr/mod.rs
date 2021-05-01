@@ -1300,6 +1300,12 @@ impl Analyzer<'_, '_> {
                 for v in c.def.body.iter() {
                     match v {
                         ClassMember::Property(ref class_prop @ ClassProperty { is_static: false, .. }) => {
+                            if class_prop.key.is_private() {
+                                self.storage
+                                    .report(Error::CannotAccessPrivatePropertyFromOutside { span });
+                                return Ok(Type::any(span));
+                            }
+
                             if let Some(declaring) = self.scope.declaring_prop.as_ref() {
                                 if class_prop.key == *declaring.sym() {
                                     return Err(Error::ReferencedInInit { span });
@@ -1315,6 +1321,12 @@ impl Analyzer<'_, '_> {
                             }
                         }
                         ClassMember::Method(ref mtd @ Method { is_static: false, .. }) => {
+                            if mtd.key.is_private() {
+                                self.storage
+                                    .report(Error::CannotAccessPrivatePropertyFromOutside { span });
+                                return Ok(Type::any(span));
+                            }
+
                             if self.key_matches(span, &mtd.key, prop, false) {
                                 return Ok(Type::Function(stc_ts_types::Function {
                                     span: mtd.span,
