@@ -93,6 +93,6 @@ function extract(content: string): ErrorRef[] {
         }
     }
 
-    await fs.promises.writeFile(path.join('tests', 'coformance.multiresult.txt'), multiResultTests.join('\n'), 'utf8')
+    await fs.promises.writeFile(path.join('tests', 'conformance.multiresult.txt'), multiResultTests.join('\n'), 'utf8')
 })()
 
