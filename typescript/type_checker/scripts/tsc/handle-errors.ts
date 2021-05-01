@@ -72,7 +72,7 @@ function extract(content: string): ErrorRef[] {
             if (!fs.existsSync(errorFilePath)) {
                 continue
             }
-            const errorJsonPath = path.join(dir, refFile);
+            const errorJsonPath = path.join(dir, refFile.replace('.txt', '.json'));
 
             const content = await fs.promises.readFile(errorFilePath, 'utf-8');
             const errors = extract(content)
