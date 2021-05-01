@@ -262,10 +262,12 @@ impl Analyzer<'_, '_> {
 
                 self.scope.declaring.extend(names.clone());
 
-                match self.declare_vars_with_ty(VarDeclKind::Let, p, ty.clone(), None) {
-                    Ok(()) => {}
-                    Err(err) => {
-                        self.storage.report(err);
+                if !self.is_builtin {
+                    match self.declare_vars_with_ty(VarDeclKind::Let, p, ty.clone(), None) {
+                        Ok(()) => {}
+                        Err(err) => {
+                            self.storage.report(err);
+                        }
                     }
                 }
             }
