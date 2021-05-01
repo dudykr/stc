@@ -16,7 +16,21 @@ pub fn builtin() {
         GLOBALS.set(&globals, || {
             let log = logger();
             let shared = StableEnv::new(log.logger, globals.clone());
-            let data = BuiltIn::from_ts_libs(&shared, &Lib::load("es2020.full"));
+            let mut libs = vec![];
+            for s in &[
+                "es2020.full",
+                "es2019.full",
+                "es2018.full",
+                "es2017.full",
+                "es2016.full",
+                "es2015.full",
+                "es5.full",
+            ] {
+                libs.extend(Lib::load(&s));
+            }
+            libs.sort();
+            libs.dedup();
+            let data = BuiltIn::from_ts_libs(&shared, &libs);
 
             let env = Env::new(
                 shared,
@@ -29,7 +43,14 @@ pub fn builtin() {
                 .get_global_type(DUMMY_SP, &"Function".into())
                 .expect("failed to get global type Function");
 
-            println!("{:?}", f);
+            let function = f.foldable().interface().unwrap();
+            assert_eq!(function.extends, vec![]);
+
+            for member in &function.body {
+                if let Some(key) = member.key() {
+                    println!("Key: {:?}", key);
+                }
+            }
 
             Ok(())
         })
