@@ -1,4 +1,4 @@
-﻿"use strict"
+"use strict"
 var as = 0;
 function foo(as: string) { }
 class C {

@@ -1,4 +1,4 @@
-﻿var resolve = {
+var resolve = {
     id: /*! @ngInject */ (details: any) => details.id,
     id1: /* c1 */ "hello",
     id2:

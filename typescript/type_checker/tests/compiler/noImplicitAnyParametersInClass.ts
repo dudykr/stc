@@ -1,4 +1,4 @@
-﻿//@noImplicitAny: true
+//@noImplicitAny: true
 
 class C {
     // No implicit-'any' errors.

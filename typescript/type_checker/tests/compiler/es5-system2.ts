@@ -1,4 +1,4 @@
-﻿// @target: ES5
+// @target: ES5
 // @sourcemap: false
 // @declaration: false
 // @module: system

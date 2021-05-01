@@ -1,1 +1,1 @@
-﻿function foo(){new.targ}
+function foo(){new.targ}

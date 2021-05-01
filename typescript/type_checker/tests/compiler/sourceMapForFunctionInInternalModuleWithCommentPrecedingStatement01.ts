@@ -1,4 +1,4 @@
-﻿//@sourceMap: true
+//@sourceMap: true
 module Q {
     function P() {
         // Test this

@@ -1,4 +1,4 @@
-﻿// @target: ES6
+// @target: ES6
 "use strict"
 var x = 1;
 export { x as foo }

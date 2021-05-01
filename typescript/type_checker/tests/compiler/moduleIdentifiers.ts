@@ -1,4 +1,4 @@
-﻿module M {
+module M {
     interface P { x: number; y: number; }
     export var a = 1
 }

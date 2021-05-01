@@ -1,4 +1,4 @@
-﻿interface f {
+interface f {
 }
 
 function f() {

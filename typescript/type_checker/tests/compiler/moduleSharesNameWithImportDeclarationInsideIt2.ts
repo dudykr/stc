@@ -1,4 +1,4 @@
-﻿module Z.M {
+module Z.M {
     export function bar() {
         return "";
     }

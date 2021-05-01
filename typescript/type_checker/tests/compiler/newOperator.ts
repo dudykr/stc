@@ -1,4 +1,4 @@
-﻿interface ifc { }
+interface ifc { }
 // Attempting to 'new' an interface yields poor error
 var i = new ifc();
 

@@ -1,4 +1,4 @@
-﻿declare module foo {
+declare module foo {
 
     interface Bar {
 

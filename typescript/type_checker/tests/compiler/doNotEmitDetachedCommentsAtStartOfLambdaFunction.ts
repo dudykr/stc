@@ -1,4 +1,4 @@
-﻿// @removeComments: true
+// @removeComments: true
 () => {
     // Single line comment
 

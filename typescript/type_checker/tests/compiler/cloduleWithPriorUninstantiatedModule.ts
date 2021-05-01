@@ -1,4 +1,4 @@
-﻿// Non-ambient & uninstantiated module.
+// Non-ambient & uninstantiated module.
 module Moclodule {
     export interface Someinterface {
         foo(): void;

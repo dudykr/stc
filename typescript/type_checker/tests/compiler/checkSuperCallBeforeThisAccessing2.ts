@@ -1,4 +1,4 @@
-﻿class Based { }
+class Based { }
 class Derived extends Based {
     public x: number;
     constructor() {

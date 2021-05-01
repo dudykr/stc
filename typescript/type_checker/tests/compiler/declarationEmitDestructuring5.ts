@@ -1,4 +1,4 @@
-﻿// @declaration: true
+// @declaration: true
 function baz([, z, , ]) { }
 function foo([, b, ]: [any, any]): void { }
 function bar([z, , , ]) { }

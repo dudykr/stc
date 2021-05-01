@@ -1,4 +1,4 @@
-﻿interface f {
+interface f {
 }
 
 var x = function f() {

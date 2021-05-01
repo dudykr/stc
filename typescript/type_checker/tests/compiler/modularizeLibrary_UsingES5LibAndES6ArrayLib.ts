@@ -1,4 +1,4 @@
-﻿// @lib: es5,es2015.core
+// @lib: es5,es2015.core
 // @target: es5
 
 // No error

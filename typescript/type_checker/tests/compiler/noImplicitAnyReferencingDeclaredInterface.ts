@@ -1,4 +1,4 @@
-﻿//@noImplicitAny: true
+//@noImplicitAny: true
 
 interface Entry {
     // Should return error for implicit any.

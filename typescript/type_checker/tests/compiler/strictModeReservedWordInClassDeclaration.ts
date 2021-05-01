@@ -1,4 +1,4 @@
-﻿interface public { }
+interface public { }
 
 class Foo {
     constructor(private, public, static) {

@@ -1,3 +1,3 @@
-﻿// @module: commonjs
+// @module: commonjs
 var x;
 export declare export = x;

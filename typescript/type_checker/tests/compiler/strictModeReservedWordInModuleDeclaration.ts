@@ -1,4 +1,4 @@
-﻿"use strict"
+"use strict"
 module public { }
 module private { }
 module public.whatever {

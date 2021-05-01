@@ -1,4 +1,4 @@
-﻿interface arguments {
+interface arguments {
 }
 
 function f() {

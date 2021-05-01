@@ -1,4 +1,4 @@
-﻿// @target: es5
+// @target: es5
 
 "use strict"
 function f0(a, [a, [b]], {b}) { }

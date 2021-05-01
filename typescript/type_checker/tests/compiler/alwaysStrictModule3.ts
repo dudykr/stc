@@ -1,4 +1,4 @@
-﻿// @alwaysStrict: true
+// @alwaysStrict: true
 // @module: es2015
 
 // module ES2015

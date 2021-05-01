@@ -1,4 +1,4 @@
-﻿// valid
+// valid
 
 // no params
 () => 1;

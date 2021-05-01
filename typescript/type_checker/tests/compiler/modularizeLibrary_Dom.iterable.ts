@@ -1,4 +1,4 @@
-﻿// @skipLibCheck: true
+// @skipLibCheck: true
 // @lib: es6,dom,dom.iterable
 // @target: es6
 

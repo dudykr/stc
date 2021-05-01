@@ -1,4 +1,4 @@
-﻿interface arguments {
+interface arguments {
 }
 
 var x = function f() {

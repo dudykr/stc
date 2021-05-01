@@ -1,1 +1,1 @@
-﻿declare function foo()
+declare function foo()

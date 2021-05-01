@@ -1,4 +1,4 @@
-﻿//@noImplicitAny: true
+//@noImplicitAny: true
 
 var x: {}[] = [[1, 2, 3], ["hello"]];
 

@@ -1,4 +1,4 @@
-﻿function foo(/*c1*/ x: any) { }
+function foo(/*c1*/ x: any) { }
 foo(/*c2*/ 1);
 foo(/*c3*/ function () { });
 foo(

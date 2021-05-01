@@ -1,4 +1,4 @@
-﻿// @declaration: true
+// @declaration: true
 
 type Foo<T> = {
     foo<U>(): Foo<U>

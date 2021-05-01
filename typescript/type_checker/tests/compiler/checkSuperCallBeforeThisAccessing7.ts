@@ -1,4 +1,4 @@
-﻿class Base {
+class Base {
     constructor(func: ()=>Base) {
     }
 }

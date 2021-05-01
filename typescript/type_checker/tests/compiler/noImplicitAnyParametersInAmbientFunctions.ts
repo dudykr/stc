@@ -1,4 +1,4 @@
-﻿//@noImplicitAny: true
+//@noImplicitAny: true
 
 // No implicit-'any' errors.
 declare function d_f1(): void;

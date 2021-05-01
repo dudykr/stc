@@ -1,4 +1,4 @@
-﻿class C extends null {
+class C extends null {
     constructor() {
         super();
         return Object.create(null);

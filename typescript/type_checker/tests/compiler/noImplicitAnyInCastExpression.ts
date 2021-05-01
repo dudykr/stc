@@ -1,4 +1,4 @@
-﻿//@noImplicitAny: true
+//@noImplicitAny: true
 
 // verify no noImplictAny errors reported with cast expression
 

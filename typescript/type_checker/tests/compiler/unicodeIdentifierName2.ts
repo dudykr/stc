@@ -1,1 +1,1 @@
-﻿var a₁ = "hello"; alert(a₁)
+var a₁ = "hello"; alert(a₁)

@@ -1,2 +1,2 @@
-﻿interface bar { }
+interface bar { }
 let bar: bar;

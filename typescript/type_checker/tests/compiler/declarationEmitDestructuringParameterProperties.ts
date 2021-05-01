@@ -1,4 +1,4 @@
-﻿// @declaration: true
+// @declaration: true
 class C1 {
     constructor(public [x, y, z]: string[]) {
     }

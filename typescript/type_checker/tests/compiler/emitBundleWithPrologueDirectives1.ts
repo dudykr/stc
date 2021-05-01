@@ -1,4 +1,4 @@
-﻿// @outFile: outFile.js
+// @outFile: outFile.js
 // @module: amd
 // @target: es5
 

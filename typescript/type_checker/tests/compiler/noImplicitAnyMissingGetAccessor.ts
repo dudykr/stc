@@ -1,4 +1,4 @@
-﻿// @noImplicitAny : true
+// @noImplicitAny : true
 // @target: es5
 
 abstract class Parent

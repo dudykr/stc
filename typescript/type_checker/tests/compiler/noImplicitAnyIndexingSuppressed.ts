@@ -1,4 +1,4 @@
-﻿//@noImplicitAny: true
+//@noImplicitAny: true
 //@suppressImplicitAnyIndexErrors: true
 
 enum MyEmusEnum {

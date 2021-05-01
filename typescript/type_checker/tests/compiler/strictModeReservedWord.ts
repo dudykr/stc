@@ -1,4 +1,4 @@
-﻿let let = 10;
+let let = 10;
 
 function foo() {
     "use strict"

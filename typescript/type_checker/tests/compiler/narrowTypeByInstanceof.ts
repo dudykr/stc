@@ -1,4 +1,4 @@
-﻿    class Match {
+    class Match {
         public range(): any {
             return undefined;
         }

@@ -1,4 +1,4 @@
-﻿//@emitBOM: true
+//@emitBOM: true
 //@declaration: true
 //@sourcemap: true
 

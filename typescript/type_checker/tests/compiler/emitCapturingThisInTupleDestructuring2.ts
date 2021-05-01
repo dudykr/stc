@@ -1,4 +1,4 @@
-﻿var array1: [number, number] = [1, 2];
+var array1: [number, number] = [1, 2];
 
 class B {
     test: number;

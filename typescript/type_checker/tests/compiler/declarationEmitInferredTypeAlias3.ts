@@ -1,4 +1,4 @@
-﻿// @declaration: true
+// @declaration: true
 // @skipDefaultLibCheck: true
 
 // @Filename: 0.ts

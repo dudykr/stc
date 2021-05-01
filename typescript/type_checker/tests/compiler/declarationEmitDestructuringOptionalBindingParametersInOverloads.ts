@@ -1,4 +1,4 @@
-﻿// @declaration: true
+// @declaration: true
 
 function foo([x, y, z] ?: [string, number, boolean]);
 function foo(...rest: any[]) {

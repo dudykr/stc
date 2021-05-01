@@ -1,4 +1,4 @@
-﻿function f<T>(value: T) { return value; };
+function f<T>(value: T) { return value; };
 
 function h<R>(func: (x: number) => R): R { return null; }
 

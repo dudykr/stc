@@ -1,4 +1,4 @@
-﻿declare class C {
+declare class C {
     baz(): any;
     foo(n: number): any;
 }

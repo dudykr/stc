@@ -1,2 +1,2 @@
-﻿const x = <div>
+const x = <div>
 <<<<<<< HEAD

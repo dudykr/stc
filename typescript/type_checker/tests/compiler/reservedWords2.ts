@@ -1,4 +1,4 @@
-﻿import while = require("dfdf");
+import while = require("dfdf");
 import * as  while from "foo"
 
 var typeof = 10;

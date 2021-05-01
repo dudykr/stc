@@ -1,4 +1,4 @@
-﻿class A {
+class A {
     blub = 6;
 }
 

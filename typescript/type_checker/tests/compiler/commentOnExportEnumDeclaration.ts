@@ -1,4 +1,4 @@
-﻿/**
+/**
  * comment
  */
 export enum Color {

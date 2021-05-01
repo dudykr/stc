@@ -1,4 +1,4 @@
-﻿declare module "punycode" {
+declare module "punycode" {
     interface ucs2 {
         decode(string: string): string;
         encode(codePoints: number[]): string;

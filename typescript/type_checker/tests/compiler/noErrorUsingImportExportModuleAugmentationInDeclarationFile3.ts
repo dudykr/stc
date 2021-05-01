@@ -1,4 +1,4 @@
-﻿// @module: none
+// @module: none
 
 // @filename: 0.d.ts
 export = a;

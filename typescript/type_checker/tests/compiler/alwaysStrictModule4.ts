@@ -1,4 +1,4 @@
-﻿// @alwaysStrict: true
+// @alwaysStrict: true
 // @module: commonjs
 
 // Module commonjs

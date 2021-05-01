@@ -1,4 +1,4 @@
-﻿// @removeComments: true
+// @removeComments: true
 /*
 
     multi line

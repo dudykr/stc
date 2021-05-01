@@ -1,4 +1,4 @@
-﻿// @module: commonjs
+// @module: commonjs
 // @skipLibCheck: true
 // @includebuiltfile: typescriptServices.d.ts
 // @noImplicitAny:true

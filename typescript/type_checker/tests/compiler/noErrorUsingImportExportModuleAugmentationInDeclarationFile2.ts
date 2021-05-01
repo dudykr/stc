@@ -1,4 +1,4 @@
-﻿// @module: none
+// @module: none
 
 // @filename: 1.ts
 export var j = "hello"; // error

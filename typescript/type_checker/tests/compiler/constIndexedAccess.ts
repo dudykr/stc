@@ -1,4 +1,4 @@
-﻿
+
 const enum numbers {
     zero,
     one

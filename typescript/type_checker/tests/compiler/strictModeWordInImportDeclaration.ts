@@ -1,4 +1,4 @@
-﻿// @target: ES6
+// @target: ES6
 "use strict"
 import * as package from "./1"
 import {foo as private} from "./1"

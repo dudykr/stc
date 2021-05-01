@@ -1,4 +1,4 @@
-﻿// @lib: es5,es2015,es2015.core,es2015.symbol.wellknown
+// @lib: es5,es2015,es2015.core,es2015.symbol.wellknown
 // @target: es6
 
 // Using Es6 array

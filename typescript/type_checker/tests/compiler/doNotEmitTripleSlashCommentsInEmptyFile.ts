@@ -1,4 +1,4 @@
-﻿// @removeComments: true
+// @removeComments: true
 
 // @Filename: file0.ts
 

@@ -1,4 +1,4 @@
-﻿// @lib: es5
+// @lib: es5
 // @target: es6
 
 // All will be error from using ES6 features but only include ES5 library

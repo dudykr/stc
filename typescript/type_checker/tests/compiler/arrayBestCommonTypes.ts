@@ -1,4 +1,4 @@
-﻿module EmptyTypes {
+module EmptyTypes {
     interface iface { }
     class base implements iface { }
     class base2 implements iface { }

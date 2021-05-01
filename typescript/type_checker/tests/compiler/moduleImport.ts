@@ -1,4 +1,4 @@
-﻿module A.B.C {
+module A.B.C {
 	import XYZ = X.Y.Z;
 	export function ping(x: number) {
 		if (x>0) XYZ.pong (x-1);

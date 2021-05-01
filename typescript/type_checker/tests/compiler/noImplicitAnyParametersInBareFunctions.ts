@@ -1,4 +1,4 @@
-﻿//@noImplicitAny: true
+//@noImplicitAny: true
 
 // No implicit-'any' errors.
 function f1(): void { }
