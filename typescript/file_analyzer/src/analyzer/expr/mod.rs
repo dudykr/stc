@@ -2060,6 +2060,30 @@ impl Analyzer<'_, '_> {
                     .context("tried to access property of a rest type");
             }
 
+            Type::Function(..) => {
+                // Classes extends prototype of `Function` (global interface)
+                if let Ok(ty) = self.access_property(
+                    span,
+                    Type::Ref(Ref {
+                        span: span.with_ctxt(Default::default()),
+                        ctxt: ModuleId::builtin(),
+                        type_name: RTsEntityName::Ident(RIdent::new(js_word!("Function"), DUMMY_SP)),
+                        type_args: None,
+                    }),
+                    prop,
+                    type_mode,
+                    id_ctx,
+                ) {
+                    return Ok(ty);
+                }
+
+                // Function does not have information about types of properties.
+                match type_mode {
+                    TypeOfMode::LValue => return Ok(Type::any(span)),
+                    TypeOfMode::RValue => {}
+                }
+            }
+
             _ => {}
         }
 
