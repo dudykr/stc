@@ -1276,7 +1276,8 @@ impl Analyzer<'_, '_> {
 
                 // Handle nodes in order described above
                 let mut body = {
-                    let mut declared_keys = vec![];
+                    let mut declared_static_keys = vec![];
+                    let mut declared_instance_keys = vec![];
 
                     // Handle static properties
                     for (index, node) in c.body.iter().enumerate() {
@@ -1288,10 +1289,10 @@ impl Analyzer<'_, '_> {
                                     // Check for duplicate property names.
                                     if let Some(key) = member.key() {
                                         // TODO: Use better logic for testing key equality
-                                        if declared_keys.iter().any(|prev: &Key| prev.type_eq(&*key)) {
+                                        if declared_static_keys.iter().any(|prev: &Key| prev.type_eq(&*key)) {
                                             child.storage.report(Error::DuplicateProperty { span: key.span() })
                                         }
-                                        declared_keys.push(key.into_owned());
+                                        declared_static_keys.push(key.into_owned());
                                     }
 
                                     let member = member.fold_with(&mut LitGeneralizer);
@@ -1411,10 +1412,10 @@ impl Analyzer<'_, '_> {
                                     // Check for duplicate property names.
                                     if let Some(key) = member.key() {
                                         // TODO: Use better logic for testing key equality
-                                        if declared_keys.iter().any(|prev: &Key| prev.type_eq(&*key)) {
+                                        if declared_instance_keys.iter().any(|prev: &Key| prev.type_eq(&*key)) {
                                             child.storage.report(Error::DuplicateProperty { span: key.span() })
                                         }
-                                        declared_keys.push(key.into_owned());
+                                        declared_instance_keys.push(key.into_owned());
                                     }
 
                                     let member = member.fold_with(&mut LitGeneralizer);
