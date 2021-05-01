@@ -51,7 +51,7 @@ function extract(content: string): ErrorRef[] {
 }
 
 async function handleTestSuite(suiteName: string) {
-    const multiResultTests = [];
+    const multiResultTests: string[] = [];
 
     const refFiles = await fs.promises.readdir(path.join('tests', 'reference'));
 
@@ -77,7 +77,7 @@ async function handleTestSuite(suiteName: string) {
             }
             const errorJsonPath = path.join(dir, refFile.replace('.txt', '.json'));
             if (errorJsonPath.includes('(')) {
-                multiResultTests.push(p.replace(`tests/${suiteName}`, ''));
+                multiResultTests.push(p.replace(`tests/${suiteName}/`, ''));
             }
 
             const content = await fs.promises.readFile(errorFilePath, 'utf-8');
@@ -90,6 +90,7 @@ async function handleTestSuite(suiteName: string) {
             await fs.promises.writeFile(errorJsonPath, JSON.stringify(errors))
         }
     }
+    multiResultTests.sort()
 
     await fs.promises.writeFile(path.join('tests', `${suiteName}.multiresult.txt`), multiResultTests.join('\n'), 'utf8')
 }
