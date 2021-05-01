@@ -40,6 +40,7 @@ use stc_ts_types::Key;
 use stc_ts_types::Union;
 use stc_ts_utils::find_ids_in_pat;
 use stc_ts_utils::MapWithMut;
+use stc_utils::ext::SpanExt;
 use std::borrow::Cow;
 use std::{
     collections::hash_map::Entry,
