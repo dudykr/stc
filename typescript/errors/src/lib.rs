@@ -59,7 +59,7 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
-    /// TS2483
+    /// TS2404
     TypeAnnOnLhsOfForLoops {
         span: Span,
     },
@@ -1287,7 +1287,7 @@ impl Error {
 
             Error::CannotAccessPrivatePropertyFromOutside { .. } => 18013,
 
-            Error::TypeAnnOnLhsOfForLoops { .. } => 2483,
+            Error::TypeAnnOnLhsOfForLoops { .. } => 2404,
 
             _ => 0,
         }
