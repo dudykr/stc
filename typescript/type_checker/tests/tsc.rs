@@ -91,8 +91,8 @@ fn is_ignored(path: &Path) -> bool {
 #[test]
 fn conformance() {
     let args: Vec<_> = env::args().collect();
-    let mut tests = load_fixtures("conformance", create_test);
-    tests.extend(load_fixtures("compiler", create_test));
+    let tests = load_fixtures("conformance", create_test);
+    // tests.extend(load_fixtures("compiler", create_test));
     test_main(&args, tests, Default::default());
 }
 
