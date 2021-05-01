@@ -640,8 +640,9 @@ impl Analyzer<'_, '_> {
             let l = left(&t.type_name);
             let top_id: Id = l.into();
 
-            let is_resolved =
-                self.data.all_local_type_names.contains(&top_id) || self.imports_by_id.contains_key(&top_id);
+            let is_resolved = self.data.all_local_type_names.contains(&top_id)
+                || self.imports_by_id.contains_key(&top_id)
+                || self.env.get_global_type(t.span, &top_id.sym()).is_ok();
 
             if !is_resolved {
                 match t.type_name {
