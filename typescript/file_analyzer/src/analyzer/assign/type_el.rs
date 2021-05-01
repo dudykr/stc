@@ -586,7 +586,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// This method assigns each property to corresponding property.
-    pub(super) fn assign_type_elements_to_type_element(
+    fn assign_type_elements_to_type_element(
         &mut self,
         opts: AssignOpts,
         missing_fields: &mut Vec<TypeElement>,

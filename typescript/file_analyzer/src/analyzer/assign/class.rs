@@ -8,6 +8,7 @@ use stc_ts_types::ClassDef;
 use stc_ts_types::ClassMember;
 use stc_ts_types::QueryExpr;
 use stc_ts_types::Type;
+use stc_ts_types::TypeLitMetadata;
 use std::borrow::Cow;
 use swc_common::EqIgnoreSpan;
 use swc_ecma_ast::Accessibility;
@@ -85,6 +86,7 @@ impl Analyzer<'_, '_> {
             Type::TypeLit(..) | Type::Interface(..) => {
                 let rhs = self.type_to_type_lit(opts.span, r)?.unwrap();
 
+                let mut lhs_members = vec![];
                 for lm in &l.body {
                     let lm = self.make_type_el_from_class_member(lm, true)?;
                     let lm = match lm {
@@ -94,9 +96,20 @@ impl Analyzer<'_, '_> {
                             continue;
                         }
                     };
-                    self.assign_type_elements_to_type_element(opts, &mut vec![], &mut vec![], &lm, &rhs.members)
-                        .context("tried to assign type elements to a class member")?;
+                    lhs_members.push(lm);
                 }
+
+                self.assign_to_type_elements(
+                    opts,
+                    l.span,
+                    &lhs_members,
+                    &r,
+                    TypeLitMetadata {
+                        specified: true,
+                        ..Default::default()
+                    },
+                )
+                .context("tried to assign type elements to a class member")?;
 
                 return Ok(());
             }
@@ -171,35 +184,9 @@ impl Analyzer<'_, '_> {
 
                 return Ok(());
             }
-            Type::Interface(rhs) => {
-                // It's legal to assign an interface to a class if all class
-                // memebers are public.
-                //
-                // See: classWithOnlyPublicMembersEquivalentToInterface.ts
 
-                // TODO: Verify that all class members all public.
-
-                for lm in &l.def.body {
-                    let lm = self.make_type_el_from_class_member(lm, false)?;
-                    let lm = match lm {
-                        Some(v) => v,
-                        None => {
-                            // Static members does not affect equivalance.
-                            //
-                            // See: classWithOnlyPublicMembersEquivalentToInterface2
-                            continue;
-                        }
-                    };
-                    self.assign_type_elements_to_type_element(opts, &mut vec![], &mut vec![], &lm, &rhs.body)
-                        .context("tried to assign type elements to a class member")?;
-                }
-
-                // TODO: Assign parent interfaces
-
-                return Ok(());
-            }
-
-            Type::TypeLit(rhs) => {
+            Type::TypeLit(..) | Type::Interface(..) | Type::Intersection(..) => {
+                let mut lhs_members = vec![];
                 for lm in &l.def.body {
                     let lm = self.make_type_el_from_class_member(lm, false)?;
                     let lm = match lm {
@@ -208,32 +195,22 @@ impl Analyzer<'_, '_> {
                             continue;
                         }
                     };
-                    self.assign_type_elements_to_type_element(opts, &mut vec![], &mut vec![], &lm, &rhs.members)
-                        .context("tried to assign type elements to a class member")?;
+                    lhs_members.push(lm);
                 }
+
+                self.assign_to_type_elements(
+                    opts,
+                    l.span,
+                    &lhs_members,
+                    &r,
+                    TypeLitMetadata {
+                        specified: true,
+                        ..Default::default()
+                    },
+                )
+                .context("tried to assign type elements to class members")?;
 
                 return Ok(());
-            }
-
-            Type::Intersection(rhs) => {
-                let rhs = self
-                    .type_to_type_lit(opts.span, r)
-                    .context("tried to convert a type to type literal to assign it to a class")?;
-                if let Some(rhs) = rhs.as_deref() {
-                    for lm in &l.def.body {
-                        let lm = self.make_type_el_from_class_member(lm, false)?;
-                        let lm = match lm {
-                            Some(v) => v,
-                            None => {
-                                continue;
-                            }
-                        };
-                        self.assign_type_elements_to_type_element(opts, &mut vec![], &mut vec![], &lm, &rhs.members)
-                            .context("tried to assign type elements to a class member")?;
-                    }
-
-                    return Ok(());
-                }
             }
 
             _ => {}
