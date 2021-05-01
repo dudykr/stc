@@ -205,14 +205,6 @@ conformance::generators::generatorReturnTypeFallback.5.ts
 conformance::interfaces::interfaceDeclarations::interfaceThatHidesBaseProperty2.ts
 conformance::internalModules::moduleDeclarations::InvalidNonInstantiatedModule.ts
 conformance::internalModules::moduleDeclarations::asiPreventsParsingAsNamespace05.ts
-conformance::parser::ecmascript5::ClassDeclarations::parserClass2.ts
-conformance::parser::ecmascript5::Generics::parserCastVersusArrowFunction1.ts
-conformance::parser::ecmascript5::Generics::parserGenericsInInterfaceDeclaration1.ts
-conformance::parser::ecmascript5::Generics::parserGenericsInVariableDeclaration1.ts
-conformance::parser::ecmascript5::RegularExpressions::parseRegularExpressionMixedWithComments.ts
-conformance::parser::ecmascript5::VariableDeclarations::parserVariableDeclaration3.ts
-conformance::salsa::inferringClassMembersFromAssignments8.ts
-conformance::scanner::ecmascript5::scannerClass2.ts
 conformance::statements::breakStatements::invalidSwitchBreakStatement.ts
 conformance::types::contextualTypes::commaOperator::contextuallyTypeCommaOperator03.ts
 conformance::types::contextualTypes::logicalAnd::contextuallyTypeLogicalAnd03.ts
