@@ -616,8 +616,6 @@ impl Analyzer<'_, '_> {
                         if let Some(..) = self.scope.get_var(&i.into()) {
                             self.storage
                                 .report(Error::NoSuchTypeButVarExists { span, name: i.into() })
-                        } else {
-                            self.storage.report(Error::NoSuchType { span, name: i.into() })
                         }
                     }
                 } else {
@@ -625,8 +623,6 @@ impl Analyzer<'_, '_> {
                         if let Some(..) = self.scope.get_var(&i.into()) {
                             self.storage
                                 .report(Error::NoSuchTypeButVarExists { span, name: i.into() })
-                        } else {
-                            self.storage.report(Error::NoSuchType { span, name: i.into() })
                         }
                     }
                 }
