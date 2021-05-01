@@ -2764,6 +2764,7 @@ types/members/objectTypeHidingMembersOfObject.ts
 types/members/objectTypePropertyAccess.ts
 types/members/objectTypeWithCallSignatureAppearsToBeFunctionType.ts
 types/members/objectTypeWithCallSignatureHidingMembersOfFunction.ts
+types/members/objectTypeWithConstructSignatureHidingMembersOfFunction.ts
 types/members/objectTypeWithNumericProperty.ts
 types/members/typesWithOptionalProperty.ts
 types/members/typesWithSpecializedConstructSignatures.ts
