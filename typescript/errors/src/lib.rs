@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS18011
+    CannotDeletePrivateProperty {
+        span: Span,
+    },
+
     /// TS18012
     ConstructorIsKeyword {
         span: Span,
@@ -1267,6 +1272,8 @@ impl Error {
             Error::ConstructorIsKeyword { .. } => 18012,
 
             Error::PrivateIdUsedAsMethodName { .. } => 18022,
+
+            Error::CannotDeletePrivateProperty { .. } => 18011,
 
             _ => 0,
         }
