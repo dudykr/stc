@@ -14,6 +14,7 @@ use stc_ts_types::TypeLit;
 use stc_ts_types::TypeParam;
 use std::collections::HashSet;
 use std::fmt::Write;
+use swc_common::Spanned;
 use swc_common::{sync::Lrc, SourceMap, DUMMY_SP};
 use swc_ecma_ast::*;
 use swc_ecma_codegen::{text_writer::JsWriter, Emitter};
@@ -22,6 +23,9 @@ pub mod debugger;
 pub mod duplicate;
 
 pub fn dump_type_as_string(cm: &Lrc<SourceMap>, t: &Type) -> String {
+    if t.span().is_dummy() {
+        return "<DUMMY>".to_string();
+    }
     let mut buf = vec![];
     {
         let mut emitter = Emitter {
