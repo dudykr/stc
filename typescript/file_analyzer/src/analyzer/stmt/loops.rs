@@ -202,9 +202,18 @@ impl Analyzer<'_, '_> {
                     RVarDeclOrPat::VarDecl(RVarDecl { decls, .. }) => {
                         if decls.len() >= 1 {
                             if decls[0].name.get_ty().is_some() {
-                                child
-                                    .storage
-                                    .report(Error::TypeAnnOnLhsOfForLoops { span: decls[0].span });
+                                match kind {
+                                    ForHeadKind::In => {
+                                        child
+                                            .storage
+                                            .report(Error::TypeAnnOnLhsOfForInLoops { span: decls[0].span });
+                                    }
+                                    ForHeadKind::Of => {
+                                        child
+                                            .storage
+                                            .report(Error::TypeAnnOnLhsOfForOfLoops { span: decls[0].span });
+                                    }
+                                }
                             }
                         }
                     }
