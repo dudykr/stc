@@ -100,7 +100,10 @@ impl Analyzer<'_, '_> {
                 }
 
                 self.assign_to_type_elements(
-                    opts,
+                    AssignOpts {
+                        allow_unknown_rhs: true,
+                        ..opts
+                    },
                     l.span,
                     &lhs_members,
                     &r,
@@ -199,7 +202,10 @@ impl Analyzer<'_, '_> {
                 }
 
                 self.assign_to_type_elements(
-                    opts,
+                    AssignOpts {
+                        allow_unknown_rhs: true,
+                        ..opts
+                    },
                     l.span,
                     &lhs_members,
                     &r,
