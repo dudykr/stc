@@ -26,6 +26,7 @@ use stc_ts_types::Operator;
 use stc_ts_types::Ref;
 use stc_ts_types::TypeParamInstantiation;
 use stc_ts_utils::find_ids_in_pat;
+use stc_ts_utils::PatExt;
 use std::borrow::Cow;
 use swc_common::Span;
 use swc_common::Spanned;
@@ -195,6 +196,20 @@ impl Analyzer<'_, '_> {
                     }) => true,
                     _ => false,
                 };
+
+                // Type annotation on lhs of for in/of loops is invalid.
+                match left {
+                    RVarDeclOrPat::VarDecl(RVarDecl { decls, .. }) => {
+                        if decls.len() >= 1 {
+                            if decls[0].name.get_ty().is_some() {
+                                child
+                                    .storage
+                                    .report(Error::TypeAnnOnLhsOfForLoops { span: decls[0].span });
+                            }
+                        }
+                    }
+                    _ => {}
+                }
 
                 let rty = rhs
                     .validate_with_default(child)
