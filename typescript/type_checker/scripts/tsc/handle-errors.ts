@@ -81,6 +81,9 @@ async function handleTestSuite(suiteName: string) {
             }
 
             const content = await fs.promises.readFile(errorFilePath, 'utf-8');
+            if (content.toLowerCase().includes('[0m:')) {
+                continue
+            }
 
             console.log('----- ----- ----- ----- -----')
             console.log(p)
