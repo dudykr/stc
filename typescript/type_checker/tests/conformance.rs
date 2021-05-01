@@ -51,26 +51,24 @@ struct RefError {
     pub code: String,
 }
 
+fn load_list(name: &str) -> Vec<String> {
+    let content = read_to_string(name).unwrap();
+
+    content
+        .lines()
+        .map(|v| v.replace("::", "/"))
+        .filter(|v| !v.trim().is_empty())
+        .collect()
+}
+
 fn is_ignored(path: &Path) -> bool {
     static IGNORED: Lazy<Vec<String>> = Lazy::new(|| {
-        let content = read_to_string("tests/conformance.ignored.txt").unwrap();
-
-        content
-            .lines()
-            .filter(|v| !v.trim().is_empty())
-            .map(|v| v.replace("::", "/"))
-            .collect()
+        let mut v = load_list("tests/conformance.ignored.txt");
+        v.extend(load_list("tests/conformance.multiresult.txt"));
+        v
     });
 
-    static PASS: Lazy<Vec<String>> = Lazy::new(|| {
-        let content = read_to_string("tests/conformance.pass.txt").unwrap();
-
-        content
-            .lines()
-            .filter(|v| !v.trim().is_empty())
-            .map(|v| v.to_string())
-            .collect()
-    });
+    static PASS: Lazy<Vec<String>> = Lazy::new(|| load_list("tests/conformance.pass.txt"));
 
     if IGNORED.iter().any(|line| path.to_string_lossy().contains(line)) {
         return true;
