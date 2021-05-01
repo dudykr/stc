@@ -148,3 +148,8 @@ conformance::statements::for-ofStatements::ES5For-of35.ts
 conformance::statements::for-ofStatements::ES5For-of36.ts
 conformance::statements::for-ofStatements::ES5For-of7.ts
 conformance::statements::for-ofStatements::ES5For-ofTypeCheck13.ts
+conformance::es6::for-ofStatements::for-of16.ts
+conformance::es6::for-ofStatements::for-of29.ts
+conformance::es6::for-ofStatements::for-of33.ts
+conformance::es6::for-ofStatements::for-of39.ts
+conformance::es6::for-ofStatements::for-of46.ts
