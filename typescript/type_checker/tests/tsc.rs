@@ -570,12 +570,12 @@ fn libs_with_deps(libs: &[Lib]) -> Vec<Lib> {
         libs.push(l);
 
         match l {
-            Lib::Es2015 => add(libs, Lib::Es5Full),
+            Lib::Es2015 | Lib::Es2015SymbolWellknown => add(libs, Lib::Es5Full),
             Lib::Es2016 => add(libs, Lib::Es2015Full),
-            Lib::Es2017 => add(libs, Lib::Es2015Full),
-            Lib::Es2018 => add(libs, Lib::Es2015Full),
-            Lib::Es2019 => add(libs, Lib::Es2015Full),
-            Lib::Es2020 => add(libs, Lib::Es2015Full),
+            Lib::Es2017 | Lib::Es2017Sharedmemory => add(libs, Lib::Es2016Full),
+            Lib::Es2018 => add(libs, Lib::Es2017Full),
+            Lib::Es2019 => add(libs, Lib::Es2018Full),
+            Lib::Es2020 => add(libs, Lib::Es2019Full),
             _ => {}
         }
 
