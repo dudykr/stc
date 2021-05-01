@@ -637,33 +637,9 @@ impl Analyzer<'_, '_> {
 
         if !self.is_builtin {
             slog::warn!(self.logger, "Crating a ref from TsTypeRef: {:?}", t.type_name);
-            let l = left(&t.type_name);
-            let top_id: Id = l.into();
 
-            let is_resolved = self.data.all_local_type_names.contains(&top_id)
-                || self.imports_by_id.contains_key(&top_id)
-                || self.env.get_global_type(t.span, &top_id.sym()).is_ok();
-
-            if !is_resolved {
-                match t.type_name {
-                    RTsEntityName::TsQualifiedName(_) => {
-                        self.storage.report(Error::NamspaceNotFound {
-                            name: box t.type_name.clone().into(),
-                            ctxt: self.ctx.module_id,
-                            type_args: type_args.clone(),
-                            span,
-                        });
-                    }
-                    RTsEntityName::Ident(_) => {
-                        self.storage.report(Error::TypeNotFound {
-                            span: l.span,
-                            name: box t.type_name.clone().into(),
-                            ctxt: self.ctx.module_id,
-                            type_args: type_args.clone(),
-                        });
-                    }
-                }
-            }
+            self.report_error_for_unresolve_type(&t.type_name, type_args.as_deref())
+                .report(&mut self.storage);
         }
         let mut span = t.span;
         if contains_infer {
@@ -1042,12 +1018,5 @@ impl Analyzer<'_, '_> {
             RTsFnParam::Rest(rest) => {}
             RTsFnParam::Object(obj) => self.default_any_object(obj),
         }
-    }
-}
-
-pub(crate) fn left(t: &RTsEntityName) -> &RIdent {
-    match t {
-        RTsEntityName::TsQualifiedName(t) => left(&t.left),
-        RTsEntityName::Ident(i) => i,
     }
 }

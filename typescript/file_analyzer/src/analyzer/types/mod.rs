@@ -11,6 +11,7 @@ use rnode::VisitWith;
 use stc_ts_ast_rnode::RClassDecl;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RNumber;
+use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsEnumDecl;
 use stc_ts_ast_rnode::RTsInterfaceDecl;
 use stc_ts_ast_rnode::RTsKeywordType;
@@ -19,6 +20,7 @@ use stc_ts_ast_rnode::RTsModuleName;
 use stc_ts_ast_rnode::RTsTypeAliasDecl;
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::DebugExt;
+use stc_ts_errors::Error;
 use stc_ts_types::name::Name;
 use stc_ts_types::Array;
 use stc_ts_types::ClassDef;
@@ -35,6 +37,7 @@ use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
 use stc_ts_types::TypeLitMetadata;
 use stc_ts_types::TypeParam;
+use stc_ts_types::TypeParamInstantiation;
 use stc_ts_types::Union;
 use stc_ts_utils::MapWithMut;
 use stc_utils::error::context;
@@ -727,6 +730,37 @@ impl Analyzer<'_, '_> {
         v
     }
 
+    pub(crate) fn report_error_for_unresolve_type(
+        &mut self,
+        type_name: &RTsEntityName,
+        type_args: Option<&TypeParamInstantiation>,
+    ) -> ValidationResult<()> {
+        let l = left(&type_name);
+        let top_id: Id = l.into();
+
+        let is_resolved = self.data.all_local_type_names.contains(&top_id)
+            || self.imports_by_id.contains_key(&top_id)
+            || self.env.get_global_type(l.span, &top_id.sym()).is_ok();
+
+        if is_resolved {
+            return Ok(());
+        }
+
+        match type_name {
+            RTsEntityName::TsQualifiedName(_) => Err(Error::NamspaceNotFound {
+                span: l.span,
+                name: box type_name.clone().into(),
+                ctxt: self.ctx.module_id,
+                type_args: type_args.cloned().map(Box::new),
+            }),
+            RTsEntityName::Ident(_) => Err(Error::TypeNotFound {
+                span: l.span,
+                name: box type_name.clone().into(),
+                ctxt: self.ctx.module_id,
+                type_args: type_args.cloned().map(Box::new),
+            }),
+        }
+    }
     /// Utility method to convert a class member to a type element.
     ///
     /// This method is used while inferring types and while assigning type
@@ -993,5 +1027,12 @@ impl VisitMut<Type> for TupleNormalizer {
             }
             _ => {}
         }
+    }
+}
+
+pub(crate) fn left(t: &RTsEntityName) -> &RIdent {
+    match t {
+        RTsEntityName::TsQualifiedName(t) => left(&t.left),
+        RTsEntityName::Ident(i) => i,
     }
 }

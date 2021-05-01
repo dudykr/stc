@@ -2501,6 +2501,17 @@ impl Analyzer<'_, '_> {
         n: &RTsEntityName,
         type_args: Option<&TypeParamInstantiation>,
     ) -> ValidationResult {
+        {
+            let res = self.report_error_for_unresolve_type(&n, type_args);
+            match res {
+                Ok(()) => {}
+                Err(err) => {
+                    self.storage.report(err);
+                    return Ok(Type::any(span));
+                }
+            }
+        }
+
         match *n {
             RTsEntityName::Ident(ref i) => {
                 if i.sym == js_word!("Array") {
