@@ -64,7 +64,7 @@ pub enum Error {
         span: Span,
     },
 
-    /// TS2484
+    /// TS2483
     TypeAnnOnLhsOfForOfLoops {
         span: Span,
     },
@@ -1293,7 +1293,7 @@ impl Error {
             Error::CannotAccessPrivatePropertyFromOutside { .. } => 18013,
 
             Error::TypeAnnOnLhsOfForInLoops { .. } => 2404,
-            Error::TypeAnnOnLhsOfForOfLoops { .. } => 2484,
+            Error::TypeAnnOnLhsOfForOfLoops { .. } => 2483,
 
             _ => 0,
         }
