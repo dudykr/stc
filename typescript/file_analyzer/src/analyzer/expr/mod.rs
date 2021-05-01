@@ -155,6 +155,10 @@ impl Analyzer<'_, '_> {
                 RExpr::This(RThisExpr { span, .. }) => {
                     let span = *span;
 
+                    if self.ctx.in_static_property_initializer {
+                        self.storage.report(Error::ThisInStaticPropertyInitializer { span })
+                    }
+
                     let is_ref_to_module = match self.scope.kind() {
                         ScopeKind::Module => true,
                         _ => false,

@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2334
+    ThisInStaticPropertyInitializer {
+        span: Span,
+    },
+
     /// TS2507
     InvalidSuperClass {
         span: Span,
@@ -1244,6 +1249,8 @@ impl Error {
             Error::WithStmtNotSupported { .. } => 2410,
 
             Error::InvalidSuperClass { .. } => 2507,
+
+            Error::ThisInStaticPropertyInitializer { .. } => 2334,
 
             _ => 0,
         }
