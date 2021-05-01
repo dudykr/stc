@@ -38,7 +38,7 @@ function extract(content: string): ErrorRef[] {
 
         console.log(line, column, code);
         if (!line || !column || !code) {
-            throw new Error(`invalid line found: ${str}`)
+            throw new Error(`invalid line found: ${str}; ${line}:${column}; code = ${code}`)
         }
         errors.push({
             line,
