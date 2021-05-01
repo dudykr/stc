@@ -291,6 +291,7 @@ classes/members/privateNames/privateNameNotAllowedOutsideClass.ts
 classes/members/privateNames/privateNamesAndDecorators.ts
 classes/members/privateNames/privateNamesAndFields.ts
 classes/members/privateNames/privateNamesAndkeyof.ts
+classes/members/privateNames/privateNamesInterfaceExtendingClass.ts
 classes/members/privateNames/privateNamesNoDelete.ts
 classes/members/privateNames/privateNamesNotAllowedAsParameters.ts
 classes/members/privateNames/privateNamesNotAllowedInVariableDeclarations.ts
@@ -2925,6 +2926,7 @@ types/tuple/wideningTuples6.ts
 types/tuple/wideningTuples7.ts
 types/typeAliases/asiPreventsParsingAsTypeAlias01.ts
 types/typeAliases/asiPreventsParsingAsTypeAlias02.ts
+types/typeAliases/circularTypeAliasForUnionWithClass.ts
 types/typeAliases/circularTypeAliasForUnionWithInterface.ts
 types/typeAliases/classDoesNotDependOnBaseTypes.ts
 types/typeAliases/interfaceDoesNotDependOnBaseTypes.ts
