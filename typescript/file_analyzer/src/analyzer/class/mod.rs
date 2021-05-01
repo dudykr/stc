@@ -1279,11 +1279,11 @@ impl Analyzer<'_, '_> {
                     let mut declared_keys = vec![];
 
                     // Handle static properties
-                    for (index, member) in c.body.iter().enumerate() {
-                        match member {
+                    for (index, node) in c.body.iter().enumerate() {
+                        match node {
                             RClassMember::ClassProp(RClassProp { is_static: true, .. })
                             | RClassMember::PrivateProp(RPrivateProp { is_static: true, .. }) => {
-                                let m = member.validate_with(child)?;
+                                let m = node.validate_with(child)?;
                                 if let Some(member) = m {
                                     // Check for duplicate property names.
                                     if let Some(key) = member.key() {
@@ -1408,6 +1408,15 @@ impl Analyzer<'_, '_> {
                                 //
                                 let class_member = member.validate_with(child)?;
                                 if let Some(member) = class_member {
+                                    // Check for duplicate property names.
+                                    if let Some(key) = member.key() {
+                                        // TODO: Use better logic for testing key equality
+                                        if declared_keys.iter().any(|prev: &Key| prev.type_eq(&*key)) {
+                                            child.storage.report(Error::DuplicateProperty { span: key.span() })
+                                        }
+                                        declared_keys.push(key.into_owned());
+                                    }
+
                                     let member = member.fold_with(&mut LitGeneralizer);
                                     child.scope.this_class_members.push((index, member));
                                 }
