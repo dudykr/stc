@@ -567,6 +567,7 @@ fn libs_with_deps(libs: &[Lib]) -> Vec<Lib> {
         if libs.contains(&l) {
             return;
         }
+        libs.push(l);
 
         match l {
             Lib::Es2015 => add(libs, Lib::Es5Full),
@@ -575,11 +576,11 @@ fn libs_with_deps(libs: &[Lib]) -> Vec<Lib> {
             Lib::Es2018 => add(libs, Lib::Es2015Full),
             Lib::Es2019 => add(libs, Lib::Es2015Full),
             Lib::Es2020 => add(libs, Lib::Es2015Full),
-            _ => {
-                for l in l.deps() {
-                    add(libs, l);
-                }
-            }
+            _ => {}
+        }
+
+        for l in l.deps() {
+            add(libs, l);
         }
     }
 
