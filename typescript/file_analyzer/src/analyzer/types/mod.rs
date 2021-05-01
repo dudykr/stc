@@ -41,6 +41,7 @@ use stc_ts_types::TypeParamInstantiation;
 use stc_ts_types::Union;
 use stc_ts_utils::MapWithMut;
 use stc_utils::error::context;
+use stc_utils::ext::SpanExt;
 use stc_utils::stack;
 use stc_utils::TryOpt;
 use std::borrow::Cow;
@@ -732,6 +733,7 @@ impl Analyzer<'_, '_> {
 
     pub(crate) fn report_error_for_unresolve_type(
         &mut self,
+        span: Span,
         type_name: &RTsEntityName,
         type_args: Option<&TypeParamInstantiation>,
     ) -> ValidationResult<()> {
@@ -749,16 +751,17 @@ impl Analyzer<'_, '_> {
         if is_resolved {
             return Ok(());
         }
+        let span = l.span.or_else(|| span);
 
         match type_name {
             RTsEntityName::TsQualifiedName(_) => Err(Error::NamspaceNotFound {
-                span: l.span,
+                span,
                 name: box type_name.clone().into(),
                 ctxt: self.ctx.module_id,
                 type_args: type_args.cloned().map(Box::new),
             }),
             RTsEntityName::Ident(_) => Err(Error::TypeNotFound {
-                span: l.span,
+                span,
                 name: box type_name.clone().into(),
                 ctxt: self.ctx.module_id,
                 type_args: type_args.cloned().map(Box::new),

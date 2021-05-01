@@ -634,7 +634,7 @@ impl Analyzer<'_, '_> {
         if !self.is_builtin {
             slog::warn!(self.logger, "Crating a ref from TsTypeRef: {:?}", t.type_name);
 
-            self.report_error_for_unresolve_type(&t.type_name, type_args.as_deref())
+            self.report_error_for_unresolve_type(t.span, &t.type_name, type_args.as_deref())
                 .report(&mut self.storage);
         }
         let mut span = t.span;

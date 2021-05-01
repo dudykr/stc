@@ -2502,7 +2502,7 @@ impl Analyzer<'_, '_> {
         type_args: Option<&TypeParamInstantiation>,
     ) -> ValidationResult {
         {
-            let res = self.report_error_for_unresolve_type(&n, type_args);
+            let res = self.report_error_for_unresolve_type(span, &n, type_args);
             match res {
                 Ok(()) => {}
                 Err(err) => {
