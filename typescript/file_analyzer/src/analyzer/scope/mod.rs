@@ -1178,7 +1178,7 @@ impl Analyzer<'_, '_> {
                     }};
                 }
 
-                if is_override {
+                if !self.is_builtin && is_override {
                     v.ty = ty;
                     return Ok(());
                 }
