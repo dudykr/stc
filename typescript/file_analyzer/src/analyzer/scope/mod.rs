@@ -530,7 +530,7 @@ impl Scope<'_> {
                 );
                 if should_override {
                     *prev = ty;
-                    return Ok(());
+                    return;
                 };
 
                 if prev.normalize().is_intersection_type() {
