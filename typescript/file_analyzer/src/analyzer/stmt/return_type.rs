@@ -163,7 +163,11 @@ impl Analyzer<'_, '_> {
                 type_name: if is_async {
                     RTsEntityName::Ident(RIdent::new("AsyncGenerator".into(), DUMMY_SP))
                 } else {
-                    RTsEntityName::Ident(RIdent::new("Generator".into(), DUMMY_SP))
+                    if self.env.get_global_type(span, &"Generator".into()).is_ok() {
+                        RTsEntityName::Ident(RIdent::new("Generator".into(), DUMMY_SP))
+                    } else {
+                        RTsEntityName::Ident(RIdent::new("IterableIterator".into(), DUMMY_SP))
+                    }
                 },
                 type_args: Some(box TypeParamInstantiation {
                     span,
