@@ -1080,12 +1080,8 @@ impl Analyzer<'_, '_> {
         let ty = match &ty {
             Some(..) if self.is_builtin => ty,
             Some(t) => {
-                let ctx = Ctx {
-                    use_any_for_type_not_found: true,
-                    ..self.ctx
-                };
                 // If type is not found, we use `any`.
-                match self.with_ctx(ctx).expand_top_ref(ty.span(), Cow::Borrowed(t)) {
+                match self.expand_top_ref(ty.span(), Cow::Borrowed(t)) {
                     Ok(new_ty) => {
                         if new_ty.is_any() {
                             Some(new_ty.into_owned())
@@ -2110,15 +2106,7 @@ impl Expander<'_, '_, '_> {
                 span,
             })
         } else {
-            if self.analyzer.ctx.use_any_for_type_not_found {
-                return Ok(Some(Type::any(span)));
-            }
-            Err(Error::TypeNotFound {
-                name: box type_name.clone().into(),
-                ctxt,
-                type_args: type_args.cloned().map(Box::new),
-                span,
-            })
+            Ok(Some(Type::any(span)))
         }
     }
     fn expand_ref(&mut self, r: Ref, was_top_level: bool) -> ValidationResult<Option<Type>> {

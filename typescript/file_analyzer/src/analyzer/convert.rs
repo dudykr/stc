@@ -637,6 +637,20 @@ impl Analyzer<'_, '_> {
 
         if !self.is_builtin {
             slog::warn!(self.logger, "Crating a ref from TsTypeRef: {:?}", t.type_name);
+            let l = left(&t.type_name);
+            let top_id: Id = l.into();
+
+            let is_resolved =
+                self.data.all_local_type_names.contains(&top_id) || self.imports_by_id.contains_key(&top_id);
+
+            if !is_resolved {
+                self.storage.report(Error::TypeNotFound {
+                    span: l.span,
+                    name: box t.type_name.clone().into(),
+                    ctxt: self.ctx.module_id,
+                    type_args: type_args.clone(),
+                })
+            }
         }
         let mut span = t.span;
         if contains_infer {
@@ -1015,5 +1029,12 @@ impl Analyzer<'_, '_> {
             RTsFnParam::Rest(rest) => {}
             RTsFnParam::Object(obj) => self.default_any_object(obj),
         }
+    }
+}
+
+pub(crate) fn left(t: &RTsEntityName) -> &RIdent {
+    match t {
+        RTsEntityName::TsQualifiedName(t) => left(&t.left),
+        RTsEntityName::Ident(i) => i,
     }
 }

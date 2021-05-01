@@ -116,8 +116,6 @@ pub(crate) struct Ctx {
 
     in_shorthand: bool,
 
-    use_any_for_type_not_found: bool,
-
     /// `true` for condition of conditional expression or of an if statement.
     in_cond: bool,
     should_store_truthy_for_access: bool,
@@ -419,7 +417,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 module_id: ModuleId::builtin(),
                 phase: Default::default(),
                 allow_module_var: false,
-                use_any_for_type_not_found: false,
                 cannot_be_tuple: false,
                 should_not_create_indexed_type_from_ty_els: false,
                 in_shorthand: false,
