@@ -11,4 +11,4 @@ export RUST_LOG=debug
 # git restore -- ../file_analyzer/tests/visualize
 # UPDATE=1 cargo test -p stc_ts_file_analyzer --test visualize
 
-cargo test --color always -q --test conformance
+cargo test --color always -q --test tsc
