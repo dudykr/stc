@@ -25,6 +25,7 @@ use stc_ts_errors::Error;
 use stc_ts_storage::Builtin;
 use stc_ts_types::ClassDef;
 use stc_ts_types::{Id, ModuleTypeData, Type};
+use stc_utils::stack;
 use std::time::Instant;
 use std::{collections::hash_map::Entry, sync::Arc};
 use swc_atoms::JsWord;
@@ -42,6 +43,8 @@ pub struct BuiltIn {
 impl BuiltIn {
     pub fn from_ts_libs(env: &StableEnv, libs: &[Lib]) -> Self {
         debug_assert_ne!(libs, &[], "No typescript library file is specified");
+
+        let _stack = stack::start(300);
 
         let mut node_id_gen = NodeIdGenerator::default();
 

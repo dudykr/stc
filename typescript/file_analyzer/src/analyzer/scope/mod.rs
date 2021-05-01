@@ -2157,6 +2157,7 @@ impl Expander<'_, '_, '_> {
         let _stack = match stack::track(self.span) {
             Ok(v) => v,
             Err(..) => {
+                print_backtrace();
                 slog::error!(
                     self.logger,
                     "[expander] Stack overflow: {}",

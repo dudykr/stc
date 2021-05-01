@@ -32,7 +32,7 @@ pub fn builtin() {
                 .get_global_type(DUMMY_SP, &"Function".into())
                 .expect("failed to get global type Function");
 
-            panic!("{:?}", f);
+            println!("{:?}", f);
 
             Ok(())
         })
