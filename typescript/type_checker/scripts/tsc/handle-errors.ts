@@ -50,8 +50,9 @@ function extract(content: string): ErrorRef[] {
     return errors;
 }
 
+const multiResultTests: string[] = [];
+
 async function handleTestSuite(suiteName: string) {
-    const multiResultTests: string[] = [];
 
     const refFiles = await fs.promises.readdir(path.join('tests', 'reference'));
 
@@ -77,7 +78,7 @@ async function handleTestSuite(suiteName: string) {
             }
             const errorJsonPath = path.join(dir, refFile.replace('.txt', '.json'));
             if (errorJsonPath.includes('(')) {
-                multiResultTests.push(p.replace(`tests/${suiteName}/`, ''));
+                multiResultTests.push(p.replace(`tests/`, ''));
             }
 
             const content = await fs.promises.readFile(errorFilePath, 'utf-8');
@@ -94,13 +95,14 @@ async function handleTestSuite(suiteName: string) {
             await fs.promises.writeFile(errorJsonPath, JSON.stringify(errors))
         }
     }
-    multiResultTests.sort()
-
-    await fs.promises.writeFile(path.join('tests', `${suiteName}.multiresult.txt`), multiResultTests.join('\n'), 'utf8')
 }
 
 (async function () {
     await handleTestSuite('conformance');
     await handleTestSuite('compiler');
+
+    multiResultTests.sort()
+
+    await fs.promises.writeFile(path.join('tests', `tsc.multiresult.txt`), multiResultTests.join('\n'), 'utf8')
 })()
 
