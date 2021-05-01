@@ -942,9 +942,10 @@ impl Analyzer<'_, '_> {
         let ty_str = dump_type_as_string(&self.cm, &ty);
         slog::debug!(
             self.logger,
-            "[expr] Accessed property:\nObject: {}\nResult: {}",
+            "[expr] Accessed property:\nObject: {}\nResult: {}\n{:?}",
             obj_str,
-            ty_str
+            ty_str,
+            type_mode
         );
 
         if !self.is_builtin && ty.span().is_dummy() && !span.is_dummy() {
