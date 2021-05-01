@@ -137,3 +137,5 @@ classes::propertyMemberDeclarations::accessorsOverrideMethod.ts
 classes::propertyMemberDeclarations::accessorsOverrideProperty7.ts
 classes::propertyMemberDeclarations::propertyOverridesAccessors4.ts
 directives::ts-expect-error-nocheck.ts
+conformance::classes::members::privateNames::privateNameBadSuper.ts
+conformance::classes::members::privateNames::privateNameCircularReference.ts
