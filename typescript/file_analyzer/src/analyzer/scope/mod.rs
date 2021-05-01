@@ -4,10 +4,7 @@ use crate::analyzer::expr::IdCtx;
 use crate::analyzer::ResultExt;
 use crate::{
     loader::ModuleInfo,
-    ty::{
-        self, Alias, IndexSignature, Interface, PropertySignature, Ref, Tuple, Type, TypeElement, TypeExt, TypeLit,
-        Union,
-    },
+    ty::{self, Alias, IndexSignature, Interface, PropertySignature, Ref, Tuple, Type, TypeExt, TypeLit, Union},
     type_facts::TypeFacts,
     util::{contains_infer_type, contains_mark, MarkFinder, RemoveTypes},
     validator::ValidateWith,
