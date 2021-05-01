@@ -52,6 +52,7 @@ use std::{
         Arc,
     },
 };
+use swc_atoms::js_word;
 use swc_atoms::JsWord;
 use swc_common::EqIgnoreSpan;
 use swc_common::TypeEq;
@@ -543,6 +544,20 @@ pub enum ClassMember {
     Method(Method),
     Property(ClassProperty),
     IndexSignature(IndexSignature),
+}
+
+impl ClassMember {
+    pub fn key(&self) -> Option<Cow<Key>> {
+        match self {
+            ClassMember::Constructor(c) => Some(Cow::Owned(Key::Normal {
+                span: c.span,
+                sym: js_word!("constructor"),
+            })),
+            ClassMember::Method(m) => Some(Cow::Borrowed(&m.key)),
+            ClassMember::Property(p) => Some(Cow::Borrowed(&p.key)),
+            ClassMember::IndexSignature(_) => None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
