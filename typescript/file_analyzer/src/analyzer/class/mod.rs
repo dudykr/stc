@@ -182,7 +182,12 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, p: &RPrivateProp) -> ValidationResult<ClassProperty> {
-        self.record(p);
+        match p.key.id.sym {
+            js_word!("constructor") => {
+                self.storage.report(Error::ConstructorIsKeyword { span: p.key.id.span });
+            }
+            _ => {}
+        }
 
         let key = Key::Private(p.key.clone().into());
 
@@ -402,6 +407,13 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, c: &RPrivateMethod) -> ValidationResult<Method> {
+        match c.key.id.sym {
+            js_word!("constructor") => {
+                self.storage.report(Error::ConstructorIsKeyword { span: c.key.id.span });
+            }
+            _ => {}
+        }
+
         let key = c.key.validate_with(self).map(Key::Private)?;
         let key_span = key.span();
 

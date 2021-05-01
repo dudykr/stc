@@ -59,6 +59,16 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS18012
+    ConstructorIsKeyword {
+        span: Span,
+    },
+
+    /// TS18022
+    PrivateIdUsedAsMethodName {
+        span: Span,
+    },
+
     /// TS2334
     ThisInStaticPropertyInitializer {
         span: Span,
@@ -1253,6 +1263,10 @@ impl Error {
             Error::ThisInStaticPropertyInitializer { .. } => 2334,
 
             Error::ImplicitAny { .. } => 7008,
+
+            Error::ConstructorIsKeyword { .. } => 18012,
+
+            Error::PrivateIdUsedAsMethodName { .. } => 18022,
 
             _ => 0,
         }
