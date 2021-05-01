@@ -1547,6 +1547,24 @@ impl Analyzer<'_, '_> {
 
                 // TODO: Check parent interfaces
 
+                if body.iter().any(|el| el.is_constructor()) {
+                    // Constructor extends prototype of `Function` (global interface)
+                    if let Ok(ty) = self.access_property(
+                        span,
+                        Type::Ref(Ref {
+                            span: span.with_ctxt(Default::default()),
+                            ctxt: ModuleId::builtin(),
+                            type_name: RTsEntityName::Ident(RIdent::new(js_word!("Function"), DUMMY_SP)),
+                            type_args: None,
+                        }),
+                        prop,
+                        type_mode,
+                        id_ctx,
+                    ) {
+                        return Ok(ty);
+                    }
+                }
+
                 return Err(Error::NoSuchProperty {
                     span,
                     obj: Some(box obj),
@@ -1557,6 +1575,24 @@ impl Analyzer<'_, '_> {
             Type::TypeLit(TypeLit { ref members, .. }) => {
                 if let Some(v) = self.access_property_of_type_elements(span, &obj, prop, type_mode, members)? {
                     return Ok(v);
+                }
+
+                if members.iter().any(|el| el.is_constructor()) {
+                    // Constructor extends prototype of `Function` (global interface)
+                    if let Ok(ty) = self.access_property(
+                        span,
+                        Type::Ref(Ref {
+                            span: span.with_ctxt(Default::default()),
+                            ctxt: ModuleId::builtin(),
+                            type_name: RTsEntityName::Ident(RIdent::new(js_word!("Function"), DUMMY_SP)),
+                            type_args: None,
+                        }),
+                        prop,
+                        type_mode,
+                        id_ctx,
+                    ) {
+                        return Ok(ty);
+                    }
                 }
 
                 dbg!();
