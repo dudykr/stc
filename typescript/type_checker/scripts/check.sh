@@ -9,7 +9,7 @@ set -eu
 
 TEST='' cargo test --test tsc \
   | grep 'ts .\.\. ok$' \
-  | sed -e 's!test tsc::conformance::!!' \
+  | sed -e 's!test conformance::!!' \
   | sed -e 's! ... ok!!' \
   | sed -e 's!::!/!g' \
   | sed -e 's!test !!' \
@@ -19,4 +19,4 @@ TEST='' cargo test --test tsc \
 
 TEST='' cargo test --test tsc \
   | grep 'ts .\.\. FAILED$' \
-  | sed -e 's!test tsc::conformance::!!'
+  | sed -e 's!test conformance::!!'
