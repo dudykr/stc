@@ -463,6 +463,7 @@ es6/Symbols/symbolDeclarationEmit7.ts
 es6/Symbols/symbolDeclarationEmit8.ts
 es6/Symbols/symbolDeclarationEmit9.ts
 es6/Symbols/symbolProperty1.ts
+es6/Symbols/symbolProperty10.ts
 es6/Symbols/symbolProperty11.ts
 es6/Symbols/symbolProperty12.ts
 es6/Symbols/symbolProperty13.ts
@@ -516,6 +517,7 @@ es6/Symbols/symbolProperty6.ts
 es6/Symbols/symbolProperty60.ts
 es6/Symbols/symbolProperty7.ts
 es6/Symbols/symbolProperty8.ts
+es6/Symbols/symbolProperty9.ts
 es6/Symbols/symbolType1.ts
 es6/Symbols/symbolType10.ts
 es6/Symbols/symbolType11.ts
@@ -2958,6 +2960,7 @@ types/typeRelationships/assignmentCompatibility/assignmentCompatWithGenericCallS
 types/typeRelationships/assignmentCompatibility/assignmentCompatWithGenericCallSignatures3.ts
 types/typeRelationships/assignmentCompatibility/assignmentCompatWithObjectMembers3.ts
 types/typeRelationships/assignmentCompatibility/assignmentCompatWithObjectMembers4.ts
+types/typeRelationships/assignmentCompatibility/assignmentCompatWithObjectMembers5.ts
 types/typeRelationships/assignmentCompatibility/assignmentCompatWithWithGenericConstructSignatures.ts
 types/typeRelationships/assignmentCompatibility/callSignatureAssignabilityInInheritance2.ts
 types/typeRelationships/assignmentCompatibility/callSignatureAssignabilityInInheritance4.ts
