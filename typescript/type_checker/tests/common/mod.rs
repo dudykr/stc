@@ -44,6 +44,8 @@ where
             .unwrap()
             .to_string();
 
+        eprintln!("Test: {}", entry.path().display());
+
         let input = {
             let mut buf = String::new();
             File::open(entry.path()).unwrap().read_to_string(&mut buf).unwrap();
