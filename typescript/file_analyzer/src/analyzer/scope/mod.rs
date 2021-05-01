@@ -2544,7 +2544,7 @@ impl Fold<ClassProperty> for Expander<'_, '_, '_> {
 
 impl Fold<FnParam> for Expander<'_, '_, '_> {
     fn fold(&mut self, param: FnParam) -> FnParam {
-        if self.analyzer.ctx.preserve_params {
+        if self.analyzer.ctx.preserve_params || self.analyzer.is_builtin {
             return param;
         }
 
