@@ -51,25 +51,39 @@ function extract(content: string): ErrorRef[] {
 }
 
 (async function () {
+    const refFiles = await fs.promises.readdir(path.join('tests', 'reference'));
+
     for await (const p of walk('tests/conformance')) {
         if (!p.endsWith('.ts') && !p.endsWith('.tsx')) continue;
         const dir = path.dirname(p);
         const fname = path.basename(p);
-        const errorFilePath = path.join('tests', 'reference', `${fname.replace('.ts', '.errors.txt')}`)
-        if (!fs.existsSync(errorFilePath)) {
-            continue
+        const refName = path.parse(fname).name;
+
+        for (const refFile of refFiles) {
+            if (!refFile.endsWith('.errors.txt')) {
+                continue;
+            }
+
+            if (!refFile.startsWith(refName)) {
+                continue;
+            }
+
+            const errorFilePath = path.join('tests', 'reference', refFile)
+            if (!fs.existsSync(errorFilePath)) {
+                continue
+            }
+            const nameWithoutExt = fname.split('.').slice(0, -1).join('.');
+            const errorJsonPath = path.join(dir, `${nameWithoutExt}.errors.json`);
+
+            const content = await fs.promises.readFile(errorFilePath, 'utf-8');
+            const errors = extract(content)
+
+            console.log('----- ----- ----- ----- -----')
+            console.log(p)
+
+            console.log('Error refs:', errorFilePath)
+            await fs.promises.writeFile(errorJsonPath, JSON.stringify(errors))
         }
-        const nameWithoutExt = fname.split('.').slice(0, -1).join('.');
-        const errorJsonPath = path.join(dir, `${nameWithoutExt}.errors.json`);
-
-        const content = await fs.promises.readFile(errorFilePath, 'utf-8');
-        const errors = extract(content)
-
-        console.log('----- ----- ----- ----- -----')
-        console.log(p)
-
-        console.log('Error refs:', errorFilePath)
-        await fs.promises.writeFile(errorJsonPath, JSON.stringify(errors))
     }
 })()
 
