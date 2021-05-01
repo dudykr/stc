@@ -201,10 +201,14 @@ conformance::externalModules::multipleExportDefault1.ts
 conformance::externalModules::multipleExportDefault2.ts
 conformance::externalModules::multipleExportDefault3.ts
 conformance::externalModules::multipleExportDefault6.ts
-conformance::generators::generatorReturnTypeFallback.5.ts
+conformance::generators::generatorReturnTypeFallback.2.ts
 conformance::interfaces::interfaceDeclarations::interfaceThatHidesBaseProperty2.ts
 conformance::internalModules::moduleDeclarations::InvalidNonInstantiatedModule.ts
 conformance::internalModules::moduleDeclarations::asiPreventsParsingAsNamespace05.ts
+conformance::parser::ecmascript5::Generics::parserAmbiguityWithBinaryOperator4.ts
+conformance::parser::ecmascript5::Generics::parserCastVersusArrowFunction1.ts
+conformance::parser::ecmascript5::RegularExpressions::parseRegularExpressionMixedWithComments.ts
+conformance::salsa::inferringClassMembersFromAssignments8.ts
 conformance::statements::breakStatements::invalidSwitchBreakStatement.ts
 conformance::types::contextualTypes::commaOperator::contextuallyTypeCommaOperator03.ts
 conformance::types::contextualTypes::logicalAnd::contextuallyTypeLogicalAnd03.ts
@@ -219,7 +223,6 @@ conformance::types::specifyingTypes::typeQueries::typeofClassWithPrivates.ts
 conformance::types::spread::objectSpreadSetonlyAccessor.ts
 conformance::types::stringLiteral::stringLiteralTypesAndLogicalOrExpressions01.ts
 conformance::types::tuple::wideningTuples2.ts
-conformance::types::typeAliases::interfaceDoesNotDependOnBaseTypes.ts
 conformance::types::typeParameters::typeArgumentLists::wrappedAndRecursiveConstraints4.ts
 conformance::types::typeParameters::typeParameterAsBaseType.ts
 conformance::types::typeParameters::typeParameterLists::typesWithDuplicateTypeParameters.ts
