@@ -17,6 +17,7 @@ use crate::{
     DepInfo, Rule, ValidationResult,
 };
 use fxhash::FxHashMap;
+use fxhash::FxHashSet;
 use rnode::VisitWith;
 use slog::Logger;
 use stc_ts_ast_rnode::RDecorator;
@@ -237,6 +238,9 @@ struct AnalyzerData {
     local_type_decls: FxHashMap<Id, Vec<Span>>,
     /// e.g. `A` for `export type A = {}`
     exported_type_decls: FxHashMap<Id, Vec<Span>>,
+
+    /// Filled only once, by `fill_known_type_names`.
+    all_local_type_names: FxHashSet<Id>,
 }
 
 /// TODO
@@ -660,6 +664,8 @@ impl Analyzer<'_, '_> {
         }
         self.load_normal_imports(&items);
 
+        self.fill_known_type_names(&modules);
+
         self.validate_stmts_with_hoisting(&items);
 
         Ok(())
@@ -671,6 +677,8 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, items: &Vec<RModuleItem>) {
         let mut items_ref = items.iter().collect::<Vec<_>>();
         self.load_normal_imports(&items_ref);
+
+        self.fill_known_type_names(&items);
 
         let mut has_normal_export = false;
         items.iter().for_each(|item| match item {
@@ -721,6 +729,8 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, items: &Vec<RStmt>) {
+        self.fill_known_type_names(&items);
+
         for item in items.iter() {
             item.visit_with(self);
         }

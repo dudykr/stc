@@ -3,10 +3,20 @@ use crate::type_facts::TypeFacts;
 use crate::util::type_ext::TypeVecExt;
 use crate::ValidationResult;
 use fxhash::FxHashMap;
+use fxhash::FxHashSet;
+use rnode::Visit;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
+use rnode::VisitWith;
+use stc_ts_ast_rnode::RClassDecl;
+use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RNumber;
+use stc_ts_ast_rnode::RTsEnumDecl;
+use stc_ts_ast_rnode::RTsInterfaceDecl;
 use stc_ts_ast_rnode::RTsKeywordType;
+use stc_ts_ast_rnode::RTsModuleDecl;
+use stc_ts_ast_rnode::RTsModuleName;
+use stc_ts_ast_rnode::RTsTypeAliasDecl;
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::DebugExt;
 use stc_ts_types::name::Name;
@@ -14,6 +24,7 @@ use stc_ts_types::Array;
 use stc_ts_types::ClassDef;
 use stc_ts_types::ClassMember;
 use stc_ts_types::ConstructorSignature;
+use stc_ts_types::Id;
 use stc_ts_types::Key;
 use stc_ts_types::MethodSignature;
 use stc_ts_types::Operator;
@@ -870,6 +881,78 @@ impl Analyzer<'_, '_> {
 
         for excluded in excludes {
             self.exclude_type(ty, &excluded);
+        }
+    }
+
+    pub(crate) fn fill_known_type_names<N>(&mut self, node: N)
+    where
+        N: VisitWith<KnownTypeVisitor>,
+    {
+        if self.is_builtin {
+            return;
+        }
+        if !self.data.all_local_type_names.is_empty() {
+            return;
+        }
+
+        let mut v = KnownTypeVisitor::default();
+        node.visit_with(&mut v);
+        self.data.all_local_type_names.extend(v.type_names);
+    }
+}
+
+#[derive(Default)]
+pub(crate) struct KnownTypeVisitor {
+    type_names: FxHashSet<Id>,
+}
+
+impl KnownTypeVisitor {
+    fn add(&mut self, id: &RIdent) {
+        self.type_names.insert(id.into());
+    }
+}
+
+impl Visit<RClassDecl> for KnownTypeVisitor {
+    fn visit(&mut self, d: &RClassDecl) {
+        d.visit_children_with(self);
+
+        self.add(&d.ident);
+    }
+}
+
+impl Visit<RTsInterfaceDecl> for KnownTypeVisitor {
+    fn visit(&mut self, d: &RTsInterfaceDecl) {
+        d.visit_children_with(self);
+
+        self.add(&d.id);
+    }
+}
+
+impl Visit<RTsTypeAliasDecl> for KnownTypeVisitor {
+    fn visit(&mut self, d: &RTsTypeAliasDecl) {
+        d.visit_children_with(self);
+
+        self.add(&d.id);
+    }
+}
+
+impl Visit<RTsEnumDecl> for KnownTypeVisitor {
+    fn visit(&mut self, d: &RTsEnumDecl) {
+        d.visit_children_with(self);
+
+        self.add(&d.id);
+    }
+}
+
+impl Visit<RTsModuleDecl> for KnownTypeVisitor {
+    fn visit(&mut self, d: &RTsModuleDecl) {
+        d.visit_children_with(self);
+
+        match &d.id {
+            RTsModuleName::Ident(i) => {
+                self.add(&i);
+            }
+            RTsModuleName::Str(_) => {}
         }
     }
 }
