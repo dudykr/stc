@@ -44,6 +44,9 @@ privateNamesInNestedClasses-1.ts
 
 # Delayed
 conformance::parser::ecmascript5::RegularExpressions::parseRegularExpressionMixedWithComments.ts
+conformance::parser::ecmascript5::Generics::parserAmbiguityWithBinaryOperator4.ts
+conformance::parser::ecmascript5::Generics::parserCastVersusArrowFunction1.ts
+conformance::parser::ecmascript5::Statements::parserForStatement4.ts
 ambient::ambientDeclarationsPatterns_tooManyAsterisks.ts
 ambient::ambientExternalModuleInsideNonAmbient.ts
 ambient::ambientExternalModuleInsideNonAmbientExternalModule.ts
