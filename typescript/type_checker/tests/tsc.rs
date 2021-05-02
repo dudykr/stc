@@ -329,7 +329,7 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
                         let s = s["lib:".len()..].trim();
                         let mut ls = HashSet::<_>::default();
                         for v in s.split(",") {
-                            ls.extend(&v.replace("es6", "es2015"))
+                            ls.extend(Lib::load(&v.replace("es6", "es2015")))
                         }
                         libs = ls.into_iter().collect()
                     } else if s.starts_with("allowUnreachableCode:") {
