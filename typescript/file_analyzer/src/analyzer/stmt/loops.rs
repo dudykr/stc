@@ -71,6 +71,14 @@ impl Analyzer<'_, '_> {
     fn check_lhs_of_for_loop(&mut self, e: &RVarDeclOrPat, elem_ty: &Type, kind: ForHeadKind) {
         let span = e.span();
 
+        match self.validate_lhs_of_for_in_of_loop(&e, kind) {
+            Ok(()) => {}
+            Err(err) => {
+                self.storage.report(err);
+                return;
+            }
+        }
+
         match *e {
             RVarDeclOrPat::VarDecl(ref v) => {
                 // It is a parsing error if there are multiple variable declarators.
@@ -109,49 +117,38 @@ impl Analyzer<'_, '_> {
                     .report(&mut self.storage);
             }
         }
-
-        self.validate_lhs_of_for_in_of_loop(&e, kind);
     }
 
-    fn validate_lhs_of_for_in_of_loop(&mut self, e: &RVarDeclOrPat, kind: ForHeadKind) {
+    fn validate_lhs_of_for_in_of_loop(&mut self, e: &RVarDeclOrPat, kind: ForHeadKind) -> ValidationResult<()> {
         match e {
             RVarDeclOrPat::VarDecl(v) => {
                 if v.decls.len() >= 1 {
-                    self.validate_lhs_of_for_in_of_loop_pat(&v.decls[0].name, kind);
+                    self.validate_lhs_of_for_in_of_loop_pat(&v.decls[0].name, kind)
+                } else {
+                    Ok(())
                 }
             }
-            RVarDeclOrPat::Pat(p) => {
-                self.validate_lhs_of_for_in_of_loop_pat(p, kind);
-            }
+            RVarDeclOrPat::Pat(p) => self.validate_lhs_of_for_in_of_loop_pat(p, kind),
         }
     }
 
-    fn validate_lhs_of_for_in_of_loop_pat(&mut self, p: &RPat, kind: ForHeadKind) {
+    fn validate_lhs_of_for_in_of_loop_pat(&mut self, p: &RPat, kind: ForHeadKind) -> ValidationResult<()> {
         match p {
             RPat::Object(..) | RPat::Array(..) => match kind {
-                ForHeadKind::In => {
-                    self.storage
-                        .report(Error::DestructuringBindingNotAllowedInLhsOfForIn { span: p.span() });
-                }
-                ForHeadKind::Of => {}
+                ForHeadKind::In => Err(Error::DestructuringBindingNotAllowedInLhsOfForIn { span: p.span() }),
+                ForHeadKind::Of => Ok(()),
             },
-            RPat::Expr(e) => {
-                self.validate_lhs_of_for_in_of_loop_expr(e, kind);
-            }
-            _ => {}
+            RPat::Expr(e) => self.validate_lhs_of_for_in_of_loop_expr(e, kind),
+            _ => Ok(()),
         }
     }
 
-    fn validate_lhs_of_for_in_of_loop_expr(&mut self, e: &RExpr, kind: ForHeadKind) {
+    fn validate_lhs_of_for_in_of_loop_expr(&mut self, e: &RExpr, kind: ForHeadKind) -> ValidationResult<()> {
         match e {
-            RExpr::Ident(..) | RExpr::This(..) | RExpr::Member(..) => {}
+            RExpr::Ident(..) | RExpr::This(..) | RExpr::Member(..) => Ok(()),
             _ => match kind {
-                ForHeadKind::In => {
-                    self.storage.report(Error::InvalidExprOfLhsOfForIn { span: e.span() });
-                }
-                ForHeadKind::Of => {
-                    self.storage.report(Error::InvalidExprOfLhsOfForOf { span: e.span() });
-                }
+                ForHeadKind::In => Err(Error::InvalidExprOfLhsOfForIn { span: e.span() }),
+                ForHeadKind::Of => Err(Error::InvalidExprOfLhsOfForOf { span: e.span() }),
             },
         }
     }
