@@ -64,6 +64,11 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2487
+    InvalidExprOfLhsOfForOf {
+        span: Span,
+    },
+
     /// TS2405
     WrongTypeForLhsOfForInLoop {
         span: Span,
@@ -1322,6 +1327,7 @@ impl Error {
             Error::WrongTypeForLhsOfForInLoop { .. } => 2405,
 
             Error::InvalidExprOfLhsOfForIn { .. } => 2406,
+            Error::InvalidExprOfLhsOfForOf { .. } => 2487,
             _ => 0,
         }
     }

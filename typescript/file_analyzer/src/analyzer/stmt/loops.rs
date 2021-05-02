@@ -110,44 +110,49 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match kind {
-            ForHeadKind::In => {
-                self.validate_lhs_of_for_in_loop(&e);
-                // TODO: Veiry that type of pat is string or any.
-            }
-            ForHeadKind::Of => {}
-        }
+        self.validate_lhs_of_for_in_of_loop(&e, kind);
     }
 
-    fn validate_lhs_of_for_in_loop(&mut self, e: &RVarDeclOrPat) {
+    fn validate_lhs_of_for_in_of_loop(&mut self, e: &RVarDeclOrPat, kind: ForHeadKind) {
         match e {
             RVarDeclOrPat::VarDecl(v) => {
                 if v.decls.len() >= 1 {
-                    self.validate_lhs_of_for_in_loop_pat(&v.decls[0].name);
+                    self.validate_lhs_of_for_in_of_loop_pat(&v.decls[0].name, kind);
                 }
             }
             RVarDeclOrPat::Pat(p) => {
-                self.validate_lhs_of_for_in_loop_pat(p);
+                self.validate_lhs_of_for_in_of_loop_pat(p, kind);
             }
         }
     }
 
-    fn validate_lhs_of_for_in_loop_pat(&mut self, p: &RPat) {
+    fn validate_lhs_of_for_in_of_loop_pat(&mut self, p: &RPat, kind: ForHeadKind) {
         match p {
-            RPat::Object(..) | RPat::Array(..) => self
-                .storage
-                .report(Error::DestructuringBindingNotAllowedInLhsOfForIn { span: p.span() }),
+            RPat::Object(..) | RPat::Array(..) => match kind {
+                ForHeadKind::In => {
+                    self.storage
+                        .report(Error::DestructuringBindingNotAllowedInLhsOfForIn { span: p.span() });
+                }
+                ForHeadKind::Of => {}
+            },
             RPat::Expr(e) => {
-                self.validate_lhs_of_for_in_loop_expr(e);
+                self.validate_lhs_of_for_in_of_loop_expr(e, kind);
             }
             _ => {}
         }
     }
 
-    fn validate_lhs_of_for_in_loop_expr(&mut self, e: &RExpr) {
+    fn validate_lhs_of_for_in_of_loop_expr(&mut self, e: &RExpr, kind: ForHeadKind) {
         match e {
             RExpr::Ident(..) | RExpr::This(..) | RExpr::Member(..) => {}
-            _ => self.storage.report(Error::InvalidExprOfLhsOfForIn { span: e.span() }),
+            _ => match kind {
+                ForHeadKind::In => {
+                    self.storage.report(Error::InvalidExprOfLhsOfForIn { span: e.span() });
+                }
+                ForHeadKind::Of => {
+                    self.storage.report(Error::InvalidExprOfLhsOfForOf { span: e.span() });
+                }
+            },
         }
     }
 
