@@ -43,6 +43,7 @@ isomorphicMappedTypeInference.ts
 privateNamesInNestedClasses-1.ts
 
 # Delayed
+conformance::parser::ecmascript5::RegularExpressions::parseRegularExpressionMixedWithComments.ts
 ambient::ambientDeclarationsPatterns_tooManyAsterisks.ts
 ambient::ambientExternalModuleInsideNonAmbient.ts
 ambient::ambientExternalModuleInsideNonAmbientExternalModule.ts
