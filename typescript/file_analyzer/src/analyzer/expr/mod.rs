@@ -2689,13 +2689,7 @@ impl Analyzer<'_, '_> {
                             errors.push(err);
                             Type::any(span)
                         } else {
-                            match &**obj {
-                                RExpr::Call(..) => Type::Keyword(RTsKeywordType {
-                                    span,
-                                    kind: TsKeywordTypeKind::TsUnknownKeyword,
-                                }),
-                                _ => return Err(err),
-                            }
+                            return Err(err);
                         }
                     }
                 };
