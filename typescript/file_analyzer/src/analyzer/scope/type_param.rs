@@ -1,4 +1,6 @@
+use crate::analyzer::scope::Scope;
 use crate::analyzer::Analyzer;
+use crate::analyzer::ScopeKind;
 use fxhash::FxHashSet;
 use rnode::Visit;
 use rnode::VisitMut;
@@ -52,10 +54,37 @@ impl Analyzer<'_, '_> {
     }
 
     fn is_type_param_dead(&mut self, name: &Id) -> bool {
-        match self.find_type(self.ctx.module_id, name) {
-            Ok(Some(..)) => false,
-            _ => true,
+        fn is_dead(s: &Scope, name: &Id) -> bool {
+            if s.is_root() {
+                return false;
+            }
+
+            if let Some(..) = s.facts.types.get(name) {
+                return true;
+            }
+            if let Some(..) = s.types.get(name) {
+                return true;
+            }
+
+            match s.parent {
+                Some(p) => match p.kind {
+                    ScopeKind::Block
+                    | ScopeKind::Fn
+                    | ScopeKind::Method { .. }
+                    | ScopeKind::Constructor
+                    | ScopeKind::ArrowFn
+                    | ScopeKind::Class
+                    | ScopeKind::Module
+                    | ScopeKind::LoopBody
+                    | ScopeKind::ObjectLit => return false,
+
+                    ScopeKind::Flow | ScopeKind::TypeParams | ScopeKind::Call => is_dead(&p, name),
+                },
+                None => return false,
+            }
         }
+
+        is_dead(&self.scope, name)
     }
 }
 
