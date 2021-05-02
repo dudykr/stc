@@ -326,9 +326,10 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
                     } else if s.starts_with("isolatedModules:") {
                         // TODO
                     } else if s.starts_with("lib:") {
+                        let s = s["lib:".len()..].trim();
                         let mut ls = HashSet::<_>::default();
-                        for v in s["lib:".len()..].trim().split(",") {
-                            ls.extend(Lib::load(v))
+                        for v in s.split(",") {
+                            ls.extend(if v == "es6" { Lib::load("es2015") } else { Lib::load(v) })
                         }
                         libs = ls.into_iter().collect()
                     } else if s.starts_with("allowUnreachableCode:") {
