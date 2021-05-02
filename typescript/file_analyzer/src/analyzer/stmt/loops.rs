@@ -91,6 +91,8 @@ impl Analyzer<'_, '_> {
                 v.visit_with(self);
             }
             RVarDeclOrPat::Pat(ref pat) => {
+                // TODO: Veiry if type of pat is string or any.
+
                 self.try_assign_pat(span, &pat, elem_ty)
                     .context("tried to assign to the pattern of a for-of/for-in loop")
                     .report(&mut self.storage);
