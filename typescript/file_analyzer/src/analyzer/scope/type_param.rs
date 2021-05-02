@@ -60,10 +60,10 @@ impl Analyzer<'_, '_> {
             }
 
             if let Some(..) = s.facts.types.get(name) {
-                return true;
+                return false;
             }
             if let Some(..) = s.types.get(name) {
-                return true;
+                return false;
             }
 
             match s.parent {
@@ -76,11 +76,12 @@ impl Analyzer<'_, '_> {
                     | ScopeKind::Class
                     | ScopeKind::Module
                     | ScopeKind::LoopBody
-                    | ScopeKind::ObjectLit => return false,
+                    | ScopeKind::Flow
+                    | ScopeKind::ObjectLit => return true,
 
-                    ScopeKind::Flow | ScopeKind::TypeParams | ScopeKind::Call => is_dead(&p, name),
+                    ScopeKind::TypeParams | ScopeKind::Call => is_dead(&p, name),
                 },
-                None => return false,
+                None => return true,
             }
         }
 
