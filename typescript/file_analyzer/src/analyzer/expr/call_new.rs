@@ -776,8 +776,9 @@ impl Analyzer<'_, '_> {
             .with_context(|| {
                 format!(
                     "tried to call property by using access_property because the object type is not handled by \
-                     call_property: {}",
-                    dump_type_as_string(&self.cm, &obj_type)
+                     call_property: \nobj = {}\ncallee = {}",
+                    dump_type_as_string(&self.cm, &obj_type),
+                    dump_type_as_string(&self.cm, &callee)
                 )
             })
         })();
