@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2405
+    WrongTypeForLhsOfForInLoop {
+        span: Span,
+    },
+
     /// TS2491
     DestructuringBindingNotAllowedInLhsOfForIn {
         span: Span,
@@ -1302,6 +1307,8 @@ impl Error {
 
             Error::DestructuringBindingNotAllowedInLhsOfForIn { .. } => 2491,
 
+            Error::WrongTypeForLhsOfForInLoop { .. } => 2405,
+
             _ => 0,
         }
     }
@@ -1313,6 +1320,10 @@ impl Error {
             | Self::NoSuchVarForShorthand { .. } => true,
             _ => false,
         }
+    }
+
+    pub fn is_assign_failure(&self) -> bool {
+        self.code() == 2322
     }
 
     pub fn is_type_not_found(&self) -> bool {

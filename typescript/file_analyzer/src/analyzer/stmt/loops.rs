@@ -94,6 +94,18 @@ impl Analyzer<'_, '_> {
             RVarDeclOrPat::Pat(ref pat) => {
                 self.try_assign_pat(span, &pat, elem_ty)
                     .context("tried to assign to the pattern of a for-of/for-in loop")
+                    .convert_err(|err| {
+                        match kind {
+                            ForHeadKind::In => {
+                                if err.is_assign_failure() {
+                                    return Error::WrongTypeForLhsOfForInLoop { span: err.span() };
+                                }
+                            }
+                            _ => {}
+                        }
+
+                        err
+                    })
                     .report(&mut self.storage);
             }
         }
