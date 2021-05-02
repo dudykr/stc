@@ -1075,6 +1075,16 @@ impl Analyzer<'_, '_> {
             );
         }
 
+        match kind {
+            VarDeclKind::Let | VarDeclKind::Const => {
+                if *name.sym() == js_word!("let") || *name.sym() == js_word!("const") {
+                    self.storage
+                        .report(Error::LetOrConstIsNotValidIdInLetOrConstVarDecls { span });
+                }
+            }
+            _ => {}
+        }
+
         let ty = match &ty {
             Some(..) if self.is_builtin => ty,
             Some(t) => {
