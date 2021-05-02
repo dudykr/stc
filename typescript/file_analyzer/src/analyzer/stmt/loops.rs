@@ -75,7 +75,6 @@ impl Analyzer<'_, '_> {
             Ok(()) => {}
             Err(err) => {
                 self.storage.report(err);
-                return;
             }
         }
 
