@@ -270,7 +270,12 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
         let cmts = comments.leading.get(&span.lo());
         match cmts {
             Some(ref cmts) => {
-                for cmt in cmts.iter() {
+                let directive_start = cmts
+                    .iter()
+                    .position(|cmt| cmt.text.trim().starts_with("@"))
+                    .unwrap_or(0);
+
+                for cmt in cmts.iter().skip(directive_start) {
                     let s = cmt.text.trim();
                     if !s.starts_with("@") {
                         if had_comment {
