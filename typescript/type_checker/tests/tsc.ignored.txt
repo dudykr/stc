@@ -166,11 +166,6 @@ conformance::es6::computedProperties::computedPropertyNames42_ES6.ts
 conformance::es6::destructuring::destructuringArrayBindingPatternAndAssignment4.ts
 conformance::es6::destructuring::destructuringObjectBindingPatternAndAssignment4.ts
 conformance::es6::destructuring::emptyObjectBindingPatternParameter04.ts
-conformance::es6::destructuring::iterableArrayPattern25.ts
-conformance::es6::destructuring::iterableArrayPattern28.ts
-conformance::es6::destructuring::optionalBindingParameters2.ts
-conformance::es6::destructuring::optionalBindingParametersInOverloads1.ts
-conformance::es6::destructuring::optionalBindingParametersInOverloads2.ts
 conformance::es6::modules::multipleDefaultExports03.ts
 conformance::es6::modules::multipleDefaultExports04.ts
 conformance::es6::modules::multipleDefaultExports05.ts
