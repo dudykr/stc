@@ -11,6 +11,7 @@ use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RForInStmt;
 use stc_ts_ast_rnode::RForOfStmt;
 use stc_ts_ast_rnode::RIdent;
+use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RStmt;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
@@ -95,6 +96,36 @@ impl Analyzer<'_, '_> {
                     .context("tried to assign to the pattern of a for-of/for-in loop")
                     .report(&mut self.storage);
             }
+        }
+
+        match kind {
+            ForHeadKind::In => {
+                self.validate_lhs_of_for_in_loop(&e);
+                // TODO: Veiry that type of pat is string or any.
+            }
+            ForHeadKind::Of => {}
+        }
+    }
+
+    fn validate_lhs_of_for_in_loop(&mut self, e: &RVarDeclOrPat) {
+        match e {
+            RVarDeclOrPat::VarDecl(v) => {
+                if v.decls.len() >= 1 {
+                    self.validate_lhs_of_for_in_loop_pat(&v.decls[0].name);
+                }
+            }
+            RVarDeclOrPat::Pat(p) => {
+                self.validate_lhs_of_for_in_loop_pat(p);
+            }
+        }
+    }
+
+    fn validate_lhs_of_for_in_loop_pat(&mut self, p: &RPat) {
+        match p {
+            RPat::Object(..) | RPat::Array(..) => self
+                .storage
+                .report(Error::DestructuringBindingNotAllowedInLhsOfForIn { span: p.span() }),
+            _ => {}
         }
     }
 

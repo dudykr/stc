@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2491
+    DestructuringBindingNotAllowedInLhsOfForIn {
+        span: Span,
+    },
+
     /// TS2404
     TypeAnnOnLhsOfForInLoops {
         span: Span,
