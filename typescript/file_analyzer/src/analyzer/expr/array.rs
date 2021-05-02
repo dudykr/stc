@@ -18,6 +18,7 @@ use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RMemberExpr;
 use stc_ts_ast_rnode::RNumber;
 use stc_ts_ast_rnode::RTsKeywordType;
+use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_type_ops::Fix;
@@ -191,6 +192,12 @@ impl Analyzer<'_, '_> {
         iterator: Cow<'a, Type>,
         n: usize,
     ) -> ValidationResult<Cow<'a, Type>> {
+        slog::debug!(
+            self.logger,
+            "Caculating element type of an iterator ({})",
+            dump_type_as_string(&self.cm, &iterator)
+        );
+
         if iterator.is_any() {
             return Ok(iterator);
         }
