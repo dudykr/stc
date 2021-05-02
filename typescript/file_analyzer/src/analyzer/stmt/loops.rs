@@ -146,7 +146,7 @@ impl Analyzer<'_, '_> {
 
     fn validate_lhs_of_for_in_loop_expr(&mut self, e: &RExpr) {
         match e {
-            RExpr::Ident(..) | RExpr::Member(..) => {}
+            RExpr::Ident(..) | RExpr::This(..) | RExpr::Member(..) => {}
             _ => self.storage.report(Error::InvalidExprOfLhsOfForIn { span: e.span() }),
         }
     }
