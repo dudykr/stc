@@ -922,6 +922,11 @@ pub enum Error {
         key: Box<Key>,
     },
 
+    /// TS2548
+    MustHaveSymbolIteratorThatReturnsIteratorOrMustBeArray {
+        span: Span,
+    },
+
     MustHaveSymbolIteratorThatReturnsIterator {
         span: Span,
     },
@@ -1232,6 +1237,8 @@ impl Error {
             Error::MissingFields { .. } => 2741,
 
             Error::MustHaveSymbolIteratorThatReturnsIterator { .. } => 2488,
+
+            Error::MustHaveSymbolIteratorThatReturnsIteratorOrMustBeArray { .. } => 2548,
 
             Error::NoSuchPropertyWhileDeclWithBidningPat { .. } => 2525,
 

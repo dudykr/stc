@@ -328,7 +328,13 @@ impl Analyzer<'_, '_> {
                     .iter()
                     .map(|v| self.get_iterator(v.span(), Cow::Borrowed(v)))
                     .map(|res| res.map(Cow::into_owned))
-                    .collect::<Result<_, _>>()?;
+                    .collect::<Result<_, _>>()
+                    .convert_err(|err| match err {
+                        Error::MustHaveSymbolIteratorThatReturnsIterator { span } => {
+                            Error::MustHaveSymbolIteratorThatReturnsIteratorOrMustBeArray { span }
+                        }
+                        _ => err,
+                    })?;
                 let new = Type::Union(Union { span: u.span, types });
                 return Ok(Cow::Owned(new));
             }
