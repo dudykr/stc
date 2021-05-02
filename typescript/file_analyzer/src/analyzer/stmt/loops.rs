@@ -32,6 +32,7 @@ use std::borrow::Cow;
 use swc_common::Span;
 use swc_common::Spanned;
 use swc_common::DUMMY_SP;
+use swc_ecma_ast::EsVersion;
 use swc_ecma_ast::TsKeywordTypeKind;
 use swc_ecma_ast::TsTypeOperatorOp;
 use swc_ecma_ast::VarDeclKind;
@@ -315,6 +316,10 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, s: &RForOfStmt) {
+        if self.env.target() < EsVersion::Es5 {
+            self.storage.report(Error::ForOfUsedInEs3 { span: s.span })
+        }
+
         self.check_for_of_in_loop(s.span, &s.left, &s.right, ForHeadKind::Of, &s.body);
 
         Ok(())

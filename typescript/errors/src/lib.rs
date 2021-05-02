@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2494
+    ForOfUsedInEs3 {
+        span: Span,
+    },
+
     /// TS2480
     LetOrConstIsNotValidIdInLetOrConstVarDecls {
         span: Span,
@@ -1342,6 +1347,7 @@ impl Error {
             Error::InvalidExprOfLhsOfForOf { .. } => 2487,
 
             Error::LetOrConstIsNotValidIdInLetOrConstVarDecls { .. } => 2480,
+            Error::ForOfUsedInEs3 { .. } => 2494,
             _ => 0,
         }
     }
