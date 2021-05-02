@@ -1300,6 +1300,8 @@ impl Error {
             Error::TypeAnnOnLhsOfForInLoops { .. } => 2404,
             Error::TypeAnnOnLhsOfForOfLoops { .. } => 2483,
 
+            Error::DestructuringBindingNotAllowedInLhsOfForIn { .. } => 2491,
+
             _ => 0,
         }
     }
