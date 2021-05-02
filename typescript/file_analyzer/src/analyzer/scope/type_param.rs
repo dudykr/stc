@@ -100,7 +100,7 @@ impl VisitMut<Type> for TypeParamEscapeHandler<'_, '_, '_> {
             v.params
         };
 
-        {
+        if !ty.normalize().is_type_param() {
             // Fast path
             let mut v = TypeParamEscapeVisitor {
                 analyzer: self.analyzer,
