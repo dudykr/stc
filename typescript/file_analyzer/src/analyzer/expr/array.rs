@@ -201,6 +201,13 @@ impl Analyzer<'_, '_> {
         if iterator.is_any() {
             return Ok(iterator);
         }
+        if iterator.is_kwd(TsKeywordTypeKind::TsStringKeyword) {
+            return Ok(Cow::Owned(Type::Keyword(RTsKeywordType {
+                span,
+                kind: TsKeywordTypeKind::TsStringKeyword,
+            })));
+        }
+
         match iterator.normalize() {
             Type::Ref(..) => {
                 let iterator = self
