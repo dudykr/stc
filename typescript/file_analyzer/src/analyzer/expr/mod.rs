@@ -342,7 +342,7 @@ impl Analyzer<'_, '_> {
 
         ty.assert_valid();
 
-        if need_type_param_handling {
+        if type_ann.is_none() && need_type_param_handling {
             self.replace_invalid_type_params(&mut ty);
         }
 
