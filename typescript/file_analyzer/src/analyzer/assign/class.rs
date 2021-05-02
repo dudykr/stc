@@ -312,7 +312,9 @@ impl Analyzer<'_, '_> {
                         ClassMember::Constructor(_) => {}
                         ClassMember::Method(_) => {}
                         ClassMember::Property(rp) => {
-                            if self.assign(&lp.key.ty(), &rp.key.ty(), opts.span).is_ok() {
+                            if lp.is_static == rp.is_static
+                                && self.assign(&lp.key.ty(), &rp.key.ty(), opts.span).is_ok()
+                            {
                                 if rp.accessibility == Some(Accessibility::Private) {
                                     return Err(Error::PrivatePropertyIsDifferent { span });
                                 }
