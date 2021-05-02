@@ -281,6 +281,12 @@ impl Analyzer<'_, '_> {
                     .report(&mut child.storage)
                     .unwrap_or_else(|| Type::any(span));
 
+                if self.env.target() < EsVersion::Es5 {
+                    if rty.is_kwd(TsKeywordTypeKind::TsStringKeyword) {
+                        self.storage.report(Error::ForOfStringUsedInEs3 { span })
+                    }
+                }
+
                 let elem_ty = match kind {
                     ForHeadKind::Of => child
                         .get_iterator_element_type(rhs.span(), Cow::Owned(rty))
@@ -316,10 +322,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, s: &RForOfStmt) {
-        if self.env.target() < EsVersion::Es5 {
-            self.storage.report(Error::ForOfUsedInEs3 { span: s.span })
-        }
-
         self.check_for_of_in_loop(s.span, &s.left, &s.right, ForHeadKind::Of, &s.body);
 
         Ok(())
