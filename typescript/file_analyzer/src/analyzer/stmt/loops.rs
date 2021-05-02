@@ -281,9 +281,9 @@ impl Analyzer<'_, '_> {
                     .report(&mut child.storage)
                     .unwrap_or_else(|| Type::any(span));
 
-                if self.env.target() < EsVersion::Es5 {
+                if child.env.target() < EsVersion::Es5 {
                     if rty.is_kwd(TsKeywordTypeKind::TsStringKeyword) {
-                        self.storage.report(Error::ForOfStringUsedInEs3 { span })
+                        child.storage.report(Error::ForOfStringUsedInEs3 { span })
                     }
                 }
 
