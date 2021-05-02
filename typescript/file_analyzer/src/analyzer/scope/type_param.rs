@@ -56,7 +56,7 @@ impl Analyzer<'_, '_> {
     fn is_type_param_dead(&mut self, name: &Id) -> bool {
         fn is_dead(s: &Scope, name: &Id) -> bool {
             if s.is_root() {
-                return false;
+                return true;
             }
 
             if let Some(..) = s.facts.types.get(name) {
@@ -67,20 +67,7 @@ impl Analyzer<'_, '_> {
             }
 
             match s.parent {
-                Some(p) => match p.kind {
-                    ScopeKind::Block
-                    | ScopeKind::Fn
-                    | ScopeKind::Method { .. }
-                    | ScopeKind::Constructor
-                    | ScopeKind::ArrowFn
-                    | ScopeKind::Class
-                    | ScopeKind::Module
-                    | ScopeKind::LoopBody
-                    | ScopeKind::Flow
-                    | ScopeKind::ObjectLit => return true,
-
-                    ScopeKind::TypeParams | ScopeKind::Call => is_dead(&p, name),
-                },
+                Some(p) => is_dead(&p, name),
                 None => return true,
             }
         }
