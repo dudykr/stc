@@ -137,7 +137,17 @@ impl Analyzer<'_, '_> {
             RPat::Object(..) | RPat::Array(..) => self
                 .storage
                 .report(Error::DestructuringBindingNotAllowedInLhsOfForIn { span: p.span() }),
+            RPat::Expr(e) => {
+                self.validate_lhs_of_for_in_loop_expr(e);
+            }
             _ => {}
+        }
+    }
+
+    fn validate_lhs_of_for_in_loop_expr(&mut self, e: &RExpr) {
+        match e {
+            RExpr::Ident(..) | RExpr::Member(..) => {}
+            _ => self.storage.report(Error::InvalidExprOfLhsOfForIn { span: e.span() }),
         }
     }
 

@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2406
+    InvalidExprOfLhsOfForIn {
+        span: Span,
+    },
+
     /// TS2405
     WrongTypeForLhsOfForInLoop {
         span: Span,
@@ -1309,6 +1314,7 @@ impl Error {
 
             Error::WrongTypeForLhsOfForInLoop { .. } => 2405,
 
+            Error::InvalidExprOfLhsOfForIn { .. } => 2406,
             _ => 0,
         }
     }
