@@ -1,6 +1,5 @@
 use crate::analyzer::scope::Scope;
 use crate::analyzer::Analyzer;
-use crate::analyzer::ScopeKind;
 use fxhash::FxHashSet;
 use rnode::Visit;
 use rnode::VisitMut;
