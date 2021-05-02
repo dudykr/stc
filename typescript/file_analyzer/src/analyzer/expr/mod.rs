@@ -2383,6 +2383,10 @@ impl Analyzer<'_, '_> {
             println!("({}) reference in initialization: {}", self.scope.depth(), i.sym);
 
             if self.ctx.allow_ref_declaring {
+                if self.rule().no_implicit_any {
+                    self.storage.report(Error::ImplicitAnyBecauseOfSelfRef { span });
+                }
+
                 return Ok(Type::any(span));
             } else {
                 return Err(Error::ReferencedInInit { span });
