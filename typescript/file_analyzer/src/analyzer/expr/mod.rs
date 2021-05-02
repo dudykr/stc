@@ -965,7 +965,11 @@ impl Analyzer<'_, '_> {
         if !self.is_builtin {
             debug_assert!(!span.is_dummy());
 
-            slog::debug!(&self.logger, "access_property");
+            slog::debug!(
+                &self.logger,
+                "access_property: obj = {}",
+                dump_type_as_string(&self.cm, &obj)
+            );
         }
 
         let _stack = stack::track(span)?;
