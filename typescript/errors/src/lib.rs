@@ -449,6 +449,11 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS7022
+    ImplicitAnyBecauseOfSelfRef {
+        span: Span,
+    },
+
     TupleAssignError {
         span: Span,
         errors: Vec<Error>,
@@ -1310,6 +1315,8 @@ impl Error {
             Error::ThisInStaticPropertyInitializer { .. } => 2334,
 
             Error::ImplicitAny { .. } => 7008,
+
+            Error::ImplicitAnyBecauseOfSelfRef { .. } => 7022,
 
             Error::ConstructorIsKeyword { .. } => 18012,
 
