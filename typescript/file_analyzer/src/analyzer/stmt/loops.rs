@@ -282,7 +282,7 @@ impl Analyzer<'_, '_> {
                     .unwrap_or_else(|| Type::any(span));
 
                 if child.env.target() < EsVersion::Es5 {
-                    if rty.is_kwd(TsKeywordTypeKind::TsStringKeyword) {
+                    if rty.is_str() {
                         child.storage.report(Error::ForOfStringUsedInEs3 { span })
                     }
                 }
