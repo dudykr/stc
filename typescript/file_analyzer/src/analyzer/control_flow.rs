@@ -583,7 +583,10 @@ impl Analyzer<'_, '_> {
 
                 self.scope.declaring.drain(prev_len..);
                 let default_value_type = res?;
-                return self.try_assign_pat_with_opts(span, &assign.left, &default_value_type, opts);
+                self.try_assign_pat_with_opts(span, &assign.left, &default_value_type, opts)
+                    .report(&mut self.storage);
+                self.try_assign_pat_with_opts(span, &assign.left, ty, opts)?;
+                return Ok(());
             }
 
             RPat::Ident(i) => {
