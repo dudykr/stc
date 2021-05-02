@@ -23,9 +23,6 @@ pub mod debugger;
 pub mod duplicate;
 
 pub fn dump_type_as_string(cm: &Lrc<SourceMap>, t: &Type) -> String {
-    if t.span().is_dummy() {
-        return "<DUMMY>".to_string();
-    }
     let mut buf = vec![];
     {
         let mut emitter = Emitter {
