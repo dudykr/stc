@@ -161,11 +161,6 @@ conformance::es6::Symbols::symbolType15.ts
 conformance::es6::Symbols::symbolType16.ts
 conformance::es6::classDeclaration::superCallBeforeThisAccessing6.ts
 conformance::es6::classDeclaration::superCallFromClassThatHasNoBaseTypeButWithSameSymbolInterface.ts
-conformance::es6::classExpressions::typeArgumentInferenceWithClassExpression2.ts
-conformance::es6::computedProperties::computedPropertyNames42_ES5.ts
-conformance::es6::computedProperties::computedPropertyNames42_ES6.ts
-conformance::es6::destructuring::destructuringArrayBindingPatternAndAssignment4.ts
-conformance::es6::destructuring::destructuringObjectBindingPatternAndAssignment4.ts
 conformance::es6::destructuring::emptyObjectBindingPatternParameter04.ts
 conformance::es6::destructuring::iterableArrayPattern25.ts
 conformance::es6::destructuring::iterableArrayPattern28.ts
