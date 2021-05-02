@@ -761,6 +761,7 @@ impl Analyzer<'_, '_> {
                 }
                 _ => {}
             }
+            let callee_str = dump_type_as_string(&self.cm, &callee);
 
             self.get_best_return_type(
                 span,
@@ -778,7 +779,7 @@ impl Analyzer<'_, '_> {
                     "tried to call property by using access_property because the object type is not handled by \
                      call_property: \nobj = {}\ncallee = {}",
                     dump_type_as_string(&self.cm, &obj_type),
-                    dump_type_as_string(&self.cm, &callee)
+                    callee_str
                 )
             })
         })();
