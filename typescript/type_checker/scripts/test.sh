@@ -12,3 +12,8 @@ export RUST_LOG=debug
 # UPDATE=1 cargo test -p stc_ts_file_analyzer --test visualize
 
 cargo test --color always -q --test tsc
+
+if command -v osascript &> /dev/null
+then
+    osascript -e 'display notification "Test finished!"'
+fi
