@@ -411,7 +411,8 @@ impl Analyzer<'_, '_> {
                                     )
                                     .context(
                                         "tried to declare a variable from an assignment property in an object pattern",
-                                    )?;
+                                    )
+                                    .report(&mut self.storage);
                                 }
                                 None => {
                                     // TODO: actual_ty
@@ -426,9 +427,8 @@ impl Analyzer<'_, '_> {
                                         prop_ty,
                                         None,
                                     )
-                                    .context(
-                                        "tried to declare a variable from a simple property in an object pattern",
-                                    )?;
+                                    .context("tried to declare a variable from a simple property in an object pattern")
+                                    .report(&mut self.storage);
                                 }
                             }
                         }
@@ -442,7 +442,10 @@ impl Analyzer<'_, '_> {
                                 Some(ty) => self
                                     .access_property(span, ty.clone(), &key, TypeOfMode::RValue, IdCtx::Var)
                                     .map(Some)
-                                    .context("tried to access property to declare variables using an object pattern")?,
+                                    .context("tried to access property to declare variables using an object pattern")
+                                    .report(&mut self.storage)
+                                    .flatten()
+                                    .or_else(|| Some(Type::any(span))),
                                 None => None,
                             };
 
