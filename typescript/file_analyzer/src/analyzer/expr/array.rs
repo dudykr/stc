@@ -326,11 +326,8 @@ impl Analyzer<'_, '_> {
     }
 
     pub(crate) fn get_iterator<'a>(&mut self, span: Span, ty: Cow<'a, Type>) -> ValidationResult<Cow<'a, Type>> {
-        slog::debug!(
-            self.logger,
-            "[exprs/array] get_iterator({})",
-            dump_type_as_string(&self.cm, &ty)
-        );
+        let ty_str = dump_type_as_string(&self.cm, &ty);
+        slog::debug!(self.logger, "[exprs/array] get_iterator({})", ty_str);
 
         ty.assert_valid();
 
@@ -421,7 +418,12 @@ impl Analyzer<'_, '_> {
             _ => err,
         })
         .map(Cow::Owned)
-        .context("tried to call `[Symbol.iterator]()` to convert a type to an iterator")
+        .with_context(|| {
+            format!(
+                "tried to call `[Symbol.iterator]()` to convert a type ({}) to an iterator",
+                ty_str
+            )
+        })
     }
     pub(crate) fn get_iterator_element_type<'a>(
         &mut self,
