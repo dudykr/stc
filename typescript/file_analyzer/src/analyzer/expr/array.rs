@@ -343,6 +343,18 @@ impl Analyzer<'_, '_> {
                 let ty = self.expand_top_ref(span, ty)?;
                 return self.get_iterator(span, ty);
             }
+            Type::Keyword(RTsKeywordType {
+                kind: TsKeywordTypeKind::TsNumberKeyword,
+                ..
+            })
+            | Type::Keyword(RTsKeywordType {
+                kind: TsKeywordTypeKind::TsBigIntKeyword,
+                ..
+            })
+            | Type::Keyword(RTsKeywordType {
+                kind: TsKeywordTypeKind::TsBooleanKeyword,
+                ..
+            }) => return Err(Error::NotArrayType { span }),
             Type::Array(..) | Type::Tuple(..) => return Ok(ty),
             Type::Union(u) => {
                 let types = u

@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2461
+    NotArrayType {
+        span: Span,
+    },
+
     /// TS2494
     ForOfStringUsedInEs3 {
         span: Span,
@@ -1348,6 +1353,8 @@ impl Error {
 
             Error::LetOrConstIsNotValidIdInLetOrConstVarDecls { .. } => 2480,
             Error::ForOfStringUsedInEs3 { .. } => 2494,
+
+            Error::NotArrayType { .. } => 2461,
             _ => 0,
         }
     }
