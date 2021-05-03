@@ -285,7 +285,12 @@ impl Analyzer<'_, '_> {
                 match kind {
                     ForHeadKind::Of => {
                         if child.env.target() < EsVersion::Es5 {
-                            if is_str_or_union(&rty) {
+                            if rty
+                                .iter_union()
+                                .flat_map(|ty| ty.iter_union())
+                                .flat_map(|ty| ty.iter_union())
+                                .any(|ty| is_str_or_union(&ty))
+                            {
                                 child.storage.report(Error::ForOfStringUsedInEs3 { span })
                             }
                         }
