@@ -301,6 +301,17 @@ impl Analyzer<'_, '_> {
                 let elem_ty = match kind {
                     ForHeadKind::Of => child
                         .get_iterator_element_type(rhs.span(), Cow::Owned(rty))
+                        .convert_err(|err| match err {
+                            Error::NotArrayType { span }
+                                if match rhs {
+                                    RExpr::Lit(..) => true,
+                                    _ => false,
+                                } =>
+                            {
+                                Error::NotArrayTypeNorStringType { span }
+                            }
+                            _ => err,
+                        })
                         .context("tried to get the element type of an iterator to calculate type for a for-of loop")?,
                     ForHeadKind::In => Cow::Owned(
                         child

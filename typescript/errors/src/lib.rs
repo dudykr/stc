@@ -64,6 +64,11 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2495
+    NotArrayTypeNorStringType {
+        span: Span,
+    },
+
     /// TS2494
     ForOfStringUsedInEs3 {
         span: Span,
@@ -1355,6 +1360,7 @@ impl Error {
             Error::ForOfStringUsedInEs3 { .. } => 2494,
 
             Error::NotArrayType { .. } => 2461,
+            Error::NotArrayTypeNorStringType { .. } => 2495,
             _ => 0,
         }
     }
