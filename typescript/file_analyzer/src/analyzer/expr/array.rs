@@ -360,7 +360,7 @@ impl Analyzer<'_, '_> {
                 let types = u
                     .types
                     .iter()
-                    .map(|v| self.get_iterator(v.span(), Cow::Borrowed(v)))
+                    .map(|v| self.get_iterator(span, Cow::Borrowed(v)))
                     .map(|res| res.map(Cow::into_owned))
                     .collect::<Result<_, _>>()
                     .convert_err(|err| match err {
