@@ -1433,7 +1433,8 @@ impl Analyzer<'_, '_> {
                             match prop_ty {
                                 Ok(ty) => {
                                     // TODO: actual_ty
-                                    self.declare_complex_vars(kind, &prop.value, ty, None)?;
+                                    self.declare_complex_vars(kind, &prop.value, ty, None)
+                                        .report(&mut self.storage);
                                 }
 
                                 Err(err) => {
@@ -1483,7 +1484,8 @@ impl Analyzer<'_, '_> {
                                                 }),
                                                 prop_ty.clone(),
                                                 None,
-                                            )?;
+                                            )
+                                            .report(&mut self.storage);
 
                                             let default_value_type = default
                                                 .validate_with_default(self)
@@ -1512,7 +1514,8 @@ impl Analyzer<'_, '_> {
                                                 }),
                                                 prop_ty,
                                                 None,
-                                            )?;
+                                            )
+                                            .report(&mut self.storage);
                                         }
                                     }
                                 }
