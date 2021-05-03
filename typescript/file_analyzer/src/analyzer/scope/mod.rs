@@ -1420,6 +1420,7 @@ impl Analyzer<'_, '_> {
 
                             let ctx = Ctx {
                                 should_not_create_indexed_type_from_ty_els: true,
+                                diallow_unknown_object_property: true,
                                 ..self.ctx
                             };
                             let prop_ty = self.with_ctx(ctx).access_property(
@@ -1459,6 +1460,7 @@ impl Analyzer<'_, '_> {
 
                             let ctx = Ctx {
                                 should_not_create_indexed_type_from_ty_els: true,
+                                diallow_unknown_object_property: true,
                                 ..self.ctx
                             };
                             let prop_ty = self.with_ctx(ctx).access_property(
