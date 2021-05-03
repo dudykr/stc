@@ -320,8 +320,8 @@ impl Analyzer<'_, '_> {
                                         TypeOfMode::RValue,
                                         IdCtx::Var,
                                     )
-                                    .map(Some)
-                                    .context("tried to access property to declare variables using an array pattern")?,
+                                    .context("tried to access property to declare variables using an array pattern")
+                                    .report(&mut self.storage),
                                 None => None,
                             };
 
