@@ -796,7 +796,7 @@ impl Analyzer<'_, '_> {
 
             RPat::Expr(lhs) => {
                 match &**lhs {
-                    RExpr::Lit(..) | RExpr::Call(..) | RExpr::New(..) => {
+                    RExpr::Lit(..) => {
                         self.storage.report(Error::InvalidLhsOfAssign { span: lhs.span() });
                     }
                     _ => {}
