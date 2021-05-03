@@ -328,102 +328,100 @@ impl Analyzer<'_, '_> {
     pub(crate) fn get_iterator<'a>(&mut self, span: Span, ty: Cow<'a, Type>) -> ValidationResult<Cow<'a, Type>> {
         let ty_str = dump_type_as_string(&self.cm, &ty);
         slog::debug!(self.logger, "[exprs/array] get_iterator({})", ty_str);
-
         ty.assert_valid();
 
-        if ty.is_str() {
-            return Ok(ty);
-        }
+        let res: ValidationResult<_> = (|| {
+            if ty.is_str() {
+                return Ok(ty);
+            }
 
-        match ty.normalize() {
-            Type::Ref(..) => {
-                let ty = self.expand_top_ref(span, ty)?;
-                return self.get_iterator(span, ty);
+            match ty.normalize() {
+                Type::Ref(..) => {
+                    let ty = self.expand_top_ref(span, ty)?;
+                    return self.get_iterator(span, ty);
+                }
+                Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsNumberKeyword,
+                    ..
+                })
+                | Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsBigIntKeyword,
+                    ..
+                })
+                | Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsBooleanKeyword,
+                    ..
+                }) => return Err(Error::NotArrayType { span }),
+                Type::Array(..) | Type::Tuple(..) => return Ok(ty),
+                Type::Union(u) => {
+                    let types = u
+                        .types
+                        .iter()
+                        .map(|v| self.get_iterator(span, Cow::Borrowed(v)))
+                        .map(|res| res.map(Cow::into_owned))
+                        .collect::<Result<_, _>>()
+                        .convert_err(|err| match err {
+                            Error::MustHaveSymbolIteratorThatReturnsIterator { span } => {
+                                Error::MustHaveSymbolIteratorThatReturnsIteratorOrMustBeArray { span }
+                            }
+                            _ => err,
+                        })?;
+                    let new = Type::Union(Union { span: u.span, types });
+                    return Ok(Cow::Owned(new));
+                }
+                Type::Intersection(i) => {
+                    let types = i
+                        .types
+                        .iter()
+                        .map(|v| self.get_iterator(v.span(), Cow::Borrowed(v)))
+                        .map(|res| res.map(Cow::into_owned))
+                        .collect::<Result<_, _>>()?;
+                    let new = Type::Intersection(Intersection { span: i.span, types });
+                    return Ok(Cow::Owned(new));
+                }
+                _ => {}
             }
-            Type::Keyword(RTsKeywordType {
-                kind: TsKeywordTypeKind::TsNumberKeyword,
-                ..
-            })
-            | Type::Keyword(RTsKeywordType {
-                kind: TsKeywordTypeKind::TsBigIntKeyword,
-                ..
-            })
-            | Type::Keyword(RTsKeywordType {
-                kind: TsKeywordTypeKind::TsBooleanKeyword,
-                ..
-            }) => return Err(Error::NotArrayType { span }),
-            Type::Array(..) | Type::Tuple(..) => return Ok(ty),
-            Type::Union(u) => {
-                let types = u
-                    .types
-                    .iter()
-                    .map(|v| self.get_iterator(span, Cow::Borrowed(v)))
-                    .map(|res| res.map(Cow::into_owned))
-                    .collect::<Result<_, _>>()
-                    .convert_err(|err| match err {
-                        Error::MustHaveSymbolIteratorThatReturnsIterator { span } => {
-                            Error::MustHaveSymbolIteratorThatReturnsIteratorOrMustBeArray { span }
-                        }
-                        _ => err,
-                    })?;
-                let new = Type::Union(Union { span: u.span, types });
-                return Ok(Cow::Owned(new));
-            }
-            Type::Intersection(i) => {
-                let types = i
-                    .types
-                    .iter()
-                    .map(|v| self.get_iterator(v.span(), Cow::Borrowed(v)))
-                    .map(|res| res.map(Cow::into_owned))
-                    .collect::<Result<_, _>>()?;
-                let new = Type::Intersection(Intersection { span: i.span, types });
-                return Ok(Cow::Owned(new));
-            }
-            _ => {}
-        }
 
-        self.call_property(
-            span,
-            ExtractKind::Call,
-            Default::default(),
-            &ty,
-            &ty,
-            &Key::Computed(ComputedKey {
+            self.call_property(
                 span,
-                expr: box RExpr::Member(RMemberExpr {
-                    node_id: NodeId::invalid(),
+                ExtractKind::Call,
+                Default::default(),
+                &ty,
+                &ty,
+                &Key::Computed(ComputedKey {
                     span,
-                    obj: RExprOrSuper::Expr(box RExpr::Ident(RIdent::new(
-                        "Symbol".into(),
-                        span.with_ctxt(SyntaxContext::empty()),
-                    ))),
-                    computed: false,
-                    prop: box RExpr::Ident(RIdent::new("iterator".into(), span.with_ctxt(SyntaxContext::empty()))),
+                    expr: box RExpr::Member(RMemberExpr {
+                        node_id: NodeId::invalid(),
+                        span,
+                        obj: RExprOrSuper::Expr(box RExpr::Ident(RIdent::new(
+                            "Symbol".into(),
+                            span.with_ctxt(SyntaxContext::empty()),
+                        ))),
+                        computed: false,
+                        prop: box RExpr::Ident(RIdent::new("iterator".into(), span.with_ctxt(SyntaxContext::empty()))),
+                    }),
+                    ty: box Type::Keyword(RTsKeywordType {
+                        span,
+                        kind: TsKeywordTypeKind::TsSymbolKeyword,
+                    }),
                 }),
-                ty: box Type::Keyword(RTsKeywordType {
-                    span,
-                    kind: TsKeywordTypeKind::TsSymbolKeyword,
-                }),
-            }),
-            None,
-            &[],
-            &[],
-            &[],
-            None,
-        )
-        .convert_err(|err| match err {
-            Error::NoCallabelPropertyWithName { span, .. }
-            | Error::NoSuchPropertyInClass { span, .. }
-            | Error::NoSuchProperty { span, .. } => Error::MustHaveSymbolIteratorThatReturnsIterator { span },
-            _ => err,
-        })
-        .map(Cow::Owned)
-        .with_context(|| {
-            format!(
-                "tried to call `[Symbol.iterator]()` to convert a type ({}) to an iterator",
-                ty_str
+                None,
+                &[],
+                &[],
+                &[],
+                None,
             )
-        })
+            .convert_err(|err| match err {
+                Error::NoCallabelPropertyWithName { span, .. }
+                | Error::NoSuchPropertyInClass { span, .. }
+                | Error::NoSuchProperty { span, .. } => Error::MustHaveSymbolIteratorThatReturnsIterator { span },
+                _ => err,
+            })
+            .map(Cow::Owned)
+            .context("tried to call `[Symbol.iterator]()`")
+        })();
+
+        res.with_context(|| format!("tried to convert a type ({}) to an iterator", ty_str))
     }
     pub(crate) fn get_iterator_element_type<'a>(
         &mut self,
