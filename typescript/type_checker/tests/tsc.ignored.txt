@@ -117,8 +117,6 @@ conformance::es2019::globalThisReadonlyProperties.ts
 
 # WIP. Ignored to focus on one test at a time.
 conformance::classes::propertyMemberDeclarations::definePropertyOutputES3.ts
-conformance::es2020::bigintMissingES2020.ts
-conformance::es2020::bigintMissingESNext.ts
 conformance::generators::generatorReturnTypeFallback.3.ts
 conformance::types::typeParameters::typeArgumentLists::wrappedAndRecursiveConstraints4.ts
 conformance::types::typeParameters::typeParameterAsBaseType.ts
