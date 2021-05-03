@@ -226,7 +226,8 @@ impl Analyzer<'_, '_> {
                     p.left,
                     ty
                 );
-                self.declare_vars_inner_with_ty(kind, &p.left, export, ty, actual_ty)?;
+                self.declare_vars_inner_with_ty(kind, &p.left, export, ty, actual_ty)
+                    .report(&mut self.storage);
 
                 return Ok(());
             }
@@ -295,14 +296,13 @@ impl Analyzer<'_, '_> {
                                                  using a rest pattern",
                                             )
                                             .map(Cow::into_owned)
-                                            .map(Some)?,
+                                            .report(&mut self.storage),
                                         None => None,
                                     };
 
                                     self.declare_vars_inner_with_ty(kind, &elem.arg, export, type_for_rest_arg, None)
-                                        .context(
-                                            "tried to declare lefting elements to the arugment of a rest pattern",
-                                        )?;
+                                        .context("tried to declare lefting elements to the arugment of a rest pattern")
+                                        .report(&mut self.storage);
                                     break;
                                 }
                                 _ => {}
@@ -326,7 +326,8 @@ impl Analyzer<'_, '_> {
                             };
 
                             // TODO: actual_ty
-                            self.declare_vars_inner_with_ty(kind, elem, export, elem_ty, None)?;
+                            self.declare_vars_inner_with_ty(kind, elem, export, elem_ty, None)
+                                .report(&mut self.storage);
                         }
                         // Skip
                         None => {}
@@ -492,7 +493,7 @@ impl Analyzer<'_, '_> {
             }) => {
                 let mut arg = arg.clone();
 
-                self.declare_vars_inner(kind, &arg, export)?;
+                self.declare_vars_inner(kind, &arg, export).report(&mut self.storage);
 
                 let new_ty = arg.get_mut_ty().take();
                 if ty.is_none() {
