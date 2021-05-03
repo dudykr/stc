@@ -116,6 +116,20 @@ conformance::es2019::globalThisReadonlyProperties.ts
 
 
 # WIP. Ignored to focus on one test at a time.
+conformance::classes::propertyMemberDeclarations::definePropertyOutputES3.ts
+conformance::es2020::bigintMissingES2020.ts
+conformance::es2020::bigintMissingESNext.ts
+conformance::generators::generatorReturnTypeFallback.3.ts
+conformance::types::typeParameters::typeArgumentLists::wrappedAndRecursiveConstraints4.ts
+conformance::types::typeParameters::typeParameterAsBaseType.ts
+conformance::types::typeParameters::typeParameterLists::typesWithDuplicateTypeParameters.ts
+conformance::types::typeRelationships::assignmentCompatibility::assignmentCompatWithGenericCallSignatures.ts
+conformance::types::typeRelationships::assignmentCompatibility::genericCallWithObjectTypeArgsAndInitializers.ts
+conformance::types::typeRelationships::assignmentCompatibility::nullAssignedToUndefined.ts
+conformance::types::typeRelationships::bestCommonType::heterogeneousArrayLiterals.ts
+conformance::types::typeRelationships::comparable::optionalProperties02.ts
+conformance::types::typeRelationships::typeAndMemberIdentity::unionTypeIdentity.ts
+conformance::types::typeRelationships::typeInference::genericCallWithObjectLiteralArgs.ts
 conformance::classes::members::privateNames::privateNamesNoDelete.ts
 conformance::es6::Symbols::symbolProperty36.ts
 conformance::es6::Symbols::symbolProperty42.ts
@@ -184,10 +198,6 @@ conformance::statements::for-ofStatements::ES5For-ofTypeCheck14.ts
 conformance::types::contextualTypes::commaOperator::contextuallyTypeCommaOperator03.ts
 conformance::types::contextualTypes::logicalAnd::contextuallyTypeLogicalAnd03.ts
 conformance::types::literal::stringLiteralsWithTypeAssertions01.ts
-conformance::types::nonPrimitive::nonPrimitiveAccessProperty.ts
-conformance::types::nonPrimitive::nonPrimitiveIndexingWithForInNoImplicitAny.ts
-conformance::types::nonPrimitive::nonPrimitiveIndexingWithForInSupressError.ts
-conformance::types::nonPrimitive::nonPrimitiveUnionIntersection.ts
 conformance::types::rest::genericRestArity.ts
 conformance::types::rest::genericRestParameters2.ts
 conformance::types::specifyingTypes::typeQueries::typeofClassWithPrivates.ts
