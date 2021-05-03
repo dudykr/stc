@@ -326,6 +326,12 @@ impl Analyzer<'_, '_> {
     }
 
     pub(crate) fn get_iterator<'a>(&mut self, span: Span, ty: Cow<'a, Type>) -> ValidationResult<Cow<'a, Type>> {
+        slog::debug!(
+            self.logger,
+            "[exprs/array] get_iterator({})",
+            dump_type_as_string(&self.cm, &ty)
+        );
+
         if ty.is_str() {
             return Ok(ty);
         }
