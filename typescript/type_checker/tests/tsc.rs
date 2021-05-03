@@ -424,6 +424,10 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
     {
         dbg!(&libs);
         for err in &mut expected_errors {
+            // This error use special span.
+            if err.line == 0 {
+                continue;
+            }
             // Typescript conformance test remove lines starting with @-directives.
             err.line += err_shift_n;
         }
@@ -492,12 +496,13 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
         for (line, error_code) in full_actual_errors.clone() {
             if let Some(idx) = expected_errors
                 .iter()
-                .position(|err| err.line == line && err.code == error_code)
+                .position(|err| (err.line == line || err.line == 0) && err.code == error_code)
             {
+                let is_zero_line = expected_errors[idx].line == 0;
                 expected_errors.remove(idx);
                 if let Some(idx) = actual_errors
                     .iter()
-                    .position(|(r_line, r_code)| line == *r_line && error_code == *r_code)
+                    .position(|(r_line, r_code)| (line == *r_line || is_zero_line) && error_code == *r_code)
                 {
                     actual_errors.remove(idx);
                 }
