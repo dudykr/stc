@@ -344,6 +344,10 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
                         rule.no_implicit_this = v;
                     } else if s.starts_with("skipDefaultLibCheck") {
                         // TODO
+                    } else if s.starts_with("suppressImplicitAnyIndexErrors:") {
+                        // TODO
+                        let v = s["suppressImplicitAnyIndexErrors:".len()..].trim().parse().unwrap();
+                        rule.suppress_implicit_any_index_errors = v;
                     } else if s.starts_with("module") {
                     } else if s.to_lowercase().starts_with("notypesandsymbols") {
                         // Ignored as we don't generate them.
