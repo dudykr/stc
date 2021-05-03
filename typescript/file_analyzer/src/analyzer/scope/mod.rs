@@ -1354,7 +1354,11 @@ impl Analyzer<'_, '_> {
 
                 let ty = self
                     .get_iterator(span, Cow::Owned(ty))
-                    .context("tried to convert a type to an iterator to assign with an array pattern.")?;
+                    .context("tried to convert a type to an iterator to assign with an array pattern.")
+                    .unwrap_or_else(|err| {
+                        self.storage.report(err);
+                        Cow::Owned(Type::any(span))
+                    });
 
                 for (i, elem) in elems.iter().enumerate() {
                     if let Some(elem) = elem {
