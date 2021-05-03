@@ -3,6 +3,7 @@ use crate::analyzer::control_flow::CondFacts;
 use crate::analyzer::types::NormalizeTypeOpts;
 use crate::analyzer::util::ResultExt;
 use crate::analyzer::Ctx;
+use crate::util::is_str_or_union;
 use crate::validator::ValidateWith;
 use crate::{analyzer::ScopeKind, ty::Type, validator, ValidationResult};
 use rnode::VisitWith;
@@ -281,10 +282,15 @@ impl Analyzer<'_, '_> {
                     .report(&mut child.storage)
                     .unwrap_or_else(|| Type::any(span));
 
-                if child.env.target() < EsVersion::Es5 {
-                    if rty.is_str() {
-                        child.storage.report(Error::ForOfStringUsedInEs3 { span })
+                match kind {
+                    ForHeadKind::Of => {
+                        if child.env.target() < EsVersion::Es5 {
+                            if is_str_or_union(&rty) {
+                                child.storage.report(Error::ForOfStringUsedInEs3 { span })
+                            }
+                        }
                     }
+                    _ => {}
                 }
 
                 let elem_ty = match kind {
