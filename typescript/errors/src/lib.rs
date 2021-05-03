@@ -69,6 +69,11 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2569
+    NotArrayTypeNorStringTypeButDownlevelIterationWouldWork {
+        span: Span,
+    },
+
     /// TS2494
     ForOfStringUsedInEs3 {
         span: Span,
@@ -1361,6 +1366,7 @@ impl Error {
 
             Error::NotArrayType { .. } => 2461,
             Error::NotArrayTypeNorStringType { .. } => 2495,
+            Error::NotArrayTypeNorStringTypeButDownlevelIterationWouldWork { .. } => 2569,
             _ => 0,
         }
     }
