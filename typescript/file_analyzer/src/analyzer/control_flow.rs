@@ -795,6 +795,12 @@ impl Analyzer<'_, '_> {
             }
 
             RPat::Expr(lhs) => {
+                match &**lhs {
+                    RExpr::Lit(..) | RExpr::Call(..) | RExpr::New(..) => {
+                        self.storage.report(Error::InvalidLhsOfAssign { span: lhs.span() });
+                    }
+                    _ => {}
+                }
                 let lhs_ty = lhs
                     .validate_with_args(self, (TypeOfMode::LValue, None, None))
                     .context("tried to validate type of the expression in lhs of assignment")?;
