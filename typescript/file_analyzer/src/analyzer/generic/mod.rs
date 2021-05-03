@@ -521,6 +521,13 @@ impl Analyzer<'_, '_> {
                             _ => {}
                         }
                     }
+
+                    // TODO: Infer only if constraints are matched
+                    //
+                    // if let Some(false) = self.extends(span, ExtendsOpts {
+                    // ..Default::default() }, arg, constraint) {
+                    //     return Ok(());
+                    // }
                 }
 
                 if self.ctx.skip_identical_while_inferencing {
