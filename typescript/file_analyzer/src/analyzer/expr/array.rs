@@ -18,6 +18,8 @@ use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RMemberExpr;
 use stc_ts_ast_rnode::RNumber;
 use stc_ts_ast_rnode::RTsKeywordType;
+use stc_ts_ast_rnode::RTsLit;
+use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
@@ -340,6 +342,7 @@ impl Analyzer<'_, '_> {
                     let ty = self.expand_top_ref(span, ty)?;
                     return self.get_iterator(span, ty);
                 }
+
                 Type::Keyword(RTsKeywordType {
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                     ..
@@ -351,7 +354,19 @@ impl Analyzer<'_, '_> {
                 | Type::Keyword(RTsKeywordType {
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
                     ..
+                })
+                | Type::Lit(RTsLitType {
+                    lit: RTsLit::Number(..),
+                    ..
+                })
+                | Type::Lit(RTsLitType {
+                    lit: RTsLit::BigInt(..),
+                    ..
+                })
+                | Type::Lit(RTsLitType {
+                    lit: RTsLit::Bool(..), ..
                 }) => return Err(Error::NotArrayType { span }),
+
                 Type::Array(..) | Type::Tuple(..) => return Ok(ty),
                 Type::Union(u) => {
                     let types = u
