@@ -332,6 +332,8 @@ impl Analyzer<'_, '_> {
             dump_type_as_string(&self.cm, &ty)
         );
 
+        ty.assert_valid();
+
         if ty.is_str() {
             return Ok(ty);
         }
