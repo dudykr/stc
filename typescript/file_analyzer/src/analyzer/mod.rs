@@ -106,6 +106,8 @@ pub(crate) struct Ctx {
 
     phase: Phase,
 
+    diallow_unknown_object_property: bool,
+
     allow_module_var: bool,
 
     /// If `true`, expression validator will not emit tuple.
@@ -416,6 +418,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             ctx: Ctx {
                 module_id: ModuleId::builtin(),
                 phase: Default::default(),
+                diallow_unknown_object_property: false,
                 allow_module_var: false,
                 cannot_be_tuple: false,
                 should_not_create_indexed_type_from_ty_els: false,
