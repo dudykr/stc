@@ -451,7 +451,8 @@ impl Analyzer<'_, '_> {
 
                             // TODO: actual_ty
                             self.declare_vars_inner_with_ty(kind, &p.value, export, prop_ty, None)
-                                .context("tried to declare a variable from key-value property in an object pattern")?;
+                                .context("tried to declare a variable from key-value property in an object pattern")
+                                .report(&mut self.storage);
                         }
 
                         RObjectPatProp::Rest(pat) => match ty {
