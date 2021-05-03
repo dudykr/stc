@@ -29,6 +29,14 @@ function extract(content: string): ErrorRef[] {
         }
         const [, data] = str.split('(', 2);
         if (!data) {
+            if (str.startsWith('error ')) {
+                const code = str.substring(6).split(':')[0];
+                errors.push({
+                    line: 0,
+                    column: 0,
+                    code
+                })
+            }
             continue
         }
 
@@ -89,9 +97,14 @@ async function handleTestSuite(suiteName: string) {
             console.log('----- ----- ----- ----- -----')
             console.log(p)
 
+
             console.log('Error refs:', errorFilePath)
 
             const errors = extract(content)
+
+            if (p.includes('generatorReturnTypeFallback.2') && errors.length === 0) {
+                throw new Error(`ERROR(${errors})`)
+            }
             await fs.promises.writeFile(errorJsonPath, JSON.stringify(errors))
         }
     }
