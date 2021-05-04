@@ -185,6 +185,8 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
+        let _stack = stack::track(opts.span)?;
+
         // if cfg!(debug_assertions) && span.is_dummy() {
         //     print_backtrace();
         //     debug_assert!(!span.is_dummy());
