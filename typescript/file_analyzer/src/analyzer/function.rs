@@ -159,7 +159,7 @@ impl Analyzer<'_, '_> {
                             }
 
                             slog::info!(
-                                self.logger,
+                                child.logger,
                                 "[fn/return] Assigning {} to {}",
                                 dump_type_as_string(&child.cm, &inferred_return_type),
                                 dump_type_as_string(&child.cm, &declared)
