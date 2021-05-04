@@ -1601,7 +1601,14 @@ impl Analyzer<'_, '_> {
 
     #[context("tried to extract keys")]
     fn extract_keys(&mut self, span: Span, ty: &Type) -> ValidationResult {
-        let ty = self.normalize(Some(span), &ty, NormalizeTypeOpts {});
+        let ty = self.normalize(
+            Some(span),
+            &ty,
+            NormalizeTypeOpts {
+                normalize_keywords: true,
+                ..Default::default()
+            },
+        )?;
         let ty = ty.normalize();
 
         match ty {
@@ -1638,7 +1645,7 @@ impl Analyzer<'_, '_> {
         Err(Error::Unimplemented {
             span,
             msg: format!("Extract keys"),
-        })
+        })?
     }
 
     /// Handles `P in 'foo' | 'bar'`. Note that `'foo' | 'bar'` part should be
