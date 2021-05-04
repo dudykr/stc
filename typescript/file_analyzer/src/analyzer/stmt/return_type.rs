@@ -29,6 +29,7 @@ use stc_ts_types::ModuleId;
 use stc_ts_types::{
     IndexedAccessType, MethodSignature, Operator, PropertySignature, Ref, TypeElement, TypeParamInstantiation,
 };
+use stc_utils::ext::SpanExt;
 use std::borrow::Cow;
 use std::{mem::take, ops::AddAssign};
 use swc_common::TypeEq;
@@ -146,7 +147,7 @@ impl Analyzer<'_, '_> {
             }
 
             let yield_ty = if types.is_empty() {
-                Type::void(span)
+                Type::void(DUMMY_SP)
             } else {
                 Type::union(types)
             };
@@ -158,7 +159,7 @@ impl Analyzer<'_, '_> {
             };
 
             return Ok(Some(Type::Ref(Ref {
-                span,
+                span: yield_ty.span().or_else(|| ret_ty.span()),
                 ctxt: ModuleId::builtin(),
                 type_name: if is_async {
                     RTsEntityName::Ident(RIdent::new("AsyncGenerator".into(), DUMMY_SP))

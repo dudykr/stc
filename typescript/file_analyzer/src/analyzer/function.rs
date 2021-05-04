@@ -139,7 +139,7 @@ impl Analyzer<'_, '_> {
             let inferred_return_type = match inferred_return_type {
                 Some(Some(inferred_return_type)) => {
                     let mut inferred_return_type = match inferred_return_type {
-                        Type::Ref(ty) => Type::Ref(child.qualify_ref_type_args(span, ty)?),
+                        Type::Ref(ty) => Type::Ref(child.qualify_ref_type_args(ty.span, ty)?),
                         _ => inferred_return_type,
                     };
 
