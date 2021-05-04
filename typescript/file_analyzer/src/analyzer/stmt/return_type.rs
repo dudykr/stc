@@ -265,7 +265,7 @@ impl Analyzer<'_, '_> {
         } else {
             self.scope.return_values.yield_types.push(Type::Keyword(RTsKeywordType {
                 span: e.span,
-                kind: TsKeywordTypeKind::TsVoidKeyword,
+                kind: TsKeywordTypeKind::TsUndefinedKeyword,
             }));
         }
 
