@@ -147,7 +147,7 @@ impl Analyzer<'_, '_> {
             }
 
             let yield_ty = if types.is_empty() {
-                Type::void(DUMMY_SP)
+                Type::any(DUMMY_SP)
             } else {
                 Type::union(types)
             };
