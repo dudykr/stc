@@ -1179,9 +1179,11 @@ impl Error {
 
             Error::SuperInClassWithoutSuper { .. } => 2335,
 
-            Error::NoSuchProperty { .. } | Error::NoSuchPropertyInThis { .. } | Error::NoSuchPropertyInClass { .. } => {
-                2339
-            }
+            Error::NoSuchProperty { .. }
+            | Error::NoSuchPropertyInThis { .. }
+            | Error::NoSuchPropertyInClass { .. }
+            | Error::NoSuchPropertyInModule { .. } => 2339,
+
             Error::AssignOpCannotBeApplied { .. } => 2365,
             Error::NonSymbolComputedPropInFormOfSymbol { .. } => 2471,
             Error::TypeUsedAsVar { .. } => 2693,
@@ -1367,6 +1369,13 @@ impl Error {
             Error::NotArrayType { .. } => 2461,
             Error::NotArrayTypeNorStringType { .. } => 2495,
             Error::NotArrayTypeNorStringTypeButDownlevelIterationWouldWork { .. } => 2569,
+
+            Error::NoCallabelPropertyWithName { .. } => 2349,
+
+            Error::NotGeneric { .. } => 2315,
+
+            Error::ReadOnly { .. } => 2546,
+
             _ => 0,
         }
     }
