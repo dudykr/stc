@@ -58,6 +58,7 @@ use swc_ecma_ast::TsTypeOperatorOp;
 mod keyof;
 mod mapped;
 mod narrowing;
+mod replace;
 mod type_param;
 
 /// All fields defaults to false.
