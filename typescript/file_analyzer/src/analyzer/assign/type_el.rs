@@ -656,8 +656,15 @@ impl Analyzer<'_, '_> {
                                 TypeElement::Method(ref rm) => {
                                     //
 
-                                    self.assign_params(opts, &lm.params, &rm.params)?;
+                                    self.assign_params(opts, &lm.params, &rm.params)
+                                        .context("tried to assign parameters of a method")?;
 
+                                    if let Some(l_ret_ty) = &lm.ret_ty {
+                                        if let Some(r_ret_ty) = &rm.ret_ty {
+                                            self.assign_with_opts(opts, &l_ret_ty, &r_ret_ty)
+                                                .context("tried to assign return type of a method")?;
+                                        }
+                                    }
                                     // TODO: Return type
 
                                     if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
