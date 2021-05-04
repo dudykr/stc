@@ -1,4 +1,5 @@
 use super::Analyzer;
+use crate::analyzer::types::NormalizeTypeOpts;
 use crate::{ty::TypeExt, ValidationResult};
 use rnode::NodeId;
 use stc_ts_ast_rnode::RBool;
@@ -14,6 +15,7 @@ use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::debug::print_backtrace;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
+use stc_ts_file_analyzer_macros::context;
 use stc_ts_types::Key;
 use stc_ts_types::Mapped;
 use stc_ts_types::Operator;
@@ -1597,7 +1599,9 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
+    #[context("tried to extract keys")]
     fn extract_keys(&mut self, span: Span, ty: &Type) -> ValidationResult {
+        let ty = self.normalize(Some(span), &ty, NormalizeTypeOpts {});
         let ty = ty.normalize();
 
         match ty {
