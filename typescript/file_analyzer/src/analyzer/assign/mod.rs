@@ -1642,6 +1642,14 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
+        if let Some(ty) = self
+            .type_to_type_lit(span, &ty)?
+            .map(Cow::into_owned)
+            .map(Type::TypeLit)
+        {
+            return self.extract_keys(span, &ty);
+        }
+
         Err(Error::Unimplemented {
             span,
             msg: format!("Extract keys"),
