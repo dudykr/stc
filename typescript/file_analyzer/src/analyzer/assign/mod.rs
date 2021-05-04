@@ -475,9 +475,11 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
 
-                let to = self.expand_top_ref(span, Cow::Borrowed(to))?;
+                let mut new_lhs = self.expand_top_ref(span, Cow::Borrowed(to))?.into_owned();
+                self.replace(&mut new_lhs, &[(to, &Type::any(span))]);
+
                 return self
-                    .assign_inner(&to, rhs, opts)
+                    .assign_inner(&new_lhs, rhs, opts)
                     .context("tried to assign a type created from a reference");
             }
 
@@ -708,9 +710,10 @@ impl Analyzer<'_, '_> {
 
         match rhs {
             Type::Ref(..) => {
-                let rhs = self.expand_top_ref(span, Cow::Borrowed(rhs))?;
+                let mut new_rhs = self.expand_top_ref(span, Cow::Borrowed(rhs))?.into_owned();
+                self.replace(&mut new_rhs, &[(rhs, &Type::any(span))]);
                 return self
-                    .assign_inner(to, &rhs, opts)
+                    .assign_inner(to, &new_rhs, opts)
                     .context("tried to assign a type expanded from a reference to another type");
             }
 
