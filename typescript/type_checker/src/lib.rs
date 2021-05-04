@@ -4,6 +4,7 @@
 use dashmap::DashMap;
 use dashmap::DashSet;
 use dashmap::SharedValue;
+use fxhash::FxBuildHasher;
 use fxhash::FxHashMap;
 use once_cell::sync::OnceCell;
 use parking_lot::Mutex;
@@ -56,12 +57,12 @@ pub struct Checker {
     module_types: RwLock<FxHashMap<ModuleId, Arc<OnceCell<Arc<ModuleTypeData>>>>>,
 
     /// Informatnion required to generate `.d.ts` files.
-    dts_modules: Arc<DashMap<ModuleId, RModule>>,
+    dts_modules: Arc<DashMap<ModuleId, RModule, FxBuildHasher>>,
 
     module_graph: Arc<ModuleGraph<StcComments, Arc<dyn Resolve>>>,
 
     /// Modules which are being processed or analyzed.
-    started: Arc<DashSet<ModuleId>>,
+    started: Arc<DashSet<ModuleId, FxBuildHasher>>,
 
     errors: Mutex<Vec<Error>>,
 

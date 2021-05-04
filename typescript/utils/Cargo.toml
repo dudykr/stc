@@ -9,6 +9,7 @@ version = "0.1.0"
 
 [dependencies]
 dashmap = "3"
+fxhash = "0.2.1"
 rnode = {path = "../../rnode/"}
 stc_ts_ast_rnode = {path = "../ast_rnode"}
 stc_ts_types = {path = "../types"}

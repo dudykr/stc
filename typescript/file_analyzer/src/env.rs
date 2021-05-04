@@ -5,6 +5,7 @@ use crate::{
 };
 use dashmap::DashMap;
 use derivative::Derivative;
+use fxhash::FxBuildHasher;
 use fxhash::FxHashMap;
 use once_cell::sync::Lazy;
 use once_cell::sync::OnceCell;
@@ -257,8 +258,8 @@ pub struct Env {
     rule: Rule,
     target: JscTarget,
     builtin: Arc<BuiltIn>,
-    global_types: Arc<DashMap<JsWord, Type>>,
-    global_vars: Arc<DashMap<JsWord, Type>>,
+    global_types: Arc<DashMap<JsWord, Type, FxBuildHasher>>,
+    global_vars: Arc<DashMap<JsWord, Type, FxBuildHasher>>,
 }
 
 impl Env {
@@ -275,7 +276,7 @@ impl Env {
 
     pub fn simple(rule: Rule, target: JscTarget, libs: &[Lib]) -> Self {
         static STABLE_ENV: Lazy<StableEnv> = Lazy::new(Default::default);
-        static CACHE: Lazy<DashMap<Vec<Lib>, OnceCell<Arc<BuiltIn>>>> = Lazy::new(Default::default);
+        static CACHE: Lazy<DashMap<Vec<Lib>, OnceCell<Arc<BuiltIn>>, FxBuildHasher>> = Lazy::new(Default::default);
 
         // TODO: Include `env` in cache
         let mut libs = libs.to_vec();

@@ -1,4 +1,5 @@
 use dashmap::DashMap;
+use fxhash::FxBuildHasher;
 use std::{
     fs::File,
     io::Read,
@@ -81,7 +82,7 @@ where
     tests
 }
 
-pub type CommentMap = Arc<DashMap<BytePos, Vec<Comment>>>;
+pub type CommentMap = Arc<DashMap<BytePos, Vec<Comment>, FxBuildHasher>>;
 
 /// Multi-threaded implementation of [Comments]
 #[derive(Clone, Default)]
