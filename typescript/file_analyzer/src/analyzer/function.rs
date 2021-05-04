@@ -19,6 +19,7 @@ use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
+use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_types::CallSignature;
@@ -156,6 +157,13 @@ impl Analyzer<'_, '_> {
                                 // declared type and assign
                                 // the declared type to Promise / Generator
                             }
+
+                            slog::info!(
+                                self.logger,
+                                "[fn/return] Assigning {} to {}",
+                                dump_type_as_string(&child.cm, &inferred_return_type),
+                                dump_type_as_string(&child.cm, &declared)
+                            );
 
                             // It's okay to return more properties than declared.
                             child
