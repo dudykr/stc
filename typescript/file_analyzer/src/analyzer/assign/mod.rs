@@ -286,19 +286,20 @@ impl Analyzer<'_, '_> {
     fn assign_inner(&mut self, to: &Type, rhs: &Type, opts: AssignOpts) -> ValidationResult<()> {
         let _stack = stack::track(opts.span)?;
 
-        {
-            let l = dump_type_as_string(&self.cm, &to);
-            let r = dump_type_as_string(&self.cm, &rhs);
-            slog::debug!(&self.logger, "[assign] {} = {}\n{:?} ", l, r, opts);
-        }
+        let l = dump_type_as_string(&self.cm, &to);
+        let r = dump_type_as_string(&self.cm, &rhs);
 
-        self.assign_without_wrapping(to, rhs, opts).with_context(|| {
+        let res = self.assign_without_wrapping(to, rhs, opts).with_context(|| {
             //
             let l = dump_type_as_string(&self.cm, &to);
             let r = dump_type_as_string(&self.cm, &rhs);
 
             format!("\nlhs = {}\nrhs = {}", l, r)
-        })
+        });
+
+        slog::debug!(self.logger, "[assign ({:?})] {} = {}\n{:?} ", res.is_ok(), l, r, opts);
+
+        res
     }
 
     /// Assigns, but does not wrap error with [Error::AssignFailed].
