@@ -41,7 +41,7 @@ impl Analyzer<'_, '_> {
         }
 
         let ty = self
-            .normalize(None, ty, NormalizeTypeOpts { ..Default::default() })
+            .normalize(Some(span), ty, NormalizeTypeOpts { ..Default::default() })
             .context("tried to normalize")?;
 
         match ty.normalize() {
