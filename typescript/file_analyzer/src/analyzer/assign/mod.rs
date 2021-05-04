@@ -76,6 +76,8 @@ pub(crate) struct AssignOpts {
 
     /// If `true`, assignment will success if rhs is `void`.
     pub allow_assignment_of_void: bool,
+
+    pub allow_assignment_of_array_to_optional_type_lit: bool,
 }
 
 impl Analyzer<'_, '_> {
@@ -1281,6 +1283,7 @@ impl Analyzer<'_, '_> {
                 self.assign_to_type_elements(
                     AssignOpts {
                         allow_unknown_rhs: true,
+                        allow_assignment_of_array_to_optional_type_lit: true,
                         ..opts
                     },
                     span,

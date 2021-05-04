@@ -172,6 +172,15 @@ impl Analyzer<'_, '_> {
                 Type::Array(..) if lhs.is_empty() => return Ok(()),
 
                 Type::Array(r_arr) => {
+                    if opts.allow_assignment_of_array_to_optional_type_lit {
+                        if lhs.iter().all(|el| match el {
+                            TypeElement::Property(PropertySignature { optional: true, .. })
+                            | TypeElement::Method(MethodSignature { optional: true, .. }) => true,
+                            _ => false,
+                        }) {
+                            return Ok(());
+                        }
+                    }
                     if lhs.iter().any(|member| match member {
                         TypeElement::Property(PropertySignature { optional: true, .. })
                         | TypeElement::Method(MethodSignature { optional: true, .. }) => true,
