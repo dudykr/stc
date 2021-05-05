@@ -778,6 +778,8 @@ pub struct IndexSignature {
 
     pub readonly: bool,
     pub span: Span,
+
+    pub is_static: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]

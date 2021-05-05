@@ -635,6 +635,7 @@ impl From<super::ClassMember> for RTsTypeElement {
                     type_ann: box ty.into(),
                 }),
                 readonly: s.readonly,
+                is_static: s.is_static,
             }),
         }
     }
@@ -686,6 +687,7 @@ impl From<TypeElement> for RTsTypeElement {
                 type_ann: e.type_ann.map(From::from),
                 readonly: e.readonly,
                 span: e.span,
+                is_static: e.is_static,
             }),
         }
     }
