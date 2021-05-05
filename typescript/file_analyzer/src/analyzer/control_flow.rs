@@ -516,7 +516,7 @@ impl Analyzer<'_, '_> {
                     let lhs_ty = self.expand(span, lhs_ty)?;
 
                     if op == op!("=") {
-                        self.assign(&lhs_ty, &ty, span)?;
+                        self.assign(&mut Default::default(), &lhs_ty, &ty, span)?;
                     } else {
                         self.assign_with_op(span, op, &lhs_ty, &ty)?;
                     }
@@ -594,6 +594,7 @@ impl Analyzer<'_, '_> {
                 if let Some(var_info) = self.scope.get_var(&i.id.clone().into()) {
                     if let Some(var_ty) = var_info.ty.clone() {
                         self.assign_with_opts(
+                            &mut Default::default(),
                             AssignOpts {
                                 span: i.id.span,
                                 ..opts
@@ -805,7 +806,7 @@ impl Analyzer<'_, '_> {
                     .validate_with_args(self, (TypeOfMode::LValue, None, None))
                     .context("tried to validate type of the expression in lhs of assignment")?;
 
-                self.assign_with_opts(AssignOpts { span, ..opts }, &lhs_ty, &ty)?;
+                self.assign_with_opts(&mut Default::default(), AssignOpts { span, ..opts }, &lhs_ty, &ty)?;
                 return Ok(());
             }
         }

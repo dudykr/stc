@@ -896,6 +896,7 @@ impl Analyzer<'_, '_> {
                 )?;
 
                 self.assign_with_opts(
+                    &mut Default::default(),
                     AssignOpts {
                         span: parent.span(),
                         allow_unknown_rhs: true,

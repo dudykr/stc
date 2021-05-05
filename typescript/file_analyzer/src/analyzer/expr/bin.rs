@@ -889,7 +889,9 @@ impl Analyzer<'_, '_> {
                             (TypeElement::Index(lm), TypeElement::Index(rm)) if lm.params.type_eq(&rm.params) => {
                                 if let Some(lt) = &lm.type_ann {
                                     if let Some(rt) = &rm.type_ann {
-                                        if self.assign(&lt, &rt, span).is_ok() || self.assign(&rt, &lt, span).is_ok() {
+                                        if self.assign(&mut Default::default(), &lt, &rt, span).is_ok()
+                                            || self.assign(&mut Default::default(), &rt, &lt, span).is_ok()
+                                        {
                                             continue;
                                         }
                                     } else {
@@ -996,7 +998,7 @@ impl Analyzer<'_, '_> {
             for rm in r {
                 match (lm, rm) {
                     (TypeElement::Method(lm), TypeElement::Method(rm)) => {
-                        if let Ok(()) = self.assign(&lm.key.ty(), &rm.key.ty(), span) {
+                        if let Ok(()) = self.assign(&mut Default::default(), &lm.key.ty(), &rm.key.ty(), span) {
                             if lm.type_params.as_ref().map(|v| v.params.len()).unwrap_or(0)
                                 != rm.type_params.as_ref().map(|v| v.params.len()).unwrap_or(0)
                             {
@@ -1004,6 +1006,7 @@ impl Analyzer<'_, '_> {
                             }
 
                             let params_res = self.assign_params(
+                                &mut Default::default(),
                                 AssignOpts {
                                     span,
                                     ..Default::default()
@@ -1018,6 +1021,7 @@ impl Analyzer<'_, '_> {
 
                             let ret_ty_res = match (lm.ret_ty.as_deref(), rm.ret_ty.as_deref()) {
                                 (Some(lt), Some(rt)) => self.assign_with_opts(
+                                    &mut Default::default(),
                                     AssignOpts {
                                         span,
                                         allow_unknown_rhs: true,
@@ -1134,6 +1138,7 @@ impl Analyzer<'_, '_> {
             // Ok if it's assignable to `Function`.
             Type::TypeLit(..) | Type::Interface(..) => {
                 if let Err(..) = self.assign(
+                    &mut Default::default(),
                     &Type::Ref(Ref {
                         span,
                         ctxt: ModuleId::builtin(),

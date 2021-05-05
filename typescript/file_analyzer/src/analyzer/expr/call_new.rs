@@ -908,7 +908,7 @@ impl Analyzer<'_, '_> {
         match m {
             TypeElement::Method(m) if kind == ExtractKind::Call => {
                 // We are interested only on methods named `prop`
-                if let Ok(()) = self.assign(&m.key.ty(), &prop.ty(), span) {
+                if let Ok(()) = self.assign(&mut Default::default(), &m.key.ty(), &prop.ty(), span) {
                     candidates.push(CallCandidate {
                         type_params: m.type_params.as_ref().map(|v| v.params.clone()),
                         params: m.params.clone(),
@@ -918,7 +918,7 @@ impl Analyzer<'_, '_> {
             }
 
             TypeElement::Property(p) if kind == ExtractKind::Call => {
-                if let Ok(()) = self.assign(&p.key.ty(), &prop.ty(), span) {
+                if let Ok(()) = self.assign(&mut Default::default(), &p.key.ty(), &prop.ty(), span) {
                     // TODO: Remove useless clone
                     let ty = *p.type_ann.as_ref().cloned().unwrap_or(box Type::any(m.span()));
 
