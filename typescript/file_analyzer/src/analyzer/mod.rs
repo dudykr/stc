@@ -132,6 +132,9 @@ pub(crate) struct Ctx {
     in_global: bool,
     in_export_default_expr: bool,
 
+    in_async: bool,
+    in_generator: bool,
+
     is_calling_iife: bool,
 
     /// `true` if unresolved references should be rerpoted.
@@ -432,6 +435,8 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 in_fn_without_body: false,
                 in_global: false,
                 in_export_default_expr: false,
+                in_async: false,
+                in_generator: false,
                 is_calling_iife: false,
                 in_actual_type: false,
                 report_error_for_non_local_export: false,

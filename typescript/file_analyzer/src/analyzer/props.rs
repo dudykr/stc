@@ -463,6 +463,9 @@ impl Analyzer<'_, '_> {
 
                 self.with_child(ScopeKind::Method { is_static: false }, Default::default(), {
                     |child: &mut Analyzer| -> ValidationResult<_> {
+                        child.ctx.in_async = p.function.is_async;
+                        child.ctx.in_generator = p.function.is_generator;
+
                         match method_type_ann.as_ref().map(|ty| ty.normalize()) {
                             Some(Type::Function(ty)) => {
                                 for p in p.function.params.iter().zip_longest(ty.params.iter()) {
