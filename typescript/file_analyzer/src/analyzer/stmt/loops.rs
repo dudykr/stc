@@ -51,9 +51,11 @@ impl Analyzer<'_, '_> {
         let mut prev_facts = orig_facts.true_facts.clone();
 
         // TODO: Loop again if required.
-        for _ in 0..2 {
+        for i in 0..2 {
             let facts_from_body: CondFacts =
                 self.with_child(ScopeKind::LoopBody, prev_facts.clone(), |child: &mut Analyzer| {
+                    child.ctx.reevaluating_loop_body = i != 0;
+
                     body.visit_with(child);
 
                     Ok(child.cur_facts.true_facts.take())
