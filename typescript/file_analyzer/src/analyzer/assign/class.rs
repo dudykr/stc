@@ -353,7 +353,11 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
-                return Err(Error::SimpleAssignFailed { span });
+                let err = Error::MissingFields { span, fields: vec![] };
+                return Err(Error::Errors {
+                    span,
+                    errors: vec![err],
+                });
             }
             ClassMember::IndexSignature(_) => {}
         }
