@@ -343,6 +343,8 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RYieldExpr) -> ValidationResult {
+        let span = e.span;
+
         if let Some(res) = e.arg.validate_with_default(self) {
             let ty = res?;
 
@@ -356,35 +358,22 @@ impl Analyzer<'_, '_> {
             };
 
             if let Some(declared) = self.scope.declared_return_type().cloned() {
-                let name = if self.ctx.in_async {
-                    "AsyncGenerator"
-                } else {
-                    if self.env.get_global_type(e.span, &"Generator".into()).is_ok() {
-                        "Generator"
-                    } else {
-                        "IterableIterator"
-                    }
-                };
-
-                self.assign_with_opts(
-                    &mut Default::default(),
-                    AssignOpts {
-                        span: e.span,
-                        allow_unknown_rhs: true,
-                        ..Default::default()
-                    },
-                    &declared,
-                    &Type::Ref(Ref {
-                        span: e.span,
-                        ctxt: ModuleId::builtin(),
-                        type_name: RTsEntityName::Ident(RIdent::new(name.into(), e.span)),
-                        type_args: Some(box TypeParamInstantiation {
+                if let Ok(declared) = self
+                    .get_iterator_element_type(span, Cow::Owned(declared))
+                    .map(Cow::into_owned)
+                {
+                    self.assign_with_opts(
+                        &mut Default::default(),
+                        AssignOpts {
                             span: e.span,
-                            params: vec![item_ty.clone()],
-                        }),
-                    }),
-                )
-                .report(&mut self.storage);
+                            allow_unknown_rhs: true,
+                            ..Default::default()
+                        },
+                        &declared,
+                        &item_ty,
+                    )
+                    .report(&mut self.storage);
+                }
             }
 
             self.scope.return_values.yield_types.push(item_ty);
