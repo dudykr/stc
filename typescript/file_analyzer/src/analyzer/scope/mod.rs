@@ -1091,7 +1091,7 @@ impl Analyzer<'_, '_> {
             );
         }
 
-        if !self.is_builtin && !is_override {
+        if !self.is_builtin && !is_override && !allow_multiple {
             let spans = self.data.var_spans.entry(name.clone()).or_default();
             let err = !spans.is_empty();
 
@@ -1099,7 +1099,10 @@ impl Analyzer<'_, '_> {
 
             if err {
                 for &span in &**spans {
-                    self.storage.report(Error::DuplicateVar { span });
+                    self.storage.report(Error::DuplicateVar {
+                        name: name.clone(),
+                        span,
+                    });
                 }
             }
         }

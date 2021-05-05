@@ -61,6 +61,7 @@ impl Errors {
 pub enum Error {
     /// TS2451
     DuplicateVar {
+        name: Id,
         span: Span,
     },
 
