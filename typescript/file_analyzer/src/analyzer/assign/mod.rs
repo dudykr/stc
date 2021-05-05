@@ -1355,6 +1355,12 @@ impl Analyzer<'_, '_> {
 
                     let res = self.assign_with_opts(data, opts, &parent, &rhs);
                     if res.is_ok() {
+                        slog::debug!(
+                            self.logger,
+                            "[assign] Parent assign successful: {} = {}",
+                            dump_type_as_string(&self.cm, &parent),
+                            dump_type_as_string(&self.cm, &rhs),
+                        );
                         return Ok(());
                     }
 
