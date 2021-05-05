@@ -80,8 +80,8 @@ pub(crate) struct AssignOpts {
     pub allow_assignment_of_array_to_optional_type_lit: bool,
 }
 #[derive(Default)]
-pub struct AssignData<'a> {
-    dejavu: Vec<(&'a Type, &'a Type)>,
+pub struct AssignData {
+    dejavu: Vec<(Type, Type)>,
 }
 
 impl Analyzer<'_, '_> {
@@ -203,6 +203,15 @@ impl Analyzer<'_, '_> {
         if self.is_builtin {
             return Ok(());
         }
+
+        if data
+            .dejavu
+            .iter()
+            .any(|(prev_l, prev_r)| prev_l.type_eq(left) && prev_r.type_eq(&right))
+        {
+            return Ok(());
+        }
+        data.dejavu.push((left.clone(), right.clone()));
 
         let _stack = stack::track(opts.span)?;
 
