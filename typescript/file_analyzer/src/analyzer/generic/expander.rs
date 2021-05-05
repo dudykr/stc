@@ -344,6 +344,7 @@ impl Analyzer<'_, '_> {
         // dbg!(child, parent);
 
         match self.assign_with_opts(
+            &mut Default::default(),
             AssignOpts {
                 span,
                 disallow_different_classes: opts.disallow_different_classes,

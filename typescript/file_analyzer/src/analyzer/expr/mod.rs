@@ -703,7 +703,8 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        self.assign(&declared.ty(), &cur.ty(), span).is_ok()
+        self.assign(&mut Default::default(), &declared.ty(), &cur.ty(), span)
+            .is_ok()
     }
 
     fn check_if_type_matches_key(&mut self, span: Span, declared: &Key, key_ty: &Type, allow_union: bool) -> bool {
@@ -859,7 +860,7 @@ impl Analyzer<'_, '_> {
                     // I guess it's because javascript work in that way.
                     let indexed = (index_ty.is_kwd(TsKeywordTypeKind::TsStringKeyword)
                         && prop_ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword))
-                        || self.assign(&index_ty, &prop_ty, span).is_ok();
+                        || self.assign(&mut Default::default(), &index_ty, &prop_ty, span).is_ok();
 
                     if indexed {
                         if let Some(ref type_ann) = type_ann {
@@ -1379,7 +1380,9 @@ impl Analyzer<'_, '_> {
 
                         ClassMember::IndexSignature(index) => {
                             if index.params.len() == 1 {
-                                if let Ok(()) = self.assign(&index.params[0].ty, &prop.ty(), span) {
+                                if let Ok(()) =
+                                    self.assign(&mut Default::default(), &index.params[0].ty, &prop.ty(), span)
+                                {
                                     return Ok(index.type_ann.clone().map(|v| *v).unwrap_or_else(|| Type::any(span)));
                                 }
                             }
@@ -1935,7 +1938,7 @@ impl Analyzer<'_, '_> {
                         // {
                         //     [P in string]: number;
                         // };
-                        if let Ok(()) = self.assign(&index, &prop.ty(), span) {
+                        if let Ok(()) = self.assign(&mut Default::default(), &index, &prop.ty(), span) {
                             // We handle `Partial<string>` at here.
                             let ty = m.ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(span));
 

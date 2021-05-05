@@ -1201,7 +1201,7 @@ impl Analyzer<'_, '_> {
                                         let ty = self.expand_fully(span, ty.clone(), true)?;
                                         let var_ty = self.expand_fully(span, generalized_var_ty, true)?;
 
-                                        let res = self.assign(&ty, &var_ty, span);
+                                        let res = self.assign(&mut Default::default(), &ty, &var_ty, span);
 
                                         if let Err(err) = res {
                                             self.storage.report(err);
@@ -1270,6 +1270,7 @@ impl Analyzer<'_, '_> {
                 Type::Function(..) => {
                     let res: ValidationResult<_> = try {
                         self.assign_with_opts(
+                            &mut Default::default(),
                             AssignOpts {
                                 span,
                                 allow_param_count_mismatch: true,

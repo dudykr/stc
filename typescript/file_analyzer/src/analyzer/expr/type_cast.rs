@@ -299,8 +299,8 @@ impl Analyzer<'_, '_> {
                                 if lm.params.type_eq(&rm.params) {
                                     if let Some(lt) = &lm.type_ann {
                                         if let Some(rt) = &rm.type_ann {
-                                            if self.assign(&lt, &rt, span).is_err()
-                                                && self.assign(&rt, &lt, span).is_err()
+                                            if self.assign(&mut Default::default(), &lt, &rt, span).is_err()
+                                                && self.assign(&mut Default::default(), &rt, &lt, span).is_err()
                                             {
                                                 return Ok(false);
                                             }
@@ -368,6 +368,7 @@ impl Analyzer<'_, '_> {
         //
         // We can cast A to B, thus from = A, to = B.
         if let Ok(()) = self.assign_with_opts(
+            &mut Default::default(),
             AssignOpts {
                 span,
                 ..Default::default()

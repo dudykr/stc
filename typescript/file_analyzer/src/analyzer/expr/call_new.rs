@@ -1730,6 +1730,7 @@ impl Analyzer<'_, '_> {
                 if !param.ty.is_any()
                     && self
                         .assign(
+                            &mut Default::default(),
                             &param.ty,
                             &Type::Keyword(RTsKeywordType {
                                 span,
@@ -2240,7 +2241,7 @@ impl Analyzer<'_, '_> {
                         RPat::Rest(..) => match param.ty.normalize() {
                             Type::Array(arr) => {
                                 // We should change type if the parameter is a rest parameter.
-                                let res = self.assign(&arr.elem_type, &arg.ty, arg.span());
+                                let res = self.assign(&mut Default::default(), &arr.elem_type, &arg.ty, arg.span());
                                 let err = match res {
                                     Ok(()) => continue,
                                     Err(err) => err,
@@ -2255,6 +2256,7 @@ impl Analyzer<'_, '_> {
                             }
                             _ => {
                                 if let Ok(()) = self.assign_with_opts(
+                                    &mut Default::default(),
                                     AssignOpts {
                                         span: arg.span(),
                                         allow_iterable_on_rhs: true,
@@ -2274,7 +2276,9 @@ impl Analyzer<'_, '_> {
                         match arg.ty.normalize() {
                             Type::Array(arg) => {
                                 // We should change type if the parameter is a rest parameter.
-                                if let Ok(()) = self.assign(&param.ty, &arg.elem_type, arg.span()) {
+                                if let Ok(()) =
+                                    self.assign(&mut Default::default(), &param.ty, &arg.elem_type, arg.span())
+                                {
                                     continue;
                                 }
                             }
@@ -2286,6 +2290,7 @@ impl Analyzer<'_, '_> {
                             _ => true,
                         };
                         if let Err(err) = self.assign_with_opts(
+                            &mut Default::default(),
                             AssignOpts {
                                 span: arg.span(),
                                 allow_unknown_rhs,
@@ -2548,6 +2553,7 @@ impl Analyzer<'_, '_> {
                     _ => {
                         if analyzer
                             .assign_with_opts(
+                                &mut Default::default(),
                                 AssignOpts {
                                     span,
                                     allow_unknown_rhs: true,
@@ -2561,7 +2567,10 @@ impl Analyzer<'_, '_> {
                         {
                             return ArgCheckResult::ArgTypeMismatch;
                         }
-                        if analyzer.assign(&arg.ty, &param.ty, span).is_err() {
+                        if analyzer
+                            .assign(&mut Default::default(), &arg.ty, &param.ty, span)
+                            .is_err()
+                        {
                             exact = false;
                         }
                     }

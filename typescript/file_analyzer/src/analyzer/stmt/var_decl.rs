@@ -262,7 +262,7 @@ impl Analyzer<'_, '_> {
                         };
 
                         match self
-                            .assign_with_opts(opts, &ty, &value_ty)
+                            .assign_with_opts(&mut Default::default(), opts, &ty, &value_ty)
                             .context("tried to assign from var decl")
                         {
                             Ok(()) => {

@@ -168,6 +168,7 @@ impl Analyzer<'_, '_> {
                             // It's okay to return more properties than declared.
                             child
                                 .assign_with_opts(
+                                    &mut Default::default(),
                                     AssignOpts {
                                         span,
                                         allow_unknown_rhs: true,
