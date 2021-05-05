@@ -358,7 +358,14 @@ impl Analyzer<'_, '_> {
                 in_cond: true,
                 ..self.ctx
             };
-            node.test.validate_with_default(&mut *self.with_ctx(ctx))?
+            let test = node.test.validate_with_default(&mut *self.with_ctx(ctx));
+            match test {
+                Ok(v) => v,
+                Err(err) => {
+                    self.storage.report(err);
+                    Type::any(node.test.span())
+                }
+            }
         };
         self.check_for_inifinite_loop(&test, &node.body);
 
