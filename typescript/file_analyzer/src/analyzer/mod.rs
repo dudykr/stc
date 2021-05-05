@@ -151,6 +151,7 @@ pub(crate) struct Ctx {
     in_static_property_initializer: bool,
 
     reevaluating_call_or_new: bool,
+    reevaluating_argument: bool,
 
     var_kind: VarDeclKind,
     pat_mode: PatMode,
@@ -446,6 +447,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 report_error_for_non_local_export: false,
                 in_static_property_initializer: false,
                 reevaluating_call_or_new: false,
+                reevaluating_argument: false,
                 var_kind: VarDeclKind::Var,
                 pat_mode: PatMode::Assign,
                 computed_prop_mode: ComputedPropMode::Object,

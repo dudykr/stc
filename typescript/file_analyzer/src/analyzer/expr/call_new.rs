@@ -1976,6 +1976,7 @@ impl Analyzer<'_, '_> {
 
             let ctx = Ctx {
                 in_argument: true,
+                reevaluating_argument: true,
                 ..self.ctx
             };
             let mut new_args = vec![];

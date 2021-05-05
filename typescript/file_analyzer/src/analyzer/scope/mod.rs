@@ -1091,7 +1091,12 @@ impl Analyzer<'_, '_> {
             );
         }
 
-        if !self.is_builtin && !is_override && !allow_multiple && !self.ctx.reevaluating_call_or_new {
+        if !self.is_builtin
+            && !is_override
+            && !allow_multiple
+            && !self.ctx.reevaluating_call_or_new
+            && !self.ctx.reevaluating_argument
+        {
             let spans = self.data.var_spans.entry(name.clone()).or_default();
             let err = !spans.is_empty();
 
