@@ -384,30 +384,33 @@ impl Analyzer<'_, '_> {
             };
 
             if let Some(declared) = self.scope.declared_return_type().cloned() {
-                if let Ok(declared) = self
+                match self
                     .get_iterator_element_type(span, Cow::Owned(declared))
                     .map(Cow::into_owned)
                 {
-                    match self.assign_with_opts(
-                        &mut Default::default(),
-                        AssignOpts {
-                            span: e.span,
-                            allow_unknown_rhs: true,
-                            use_missing_fields_for_class: true,
-                            ..Default::default()
-                        },
-                        &declared,
-                        &item_ty,
-                    ) {
-                        Ok(()) => {}
-                        Err(err) => {
-                            self.storage.report(err);
-                            return Ok(Type::any(span));
+                    Ok(declared) => {
+                        match self.assign_with_opts(
+                            &mut Default::default(),
+                            AssignOpts {
+                                span: e.span,
+                                allow_unknown_rhs: true,
+                                use_missing_fields_for_class: true,
+                                ..Default::default()
+                            },
+                            &declared,
+                            &item_ty,
+                        ) {
+                            Ok(()) => {}
+                            Err(err) => {
+                                self.storage.report(err);
+                                return Ok(Type::any(span));
+                            }
                         }
                     }
-                } else {
-                    self.storage.report(Error::SimpleAssignFailed { span });
-                    return Ok(Type::any(span));
+                    Err(err) => {
+                        self.storage.report(Error::SimpleAssignFailed { span });
+                        return Ok(Type::any(span));
+                    }
                 }
             }
 
