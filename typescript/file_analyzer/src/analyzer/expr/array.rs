@@ -23,6 +23,7 @@ use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
+use stc_ts_file_analyzer_macros::context;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::Array;
 use stc_ts_types::ComputedKey;
@@ -444,6 +445,11 @@ impl Analyzer<'_, '_> {
         ty: Cow<'a, Type>,
     ) -> ValidationResult<Cow<'a, Type>> {
         let ty_str = dump_type_as_string(&self.cm, &ty);
+
+        if let Ok(ty) = self.get_next_value_type_of_iterator(span, Cow::Borrowed(&ty)) {
+            return Ok(Cow::Owned(ty));
+        }
+
         let iterator = self.get_iterator(span, ty).with_context(|| {
             format!(
                 "tried to get a type of an iterator to get the element type of it ({})",
@@ -495,6 +501,14 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
+        let elem_ty = self.get_next_value_type_of_iterator(span, iterator)?;
+
+        Ok(Cow::Owned(elem_ty))
+    }
+
+    /// Returns the type of `iterator.next().value`.
+    #[context("tried to get type of `type.next().value`")]
+    fn get_next_value_type_of_iterator(&mut self, span: Span, iterator: Cow<Type>) -> ValidationResult<Type> {
         let next_ret_ty = self
             .call_property(
                 span,
@@ -540,6 +554,6 @@ impl Analyzer<'_, '_> {
 
         elem_ty = self.apply_type_facts_to_type(TypeFacts::Truthy, elem_ty);
 
-        Ok(Cow::Owned(elem_ty))
+        elem_ty
     }
 }
