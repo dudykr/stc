@@ -104,6 +104,9 @@ impl Analyzer<'_, '_> {
             let mut declared_ret_ty = try_opt!(f.return_type.validate_with(child));
 
             if let Some(ty) = &mut declared_ret_ty {
+                ty.make_cheap();
+
+                child.scope.declared_return_type = Some(ty.clone());
                 child.expand_return_type_of_fn(ty).report(&mut child.storage);
             }
 

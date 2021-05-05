@@ -79,6 +79,9 @@ pub(crate) struct Scope<'a> {
     kind: ScopeKind,
     pub declaring: Vec<Id>,
 
+    pub declared_return_type: Option<Type>,
+    pub declared_yield_type: Option<Type>,
+
     pub declaring_type_params: FxHashSet<Id>,
 
     pub(super) vars: FxHashMap<Id, VarInfo>,
@@ -360,6 +363,8 @@ impl Scope<'_> {
             parent: None,
             kind: self.kind,
             declaring: self.declaring,
+            declared_return_type: self.declared_return_type,
+            declared_yield_type: self.declared_yield_type,
             declaring_type_params: self.declaring_type_params,
             vars: self.vars,
             types: self.types,
@@ -1752,6 +1757,8 @@ impl<'a> Scope<'a> {
 
             kind,
             declaring: Default::default(),
+            declared_return_type: None,
+            declared_yield_type: None,
             declaring_type_params: Default::default(),
             vars: Default::default(),
             types: Default::default(),
