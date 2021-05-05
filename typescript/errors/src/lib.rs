@@ -567,6 +567,7 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2539
     NotVariable {
         // Span of rhs
         span: Span,
@@ -1188,6 +1189,8 @@ impl Error {
             Error::NonSymbolComputedPropInFormOfSymbol { .. } => 2471,
             Error::TypeUsedAsVar { .. } => 2693,
             Error::TypeNotFound { .. } => 2304,
+
+            Error::NotVariable { .. } => 2539,
 
             Error::NoInitAndNoDefault { .. } => 2525,
 
