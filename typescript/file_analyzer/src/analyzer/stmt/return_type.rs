@@ -244,7 +244,27 @@ impl Analyzer<'_, '_> {
         if let Some(declared) = self.scope.declared_return_type().cloned() {
             match (self.ctx.in_async, self.ctx.in_generator) {
                 // AsyncGenerator
-                (true, true) => {}
+                (true, true) => {
+                    self.assign_with_opts(
+                        &mut Default::default(),
+                        AssignOpts {
+                            span: node.span,
+                            allow_unknown_rhs: true,
+                            ..Default::default()
+                        },
+                        &declared,
+                        &Type::Ref(Ref {
+                            span: node.span,
+                            ctxt: ModuleId::builtin(),
+                            type_name: RTsEntityName::Ident(RIdent::new("AsyncGenerator".into(), node.span)),
+                            type_args: Some(box TypeParamInstantiation {
+                                span: node.span,
+                                params: vec![Type::any(DUMMY_SP), ty.clone()],
+                            }),
+                        }),
+                    )
+                    .report(&mut self.storage);
+                }
 
                 // Promise
                 (true, false) => {
@@ -270,7 +290,27 @@ impl Analyzer<'_, '_> {
                 }
 
                 // Generator
-                (false, true) => {}
+                (false, true) => {
+                    self.assign_with_opts(
+                        &mut Default::default(),
+                        AssignOpts {
+                            span: node.span,
+                            allow_unknown_rhs: true,
+                            ..Default::default()
+                        },
+                        &declared,
+                        &Type::Ref(Ref {
+                            span: node.span,
+                            ctxt: ModuleId::builtin(),
+                            type_name: RTsEntityName::Ident(RIdent::new("Generator".into(), node.span)),
+                            type_args: Some(box TypeParamInstantiation {
+                                span: node.span,
+                                params: vec![Type::any(DUMMY_SP), ty.clone()],
+                            }),
+                        }),
+                    )
+                    .report(&mut self.storage);
+                }
 
                 (false, false) => {
                     self.assign_with_opts(
