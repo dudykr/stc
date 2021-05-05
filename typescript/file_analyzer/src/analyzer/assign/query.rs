@@ -1,3 +1,4 @@
+use super::AssignData;
 use super::AssignOpts;
 use crate::analyzer::Analyzer;
 use crate::ValidationResult;
@@ -9,6 +10,7 @@ use stc_ts_types::Type;
 impl Analyzer<'_, '_> {
     pub(super) fn assign_to_query_type(
         &mut self,
+        data: &mut AssignData,
         opts: AssignOpts,
         to: &QueryType,
         rhs: &Type,
@@ -21,7 +23,7 @@ impl Analyzer<'_, '_> {
                     .resolve_typeof(opts.span, e)
                     .context("tried to resolve typeof for assignment")?;
 
-                return self.assign_with_opts(opts, &to, rhs);
+                return self.assign_with_opts(data, opts, &to, rhs);
             }
             QueryExpr::Import(_) => {
                 unimplemented!("assignment of query type with import")
@@ -31,6 +33,7 @@ impl Analyzer<'_, '_> {
 
     pub(super) fn assign_from_query_type(
         &mut self,
+        data: &mut AssignData,
         opts: AssignOpts,
         to: &Type,
         rhs: &QueryType,
@@ -43,7 +46,7 @@ impl Analyzer<'_, '_> {
                     .resolve_typeof(opts.span, e)
                     .context("tried to resolve typeof for assignment")?;
 
-                return self.assign_with_opts(opts, to, &rhs);
+                return self.assign_with_opts(data, opts, to, &rhs);
             }
             QueryExpr::Import(_) => {
                 unimplemented!("assignment of query type with import")

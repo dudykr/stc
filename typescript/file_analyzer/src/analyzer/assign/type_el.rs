@@ -1,3 +1,4 @@
+use super::AssignData;
 use super::AssignOpts;
 use crate::analyzer::util::ResultExt;
 use crate::analyzer::Analyzer;
@@ -47,6 +48,7 @@ impl Analyzer<'_, '_> {
     /// ```
     pub(super) fn assign_to_type_elements(
         &mut self,
+        data: &mut AssignData,
         opts: AssignOpts,
         lhs_span: Span,
         lhs: &[TypeElement],
@@ -78,13 +80,14 @@ impl Analyzer<'_, '_> {
 
             match *rhs.normalize() {
                 Type::Array(Array { ref elem_type, .. }) => {
-                    return self.assign_inner(numeric_keyed_ty, elem_type, opts)
+                    return self.assign_inner(data, numeric_keyed_ty, elem_type, opts)
                 }
 
                 Type::Tuple(Tuple { ref elems, .. }) => {
                     let mut errors = Errors::default();
                     for el in elems {
                         self.assign_inner(
+                            data,
                             numeric_keyed_ty,
                             &el.ty,
                             AssignOpts {
