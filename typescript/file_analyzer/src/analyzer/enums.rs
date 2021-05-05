@@ -393,6 +393,7 @@ impl Analyzer<'_, '_> {
                     span: DUMMY_SP,
                     kind: TsKeywordTypeKind::TsStringKeyword,
                 })),
+                is_static: false,
             }));
         }
 

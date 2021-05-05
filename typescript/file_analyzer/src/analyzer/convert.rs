@@ -349,6 +349,7 @@ impl Analyzer<'_, '_> {
             params: d.params.validate_with(self)?,
             readonly: d.readonly,
             type_ann: try_opt!(d.type_ann.validate_with(self)).map(Box::new),
+            is_static: d.is_static,
         })
     }
 }

@@ -1372,6 +1372,7 @@ impl Analyzer<'_, '_> {
                                             type_ann: None,
                                             decorators: Default::default(),
                                             declare: false,
+                                            is_override: false,
                                         }));
                                     }
 
