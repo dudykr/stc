@@ -1276,6 +1276,10 @@ externalModules/esnext/esnextmodulekindWithES5Target7.ts
 externalModules/esnext/esnextmodulekindWithES5Target8.ts
 externalModules/esnext/exnextmodulekindExportClassNameWithObject.ts
 externalModules/exportAmbientClassNameWithObject.ts
+externalModules/exportClassNameWithObjectAMD.ts
+externalModules/exportClassNameWithObjectCommonJS.ts
+externalModules/exportClassNameWithObjectSystem.ts
+externalModules/exportClassNameWithObjectUMD.ts
 functions/functionOverloadCompatibilityWithVoid01.ts
 functions/functionOverloadCompatibilityWithVoid02.ts
 functions/functionOverloadCompatibilityWithVoid03.ts
@@ -1516,6 +1520,7 @@ parser/ecmascript5/ObjectTypes/parserObjectType3.ts
 parser/ecmascript5/ObjectTypes/parserObjectType4.ts
 parser/ecmascript5/ParameterLists/parserParameterList12.ts
 parser/ecmascript5/ParameterLists/parserParameterList14.ts
+parser/ecmascript5/ParameterLists/parserParameterList15.ts
 parser/ecmascript5/PropertyAssignments/parserFunctionPropertyAssignment1.ts
 parser/ecmascript5/PropertyAssignments/parserFunctionPropertyAssignment2.ts
 parser/ecmascript5/PropertyAssignments/parserFunctionPropertyAssignment3.ts
