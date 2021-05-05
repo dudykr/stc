@@ -375,7 +375,7 @@ impl Analyzer<'_, '_> {
             let ty = res?;
 
             let item_ty = if e.delegate {
-                self.get_iterator_element_type(e.span, Cow::Owned(ty))
+                self.get_iterator_element_type(e.span, Cow::Owned(ty), false)
                     .context("tried to convert argument as an iterator for delegating yield")?
                     .into_owned()
                     .cheap()
@@ -385,7 +385,7 @@ impl Analyzer<'_, '_> {
 
             if let Some(declared) = self.scope.declared_return_type().cloned() {
                 match self
-                    .get_iterator_element_type(span, Cow::Owned(declared))
+                    .get_iterator_element_type(span, Cow::Owned(declared), true)
                     .map(Cow::into_owned)
                 {
                     Ok(declared) => {

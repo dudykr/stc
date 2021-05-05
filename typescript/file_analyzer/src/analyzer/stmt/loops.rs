@@ -300,7 +300,7 @@ impl Analyzer<'_, '_> {
 
                 let elem_ty = match kind {
                     ForHeadKind::Of => child
-                        .get_iterator_element_type(rhs.span(), Cow::Owned(rty))
+                        .get_iterator_element_type(rhs.span(), Cow::Owned(rty), false)
                         .convert_err(|err| match err {
                             Error::NotArrayType { span }
                                 if match rhs {

@@ -114,7 +114,7 @@ impl Analyzer<'_, '_> {
                         }
                         _ => {
                             let elem_type = self
-                                .get_iterator_element_type(span, Cow::Owned(element_type))
+                                .get_iterator_element_type(span, Cow::Owned(element_type), false)
                                 .context("tried to calculated the element type of a iterable provided to spread")?
                                 .into_owned();
 
@@ -439,15 +439,24 @@ impl Analyzer<'_, '_> {
 
         res.with_context(|| format!("tried to convert a type ({}) to an iterator", ty_str))
     }
+
+    /// # Parameters
+    ///
+    /// ## try_next_value
+    ///
+    /// If it's true, this method will try `ty.next().value`.
     pub(crate) fn get_iterator_element_type<'a>(
         &mut self,
         span: Span,
         ty: Cow<'a, Type>,
+        try_next_value: bool,
     ) -> ValidationResult<Cow<'a, Type>> {
         let ty_str = dump_type_as_string(&self.cm, &ty);
 
-        if let Ok(ty) = self.get_next_value_type_of_iterator(span, Cow::Borrowed(&ty)) {
-            return Ok(Cow::Owned(ty));
+        if try_next_value {
+            if let Ok(ty) = self.get_next_value_type_of_iterator(span, Cow::Borrowed(&ty)) {
+                return Ok(Cow::Owned(ty));
+            }
         }
 
         let iterator = self.get_iterator(span, ty).with_context(|| {
@@ -478,7 +487,9 @@ impl Analyzer<'_, '_> {
                 let mut types = u
                     .types
                     .iter()
-                    .map(|iterator| self.get_iterator_element_type(iterator.span(), Cow::Borrowed(iterator)))
+                    .map(|iterator| {
+                        self.get_iterator_element_type(iterator.span(), Cow::Borrowed(iterator), try_next_value)
+                    })
                     .map(|ty| ty.map(Cow::into_owned))
                     .collect::<Result<Vec<_>, _>>()?;
                 types.dedup_type();
@@ -490,7 +501,9 @@ impl Analyzer<'_, '_> {
                 let mut types = i
                     .types
                     .iter()
-                    .map(|iterator| self.get_iterator_element_type(iterator.span(), Cow::Borrowed(iterator)))
+                    .map(|iterator| {
+                        self.get_iterator_element_type(iterator.span(), Cow::Borrowed(iterator), try_next_value)
+                    })
                     .map(|ty| ty.map(Cow::into_owned))
                     .collect::<Result<Vec<_>, _>>()?;
                 types.dedup_type();
