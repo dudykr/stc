@@ -388,7 +388,7 @@ impl Analyzer<'_, '_> {
                     .get_iterator_element_type(span, Cow::Owned(declared))
                     .map(Cow::into_owned)
                 {
-                    self.assign_with_opts(
+                    match self.assign_with_opts(
                         &mut Default::default(),
                         AssignOpts {
                             span: e.span,
@@ -398,8 +398,13 @@ impl Analyzer<'_, '_> {
                         },
                         &declared,
                         &item_ty,
-                    )
-                    .report(&mut self.storage);
+                    ) {
+                        Ok(()) => {}
+                        Err(err) => {
+                            self.storage.report(err);
+                            return Ok(Type::any(span));
+                        }
+                    }
                 }
             }
 
