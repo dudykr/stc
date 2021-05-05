@@ -74,147 +74,173 @@ impl Analyzer<'_, '_> {
 
         // let mut old_ret_tys = self.scope.return_types.take();
 
-        let mut values: ReturnValues = {
-            let ctx = Ctx {
-                preserve_ref: true,
-                ..self.ctx
+        let ret_ty = (|| -> ValidationResult<_> {
+            let mut values: ReturnValues = {
+                let ctx = Ctx {
+                    preserve_ref: true,
+                    ..self.ctx
+                };
+                self.with_ctx(ctx).with(|analyzer: &mut Analyzer| {
+                    analyzer.validate_stmts_and_collect(&stmts.iter().collect::<Vec<_>>());
+
+                    take(&mut analyzer.scope.return_values)
+                })
             };
-            self.with_ctx(ctx).with(|analyzer: &mut Analyzer| {
-                analyzer.validate_stmts_and_collect(&stmts.iter().collect::<Vec<_>>());
 
-                take(&mut analyzer.scope.return_values)
-            })
-        };
+            {
+                //  Expand return types if no element references a type parameter
+                let can_expand = values.return_types.iter().all(|ty| {
+                    if should_preserve_ref(ty) {
+                        return false;
+                    }
 
-        {
-            //  Expand return types if no element references a type parameter
-            let can_expand = values.return_types.iter().all(|ty| {
-                if should_preserve_ref(ty) {
-                    return false;
+                    true
+                });
+
+                if can_expand {
+                    values.return_types = values
+                        .return_types
+                        .into_iter()
+                        .map(|ty| {
+                            debug_assert_ne!(ty.span(), DUMMY_SP);
+                            let ctx = Ctx {
+                                preserve_ref: true,
+                                ignore_expand_prevention_for_top: false,
+                                ignore_expand_prevention_for_all: false,
+                                ..self.ctx
+                            };
+                            self.with_ctx(ctx).expand_fully(ty.span(), ty, true)
+                        })
+                        .collect::<Result<_, _>>()
+                        .report(&mut self.storage)
+                        .unwrap_or_default();
+
+                    values.yield_types = values
+                        .yield_types
+                        .into_iter()
+                        .map(|ty| self.expand_fully(ty.span(), ty, true))
+                        .collect::<Result<_, _>>()
+                        .report(&mut self.storage)
+                        .unwrap_or_default();
+                }
+            }
+
+            slog::debug!(
+                self.logger,
+                "visit_stmts_for_return: types.len() = {}",
+                values.return_types.len()
+            );
+
+            let mut actual = Vec::with_capacity(values.return_types.len());
+            for mut ty in values.return_types {
+                ty = ty.fold_with(&mut KeyInliner { analyzer: self });
+                if values.should_generalize {
+                    ty = ty.generalize_lit();
                 }
 
-                true
-            });
-
-            if can_expand {
-                values.return_types = values
-                    .return_types
-                    .into_iter()
-                    .map(|ty| {
-                        debug_assert_ne!(ty.span(), DUMMY_SP);
-                        let ctx = Ctx {
-                            preserve_ref: true,
-                            ignore_expand_prevention_for_top: false,
-                            ignore_expand_prevention_for_all: false,
-                            ..self.ctx
-                        };
-                        self.with_ctx(ctx).expand_fully(ty.span(), ty, true)
-                    })
-                    .collect::<Result<_, _>>()
-                    .report(&mut self.storage)
-                    .unwrap_or_default();
-
-                values.yield_types = values
-                    .yield_types
-                    .into_iter()
-                    .map(|ty| self.expand_fully(ty.span(), ty, true))
-                    .collect::<Result<_, _>>()
-                    .report(&mut self.storage)
-                    .unwrap_or_default();
-            }
-        }
-
-        slog::debug!(
-            self.logger,
-            "visit_stmts_for_return: types.len() = {}",
-            values.return_types.len()
-        );
-
-        let mut actual = Vec::with_capacity(values.return_types.len());
-        for mut ty in values.return_types {
-            ty = ty.fold_with(&mut KeyInliner { analyzer: self });
-            if values.should_generalize {
-                ty = ty.generalize_lit();
+                actual.push(ty);
             }
 
-            actual.push(ty);
-        }
+            if is_generator {
+                let mut types = Vec::with_capacity(values.yield_types.len());
+                for ty in values.yield_types {
+                    let ty = self.simplify(ty);
+                    types.push(ty);
+                }
 
-        if is_generator {
-            let mut types = Vec::with_capacity(values.yield_types.len());
-            for ty in values.yield_types {
-                let ty = self.simplify(ty);
-                types.push(ty);
-            }
-
-            let yield_ty = if types.is_empty() {
-                Type::any(DUMMY_SP)
-            } else {
-                Type::union(types)
-            };
-
-            let ret_ty = if actual.is_empty() {
-                Type::void(span)
-            } else {
-                self.simplify(Type::union(actual))
-            };
-
-            return Ok(Some(Type::Ref(Ref {
-                span: yield_ty.span().or_else(|| ret_ty.span()),
-                ctxt: ModuleId::builtin(),
-                type_name: if is_async {
-                    RTsEntityName::Ident(RIdent::new("AsyncGenerator".into(), DUMMY_SP))
+                let yield_ty = if types.is_empty() {
+                    Type::any(DUMMY_SP)
                 } else {
-                    if self.env.get_global_type(span, &"Generator".into()).is_ok() {
-                        RTsEntityName::Ident(RIdent::new("Generator".into(), DUMMY_SP))
+                    Type::union(types)
+                };
+
+                let ret_ty = if actual.is_empty() {
+                    Type::void(span)
+                } else {
+                    self.simplify(Type::union(actual))
+                };
+
+                return Ok(Some(Type::Ref(Ref {
+                    span: yield_ty.span().or_else(|| ret_ty.span()),
+                    ctxt: ModuleId::builtin(),
+                    type_name: if is_async {
+                        RTsEntityName::Ident(RIdent::new("AsyncGenerator".into(), DUMMY_SP))
                     } else {
-                        RTsEntityName::Ident(RIdent::new("IterableIterator".into(), DUMMY_SP))
-                    }
-                },
-                type_args: Some(box TypeParamInstantiation {
+                        if self.env.get_global_type(span, &"Generator".into()).is_ok() {
+                            RTsEntityName::Ident(RIdent::new("Generator".into(), DUMMY_SP))
+                        } else {
+                            RTsEntityName::Ident(RIdent::new("IterableIterator".into(), DUMMY_SP))
+                        }
+                    },
+                    type_args: Some(box TypeParamInstantiation {
+                        span,
+                        params: vec![
+                            yield_ty,
+                            ret_ty,
+                            Type::Keyword(RTsKeywordType {
+                                span,
+                                kind: TsKeywordTypeKind::TsUnknownKeyword,
+                            }),
+                        ],
+                    }),
+                })));
+            }
+
+            if is_async {
+                let ret_ty = if actual.is_empty() {
+                    Type::void(span)
+                } else {
+                    self.simplify(Type::union(actual))
+                };
+
+                return Ok(Some(Type::Ref(Ref {
                     span,
-                    params: vec![
-                        yield_ty,
-                        ret_ty,
-                        Type::Keyword(RTsKeywordType {
-                            span,
-                            kind: TsKeywordTypeKind::TsUnknownKeyword,
-                        }),
-                    ],
-                }),
-            })));
+                    ctxt: ModuleId::builtin(),
+                    type_name: RTsEntityName::Ident(RIdent::new("Promise".into(), DUMMY_SP)),
+                    type_args: Some(box TypeParamInstantiation {
+                        span,
+                        params: vec![ret_ty],
+                    }),
+                })));
+            }
+
+            if actual.is_empty() {
+                return Ok(None);
+            }
+
+            actual.dedup_type();
+
+            let ty = Type::union(actual);
+            let ty = self.simplify(ty);
+
+            // print_type("Return", &self.cm, &ty);
+
+            Ok(Some(ty))
+        })()?;
+
+        if self.is_builtin {
+            return Ok(ret_ty);
         }
 
-        if is_async {
-            let ret_ty = if actual.is_empty() {
-                Type::void(span)
-            } else {
-                self.simplify(Type::union(actual))
-            };
-
-            return Ok(Some(Type::Ref(Ref {
-                span,
-                ctxt: ModuleId::builtin(),
-                type_name: RTsEntityName::Ident(RIdent::new("Promise".into(), DUMMY_SP)),
-                type_args: Some(box TypeParamInstantiation {
-                    span,
-                    params: vec![ret_ty],
-                }),
-            })));
+        if let Some(declared) = self.scope.declared_return_type().cloned() {
+            if is_generator && declared.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
+                // We use different error code
+            } else if let Some(ret_ty) = &ret_ty {
+                self.assign_with_opts(
+                    &mut Default::default(),
+                    AssignOpts {
+                        span,
+                        allow_unknown_rhs: true,
+                        ..Default::default()
+                    },
+                    &declared,
+                    ret_ty,
+                )
+                .report(&mut self.storage);
+            }
         }
 
-        if actual.is_empty() {
-            return Ok(None);
-        }
-
-        actual.dedup_type();
-
-        let ty = Type::union(actual);
-        let ty = self.simplify(ty);
-
-        // print_type("Return", &self.cm, &ty);
-
-        Ok(Some(ty))
+        Ok(ret_ty)
     }
 }
 
