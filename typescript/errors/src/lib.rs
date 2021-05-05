@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2451
+    DuplicateVar {
+        span: Span,
+    },
+
     /// TS2725
     ClassNameCannotBeObjectWhenTargetingEs5WithModule {
         span: Span,
@@ -1385,6 +1390,8 @@ impl Error {
             Error::ReadOnly { .. } => 2546,
 
             Error::ClassNameCannotBeObjectWhenTargetingEs5WithModule { .. } => 2725,
+
+            Error::DuplicateVar { .. } => 2451,
 
             _ => 0,
         }

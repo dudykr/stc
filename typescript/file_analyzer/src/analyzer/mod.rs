@@ -41,6 +41,7 @@ use stc_ts_storage::Builtin;
 use stc_ts_storage::Info;
 use stc_ts_storage::Storage;
 use stc_ts_types::{Id, ModuleId, ModuleTypeData, SymbolIdGenerator};
+use stc_utils::FastHashMap;
 use std::mem::take;
 use std::{
     fmt::Debug,
@@ -244,6 +245,9 @@ struct AnalyzerData {
 
     /// Filled only once, by `fill_known_type_names`.
     all_local_type_names: FxHashSet<Id>,
+
+    /// Spans of declared variables.
+    var_spans: FastHashMap<Id, Vec<Span>>,
 }
 
 /// TODO

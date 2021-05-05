@@ -1091,6 +1091,19 @@ impl Analyzer<'_, '_> {
             );
         }
 
+        if !is_override {
+            let spans = self.data.var_spans.entry(name.clone()).or_default();
+            let err = !spans.is_empty();
+
+            spans.push(span);
+
+            if err {
+                for &span in &**spans {
+                    self.storage.report(Error::DuplicateVar { span });
+                }
+            }
+        }
+
         match kind {
             VarDeclKind::Let | VarDeclKind::Const => {
                 if *name.sym() == js_word!("let") || *name.sym() == js_word!("const") {
