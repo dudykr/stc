@@ -286,7 +286,7 @@ impl Analyzer<'_, '_> {
                 }
             }
             ClassMember::Method(lm) => {
-                if lm.accessibility == Some(Accessibility::Private) {
+                if lm.accessibility == Some(Accessibility::Private) || lm.key.is_private() {
                     return Err(Error::PrivateMethodIsDifferent { span });
                 }
 
@@ -295,8 +295,8 @@ impl Analyzer<'_, '_> {
                         ClassMember::Constructor(_) => {}
                         ClassMember::Method(rm) => {
                             //
-                            if self.assign(data, &lm.key.ty(), &rm.key.ty(), opts.span).is_ok() {
-                                if rm.accessibility == Some(Accessibility::Private) {
+                            if self.key_matches(span, &lm.key, &rm.key, false) {
+                                if rm.accessibility == Some(Accessibility::Private) || rm.key.is_private() {
                                     return Err(Error::PrivateMethodIsDifferent { span });
                                 }
 
