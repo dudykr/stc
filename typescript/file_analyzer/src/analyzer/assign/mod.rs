@@ -1424,6 +1424,16 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                if !errors.is_empty() {
+                    return Err(Error::AssignFailed {
+                        span,
+                        left: box to.clone(),
+                        right: box rhs.clone(),
+                        right_ident: opts.right_ident_span,
+                        cause: errors,
+                    });
+                }
+
                 return Ok(());
             }
 
