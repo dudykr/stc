@@ -666,7 +666,7 @@ impl Analyzer<'_, '_> {
                 if !opts.allow_unknown_rhs {
                     let lhs = self.type_to_type_lit(span, to)?;
                     if let Some(lhs) = lhs {
-                        self.assign_to_type_elements(opts, lhs.span, &lhs.members, &rhs, lhs.metadata)
+                        self.assign_to_type_elements(data, opts, lhs.span, &lhs.members, &rhs, lhs.metadata)
                             .with_context(|| {
                                 format!(
                                     "tried to check if unknown rhs exists while assigning to an intersection \
@@ -1315,6 +1315,7 @@ impl Analyzer<'_, '_> {
                 // TODO: Optimize handling of unknown rhs
 
                 self.assign_to_type_elements(
+                    data,
                     AssignOpts {
                         allow_unknown_rhs: true,
                         allow_assignment_of_array_to_optional_type_lit: true,
@@ -1391,7 +1392,7 @@ impl Analyzer<'_, '_> {
                 if !opts.allow_unknown_rhs {
                     let lhs = self.type_to_type_lit(span, to)?;
                     if let Some(lhs) = lhs {
-                        self.assign_to_type_elements(opts, span, &lhs.members, rhs, Default::default())
+                        self.assign_to_type_elements(data, opts, span, &lhs.members, rhs, Default::default())
                             .with_context(|| {
                                 format!(
                                     "tried to assign a type to an interface to check if unknown rhs exists\nLHS: {}",
@@ -1408,7 +1409,7 @@ impl Analyzer<'_, '_> {
                 ref members, metadata, ..
             }) => {
                 return self
-                    .assign_to_type_elements(opts, span, &members, rhs, *metadata)
+                    .assign_to_type_elements(data, opts, span, &members, rhs, *metadata)
                     .context("tried to assign a type to type elements");
             }
 

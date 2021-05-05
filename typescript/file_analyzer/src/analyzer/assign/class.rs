@@ -107,6 +107,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 self.assign_to_type_elements(
+                    data,
                     AssignOpts {
                         allow_unknown_rhs: true,
                         ..opts
@@ -215,6 +216,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 self.assign_to_type_elements(
+                    data,
                     AssignOpts {
                         allow_unknown_rhs: true,
                         ..opts

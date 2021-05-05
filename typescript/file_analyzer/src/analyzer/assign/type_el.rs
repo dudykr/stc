@@ -164,7 +164,7 @@ impl Analyzer<'_, '_> {
                         .map(Cow::into_owned)
                         .map(Type::TypeLit)
                     {
-                        return self.assign_to_type_elements(opts, lhs_span, lhs, &rty, lhs_metadata);
+                        return self.assign_to_type_elements(data, opts, lhs_span, lhs, &rty, lhs_metadata);
                     }
 
                     return Err(Error::SimpleAssignFailed { span });
@@ -207,6 +207,7 @@ impl Analyzer<'_, '_> {
 
                     return self
                         .assign_to_type_elements(
+                            data,
                             AssignOpts {
                                 allow_unknown_rhs: true,
                                 ..opts
@@ -227,6 +228,7 @@ impl Analyzer<'_, '_> {
                     {
                         return self
                             .assign_to_type_elements(
+                                data,
                                 AssignOpts {
                                     allow_unknown_rhs: true,
                                     ..opts
@@ -263,6 +265,7 @@ impl Analyzer<'_, '_> {
 
                     return self
                         .assign_to_type_elements(
+                            data,
                             AssignOpts {
                                 allow_unknown_rhs: true,
                                 ..opts
@@ -300,6 +303,7 @@ impl Analyzer<'_, '_> {
 
                     return self
                         .assign_to_type_elements(
+                            data,
                             AssignOpts {
                                 allow_unknown_rhs: true,
                                 ..opts
