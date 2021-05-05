@@ -138,6 +138,8 @@ pub(crate) struct Ctx {
 
     is_calling_iife: bool,
 
+    in_ts_fn_type: bool,
+
     /// `true` if unresolved references should be rerpoted.
     ///
     /// For example, while validating type parameter instantiation, unresolved
@@ -443,6 +445,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 in_async: false,
                 in_generator: false,
                 is_calling_iife: false,
+                in_ts_fn_type: false,
                 in_actual_type: false,
                 report_error_for_non_local_export: false,
                 in_static_property_initializer: false,

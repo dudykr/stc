@@ -518,7 +518,11 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsFnType) -> ValidationResult<stc_ts_types::Function> {
-        self.with_scope_for_type_params(|child: &mut Analyzer| {
+        let ctx = Ctx {
+            in_ts_fn_type: true,
+            ..self.ctx
+        };
+        self.with_ctx(ctx).with_scope_for_type_params(|child: &mut Analyzer| {
             let type_params = try_opt!(t.type_params.validate_with(child));
 
             for param in &t.params {

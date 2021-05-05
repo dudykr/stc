@@ -1096,6 +1096,7 @@ impl Analyzer<'_, '_> {
             && !allow_multiple
             && !self.ctx.reevaluating_call_or_new
             && !self.ctx.reevaluating_argument
+            && !self.ctx.in_ts_fn_type
         {
             let spans = self.data.var_spans.entry(name.clone()).or_default();
             let err = !spans.is_empty();
