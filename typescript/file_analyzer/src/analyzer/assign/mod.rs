@@ -224,6 +224,7 @@ impl Analyzer<'_, '_> {
         // self.verify_before_assign("rhs", right);
 
         let res = self.assign_inner(data, left, right, opts);
+        data.dejavu.pop();
         match res {
             Err(Error::Errors { errors, .. }) if errors.is_empty() => return Ok(()),
             _ => {}
