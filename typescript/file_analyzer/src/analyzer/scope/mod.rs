@@ -80,7 +80,6 @@ pub(crate) struct Scope<'a> {
     pub declaring: Vec<Id>,
 
     pub declared_return_type: Option<Type>,
-    pub declared_yield_type: Option<Type>,
 
     pub declaring_type_params: FxHashSet<Id>,
 
@@ -364,7 +363,6 @@ impl Scope<'_> {
             kind: self.kind,
             declaring: self.declaring,
             declared_return_type: self.declared_return_type,
-            declared_yield_type: self.declared_yield_type,
             declaring_type_params: self.declaring_type_params,
             vars: self.vars,
             types: self.types,
@@ -462,20 +460,6 @@ impl Scope<'_> {
         }
 
         self.parent?.declared_return_type()
-    }
-
-    pub fn declared_yield_type(&self) -> Option<&Type> {
-        match &self.declared_yield_type {
-            Some(v) => return Some(v),
-            None => {}
-        }
-
-        match self.kind {
-            ScopeKind::Fn | ScopeKind::Method { .. } | ScopeKind::Constructor | ScopeKind::ArrowFn => return None,
-            _ => {}
-        }
-
-        self.parent?.declared_yield_type()
     }
 
     pub fn remove_declaring<I>(&mut self, names: impl IntoIterator<IntoIter = I, Item = Id>)
@@ -1785,7 +1769,6 @@ impl<'a> Scope<'a> {
             kind,
             declaring: Default::default(),
             declared_return_type: None,
-            declared_yield_type: None,
             declaring_type_params: Default::default(),
             vars: Default::default(),
             types: Default::default(),
