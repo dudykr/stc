@@ -295,6 +295,7 @@ classes/members/privateNames/privateNamesInterfaceExtendingClass.ts
 classes/members/privateNames/privateNamesNoDelete.ts
 classes/members/privateNames/privateNamesNotAllowedAsParameters.ts
 classes/members/privateNames/privateNamesNotAllowedInVariableDeclarations.ts
+classes/members/privateNames/privateNamesUnique-1.ts
 classes/members/privateNames/privateNamesUnique-4.ts
 classes/members/privateNames/privateNamesUnique-5.ts
 classes/methodDeclarations/optionalMethodDeclarations.ts
