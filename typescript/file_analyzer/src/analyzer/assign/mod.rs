@@ -79,6 +79,10 @@ pub(crate) struct AssignOpts {
 
     pub allow_assignment_of_array_to_optional_type_lit: bool,
 }
+#[derive(Default)]
+pub struct AssignData<'a> {
+    dejavu: Vec<(&'a Type, &'a Type)>,
+}
 
 impl Analyzer<'_, '_> {
     pub(crate) fn assign_with_op(&mut self, span: Span, op: AssignOp, lhs: &Type, rhs: &Type) -> ValidationResult<()> {
@@ -171,7 +175,13 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO: Change argument order. (Span should come first).
-    pub(crate) fn assign(&mut self, left: &Type, right: &Type, span: Span) -> ValidationResult<()> {
+    pub(crate) fn assign(
+        &mut self,
+        data: &mut AssignData,
+        left: &Type,
+        right: &Type,
+        span: Span,
+    ) -> ValidationResult<()> {
         self.assign_with_opts(
             AssignOpts {
                 span,
@@ -182,7 +192,13 @@ impl Analyzer<'_, '_> {
         )
     }
 
-    pub(crate) fn assign_with_opts(&mut self, opts: AssignOpts, left: &Type, right: &Type) -> ValidationResult<()> {
+    pub(crate) fn assign_with_opts(
+        &mut self,
+        data: &mut AssignData,
+        opts: AssignOpts,
+        left: &Type,
+        right: &Type,
+    ) -> ValidationResult<()> {
         if self.is_builtin {
             return Ok(());
         }
@@ -479,7 +495,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 let mut new_lhs = self.expand_top_ref(span, Cow::Borrowed(to))?.into_owned();
-                self.replace(&mut new_lhs, &[(to, &Type::any(span))]);
+                // self.replace(&mut new_lhs, &[(to, &Type::any(span))]);
 
                 return self
                     .assign_inner(&new_lhs, rhs, opts)
@@ -714,7 +730,7 @@ impl Analyzer<'_, '_> {
         match rhs {
             Type::Ref(..) => {
                 let mut new_rhs = self.expand_top_ref(span, Cow::Borrowed(rhs))?.into_owned();
-                self.replace(&mut new_rhs, &[(rhs, &Type::any(span))]);
+                // self.replace(&mut new_rhs, &[(rhs, &Type::any(span))]);
                 return self
                     .assign_inner(to, &new_rhs, opts)
                     .context("tried to assign a type expanded from a reference to another type");

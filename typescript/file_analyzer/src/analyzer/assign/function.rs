@@ -33,6 +33,7 @@ impl Analyzer<'_, '_> {
     /// ```
     pub(super) fn assign_to_function(
         &mut self,
+        data: &mut AssignData,
         opts: AssignOpts,
         lt: &Type,
         l: &Function,
@@ -114,7 +115,7 @@ impl Analyzer<'_, '_> {
                             }
 
                             if let Some(r_ret_ty) = &rm.ret_ty {
-                                if self.assign_with_opts(opts, &l.ret_ty, &r_ret_ty).is_err() {
+                                if self.assign_with_opts(data, opts, &l.ret_ty, &r_ret_ty).is_err() {
                                     continue;
                                 }
                             }
@@ -142,6 +143,8 @@ impl Analyzer<'_, '_> {
 
     pub(super) fn assign_to_constructor(
         &mut self,
+        data: &mut AssignData,
+
         opts: AssignOpts,
         lt: &Type,
         l: &Constructor,
@@ -290,7 +293,13 @@ impl Analyzer<'_, '_> {
     /// # Notes
     ///
     ///  - `string` is assignable to `...args: any[]`.
-    fn assign_param(&mut self, l: &FnParam, r: &FnParam, opts: AssignOpts) -> ValidationResult<()> {
+    fn assign_param(
+        &mut self,
+        data: &mut AssignData,
+        l: &FnParam,
+        r: &FnParam,
+        opts: AssignOpts,
+    ) -> ValidationResult<()> {
         debug_assert!(
             !opts.span.is_dummy(),
             "Cannot assign function parameters with dummy span"
@@ -345,7 +354,13 @@ impl Analyzer<'_, '_> {
     /// ```
     ///
     /// So, it's an error if `l.params.len() < r.params.len()`.
-    pub(crate) fn assign_params(&mut self, opts: AssignOpts, l: &[FnParam], r: &[FnParam]) -> ValidationResult<()> {
+    pub(crate) fn assign_params(
+        &mut self,
+        data: &mut AssignData,
+        opts: AssignOpts,
+        l: &[FnParam],
+        r: &[FnParam],
+    ) -> ValidationResult<()> {
         let span = opts.span;
 
         let li = l.iter().filter(|p| match p.pat {

@@ -1,3 +1,4 @@
+use super::AssignData;
 use super::AssignOpts;
 use crate::analyzer::Analyzer;
 use crate::ValidationResult;
@@ -14,13 +15,19 @@ use swc_common::EqIgnoreSpan;
 use swc_ecma_ast::Accessibility;
 
 impl Analyzer<'_, '_> {
-    pub(super) fn assign_to_class_def(&mut self, opts: AssignOpts, l: &ClassDef, r: &Type) -> ValidationResult<()> {
+    pub(super) fn assign_to_class_def(
+        &mut self,
+        data: &mut AssignData,
+        opts: AssignOpts,
+        l: &ClassDef,
+        r: &Type,
+    ) -> ValidationResult<()> {
         let r = r.normalize();
 
         match r {
             Type::Ref(..) => {
                 let r = self.expand_top_ref(opts.span, Cow::Borrowed(r))?;
-                return self.assign_to_class_def(opts, l, &r);
+                return self.assign_to_class_def(data, opts, l, &r);
             }
 
             Type::Query(r_ty) => match &*r_ty.expr {
@@ -29,7 +36,7 @@ impl Analyzer<'_, '_> {
                         .resolve_typeof(opts.span, e)
                         .context("tried to resolve typeof for assignment")?;
 
-                    return self.assign_to_class_def(opts, l, &rhs);
+                    return self.assign_to_class_def(data, opts, l, &rhs);
                 }
                 QueryExpr::Import(_) => {}
             },
@@ -49,7 +56,7 @@ impl Analyzer<'_, '_> {
                     // let p: Parent;
                     // `p = c` is valid
                     if let Some(parent) = &rc.super_class {
-                        if self.assign_to_class_def(opts, l, &parent).is_ok() {
+                        if self.assign_to_class_def(data, opts, l, &parent).is_ok() {
                             return Ok(());
                         }
                     }
@@ -71,7 +78,7 @@ impl Analyzer<'_, '_> {
                 };
 
                 for (i, lm) in l.body.iter().enumerate() {
-                    self.assign_class_members_to_class_member(opts, lm, r_body)
+                    self.assign_class_members_to_class_member(data, opts, lm, r_body)
                         .with_context(|| {
                             format!(
                                 "tried to assign class members to {}th class member\n{:#?}\n{:#?}",
@@ -125,7 +132,13 @@ impl Analyzer<'_, '_> {
         })
     }
 
-    pub(super) fn assign_to_class(&mut self, opts: AssignOpts, l: &Class, r: &Type) -> ValidationResult<()> {
+    pub(super) fn assign_to_class(
+        &mut self,
+        data: &mut AssignData,
+        opts: AssignOpts,
+        l: &Class,
+        r: &Type,
+    ) -> ValidationResult<()> {
         // debug_assert!(!span.is_dummy());
 
         let r = r.normalize();
@@ -133,7 +146,7 @@ impl Analyzer<'_, '_> {
         match r {
             Type::Ref(..) => {
                 let r = self.expand_top_ref(opts.span, Cow::Borrowed(r))?;
-                return self.assign_to_class(opts, l, &r);
+                return self.assign_to_class(data, opts, l, &r);
             }
 
             Type::Class(rc) => {
@@ -150,7 +163,7 @@ impl Analyzer<'_, '_> {
                         let parent = self
                             .instantiate_class(opts.span, &parent)
                             .context("tried to instanitate class to asssign the super class to a class")?;
-                        if self.assign_to_class(opts, l, &parent).is_ok() {
+                        if self.assign_to_class(data, opts, l, &parent).is_ok() {
                             return Ok(());
                         }
                     }
@@ -250,6 +263,7 @@ impl Analyzer<'_, '_> {
 
     fn assign_class_members_to_class_member(
         &mut self,
+        data: &mut AssignData,
         opts: AssignOpts,
         l: &ClassMember,
         r: &[ClassMember],
