@@ -206,19 +206,6 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        if data
-            .dejavu
-            .iter()
-            .any(|(prev_l, prev_r)| prev_l.type_eq(left) && prev_r.type_eq(&right))
-        {
-            let l = dump_type_as_string(&self.cm, &left);
-            let r = dump_type_as_string(&self.cm, &right);
-
-            slog::info!(self.logger, "[assign/dejavu] {} = {}\n{:?} ", l, r, opts);
-            return Ok(());
-        }
-        data.dejavu.push((left.clone(), right.clone()));
-
         let _stack = stack::track(opts.span)?;
 
         // if cfg!(debug_assertions) && span.is_dummy() {
@@ -228,10 +215,7 @@ impl Analyzer<'_, '_> {
 
         // self.verify_before_assign("lhs", left);
         // self.verify_before_assign("rhs", right);
-
         let res = self.assign_inner(data, left, right, opts);
-        let dejavu = data.dejavu.pop();
-        debug_assert!(dejavu.is_some());
 
         match res {
             Err(Error::Errors { errors, .. }) if errors.is_empty() => return Ok(()),
@@ -318,19 +302,38 @@ impl Analyzer<'_, '_> {
         Ok(Cow::Borrowed(ty))
     }
 
-    fn assign_inner(&mut self, data: &mut AssignData, to: &Type, rhs: &Type, opts: AssignOpts) -> ValidationResult<()> {
+    fn assign_inner(
+        &mut self,
+        data: &mut AssignData,
+        left: &Type,
+        right: &Type,
+        opts: AssignOpts,
+    ) -> ValidationResult<()> {
+        let l = dump_type_as_string(&self.cm, &left);
+        let r = dump_type_as_string(&self.cm, &right);
+
+        if data
+            .dejavu
+            .iter()
+            .any(|(prev_l, prev_r)| prev_l.type_eq(left) && prev_r.type_eq(&right))
+        {
+            slog::info!(self.logger, "[assign/dejavu] {} = {}\n{:?} ", l, r, opts);
+            return Ok(());
+        }
         let _stack = stack::track(opts.span)?;
 
-        let l = dump_type_as_string(&self.cm, &to);
-        let r = dump_type_as_string(&self.cm, &rhs);
+        data.dejavu.push((left.clone(), right.clone()));
 
-        let res = self.assign_without_wrapping(data, to, rhs, opts).with_context(|| {
+        let res = self.assign_without_wrapping(data, left, right, opts).with_context(|| {
             //
-            let l = dump_type_as_string(&self.cm, &to);
-            let r = dump_type_as_string(&self.cm, &rhs);
+            let l = dump_type_as_string(&self.cm, &left);
+            let r = dump_type_as_string(&self.cm, &right);
 
             format!("\nlhs = {}\nrhs = {}", l, r)
         });
+
+        let dejavu = data.dejavu.pop();
+        debug_assert!(dejavu.is_some());
 
         slog::debug!(self.logger, "[assign ({:?})] {} = {}\n{:?} ", res.is_ok(), l, r, opts);
 
