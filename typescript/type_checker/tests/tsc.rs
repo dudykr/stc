@@ -540,12 +540,8 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
 
         let err_count = actual_errors.len();
 
-        if full_ref_errors.is_empty() {
-            println!("[INFER_ONLY]{}", file_name.display());
-        }
-
-        if actual_errors.len() <= 2 {
-            println!("[ALMOST]{}", file_name.display());
+        if expected_errors.is_empty() {
+            println!("[REMOVE_ONLY]{}", file_name.display());
         }
 
         if !success {
