@@ -443,9 +443,13 @@ impl Analyzer<'_, '_> {
         span: Span,
         ty: Cow<'a, Type>,
     ) -> ValidationResult<Cow<'a, Type>> {
-        let iterator = self
-            .get_iterator(span, ty)
-            .context("tried to get a type of an iterator to get the element type of it")?;
+        let ty_str = dump_type_as_string(&self.cm, &ty);
+        let iterator = self.get_iterator(span, ty).with_context(|| {
+            format!(
+                "tried to get a type of an iterator to get the element type of it ({})",
+                ty_str
+            )
+        })?;
 
         if iterator.is_str() {
             return Ok(Cow::Owned(Type::Keyword(RTsKeywordType {
