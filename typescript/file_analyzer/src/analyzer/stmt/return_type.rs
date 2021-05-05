@@ -242,17 +242,39 @@ impl Analyzer<'_, '_> {
         debug_assert_ne!(ty.span(), DUMMY_SP, "{:?}", ty);
 
         if let Some(declared) = self.scope.declared_return_type().cloned() {
-            self.assign_with_opts(
-                &mut Default::default(),
-                AssignOpts {
-                    span: node.span,
-                    allow_unknown_rhs: true,
-                    ..Default::default()
-                },
-                &declared,
-                &ty,
-            )
-            .report(&mut self.storage);
+            if self.ctx.in_async {
+                self.assign_with_opts(
+                    &mut Default::default(),
+                    AssignOpts {
+                        span: node.span,
+                        allow_unknown_rhs: true,
+                        ..Default::default()
+                    },
+                    &declared,
+                    &Type::Ref(Ref {
+                        span: node.span,
+                        ctxt: ModuleId::builtin(),
+                        type_name: RTsEntityName::Ident(RIdent::new("Promise".into(), node.span)),
+                        type_args: Some(box TypeParamInstantiation {
+                            span: node.span,
+                            params: vec![ty.clone()],
+                        }),
+                    }),
+                )
+                .report(&mut self.storage);
+            } else {
+                self.assign_with_opts(
+                    &mut Default::default(),
+                    AssignOpts {
+                        span: node.span,
+                        allow_unknown_rhs: true,
+                        ..Default::default()
+                    },
+                    &declared,
+                    &ty,
+                )
+                .report(&mut self.storage);
+            };
         }
 
         self.scope.return_values.return_types.push(ty);

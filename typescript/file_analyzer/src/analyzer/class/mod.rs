@@ -493,6 +493,8 @@ impl Analyzer<'_, '_> {
             Default::default(),
             |child: &mut Analyzer| -> ValidationResult<_> {
                 child.ctx.in_declare |= c.function.body.is_none();
+                child.ctx.in_async |= c.function.is_async;
+                child.ctx.in_generator |= c.function.is_generator;
 
                 child.scope.declaring_prop = match &key {
                     Key::Normal { sym, .. } => Some(Id::word(sym.clone())),
@@ -557,6 +559,8 @@ impl Analyzer<'_, '_> {
                 }
 
                 let declared_ret_ty = try_opt!(c.function.return_type.validate_with(child));
+                let declared_ret_ty = declared_ret_ty.map(|ty| ty.cheap());
+                child.scope.declared_return_type = declared_ret_ty.clone();
 
                 let span = c.function.span;
                 let is_async = c.function.is_async;
