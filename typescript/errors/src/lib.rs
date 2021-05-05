@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2725
+    ClassNameCannotBeObjectWhenTargetingEs5WithModule {
+        span: Span,
+    },
+
     /// TS2461
     NotArrayType {
         span: Span,
@@ -1378,6 +1383,8 @@ impl Error {
             Error::NotGeneric { .. } => 2315,
 
             Error::ReadOnly { .. } => 2546,
+
+            Error::ClassNameCannotBeObjectWhenTargetingEs5WithModule { .. } => 2725,
 
             _ => 0,
         }

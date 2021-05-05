@@ -1043,6 +1043,10 @@ impl Analyzer<'_, '_> {
                 "any" | "void" | "never" | "string" | "number" | "boolean" | "null" | "undefined" | "symbol" => {
                     self.storage.report(Error::InvalidClassName { span: c.span });
                 }
+                "Object" if self.env.target() <= EsVersion::Es5 => {
+                    self.storage
+                        .report(Error::ClassNameCannotBeObjectWhenTargetingEs5WithModule { span: c.span });
+                }
                 _ => {}
             },
             _ => {}
