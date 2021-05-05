@@ -52,6 +52,7 @@ struct RefError {
     pub code: String,
 }
 
+/// Retunrs **path**s (separated by `/`) of tests.
 fn load_list(name: &str) -> Vec<String> {
     let content = read_to_string(name).unwrap();
 
@@ -74,6 +75,7 @@ fn is_ignored(path: &Path) -> bool {
     static PASS: Lazy<Vec<String>> = Lazy::new(|| {
         let mut v = load_list("tests/conformance.pass.txt");
         v.extend(load_list("tests/compiler.pass.txt"));
+        v.extend(load_list("tests/tsc.wip.txt"));
         v
     });
 
