@@ -1289,7 +1289,7 @@ impl Analyzer<'_, '_> {
                             &mut Default::default(),
                             AssignOpts {
                                 span,
-                                allow_param_count_mismatch: true,
+                                for_overload: true,
                                 ..Default::default()
                             },
                             &new,
