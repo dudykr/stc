@@ -223,7 +223,9 @@ impl Analyzer<'_, '_> {
         }
 
         if let Some(declared) = self.scope.declared_return_type().cloned() {
-            if is_generator && declared.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
+            if !is_async && !is_generator {
+                // Noop
+            } else if is_generator && declared.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
                 // We use different error code
             } else if let Some(ret_ty) = &ret_ty {
                 self.assign_with_opts(
