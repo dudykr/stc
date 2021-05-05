@@ -287,10 +287,13 @@ impl Analyzer<'_, '_> {
                 should_store_truthy_for_access: true,
                 ..self.ctx
             };
-            let _test = stmt
-                .test
-                .validate_with_default(&mut *self.with_ctx(ctx))
-                .report(&mut self.storage);
+            let test = stmt.test.validate_with_default(&mut *self.with_ctx(ctx));
+            match test {
+                Ok(_) => {}
+                Err(err)=>{
+                    self.storage.report(err);
+                }
+            }
         }
 
         let true_facts = self.cur_facts.true_facts.take();
