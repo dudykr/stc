@@ -209,6 +209,10 @@ impl Analyzer<'_, '_> {
             .iter()
             .any(|(prev_l, prev_r)| prev_l.type_eq(left) && prev_r.type_eq(&right))
         {
+            let l = dump_type_as_string(&self.cm, &left);
+            let r = dump_type_as_string(&self.cm, &right);
+
+            slog::info!(self.logger, "[assign/dejavu] {} = {}\n{:?} ", l, r, opts);
             return Ok(());
         }
         data.dejavu.push((left.clone(), right.clone()));
