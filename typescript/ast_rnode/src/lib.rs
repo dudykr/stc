@@ -79,6 +79,7 @@ define_rnode!({
         pub readonly: bool,
         pub declare: bool,
         pub definite: bool,
+        pub is_override: bool,
     }
     pub struct PrivateProp {
         pub span: Span,
@@ -94,6 +95,7 @@ define_rnode!({
         pub is_optional: bool,
         pub readonly: bool,
         pub definite: bool,
+        pub is_override: bool,
     }
     pub struct ClassMethod {
         pub span: Span,
@@ -106,6 +108,7 @@ define_rnode!({
         pub accessibility: Option<Accessibility>,
         pub is_abstract: bool,
         pub is_optional: bool,
+        pub is_override: bool,
     }
     pub struct PrivateMethod {
         pub span: Span,
@@ -118,6 +121,7 @@ define_rnode!({
         pub accessibility: Option<Accessibility>,
         pub is_abstract: bool,
         pub is_optional: bool,
+        pub is_override: bool,
     }
     pub struct Constructor {
         pub span: Span,
@@ -910,13 +914,7 @@ define_rnode!({
         TsQualifiedName(Box<TsQualifiedName>),
         Ident(Ident),
     }
-    pub enum TsSignatureDecl {
-        TsCallSignatureDecl(TsCallSignatureDecl),
-        TsConstructSignatureDecl(TsConstructSignatureDecl),
-        TsMethodSignature(TsMethodSignature),
-        TsFnType(TsFnType),
-        TsConstructorType(TsConstructorType),
-    }
+
     pub enum TsTypeElement {
         TsCallSignatureDecl(TsCallSignatureDecl),
         TsConstructSignatureDecl(TsConstructSignatureDecl),
@@ -983,6 +981,7 @@ define_rnode!({
         pub type_ann: Option<TsTypeAnn>,
         pub readonly: bool,
         pub span: Span,
+        pub is_static: bool,
     }
     pub enum TsType {
         TsKeywordType(TsKeywordType),
