@@ -451,6 +451,24 @@ impl Scope<'_> {
         }
     }
 
+    pub fn declared_return_type(&self) -> Option<Type> {
+        match &self.declared_return_type {
+            Some(v) => return Some(v.clone()),
+            None => {}
+        }
+
+        self.parent?.declared_return_type()
+    }
+
+    pub fn declared_yield_type(&self) -> Option<Type> {
+        match &self.declared_yield_type {
+            Some(v) => return Some(v.clone()),
+            None => {}
+        }
+
+        self.parent?.declared_yield_type()
+    }
+
     pub fn remove_declaring<I>(&mut self, names: impl IntoIterator<IntoIter = I, Item = Id>)
     where
         I: Iterator<Item = Id> + DoubleEndedIterator,
