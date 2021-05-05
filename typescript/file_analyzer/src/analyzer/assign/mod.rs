@@ -78,6 +78,8 @@ pub(crate) struct AssignOpts {
     pub allow_assignment_of_void: bool,
 
     pub allow_assignment_of_array_to_optional_type_lit: bool,
+
+    pub use_missing_fields_for_class: bool,
 }
 #[derive(Default)]
 pub struct AssignData {

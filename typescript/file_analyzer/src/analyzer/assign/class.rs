@@ -353,11 +353,15 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
-                let err = Error::MissingFields { span, fields: vec![] };
-                return Err(Error::Errors {
-                    span,
-                    errors: vec![err],
-                });
+                if opts.use_missing_fields_for_class {
+                    let err = Error::MissingFields { span, fields: vec![] };
+                    return Err(Error::Errors {
+                        span,
+                        errors: vec![err],
+                    });
+                } else {
+                    return Err(Error::SimpleAssignFailed { span });
+                }
             }
             ClassMember::IndexSignature(_) => {}
         }
