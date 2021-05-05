@@ -405,6 +405,9 @@ impl Analyzer<'_, '_> {
                             return Ok(Type::any(span));
                         }
                     }
+                } else {
+                    self.storage.report(Error::SimpleAssignFailed { span });
+                    return Ok(Type::any(span));
                 }
             }
 
