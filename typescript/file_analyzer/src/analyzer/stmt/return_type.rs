@@ -1,3 +1,4 @@
+use crate::analyzer::assign::AssignOpts;
 use crate::analyzer::util::ResultExt;
 use crate::util::type_ext::TypeVecExt;
 use crate::{
@@ -239,6 +240,20 @@ impl Analyzer<'_, '_> {
             })
         };
         debug_assert_ne!(ty.span(), DUMMY_SP, "{:?}", ty);
+
+        if let Some(declared) = self.scope.declared_return_type().cloned() {
+            self.assign_with_opts(
+                &mut Default::default(),
+                AssignOpts {
+                    span: node.span,
+                    allow_unknown_rhs: true,
+                    ..Default::default()
+                },
+                &declared,
+                &ty,
+            )
+            .report(&mut self.storage);
+        }
 
         self.scope.return_values.return_types.push(ty);
 

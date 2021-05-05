@@ -451,18 +451,18 @@ impl Scope<'_> {
         }
     }
 
-    pub fn declared_return_type(&self) -> Option<Type> {
+    pub fn declared_return_type(&self) -> Option<&Type> {
         match &self.declared_return_type {
-            Some(v) => return Some(v.clone()),
+            Some(v) => return Some(v),
             None => {}
         }
 
         self.parent?.declared_return_type()
     }
 
-    pub fn declared_yield_type(&self) -> Option<Type> {
+    pub fn declared_yield_type(&self) -> Option<&Type> {
         match &self.declared_yield_type {
-            Some(v) => return Some(v.clone()),
+            Some(v) => return Some(v),
             None => {}
         }
 

@@ -1,4 +1,3 @@
-use super::assign::AssignOpts;
 use super::Analyzer;
 use crate::analyzer::util::ResultExt;
 use crate::{
@@ -19,7 +18,6 @@ use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_types::CallSignature;
@@ -154,33 +152,6 @@ impl Analyzer<'_, '_> {
                             child
                                 .storage
                                 .report(Error::GeneratorCannotHaveVoidAsReturnType { span: declared.span() })
-                        } else {
-                            if f.is_async || f.is_generator {
-                                // TODO: Assign the inferred type to the
-                                // declared type and assign
-                                // the declared type to Promise / Generator
-                            }
-
-                            slog::info!(
-                                child.logger,
-                                "[fn/return] Assigning {} to {}",
-                                dump_type_as_string(&child.cm, &inferred_return_type),
-                                dump_type_as_string(&child.cm, &declared)
-                            );
-
-                            // It's okay to return more properties than declared.
-                            child
-                                .assign_with_opts(
-                                    &mut Default::default(),
-                                    AssignOpts {
-                                        span,
-                                        allow_unknown_rhs: true,
-                                        ..Default::default()
-                                    },
-                                    &declared,
-                                    &inferred_return_type,
-                                )
-                                .report(&mut child.storage);
                         }
                     } else {
                         if child.rule().no_implicit_any {
