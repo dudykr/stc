@@ -183,6 +183,7 @@ impl Analyzer<'_, '_> {
         span: Span,
     ) -> ValidationResult<()> {
         self.assign_with_opts(
+            data,
             AssignOpts {
                 span,
                 ..Default::default()
@@ -213,7 +214,7 @@ impl Analyzer<'_, '_> {
         // self.verify_before_assign("lhs", left);
         // self.verify_before_assign("rhs", right);
 
-        let res = self.assign_inner(left, right, opts);
+        let res = self.assign_inner(data, left, right, opts);
         match res {
             Err(Error::Errors { errors, .. }) if errors.is_empty() => return Ok(()),
             _ => {}
@@ -299,13 +300,13 @@ impl Analyzer<'_, '_> {
         Ok(Cow::Borrowed(ty))
     }
 
-    fn assign_inner(&mut self, to: &Type, rhs: &Type, opts: AssignOpts) -> ValidationResult<()> {
+    fn assign_inner(&mut self, data: &mut AssignData, to: &Type, rhs: &Type, opts: AssignOpts) -> ValidationResult<()> {
         let _stack = stack::track(opts.span)?;
 
         let l = dump_type_as_string(&self.cm, &to);
         let r = dump_type_as_string(&self.cm, &rhs);
 
-        let res = self.assign_without_wrapping(to, rhs, opts).with_context(|| {
+        let res = self.assign_without_wrapping(data, to, rhs, opts).with_context(|| {
             //
             let l = dump_type_as_string(&self.cm, &to);
             let r = dump_type_as_string(&self.cm, &rhs);
@@ -319,7 +320,13 @@ impl Analyzer<'_, '_> {
     }
 
     /// Assigns, but does not wrap error with [Error::AssignFailed].
-    fn assign_without_wrapping(&mut self, to: &Type, rhs: &Type, opts: AssignOpts) -> ValidationResult<()> {
+    fn assign_without_wrapping(
+        &mut self,
+        data: &mut AssignData,
+        to: &Type,
+        rhs: &Type,
+        opts: AssignOpts,
+    ) -> ValidationResult<()> {
         let span = opts.span;
 
         if !self.is_builtin && span.is_dummy() {
@@ -377,6 +384,7 @@ impl Analyzer<'_, '_> {
 
                 if !e.has_str && !e.has_num {
                     return self.assign_inner(
+                        data,
                         to,
                         &Type::Keyword(RTsKeywordType {
                             span,
@@ -388,6 +396,7 @@ impl Analyzer<'_, '_> {
 
                 if !e.has_num {
                     return self.assign_inner(
+                        data,
                         to,
                         &Type::Keyword(RTsKeywordType {
                             span,
@@ -399,6 +408,7 @@ impl Analyzer<'_, '_> {
 
                 if !e.has_str {
                     return self.assign_inner(
+                        data,
                         to,
                         &Type::Keyword(RTsKeywordType {
                             span,
@@ -409,6 +419,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 return self.assign_inner(
+                    data,
                     to,
                     &Type::union(vec![
                         Type::Keyword(RTsKeywordType {
@@ -429,7 +440,7 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        if let Some(res) = self.assign_to_builtins(opts, &to, &rhs) {
+        if let Some(res) = self.assign_to_builtins(data, opts, &to, &rhs) {
             return res;
         }
 
@@ -498,7 +509,7 @@ impl Analyzer<'_, '_> {
                 // self.replace(&mut new_lhs, &[(to, &Type::any(span))]);
 
                 return self
-                    .assign_inner(&new_lhs, rhs, opts)
+                    .assign_inner(data, &new_lhs, rhs, opts)
                     .context("tried to assign a type created from a reference");
             }
 
@@ -558,9 +569,9 @@ impl Analyzer<'_, '_> {
 
         match rhs {
             Type::Conditional(rhs) => {
-                self.assign_with_opts(opts, to, &rhs.true_type)
+                self.assign_with_opts(data, opts, to, &rhs.true_type)
                     .context("tried to assign the true type of a conditional type to lhs")?;
-                self.assign_with_opts(opts, to, &rhs.false_type)
+                self.assign_with_opts(data, opts, to, &rhs.false_type)
                     .context("tried to assign the false type of a conditional type to lhs")?;
 
                 return Ok(());

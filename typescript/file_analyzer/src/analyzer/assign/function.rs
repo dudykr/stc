@@ -95,6 +95,7 @@ impl Analyzer<'_, '_> {
 
                 // TODO: Verify type parameters.
                 self.assign_inner(
+                    data,
                     &l.ret_ty,
                     r_ret_ty,
                     AssignOpts {

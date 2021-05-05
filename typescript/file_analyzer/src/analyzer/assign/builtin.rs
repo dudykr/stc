@@ -1,3 +1,4 @@
+use super::AssignData;
 use super::AssignOpts;
 use crate::analyzer::Analyzer;
 use crate::ValidationResult;
@@ -12,7 +13,13 @@ use stc_ts_types::TypeElement;
 use swc_atoms::js_word;
 
 impl Analyzer<'_, '_> {
-    pub(super) fn assign_to_builtins(&mut self, opts: AssignOpts, l: &Type, r: &Type) -> Option<ValidationResult<()>> {
+    pub(super) fn assign_to_builtins(
+        &mut self,
+        data: &mut AssignData,
+        opts: AssignOpts,
+        l: &Type,
+        r: &Type,
+    ) -> Option<ValidationResult<()>> {
         let span = opts.span;
         let l = l.normalize();
         let r = r.normalize();
@@ -33,7 +40,7 @@ impl Analyzer<'_, '_> {
             }) => match r {
                 Type::Array(r) => {
                     if type_args.params.len() == 1 {
-                        return Some(self.assign_inner(&type_args.params[0], &r.elem_type, opts));
+                        return Some(self.assign_inner(data, &type_args.params[0], &r.elem_type, opts));
                     }
                     return Some(Ok(()));
                 }
@@ -41,7 +48,7 @@ impl Analyzer<'_, '_> {
                     if type_args.params.len() == 1 {
                         let mut errors = vec![];
                         for el in &r.elems {
-                            errors.extend(self.assign_inner(&type_args.params[0], &el.ty, opts).err());
+                            errors.extend(self.assign_inner(data, &type_args.params[0], &el.ty, opts).err());
                         }
                         if !errors.is_empty() {
                             return Some(Err(Error::TupleAssignError { span, errors }));
@@ -114,7 +121,7 @@ impl Analyzer<'_, '_> {
                             Err(err) => return Some(Err(err)),
                         };
 
-                        if let Some(Ok(())) = self.assign_to_builtins(opts, l, &parent) {
+                        if let Some(Ok(())) = self.assign_to_builtins(data, opts, l, &parent) {
                             return Some(Ok(()));
                         }
                     }
@@ -137,7 +144,7 @@ impl Analyzer<'_, '_> {
                         match r {
                             Type::Array(Array { elem_type, .. }) => {
                                 return Some(
-                                    self.assign_inner(&type_args.params[0], elem_type, opts)
+                                    self.assign_inner(data, &type_args.params[0], elem_type, opts)
                                         .context("tried to assign an array to a readonly array (builtin)"),
                                 );
                             }

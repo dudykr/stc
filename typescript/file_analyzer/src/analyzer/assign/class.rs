@@ -335,7 +335,7 @@ impl Analyzer<'_, '_> {
 
                                 if let Some(lt) = &lp.value {
                                     if let Some(rt) = &rp.value {
-                                        return self.assign_inner(&lt, &rt, opts);
+                                        return self.assign_inner(data, &lt, &rt, opts);
                                     }
                                 }
 
