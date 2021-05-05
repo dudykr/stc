@@ -498,6 +498,11 @@ impl Analyzer<'_, '_> {
 
                         let type_params = try_opt!(p.function.type_params.validate_with(child));
                         let params = p.function.params.validate_with(child)?;
+
+                        let ret_ty = try_opt!(p.function.return_type.validate_with(child));
+                        let ret_ty = ret_ty.map(|ty| ty.cheap());
+                        child.scope.declared_return_type = ret_ty.clone();
+
                         let mut inferred = None;
 
                         if let Some(body) = &p.function.body {
@@ -537,8 +542,6 @@ impl Analyzer<'_, '_> {
 
                             // TODO: Assign
                         }
-
-                        let ret_ty = try_opt!(p.function.return_type.validate_with(child));
                         let ret_ty = ret_ty.or(inferred).map(Box::new);
 
                         Ok(MethodSignature {

@@ -456,6 +456,10 @@ impl Scope<'_> {
             Some(v) => return Some(v),
             None => {}
         }
+        match self.kind {
+            ScopeKind::Fn | ScopeKind::Method { .. } | ScopeKind::Constructor | ScopeKind::ArrowFn => return None,
+            _ => {}
+        }
 
         self.parent?.declared_return_type()
     }
@@ -464,6 +468,11 @@ impl Scope<'_> {
         match &self.declared_yield_type {
             Some(v) => return Some(v),
             None => {}
+        }
+
+        match self.kind {
+            ScopeKind::Fn | ScopeKind::Method { .. } | ScopeKind::Constructor | ScopeKind::ArrowFn => return None,
+            _ => {}
         }
 
         self.parent?.declared_yield_type()
