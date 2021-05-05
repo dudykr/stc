@@ -39,7 +39,7 @@ async function main() {
         const src = await fs.promises.readFile(file, 'utf8');
         const lineCount = src.split('\n').length;
 
-        if (lineCount <= 10) {
+        if (lineCount <= 5) {
             const relPath = path.relative(conformanceDir, file);
             console.log(`${relPath}`)
         }
