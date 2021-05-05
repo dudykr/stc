@@ -145,6 +145,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     self.handle_assignment_of_type_elements_to_type_elements(
+                        data,
                         AssignOpts {
                             allow_unknown_rhs,
                             ..opts
@@ -341,6 +342,7 @@ impl Analyzer<'_, '_> {
                     let rhs = self.enum_to_type_lit(r).map(Type::TypeLit)?;
                     return self
                         .assign_to_type_elements(
+                            data,
                             AssignOpts {
                                 allow_unknown_rhs: true,
                                 ..opts
@@ -362,7 +364,7 @@ impl Analyzer<'_, '_> {
                         .unwrap();
 
                     return self
-                        .assign_to_type_elements(opts, lhs_span, lhs, &rhs, lhs_metadata)
+                        .assign_to_type_elements(data, opts, lhs_span, lhs, &rhs, lhs_metadata)
                         .context("tried to assign the converted type to type elements");
                 }
 
@@ -416,10 +418,12 @@ impl Analyzer<'_, '_> {
                                     ..
                                 })) = r_mapped.type_param.constraint.as_deref().map(|ty| ty.normalize())
                                 {
-                                    if let Ok(()) = self.assign_with_opts(opts, &l_index.params[0].ty, &&r_constraint) {
+                                    if let Ok(()) =
+                                        self.assign_with_opts(data, opts, &l_index.params[0].ty, &&r_constraint)
+                                    {
                                         if let Some(l_type_ann) = &l_index.type_ann {
                                             if let Some(r_ty) = &r_mapped.ty {
-                                                self.assign_with_opts(opts, &l_type_ann, &r_ty)
+                                                self.assign_with_opts(data, opts, &l_type_ann, &r_ty)
                                                     .context("tried to assign a mapped type to an index signature")?;
                                             }
                                         }
@@ -561,6 +565,7 @@ impl Analyzer<'_, '_> {
     }
     fn handle_assignment_of_type_elements_to_type_elements(
         &mut self,
+        data: &mut AssignData,
         opts: AssignOpts,
         missing_fields: &mut Vec<TypeElement>,
         unhandled_rhs: &mut Vec<Span>,
@@ -571,7 +576,7 @@ impl Analyzer<'_, '_> {
 
         for (i, m) in lhs.into_iter().enumerate().filter(|(_, m)| m.key().is_some()) {
             let res = self
-                .assign_type_elements_to_type_element(opts, missing_fields, unhandled_rhs, m, rhs)
+                .assign_type_elements_to_type_element(data, opts, missing_fields, unhandled_rhs, m, rhs)
                 .with_context(|| format!("tried to assign to {}th element: {:?}", i, m.key()));
 
             match res {
@@ -587,7 +592,7 @@ impl Analyzer<'_, '_> {
         for m in lhs.iter().filter(|m| m.key().is_none()) {
             for r in rhs {
                 let res = self
-                    .assign_type_elements_to_type_element(opts, missing_fields, unhandled_rhs, m, &[r.clone()])
+                    .assign_type_elements_to_type_element(data, opts, missing_fields, unhandled_rhs, m, &[r.clone()])
                     .with_context(|| format!("tried to assign to an element (not a key-based)"));
 
                 errors.extend(res.err());
@@ -604,6 +609,7 @@ impl Analyzer<'_, '_> {
     /// This method assigns each property to corresponding property.
     fn assign_type_elements_to_type_element(
         &mut self,
+        data: &mut AssignData,
         opts: AssignOpts,
         missing_fields: &mut Vec<TypeElement>,
         unhandled_rhs: &mut Vec<Span>,
@@ -633,6 +639,7 @@ impl Analyzer<'_, '_> {
                                     }
 
                                     self.assign_inner(
+                                        data,
                                         lp.type_ann.as_deref().unwrap_or(&Type::any(span)),
                                         r_el.type_ann.as_deref().unwrap_or(&Type::any(span)),
                                         opts,
@@ -645,13 +652,13 @@ impl Analyzer<'_, '_> {
                                 TypeElement::Method(rm) => {
                                     if let Some(lp_ty) = &lp.type_ann {
                                         if let Type::Function(lp_ty) = lp_ty.normalize() {
-                                            self.assign_params(opts, &lp_ty.params, &rm.params).context(
+                                            self.assign_params(data, opts, &lp_ty.params, &rm.params).context(
                                                 "tried to assign parameters of a method property to the parameters of \
                                                  a property with callable type",
                                             )?;
 
                                             if let Some(r_ret_ty) = &rm.ret_ty {
-                                                self.assign_with_opts(opts, &lp_ty.ret_ty, &r_ret_ty).context(
+                                                self.assign_with_opts(data, opts, &lp_ty.ret_ty, &r_ret_ty).context(
                                                     "tried to assign return type of a method property to the return \
                                                      type of a property with callable type",
                                                 )?;
@@ -672,12 +679,12 @@ impl Analyzer<'_, '_> {
                                 TypeElement::Method(ref rm) => {
                                     //
 
-                                    self.assign_params(opts, &lm.params, &rm.params)
+                                    self.assign_params(data, opts, &lm.params, &rm.params)
                                         .context("tried to assign parameters of a method")?;
 
                                     if let Some(l_ret_ty) = &lm.ret_ty {
                                         if let Some(r_ret_ty) = &rm.ret_ty {
-                                            self.assign_with_opts(opts, &l_ret_ty, &r_ret_ty)
+                                            self.assign_with_opts(data, opts, &l_ret_ty, &r_ret_ty)
                                                 .context("tried to assign return type of a method")?;
                                         }
                                     }
@@ -694,7 +701,7 @@ impl Analyzer<'_, '_> {
                                     // Allow assigning property with callable type to methods.
                                     if let Some(rp_ty) = &rp.type_ann {
                                         if let Type::Function(rp_ty) = rp_ty.normalize() {
-                                            self.assign_params(opts, &lm.params, &rp_ty.params).context(
+                                            self.assign_params(data, opts, &lm.params, &rp_ty.params).context(
                                                 "tried to assign parameters of a property with callable type to a \
                                                  method parameters",
                                             )?;
@@ -733,12 +740,14 @@ impl Analyzer<'_, '_> {
                             TypeElement::Call(_) | TypeElement::Constructor(_) => continue,
 
                             TypeElement::Property(r_prop) => {
-                                if let Ok(()) = self.assign(&l_index.params[0].ty, &r_prop.key.ty(), span) {
+                                if let Ok(()) = self.assign(data, &l_index.params[0].ty, &r_prop.key.ty(), span) {
                                     if let Some(l_index_ret_ty) = &l_index.type_ann {
                                         if let Some(r_prop_ty) = &r_prop.type_ann {
-                                            self.assign_with_opts(opts, &l_index_ret_ty, &&r_prop_ty).context(
-                                                "tried to assign a type of property to thr type of an index signature",
-                                            )?;
+                                            self.assign_with_opts(data, opts, &l_index_ret_ty, &&r_prop_ty)
+                                                .context(
+                                                    "tried to assign a type of property to thr type of an index \
+                                                     signature",
+                                                )?;
                                         }
                                     }
                                 }
@@ -783,6 +792,7 @@ impl Analyzer<'_, '_> {
 
     pub(super) fn assign_class_members_to_type_element(
         &mut self,
+        data: &mut AssignData,
         opts: AssignOpts,
         el: &TypeElement,
         rhs_members: &[ClassMember],
@@ -794,10 +804,10 @@ impl Analyzer<'_, '_> {
                         ClassMember::Method(_) => {}
                         ClassMember::Property(rp) => {
                             // Check for property
-                            if self.assign(&lp.key.ty(), &rp.key.ty(), opts.span).is_ok() {
+                            if self.assign(data, &lp.key.ty(), &rp.key.ty(), opts.span).is_ok() {
                                 if let Some(lt) = &lp.type_ann {
                                     if let Some(rt) = &rp.value {
-                                        self.assign(&lt, &rt, opts.span)?;
+                                        self.assign(data, &lt, &rt, opts.span)?;
                                         return Ok(());
                                     }
                                 }
