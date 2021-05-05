@@ -291,6 +291,12 @@ impl Analyzer<'_, '_> {
 
                 // Generator
                 (false, true) => {
+                    let name = if self.env.get_global_type(node.span, &"Generator".into()).is_ok() {
+                        "Generator"
+                    } else {
+                        "IterableIterator"
+                    };
+
                     self.assign_with_opts(
                         &mut Default::default(),
                         AssignOpts {
@@ -302,7 +308,7 @@ impl Analyzer<'_, '_> {
                         &Type::Ref(Ref {
                             span: node.span,
                             ctxt: ModuleId::builtin(),
-                            type_name: RTsEntityName::Ident(RIdent::new("Generator".into(), node.span)),
+                            type_name: RTsEntityName::Ident(RIdent::new(name.into(), node.span)),
                             type_args: Some(box TypeParamInstantiation {
                                 span: node.span,
                                 params: vec![Type::any(DUMMY_SP), ty.clone()],
@@ -340,16 +346,48 @@ impl Analyzer<'_, '_> {
         if let Some(res) = e.arg.validate_with_default(self) {
             let ty = res?;
 
-            if e.delegate {
-                let item_ty = self
-                    .get_iterator_element_type(e.span, Cow::Owned(ty))
+            let item_ty = if e.delegate {
+                self.get_iterator_element_type(e.span, Cow::Owned(ty))
                     .context("tried to convert argument as an iterator for delegating yield")?
-                    .into_owned();
-
-                self.scope.return_values.yield_types.push(item_ty);
+                    .into_owned()
+                    .cheap()
             } else {
-                self.scope.return_values.yield_types.push(ty);
+                ty.cheap()
+            };
+
+            if let Some(declared) = self.scope.declared_return_type().cloned() {
+                let name = if self.ctx.in_async {
+                    "AsyncGenerator"
+                } else {
+                    if self.env.get_global_type(e.span, &"Generator".into()).is_ok() {
+                        "Generator"
+                    } else {
+                        "IterableIterator"
+                    }
+                };
+
+                self.assign_with_opts(
+                    &mut Default::default(),
+                    AssignOpts {
+                        span: e.span,
+                        allow_unknown_rhs: true,
+                        ..Default::default()
+                    },
+                    &declared,
+                    &Type::Ref(Ref {
+                        span: e.span,
+                        ctxt: ModuleId::builtin(),
+                        type_name: RTsEntityName::Ident(RIdent::new(name.into(), e.span)),
+                        type_args: Some(box TypeParamInstantiation {
+                            span: e.span,
+                            params: vec![item_ty.clone()],
+                        }),
+                    }),
+                )
+                .report(&mut self.storage);
             }
+
+            self.scope.return_values.yield_types.push(item_ty);
         } else {
             self.scope.return_values.yield_types.push(Type::Keyword(RTsKeywordType {
                 span: e.span,
