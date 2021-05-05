@@ -319,7 +319,7 @@ impl Analyzer<'_, '_> {
                 return Err(Error::SimpleAssignFailed { span });
             }
             ClassMember::Property(lp) => {
-                if lp.accessibility == Some(Accessibility::Private) {
+                if lp.accessibility == Some(Accessibility::Private) || lp.key.is_private() {
                     return Err(Error::PrivatePropertyIsDifferent { span });
                 }
 
@@ -332,7 +332,7 @@ impl Analyzer<'_, '_> {
                                 && lp.is_static == rp.is_static
                                 && self.key_matches(span, &lp.key, &rp.key, false)
                             {
-                                if rp.accessibility == Some(Accessibility::Private) {
+                                if rp.accessibility == Some(Accessibility::Private) || rp.key.is_private() {
                                     return Err(Error::PrivatePropertyIsDifferent { span });
                                 }
 
