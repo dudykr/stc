@@ -185,7 +185,7 @@ impl Analyzer<'_, '_> {
                 };
 
                 for (i, lm) in l.def.body.iter().enumerate() {
-                    self.assign_class_members_to_class_member(opts, lm, r_body)
+                    self.assign_class_members_to_class_member(data, opts, lm, r_body)
                         .with_context(|| {
                             format!(
                                 "tried to assign class members to {}th class member\n{:#?}\n{:#?}",
@@ -275,7 +275,7 @@ impl Analyzer<'_, '_> {
                 for rm in r {
                     match rm {
                         ClassMember::Constructor(rc) => {
-                            self.assign_params(opts, &lc.params, &rc.params)?;
+                            self.assign_params(data, opts, &lc.params, &rc.params)?;
                             // TODO: Validate parameters and etc..
                             return Ok(());
                         }
@@ -293,13 +293,13 @@ impl Analyzer<'_, '_> {
                         ClassMember::Constructor(_) => {}
                         ClassMember::Method(rm) => {
                             //
-                            if self.assign(&lm.key.ty(), &rm.key.ty(), opts.span).is_ok() {
+                            if self.assign(data, &lm.key.ty(), &rm.key.ty(), opts.span).is_ok() {
                                 if rm.accessibility == Some(Accessibility::Private) {
                                     return Err(Error::PrivateMethodIsDifferent { span });
                                 }
 
                                 // TODO: Parameters.
-                                self.assign_with_opts(opts, &lm.ret_ty, &rm.ret_ty)
+                                self.assign_with_opts(data, opts, &lm.ret_ty, &rm.ret_ty)
                                     .context("tried to assign return type of a class method")?;
 
                                 return Ok(());
@@ -327,7 +327,7 @@ impl Analyzer<'_, '_> {
                         ClassMember::Method(_) => {}
                         ClassMember::Property(rp) => {
                             if lp.is_static == rp.is_static
-                                && self.assign(&lp.key.ty(), &rp.key.ty(), opts.span).is_ok()
+                                && self.assign(data, &lp.key.ty(), &rp.key.ty(), opts.span).is_ok()
                             {
                                 if rp.accessibility == Some(Accessibility::Private) {
                                     return Err(Error::PrivatePropertyIsDifferent { span });

@@ -1,3 +1,4 @@
+use super::AssignData;
 use super::AssignOpts;
 use crate::analyzer::Analyzer;
 use crate::ValidationResult;
@@ -88,7 +89,7 @@ impl Analyzer<'_, '_> {
                 //
                 // So we check for length first.
                 if r_params.len() != 0 {
-                    self.assign_params(opts, &l.params, &r_params)
+                    self.assign_params(data, opts, &l.params, &r_params)
                         .context("tried to assign parameters of a function to parameters of another function")?;
                 }
 
@@ -110,7 +111,7 @@ impl Analyzer<'_, '_> {
                 for rm in &rt.members {
                     match rm {
                         TypeElement::Call(rm) => {
-                            if self.assign_params(opts, &l.params, &rm.params).is_err() {
+                            if self.assign_params(data, opts, &l.params, &rm.params).is_err() {
                                 continue;
                             }
 
@@ -131,7 +132,7 @@ impl Analyzer<'_, '_> {
                 let ty = self.type_to_type_lit(span, r)?.map(Cow::into_owned).map(Type::TypeLit);
                 if let Some(ty) = ty {
                     return self
-                        .assign_to_function(opts, lt, l, &ty)
+                        .assign_to_function(data, opts, lt, l, &ty)
                         .context("tried to assign an expanded type to a function");
                 }
             }
@@ -144,7 +145,6 @@ impl Analyzer<'_, '_> {
     pub(super) fn assign_to_constructor(
         &mut self,
         data: &mut AssignData,
-
         opts: AssignOpts,
         lt: &Type,
         l: &Constructor,
@@ -185,11 +185,11 @@ impl Analyzer<'_, '_> {
                     _ => (&rc.params, &rc.type_ann),
                 };
 
-                self.assign_params(opts, &l.params, &r_params).context(
+                self.assign_params(data, opts, &l.params, &r_params).context(
                     "tried to assign the parameters of constructor to the parameters of another constructor",
                 )?;
 
-                self.assign_with_opts(opts, &l.type_ann, &r_type_ann).context(
+                self.assign_with_opts(data, opts, &l.type_ann, &r_type_ann).context(
                     "tried to assign the return type of constructor to the return type of another constructor",
                 )?;
 
@@ -204,7 +204,7 @@ impl Analyzer<'_, '_> {
                 for (idx, rm) in rt.members.iter().enumerate() {
                     match rm {
                         TypeElement::Constructor(rc) => {
-                            if let Err(err) = self.assign_params(opts, &l.params, &rc.params).with_context(|| {
+                            if let Err(err) = self.assign_params(data, opts, &l.params, &rc.params).with_context(|| {
                                 format!(
                                     "tried to assign parameters of a constructor to them of another constructor ({}th \
                                      element)",
@@ -216,8 +216,9 @@ impl Analyzer<'_, '_> {
                             }
 
                             if let Some(r_ret_ty) = &rc.ret_ty {
-                                if let Err(err) =
-                                    self.assign_with_opts(opts, &l.type_ann, &r_ret_ty).with_context(|| {
+                                if let Err(err) = self
+                                    .assign_with_opts(data, opts, &l.type_ann, &r_ret_ty)
+                                    .with_context(|| {
                                         format!(
                                             "tried to  assign the return type of a constructor to it of another \
                                              constructor ({}th element)",
@@ -243,7 +244,7 @@ impl Analyzer<'_, '_> {
                 let ty = self.type_to_type_lit(span, r)?.map(Cow::into_owned).map(Type::TypeLit);
                 if let Some(ty) = ty {
                     return self
-                        .assign_to_constructor(opts, lt, l, &ty)
+                        .assign_to_constructor(data, opts, lt, l, &ty)
                         .context("tried to assign an expanded type to a constructor type");
                 }
             }
@@ -308,7 +309,7 @@ impl Analyzer<'_, '_> {
         match l.pat {
             RPat::Rest(..) => match l.ty.normalize() {
                 Type::Array(l_arr) => {
-                    if let Ok(()) = self.assign_with_opts(opts, &l_arr.elem_type, &r.ty) {
+                    if let Ok(()) = self.assign_with_opts(data, opts, &l_arr.elem_type, &r.ty) {
                         return Ok(());
                     }
                 }
@@ -328,10 +329,10 @@ impl Analyzer<'_, '_> {
         };
 
         if reverse {
-            self.assign_with_opts(opts, &r.ty, &l.ty)
+            self.assign_with_opts(data, opts, &r.ty, &l.ty)
                 .context("tried to assign the type of a parameter to another (reversed)")?;
         } else {
-            self.assign_with_opts(opts, &l.ty, &r.ty)
+            self.assign_with_opts(data, opts, &l.ty, &r.ty)
                 .context("tried to assign the type of a parameter to another")?;
         }
 
@@ -405,6 +406,7 @@ impl Analyzer<'_, '_> {
                     // TODO: What should we do?
                     if opts.allow_assignment_to_param {
                         if let Ok(()) = self.assign_param(
+                            data,
                             &rp,
                             &lp,
                             AssignOpts {
@@ -417,6 +419,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     self.assign_param(
+                        data,
                         lp,
                         rp,
                         AssignOpts {
