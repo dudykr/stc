@@ -1353,6 +1353,9 @@ impl Analyzer<'_, '_> {
                         parent.type_args.as_deref(),
                     )?;
 
+                    // An interface can extend a class.
+                    let parent = self.instantiate_class(span, &parent)?;
+
                     let res = self.assign_with_opts(
                         data,
                         AssignOpts {
