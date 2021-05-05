@@ -1091,7 +1091,7 @@ impl Analyzer<'_, '_> {
             );
         }
 
-        if !is_override {
+        if !self.is_builtin && !is_override {
             let spans = self.data.var_spans.entry(name.clone()).or_default();
             let err = !spans.is_empty();
 
