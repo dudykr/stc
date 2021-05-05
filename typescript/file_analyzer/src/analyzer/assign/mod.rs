@@ -1353,7 +1353,15 @@ impl Analyzer<'_, '_> {
                         parent.type_args.as_deref(),
                     )?;
 
-                    let res = self.assign_with_opts(data, opts, &parent, &rhs);
+                    let res = self.assign_with_opts(
+                        data,
+                        AssignOpts {
+                            allow_unknown_rhs: true,
+                            ..opts
+                        },
+                        &parent,
+                        &rhs,
+                    );
                     if res.is_ok() {
                         slog::debug!(
                             self.logger,
