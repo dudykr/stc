@@ -2341,7 +2341,13 @@ impl Analyzer<'_, '_> {
         }
 
         match i.sym {
-            js_word!("undefined") => return Ok(Type::undefined(span)),
+            js_word!("undefined") => {
+                match type_mode {
+                    TypeOfMode::LValue => self.storage.report(Error::NotVariable { span, left: span }),
+                    TypeOfMode::RValue => {}
+                }
+                return Ok(Type::undefined(span));
+            }
             js_word!("void") => return Ok(Type::any(span)),
             js_word!("eval") => match type_mode {
                 TypeOfMode::LValue => return Err(Error::CannotAssignToNonVariable { span }),
