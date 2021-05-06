@@ -1089,6 +1089,8 @@ impl Analyzer<'_, '_> {
                 name,
                 dump_type_as_string(&self.cm, ty)
             );
+        } else {
+            slog::debug!(self.logger, "[vars]: Declaring {} without type", name,);
         }
 
         if !self.is_builtin
