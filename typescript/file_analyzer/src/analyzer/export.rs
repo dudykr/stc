@@ -453,6 +453,8 @@ impl Analyzer<'_, '_> {
         let ctxt = self.ctx.module_id;
         let base = self.storage.path(ctxt);
 
+        node.specifiers.visit_with(self);
+
         for specifier in &node.specifiers {
             match specifier {
                 RExportSpecifier::Namespace(_) => {
