@@ -1460,6 +1460,9 @@ impl Analyzer<'_, '_> {
                                         }
                                         _ => err,
                                     }));
+
+                                    self.declare_vars_inner_with_ty(kind, &prop.value, false, None, None)
+                                        .report(&mut self.storage);
                                 }
                             }
                         }
@@ -1543,6 +1546,19 @@ impl Analyzer<'_, '_> {
                                         }
                                         _ => err,
                                     }));
+
+                                    self.declare_vars_inner_with_ty(
+                                        kind,
+                                        &RPat::Ident(RBindingIdent {
+                                            node_id: NodeId::invalid(),
+                                            id: prop.key.clone(),
+                                            type_ann: None,
+                                        }),
+                                        false,
+                                        None,
+                                        None,
+                                    )
+                                    .report(&mut self.storage);
                                 }
                             }
                         }
