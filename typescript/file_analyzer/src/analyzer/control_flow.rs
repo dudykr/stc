@@ -820,6 +820,7 @@ impl Analyzer<'_, '_> {
                 match &**lhs {
                     RExpr::Lit(..) => {
                         self.storage.report(Error::InvalidLhsOfAssign { span: lhs.span() });
+                        return Ok(());
                     }
                     _ => {}
                 }
