@@ -410,10 +410,6 @@ impl Analyzer<'_, '_> {
                     ty_of_left = analyzer
                         .type_of_var(i, TypeOfMode::LValue, None)
                         .context("tried to get type of lhs of an assignment")
-                        .or_else(|err| match err.actual() {
-                            Error::NoSuchVar { .. } => Ok(Type::any(i.span)),
-                            _ => Err(err),
-                        })
                         .report(&mut analyzer.storage);
 
                     (any_span, ty_of_left.as_ref())
@@ -440,11 +436,7 @@ impl Analyzer<'_, '_> {
                         analyzer.mark_var_as_truthy(Id::from(&i.id))?;
                     }
                 }
-                RPatOrExpr::Pat(box RPat::Expr(l)) | RPatOrExpr::Expr(l) => {
-                    l.validate_with_args(analyzer, (TypeOfMode::LValue, None, type_ann))
-                        .context("tried to validate lhs of an assign expr")
-                        .report(&mut analyzer.storage);
-                }
+                RPatOrExpr::Pat(box RPat::Expr(l)) | RPatOrExpr::Expr(l) => {}
                 _ => {
                     e.left.visit_with(analyzer);
                 }
