@@ -409,7 +409,12 @@ impl Load for Checker {
         let mut _result = ModuleTypeData::default();
 
         // TODO: Use ModuleId for analyze_module
-        let path = self.module_graph.resolve(&base, &import.src).unwrap();
+        let path = self.module_graph.resolve(&base, &import.src);
+        let path = match path {
+            Ok(v) => v,
+            Err(..) => return Err(Error::ModuleNotFound { span: import.span }),
+        };
+
         slog::info!(self.logger, "({}): Loading {}", base.display(), path.display());
         let id = self.module_graph.id(&path);
 
