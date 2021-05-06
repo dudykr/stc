@@ -8,6 +8,7 @@ use super::util::VarVisitor;
 use super::Analyzer;
 use super::Ctx;
 use super::ScopeKind;
+use crate::env::ModuleConfig;
 use crate::ty::LitGeneralizer;
 use crate::ty::TypeExt;
 use crate::util::property_map::PropertyMap;
@@ -1043,10 +1044,13 @@ impl Analyzer<'_, '_> {
                 "any" | "void" | "never" | "string" | "number" | "boolean" | "null" | "undefined" | "symbol" => {
                     self.storage.report(Error::InvalidClassName { span: c.span });
                 }
-                "Object" if self.env.target() <= EsVersion::Es5 => {
-                    self.storage
-                        .report(Error::ClassNameCannotBeObjectWhenTargetingEs5WithModule { span: c.span });
-                }
+                "Object" if self.env.target() <= EsVersion::Es5 => match self.env.module() {
+                    ModuleConfig::Umd | ModuleConfig::Amd | ModuleConfig::CommonJs => {
+                        self.storage
+                            .report(Error::ClassNameCannotBeObjectWhenTargetingEs5WithModule { span: c.span });
+                    }
+                    _ => {}
+                },
                 _ => {}
             },
             _ => {}
