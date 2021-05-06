@@ -540,6 +540,7 @@ es6/destructuring/destructuringObjectBindingPatternAndAssignment5.ts
 es6/destructuring/destructuringParameterDeclaration7ES5.ts
 es6/destructuring/destructuringParameterDeclaration7ES5iterable.ts
 es6/destructuring/destructuringReassignsRightHandSide.ts
+es6/destructuring/destructuringSameNames.ts
 es6/destructuring/destructuringSpread.ts
 es6/destructuring/destructuringTypeAssertionsES5_1.ts
 es6/destructuring/destructuringTypeAssertionsES5_2.ts
@@ -649,6 +650,7 @@ es6/for-ofStatements/for-of49.ts
 es6/for-ofStatements/for-of5.ts
 es6/for-ofStatements/for-of50.ts
 es6/for-ofStatements/for-of51.ts
+es6/for-ofStatements/for-of52.ts
 es6/for-ofStatements/for-of53.ts
 es6/for-ofStatements/for-of56.ts
 es6/for-ofStatements/for-of57.ts
