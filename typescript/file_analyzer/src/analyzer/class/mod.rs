@@ -279,20 +279,6 @@ impl Analyzer<'_, '_> {
 
                 let p: FnParam = param.validate_with(child)?;
 
-                match param {
-                    RParamOrTsParamProp::Param(RParam { ref pat, .. }) => {
-                        match child.declare_vars_with_ty(VarDeclKind::Let, pat, Some(*p.ty.clone()), None) {
-                            Ok(()) => {}
-                            Err(err) => {
-                                child.storage.report(err);
-                            }
-                        }
-                    }
-                    RParamOrTsParamProp::TsParamProp(ref param) => {
-                        // param.visit_with(child);
-                    }
-                }
-
                 ps.push(p);
 
                 child.scope.remove_declaring(names);
