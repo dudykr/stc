@@ -536,6 +536,7 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2695
     UselessSeqExpr {
         span: Span,
     },
