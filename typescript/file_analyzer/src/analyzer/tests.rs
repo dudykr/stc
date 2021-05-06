@@ -1,5 +1,6 @@
 use super::Analyzer;
 use crate::env::Env;
+use crate::env::ModuleConfig;
 use crate::loader::Load;
 use crate::loader::ModuleInfo;
 use crate::tests::GLOBALS;
@@ -29,7 +30,14 @@ use swc_ecma_transforms::resolver::ts_resolver;
 use swc_ecma_visit::FoldWith;
 use testing::StdErr;
 
-static ENV: Lazy<Env> = Lazy::new(|| Env::simple(Default::default(), JscTarget::Es2020, &Lib::load("es2020.full")));
+static ENV: Lazy<Env> = Lazy::new(|| {
+    Env::simple(
+        Default::default(),
+        JscTarget::Es2020,
+        ModuleConfig::None,
+        &Lib::load("es2020.full"),
+    )
+});
 
 pub struct Tester<'a, 'b> {
     cm: Arc<SourceMap>,

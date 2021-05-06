@@ -2,6 +2,7 @@ use stc_testing::logger;
 use stc_ts_builtin_types::Lib;
 use stc_ts_file_analyzer::env::BuiltIn;
 use stc_ts_file_analyzer::env::Env;
+use stc_ts_file_analyzer::env::ModuleConfig;
 use stc_ts_file_analyzer::env::StableEnv;
 use std::sync::Arc;
 use swc_common::Globals;
@@ -36,6 +37,7 @@ pub fn builtin() {
                 shared,
                 Default::default(),
                 swc_ecma_ast::EsVersion::Es2020,
+                ModuleConfig::None,
                 Arc::new(data),
             );
 

@@ -7,6 +7,7 @@ use self::{
     scope::Scope,
     util::ResultExt,
 };
+use crate::env::ModuleConfig;
 use crate::{
     env::{Env, StableEnv},
     loader::{Load, ModuleInfo},
@@ -373,7 +374,13 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
 
         Self::new_inner(
             logger.clone(),
-            Env::new(env, Default::default(), JscTarget::Es2020, Default::default()),
+            Env::new(
+                env,
+                Default::default(),
+                JscTarget::Es2020,
+                ModuleConfig::None,
+                Default::default(),
+            ),
             Arc::new(SourceMap::default()),
             box storage,
             None,

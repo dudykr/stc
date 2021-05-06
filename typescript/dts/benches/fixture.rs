@@ -12,6 +12,7 @@ use stc_ts_dts::cleanup_module_for_dts;
 use stc_ts_file_analyzer::analyzer::Analyzer;
 use stc_ts_file_analyzer::analyzer::NoopLoader;
 use stc_ts_file_analyzer::env::Env;
+use stc_ts_file_analyzer::env::ModuleConfig;
 use stc_ts_file_analyzer::validator::ValidateWith;
 use stc_ts_storage::Single;
 use stc_ts_types::module_id;
@@ -164,7 +165,12 @@ fn run_bench(b: &mut Bencher, path: PathBuf) {
 
     ::testing::run_test2(false, |cm, _| {
         let fm = cm.load_file(&path).unwrap();
-        let env = Env::simple(Default::default(), JscTarget::Es2020, &Lib::load("es2020.full"));
+        let env = Env::simple(
+            Default::default(),
+            JscTarget::Es2020,
+            ModuleConfig::None,
+            &Lib::load("es2020.full"),
+        );
         let stable_env = env.shared().clone();
         let generator = module_id::Generator::default();
         let path = Arc::new(path.clone());

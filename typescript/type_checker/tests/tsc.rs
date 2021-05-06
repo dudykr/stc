@@ -17,6 +17,7 @@ use serde::Deserialize;
 use stc_testing::logger;
 use stc_ts_builtin_types::Lib;
 use stc_ts_file_analyzer::env::Env;
+use stc_ts_file_analyzer::env::ModuleConfig;
 use stc_ts_file_analyzer::Rule;
 use stc_ts_module_loader::resolver::node::NodeResolver;
 use stc_ts_type_checker::Checker;
@@ -201,6 +202,7 @@ struct TestSpec {
     rule: Rule,
     ts_config: TsConfig,
     target: EsVersion,
+    module_config: ModuleConfig,
 }
 
 fn parse_targets(s: &str) -> Vec<EsVersion> {
@@ -265,6 +267,7 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
 
         let mut libs = vec![Lib::Es5, Lib::Dom];
         let mut rule = Rule::default();
+        let mut module_config = ModuleConfig::None;
         let ts_config = TsConfig::default();
 
         let mut had_comment = false;
@@ -402,10 +405,11 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
 
                 TestSpec {
                     err_shift_n,
-                    ts_config,
                     libs,
                     rule,
+                    ts_config,
                     target,
+                    module_config,
                 }
             })
             .collect())
@@ -426,6 +430,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
         rule,
         ts_config,
         target,
+        module_config,
     } in specs
     {
         dbg!(&libs);
@@ -450,7 +455,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
                     log.logger,
                     cm.clone(),
                     handler.clone(),
-                    Env::simple(rule, target, &libs),
+                    Env::simple(rule, target, module_config, &libs),
                     TsConfig {
                         tsx: fname.contains("tsx"),
                         ..ts_config

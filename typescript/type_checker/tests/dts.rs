@@ -10,6 +10,7 @@ use stc_testing::get_git_root;
 use stc_testing::logger;
 use stc_ts_builtin_types::Lib;
 use stc_ts_file_analyzer::env::Env;
+use stc_ts_file_analyzer::env::ModuleConfig;
 use stc_ts_module_loader::resolver::node::NodeResolver;
 use stc_ts_type_checker::Checker;
 use std::fs::read_to_string;
@@ -64,7 +65,12 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
             log.logger.clone(),
             cm.clone(),
             handler.clone(),
-            Env::simple(Default::default(), JscTarget::Es2020, &Lib::load("es2019.full")),
+            Env::simple(
+                Default::default(),
+                JscTarget::Es2020,
+                ModuleConfig::None,
+                &Lib::load("es2019.full"),
+            ),
             TsConfig {
                 tsx: fname.contains("tsx"),
                 decorators: true,

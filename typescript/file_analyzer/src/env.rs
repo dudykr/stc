@@ -29,6 +29,7 @@ use stc_ts_types::{Id, ModuleTypeData, Type};
 use stc_utils::stack;
 use std::time::Instant;
 use std::{collections::hash_map::Entry, sync::Arc};
+use string_enum::StringEnum;
 use swc_atoms::JsWord;
 use swc_common::Spanned;
 use swc_common::{Globals, Span, DUMMY_SP};
@@ -257,24 +258,26 @@ pub struct Env {
     stable: StableEnv,
     rule: Rule,
     target: JscTarget,
+    module: ModuleConfig,
     builtin: Arc<BuiltIn>,
     global_types: Arc<DashMap<JsWord, Type, FxBuildHasher>>,
     global_vars: Arc<DashMap<JsWord, Type, FxBuildHasher>>,
 }
 
 impl Env {
-    pub fn new(env: StableEnv, rule: Rule, target: JscTarget, builtin: Arc<BuiltIn>) -> Self {
+    pub fn new(env: StableEnv, rule: Rule, target: JscTarget, module: ModuleConfig, builtin: Arc<BuiltIn>) -> Self {
         Self {
             stable: env,
             builtin,
             target,
+            module,
             global_types: Default::default(),
             global_vars: Default::default(),
             rule,
         }
     }
 
-    pub fn simple(rule: Rule, target: JscTarget, libs: &[Lib]) -> Self {
+    pub fn simple(rule: Rule, target: JscTarget, module: ModuleConfig, libs: &[Lib]) -> Self {
         static STABLE_ENV: Lazy<StableEnv> = Lazy::new(Default::default);
         static CACHE: Lazy<DashMap<Vec<Lib>, OnceCell<Arc<BuiltIn>>, FxBuildHasher>> = Lazy::new(Default::default);
 
@@ -296,6 +299,7 @@ impl Env {
             stable: STABLE_ENV.clone(),
             rule,
             target,
+            module,
             builtin,
             global_types: Default::default(),
             global_vars: Default::default(),
@@ -308,6 +312,10 @@ impl Env {
 
     pub const fn target(&self) -> JscTarget {
         self.target
+    }
+
+    pub const fn module(&self) -> ModuleConfig {
+        self.module
     }
 
     pub const fn rule(&self) -> Rule {
@@ -406,4 +414,26 @@ impl Default for StableEnv {
     fn default() -> Self {
         Self::new(Logger::root(slog::Discard, slog::o!()), Default::default())
     }
+}
+
+#[derive(Clone, Copy, StringEnum)]
+pub enum ModuleConfig {
+    /// `commonjs`
+    CommonJs,
+    /// `es6`
+    Es6,
+    /// `es2015`
+    Es2015,
+    /// `es2020`
+    Es2020,
+    /// `none`
+    None,
+    /// `umd`
+    Umd,
+    /// `amd`
+    Amd,
+    /// `system`
+    System,
+    /// `esnext`
+    EsNext,
 }
