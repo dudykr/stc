@@ -254,11 +254,11 @@ impl Analyzer<'_, '_> {
                 self.export(f.span(), Id::word(js_word!("default")), Some(i))
             }
             RDefaultDecl::Class(ref c) => {
-                let id = c
-                    .ident
-                    .as_ref()
-                    .map(|v| v.into())
-                    .unwrap_or_else(|| Id::word(js_word!("default")));
+                let id = c.ident.as_ref().map(|v| v.into());
+
+                self.scope.this_class_name = id.clone();
+
+                let id = id.unwrap_or_else(|| Id::word(js_word!("default")));
 
                 let class_ty = c.class.validate_with(self)?;
                 self.register_type(id.clone(), Type::ClassDef(class_ty));
