@@ -815,7 +815,19 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, decl: &RTsNamespaceDecl) {
-        unimplemented!("namespace is not supported yet")
+        let ctx = Ctx {
+            in_global: self.ctx.in_global || decl.global,
+            ..self.ctx
+        };
+
+        self.with_ctx(ctx)
+            .with_child(ScopeKind::Module, Default::default(), |a: &mut Analyzer| {
+                //
+
+                decl.body.visit_with(a);
+
+                Ok(())
+            })
     }
 }
 
