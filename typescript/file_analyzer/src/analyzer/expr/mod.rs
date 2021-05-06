@@ -432,7 +432,7 @@ impl Analyzer<'_, '_> {
                     let rhs_is_always_true = true;
 
                     // TODO: Deny changing type of const
-                    if rhs_is_always_true {
+                    if rhs_is_always_true && type_ann.is_some() {
                         analyzer.mark_var_as_truthy(Id::from(&i.id))?;
                     }
                 }
