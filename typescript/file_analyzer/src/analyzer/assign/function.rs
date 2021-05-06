@@ -391,13 +391,16 @@ impl Analyzer<'_, '_> {
 
         // TODO: Consider optional parameters.
 
+        let required_li = li.clone().filter(|i| i.required);
+        let required_ri = ri.clone().filter(|i| i.required);
+
         if opts.for_overload {
-            if li.clone().count() > ri.clone().count() {
+            if required_li.clone().count() > required_ri.clone().count() {
                 return Err(Error::SimpleAssignFailed { span });
             }
         }
 
-        if !l_has_rest && li.clone().count() < ri.clone().count() {
+        if !l_has_rest && required_li.clone().count() < required_li.clone().count() {
             // I don't know why, but overload signature does not need to match overloaded
             // signature.
             if opts.for_overload {
