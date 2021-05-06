@@ -525,6 +525,7 @@ impl Analyzer<'_, '_> {
                         });
                     }
                     RExpr::Ident(..)
+                    | RExpr::Cond(..)
                     | RExpr::Lit(..)
                     | RExpr::Unary(RUnaryExpr {
                         op: op!(unary, "-"), ..
