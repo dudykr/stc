@@ -1524,6 +1524,7 @@ parser/ecmascript5/ObjectTypes/parserObjectType4.ts
 parser/ecmascript5/ParameterLists/parserParameterList12.ts
 parser/ecmascript5/ParameterLists/parserParameterList14.ts
 parser/ecmascript5/ParameterLists/parserParameterList15.ts
+parser/ecmascript5/ParameterLists/parserParameterList17.ts
 parser/ecmascript5/PropertyAssignments/parserFunctionPropertyAssignment1.ts
 parser/ecmascript5/PropertyAssignments/parserFunctionPropertyAssignment2.ts
 parser/ecmascript5/PropertyAssignments/parserFunctionPropertyAssignment3.ts
