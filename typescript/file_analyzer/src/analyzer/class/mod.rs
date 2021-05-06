@@ -1045,7 +1045,7 @@ impl Analyzer<'_, '_> {
                     self.storage.report(Error::InvalidClassName { span: c.span });
                 }
                 "Object" if self.env.target() <= EsVersion::Es5 => match self.env.module() {
-                    ModuleConfig::Umd | ModuleConfig::Amd | ModuleConfig::CommonJs => {
+                    ModuleConfig::Umd | ModuleConfig::System | ModuleConfig::Amd | ModuleConfig::CommonJs => {
                         self.storage
                             .report(Error::ClassNameCannotBeObjectWhenTargetingEs5WithModule { span: c.span });
                     }
