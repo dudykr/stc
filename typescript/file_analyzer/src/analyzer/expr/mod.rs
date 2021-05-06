@@ -483,17 +483,11 @@ impl Analyzer<'_, '_> {
 
             analyzer.storage.report_all(errors);
 
-            let rhs_ty = match rhs_ty {
+            let mut rhs_ty = match rhs_ty {
                 Ok(v) => v,
                 Err(()) => Type::any(span),
             };
 
-            let ctx = Ctx {
-                preserve_params: true,
-                preserve_ret_ty: true,
-                ..analyzer.ctx
-            };
-            let mut rhs_ty = analyzer.with_ctx(ctx).expand_fully(span, rhs_ty, true)?;
             analyzer.try_assign(span, e.op, &e.left, &rhs_ty);
             rhs_ty.respan(e.right.span());
 
