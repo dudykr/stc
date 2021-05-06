@@ -425,6 +425,13 @@ impl Analyzer<'_, '_> {
                     (any_span, ty_of_left.as_ref())
                 }
 
+                RPatOrExpr::Pat(box RPat::Expr(ref e)) | RPatOrExpr::Expr(ref e) => {
+                    e.validate_with_args(analyzer, (TypeOfMode::LValue, None, None))
+                        .report(&mut analyzer.storage);
+
+                    (None, type_ann)
+                }
+
                 _ => {
                     e.left.visit_with(analyzer);
                     (None, type_ann)
