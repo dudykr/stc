@@ -633,7 +633,7 @@ impl Analyzer<'_, '_> {
                     }
                 } else {
                     self.storage.report(Error::NoSuchVar {
-                        span: i.id.span,
+                        span: i.id.span.or_else(|| span),
                         name: i.id.clone().into(),
                     });
                     return Ok(());
