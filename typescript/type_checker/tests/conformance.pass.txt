@@ -1760,10 +1760,13 @@ statements/for-ofStatements/ES5For-of23.ts
 statements/for-ofStatements/ES5For-of24.ts
 statements/for-ofStatements/ES5For-of25.ts
 statements/for-ofStatements/ES5For-of26.ts
+statements/for-ofStatements/ES5For-of27.ts
 statements/for-ofStatements/ES5For-of28.ts
+statements/for-ofStatements/ES5For-of29.ts
 statements/for-ofStatements/ES5For-of3.ts
 statements/for-ofStatements/ES5For-of33.ts
 statements/for-ofStatements/ES5For-of34.ts
+statements/for-ofStatements/ES5For-of35.ts
 statements/for-ofStatements/ES5For-of37.ts
 statements/for-ofStatements/ES5For-of4.ts
 statements/for-ofStatements/ES5For-of5.ts
