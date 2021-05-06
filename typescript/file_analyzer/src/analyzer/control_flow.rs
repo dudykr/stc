@@ -512,6 +512,12 @@ impl Analyzer<'_, '_> {
     }
 }
 
+#[derive(Debug, Clone, Copy, Default)]
+pub(crate) struct PatAssignOpts {
+    pub assign: AssignOpts,
+    pub ignore_lhs_errors: bool,
+}
+
 impl Analyzer<'_, '_> {
     pub(super) fn try_assign(&mut self, span: Span, op: AssignOp, lhs: &RPatOrExpr, ty: &Type) {
         let res: ValidationResult<()> = try {
@@ -529,7 +535,15 @@ impl Analyzer<'_, '_> {
 
                 RPatOrExpr::Pat(ref pat) => {
                     if op == op!("=") {
-                        self.try_assign_pat(span, pat, ty)?;
+                        self.try_assign_pat_with_opts(
+                            span,
+                            pat,
+                            ty,
+                            PatAssignOpts {
+                                ignore_lhs_errors: true,
+                                ..Default::default()
+                            },
+                        )?;
                     } else {
                         // TODO
                         match &**pat {
@@ -559,7 +573,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         lhs: &RPat,
         ty: &Type,
-        opts: AssignOpts,
+        opts: PatAssignOpts,
     ) -> ValidationResult<()> {
         let is_in_loop = self.scope.is_in_loop_body();
         let ty = self
@@ -599,7 +613,7 @@ impl Analyzer<'_, '_> {
                             &mut Default::default(),
                             AssignOpts {
                                 span: i.id.span,
-                                ..opts
+                                ..opts.assign
                             },
                             &var_ty,
                             &ty,
@@ -706,8 +720,11 @@ impl Analyzer<'_, '_> {
                                     span,
                                     &elem.arg,
                                     &type_for_rest_arg,
-                                    AssignOpts {
-                                        allow_iterable_on_rhs: true,
+                                    PatAssignOpts {
+                                        assign: AssignOpts {
+                                            allow_iterable_on_rhs: true,
+                                            ..opts.assign
+                                        },
                                         ..opts
                                     },
                                 )
@@ -810,7 +827,12 @@ impl Analyzer<'_, '_> {
                     .report(&mut self.storage);
 
                 if let Some(lhs_ty) = &lhs_ty {
-                    self.assign_with_opts(&mut Default::default(), AssignOpts { span, ..opts }, &lhs_ty, &ty)?;
+                    self.assign_with_opts(
+                        &mut Default::default(),
+                        AssignOpts { span, ..opts.assign },
+                        &lhs_ty,
+                        &ty,
+                    )?;
                 }
                 return Ok(());
             }

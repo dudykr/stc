@@ -81,6 +81,7 @@ pub(crate) struct AssignOpts {
 
     pub use_missing_fields_for_class: bool,
 }
+
 #[derive(Default)]
 pub struct AssignData {
     dejavu: Vec<(Type, Type)>,
