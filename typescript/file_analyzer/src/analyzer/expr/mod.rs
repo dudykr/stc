@@ -457,7 +457,9 @@ impl Analyzer<'_, '_> {
                     ..analyzer.ctx
                 };
                 let mut analyzer = analyzer.with_ctx(ctx);
-                e.right.validate_with_args(&mut *analyzer, (mode, None, type_ann))
+                e.right
+                    .validate_with_args(&mut *analyzer, (mode, None, type_ann))
+                    .context("tried to validate rhs an assign expr")
             } {
                 Ok(rhs_ty) => {
                     let lhs;
