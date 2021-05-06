@@ -1,5 +1,6 @@
 use super::expr::TypeOfMode;
 use super::{Analyzer, Ctx};
+use crate::DepInfo;
 use crate::{analyzer::util::ResultExt, ty::Type, validator, validator::ValidateWith, ValidationResult};
 use rnode::NodeId;
 use rnode::VisitWith;
@@ -462,6 +463,18 @@ impl Analyzer<'_, '_> {
                     match &node.src {
                         Some(src) => {
                             let module_id = self.loader.module_id(&base, &src.value);
+                            let module = self
+                                .loader
+                                .load_non_circular_dep(
+                                    base.clone(),
+                                    &DepInfo {
+                                        span: src.span,
+                                        src: src.value.clone(),
+                                    },
+                                )
+                                .report(&mut self.storage);
+
+                            if let Some(module) = module {}
                         }
                         None => {}
                     }
