@@ -4,7 +4,7 @@ use crate::analyzer::expr::IdCtx;
 use crate::analyzer::ResultExt;
 use crate::{
     loader::ModuleInfo,
-    ty::{self, Alias, IndexSignature, Interface, PropertySignature, Ref, Tuple, Type, TypeExt, TypeLit, Union},
+    ty::{self, Alias, Interface, PropertySignature, Ref, Tuple, Type, TypeExt, TypeLit, Union},
     type_facts::TypeFacts,
     util::{contains_infer_type, contains_mark, MarkFinder, RemoveTypes},
     validator::ValidateWith,
@@ -26,7 +26,6 @@ use stc_ts_ast_rnode::RBindingIdent;
 use stc_ts_ast_rnode::RObjectPat;
 use stc_ts_ast_rnode::RObjectPatProp;
 use stc_ts_ast_rnode::RPat;
-use stc_ts_ast_rnode::RPropName;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsQualifiedName;
@@ -1416,31 +1415,6 @@ impl Analyzer<'_, '_> {
             }
 
             RPat::Object(RObjectPat { ref props, .. }) => {
-                fn find<'a>(members: &[TypeElement], key: &RPropName) -> Option<Type> {
-                    let mut index_el = None;
-                    // First, we search for Property
-                    for m in members {
-                        match *m {
-                            TypeElement::Property(PropertySignature { ref type_ann, .. }) => {
-                                return match *type_ann {
-                                    Some(ref ty) => Some(*ty.clone()),
-                                    None => Some(Type::any(key.span())),
-                                }
-                            }
-
-                            TypeElement::Index(IndexSignature { ref type_ann, .. }) => {
-                                index_el = Some(match *type_ann {
-                                    Some(ref ty) => *ty.clone(),
-                                    None => Type::any(key.span()),
-                                });
-                            }
-                            _ => {}
-                        }
-                    }
-
-                    return index_el;
-                }
-
                 let should_use_no_such_property = match ty.normalize() {
                     Type::TypeLit(..) => false,
                     _ => true,
