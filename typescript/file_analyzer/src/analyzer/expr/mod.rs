@@ -493,7 +493,7 @@ impl Analyzer<'_, '_> {
                 preserve_ret_ty: true,
                 ..analyzer.ctx
             };
-            let mut rhs_ty = analyzer.with_ctx(ctx).expand_fully(span, rhs_ty.clone(), true)?;
+            let mut rhs_ty = analyzer.with_ctx(ctx).expand_fully(span, rhs_ty, true)?;
             analyzer.try_assign(span, e.op, &e.left, &rhs_ty);
             rhs_ty.respan(e.right.span());
 
