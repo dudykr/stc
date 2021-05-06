@@ -277,18 +277,7 @@ impl Analyzer<'_, '_> {
 
                 child.scope.declaring.extend(names.clone());
 
-                let mut p = match &param {
-                    RParamOrTsParamProp::TsParamProp(RTsParamProp {
-                        param: RTsParamPropParam::Ident(i),
-                        ..
-                    }) => RTsFnParam::Ident(i.clone()),
-                    RParamOrTsParamProp::TsParamProp(RTsParamProp {
-                        param: RTsParamPropParam::Assign(RAssignPat { left: box pat, .. }),
-                        ..
-                    })
-                    | RParamOrTsParamProp::Param(RParam { pat, .. }) => from_pat(pat.clone()),
-                };
-                let p: FnParam = p.validate_with(child)?;
+                let p: FnParam = param.validate_with(child)?;
 
                 match param {
                     RParamOrTsParamProp::Param(RParam { ref pat, .. }) => {
@@ -324,7 +313,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, p: &RTsParamProp) -> ValidationResult<()> {
+    fn validate(&mut self, p: &RTsParamProp) -> ValidationResult<FnParam> {
         if self.ctx.in_declare {
             match p.param {
                 RTsParamPropParam::Assign(..) => self
@@ -340,18 +329,26 @@ impl Analyzer<'_, '_> {
                 left: box RPat::Ident(ref i),
                 ..
             }) => {
-                let ty = i.type_ann.validate_with(self).try_opt()?;
+                let ty: Option<Type> = i.type_ann.validate_with(self).try_opt()?;
+                let ty = ty.map(|ty| ty.cheap());
 
                 self.declare_var(
                     i.id.span,
                     VarDeclKind::Let,
                     i.id.clone().into(),
-                    ty,
+                    ty.clone(),
                     None,
                     true,
                     false,
                     false,
-                )
+                )?;
+
+                Ok(FnParam {
+                    span: p.span,
+                    required: !i.id.optional,
+                    pat: RPat::Ident(i.clone()),
+                    ty: box ty.unwrap_or_else(|| Type::any(i.id.span)),
+                })
             }
             _ => unreachable!(),
         }

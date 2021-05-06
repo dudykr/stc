@@ -15,6 +15,7 @@ use stc_ts_ast_rnode::RFnDecl;
 use stc_ts_ast_rnode::RFnExpr;
 use stc_ts_ast_rnode::RFunction;
 use stc_ts_ast_rnode::RIdent;
+use stc_ts_ast_rnode::RParamOrTsParamProp;
 use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
@@ -391,6 +392,16 @@ impl Analyzer<'_, '_> {
                 self.storage.report(err);
                 Type::any(f.span)
             }
+        }
+    }
+}
+
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, p: &RParamOrTsParamProp) -> ValidationResult<FnParam> {
+        match p {
+            RParamOrTsParamProp::TsParamProp(p) => p.validate_with(self),
+            RParamOrTsParamProp::Param(p) => p.validate_with(self),
         }
     }
 }
