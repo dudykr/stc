@@ -278,11 +278,15 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
 
+                let rhs_ctx = Ctx {
+                    cannot_be_tuple: true,
+                    ..child.ctx
+                };
+
                 let rty = rhs
-                    .validate_with_default(child)
-                    .context("tried to validate rhs of a for in/of loop")
-                    .report(&mut child.storage)
-                    .unwrap_or_else(|| Type::any(span));
+                    .validate_with_default(&mut *child.with_ctx(rhs_ctx))
+                    .context("tried to validate rhs of a for in/of loop");
+                let rty = rty.report(&mut child.storage).unwrap_or_else(|| Type::any(span));
 
                 match kind {
                     ForHeadKind::Of => {
