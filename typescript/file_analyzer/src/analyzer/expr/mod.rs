@@ -410,6 +410,10 @@ impl Analyzer<'_, '_> {
                     ty_of_left = analyzer
                         .type_of_var(i, TypeOfMode::LValue, None)
                         .context("tried to get type of lhs of an assignment")
+                        .or_else(|err| match err.actual() {
+                            Error::NoSuchVar { .. } => Ok(Type::any(i.span)),
+                            _ => Err(err),
+                        })
                         .report(&mut analyzer.storage);
 
                     (any_span, ty_of_left.as_ref())
