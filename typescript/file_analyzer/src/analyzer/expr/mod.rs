@@ -524,7 +524,7 @@ impl Analyzer<'_, '_> {
 
             if !is_last {
                 match **e {
-                    RExpr::Arrow(..) => {
+                    RExpr::Arrow(..) if !self.rule().allow_unreachable_code => {
                         self.storage.report(Error::UselessSeqExpr {
                             span: span.with_lo(first_span.lo()),
                         });
