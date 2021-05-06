@@ -1262,15 +1262,6 @@ impl Analyzer<'_, '_> {
                                 }
 
                                 constructor_spans.push(cons.span);
-
-                                for param in &cons.params {
-                                    match param {
-                                        RParamOrTsParamProp::TsParamProp(p) => {
-                                            p.validate_with(child).report(&mut child.storage);
-                                        }
-                                        RParamOrTsParamProp::Param(_) => {}
-                                    }
-                                }
                             }
 
                             _ => {}
