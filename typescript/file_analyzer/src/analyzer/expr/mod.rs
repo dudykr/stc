@@ -438,6 +438,7 @@ impl Analyzer<'_, '_> {
                 }
                 RPatOrExpr::Pat(box RPat::Expr(l)) | RPatOrExpr::Expr(l) => {
                     l.validate_with_args(analyzer, (TypeOfMode::LValue, None, type_ann))
+                        .context("tried to validate lhs of an assign expr")
                         .report(&mut analyzer.storage);
                 }
                 _ => {
