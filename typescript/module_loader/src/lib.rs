@@ -3,6 +3,7 @@
 use self::deps::find_deps;
 use self::resolver::Resolve;
 use anyhow::bail;
+use anyhow::Context;
 use anyhow::Error;
 use dashmap::DashMap;
 use fxhash::FxBuildHasher;
@@ -139,7 +140,9 @@ where
     }
 
     fn load_including_deps(&self, path: &Arc<PathBuf>) -> Result<(), Error> {
-        let loaded = self.load(path)?;
+        let loaded = self
+            .load(path)
+            .with_context(|| format!("failed to load file at {}", path.display()))?;
         let loaded = match loaded {
             Some(v) => v,
             None => return Ok(()),
@@ -154,7 +157,7 @@ where
             .deps
             .into_par_iter()
             .map(|dep_path| -> Result<_, Error> {
-                self.load_including_deps(&dep_path)?;
+                let _ = self.load_including_deps(&dep_path);
 
                 let id = self.id_generator.generate(&dep_path).1;
                 self.paths.insert(id, dep_path.clone());
