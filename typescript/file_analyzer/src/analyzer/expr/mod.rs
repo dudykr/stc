@@ -395,6 +395,7 @@ impl Analyzer<'_, '_> {
         };
         self.with_ctx(ctx).with(|analyzer: &mut Analyzer| {
             let span = e.span();
+            let mut mark_var_as_truthy = false;
 
             let ty_of_left;
             let (any_span, type_ann) = match e.left {
@@ -410,6 +411,10 @@ impl Analyzer<'_, '_> {
                     ty_of_left = analyzer
                         .type_of_var(i, TypeOfMode::LValue, None)
                         .context("tried to get type of lhs of an assignment")
+                        .map(|ty| {
+                            mark_var_as_truthy = true;
+                            ty
+                        })
                         .or_else(|err| match err.actual() {
                             Error::NoSuchVar { .. } => Ok(Type::any(i.span)),
                             _ => Err(err),
@@ -431,7 +436,15 @@ impl Analyzer<'_, '_> {
             let mut errors = Errors::default();
 
             match &e.left {
-                RPatOrExpr::Pat(box RPat::Ident(i)) => {}
+                RPatOrExpr::Pat(box RPat::Ident(i)) => {
+                    // TODO: Implemennt this
+                    let rhs_is_always_true = true;
+
+                    // TODO: Deny changing type of const
+                    if rhs_is_always_true && mark_var_as_truthy {
+                        analyzer.mark_var_as_truthy(Id::from(&i.id))?;
+                    }
+                }
                 RPatOrExpr::Pat(box RPat::Expr(l)) | RPatOrExpr::Expr(l) => {}
                 _ => {
                     e.left.visit_with(analyzer);
