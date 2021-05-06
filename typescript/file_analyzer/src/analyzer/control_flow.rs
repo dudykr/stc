@@ -646,10 +646,12 @@ impl Analyzer<'_, '_> {
                         actual_ty = Some(self.narrowed_type_of_assignment(span, declared_ty, &ty)?);
                     }
                 } else {
-                    self.storage.report(Error::NoSuchVar {
-                        span,
-                        name: i.id.clone().into(),
-                    });
+                    if !opts.ignore_lhs_errors {
+                        self.storage.report(Error::NoSuchVar {
+                            span,
+                            name: i.id.clone().into(),
+                        });
+                    }
                     return Ok(());
                 }
 
