@@ -1566,6 +1566,7 @@ parser/ecmascript5/RegularExpressions/parserRegularExpressionDivideAmbiguity1.ts
 parser/ecmascript5/RegularExpressions/parserRegularExpressionDivideAmbiguity2.ts
 parser/ecmascript5/RegularExpressions/parserRegularExpressionDivideAmbiguity3.ts
 parser/ecmascript5/RegularExpressions/parserRegularExpressionDivideAmbiguity5.ts
+parser/ecmascript5/RegularExpressions/parserRegularExpressionDivideAmbiguity6.ts
 parser/ecmascript5/Statements/BreakStatements/parser_breakInIterationOrSwitchStatement1.ts
 parser/ecmascript5/Statements/BreakStatements/parser_breakInIterationOrSwitchStatement2.ts
 parser/ecmascript5/Statements/BreakStatements/parser_breakInIterationOrSwitchStatement3.ts
@@ -1706,6 +1707,7 @@ parser/ecmascriptnext/numericSeparators/parser.numericSeparators.binary.ts
 parser/ecmascriptnext/numericSeparators/parser.numericSeparators.decimal.ts
 parser/ecmascriptnext/numericSeparators/parser.numericSeparators.hex.ts
 parser/ecmascriptnext/numericSeparators/parser.numericSeparators.octal.ts
+salsa/mixedPropertyElementAccessAssignmentDeclaration.ts
 salsa/propertyAssignmentUseParentType3.ts
 salsa/typeFromPropertyAssignment30.ts
 salsa/typeFromPropertyAssignment38.ts
