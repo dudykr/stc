@@ -17,6 +17,8 @@ pub trait Load: 'static + Send + Sync {
     fn module_id(&self, base: &Arc<PathBuf>, src: &JsWord) -> ModuleId;
 
     /// Note: This method called within a thread
+    ///
+    /// TODO: Change argument to ModuleId.
     fn is_in_same_circular_group(&self, base: &Arc<PathBuf>, src: &JsWord) -> bool;
 
     /// This method can be called multiple time for same module.
@@ -25,6 +27,8 @@ pub trait Load: 'static + Send + Sync {
     ///
     /// `partial` denotes the types and variables which the [Analyzer] successed
     /// processing, with resolved imports.
+    ///
+    /// TODO: Change argument to ModuleId.
     fn load_circular_dep(
         &self,
         base: Arc<PathBuf>,
