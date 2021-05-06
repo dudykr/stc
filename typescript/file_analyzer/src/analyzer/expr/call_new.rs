@@ -780,6 +780,17 @@ impl Analyzer<'_, '_> {
                 &spread_arg_types,
                 type_ann,
             )
+            .convert_err(|err| match err {
+                Error::NoCallSignature { span, .. } => Error::NoCallabelPropertyWithName {
+                    span,
+                    key: box prop.clone(),
+                },
+                Error::NoNewSignature { span, .. } => Error::NoCallabelPropertyWithName {
+                    span,
+                    key: box prop.clone(),
+                },
+                _ => err,
+            })
             .with_context(|| {
                 format!(
                     "tried to call property by using access_property because the object type is not handled by \
