@@ -54,7 +54,7 @@ pub struct Checker {
     cm: Arc<SourceMap>,
     handler: Arc<Handler>,
     /// Cache
-    module_types: RwLock<FxHashMap<ModuleId, Arc<OnceCell<Arc<ModuleTypeData>>>>>,
+    module_types: RwLock<FxHashMap<ModuleId, Arc<OnceCell<Option<Arc<ModuleTypeData>>>>>>,
 
     /// Informatnion required to generate `.d.ts` files.
     dts_modules: Arc<DashMap<ModuleId, RModule, FxBuildHasher>>,
@@ -117,7 +117,7 @@ impl Checker {
     /// Get type informations of a module.
     pub fn get_types(&self, id: ModuleId) -> Option<Arc<ModuleTypeData>> {
         let lock = self.module_types.read();
-        lock.get(&id).map(|v| v.get().cloned()).flatten()
+        lock.get(&id).and_then(|v| v.get().cloned()).flatten()
     }
 
     /// Removes dts module from `self` and return it.
@@ -145,7 +145,7 @@ impl Checker {
     }
 
     /// Analyzes one module.
-    fn analyze_module(&self, starter: Option<Arc<PathBuf>>, path: Arc<PathBuf>) -> Arc<ModuleTypeData> {
+    fn analyze_module(&self, starter: Option<Arc<PathBuf>>, path: Arc<PathBuf>) -> Option<Arc<ModuleTypeData>> {
         self.run(|| {
             let id = self.module_graph.id(&path);
 
@@ -196,6 +196,7 @@ impl Checker {
                         let modules = ids
                             .iter()
                             .map(|&id| self.module_graph.clone_module(id))
+                            .filter_map(|m| m)
                             .map(|module| {
                                 RModule::from_orig(
                                     &mut node_id_gen,
@@ -245,7 +246,7 @@ impl Checker {
                         {
                             let mut lock = self.module_types.write();
                             for (module_id, data) in storage.info {
-                                let res = lock.entry(module_id).or_default().set(Arc::new(data));
+                                let res = lock.entry(module_id).or_default().set(Some(Arc::new(data)));
                                 match res {
                                     Ok(()) => {}
                                     Err(..) => {
@@ -303,12 +304,16 @@ impl Checker {
         })
     }
 
-    fn analyze_non_circular_module(&self, id: ModuleId, path: Arc<PathBuf>) -> Arc<ModuleTypeData> {
+    fn analyze_non_circular_module(&self, id: ModuleId, path: Arc<PathBuf>) -> Option<Arc<ModuleTypeData>> {
         self.run(|| {
             let start = Instant::now();
 
             let mut node_id_gen = NodeIdGenerator::default();
-            let mut module = self.module_graph.clone_module(id);
+            let module = self.module_graph.clone_module(id);
+            let mut module = match module {
+                Some(v) => v,
+                None => return None,
+            };
             module = module.fold_with(&mut ts_resolver(self.env.shared().marks().top_level_mark()));
             let mut module = RModule::from_orig(&mut node_id_gen, module);
 
@@ -355,7 +360,7 @@ impl Checker {
             let dur = Instant::now() - start;
             eprintln!("[Timing] Full analysis of {}: {:?}", path.display(), dur);
 
-            type_info
+            Some(type_info)
         })
     }
 }
@@ -386,6 +391,10 @@ impl Load for Checker {
         let id = self.module_graph.id(&path);
 
         let data = self.analyze_module(Some(base.clone()), path.clone());
+        let data = match data {
+            Some(v) => v,
+            None => return Err(Error::ModuleNotFound { span: import.span }),
+        };
 
         return Ok(ModuleInfo { module_id: id, data });
     }
@@ -399,6 +408,10 @@ impl Load for Checker {
         let id = self.module_graph.id(&path);
 
         let data = self.analyze_module(Some(base.clone()), path.clone());
+        let data = match data {
+            Some(v) => v,
+            None => return Err(Error::ModuleNotFound { span: import.span }),
+        };
 
         return Ok(ModuleInfo { module_id: id, data });
     }

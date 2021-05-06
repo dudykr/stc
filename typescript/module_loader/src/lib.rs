@@ -3,7 +3,6 @@
 use self::deps::find_deps;
 use self::resolver::Resolve;
 use anyhow::bail;
-use anyhow::Context;
 use anyhow::Error;
 use dashmap::DashMap;
 use fxhash::FxBuildHasher;
@@ -88,8 +87,7 @@ where
     }
 
     pub fn load_all(&self, entry: &Arc<PathBuf>) -> Result<ModuleId, Error> {
-        self.load_including_deps(entry)
-            .with_context(|| format!("load_including_deps failed: {}", entry.display()))?;
+        let _ = self.load_including_deps(entry);
 
         let (_, module_id) = self.id_generator.generate(entry);
 
@@ -119,10 +117,10 @@ where
         self.resolver.resolve(base, specifier)
     }
 
-    pub fn clone_module(&self, id: ModuleId) -> Module {
-        let m = self.loaded.get(&id).unwrap();
+    pub fn clone_module(&self, id: ModuleId) -> Option<Module> {
+        let m = self.loaded.get(&id)?;
 
-        (&**m).clone()
+        Some((&**m).clone())
     }
 
     pub fn stmt_count_of(&self, id: ModuleId) -> usize {

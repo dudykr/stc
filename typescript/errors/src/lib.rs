@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2307
+    ModuleNotFound {
+        span: Span,
+    },
+
     /// TS5061
     TooManyAsterisk {
         span: Span,
@@ -1401,6 +1406,8 @@ impl Error {
             Error::DuplicateVar { .. } => 2451,
 
             Error::TooManyAsterisk { .. } => 5061,
+
+            Error::ModuleNotFound { .. } => 2307,
 
             _ => 0,
         }
