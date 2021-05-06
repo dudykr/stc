@@ -2433,7 +2433,7 @@ impl Analyzer<'_, '_> {
 
         if !self.is_builtin {
             if let Ok(ty) = self.env.get_global_var(span, &i.sym) {
-                if self.ctx.report_error_for_non_local_export {
+                if self.ctx.report_error_for_non_local_vars {
                     self.storage.report(Error::CannotExportNonLocalVar { span: i.span });
                 }
 

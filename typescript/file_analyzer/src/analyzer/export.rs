@@ -404,7 +404,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RExportNamedSpecifier) {
         let ctx = Ctx {
-            report_error_for_non_local_export: true,
+            report_error_for_non_local_vars: true,
             ..self.ctx
         };
         self.with_ctx(ctx).validate_with(|a| {

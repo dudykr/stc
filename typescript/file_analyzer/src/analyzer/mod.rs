@@ -149,7 +149,7 @@ pub(crate) struct Ctx {
 
     /// If true, `type_of_raw_var` should report an error if the referenced
     /// variable is global.
-    report_error_for_non_local_export: bool,
+    report_error_for_non_local_vars: bool,
 
     in_static_property_initializer: bool,
 
@@ -456,7 +456,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 is_calling_iife: false,
                 in_ts_fn_type: false,
                 in_actual_type: false,
-                report_error_for_non_local_export: false,
+                report_error_for_non_local_vars: false,
                 in_static_property_initializer: false,
                 reevaluating_call_or_new: false,
                 reevaluating_argument: false,
