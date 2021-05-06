@@ -95,7 +95,7 @@ where
         let res = self.load_including_deps(entry);
         match res {
             Err(err) => {
-                slog::error!(self.logger, "Failed to load {}: {}", entry.display(), err);
+                slog::error!(self.logger, "Failed to load {}:\n{:?}", entry.display(), err);
             }
             _ => {}
         }
@@ -244,7 +244,8 @@ where
         let deps = deps
             .into_par_iter()
             .map(|specifier| resolver.resolve(path, &specifier))
-            .collect::<Result<_, _>>()?;
+            .collect::<Result<_, _>>()
+            .context("failed to resolve deps")?;
 
         Ok(Some(LoadResult { module, deps }))
     }
