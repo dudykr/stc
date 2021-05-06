@@ -806,9 +806,12 @@ impl Analyzer<'_, '_> {
                 }
                 let lhs_ty = lhs
                     .validate_with_args(self, (TypeOfMode::LValue, None, None))
-                    .context("tried to validate type of the expression in lhs of assignment")?;
+                    .context("tried to validate type of the expression in lhs of assignment")
+                    .report(&mut self.storage);
 
-                self.assign_with_opts(&mut Default::default(), AssignOpts { span, ..opts }, &lhs_ty, &ty)?;
+                if let Some(lhs_ty) = &lhs_ty {
+                    self.assign_with_opts(&mut Default::default(), AssignOpts { span, ..opts }, &lhs_ty, &ty)?;
+                }
                 return Ok(());
             }
         }
