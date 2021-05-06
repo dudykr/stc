@@ -290,7 +290,7 @@ impl Analyzer<'_, '_> {
             let test = stmt.test.validate_with_default(&mut *self.with_ctx(ctx));
             match test {
                 Ok(_) => {}
-                Err(err)=>{
+                Err(err) => {
                     self.storage.report(err);
                 }
             }
@@ -576,7 +576,8 @@ impl Analyzer<'_, '_> {
             RPat::Assign(assign) => {
                 let ids: Vec<Id> = find_ids_in_pat(&assign.left);
 
-                self.try_assign_pat_with_opts(span, &assign.left, &ty, opts)?;
+                self.try_assign_pat_with_opts(span, &assign.left, &ty, opts)
+                    .report(&mut self.storage);
 
                 let prev_len = self.scope.declaring.len();
                 self.scope.declaring.extend(ids);
@@ -588,9 +589,17 @@ impl Analyzer<'_, '_> {
                     .context("tried to validate type of default expression in an assginment pattern");
 
                 self.scope.declaring.drain(prev_len..);
-                let default_value_type = res?;
-                self.try_assign_pat_with_opts(span, &assign.left, &default_value_type, opts)
-                    .report(&mut self.storage);
+
+                match res {
+                    Ok(default_value_type) => {
+                        self.try_assign_pat_with_opts(span, &assign.left, &default_value_type, opts)
+                            .report(&mut self.storage);
+                    }
+                    Err(err) => {
+                        self.storage.report(err);
+                    }
+                }
+
                 self.try_assign_pat_with_opts(span, &assign.left, ty, opts)?;
                 return Ok(());
             }
