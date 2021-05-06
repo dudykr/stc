@@ -224,6 +224,8 @@ impl Analyzer<'_, '_> {
         let c_span = c.span();
 
         self.with_child(ScopeKind::Constructor, Default::default(), |child: &mut Analyzer| {
+            child.ctx.in_declare |= c.body.is_none();
+
             let RConstructor { params, body, .. } = c;
 
             {
