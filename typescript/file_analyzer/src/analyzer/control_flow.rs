@@ -590,15 +590,10 @@ impl Analyzer<'_, '_> {
 
                 self.scope.declaring.drain(prev_len..);
 
-                match res {
-                    Ok(default_value_type) => {
-                        self.try_assign_pat_with_opts(span, &assign.left, &default_value_type, opts)
-                            .report(&mut self.storage);
-                    }
-                    Err(err) => {
-                        self.storage.report(err);
-                    }
-                }
+                res.and_then(|default_value_type| {
+                    self.try_assign_pat_with_opts(span, &assign.left, &default_value_type, opts)
+                })
+                .report(&mut self.storage);
 
                 self.try_assign_pat_with_opts(span, &assign.left, ty, opts)?;
                 return Ok(());
