@@ -323,6 +323,15 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, p: &RTsParamProp) -> ValidationResult<()> {
+        if self.ctx.in_declare {
+            match p.param {
+                RTsParamPropParam::Assign(..) => self
+                    .storage
+                    .report(Error::InitializerDisallowedInAmbientContext { span: p.span }),
+                _ => {}
+            }
+        }
+
         match &p.param {
             RTsParamPropParam::Ident(ref i)
             | RTsParamPropParam::Assign(RAssignPat {
