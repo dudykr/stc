@@ -409,9 +409,10 @@ impl Analyzer<'_, '_> {
 
                     ty_of_left = analyzer
                         .type_of_var(i, TypeOfMode::LValue, None)
-                        .context("tried to get type of lhs of an assignment")?;
+                        .context("tried to get type of lhs of an assignment")
+                        .report(&mut analyzer.storage);
 
-                    (any_span, Some(&ty_of_left))
+                    (any_span, ty_of_left.as_ref())
                 }
 
                 _ => (None, type_ann),
