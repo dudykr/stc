@@ -400,7 +400,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if !l_has_rest && required_li.clone().count() < required_li.clone().count() {
+        if !l_has_rest && required_li.clone().count() < required_ri.clone().count() {
             // I don't know why, but overload signature does not need to match overloaded
             // signature.
             if opts.for_overload {
