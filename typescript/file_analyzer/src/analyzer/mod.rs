@@ -889,6 +889,15 @@ impl Analyzer<'_, '_> {
                     self.register_type(i.into(), ty);
                 }
                 RTsModuleName::Str(s) => {
+                    let name: &str = &*s.value;
+
+                    if let Some(pos) = name.as_bytes().iter().position(|&c| c == b'*') {
+                        if let Some(rpos) = name.as_bytes().iter().rposition(|&c| c == b'*') {
+                            if pos != rpos {
+                                self.storage.report(Error::TooManyAsterisk { span: s.span });
+                            }
+                        }
+                    }
                     //TODO
                     return Ok(());
                 }

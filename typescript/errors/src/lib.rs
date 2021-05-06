@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS5061
+    TooManyAsterisk {
+        span: Span,
+    },
+
     /// TS2451
     DuplicateVar {
         name: Id,
@@ -1394,6 +1399,8 @@ impl Error {
             Error::ClassNameCannotBeObjectWhenTargetingEs5WithModule { .. } => 2725,
 
             Error::DuplicateVar { .. } => 2451,
+
+            Error::TooManyAsterisk { .. } => 5061,
 
             _ => 0,
         }
