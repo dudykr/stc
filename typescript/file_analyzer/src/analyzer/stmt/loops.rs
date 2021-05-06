@@ -318,11 +318,15 @@ impl Analyzer<'_, '_> {
                             }
                             _ => err,
                         })
-                        .context("tried to get the element type of an iterator to calculate type for a for-of loop")?,
+                        .context("tried to get the element type of an iterator to calculate type for a for-of loop")
+                        .report(&mut child.storage)
+                        .unwrap_or_else(|| Cow::Owned(Type::any(span))),
                     ForHeadKind::In => Cow::Owned(
                         child
                             .get_element_type_of_for_in(&rty)
-                            .context("tried to calculate the element type for a for-in loop")?,
+                            .context("tried to calculate the element type for a for-in loop")
+                            .report(&mut child.storage)
+                            .unwrap_or_else(|| Type::any(span)),
                     ),
                 };
 
