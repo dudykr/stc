@@ -147,7 +147,7 @@ impl Analyzer<'_, '_> {
             }));
         }
 
-        if !can_be_tuple {
+        if !can_be_tuple || (type_ann.is_none() && elements.is_empty()) {
             elements.retain(|el| {
                 if el.ty.is_kwd(TsKeywordTypeKind::TsNullKeyword) || el.ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
                 {
