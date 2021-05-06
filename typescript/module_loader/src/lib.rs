@@ -244,8 +244,8 @@ where
         let deps = deps
             .into_par_iter()
             .map(|specifier| resolver.resolve(path, &specifier))
-            .collect::<Result<_, _>>()
-            .context("failed to resolve deps")?;
+            .filter_map(|id| id.ok())
+            .collect();
 
         Ok(Some(LoadResult { module, deps }))
     }
