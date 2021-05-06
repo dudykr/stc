@@ -817,6 +817,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, decl: &RTsNamespaceDecl) {
         let ctx = Ctx {
             in_global: self.ctx.in_global || decl.global,
+            in_declare: self.ctx.in_declare || decl.declare,
             ..self.ctx
         };
 
