@@ -525,7 +525,6 @@ impl Analyzer<'_, '_> {
             if !is_last {
                 match **e {
                     RExpr::Arrow(..) => {
-                        e.visit_with(self);
                         self.storage.report(Error::UselessSeqExpr {
                             span: span.with_lo(first_span.lo()),
                         });
