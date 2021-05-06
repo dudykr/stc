@@ -370,7 +370,12 @@ impl Load for Checker {
     fn is_in_same_circular_group(&self, base: &Arc<PathBuf>, src: &JsWord) -> bool {
         let id = self.module_graph.id(&base);
 
-        let path = self.module_graph.resolve(&base, src).unwrap();
+        let path = self.module_graph.resolve(&base, src);
+        let path = match path {
+            Ok(v) => v,
+            // Unresolved deps.
+            Err(..) => return false,
+        };
         let target = self.module_graph.id(&path);
 
         let circular_set = self.module_graph.get_circular(id);
