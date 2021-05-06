@@ -82,13 +82,14 @@ impl Checker {
         resolver: Arc<dyn Resolve>,
     ) -> Self {
         Checker {
-            logger,
+            logger: logger.clone(),
             env: env.clone(),
             cm: cm.clone(),
             handler,
             module_types: Default::default(),
             dts_modules: Default::default(),
             module_graph: Arc::new(ModuleGraph::new(
+                logger,
                 cm,
                 Some(Default::default()),
                 resolver,

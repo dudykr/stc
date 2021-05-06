@@ -11,6 +11,7 @@ use parking_lot::Mutex;
 use parking_lot::RwLock;
 use petgraph::{algo::all_simple_paths, graphmap::DiGraphMap};
 use rayon::prelude::*;
+use slog::Logger;
 use stc_ts_types::module_id;
 use stc_ts_types::ModuleId;
 use std::collections::HashSet;
@@ -36,6 +37,7 @@ where
     C: Comments + Send + Sync,
     R: Resolve,
 {
+    logger: Logger,
     cm: Arc<SourceMap>,
     parser_config: TsConfig,
     target: JscTarget,
@@ -66,6 +68,7 @@ where
     R: Resolve,
 {
     pub fn new(
+        logger: Logger,
         cm: Arc<SourceMap>,
         comments: Option<C>,
         resolver: R,
@@ -73,6 +76,7 @@ where
         target: JscTarget,
     ) -> Self {
         Self {
+            logger,
             cm,
             comments,
             parser_config,
@@ -87,7 +91,13 @@ where
     }
 
     pub fn load_all(&self, entry: &Arc<PathBuf>) -> Result<ModuleId, Error> {
-        let _ = self.load_including_deps(entry);
+        let res = self.load_including_deps(entry);
+        match res {
+            Err(err) => {
+                slog::error!(self.logger, "Failed to load {}: {}", entry.display(), err);
+            }
+            _ => {}
+        }
 
         let (_, module_id) = self.id_generator.generate(entry);
 
