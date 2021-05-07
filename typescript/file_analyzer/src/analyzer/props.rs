@@ -137,7 +137,7 @@ impl Analyzer<'_, '_> {
                 if !analyzer.is_type_valid_for_computed_key(span, &ty) {
                     check_for_validity = false;
 
-                    analyzer.storage.report(Error::TS2464 {
+                    analyzer.storage.report(Error::InvalidTypeForComputedProperty {
                         span,
                         ty: box ty.clone(),
                     });
