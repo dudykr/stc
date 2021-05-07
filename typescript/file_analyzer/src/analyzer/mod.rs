@@ -197,6 +197,12 @@ pub(crate) struct Ctx {
     skip_identical_while_inferencing: bool,
 }
 
+impl Ctx {
+    pub fn can_generalize_literals(self) -> bool {
+        !self.in_argument
+    }
+}
+
 /// Note: All methods named `validate_*` return [Err] iff it's not recoverable.
 pub struct Analyzer<'scope, 'b> {
     pub(crate) logger: Logger,

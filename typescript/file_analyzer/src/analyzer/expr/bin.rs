@@ -642,11 +642,19 @@ impl Analyzer<'_, '_> {
                 let mut lt = lt;
                 let mut rt = rt;
 
-                if self.may_generalize(&lt) {
+                if lt.type_eq(&rt) {
+                    return Ok(lt);
+                }
+
+                if self.may_generalize(&lt) || (type_ann.is_none() && self.ctx.can_generalize_literals()) {
                     lt = lt.generalize_lit();
                 }
-                if self.may_generalize(&rt) {
+                if self.may_generalize(&rt) || (type_ann.is_none() && self.ctx.can_generalize_literals()) {
                     rt = rt.generalize_lit();
+                }
+
+                if lt.type_eq(&rt) {
+                    return Ok(lt);
                 }
 
                 match lt.normalize() {
@@ -661,10 +669,6 @@ impl Analyzer<'_, '_> {
                 match op {
                     op!("||") => {
                         if lt.is_never() {
-                            return Ok(lt);
-                        }
-
-                        if lt.type_eq(&rt) {
                             return Ok(lt);
                         }
 
