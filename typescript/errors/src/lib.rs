@@ -1109,6 +1109,46 @@ impl Debug for DebugContext {
 }
 
 impl Error {
+    pub fn normalize_error_code(code: usize) -> usize {
+        match code {
+            // TS2304: Type not found.
+            // TS2318: Type not found and name is global.
+            // TS2552: Type not found with recommendation.
+            // TS2580: Type not found with recommendation for package to instsall.
+            // TS2581: Type not found with recommendation for jQuery.
+            // TS2582: Type not found with recommendation for jest or mocha.
+            // TS2583: Type not found with recommendation to change target library.
+            // TS2584: Type not found with recommendation to change target library to include `dom`.
+            2318 | 2552 | 2580 | 2581 | 2582 | 2583 | 2584 => 2304,
+
+            // TS2339: Property not found.
+            // TS2550: Property not found with a suggestion to change `lib`.
+            // TS2551: Property not found with a suggestion.
+            2550 | 2551 => 2339,
+
+            // TS2693: Type used as a variable.
+            // TS2585: Type used as a variable with a suggestion to change 'lib',
+            2585 => 2693,
+
+            // TS2307: Module not found.
+            // TS2792: Module not found with recommendation to change module resolution.
+            2792 => 2307,
+
+            // TS2372: Referenced while initialization.
+            // TS2448: Referenced while initialization and the variable is declared with let or const.
+            2448 => 2372,
+
+            // ===== ===== ===== For convinience ===== ===== =====
+
+            // TS2461: Not an array type.
+            // TS2548: Not an array or no Symbol.iterator
+            // TS2549: Not an array, string or no Symbol.iterator
+            2548 | 2549 => 2461,
+
+            _ => code,
+        }
+    }
+
     #[track_caller]
     pub fn context(self, context: impl Display) -> Self {
         if !cfg!(debug_assertions) {
@@ -1468,7 +1508,11 @@ impl Error {
     pub fn emit(self, h: &Handler) {
         let span = self.span();
 
-        let mut err = h.struct_span_err_with_code(span, &self.msg(), DiagnosticId::Error(format!("TS{}", self.code())));
+        let mut err = h.struct_span_err_with_code(
+            span,
+            &self.msg(),
+            DiagnosticId::Error(format!("TS{}", Self::normalize_error_code(self.code()))),
+        );
 
         err.emit();
     }

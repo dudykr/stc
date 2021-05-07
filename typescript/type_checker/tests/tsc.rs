@@ -159,47 +159,10 @@ fn load_expected_errors(ts_file: &Path) -> Result<Vec<RefError>, Error> {
                 .context("failed to parse errors.txt.json")?;
 
         for err in &mut errors {
-            match &*err.code {
-                // TS2304: Type not found.
-                // TS2318: Type not found and name is global.
-                // TS2552: Type not found with recommendation.
-                // TS2580: Type not found with recommendation for package to instsall.
-                // TS2581: Type not found with recommendation for jQuery.
-                // TS2582: Type not found with recommendation for jest or mocha.
-                // TS2583: Type not found with recommendation to change target library.
-                // TS2584: Type not found with recommendation to change target library to include `dom`.
-                "TS2318" | "TS2552" | "TS2580" | "TS2581" | "TS2582" | "TS2583" | "TS2584" => {
-                    // TS2304: Type not found without recommendation.
-                    err.code = "TS2304".to_string();
-                }
+            let code = err.code.replace("TS", "").parse().expect("failed to parse error code");
+            let code = stc_ts_errors::Error::normalize_error_code(code);
 
-                // TS2339: Property not found.
-                // TS2550: Property not found with a suggestion to change `lib`.
-                // TS2551: Property not found with a suggestion.
-                "TS2550" | "TS2551" => {
-                    err.code = "TS2339".to_string();
-                }
-
-                // TS2693: Type used as a variable.
-                // TS2585: Type used as a variable with a suggestion to change 'lib',
-                "TS2585" => {
-                    err.code = "TS2693".to_string();
-                }
-
-                // TS2307: Module not found.
-                // TS2792: Module not found with recommendation to change module resolution.
-                "TS2792" => {
-                    err.code = "TS2307".to_string();
-                }
-
-                // TS2372: Referenced while initialization.
-                // TS2448: Referenced while initialization and the variable is declared with let or const.
-                "TS2448" => {
-                    err.code = "TS2372".to_string();
-                }
-
-                _ => {}
-            }
+            err.code = format!("TS{}", code);
         }
 
         // TODO: Match column and message
