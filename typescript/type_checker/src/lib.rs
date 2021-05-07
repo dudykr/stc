@@ -23,7 +23,6 @@ use stc_ts_file_analyzer::env::Env;
 use stc_ts_file_analyzer::loader::Load;
 use stc_ts_file_analyzer::loader::ModuleInfo;
 use stc_ts_file_analyzer::validator::ValidateWith;
-use stc_ts_file_analyzer::DepInfo;
 use stc_ts_file_analyzer::ModuleTypeData;
 use stc_ts_file_analyzer::ValidationResult;
 use stc_ts_module_loader::resolver::Resolve;
@@ -363,21 +362,6 @@ impl Checker {
 }
 
 impl Load for Checker {
-    fn old_load_circular_dep(
-        &self,
-        base: Arc<PathBuf>,
-        _partial: &ModuleTypeData,
-        import: &DepInfo,
-    ) -> ValidationResult<ModuleInfo> {
-        let _base_id = self.module_graph.id(&base);
-        let path = self.module_graph.resolve(&base, &import.src).unwrap();
-        let id = self.module_graph.id(&path);
-
-        let data = self.analyze_module(Some(base.clone()), path.clone());
-
-        return Ok(ModuleInfo { module_id: id, data });
-    }
-
     fn module_id(&self, base: &Arc<PathBuf>, src: &JsWord) -> Option<ModuleId> {
         let path = self.module_graph.resolve(&base, src).ok()?;
         let id = self.module_graph.id(&path);
@@ -397,25 +381,24 @@ impl Load for Checker {
         &self,
         base: ModuleId,
         dep: ModuleId,
-        partial: &ModuleTypeData,
+        _partial: &ModuleTypeData,
     ) -> ValidationResult<ModuleInfo> {
+        let base_path = self.module_graph.path(base);
+        let dep_path = self.module_graph.path(dep);
+
+        let data = self.analyze_module(Some(base_path.clone()), dep_path.clone());
+
+        return Ok(ModuleInfo { module_id: dep, data });
     }
 
     fn load_non_circular_dep(&self, base: ModuleId, dep: ModuleId) -> ValidationResult<ModuleInfo> {
-        let mut _result = ModuleTypeData::default();
+        let base_path = self.module_graph.path(base);
+        let dep_path = self.module_graph.path(dep);
 
-        // TODO: Use ModuleId for analyze_module
-        let path = self.module_graph.resolve(&base, &import.src);
-        let path = match path {
-            Ok(v) => v,
-            Err(..) => return Err(Error::ModuleNotFound { span: import.span }),
-        };
+        slog::info!(self.logger, "({}): Loading {}", base_path.display(), dep_path.display());
 
-        slog::info!(self.logger, "({}): Loading {}", base.display(), path.display());
-        let id = self.module_graph.id(&path);
+        let data = self.analyze_module(Some(base_path.clone()), dep_path.clone());
 
-        let data = self.analyze_module(Some(base.clone()), path.clone());
-
-        return Ok(ModuleInfo { module_id: id, data });
+        return Ok(ModuleInfo { module_id: dep, data });
     }
 }
