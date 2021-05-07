@@ -5,7 +5,6 @@ use crate::loader::Load;
 use crate::loader::ModuleInfo;
 use crate::tests::GLOBALS;
 use crate::tests::MARKS;
-use crate::DepInfo;
 use crate::ValidationResult;
 use once_cell::sync::Lazy;
 use rnode::NodeIdGenerator;

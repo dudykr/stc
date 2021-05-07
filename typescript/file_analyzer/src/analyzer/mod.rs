@@ -657,25 +657,20 @@ impl<'b, 'c> DerefMut for WithCtx<'_, 'b, 'c> {
 pub struct NoopLoader;
 
 impl Load for NoopLoader {
-    fn is_in_same_circular_group(&self, base: &Arc<PathBuf>, src: &JsWord) -> bool {
-        false
+    fn module_id(&self, base: &Arc<PathBuf>, src: &JsWord) -> Option<ModuleId> {
+        unreachable!()
     }
 
-    fn load_non_circular_dep(&self, base: Arc<PathBuf>, import: &DepInfo) -> ValidationResult<ModuleInfo> {
-        unimplemented!()
+    fn is_in_same_circular_group(&self, base: ModuleId, dep: ModuleId) -> bool {
+        unreachable!()
     }
 
-    fn load_circular_dep(
-        &self,
-        base: Arc<PathBuf>,
-        partial: &ModuleTypeData,
-        import: &DepInfo,
-    ) -> ValidationResult<ModuleInfo> {
-        unimplemented!()
+    fn load_circular_dep(&self, dep: ModuleId, partial: &ModuleTypeData) -> ValidationResult<ModuleInfo> {
+        unreachable!()
     }
 
-    fn module_id(&self, base: &Arc<PathBuf>, src: &JsWord) -> ModuleId {
-        unimplemented!()
+    fn load_non_circular_dep(&self, dep: ModuleId) -> ValidationResult<ModuleInfo> {
+        unreachable!()
     }
 }
 
