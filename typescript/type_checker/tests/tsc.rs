@@ -159,10 +159,12 @@ fn load_expected_errors(ts_file: &Path) -> Result<Vec<RefError>, Error> {
                 .context("failed to parse errors.txt.json")?;
 
         for err in &mut errors {
-            let code = err.code.replace("TS", "").parse().expect("failed to parse error code");
-            let code = stc_ts_errors::Error::normalize_error_code(code);
+            let orig_code = err.code.replace("TS", "").parse().expect("failed to parse error code");
+            let code = stc_ts_errors::Error::normalize_error_code(orig_code);
 
-            err.code = format!("TS{}", code);
+            if orig_code != code {
+                err.code = format!("TS{}", code);
+            }
         }
 
         // TODO: Match column and message
