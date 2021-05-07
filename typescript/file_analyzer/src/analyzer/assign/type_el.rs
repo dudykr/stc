@@ -638,12 +638,24 @@ impl Analyzer<'_, '_> {
                                         }
                                     }
 
-                                    self.assign_inner(
-                                        data,
-                                        lp.type_ann.as_deref().unwrap_or(&Type::any(span)),
-                                        r_el.type_ann.as_deref().unwrap_or(&Type::any(span)),
-                                        opts,
-                                    )?;
+                                    // Allow assigning undefined to optional properties.
+                                    (|| {
+                                        if lp.optional {
+                                            if let Some(r_ty) = &r_el.type_ann {
+                                                if r_ty.is_undefined() {
+                                                    return Ok(());
+                                                }
+                                            }
+                                        }
+
+                                        self.assign_inner(
+                                            data,
+                                            lp.type_ann.as_deref().unwrap_or(&Type::any(span)),
+                                            r_el.type_ann.as_deref().unwrap_or(&Type::any(span)),
+                                            opts,
+                                        )
+                                    })()?;
+
                                     if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
                                         unhandled_rhs.remove(pos);
                                     }
