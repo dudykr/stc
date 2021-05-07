@@ -104,24 +104,19 @@ impl Tester<'_, '_> {
 struct Loader {}
 
 impl Load for Loader {
-    fn module_id(&self, base: &Arc<PathBuf>, src: &JsWord) -> ModuleId {
+    fn module_id(&self, base: &Arc<PathBuf>, src: &JsWord) -> Option<ModuleId> {
         unimplemented!()
     }
 
-    fn is_in_same_circular_group(&self, base: &Arc<PathBuf>, src: &JsWord) -> bool {
+    fn is_in_same_circular_group(&self, dep: ModuleId) -> bool {
         unimplemented!()
     }
 
-    fn load_circular_dep(
-        &self,
-        base: Arc<PathBuf>,
-        partial: &ModuleTypeData,
-        import: &DepInfo,
-    ) -> ValidationResult<ModuleInfo> {
+    fn load_circular_dep(&self, dep: ModuleId, partial: &ModuleTypeData) -> ValidationResult<ModuleInfo> {
         unimplemented!()
     }
 
-    fn load_non_circular_dep(&self, base: Arc<PathBuf>, import: &DepInfo) -> ValidationResult<ModuleInfo> {
+    fn load_non_circular_dep(&self, dep: ModuleId) -> ValidationResult<ModuleInfo> {
         unimplemented!()
     }
 }
