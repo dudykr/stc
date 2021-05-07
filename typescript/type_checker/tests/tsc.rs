@@ -186,6 +186,12 @@ fn load_expected_errors(ts_file: &Path) -> Result<Vec<RefError>, Error> {
                     err.code = "TS2693".to_string();
                 }
 
+                // TS2307: Module not found.
+                // TS2792: Module not found with recommendation to change module resolution.
+                "TS2792" => {
+                    err.code = "TS2307".to_string();
+                }
+
                 _ => {}
             }
         }
