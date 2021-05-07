@@ -745,8 +745,8 @@ impl Analyzer<'_, '_> {
                                 } else {
                                     self.storage.report(Error::TupleIndexError {
                                         span,
-                                        len: elems.len(),
-                                        index: i,
+                                        len: elems.len() as _,
+                                        index: i as _,
                                     });
                                 }
                             }
