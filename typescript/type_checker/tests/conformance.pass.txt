@@ -656,6 +656,7 @@ es6/for-ofStatements/for-of50.ts
 es6/for-ofStatements/for-of51.ts
 es6/for-ofStatements/for-of52.ts
 es6/for-ofStatements/for-of53.ts
+es6/for-ofStatements/for-of55.ts
 es6/for-ofStatements/for-of56.ts
 es6/for-ofStatements/for-of57.ts
 es6/for-ofStatements/for-of58.ts
@@ -1771,6 +1772,7 @@ statements/for-ofStatements/ES5For-of13.ts
 statements/for-ofStatements/ES5For-of14.ts
 statements/for-ofStatements/ES5For-of15.ts
 statements/for-ofStatements/ES5For-of16.ts
+statements/for-ofStatements/ES5For-of17.ts
 statements/for-ofStatements/ES5For-of18.ts
 statements/for-ofStatements/ES5For-of19.ts
 statements/for-ofStatements/ES5For-of2.ts
