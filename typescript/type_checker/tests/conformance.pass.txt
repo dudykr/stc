@@ -7,6 +7,7 @@ Symbols/ES5SymbolProperty6.ts
 Symbols/ES5SymbolProperty7.ts
 Symbols/ES5SymbolType1.ts
 ambient/ambientDeclarations.ts
+ambient/ambientDeclarationsPatterns_tooManyAsterisks.ts
 ambient/ambientEnumDeclaration1.ts
 ambient/ambientEnumDeclaration2.ts
 ambient/ambientInsideNonAmbient.ts
@@ -286,6 +287,7 @@ es2018/usePromiseFinally.ts
 es2018/useRegexpGroups.ts
 es2019/globalThisTypeIndexAccess.ts
 es2020/bigintMissingES2019.ts
+es2020/modules/exportAsNamespace_nonExistent.ts
 es6/Symbols/symbolDeclarationEmit1.ts
 es6/Symbols/symbolDeclarationEmit10.ts
 es6/Symbols/symbolDeclarationEmit11.ts
@@ -676,6 +678,7 @@ es6/memberFunctionDeclarations/MemberFunctionDeclaration2_es6.ts
 es6/memberFunctionDeclarations/MemberFunctionDeclaration3_es6.ts
 es6/memberFunctionDeclarations/MemberFunctionDeclaration7_es6.ts
 es6/modules/defaultExportWithOverloads01.ts
+es6/modules/importEmptyFromModuleNotExisted.ts
 es6/propertyAccess/propertyAccessNumericLiterals.es6.ts
 es6/restParameters/emitRestParametersFunction.ts
 es6/restParameters/emitRestParametersFunctionES6.ts
@@ -1568,6 +1571,7 @@ parser/ecmascript5/RegressionTests/parser645086_3.ts
 parser/ecmascript5/RegressionTests/parser645086_4.ts
 parser/ecmascript5/RegressionTests/parser645484.ts
 parser/ecmascript5/RegressionTests/parserNotHexLiteral1.ts
+parser/ecmascript5/RegressionTests/parserTernaryAndCommaOperators1.ts
 parser/ecmascript5/RegularExpressions/parserRegularExpression2.ts
 parser/ecmascript5/RegularExpressions/parserRegularExpression3.ts
 parser/ecmascript5/RegularExpressions/parserRegularExpression4.ts
