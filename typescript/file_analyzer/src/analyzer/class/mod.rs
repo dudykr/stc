@@ -15,6 +15,7 @@ use crate::util::property_map::PropertyMap;
 use crate::validator;
 use crate::validator::ValidateWith;
 use crate::ValidationResult;
+use itertools::Itertools;
 use rnode::FoldWith;
 use rnode::IntoRNode;
 use rnode::NodeId;
@@ -1219,6 +1220,20 @@ impl Analyzer<'_, '_> {
                     // Validate constructors
                     let mut constructor_spans = vec![];
                     let mut constructor_required_param_count = None;
+                    let constructors_with_body = c
+                        .body
+                        .iter()
+                        .filter_map(|member| match member {
+                            RClassMember::Constructor(c) if c.body.is_some() => Some(c.span),
+                            _ => None,
+                        })
+                        .collect_vec();
+
+                    if constructors_with_body.len() >= 2 {
+                        for &span in &constructors_with_body {
+                            child.storage.report(Error::DuplciateConstructor { span })
+                        }
+                    }
 
                     for m in c.body.iter() {
                         match *m {
@@ -1235,7 +1250,7 @@ impl Analyzer<'_, '_> {
                                     }
                                 }
 
-                                {
+                                if constructors_with_body.len() == 1 {
                                     // Check parameter count
                                     let required_param_count = cons
                                         .params

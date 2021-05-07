@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2392
+    DuplciateConstructor {
+        span: Span,
+    },
+
     /// TS2307
     ModuleNotFound {
         span: Span,
