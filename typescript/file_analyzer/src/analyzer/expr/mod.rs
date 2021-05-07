@@ -819,17 +819,6 @@ impl Analyzer<'_, '_> {
             _ => false,
         });
 
-        if is_callable {
-            // Handle funciton-like interfaces
-            // Example of code handled by this block is `Error.call`
-
-            let obj = self.env.get_global_type(span, &js_word!("Function"))?;
-
-            if let Ok(v) = self.access_property(span, obj, prop, type_mode, IdCtx::Var) {
-                return Ok(Some(v));
-            }
-        }
-
         if matching_elements.len() == 1 {
             return Ok(matching_elements.pop());
         }
@@ -2730,6 +2719,7 @@ impl Analyzer<'_, '_> {
                 }
             }
         };
+
         self.storage.report_all(errors);
 
         let prop = self.validate_key(prop, computed)?;
