@@ -7,6 +7,7 @@ use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_ast_rnode::RTsTypeAssertion;
+use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeParamInstantiation;
@@ -192,11 +193,9 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        if self.castable(span, &orig, &casted)? {
-            return Ok(());
-        }
-
-        Err(Error::NonOverlappingTypeCast { span })
+        self.castable(span, &orig, &casted)
+            .map(|_| ())
+            .convert_err(|err| Error::NonOverlappingTypeCast { span })
     }
 
     pub(crate) fn has_overlap(&mut self, span: Span, l: &Type, r: &Type) -> ValidationResult<bool> {
