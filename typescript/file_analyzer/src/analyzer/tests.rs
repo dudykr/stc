@@ -108,7 +108,7 @@ impl Load for Loader {
         unimplemented!()
     }
 
-    fn is_in_same_circular_group(&self, dep: ModuleId) -> bool {
+    fn is_in_same_circular_group(&self, base: ModuleId, dep: ModuleId) -> bool {
         unimplemented!()
     }
 

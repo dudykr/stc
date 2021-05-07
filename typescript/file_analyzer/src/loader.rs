@@ -16,7 +16,7 @@ pub trait Load: 'static + Send + Sync {
     fn module_id(&self, base: &Arc<PathBuf>, src: &JsWord) -> Option<ModuleId>;
 
     /// Note: This method called within a thread
-    fn is_in_same_circular_group(&self, dep: ModuleId) -> bool;
+    fn is_in_same_circular_group(&self, base: ModuleId, dep: ModuleId) -> bool;
 
     /// This method can be called multiple time for same module.
     ///
@@ -38,8 +38,8 @@ where
         (**self).module_id(base, src)
     }
 
-    fn is_in_same_circular_group(&self, dep: ModuleId) -> bool {
-        (**self).is_in_same_circular_group(dep)
+    fn is_in_same_circular_group(&self, base: ModuleId, dep: ModuleId) -> bool {
+        (**self).is_in_same_circular_group(base, dep)
     }
 
     fn load_circular_dep(&self, dep: ModuleId, partial: &ModuleTypeData) -> ValidationResult<ModuleInfo> {
@@ -59,8 +59,8 @@ where
         (**self).module_id(base, src)
     }
 
-    fn is_in_same_circular_group(&self, dep: ModuleId) -> bool {
-        (**self).is_in_same_circular_group(dep)
+    fn is_in_same_circular_group(&self, base: ModuleId, dep: ModuleId) -> bool {
+        (**self).is_in_same_circular_group(base, dep)
     }
 
     fn load_circular_dep(&self, dep: ModuleId, partial: &ModuleTypeData) -> ValidationResult<ModuleInfo> {
