@@ -1070,7 +1070,9 @@ impl Analyzer<'_, '_> {
                     _ => false,
                 });
                 let errors = results.into_iter().map(Result::unwrap_err).collect();
-                if normalized {
+                let should_use_single_error = normalized || types.iter().all(|ty| ty.normalize().is_lit());
+
+                if should_use_single_error {
                     return Err(Error::AssignFailed {
                         span,
                         cause: errors,
