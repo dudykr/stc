@@ -8,12 +8,14 @@ use super::util::VarVisitor;
 use super::Analyzer;
 use super::Ctx;
 use super::ScopeKind;
+use crate::env::ModuleConfig;
 use crate::ty::LitGeneralizer;
 use crate::ty::TypeExt;
 use crate::util::property_map::PropertyMap;
 use crate::validator;
 use crate::validator::ValidateWith;
 use crate::ValidationResult;
+use itertools::Itertools;
 use rnode::FoldWith;
 use rnode::IntoRNode;
 use rnode::NodeId;
@@ -55,6 +57,7 @@ use stc_ts_errors::Errors;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::Class;
 use stc_ts_types::ClassDef;
+use stc_ts_types::ClassMember;
 use stc_ts_types::ClassProperty;
 use stc_ts_types::ComputedKey;
 use stc_ts_types::ConstructorSignature;
@@ -67,6 +70,7 @@ use stc_ts_types::Operator;
 use stc_ts_types::QueryExpr;
 use stc_ts_types::QueryType;
 use stc_ts_types::Ref;
+use stc_ts_types::TsExpr;
 use stc_ts_types::Type;
 use stc_ts_utils::PatExt;
 use stc_utils::TryOpt;
@@ -92,8 +96,23 @@ impl Analyzer<'_, '_> {
         type_ann: &Option<RTsTypeAnn>,
         value: &Option<Box<RExpr>>,
     ) -> ValidationResult<Option<Type>> {
-        let ty = try_opt!(type_ann.validate_with(self));
-        let value_ty = try_opt!(value.validate_with_args(self, (TypeOfMode::RValue, None, ty.as_ref())));
+        let mut ty = try_opt!(type_ann.validate_with(self));
+        let mut value_ty = {
+            let ctx = Ctx {
+                in_static_property_initializer: is_static,
+                ..self.ctx
+            };
+            try_opt!(value.validate_with_args(&mut *self.with_ctx(ctx), (TypeOfMode::RValue, None, ty.as_ref())))
+        };
+
+        if readonly {
+            if let Some(ty) = &mut ty {
+                self.prevent_generalize(ty);
+            }
+            if let Some(ty) = &mut value_ty {
+                self.prevent_generalize(ty);
+            }
+        }
 
         Ok(ty.or_else(|| value_ty).map(|ty| match ty {
             Type::Symbol(..) if readonly && is_static => Type::Operator(Operator {
@@ -113,6 +132,18 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, p: &RClassProp) -> ValidationResult<ClassProperty> {
         self.record(p);
+
+        if !p.computed && p.is_static {
+            match &*p.key {
+                RExpr::Ident(i) => {
+                    if &*i.sym == "prototype" {
+                        self.storage
+                            .report(Error::StaticPropertyCannotBeNamedProptotype { span: i.span })
+                    }
+                }
+                _ => {}
+            }
+        }
 
         // Verify key if key is computed
         if p.computed {
@@ -153,13 +184,24 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, p: &RPrivateProp) -> ValidationResult<ClassProperty> {
-        self.record(p);
+        match p.key.id.sym {
+            js_word!("constructor") => {
+                self.storage.report(Error::ConstructorIsKeyword { span: p.key.id.span });
+            }
+            _ => {}
+        }
 
         let key = Key::Private(p.key.clone().into());
 
         let value = self
             .validate_type_of_class_property(p.span, p.readonly, p.is_static, &p.type_ann, &p.value)?
             .map(Box::new);
+
+        if !self.ctx.in_declare && self.rule().no_implicit_any {
+            if value.is_none() {
+                self.storage.report(Error::ImplicitAny { span: key.span() })
+            }
+        }
 
         Ok(ClassProperty {
             span: p.span,
@@ -183,6 +225,8 @@ impl Analyzer<'_, '_> {
         let c_span = c.span();
 
         self.with_child(ScopeKind::Constructor, Default::default(), |child: &mut Analyzer| {
+            child.ctx.in_declare |= c.body.is_none();
+
             let RConstructor { params, body, .. } = c;
 
             {
@@ -234,32 +278,7 @@ impl Analyzer<'_, '_> {
 
                 child.scope.declaring.extend(names.clone());
 
-                let mut p = match &param {
-                    RParamOrTsParamProp::TsParamProp(RTsParamProp {
-                        param: RTsParamPropParam::Ident(i),
-                        ..
-                    }) => RTsFnParam::Ident(i.clone()),
-                    RParamOrTsParamProp::TsParamProp(RTsParamProp {
-                        param: RTsParamPropParam::Assign(RAssignPat { left: box pat, .. }),
-                        ..
-                    })
-                    | RParamOrTsParamProp::Param(RParam { pat, .. }) => from_pat(pat.clone()),
-                };
-                let p: FnParam = p.validate_with(child)?;
-
-                match param {
-                    RParamOrTsParamProp::Param(RParam { ref pat, .. }) => {
-                        match child.declare_vars_with_ty(VarDeclKind::Let, pat, Some(*p.ty.clone()), None) {
-                            Ok(()) => {}
-                            Err(err) => {
-                                child.storage.report(err);
-                            }
-                        }
-                    }
-                    RParamOrTsParamProp::TsParamProp(ref param) => {
-                        // param.visit_with(child);
-                    }
-                }
+                let p: FnParam = param.validate_with(child)?;
 
                 ps.push(p);
 
@@ -281,16 +300,42 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, p: &RTsParamProp) -> ValidationResult<()> {
+    fn validate(&mut self, p: &RTsParamProp) -> ValidationResult<FnParam> {
+        if self.ctx.in_declare {
+            match p.param {
+                RTsParamPropParam::Assign(..) => self
+                    .storage
+                    .report(Error::InitializerDisallowedInAmbientContext { span: p.span }),
+                _ => {}
+            }
+        }
+
         match &p.param {
             RTsParamPropParam::Ident(ref i)
             | RTsParamPropParam::Assign(RAssignPat {
                 left: box RPat::Ident(ref i),
                 ..
             }) => {
-                let ty = i.type_ann.validate_with(self).try_opt()?;
+                let ty: Option<Type> = i.type_ann.validate_with(self).try_opt()?;
+                let ty = ty.map(|ty| ty.cheap());
 
-                self.declare_var(i.id.span, VarDeclKind::Let, i.id.clone().into(), ty, None, true, false)
+                self.declare_var(
+                    i.id.span,
+                    VarDeclKind::Let,
+                    i.id.clone().into(),
+                    ty.clone(),
+                    None,
+                    true,
+                    false,
+                    false,
+                )?;
+
+                Ok(FnParam {
+                    span: p.span,
+                    required: !i.id.optional,
+                    pat: RPat::Ident(i.clone()),
+                    ty: box ty.unwrap_or_else(|| Type::any(i.id.span)),
+                })
             }
             _ => unreachable!(),
         }
@@ -358,6 +403,21 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, c: &RPrivateMethod) -> ValidationResult<Method> {
+        match c.key.id.sym {
+            js_word!("constructor") => {
+                self.storage.report(Error::ConstructorIsKeyword { span: c.key.id.span });
+            }
+            _ => {}
+        }
+
+        match c.kind {
+            MethodKind::Method => {
+                self.storage
+                    .report(Error::PrivateIdUsedAsMethodName { span: c.key.id.span });
+            }
+            _ => {}
+        }
+
         let key = c.key.validate_with(self).map(Key::Private)?;
         let key_span = key.span();
 
@@ -416,7 +476,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, c: &RClassMethod) -> ValidationResult<Method> {
+    fn validate(&mut self, c: &RClassMethod) -> ValidationResult<ClassMember> {
         self.record(c);
 
         let key = c.key.validate_with(self)?;
@@ -428,6 +488,10 @@ impl Analyzer<'_, '_> {
             ScopeKind::Method { is_static: c.is_static },
             Default::default(),
             |child: &mut Analyzer| -> ValidationResult<_> {
+                child.ctx.in_declare |= c.function.body.is_none();
+                child.ctx.in_async |= c.function.is_async;
+                child.ctx.in_generator |= c.function.is_generator;
+
                 child.scope.declaring_prop = match &key {
                     Key::Normal { sym, .. } => Some(Id::word(sym.clone())),
                     _ => None,
@@ -491,6 +555,8 @@ impl Analyzer<'_, '_> {
                 }
 
                 let declared_ret_ty = try_opt!(c.function.return_type.validate_with(child));
+                let declared_ret_ty = declared_ret_ty.map(|ty| ty.cheap());
+                child.scope.declared_return_type = declared_ret_ty.clone();
 
                 let span = c.function.span;
                 let is_async = c.function.is_async;
@@ -546,7 +612,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        Ok(Method {
+        Ok(ClassMember::Method(Method {
             span: c_span,
             key,
             accessibility: c.accessibility,
@@ -557,19 +623,19 @@ impl Analyzer<'_, '_> {
             params,
             ret_ty,
             kind: c.kind,
-        })
+        }))
     }
 }
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, m: &RClassMember) -> ValidationResult<Option<stc_ts_types::ClassMember>> {
+    fn validate(&mut self, m: &RClassMember) -> ValidationResult<Option<ClassMember>> {
         Ok(match m {
             RClassMember::PrivateMethod(m) => Some(m.validate_with(self).map(From::from)?),
             RClassMember::PrivateProp(m) => Some(m.validate_with(self).map(From::from)?),
             RClassMember::Empty(..) => None,
 
-            RClassMember::Constructor(v) => Some(stc_ts_types::ClassMember::Constructor(v.validate_with(self)?)),
+            RClassMember::Constructor(v) => Some(ClassMember::Constructor(v.validate_with(self)?)),
             RClassMember::Method(method) => {
                 let v = method.validate_with(self)?;
 
@@ -580,12 +646,10 @@ impl Analyzer<'_, '_> {
                     };
                 }
 
-                Some(stc_ts_types::ClassMember::Method(v))
+                Some(v)
             }
-            RClassMember::ClassProp(v) => Some(stc_ts_types::ClassMember::Property(v.validate_with(self)?)),
-            RClassMember::TsIndexSignature(v) => {
-                Some(stc_ts_types::ClassMember::IndexSignature(v.validate_with(self)?))
-            }
+            RClassMember::ClassProp(v) => Some(ClassMember::Property(v.validate_with(self)?)),
+            RClassMember::TsIndexSignature(v) => Some(ClassMember::IndexSignature(v.validate_with(self)?)),
         })
     }
 }
@@ -637,7 +701,7 @@ impl Analyzer<'_, '_> {
 
         for (idx, m) in c.body.iter().enumerate() {
             macro_rules! check {
-                ($m:expr, $body:expr) => {{
+                ($m:expr, $body:expr, $is_constructor:expr) => {{
                     let m = $m;
 
                     let computed = match m.key {
@@ -650,8 +714,12 @@ impl Analyzer<'_, '_> {
                             && !is_key_optional(&m.key)
                             && !is_prop_name_eq_include_computed(&name.unwrap(), &m.key)
                         {
-                            for span in replace(&mut spans, vec![]) {
-                                errors.push(Error::FnImplMissingOrNotFollowedByDecl { span });
+                            for (span, is_constructor) in replace(&mut spans, vec![]) {
+                                if is_constructor {
+                                    errors.push(Error::ConstructorImplMissingOrNotFollowedByDecl { span });
+                                } else {
+                                    errors.push(Error::FnImplMissingOrNotFollowedByDecl { span });
+                                }
                             }
                         }
 
@@ -660,8 +728,12 @@ impl Analyzer<'_, '_> {
                             name = None;
                             spans.clear();
                         } else {
+                            if name.is_some() && is_prop_name_eq_include_computed(&name.unwrap(), &m.key) {
+                                spans.clear();
+                            }
+                            spans.push((m.key.span(), $is_constructor));
+
                             name = Some(&m.key);
-                            spans.push(m.key.span());
                         }
                     } else {
                         if name.is_none() || is_prop_name_eq_include_computed(&name.unwrap(), &m.key) {
@@ -679,12 +751,20 @@ impl Analyzer<'_, '_> {
                             let constructor_name = RPropName::Ident(RIdent::new(js_word!("constructor"), DUMMY_SP));
 
                             if is_prop_name_eq_include_computed(&name.unwrap(), &constructor_name) {
-                                for span in replace(&mut spans, vec![]) {
-                                    errors.push(Error::FnImplMissingOrNotFollowedByDecl { span });
+                                for (span, is_constructor) in replace(&mut spans, vec![]) {
+                                    if is_constructor {
+                                        errors.push(Error::ConstructorImplMissingOrNotFollowedByDecl { span });
+                                    } else {
+                                        errors.push(Error::FnImplMissingOrNotFollowedByDecl { span });
+                                    }
                                 }
                             } else if is_prop_name_eq_include_computed(&m.key, &constructor_name) {
-                                for span in replace(&mut spans, vec![]) {
-                                    errors.push(Error::FnImplMissingOrNotFollowedByDecl { span });
+                                for (span, is_constructor) in replace(&mut spans, vec![]) {
+                                    if is_constructor {
+                                        errors.push(Error::ConstructorImplMissingOrNotFollowedByDecl { span });
+                                    } else {
+                                        errors.push(Error::FnImplMissingOrNotFollowedByDecl { span });
+                                    }
                                 }
                             } else {
                                 spans = vec![];
@@ -704,15 +784,21 @@ impl Analyzer<'_, '_> {
             }
 
             match *m {
-                RClassMember::Constructor(ref m) => check!(m, m.body),
-                RClassMember::Method(ref m @ RClassMethod { is_abstract: false, .. }) => check!(m, m.function.body),
+                RClassMember::Constructor(ref m) => check!(m, m.body, true),
+                RClassMember::Method(ref m @ RClassMethod { is_abstract: false, .. }) => {
+                    check!(m, m.function.body, false)
+                }
                 _ => {}
             }
         }
 
         // Class definition ended with `foo();`
-        for span in replace(&mut spans, vec![]) {
-            errors.push(Error::FnImplMissingOrNotFollowedByDecl { span });
+        for (span, is_constructor) in replace(&mut spans, vec![]) {
+            if is_constructor {
+                errors.push(Error::ConstructorImplMissingOrNotFollowedByDecl { span });
+            } else {
+                errors.push(Error::FnImplMissingOrNotFollowedByDecl { span });
+            }
         }
 
         self.storage.report_all(errors);
@@ -780,7 +866,17 @@ impl Analyzer<'_, '_> {
         }
     }
 
+    fn validate_interface_conflicts(&mut self, interfaces: &[TsExpr]) {
+        if self.is_builtin {
+            return;
+        }
+    }
+
     fn validate_inherited_members_from_interfaces(&mut self, name: Option<Span>, class: &ClassDef) {
+        if self.is_builtin {
+            return;
+        }
+
         if class.is_abstract || self.ctx.in_declare {
             return;
         }
@@ -800,6 +896,7 @@ impl Analyzer<'_, '_> {
                 )?;
 
                 self.assign_with_opts(
+                    &mut Default::default(),
                     AssignOpts {
                         span: parent.span(),
                         allow_unknown_rhs: true,
@@ -863,11 +960,13 @@ impl Analyzer<'_, '_> {
 
         let res: ValidationResult<()> = try {
             if let Some(ref super_ty) = class.super_class {
+                self.validate_super_class(super_ty);
+
                 match super_ty.normalize() {
                     Type::ClassDef(sc) => {
                         'outer: for sm in &sc.body {
                             match sm {
-                                stc_ts_types::ClassMember::Method(sm) => {
+                                ClassMember::Method(sm) => {
                                     if sm.is_optional || !sm.is_abstract {
                                         // TODO: Validate parameters
 
@@ -877,7 +976,7 @@ impl Analyzer<'_, '_> {
 
                                     for m in &class.body {
                                         match m {
-                                            stc_ts_types::ClassMember::Method(ref m) => {
+                                            ClassMember::Method(ref m) => {
                                                 if !&m.key.type_eq(&sm.key) {
                                                     continue;
                                                 }
@@ -935,6 +1034,26 @@ impl Analyzer<'_, '_> {
 
         c.decorators.visit_with(self);
         let name = self.scope.this_class_name.take();
+        match &name {
+            Some(i) => match &**i.sym() {
+                "any" | "void" | "never" | "string" | "number" | "boolean" | "null" | "undefined" | "symbol" => {
+                    self.storage.report(Error::InvalidClassName { span: c.span });
+                }
+                "Object" if self.env.target() <= EsVersion::Es5 => match self.env.module() {
+                    ModuleConfig::None
+                    | ModuleConfig::Umd
+                    | ModuleConfig::System
+                    | ModuleConfig::Amd
+                    | ModuleConfig::CommonJs => {
+                        self.storage
+                            .report(Error::ClassNameCannotBeObjectWhenTargetingEs5WithModule { span: c.span });
+                    }
+                    _ => {}
+                },
+                _ => {}
+            },
+            _ => {}
+        }
 
         let mut types_to_register: Vec<(Id, _)> = vec![];
         let mut additional_members = vec![];
@@ -950,6 +1069,9 @@ impl Analyzer<'_, '_> {
                         .flat_map(|decl| &decl.params)
                         .map(|param| param.name.clone().into()),
                 );
+
+                // Register the class.
+                child.scope.this_class_name = name.clone();
 
                 // We handle type parameters first.
                 let type_params = try_opt!(c.type_params.validate_with(child));
@@ -967,6 +1089,23 @@ impl Analyzer<'_, '_> {
                             };
                             let super_ty =
                                 expr.validate_with_args(child, (TypeOfMode::RValue, super_type_params.as_ref(), None))?;
+
+                            child.validate_with(|a| match super_ty.normalize() {
+                                Type::Lit(..)
+                                | Type::Keyword(RTsKeywordType {
+                                    kind: TsKeywordTypeKind::TsStringKeyword,
+                                    ..
+                                })
+                                | Type::Keyword(RTsKeywordType {
+                                    kind: TsKeywordTypeKind::TsNumberKeyword,
+                                    ..
+                                })
+                                | Type::Keyword(RTsKeywordType {
+                                    kind: TsKeywordTypeKind::TsBooleanKeyword,
+                                    ..
+                                }) => Err(Error::InvalidSuperClass { span: super_ty.span() }),
+                                _ => Ok(()),
+                            });
 
                             match super_ty.normalize() {
                                 // We should handle mixin
@@ -1072,9 +1211,6 @@ impl Analyzer<'_, '_> {
 
                 // TODO: Check for implements
 
-                // Register the class.
-                child.scope.this_class_name = name.clone();
-
                 child.check_ambient_methods(c, false)?;
 
                 child.scope.super_class = super_class
@@ -1084,6 +1220,20 @@ impl Analyzer<'_, '_> {
                     // Validate constructors
                     let mut constructor_spans = vec![];
                     let mut constructor_required_param_count = None;
+                    let constructors_with_body = c
+                        .body
+                        .iter()
+                        .filter_map(|member| match member {
+                            RClassMember::Constructor(c) if c.body.is_some() => Some(c.span),
+                            _ => None,
+                        })
+                        .collect_vec();
+
+                    if constructors_with_body.len() >= 2 {
+                        for &span in &constructors_with_body {
+                            child.storage.report(Error::DuplciateConstructor { span })
+                        }
+                    }
 
                     for m in c.body.iter() {
                         match *m {
@@ -1100,7 +1250,7 @@ impl Analyzer<'_, '_> {
                                     }
                                 }
 
-                                {
+                                if constructors_with_body.len() == 1 {
                                     // Check parameter count
                                     let required_param_count = cons
                                         .params
@@ -1121,7 +1271,7 @@ impl Analyzer<'_, '_> {
                                     match constructor_required_param_count {
                                         Some(v) if required_param_count != v => {
                                             for span in constructor_spans.drain(..) {
-                                                child.storage.report(Error::TS2394 { span })
+                                                child.storage.report(Error::WrongOverloadSignature { span })
                                             }
                                         }
 
@@ -1131,15 +1281,6 @@ impl Analyzer<'_, '_> {
                                 }
 
                                 constructor_spans.push(cons.span);
-
-                                for param in &cons.params {
-                                    match param {
-                                        RParamOrTsParamProp::TsParamProp(p) => {
-                                            p.validate_with(child).report(&mut child.storage);
-                                        }
-                                        RParamOrTsParamProp::Param(_) => {}
-                                    }
-                                }
                             }
 
                             _ => {}
@@ -1172,13 +1313,25 @@ impl Analyzer<'_, '_> {
 
                 // Handle nodes in order described above
                 let mut body = {
+                    let mut declared_static_keys = vec![];
+                    let mut declared_instance_keys = vec![];
+
                     // Handle static properties
-                    for (index, member) in c.body.iter().enumerate() {
-                        match member {
+                    for (index, node) in c.body.iter().enumerate() {
+                        match node {
                             RClassMember::ClassProp(RClassProp { is_static: true, .. })
                             | RClassMember::PrivateProp(RPrivateProp { is_static: true, .. }) => {
-                                let m = member.validate_with(child)?;
+                                let m = node.validate_with(child)?;
                                 if let Some(member) = m {
+                                    // Check for duplicate property names.
+                                    if let Some(key) = member.key() {
+                                        // TODO: Use better logic for testing key equality
+                                        if declared_static_keys.iter().any(|prev: &Key| prev.type_eq(&*key)) {
+                                            child.storage.report(Error::DuplicateProperty { span: key.span() })
+                                        }
+                                        declared_static_keys.push(key.into_owned());
+                                    }
+
                                     let member = member.fold_with(&mut LitGeneralizer);
                                     child.scope.this_class_members.push((index, member));
                                 }
@@ -1227,6 +1380,7 @@ impl Analyzer<'_, '_> {
                                             type_ann: None,
                                             decorators: Default::default(),
                                             declare: false,
+                                            is_override: false,
                                         }));
                                     }
 
@@ -1264,7 +1418,7 @@ impl Analyzer<'_, '_> {
 
                                     child.scope.this_class_members.push((
                                         index,
-                                        stc_ts_types::ClassMember::Property(stc_ts_types::ClassProperty {
+                                        ClassMember::Property(stc_ts_types::ClassProperty {
                                             span: p.span,
                                             key: Key::Normal {
                                                 span: i.id.span,
@@ -1293,6 +1447,15 @@ impl Analyzer<'_, '_> {
                                 //
                                 let class_member = member.validate_with(child)?;
                                 if let Some(member) = class_member {
+                                    // Check for duplicate property names.
+                                    if let Some(key) = member.key() {
+                                        // TODO: Use better logic for testing key equality
+                                        if declared_instance_keys.iter().any(|prev: &Key| prev.type_eq(&*key)) {
+                                            child.storage.report(Error::DuplicateProperty { span: key.span() })
+                                        }
+                                        declared_instance_keys.push(key.into_owned());
+                                    }
+
                                     let member = member.fold_with(&mut LitGeneralizer);
                                     child.scope.this_class_members.push((index, member));
                                 }
@@ -1348,27 +1511,25 @@ impl Analyzer<'_, '_> {
 
                     for (_, m) in body.iter_mut() {
                         match m {
-                            stc_ts_types::ClassMember::IndexSignature(_)
-                            | stc_ts_types::ClassMember::Constructor(_) => continue,
+                            ClassMember::IndexSignature(_) | ClassMember::Constructor(_) => continue,
 
-                            stc_ts_types::ClassMember::Method(m) => match m.kind {
+                            ClassMember::Method(m) => match m.kind {
                                 MethodKind::Getter => {
                                     prop_types.insert(m.key.clone(), m.ret_ty.clone());
                                 }
                                 _ => {}
                             },
 
-                            stc_ts_types::ClassMember::Property(_) => {}
+                            ClassMember::Property(_) => {}
                         }
                     }
 
                     for (index, m) in body.iter_mut() {
                         let orig = &c.body[*index];
                         match m {
-                            stc_ts_types::ClassMember::IndexSignature(_)
-                            | stc_ts_types::ClassMember::Constructor(_) => continue,
+                            ClassMember::IndexSignature(_) | ClassMember::Constructor(_) => continue,
 
-                            stc_ts_types::ClassMember::Method(m) => match m.kind {
+                            ClassMember::Method(m) => match m.kind {
                                 MethodKind::Setter => {
                                     if let Some(param) = m.params.first_mut() {
                                         if param.ty.is_any() {
@@ -1395,7 +1556,7 @@ impl Analyzer<'_, '_> {
                                 MethodKind::Getter => {}
                             },
 
-                            stc_ts_types::ClassMember::Property(_) => {}
+                            ClassMember::Property(_) => {}
                         }
                     }
                 }
@@ -1424,6 +1585,7 @@ impl Analyzer<'_, '_> {
 
                 child.validate_inherited_members_from_super_class(None, &class);
                 child.validate_inherited_members_from_interfaces(None, &class);
+                child.validate_interface_conflicts(&class.implements);
 
                 Ok(class)
             },
@@ -1455,7 +1617,7 @@ impl Analyzer<'_, '_> {
         let c = self
             .with_child(ScopeKind::Block, Default::default(), |analyzer| {
                 if let Some(ref i) = c.ident {
-                    analyzer.register_type(i.into(), ty.clone());
+                    let ty = analyzer.register_type(i.into(), ty);
 
                     match analyzer.declare_var(
                         ty.span(),
@@ -1466,6 +1628,7 @@ impl Analyzer<'_, '_> {
                         // initialized = true
                         true,
                         // declare Class does not allow multiple declarations.
+                        false,
                         false,
                     ) {
                         Ok(()) => {}
@@ -1503,6 +1666,38 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
+    fn validate_super_class(&mut self, ty: &Type) {
+        if self.is_builtin {
+            return;
+        }
+
+        let res: ValidationResult<_> = try {
+            match ty.normalize() {
+                Type::Ref(Ref {
+                    type_name: RTsEntityName::Ident(i),
+                    ..
+                }) => {
+                    if let Some(name) = &self.scope.this_class_name {
+                        if *name == i {
+                            Err(Error::SelfReferentialSuperClass { span: i.span })?
+                        }
+                    }
+                }
+                _ => {}
+            }
+
+            let ty = self.normalize(None, ty, Default::default())?;
+
+            match ty.normalize() {
+                Type::Function(..) => Err(Error::NotConstructorType { span: ty.span() })?,
+
+                _ => {}
+            }
+        };
+
+        res.report(&mut self.storage);
+    }
+
     /// TODO: Instantate fully
     pub(crate) fn instantiate_class(&mut self, span: Span, ty: &Type) -> ValidationResult {
         Ok(match ty.normalize() {
@@ -1530,7 +1725,7 @@ impl Analyzer<'_, '_> {
         let old_this = self.scope.this.take();
         // self.scope.this = Some(ty.clone());
 
-        self.register_type(c.ident.clone().into(), ty.clone().into());
+        let ty = self.register_type(c.ident.clone().into(), ty.clone().into());
 
         match self.declare_var(
             ty.span(),
@@ -1541,6 +1736,7 @@ impl Analyzer<'_, '_> {
             // initialized = true
             true,
             // declare Class does not allow multiple declarations.
+            false,
             false,
         ) {
             Ok(()) => {}

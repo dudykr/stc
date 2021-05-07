@@ -12,6 +12,7 @@ use crate::{
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RArrayPat;
 use stc_ts_ast_rnode::RAssignPat;
+use stc_ts_ast_rnode::RAssignPatProp;
 use stc_ts_ast_rnode::RBindingIdent;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RIdent;
@@ -28,6 +29,12 @@ use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_types::Array;
+use stc_ts_types::Key;
+use stc_ts_types::PropertySignature;
+use stc_ts_types::Tuple;
+use stc_ts_types::TupleElement;
+use stc_ts_types::TypeElement;
+use stc_ts_types::TypeLit;
 use stc_ts_utils::PatExt;
 use stc_utils::TryOpt;
 use swc_atoms::js_word;
@@ -71,6 +78,96 @@ impl Analyzer<'_, '_> {
 
         false
     }
+
+    pub(crate) fn default_type_for_pat(&mut self, pat: &RPat) -> ValidationResult<Type> {
+        let implicit_type_mark = self.marks().implicit_type_mark;
+
+        let span = pat.span();
+        match pat {
+            RPat::Array(arr) => {
+                return Ok(Type::Tuple(Tuple {
+                    span: DUMMY_SP,
+                    elems: arr
+                        .elems
+                        .iter()
+                        .map(|elem| {
+                            let span = elem.span();
+                            // any
+                            let ty = match elem {
+                                Some(v) => self.default_type_for_pat(v)?,
+                                None => Type::any(span),
+                            };
+
+                            Ok(TupleElement {
+                                span,
+                                // TODO?
+                                label: None,
+                                ty: box ty,
+                            })
+                        })
+                        .collect::<ValidationResult<_>>()?,
+                }));
+            }
+            RPat::Rest(r) => match &*r.arg {
+                RPat::Array(..) => return self.default_type_for_pat(&r.arg),
+                _ => {}
+            },
+            RPat::Object(obj) => {
+                let mut members = Vec::with_capacity(obj.props.len());
+
+                for props in &obj.props {
+                    match props {
+                        RObjectPatProp::KeyValue(p) => {
+                            let key = p.key.validate_with(self)?;
+                            let ty = box self.default_type_for_pat(&p.value)?;
+
+                            members.push(TypeElement::Property(PropertySignature {
+                                span: DUMMY_SP,
+                                accessibility: None,
+                                readonly: false,
+                                key,
+                                optional: false,
+                                params: vec![],
+                                type_ann: Some(ty),
+                                type_params: None,
+                            }))
+                        }
+                        RObjectPatProp::Assign(RAssignPatProp { key, .. }) => {
+                            let key = Key::Normal {
+                                span: key.span,
+                                sym: key.sym.clone(),
+                            };
+                            members.push(TypeElement::Property(PropertySignature {
+                                span: DUMMY_SP,
+                                accessibility: None,
+                                readonly: false,
+                                key,
+                                optional: false,
+                                params: vec![],
+                                type_ann: None,
+                                type_params: None,
+                            }))
+                        }
+                        RObjectPatProp::Rest(..) => {}
+                    }
+                }
+
+                return Ok(Type::TypeLit(TypeLit {
+                    span: DUMMY_SP.apply_mark(implicit_type_mark),
+                    members,
+                    metadata: Default::default(),
+                }));
+            }
+            RPat::Assign(pat) => return self.default_type_for_pat(&pat.left),
+            _ => {}
+        }
+
+        if self.ctx.in_argument {
+            Ok(Type::unknown(pat.span()))
+        } else {
+            Ok(Type::any(pat.span()))
+        }
+    }
 }
 
 #[validator]
@@ -94,6 +191,15 @@ impl Analyzer<'_, '_> {
         self.record(p);
         if !self.is_builtin {
             debug_assert_ne!(p.span(), DUMMY_SP, "A pattern should have a valid span");
+        }
+
+        if self.ctx.in_declare {
+            match p {
+                RPat::Assign(p) => self
+                    .storage
+                    .report(Error::InitializerDisallowedInAmbientContext { span: p.span }),
+                _ => {}
+            }
         }
 
         if !self.ctx.in_declare && !self.ctx.in_fn_without_body {
@@ -156,10 +262,12 @@ impl Analyzer<'_, '_> {
 
                 self.scope.declaring.extend(names.clone());
 
-                match self.declare_vars_with_ty(VarDeclKind::Let, p, ty.clone(), None) {
-                    Ok(()) => {}
-                    Err(err) => {
-                        self.storage.report(err);
+                if !self.is_builtin {
+                    match self.declare_vars_with_ty(VarDeclKind::Let, p, ty.clone(), None) {
+                        Ok(()) => {}
+                        Err(err) => {
+                            self.storage.report(err);
+                        }
                     }
                 }
             }
@@ -243,13 +351,10 @@ impl Analyzer<'_, '_> {
             },
         };
 
-        let ty = ty.unwrap_or_else(|| {
-            if self.ctx.in_argument {
-                Type::unknown(p.span())
-            } else {
-                Type::any(p.span())
-            }
-        });
+        let ty = match ty {
+            Some(v) => v,
+            _ => self.default_type_for_pat(p)?,
+        };
 
         if p.get_ty().is_none() {
             if let Some(node_id) = p.node_id() {

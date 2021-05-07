@@ -274,7 +274,10 @@ impl Analyzer<'_, '_> {
 
                 match (p, a) {
                     (TypeElement::Property(p), TypeElement::Property(a)) => {
-                        if self.assign(&p.key.ty(), &a.key.ty(), span).is_ok() {
+                        if self
+                            .assign(&mut Default::default(), &p.key.ty(), &a.key.ty(), span)
+                            .is_ok()
+                        {
                             if let Some(pt) = &p.type_ann {
                                 if let Some(at) = &a.type_ann {
                                     self.infer_type(span, inferred, pt, at)?;
@@ -306,7 +309,7 @@ impl Analyzer<'_, '_> {
                     (TypeElement::Index(p), TypeElement::Property(a)) => {
                         assert_eq!(p.params.len(), 1, "Index signature should have exactly one parameter");
 
-                        if let Ok(()) = self.assign(&p.params[0].ty, &a.key.ty(), span) {
+                        if let Ok(()) = self.assign(&mut Default::default(), &p.params[0].ty, &a.key.ty(), span) {
                             if let Some(p_ty) = &p.type_ann {
                                 if let Some(arg_ty) = &a.type_ann {
                                     self.infer_type(span, inferred, &p_ty, &arg_ty)?;
@@ -318,7 +321,10 @@ impl Analyzer<'_, '_> {
                     }
 
                     (TypeElement::Method(p), TypeElement::Method(a)) => {
-                        if self.assign(&p.key.ty(), &a.key.ty(), span).is_ok() {
+                        if self
+                            .assign(&mut Default::default(), &p.key.ty(), &a.key.ty(), span)
+                            .is_ok()
+                        {
                             self.infer_type_of_fn_params(span, inferred, &p.params, &a.params)?;
 
                             if let Some(p_ret) = &p.ret_ty {
@@ -397,17 +403,17 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    pub(super) fn infer_class(
+    pub(super) fn infer_types_using_class(
         &mut self,
         span: Span,
         inferred: &mut InferData,
         param: &Class,
         arg: &Class,
     ) -> ValidationResult<()> {
-        self.infer_class_def(span, inferred, &param.def, &arg.def)
+        self.infer_types_using_class_def(span, inferred, &param.def, &arg.def)
     }
 
-    pub(super) fn infer_class_def(
+    pub(super) fn infer_types_using_class_def(
         &mut self,
         span: Span,
         inferred: &mut InferData,

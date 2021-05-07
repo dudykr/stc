@@ -11,6 +11,8 @@ use rnode::NodeId;
 use stc_ts_ast_rnode::RBigInt;
 use stc_ts_ast_rnode::RBool;
 use stc_ts_ast_rnode::RExpr;
+use stc_ts_ast_rnode::RExprOrSuper;
+use stc_ts_ast_rnode::RMemberExpr;
 use stc_ts_ast_rnode::RNumber;
 use stc_ts_ast_rnode::RStr;
 use stc_ts_ast_rnode::RTsKeywordType;
@@ -33,17 +35,7 @@ impl Analyzer<'_, '_> {
         if let op!("delete") = op {
             // `delete foo` returns bool
 
-            match &**arg {
-                RExpr::Member(..) => {}
-
-                RExpr::Await(arg) => {
-                    self.storage.report(Error::InvalidDeleteOperand { span: arg.span });
-                }
-
-                _ => {
-                    self.storage.report(Error::InvalidDeleteOperand { span });
-                }
-            }
+            self.validate_with(|a| a.validate_delete_operand(&arg));
         }
 
         // TODO: Check for `self.ctx.in_cond` to improve performance.
@@ -211,6 +203,25 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
+    fn validate_delete_operand(&mut self, arg: &RExpr) -> ValidationResult<()> {
+        let span = arg.span();
+
+        match &*arg {
+            RExpr::Member(RMemberExpr {
+                obj: RExprOrSuper::Expr(box RExpr::This(..)),
+                computed: false,
+                prop: box RExpr::PrivateName(..),
+                ..
+            }) => Err(Error::CannotDeletePrivateProperty { span }),
+
+            RExpr::Member(..) => return Ok(()),
+
+            RExpr::Await(..) => Err(Error::InvalidDeleteOperand { span }),
+
+            _ => Err(Error::InvalidDeleteOperand { span }),
+        }
+    }
+
     fn validate_unary_expr_inner(&mut self, span: Span, op: UnaryOp, arg: &Type) {
         let mut errors = Errors::default();
 

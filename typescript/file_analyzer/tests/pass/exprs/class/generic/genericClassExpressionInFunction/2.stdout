@@ -1,0 +1,72 @@
+warning: Type
+ --> $DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/2.ts:6:26
+  |
+6 |     return class extends A<U> { }
+  |                          ^
+  |
+  = note: typeof A
+
+warning: Type
+ --> $DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/2.ts:6:12
+  |
+6 |     return class extends A<U> { }
+  |            ^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: typeof anonymous class
+
+warning: Type
+ --> $DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/2.ts:9:17
+  |
+9 | class K extends B1<number>() {
+  |                 ^^
+  |
+  = note: <U>() => typeof anonymous class
+
+warning: Type
+ --> $DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/2.ts:9:17
+  |
+9 | class K extends B1<number>() {
+  |                 ^^^^^^^^^^^^
+  |
+  = note: typeof anonymous class
+
+warning: Type
+  --> $DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/2.ts:12:13
+   |
+12 | var k = new K();
+   |             ^
+   |
+   = note: typeof K
+
+warning: Type
+  --> $DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/2.ts:12:9
+   |
+12 | var k = new K();
+   |         ^^^^^^^
+   |
+   = note: K
+
+warning: Type
+  --> $DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/2.ts:13:1
+   |
+13 | k.genericVar = 12;
+   | ^
+   |
+   = note: K
+
+warning: Type
+  --> $DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/2.ts:13:1
+   |
+13 | k.genericVar = 12;
+   | ^^^^^^^^^^^^
+   |
+   = note: number
+
+warning: Type
+  --> $DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/2.ts:13:1
+   |
+13 | k.genericVar = 12;
+   | ^^^^^^^^^^^^^^^^^
+   |
+   = note: 12
+

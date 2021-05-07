@@ -114,6 +114,21 @@ impl Fold<Interface> for LitGeneralizer {
     }
 }
 
+impl Fold<Class> for LitGeneralizer {
+    fn fold(&mut self, node: Class) -> Class {
+        node
+    }
+}
+
+impl Fold<ClassProperty> for LitGeneralizer {
+    fn fold(&mut self, node: ClassProperty) -> ClassProperty {
+        if node.readonly {
+            return node;
+        }
+        node.fold_children_with(self)
+    }
+}
+
 impl Fold<TypeLit> for LitGeneralizer {
     fn fold(&mut self, node: TypeLit) -> TypeLit {
         if node.metadata.specified {

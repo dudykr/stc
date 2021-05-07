@@ -17,6 +17,7 @@ use stc_ts_dts::cleanup_module_for_dts;
 use stc_ts_file_analyzer::analyzer::Analyzer;
 use stc_ts_file_analyzer::analyzer::NoopLoader;
 use stc_ts_file_analyzer::env::Env;
+use stc_ts_file_analyzer::env::ModuleConfig;
 use stc_ts_file_analyzer::validator::ValidateWith;
 use stc_ts_storage::Single;
 use stc_ts_types::module_id;
@@ -70,7 +71,12 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
     let res = testing::Tester::new().print_errors(|cm, handler| {
         let handler = Arc::new(handler);
         let fm = cm.load_file(&file_name).unwrap();
-        let env = Env::simple(Default::default(), JscTarget::Es2020, &Lib::load("es2019.full"));
+        let env = Env::simple(
+            Default::default(),
+            JscTarget::Es2020,
+            ModuleConfig::None,
+            &Lib::load("es2019.full"),
+        );
         let stable_env = env.shared().clone();
         let generator = module_id::Generator::default();
         let path = Arc::new(file_name.clone());

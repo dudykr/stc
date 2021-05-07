@@ -1,4 +1,4 @@
-﻿// @module: commonjs
+// @module: commonjs
 // @filename: 0.ts
 export class C { }
 

@@ -1,16 +1,15 @@
 use dashmap::{DashMap, SharedValue};
+use std::hash::BuildHasher;
 use std::hash::Hash;
 
-pub(crate) trait DashMapExt<'a, K, V>
+pub(crate) trait DashMapExt<'a, K, V, H>
 where
     K: 'a,
     V: 'a,
 {
     fn try_insert_default(&self, k: K)
     where
-        V: Default,
-    {
-    }
+        V: Default;
 
     fn try_get<F, Ret>(&self, k: &K, op: F) -> Option<Ret>
     where
@@ -21,11 +20,12 @@ where
     }
 }
 
-impl<'a, K, V, T> DashMapExt<'a, K, V> for T
+impl<'a, K, V, T, H> DashMapExt<'a, K, V, H> for T
 where
-    T: AsRef<DashMap<K, V>>,
+    T: AsRef<DashMap<K, V, H>>,
     K: 'a + Eq + Hash,
     V: 'a,
+    H: 'a + BuildHasher + Clone,
 {
     fn try_get<F, Ret>(&self, k: &K, op: F) -> Option<Ret>
     where

@@ -7,9 +7,9 @@
 
 set -eu
 
-TEST='' cargo test --test conformance \
+TEST='' cargo test --test tsc \
   | grep 'ts .\.\. ok$' \
-  | sed -e 's!test tsc::conformance::!!' \
+  | sed -e 's!test conformance::!!' \
   | sed -e 's! ... ok!!' \
   | sed -e 's!::!/!g' \
   | sed -e 's!test !!' \
@@ -17,6 +17,12 @@ TEST='' cargo test --test conformance \
 
 ./scripts/sort.sh
 
-TEST='' cargo test --test conformance \
+if command -v osascript &> /dev/null
+then
+    osascript -e 'display notification "Check done!"'
+fi
+
+
+TEST='' cargo test --test tsc \
   | grep 'ts .\.\. FAILED$' \
-  | sed -e 's!test tsc::conformance::!!'
+  | sed -e 's!test conformance::!!'

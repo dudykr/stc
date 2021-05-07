@@ -7,6 +7,7 @@ use self::{
     scope::Scope,
     util::ResultExt,
 };
+use crate::env::ModuleConfig;
 use crate::{
     env::{Env, StableEnv},
     loader::{Load, ModuleInfo},
@@ -14,9 +15,10 @@ use crate::{
     ty::Type,
     validator,
     validator::ValidateWith,
-    DepInfo, Rule, ValidationResult,
+    Rule, ValidationResult,
 };
 use fxhash::FxHashMap;
+use fxhash::FxHashSet;
 use rnode::VisitWith;
 use slog::Logger;
 use stc_ts_ast_rnode::RDecorator;
@@ -40,6 +42,7 @@ use stc_ts_storage::Builtin;
 use stc_ts_storage::Info;
 use stc_ts_storage::Storage;
 use stc_ts_types::{Id, ModuleId, ModuleTypeData, SymbolIdGenerator};
+use stc_utils::FastHashMap;
 use std::mem::take;
 use std::{
     fmt::Debug,
@@ -66,6 +69,7 @@ mod assign;
 mod class;
 mod control_flow;
 mod convert;
+mod decl_merging;
 mod enums;
 mod export;
 mod expr;
@@ -104,7 +108,17 @@ pub(crate) struct Ctx {
 
     phase: Phase,
 
+    diallow_unknown_object_property: bool,
+
     allow_module_var: bool,
+
+    /// If `true`, expression validator will not emit tuple.
+    cannot_be_tuple: bool,
+
+    /// If `true`, `access_property` will not produce types like `Array['b']`
+    should_not_create_indexed_type_from_ty_els: bool,
+
+    in_shorthand: bool,
 
     /// `true` for condition of conditional expression or of an if statement.
     in_cond: bool,
@@ -120,7 +134,12 @@ pub(crate) struct Ctx {
     in_global: bool,
     in_export_default_expr: bool,
 
+    in_async: bool,
+    in_generator: bool,
+
     is_calling_iife: bool,
+
+    in_ts_fn_type: bool,
 
     /// `true` if unresolved references should be rerpoted.
     ///
@@ -128,7 +147,16 @@ pub(crate) struct Ctx {
     /// references are error.
     in_actual_type: bool,
 
+    /// If true, `type_of_raw_var` should report an error if the referenced
+    /// variable is global.
+    report_error_for_non_local_vars: bool,
+
+    in_static_property_initializer: bool,
+
     reevaluating_call_or_new: bool,
+    reevaluating_argument: bool,
+
+    reevaluating_loop_body: bool,
 
     var_kind: VarDeclKind,
     pat_mode: PatMode,
@@ -138,6 +166,8 @@ pub(crate) struct Ctx {
     in_fn_with_return_type: bool,
     in_return_arg: bool,
     in_assign_rhs: bool,
+
+    in_export_decl: bool,
 
     preserve_ref: bool,
 
@@ -162,17 +192,16 @@ pub(crate) struct Ctx {
     /// If true, **recovereable** errors are ignored. Used for trying.
     ignore_errors: bool,
 
-    /// If true, assignemt from `{ a: string }` to `{}` will fail.
-    fail_on_extra_fields: bool,
-
     skip_union_while_inferencing: bool,
+
+    skip_identical_while_inferencing: bool,
 }
 
 /// Note: All methods named `validate_*` return [Err] iff it's not recoverable.
 pub struct Analyzer<'scope, 'b> {
-    logger: Logger,
+    pub(crate) logger: Logger,
     env: Env,
-    cm: Arc<SourceMap>,
+    pub(crate) cm: Arc<SourceMap>,
 
     /// This is [None] only for `.d.ts` files.
     pub mutations: Option<Mutations>,
@@ -210,6 +239,21 @@ pub struct Analyzer<'scope, 'b> {
     mapped_type_param_name: Vec<Id>,
 
     debugger: Option<Debugger>,
+
+    data: AnalyzerData,
+}
+#[derive(Debug, Default)]
+struct AnalyzerData {
+    /// e.g. `A` for `type A = {}`
+    local_type_decls: FxHashMap<Id, Vec<Span>>,
+    /// e.g. `A` for `export type A = {}`
+    exported_type_decls: FxHashMap<Id, Vec<Span>>,
+
+    /// Filled only once, by `fill_known_type_names`.
+    all_local_type_names: FxHashSet<Id>,
+
+    /// Spans of declared variables.
+    var_spans: FastHashMap<Id, Vec<Span>>,
 }
 
 /// TODO
@@ -269,7 +313,7 @@ impl Analyzer<'_, '_> {
         let span = node.span;
 
         let (errors, data) = {
-            let mut new = self.new(Scope::root(self.logger.clone()));
+            let mut new = self.new(Scope::root(self.logger.clone()), Default::default());
             {
                 node.visit_children_with(&mut new);
             }
@@ -321,6 +365,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             false,
             Default::default(),
             debugger,
+            Default::default(),
         )
     }
 
@@ -329,7 +374,13 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
 
         Self::new_inner(
             logger.clone(),
-            Env::new(env, Default::default(), JscTarget::Es2020, Default::default()),
+            Env::new(
+                env,
+                Default::default(),
+                JscTarget::Es2020,
+                ModuleConfig::None,
+                Default::default(),
+            ),
             Arc::new(SourceMap::default()),
             box storage,
             None,
@@ -338,10 +389,11 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             true,
             Default::default(),
             None,
+            Default::default(),
         )
     }
 
-    fn new(&'b self, scope: Scope<'scope>) -> Self {
+    fn new(&'b self, scope: Scope<'scope>, data: AnalyzerData) -> Self {
         Self::new_inner(
             self.logger.clone(),
             self.env.clone(),
@@ -353,6 +405,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             self.is_builtin,
             self.symbols.clone(),
             self.debugger.clone(),
+            data,
         )
     }
 
@@ -367,6 +420,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         is_builtin: bool,
         symbols: Arc<SymbolIdGenerator>,
         debugger: Option<Debugger>,
+        data: AnalyzerData,
     ) -> Self {
         Self {
             logger,
@@ -383,7 +437,11 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             ctx: Ctx {
                 module_id: ModuleId::builtin(),
                 phase: Default::default(),
+                diallow_unknown_object_property: false,
                 allow_module_var: false,
+                cannot_be_tuple: false,
+                should_not_create_indexed_type_from_ty_els: false,
+                in_shorthand: false,
                 in_cond: false,
                 should_store_truthy_for_access: false,
                 in_switch_case_test: false,
@@ -393,9 +451,16 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 in_fn_without_body: false,
                 in_global: false,
                 in_export_default_expr: false,
+                in_async: false,
+                in_generator: false,
                 is_calling_iife: false,
+                in_ts_fn_type: false,
                 in_actual_type: false,
+                report_error_for_non_local_vars: false,
+                in_static_property_initializer: false,
                 reevaluating_call_or_new: false,
+                reevaluating_argument: false,
+                reevaluating_loop_body: false,
                 var_kind: VarDeclKind::Var,
                 pat_mode: PatMode::Assign,
                 computed_prop_mode: ComputedPropMode::Object,
@@ -404,14 +469,15 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 in_fn_with_return_type: false,
                 in_return_arg: false,
                 in_assign_rhs: false,
+                in_export_decl: false,
                 preserve_ref: false,
                 ignore_expand_prevention_for_top: false,
                 ignore_expand_prevention_for_all: false,
                 preserve_params: false,
                 preserve_ret_ty: false,
                 ignore_errors: false,
-                fail_on_extra_fields: false,
                 skip_union_while_inferencing: false,
+                skip_identical_while_inferencing: false,
             },
             loader,
             is_builtin,
@@ -421,6 +487,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             mapped_type_param_name: vec![],
             imports_by_id: Default::default(),
             debugger,
+            data,
         }
     }
 
@@ -453,6 +520,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         let imports_by_id = take(&mut self.imports_by_id);
         let mutations = self.mutations.take();
         let cur_facts = take(&mut self.cur_facts);
+        let data = take(&mut self.data);
 
         let child_scope = Scope::new(&self.scope, kind, facts);
         let (
@@ -466,8 +534,9 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             prepend_stmts,
             append_stmts,
             mutations,
+            data,
         ) = {
-            let mut child = self.new(child_scope);
+            let mut child = self.new(child_scope, data);
             child.imports = imports;
             child.imports_by_id = imports_by_id;
             child.mutations = mutations;
@@ -487,6 +556,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 child.prepend_stmts,
                 child.append_stmts,
                 child.mutations.take(),
+                take(&mut child.data),
             )
         };
         self.storage.report_all(errors);
@@ -509,9 +579,11 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         // }
 
         self.duplicated_tracker.record_all(dup);
+        self.scope.move_types_from_child(&mut child_scope);
         self.scope.move_vars_from_child(&mut child_scope);
         self.prepend_stmts.extend(prepend_stmts);
         self.append_stmts.extend(append_stmts);
+        self.data = data;
 
         // Move return types from child to parent
         match kind {
@@ -523,6 +595,19 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         }
 
         ret
+    }
+
+    fn validate_with<F>(&mut self, op: F)
+    where
+        F: FnOnce(&mut Analyzer) -> ValidationResult<()>,
+    {
+        let res = op(self);
+        match res {
+            Ok(()) => {}
+            Err(err) => {
+                self.storage.report(err);
+            }
+        }
     }
 
     fn with_ctx(&mut self, ctx: Ctx) -> WithCtx<'_, 'scope, 'b> {
@@ -572,25 +657,25 @@ impl<'b, 'c> DerefMut for WithCtx<'_, 'b, 'c> {
 pub struct NoopLoader;
 
 impl Load for NoopLoader {
-    fn is_in_same_circular_group(&self, base: &Arc<PathBuf>, src: &JsWord) -> bool {
-        false
+    fn module_id(&self, base: &Arc<PathBuf>, src: &JsWord) -> Option<ModuleId> {
+        unreachable!()
     }
 
-    fn load_non_circular_dep(&self, base: Arc<PathBuf>, import: &DepInfo) -> ValidationResult<ModuleInfo> {
-        unimplemented!()
+    fn is_in_same_circular_group(&self, base: ModuleId, dep: ModuleId) -> bool {
+        unreachable!()
     }
 
     fn load_circular_dep(
         &self,
-        base: Arc<PathBuf>,
+        base: ModuleId,
+        dep: ModuleId,
         partial: &ModuleTypeData,
-        import: &DepInfo,
     ) -> ValidationResult<ModuleInfo> {
-        unimplemented!()
+        unreachable!()
     }
 
-    fn module_id(&self, base: &Arc<PathBuf>, src: &JsWord) -> ModuleId {
-        unimplemented!()
+    fn load_non_circular_dep(&self, base: ModuleId, dep: ModuleId) -> ValidationResult<ModuleInfo> {
+        unreachable!()
     }
 }
 
@@ -603,6 +688,8 @@ impl Analyzer<'_, '_> {
         }
         self.load_normal_imports(&items);
 
+        self.fill_known_type_names(&modules);
+
         self.validate_stmts_with_hoisting(&items);
 
         Ok(())
@@ -614,6 +701,8 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, items: &Vec<RModuleItem>) {
         let mut items_ref = items.iter().collect::<Vec<_>>();
         self.load_normal_imports(&items_ref);
+
+        self.fill_known_type_names(&items);
 
         let mut has_normal_export = false;
         items.iter().for_each(|item| match item {
@@ -664,6 +753,8 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, items: &Vec<RStmt>) {
+        self.fill_known_type_names(&items);
+
         for item in items.iter() {
             item.visit_with(self);
         }
@@ -687,24 +778,57 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RTsImportEqualsDecl) {
         self.record(node);
 
-        match node.module_ref {
-            RTsModuleRef::TsEntityName(ref e) => {
-                match self.type_of_ts_entity_name(node.span, self.ctx.module_id, e, None) {
-                    Ok(..) => {}
-                    Err(err) => self.storage.report(err),
-                }
-            }
-            _ => {}
-        }
+        let ctx = Ctx {
+            in_declare: self.ctx.in_declare || node.declare,
+            ..self.ctx
+        };
+        self.with_ctx(ctx).with(|analyzer: &mut Analyzer| {
+            match node.module_ref {
+                RTsModuleRef::TsEntityName(ref e) => {
+                    let ty = analyzer
+                        .type_of_ts_entity_name(node.span, analyzer.ctx.module_id, e, None)
+                        .unwrap_or_else(|err| {
+                            analyzer.storage.report(err);
+                            Type::any(node.span)
+                        });
+                    ty.assert_valid();
 
-        Ok(())
+                    analyzer.declare_var(
+                        node.span,
+                        VarDeclKind::Const,
+                        node.id.clone().into(),
+                        Some(ty),
+                        None,
+                        true,
+                        false,
+                        false,
+                    )?;
+                }
+                _ => {}
+            }
+
+            Ok(())
+        })
     }
 }
 
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, decl: &RTsNamespaceDecl) {
-        unimplemented!("namespace is not supported yet")
+        let ctx = Ctx {
+            in_global: self.ctx.in_global || decl.global,
+            in_declare: self.ctx.in_declare || decl.declare,
+            ..self.ctx
+        };
+
+        self.with_ctx(ctx)
+            .with_child(ScopeKind::Module, Default::default(), |a: &mut Analyzer| {
+                //
+
+                decl.body.visit_with(a);
+
+                Ok(())
+            })
     }
 }
 
@@ -765,6 +889,15 @@ impl Analyzer<'_, '_> {
                     self.register_type(i.into(), ty);
                 }
                 RTsModuleName::Str(s) => {
+                    let name: &str = &*s.value;
+
+                    if let Some(pos) = name.as_bytes().iter().position(|&c| c == b'*') {
+                        if let Some(rpos) = name.as_bytes().iter().rposition(|&c| c == b'*') {
+                            if pos != rpos {
+                                self.storage.report(Error::TooManyAsterisk { span: s.span });
+                            }
+                        }
+                    }
                     //TODO
                     return Ok(());
                 }

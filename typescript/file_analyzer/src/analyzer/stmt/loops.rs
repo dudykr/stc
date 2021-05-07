@@ -3,6 +3,7 @@ use crate::analyzer::control_flow::CondFacts;
 use crate::analyzer::types::NormalizeTypeOpts;
 use crate::analyzer::util::ResultExt;
 use crate::analyzer::Ctx;
+use crate::util::is_str_or_union;
 use crate::validator::ValidateWith;
 use crate::{analyzer::ScopeKind, ty::Type, validator, ValidationResult};
 use rnode::VisitWith;
@@ -11,9 +12,11 @@ use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RForInStmt;
 use stc_ts_ast_rnode::RForOfStmt;
 use stc_ts_ast_rnode::RIdent;
+use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RStmt;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
+use stc_ts_ast_rnode::RVarDecl;
 use stc_ts_ast_rnode::RVarDeclOrPat;
 use stc_ts_ast_rnode::RWhileStmt;
 use stc_ts_errors::DebugExt;
@@ -25,12 +28,15 @@ use stc_ts_types::Operator;
 use stc_ts_types::Ref;
 use stc_ts_types::TypeParamInstantiation;
 use stc_ts_utils::find_ids_in_pat;
+use stc_ts_utils::PatExt;
 use std::borrow::Cow;
 use swc_common::Span;
 use swc_common::Spanned;
 use swc_common::DUMMY_SP;
+use swc_ecma_ast::EsVersion;
 use swc_ecma_ast::TsKeywordTypeKind;
 use swc_ecma_ast::TsTypeOperatorOp;
+use swc_ecma_ast::VarDeclKind;
 
 #[derive(Clone, Copy)]
 enum ForHeadKind {
@@ -45,9 +51,11 @@ impl Analyzer<'_, '_> {
         let mut prev_facts = orig_facts.true_facts.clone();
 
         // TODO: Loop again if required.
-        for _ in 0..2 {
+        for i in 0..2 {
             let facts_from_body: CondFacts =
                 self.with_child(ScopeKind::LoopBody, prev_facts.clone(), |child: &mut Analyzer| {
+                    child.ctx.reevaluating_loop_body |= i != 0;
+
                     body.visit_with(child);
 
                     Ok(child.cur_facts.true_facts.take())
@@ -66,6 +74,13 @@ impl Analyzer<'_, '_> {
     #[extra_validator]
     fn check_lhs_of_for_loop(&mut self, e: &RVarDeclOrPat, elem_ty: &Type, kind: ForHeadKind) {
         let span = e.span();
+
+        match self.validate_lhs_of_for_in_of_loop(&e, kind) {
+            Ok(()) => {}
+            Err(err) => {
+                self.storage.report(err);
+            }
+        }
 
         match *e {
             RVarDeclOrPat::VarDecl(ref v) => {
@@ -90,8 +105,54 @@ impl Analyzer<'_, '_> {
             RVarDeclOrPat::Pat(ref pat) => {
                 self.try_assign_pat(span, &pat, elem_ty)
                     .context("tried to assign to the pattern of a for-of/for-in loop")
+                    .convert_err(|err| {
+                        match kind {
+                            ForHeadKind::In => {
+                                if err.is_assign_failure() {
+                                    return Error::WrongTypeForLhsOfForInLoop { span: err.span() };
+                                }
+                            }
+                            _ => {}
+                        }
+
+                        err
+                    })
                     .report(&mut self.storage);
             }
+        }
+    }
+
+    fn validate_lhs_of_for_in_of_loop(&mut self, e: &RVarDeclOrPat, kind: ForHeadKind) -> ValidationResult<()> {
+        match e {
+            RVarDeclOrPat::VarDecl(v) => {
+                if v.decls.len() >= 1 {
+                    self.validate_lhs_of_for_in_of_loop_pat(&v.decls[0].name, kind)
+                } else {
+                    Ok(())
+                }
+            }
+            RVarDeclOrPat::Pat(p) => self.validate_lhs_of_for_in_of_loop_pat(p, kind),
+        }
+    }
+
+    fn validate_lhs_of_for_in_of_loop_pat(&mut self, p: &RPat, kind: ForHeadKind) -> ValidationResult<()> {
+        match p {
+            RPat::Object(..) | RPat::Array(..) => match kind {
+                ForHeadKind::In => Err(Error::DestructuringBindingNotAllowedInLhsOfForIn { span: p.span() }),
+                ForHeadKind::Of => Ok(()),
+            },
+            RPat::Expr(e) => self.validate_lhs_of_for_in_of_loop_expr(e, kind),
+            _ => Ok(()),
+        }
+    }
+
+    fn validate_lhs_of_for_in_of_loop_expr(&mut self, e: &RExpr, kind: ForHeadKind) -> ValidationResult<()> {
+        match e {
+            RExpr::Ident(..) | RExpr::This(..) | RExpr::Member(..) => Ok(()),
+            _ => match kind {
+                ForHeadKind::In => Err(Error::InvalidExprOfLhsOfForIn { span: e.span() }),
+                ForHeadKind::Of => Err(Error::InvalidExprOfLhsOfForOf { span: e.span() }),
+            },
         }
     }
 
@@ -103,6 +164,7 @@ impl Analyzer<'_, '_> {
     fn get_element_type_of_for_in(&mut self, rhs: &Type) -> ValidationResult {
         let rhs = self
             .normalize(
+                None,
                 rhs,
                 NormalizeTypeOpts {
                     preserve_mapped: true,
@@ -186,20 +248,85 @@ impl Analyzer<'_, '_> {
                 debug_assert_eq!(child.scope.declaring, Vec::<Id>::new());
                 child.scope.declaring.extend(created_vars);
 
+                child.ctx.allow_ref_declaring = match left {
+                    RVarDeclOrPat::VarDecl(RVarDecl {
+                        kind: VarDeclKind::Var, ..
+                    }) => true,
+                    _ => false,
+                };
+
+                // Type annotation on lhs of for in/of loops is invalid.
+                match left {
+                    RVarDeclOrPat::VarDecl(RVarDecl { decls, .. }) => {
+                        if decls.len() >= 1 {
+                            if decls[0].name.get_ty().is_some() {
+                                match kind {
+                                    ForHeadKind::In => {
+                                        child
+                                            .storage
+                                            .report(Error::TypeAnnOnLhsOfForInLoops { span: decls[0].span });
+                                    }
+                                    ForHeadKind::Of => {
+                                        child
+                                            .storage
+                                            .report(Error::TypeAnnOnLhsOfForOfLoops { span: decls[0].span });
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+
+                let rhs_ctx = Ctx {
+                    cannot_be_tuple: true,
+                    ..child.ctx
+                };
+
                 let rty = rhs
-                    .validate_with_default(child)
-                    .context("tried to validate rhs of a for in/of loop")
-                    .report(&mut child.storage)
-                    .unwrap_or_else(|| Type::any(span));
+                    .validate_with_default(&mut *child.with_ctx(rhs_ctx))
+                    .context("tried to validate rhs of a for in/of loop");
+                let rty = rty.report(&mut child.storage).unwrap_or_else(|| Type::any(span));
+
+                match kind {
+                    ForHeadKind::Of => {
+                        if child.env.target() < EsVersion::Es5 {
+                            if rty
+                                .iter_union()
+                                .flat_map(|ty| ty.iter_union())
+                                .flat_map(|ty| ty.iter_union())
+                                .any(|ty| is_str_or_union(&ty))
+                            {
+                                child.storage.report(Error::ForOfStringUsedInEs3 { span })
+                            }
+                        }
+                    }
+                    _ => {}
+                }
 
                 let elem_ty = match kind {
                     ForHeadKind::Of => child
-                        .get_iterator_element_type(rhs.span(), Cow::Owned(rty))
-                        .context("tried to get the element type of an iterator to calculate type for a for-of loop")?,
+                        .get_iterator_element_type(rhs.span(), Cow::Owned(rty), false)
+                        .convert_err(|err| match err {
+                            Error::NotArrayType { span }
+                                if match rhs {
+                                    RExpr::Lit(..) => true,
+                                    _ => false,
+                                } =>
+                            {
+                                Error::NotArrayTypeNorStringType { span }
+                            }
+                            _ => err,
+                        })
+                        .context("tried to get the element type of an iterator to calculate type for a for-of loop")
+                        .report(&mut child.storage)
+                        .unwrap_or_else(|| Cow::Owned(Type::any(span))),
                     ForHeadKind::In => Cow::Owned(
                         child
                             .get_element_type_of_for_in(&rty)
-                            .context("tried to calculate the element type for a for-in loop")?,
+                            .context("tried to calculate the element type for a for-in loop")
+                            .report(&mut child.storage)
+                            .unwrap_or_else(|| Type::any(span)),
                     ),
                 };
 
@@ -241,7 +368,14 @@ impl Analyzer<'_, '_> {
                 in_cond: true,
                 ..self.ctx
             };
-            node.test.validate_with_default(&mut *self.with_ctx(ctx))?
+            let test = node.test.validate_with_default(&mut *self.with_ctx(ctx));
+            match test {
+                Ok(v) => v,
+                Err(err) => {
+                    self.storage.report(err);
+                    Type::any(node.test.span())
+                }
+            }
         };
         self.check_for_inifinite_loop(&test, &node.body);
 

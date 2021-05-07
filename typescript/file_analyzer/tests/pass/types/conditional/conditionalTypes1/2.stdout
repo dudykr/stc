@@ -1,0 +1,16 @@
+warning: Type
+ --> $DIR/tests/pass/types/conditional/conditionalTypes1/2.ts:2:13
+  |
+2 |     let e = x[0];  // string
+  |             ^
+  |
+  = note: T extends infer U[] ? U[] : never
+
+warning: Type
+ --> $DIR/tests/pass/types/conditional/conditionalTypes1/2.ts:2:13
+  |
+2 |     let e = x[0];  // string
+  |             ^^^^
+  |
+  = note: U
+

@@ -1,3 +1,4 @@
+use crate::analyzer::scope::Scope;
 use crate::analyzer::Analyzer;
 use fxhash::FxHashSet;
 use rnode::Visit;
@@ -52,10 +53,25 @@ impl Analyzer<'_, '_> {
     }
 
     fn is_type_param_dead(&mut self, name: &Id) -> bool {
-        match self.find_type(self.ctx.module_id, name) {
-            Ok(Some(..)) => false,
-            _ => true,
+        fn is_dead(s: &Scope, name: &Id) -> bool {
+            if s.is_root() {
+                return true;
+            }
+
+            if let Some(..) = s.facts.types.get(name) {
+                return false;
+            }
+            if let Some(..) = s.types.get(name) {
+                return false;
+            }
+
+            match s.parent {
+                Some(p) => is_dead(&p, name),
+                None => return true,
+            }
         }
+
+        is_dead(&self.scope, name)
     }
 }
 
@@ -100,7 +116,7 @@ impl VisitMut<Type> for TypeParamEscapeHandler<'_, '_, '_> {
             v.params
         };
 
-        {
+        if !ty.normalize().is_type_param() {
             // Fast path
             let mut v = TypeParamEscapeVisitor {
                 analyzer: self.analyzer,

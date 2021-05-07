@@ -6,6 +6,7 @@ extern crate test;
 use slog::Logger;
 use stc_ts_builtin_types::Lib;
 use stc_ts_file_analyzer::env::Env;
+use stc_ts_file_analyzer::env::ModuleConfig;
 use stc_ts_module_loader::resolver::node::NodeResolver;
 use stc_ts_type_checker::Checker;
 use std::{
@@ -57,7 +58,12 @@ fn run_bench(b: &mut Bencher, path: &Path) {
                 Logger::root(slog::Discard, slog::o!()),
                 cm.clone(),
                 handler.clone(),
-                Env::simple(Default::default(), JscTarget::Es2020, &Lib::load("es2020.full")),
+                Env::simple(
+                    Default::default(),
+                    JscTarget::Es2020,
+                    ModuleConfig::None,
+                    &Lib::load("es2020.full"),
+                ),
                 TsConfig { ..Default::default() },
                 None,
                 Arc::new(NodeResolver),

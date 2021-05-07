@@ -1,0 +1,48 @@
+warning: Type
+  --> $DIR/tests/pass/types/mapped/4-1.ts:14:1
+   |
+14 | e1.foo
+   | ^^
+   |
+   = note: E1<string>
+
+warning: Type
+  --> $DIR/tests/pass/types/mapped/4-1.ts:14:1
+   |
+14 | e1.foo
+   | ^^^^^^
+   |
+   = note: string
+
+warning: Type
+  --> $DIR/tests/pass/types/mapped/4-1.ts:15:1
+   |
+15 | e1.bar
+   | ^^
+   |
+   = note: E1<string>
+
+warning: Type
+  --> $DIR/tests/pass/types/mapped/4-1.ts:15:1
+   |
+15 | e1.bar
+   | ^^^^^^
+   |
+   = note: any
+
+warning: Type
+  --> $DIR/tests/pass/types/mapped/4-1.ts:16:1
+   |
+16 | e1.baz
+   | ^^
+   |
+   = note: E1<string>
+
+warning: Type
+  --> $DIR/tests/pass/types/mapped/4-1.ts:16:1
+   |
+16 | e1.baz
+   | ^^^^^^
+   |
+   = note: any
+

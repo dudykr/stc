@@ -1,10 +1,11 @@
 use dashmap::DashMap;
+use fxhash::FxBuildHasher;
 use std::sync::Arc;
 use swc_common::comments::Comment;
 use swc_common::comments::Comments;
 use swc_common::BytePos;
 
-type CommentMap = Arc<DashMap<BytePos, Vec<Comment>>>;
+type CommentMap = Arc<DashMap<BytePos, Vec<Comment>, FxBuildHasher>>;
 
 /// Multi-threaded implementation of [Comments]
 #[derive(Clone, Default)]

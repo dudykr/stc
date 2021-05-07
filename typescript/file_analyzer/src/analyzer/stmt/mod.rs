@@ -10,12 +10,15 @@ use rnode::VisitWith;
 use stc_ts_ast_rnode::RBlockStmt;
 use stc_ts_ast_rnode::RBool;
 use stc_ts_ast_rnode::RForStmt;
+use stc_ts_ast_rnode::RModuleItem;
 use stc_ts_ast_rnode::RStmt;
 use stc_ts_ast_rnode::RTsExprWithTypeArgs;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_ast_rnode::RWithStmt;
+use stc_ts_errors::Error;
 use stc_ts_types::Type;
+use stc_utils::stack;
 use swc_common::DUMMY_SP;
 use swc_ecma_utils::Value::Known;
 
@@ -27,7 +30,20 @@ mod var_decl;
 
 #[validator]
 impl Analyzer<'_, '_> {
+    fn validate(&mut self, i: &RModuleItem) {
+        let _stack = stack::start(100);
+
+        i.visit_children_with(self);
+
+        Ok(())
+    }
+}
+
+#[validator]
+impl Analyzer<'_, '_> {
     fn validate(&mut self, s: &RStmt) {
+        slog::warn!(self.logger, "Statement start");
+
         let old_in_conditional = self.scope.return_values.in_conditional;
         self.scope.return_values.in_conditional |= match s {
             RStmt::If(_) => true,
@@ -90,6 +106,8 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, s: &RWithStmt) {
+        self.storage.report(Error::WithStmtNotSupported { span: s.span });
+
         s.obj.visit_with(self);
 
         Ok(())

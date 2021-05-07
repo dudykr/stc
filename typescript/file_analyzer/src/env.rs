@@ -5,6 +5,7 @@ use crate::{
 };
 use dashmap::DashMap;
 use derivative::Derivative;
+use fxhash::FxBuildHasher;
 use fxhash::FxHashMap;
 use once_cell::sync::Lazy;
 use once_cell::sync::OnceCell;
@@ -25,8 +26,10 @@ use stc_ts_errors::Error;
 use stc_ts_storage::Builtin;
 use stc_ts_types::ClassDef;
 use stc_ts_types::{Id, ModuleTypeData, Type};
+use stc_utils::stack;
 use std::time::Instant;
 use std::{collections::hash_map::Entry, sync::Arc};
+use string_enum::StringEnum;
 use swc_atoms::JsWord;
 use swc_common::Spanned;
 use swc_common::{Globals, Span, DUMMY_SP};
@@ -42,6 +45,8 @@ pub struct BuiltIn {
 impl BuiltIn {
     pub fn from_ts_libs(env: &StableEnv, libs: &[Lib]) -> Self {
         debug_assert_ne!(libs, &[], "No typescript library file is specified");
+
+        let _stack = stack::start(300);
 
         let mut node_id_gen = NodeIdGenerator::default();
 
@@ -253,26 +258,28 @@ pub struct Env {
     stable: StableEnv,
     rule: Rule,
     target: JscTarget,
+    module: ModuleConfig,
     builtin: Arc<BuiltIn>,
-    global_types: Arc<DashMap<JsWord, Type>>,
-    global_vars: Arc<DashMap<JsWord, Type>>,
+    global_types: Arc<DashMap<JsWord, Type, FxBuildHasher>>,
+    global_vars: Arc<DashMap<JsWord, Type, FxBuildHasher>>,
 }
 
 impl Env {
-    pub fn new(env: StableEnv, rule: Rule, target: JscTarget, builtin: Arc<BuiltIn>) -> Self {
+    pub fn new(env: StableEnv, rule: Rule, target: JscTarget, module: ModuleConfig, builtin: Arc<BuiltIn>) -> Self {
         Self {
             stable: env,
             builtin,
             target,
+            module,
             global_types: Default::default(),
             global_vars: Default::default(),
             rule,
         }
     }
 
-    pub fn simple(rule: Rule, target: JscTarget, libs: &[Lib]) -> Self {
+    pub fn simple(rule: Rule, target: JscTarget, module: ModuleConfig, libs: &[Lib]) -> Self {
         static STABLE_ENV: Lazy<StableEnv> = Lazy::new(Default::default);
-        static CACHE: Lazy<DashMap<Vec<Lib>, OnceCell<Arc<BuiltIn>>>> = Lazy::new(Default::default);
+        static CACHE: Lazy<DashMap<Vec<Lib>, OnceCell<Arc<BuiltIn>>, FxBuildHasher>> = Lazy::new(Default::default);
 
         // TODO: Include `env` in cache
         let mut libs = libs.to_vec();
@@ -292,6 +299,7 @@ impl Env {
             stable: STABLE_ENV.clone(),
             rule,
             target,
+            module,
             builtin,
             global_types: Default::default(),
             global_vars: Default::default(),
@@ -304,6 +312,10 @@ impl Env {
 
     pub const fn target(&self) -> JscTarget {
         self.target
+    }
+
+    pub const fn module(&self) -> ModuleConfig {
+        self.module
     }
 
     pub const fn rule(&self) -> Rule {
@@ -330,7 +342,7 @@ impl Env {
         }
     }
 
-    pub(crate) fn get_global_var(&self, span: Span, name: &JsWord) -> Result<Type, Error> {
+    pub fn get_global_var(&self, span: Span, name: &JsWord) -> Result<Type, Error> {
         if let Some(ty) = self.global_vars.get(name) {
             debug_assert!(ty.is_clone_cheap(), "{:?}", *ty);
             return Ok((*ty).clone());
@@ -348,7 +360,7 @@ impl Env {
         })
     }
 
-    pub(crate) fn get_global_type(&self, span: Span, name: &JsWord) -> Result<Type, Error> {
+    pub fn get_global_type(&self, span: Span, name: &JsWord) -> Result<Type, Error> {
         if let Some(ty) = self.global_types.get(name) {
             debug_assert!(ty.is_clone_cheap(), "{:?}", *ty);
             return Ok((*ty).clone());
@@ -402,4 +414,26 @@ impl Default for StableEnv {
     fn default() -> Self {
         Self::new(Logger::root(slog::Discard, slog::o!()), Default::default())
     }
+}
+
+#[derive(Clone, Copy, StringEnum)]
+pub enum ModuleConfig {
+    /// `commonjs`
+    CommonJs,
+    /// `es6`
+    Es6,
+    /// `es2015`
+    Es2015,
+    /// `es2020`
+    Es2020,
+    /// `none`
+    None,
+    /// `umd`
+    Umd,
+    /// `amd`
+    Amd,
+    /// `system`
+    System,
+    /// `esnext`
+    EsNext,
 }

@@ -15,6 +15,7 @@ use stc_testing::logger;
 use stc_ts_builtin_types::Lib;
 use stc_ts_errors::debug::debugger::Debugger;
 use stc_ts_file_analyzer::env::Env;
+use stc_ts_file_analyzer::env::ModuleConfig;
 use stc_ts_file_analyzer::Rule;
 use stc_ts_module_loader::resolver::node::NodeResolver;
 use stc_ts_testing::tsc::TsTestCase;
@@ -229,7 +230,7 @@ fn do_test(path: &Path) -> Result<(), StdErr> {
                 log.logger,
                 cm.clone(),
                 handler_for_errors.clone(),
-                Env::simple(rule, target, &libs),
+                Env::simple(rule, target, ModuleConfig::None, &libs),
                 TsConfig {
                     tsx: str_name.contains("tsx"),
                     ..ts_config

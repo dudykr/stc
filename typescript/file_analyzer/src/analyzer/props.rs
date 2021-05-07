@@ -108,6 +108,7 @@ impl Analyzer<'_, '_> {
         };
 
         self.with_ctx(ctx).with(|analyzer: &mut Analyzer| {
+            let mut check_for_validity = true;
             let mut check_for_symbol_form = true;
 
             let mut errors = Errors::default();
@@ -127,7 +128,52 @@ impl Analyzer<'_, '_> {
                 }
             };
 
-            if check_for_symbol_form && is_symbol_access {
+            if match mode {
+                ComputedPropMode::Class { has_body } => errors.is_empty(),
+                ComputedPropMode::Object => errors.is_empty(),
+                // TODO:
+                ComputedPropMode::Interface => errors.is_empty(),
+            } {
+                if !analyzer.is_type_valid_for_computed_key(span, &ty) {
+                    check_for_validity = false;
+
+                    analyzer.storage.report(Error::InvalidTypeForComputedProperty {
+                        span,
+                        ty: box ty.clone(),
+                    });
+                }
+            }
+
+            if check_for_validity {
+                match mode {
+                    ComputedPropMode::Class { .. } | ComputedPropMode::Interface => {
+                        let is_valid_key = is_valid_computed_key(&node.expr);
+
+                        let ty = analyzer.expand(node.span, ty.clone()).report(&mut analyzer.storage);
+
+                        if let Some(ref ty) = ty {
+                            // TODO: Add support for expressions like '' + ''.
+                            match ty.normalize() {
+                                _ if is_valid_key => {}
+                                Type::Lit(..) => {}
+                                Type::EnumVariant(..) => {}
+                                _ if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) || ty.is_unique_symbol() => {}
+                                _ => match mode {
+                                    ComputedPropMode::Interface => {
+                                        errors.push(Error::TS1169 { span: node.span });
+                                        check_for_symbol_form = false;
+                                    }
+                                    _ => {}
+                                },
+                            }
+                        }
+                    }
+
+                    _ => {}
+                }
+            }
+
+            if check_for_validity && check_for_symbol_form && is_symbol_access {
                 match ty.normalize() {
                     Type::Keyword(RTsKeywordType {
                         kind: TsKeywordTypeKind::TsSymbolKeyword,
@@ -143,46 +189,6 @@ impl Analyzer<'_, '_> {
                         analyzer
                             .storage
                             .report(Error::NonSymbolComputedPropInFormOfSymbol { span });
-                    }
-                }
-            }
-
-            match mode {
-                ComputedPropMode::Class { .. } | ComputedPropMode::Interface => {
-                    let is_valid_key = is_valid_computed_key(&node.expr);
-
-                    let ty = analyzer.expand(node.span, ty.clone()).report(&mut analyzer.storage);
-
-                    if let Some(ref ty) = ty {
-                        // TODO: Add support for expressions like '' + ''.
-                        match ty.normalize() {
-                            _ if is_valid_key => {}
-                            Type::Lit(..) => {}
-                            Type::EnumVariant(..) => {}
-                            _ if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) || ty.is_unique_symbol() => {}
-                            _ => match mode {
-                                ComputedPropMode::Interface => errors.push(Error::TS1169 { span: node.span }),
-                                _ => {}
-                            },
-                        }
-                    }
-                }
-
-                _ => {}
-            }
-
-            if match mode {
-                ComputedPropMode::Class { has_body } => errors.is_empty(),
-                ComputedPropMode::Object => errors.is_empty(),
-                // TODO:
-                ComputedPropMode::Interface => errors.is_empty(),
-            } {
-                if !is_symbol_access {
-                    if !analyzer.is_type_valid_for_computed_key(span, &ty) {
-                        analyzer.storage.report(Error::TS2464 {
-                            span,
-                            ty: box ty.clone(),
-                        });
                     }
                 }
             }
@@ -222,11 +228,15 @@ impl Analyzer<'_, '_> {
 
         let ctx = Ctx {
             computed_prop_mode: ComputedPropMode::Object,
+            in_shorthand: match prop {
+                RProp::Shorthand(..) => true,
+                _ => false,
+            },
             ..self.ctx
         };
 
         let old_this = self.scope.this.take();
-        let res = self.with_ctx(ctx).validate_prop_inner(prop, object_type);
+        let mut res = self.with_ctx(ctx).validate_prop_inner(prop, object_type);
         self.scope.this = old_this;
 
         res
@@ -277,7 +287,12 @@ impl Analyzer<'_, '_> {
 
     fn is_type_valid_for_computed_key(&mut self, span: Span, ty: &Type) -> bool {
         let ty = ty.clone().generalize_lit();
-        let ty = self.normalize(&ty, Default::default());
+
+        match ty.normalize() {
+            Type::Function(..) => return false,
+            _ => {}
+        }
+        let ty = self.normalize(None, &ty, Default::default());
         let ty = match ty {
             Ok(v) => v,
             _ => return true,
@@ -448,6 +463,9 @@ impl Analyzer<'_, '_> {
 
                 self.with_child(ScopeKind::Method { is_static: false }, Default::default(), {
                     |child: &mut Analyzer| -> ValidationResult<_> {
+                        child.ctx.in_async = p.function.is_async;
+                        child.ctx.in_generator = p.function.is_generator;
+
                         match method_type_ann.as_ref().map(|ty| ty.normalize()) {
                             Some(Type::Function(ty)) => {
                                 for p in p.function.params.iter().zip_longest(ty.params.iter()) {
@@ -483,6 +501,11 @@ impl Analyzer<'_, '_> {
 
                         let type_params = try_opt!(p.function.type_params.validate_with(child));
                         let params = p.function.params.validate_with(child)?;
+
+                        let ret_ty = try_opt!(p.function.return_type.validate_with(child));
+                        let ret_ty = ret_ty.map(|ty| ty.cheap());
+                        child.scope.declared_return_type = ret_ty.clone();
+
                         let mut inferred = None;
 
                         if let Some(body) = &p.function.body {
@@ -522,8 +545,6 @@ impl Analyzer<'_, '_> {
 
                             // TODO: Assign
                         }
-
-                        let ret_ty = try_opt!(p.function.return_type.validate_with(child));
                         let ret_ty = ret_ty.or(inferred).map(Box::new);
 
                         Ok(MethodSignature {

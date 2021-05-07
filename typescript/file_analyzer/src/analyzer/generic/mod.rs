@@ -1,3 +1,4 @@
+pub(crate) use self::expander::ExtendsOpts;
 use super::Analyzer;
 use super::Ctx;
 use crate::util::RemoveTypes;
@@ -51,6 +52,7 @@ use stc_ts_types::TypeParamDecl;
 use stc_ts_types::TypeParamInstantiation;
 use stc_ts_types::Union;
 use stc_ts_utils::MapWithMut;
+use stc_utils::error::context;
 use std::borrow::Cow;
 use std::collections::hash_map::Entry;
 use std::mem::take;
@@ -393,6 +395,14 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
+        let _ctx = context(format!(
+            "infer_type()\nParam: {}\nArg: {}",
+            dump_type_as_string(&self.cm, &param),
+            dump_type_as_string(&self.cm, &arg)
+        ));
+
+        debug_assert!(!span.is_dummy(), "infer_type: `span` should not be dummy");
+
         print_type(&self.logger, "param", &self.cm, &param);
         print_type(&self.logger, "arg", &self.cm, &arg);
 
@@ -471,8 +481,14 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {
                 let constraint = constraint.as_ref().map(|ty| ty.normalize());
-                if let Some(prev) = inferred.type_params.get(name).cloned() {
-                    self.infer_type(span, inferred, &prev, arg)?;
+                if !self.ctx.skip_identical_while_inferencing {
+                    if let Some(prev) = inferred.type_params.get(name).cloned() {
+                        let ctx = Ctx {
+                            skip_identical_while_inferencing: true,
+                            ..self.ctx
+                        };
+                        self.with_ctx(ctx).infer_type(span, inferred, &prev, arg)?;
+                    }
                 }
 
                 slog::trace!(self.logger, "infer_type: type parameter: {} = {:?}", name, constraint);
@@ -505,15 +521,24 @@ impl Analyzer<'_, '_> {
                             _ => {}
                         }
                     }
+
+                    // TODO: Infer only if constraints are matched
+                    //
+                    // if let Some(false) = self.extends(span, ExtendsOpts {
+                    // ..Default::default() }, arg, constraint) {
+                    //     return Ok(());
+                    // }
                 }
 
-                match arg {
-                    Type::Param(arg) => {
-                        if *name == arg.name {
-                            return Ok(());
+                if self.ctx.skip_identical_while_inferencing {
+                    match arg {
+                        Type::Param(arg) => {
+                            if *name == arg.name {
+                                return Ok(());
+                            }
                         }
+                        _ => {}
                     }
-                    _ => {}
                 }
 
                 if arg.is_any() && self.is_implicitly_typed(&arg) {
@@ -714,6 +739,12 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                Type::Interface(..) | Type::Enum(..) | Type::Alias(..) => {
+                    if let Some(arg) = self.type_to_type_lit(span, arg)? {
+                        return self.infer_type_using_type_lit_and_type_lit(span, inferred, param, &arg);
+                    }
+                }
+
                 _ => {
                     dbg!();
                 }
@@ -894,12 +925,12 @@ impl Analyzer<'_, '_> {
             },
 
             Type::Class(param) => match arg {
-                Type::Class(arg) => return self.infer_class(span, inferred, param, arg),
+                Type::Class(arg) => return self.infer_types_using_class(span, inferred, param, arg),
                 _ => {}
             },
 
             Type::ClassDef(param) => match arg {
-                Type::ClassDef(arg) => return self.infer_class_def(span, inferred, param, arg),
+                Type::ClassDef(arg) => return self.infer_types_using_class_def(span, inferred, param, arg),
                 _ => {}
             },
 

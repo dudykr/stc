@@ -4,6 +4,7 @@
 use dashmap::DashMap;
 use dashmap::DashSet;
 use dashmap::SharedValue;
+use fxhash::FxBuildHasher;
 use fxhash::FxHashMap;
 use once_cell::sync::OnceCell;
 use parking_lot::Mutex;
@@ -22,7 +23,6 @@ use stc_ts_file_analyzer::env::Env;
 use stc_ts_file_analyzer::loader::Load;
 use stc_ts_file_analyzer::loader::ModuleInfo;
 use stc_ts_file_analyzer::validator::ValidateWith;
-use stc_ts_file_analyzer::DepInfo;
 use stc_ts_file_analyzer::ModuleTypeData;
 use stc_ts_file_analyzer::ValidationResult;
 use stc_ts_module_loader::resolver::Resolve;
@@ -56,12 +56,12 @@ pub struct Checker {
     module_types: RwLock<FxHashMap<ModuleId, Arc<OnceCell<Arc<ModuleTypeData>>>>>,
 
     /// Informatnion required to generate `.d.ts` files.
-    dts_modules: Arc<DashMap<ModuleId, RModule>>,
+    dts_modules: Arc<DashMap<ModuleId, RModule, FxBuildHasher>>,
 
     module_graph: Arc<ModuleGraph<StcComments, Arc<dyn Resolve>>>,
 
     /// Modules which are being processed or analyzed.
-    started: Arc<DashSet<ModuleId>>,
+    started: Arc<DashSet<ModuleId, FxBuildHasher>>,
 
     errors: Mutex<Vec<Error>>,
 
@@ -81,13 +81,14 @@ impl Checker {
         resolver: Arc<dyn Resolve>,
     ) -> Self {
         Checker {
-            logger,
+            logger: logger.clone(),
             env: env.clone(),
             cm: cm.clone(),
             handler,
             module_types: Default::default(),
             dts_modules: Default::default(),
             module_graph: Arc::new(ModuleGraph::new(
+                logger,
                 cm,
                 Some(Default::default()),
                 resolver,
@@ -116,7 +117,7 @@ impl Checker {
     /// Get type informations of a module.
     pub fn get_types(&self, id: ModuleId) -> Option<Arc<ModuleTypeData>> {
         let lock = self.module_types.read();
-        lock.get(&id).map(|v| v.get().cloned()).flatten()
+        lock.get(&id).and_then(|v| v.get().cloned())
     }
 
     /// Removes dts module from `self` and return it.
@@ -195,6 +196,7 @@ impl Checker {
                         let modules = ids
                             .iter()
                             .map(|&id| self.module_graph.clone_module(id))
+                            .filter_map(|m| m)
                             .map(|module| {
                                 RModule::from_orig(
                                     &mut node_id_gen,
@@ -307,7 +309,7 @@ impl Checker {
             let start = Instant::now();
 
             let mut node_id_gen = NodeIdGenerator::default();
-            let mut module = self.module_graph.clone_module(id);
+            let mut module = self.module_graph.clone_module(id).unwrap();
             module = module.fold_with(&mut ts_resolver(self.env.shared().marks().top_level_mark()));
             let mut module = RModule::from_orig(&mut node_id_gen, module);
 
@@ -360,51 +362,43 @@ impl Checker {
 }
 
 impl Load for Checker {
-    fn is_in_same_circular_group(&self, base: &Arc<PathBuf>, src: &JsWord) -> bool {
-        let id = self.module_graph.id(&base);
+    fn module_id(&self, base: &Arc<PathBuf>, src: &JsWord) -> Option<ModuleId> {
+        let path = self.module_graph.resolve(&base, src).ok()?;
+        let id = self.module_graph.id(&path);
+        Some(id)
+    }
 
-        let path = self.module_graph.resolve(&base, src).unwrap();
-        let target = self.module_graph.id(&path);
-
-        let circular_set = self.module_graph.get_circular(id);
+    fn is_in_same_circular_group(&self, base: ModuleId, dep: ModuleId) -> bool {
+        let circular_set = self.module_graph.get_circular(base);
 
         match circular_set {
-            Some(set) => set.contains(&target),
+            Some(set) => set.contains(&dep),
             None => false,
         }
     }
 
     fn load_circular_dep(
         &self,
-        base: Arc<PathBuf>,
+        base: ModuleId,
+        dep: ModuleId,
         _partial: &ModuleTypeData,
-        import: &DepInfo,
     ) -> ValidationResult<ModuleInfo> {
-        let _base_id = self.module_graph.id(&base);
-        let path = self.module_graph.resolve(&base, &import.src).unwrap();
-        let id = self.module_graph.id(&path);
+        let base_path = self.module_graph.path(base);
+        let dep_path = self.module_graph.path(dep);
 
-        let data = self.analyze_module(Some(base.clone()), path.clone());
+        let data = self.analyze_module(Some(base_path.clone()), dep_path.clone());
 
-        return Ok(ModuleInfo { module_id: id, data });
+        return Ok(ModuleInfo { module_id: dep, data });
     }
 
-    fn load_non_circular_dep(&self, base: Arc<PathBuf>, import: &DepInfo) -> ValidationResult<ModuleInfo> {
-        let mut _result = ModuleTypeData::default();
+    fn load_non_circular_dep(&self, base: ModuleId, dep: ModuleId) -> ValidationResult<ModuleInfo> {
+        let base_path = self.module_graph.path(base);
+        let dep_path = self.module_graph.path(dep);
 
-        // TODO: Use ModuleId for analyze_module
-        let path = self.module_graph.resolve(&base, &import.src).unwrap();
-        slog::info!(self.logger, "({}): Loading {}", base.display(), path.display());
-        let id = self.module_graph.id(&path);
+        slog::info!(self.logger, "({}): Loading {}", base_path.display(), dep_path.display());
 
-        let data = self.analyze_module(Some(base.clone()), path.clone());
+        let data = self.analyze_module(Some(base_path.clone()), dep_path.clone());
 
-        return Ok(ModuleInfo { module_id: id, data });
-    }
-
-    fn module_id(&self, base: &Arc<PathBuf>, src: &JsWord) -> ModuleId {
-        let path = self.module_graph.resolve(&base, src).unwrap();
-        let id = self.module_graph.id(&path);
-        id
+        return Ok(ModuleInfo { module_id: dep, data });
     }
 }

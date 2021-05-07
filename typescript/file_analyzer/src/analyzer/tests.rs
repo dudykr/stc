@@ -1,10 +1,10 @@
 use super::Analyzer;
 use crate::env::Env;
+use crate::env::ModuleConfig;
 use crate::loader::Load;
 use crate::loader::ModuleInfo;
 use crate::tests::GLOBALS;
 use crate::tests::MARKS;
-use crate::DepInfo;
 use crate::ValidationResult;
 use once_cell::sync::Lazy;
 use rnode::NodeIdGenerator;
@@ -29,7 +29,14 @@ use swc_ecma_transforms::resolver::ts_resolver;
 use swc_ecma_visit::FoldWith;
 use testing::StdErr;
 
-static ENV: Lazy<Env> = Lazy::new(|| Env::simple(Default::default(), JscTarget::Es2020, &Lib::load("es2020.full")));
+static ENV: Lazy<Env> = Lazy::new(|| {
+    Env::simple(
+        Default::default(),
+        JscTarget::Es2020,
+        ModuleConfig::None,
+        &Lib::load("es2020.full"),
+    )
+});
 
 pub struct Tester<'a, 'b> {
     cm: Arc<SourceMap>,
@@ -96,24 +103,24 @@ impl Tester<'_, '_> {
 struct Loader {}
 
 impl Load for Loader {
-    fn module_id(&self, base: &Arc<PathBuf>, src: &JsWord) -> ModuleId {
+    fn module_id(&self, base: &Arc<PathBuf>, src: &JsWord) -> Option<ModuleId> {
         unimplemented!()
     }
 
-    fn is_in_same_circular_group(&self, base: &Arc<PathBuf>, src: &JsWord) -> bool {
+    fn is_in_same_circular_group(&self, base: ModuleId, dep: ModuleId) -> bool {
         unimplemented!()
     }
 
     fn load_circular_dep(
         &self,
-        base: Arc<PathBuf>,
+        base: ModuleId,
+        dep: ModuleId,
         partial: &ModuleTypeData,
-        import: &DepInfo,
     ) -> ValidationResult<ModuleInfo> {
         unimplemented!()
     }
 
-    fn load_non_circular_dep(&self, base: Arc<PathBuf>, import: &DepInfo) -> ValidationResult<ModuleInfo> {
+    fn load_non_circular_dep(&self, base: ModuleId, dep: ModuleId) -> ValidationResult<ModuleInfo> {
         unimplemented!()
     }
 }

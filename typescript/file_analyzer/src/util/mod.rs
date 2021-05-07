@@ -143,7 +143,7 @@ impl VisitMut<Type> for Marker {
 }
 
 pub(crate) fn is_str_or_union(t: &Type) -> bool {
-    match t {
+    match t.normalize() {
         Type::Lit(RTsLitType {
             lit: RTsLit::Str(..), ..
         }) => true,

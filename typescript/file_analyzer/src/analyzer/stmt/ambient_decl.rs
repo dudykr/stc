@@ -20,11 +20,7 @@ impl Analyzer<'_, '_> {
 
         nodes.visit_with(&mut visitor);
 
-        if visitor.last_ambient_name.is_some() {
-            visitor.errors.report(Error::FnImplMissingOrNotFollowedByDecl {
-                span: visitor.last_ambient_name.unwrap().span,
-            })
-        }
+        visitor.handle_missing_impl();
     }
 }
 
@@ -41,6 +37,15 @@ struct AmbientFunctionHandler<'a, 'b> {
     errors: &'a mut Storage<'b>,
 }
 
+impl AmbientFunctionHandler<'_, '_> {
+    pub fn handle_missing_impl(&mut self) {
+        if let Some(id) = self.last_ambient_name.take() {
+            self.errors
+                .report(Error::FnImplMissingOrNotFollowedByDecl { span: id.span })
+        }
+    }
+}
+
 impl Visit<RStmt> for AmbientFunctionHandler<'_, '_> {
     fn visit(&mut self, node: &RStmt) {
         node.visit_children_with(self);
@@ -48,11 +53,7 @@ impl Visit<RStmt> for AmbientFunctionHandler<'_, '_> {
         match node {
             RStmt::Decl(RDecl::Fn(..)) => {}
             _ => {
-                // .take() is same as self.last_ambient_name = None
-                if let Some(ref i) = self.last_ambient_name.take() {
-                    self.errors
-                        .report(Error::FnImplMissingOrNotFollowedByDecl { span: i.span });
-                }
+                self.handle_missing_impl();
             }
         }
     }
@@ -67,7 +68,8 @@ impl Visit<RFnDecl> for AmbientFunctionHandler<'_, '_> {
         if node.function.body.is_none() {
             if let Some(ref name) = self.last_ambient_name {
                 if node.ident.sym != name.sym {
-                    self.errors.report(Error::TS2389 { span: name.span });
+                    self.errors
+                        .report(Error::FnImplMissingOrNotFollowedByDecl { span: name.span });
                 }
             }
             self.last_ambient_name = Some(node.ident.clone());

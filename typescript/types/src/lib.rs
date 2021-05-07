@@ -36,7 +36,7 @@ use stc_ts_ast_rnode::RTsModuleName;
 use stc_ts_ast_rnode::RTsNamespaceDecl;
 use stc_ts_ast_rnode::RTsThisType;
 use stc_ts_ast_rnode::RTsThisTypeOrIdent;
-use stc_utils::panic_context;
+use stc_utils::error::context;
 use stc_visit::Visit;
 use stc_visit::Visitable;
 use std::borrow::Cow;
@@ -52,6 +52,7 @@ use std::{
         Arc,
     },
 };
+use swc_atoms::js_word;
 use swc_atoms::JsWord;
 use swc_common::EqIgnoreSpan;
 use swc_common::TypeEq;
@@ -537,12 +538,26 @@ pub struct ClassDef {
 
 assert_eq_size!(ClassDef, [u8; 112]);
 
-#[derive(Debug, Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit, Is)]
 pub enum ClassMember {
     Constructor(ConstructorSignature),
     Method(Method),
     Property(ClassProperty),
     IndexSignature(IndexSignature),
+}
+
+impl ClassMember {
+    pub fn key(&self) -> Option<Cow<Key>> {
+        match self {
+            ClassMember::Constructor(c) => Some(Cow::Owned(Key::Normal {
+                span: c.span,
+                sym: js_word!("constructor"),
+            })),
+            ClassMember::Method(m) => Some(Cow::Borrowed(&m.key)),
+            ClassMember::Property(p) => Some(Cow::Borrowed(&p.key)),
+            ClassMember::IndexSignature(_) => None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
@@ -679,7 +694,7 @@ pub struct TypeParamInstantiation {
     pub params: Vec<Type>,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit, Is)]
 pub enum TypeElement {
     Call(CallSignature),
     Constructor(ConstructorSignature),
@@ -763,6 +778,8 @@ pub struct IndexSignature {
 
     pub readonly: bool,
     pub span: Span,
+
+    pub is_static: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
@@ -820,6 +837,27 @@ pub struct Intersection {
 }
 
 assert_eq_size!(Intersection, [u8; 40]);
+
+impl Intersection {
+    pub fn assert_valid(&self) {
+        if !cfg!(debug_assertions) {
+            return;
+        }
+
+        self.types.iter().for_each(|ty| ty.assert_valid());
+
+        for (i, t1) in self.types.iter().enumerate() {
+            for (j, t2) in self.types.iter().enumerate() {
+                if i == j {
+                    continue;
+                }
+                if t1.type_eq(t2) {
+                    panic!("An intersection type has duplicate elements: ({:?})", t1)
+                }
+            }
+        }
+    }
+}
 
 /// A type parameter
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
@@ -926,7 +964,7 @@ impl Type {
     ///
     ///  - never types are excluded.
     pub fn union<I: IntoIterator<Item = Self> + Debug>(iter: I) -> Self {
-        let _panic = panic_context::enter(format!("Iterator: {:?}", iter));
+        let _ctx = context(format!("Iterator: {:?}", iter));
 
         let mut span = DUMMY_SP;
 
@@ -1210,10 +1248,11 @@ impl Type {
             return;
         }
 
-        let _panic = panic_context::enter(format!("{:?}", self));
+        let _ctx = context(format!("{:?}", self));
 
         match self.normalize() {
             Type::Union(ty) => ty.assert_valid(),
+            Type::Intersection(ty) => ty.assert_valid(),
             _ => {}
         }
     }

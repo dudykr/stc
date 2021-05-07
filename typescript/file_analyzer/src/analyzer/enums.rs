@@ -57,6 +57,10 @@ type EnumValues = FxHashMap<JsWord, RTsLit>;
 impl Analyzer<'_, '_> {
     #[inline(never)]
     fn validate(&mut self, e: &RTsEnumDecl) -> ValidationResult<Enum> {
+        for m in &e.members {
+            self.validate_with(|a| a.validate_enum_memeber_name(&m.id));
+        }
+
         let mut default = 0;
         let mut values = Default::default();
         let ty: Result<_, _> = try {
@@ -147,6 +151,7 @@ impl Analyzer<'_, '_> {
             None,
             true,
             true,
+            false,
         )
         .report(&mut self.storage);
 
@@ -307,6 +312,19 @@ fn compute(
 }
 
 impl Analyzer<'_, '_> {
+    fn validate_enum_memeber_name(&mut self, e: &RTsEnumMemberId) -> ValidationResult<()> {
+        match e {
+            RTsEnumMemberId::Ident(i) => {}
+            RTsEnumMemberId::Str(s) => {
+                if s.value.starts_with(|c: char| c.is_digit(10)) {
+                    Err(Error::EnumMemberIdCannotBeNumber { span: s.span })?
+                }
+            }
+        }
+
+        Ok(())
+    }
+
     /// `enumBasics.ts` says
     ///
     /// > Enum object type is anonymous with properties of the enum type and
@@ -375,6 +393,7 @@ impl Analyzer<'_, '_> {
                     span: DUMMY_SP,
                     kind: TsKeywordTypeKind::TsStringKeyword,
                 })),
+                is_static: false,
             }));
         }
 
@@ -385,11 +404,24 @@ impl Analyzer<'_, '_> {
         })
     }
 
-    // Check for constant enum in rvalue.
-    pub(super) fn check_rvalue(&mut self, span: Span, rhs_ty: &Type) {
+    // Check for rvalue of assignments.
+    pub(super) fn check_rvalue(&mut self, span: Span, lhs: &RPat, rhs_ty: &Type) {
         match *rhs_ty.normalize() {
             Type::Enum(ref e) if e.is_const => {
                 self.storage.report(Error::InvalidUseOfConstEnum { span });
+            }
+            Type::Keyword(RTsKeywordType {
+                kind: TsKeywordTypeKind::TsVoidKeyword,
+                ..
+            }) => {
+                if self.rule().strict_null_checks {
+                    match lhs {
+                        RPat::Array(_) | RPat::Rest(_) | RPat::Object(_) => {
+                            self.storage.report(Error::ObjectIsPossiblyUndefined { span });
+                        }
+                        _ => {}
+                    }
+                }
             }
             _ => {}
         }

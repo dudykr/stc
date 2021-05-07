@@ -1,0 +1,88 @@
+warning: Type
+  --> $DIR/tests/pass/class/member/interface/merging/2.ts:13:26
+   |
+13 | class Grandchild extends ChildNoBaseClass {
+   |                          ^^^^^^^^^^^^^^^^
+   |
+   = note: typeof ChildNoBaseClass
+
+warning: Type
+  --> $DIR/tests/pass/class/member/interface/merging/2.ts:17:1
+   |
+17 | grandchild.required;
+   | ^^^^^^^^^^
+   |
+   = note: Grandchild
+
+warning: Type
+  --> $DIR/tests/pass/class/member/interface/merging/2.ts:17:1
+   |
+17 | grandchild.required;
+   | ^^^^^^^^^^^^^^^^^^^
+   |
+   = note: number
+
+warning: Type
+  --> $DIR/tests/pass/class/member/interface/merging/2.ts:18:1
+   |
+18 | grandchild.optional;
+   | ^^^^^^^^^^
+   |
+   = note: Grandchild
+
+warning: Type
+  --> $DIR/tests/pass/class/member/interface/merging/2.ts:18:1
+   |
+18 | grandchild.optional;
+   | ^^^^^^^^^^^^^^^^^^^
+   |
+   = note: number
+
+warning: Type
+  --> $DIR/tests/pass/class/member/interface/merging/2.ts:19:1
+   |
+19 | grandchild.additional2;
+   | ^^^^^^^^^^
+   |
+   = note: Grandchild
+
+warning: Type
+  --> $DIR/tests/pass/class/member/interface/merging/2.ts:19:1
+   |
+19 | grandchild.additional2;
+   | ^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: string
+
+warning: Type
+  --> $DIR/tests/pass/class/member/interface/merging/2.ts:20:1
+   |
+20 | grandchild.classString;
+   | ^^^^^^^^^^
+   |
+   = note: Grandchild
+
+warning: Type
+  --> $DIR/tests/pass/class/member/interface/merging/2.ts:20:1
+   |
+20 | grandchild.classString;
+   | ^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: string
+
+warning: Type
+  --> $DIR/tests/pass/class/member/interface/merging/2.ts:21:1
+   |
+21 | grandchild.method2();
+   | ^^^^^^^^^^
+   |
+   = note: Grandchild
+
+warning: Type
+  --> $DIR/tests/pass/class/member/interface/merging/2.ts:21:1
+   |
+21 | grandchild.method2();
+   | ^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: void
+

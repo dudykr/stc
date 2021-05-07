@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use super::{util::ResultExt, Analyzer};
 use crate::DepInfo;
 use crate::{loader::ModuleInfo, validator, ValidationResult};
@@ -18,12 +20,35 @@ use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_storage::Storage;
 use stc_ts_types::ModuleId;
+use stc_ts_types::ModuleTypeData;
 use stc_ts_types::{Id, Type};
 use swc_atoms::js_word;
+use swc_atoms::JsWord;
 use swc_common::Span;
 use swc_common::Spanned;
 
 impl Analyzer<'_, '_> {
+    /// Returns `(base, dep, dep_types)`
+    pub(crate) fn get_imported_items(
+        &mut self,
+        span: Span,
+        dst: &JsWord,
+    ) -> ValidationResult<(ModuleId, Arc<ModuleTypeData>)> {
+        let ctxt = self.ctx.module_id;
+        let base = self.storage.path(ctxt);
+        let dep_id = self.loader.module_id(&base, &dst);
+        let dep_id = match dep_id {
+            Some(v) => v,
+            None => return Err(Error::ModuleNotFound { span }),
+        };
+        let data = match self.imports.get(&(ctxt, dep_id)).cloned() {
+            Some(v) => v,
+            None => return Err(Error::ModuleNotFound { span }),
+        };
+
+        Ok((dep_id, data))
+    }
+
     pub(super) fn find_imported_var(&self, id: &Id) -> ValidationResult<Option<Type>> {
         if let Some(ModuleInfo { module_id, data }) = self.imports_by_id.get(&id) {
             if let Some(dep) = data.vars.get(id.sym()).cloned() {
@@ -54,24 +79,35 @@ impl Analyzer<'_, '_> {
         let loader = self.loader;
         let mut normal_imports = vec![];
         for (ctxt, import) in imports {
+            let span = import.span;
+
             let base = self.storage.path(ctxt);
-            if loader.is_in_same_circular_group(&base, &import.src) {
+            let dep_id = self.loader.module_id(&base, &import.src);
+            let dep_id = match dep_id {
+                Some(v) => v,
+                None => {
+                    self.storage.report(Error::ModuleNotFound { span });
+                    continue;
+                }
+            };
+
+            if loader.is_in_same_circular_group(ctxt, dep_id) {
                 continue;
             }
 
-            normal_imports.push((ctxt, base, import));
+            normal_imports.push((ctxt, dep_id, import));
         }
 
         let import_results = normal_imports
             .into_par_iter()
-            .map(|(ctxt, base, import)| {
-                let res = loader.load_non_circular_dep(base, &import);
-                (ctxt, import, res)
+            .map(|(ctxt, dep_id, import)| {
+                let res = loader.load_non_circular_dep(ctxt, dep_id);
+                (ctxt, dep_id, import, res)
             })
             .panic_fuse()
             .collect::<Vec<_>>();
 
-        for (ctxt, import, res) in import_results {
+        for (ctxt, dep_id, import, res) in import_results {
             let span = import.span;
 
             match res {
@@ -100,7 +136,7 @@ impl Analyzer<'_, '_> {
                 if orig.sym() == i {
                     for ty in types {
                         did_work = true;
-                        self.storage.store_private_type(ctxt, id.clone(), ty.clone());
+                        self.storage.store_private_type(ctxt, id.clone(), ty.clone(), false);
                     }
                 }
             }
@@ -115,9 +151,10 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RImportDecl) {
-        let ctxt = self.ctx.module_id;
-        let base = self.storage.path(ctxt);
-        let target = self.loader.module_id(&base, &node.src.value);
+        let span = node.span;
+        let base = self.ctx.module_id;
+
+        let (dep, data) = self.get_imported_items(span, &node.src.value)?;
 
         for specifier in &node.specifiers {
             match specifier {
@@ -125,24 +162,18 @@ impl Analyzer<'_, '_> {
                     //
                     match &named.imported {
                         Some(imported) => {
-                            self.handle_import(named.span, ctxt, target, Id::from(imported), Id::from(&named.local));
+                            self.handle_import(named.span, base, dep, Id::from(imported), Id::from(&named.local));
                         }
                         None => {
-                            self.handle_import(
-                                named.span,
-                                ctxt,
-                                target,
-                                Id::from(&named.local),
-                                Id::from(&named.local),
-                            );
+                            self.handle_import(named.span, base, dep, Id::from(&named.local), Id::from(&named.local));
                         }
                     }
                 }
                 RImportSpecifier::Default(default) => {
                     self.handle_import(
                         default.span,
-                        ctxt,
-                        target,
+                        base,
+                        dep,
                         Id::word(js_word!("default")),
                         Id::from(&default.local),
                     );

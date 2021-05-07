@@ -269,6 +269,7 @@ impl VisitMut<RClassMember> for Dts {
                         readonly: false,
                         declare: false,
                         definite: false,
+                        is_override: false,
                     });
                     return;
                 }
@@ -568,6 +569,7 @@ impl VisitMut<Vec<RClassMember>> for Dts {
                                             is_optional: false,
                                             readonly: p.readonly,
                                             definite: false,
+                                            is_override: false,
                                         }));
                                     }
 
@@ -637,6 +639,7 @@ impl VisitMut<Vec<RClassMember>> for Dts {
                         is_optional: false,
                         readonly: false,
                         definite: false,
+                        is_override: false,
                     }),
                 );
             }

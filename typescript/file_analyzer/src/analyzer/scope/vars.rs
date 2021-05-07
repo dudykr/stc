@@ -1,5 +1,6 @@
 use crate::analyzer::expr::IdCtx;
 use crate::analyzer::expr::TypeOfMode;
+use crate::analyzer::pat::PatMode;
 use crate::analyzer::types::NormalizeTypeOpts;
 use crate::analyzer::util::ResultExt;
 use crate::analyzer::Analyzer;
@@ -44,6 +45,7 @@ use swc_ecma_ast::VarDeclKind;
 impl Analyzer<'_, '_> {
     pub(crate) fn exclude_props(&mut self, span: Span, ty: &Type, keys: &[Key]) -> ValidationResult<Type> {
         let ty = self.normalize(
+            None,
             &ty,
             NormalizeTypeOpts {
                 preserve_mapped: false,
@@ -181,7 +183,7 @@ impl Analyzer<'_, '_> {
             .and_then(|span| if span.is_dummy() { None } else { Some(span) })
             .unwrap_or_else(|| pat.span());
         if !self.is_builtin {
-            assert_ne!(span, DUMMY_SP);
+            debug_assert!(!span.is_dummy(), "Cannot declare a variable with a dummy span")
         }
 
         match &*pat {
@@ -204,6 +206,7 @@ impl Analyzer<'_, '_> {
                     true,
                     // allow_multiple
                     kind == VarDeclKind::Var,
+                    false,
                 )?;
                 if export {
                     self.storage.store_private_var(
@@ -223,7 +226,8 @@ impl Analyzer<'_, '_> {
                     p.left,
                     ty
                 );
-                self.declare_vars_inner_with_ty(kind, &p.left, export, ty, actual_ty)?;
+                self.declare_vars_inner_with_ty(kind, &p.left, export, ty, actual_ty)
+                    .report(&mut self.storage);
 
                 return Ok(());
             }
@@ -281,6 +285,29 @@ impl Analyzer<'_, '_> {
                 for (idx, elem) in elems.iter().enumerate() {
                     match elem {
                         Some(elem) => {
+                            match elem {
+                                RPat::Rest(elem) => {
+                                    // Rest element is special.
+                                    let type_for_rest_arg = match ty {
+                                        Some(ty) => self
+                                            .get_lefting_elements(Some(*span), Cow::Owned(ty), idx)
+                                            .context(
+                                                "tried to get lefting elements of an iterator to declare variables \
+                                                 using a rest pattern",
+                                            )
+                                            .map(Cow::into_owned)
+                                            .report(&mut self.storage),
+                                        None => None,
+                                    };
+
+                                    self.declare_vars_inner_with_ty(kind, &elem.arg, export, type_for_rest_arg, None)
+                                        .context("tried to declare lefting elements to the arugment of a rest pattern")
+                                        .report(&mut self.storage);
+                                    break;
+                                }
+                                _ => {}
+                            }
+
                             let elem_ty = match &ty {
                                 Some(ty) => self
                                     .access_property(
@@ -293,13 +320,14 @@ impl Analyzer<'_, '_> {
                                         TypeOfMode::RValue,
                                         IdCtx::Var,
                                     )
-                                    .map(Some)
-                                    .context("tried to access property to declare variables using an array pattern")?,
+                                    .context("tried to access property to declare variables using an array pattern")
+                                    .report(&mut self.storage),
                                 None => None,
                             };
 
                             // TODO: actual_ty
-                            self.declare_vars_inner_with_ty(kind, elem, export, elem_ty, None)?;
+                            self.declare_vars_inner_with_ty(kind, elem, export, elem_ty, None)
+                                .report(&mut self.storage);
                         }
                         // Skip
                         None => {}
@@ -315,13 +343,16 @@ impl Analyzer<'_, '_> {
                 node_id,
                 ..
             }) => {
-                if self.ctx.in_declare {
-                    self.storage.report(Error::DestructuringAssignInAmbientContext { span });
-                }
+                // if self.ctx.in_declare {
+                //     self.storage.report(Error::DestructuringAssignInAmbientContext { span });
+                // }
 
                 let ty = match ty {
                     None => try_opt!(type_ann.as_ref().map(|v| v.type_ann.validate_with(self))),
-                    Some(ty) => Some(ty),
+                    Some(mut ty) => {
+                        ty.respan(span);
+                        Some(ty)
+                    }
                 };
 
                 if type_ann.is_none() {
@@ -381,7 +412,8 @@ impl Analyzer<'_, '_> {
                                     )
                                     .context(
                                         "tried to declare a variable from an assignment property in an object pattern",
-                                    )?;
+                                    )
+                                    .report(&mut self.storage);
                                 }
                                 None => {
                                     // TODO: actual_ty
@@ -396,9 +428,8 @@ impl Analyzer<'_, '_> {
                                         prop_ty,
                                         None,
                                     )
-                                    .context(
-                                        "tried to declare a variable from a simple property in an object pattern",
-                                    )?;
+                                    .context("tried to declare a variable from a simple property in an object pattern")
+                                    .report(&mut self.storage);
                                 }
                             }
                         }
@@ -412,19 +443,23 @@ impl Analyzer<'_, '_> {
                                 Some(ty) => self
                                     .access_property(span, ty.clone(), &key, TypeOfMode::RValue, IdCtx::Var)
                                     .map(Some)
-                                    .context("tried to access property to declare variables using an object pattern")?,
+                                    .context("tried to access property to declare variables using an object pattern")
+                                    .report(&mut self.storage)
+                                    .flatten()
+                                    .or_else(|| Some(Type::any(span))),
                                 None => None,
                             };
 
                             // TODO: actual_ty
                             self.declare_vars_inner_with_ty(kind, &p.value, export, prop_ty, None)
-                                .context("tried to declare a variable from key-value property in an object pattern")?;
+                                .context("tried to declare a variable from key-value property in an object pattern")
+                                .report(&mut self.storage);
                         }
 
                         RObjectPatProp::Rest(pat) => match ty {
                             Some(ty) => {
                                 let rest_ty = self
-                                    .exclude_props(pat.span(), &ty, &used_keys)
+                                    .exclude_props(span, &ty, &used_keys)
                                     .context("tried to exclude keys for declare vars with a object rest pattern")?;
 
                                 return self
@@ -440,6 +475,13 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                match self.ctx.pat_mode {
+                    PatMode::Decl => {
+                        // TODO: Report errors for unused properties
+                    }
+                    _ => {}
+                }
+
                 return Ok(());
             }
 
@@ -451,7 +493,7 @@ impl Analyzer<'_, '_> {
             }) => {
                 let mut arg = arg.clone();
 
-                self.declare_vars_inner(kind, &arg, export)?;
+                self.declare_vars_inner(kind, &arg, export).report(&mut self.storage);
 
                 let new_ty = arg.get_mut_ty().take();
                 if ty.is_none() {

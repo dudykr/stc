@@ -1,4 +1,5 @@
 use super::Analyzer;
+use crate::analyzer::types::NormalizeTypeOpts;
 use crate::{ty::TypeExt, ValidationResult};
 use rnode::NodeId;
 use stc_ts_ast_rnode::RBool;
@@ -14,6 +15,7 @@ use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::debug::print_backtrace;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
+use stc_ts_file_analyzer_macros::context;
 use stc_ts_types::Key;
 use stc_ts_types::Mapped;
 use stc_ts_types::Operator;
@@ -22,6 +24,7 @@ use stc_ts_types::Ref;
 use stc_ts_types::{
     Array, EnumVariant, FnParam, Interface, Intersection, Tuple, Type, TypeElement, TypeLit, TypeParam, Union,
 };
+use stc_utils::stack;
 use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::EqIgnoreSpan;
@@ -38,7 +41,7 @@ mod query;
 mod type_el;
 
 /// Context used for `=` assignments.
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy, Default)]
 pub(crate) struct AssignOpts {
     /// This field should be overrided by caller.
     pub span: Span,
@@ -61,18 +64,27 @@ pub(crate) struct AssignOpts {
     /// ```
     pub allow_unknown_type: bool,
     pub allow_assignment_to_param: bool,
+
+    pub for_overload: bool,
+
+    /// If true, assignment of a class to another class without inheritance
+    /// relation will fail, even if the class is empty.
+    pub disallow_different_classes: bool,
+
+    /// If true, `assign` will try to assign by converting rhs to an iterable.
+    pub allow_iterable_on_rhs: bool,
+
+    /// If `true`, assignment will success if rhs is `void`.
+    pub allow_assignment_of_void: bool,
+
+    pub allow_assignment_of_array_to_optional_type_lit: bool,
+
+    pub use_missing_fields_for_class: bool,
 }
 
-impl Default for AssignOpts {
-    fn default() -> Self {
-        Self {
-            span: DUMMY_SP,
-            right_ident_span: None,
-            allow_assignment_to_param: false,
-            allow_unknown_rhs: false,
-            allow_unknown_type: false,
-        }
-    }
+#[derive(Default)]
+pub struct AssignData {
+    dejavu: Vec<(Type, Type)>,
 }
 
 impl Analyzer<'_, '_> {
@@ -166,8 +178,15 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO: Change argument order. (Span should come first).
-    pub(crate) fn assign(&mut self, left: &Type, right: &Type, span: Span) -> ValidationResult<()> {
+    pub(crate) fn assign(
+        &mut self,
+        data: &mut AssignData,
+        left: &Type,
+        right: &Type,
+        span: Span,
+    ) -> ValidationResult<()> {
         self.assign_with_opts(
+            data,
             AssignOpts {
                 span,
                 ..Default::default()
@@ -177,10 +196,18 @@ impl Analyzer<'_, '_> {
         )
     }
 
-    pub(crate) fn assign_with_opts(&mut self, opts: AssignOpts, left: &Type, right: &Type) -> ValidationResult<()> {
+    pub(crate) fn assign_with_opts(
+        &mut self,
+        data: &mut AssignData,
+        opts: AssignOpts,
+        left: &Type,
+        right: &Type,
+    ) -> ValidationResult<()> {
         if self.is_builtin {
             return Ok(());
         }
+
+        let _stack = stack::track(opts.span)?;
 
         // if cfg!(debug_assertions) && span.is_dummy() {
         //     print_backtrace();
@@ -189,8 +216,8 @@ impl Analyzer<'_, '_> {
 
         // self.verify_before_assign("lhs", left);
         // self.verify_before_assign("rhs", right);
+        let res = self.assign_inner(data, left, right, opts);
 
-        let res = self.assign_inner(left, right, opts);
         match res {
             Err(Error::Errors { errors, .. }) if errors.is_empty() => return Ok(()),
             _ => {}
@@ -234,7 +261,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn normalize_for_assign<'a>(&mut self, ty: &'a Type) -> ValidationResult<Cow<'a, Type>> {
+    fn normalize_for_assign<'a>(&mut self, span: Span, ty: &'a Type) -> ValidationResult<Cow<'a, Type>> {
         ty.assert_valid();
 
         let ty = ty.normalize();
@@ -264,7 +291,7 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {
                 let ty = self
-                    .normalize(&ty, Default::default())
+                    .normalize(Some(span), &ty, Default::default())
                     .context("tried to normalize a type for assignment")?
                     .into_owned();
 
@@ -276,18 +303,52 @@ impl Analyzer<'_, '_> {
         Ok(Cow::Borrowed(ty))
     }
 
-    fn assign_inner(&mut self, to: &Type, rhs: &Type, opts: AssignOpts) -> ValidationResult<()> {
-        self.assign_without_wrapping(to, rhs, opts).with_context(|| {
+    fn assign_inner(
+        &mut self,
+        data: &mut AssignData,
+        left: &Type,
+        right: &Type,
+        opts: AssignOpts,
+    ) -> ValidationResult<()> {
+        let l = dump_type_as_string(&self.cm, &left);
+        let r = dump_type_as_string(&self.cm, &right);
+
+        if data
+            .dejavu
+            .iter()
+            .any(|(prev_l, prev_r)| prev_l.type_eq(left) && prev_r.type_eq(&right))
+        {
+            slog::info!(self.logger, "[assign/dejavu] {} = {}\n{:?} ", l, r, opts);
+            return Ok(());
+        }
+        let _stack = stack::track(opts.span)?;
+
+        data.dejavu.push((left.clone(), right.clone()));
+
+        let res = self.assign_without_wrapping(data, left, right, opts).with_context(|| {
             //
-            let l = dump_type_as_string(&self.cm, &to);
-            let r = dump_type_as_string(&self.cm, &rhs);
+            let l = dump_type_as_string(&self.cm, &left);
+            let r = dump_type_as_string(&self.cm, &right);
 
             format!("\nlhs = {}\nrhs = {}", l, r)
-        })
+        });
+
+        let dejavu = data.dejavu.pop();
+        debug_assert!(dejavu.is_some());
+
+        slog::debug!(self.logger, "[assign ({:?})] {} = {}\n{:?} ", res.is_ok(), l, r, opts);
+
+        res
     }
 
     /// Assigns, but does not wrap error with [Error::AssignFailed].
-    fn assign_without_wrapping(&mut self, to: &Type, rhs: &Type, opts: AssignOpts) -> ValidationResult<()> {
+    fn assign_without_wrapping(
+        &mut self,
+        data: &mut AssignData,
+        to: &Type,
+        rhs: &Type,
+        opts: AssignOpts,
+    ) -> ValidationResult<()> {
         let span = opts.span;
 
         if !self.is_builtin && span.is_dummy() {
@@ -304,8 +365,8 @@ impl Analyzer<'_, '_> {
         }
 
         // debug_assert!(!span.is_dummy(), "\n\t{:?}\n<-\n\t{:?}", to, rhs);
-        let to = self.normalize_for_assign(to)?;
-        let rhs = self.normalize_for_assign(rhs)?;
+        let to = self.normalize_for_assign(span, to)?;
+        let rhs = self.normalize_for_assign(span, rhs)?;
 
         let to = to.normalize();
         let rhs = rhs.normalize();
@@ -345,6 +406,7 @@ impl Analyzer<'_, '_> {
 
                 if !e.has_str && !e.has_num {
                     return self.assign_inner(
+                        data,
                         to,
                         &Type::Keyword(RTsKeywordType {
                             span,
@@ -356,6 +418,7 @@ impl Analyzer<'_, '_> {
 
                 if !e.has_num {
                     return self.assign_inner(
+                        data,
                         to,
                         &Type::Keyword(RTsKeywordType {
                             span,
@@ -367,6 +430,7 @@ impl Analyzer<'_, '_> {
 
                 if !e.has_str {
                     return self.assign_inner(
+                        data,
                         to,
                         &Type::Keyword(RTsKeywordType {
                             span,
@@ -377,6 +441,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 return self.assign_inner(
+                    data,
                     to,
                     &Type::union(vec![
                         Type::Keyword(RTsKeywordType {
@@ -397,12 +462,28 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        if let Some(res) = self.assign_to_builtins(opts, &to, &rhs) {
+        if let Some(res) = self.assign_to_builtins(data, opts, &to, &rhs) {
             return res;
         }
 
         if rhs.is_kwd(TsKeywordTypeKind::TsNeverKeyword) {
             return Ok(());
+        }
+
+        match rhs {
+            Type::IndexedAccessType(rhs) => {
+                let err = Error::NoSuchProperty {
+                    span,
+                    obj: Some(rhs.obj_type.clone()),
+                    // TODO
+                    prop: None,
+                };
+                return Err(Error::Errors {
+                    span,
+                    errors: vec![err],
+                });
+            }
+            _ => {}
         }
 
         match to {
@@ -446,8 +527,12 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
 
-                let to = self.expand_top_ref(span, Cow::Borrowed(to))?;
-                return self.assign_inner(&to, rhs, opts);
+                let mut new_lhs = self.expand_top_ref(span, Cow::Borrowed(to))?.into_owned();
+                // self.replace(&mut new_lhs, &[(to, &Type::any(span))]);
+
+                return self
+                    .assign_inner(data, &new_lhs, rhs, opts)
+                    .context("tried to assign a type created from a reference");
             }
 
             _ => {}
@@ -502,6 +587,18 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
             }
+        }
+
+        match rhs {
+            Type::Conditional(rhs) => {
+                self.assign_with_opts(data, opts, to, &rhs.true_type)
+                    .context("tried to assign the true type of a conditional type to lhs")?;
+                self.assign_with_opts(data, opts, to, &rhs.false_type)
+                    .context("tried to assign the false type of a conditional type to lhs")?;
+
+                return Ok(());
+            }
+            _ => {}
         }
 
         match to {
@@ -573,6 +670,7 @@ impl Analyzer<'_, '_> {
                 for ty in &i.types {
                     match self
                         .assign_with_opts(
+                            data,
                             AssignOpts {
                                 allow_unknown_rhs: true,
                                 ..opts
@@ -590,7 +688,7 @@ impl Analyzer<'_, '_> {
                 if !opts.allow_unknown_rhs {
                     let lhs = self.type_to_type_lit(span, to)?;
                     if let Some(lhs) = lhs {
-                        self.assign_to_type_elements(opts, lhs.span, &lhs.members, &rhs, lhs.metadata)
+                        self.assign_to_type_elements(data, opts, lhs.span, &lhs.members, &rhs, lhs.metadata)
                             .with_context(|| {
                                 format!(
                                     "tried to check if unknown rhs exists while assigning to an intersection \
@@ -622,14 +720,14 @@ impl Analyzer<'_, '_> {
                 | Type::Class(..)
                 | Type::Predicate(..) => {
                     return self
-                        .assign_to_class(opts, l, rhs)
+                        .assign_to_class(data, opts, l, rhs)
                         .context("tried to assign a type to an instance of a class")
                 }
                 _ => {}
             },
             Type::ClassDef(l) => {
                 return self
-                    .assign_to_class_def(opts, l, rhs)
+                    .assign_to_class_def(data, opts, l, rhs)
                     .context("tried to assign a type to a class definition")
             }
 
@@ -642,7 +740,7 @@ impl Analyzer<'_, '_> {
                 _ => fail!(),
             },
 
-            Type::Query(ref to) => return self.assign_to_query_type(opts, to, &rhs),
+            Type::Query(ref to) => return self.assign_to_query_type(data, opts, to, &rhs),
 
             Type::Operator(Operator {
                 op: TsTypeOperatorOp::ReadOnly,
@@ -650,24 +748,31 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {
                 return self
-                    .assign_with_opts(opts, &ty, rhs)
+                    .assign_with_opts(data, opts, &ty, rhs)
                     .context("tried to assign a type to an operand of readonly type")
             }
 
             _ => {}
         }
 
+        if opts.allow_assignment_of_void {
+            if rhs.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
+                return Ok(());
+            }
+        }
+
         match rhs {
             Type::Ref(..) => {
-                let rhs = self.expand_top_ref(span, Cow::Borrowed(rhs))?;
+                let mut new_rhs = self.expand_top_ref(span, Cow::Borrowed(rhs))?.into_owned();
+                // self.replace(&mut new_rhs, &[(rhs, &Type::any(span))]);
                 return self
-                    .assign_inner(to, &rhs, opts)
-                    .context("tried to assign an expanded type to another type");
+                    .assign_inner(data, to, &new_rhs, opts)
+                    .context("tried to assign a type expanded from a reference to another type");
             }
 
             Type::Query(rhs) => {
                 return self
-                    .assign_from_query_type(opts, to, &rhs)
+                    .assign_from_query_type(data, opts, to, &rhs)
                     .context("tried to assign a query type to another type")
             }
 
@@ -697,7 +802,7 @@ impl Analyzer<'_, '_> {
             Type::Intersection(Intersection { types, .. }) => {
                 let errors = types
                     .iter()
-                    .map(|rhs| self.assign_inner(to, rhs, opts))
+                    .map(|rhs| self.assign_inner(data, to, rhs, opts))
                     .collect::<Vec<_>>();
                 if errors.iter().any(Result::is_ok) {
                     return Ok(());
@@ -709,30 +814,29 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Union(Union { ref types, .. }) => {
-                match to {
-                    Type::Union(..) => {
-                        types
-                            .iter()
-                            .map(|rhs| {
-                                self.assign_with_opts(
-                                    AssignOpts {
-                                        allow_unknown_rhs: true,
-                                        ..opts
-                                    },
-                                    to,
-                                    rhs,
-                                )
-                            })
-                            .collect::<Result<_, _>>()
-                            .context("tried to assign an union type to another one")?;
+                if self.should_use_union_assignment(span, rhs)? {
+                    types
+                        .iter()
+                        .map(|rhs| {
+                            self.assign_with_opts(
+                                data,
+                                AssignOpts {
+                                    allow_unknown_rhs: true,
+                                    ..opts
+                                },
+                                to,
+                                rhs,
+                            )
+                        })
+                        .collect::<Result<_, _>>()
+                        .context("tried to assign an union type to another one")?;
 
-                        return Ok(());
-                    }
-                    _ => {}
+                    return Ok(());
                 }
+
                 let errors = types
                     .iter()
-                    .filter_map(|rhs| match self.assign_with_opts(opts, to, rhs) {
+                    .filter_map(|rhs| match self.assign_with_opts(data, opts, to, rhs) {
                         Ok(()) => None,
                         Err(err) => Some(err),
                     })
@@ -785,6 +889,7 @@ impl Analyzer<'_, '_> {
                 match *constraint {
                     Some(ref c) => {
                         return self.assign_inner(
+                            data,
                             to,
                             c,
                             AssignOpts {
@@ -814,12 +919,13 @@ impl Analyzer<'_, '_> {
         }
 
         match to {
-            Type::Mapped(to) => return self.assign_to_mapped(opts, to, rhs),
+            Type::Mapped(to) => return self.assign_to_mapped(data, opts, to, rhs),
             Type::Param(TypeParam {
                 constraint: Some(ref c),
                 ..
             }) => {
                 return self.assign_inner(
+                    data,
                     c,
                     rhs,
                     AssignOpts {
@@ -847,13 +953,13 @@ impl Analyzer<'_, '_> {
                     elem_type: ref rhs_elem_type,
                     ..
                 }) => {
-                    return self.assign_inner(&elem_type, &rhs_elem_type, opts);
+                    return self.assign_inner(data, &elem_type, &rhs_elem_type, opts);
                 }
 
                 Type::Tuple(Tuple { ref elems, .. }) => {
                     let mut errors = vec![];
                     for el in elems {
-                        errors.extend(self.assign_inner(elem_type, &el.ty, opts).err());
+                        errors.extend(self.assign_inner(data, elem_type, &el.ty, opts).err());
                     }
                     if !errors.is_empty() {
                         Err(Error::Errors { span, errors })?;
@@ -874,12 +980,42 @@ impl Analyzer<'_, '_> {
                                         ..
                                     }) => {
                                         if let Some(type_ann) = &m.type_ann {
-                                            return self.assign_with_opts(opts, elem_type, type_ann);
+                                            return self.assign_with_opts(data, opts, elem_type, type_ann);
                                         }
                                     }
                                     _ => {}
                                 },
                                 _ => {}
+                            }
+                        }
+                    }
+
+                    // Try to assign by converting rhs to an iterable.
+                    if opts.allow_iterable_on_rhs {
+                        let res: ValidationResult<_> = try {
+                            let r = self
+                                .get_iterator(span, Cow::Borrowed(&rhs))
+                                .context("tried to convert a type to an iterator to assign to a tuple")?;
+                            //
+                            let rhs_el = self
+                                .get_iterator_element_type(span, r, false)
+                                .context("tried to get the element type of an iterator assignment")?;
+
+                            self.assign_with_opts(
+                                data,
+                                AssignOpts {
+                                    allow_iterable_on_rhs: false,
+                                    ..opts
+                                },
+                                elem_type,
+                                &rhs_el,
+                            )?;
+                        };
+
+                        match res {
+                            Ok(_) => return Ok(()),
+                            Err(_) => {
+                                // TODO: Log?
                             }
                         }
                     }
@@ -913,6 +1049,7 @@ impl Analyzer<'_, '_> {
                     .iter()
                     .map(|to| {
                         self.assign_with_opts(
+                            data,
                             AssignOpts {
                                 allow_unknown_rhs: true,
                                 ..opts
@@ -947,7 +1084,7 @@ impl Analyzer<'_, '_> {
             Type::Intersection(Intersection { ref types, .. }) => {
                 let vs = types
                     .iter()
-                    .map(|to| self.assign_inner(&to, rhs, opts))
+                    .map(|to| self.assign_inner(data, &to, rhs, opts))
                     .collect::<Vec<_>>();
 
                 // TODO: Multiple error
@@ -1200,8 +1337,10 @@ impl Analyzer<'_, '_> {
                 // TODO: Optimize handling of unknown rhs
 
                 self.assign_to_type_elements(
+                    data,
                     AssignOpts {
                         allow_unknown_rhs: true,
+                        allow_assignment_of_array_to_optional_type_lit: true,
                         ..opts
                     },
                     span,
@@ -1220,8 +1359,25 @@ impl Analyzer<'_, '_> {
                         parent.type_args.as_deref(),
                     )?;
 
-                    let res = self.assign_with_opts(opts, &parent, &rhs);
+                    // An interface can extend a class.
+                    let parent = self.instantiate_class(span, &parent)?;
+
+                    let res = self.assign_with_opts(
+                        data,
+                        AssignOpts {
+                            allow_unknown_rhs: true,
+                            ..opts
+                        },
+                        &parent,
+                        &rhs,
+                    );
                     if res.is_ok() {
+                        slog::debug!(
+                            self.logger,
+                            "[assign] Parent assign successful: {} = {}",
+                            dump_type_as_string(&self.cm, &parent),
+                            dump_type_as_string(&self.cm, &rhs),
+                        );
                         return Ok(());
                     }
 
@@ -1275,7 +1431,7 @@ impl Analyzer<'_, '_> {
                 if !opts.allow_unknown_rhs {
                     let lhs = self.type_to_type_lit(span, to)?;
                     if let Some(lhs) = lhs {
-                        self.assign_to_type_elements(opts, span, &lhs.members, rhs, Default::default())
+                        self.assign_to_type_elements(data, opts, span, &lhs.members, rhs, Default::default())
                             .with_context(|| {
                                 format!(
                                     "tried to assign a type to an interface to check if unknown rhs exists\nLHS: {}",
@@ -1285,6 +1441,16 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                if !errors.is_empty() {
+                    return Err(Error::AssignFailed {
+                        span,
+                        left: box to.clone(),
+                        right: box rhs.clone(),
+                        right_ident: opts.right_ident_span,
+                        cause: errors,
+                    });
+                }
+
                 return Ok(());
             }
 
@@ -1292,7 +1458,7 @@ impl Analyzer<'_, '_> {
                 ref members, metadata, ..
             }) => {
                 return self
-                    .assign_to_type_elements(opts, span, &members, rhs, *metadata)
+                    .assign_to_type_elements(data, opts, span, &members, rhs, *metadata)
                     .context("tried to assign a type to type elements");
             }
 
@@ -1323,7 +1489,7 @@ impl Analyzer<'_, '_> {
             Type::Function(lf) => match rhs {
                 Type::Function(..) | Type::Lit(..) | Type::TypeLit(..) | Type::Interface(..) => {
                     return self
-                        .assign_to_function(opts, to, lf, rhs)
+                        .assign_to_function(data, opts, to, lf, rhs)
                         .context("tried to assign to a function type")
                 }
                 Type::Keyword(RTsKeywordType {
@@ -1353,6 +1519,12 @@ impl Analyzer<'_, '_> {
             },
 
             Type::Tuple(Tuple { ref elems, .. }) => {
+                if elems.is_empty() {
+                    match rhs {
+                        Type::Array(..) | Type::Tuple(..) => return Ok(()),
+                        _ => {}
+                    }
+                }
                 //
                 match *rhs.normalize() {
                     Type::Tuple(Tuple {
@@ -1376,7 +1548,7 @@ impl Analyzer<'_, '_> {
                                     _ => {}
                                 }
 
-                                errors.extend(self.assign_inner(&l.ty, &r.ty, opts).err());
+                                errors.extend(self.assign_inner(data, &l.ty, &r.ty, opts).err());
                             }
                         }
 
@@ -1392,17 +1564,44 @@ impl Analyzer<'_, '_> {
                     | Type::Keyword(..)
                     | Type::Array(..)
                     | Type::Class(..)
-                    | Type::ClassDef(..) => {
+                    | Type::ClassDef(..)
+                        if !opts.allow_iterable_on_rhs =>
+                    {
                         fail!()
                     }
 
-                    _ => {}
+                    _ => {
+                        // Try to assign by converting rhs to an iterable.
+                        if opts.allow_iterable_on_rhs {
+                            let r = self
+                                .get_iterator(span, Cow::Borrowed(&rhs))
+                                .context("tried to convert a type to an iterator to assign to a tuple")?;
+                            //
+                            for (i, elem) in elems.iter().enumerate() {
+                                let r_ty = self
+                                    .get_element_from_iterator(span, Cow::Borrowed(&r), i)
+                                    .context("tried to get an element of type to assign to a tuple element")?;
+
+                                self.assign_with_opts(
+                                    data,
+                                    AssignOpts {
+                                        allow_iterable_on_rhs: false,
+                                        ..opts
+                                    },
+                                    &elem.ty,
+                                    &r_ty,
+                                )?;
+                            }
+
+                            return Ok(());
+                        }
+                    }
                 }
             }
 
             Type::Constructor(ref lc) => {
                 return self
-                    .assign_to_constructor(opts, to, &lc, rhs)
+                    .assign_to_constructor(data, opts, to, &lc, rhs)
                     .context("tried to assign to a constructor type")
             }
 
@@ -1439,6 +1638,7 @@ impl Analyzer<'_, '_> {
 
                 fail!()
             }
+
             _ => {}
         }
 
@@ -1467,6 +1667,7 @@ impl Analyzer<'_, '_> {
             }) if ty.normalize().is_type_param() => {
                 return self
                     .assign_with_opts(
+                        data,
                         opts,
                         &Type::Keyword(RTsKeywordType {
                             span: DUMMY_SP,
@@ -1492,7 +1693,16 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
+    #[context("tried to extract keys")]
     fn extract_keys(&mut self, span: Span, ty: &Type) -> ValidationResult {
+        let ty = self.normalize(
+            Some(span),
+            &ty,
+            NormalizeTypeOpts {
+                normalize_keywords: true,
+                ..Default::default()
+            },
+        )?;
         let ty = ty.normalize();
 
         match ty {
@@ -1526,10 +1736,18 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
+        if let Some(ty) = self
+            .type_to_type_lit(span, &ty)?
+            .map(Cow::into_owned)
+            .map(Type::TypeLit)
+        {
+            return self.extract_keys(span, &ty);
+        }
+
         Err(Error::Unimplemented {
             span,
             msg: format!("Extract keys"),
-        })
+        })?
     }
 
     /// Handles `P in 'foo' | 'bar'`. Note that `'foo' | 'bar'` part should be
@@ -1537,21 +1755,33 @@ impl Analyzer<'_, '_> {
     ///
     ///
     /// Currently only literals and unions are supported for `keys`.
-    fn assign_keys(&mut self, opts: AssignOpts, keys: &Type, rhs: &Type) -> ValidationResult<()> {
+    fn assign_keys(
+        &mut self,
+        data: &mut AssignData,
+        opts: AssignOpts,
+        keys: &Type,
+        rhs: &Type,
+    ) -> ValidationResult<()> {
         let keys = keys.normalize();
         let rhs = rhs.normalize();
 
         let rhs_keys = self.extract_keys(opts.span, &rhs)?;
 
-        self.assign_with_opts(opts, &keys, &rhs_keys)
+        self.assign_with_opts(data, opts, &keys, &rhs_keys)
     }
 
-    fn assign_to_mapped(&mut self, opts: AssignOpts, to: &Mapped, rhs: &Type) -> ValidationResult<()> {
+    fn assign_to_mapped(
+        &mut self,
+        data: &mut AssignData,
+        opts: AssignOpts,
+        to: &Mapped,
+        rhs: &Type,
+    ) -> ValidationResult<()> {
         let rhs = rhs.normalize();
 
         // Validate keys
         match &to.type_param.constraint {
-            Some(constraint) => self.assign_keys(opts, &constraint, rhs)?,
+            Some(constraint) => self.assign_keys(data, opts, &constraint, rhs)?,
             None => {}
         }
 
@@ -1567,7 +1797,7 @@ impl Analyzer<'_, '_> {
                     match member {
                         TypeElement::Property(prop) => {
                             if let Some(prop_ty) = &prop.type_ann {
-                                self.assign_with_opts(opts, &ty, &prop_ty)?;
+                                self.assign_with_opts(data, opts, &ty, &prop_ty)?;
                             }
                         }
                         _ => {
@@ -1588,6 +1818,33 @@ impl Analyzer<'_, '_> {
             span: opts.span,
             msg: format!("Assignment to mapped type"),
         })
+    }
+
+    /// Returns true for `A | B | | C = A | B` and simillar cases.
+    ///
+    /// Should be called iff lhs is a union type.
+    fn should_use_union_assignment(&mut self, span: Span, r: &Type) -> ValidationResult<bool> {
+        match r.normalize() {
+            Type::Union(..) => return Ok(true),
+            Type::TypeLit(r) => {
+                if r.members.iter().all(|el| match el {
+                    TypeElement::Call(..) => true,
+                    _ => false,
+                }) {
+                    return Ok(true);
+                }
+
+                if r.members.iter().all(|el| match el {
+                    TypeElement::Constructor(..) => true,
+                    _ => false,
+                }) {
+                    return Ok(true);
+                }
+            }
+            _ => {}
+        }
+
+        Ok(false)
     }
 }
 

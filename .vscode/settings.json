@@ -32,8 +32,11 @@
   ],
   "rust-analyzer.cargo.loadOutDirsFromCheck": true,
   "rust-analyzer.procMacro.enable": true,
-  "rust-analyzer.updates.channel": "stable",
+  "rust-analyzer.updates.channel": "nightly",
   "rust-analyzer.diagnostics.enable": false,
   "rust-analyzer.diagnostics.enableExperimental": false,
-  "rust-analyzer.lens.methodReferences": true
+  "rust-analyzer.lens.methodReferences": true,
+  "favorites.resources": [
+    "typescript/errors/src/lib.rs"
+  ]
 }
