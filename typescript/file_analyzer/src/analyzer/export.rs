@@ -425,24 +425,16 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RExportAll) {
         let span = node.span;
 
-        let path = self.storage.path(self.ctx.module_id);
-        let module_id = self.loader.module_id(&path, &node.src.value);
-        let ctxt = self.ctx.module_id;
+        let (base, dep, data) = self.get_imported_items(span, &node.src.value)?;
 
-        match self.imports.get(&(ctxt, module_id)) {
-            Some(data) => {
-                for (id, ty) in data.vars.iter() {
-                    self.storage.reexport_var(span, ctxt, id.clone(), ty.clone());
-                }
-                for (id, types) in data.types.iter() {
-                    for ty in types {
-                        self.storage.reexport_type(span, ctxt, id.clone(), ty.clone());
-                    }
-                }
-            }
-            None => self.storage.report(Error::ExportAllFailed { span }),
+        for (id, ty) in data.vars.iter() {
+            self.storage.reexport_var(span, dep, id.clone(), ty.clone());
         }
-
+        for (id, types) in data.types.iter() {
+            for ty in types {
+                self.storage.reexport_type(span, dep, id.clone(), ty.clone());
+            }
+        }
         Ok(())
     }
 }
@@ -451,8 +443,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RNamedExport) {
         let span = node.span;
-        let ctxt = self.ctx.module_id;
-        let base = self.storage.path(ctxt);
+        let base = self.ctx.module_id;
 
         node.specifiers.visit_with(self);
 
@@ -462,19 +453,7 @@ impl Analyzer<'_, '_> {
                     // We need
                     match &node.src {
                         Some(src) => {
-                            let module_id = self.loader.module_id(&base, &src.value);
-                            let module = self
-                                .loader
-                                .load_non_circular_dep(
-                                    base.clone(),
-                                    &DepInfo {
-                                        span: src.span,
-                                        src: src.value.clone(),
-                                    },
-                                )
-                                .report(&mut self.storage);
-
-                            if let Some(module) = module {}
+                            let (base, dep, data) = self.get_imported_items(node.span, &src.value)?;
                         }
                         None => {}
                     }
@@ -485,12 +464,12 @@ impl Analyzer<'_, '_> {
 
                     match &node.src {
                         Some(src) => {
-                            let module_id = self.loader.module_id(&base, &src.value);
+                            let (base, dep, data) = self.get_imported_items(node.span, &src.value)?;
 
                             self.reexport(
                                 span,
-                                ctxt,
-                                module_id,
+                                base,
+                                dep,
                                 named
                                     .exported
                                     .as_ref()
@@ -502,7 +481,7 @@ impl Analyzer<'_, '_> {
                         None => {
                             self.export_named(
                                 span,
-                                ctxt,
+                                base,
                                 Id::from(&named.orig),
                                 named
                                     .exported
