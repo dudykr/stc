@@ -640,10 +640,12 @@ impl Analyzer<'_, '_> {
 
                                     // Allow assigning undefined to optional properties.
                                     (|| {
-                                        if lp.optional {
-                                            if let Some(r_ty) = &r_el.type_ann {
-                                                if r_ty.is_undefined() {
-                                                    return Ok(());
+                                        if opts.for_castablity {
+                                            if lp.optional {
+                                                if let Some(r_ty) = &r_el.type_ann {
+                                                    if r_ty.is_undefined() {
+                                                        return Ok(());
+                                                    }
                                                 }
                                             }
                                         }

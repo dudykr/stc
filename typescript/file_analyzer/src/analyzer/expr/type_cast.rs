@@ -370,6 +370,7 @@ impl Analyzer<'_, '_> {
             &mut Default::default(),
             AssignOpts {
                 span,
+                for_castablity: true,
                 ..Default::default()
             },
             from,
