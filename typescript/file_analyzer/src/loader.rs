@@ -1,4 +1,3 @@
-use crate::DepInfo;
 use crate::ValidationResult;
 use stc_ts_types::{ModuleId, ModuleTypeData};
 use std::{path::PathBuf, sync::Arc};
@@ -14,12 +13,10 @@ pub struct ModuleInfo {
 ///
 /// Group of circular imports are handled by one thread. This
 pub trait Load: 'static + Send + Sync {
-    fn module_id(&self, base: &Arc<PathBuf>, src: &JsWord) -> ModuleId;
+    fn module_id(&self, base: &Arc<PathBuf>, src: &JsWord) -> Option<ModuleId>;
 
     /// Note: This method called within a thread
-    ///
-    /// TODO: Change argument to ModuleId.
-    fn is_in_same_circular_group(&self, base: &Arc<PathBuf>, src: &JsWord) -> bool;
+    fn is_in_same_circular_group(&self, dep: ModuleId) -> bool;
 
     /// This method can be called multiple time for same module.
     ///
@@ -27,42 +24,30 @@ pub trait Load: 'static + Send + Sync {
     ///
     /// `partial` denotes the types and variables which the [Analyzer] successed
     /// processing, with resolved imports.
-    ///
-    /// TODO: Change argument to ModuleId.
-    fn load_circular_dep(
-        &self,
-        base: Arc<PathBuf>,
-        partial: &ModuleTypeData,
-        import: &DepInfo,
-    ) -> ValidationResult<ModuleInfo>;
+    fn load_circular_dep(&self, dep: ModuleId, partial: &ModuleTypeData) -> ValidationResult<ModuleInfo>;
 
     /// Note: This method is called in parallel.
-    fn load_non_circular_dep(&self, base: Arc<PathBuf>, import: &DepInfo) -> ValidationResult<ModuleInfo>;
+    fn load_non_circular_dep(&self, dep: ModuleId) -> ValidationResult<ModuleInfo>;
 }
 
 impl<T> Load for Arc<T>
 where
     T: ?Sized + Load,
 {
-    fn is_in_same_circular_group(&self, base: &Arc<PathBuf>, src: &JsWord) -> bool {
-        (**self).is_in_same_circular_group(base, src)
-    }
-
-    fn load_non_circular_dep(&self, base: Arc<PathBuf>, import: &DepInfo) -> ValidationResult<ModuleInfo> {
-        (**self).load_non_circular_dep(base, import)
-    }
-
-    fn load_circular_dep(
-        &self,
-        base: Arc<PathBuf>,
-        partial: &ModuleTypeData,
-        import: &DepInfo,
-    ) -> ValidationResult<ModuleInfo> {
-        (**self).load_circular_dep(base, partial, import)
-    }
-
-    fn module_id(&self, base: &Arc<PathBuf>, src: &JsWord) -> ModuleId {
+    fn module_id(&self, base: &Arc<PathBuf>, src: &JsWord) -> Option<ModuleId> {
         (**self).module_id(base, src)
+    }
+
+    fn is_in_same_circular_group(&self, dep: ModuleId) -> bool {
+        (**self).is_in_same_circular_group(dep)
+    }
+
+    fn load_circular_dep(&self, dep: ModuleId, partial: &ModuleTypeData) -> ValidationResult<ModuleInfo> {
+        (**self).load_circular_dep(dep, partial)
+    }
+
+    fn load_non_circular_dep(&self, dep: ModuleId) -> ValidationResult<ModuleInfo> {
+        (**self).load_non_circular_dep(dep)
     }
 }
 
@@ -70,24 +55,19 @@ impl<T> Load for Box<T>
 where
     T: ?Sized + Load,
 {
-    fn is_in_same_circular_group(&self, base: &Arc<PathBuf>, src: &JsWord) -> bool {
-        (**self).is_in_same_circular_group(base, src)
-    }
-
-    fn load_circular_dep(
-        &self,
-        base: Arc<PathBuf>,
-        partial: &ModuleTypeData,
-        import: &DepInfo,
-    ) -> ValidationResult<ModuleInfo> {
-        (**self).load_circular_dep(base, partial, import)
-    }
-
-    fn load_non_circular_dep(&self, base: Arc<PathBuf>, import: &DepInfo) -> ValidationResult<ModuleInfo> {
-        (**self).load_non_circular_dep(base, import)
-    }
-
-    fn module_id(&self, base: &Arc<PathBuf>, src: &JsWord) -> ModuleId {
+    fn module_id(&self, base: &Arc<PathBuf>, src: &JsWord) -> Option<ModuleId> {
         (**self).module_id(base, src)
+    }
+
+    fn is_in_same_circular_group(&self, dep: ModuleId) -> bool {
+        (**self).is_in_same_circular_group(dep)
+    }
+
+    fn load_circular_dep(&self, dep: ModuleId, partial: &ModuleTypeData) -> ValidationResult<ModuleInfo> {
+        (**self).load_circular_dep(dep, partial)
+    }
+
+    fn load_non_circular_dep(&self, dep: ModuleId) -> ValidationResult<ModuleInfo> {
+        (**self).load_non_circular_dep(dep)
     }
 }
