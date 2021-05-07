@@ -1256,7 +1256,7 @@ impl Analyzer<'_, '_> {
                                     match constructor_required_param_count {
                                         Some(v) if required_param_count != v => {
                                             for span in constructor_spans.drain(..) {
-                                                child.storage.report(Error::TS2394 { span })
+                                                child.storage.report(Error::WrongOverloadSignature { span })
                                             }
                                         }
 

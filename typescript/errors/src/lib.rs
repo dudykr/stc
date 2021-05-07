@@ -816,7 +816,7 @@ pub enum Error {
         span: Span,
     },
 
-    TS2394 {
+    WrongOverloadSignature {
         span: Span,
     },
 
@@ -1171,7 +1171,7 @@ impl Error {
             Error::TS2363 { .. } => 2363,
             Error::TS2365 { .. } => 2365,
             Error::TS2370 { .. } => 2370,
-            Error::TS2394 { .. } => 2394,
+            Error::WrongOverloadSignature { .. } => 2394,
             Error::TS1166 { .. } => 1166,
             Error::TS1345 { .. } => 1345,
             Error::TS2353 { .. } => 2353,
