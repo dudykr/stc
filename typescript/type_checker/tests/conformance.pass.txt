@@ -1790,6 +1790,7 @@ statements/for-ofStatements/ES5For-of30.ts
 statements/for-ofStatements/ES5For-of33.ts
 statements/for-ofStatements/ES5For-of34.ts
 statements/for-ofStatements/ES5For-of35.ts
+statements/for-ofStatements/ES5For-of36.ts
 statements/for-ofStatements/ES5For-of37.ts
 statements/for-ofStatements/ES5For-of4.ts
 statements/for-ofStatements/ES5For-of5.ts
@@ -1857,6 +1858,7 @@ types/literal/stringLiteralsWithEqualityChecks04.ts
 types/literal/stringLiteralsWithSwitchStatements01.ts
 types/literal/stringLiteralsWithSwitchStatements02.ts
 types/literal/stringLiteralsWithSwitchStatements04.ts
+types/literal/stringLiteralsWithTypeAssertions01.ts
 types/localTypes/localTypes1.ts
 types/localTypes/localTypes2.ts
 types/localTypes/localTypes3.ts
@@ -2066,6 +2068,8 @@ types/typeRelationships/comparable/equalityStrictNulls.ts
 types/typeRelationships/comparable/equalityWithIntersectionTypes01.ts
 types/typeRelationships/comparable/equalityWithUnionTypes01.ts
 types/typeRelationships/comparable/independentPropertyVariance.ts
+types/typeRelationships/comparable/optionalProperties01.ts
+types/typeRelationships/comparable/optionalProperties02.ts
 types/typeRelationships/comparable/switchCaseWithUnionTypes01.ts
 types/typeRelationships/comparable/typeAssertionsWithIntersectionTypes01.ts
 types/typeRelationships/comparable/typeAssertionsWithUnionTypes01.ts
