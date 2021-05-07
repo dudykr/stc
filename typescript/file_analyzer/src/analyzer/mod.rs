@@ -15,7 +15,7 @@ use crate::{
     ty::Type,
     validator,
     validator::ValidateWith,
-    DepInfo, Rule, ValidationResult,
+    Rule, ValidationResult,
 };
 use fxhash::FxHashMap;
 use fxhash::FxHashSet;

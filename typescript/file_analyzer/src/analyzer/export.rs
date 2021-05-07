@@ -1,6 +1,5 @@
 use super::expr::TypeOfMode;
 use super::{Analyzer, Ctx};
-use crate::DepInfo;
 use crate::{analyzer::util::ResultExt, ty::Type, validator, validator::ValidateWith, ValidationResult};
 use rnode::NodeId;
 use rnode::VisitWith;
@@ -425,7 +424,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RExportAll) {
         let span = node.span;
 
-        let (base, dep, data) = self.get_imported_items(span, &node.src.value)?;
+        let (dep, data) = self.get_imported_items(span, &node.src.value)?;
 
         for (id, ty) in data.vars.iter() {
             self.storage.reexport_var(span, dep, id.clone(), ty.clone());
@@ -453,7 +452,7 @@ impl Analyzer<'_, '_> {
                     // We need
                     match &node.src {
                         Some(src) => {
-                            let (base, dep, data) = self.get_imported_items(node.span, &src.value)?;
+                            let (dep, data) = self.get_imported_items(node.span, &src.value)?;
                         }
                         None => {}
                     }
@@ -464,7 +463,7 @@ impl Analyzer<'_, '_> {
 
                     match &node.src {
                         Some(src) => {
-                            let (base, dep, data) = self.get_imported_items(node.span, &src.value)?;
+                            let (dep, data) = self.get_imported_items(node.span, &src.value)?;
 
                             self.reexport(
                                 span,

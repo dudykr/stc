@@ -33,7 +33,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         dst: &JsWord,
-    ) -> ValidationResult<(ModuleId, ModuleId, Arc<ModuleTypeData>)> {
+    ) -> ValidationResult<(ModuleId, Arc<ModuleTypeData>)> {
         let ctxt = self.ctx.module_id;
         let base = self.storage.path(ctxt);
         let dep_id = self.loader.module_id(&base, &dst);
@@ -41,6 +41,12 @@ impl Analyzer<'_, '_> {
             Some(v) => v,
             None => return Err(Error::ModuleNotFound { span }),
         };
+        let data = match self.imports.get(&(ctxt, dep_id)).cloned() {
+            Some(v) => v,
+            None => return Err(Error::ModuleNotFound { span }),
+        };
+
+        Ok((dep_id, data))
     }
 
     pub(super) fn find_imported_var(&self, id: &Id) -> ValidationResult<Option<Type>> {
@@ -146,8 +152,9 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RImportDecl) {
         let span = node.span;
+        let base = self.ctx.module_id;
 
-        let (base, dep, data) = self.get_imported_items(span, &node.src.value)?;
+        let (dep, data) = self.get_imported_items(span, &node.src.value)?;
 
         for specifier in &node.specifiers {
             match specifier {
@@ -155,24 +162,18 @@ impl Analyzer<'_, '_> {
                     //
                     match &named.imported {
                         Some(imported) => {
-                            self.handle_import(named.span, ctxt, target, Id::from(imported), Id::from(&named.local));
+                            self.handle_import(named.span, base, dep, Id::from(imported), Id::from(&named.local));
                         }
                         None => {
-                            self.handle_import(
-                                named.span,
-                                ctxt,
-                                target,
-                                Id::from(&named.local),
-                                Id::from(&named.local),
-                            );
+                            self.handle_import(named.span, base, dep, Id::from(&named.local), Id::from(&named.local));
                         }
                     }
                 }
                 RImportSpecifier::Default(default) => {
                     self.handle_import(
                         default.span,
-                        ctxt,
-                        target,
+                        base,
+                        dep,
                         Id::word(js_word!("default")),
                         Id::from(&default.local),
                     );
