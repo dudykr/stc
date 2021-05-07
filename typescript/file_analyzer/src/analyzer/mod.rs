@@ -665,11 +665,16 @@ impl Load for NoopLoader {
         unreachable!()
     }
 
-    fn load_circular_dep(&self, dep: ModuleId, partial: &ModuleTypeData) -> ValidationResult<ModuleInfo> {
+    fn load_circular_dep(
+        &self,
+        base: ModuleId,
+        dep: ModuleId,
+        partial: &ModuleTypeData,
+    ) -> ValidationResult<ModuleInfo> {
         unreachable!()
     }
 
-    fn load_non_circular_dep(&self, dep: ModuleId) -> ValidationResult<ModuleInfo> {
+    fn load_non_circular_dep(&self, base: ModuleId, dep: ModuleId) -> ValidationResult<ModuleInfo> {
         unreachable!()
     }
 }

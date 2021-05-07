@@ -363,26 +363,7 @@ impl Checker {
 }
 
 impl Load for Checker {
-    fn is_in_same_circular_group(&self, base: &Arc<PathBuf>, src: &JsWord) -> bool {
-        let id = self.module_graph.id(&base);
-
-        let path = self.module_graph.resolve(&base, src);
-        let path = match path {
-            Ok(v) => v,
-            // Unresolved deps.
-            Err(..) => return false,
-        };
-        let target = self.module_graph.id(&path);
-
-        let circular_set = self.module_graph.get_circular(id);
-
-        match circular_set {
-            Some(set) => set.contains(&target),
-            None => false,
-        }
-    }
-
-    fn load_circular_dep(
+    fn old_load_circular_dep(
         &self,
         base: Arc<PathBuf>,
         _partial: &ModuleTypeData,
@@ -397,7 +378,30 @@ impl Load for Checker {
         return Ok(ModuleInfo { module_id: id, data });
     }
 
-    fn load_non_circular_dep(&self, base: Arc<PathBuf>, import: &DepInfo) -> ValidationResult<ModuleInfo> {
+    fn module_id(&self, base: &Arc<PathBuf>, src: &JsWord) -> Option<ModuleId> {
+        let path = self.module_graph.resolve(&base, src).ok()?;
+        let id = self.module_graph.id(&path);
+        Some(id)
+    }
+
+    fn is_in_same_circular_group(&self, base: ModuleId, dep: ModuleId) -> bool {
+        let circular_set = self.module_graph.get_circular(base);
+
+        match circular_set {
+            Some(set) => set.contains(&dep),
+            None => false,
+        }
+    }
+
+    fn load_circular_dep(
+        &self,
+        base: ModuleId,
+        dep: ModuleId,
+        partial: &ModuleTypeData,
+    ) -> ValidationResult<ModuleInfo> {
+    }
+
+    fn load_non_circular_dep(&self, base: ModuleId, dep: ModuleId) -> ValidationResult<ModuleInfo> {
         let mut _result = ModuleTypeData::default();
 
         // TODO: Use ModuleId for analyze_module
@@ -413,11 +417,5 @@ impl Load for Checker {
         let data = self.analyze_module(Some(base.clone()), path.clone());
 
         return Ok(ModuleInfo { module_id: id, data });
-    }
-
-    fn module_id(&self, base: &Arc<PathBuf>, src: &JsWord) -> ModuleId {
-        let path = self.module_graph.resolve(&base, src).unwrap();
-        let id = self.module_graph.id(&path);
-        id
     }
 }

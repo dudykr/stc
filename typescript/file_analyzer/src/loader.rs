@@ -24,10 +24,15 @@ pub trait Load: 'static + Send + Sync {
     ///
     /// `partial` denotes the types and variables which the [Analyzer] successed
     /// processing, with resolved imports.
-    fn load_circular_dep(&self, dep: ModuleId, partial: &ModuleTypeData) -> ValidationResult<ModuleInfo>;
+    fn load_circular_dep(
+        &self,
+        base: ModuleId,
+        dep: ModuleId,
+        partial: &ModuleTypeData,
+    ) -> ValidationResult<ModuleInfo>;
 
     /// Note: This method is called in parallel.
-    fn load_non_circular_dep(&self, dep: ModuleId) -> ValidationResult<ModuleInfo>;
+    fn load_non_circular_dep(&self, base: ModuleId, dep: ModuleId) -> ValidationResult<ModuleInfo>;
 }
 
 impl<T> Load for Arc<T>
@@ -42,12 +47,17 @@ where
         (**self).is_in_same_circular_group(base, dep)
     }
 
-    fn load_circular_dep(&self, dep: ModuleId, partial: &ModuleTypeData) -> ValidationResult<ModuleInfo> {
-        (**self).load_circular_dep(dep, partial)
+    fn load_circular_dep(
+        &self,
+        base: ModuleId,
+        dep: ModuleId,
+        partial: &ModuleTypeData,
+    ) -> ValidationResult<ModuleInfo> {
+        (**self).load_circular_dep(base, dep, partial)
     }
 
-    fn load_non_circular_dep(&self, dep: ModuleId) -> ValidationResult<ModuleInfo> {
-        (**self).load_non_circular_dep(dep)
+    fn load_non_circular_dep(&self, base: ModuleId, dep: ModuleId) -> ValidationResult<ModuleInfo> {
+        (**self).load_non_circular_dep(base, dep)
     }
 }
 
@@ -63,11 +73,16 @@ where
         (**self).is_in_same_circular_group(base, dep)
     }
 
-    fn load_circular_dep(&self, dep: ModuleId, partial: &ModuleTypeData) -> ValidationResult<ModuleInfo> {
-        (**self).load_circular_dep(dep, partial)
+    fn load_circular_dep(
+        &self,
+        base: ModuleId,
+        dep: ModuleId,
+        partial: &ModuleTypeData,
+    ) -> ValidationResult<ModuleInfo> {
+        (**self).load_circular_dep(base, dep, partial)
     }
 
-    fn load_non_circular_dep(&self, dep: ModuleId) -> ValidationResult<ModuleInfo> {
-        (**self).load_non_circular_dep(dep)
+    fn load_non_circular_dep(&self, base: ModuleId, dep: ModuleId) -> ValidationResult<ModuleInfo> {
+        (**self).load_non_circular_dep(base, dep)
     }
 }

@@ -101,7 +101,7 @@ impl Analyzer<'_, '_> {
         let import_results = normal_imports
             .into_par_iter()
             .map(|(ctxt, dep_id, import)| {
-                let res = loader.load_non_circular_dep(dep_id);
+                let res = loader.load_non_circular_dep(ctxt, dep_id);
                 (ctxt, dep_id, import, res)
             })
             .panic_fuse()
