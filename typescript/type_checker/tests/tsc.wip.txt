@@ -928,6 +928,5 @@ types/typeRelationships/assignmentCompatibility/genericCallWithObjectTypeArgsAnd
 types/typeRelationships/comparable/optionalProperties02.ts
 types/typeRelationships/recursiveTypes/infiniteExpansionThroughTypeInference.ts
 types/typeRelationships/typeAndMemberIdentity/unionTypeIdentity.ts
-types/typeRelationships/typeInference/genericCallWithObjectLiteralArgs.ts
 typings/typingsSuggestion1.ts
 typings/typingsSuggestion2.ts
