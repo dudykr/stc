@@ -816,6 +816,7 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2394
     WrongOverloadSignature {
         span: Span,
     },
