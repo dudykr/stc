@@ -1143,7 +1143,8 @@ impl Error {
             // TS2461: Not an array type.
             // TS2548: Not an array or no Symbol.iterator
             // TS2549: Not an array, string or no Symbol.iterator
-            2548 | 2549 => 2461,
+            // TS2569: Not an array, string or no Symbol.iterator but downlevel iteration will work.
+            2548 | 2549 | 2569 => 2461,
 
             _ => code,
         }
