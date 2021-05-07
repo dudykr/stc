@@ -1416,6 +1416,8 @@ impl Error {
 
             Error::ModuleNotFound { .. } => 2307,
 
+            Error::DuplciateConstructor { .. } => 2392,
+
             _ => 0,
         }
     }
