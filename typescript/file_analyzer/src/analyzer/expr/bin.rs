@@ -4,6 +4,7 @@ use super::super::{
 };
 use super::TypeOfMode;
 use crate::analyzer::assign::AssignOpts;
+use crate::analyzer::generic::ExtendsOpts;
 use crate::util::type_ext::TypeVecExt;
 use crate::{
     analyzer::{Ctx, ScopeKind},
@@ -347,7 +348,7 @@ impl Analyzer<'_, '_> {
                         let orig_ty = self.type_of_var(i, TypeOfMode::RValue, None)?;
 
                         //
-                        let ty = self.validate_rhs_of_instanceof(span, rt.clone());
+                        let ty = self.validate_rhs_of_instanceof(span, &rt, rt.clone());
 
                         // typeGuardsWithInstanceOfByConstructorSignature.ts
                         //
@@ -369,7 +370,7 @@ impl Analyzer<'_, '_> {
                                 _ => false,
                             };
 
-                        if !cannot_narrow {
+                        if self.ctx.in_cond && !cannot_narrow {
                             let narrowed_ty = self
                                 .narrow_with_instanceof(span, ty.clone(), &orig_ty)
                                 .context("tried to narrow type with instanceof")?
@@ -753,12 +754,23 @@ impl Analyzer<'_, '_> {
     /// error.
     ///
     /// TODO: Use Cow
+    ///
+    /// # Related tests
+    ///
+    /// ## narrowingConstrainedTypeVaraible.ts
+    ///
+    /// In the test, there's `function f2<T extends C, U extends D>(v: T | U)
+    /// {}`.
+    ///
+    /// If we apply `instanceof C` to `v`, `v` becomes `T`.
+    /// Note that `C extends D` and `D extends C` are true because both of `C`
+    /// and `D` are empty classes.
     fn narrow_with_instanceof(&mut self, span: Span, ty: Type, orig_ty: &Type) -> ValidationResult {
         let orig_ty = orig_ty.normalize();
 
         match orig_ty {
             Type::Ref(..) | Type::Query(..) => {
-                let orig_ty = self.normalize(orig_ty, Default::default())?;
+                let orig_ty = self.normalize(None, orig_ty, Default::default())?;
                 return self.narrow_with_instanceof(span, ty, &orig_ty);
             }
 
@@ -805,7 +817,15 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        if let Some(v) = self.extends(span, orig_ty, &ty) {
+        if let Some(v) = self.extends(
+            span,
+            ExtendsOpts {
+                disallow_different_classes: true,
+                ..Default::default()
+            },
+            orig_ty,
+            &ty,
+        ) {
             if v {
                 match orig_ty.normalize() {
                     Type::ClassDef(def) => {
@@ -869,7 +889,9 @@ impl Analyzer<'_, '_> {
                             (TypeElement::Index(lm), TypeElement::Index(rm)) if lm.params.type_eq(&rm.params) => {
                                 if let Some(lt) = &lm.type_ann {
                                     if let Some(rt) = &rm.type_ann {
-                                        if self.assign(&lt, &rt, span).is_ok() || self.assign(&rt, &lt, span).is_ok() {
+                                        if self.assign(&mut Default::default(), &lt, &rt, span).is_ok()
+                                            || self.assign(&mut Default::default(), &rt, &lt, span).is_ok()
+                                        {
                                             continue;
                                         }
                                     } else {
@@ -976,7 +998,7 @@ impl Analyzer<'_, '_> {
             for rm in r {
                 match (lm, rm) {
                     (TypeElement::Method(lm), TypeElement::Method(rm)) => {
-                        if let Ok(()) = self.assign(&lm.key.ty(), &rm.key.ty(), span) {
+                        if let Ok(()) = self.assign(&mut Default::default(), &lm.key.ty(), &rm.key.ty(), span) {
                             if lm.type_params.as_ref().map(|v| v.params.len()).unwrap_or(0)
                                 != rm.type_params.as_ref().map(|v| v.params.len()).unwrap_or(0)
                             {
@@ -984,13 +1006,13 @@ impl Analyzer<'_, '_> {
                             }
 
                             let params_res = self.assign_params(
+                                &mut Default::default(),
                                 AssignOpts {
                                     span,
                                     ..Default::default()
                                 },
                                 &lm.params,
                                 &rm.params,
-                                true,
                             );
 
                             if params_res.is_err() {
@@ -999,6 +1021,7 @@ impl Analyzer<'_, '_> {
 
                             let ret_ty_res = match (lm.ret_ty.as_deref(), rm.ret_ty.as_deref()) {
                                 (Some(lt), Some(rt)) => self.assign_with_opts(
+                                    &mut Default::default(),
                                     AssignOpts {
                                         span,
                                         allow_unknown_rhs: true,
@@ -1049,7 +1072,7 @@ impl Analyzer<'_, '_> {
 
     /// The right operand to be of type Any or a subtype of the 'Function'
     /// interface type.
-    fn validate_rhs_of_instanceof(&mut self, span: Span, ty: Type) -> Type {
+    fn validate_rhs_of_instanceof(&mut self, span: Span, type_for_error: &Type, ty: Type) -> Type {
         if ty.is_any() {
             return ty;
         }
@@ -1082,18 +1105,29 @@ impl Analyzer<'_, '_> {
                         ..
                     }),
                 ..
-            }) => {
+            })
+            | Type::Symbol(..) => {
                 self.storage.report(Error::InvalidRhsInInstanceOf {
                     span,
-                    ty: box ty.clone(),
+                    ty: box type_for_error.clone(),
                 });
             }
 
             Type::TypeLit(e) if e.members.is_empty() => {
                 self.storage.report(Error::InvalidRhsInInstanceOf {
                     span,
-                    ty: box ty.clone(),
+                    ty: box type_for_error.clone(),
                 });
+            }
+
+            Type::Union(u) => {
+                let types = u
+                    .types
+                    .iter()
+                    .map(|ty| self.validate_rhs_of_instanceof(span, type_for_error, ty.clone()))
+                    .collect();
+
+                return Type::Union(Union { span: u.span, types });
             }
 
             // Ok
@@ -1104,6 +1138,7 @@ impl Analyzer<'_, '_> {
             // Ok if it's assignable to `Function`.
             Type::TypeLit(..) | Type::Interface(..) => {
                 if let Err(..) = self.assign(
+                    &mut Default::default(),
                     &Type::Ref(Ref {
                         span,
                         ctxt: ModuleId::builtin(),
@@ -1118,7 +1153,7 @@ impl Analyzer<'_, '_> {
                 ) {
                     self.storage.report(Error::InvalidRhsInInstanceOf {
                         span,
-                        ty: box ty.clone(),
+                        ty: box type_for_error.clone(),
                     });
                 }
             }

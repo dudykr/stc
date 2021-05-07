@@ -1,3 +1,5 @@
+use crate::analyzer::assign::AssignOpts;
+use crate::analyzer::expr::TypeOfMode;
 use crate::{
     analyzer::{Analyzer, Ctx},
     ty::{Array, IndexedAccessType, Mapped, Operator, PropertySignature, Ref, Type, TypeElement, TypeLit},
@@ -6,21 +8,47 @@ use crate::{
 use fxhash::{FxHashMap, FxHashSet};
 use rnode::Fold;
 use rnode::FoldWith;
+use rnode::VisitWith;
 use slog::Logger;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
+use stc_ts_ast_rnode::RTsLit;
+use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_errors::debug::dump_type_as_string;
+use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
 use stc_ts_types::Function;
+use stc_ts_types::IdCtx;
 use stc_ts_types::Interface;
 use stc_ts_types::Key;
 use stc_ts_types::TypeParamDecl;
 use stc_ts_types::TypeParamInstantiation;
+use stc_ts_types::Union;
 use stc_ts_types::{Id, TypeParam};
+use stc_utils::error::context;
+use stc_utils::ext::SpanExt;
+use stc_utils::stack;
 use swc_atoms::js_word;
 use swc_common::Span;
 use swc_common::Spanned;
 use swc_common::TypeEq;
 use swc_ecma_ast::*;
+
+/// All fields default to false.
+#[derive(Debug, Clone, Copy, Default)]
+pub(crate) struct ExtendsOpts {
+    /// If true, different classes are treated as not extending each other even
+    /// though those are empty.
+    ///
+    /// `false` by default because the type `Foo` in code below is 1.
+    ///
+    /// ```ts
+    /// class C {}
+    /// class D {}
+    ///
+    /// type Foo = C extends D ? 1 : 0
+    /// ```
+    pub disallow_different_classes: bool,
+}
 
 /// Generic expander.
 impl Analyzer<'_, '_> {
@@ -55,7 +83,10 @@ impl Analyzer<'_, '_> {
         Ok(params)
     }
 
-    pub(in super::super) fn expand_type_params(&mut self, params: &FxHashMap<Id, Type>, ty: Type) -> ValidationResult {
+    pub(in super::super) fn expand_type_params<T>(&mut self, params: &FxHashMap<Id, Type>, ty: T) -> ValidationResult<T>
+    where
+        T: for<'aa, 'bb, 'cc, 'dd> FoldWith<GenericExpander<'aa, 'bb, 'cc, 'dd>>,
+    {
         let ty = self.expand_type_params_inner(params, ty, false)?;
         Ok(ty)
     }
@@ -76,7 +107,10 @@ impl Analyzer<'_, '_> {
     ///z     T extends {
     ///          x: infer P extends number ? infer P : string;
     ///      } ? P : never
-    fn expand_type_params_inner(&mut self, params: &FxHashMap<Id, Type>, ty: Type, fully: bool) -> ValidationResult {
+    fn expand_type_params_inner<T>(&mut self, params: &FxHashMap<Id, Type>, ty: T, fully: bool) -> ValidationResult<T>
+    where
+        T: for<'aa, 'bb, 'cc, 'dd> FoldWith<GenericExpander<'aa, 'bb, 'cc, 'dd>>,
+    {
         let ty = ty.fold_with(&mut GenericExpander {
             logger: self.logger.clone(),
             analyzer: self,
@@ -89,12 +123,31 @@ impl Analyzer<'_, '_> {
     }
 
     /// Returns `Some(true)` if `child` extends `parent`.
-    pub(crate) fn extends(&mut self, span: Span, child: &Type, parent: &Type) -> Option<bool> {
+    pub(crate) fn extends(&mut self, span: Span, opts: ExtendsOpts, child: &Type, parent: &Type) -> Option<bool> {
         let child = child.normalize();
         let parent = parent.normalize();
 
         if child.type_eq(&parent) {
             return Some(true);
+        }
+
+        slog::debug!(
+            self.logger,
+            "[generic/extends] Checking if {} extends {}",
+            dump_type_as_string(&self.cm, &child),
+            dump_type_as_string(&self.cm, &parent),
+        );
+
+        match child {
+            Type::Param(TypeParam {
+                constraint: Some(child),
+                ..
+            }) => {
+                if let Some(v) = self.extends(span, opts, child, parent) {
+                    return Some(v);
+                }
+            }
+            _ => {}
         }
 
         match child {
@@ -117,7 +170,28 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
 
-                return self.extends(span, &child, parent);
+                return self.extends(span, opts, &child, parent);
+            }
+
+            Type::Union(child) => {
+                let mut prev = None;
+
+                for child in &child.types {
+                    let res = self.extends(span, opts, child, parent)?;
+
+                    match prev {
+                        Some(v) => {
+                            if v != res {
+                                return None;
+                            }
+                        }
+                        None => {
+                            prev = Some(res);
+                        }
+                    }
+                }
+
+                return prev;
             }
 
             _ => {}
@@ -143,7 +217,7 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
 
-                return self.extends(span, child, &parent);
+                return self.extends(span, opts, child, &parent);
             }
             _ => {}
         }
@@ -154,13 +228,27 @@ impl Analyzer<'_, '_> {
                 ..
             }) => return Some(false),
             Type::Union(parent) => {
-                for res in parent.types.iter().map(|parent| self.extends(span, child, &parent)) {
-                    if res != Some(true) {
-                        return Some(false);
+                let mut has_false = false;
+
+                for parent in &parent.types {
+                    let res = self.extends(span, opts, child, parent);
+                    if let Some(true) = res {
+                        return Some(true);
+                    }
+                    match res {
+                        Some(true) => return Some(true),
+                        Some(false) => {
+                            has_false = true;
+                        }
+                        None => {}
                     }
                 }
 
-                return Some(true);
+                if has_false {
+                    return Some(false);
+                } else {
+                    return None;
+                }
             }
 
             Type::Interface(Interface { name, .. }) if *name.sym() == *"ObjectConstructor" => match child {
@@ -228,7 +316,7 @@ impl Analyzer<'_, '_> {
                         Type::ClassDef(parent) => {
                             // Check for grand parent
                             if let Some(grand_parent) = &parent.super_class {
-                                if let Some(false) = self.extends(span, child, grand_parent) {
+                                if let Some(false) = self.extends(span, opts, child, grand_parent) {
                                     return Some(false);
                                 }
                             }
@@ -240,7 +328,7 @@ impl Analyzer<'_, '_> {
             Type::Tuple(child_tuple) => match parent {
                 Type::Array(parent_array) => {
                     if child_tuple.elems.iter().all(|child_element| {
-                        self.extends(span, &child_element.ty, &parent_array.elem_type) == Some(true)
+                        self.extends(span, opts, &child_element.ty, &parent_array.elem_type) == Some(true)
                     }) {
                         return Some(true);
                     }
@@ -255,22 +343,25 @@ impl Analyzer<'_, '_> {
         }
         // dbg!(child, parent);
 
-        {
-            let ctx = Ctx {
-                fail_on_extra_fields: true,
-                ..self.ctx
-            };
-            match self.with_ctx(ctx).assign(parent, child, span) {
-                Ok(()) => Some(true),
-                _ => Some(false),
-            }
+        match self.assign_with_opts(
+            &mut Default::default(),
+            AssignOpts {
+                span,
+                disallow_different_classes: opts.disallow_different_classes,
+                ..Default::default()
+            },
+            parent,
+            child,
+        ) {
+            Ok(()) => Some(true),
+            _ => Some(false),
         }
     }
 }
 
 /// This struct does not expands ref to other thpe. See Analyzer.expand to do
 /// such operation.
-struct GenericExpander<'a, 'b, 'c, 'd> {
+pub(crate) struct GenericExpander<'a, 'b, 'c, 'd> {
     logger: Logger,
     analyzer: &'a mut Analyzer<'b, 'c>,
     params: &'d FxHashMap<Id, Type>,
@@ -281,6 +372,22 @@ struct GenericExpander<'a, 'b, 'c, 'd> {
 
 impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
     fn fold(&mut self, ty: Type) -> Type {
+        let _stack = match stack::track(ty.span()) {
+            Ok(v) => v,
+            _ => {
+                slog::error!(
+                    self.logger,
+                    "[generic/expander] Stack overflow: {}",
+                    dump_type_as_string(&self.analyzer.cm, &ty)
+                );
+                return ty;
+            }
+        };
+        let _context = context(format!(
+            "Expanding generics of {}",
+            dump_type_as_string(&self.analyzer.cm, &ty)
+        ));
+
         let old_fully = self.fully;
         self.fully |= match ty.normalize() {
             Type::Mapped(..) => true,
@@ -288,7 +395,20 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
         };
         let span = ty.span();
 
-        slog::trace!(self.logger, "generic_expand: {:?}", &ty);
+        {
+            let mut v = TypeParamUsageFinder::default();
+            ty.visit_with(&mut v);
+            let will_expand = v.params.iter().any(|param| self.params.contains_key(&param.name));
+            if !will_expand {
+                return ty;
+            }
+        }
+
+        slog::debug!(
+            self.logger,
+            "[generic/expander]: Expanding {}",
+            dump_type_as_string(&self.analyzer.cm, &ty)
+        );
         let ty = ty.foldable();
 
         match ty {
@@ -492,6 +612,10 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                                             }
                                         }
 
+                                        for member in &mut members {
+                                            self.analyzer.apply_mapped_flags(member, m.optional, m.readonly);
+                                        }
+
                                         return Type::TypeLit(TypeLit {
                                             span: ty.span,
                                             members,
@@ -522,7 +646,7 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                     Some(box Type::TypeLit(lit)) => {
                         let ty = m.ty.clone();
 
-                        let members = lit
+                        let mut members = lit
                             .members
                             .into_iter()
                             .map(|mut v| match v {
@@ -534,6 +658,11 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                                 _ => todo!("type element other than property in a mapped type"),
                             })
                             .collect();
+
+                        for member in &mut members {
+                            self.analyzer.apply_mapped_flags(member, m.optional, m.readonly);
+                        }
+
                         return Type::TypeLit(TypeLit {
                             span,
                             members,
@@ -582,6 +711,10 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                                     }
                                 }
 
+                                for member in &mut new_members {
+                                    self.analyzer.apply_mapped_flags(member, m.optional, m.readonly);
+                                }
+
                                 return Type::TypeLit(TypeLit {
                                     span,
                                     members: new_members,
@@ -607,7 +740,7 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                             op: TsTypeOperatorOp::KeyOf,
                             ty,
                         }) => match ty.normalize() {
-                            Type::Keyword(..) => return *ty.clone(),
+                            Type::Keyword(..) if m.optional == None && m.readonly == None => return *ty.clone(),
                             Type::TypeLit(TypeLit {
                                 span,
                                 members,
@@ -646,6 +779,10 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                                     }
                                 }
 
+                                for member in &mut new_members {
+                                    self.analyzer.apply_mapped_flags(member, m.optional, m.readonly);
+                                }
+
                                 return Type::TypeLit(TypeLit {
                                     span: *span,
                                     members: new_members,
@@ -666,6 +803,39 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                 return ty.fold_children_with(self)
             }
 
+            Type::IndexedAccessType(ty) => {
+                let ty = ty.fold_with(self);
+
+                let key = match ty.index_type.normalize() {
+                    Type::Lit(RTsLitType {
+                        lit: RTsLit::Str(s), ..
+                    }) => Some(Key::Normal {
+                        span: s.span,
+                        sym: s.value.clone(),
+                    }),
+                    Type::Lit(RTsLitType {
+                        lit: RTsLit::Number(v), ..
+                    }) => Some(Key::Num(v.clone())),
+                    _ => None,
+                };
+
+                let key = match key {
+                    Some(v) => v,
+                    None => return Type::IndexedAccessType(ty),
+                };
+
+                let span = key.span().or_else(|| ty.obj_type.span()).or_else(|| ty.span());
+
+                if let Ok(prop_ty) =
+                    self.analyzer
+                        .access_property(span, *ty.obj_type.clone(), &key, TypeOfMode::RValue, IdCtx::Var)
+                {
+                    return prop_ty;
+                }
+
+                Type::IndexedAccessType(ty)
+            }
+
             Type::Query(..)
             | Type::Operator(..)
             | Type::Tuple(..)
@@ -684,11 +854,26 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
             | Type::ClassDef(..)
             | Type::Optional(..)
             | Type::Rest(..)
-            | Type::IndexedAccessType(..)
             | Type::Mapped(..) => return ty.fold_children_with(self),
 
             Type::Arc(a) => return (*a.ty).clone().fold_with(self),
         }
+    }
+}
+
+/// Override to handle some edge cases.
+///
+/// For inputs like `T | PromiseLike<T>` where `T` = `T | PromiseLike<T>`, we
+/// should expand it to `T | PromiseLike<T>`.
+impl Fold<Union> for GenericExpander<'_, '_, '_, '_> {
+    fn fold(&mut self, u: Union) -> Union {
+        let u = u.fold_children_with(self);
+
+        {
+            // TODO: Handle recursive types.
+        }
+
+        u
     }
 }
 

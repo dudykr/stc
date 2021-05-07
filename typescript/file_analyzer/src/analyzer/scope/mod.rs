@@ -1,12 +1,10 @@
+use super::assign::AssignOpts;
 use super::{control_flow::CondFacts, expr::TypeOfMode, stmt::return_type::ReturnValues, Analyzer, Ctx};
 use crate::analyzer::expr::IdCtx;
 use crate::analyzer::ResultExt;
 use crate::{
     loader::ModuleInfo,
-    ty::{
-        self, Alias, IndexSignature, Interface, PropertySignature, Ref, Tuple, Type, TypeElement, TypeExt, TypeLit,
-        Union,
-    },
+    ty::{self, Alias, Interface, PropertySignature, Ref, Tuple, Type, TypeExt, TypeLit, Union},
     type_facts::TypeFacts,
     util::{contains_infer_type, contains_mark, MarkFinder, RemoveTypes},
     validator::ValidateWith,
@@ -28,7 +26,6 @@ use stc_ts_ast_rnode::RBindingIdent;
 use stc_ts_ast_rnode::RObjectPat;
 use stc_ts_ast_rnode::RObjectPatProp;
 use stc_ts_ast_rnode::RPat;
-use stc_ts_ast_rnode::RPropName;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsQualifiedName;
@@ -36,17 +33,22 @@ use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::debug::print_backtrace;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
+use stc_ts_type_ops::Fix;
 use stc_ts_types::name::Name;
 use stc_ts_types::Array;
 use stc_ts_types::Class;
 use stc_ts_types::ClassDef;
+use stc_ts_types::ClassProperty;
 use stc_ts_types::Intersection;
 use stc_ts_types::Key;
+use stc_ts_types::TypeElement;
 use stc_ts_types::TypeParamInstantiation;
 use stc_ts_types::{
     Conditional, FnParam, Id, IndexedAccessType, Mapped, ModuleId, Operator, QueryExpr, QueryType, StaticThis,
     TypeParam,
 };
+use stc_utils::error::context;
+use stc_utils::stack;
 use std::mem::replace;
 use std::mem::take;
 use std::{borrow::Cow, collections::hash_map::Entry, fmt::Debug, iter, slice};
@@ -76,6 +78,8 @@ pub(crate) struct Scope<'a> {
     kind: ScopeKind,
     pub declaring: Vec<Id>,
 
+    pub declared_return_type: Option<Type>,
+
     pub declaring_type_params: FxHashSet<Id>,
 
     pub(super) vars: FxHashMap<Id, VarInfo>,
@@ -89,7 +93,8 @@ pub(crate) struct Scope<'a> {
 
     pub(super) this: Option<Type>,
 
-    /// Used while validating static class properties. Otherwise [None].
+    /// Used while validating super class and static class properties. Otherwise
+    /// [None].
     ///
     /// Required to handle static properies.
     pub(super) this_class_name: Option<Id>,
@@ -142,6 +147,53 @@ impl Scope<'_> {
         F: FnMut(ScopeKind) -> bool,
     {
         self.first(|scope| filter(scope.kind))
+    }
+
+    /// If `filter` returns [Some], this method returns it.
+    pub fn matches<F>(&self, mut filter: F) -> Option<bool>
+    where
+        F: FnMut(&Self) -> Option<bool>,
+    {
+        let res = filter(self);
+        match res {
+            Some(v) => return Some(v),
+            None => {}
+        }
+
+        self.parent?.matches(filter)
+    }
+
+    /// If `filter` returns [Some], this method returns it.
+    pub fn matches_kind<F>(&self, mut filter: F) -> Option<bool>
+    where
+        F: FnMut(ScopeKind) -> Option<bool>,
+    {
+        self.matches(|scope| filter(scope.kind))
+    }
+
+    pub fn is_arguments_implicitly_defined(&self) -> bool {
+        self.first(|scope| {
+            if scope.is_root() {
+                return false;
+            }
+
+            match scope.kind {
+                ScopeKind::Fn | ScopeKind::Method { .. } => true,
+                _ => false,
+            }
+        })
+        .is_some()
+    }
+
+    pub fn is_declaring(&self, id: &Id) -> bool {
+        if self.declaring.contains(id) {
+            return true;
+        }
+
+        match self.parent {
+            Some(s) => s.is_declaring(id),
+            None => false,
+        }
     }
 
     /// Get scope of computed property names.
@@ -309,6 +361,7 @@ impl Scope<'_> {
             parent: None,
             kind: self.kind,
             declaring: self.declaring,
+            declared_return_type: self.declared_return_type,
             declaring_type_params: self.declaring_type_params,
             vars: self.vars,
             types: self.types,
@@ -335,6 +388,14 @@ impl Scope<'_> {
         }
 
         self.parent?.current_module_name()
+    }
+
+    pub fn move_types_from_child(&mut self, child: &mut Scope) {
+        for (name, ty) in child.types.drain() {
+            if ty.normalize().is_type_param() {
+                self.register_type(name, ty, false);
+            }
+        }
     }
 
     pub fn move_vars_from_child(&mut self, child: &mut Scope) {
@@ -387,6 +448,19 @@ impl Scope<'_> {
         }
     }
 
+    pub fn declared_return_type(&self) -> Option<&Type> {
+        match &self.declared_return_type {
+            Some(v) => return Some(v),
+            None => {}
+        }
+        match self.kind {
+            ScopeKind::Fn | ScopeKind::Method { .. } | ScopeKind::Constructor | ScopeKind::ArrowFn => return None,
+            _ => {}
+        }
+
+        self.parent?.declared_return_type()
+    }
+
     pub fn remove_declaring<I>(&mut self, names: impl IntoIterator<IntoIter = I, Item = Id>)
     where
         I: Iterator<Item = Id> + DoubleEndedIterator,
@@ -413,7 +487,7 @@ impl Scope<'_> {
     }
 
     /// Add a type to the scope.
-    fn register_type(&mut self, name: Id, ty: Type) {
+    fn register_type(&mut self, name: Id, ty: Type, should_override: bool) {
         ty.assert_valid();
 
         let ty = ty.cheap();
@@ -457,9 +531,22 @@ impl Scope<'_> {
             }
             _ => {}
         }
-        match self.types.entry(name) {
+        match self.types.entry(name.clone()) {
             Entry::Occupied(mut e) => {
                 let prev = e.get_mut();
+                slog::debug!(
+                    self.logger,
+                    "Scope.register_type({}): override = {:?}; prev = {:?}; new_ty = {:?}",
+                    name,
+                    should_override,
+                    prev,
+                    ty,
+                );
+                if should_override {
+                    *prev = ty;
+                    return;
+                };
+
                 if prev.normalize().is_intersection_type() {
                     match prev.normalize_mut() {
                         Type::Intersection(prev) => {
@@ -480,6 +567,7 @@ impl Scope<'_> {
                 }
             }
             Entry::Vacant(e) => {
+                slog::debug!(self.logger, "Scope.register_type({}): {:?}", name, should_override);
                 e.insert(ty);
             }
         }
@@ -517,9 +605,9 @@ impl Scope<'_> {
 }
 
 impl Analyzer<'_, '_> {
-    /// Overrides a variable. Used for removing lazily-typed stuffs.
+    /// Overrides a variable. Used for updating types.
     pub(super) fn override_var(&mut self, kind: VarDeclKind, name: Id, ty: Type) -> ValidationResult<()> {
-        self.declare_var(ty.span(), kind, name, Some(ty), None, true, true)?;
+        self.declare_var(ty.span(), kind, name, Some(ty), None, true, true, true)?;
 
         Ok(())
     }
@@ -535,6 +623,8 @@ impl Analyzer<'_, '_> {
                 ty
             );
         }
+
+        let _ctx = context(format!("expand: {}", dump_type_as_string(&self.cm, &ty)));
 
         let mut v = Expander {
             logger: self.logger.clone(),
@@ -557,13 +647,17 @@ impl Analyzer<'_, '_> {
     ///    assignment, and false if you are going to use it in user-visible
     ///    stuffs (e.g. type annotation for .d.ts file)
     pub(super) fn expand_fully(&mut self, span: Span, ty: Type, expand_union: bool) -> ValidationResult {
+        ty.assert_valid();
         if !self.is_builtin {
             debug_assert_ne!(
                 span, DUMMY_SP,
-                "expand: {:#?} cannot be expanded because it has empty span",
+                "expand: {:#?} cannot be expanded because it has dummy span",
                 ty
             );
         }
+
+        let _ctx = context(format!("expand_fully: {}", dump_type_as_string(&self.cm, &ty)));
+        let orig = dump_type_as_string(&self.cm, &ty);
 
         let mut v = Expander {
             logger: self.logger.clone(),
@@ -575,7 +669,11 @@ impl Analyzer<'_, '_> {
             expand_top_level: true,
         };
 
-        let ty = ty.foldable().fold_with(&mut v);
+        let ty = ty.foldable().fold_with(&mut v).fixed();
+        ty.assert_valid();
+
+        let new = dump_type_as_string(&self.cm, &ty);
+        slog::debug!(self.logger, "[expander] expand_fully: {} => {}", orig, new);
 
         Ok(ty)
     }
@@ -589,6 +687,8 @@ impl Analyzer<'_, '_> {
     }
 
     pub(crate) fn expand_top_ref<'a>(&mut self, span: Span, ty: Cow<'a, Type>) -> ValidationResult<Cow<'a, Type>> {
+        ty.assert_valid();
+
         if !ty.normalize().is_ref_type() {
             return Ok(ty);
         }
@@ -606,8 +706,48 @@ impl Analyzer<'_, '_> {
             .map(Cow::Owned)
     }
 
-    pub(super) fn register_type(&mut self, name: Id, ty: Type) {
+    pub(super) fn register_type(&mut self, name: Id, ty: Type) -> Type {
         slog::debug!(self.logger, "Registering: {:?}", name);
+
+        let should_check_for_mixed = match ty.normalize() {
+            Type::Param(..) => false,
+            _ => true,
+        };
+        if should_check_for_mixed {
+            // Report an error for
+            //
+            // export type A = {}
+            // type A = {}
+
+            if self.ctx.in_export_decl {
+                self.data
+                    .exported_type_decls
+                    .entry(name.clone())
+                    .or_default()
+                    .push(ty.span());
+
+                if let Some(spans) = self.data.local_type_decls.get(&name) {
+                    self.storage.report(Error::ExportMixedWithLocal { span: ty.span() });
+                    for span in spans.iter().copied() {
+                        self.storage.report(Error::ExportMixedWithLocal { span })
+                    }
+                }
+            } else {
+                self.data
+                    .local_type_decls
+                    .entry(name.clone())
+                    .or_default()
+                    .push(ty.span());
+
+                if let Some(spans) = self.data.exported_type_decls.get(&name) {
+                    self.storage.report(Error::ExportMixedWithLocal { span: ty.span() });
+
+                    for span in spans.iter().copied() {
+                        self.storage.report(Error::ExportMixedWithLocal { span })
+                    }
+                }
+            }
+        }
 
         if self.ctx.in_global {
             if !ty.normalize().is_type_param() {
@@ -615,47 +755,33 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if self.is_builtin
-            && match ty.normalize() {
-                Type::EnumVariant(_)
-                | Type::Interface(_)
-                | Type::Enum(_)
-                | Type::Mapped(_)
-                | Type::Alias(_)
-                | Type::Namespace(_)
-                | Type::Module(_)
-                | Type::Class(_)
-                | Type::ClassDef(_)
-                | Type::Intersection(_)
-                | Type::Function(_)
-                | Type::Constructor(_)
-                | Type::Union(_)
-                | Type::Array(_)
-                | Type::Tuple(_)
-                | Type::Keyword(_)
-                | Type::Conditional(_)
-                | Type::TypeLit(_)
-                | Type::Ref(_)
-                | Type::IndexedAccessType(_)
-                | Type::Import(_)
-                | Type::Query(_)
-                | Type::Lit(_)
-                | Type::This(_) => true,
-
-                _ => false,
-            }
-        {
+        if self.is_builtin {
             let ty = ty.cheap();
 
             self.storage
-                .store_private_type(ModuleId::builtin(), name.clone(), ty.clone());
-            self.scope.register_type(name, ty);
+                .store_private_type(ModuleId::builtin(), name.clone(), ty.clone(), false);
+            self.scope.register_type(name, ty.clone(), false);
+
+            ty
         } else {
             let ty = ty.cheap();
+            let (ty, should_override) = self
+                .merge_decl_with_name(name.clone(), ty.clone())
+                .map(|(ty, should_override)| (ty.cheap(), should_override))
+                .unwrap_or_else(|err| {
+                    self.storage.report(err);
+                    (ty, false)
+                });
+
+            // Override class definitions.
+            if should_override && self.scope.get_var(&name).is_some() {
+                self.override_var(VarDeclKind::Let, name.clone(), ty.clone())
+                    .report(&mut self.storage);
+            }
 
             if (self.scope.is_root() || self.scope.is_module()) && !ty.normalize().is_type_param() {
                 self.storage
-                    .store_private_type(self.ctx.module_id, name.clone(), ty.clone());
+                    .store_private_type(self.ctx.module_id, name.clone(), ty.clone(), should_override);
 
                 match *name.sym() {
                     js_word!("Array") | js_word!("Number") | js_word!("Boolean") | js_word!("String") => {
@@ -665,7 +791,9 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            self.scope.register_type(name, ty);
+            self.scope.register_type(name, ty.clone(), should_override);
+
+            ty
         }
     }
 
@@ -688,6 +816,10 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn resolve_typeof(&mut self, span: Span, name: &RTsEntityName) -> ValidationResult {
+        if !self.is_builtin {
+            debug_assert!(!span.is_dummy(), "Cannot resolve `typeof` with a dummy span");
+        }
+
         let mut ty = match name {
             RTsEntityName::Ident(i) => {
                 if i.sym == js_word!("undefined") {
@@ -882,7 +1014,11 @@ impl Analyzer<'_, '_> {
             if let Ok(ty) = self.env.get_global_type(DUMMY_SP, name.sym()) {
                 debug_assert!(ty.is_clone_cheap(), "{:?}", ty);
 
-                slog::debug!(self.logger, "Using builtin / global type");
+                slog::debug!(
+                    self.logger,
+                    "Using builtin / global type: {}",
+                    dump_type_as_string(&self.cm, &ty)
+                );
                 src.push(ty.clone());
             }
         }
@@ -930,6 +1066,9 @@ impl Analyzer<'_, '_> {
         }))
     }
 
+    /// If `allow_multiple` is true and `is_override` is false, the value type
+    /// is updated only if it's temporary type (like `typeof foo` while
+    /// validating `foo`).
     pub fn declare_var(
         &mut self,
         span: Span,
@@ -939,7 +1078,80 @@ impl Analyzer<'_, '_> {
         actual_ty: Option<Type>,
         initialized: bool,
         allow_multiple: bool,
+        is_override: bool,
     ) -> ValidationResult<()> {
+        if let Some(ty) = &ty {
+            ty.assert_valid();
+            slog::debug!(
+                self.logger,
+                "[vars]: Declaring {} as {}",
+                name,
+                dump_type_as_string(&self.cm, ty)
+            );
+        } else {
+            slog::debug!(self.logger, "[vars]: Declaring {} without type", name,);
+        }
+
+        if !self.is_builtin
+            && !is_override
+            && !allow_multiple
+            && !self.ctx.reevaluating_call_or_new
+            && !self.ctx.reevaluating_argument
+            && !self.ctx.reevaluating_loop_body
+            && !self.ctx.in_ts_fn_type
+        {
+            let spans = self.data.var_spans.entry(name.clone()).or_default();
+            let err = !spans.is_empty();
+
+            spans.push(span);
+
+            if err {
+                for &span in &**spans {
+                    self.storage.report(Error::DuplicateVar {
+                        name: name.clone(),
+                        span,
+                    });
+                }
+            }
+        }
+
+        match kind {
+            VarDeclKind::Let | VarDeclKind::Const => {
+                if *name.sym() == js_word!("let") || *name.sym() == js_word!("const") {
+                    self.storage
+                        .report(Error::LetOrConstIsNotValidIdInLetOrConstVarDecls { span });
+                }
+            }
+            _ => {}
+        }
+
+        let ty = match &ty {
+            Some(..) if self.is_builtin => ty,
+            Some(t) => {
+                // If type is not found, we use `any`.
+                match self.expand_top_ref(ty.span(), Cow::Borrowed(t)) {
+                    Ok(new_ty) => {
+                        if new_ty.is_any() {
+                            Some(new_ty.into_owned())
+                        } else {
+                            ty
+                        }
+                    }
+                    Err(..) => Some(Type::any(ty.span())),
+                }
+            }
+            None => None,
+        };
+
+        if let Some(ty) = &ty {
+            slog::debug!(
+                self.logger,
+                "[vars]: Expanded {} as {}",
+                name,
+                dump_type_as_string(&self.cm, ty)
+            );
+        }
+
         let ty = ty.map(|ty| ty.cheap());
 
         if let Some(actual_ty) = &actual_ty {
@@ -977,10 +1189,6 @@ impl Analyzer<'_, '_> {
 
         match self.scope.vars.entry(name.clone()) {
             Entry::Occupied(e) => {
-                if !allow_multiple {
-                    self.storage.report(Error::DuplicateName { span, name });
-                    return Ok(());
-                }
                 //println!("\tdeclare_var: found entry");
                 let (k, mut v) = e.remove_entry();
 
@@ -988,6 +1196,17 @@ impl Analyzer<'_, '_> {
                     () => {{
                         self.scope.vars.insert(k, v);
                     }};
+                }
+
+                if !self.is_builtin && is_override {
+                    v.ty = ty;
+                    return Ok(());
+                }
+
+                if let Some(orig) = &v.ty {
+                    if let Some(ty) = &ty {
+                        self.validate_with(|a| a.validate_fn_overloads(span, orig, ty));
+                    }
                 }
 
                 v.ty = if let Some(ty) = ty {
@@ -1018,7 +1237,7 @@ impl Analyzer<'_, '_> {
                                         let ty = self.expand_fully(span, ty.clone(), true)?;
                                         let var_ty = self.expand_fully(span, generalized_var_ty, true)?;
 
-                                        let res = self.assign(&ty, &var_ty, span);
+                                        let res = self.assign(&mut Default::default(), &ty, &var_ty, span);
 
                                         if let Err(err) = res {
                                             self.storage.report(err);
@@ -1075,6 +1294,43 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
+    fn validate_fn_overloads(&mut self, span: Span, orig: &Type, new: &Type) -> ValidationResult<()> {
+        // We validates using the signature of implementing function.
+        // TODO: Validate using last element, when there's a no function decl with body.
+        if self.is_builtin || self.ctx.in_declare {
+            return Ok(());
+        }
+
+        for orig in orig.iter_union().flat_map(|ty| ty.iter_union()) {
+            match orig.normalize() {
+                Type::Function(..) => {
+                    let res: ValidationResult<_> = try {
+                        self.assign_with_opts(
+                            &mut Default::default(),
+                            AssignOpts {
+                                span,
+                                for_overload: true,
+                                ..Default::default()
+                            },
+                            &new,
+                            &orig,
+                        )
+                        .context("tried to validate signatures of overloaded functions")?;
+                    };
+
+                    res.convert_err(|err| Error::ImcompatibleFnOverload {
+                        span: orig.span(),
+                        cause: box err,
+                    })
+                    .report(&mut self.storage);
+                }
+                _ => {}
+            }
+        }
+
+        Ok(())
+    }
+
     pub fn declare_complex_vars(
         &mut self,
         kind: VarDeclKind,
@@ -1105,7 +1361,12 @@ impl Analyzer<'_, '_> {
             RPat::Assign(p) => return self.declare_complex_vars(kind, &p.left, ty, actual_ty),
 
             RPat::Ident(ref i) => {
-                slog::debug!(&self.logger, "declare_complex_vars: declaring {}", i.id.sym);
+                slog::debug!(
+                    &self.logger,
+                    "declare_complex_vars: declaring {} as {}",
+                    i.id.sym,
+                    dump_type_as_string(&self.cm, &ty)
+                );
                 self.declare_var(
                     span,
                     kind,
@@ -1117,6 +1378,7 @@ impl Analyzer<'_, '_> {
                     // let/const declarations does not allow multiple declarations with
                     // same name
                     kind == VarDeclKind::Var,
+                    false,
                 )?;
                 Ok(())
             }
@@ -1129,7 +1391,11 @@ impl Analyzer<'_, '_> {
 
                 let ty = self
                     .get_iterator(span, Cow::Owned(ty))
-                    .context("tried to convert a type to an iterator to assign with an array pattern.")?;
+                    .context("tried to convert a type to an iterator to assign with an array pattern.")
+                    .unwrap_or_else(|err| {
+                        self.storage.report(err);
+                        Cow::Owned(Type::any(span))
+                    });
 
                 for (i, elem) in elems.iter().enumerate() {
                     if let Some(elem) = elem {
@@ -1149,30 +1415,10 @@ impl Analyzer<'_, '_> {
             }
 
             RPat::Object(RObjectPat { ref props, .. }) => {
-                fn find<'a>(members: &[TypeElement], key: &RPropName) -> Option<Type> {
-                    let mut index_el = None;
-                    // First, we search for Property
-                    for m in members {
-                        match *m {
-                            TypeElement::Property(PropertySignature { ref type_ann, .. }) => {
-                                return match *type_ann {
-                                    Some(ref ty) => Some(*ty.clone()),
-                                    None => Some(Type::any(key.span())),
-                                }
-                            }
-
-                            TypeElement::Index(IndexSignature { ref type_ann, .. }) => {
-                                index_el = Some(match *type_ann {
-                                    Some(ref ty) => *ty.clone(),
-                                    None => Type::any(key.span()),
-                                });
-                            }
-                            _ => {}
-                        }
-                    }
-
-                    return index_el;
-                }
+                let should_use_no_such_property = match ty.normalize() {
+                    Type::TypeLit(..) => false,
+                    _ => true,
+                };
 
                 // TODO: Normalize static
                 //
@@ -1184,22 +1430,39 @@ impl Analyzer<'_, '_> {
                             let mut key = prop.key.validate_with(self)?;
                             used_keys.push(key.clone());
 
-                            let prop_ty = self.access_property(span, ty.clone(), &key, TypeOfMode::RValue, IdCtx::Var);
+                            let ctx = Ctx {
+                                should_not_create_indexed_type_from_ty_els: true,
+                                diallow_unknown_object_property: true,
+                                ..self.ctx
+                            };
+                            let prop_ty = self.with_ctx(ctx).access_property(
+                                span,
+                                ty.clone(),
+                                &key,
+                                TypeOfMode::RValue,
+                                IdCtx::Var,
+                            );
 
                             match prop_ty {
                                 Ok(ty) => {
                                     // TODO: actual_ty
-                                    self.declare_complex_vars(kind, &prop.value, ty, None)?;
+                                    self.declare_complex_vars(kind, &prop.value, ty, None)
+                                        .report(&mut self.storage);
                                 }
 
                                 Err(err) => {
                                     self.storage.report(err.convert(|err| match err {
                                         Error::NoSuchProperty { span, .. }
-                                        | Error::NoSuchPropertyInClass { span, .. } => {
+                                        | Error::NoSuchPropertyInClass { span, .. }
+                                            if !should_use_no_such_property =>
+                                        {
                                             Error::NoInitAndNoDefault { span }
                                         }
                                         _ => err,
                                     }));
+
+                                    self.declare_vars_inner_with_ty(kind, &prop.value, false, None, None)
+                                        .report(&mut self.storage);
                                 }
                             }
                         }
@@ -1210,7 +1473,18 @@ impl Analyzer<'_, '_> {
                             };
                             used_keys.push(key.clone());
 
-                            let prop_ty = self.access_property(span, ty.clone(), &key, TypeOfMode::RValue, IdCtx::Var);
+                            let ctx = Ctx {
+                                should_not_create_indexed_type_from_ty_els: true,
+                                diallow_unknown_object_property: true,
+                                ..self.ctx
+                            };
+                            let prop_ty = self.with_ctx(ctx).access_property(
+                                span,
+                                ty.clone(),
+                                &key,
+                                TypeOfMode::RValue,
+                                IdCtx::Var,
+                            );
 
                             match prop_ty {
                                 Ok(prop_ty) => {
@@ -1227,7 +1501,8 @@ impl Analyzer<'_, '_> {
                                                 }),
                                                 prop_ty.clone(),
                                                 None,
-                                            )?;
+                                            )
+                                            .report(&mut self.storage);
 
                                             let default_value_type = default
                                                 .validate_with_default(self)
@@ -1256,18 +1531,34 @@ impl Analyzer<'_, '_> {
                                                 }),
                                                 prop_ty,
                                                 None,
-                                            )?;
+                                            )
+                                            .report(&mut self.storage);
                                         }
                                     }
                                 }
                                 Err(err) => {
                                     self.storage.report(err.convert(|err| match err {
                                         Error::NoSuchProperty { span, .. }
-                                        | Error::NoSuchPropertyInClass { span, .. } => {
+                                        | Error::NoSuchPropertyInClass { span, .. }
+                                            if !should_use_no_such_property =>
+                                        {
                                             Error::NoInitAndNoDefault { span }
                                         }
                                         _ => err,
                                     }));
+
+                                    self.declare_vars_inner_with_ty(
+                                        kind,
+                                        &RPat::Ident(RBindingIdent {
+                                            node_id: NodeId::invalid(),
+                                            id: prop.key.clone(),
+                                            type_ann: None,
+                                        }),
+                                        false,
+                                        None,
+                                        None,
+                                    )
+                                    .report(&mut self.storage);
                                 }
                             }
                         }
@@ -1488,6 +1779,7 @@ impl<'a> Scope<'a> {
 
             kind,
             declaring: Default::default(),
+            declared_return_type: None,
             declaring_type_params: Default::default(),
             vars: Default::default(),
             types: Default::default(),
@@ -1847,12 +2139,8 @@ impl Expander<'_, '_, '_> {
         }
 
         print_backtrace();
-        Err(Error::TypeNotFound {
-            name: box type_name.clone().into(),
-            ctxt,
-            type_args: type_args.cloned().map(Box::new),
-            span,
-        })
+
+        Ok(Some(Type::any(span)))
     }
     fn expand_ref(&mut self, r: Ref, was_top_level: bool) -> ValidationResult<Option<Type>> {
         let trying_primitive_expansion = self.analyzer.scope.expand_triage_depth != 0;
@@ -1893,6 +2181,19 @@ impl Expander<'_, '_, '_> {
             }
             _ => {}
         }
+
+        let _stack = match stack::track(self.span) {
+            Ok(v) => v,
+            Err(..) => {
+                print_backtrace();
+                slog::error!(
+                    self.logger,
+                    "[expander] Stack overflow: {}",
+                    dump_type_as_string(&self.analyzer.cm, &ty)
+                );
+                return ty;
+            }
+        };
 
         self.full |= match ty {
             Type::Mapped(..) => true,
@@ -2112,7 +2413,10 @@ impl Expander<'_, '_, '_> {
                                 .cloned()
                                 .enumerate()
                                 .map(|(idx, mut element)| {
-                                    if let Some(v) = self.analyzer.extends(span, &element.ty, &extends_type) {
+                                    if let Some(v) =
+                                        self.analyzer
+                                            .extends(span, Default::default(), &element.ty, &extends_type)
+                                    {
                                         let ty = if v { true_type } else { false_type };
 
                                         let (unwrapped, ty) = unwrap_type(&ty);
@@ -2146,7 +2450,10 @@ impl Expander<'_, '_, '_> {
                         _ => {}
                     }
 
-                    if let Some(v) = self.analyzer.extends(span, &obj_type, &extends_type) {
+                    if let Some(v) = self
+                        .analyzer
+                        .extends(span, Default::default(), &obj_type, &extends_type)
+                    {
                         let ty = if v { true_type } else { false_type };
                         let (_, mut ty) = unwrap_type(&**ty);
 
@@ -2162,7 +2469,7 @@ impl Expander<'_, '_, '_> {
                 }
 
                 Type::Union(Union { span, types }) => {
-                    return Type::union(types);
+                    return Type::Union(Union { span, types });
                 }
 
                 Type::Function(ty::Function {
@@ -2194,6 +2501,11 @@ impl Expander<'_, '_, '_> {
             }
         };
 
+        let _ctx = context(format!(
+            "Expander.expand_type: {}",
+            dump_type_as_string(&self.analyzer.cm, &ty)
+        ));
+
         match ty {
             Type::Conditional(Conditional {
                 span,
@@ -2206,7 +2518,7 @@ impl Expander<'_, '_, '_> {
                 // We need to handle infer type.
                 let type_params = self
                     .analyzer
-                    .infer_ts_infer_types(span, &extends_type, &check_type)
+                    .infer_ts_infer_types(self.span, &extends_type, &check_type)
                     .ok();
 
                 if let Some(type_params) = type_params {
@@ -2251,9 +2563,15 @@ impl Fold<ty::Function> for Expander<'_, '_, '_> {
     }
 }
 
+impl Fold<ClassProperty> for Expander<'_, '_, '_> {
+    fn fold(&mut self, value: ClassProperty) -> ClassProperty {
+        value
+    }
+}
+
 impl Fold<FnParam> for Expander<'_, '_, '_> {
     fn fold(&mut self, param: FnParam) -> FnParam {
-        if self.analyzer.ctx.preserve_params {
+        if self.analyzer.ctx.preserve_params || self.analyzer.is_builtin {
             return param;
         }
 
@@ -2274,7 +2592,7 @@ impl Fold<Type> for Expander<'_, '_, '_> {
         let expanded = self.expand_type(ty);
         slog::debug!(
             self.logger,
-            "[expand]: {} => {}",
+            "[expander]: {} => {}",
             before,
             dump_type_as_string(&self.analyzer.cm, &expanded)
         );
@@ -2291,6 +2609,12 @@ impl Fold<stc_ts_types::Class> for Expander<'_, '_, '_> {
 
 impl Fold<stc_ts_types::ClassMember> for Expander<'_, '_, '_> {
     fn fold(&mut self, node: stc_ts_types::ClassMember) -> stc_ts_types::ClassMember {
+        node
+    }
+}
+
+impl Fold<TypeElement> for Expander<'_, '_, '_> {
+    fn fold(&mut self, node: TypeElement) -> TypeElement {
         node
     }
 }

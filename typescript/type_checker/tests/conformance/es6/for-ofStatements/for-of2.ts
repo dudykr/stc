@@ -1,3 +1,3 @@
-﻿//@target: ES6
+//@target: ES6
 const v;
 for (v of []) { }

@@ -1,4 +1,4 @@
-﻿// @lib: es5
+// @lib: es5
 //﻿
 // Copyright (c) Microsoft Corporation.  All rights reserved.
 // 

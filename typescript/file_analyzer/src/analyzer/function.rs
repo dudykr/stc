@@ -1,4 +1,3 @@
-use super::assign::AssignOpts;
 use super::Analyzer;
 use crate::analyzer::util::ResultExt;
 use crate::{
@@ -16,6 +15,7 @@ use stc_ts_ast_rnode::RFnDecl;
 use stc_ts_ast_rnode::RFnExpr;
 use stc_ts_ast_rnode::RFunction;
 use stc_ts_ast_rnode::RIdent;
+use stc_ts_ast_rnode::RParamOrTsParamProp;
 use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
@@ -42,6 +42,8 @@ impl Analyzer<'_, '_> {
 
         self.with_child(ScopeKind::Fn, Default::default(), |child: &mut Analyzer| {
             child.ctx.in_fn_with_return_type = f.return_type.is_some();
+            child.ctx.in_async = f.is_async;
+            child.ctx.in_generator = f.is_generator;
 
             let mut errors = Errors::default();
 
@@ -103,6 +105,9 @@ impl Analyzer<'_, '_> {
             let mut declared_ret_ty = try_opt!(f.return_type.validate_with(child));
 
             if let Some(ty) = &mut declared_ret_ty {
+                ty.make_cheap();
+
+                child.scope.declared_return_type = Some(ty.clone());
                 child.expand_return_type_of_fn(ty).report(&mut child.storage);
             }
 
@@ -138,7 +143,7 @@ impl Analyzer<'_, '_> {
             let inferred_return_type = match inferred_return_type {
                 Some(Some(inferred_return_type)) => {
                     let mut inferred_return_type = match inferred_return_type {
-                        Type::Ref(ty) => Type::Ref(child.qualify_ref_type_args(span, ty)?),
+                        Type::Ref(ty) => Type::Ref(child.qualify_ref_type_args(ty.span, ty)?),
                         _ => inferred_return_type,
                     };
 
@@ -150,21 +155,14 @@ impl Analyzer<'_, '_> {
                             child
                                 .storage
                                 .report(Error::GeneratorCannotHaveVoidAsReturnType { span: declared.span() })
-                        } else {
-                            // It's okay to return more properties than declared.
-                            child
-                                .assign_with_opts(
-                                    AssignOpts {
-                                        span,
-                                        allow_unknown_rhs: true,
-                                        ..Default::default()
-                                    },
-                                    &declared,
-                                    &inferred_return_type,
-                                )
-                                .report(&mut child.storage);
                         }
                     } else {
+                        if child.rule().no_implicit_any {
+                            if child.is_implicitly_typed(&inferred_return_type) {
+                                child.storage.report(Error::ImplicitReturnType { span })
+                            }
+                        }
+
                         if child.may_generalize(&inferred_return_type) {
                             inferred_return_type = inferred_return_type.generalize_lit();
                         }
@@ -400,18 +398,43 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
+    fn validate(&mut self, p: &RParamOrTsParamProp) -> ValidationResult<FnParam> {
+        match p {
+            RParamOrTsParamProp::TsParamProp(p) => p.validate_with(self),
+            RParamOrTsParamProp::Param(p) => p.validate_with(self),
+        }
+    }
+}
+
+#[validator]
+impl Analyzer<'_, '_> {
     /// NOTE: This method **should not call f.fold_children_with(self)**
     fn validate(&mut self, f: &RFnDecl) {
-        let fn_ty = self.visit_fn(Some(&f.ident), &f.function).cheap();
+        let ctx = Ctx {
+            in_declare: self.ctx.in_declare || f.declare || f.function.body.is_none(),
+            ..self.ctx
+        };
+        self.with_ctx(ctx).with(|a: &mut Analyzer| {
+            let fn_ty = a.visit_fn(Some(&f.ident), &f.function).cheap();
 
-        match self.override_var(VarDeclKind::Var, f.ident.clone().into(), fn_ty) {
-            Ok(()) => {}
-            Err(err) => {
-                self.storage.report(err);
+            match a.declare_var(
+                f.span(),
+                VarDeclKind::Var,
+                f.ident.clone().into(),
+                Some(fn_ty),
+                None,
+                true,
+                true,
+                false,
+            ) {
+                Ok(()) => {}
+                Err(err) => {
+                    a.storage.report(err);
+                }
             }
-        }
 
-        Ok(())
+            Ok(())
+        })
     }
 }
 

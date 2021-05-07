@@ -51,6 +51,7 @@ use stc_ts_ast_rnode::RTsThisTypeOrIdent;
 use stc_ts_ast_rnode::RTsType;
 use stc_ts_ast_rnode::RTsTypeParamInstantiation;
 use stc_ts_ast_rnode::RTsTypeRef;
+use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::debug::print_backtrace;
 use stc_ts_errors::debug::print_type;
 use stc_ts_errors::DebugExt;
@@ -59,6 +60,7 @@ use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
 use stc_ts_type_ops::is_str_lit_or_union;
 use stc_ts_type_ops::Fix;
+use stc_ts_types::Array;
 use stc_ts_types::Class;
 use stc_ts_types::ClassDef;
 use stc_ts_types::ClassProperty;
@@ -297,6 +299,10 @@ impl Analyzer<'_, '_> {
                 sym: js_word!("Symbol"),
                 ..
             }) => {
+                if kind == ExtractKind::New {
+                    self.storage.report(Error::CannotCallWithNewNonVoidFunction { span })
+                }
+
                 // Symbol uses special type
                 if !args.is_empty() {
                     unimplemented!("Error reporting for calling `Symbol` with arguments is not implemented yet")
@@ -586,7 +592,7 @@ impl Analyzer<'_, '_> {
 
                 Type::Interface(ref i) => {
                     // We check for body before parent to support overriding
-                    let err = match self.search_members_for_callable_prop(
+                    let err = match self.call_property_of_type_elements(
                         kind,
                         expr,
                         span,
@@ -629,7 +635,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::TypeLit(ref t) => {
-                    return self.search_members_for_callable_prop(
+                    return self.call_property_of_type_elements(
                         kind,
                         expr,
                         span,
@@ -743,9 +749,25 @@ impl Analyzer<'_, '_> {
                 _ => {}
             }
 
-            let callee = self.access_property(span, obj_type.clone(), &prop, TypeOfMode::RValue, IdCtx::Var)?;
+            let ctx = Ctx {
+                diallow_unknown_object_property: true,
+                ..self.ctx
+            };
+            let callee =
+                self.with_ctx(ctx)
+                    .access_property(span, obj_type.clone(), &prop, TypeOfMode::RValue, IdCtx::Var)?;
 
             let callee = self.expand_top_ref(span, Cow::Owned(callee))?.into_owned();
+
+            match callee.normalize() {
+                Type::ClassDef(cls) => {
+                    if cls.is_abstract {
+                        self.storage.report(Error::CannotCreateInstanceOfAbstractClass { span })
+                    }
+                }
+                _ => {}
+            }
+            let callee_str = dump_type_as_string(&self.cm, &callee);
 
             self.get_best_return_type(
                 span,
@@ -758,11 +780,23 @@ impl Analyzer<'_, '_> {
                 &spread_arg_types,
                 type_ann,
             )
+            .convert_err(|err| match err {
+                Error::NoCallSignature { span, .. } => Error::NoCallabelPropertyWithName {
+                    span,
+                    key: box prop.clone(),
+                },
+                Error::NoNewSignature { span, .. } => Error::NoCallabelPropertyWithName {
+                    span,
+                    key: box prop.clone(),
+                },
+                _ => err,
+            })
             .with_context(|| {
                 format!(
                     "tried to call property by using access_property because the object type is not handled by \
-                     call_property: {:#?}",
-                    obj_type
+                     call_property: \nobj = {}\ncallee = {}",
+                    dump_type_as_string(&self.cm, &obj_type),
+                    callee_str
                 )
             })
         })();
@@ -785,7 +819,7 @@ impl Analyzer<'_, '_> {
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
     ) -> ValidationResult<Option<Type>> {
-        let mut candidates = vec![];
+        let mut candidates: Vec<CallCandidate> = vec![];
         for member in c.body.iter() {
             match member {
                 ty::ClassMember::Method(Method {
@@ -797,7 +831,11 @@ impl Analyzer<'_, '_> {
                     ..
                 }) if *is_static == is_static_call => {
                     if self.key_matches(span, key, prop, false) {
-                        candidates.push((type_params, params, ret_ty));
+                        candidates.push(CallCandidate {
+                            type_params: type_params.as_ref().map(|v| v.params.clone()),
+                            params: params.clone(),
+                            ret_ty: *ret_ty.clone(),
+                        });
                     }
                 }
                 ty::ClassMember::Property(ClassProperty {
@@ -829,34 +867,18 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        candidates.sort_by_cached_key(|(type_params, params, _)| {
-            self.check_call_args(
-                span,
-                type_params.as_ref().map(|v| &*v.params),
-                params,
-                type_args,
-                args,
-                arg_types,
-                spread_arg_types,
-            )
-        });
-
-        for (type_params, params, ret_ty) in candidates {
-            return self
-                .get_return_type(
-                    span,
-                    kind,
-                    expr,
-                    type_params.as_ref().map(|v| &*v.params),
-                    &params,
-                    *ret_ty.clone(),
-                    type_args,
-                    args,
-                    &arg_types,
-                    &spread_arg_types,
-                    type_ann,
-                )
-                .map(Some);
+        if let Some(v) = self.select_and_invoke(
+            span,
+            kind,
+            expr,
+            &candidates,
+            type_args,
+            args,
+            arg_types,
+            spread_arg_types,
+            type_ann,
+        )? {
+            return Ok(Some(v));
         }
 
         if let Some(ty) = &c.super_class {
@@ -886,24 +908,28 @@ impl Analyzer<'_, '_> {
         Ok(None)
     }
 
-    fn check_type_element_for_call(
+    fn check_type_element_for_call<'a>(
         &mut self,
         span: Span,
         kind: ExtractKind,
-        candidates: &mut Vec<MethodSignature>,
-        m: &TypeElement,
+        candidates: &mut Vec<CallCandidate>,
+        m: &'a TypeElement,
         prop: &Key,
     ) {
         match m {
             TypeElement::Method(m) if kind == ExtractKind::Call => {
                 // We are interested only on methods named `prop`
-                if let Ok(()) = self.assign(&m.key.ty(), &prop.ty(), span) {
-                    candidates.push(m.clone());
+                if let Ok(()) = self.assign(&mut Default::default(), &m.key.ty(), &prop.ty(), span) {
+                    candidates.push(CallCandidate {
+                        type_params: m.type_params.as_ref().map(|v| v.params.clone()),
+                        params: m.params.clone(),
+                        ret_ty: m.ret_ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(m.span)),
+                    });
                 }
             }
 
             TypeElement::Property(p) if kind == ExtractKind::Call => {
-                if let Ok(()) = self.assign(&p.key.ty(), &prop.ty(), span) {
+                if let Ok(()) = self.assign(&mut Default::default(), &p.key.ty(), &prop.ty(), span) {
                     // TODO: Remove useless clone
                     let ty = *p.type_ann.as_ref().cloned().unwrap_or(box Type::any(m.span()));
 
@@ -911,28 +937,18 @@ impl Analyzer<'_, '_> {
                         Type::Keyword(RTsKeywordType {
                             kind: TsKeywordTypeKind::TsAnyKeyword,
                             ..
-                        }) => candidates.push(MethodSignature {
-                            span: p.span,
-                            accessibility: None,
-                            readonly: p.readonly,
-                            key: p.key.clone(),
-                            optional: p.optional,
+                        }) => candidates.push(CallCandidate {
                             // TODO: Maybe we need Option<Vec<T>>.
                             params: Default::default(),
-                            ret_ty: Default::default(),
+                            ret_ty: Type::any(span),
                             type_params: Default::default(),
                         }),
 
                         Type::Function(f) => {
-                            candidates.push(MethodSignature {
-                                span: f.span,
-                                accessibility: None,
-                                readonly: p.readonly,
-                                key: p.key.clone(),
-                                optional: p.optional,
+                            candidates.push(CallCandidate {
                                 params: f.params,
-                                ret_ty: Some(f.ret_ty),
-                                type_params: f.type_params,
+                                ret_ty: *f.ret_ty,
+                                type_params: f.type_params.clone().map(|v| v.params),
                             });
                         }
 
@@ -945,7 +961,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn search_members_for_callable_prop(
+    fn call_property_of_type_elements(
         &mut self,
         kind: ExtractKind,
         expr: ReevalMode,
@@ -989,55 +1005,25 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match candidates.len() {
-            0 => Err(Error::NoSuchProperty {
-                span,
-                obj: Some(box obj.clone()),
-                prop: Some(box prop.clone()),
-            }),
-            1 => {
-                // TODO:
-                return self.check_method_call(
-                    span,
-                    expr,
-                    &candidates.into_iter().next().unwrap(),
-                    type_args,
-                    args,
-                    &arg_types,
-                    spread_arg_types,
-                    type_ann,
-                );
-            }
-            _ => {
-                //
-                candidates.sort_by_cached_key(|method: &MethodSignature| {
-                    self.check_call_args(
-                        span,
-                        method.type_params.as_ref().map(|v| &*v.params),
-                        &method.params,
-                        type_args,
-                        args,
-                        arg_types,
-                        spread_arg_types,
-                    )
-                });
-
-                for c in candidates {
-                    return self.check_method_call(
-                        span,
-                        expr,
-                        &c,
-                        type_args,
-                        args,
-                        &arg_types,
-                        spread_arg_types,
-                        type_ann,
-                    );
-                }
-
-                unimplemented!("multiple methods with same name and same number of arguments")
-            }
+        if let Some(v) = self.select_and_invoke(
+            span,
+            kind,
+            expr,
+            &candidates,
+            type_args,
+            args,
+            arg_types,
+            spread_arg_types,
+            type_ann,
+        )? {
+            return Ok(v);
         }
+
+        Err(Error::NoSuchProperty {
+            span,
+            obj: Some(box obj.clone()),
+            prop: Some(box prop.clone()),
+        })
     }
 
     /// Returns `()`
@@ -1084,7 +1070,7 @@ impl Analyzer<'_, '_> {
                             self.scope.is_call_arg_count_unknown = true;
 
                             let elem_type = self
-                                .get_iterator_element_type(arg.span(), arg_ty)
+                                .get_iterator_element_type(arg.span(), arg_ty, false)
                                 .context("tried to get element type of an iterator for spread syntax in arguments")?;
 
                             new_arg_types.push(TypeOrSpread {
@@ -1117,9 +1103,13 @@ impl Analyzer<'_, '_> {
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
     ) -> ValidationResult {
+        if !self.is_builtin {
+            ty.assert_valid();
+        }
+
         match ty.normalize() {
             Type::Ref(..) | Type::Query(..) => {
-                let ty = self.normalize(ty, Default::default())?;
+                let ty = self.normalize(None, ty, Default::default())?;
                 return self.extract(
                     span,
                     expr,
@@ -1135,6 +1125,12 @@ impl Analyzer<'_, '_> {
 
             _ => {}
         }
+
+        slog::debug!(
+            self.logger,
+            "[exprs/call] Calling {}",
+            dump_type_as_string(&self.cm, &ty)
+        );
 
         match kind {
             ExtractKind::New => match ty.normalize() {
@@ -1180,7 +1176,7 @@ impl Analyzer<'_, '_> {
                             span,
                             kind,
                             expr,
-                            cls.type_params.as_ref().map(|v| &*v.params),
+                            Some(&type_params.params),
                             &[],
                             Type::Class(Class {
                                 span,
@@ -1192,6 +1188,7 @@ impl Analyzer<'_, '_> {
                             spread_arg_types,
                             type_ann,
                         )?;
+
                         return Ok(ret_ty);
                     }
 
@@ -1341,11 +1338,23 @@ impl Analyzer<'_, '_> {
             ),
 
             Type::Interface(ref i) => {
+                if kind == ExtractKind::New && &**i.name.sym() == "ArrayConstructor" {
+                    if let Some(type_args) = type_args {
+                        if type_args.params.len() == 1 {
+                            return Ok(Type::Array(Array {
+                                span,
+                                elem_type: box type_args.params.iter().cloned().next().unwrap(),
+                            }));
+                        }
+                    }
+                }
+
                 // Search for methods
                 match self.search_members_for_extract(
                     span,
                     expr,
                     &ty,
+                    i.type_params.as_ref().map(|v| &*v.params),
                     &i.body,
                     kind,
                     args,
@@ -1385,6 +1394,7 @@ impl Analyzer<'_, '_> {
                     span,
                     expr,
                     &ty,
+                    None,
                     &l.members,
                     kind,
                     args,
@@ -1415,6 +1425,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         expr: ReevalMode,
         callee_ty: &Type,
+        type_params_of_type: Option<&[TypeParam]>,
         members: &[TypeElement],
         kind: ExtractKind,
         args: &[RExprOrSpread],
@@ -1433,58 +1444,56 @@ impl Analyzer<'_, '_> {
                     params,
                     type_params,
                     ret_ty,
-                }) if kind == ExtractKind::Call => Some((span, params, type_params, ret_ty)),
+                }) if kind == ExtractKind::Call => Some(CallCandidate {
+                    params: params.clone(),
+                    type_params: type_params
+                        .clone()
+                        .map(|v| v.params)
+                        .or_else(|| type_params_of_type.map(|v| v.to_vec())),
+                    ret_ty: ret_ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(*span)),
+                }),
                 TypeElement::Constructor(ConstructorSignature {
                     span,
                     params,
                     ret_ty,
                     type_params,
                     ..
-                }) if kind == ExtractKind::New => Some((span, params, type_params, ret_ty)),
+                }) if kind == ExtractKind::New => Some(CallCandidate {
+                    params: params.clone(),
+                    type_params: type_params
+                        .clone()
+                        .map(|v| v.params)
+                        .or_else(|| type_params_of_type.clone().map(|v| v.to_vec())),
+                    ret_ty: ret_ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(*span)),
+                }),
                 _ => None,
             })
             .collect::<Vec<_>>();
 
-        if candidates.is_empty() {
-            return match kind {
-                ExtractKind::Call => Err(Error::NoCallSignature {
-                    span,
-                    callee: box callee_ty.clone(),
-                }),
-                ExtractKind::New => Err(Error::NoNewSignature {
-                    span,
-                    callee: box callee_ty.clone(),
-                }),
-            };
-        }
-
-        candidates.sort_by_cached_key(|(_, params, type_params, _)| {
-            self.check_call_args(
-                span,
-                type_params.as_ref().map(|v| &*v.params),
-                params,
-                type_args,
-                args,
-                arg_types,
-                spread_arg_types,
-            )
-        });
-
-        let (_, params, type_params, ret_ty) = candidates.into_iter().next().unwrap();
-
-        return self.get_return_type(
+        if let Some(v) = self.select_and_invoke(
             span,
             kind,
             expr,
-            type_params.as_ref().map(|v| &*v.params),
-            params,
-            ret_ty.clone().map(|v| *v).unwrap_or(Type::any(span)),
+            &candidates,
             type_args,
             args,
             arg_types,
             spread_arg_types,
             type_ann,
-        );
+        )? {
+            return Ok(v);
+        }
+
+        match kind {
+            ExtractKind::Call => Err(Error::NoCallSignature {
+                span,
+                callee: box callee_ty.clone(),
+            }),
+            ExtractKind::New => Err(Error::NoNewSignature {
+                span,
+                callee: box callee_ty.clone(),
+            }),
+        }
     }
 
     fn check_method_call(
@@ -1513,29 +1522,19 @@ impl Analyzer<'_, '_> {
         )
     }
 
-    fn extract_callee_candidates<'a>(
+    fn extract_callee_candidates(
         &mut self,
         span: Span,
         kind: ExtractKind,
-        callee: &'a Type,
-    ) -> ValidationResult<Vec<(Option<Cow<'a, [TypeParam]>>, Cow<'a, [FnParam]>, Option<Cow<'a, Type>>)>> {
+        callee: &Type,
+    ) -> ValidationResult<Vec<CallCandidate>> {
         let callee = callee.normalize();
 
         // TODO: Check if signature match.
         match callee {
             Type::Ref(..) => {
                 let callee = self.expand_top_ref(span, Cow::Borrowed(callee))?.into_owned();
-                return Ok(self
-                    .extract_callee_candidates(span, kind, &callee)?
-                    .into_iter()
-                    .map(|(tp, ps, re)| {
-                        (
-                            tp.map(Cow::into_owned).map(Cow::Owned),
-                            Cow::Owned(ps.into_owned()),
-                            re.map(Cow::into_owned).map(Cow::Owned),
-                        )
-                    })
-                    .collect());
+                return Ok(self.extract_callee_candidates(span, kind, &callee)?);
             }
 
             Type::Intersection(i) => {
@@ -1550,20 +1549,20 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Constructor(c) if kind == ExtractKind::New => {
-                let candidate = (
-                    c.type_params.as_ref().map(|v| &*v.params).map(Cow::Borrowed),
-                    Cow::Borrowed(&*c.params),
-                    Some(Cow::Borrowed(&*c.type_ann)),
-                );
+                let candidate = CallCandidate {
+                    type_params: c.type_params.clone().map(|v| v.params),
+                    params: c.params.clone(),
+                    ret_ty: *c.type_ann.clone(),
+                };
                 return Ok(vec![candidate]);
             }
 
             Type::Function(f) if kind == ExtractKind::Call => {
-                let candidate = (
-                    f.type_params.as_ref().map(|v| &*v.params).map(Cow::Borrowed),
-                    Cow::Borrowed(&*f.params),
-                    Some(Cow::Borrowed(&*f.ret_ty)),
-                );
+                let candidate = CallCandidate {
+                    type_params: f.type_params.clone().map(|v| v.params),
+                    params: f.params.clone(),
+                    ret_ty: *f.ret_ty.clone(),
+                };
                 return Ok(vec![candidate]);
             }
 
@@ -1597,17 +1596,7 @@ impl Analyzer<'_, '_> {
                     .map(Cow::into_owned)
                     .map(Type::TypeLit);
                 if let Some(callee) = callee {
-                    return Ok(self
-                        .extract_callee_candidates(span, kind, &callee)?
-                        .into_iter()
-                        .map(|(tp, ps, re)| {
-                            (
-                                tp.map(Cow::into_owned).map(Cow::Owned),
-                                Cow::Owned(ps.into_owned()),
-                                re.map(Cow::into_owned).map(Cow::Owned),
-                            )
-                        })
-                        .collect());
+                    return Ok(self.extract_callee_candidates(span, kind, &callee)?);
                 }
             }
 
@@ -1617,19 +1606,19 @@ impl Analyzer<'_, '_> {
                 for member in &ty.members {
                     match member {
                         TypeElement::Call(m) if kind == ExtractKind::Call => {
-                            candidates.push((
-                                m.type_params.as_ref().map(|v| &*v.params).map(Cow::Borrowed),
-                                Cow::Borrowed(&*m.params),
-                                m.ret_ty.as_deref().map(Cow::Borrowed),
-                            ));
+                            candidates.push(CallCandidate {
+                                type_params: m.type_params.clone().map(|v| v.params),
+                                params: m.params.clone(),
+                                ret_ty: m.ret_ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(m.span)),
+                            });
                         }
 
                         TypeElement::Constructor(m) if kind == ExtractKind::New => {
-                            candidates.push((
-                                m.type_params.as_ref().map(|v| &*v.params).map(Cow::Borrowed),
-                                Cow::Borrowed(&*m.params),
-                                m.ret_ty.as_deref().map(Cow::Borrowed),
-                            ));
+                            candidates.push(CallCandidate {
+                                type_params: m.type_params.clone().map(|v| v.params),
+                                params: m.params.clone(),
+                                ret_ty: m.ret_ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(m.span)),
+                            });
                         }
                         _ => {}
                     }
@@ -1665,70 +1654,54 @@ impl Analyzer<'_, '_> {
 
         slog::info!(self.logger, "get_best_return_type: {} candidates", candidates.len());
 
-        if candidates.is_empty() {
-            dbg!();
-
-            match callee.normalize() {
-                Type::ClassDef(cls) if kind == ExtractKind::New => {
-                    let ret_ty = self.get_return_type(
-                        span,
-                        kind,
-                        expr,
-                        cls.type_params.as_ref().map(|v| &*v.params),
-                        &[],
-                        callee.clone(),
-                        type_args,
-                        args,
-                        arg_types,
-                        spread_arg_types,
-                        type_ann,
-                    )?;
-                    return Ok(ret_ty);
-                }
-                _ => {}
-            }
-
-            return Err(if kind == ExtractKind::Call {
-                print_backtrace();
-                Error::NoCallSignature {
-                    span,
-                    callee: box callee,
-                }
-            } else {
-                Error::NoNewSignature {
-                    span,
-                    callee: box callee,
-                }
-            });
-        }
-
-        candidates.sort_by_cached_key(|(type_params, params, ret_ty)| {
-            self.check_call_args(
-                span,
-                type_params.as_deref(),
-                &params,
-                type_args,
-                args,
-                arg_types,
-                spread_arg_types,
-            )
-        });
-
-        let (type_params, params, ret_ty) = candidates.into_iter().next().unwrap();
-
-        return self.get_return_type(
+        if let Some(v) = self.select_and_invoke(
             span,
             kind,
             expr,
-            type_params.as_deref(),
-            &params,
-            ret_ty.map(Cow::into_owned).unwrap_or_else(|| Type::any(span)),
+            &candidates,
             type_args,
             args,
             arg_types,
             spread_arg_types,
             type_ann,
-        );
+        )? {
+            return Ok(v);
+        }
+
+        dbg!();
+
+        match callee.normalize() {
+            Type::ClassDef(cls) if kind == ExtractKind::New => {
+                let ret_ty = self.get_return_type(
+                    span,
+                    kind,
+                    expr,
+                    cls.type_params.as_ref().map(|v| &*v.params),
+                    &[],
+                    callee.clone(),
+                    type_args,
+                    args,
+                    arg_types,
+                    spread_arg_types,
+                    type_ann,
+                )?;
+                return Ok(ret_ty);
+            }
+            _ => {}
+        }
+
+        return Err(if kind == ExtractKind::Call {
+            print_backtrace();
+            Error::NoCallSignature {
+                span,
+                callee: box callee,
+            }
+        } else {
+            Error::NoNewSignature {
+                span,
+                callee: box callee,
+            }
+        });
     }
 
     fn validate_arg_count(
@@ -1768,6 +1741,7 @@ impl Analyzer<'_, '_> {
                 if !param.ty.is_any()
                     && self
                         .assign(
+                            &mut Default::default(),
                             &param.ty,
                             &Type::Keyword(RTsKeywordType {
                                 span,
@@ -1809,6 +1783,77 @@ impl Analyzer<'_, '_> {
                 max: max_param,
             });
         }
+    }
+
+    /// Returns [None] if nothing matched.
+    fn select_and_invoke(
+        &mut self,
+        span: Span,
+        kind: ExtractKind,
+        expr: ReevalMode,
+        candidates: &[CallCandidate],
+        type_args: Option<&TypeParamInstantiation>,
+        args: &[RExprOrSpread],
+        arg_types: &[TypeOrSpread],
+        spread_arg_types: &[TypeOrSpread],
+        type_ann: Option<&Type>,
+    ) -> ValidationResult<Option<Type>> {
+        let mut callable = candidates
+            .iter()
+            .map(|c| {
+                let res = self.check_call_args(
+                    span,
+                    c.type_params.as_deref(),
+                    &c.params,
+                    type_args,
+                    args,
+                    arg_types,
+                    spread_arg_types,
+                );
+
+                (c, res)
+            })
+            .collect::<Vec<_>>();
+        callable.sort_by_key(|(_, res)| res.clone());
+
+        if candidates.is_empty() {
+            return Ok(None);
+        }
+
+        let (c, _) = callable.into_iter().next().unwrap();
+
+        if candidates.len() == 1 {
+            return self
+                .get_return_type(
+                    span,
+                    kind,
+                    expr,
+                    c.type_params.as_deref(),
+                    &c.params,
+                    c.ret_ty.clone(),
+                    type_args,
+                    args,
+                    arg_types,
+                    spread_arg_types,
+                    type_ann,
+                )
+                .map(Some);
+        }
+
+        self.get_return_type(
+            span,
+            kind,
+            expr,
+            c.type_params.as_deref(),
+            &c.params,
+            c.ret_ty.clone(),
+            type_args,
+            args,
+            arg_types,
+            spread_arg_types,
+            type_ann,
+        )
+        .map(Some)
     }
 
     /// Returns the return type of function. This method should be called only
@@ -1926,6 +1971,7 @@ impl Analyzer<'_, '_> {
                 params
             };
 
+            slog::debug!(self.logger, "Inferring arg types for a call");
             let inferred = self.infer_arg_types(span, type_args, type_params, &params, &spread_arg_types, None)?;
 
             let expanded_param_types = params
@@ -1933,6 +1979,7 @@ impl Analyzer<'_, '_> {
                 .map(|v| -> ValidationResult<_> {
                     let mut ty = box self.expand_type_params(&inferred, *v.ty)?;
                     ty.fix();
+                    ty.assert_valid();
 
                     Ok(FnParam { ty, ..v })
                 })
@@ -1940,11 +1987,25 @@ impl Analyzer<'_, '_> {
 
             let ctx = Ctx {
                 in_argument: true,
+                reevaluating_argument: true,
                 ..self.ctx
             };
             let mut new_args = vec![];
             for (idx, (arg, param)) in args.into_iter().zip(expanded_param_types.iter()).enumerate() {
                 let arg_ty = &arg_types[idx];
+                print_type(
+                    &self.logger,
+                    &format!("Expanded parameter at {}", idx),
+                    &self.cm,
+                    &param.ty,
+                );
+                print_type(
+                    &self.logger,
+                    &format!("Original argument at {}", idx),
+                    &self.cm,
+                    &arg_ty.ty,
+                );
+
                 let (type_param_decl, actual_params) = match &*param.ty {
                     Type::Function(f) => (&f.type_params, &f.params),
                     _ => {
@@ -2020,7 +2081,12 @@ impl Analyzer<'_, '_> {
                     }
                     _ => arg_ty.ty.clone(),
                 };
-                print_type(&logger, "mapped", &self.cm, &ty);
+                print_type(
+                    &self.logger,
+                    &format!("Mapped argument at {}", idx),
+                    &self.cm,
+                    &arg_ty.ty,
+                );
 
                 let new_arg = TypeOrSpread { ty, ..arg_ty.clone() };
 
@@ -2028,6 +2094,7 @@ impl Analyzer<'_, '_> {
             }
 
             if !self.ctx.reevaluating_call_or_new {
+                slog::debug!(self.logger, "Reevaluating a call");
                 let ctx = Ctx {
                     reevaluating_call_or_new: true,
                     ..self.ctx
@@ -2045,6 +2112,10 @@ impl Analyzer<'_, '_> {
 
             // if arg.len() > param.len(), we need to add all args
             if arg_types.len() > expanded_param_types.len() {
+                for idx in expanded_param_types.len()..arg_types.len() {
+                    let ty = &arg_types[idx].ty;
+                    print_type(&self.logger, &format!("Expanded param type at {}", idx), &self.cm, &ty);
+                }
                 new_args.extend(arg_types[expanded_param_types.len()..].iter().cloned());
             }
 
@@ -2128,6 +2199,8 @@ impl Analyzer<'_, '_> {
     }
 
     fn validate_arg_types(&mut self, params: &[FnParam], spread_arg_types: &[TypeOrSpread]) {
+        slog::info!(self.logger, "[exprs] Validating arguments");
+
         let rest_idx = {
             let mut rest_idx = None;
             let mut shift = 0;
@@ -2180,7 +2253,7 @@ impl Analyzer<'_, '_> {
                         RPat::Rest(..) => match param.ty.normalize() {
                             Type::Array(arr) => {
                                 // We should change type if the parameter is a rest parameter.
-                                let res = self.assign(&arr.elem_type, &arg.ty, arg.span());
+                                let res = self.assign(&mut Default::default(), &arr.elem_type, &arg.ty, arg.span());
                                 let err = match res {
                                     Ok(()) => continue,
                                     Err(err) => err,
@@ -2193,7 +2266,20 @@ impl Analyzer<'_, '_> {
                                 self.storage.report(err);
                                 continue;
                             }
-                            _ => {}
+                            _ => {
+                                if let Ok(()) = self.assign_with_opts(
+                                    &mut Default::default(),
+                                    AssignOpts {
+                                        span: arg.span(),
+                                        allow_iterable_on_rhs: true,
+                                        ..Default::default()
+                                    },
+                                    &param.ty,
+                                    &arg.ty,
+                                ) {
+                                    continue;
+                                }
+                            }
                         },
                         _ => {}
                     }
@@ -2202,7 +2288,9 @@ impl Analyzer<'_, '_> {
                         match arg.ty.normalize() {
                             Type::Array(arg) => {
                                 // We should change type if the parameter is a rest parameter.
-                                if let Ok(()) = self.assign(&param.ty, &arg.elem_type, arg.span()) {
+                                if let Ok(()) =
+                                    self.assign(&mut Default::default(), &param.ty, &arg.elem_type, arg.span())
+                                {
                                     continue;
                                 }
                             }
@@ -2214,6 +2302,7 @@ impl Analyzer<'_, '_> {
                             _ => true,
                         };
                         if let Err(err) = self.assign_with_opts(
+                            &mut Default::default(),
                             AssignOpts {
                                 span: arg.span(),
                                 allow_unknown_rhs,
@@ -2325,7 +2414,7 @@ impl Analyzer<'_, '_> {
                         return self.narrow_with_predicate(span, &orig_ty, new_ty);
                     }
                     _ => {
-                        if let Some(v) = self.extends(span, orig_ty, &new_ty) {
+                        if let Some(v) = self.extends(span, Default::default(), orig_ty, &new_ty) {
                             if v {
                                 match orig_ty.normalize() {
                                     Type::ClassDef(def) => {
@@ -2348,7 +2437,7 @@ impl Analyzer<'_, '_> {
 
                 let mut upcasted = false;
                 for ty in orig_ty.iter_union().flat_map(|ty| ty.iter_union()) {
-                    match self.extends(span, &new_ty, &ty) {
+                    match self.extends(span, Default::default(), &new_ty, &ty) {
                         Some(true) => {
                             upcasted = true;
                             new_types.push(ty.clone());
@@ -2476,6 +2565,7 @@ impl Analyzer<'_, '_> {
                     _ => {
                         if analyzer
                             .assign_with_opts(
+                                &mut Default::default(),
                                 AssignOpts {
                                     span,
                                     allow_unknown_rhs: true,
@@ -2489,7 +2579,10 @@ impl Analyzer<'_, '_> {
                         {
                             return ArgCheckResult::ArgTypeMismatch;
                         }
-                        if analyzer.assign(&arg.ty, &param.ty, span).is_err() {
+                        if analyzer
+                            .assign(&mut Default::default(), &arg.ty, &param.ty, span)
+                            .is_err()
+                        {
                             exact = false;
                         }
                     }
@@ -2766,4 +2859,11 @@ fn test_arg_check_result_order() {
     v.sort();
 
     assert_eq!(v, expected);
+}
+
+/// TODO: Use cow
+struct CallCandidate {
+    pub type_params: Option<Vec<TypeParam>>,
+    pub params: Vec<FnParam>,
+    pub ret_ty: Type,
 }

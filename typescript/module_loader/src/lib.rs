@@ -12,6 +12,7 @@ use parking_lot::Mutex;
 use parking_lot::RwLock;
 use petgraph::{algo::all_simple_paths, graphmap::DiGraphMap};
 use rayon::prelude::*;
+use slog::Logger;
 use stc_ts_types::module_id;
 use stc_ts_types::ModuleId;
 use std::collections::HashSet;
@@ -37,6 +38,7 @@ where
     C: Comments + Send + Sync,
     R: Resolve,
 {
+    logger: Logger,
     cm: Arc<SourceMap>,
     parser_config: TsConfig,
     target: JscTarget,
@@ -67,6 +69,7 @@ where
     R: Resolve,
 {
     pub fn new(
+        logger: Logger,
         cm: Arc<SourceMap>,
         comments: Option<C>,
         resolver: R,
@@ -74,6 +77,7 @@ where
         target: JscTarget,
     ) -> Self {
         Self {
+            logger,
             cm,
             comments,
             parser_config,
@@ -88,8 +92,13 @@ where
     }
 
     pub fn load_all(&self, entry: &Arc<PathBuf>) -> Result<ModuleId, Error> {
-        self.load_including_deps(entry)
-            .with_context(|| format!("load_including_deps failed: {}", entry.display()))?;
+        let res = self.load_including_deps(entry);
+        match res {
+            Err(err) => {
+                slog::error!(self.logger, "Failed to load {}:\n{:?}", entry.display(), err);
+            }
+            _ => {}
+        }
 
         let (_, module_id) = self.id_generator.generate(entry);
 
@@ -119,10 +128,10 @@ where
         self.resolver.resolve(base, specifier)
     }
 
-    pub fn clone_module(&self, id: ModuleId) -> Module {
-        let m = self.loaded.get(&id).unwrap();
+    pub fn clone_module(&self, id: ModuleId) -> Option<Module> {
+        let m = self.loaded.get(&id)?;
 
-        (&**m).clone()
+        Some((&**m).clone())
     }
 
     pub fn stmt_count_of(&self, id: ModuleId) -> usize {
@@ -131,7 +140,9 @@ where
     }
 
     fn load_including_deps(&self, path: &Arc<PathBuf>) -> Result<(), Error> {
-        let loaded = self.load(path)?;
+        let loaded = self
+            .load(path)
+            .with_context(|| format!("failed to load file at {}", path.display()))?;
         let loaded = match loaded {
             Some(v) => v,
             None => return Ok(()),
@@ -146,7 +157,7 @@ where
             .deps
             .into_par_iter()
             .map(|dep_path| -> Result<_, Error> {
-                self.load_including_deps(&dep_path)?;
+                let _ = self.load_including_deps(&dep_path);
 
                 let id = self.id_generator.generate(&dep_path).1;
                 self.paths.insert(id, dep_path.clone());
@@ -233,7 +244,8 @@ where
         let deps = deps
             .into_par_iter()
             .map(|specifier| resolver.resolve(path, &specifier))
-            .collect::<Result<_, _>>()?;
+            .filter_map(|id| id.ok())
+            .collect();
 
         Ok(Some(LoadResult { module, deps }))
     }

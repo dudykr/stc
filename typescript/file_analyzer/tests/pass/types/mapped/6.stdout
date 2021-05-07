@@ -15,6 +15,6 @@ warning: Type
   |                 ^^^^
   |
   = note: {
-              [P in keyof Number]: void;
+              [P in keyof T1]: void;
           }
 

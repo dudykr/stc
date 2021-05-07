@@ -7,5 +7,7 @@ export RUST_BACKTRACE=1
 git restore -- tests/pass
 git restore -- tests/visualize
 
+export RUST_LOG=debug
+
 touch ./tests/visualize.rs
 UPDATE=1 cargo test --test visualize $@

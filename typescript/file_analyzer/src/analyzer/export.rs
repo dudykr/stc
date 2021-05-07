@@ -1,3 +1,4 @@
+use super::expr::TypeOfMode;
 use super::{Analyzer, Ctx};
 use crate::{analyzer::util::ResultExt, ty::Type, validator, validator::ValidateWith, ValidationResult};
 use rnode::NodeId;
@@ -9,6 +10,7 @@ use stc_ts_ast_rnode::RExportAll;
 use stc_ts_ast_rnode::RExportDecl;
 use stc_ts_ast_rnode::RExportDefaultDecl;
 use stc_ts_ast_rnode::RExportDefaultExpr;
+use stc_ts_ast_rnode::RExportNamedSpecifier;
 use stc_ts_ast_rnode::RExportSpecifier;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RIdent;
@@ -142,73 +144,78 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, export: &RExportDecl) {
-        let span = export.span;
+        let ctx = Ctx {
+            in_export_decl: true,
+            ..self.ctx
+        };
+        self.with_ctx(ctx).with(|a: &mut Analyzer| {
+            let span = export.span;
 
-        match &export.decl {
-            RDecl::Fn(ref f) => {
-                f.visit_with(self);
-                // self.export(f.span(), f.ident.clone().into(), None);
-                self.export_var(f.span(), f.ident.clone().into());
-            }
-            RDecl::TsInterface(ref i) => {
-                i.visit_with(self);
-
-                self.export(i.span(), i.id.clone().into(), None)
-            }
-
-            RDecl::Class(ref c) => {
-                c.visit_with(self);
-                self.export(c.span(), c.ident.clone().into(), None);
-                self.export_var(c.span(), c.ident.clone().into());
-            }
-            RDecl::Var(ref var) => {
-                let span = var.span;
-                var.visit_with(self);
-
-                let ids: Vec<Id> = find_ids_in_pat(&var.decls);
-
-                for id in ids {
-                    self.export_var(span, id)
+            match &export.decl {
+                RDecl::Fn(ref f) => {
+                    f.visit_with(a);
+                    // self.export(f.span(), f.ident.clone().into(), None);
+                    a.export_var(f.span(), f.ident.clone().into());
                 }
-            }
-            RDecl::TsEnum(ref e) => {
-                let span = e.span();
+                RDecl::TsInterface(ref i) => {
+                    i.visit_with(a);
 
-                let ty = e
-                    .validate_with(self)
-                    .report(&mut self.storage)
-                    .map(Type::from)
-                    .map(|ty| ty.cheap());
-                let ty = ty.unwrap_or_else(|| Type::any(span));
+                    a.export(i.span(), i.id.clone().into(), None)
+                }
 
-                self.storage
-                    .store_private_type(self.ctx.module_id, e.id.clone().into(), ty);
-                self.storage.export_type(span, self.ctx.module_id, e.id.clone().into());
-            }
-            RDecl::TsModule(module) => {
-                module.visit_with(self);
+                RDecl::Class(ref c) => {
+                    c.visit_with(a);
+                    a.export(c.span(), c.ident.clone().into(), None);
+                    a.export_var(c.span(), c.ident.clone().into());
+                }
+                RDecl::Var(ref var) => {
+                    let span = var.span;
+                    var.visit_with(a);
 
-                match &module.id {
-                    RTsModuleName::Ident(id) => {
-                        self.storage.export_type(span, self.ctx.module_id, id.clone().into());
-                    }
-                    RTsModuleName::Str(_) => {
-                        unimplemented!("export module with string name")
+                    let ids: Vec<Id> = find_ids_in_pat(&var.decls);
+
+                    for id in ids {
+                        a.export_var(span, id)
                     }
                 }
+                RDecl::TsEnum(ref e) => {
+                    let span = e.span();
+
+                    let ty = e
+                        .validate_with(a)
+                        .report(&mut a.storage)
+                        .map(Type::from)
+                        .map(|ty| ty.cheap());
+                    let ty = ty.unwrap_or_else(|| Type::any(span));
+                    a.register_type(e.id.clone().into(), ty);
+
+                    a.storage.export_type(span, a.ctx.module_id, e.id.clone().into());
+                }
+                RDecl::TsModule(module) => {
+                    module.visit_with(a);
+
+                    match &module.id {
+                        RTsModuleName::Ident(id) => {
+                            a.storage.export_type(span, a.ctx.module_id, id.clone().into());
+                        }
+                        RTsModuleName::Str(_) => {
+                            unimplemented!("export module with string name")
+                        }
+                    }
+                }
+                RDecl::TsTypeAlias(ref decl) => {
+                    decl.visit_with(a);
+                    // export type Foo = 'a' | 'b';
+                    // export type Foo = {};
+
+                    // TODO: Handle type parameters.
+
+                    a.export(span, decl.id.clone().into(), None)
+                }
             }
-            RDecl::TsTypeAlias(ref decl) => {
-                decl.visit_with(self);
-                // export type Foo = 'a' | 'b';
-                // export type Foo = {};
 
-                // TODO: Handle type parameters.
-
-                self.export(span, decl.id.clone().into(), None)
-            }
-        }
-
-        Ok(())
+            Ok(())
+        })
     }
 }
 
@@ -247,11 +254,11 @@ impl Analyzer<'_, '_> {
                 self.export(f.span(), Id::word(js_word!("default")), Some(i))
             }
             RDefaultDecl::Class(ref c) => {
-                let id = c
-                    .ident
-                    .as_ref()
-                    .map(|v| v.into())
-                    .unwrap_or_else(|| Id::word(js_word!("default")));
+                let id = c.ident.as_ref().map(|v| v.into());
+
+                self.scope.this_class_name = id.clone();
+
+                let id = id.unwrap_or_else(|| Id::word(js_word!("default")));
 
                 let class_ty = c.class.validate_with(self)?;
                 self.register_type(id.clone(), Type::ClassDef(class_ty));
@@ -312,7 +319,8 @@ impl Analyzer<'_, '_> {
             .collect::<Vec<_>>();
 
         for ty in iter {
-            self.storage.store_private_type(self.ctx.module_id, name.clone(), ty);
+            self.storage
+                .store_private_type(self.ctx.module_id, name.clone(), ty, false);
         }
 
         self.storage.export_type(span, self.ctx.module_id, name);
@@ -394,27 +402,38 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
+    fn validate(&mut self, node: &RExportNamedSpecifier) {
+        let ctx = Ctx {
+            report_error_for_non_local_vars: true,
+            ..self.ctx
+        };
+        self.with_ctx(ctx).validate_with(|a| {
+            a.type_of_var(&node.orig, TypeOfMode::RValue, None)?;
+
+            Ok(())
+        });
+
+        // TODO: Add an export
+
+        Ok(())
+    }
+}
+
+#[validator]
+impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RExportAll) {
         let span = node.span;
 
-        let path = self.storage.path(self.ctx.module_id);
-        let module_id = self.loader.module_id(&path, &node.src.value);
-        let ctxt = self.ctx.module_id;
+        let (dep, data) = self.get_imported_items(span, &node.src.value)?;
 
-        match self.imports.get(&(ctxt, module_id)) {
-            Some(data) => {
-                for (id, ty) in data.vars.iter() {
-                    self.storage.reexport_var(span, ctxt, id.clone(), ty.clone());
-                }
-                for (id, types) in data.types.iter() {
-                    for ty in types {
-                        self.storage.reexport_type(span, ctxt, id.clone(), ty.clone());
-                    }
-                }
-            }
-            None => self.storage.report(Error::ExportAllFailed { span }),
+        for (id, ty) in data.vars.iter() {
+            self.storage.reexport_var(span, dep, id.clone(), ty.clone());
         }
-
+        for (id, types) in data.types.iter() {
+            for ty in types {
+                self.storage.reexport_type(span, dep, id.clone(), ty.clone());
+            }
+        }
         Ok(())
     }
 }
@@ -423,8 +442,9 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RNamedExport) {
         let span = node.span;
-        let ctxt = self.ctx.module_id;
-        let base = self.storage.path(ctxt);
+        let base = self.ctx.module_id;
+
+        node.specifiers.visit_with(self);
 
         for specifier in &node.specifiers {
             match specifier {
@@ -432,7 +452,7 @@ impl Analyzer<'_, '_> {
                     // We need
                     match &node.src {
                         Some(src) => {
-                            let module_id = self.loader.module_id(&base, &src.value);
+                            let (dep, data) = self.get_imported_items(node.span, &src.value)?;
                         }
                         None => {}
                     }
@@ -443,12 +463,12 @@ impl Analyzer<'_, '_> {
 
                     match &node.src {
                         Some(src) => {
-                            let module_id = self.loader.module_id(&base, &src.value);
+                            let (dep, data) = self.get_imported_items(node.span, &src.value)?;
 
                             self.reexport(
                                 span,
-                                ctxt,
-                                module_id,
+                                base,
+                                dep,
                                 named
                                     .exported
                                     .as_ref()
@@ -460,7 +480,7 @@ impl Analyzer<'_, '_> {
                         None => {
                             self.export_named(
                                 span,
-                                ctxt,
+                                base,
                                 Id::from(&named.orig),
                                 named
                                     .exported

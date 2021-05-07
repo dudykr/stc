@@ -1,4 +1,4 @@
-﻿class C1 {
+class C1 {
     constructor(public [x, y, z]: string[]) {
     }
 }

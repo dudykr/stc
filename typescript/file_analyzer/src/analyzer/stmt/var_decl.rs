@@ -28,12 +28,14 @@ use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsTypeAssertion;
 use stc_ts_ast_rnode::RVarDecl;
 use stc_ts_ast_rnode::RVarDeclarator;
+use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_types::QueryExpr;
 use stc_ts_types::QueryType;
 use stc_ts_types::{Array, Id, Operator, Symbol};
+use stc_ts_utils::find_ids_in_pat;
 use stc_ts_utils::PatExt;
 use swc_atoms::js_word;
 use swc_common::Spanned;
@@ -113,6 +115,9 @@ impl Analyzer<'_, '_> {
             } else {
                 None
             };
+            let ids: Vec<Id> = find_ids_in_pat(&v.name);
+            let prev_declaring_len = self.scope.declaring.len();
+            self.scope.declaring.extend(ids);
 
             macro_rules! inject_any {
                 () => {
@@ -148,7 +153,7 @@ impl Analyzer<'_, '_> {
                             m.for_var_decls.entry(node_id).or_default().remove_init = true;
                         }
                     }
-
+                    self.scope.declaring.drain(prev_declaring_len..);
                     debug_assert_eq!(Some(self.scope.declaring.clone()), debug_declaring);
                 }};
             }
@@ -237,7 +242,7 @@ impl Analyzer<'_, '_> {
                         ty.assert_valid();
                         let ty = instantiate_class(self.ctx.module_id, ty);
                         ty.assert_valid();
-                        self.check_rvalue(span, &ty);
+                        self.check_rvalue(span, &v.name, &ty);
 
                         self.scope.this = Some(ty.clone().remove_falsy());
                         let mut value_ty = get_value_ty!(Some(&ty));
@@ -257,7 +262,7 @@ impl Analyzer<'_, '_> {
                         };
 
                         match self
-                            .assign_with_opts(opts, &ty, &value_ty)
+                            .assign_with_opts(&mut Default::default(), opts, &ty, &value_ty)
                             .context("tried to assign from var decl")
                         {
                             Ok(()) => {
@@ -322,6 +327,12 @@ impl Analyzer<'_, '_> {
                             }
                         }
 
+                        slog::debug!(
+                            self.logger,
+                            "[vars]: Type after generalization: {}",
+                            dump_type_as_string(&self.cm, &ty)
+                        );
+
                         if should_generalize_fully {
                             self.normalize_tuples(&mut ty);
                             ty = match ty.normalize() {
@@ -331,10 +342,11 @@ impl Analyzer<'_, '_> {
                                 }
 
                                 Type::Tuple(tuple)
-                                    if tuple.elems.iter().all(|e| match &*e.ty {
-                                        Type::Keyword(..) => true,
-                                        _ => false,
-                                    }) =>
+                                    if !tuple.elems.is_empty()
+                                        && tuple.elems.iter().all(|e| match &*e.ty {
+                                            Type::Keyword(..) => true,
+                                            _ => false,
+                                        }) =>
                                 {
                                     let mut types = tuple.elems.iter().map(|e| *e.ty.clone()).collect::<Vec<_>>();
                                     types.dedup_type();
@@ -354,6 +366,12 @@ impl Analyzer<'_, '_> {
                             };
                         }
 
+                        slog::debug!(
+                            self.logger,
+                            "[vars]: Type after normalization: {}",
+                            dump_type_as_string(&self.cm, &ty)
+                        );
+
                         match ty.normalize() {
                             Type::Ref(..) => {
                                 let ctx = Ctx {
@@ -363,6 +381,12 @@ impl Analyzer<'_, '_> {
                                     ..self.ctx
                                 };
                                 ty = self.with_ctx(ctx).expand(span, ty)?;
+
+                                slog::debug!(
+                                    self.logger,
+                                    "[vars]: Type after expansion: {}",
+                                    dump_type_as_string(&self.cm, &ty)
+                                );
                             }
                             _ => {}
                         }
@@ -491,14 +515,14 @@ impl Analyzer<'_, '_> {
                                 ty = self.with_ctx(ctx).expand(span, ty)?;
                             }
                         }
-                        self.check_rvalue(span, &ty);
+                        self.check_rvalue(span, &v.name, &ty);
 
                         let mut type_errors = Errors::default();
 
                         // Handle implicit any
 
                         match ty.normalize_mut() {
-                            Type::Tuple(Tuple { ref mut elems, .. }) => {
+                            Type::Tuple(Tuple { ref mut elems, .. }) if !elems.is_empty() => {
                                 for (i, element) in elems.iter_mut().enumerate() {
                                     let span = element.span();
 
@@ -577,6 +601,7 @@ impl Analyzer<'_, '_> {
                 if let Some(var_ty) = var_ty {
                     self.declare_complex_vars(kind, &v.name, var_ty, None)
                         .report(&mut self.storage);
+                    remove_declaring!();
                     return Ok(());
                 }
 
@@ -595,7 +620,7 @@ impl Analyzer<'_, '_> {
                         if !self.is_builtin {
                             // Report error if type is not found.
                             if let Some(ty) = &ty {
-                                self.normalize(&ty, Default::default()).report(&mut self.storage);
+                                self.normalize(None, &ty, Default::default()).report(&mut self.storage);
                             }
                         }
 
@@ -609,6 +634,7 @@ impl Analyzer<'_, '_> {
                             false,
                             // allow_multiple
                             kind == VarDeclKind::Var,
+                            false,
                         ) {
                             Ok(()) => {}
                             Err(err) => {

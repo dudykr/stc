@@ -1,0 +1,80 @@
+warning: Type
+ --> $DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/3.ts:5:40
+  |
+5 |     return class Inner<TInner> extends A<W> { }
+  |                                        ^
+  |
+  = note: typeof A
+
+warning: Type
+ --> $DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/3.ts:5:12
+  |
+5 |     return class Inner<TInner> extends A<W> { }
+  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: typeof Inner
+
+warning: Type
+ --> $DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/3.ts:8:16
+  |
+8 | let b3Number = B3<number>();
+  |                ^^
+  |
+  = note: <W>() => typeof Inner
+
+warning: Type
+ --> $DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/3.ts:8:16
+  |
+8 | let b3Number = B3<number>();
+  |                ^^^^^^^^^^^^
+  |
+  = note: typeof Inner
+
+warning: Type
+ --> $DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/3.ts:9:17
+  |
+9 | class S extends b3Number<string> {
+  |                 ^^^^^^^^
+  |
+  = note: typeof Inner
+
+warning: Type
+  --> $DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/3.ts:12:13
+   |
+12 | var s = new S();
+   |             ^
+   |
+   = note: typeof S
+
+warning: Type
+  --> $DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/3.ts:12:9
+   |
+12 | var s = new S();
+   |         ^^^^^^^
+   |
+   = note: S
+
+warning: Type
+  --> $DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/3.ts:13:1
+   |
+13 | s.genericVar = 12;
+   | ^
+   |
+   = note: S
+
+warning: Type
+  --> $DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/3.ts:13:1
+   |
+13 | s.genericVar = 12;
+   | ^^^^^^^^^^^^
+   |
+   = note: number
+
+warning: Type
+  --> $DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/3.ts:13:1
+   |
+13 | s.genericVar = 12;
+   | ^^^^^^^^^^^^^^^^^
+   |
+   = note: 12
+

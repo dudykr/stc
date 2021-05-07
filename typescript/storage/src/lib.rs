@@ -34,7 +34,7 @@ pub trait TypeStore: Send + Sync {
     fn get_local_type(&self, ctxt: ModuleId, id: Id) -> Option<Type>;
     fn get_local_var(&self, ctxt: ModuleId, id: Id) -> Option<Type>;
 
-    fn store_private_type(&mut self, ctxt: ModuleId, id: Id, ty: Type);
+    fn store_private_type(&mut self, ctxt: ModuleId, id: Id, ty: Type, should_override: bool);
     fn store_private_var(&mut self, ctxt: ModuleId, id: Id, ty: Type);
 
     fn export_type(&mut self, span: Span, ctxt: ModuleId, id: Id);
@@ -93,8 +93,8 @@ where
         (**self).get_local_var(ctxt, id)
     }
 
-    fn store_private_type(&mut self, ctxt: ModuleId, id: Id, ty: Type) {
-        (**self).store_private_type(ctxt, id, ty)
+    fn store_private_type(&mut self, ctxt: ModuleId, id: Id, ty: Type, should_override: bool) {
+        (**self).store_private_type(ctxt, id, ty, should_override)
     }
 
     fn store_private_var(&mut self, ctxt: ModuleId, id: Id, ty: Type) {
@@ -162,10 +162,17 @@ impl ErrorStore for Single<'_> {
 }
 
 impl TypeStore for Single<'_> {
-    fn store_private_type(&mut self, ctxt: ModuleId, id: Id, ty: Type) {
+    fn store_private_type(&mut self, ctxt: ModuleId, id: Id, ty: Type, should_override: bool) {
         debug_assert_eq!(ctxt, self.id);
 
-        self.info.exports.private_types.entry(id).or_default().push(ty);
+        if should_override {
+            if self.info.exports.types.contains_key(&id.sym()) {
+                self.info.exports.types.insert(id.sym().clone(), vec![ty.clone()]);
+            }
+            self.info.exports.private_types.insert(id, vec![ty]);
+        } else {
+            self.info.exports.private_types.entry(id).or_default().push(ty);
+        }
     }
 
     fn store_private_var(&mut self, ctxt: ModuleId, id: Id, ty: Type) {
@@ -309,14 +316,26 @@ impl ErrorStore for Group<'_> {
 }
 
 impl TypeStore for Group<'_> {
-    fn store_private_type(&mut self, ctxt: ModuleId, id: Id, ty: Type) {
-        self.info
-            .entry(ctxt)
-            .or_default()
-            .private_types
-            .entry(id)
-            .or_default()
-            .push(ty);
+    fn store_private_type(&mut self, ctxt: ModuleId, id: Id, ty: Type, should_override: bool) {
+        if should_override {
+            if self.info.entry(ctxt).or_default().types.contains_key(&id.sym()) {
+                self.info
+                    .entry(ctxt)
+                    .or_default()
+                    .types
+                    .insert(id.sym().clone(), vec![ty.clone()]);
+            }
+
+            self.info.entry(ctxt).or_default().private_types.insert(id, vec![ty]);
+        } else {
+            self.info
+                .entry(ctxt)
+                .or_default()
+                .private_types
+                .entry(id)
+                .or_default()
+                .push(ty);
+        }
     }
 
     fn store_private_var(&mut self, ctxt: ModuleId, id: Id, ty: Type) {
@@ -452,8 +471,9 @@ impl ErrorStore for Builtin {
 }
 
 impl TypeStore for Builtin {
-    fn store_private_type(&mut self, ctxt: ModuleId, id: Id, ty: Type) {
+    fn store_private_type(&mut self, ctxt: ModuleId, id: Id, ty: Type, should_override: bool) {
         debug_assert_eq!(ctxt, ModuleId::builtin());
+        debug_assert!(!should_override);
 
         self.types.entry(id.sym().clone()).or_default().push(ty);
     }

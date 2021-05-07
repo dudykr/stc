@@ -313,6 +313,7 @@ impl VisitMut<RClassMember> for DceForDts<'_> {
                     is_optional: *is_optional,
                     readonly: false,
                     definite: false,
+                    is_override: false,
                 });
                 return;
             }

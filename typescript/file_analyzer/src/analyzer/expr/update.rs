@@ -20,6 +20,11 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RUpdateExpr) -> ValidationResult {
         let span = e.span;
 
+        match &*e.arg {
+            RExpr::New(..) => self.storage.report(Error::ExprInvalidForUpdateArg { span }),
+            _ => {}
+        }
+
         let ty = e
             .arg
             .validate_with_args(self, (TypeOfMode::LValue, None, None))
@@ -32,6 +37,10 @@ impl Analyzer<'_, '_> {
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
                     ..
                 })
+                | Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                    ..
+                })
                 | Type::Lit(RTsLitType {
                     lit: RTsLit::Str(..), ..
                 })
@@ -39,7 +48,10 @@ impl Analyzer<'_, '_> {
                     lit: RTsLit::Bool(..), ..
                 })
                 | Type::TypeLit(..)
-                | Type::Array(..) => Err(Error::TypeInvalidForUpdateArg { span: e.arg.span() }),
+                | Type::Array(..)
+                | Type::Tuple(..)
+                | Type::This(..)
+                | Type::Function(..) => Err(Error::TypeInvalidForUpdateArg { span: e.arg.span() }),
 
                 Type::Enum(..) => Err(Error::CannotAssignToNonVariable { span: e.arg.span() }),
 
@@ -66,10 +78,7 @@ impl Analyzer<'_, '_> {
 
         if let Some(ty) = ty {
             if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) {
-                self.storage.report(Error::UpdateOpToSymbol {
-                    span: e.arg.span(),
-                    op: e.op,
-                })
+                self.storage.report(Error::InvalidNumericOperand { span: e.arg.span() })
             }
         }
 

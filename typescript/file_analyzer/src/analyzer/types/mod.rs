@@ -3,10 +3,22 @@ use crate::type_facts::TypeFacts;
 use crate::util::type_ext::TypeVecExt;
 use crate::ValidationResult;
 use fxhash::FxHashMap;
+use fxhash::FxHashSet;
+use rnode::Visit;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
+use rnode::VisitWith;
+use stc_ts_ast_rnode::RClassDecl;
+use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RNumber;
+use stc_ts_ast_rnode::RTsEntityName;
+use stc_ts_ast_rnode::RTsEnumDecl;
+use stc_ts_ast_rnode::RTsInterfaceDecl;
 use stc_ts_ast_rnode::RTsKeywordType;
+use stc_ts_ast_rnode::RTsModuleDecl;
+use stc_ts_ast_rnode::RTsModuleName;
+use stc_ts_ast_rnode::RTsTypeAliasDecl;
+use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_types::name::Name;
@@ -14,6 +26,7 @@ use stc_ts_types::Array;
 use stc_ts_types::ClassDef;
 use stc_ts_types::ClassMember;
 use stc_ts_types::ConstructorSignature;
+use stc_ts_types::Id;
 use stc_ts_types::Key;
 use stc_ts_types::MethodSignature;
 use stc_ts_types::Operator;
@@ -24,14 +37,20 @@ use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
 use stc_ts_types::TypeLitMetadata;
 use stc_ts_types::TypeParam;
+use stc_ts_types::TypeParamInstantiation;
+use stc_ts_types::Union;
 use stc_ts_utils::MapWithMut;
+use stc_utils::error::context;
+use stc_utils::ext::SpanExt;
+use stc_utils::stack;
 use stc_utils::TryOpt;
 use std::borrow::Cow;
+use std::collections::HashMap;
+use swc_atoms::js_word;
 use swc_common::Span;
 use swc_common::Spanned;
 use swc_common::SyntaxContext;
 use swc_common::TypeEq;
-use swc_common::DUMMY_SP;
 use swc_ecma_ast::MethodKind;
 use swc_ecma_ast::TsKeywordTypeKind;
 use swc_ecma_ast::TsTypeOperatorOp;
@@ -39,26 +58,16 @@ use swc_ecma_ast::TsTypeOperatorOp;
 mod keyof;
 mod mapped;
 mod narrowing;
+mod replace;
 mod type_param;
 
-#[derive(Debug, Clone, Copy)]
+/// All fields defaults to false.
+#[derive(Debug, Default, Clone, Copy)]
 pub(crate) struct NormalizeTypeOpts {
     pub preserve_mapped: bool,
     pub preserve_typeof: bool,
-    /// Used to prevent infinite recursion.
-    ///
-    /// 64 by default.
-    pub lefting_stack: u16,
-}
-
-impl Default for NormalizeTypeOpts {
-    fn default() -> Self {
-        Self {
-            preserve_mapped: false,
-            preserve_typeof: false,
-            lefting_stack: 64,
-        }
-    }
+    /// Should we normalize keywords as interfaces?
+    pub normalize_keywords: bool,
 }
 
 impl Analyzer<'_, '_> {
@@ -69,38 +78,66 @@ impl Analyzer<'_, '_> {
     ///  - [Type::Ref]
     ///  - [Type::Mapped]
     ///  - [Type::Alias]
+    ///
+    /// TOOD: Accept [Cow] to optimize performance
 
+    ///
+    /// # Span
+    ///
+    /// If `span` is provided, it will be used for types **created** by the
+    /// method. Otherwise the span of the original type is used.
     pub(crate) fn normalize<'a>(
         &mut self,
+        span: Option<Span>,
         ty: &'a Type,
         mut opts: NormalizeTypeOpts,
     ) -> ValidationResult<Cow<'a, Type>> {
-        let span = ty.span();
+        let actual_span = span.unwrap_or_else(|| ty.span());
         if !self.is_builtin {
-            debug_assert_ne!(span, DUMMY_SP, "Cannot normalize a type with dummy span\n{:?}", ty);
+            debug_assert!(
+                !actual_span.is_dummy(),
+                "Cannot normalize a type with dummy span\n{:?}",
+                ty
+            );
         }
 
-        opts.lefting_stack -= 1;
-        if opts.lefting_stack == 0 {
-            return Err(Error::StackOverlfow { span });
-        }
+        let _stack = stack::track(actual_span)?;
 
         let ty = ty.normalize();
 
         match ty {
             Type::Ref(_) => {
                 let ty = self
-                    .expand_top_ref(span, Cow::Borrowed(ty))
+                    .expand_top_ref(actual_span, Cow::Borrowed(ty))
                     .context("tried to expand a ref type as a part of normalization")?;
-                return Ok(Cow::Owned(self.normalize(&ty, opts)?.into_owned()));
+                return Ok(Cow::Owned(self.normalize(span, &ty, opts)?.into_owned()));
+            }
+
+            Type::Keyword(k) => {
+                if opts.normalize_keywords {
+                    let name = match k.kind {
+                        TsKeywordTypeKind::TsNumberKeyword => Some(js_word!("Number")),
+                        TsKeywordTypeKind::TsObjectKeyword => Some(js_word!("Number")),
+                        TsKeywordTypeKind::TsBooleanKeyword => Some(js_word!("Boolean")),
+                        TsKeywordTypeKind::TsStringKeyword => Some(js_word!("String")),
+                        TsKeywordTypeKind::TsSymbolKeyword => Some(js_word!("Symbol")),
+                        _ => None,
+                    };
+
+                    if let Some(name) = name {
+                        let global = self.env.get_global_type(actual_span, &name)?;
+
+                        return Ok(Cow::Owned(global));
+                    }
+                }
             }
 
             Type::Mapped(m) => {
                 if !opts.preserve_mapped {
-                    let ty = self.expand_mapped(span, m)?;
+                    let ty = self.expand_mapped(actual_span, m)?;
                     if let Some(ty) = ty {
                         return Ok(Cow::Owned(
-                            self.normalize(&ty, opts)
+                            self.normalize(span, &ty, opts)
                                 .context("tried to expand a mapped type as a part of normalization")?
                                 .into_owned(),
                         ));
@@ -108,12 +145,12 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            Type::Alias(a) => return Ok(Cow::Owned(self.normalize(&a.ty, opts)?.into_owned())),
+            Type::Alias(a) => return Ok(Cow::Owned(self.normalize(span, &a.ty, opts)?.into_owned())),
 
             // Leaf types.
             Type::Array(arr) => {
                 let elem_type = box self
-                    .normalize(&arr.elem_type, opts)
+                    .normalize(span, &arr.elem_type, opts)
                     .context("tried to normalize the type of the element of an array type")?
                     .into_owned();
                 return Ok(Cow::Owned(Type::Array(Array {
@@ -127,7 +164,6 @@ impl Analyzer<'_, '_> {
             | Type::Interface(..)
             | Type::Class(..)
             | Type::ClassDef(..)
-            | Type::Keyword(..)
             | Type::Tuple(..)
             | Type::Function(..)
             | Type::Constructor(..)
@@ -143,11 +179,115 @@ impl Analyzer<'_, '_> {
             Type::Union(_) | Type::Intersection(_) => {}
 
             Type::Conditional(c) => {
-                if let Some(v) = self.extends(ty.span(), &c.check_type, &c.extends_type) {
+                let mut check_type = self
+                    .normalize(span, &c.check_type, Default::default())
+                    .context("tried to normalize the `check` type of a conditional type")?
+                    .into_owned();
+
+                let extends_type = self
+                    .normalize(span, &c.extends_type, Default::default())
+                    .context("tried to normalize the `extends` type of a conditional type")?;
+
+                if let Some(v) = self.extends(ty.span(), Default::default(), &check_type, &extends_type) {
                     let ty = if v { &c.true_type } else { &c.false_type };
                     return self
-                        .normalize(&ty, opts)
+                        .normalize(span, &ty, opts)
                         .context("tried to normalize the calculated type of a conditional type");
+                }
+
+                match check_type.normalize() {
+                    Type::Union(check_type_union) => {
+                        let mut all = true;
+                        let mut types = vec![];
+                        for check_type in &check_type_union.types {
+                            let res = self.extends(ty.span(), Default::default(), &check_type, &extends_type);
+                            if let Some(v) = res {
+                                if v {
+                                    if !c.true_type.is_never() {
+                                        types.push(check_type.clone());
+                                    }
+                                } else {
+                                    if !c.false_type.is_never() {
+                                        types.push(check_type.clone());
+                                    }
+                                }
+                            } else {
+                                all = false;
+                                break;
+                            }
+                        }
+
+                        if all {
+                            types.dedup_type();
+                            let new = Type::Union(Union {
+                                span: actual_span,
+                                types,
+                            });
+
+                            return Ok(Cow::Owned(new));
+                        }
+                    }
+                    _ => {}
+                }
+
+                // TOOD: Optimize
+                // If we can calculate type using constraints, do so.
+                match check_type.normalize_mut() {
+                    Type::Param(TypeParam {
+                        name,
+                        constraint: Some(check_type_contraint),
+                        ..
+                    }) => {
+                        // We removes unmatchable constraints.
+                        // It means, for
+                        //
+                        // T: a type param extends string | undefined
+                        // A: T extends null | undefined ? never : T
+                        //
+                        // We removes `undefined` from parents of T.
+
+                        match check_type_contraint.normalize() {
+                            Type::Union(check_type_union) => {
+                                let mut all = true;
+                                let mut types = vec![];
+                                for check_type in &check_type_union.types {
+                                    let res = self.extends(ty.span(), Default::default(), &check_type, &extends_type);
+                                    if let Some(v) = res {
+                                        if v {
+                                            if !c.true_type.is_never() {
+                                                types.push(check_type.clone());
+                                            }
+                                        } else {
+                                            if !c.false_type.is_never() {
+                                                types.push(check_type.clone());
+                                            }
+                                        }
+                                    } else {
+                                        all = false;
+                                        break;
+                                    }
+                                }
+
+                                if all {
+                                    types.dedup_type();
+                                    let new = Type::Union(Union {
+                                        span: actual_span,
+                                        types,
+                                    });
+
+                                    *check_type_contraint = box new;
+
+                                    let mut params = HashMap::default();
+                                    params.insert(name.clone(), check_type);
+                                    let c = self.expand_type_params(&params, c.clone())?;
+
+                                    return Ok(Cow::Owned(Type::Conditional(c)));
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                    _ => {}
                 }
             }
 
@@ -156,11 +296,11 @@ impl Analyzer<'_, '_> {
                     match &*q.expr {
                         QueryExpr::TsEntityName(e) => {
                             let ty = self
-                                .resolve_typeof(span, e)
+                                .resolve_typeof(actual_span, e)
                                 .context("tried to resolve typeof as a part of normalization")?;
 
                             return Ok(Cow::Owned(
-                                self.normalize(&ty, opts)
+                                self.normalize(span, &ty, opts)
                                     .context("tried to normalize the type returned from typeof")?
                                     .into_owned(),
                             ));
@@ -187,7 +327,7 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {
                 let keys_ty = self
-                    .keyof(span, &ty)
+                    .keyof(actual_span, &ty)
                     .context("tried to get keys of a type as a part of normalization")?;
                 return Ok(Cow::Owned(keys_ty));
             }
@@ -208,7 +348,7 @@ impl Analyzer<'_, '_> {
             None => return Ok(None),
         };
 
-        let ty = self.normalize(ty, Default::default())?;
+        let ty = self.normalize(None, ty, Default::default())?;
 
         Ok(Some(ty))
     }
@@ -281,7 +421,11 @@ impl Analyzer<'_, '_> {
                 .flatten(),
         );
 
+        let before = dump_type_as_string(&self.cm, &ty);
         self.exclude_types(ty, Some(types_to_exclude));
+        let after = dump_type_as_string(&self.cm, &ty);
+
+        slog::debug!(self.logger, "[types/facts] Excluded types: {} => {}", before, after);
     }
 
     pub(crate) fn apply_type_facts(&mut self, name: &Name, ty: Type) -> Type {
@@ -361,6 +505,8 @@ impl Analyzer<'_, '_> {
         span: Span,
         ty: &'a Type,
     ) -> ValidationResult<Option<Cow<'a, TypeLit>>> {
+        let _ctx = context(format!("type_to_type_lit: {:?}", ty));
+
         debug_assert!(!span.is_dummy(), "type_to_type_lit: `span` should not be dummy");
 
         let ty = ty.normalize();
@@ -551,7 +697,7 @@ impl Analyzer<'_, '_> {
 
             Type::Query(..) => {
                 let ty = self
-                    .normalize(ty, Default::default())
+                    .normalize(None, ty, Default::default())
                     .context("tried to normalize a type to convert it to type literal")?;
                 let ty = self
                     .type_to_type_lit(span, &ty)
@@ -586,6 +732,43 @@ impl Analyzer<'_, '_> {
         v
     }
 
+    pub(crate) fn report_error_for_unresolve_type(
+        &mut self,
+        span: Span,
+        type_name: &RTsEntityName,
+        type_args: Option<&TypeParamInstantiation>,
+    ) -> ValidationResult<()> {
+        if self.is_builtin {
+            return Ok(());
+        }
+
+        let l = left(&type_name);
+        let top_id: Id = l.into();
+
+        let is_resolved = self.data.all_local_type_names.contains(&top_id)
+            || self.imports_by_id.contains_key(&top_id)
+            || self.env.get_global_type(l.span, &top_id.sym()).is_ok();
+
+        if is_resolved {
+            return Ok(());
+        }
+        let span = l.span.or_else(|| span);
+
+        match type_name {
+            RTsEntityName::TsQualifiedName(_) => Err(Error::NamspaceNotFound {
+                span,
+                name: box type_name.clone().into(),
+                ctxt: self.ctx.module_id,
+                type_args: type_args.cloned().map(Box::new),
+            }),
+            RTsEntityName::Ident(_) => Err(Error::TypeNotFound {
+                span,
+                name: box type_name.clone().into(),
+                ctxt: self.ctx.module_id,
+                type_args: type_args.cloned().map(Box::new),
+            }),
+        }
+    }
     /// Utility method to convert a class member to a type element.
     ///
     /// This method is used while inferring types and while assigning type
@@ -742,6 +925,78 @@ impl Analyzer<'_, '_> {
             self.exclude_type(ty, &excluded);
         }
     }
+
+    pub(crate) fn fill_known_type_names<N>(&mut self, node: N)
+    where
+        N: VisitWith<KnownTypeVisitor>,
+    {
+        if self.is_builtin {
+            return;
+        }
+        if !self.data.all_local_type_names.is_empty() {
+            return;
+        }
+
+        let mut v = KnownTypeVisitor::default();
+        node.visit_with(&mut v);
+        self.data.all_local_type_names.extend(v.type_names);
+    }
+}
+
+#[derive(Default)]
+pub(crate) struct KnownTypeVisitor {
+    type_names: FxHashSet<Id>,
+}
+
+impl KnownTypeVisitor {
+    fn add(&mut self, id: &RIdent) {
+        self.type_names.insert(id.into());
+    }
+}
+
+impl Visit<RClassDecl> for KnownTypeVisitor {
+    fn visit(&mut self, d: &RClassDecl) {
+        d.visit_children_with(self);
+
+        self.add(&d.ident);
+    }
+}
+
+impl Visit<RTsInterfaceDecl> for KnownTypeVisitor {
+    fn visit(&mut self, d: &RTsInterfaceDecl) {
+        d.visit_children_with(self);
+
+        self.add(&d.id);
+    }
+}
+
+impl Visit<RTsTypeAliasDecl> for KnownTypeVisitor {
+    fn visit(&mut self, d: &RTsTypeAliasDecl) {
+        d.visit_children_with(self);
+
+        self.add(&d.id);
+    }
+}
+
+impl Visit<RTsEnumDecl> for KnownTypeVisitor {
+    fn visit(&mut self, d: &RTsEnumDecl) {
+        d.visit_children_with(self);
+
+        self.add(&d.id);
+    }
+}
+
+impl Visit<RTsModuleDecl> for KnownTypeVisitor {
+    fn visit(&mut self, d: &RTsModuleDecl) {
+        d.visit_children_with(self);
+
+        match &d.id {
+            RTsModuleName::Ident(i) => {
+                self.add(&i);
+            }
+            RTsModuleName::Str(_) => {}
+        }
+    }
 }
 
 struct TupleNormalizer;
@@ -751,7 +1006,11 @@ impl VisitMut<Type> for TupleNormalizer {
         ty.visit_mut_children_with(self);
 
         match ty.normalize() {
-            Type::Tuple(..) => {
+            Type::Tuple(tuple) => {
+                if tuple.elems.is_empty() {
+                    return;
+                }
+
                 let span = ty.span();
                 let mut types = ty
                     .take()
@@ -776,5 +1035,12 @@ impl VisitMut<Type> for TupleNormalizer {
             }
             _ => {}
         }
+    }
+}
+
+pub(crate) fn left(t: &RTsEntityName) -> &RIdent {
+    match t {
+        RTsEntityName::TsQualifiedName(t) => left(&t.left),
+        RTsEntityName::Ident(i) => i,
     }
 }

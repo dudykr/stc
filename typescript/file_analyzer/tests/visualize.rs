@@ -14,6 +14,7 @@ use stc_ts_errors::Error;
 use stc_ts_file_analyzer::analyzer::Analyzer;
 use stc_ts_file_analyzer::analyzer::NoopLoader;
 use stc_ts_file_analyzer::env::Env;
+use stc_ts_file_analyzer::env::ModuleConfig;
 use stc_ts_file_analyzer::validator::ValidateWith;
 use stc_ts_file_analyzer::Rule;
 use stc_ts_storage::ErrorStore;
@@ -87,7 +88,7 @@ fn run_test(file_name: PathBuf, for_error: bool) {
                 panic!("Invalid directive: {:?}", line)
             }
 
-            let env = Env::simple(rule, JscTarget::Es2020, &libs);
+            let env = Env::simple(rule, JscTarget::Es2020, ModuleConfig::None, &libs);
             let stable_env = env.shared().clone();
             let generator = module_id::Generator::default();
             let path = Arc::new(file_name.clone());

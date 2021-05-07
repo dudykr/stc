@@ -1,4 +1,5 @@
 use dashmap::DashMap;
+use fxhash::FxBuildHasher;
 use std::{
     fs::File,
     io::Read,
@@ -44,13 +45,17 @@ where
             .unwrap()
             .to_string();
 
+        eprintln!("Test: {}", entry.path().display());
+
         let input = {
             let mut buf = String::new();
-            File::open(entry.path()).unwrap().read_to_string(&mut buf).unwrap();
+            if File::open(entry.path()).unwrap().read_to_string(&mut buf).is_err() {
+                continue;
+            }
             buf
         };
 
-        let test_name = file_name.replace("/", "::");
+        let test_name = format!("{}::{}", dir_name, file_name.replace("/", "::"));
         let test_fn = op(entry.path().to_path_buf());
         let (test_fn, ignore) = match test_fn {
             Some(v) => (v, false),
@@ -77,7 +82,7 @@ where
     tests
 }
 
-pub type CommentMap = Arc<DashMap<BytePos, Vec<Comment>>>;
+pub type CommentMap = Arc<DashMap<BytePos, Vec<Comment>, FxBuildHasher>>;
 
 /// Multi-threaded implementation of [Comments]
 #[derive(Clone, Default)]

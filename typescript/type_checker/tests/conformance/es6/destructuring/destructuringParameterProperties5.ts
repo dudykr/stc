@@ -1,4 +1,4 @@
-﻿type ObjType1 = { x: number; y: string; z: boolean }
+type ObjType1 = { x: number; y: string; z: boolean }
 type TupleType1 = [ObjType1, number, string]
 
 class C1 {

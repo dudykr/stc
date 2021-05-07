@@ -1,0 +1,8 @@
+warning: Type
+ --> $DIR/tests/pass/vars/duplicate/1.ts:3:12
+  |
+3 |     return r;
+  |            ^
+  |
+  = note: (x: T) => T
+

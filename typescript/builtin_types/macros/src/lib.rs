@@ -20,6 +20,20 @@ pub fn builtin(_: proc_macro::TokenStream) -> proc_macro::TokenStream {
         let cm = Arc::new(SourceMap::new(FilePathMapping::empty()));
 
         let mut deps = HashMap::<String, Vec<String>>::default();
+
+        {
+            let mut add_dep = |from: &str, to: &str| {
+                deps.entry(from.to_string()).or_default().push(to.to_string());
+            };
+
+            add_dep("Es2015", "Es5Full");
+            add_dep("Es2016", "Es2015Full");
+            add_dep("Es2017", "Es2016Full");
+            add_dep("Es2018", "Es2017Full");
+            add_dep("Es2019", "Es2018Full");
+            add_dep("Es2020", "Es2019Full");
+        }
+
         let mut contents = HashMap::<String, String>::default();
 
         let dir_str = ::std::env::var("CARGO_MANIFEST_DIR").expect("failed to read CARGO_MANIFEST_DIR");
@@ -231,7 +245,7 @@ pub fn builtin(_: proc_macro::TokenStream) -> proc_macro::TokenStream {
                         libs.into_iter().collect()
                     }
 
-                    fn deps(self) -> Vec<Self> {
+                    pub fn deps(self) -> Vec<Self> {
                         deps_body
                     }
                 }

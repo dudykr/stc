@@ -1,7 +1,16 @@
 use once_cell::sync::Lazy;
+use std::collections::HashMap;
+use std::collections::HashSet;
 use std::env;
 
+pub mod error;
+pub mod ext;
 pub mod panic_context;
+pub mod stack;
+
+pub type FastHashMap<K, V> = HashMap<K, V, ahash::RandomState>;
+
+pub type FastHashSet<V> = HashSet<V, ahash::RandomState>;
 
 #[cfg(all(unix, not(target_env = "musl")))]
 #[global_allocator]

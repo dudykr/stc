@@ -34,6 +34,8 @@ struct Fixer;
 
 impl VisitMut<Union> for Fixer {
     fn visit_mut(&mut self, u: &mut Union) {
+        u.visit_mut_children_with(self);
+
         let mut new: Vec<Type> = Vec::with_capacity(u.types.capacity());
         for ty in u.types.drain(..) {
             if new.iter().any(|stored| stored.type_eq(&ty)) {
@@ -42,6 +44,21 @@ impl VisitMut<Union> for Fixer {
             new.push(ty);
         }
         u.types = new;
+    }
+}
+
+impl VisitMut<Intersection> for Fixer {
+    fn visit_mut(&mut self, ty: &mut Intersection) {
+        ty.visit_mut_children_with(self);
+
+        let mut new: Vec<Type> = Vec::with_capacity(ty.types.capacity());
+        for ty in ty.types.drain(..) {
+            if new.iter().any(|stored| stored.type_eq(&ty)) {
+                continue;
+            }
+            new.push(ty);
+        }
+        ty.types = new;
     }
 }
 
@@ -65,6 +82,19 @@ impl VisitMut<Type> for Fixer {
                 }
                 1 => {
                     let elem = u.types.drain(..).next().unwrap();
+                    *ty = elem;
+                    return;
+                }
+                _ => {}
+            },
+
+            Type::Intersection(i) => match i.types.len() {
+                0 => {
+                    *ty = Type::any(i.span);
+                    return;
+                }
+                1 => {
+                    let elem = i.types.drain(..).next().unwrap();
                     *ty = elem;
                     return;
                 }

@@ -1,0 +1,24 @@
+warning: Type
+ --> $DIR/tests/pass/types/enums/object/entries.ts:2:38
+  |
+2 | export var entries5 = Object.entries(E);                   // [string, any][]
+  |                                      ^
+  |
+  = note: E
+
+warning: Type
+ --> $DIR/tests/pass/types/enums/object/entries.ts:2:23
+  |
+2 | export var entries5 = Object.entries(E);                   // [string, any][]
+  |                       ^^^^^^
+  |
+  = note: ObjectConstructor
+
+warning: Type
+ --> $DIR/tests/pass/types/enums/object/entries.ts:2:23
+  |
+2 | export var entries5 = Object.entries(E);                   // [string, any][]
+  |                       ^^^^^^^^^^^^^^^^^
+  |
+  = note: [string, E.A | E.B][]
+

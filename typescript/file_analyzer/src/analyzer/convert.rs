@@ -60,6 +60,7 @@ use stc_ts_ast_rnode::RTsUnionOrIntersectionType;
 use stc_ts_ast_rnode::RTsUnionType;
 use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
+use stc_ts_type_ops::Fix;
 use stc_ts_types::Alias;
 use stc_ts_types::Array;
 use stc_ts_types::CallSignature;
@@ -143,11 +144,18 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, p: &RTsTypeParam) -> ValidationResult<TypeParam> {
         self.record(p);
 
+        let ctx = Ctx {
+            in_actual_type: true,
+            ..self.ctx
+        };
+        let constraint = try_opt!(p.constraint.validate_with(&mut *self.with_ctx(ctx))).map(Box::new);
+        let default = try_opt!(p.default.validate_with(&mut *self.with_ctx(ctx))).map(Box::new);
+
         let param = TypeParam {
             span: p.span,
             name: p.name.clone().into(),
-            constraint: try_opt!(p.constraint.validate_with(self)).map(Box::new),
-            default: try_opt!(p.default.validate_with(self)).map(Box::new),
+            constraint,
+            default,
         };
         self.register_type(param.name.clone().into(), param.clone().into());
 
@@ -206,6 +214,13 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, d: &RTsInterfaceDecl) -> ValidationResult<Interface> {
         let ty: Interface = self.with_child(ScopeKind::Flow, Default::default(), |child| -> ValidationResult<_> {
+            match &*d.id.sym {
+                "any" | "void" | "never" | "string" | "number" | "boolean" | "null" | "undefined" | "symbol" => {
+                    child.storage.report(Error::InvalidInterfaceName { span: d.id.span });
+                }
+                _ => {}
+            }
+
             let mut ty = Interface {
                 span: d.span,
                 name: d.id.clone().into(),
@@ -214,8 +229,6 @@ impl Analyzer<'_, '_> {
                 body: d.body.validate_with(child)?,
             };
             child.prevent_expansion(&mut ty.body);
-
-            child.register_type(d.id.clone().into(), ty.clone().into());
 
             child.resolve_parent_interfaces(&d.extends);
 
@@ -336,6 +349,7 @@ impl Analyzer<'_, '_> {
             params: d.params.validate_with(self)?,
             readonly: d.readonly,
             type_ann: try_opt!(d.type_ann.validate_with(self)).map(Box::new),
+            is_static: d.is_static,
         })
     }
 }
@@ -427,15 +441,21 @@ impl Analyzer<'_, '_> {
     }
 }
 
+/// Order of evaluation is important to handle infer types correctly.
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsConditionalType) -> ValidationResult<Conditional> {
+        let check_type = box t.check_type.validate_with(self)?;
+        let extends_type = box t.extends_type.validate_with(self)?;
+        let true_type = box t.true_type.validate_with(self)?;
+        let false_type = box t.false_type.validate_with(self)?;
+
         Ok(Conditional {
             span: t.span,
-            check_type: box t.check_type.validate_with(self)?,
-            extends_type: box t.extends_type.validate_with(self)?,
-            true_type: box t.true_type.validate_with(self)?,
-            false_type: box t.false_type.validate_with(self)?,
+            check_type,
+            extends_type,
+            true_type,
+            false_type,
         })
     }
 }
@@ -499,7 +519,11 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsFnType) -> ValidationResult<stc_ts_types::Function> {
-        self.with_scope_for_type_params(|child: &mut Analyzer| {
+        let ctx = Ctx {
+            in_ts_fn_type: true,
+            ..self.ctx
+        };
+        self.with_ctx(ctx).with_scope_for_type_params(|child: &mut Analyzer| {
             let type_params = try_opt!(t.type_params.validate_with(child));
 
             for param in &t.params {
@@ -594,11 +618,17 @@ impl Analyzer<'_, '_> {
                     }
 
                     if !self.is_builtin && !found && self.ctx.in_actual_type {
-                        self.storage.report(Error::NoSuchType { span, name: i.into() })
+                        if let Some(..) = self.scope.get_var(&i.into()) {
+                            self.storage
+                                .report(Error::NoSuchTypeButVarExists { span, name: i.into() })
+                        }
                     }
                 } else {
                     if !self.is_builtin && self.ctx.in_actual_type {
-                        self.storage.report(Error::NoSuchType { span, name: i.into() })
+                        if let Some(..) = self.scope.get_var(&i.into()) {
+                            self.storage
+                                .report(Error::NoSuchTypeButVarExists { span, name: i.into() })
+                        }
                     }
                 }
             }
@@ -608,6 +638,9 @@ impl Analyzer<'_, '_> {
 
         if !self.is_builtin {
             slog::warn!(self.logger, "Crating a ref from TsTypeRef: {:?}", t.type_name);
+
+            self.report_error_for_unresolve_type(t.span, &t.type_name, type_args.as_deref())
+                .report(&mut self.storage);
         }
         let mut span = t.span;
         if contains_infer {
@@ -750,10 +783,10 @@ impl Analyzer<'_, '_> {
             RTsType::TsKeywordType(ty) => Type::Keyword(ty.clone()),
             RTsType::TsTupleType(ty) => Type::Tuple(ty.validate_with(self)?),
             RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsUnionType(u)) => {
-                Type::Union(u.validate_with(self)?)
+                Type::Union(u.validate_with(self)?).fixed()
             }
             RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsIntersectionType(i)) => {
-                Type::Intersection(i.validate_with(self)?)
+                Type::Intersection(i.validate_with(self)?).fixed()
             }
             RTsType::TsArrayType(arr) => Type::Array(arr.validate_with(self)?),
             RTsType::TsFnOrConstructorType(RTsFnOrConstructorType::TsFnType(f)) => {
@@ -875,7 +908,7 @@ impl Analyzer<'_, '_> {
                             if let Some(m) = &mut self.mutations {
                                 m.for_pats.entry(arr.node_id).or_default().ty.take().unwrap()
                             } else {
-                                Type::any(DUMMY_SP)
+                                unreachable!();
                             }
                         }
                         Some(RPat::Object(ref obj)) => {
@@ -884,7 +917,7 @@ impl Analyzer<'_, '_> {
                             if let Some(m) = &mut self.mutations {
                                 m.for_pats.entry(obj.node_id).or_default().ty.take().unwrap()
                             } else {
-                                Type::any(DUMMY_SP)
+                                unreachable!();
                             }
                         }
 

@@ -174,7 +174,7 @@ warning: Type
 8 | t1 = a!.m!({ x: 12 });
   |      ^^^^
   |
-  = note: <T>(obj: {
+  = note: undefined | <T>(obj: {
               x: T;
           }) => T
 

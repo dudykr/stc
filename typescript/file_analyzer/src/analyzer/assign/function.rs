@@ -1,7 +1,10 @@
+use super::AssignData;
 use super::AssignOpts;
 use crate::analyzer::Analyzer;
 use crate::ValidationResult;
 use fxhash::FxHashMap;
+use itertools::EitherOrBoth;
+use itertools::Itertools;
 use stc_ts_ast_rnode::RBindingIdent;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RPat;
@@ -31,6 +34,7 @@ impl Analyzer<'_, '_> {
     /// ```
     pub(super) fn assign_to_function(
         &mut self,
+        data: &mut AssignData,
         opts: AssignOpts,
         lt: &Type,
         l: &Function,
@@ -85,13 +89,21 @@ impl Analyzer<'_, '_> {
                 //
                 // So we check for length first.
                 if r_params.len() != 0 {
-                    self.assign_params(opts, &l.params, &r_params, true)
+                    self.assign_params(data, opts, &l.params, &r_params)
                         .context("tried to assign parameters of a function to parameters of another function")?;
                 }
 
                 // TODO: Verify type parameters.
-                self.assign_inner(&l.ret_ty, r_ret_ty, opts)
-                    .context("tried to assign the return type of a function to the return type of another function")?;
+                self.assign_inner(
+                    data,
+                    &l.ret_ty,
+                    r_ret_ty,
+                    AssignOpts {
+                        allow_assignment_of_void: true,
+                        ..opts
+                    },
+                )
+                .context("tried to assign the return type of a function to the return type of another function")?;
 
                 return Ok(());
             }
@@ -100,12 +112,12 @@ impl Analyzer<'_, '_> {
                 for rm in &rt.members {
                     match rm {
                         TypeElement::Call(rm) => {
-                            if self.assign_params(opts, &l.params, &rm.params, true).is_err() {
+                            if self.assign_params(data, opts, &l.params, &rm.params).is_err() {
                                 continue;
                             }
 
                             if let Some(r_ret_ty) = &rm.ret_ty {
-                                if self.assign_with_opts(opts, &l.ret_ty, &r_ret_ty).is_err() {
+                                if self.assign_with_opts(data, opts, &l.ret_ty, &r_ret_ty).is_err() {
                                     continue;
                                 }
                             }
@@ -121,7 +133,7 @@ impl Analyzer<'_, '_> {
                 let ty = self.type_to_type_lit(span, r)?.map(Cow::into_owned).map(Type::TypeLit);
                 if let Some(ty) = ty {
                     return self
-                        .assign_to_function(opts, lt, l, &ty)
+                        .assign_to_function(data, opts, lt, l, &ty)
                         .context("tried to assign an expanded type to a function");
                 }
             }
@@ -133,6 +145,7 @@ impl Analyzer<'_, '_> {
 
     pub(super) fn assign_to_constructor(
         &mut self,
+        data: &mut AssignData,
         opts: AssignOpts,
         lt: &Type,
         l: &Constructor,
@@ -173,11 +186,11 @@ impl Analyzer<'_, '_> {
                     _ => (&rc.params, &rc.type_ann),
                 };
 
-                self.assign_params(opts, &l.params, &r_params, true).context(
+                self.assign_params(data, opts, &l.params, &r_params).context(
                     "tried to assign the parameters of constructor to the parameters of another constructor",
                 )?;
 
-                self.assign_with_opts(opts, &l.type_ann, &r_type_ann).context(
+                self.assign_with_opts(data, opts, &l.type_ann, &r_type_ann).context(
                     "tried to assign the return type of constructor to the return type of another constructor",
                 )?;
 
@@ -192,22 +205,21 @@ impl Analyzer<'_, '_> {
                 for (idx, rm) in rt.members.iter().enumerate() {
                     match rm {
                         TypeElement::Constructor(rc) => {
-                            if let Err(err) =
-                                self.assign_params(opts, &l.params, &rc.params, false).with_context(|| {
-                                    format!(
-                                        "tried to assign parameters of a constructor to them of another constructor \
-                                         ({}th element)",
-                                        idx
-                                    )
-                                })
-                            {
+                            if let Err(err) = self.assign_params(data, opts, &l.params, &rc.params).with_context(|| {
+                                format!(
+                                    "tried to assign parameters of a constructor to them of another constructor ({}th \
+                                     element)",
+                                    idx
+                                )
+                            }) {
                                 errors.push(err);
                                 continue;
                             }
 
                             if let Some(r_ret_ty) = &rc.ret_ty {
-                                if let Err(err) =
-                                    self.assign_with_opts(opts, &l.type_ann, &r_ret_ty).with_context(|| {
+                                if let Err(err) = self
+                                    .assign_with_opts(data, opts, &l.type_ann, &r_ret_ty)
+                                    .with_context(|| {
                                         format!(
                                             "tried to  assign the return type of a constructor to it of another \
                                              constructor ({}th element)",
@@ -233,7 +245,7 @@ impl Analyzer<'_, '_> {
                 let ty = self.type_to_type_lit(span, r)?.map(Cow::into_owned).map(Type::TypeLit);
                 if let Some(ty) = ty {
                     return self
-                        .assign_to_constructor(opts, lt, l, &ty)
+                        .assign_to_constructor(data, opts, lt, l, &ty)
                         .context("tried to assign an expanded type to a constructor type");
                 }
             }
@@ -243,21 +255,116 @@ impl Analyzer<'_, '_> {
         Err(Error::SimpleAssignFailed { span })
     }
 
-    /// ``ts
+    /// Assigns a parameter to another one.
+    /// It may assign in reverse direction because of the rule 1.
+    /// At the same time, it should not be reversed in some cases. (See rule 2)
+    ///
+    /// ## Rule 1
+    ///
+    /// ```ts
     /// declare let a: (parent: 'foo' | 'bar') => void
     /// declare let b: (parent: 'bar') => void
     ///
     /// a = b // error
     /// b = a // ok
     /// ```
+    ///
+    /// Valid assignment is `foo | bar` = `bar`, which is `a.param[0] =
+    /// b.param[0]`, but it doesn't match `b = a`.
+    ///
+    /// ## Rule 2
+    ///
+    /// ```ts
+    /// class Base {
+    ///     private foo!: string
+    /// }
+    /// class Derived extends Base {
+    ///     private bar!: string
+    /// }
+    ///
+    /// declare var a: (y: Derived) => any;
+    /// declare var b: (y: Base) => any
+    ///
+    /// a = b // ok
+    /// b = a // error
+    /// ```
+    ///
+    /// Valid assignment is `Derived = Base`, which is `a.params[0] =
+    /// b.param[0]` and it matches `a = b`.
+    ///
+    /// # Notes
+    ///
+    ///  - `string` is assignable to `...args: any[]`.
+    fn assign_param(
+        &mut self,
+        data: &mut AssignData,
+        l: &FnParam,
+        r: &FnParam,
+        opts: AssignOpts,
+    ) -> ValidationResult<()> {
+        debug_assert!(
+            !opts.span.is_dummy(),
+            "Cannot assign function parameters with dummy span"
+        );
+
+        match l.pat {
+            RPat::Rest(..) => match l.ty.normalize() {
+                Type::Array(l_arr) => {
+                    if let Ok(()) = self.assign_with_opts(data, opts, &l_arr.elem_type, &r.ty) {
+                        return Ok(());
+                    }
+                }
+                _ => {}
+            },
+            _ => {}
+        }
+
+        // TODO: Change this to extends call.
+
+        let l_ty = self.normalize(Some(opts.span), &l.ty, Default::default())?;
+        let r_ty = self.normalize(Some(opts.span), &r.ty, Default::default())?;
+        let reverse = match (l_ty.normalize(), r_ty.normalize()) {
+            (Type::Union(..), Type::Union(..)) => false,
+            (_, Type::Union(..)) => true,
+            _ => false,
+        };
+
+        if reverse {
+            self.assign_with_opts(data, opts, &r.ty, &l.ty)
+                .context("tried to assign the type of a parameter to another (reversed)")?;
+        } else {
+            self.assign_with_opts(data, opts, &l.ty, &r.ty)
+                .context("tried to assign the type of a parameter to another")?;
+        }
+
+        Ok(())
+    }
+
+    /// # Validation of parameter count
+    ///
+    /// A parameter named `this` is excluded.
+    ///
+    ///
+    /// ## Rule
+    ///
+    /// ```ts
+    /// declare var a: (x: string) => any;
+    /// declare var b: (x: string, y: number) => any
+    ///
+    /// a = b // error
+    /// b = a // ok
+    /// ```
+    ///
+    /// So, it's an error if `l.params.len() < r.params.len()`.
     pub(crate) fn assign_params(
         &mut self,
+        data: &mut AssignData,
         opts: AssignOpts,
         l: &[FnParam],
         r: &[FnParam],
-        reverse: bool,
     ) -> ValidationResult<()> {
         let span = opts.span;
+
         let li = l.iter().filter(|p| match p.pat {
             RPat::Ident(RBindingIdent {
                 id: RIdent {
@@ -277,46 +384,64 @@ impl Analyzer<'_, '_> {
             _ => true,
         });
 
+        let l_has_rest = l.iter().any(|p| match p.pat {
+            RPat::Rest(..) => true,
+            _ => false,
+        });
+
         // TODO: Consider optional parameters.
-        if li.clone().count() < ri.clone().count() {
+
+        let required_li = li.clone().filter(|i| i.required);
+        let required_ri = ri.clone().filter(|i| i.required);
+
+        if opts.for_overload {
+            if required_li.clone().count() > required_ri.clone().count() {
+                return Err(Error::SimpleAssignFailed { span });
+            }
+        }
+
+        if !l_has_rest && required_li.clone().count() < required_ri.clone().count() {
+            // I don't know why, but overload signature does not need to match overloaded
+            // signature.
+            if opts.for_overload {
+                return Ok(());
+            }
+
             return Err(Error::SimpleAssignFailed { span });
         }
 
-        for (lp, rp) in li.zip(ri) {
-            // TODO: What should we do?
-            if opts.allow_assignment_to_param {
-                if let Ok(()) = self.assign_inner(
-                    &rp.ty,
-                    &lp.ty,
-                    AssignOpts {
-                        allow_unknown_type: true,
-                        ..opts
-                    },
-                ) {
-                    continue;
-                }
-            }
+        for pair in li.zip_longest(ri) {
+            match pair {
+                EitherOrBoth::Both(lp, rp) => {
+                    // TODO: What should we do?
+                    if opts.allow_assignment_to_param {
+                        if let Ok(()) = self.assign_param(
+                            data,
+                            &rp,
+                            &lp,
+                            AssignOpts {
+                                allow_unknown_type: true,
+                                ..opts
+                            },
+                        ) {
+                            continue;
+                        }
+                    }
 
-            if reverse {
-                self.assign_inner(
-                    &rp.ty,
-                    &lp.ty,
-                    AssignOpts {
-                        allow_unknown_type: true,
-                        ..opts
-                    },
-                )
-            } else {
-                self.assign_inner(
-                    &lp.ty,
-                    &rp.ty,
-                    AssignOpts {
-                        allow_unknown_type: true,
-                        ..opts
-                    },
-                )
+                    self.assign_param(
+                        data,
+                        lp,
+                        rp,
+                        AssignOpts {
+                            allow_unknown_type: true,
+                            ..opts
+                        },
+                    )
+                    .with_context(|| format!("tried to assign a method parameter to a method parameter",))?;
+                }
+                EitherOrBoth::Left(_) => {}
+                EitherOrBoth::Right(_) => {}
             }
-            .context("tried to assign a method parameter to a method parameter")?;
         }
 
         Ok(())

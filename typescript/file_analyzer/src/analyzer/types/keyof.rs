@@ -20,6 +20,7 @@ use stc_ts_types::Ref;
 use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
 use stc_ts_types::Union;
+use stc_utils::error::context;
 use swc_atoms::js_word;
 use swc_common::Span;
 use swc_common::DUMMY_SP;
@@ -33,8 +34,14 @@ impl Analyzer<'_, '_> {
     /// ## `ty`
     /// Should be operand of `keyof`.
     pub(super) fn keyof(&mut self, span: Span, ty: &Type) -> ValidationResult<Type> {
+        let _ctx = context(format!("keyof: {}", dump_type_as_string(&self.cm, ty)));
+
+        if !self.is_builtin {
+            debug_assert!(!span.is_dummy(), "Cannot perform `keyof` operation with dummy span");
+        }
+
         let ty = self
-            .normalize(ty, NormalizeTypeOpts { ..Default::default() })
+            .normalize(Some(span), ty, NormalizeTypeOpts { ..Default::default() })
             .context("tried to normalize")?;
 
         match ty.normalize() {

@@ -14,5 +14,7 @@ export interface E2 extends Base {
 
 declare var e2: E2
 e2.foo
+e2.foo.name
+e2.foo.value
 e2.bar
 e2.baz

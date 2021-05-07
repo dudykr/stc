@@ -1,5 +1,4 @@
 //! A module to validate while type checking
-
 use backtrace::Backtrace;
 use rnode::Fold;
 use rnode::FoldWith;
@@ -14,6 +13,7 @@ use stc_ts_types::Type;
 use stc_ts_types::TypeLit;
 use stc_ts_types::TypeParam;
 use std::collections::HashSet;
+use std::fmt::Write;
 use swc_common::{sync::Lrc, SourceMap, DUMMY_SP};
 use swc_ecma_ast::*;
 use swc_ecma_codegen::{text_writer::JsWriter, Emitter};
@@ -71,7 +71,15 @@ pub fn dump_type_as_string(cm: &Lrc<SourceMap>, t: &Type) -> String {
             })
             .unwrap();
     }
-    let s = String::from_utf8_lossy(&buf).replace("TYPE as", "");
+    let mut s = String::from_utf8_lossy(&buf).replace("TYPE as", "");
+
+    match t.normalize() {
+        Type::ClassDef(..) => {
+            writeln!(s, "\n{:?}", t.normalize()).unwrap();
+        }
+        _ => {}
+    }
+
     let s = s.trim();
 
     s.to_string()

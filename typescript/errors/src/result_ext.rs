@@ -5,7 +5,7 @@ pub trait DebugExt<T>: Into<Result<T, Error>> {
     where
         F: FnOnce(Error) -> Error,
     {
-        self.into().map_err(|err| op(err))
+        self.into().map_err(|err: Error| err.convert(op))
     }
 
     #[inline]

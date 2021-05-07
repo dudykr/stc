@@ -13,6 +13,7 @@ use stc_ts_types::ModuleId;
 use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeParamInstantiation;
+use stc_utils::stack::StackOverflowError;
 use std::borrow::Cow;
 use std::fmt;
 use std::fmt::Debug;
@@ -58,6 +59,211 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2392
+    DuplciateConstructor {
+        span: Span,
+    },
+
+    /// TS2307
+    ModuleNotFound {
+        span: Span,
+    },
+
+    /// TS5061
+    TooManyAsterisk {
+        span: Span,
+    },
+
+    /// TS2451
+    DuplicateVar {
+        name: Id,
+        span: Span,
+    },
+
+    /// TS2725
+    ClassNameCannotBeObjectWhenTargetingEs5WithModule {
+        span: Span,
+    },
+
+    /// TS2461
+    NotArrayType {
+        span: Span,
+    },
+
+    /// TS2495
+    NotArrayTypeNorStringType {
+        span: Span,
+    },
+
+    /// TS2569
+    NotArrayTypeNorStringTypeButDownlevelIterationWouldWork {
+        span: Span,
+    },
+
+    /// TS2494
+    ForOfStringUsedInEs3 {
+        span: Span,
+    },
+
+    /// TS2480
+    LetOrConstIsNotValidIdInLetOrConstVarDecls {
+        span: Span,
+    },
+
+    /// TS2406
+    InvalidExprOfLhsOfForIn {
+        span: Span,
+    },
+
+    /// TS2487
+    InvalidExprOfLhsOfForOf {
+        span: Span,
+    },
+
+    /// TS2405
+    WrongTypeForLhsOfForInLoop {
+        span: Span,
+    },
+
+    /// TS2491
+    DestructuringBindingNotAllowedInLhsOfForIn {
+        span: Span,
+    },
+
+    /// TS2404
+    TypeAnnOnLhsOfForInLoops {
+        span: Span,
+    },
+
+    /// TS2483
+    TypeAnnOnLhsOfForOfLoops {
+        span: Span,
+    },
+
+    /// TS18013
+    CannotAccessPrivatePropertyFromOutside {
+        span: Span,
+    },
+
+    /// TS18011
+    CannotDeletePrivateProperty {
+        span: Span,
+    },
+
+    /// TS18012
+    ConstructorIsKeyword {
+        span: Span,
+    },
+
+    /// TS18022
+    PrivateIdUsedAsMethodName {
+        span: Span,
+    },
+
+    /// TS2334
+    ThisInStaticPropertyInitializer {
+        span: Span,
+    },
+
+    /// TS2507
+    InvalidSuperClass {
+        span: Span,
+    },
+
+    /// TS2410
+    WithStmtNotSupported {
+        span: Span,
+    },
+
+    /// TS2503
+    NamspaceNotFound {
+        name: Box<Name>,
+        ctxt: ModuleId,
+        type_args: Option<Box<TypeParamInstantiation>>,
+        span: Span,
+    },
+
+    /// TS2452
+    EnumMemberIdCannotBeNumber {
+        span: Span,
+    },
+
+    /// TS2364
+    InvalidLhsOfAssign {
+        span: Span,
+    },
+
+    /// TS7010
+    ImplicitReturnType {
+        span: Span,
+    },
+
+    /// TS2394
+    ImcompatibleFnOverload {
+        span: Span,
+        cause: Box<Error>,
+    },
+
+    /// TS2371
+    InitializerDisallowedInAmbientContext {
+        span: Span,
+    },
+
+    /// TS2414
+    InvalidClassName {
+        span: Span,
+    },
+
+    /// TS18004
+    NoSuchVarForShorthand {
+        span: Span,
+        name: Id,
+    },
+
+    /// TS2769
+    NoMatchingOverload {
+        span: Span,
+    },
+
+    /// TS2427
+    InvalidInterfaceName {
+        span: Span,
+    },
+
+    // TS2350
+    CannotCallWithNewNonVoidFunction {
+        span: Span,
+    },
+
+    /// TS2300
+    DuplicateProperty {
+        span: Span,
+    },
+
+    /// TS2661
+    CannotExportNonLocalVar {
+        span: Span,
+    },
+
+    /// TS2699
+    StaticPropertyCannotBeNamedProptotype {
+        span: Span,
+    },
+
+    /// TS2506
+    SelfReferentialSuperClass {
+        span: Span,
+    },
+
+    /// TS2507
+    NotConstructorType {
+        span: Span,
+    },
+
+    /// TS2395
+    ExportMixedWithLocal {
+        span: Span,
+    },
     /// TS2420
     ClassIncorrectlyImplementsInterface {
         span: Span,
@@ -131,10 +337,12 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2357
     ExprInvalidForUpdateArg {
         span: Span,
     },
 
+    /// TS2356
     TypeInvalidForUpdateArg {
         span: Span,
     },
@@ -292,6 +500,11 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS7022
+    ImplicitAnyBecauseOfSelfRef {
+        span: Span,
+    },
+
     TupleAssignError {
         span: Span,
         errors: Vec<Error>,
@@ -311,11 +524,23 @@ pub enum Error {
         name: Id,
     },
 
+    /// TS2749
+    NoSuchTypeButVarExists {
+        span: Span,
+        name: Id,
+    },
+
+    /// TS2496
+    InvalidUseOfArgumentsInEs3OrEs5 {
+        span: Span,
+    },
+
     NoSuchVar {
         span: Span,
         name: Id,
     },
 
+    /// TS2693
     TypeUsedAsVar {
         span: Span,
         name: Id,
@@ -326,6 +551,7 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2695
     UselessSeqExpr {
         span: Span,
     },
@@ -368,6 +594,7 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2539
     NotVariable {
         // Span of rhs
         span: Span,
@@ -488,11 +715,13 @@ pub enum Error {
         items: Vec<Id>,
     },
 
+    /// TS2351
     NoNewSignature {
         span: Span,
         callee: Box<Type>,
     },
 
+    /// TS2349
     NoCallSignature {
         span: Span,
         callee: Box<Type>,
@@ -592,7 +821,8 @@ pub enum Error {
         span: Span,
     },
 
-    TS2394 {
+    /// TS2394
+    WrongOverloadSignature {
         span: Span,
     },
 
@@ -608,12 +838,18 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2390
+    ConstructorImplMissingOrNotFollowedByDecl {
+        span: Span,
+    },
+
     /// TS2391
     FnImplMissingOrNotFollowedByDecl {
         span: Span,
     },
 
-    TS2464 {
+    /// TS2464
+    InvalidTypeForComputedProperty {
         span: Span,
         ty: Box<Type>,
     },
@@ -650,6 +886,7 @@ pub enum Error {
         span: Span,
     },
 
+    /// Type used as a variable, but changing target library can fix the issue.
     TS2585 {
         span: Span,
     },
@@ -677,6 +914,11 @@ pub enum Error {
         /// Span of the argument.
         span: Span,
         op: UnaryOp,
+    },
+
+    /// TS2356
+    InvalidNumericOperand {
+        span: Span,
     },
 
     /// `TS2469`
@@ -711,6 +953,7 @@ pub enum Error {
         op: AssignOp,
     },
 
+    /// TS2471
     NonSymbolComputedPropInFormOfSymbol {
         span: Span,
     },
@@ -742,6 +985,11 @@ pub enum Error {
     NoCallabelPropertyWithName {
         span: Span,
         key: Box<Key>,
+    },
+
+    /// TS2548
+    MustHaveSymbolIteratorThatReturnsIteratorOrMustBeArray {
+        span: Span,
     },
 
     MustHaveSymbolIteratorThatReturnsIterator {
@@ -781,6 +1029,7 @@ impl Error {
         self.convert_all_inner(&mut op)
     }
 
+    #[cfg_attr(not(debug_assertions), inline(always))]
     pub fn actual(&self) -> &Self {
         match self {
             Error::DebugContext(ctx) => ctx.inner.actual(),
@@ -928,12 +1177,13 @@ impl Error {
             Error::TS2363 { .. } => 2363,
             Error::TS2365 { .. } => 2365,
             Error::TS2370 { .. } => 2370,
-            Error::TS2394 { .. } => 2394,
+            Error::WrongOverloadSignature { .. } => 2394,
             Error::TS1166 { .. } => 1166,
             Error::TS1345 { .. } => 1345,
             Error::TS2353 { .. } => 2353,
+            Error::ConstructorImplMissingOrNotFollowedByDecl { .. } => 2390,
             Error::FnImplMissingOrNotFollowedByDecl { .. } => 2391,
-            Error::TS2464 { .. } => 2464,
+            Error::InvalidTypeForComputedProperty { .. } => 2464,
             Error::TS2356 { .. } => 2356,
             Error::TS2369 { .. } => 2369,
             Error::TS2389 { .. } => 2389,
@@ -959,13 +1209,17 @@ impl Error {
 
             Error::SuperInClassWithoutSuper { .. } => 2335,
 
-            Error::NoSuchProperty { .. } | Error::NoSuchPropertyInThis { .. } | Error::NoSuchPropertyInClass { .. } => {
-                2339
-            }
+            Error::NoSuchProperty { .. }
+            | Error::NoSuchPropertyInThis { .. }
+            | Error::NoSuchPropertyInClass { .. }
+            | Error::NoSuchPropertyInModule { .. } => 2339,
+
             Error::AssignOpCannotBeApplied { .. } => 2365,
             Error::NonSymbolComputedPropInFormOfSymbol { .. } => 2471,
-            Error::TypeUsedAsVar { .. } => 2585,
+            Error::TypeUsedAsVar { .. } => 2693,
             Error::TypeNotFound { .. } => 2304,
+
+            Error::NotVariable { .. } => 2539,
 
             Error::NoInitAndNoDefault { .. } => 2525,
 
@@ -982,6 +1236,7 @@ impl Error {
 
             Error::NoSuchVar { .. } => 2304,
             Error::NoSuchType { .. } => 2304,
+            Error::NoSuchTypeButVarExists { .. } => 2749,
             Error::NoSuchVarButThisHasSuchProperty { .. } => 2663,
 
             Error::CannotAssignAbstractConstructorToNonAbstractConstructor { .. } => 2322,
@@ -1030,6 +1285,8 @@ impl Error {
 
             Error::NumericUnaryOpToSymbol { .. } => 2469,
 
+            Error::InvalidNumericOperand { .. } => 2356,
+
             Error::UpdateOpToSymbol { .. } => 2469,
 
             Error::UselessSeqExpr { .. } => 2695,
@@ -1050,9 +1307,11 @@ impl Error {
 
             Error::MustHaveSymbolIteratorThatReturnsIterator { .. } => 2488,
 
+            Error::MustHaveSymbolIteratorThatReturnsIteratorOrMustBeArray { .. } => 2548,
+
             Error::NoSuchPropertyWhileDeclWithBidningPat { .. } => 2525,
 
-            Error::NoNewSignature { .. } => 2555,
+            Error::NoNewSignature { .. } => 2351,
 
             Error::Unknown { .. } => 2571,
 
@@ -1070,7 +1329,116 @@ impl Error {
 
             Error::ClassIncorrectlyImplementsInterface { .. } => 2420,
 
+            Error::ExportMixedWithLocal { .. } => 2395,
+
+            Error::NotConstructorType { .. } => 2507,
+
+            Error::SelfReferentialSuperClass { .. } => 2506,
+
+            Error::StaticPropertyCannotBeNamedProptotype { .. } => 2699,
+
+            Error::CannotExportNonLocalVar { .. } => 2661,
+
+            Error::DuplicateProperty { .. } => 2300,
+
+            Error::CannotCallWithNewNonVoidFunction { .. } => 2350,
+
+            Error::InvalidInterfaceName { .. } => 2427,
+
+            Error::InvalidUseOfArgumentsInEs3OrEs5 { .. } => 2496,
+
+            Error::NoMatchingOverload { .. } => 2769,
+
+            Error::NoSuchVarForShorthand { .. } => 18004,
+
+            Error::NoCallSignature { .. } => 2349,
+
+            Error::InvalidClassName { .. } => 2414,
+
+            Error::InitializerDisallowedInAmbientContext { .. } => 2371,
+
+            Error::ImcompatibleFnOverload { .. } => 2394,
+
+            Error::ImplicitReturnType { .. } => 7010,
+
+            Error::InvalidLhsOfAssign { .. } => 2364,
+
+            Error::EnumMemberIdCannotBeNumber { .. } => 2452,
+
+            Error::NamspaceNotFound { .. } => 2503,
+
+            Error::WithStmtNotSupported { .. } => 2410,
+
+            Error::InvalidSuperClass { .. } => 2507,
+
+            Error::ThisInStaticPropertyInitializer { .. } => 2334,
+
+            Error::ImplicitAny { .. } => 7008,
+
+            Error::ImplicitAnyBecauseOfSelfRef { .. } => 7022,
+
+            Error::ConstructorIsKeyword { .. } => 18012,
+
+            Error::PrivateIdUsedAsMethodName { .. } => 18022,
+
+            Error::CannotDeletePrivateProperty { .. } => 18011,
+
+            Error::CannotAccessPrivatePropertyFromOutside { .. } => 18013,
+
+            Error::TypeAnnOnLhsOfForInLoops { .. } => 2404,
+            Error::TypeAnnOnLhsOfForOfLoops { .. } => 2483,
+
+            Error::DestructuringBindingNotAllowedInLhsOfForIn { .. } => 2491,
+
+            Error::WrongTypeForLhsOfForInLoop { .. } => 2405,
+
+            Error::InvalidExprOfLhsOfForIn { .. } => 2406,
+            Error::InvalidExprOfLhsOfForOf { .. } => 2487,
+
+            Error::LetOrConstIsNotValidIdInLetOrConstVarDecls { .. } => 2480,
+            Error::ForOfStringUsedInEs3 { .. } => 2494,
+
+            Error::NotArrayType { .. } => 2461,
+            Error::NotArrayTypeNorStringType { .. } => 2495,
+            Error::NotArrayTypeNorStringTypeButDownlevelIterationWouldWork { .. } => 2569,
+
+            Error::NoCallabelPropertyWithName { .. } => 2349,
+
+            Error::NotGeneric { .. } => 2315,
+
+            Error::ReadOnly { .. } => 2546,
+
+            Error::ClassNameCannotBeObjectWhenTargetingEs5WithModule { .. } => 2725,
+
+            Error::DuplicateVar { .. } => 2451,
+
+            Error::TooManyAsterisk { .. } => 5061,
+
+            Error::ModuleNotFound { .. } => 2307,
+
+            Error::DuplciateConstructor { .. } => 2392,
+
             _ => 0,
+        }
+    }
+
+    pub fn is_var_not_found(&self) -> bool {
+        match self.actual() {
+            Self::NoSuchVar { .. }
+            | Self::NoSuchVarButThisHasSuchProperty { .. }
+            | Self::NoSuchVarForShorthand { .. } => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_assign_failure(&self) -> bool {
+        self.code() == 2322
+    }
+
+    pub fn is_type_not_found(&self) -> bool {
+        match self.actual() {
+            Self::NoSuchType { .. } | Self::NoSuchTypeButVarExists { .. } => true,
+            _ => false,
         }
     }
 
@@ -1215,5 +1583,11 @@ impl Extend<Error> for Errors {
         } else {
             self.0.extend(iter)
         }
+    }
+}
+
+impl From<StackOverflowError> for Error {
+    fn from(e: StackOverflowError) -> Self {
+        Error::StackOverlfow { span: e.span }
     }
 }

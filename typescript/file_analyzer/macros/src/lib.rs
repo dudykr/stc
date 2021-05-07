@@ -8,10 +8,36 @@ extern crate proc_macro;
 
 use pmutil::{Quote, ToTokensExt};
 use swc_macros_common::prelude::*;
+use syn::Block;
+use syn::LitStr;
 use syn::{
     fold::Fold, ExprTryBlock, FnArg, Ident, ImplItem, ImplItemMethod, ItemImpl, Lifetime, ReturnType, Token, Type,
     TypeReference,
 };
+
+#[proc_macro_attribute]
+pub fn context(arg: proc_macro::TokenStream, item: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    let context_arg: LitStr = syn::parse(arg).unwrap();
+    let mut item: ImplItemMethod = syn::parse(item).expect("failed to parse input as an item");
+
+    let body = q!(
+        Vars {
+            body: &item.block,
+            context_arg
+        },
+        ({
+            let _ctx = stc_utils::error::context(context_arg);
+            let res: Result<_, stc_ts_errors::Error> = try { body };
+
+            res.context(context_arg)
+        })
+    )
+    .parse::<Block>();
+
+    item.block = body;
+
+    print("context", item.dump())
+}
 
 /// This macro converts
 ///
