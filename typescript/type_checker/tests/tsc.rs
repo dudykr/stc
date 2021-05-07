@@ -192,6 +192,12 @@ fn load_expected_errors(ts_file: &Path) -> Result<Vec<RefError>, Error> {
                     err.code = "TS2307".to_string();
                 }
 
+                // TS2372: Referenced while initialization.
+                // TS2448: Referenced while initialization and the variable is declared with let or const.
+                "TS2448" => {
+                    err.code = "TS2372".to_string();
+                }
+
                 _ => {}
             }
         }
