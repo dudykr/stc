@@ -1965,6 +1965,7 @@ types/stringLiteral/stringLiteralCheckedInIf01.ts
 types/stringLiteral/stringLiteralCheckedInIf02.ts
 types/stringLiteral/stringLiteralMatchedInSwitch01.ts
 types/stringLiteral/stringLiteralTypeAssertion01.ts
+types/stringLiteral/stringLiteralTypesAndLogicalOrExpressions01.ts
 types/stringLiteral/stringLiteralTypesAndParenthesizedExpressions01.ts
 types/stringLiteral/stringLiteralTypesAndTuples01.ts
 types/stringLiteral/stringLiteralTypesAsTags01.ts
