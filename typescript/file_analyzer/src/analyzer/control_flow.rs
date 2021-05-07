@@ -707,7 +707,9 @@ impl Analyzer<'_, '_> {
             RPat::Array(ref arr) => {
                 let ty = self
                     .get_iterator(span, Cow::Borrowed(&ty))
-                    .context("tried to convert a type to an iterator to assign with an array pattern")?;
+                    .context("tried to convert a type to an iterator to assign with an array pattern")
+                    .report(&mut self.storage)
+                    .unwrap_or_else(|| Cow::Owned(Type::any(span)));
                 //
                 for (i, elem) in arr.elems.iter().enumerate() {
                     if let Some(elem) = elem {
@@ -740,6 +742,12 @@ impl Analyzer<'_, '_> {
                             Type::Tuple(Tuple { elems, .. }) => {
                                 if elems.len() > i {
                                     self.try_assign_pat_with_opts(span, elem, &elems[i].ty, opts)?;
+                                } else {
+                                    self.storage.report(Error::TupleIndexError {
+                                        span,
+                                        len: elems.len(),
+                                        index: i,
+                                    });
                                 }
                             }
 
