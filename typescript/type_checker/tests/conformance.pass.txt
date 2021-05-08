@@ -1823,6 +1823,7 @@ types/any/assignEveryTypeToAny.ts
 types/conditional/inferTypes2.ts
 types/contextualTypes/commaOperator/contextuallyTypeCommaOperator01.ts
 types/contextualTypes/commaOperator/contextuallyTypeCommaOperator02.ts
+types/contextualTypes/commaOperator/contextuallyTypeCommaOperator03.ts
 types/contextualTypes/logicalAnd/contextuallyTypeLogicalAnd01.ts
 types/contextualTypes/logicalAnd/contextuallyTypeLogicalAnd02.ts
 types/contextualTypes/partiallyAnnotatedFunction/partiallyAnnotatedFunctionInferenceError.ts
