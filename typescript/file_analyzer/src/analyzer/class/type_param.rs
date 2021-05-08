@@ -5,6 +5,7 @@ use rnode::VisitWith;
 use stc_ts_errors::Error;
 use stc_ts_types::Id;
 use stc_ts_types::TypeParam;
+use swc_common::Span;
 
 impl Analyzer<'_, '_> {
     pub(crate) fn is_type_param_declared_in_containing_class(&mut self, id: &Id) -> bool {
@@ -18,13 +19,15 @@ impl Analyzer<'_, '_> {
                 if scope.kind() != ScopeKind::Class {
                     return false;
                 }
-                parent.declaring_type_params.contains(&id)
+                dbg!(&scope.declaring_type_params);
+                scope.declaring_type_params.contains(&id)
             })
             .is_some()
     }
 }
 
 pub(super) struct StaticTypeParamValidator<'a, 'b, 'c> {
+    pub span: Span,
     pub analyzer: &'a mut Analyzer<'b, 'c>,
 }
 
@@ -35,7 +38,7 @@ impl Visit<TypeParam> for StaticTypeParamValidator<'_, '_, '_> {
         if self.analyzer.is_type_param_declared_in_containing_class(&param.name) {
             self.analyzer
                 .storage
-                .report(Error::StaticMemberCannotUseTypeParamOfClass { span: param.span })
+                .report(Error::StaticMemberCannotUseTypeParamOfClass { span: self.span })
         }
     }
 }

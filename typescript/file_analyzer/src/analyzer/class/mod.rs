@@ -157,7 +157,10 @@ impl Analyzer<'_, '_> {
             .map(Box::new);
 
         if p.is_static {
-            value.visit_with(&mut StaticTypeParamValidator { analyzer: self });
+            value.visit_with(&mut StaticTypeParamValidator {
+                span: p.span,
+                analyzer: self,
+            });
         }
 
         match p.accessibility {
