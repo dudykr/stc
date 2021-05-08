@@ -1884,7 +1884,10 @@ impl Analyzer<'_, '_> {
                 let scope = if self.ctx.in_computed_prop_name {
                     self.scope.scope_of_computed_props()
                 } else {
-                    Some(&self.scope)
+                    self.scope.first(|scope| match scope.kind() {
+                        ScopeKind::TypeParams | ScopeKind::Flow => false,
+                        _ => true,
+                    })
                 };
 
                 match scope.map(|scope| scope.kind()) {
