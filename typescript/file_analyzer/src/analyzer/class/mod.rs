@@ -1050,6 +1050,8 @@ impl Analyzer<'_, '_> {
                     self.storage.report(Error::InvalidClassName { span: c.span });
                 }
                 "Object" if self.env.target() <= EsVersion::Es5 => match self.env.module() {
+                    ModuleConfig::None if self.ctx.in_declare => {}
+
                     ModuleConfig::None
                     | ModuleConfig::Umd
                     | ModuleConfig::System
