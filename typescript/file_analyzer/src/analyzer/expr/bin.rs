@@ -646,10 +646,17 @@ impl Analyzer<'_, '_> {
                     return Ok(lt);
                 }
 
-                if self.may_generalize(&lt) || (type_ann.is_none() && self.ctx.can_generalize_literals()) {
+                let can_generalize = type_ann.is_none()
+                    && self.ctx.can_generalize_literals()
+                    && match (&**left, &**right) {
+                        (_, RExpr::Ident(..)) => false,
+                        _ => true,
+                    };
+
+                if can_generalize || self.may_generalize(&lt) {
                     lt = lt.generalize_lit();
                 }
-                if self.may_generalize(&rt) || (type_ann.is_none() && self.ctx.can_generalize_literals()) {
+                if can_generalize || self.may_generalize(&rt) {
                     rt = rt.generalize_lit();
                 }
 
