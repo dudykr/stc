@@ -1445,6 +1445,16 @@ impl Type {
             _ => false,
         }
     }
+
+    pub fn is_num_lit(&self) -> bool {
+        match self.normalize() {
+            Type::Lit(RTsLitType {
+                lit: RTsLit::Number(..),
+                ..
+            }) => true,
+            _ => false,
+        }
+    }
 }
 
 //impl Type {

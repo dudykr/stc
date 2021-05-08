@@ -258,7 +258,7 @@ impl Analyzer<'_, '_> {
                     right: (&**right, rt.normalize()),
                 };
 
-                if !self.has_overlap(span, &lt, &rt)? {
+                if !self.is_valid_for_switch_case(span, &lt, &rt)? {
                     if self.ctx.in_switch_case_test {
                         self.storage.report(Error::SwitchCaseTestNotCompatible { span })
                     } else {
@@ -744,6 +744,18 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
+    fn is_valid_for_switch_case(&mut self, span: Span, disc_ty: &Type, case_ty: &Type) -> ValidationResult<bool> {
+        if disc_ty.type_eq(case_ty) {
+            return Ok(true);
+        }
+
+        if disc_ty.is_num_lit() && case_ty.is_num_lit() {
+            return Ok(false);
+        }
+
+        self.has_overlap(span, &disc_ty, &case_ty)
+    }
+
     /// We have to check for inheritnace.
     ///
     /// ```ts
