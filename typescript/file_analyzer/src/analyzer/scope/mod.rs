@@ -1,4 +1,5 @@
 use super::assign::AssignOpts;
+use super::class::ClassState;
 use super::{control_flow::CondFacts, expr::TypeOfMode, stmt::return_type::ReturnValues, Analyzer, Ctx};
 use crate::analyzer::expr::IdCtx;
 use crate::analyzer::ResultExt;
@@ -124,6 +125,9 @@ pub(crate) struct Scope<'a> {
     /// It means we need a way to know which module we are in, and this field is
     /// used to store module name.
     pub(super) cur_module_name: Option<Id>,
+
+    /// All states related to validation of a class.
+    pub(super) class: ClassState,
 }
 
 impl Scope<'_> {
@@ -378,6 +382,7 @@ impl Scope<'_> {
             is_call_arg_count_unknown: self.is_call_arg_count_unknown,
             type_params: self.type_params,
             cur_module_name: self.cur_module_name,
+            class: self.class,
         }
     }
 
@@ -1776,7 +1781,6 @@ impl<'a> Scope<'a> {
         Scope {
             logger,
             parent,
-
             kind,
             declaring: Default::default(),
             declared_return_type: None,
@@ -1796,6 +1800,7 @@ impl<'a> Scope<'a> {
             is_call_arg_count_unknown: false,
             type_params: Default::default(),
             cur_module_name: None,
+            class: Default::default(),
         }
     }
 

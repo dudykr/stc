@@ -89,6 +89,9 @@ use swc_ecma_utils::private_ident;
 mod order;
 mod type_param;
 
+#[derive(Debug, Default)]
+pub(crate) struct ClassState {}
+
 impl Analyzer<'_, '_> {
     fn validate_type_of_class_property(
         &mut self,
