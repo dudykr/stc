@@ -500,6 +500,16 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS7052
+    ImplicitAnyBecauseNoIndexSignatureExists {
+        span: Span,
+    },
+
+    /// TS7053
+    ImplicitAnyBecauseIndexTypeIsWrong {
+        span: Span,
+    },
+
     /// TS7022
     ImplicitAnyBecauseOfSelfRef {
         span: Span,
@@ -1420,6 +1430,10 @@ impl Error {
             Error::ThisInStaticPropertyInitializer { .. } => 2334,
 
             Error::ImplicitAny { .. } => 7005,
+
+            Error::ImplicitAnyBecauseNoIndexSignatureExists { .. } => 7052,
+
+            Error::ImplicitAnyBecauseIndexTypeIsWrong { .. } => 70543,
 
             Error::ImplicitAnyBecauseOfSelfRef { .. } => 7022,
 
