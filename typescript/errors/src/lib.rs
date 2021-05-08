@@ -1433,7 +1433,7 @@ impl Error {
 
             Error::ImplicitAnyBecauseNoIndexSignatureExists { .. } => 7052,
 
-            Error::ImplicitAnyBecauseIndexTypeIsWrong { .. } => 70543,
+            Error::ImplicitAnyBecauseIndexTypeIsWrong { .. } => 7053,
 
             Error::ImplicitAnyBecauseOfSelfRef { .. } => 7022,
 
