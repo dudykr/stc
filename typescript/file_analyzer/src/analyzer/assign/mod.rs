@@ -681,6 +681,7 @@ impl Analyzer<'_, '_> {
                             rhs,
                         )
                         .context("tried to assign to an element of an intersection type")
+                        .convert_err(|err| Error::SimpleAssignFailed { span: err.span() })
                     {
                         Ok(..) => {}
                         Err(err) => errors.push(err),
