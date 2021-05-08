@@ -1146,6 +1146,11 @@ impl Error {
             // TS2569: Not an array, string or no Symbol.iterator but downlevel iteration will work.
             2548 | 2549 | 2569 => 2461,
 
+            // TS7005; No implicit any for variables.
+            // TS7006; No implicit any for parameters.
+            // TS7008; No implicit any for members.
+            7005 | 7006 | 7008 => 7005,
+
             _ => code,
         }
     }
@@ -1414,7 +1419,7 @@ impl Error {
 
             Error::ThisInStaticPropertyInitializer { .. } => 2334,
 
-            Error::ImplicitAny { .. } => 7008,
+            Error::ImplicitAny { .. } => 7005,
 
             Error::ImplicitAnyBecauseOfSelfRef { .. } => 7022,
 
