@@ -1496,11 +1496,14 @@ impl Analyzer<'_, '_> {
 
             Type::Keyword(RTsKeywordType { kind, .. }) if !self.is_builtin => {
                 match prop {
-                    Key::Computed(prop) => match prop.ty.normalize() {
-                        Type::Keyword(RTsKeywordType {
-                            kind: TsKeywordTypeKind::TsStringKeyword,
-                            ..
-                        }) => {
+                    Key::Computed(prop) => match (*kind, prop.ty.normalize()) {
+                        (
+                            TsKeywordTypeKind::TsObjectKeyword,
+                            Type::Keyword(RTsKeywordType {
+                                kind: TsKeywordTypeKind::TsStringKeyword,
+                                ..
+                            }),
+                        ) => {
                             self.storage.report(Error::ImplicitAnyBecauseIndexTypeIsWrong { span });
 
                             return Ok(Type::any(span));
