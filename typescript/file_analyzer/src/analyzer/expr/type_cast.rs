@@ -1,6 +1,7 @@
 use super::{super::Analyzer, TypeOfMode};
 use crate::analyzer::assign::AssignOpts;
 use crate::analyzer::util::ResultExt;
+use crate::util::is_str_or_union;
 use crate::{analyzer::util::instantiate_class, ty::Type, validator, validator::ValidateWith, ValidationResult};
 use stc_ts_ast_rnode::RTsAsExpr;
 use stc_ts_ast_rnode::RTsKeywordType;
@@ -86,7 +87,7 @@ impl Analyzer<'_, '_> {
     fn validate_type_cast_inner(&mut self, span: Span, orig: &Type, casted: &Type) -> ValidationResult<()> {
         // I don't know why this is valid, but `stringLiteralsWithTypeAssertions01.ts`
         // has some tests for this.
-        if orig.is_str() && casted.is_str() {
+        if is_str_or_union(&orig) && casted.is_str() {
             return Ok(());
         }
 
