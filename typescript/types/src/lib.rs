@@ -1409,6 +1409,7 @@ impl<'a> Iterator for Iter<'a> {
 impl FusedIterator for Iter<'_> {}
 
 impl Type {
+    /// Returns true if `self` is a `string` or a string literal.
     pub fn is_str(&self) -> bool {
         match self.normalize() {
             Type::Keyword(RTsKeywordType {
@@ -1416,6 +1417,15 @@ impl Type {
                 ..
             })
             | Type::Lit(RTsLitType {
+                lit: RTsLit::Str(..), ..
+            }) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_str_lit(&self) -> bool {
+        match self.normalize() {
+            Type::Lit(RTsLitType {
                 lit: RTsLit::Str(..), ..
             }) => true,
             _ => false,
