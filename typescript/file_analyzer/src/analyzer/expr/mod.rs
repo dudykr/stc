@@ -179,10 +179,14 @@ impl Analyzer<'_, '_> {
                         self.storage.report(Error::ThisRefToModuleOrNamespace { span })
                     }
 
+                    // Use globalThis
                     if !self.scope.is_this_defined() {
-                        return Ok(Type::Keyword(RTsKeywordType {
+                        return Ok(Type::Query(QueryType {
                             span,
-                            kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                            expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(RIdent::new(
+                                "globalThis".into(),
+                                span.with_ctxt(SyntaxContext::empty()),
+                            ))),
                         }));
                     }
 
