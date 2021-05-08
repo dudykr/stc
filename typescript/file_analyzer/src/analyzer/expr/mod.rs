@@ -1504,7 +1504,7 @@ impl Analyzer<'_, '_> {
                                 ..
                             }),
                         ) => {
-                            if self.rule().no_implicit_any {
+                            if self.rule().no_implicit_any && !self.rule().suppress_implicit_any_index_errors {
                                 self.storage.report(Error::ImplicitAnyBecauseIndexTypeIsWrong { span });
                             }
 
