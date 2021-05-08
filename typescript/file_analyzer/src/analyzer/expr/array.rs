@@ -539,6 +539,10 @@ impl Analyzer<'_, '_> {
                 &[],
                 None,
             )
+            .convert_err(|err| match err {
+                Error::NoCallabelPropertyWithName { span, .. } => Error::NoMethodNamedNext { span },
+                _ => err,
+            })
             .context("tried calling `next()` to get element type of iterator")?;
 
         let mut elem_ty = self

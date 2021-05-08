@@ -992,6 +992,11 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2489
+    NoMethodNamedNext {
+        span: Span,
+    },
+
     NoCallabelPropertyWithName {
         span: Span,
         key: Box<Key>,
@@ -1463,6 +1468,8 @@ impl Error {
             Error::NotArrayTypeNorStringTypeButDownlevelIterationWouldWork { .. } => 2569,
 
             Error::NoCallabelPropertyWithName { .. } => 2349,
+
+            Error::NoMethodNamedNext { .. } => 2489,
 
             Error::NotGeneric { .. } => 2315,
 
