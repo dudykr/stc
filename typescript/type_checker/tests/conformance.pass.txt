@@ -1753,6 +1753,7 @@ statements/VariableStatements/recursiveInitializer.ts
 statements/breakStatements/doWhileBreakStatements.ts
 statements/breakStatements/forBreakStatements.ts
 statements/breakStatements/forInBreakStatements.ts
+statements/breakStatements/invalidSwitchBreakStatement.ts
 statements/breakStatements/switchBreakStatements.ts
 statements/breakStatements/whileBreakStatements.ts
 statements/continueStatements/doWhileContinueStatements.ts
