@@ -555,12 +555,17 @@ impl Analyzer<'_, '_> {
             }
 
             if !is_last {
-                match e.validate_with_default(self) {
+                let ctx = Ctx {
+                    in_useless_expr_for_seq: true,
+                    ..self.ctx
+                };
+                let mut a = self.with_ctx(ctx);
+                match e.validate_with_default(&mut *a) {
                     Ok(..) => {}
                     Err(Error::ReferencedInInit { .. }) => {
                         is_any = true;
                     }
-                    Err(err) => self.storage.report(err),
+                    Err(err) => a.storage.report(err),
                 }
             }
         }

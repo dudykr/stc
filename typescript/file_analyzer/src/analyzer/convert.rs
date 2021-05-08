@@ -869,10 +869,11 @@ impl Analyzer<'_, '_> {
         }
 
         if self.env.rule().no_implicit_any {
-            if !self.ctx.in_argument
+            dbg!(&self.ctx);
+            let no_type_ann = !self.ctx.in_argument
                 && !(self.ctx.in_return_arg && self.ctx.in_fn_with_return_type)
-                && !self.ctx.in_assign_rhs
-            {
+                && !self.ctx.in_assign_rhs;
+            if no_type_ann || self.ctx.in_useless_expr_for_seq {
                 self.storage.report(Error::ImplicitAny { span: i.id.span });
             }
         }

@@ -139,6 +139,8 @@ pub(crate) struct Ctx {
 
     is_calling_iife: bool,
 
+    in_useless_expr_for_seq: bool,
+
     in_ts_fn_type: bool,
 
     /// `true` if unresolved references should be rerpoted.
@@ -460,6 +462,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 in_async: false,
                 in_generator: false,
                 is_calling_iife: false,
+                in_useless_expr_for_seq: false,
                 in_ts_fn_type: false,
                 in_actual_type: false,
                 report_error_for_non_local_vars: false,
