@@ -622,6 +622,7 @@ es6/for-ofStatements/for-of11.ts
 es6/for-ofStatements/for-of12.ts
 es6/for-ofStatements/for-of13.ts
 es6/for-ofStatements/for-of14.ts
+es6/for-ofStatements/for-of16.ts
 es6/for-ofStatements/for-of17.ts
 es6/for-ofStatements/for-of18.ts
 es6/for-ofStatements/for-of19.ts
@@ -701,6 +702,7 @@ es6/shorthandPropertyAssignment/objectLiteralShorthandPropertiesWithModuleES6.ts
 es6/spread/arrayLiteralSpread.ts
 es6/spread/arrayLiteralSpreadES5iterable.ts
 es6/spread/iteratorSpreadInArray.ts
+es6/spread/iteratorSpreadInArray10.ts
 es6/spread/iteratorSpreadInArray11.ts
 es6/spread/iteratorSpreadInArray2.ts
 es6/spread/iteratorSpreadInArray3.ts
