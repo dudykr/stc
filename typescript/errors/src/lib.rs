@@ -1504,20 +1504,6 @@ impl Error {
 
     fn msg(&self) -> Cow<'static, str> {
         match self {
-            Self::FnImplMissingOrNotFollowedByDecl { .. } => {
-                "Function implementation is missing or not immediately following the declaration".into()
-            }
-            Self::NonOverlappingTypeCast { .. } => "Conversion of type may be a mistake because neither type \
-                                                    sufficiently overlaps with the other. If this was intentional, \
-                                                    convert the expression to 'unknown' first."
-                .into(),
-
-            Self::AssignOpCannotBeApplied { op, .. } => format!("Operator '{}' cannot be applied to types", op).into(),
-
-            Self::NonSymbolComputedPropInFormOfSymbol { .. } => {
-                "A computed property name of the form '{TODO}' must be of type 'symbol'.".into()
-            }
-
             Self::Unimplemented { msg, .. } => format!("unimplemented: {}", msg).into(),
 
             _ => format!("{:#?}", self).into(),
