@@ -1890,6 +1890,7 @@ types/nonPrimitive/nonPrimitiveAccessProperty.ts
 types/nonPrimitive/nonPrimitiveAsProperty.ts
 types/nonPrimitive/nonPrimitiveInFunction.ts
 types/nonPrimitive/nonPrimitiveIndexingWithForIn.ts
+types/nonPrimitive/nonPrimitiveIndexingWithForInNoImplicitAny.ts
 types/nonPrimitive/nonPrimitiveIndexingWithForInSupressError.ts
 types/nonPrimitive/nonPrimitiveRhsSideOfInExpression.ts
 types/nonPrimitive/nonPrimitiveUnionIntersection.ts
