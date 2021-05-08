@@ -90,7 +90,12 @@ mod order;
 mod type_param;
 
 #[derive(Debug, Default)]
-pub(crate) struct ClassState {}
+pub(crate) struct ClassState {
+    /// Used only while valdiation consturctors.
+    ///
+    /// `false` means `this` can be used.
+    pub need_super_call: bool,
+}
 
 impl Analyzer<'_, '_> {
     fn validate_type_of_class_property(
