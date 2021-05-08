@@ -515,7 +515,13 @@ impl Analyzer<'_, '_> {
                         fail!()
                     }
                 }
-                _ => {}
+                _ => {
+                    if opts.for_castablity {
+                        if rhs.is_kwd(TsKeywordTypeKind::TsStringKeyword) {
+                            return Ok(());
+                        }
+                    }
+                }
             },
 
             Type::Ref(left) => {
