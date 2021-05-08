@@ -329,6 +329,7 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2678
     SwitchCaseTestNotCompatible {
         span: Span,
     },
