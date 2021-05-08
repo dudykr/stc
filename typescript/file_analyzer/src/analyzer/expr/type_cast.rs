@@ -194,7 +194,13 @@ impl Analyzer<'_, '_> {
         }
 
         self.castable(span, &orig, &casted)
-            .map(|_| ())
+            .and_then(|castable| {
+                if castable {
+                    Ok(())
+                } else {
+                    Err(Error::NonOverlappingTypeCast { span })
+                }
+            })
             .convert_err(|err| Error::NonOverlappingTypeCast { span })
     }
 
