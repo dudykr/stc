@@ -629,10 +629,10 @@ impl Analyzer<'_, '_> {
                     if l_key.type_eq(&*r_key) {
                         match lm {
                             TypeElement::Property(ref lp) => match rm {
-                                TypeElement::Property(ref r_el) => {
-                                    if lp.accessibility != r_el.accessibility {
+                                TypeElement::Property(ref rp) => {
+                                    if lp.accessibility != rp.accessibility {
                                         if lp.accessibility == Some(Accessibility::Private)
-                                            || r_el.accessibility == Some(Accessibility::Private)
+                                            || rp.accessibility == Some(Accessibility::Private)
                                         {
                                             return Err(Error::AssignFailedDueToAccessibility { span });
                                         }
@@ -642,8 +642,24 @@ impl Analyzer<'_, '_> {
                                     (|| {
                                         if opts.for_castablity {
                                             if lp.optional {
-                                                if let Some(r_ty) = &r_el.type_ann {
+                                                if let Some(r_ty) = &rp.type_ann {
                                                     if r_ty.is_undefined() {
+                                                        return Ok(());
+                                                    }
+                                                }
+                                            }
+
+                                            if rp.optional {
+                                                if let Some(lt) = &lp.type_ann {
+                                                    if let Ok(()) = self.assign_with_opts(
+                                                        data,
+                                                        opts,
+                                                        &lt,
+                                                        &Type::Keyword(RTsKeywordType {
+                                                            span,
+                                                            kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                                                        }),
+                                                    ) {
                                                         return Ok(());
                                                     }
                                                 }
@@ -653,7 +669,7 @@ impl Analyzer<'_, '_> {
                                         self.assign_inner(
                                             data,
                                             lp.type_ann.as_deref().unwrap_or(&Type::any(span)),
-                                            r_el.type_ann.as_deref().unwrap_or(&Type::any(span)),
+                                            rp.type_ann.as_deref().unwrap_or(&Type::any(span)),
                                             opts,
                                         )
                                     })()?;
