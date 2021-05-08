@@ -159,14 +159,22 @@ impl Analyzer<'_, '_> {
                         self.storage.report(Error::ThisInStaticPropertyInitializer { span })
                     }
 
-                    let is_ref_to_module = match self.scope.kind() {
-                        ScopeKind::Module => true,
-                        _ => false,
-                    } || (self.ctx.in_computed_prop_name
-                        && match self.scope.scope_of_computed_props().map(|s| s.kind()) {
-                            Some(ScopeKind::Module) => true,
+                    let is_ref_to_module = self
+                        .scope
+                        .first(|scope| match scope.kind() {
+                            ScopeKind::Module | ScopeKind::Fn | ScopeKind::Class => true,
                             _ => false,
-                        });
+                        })
+                        .map(|scope| match scope.kind() {
+                            ScopeKind::Module => true,
+                            _ => false,
+                        })
+                        .unwrap_or(false)
+                        || (self.ctx.in_computed_prop_name
+                            && match self.scope.scope_of_computed_props().map(|s| s.kind()) {
+                                Some(ScopeKind::Module) => true,
+                                _ => false,
+                            });
                     if is_ref_to_module {
                         self.storage.report(Error::ThisRefToModuleOrNamespace { span })
                     }
