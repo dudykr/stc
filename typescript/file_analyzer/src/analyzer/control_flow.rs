@@ -548,8 +548,11 @@ impl Analyzer<'_, '_> {
                         // TODO
                         match &**pat {
                             RPat::Ident(left) => {
-                                let lhs = self.type_of_var(&left.id, TypeOfMode::LValue, None)?;
-                                self.assign_with_op(span, op, &lhs, &ty)?;
+                                let lhs = self.type_of_var(&left.id, TypeOfMode::LValue, None);
+
+                                if let Ok(lhs) = lhs {
+                                    self.assign_with_op(span, op, &lhs, &ty)?;
+                                }
                             }
                             _ => Err(Error::InvalidOperatorForLhs { span, op })?,
                         }
