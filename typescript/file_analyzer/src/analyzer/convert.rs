@@ -842,7 +842,7 @@ impl Analyzer<'_, '_> {
 
         if static_method.is_some() {
             self.storage
-                .report(Error::StaticMethodCannotUseTypeParamOfClass { span })
+                .report(Error::StaticMemberCannotUseTypeParamOfClass { span })
         }
     }
 

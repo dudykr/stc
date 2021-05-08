@@ -280,7 +280,7 @@ pub enum Error {
     },
 
     /// TS2302
-    StaticMethodCannotUseTypeParamOfClass {
+    StaticMemberCannotUseTypeParamOfClass {
         span: Span,
     },
 
@@ -1364,7 +1364,7 @@ impl Error {
             Error::CannotReferenceSuperInComputedPropName { .. } => 2466,
             Error::DeclaringTypeParamReferencedByComputedPropName { .. } => 2467,
 
-            Error::StaticMethodCannotUseTypeParamOfClass { .. } => 2302,
+            Error::StaticMemberCannotUseTypeParamOfClass { .. } => 2302,
 
             Error::InvalidImplOfInterface { .. } => 2416,
 

@@ -1,3 +1,4 @@
+use self::type_param::StaticTypeParamValidator;
 use super::assign::AssignOpts;
 use super::expr::TypeOfMode;
 use super::props::ComputedPropMode;
@@ -86,6 +87,7 @@ use swc_ecma_ast::*;
 use swc_ecma_utils::private_ident;
 
 mod order;
+mod type_param;
 
 impl Analyzer<'_, '_> {
     fn validate_type_of_class_property(
@@ -153,6 +155,11 @@ impl Analyzer<'_, '_> {
         let value = self
             .validate_type_of_class_property(p.span, p.readonly, p.is_static, &p.type_ann, &p.value)?
             .map(Box::new);
+
+        if p.is_static {
+            value.visit_with(&mut StaticTypeParamValidator { analyzer: self });
+        }
+
         match p.accessibility {
             Some(Accessibility::Private) => {}
             _ => {
