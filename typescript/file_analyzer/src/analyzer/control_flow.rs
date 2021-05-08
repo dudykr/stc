@@ -523,8 +523,11 @@ impl Analyzer<'_, '_> {
         let res: ValidationResult<()> = try {
             match *lhs {
                 RPatOrExpr::Expr(ref expr) | RPatOrExpr::Pat(box RPat::Expr(ref expr)) => {
-                    let lhs_ty = expr.validate_with_args(self, (TypeOfMode::LValue, None, None))?;
-                    let lhs_ty = self.expand(span, lhs_ty)?;
+                    let lhs_ty = expr.validate_with_args(self, (TypeOfMode::LValue, None, None));
+                    let lhs_ty = match lhs_ty {
+                        Ok(v) => v,
+                        _ => return,
+                    };
 
                     if op == op!("=") {
                         self.assign(&mut Default::default(), &lhs_ty, &ty, span)?;
