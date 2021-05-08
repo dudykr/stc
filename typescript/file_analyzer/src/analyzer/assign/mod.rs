@@ -697,7 +697,8 @@ impl Analyzer<'_, '_> {
                                      type:\nLHS: {}",
                                     dump_type_as_string(&self.cm, &Type::TypeLit(lhs.into_owned()))
                                 )
-                            })?;
+                            })
+                            .convert_err(|err| Error::SimpleAssignFailed { span: err.span() })?;
 
                         errors.retain(|err| match err.actual() {
                             Error::UnknownPropertyInObjectLiteralAssignment { .. } => false,
