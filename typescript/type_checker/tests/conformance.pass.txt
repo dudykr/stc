@@ -1726,6 +1726,7 @@ parser/ecmascriptnext/numericSeparators/parser.numericSeparators.binary.ts
 parser/ecmascriptnext/numericSeparators/parser.numericSeparators.decimal.ts
 parser/ecmascriptnext/numericSeparators/parser.numericSeparators.hex.ts
 parser/ecmascriptnext/numericSeparators/parser.numericSeparators.octal.ts
+salsa/inferringClassMembersFromAssignments8.ts
 salsa/mixedPropertyElementAccessAssignmentDeclaration.ts
 salsa/propertyAssignmentUseParentType3.ts
 salsa/typeFromPropertyAssignment30.ts
