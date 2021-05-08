@@ -651,15 +651,7 @@ impl Analyzer<'_, '_> {
 
                                             if rp.optional {
                                                 if let Some(lt) = &lp.type_ann {
-                                                    if let Ok(()) = self.assign_with_opts(
-                                                        data,
-                                                        opts,
-                                                        &lt,
-                                                        &Type::Keyword(RTsKeywordType {
-                                                            span,
-                                                            kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                                                        }),
-                                                    ) {
+                                                    if lt.is_undefined() {
                                                         return Ok(());
                                                     }
                                                 }
