@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2448
+    BlockScopedVarUsedBeforeInit {
+        span: Span,
+    },
+
     /// TS2528
     DuplicateDefaultExport {
         span: Span,
@@ -1495,6 +1500,8 @@ impl Error {
             Error::DuplicateFnImpl { .. } => 2393,
 
             Error::DuplicateDefaultExport { .. } => 2528,
+
+            Error::BlockScopedVarUsedBeforeInit { .. } => 2448,
 
             _ => 0,
         }
