@@ -298,7 +298,7 @@ impl Analyzer<'_, '_> {
     }
 
     #[extra_validator]
-    fn export_var(&mut self, span: Span, name: Id) {
+    fn export_var(&mut self, span: Span, name: Id, orig_name: Option<Id>) {
         self.check_for_duplicate_export_of_var(span, name.sym().clone());
 
         self.storage.export_var(span, self.ctx.module_id, name);
