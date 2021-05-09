@@ -2438,17 +2438,38 @@ impl Analyzer<'_, '_> {
             );
 
             // Report an error if a variable is used before initialization.
-            (|| match self.ctx.var_kind {
-                VarDeclKind::Let | VarDeclKind::Const => {
-                    if let Some(cls_name) = self.scope.get_this_class_name() {
-                        if cls_name == i {
-                            return;
-                        }
+            (|| {
+                match self.ctx.var_kind {
+                    VarDeclKind::Let | VarDeclKind::Const => {}
+                    _ => return,
+                }
+
+                // If a method or a function scope exists before the scope declaring the
+                // variable, it means current statement will be evaluated after the variable is
+                // initialized.
+                if let Some(scope) = self.scope.first(|scope| {
+                    if scope.declaring.contains(&i.into()) {
+                        return true;
                     }
 
-                    self.storage.report(Error::BlockScopedVarUsedBeforeInit { span })
+                    match scope.kind() {
+                        ScopeKind::Method { .. } | ScopeKind::Fn | ScopeKind::ArrowFn | ScopeKind::Constructor => {
+                            return true;
+                        }
+                        _ => false,
+                    }
+                }) {
+                    match scope.kind() {
+                        ScopeKind::Method { .. } | ScopeKind::Fn | ScopeKind::ArrowFn | ScopeKind::Constructor => {
+                            return
+                        }
+                        _ => {}
+                    }
+                } else {
+                    return;
                 }
-                _ => {}
+
+                self.storage.report(Error::BlockScopedVarUsedBeforeInit { span })
             })();
 
             if self.ctx.allow_ref_declaring {
