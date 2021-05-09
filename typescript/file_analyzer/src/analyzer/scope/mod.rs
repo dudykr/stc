@@ -803,7 +803,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub fn declare_vars(&mut self, kind: VarDeclKind, pat: &RPat) -> ValidationResult<()> {
-        self.declare_vars_inner_with_ty(kind, pat, false, None, None)
+        self.declare_vars_inner_with_ty(kind, pat, None, None)
     }
 
     pub fn declare_vars_with_ty(
@@ -813,11 +813,11 @@ impl Analyzer<'_, '_> {
         ty: Option<Type>,
         actual_ty: Option<Type>,
     ) -> ValidationResult<()> {
-        self.declare_vars_inner_with_ty(kind, pat, false, ty, actual_ty)
+        self.declare_vars_inner_with_ty(kind, pat, ty, actual_ty)
     }
 
-    pub(super) fn declare_vars_inner(&mut self, kind: VarDeclKind, pat: &RPat, export: bool) -> ValidationResult<()> {
-        self.declare_vars_inner_with_ty(kind, pat, export, None, None)
+    pub(super) fn declare_vars_inner(&mut self, kind: VarDeclKind, pat: &RPat) -> ValidationResult<()> {
+        self.declare_vars_inner_with_ty(kind, pat, None, None)
     }
 
     pub(super) fn resolve_typeof(&mut self, span: Span, name: &RTsEntityName) -> ValidationResult {
@@ -1466,7 +1466,7 @@ impl Analyzer<'_, '_> {
                                         _ => err,
                                     }));
 
-                                    self.declare_vars_inner_with_ty(kind, &prop.value, false, None, None)
+                                    self.declare_vars_inner_with_ty(kind, &prop.value, None, None)
                                         .report(&mut self.storage);
                                 }
                             }
@@ -1559,7 +1559,6 @@ impl Analyzer<'_, '_> {
                                             id: prop.key.clone(),
                                             type_ann: None,
                                         }),
-                                        false,
                                         None,
                                         None,
                                     )

@@ -166,7 +166,6 @@ impl Analyzer<'_, '_> {
         &mut self,
         kind: VarDeclKind,
         pat: &RPat,
-        export: bool,
         ty: Option<Type>,
         actual_ty: Option<Type>,
     ) -> ValidationResult<()> {
@@ -208,14 +207,7 @@ impl Analyzer<'_, '_> {
                     kind == VarDeclKind::Var,
                     false,
                 )?;
-                if export {
-                    self.storage.store_private_var(
-                        self.ctx.module_id,
-                        name.clone(),
-                        ty.unwrap_or(Type::any(i.id.span)),
-                    );
-                    self.storage.export_var(span, self.ctx.module_id, name.clone(), name);
-                }
+
                 return Ok(());
             }
             RPat::Assign(ref p) => {
@@ -226,7 +218,7 @@ impl Analyzer<'_, '_> {
                     p.left,
                     ty
                 );
-                self.declare_vars_inner_with_ty(kind, &p.left, export, ty, actual_ty)
+                self.declare_vars_inner_with_ty(kind, &p.left, ty, actual_ty)
                     .report(&mut self.storage);
 
                 return Ok(());
@@ -300,7 +292,7 @@ impl Analyzer<'_, '_> {
                                         None => None,
                                     };
 
-                                    self.declare_vars_inner_with_ty(kind, &elem.arg, export, type_for_rest_arg, None)
+                                    self.declare_vars_inner_with_ty(kind, &elem.arg, type_for_rest_arg, None)
                                         .context("tried to declare lefting elements to the arugment of a rest pattern")
                                         .report(&mut self.storage);
                                     break;
@@ -326,7 +318,7 @@ impl Analyzer<'_, '_> {
                             };
 
                             // TODO: actual_ty
-                            self.declare_vars_inner_with_ty(kind, elem, export, elem_ty, None)
+                            self.declare_vars_inner_with_ty(kind, elem, elem_ty, None)
                                 .report(&mut self.storage);
                         }
                         // Skip
@@ -406,7 +398,6 @@ impl Analyzer<'_, '_> {
                                             id: prop.key.clone(),
                                             type_ann: None,
                                         }),
-                                        export,
                                         prop_ty,
                                         None,
                                     )
@@ -424,7 +415,6 @@ impl Analyzer<'_, '_> {
                                             id: prop.key.clone(),
                                             type_ann: None,
                                         }),
-                                        export,
                                         prop_ty,
                                         None,
                                     )
@@ -451,7 +441,7 @@ impl Analyzer<'_, '_> {
                             };
 
                             // TODO: actual_ty
-                            self.declare_vars_inner_with_ty(kind, &p.value, export, prop_ty, None)
+                            self.declare_vars_inner_with_ty(kind, &p.value, prop_ty, None)
                                 .context("tried to declare a variable from key-value property in an object pattern")
                                 .report(&mut self.storage);
                         }
@@ -468,7 +458,7 @@ impl Analyzer<'_, '_> {
                             }
                             None => {
                                 return self
-                                    .declare_vars_inner_with_ty(kind, &pat.arg, export, None, None)
+                                    .declare_vars_inner_with_ty(kind, &pat.arg, None, None)
                                     .context("tried to declare vars with an object rest pattern without types");
                             }
                         },
@@ -493,7 +483,7 @@ impl Analyzer<'_, '_> {
             }) => {
                 let mut arg = arg.clone();
 
-                self.declare_vars_inner(kind, &arg, export).report(&mut self.storage);
+                self.declare_vars_inner(kind, &arg).report(&mut self.storage);
 
                 let new_ty = arg.get_mut_ty().take();
                 if ty.is_none() {
