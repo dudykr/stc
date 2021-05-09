@@ -918,6 +918,12 @@ impl Analyzer<'_, '_> {
     ) {
         match m {
             TypeElement::Method(m) if kind == ExtractKind::Call => {
+                if m.optional {
+                    // See: for-of29.ts
+                    // Optional properties cannot be called.
+                    return;
+                }
+
                 // We are interested only on methods named `prop`
                 if let Ok(()) = self.assign(&mut Default::default(), &m.key.ty(), &prop.ty(), span) {
                     candidates.push(CallCandidate {
@@ -929,6 +935,12 @@ impl Analyzer<'_, '_> {
             }
 
             TypeElement::Property(p) if kind == ExtractKind::Call => {
+                if p.optional {
+                    // See: for-of29.ts
+                    // Optional properties cannot be called.
+                    return;
+                }
+
                 if let Ok(()) = self.assign(&mut Default::default(), &p.key.ty(), &prop.ty(), span) {
                     // TODO: Remove useless clone
                     let ty = *p.type_ann.as_ref().cloned().unwrap_or(box Type::any(m.span()));
