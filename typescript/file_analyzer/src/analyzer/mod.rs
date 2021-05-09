@@ -204,6 +204,7 @@ impl Ctx {
     pub fn reevaluating(self) -> bool {
         self.reevaluating_argument || self.reevaluating_call_or_new || self.reevaluating_loop_body
     }
+
     pub fn can_generalize_literals(self) -> bool {
         !self.in_argument
     }
