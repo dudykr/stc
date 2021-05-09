@@ -1497,6 +1497,11 @@ impl Analyzer<'_, '_> {
 
                                     match &prop.value {
                                         Some(default) => {
+                                            let default_value_type = default
+                                                .validate_with_default(self)
+                                                .context("tried to validate default value of an assignment pattern")
+                                                .report(&mut self.storage);
+
                                             self.declare_complex_vars(
                                                 kind,
                                                 &RPat::Ident(RBindingIdent {
@@ -1508,10 +1513,6 @@ impl Analyzer<'_, '_> {
                                                 None,
                                             )
                                             .report(&mut self.storage);
-
-                                            let default_value_type = default
-                                                .validate_with_default(self)
-                                                .context("tried to validate default value of an assignment pattern")?;
 
                                             self.try_assign_pat(
                                                 span,
