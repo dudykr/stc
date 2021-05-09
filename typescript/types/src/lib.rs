@@ -1256,6 +1256,16 @@ impl Type {
             _ => {}
         }
     }
+
+    pub fn is_global_this(&self) -> bool {
+        match self.normalize() {
+            Type::Query(QueryType {
+                expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(i)),
+                ..
+            }) => &*i.sym == "globalThis",
+            _ => false,
+        }
+    }
 }
 
 //

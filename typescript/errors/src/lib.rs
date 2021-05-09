@@ -870,10 +870,6 @@ pub enum Error {
         ty: Box<Type>,
     },
 
-    TS2356 {
-        span: Span,
-    },
-
     TS2369 {
         span: Span,
     },
@@ -1251,7 +1247,7 @@ impl Error {
             Error::ConstructorImplMissingOrNotFollowedByDecl { .. } => 2390,
             Error::FnImplMissingOrNotFollowedByDecl { .. } => 2391,
             Error::InvalidTypeForComputedProperty { .. } => 2464,
-            Error::TS2356 { .. } => 2356,
+
             Error::TS2369 { .. } => 2369,
             Error::TS2389 { .. } => 2389,
             Error::TS2447 { .. } => 2447,
