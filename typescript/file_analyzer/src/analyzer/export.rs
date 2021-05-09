@@ -252,12 +252,10 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                if let Some(ref i) = f.ident {
-                    self.override_var(VarDeclKind::Var, i.into(), fn_ty.into())
-                        .report(&mut self.storage);
-                }
+                self.override_var(VarDeclKind::Var, i.clone(), fn_ty.into())
+                    .report(&mut self.storage);
 
-                self.export_var(f.span(), Id::word(js_word!("default")), None)
+                self.export_var(f.span(), Id::word(js_word!("default")), i);
             }
             RDefaultDecl::Class(ref c) => {
                 let id = c.ident.as_ref().map(|v| v.into());
