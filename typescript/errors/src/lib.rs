@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2528
+    DuplicateDefaultExport {
+        span: Span,
+    },
+
     /// TS2393
     DuplicateFnImpl {
         span: Span,
@@ -1488,6 +1493,8 @@ impl Error {
             Error::DuplciateConstructor { .. } => 2392,
 
             Error::DuplicateFnImpl { .. } => 2393,
+
+            Error::DuplicateDefaultExport { .. } => 2528,
 
             _ => 0,
         }
