@@ -214,7 +214,7 @@ impl Analyzer<'_, '_> {
                         name.clone(),
                         ty.unwrap_or(Type::any(i.id.span)),
                     );
-                    self.storage.export_var(span, self.ctx.module_id, name);
+                    self.storage.export_var(span, self.ctx.module_id, name.clone(), name);
                 }
                 return Ok(());
             }

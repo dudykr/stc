@@ -138,8 +138,12 @@ impl Analyzer<'_, '_> {
         };
         self.storage
             .store_private_var(self.ctx.module_id, Id::word(js_word!("default")), ty);
-        self.storage
-            .export_var(span, self.ctx.module_id, Id::word(js_word!("default")));
+        self.storage.export_var(
+            span,
+            self.ctx.module_id,
+            Id::word(js_word!("default")),
+            Id::word(js_word!("default")),
+        );
     }
 }
 
@@ -157,7 +161,7 @@ impl Analyzer<'_, '_> {
                 RDecl::Fn(ref f) => {
                     f.visit_with(a);
                     // self.export(f.span(), f.ident.clone().into(), None);
-                    a.export_var(f.span(), f.ident.clone().into());
+                    a.export_var(f.span(), f.ident.clone().into(), None);
                 }
                 RDecl::TsInterface(ref i) => {
                     i.visit_with(a);
@@ -168,7 +172,7 @@ impl Analyzer<'_, '_> {
                 RDecl::Class(ref c) => {
                     c.visit_with(a);
                     a.export(c.span(), c.ident.clone().into(), None);
-                    a.export_var(c.span(), c.ident.clone().into());
+                    a.export_var(c.span(), c.ident.clone().into(), None);
                 }
                 RDecl::Var(ref var) => {
                     let span = var.span;
@@ -177,7 +181,7 @@ impl Analyzer<'_, '_> {
                     let ids: Vec<Id> = find_ids_in_pat(&var.decls);
 
                     for id in ids {
-                        a.export_var(span, id)
+                        a.export_var(span, id, None)
                     }
                 }
                 RDecl::TsEnum(ref e) => {
@@ -253,7 +257,7 @@ impl Analyzer<'_, '_> {
                         .report(&mut self.storage);
                 }
 
-                self.export_var(f.span(), Id::word(js_word!("default")))
+                self.export_var(f.span(), Id::word(js_word!("default")), None)
             }
             RDefaultDecl::Class(ref c) => {
                 let id = c.ident.as_ref().map(|v| v.into());
@@ -301,7 +305,8 @@ impl Analyzer<'_, '_> {
     fn export_var(&mut self, span: Span, name: Id, orig_name: Option<Id>) {
         self.check_for_duplicate_export_of_var(span, name.sym().clone());
 
-        self.storage.export_var(span, self.ctx.module_id, name);
+        self.storage
+            .export_var(span, self.ctx.module_id, name.clone(), orig_name.unwrap_or(name));
     }
 
     /// Exports a type.
@@ -522,7 +527,9 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn export_named(&mut self, span: Span, ctxt: ModuleId, orig: Id, id: Id) {
         if self.storage.get_local_var(ctxt, orig.clone()).is_some() {
-            self.storage.export_var(span, ctxt, id.clone());
+            self.check_for_duplicate_export_of_var(span, id.sym().clone());
+
+            self.storage.export_var(span, ctxt, id.clone(), orig.clone());
         }
 
         if self.storage.get_local_type(ctxt, orig).is_some() {
