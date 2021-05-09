@@ -2437,12 +2437,19 @@ impl Analyzer<'_, '_> {
                 i.sym
             );
 
-            match self.ctx.var_kind {
+            // Report an error if a variable is used before initialization.
+            (|| match self.ctx.var_kind {
                 VarDeclKind::Let | VarDeclKind::Const => {
+                    if let Some(cls_name) = self.scope.get_this_class_name() {
+                        if cls_name == i {
+                            return;
+                        }
+                    }
+
                     self.storage.report(Error::BlockScopedVarUsedBeforeInit { span })
                 }
                 _ => {}
-            }
+            })();
 
             if self.ctx.allow_ref_declaring {
                 if self.rule().no_implicit_any {
