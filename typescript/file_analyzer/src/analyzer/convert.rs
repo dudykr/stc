@@ -97,6 +97,7 @@ use stc_ts_types::TypeParamInstantiation;
 use stc_ts_types::Union;
 use stc_ts_utils::OptionExt;
 use stc_ts_utils::PatExt;
+use stc_utils::FastHashSet;
 use swc_atoms::js_word;
 use swc_common::Spanned;
 use swc_common::DUMMY_SP;
@@ -115,6 +116,25 @@ impl Analyzer<'_, '_> {
                 params: decl.params.validate_with(self)?,
             })
         } else {
+            {
+                // Check for duplicates
+                let mut names = decl.params.iter().map(|param| param.name.clone()).collect::<Vec<_>>();
+                let mut found = FastHashSet::default();
+
+                for name in names {
+                    if !found.insert(name.sym.clone()) {
+                        self.storage.report(
+                            Error::DuplicateName {
+                                span: name.span,
+                                name: name.into(),
+                            }
+                            .context("tried to validate duplicate entries of a type parameter declaration"),
+                        );
+                    }
+                }
+                //
+            }
+
             for param in &decl.params {
                 let name: Id = param.name.clone().into();
                 self.register_type(
