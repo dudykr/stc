@@ -40,7 +40,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, f: &RFunction, name: Option<&RIdent>) -> ValidationResult<ty::Function> {
         self.record(f);
 
-        if f.body.is_some() {
+        if !self.ctx.reevaluating() && f.body.is_some() {
             if let Some(id) = name {
                 let v = self.data.fn_impl_spans.entry(id.into()).or_default();
 
