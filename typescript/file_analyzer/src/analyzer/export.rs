@@ -255,7 +255,7 @@ impl Analyzer<'_, '_> {
                 self.override_var(VarDeclKind::Var, i.clone(), fn_ty.into())
                     .report(&mut self.storage);
 
-                self.export_var(f.span(), Id::word(js_word!("default")), i);
+                self.export_var(f.span(), Id::word(js_word!("default")), Some(i));
             }
             RDefaultDecl::Class(ref c) => {
                 let id = c.ident.as_ref().map(|v| v.into());
