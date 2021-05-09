@@ -78,6 +78,7 @@ use swc_ecma_ast::EsVersion;
 use swc_ecma_ast::TruePlusMinus;
 use swc_ecma_ast::TsKeywordTypeKind;
 use swc_ecma_ast::TsTypeOperatorOp;
+use swc_ecma_ast::VarDeclKind;
 use ty::TypeExt;
 
 mod array;
@@ -2435,6 +2436,13 @@ impl Analyzer<'_, '_> {
                 self.scope.depth(),
                 i.sym
             );
+
+            match self.ctx.var_kind {
+                VarDeclKind::Let | VarDeclKind::Const => {
+                    self.storage.report(Error::BlockScopedVarUsedBeforeInit { span })
+                }
+                _ => {}
+            }
 
             if self.ctx.allow_ref_declaring {
                 if self.rule().no_implicit_any {
