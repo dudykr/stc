@@ -2467,8 +2467,6 @@ impl Analyzer<'_, '_> {
                             _ => {}
                         }
                     }
-                } else {
-                    return;
                 }
 
                 self.storage.report(Error::BlockScopedVarUsedBeforeInit { span })
