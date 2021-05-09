@@ -37,8 +37,22 @@ mod return_type;
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, f: &RFunction) -> ValidationResult<ty::Function> {
+    fn validate(&mut self, f: &RFunction, name: Option<&RIdent>) -> ValidationResult<ty::Function> {
         self.record(f);
+
+        if f.body.is_some() {
+            if let Some(id) = name {
+                let v = self.data.fn_impl_spans.entry(id.into()).or_default();
+
+                v.push(f.span);
+                // TODO: Make this efficient by report same error only once.
+                if v.len() >= 2 {
+                    for &span in &*v {
+                        self.storage.report(Error::DuplicateFnImpl { span })
+                    }
+                }
+            }
+        }
 
         self.with_child(ScopeKind::Fn, Default::default(), |child: &mut Analyzer| {
             child.ctx.in_fn_with_return_type = f.return_type.is_some();

@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2393
+    DuplicateFnImpl {
+        span: Span,
+    },
+
     /// TS2392
     DuplciateConstructor {
         span: Span,
@@ -1485,6 +1490,8 @@ impl Error {
             Error::ModuleNotFound { .. } => 2307,
 
             Error::DuplciateConstructor { .. } => 2392,
+
+            Error::DuplicateFnImpl { .. } => 2393,
 
             _ => 0,
         }
