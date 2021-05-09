@@ -110,6 +110,7 @@ pub(crate) struct Ctx {
     phase: Phase,
 
     diallow_unknown_object_property: bool,
+    disallow_optional_object_property: bool,
 
     allow_module_var: bool,
 
@@ -457,6 +458,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 module_id: ModuleId::builtin(),
                 phase: Default::default(),
                 diallow_unknown_object_property: false,
+                disallow_optional_object_property: false,
                 allow_module_var: false,
                 cannot_be_tuple: false,
                 should_not_create_indexed_type_from_ty_els: false,

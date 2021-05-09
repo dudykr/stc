@@ -918,7 +918,7 @@ impl Analyzer<'_, '_> {
     ) {
         match m {
             TypeElement::Method(m) if kind == ExtractKind::Call => {
-                if m.optional {
+                if self.ctx.disallow_optional_object_property && m.optional {
                     // See: for-of29.ts
                     // Optional properties cannot be called.
                     return;
@@ -935,7 +935,7 @@ impl Analyzer<'_, '_> {
             }
 
             TypeElement::Property(p) if kind == ExtractKind::Call => {
-                if p.optional {
+                if self.ctx.disallow_optional_object_property && p.optional {
                     // See: for-of29.ts
                     // Optional properties cannot be called.
                     return;

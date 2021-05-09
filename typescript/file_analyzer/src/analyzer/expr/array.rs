@@ -3,6 +3,7 @@ use super::IdCtx;
 use super::TypeOfMode;
 use crate::analyzer::types::NormalizeTypeOpts;
 use crate::analyzer::Analyzer;
+use crate::analyzer::Ctx;
 use crate::type_facts::TypeFacts;
 use crate::util::type_ext::TypeVecExt;
 use crate::validator;
@@ -398,43 +399,52 @@ impl Analyzer<'_, '_> {
                 _ => {}
             }
 
-            self.call_property(
-                span,
-                ExtractKind::Call,
-                Default::default(),
-                &ty,
-                &ty,
-                &Key::Computed(ComputedKey {
+            let ctx = Ctx {
+                disallow_optional_object_property: true,
+                ..self.ctx
+            };
+
+            self.with_ctx(ctx)
+                .call_property(
                     span,
-                    expr: box RExpr::Member(RMemberExpr {
-                        node_id: NodeId::invalid(),
+                    ExtractKind::Call,
+                    Default::default(),
+                    &ty,
+                    &ty,
+                    &Key::Computed(ComputedKey {
                         span,
-                        obj: RExprOrSuper::Expr(box RExpr::Ident(RIdent::new(
-                            "Symbol".into(),
-                            span.with_ctxt(SyntaxContext::empty()),
-                        ))),
-                        computed: false,
-                        prop: box RExpr::Ident(RIdent::new("iterator".into(), span.with_ctxt(SyntaxContext::empty()))),
+                        expr: box RExpr::Member(RMemberExpr {
+                            node_id: NodeId::invalid(),
+                            span,
+                            obj: RExprOrSuper::Expr(box RExpr::Ident(RIdent::new(
+                                "Symbol".into(),
+                                span.with_ctxt(SyntaxContext::empty()),
+                            ))),
+                            computed: false,
+                            prop: box RExpr::Ident(RIdent::new(
+                                "iterator".into(),
+                                span.with_ctxt(SyntaxContext::empty()),
+                            )),
+                        }),
+                        ty: box Type::Keyword(RTsKeywordType {
+                            span,
+                            kind: TsKeywordTypeKind::TsSymbolKeyword,
+                        }),
                     }),
-                    ty: box Type::Keyword(RTsKeywordType {
-                        span,
-                        kind: TsKeywordTypeKind::TsSymbolKeyword,
-                    }),
-                }),
-                None,
-                &[],
-                &[],
-                &[],
-                None,
-            )
-            .convert_err(|err| match err {
-                Error::NoCallabelPropertyWithName { span, .. }
-                | Error::NoSuchPropertyInClass { span, .. }
-                | Error::NoSuchProperty { span, .. } => Error::MustHaveSymbolIteratorThatReturnsIterator { span },
-                _ => err,
-            })
-            .map(Cow::Owned)
-            .context("tried to call `[Symbol.iterator]()`")
+                    None,
+                    &[],
+                    &[],
+                    &[],
+                    None,
+                )
+                .convert_err(|err| match err {
+                    Error::NoCallabelPropertyWithName { span, .. }
+                    | Error::NoSuchPropertyInClass { span, .. }
+                    | Error::NoSuchProperty { span, .. } => Error::MustHaveSymbolIteratorThatReturnsIterator { span },
+                    _ => err,
+                })
+                .map(Cow::Owned)
+                .context("tried to call `[Symbol.iterator]()`")
         })();
 
         res.with_context(|| format!("tried to convert a type ({}) to an iterator", ty_str))
