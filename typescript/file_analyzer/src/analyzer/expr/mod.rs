@@ -2459,11 +2459,13 @@ impl Analyzer<'_, '_> {
                         _ => false,
                     }
                 }) {
-                    match scope.kind() {
-                        ScopeKind::Method { .. } | ScopeKind::Fn | ScopeKind::ArrowFn | ScopeKind::Constructor => {
-                            return
+                    if !scope.is_root() {
+                        match scope.kind() {
+                            ScopeKind::Method { .. } | ScopeKind::Fn | ScopeKind::ArrowFn | ScopeKind::Constructor => {
+                                return
+                            }
+                            _ => {}
                         }
-                        _ => {}
                     }
                 } else {
                     return;
