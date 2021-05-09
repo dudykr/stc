@@ -2075,7 +2075,11 @@ impl Analyzer<'_, '_> {
                         }
 
                         slog::info!(self.logger, "Inferring type of function expr with updated type");
-                        let mut ty = box Type::Function(fn_expr.function.validate_with(&mut *self.with_ctx(ctx))?);
+                        let mut ty = box Type::Function(
+                            fn_expr
+                                .function
+                                .validate_with_args(&mut *self.with_ctx(ctx), fn_expr.ident.as_ref())?,
+                        );
                         self.add_required_type_params(&mut ty);
                         ty
                     }

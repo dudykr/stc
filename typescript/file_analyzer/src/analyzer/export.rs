@@ -231,7 +231,7 @@ impl Analyzer<'_, '_> {
                     .as_ref()
                     .map(|v| v.into())
                     .unwrap_or_else(|| Id::word(js_word!("default")));
-                let fn_ty = match f.function.validate_with(self) {
+                let fn_ty = match f.function.validate_with_args(self, f.ident.as_ref()) {
                     Ok(ty) => ty,
                     Err(err) => {
                         self.storage.report(err);

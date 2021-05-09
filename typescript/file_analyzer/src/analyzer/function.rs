@@ -351,7 +351,7 @@ impl Analyzer<'_, '_> {
                 self.scope.declaring_fn = Some(name.into());
             }
 
-            let mut fn_ty: ty::Function = f.validate_with(self)?;
+            let mut fn_ty: ty::Function = f.validate_with_args(self, name)?;
             // Handle type parameters in return type.
             fn_ty.ret_ty = fn_ty.ret_ty.fold_with(&mut TypeParamHandler {
                 params: fn_ty.type_params.as_ref().map(|v| &*v.params),
