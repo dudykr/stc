@@ -252,8 +252,17 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                self.override_var(VarDeclKind::Var, i.clone(), fn_ty.into())
-                    .report(&mut self.storage);
+                self.declare_var(
+                    span,
+                    VarDeclKind::Var,
+                    i.clone(),
+                    Some(fn_ty.into()),
+                    None,
+                    true,
+                    true,
+                    false,
+                )
+                .report(&mut self.storage);
 
                 self.export_var(f.span(), Id::word(js_word!("default")), Some(i));
             }
