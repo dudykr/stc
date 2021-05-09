@@ -2399,7 +2399,12 @@ impl Analyzer<'_, '_> {
         }
 
         if let Some(ty) = self.find_imported_var(&i.into())? {
-            println!("({}) type_of({}): resolved import", self.scope.depth(), Id::from(i));
+            slog::debug!(
+                self.logger,
+                "({}) type_of({}): resolved import",
+                self.scope.depth(),
+                Id::from(i)
+            );
             return Ok(ty.clone());
         }
 
@@ -2424,7 +2429,12 @@ impl Analyzer<'_, '_> {
 
         // Check `declaring` before checking variables.
         if self.scope.is_declaring(&i.into()) {
-            println!("({}) reference in initialization: {}", self.scope.depth(), i.sym);
+            slog::debug!(
+                self.logger,
+                "({}) reference in initialization: {}",
+                self.scope.depth(),
+                i.sym
+            );
 
             if self.ctx.allow_ref_declaring {
                 if self.rule().no_implicit_any {
