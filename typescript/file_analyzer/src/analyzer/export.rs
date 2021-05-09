@@ -293,8 +293,10 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
+    /// Currently noop because we need to know if a function is last item among
+    /// overloads
     fn check_for_duplicate_export_of_var(&mut self, span: Span, sym: JsWord) {
-        if self.ctx.reevaluating() {
+        if self.ctx.reevaluating() || true {
             return;
         }
         let mut v = self.data.exports_spans.entry((sym.clone(), IdCtx::Var)).or_default();
