@@ -41,6 +41,7 @@ use stc_ts_errors::Error;
 use stc_ts_storage::Builtin;
 use stc_ts_storage::Info;
 use stc_ts_storage::Storage;
+use stc_ts_types::IdCtx;
 use stc_ts_types::{Id, ModuleId, ModuleTypeData, SymbolIdGenerator};
 use stc_utils::FastHashMap;
 use std::mem::take;
@@ -262,6 +263,12 @@ struct AnalyzerData {
 
     /// Spans of declared variables.
     var_spans: FastHashMap<Id, Vec<Span>>,
+
+    /// Spans of functions **with body**.
+    fn_impl_spans: FxHashMap<Id, Vec<Span>>,
+
+    /// Spans exported items.
+    exports_spans: FxHashMap<(JsWord, IdCtx), Vec<Span>>,
 }
 
 /// TODO
