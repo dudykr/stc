@@ -1083,6 +1083,9 @@ impl Analyzer<'_, '_> {
             ScopeKind::Class,
             Default::default(),
             |child: &mut Analyzer| -> ValidationResult<_> {
+                child.ctx.super_references_super_class = true;
+                child.ctx.in_class_with_super = c.super_class.is_some();
+
                 child.scope.declaring_type_params.extend(
                     c.type_params
                         .iter()
