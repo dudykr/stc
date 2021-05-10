@@ -106,6 +106,7 @@ impl Analyzer<'_, '_> {
 
         let callee = match callee {
             RExprOrSuper::Super(..) => {
+                self.report_error_for_super_refs_without_supers(span, true);
                 self.report_error_for_super_reference_in_compute_keys(span, true);
 
                 return Ok(Type::any(span));

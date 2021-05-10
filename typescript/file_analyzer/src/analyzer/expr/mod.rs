@@ -2929,6 +2929,16 @@ impl Analyzer<'_, '_> {
         }
     }
 
+    pub(crate) fn report_error_for_super_refs_without_supers(&mut self, span: Span, is_super_call: bool) {
+        let res: ValidationResult<_> = try {
+            if !self.ctx.in_class_with_super && self.ctx.super_references_super_class {
+                Err(Error::SuperInClassWithoutSuper { span })?
+            }
+        };
+
+        res.report(&mut self.storage);
+    }
+
     pub(crate) fn report_error_for_super_reference_in_compute_keys(&mut self, span: Span, is_super_call: bool) {
         if !self.ctx.in_computed_prop_name {
             return;
