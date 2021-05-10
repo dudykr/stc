@@ -1,6 +1,7 @@
 use super::assign::AssignOpts;
 use super::class::ClassState;
 use super::{control_flow::CondFacts, expr::TypeOfMode, stmt::return_type::ReturnValues, Analyzer, Ctx};
+use crate::analyzer::expr::GetIteratorOpts;
 use crate::analyzer::expr::IdCtx;
 use crate::analyzer::ResultExt;
 use crate::{
@@ -1395,7 +1396,14 @@ impl Analyzer<'_, '_> {
                 //
 
                 let ty = self
-                    .get_iterator(span, Cow::Owned(ty), Default::default())
+                    .get_iterator(
+                        span,
+                        Cow::Owned(ty),
+                        GetIteratorOpts {
+                            disallow_str: true,
+                            ..Default::default()
+                        },
+                    )
                     .context("tried to convert a type to an iterator to assign with an array pattern.")
                     .unwrap_or_else(|err| {
                         self.storage.report(err);
