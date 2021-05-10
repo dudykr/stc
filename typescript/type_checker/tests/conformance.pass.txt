@@ -537,6 +537,7 @@ es6/defaultParameters/emitDefaultParametersMethod.ts
 es6/defaultParameters/emitDefaultParametersMethodES6.ts
 es6/destructuring/arrayAssignmentPatternWithAny.ts
 es6/destructuring/declarationInAmbientContext.ts
+es6/destructuring/destructuringArrayBindingPatternAndAssignment4.ts
 es6/destructuring/destructuringCatch.ts
 es6/destructuring/destructuringInFunctionType.ts
 es6/destructuring/destructuringObjectAssignmentPatternWithNestedSpread.ts
@@ -1046,6 +1047,7 @@ es7/exponentiationOperator/exponentiationOperatorWithAnyAndNumber.ts
 es7/exponentiationOperator/exponentiationOperatorWithEnum.ts
 es7/exponentiationOperator/exponentiationOperatorWithEnumUnion.ts
 es7/exponentiationOperator/exponentiationOperatorWithNew.ts
+esnext/logicalAssignment/logicalAssignment9.ts
 expressions/arrayLiterals/arrayLiterals2ES5.ts
 expressions/arrayLiterals/arrayLiterals2ES6.ts
 expressions/arrayLiterals/arrayLiterals3.ts
