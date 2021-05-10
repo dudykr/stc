@@ -168,6 +168,12 @@ impl Analyzer<'_, '_> {
 
         match op {
             op!("+=") => {}
+
+            op!("??=") | op!("&&=") => {
+                if rhs.is_bool() {
+                    return Ok(());
+                }
+            }
             _ => {}
         }
 
