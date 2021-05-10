@@ -112,6 +112,8 @@ pub(crate) struct Ctx {
     diallow_unknown_object_property: bool,
     disallow_optional_object_property: bool,
 
+    use_undefined_for_empty_tuple: bool,
+
     allow_module_var: bool,
 
     /// If `true`, expression validator will not emit tuple.
@@ -463,6 +465,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 phase: Default::default(),
                 diallow_unknown_object_property: false,
                 disallow_optional_object_property: false,
+                use_undefined_for_empty_tuple: false,
                 allow_module_var: false,
                 cannot_be_tuple: false,
                 should_not_create_indexed_type_from_ty_els: false,

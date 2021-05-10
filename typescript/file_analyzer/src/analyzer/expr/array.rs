@@ -60,6 +60,7 @@ impl Analyzer<'_, '_> {
             .and_then(|ty| self.get_iterator(span, Cow::Borrowed(ty)).ok());
 
         let prefer_tuple = self.prefer_tuple(type_ann.as_deref());
+        let is_empty = elems.is_empty();
         let mut can_be_tuple = !self.ctx.cannot_be_tuple;
         let mut elements = Vec::with_capacity(elems.len());
 
@@ -159,7 +160,11 @@ impl Analyzer<'_, '_> {
             let mut types: Vec<_> = elements.into_iter().map(|element| *element.ty).collect();
             types.dedup_type();
             if types.is_empty() {
-                types.push(Type::any(span));
+                types.push(if self.ctx.use_undefined_for_empty_tuple && is_empty {
+                    Type::undefined(span)
+                } else {
+                    Type::any(span)
+                });
             }
 
             let mut ty = Type::Array(
