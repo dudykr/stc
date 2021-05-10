@@ -1005,6 +1005,7 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2703
     InvalidDeleteOperand {
         span: Span,
     },
