@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2754
+    SuperCannotUseTypeArgs {
+        span: Span,
+    },
+
     /// TS2448
     BlockScopedVarUsedBeforeInit {
         span: Span,
@@ -1502,6 +1507,8 @@ impl Error {
             Error::DuplicateDefaultExport { .. } => 2528,
 
             Error::BlockScopedVarUsedBeforeInit { .. } => 2448,
+
+            Error::SuperCannotUseTypeArgs { .. } => 2754,
 
             _ => 0,
         }
