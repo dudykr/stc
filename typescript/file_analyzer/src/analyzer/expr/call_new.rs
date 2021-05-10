@@ -109,6 +109,11 @@ impl Analyzer<'_, '_> {
                 self.report_error_for_super_refs_without_supers(span, true);
                 self.report_error_for_super_reference_in_compute_keys(span, true);
 
+                if type_args.is_some() {
+                    // super<T>() is invalid.
+                    self.storage.report(Error::SuperCannotUseTypeArgs { span })
+                }
+
                 return Ok(Type::any(span));
             }
             RExprOrSuper::Expr(callee) => callee,
