@@ -2798,7 +2798,7 @@ impl Analyzer<'_, '_> {
             }
 
             RExprOrSuper::Super(RSuper { span, .. }) => {
-                self.report_error_for_super_reference(span, false);
+                self.report_error_for_super_reference_in_compute_keys(span, false);
 
                 if let Some(v) = self.scope.get_super_class() {
                     v.clone()
@@ -2929,7 +2929,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    pub(crate) fn report_error_for_super_reference(&mut self, span: Span, is_super_call: bool) {
+    pub(crate) fn report_error_for_super_reference_in_compute_keys(&mut self, span: Span, is_super_call: bool) {
         if !self.ctx.in_computed_prop_name {
             return;
         }
