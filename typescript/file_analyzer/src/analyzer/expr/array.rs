@@ -351,7 +351,7 @@ impl Analyzer<'_, '_> {
         ty.assert_valid();
 
         let res: ValidationResult<_> = (|| {
-            if opts.disallow_str {
+            if !opts.disallow_str {
                 if ty.is_str() {
                     return Ok(ty);
                 }
