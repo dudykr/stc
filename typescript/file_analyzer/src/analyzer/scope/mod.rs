@@ -1395,7 +1395,7 @@ impl Analyzer<'_, '_> {
                 //
 
                 let ty = self
-                    .get_iterator(span, Cow::Owned(ty))
+                    .get_iterator(span, Cow::Owned(ty), Default::default())
                     .context("tried to convert a type to an iterator to assign with an array pattern.")
                     .unwrap_or_else(|err| {
                         self.storage.report(err);

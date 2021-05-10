@@ -1006,7 +1006,7 @@ impl Analyzer<'_, '_> {
                     if opts.allow_iterable_on_rhs {
                         let res: ValidationResult<_> = try {
                             let r = self
-                                .get_iterator(span, Cow::Borrowed(&rhs))
+                                .get_iterator(span, Cow::Borrowed(&rhs), Default::default())
                                 .context("tried to convert a type to an iterator to assign to a tuple")?;
                             //
                             let rhs_el = self
@@ -1588,7 +1588,7 @@ impl Analyzer<'_, '_> {
                         // Try to assign by converting rhs to an iterable.
                         if opts.allow_iterable_on_rhs {
                             let r = self
-                                .get_iterator(span, Cow::Borrowed(&rhs))
+                                .get_iterator(span, Cow::Borrowed(&rhs), Default::default())
                                 .context("tried to convert a type to an iterator to assign to a tuple")?;
                             //
                             for (i, elem) in elems.iter().enumerate() {

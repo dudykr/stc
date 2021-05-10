@@ -712,7 +712,7 @@ impl Analyzer<'_, '_> {
 
             RPat::Array(ref arr) => {
                 let ty = self
-                    .get_iterator(span, Cow::Borrowed(&ty))
+                    .get_iterator(span, Cow::Borrowed(&ty), Default::default())
                     .context("tried to convert a type to an iterator to assign with an array pattern")
                     .report(&mut self.storage)
                     .unwrap_or_else(|| Cow::Owned(Type::any(span)));

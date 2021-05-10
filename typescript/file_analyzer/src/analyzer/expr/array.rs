@@ -41,6 +41,12 @@ use swc_common::Spanned;
 use swc_common::SyntaxContext;
 use swc_ecma_ast::TsKeywordTypeKind;
 
+#[derive(Debug, Clone, Copy, Default)]
+pub(crate) struct GetIteratorOpts {
+    /// Defaults to `false`.
+    pub disallow_str: bool,
+}
+
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(
@@ -57,7 +63,7 @@ impl Analyzer<'_, '_> {
 
         let iterator = type_ann
             .as_deref()
-            .and_then(|ty| self.get_iterator(span, Cow::Borrowed(ty)).ok());
+            .and_then(|ty| self.get_iterator(span, Cow::Borrowed(ty), Default::default()).ok());
 
         let prefer_tuple = self.prefer_tuple(type_ann.as_deref());
         let is_empty = elems.is_empty();
@@ -334,7 +340,12 @@ impl Analyzer<'_, '_> {
         Ok(Cow::Owned(iterator.into_owned()))
     }
 
-    pub(crate) fn get_iterator<'a>(&mut self, span: Span, ty: Cow<'a, Type>) -> ValidationResult<Cow<'a, Type>> {
+    pub(crate) fn get_iterator<'a>(
+        &mut self,
+        span: Span,
+        ty: Cow<'a, Type>,
+        opts: GetIteratorOpts,
+    ) -> ValidationResult<Cow<'a, Type>> {
         let ty_str = dump_type_as_string(&self.cm, &ty);
         slog::debug!(self.logger, "[exprs/array] get_iterator({})", ty_str);
         ty.assert_valid();
@@ -347,7 +358,7 @@ impl Analyzer<'_, '_> {
             match ty.normalize() {
                 Type::Ref(..) => {
                     let ty = self.expand_top_ref(span, ty)?;
-                    return self.get_iterator(span, ty);
+                    return self.get_iterator(span, ty, opts);
                 }
 
                 Type::Keyword(RTsKeywordType {
@@ -379,7 +390,7 @@ impl Analyzer<'_, '_> {
                     let types = u
                         .types
                         .iter()
-                        .map(|v| self.get_iterator(span, Cow::Borrowed(v)))
+                        .map(|v| self.get_iterator(span, Cow::Borrowed(v), opts))
                         .map(|res| res.map(Cow::into_owned))
                         .collect::<Result<_, _>>()
                         .convert_err(|err| match err {
@@ -395,7 +406,7 @@ impl Analyzer<'_, '_> {
                     let types = i
                         .types
                         .iter()
-                        .map(|v| self.get_iterator(v.span(), Cow::Borrowed(v)))
+                        .map(|v| self.get_iterator(v.span(), Cow::Borrowed(v), opts))
                         .map(|res| res.map(Cow::into_owned))
                         .collect::<Result<_, _>>()?;
                     let new = Type::Intersection(Intersection { span: i.span, types });
@@ -474,7 +485,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let iterator = self.get_iterator(span, ty).with_context(|| {
+        let iterator = self.get_iterator(span, ty, Default::default()).with_context(|| {
             format!(
                 "tried to get a type of an iterator to get the element type of it ({})",
                 ty_str
