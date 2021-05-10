@@ -898,6 +898,7 @@ define_rnode!({
         pub accessibility: Option<Accessibility>,
         pub readonly: bool,
         pub param: TsParamPropParam,
+        pub is_override: bool,
     }
 
     pub enum TsParamPropParam {

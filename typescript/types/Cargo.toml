@@ -20,7 +20,7 @@ stc_utils = {path = "../../utils"}
 stc_visit = {path = "../../visit"}
 swc_atoms = "0.2.5"
 swc_common = {version = "0.10.12", features = ["concurrent"]}
-swc_ecma_ast = "0.43.1"
-swc_ecma_utils = "0.34.2"
-swc_ecma_visit = "0.29.1"
+swc_ecma_ast = "0.44.0"
+swc_ecma_utils = "0.35.0"
+swc_ecma_visit = "0.30.0"
 swc_visit = "0.2.2"
