@@ -1465,6 +1465,20 @@ impl Type {
             _ => false,
         }
     }
+
+    /// Returns true if `self` is a `boolean` or a boolean literal.
+    pub fn is_bool(&self) -> bool {
+        match self.normalize() {
+            Type::Keyword(RTsKeywordType {
+                kind: TsKeywordTypeKind::TsBooleanKeyword,
+                ..
+            })
+            | Type::Lit(RTsLitType {
+                lit: RTsLit::Bool(..), ..
+            }) => true,
+            _ => false,
+        }
+    }
 }
 
 //impl Type {
