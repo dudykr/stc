@@ -257,18 +257,26 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
                     .iter()
                     .position(|cmt| cmt.text.trim().starts_with("@"))
                     .unwrap_or(0);
+                let cmt_start_line = if directive_start == 0 {
+                    0
+                } else {
+                    cmts.iter()
+                        .find(|cmt| cmt.text.trim().starts_with("@"))
+                        .map(|cmt| cm.lookup_char_pos(cmt.span.hi).line)
+                        .unwrap_or(0)
+                };
 
                 for cmt in cmts.iter().skip(directive_start) {
                     let s = cmt.text.trim();
                     if !s.starts_with("@") {
                         if had_comment {
-                            err_shift_n = cm.lookup_char_pos(cmt.span.hi).line - 1;
+                            err_shift_n = cm.lookup_char_pos(cmt.span.hi).line - 1 - cmt_start_line;
                             break;
                         }
                         continue;
                     }
                     had_comment = true;
-                    err_shift_n = cm.lookup_char_pos(cmt.span.hi + BytePos(1)).line;
+                    err_shift_n = cm.lookup_char_pos(cmt.span.hi + BytePos(1)).line - cmt_start_line;
                     let s = &s[1..]; // '@'
 
                     if s.starts_with("target:") || s.starts_with("Target:") {
