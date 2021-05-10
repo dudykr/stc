@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2790
+    DeleteOperandMustBeOptional {
+        span: Span,
+    },
+
     /// TS2754
     SuperCannotUseTypeArgs {
         span: Span,
@@ -1510,6 +1515,8 @@ impl Error {
             Error::BlockScopedVarUsedBeforeInit { .. } => 2448,
 
             Error::SuperCannotUseTypeArgs { .. } => 2754,
+
+            Error::DeleteOperandMustBeOptional { .. } => 2790,
 
             _ => 0,
         }
