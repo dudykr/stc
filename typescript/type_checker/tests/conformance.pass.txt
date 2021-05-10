@@ -1766,6 +1766,7 @@ statements/continueStatements/forContinueStatements.ts
 statements/continueStatements/forInContinueStatements.ts
 statements/continueStatements/whileContinueStatements.ts
 statements/for-inStatements/for-inStatementsArray.ts
+statements/for-inStatements/for-inStatementsDestructuring.ts
 statements/for-inStatements/for-inStatementsDestructuring2.ts
 statements/for-inStatements/for-inStatementsDestructuring3.ts
 statements/for-inStatements/for-inStatementsDestructuring4.ts
