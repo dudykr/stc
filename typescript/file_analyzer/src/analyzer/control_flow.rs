@@ -583,7 +583,7 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult<()> {
         let is_in_loop = self.scope.is_in_loop_body();
         let ty = self
-            .normalize(Some(ty.span().or_else(|| span)), ty, Default::default())
+            .normalize(Some(ty.span().or_else(|| span)), Cow::Borrowed(ty), Default::default())
             .context("tried to normalize a type to assign it to a pattern")?;
         let ty = ty.normalize();
 

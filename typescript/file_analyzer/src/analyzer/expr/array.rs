@@ -312,7 +312,7 @@ impl Analyzer<'_, '_> {
         iterator: Cow<'a, Type>,
         start_index: usize,
     ) -> ValidationResult<Cow<'a, Type>> {
-        let iterator = self.normalize(span, &iterator, NormalizeTypeOpts { ..Default::default() })?;
+        let iterator = self.normalize(span, iterator, NormalizeTypeOpts { ..Default::default() })?;
 
         if iterator.is_tuple() {
             let ty = iterator.into_owned().foldable().tuple().unwrap();

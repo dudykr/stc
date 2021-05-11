@@ -292,7 +292,7 @@ impl Analyzer<'_, '_> {
             Type::Function(..) => return false,
             _ => {}
         }
-        let ty = self.normalize(None, &ty, Default::default());
+        let ty = self.normalize(None, Cow::Owned(ty), Default::default());
         let ty = match ty {
             Ok(v) => v,
             _ => return true,

@@ -299,7 +299,7 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {
                 let ty = self
-                    .normalize(Some(span), &ty, Default::default())
+                    .normalize(Some(span), Cow::Borrowed(ty), Default::default())
                     .context("tried to normalize a type for assignment")?
                     .into_owned();
 
@@ -1717,7 +1717,7 @@ impl Analyzer<'_, '_> {
     fn extract_keys(&mut self, span: Span, ty: &Type) -> ValidationResult {
         let ty = self.normalize(
             Some(span),
-            &ty,
+            Cow::Borrowed(&ty),
             NormalizeTypeOpts {
                 normalize_keywords: true,
                 ..Default::default()

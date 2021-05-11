@@ -321,8 +321,8 @@ impl Analyzer<'_, '_> {
 
         // TODO: Change this to extends call.
 
-        let l_ty = self.normalize(Some(opts.span), &l.ty, Default::default())?;
-        let r_ty = self.normalize(Some(opts.span), &r.ty, Default::default())?;
+        let l_ty = self.normalize(Some(opts.span), Cow::Borrowed(&l.ty), Default::default())?;
+        let r_ty = self.normalize(Some(opts.span), Cow::Borrowed(&r.ty), Default::default())?;
         let reverse = match (l_ty.normalize(), r_ty.normalize()) {
             (Type::Union(..), Type::Union(..)) => false,
             (_, Type::Union(..)) => true,

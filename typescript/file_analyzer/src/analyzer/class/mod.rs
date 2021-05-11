@@ -75,6 +75,7 @@ use stc_ts_types::TsExpr;
 use stc_ts_types::Type;
 use stc_ts_utils::PatExt;
 use stc_utils::TryOpt;
+use std::borrow::Cow;
 use std::mem::replace;
 use std::mem::take;
 use swc_atoms::js_word;
@@ -1709,7 +1710,7 @@ impl Analyzer<'_, '_> {
                 _ => {}
             }
 
-            let ty = self.normalize(None, ty, Default::default())?;
+            let ty = self.normalize(None, Cow::Borrowed(ty), Default::default())?;
 
             match ty.normalize() {
                 Type::Function(..) => Err(Error::NotConstructorType { span: ty.span() })?,

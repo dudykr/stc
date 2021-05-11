@@ -89,7 +89,7 @@ impl Analyzer<'_, '_> {
     pub(crate) fn normalize<'a>(
         &mut self,
         span: Option<Span>,
-        ty: &'a Type,
+        ty: Cow<'a, Type>,
         mut opts: NormalizeTypeOpts,
     ) -> ValidationResult<Cow<'a, Type>> {
         let actual_span = span.unwrap_or_else(|| ty.span());
@@ -103,14 +103,28 @@ impl Analyzer<'_, '_> {
 
         let _stack = stack::track(actual_span)?;
 
-        let ty = ty.normalize();
+        match ty.normalize() {
+            Type::Lit(..)
+            | Type::TypeLit(..)
+            | Type::Interface(..)
+            | Type::Class(..)
+            | Type::ClassDef(..)
+            | Type::Tuple(..)
+            | Type::Function(..)
+            | Type::Constructor(..)
+            | Type::EnumVariant(..)
+            | Type::Enum(..)
+            | Type::Param(_)
+            | Type::Module(_) => return Ok(ty),
+            _ => {}
+        }
 
-        match ty {
+        match ty.normalize() {
             Type::Ref(_) => {
                 let ty = self
                     .expand_top_ref(actual_span, Cow::Borrowed(ty))
                     .context("tried to expand a ref type as a part of normalization")?;
-                return Ok(Cow::Owned(self.normalize(span, &ty, opts)?.into_owned()));
+                return Ok(Cow::Owned(self.normalize(span, ty, opts)?.into_owned()));
             }
 
             Type::Keyword(k) => {
@@ -137,7 +151,7 @@ impl Analyzer<'_, '_> {
                     let ty = self.expand_mapped(actual_span, m)?;
                     if let Some(ty) = ty {
                         return Ok(Cow::Owned(
-                            self.normalize(span, &ty, opts)
+                            self.normalize(span, Cow::Owned(ty), opts)
                                 .context("tried to expand a mapped type as a part of normalization")?
                                 .into_owned(),
                         ));
@@ -159,19 +173,6 @@ impl Analyzer<'_, '_> {
                 })));
             }
 
-            Type::Lit(..)
-            | Type::TypeLit(..)
-            | Type::Interface(..)
-            | Type::Class(..)
-            | Type::ClassDef(..)
-            | Type::Tuple(..)
-            | Type::Function(..)
-            | Type::Constructor(..)
-            | Type::EnumVariant(..)
-            | Type::Enum(..)
-            | Type::Param(_)
-            | Type::Module(_) => return Ok(Cow::Borrowed(ty)),
-
             // Not normalizable.
             Type::Infer(_) | Type::Instance(_) | Type::StaticThis(_) | Type::This(_) => {}
 
@@ -180,7 +181,7 @@ impl Analyzer<'_, '_> {
 
             Type::Conditional(c) => {
                 let mut check_type = self
-                    .normalize(span, &c.check_type, Default::default())
+                    .normalize(span, c.check_type, Default::default())
                     .context("tried to normalize the `check` type of a conditional type")?
                     .into_owned();
 
@@ -339,7 +340,14 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        Ok(Cow::Borrowed(ty.normalize()))
+        if ty.is_arc() {
+            return Ok(Cow::Borrowed(ty.normalize()));
+        }
+
+        match ty {
+            Cow::Borrowed(ty) => Ok(Cow::Borrowed(ty.normalize())),
+            Cow::Owned(ty) => Ok(Cow::Owned(ty)),
+        }
     }
 
     pub(crate) fn expand_type_ann<'a>(&mut self, ty: Option<&'a Type>) -> ValidationResult<Option<Cow<'a, Type>>> {
