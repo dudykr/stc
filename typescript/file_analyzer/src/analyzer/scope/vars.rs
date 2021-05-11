@@ -46,7 +46,7 @@ impl Analyzer<'_, '_> {
     pub(crate) fn exclude_props(&mut self, span: Span, ty: &Type, keys: &[Key]) -> ValidationResult<Type> {
         let ty = self.normalize(
             None,
-            &ty,
+            Cow::Borrowed(ty),
             NormalizeTypeOpts {
                 preserve_mapped: false,
                 ..Default::default()

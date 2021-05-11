@@ -165,7 +165,7 @@ impl Analyzer<'_, '_> {
         let rhs = self
             .normalize(
                 None,
-                rhs,
+                Cow::Borrowed(rhs),
                 NormalizeTypeOpts {
                     preserve_mapped: true,
                     ..Default::default()

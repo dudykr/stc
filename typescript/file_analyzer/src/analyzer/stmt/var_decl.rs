@@ -37,6 +37,7 @@ use stc_ts_types::QueryType;
 use stc_ts_types::{Array, Id, Operator, Symbol};
 use stc_ts_utils::find_ids_in_pat;
 use stc_ts_utils::PatExt;
+use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::Spanned;
 use swc_ecma_ast::*;
@@ -620,7 +621,8 @@ impl Analyzer<'_, '_> {
                         if !self.is_builtin {
                             // Report error if type is not found.
                             if let Some(ty) = &ty {
-                                self.normalize(None, &ty, Default::default()).report(&mut self.storage);
+                                self.normalize(None, Cow::Borrowed(ty), Default::default())
+                                    .report(&mut self.storage);
                             }
                         }
 

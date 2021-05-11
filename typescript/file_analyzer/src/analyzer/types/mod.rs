@@ -122,7 +122,7 @@ impl Analyzer<'_, '_> {
         match ty.normalize() {
             Type::Ref(_) => {
                 let ty = self
-                    .expand_top_ref(actual_span, Cow::Borrowed(ty))
+                    .expand_top_ref(actual_span, ty)
                     .context("tried to expand a ref type as a part of normalization")?;
                 return Ok(Cow::Owned(self.normalize(span, ty, opts)?.into_owned()));
             }
@@ -159,12 +159,18 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            Type::Alias(a) => return Ok(Cow::Owned(self.normalize(span, &a.ty, opts)?.into_owned())),
+            Type::Alias(a) => {
+                // TODO: Optimize
+                return Ok(Cow::Owned(
+                    self.normalize(span, Cow::Borrowed(&a.ty), opts)?.into_owned(),
+                ));
+            }
 
             // Leaf types.
             Type::Array(arr) => {
+                // TODO: Optimize
                 let elem_type = box self
-                    .normalize(span, &arr.elem_type, opts)
+                    .normalize(span, Cow::Borrowed(&arr.elem_type), opts)
                     .context("tried to normalize the type of the element of an array type")?
                     .into_owned();
                 return Ok(Cow::Owned(Type::Array(Array {
@@ -181,18 +187,19 @@ impl Analyzer<'_, '_> {
 
             Type::Conditional(c) => {
                 let mut check_type = self
-                    .normalize(span, c.check_type, Default::default())
+                    .normalize(span, Cow::Borrowed(&c.check_type), Default::default())
                     .context("tried to normalize the `check` type of a conditional type")?
                     .into_owned();
 
                 let extends_type = self
-                    .normalize(span, &c.extends_type, Default::default())
+                    .normalize(span, Cow::Borrowed(&c.extends_type), Default::default())
                     .context("tried to normalize the `extends` type of a conditional type")?;
 
                 if let Some(v) = self.extends(ty.span(), Default::default(), &check_type, &extends_type) {
                     let ty = if v { &c.true_type } else { &c.false_type };
+                    // TODO: Optimize
                     return self
-                        .normalize(span, &ty, opts)
+                        .normalize(span, Cow::Borrowed(&ty), opts)
                         .context("tried to normalize the calculated type of a conditional type");
                 }
 
@@ -300,11 +307,9 @@ impl Analyzer<'_, '_> {
                                 .resolve_typeof(actual_span, e)
                                 .context("tried to resolve typeof as a part of normalization")?;
 
-                            return Ok(Cow::Owned(
-                                self.normalize(span, &ty, opts)
-                                    .context("tried to normalize the type returned from typeof")?
-                                    .into_owned(),
-                            ));
+                            return Ok(self
+                                .normalize(span, Cow::Owned(ty), opts)
+                                .context("tried to normalize the type returned from typeof")?);
                         }
                         QueryExpr::Import(_) => {}
                     }
@@ -356,7 +361,7 @@ impl Analyzer<'_, '_> {
             None => return Ok(None),
         };
 
-        let ty = self.normalize(None, ty, Default::default())?;
+        let ty = self.normalize(None, Cow::Borrowed(ty), Default::default())?;
 
         Ok(Some(ty))
     }
@@ -704,8 +709,9 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Query(..) => {
+                // TODO: Optimize
                 let ty = self
-                    .normalize(None, ty, Default::default())
+                    .normalize(None, Cow::Borrowed(ty), Default::default())
                     .context("tried to normalize a type to convert it to type literal")?;
                 let ty = self
                     .type_to_type_lit(span, &ty)

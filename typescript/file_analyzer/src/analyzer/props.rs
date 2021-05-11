@@ -36,6 +36,7 @@ use stc_ts_types::Key;
 use stc_ts_types::PrivateName;
 use stc_ts_types::TypeParam;
 use stc_ts_utils::PatExt;
+use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::Span;
 use swc_common::Spanned;
