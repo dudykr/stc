@@ -47,6 +47,14 @@ pub(in crate::analyzer) struct ReturnValues {
     /// Are we in if or switch statement?
     pub(super) in_conditional: bool,
     pub(super) forced_never: bool,
+
+    /// `generatorReturnTypeFallback.3.ts` says
+    ///
+    /// Do not allow generators to fallback to IterableIterator while in
+    /// strictNullChecks mode if they need a type for the sent value.
+    /// NOTE: In non-strictNullChecks mode, `undefined` (the default sent value)
+    /// is assignable to everything.
+    pub(super) can_fallback_to_iterable_iterator: bool,
 }
 
 impl AddAssign for ReturnValues {
