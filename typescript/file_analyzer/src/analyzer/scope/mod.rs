@@ -846,7 +846,7 @@ impl Analyzer<'_, '_> {
 
                 self.access_property(
                     span,
-                    obj,
+                    &obj,
                     &Key::Normal {
                         span: i.span,
                         sym: i.sym.clone(),
@@ -1448,13 +1448,9 @@ impl Analyzer<'_, '_> {
                                 diallow_unknown_object_property: true,
                                 ..self.ctx
                             };
-                            let prop_ty = self.with_ctx(ctx).access_property(
-                                span,
-                                ty.clone(),
-                                &key,
-                                TypeOfMode::RValue,
-                                IdCtx::Var,
-                            );
+                            let prop_ty =
+                                self.with_ctx(ctx)
+                                    .access_property(span, &ty, &key, TypeOfMode::RValue, IdCtx::Var);
 
                             match prop_ty {
                                 Ok(ty) => {
@@ -1491,13 +1487,9 @@ impl Analyzer<'_, '_> {
                                 diallow_unknown_object_property: true,
                                 ..self.ctx
                             };
-                            let prop_ty = self.with_ctx(ctx).access_property(
-                                span,
-                                ty.clone(),
-                                &key,
-                                TypeOfMode::RValue,
-                                IdCtx::Var,
-                            );
+                            let prop_ty =
+                                self.with_ctx(ctx)
+                                    .access_property(span, &ty, &key, TypeOfMode::RValue, IdCtx::Var);
 
                             match prop_ty {
                                 Ok(prop_ty) => {
@@ -2131,7 +2123,7 @@ impl Expander<'_, '_, '_> {
                 let left =
                     self.expand_ts_entity_name(span, ctxt, left, None, was_top_level, trying_primitive_expansion)?;
 
-                if let Some(left) = left {
+                if let Some(left) = &left {
                     let ty = self
                         .analyzer
                         .access_property(

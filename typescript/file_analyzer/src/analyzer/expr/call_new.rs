@@ -759,9 +759,9 @@ impl Analyzer<'_, '_> {
                 diallow_unknown_object_property: true,
                 ..self.ctx
             };
-            let callee =
-                self.with_ctx(ctx)
-                    .access_property(span, obj_type.clone(), &prop, TypeOfMode::RValue, IdCtx::Var)?;
+            let callee = self
+                .with_ctx(ctx)
+                .access_property(span, obj_type, &prop, TypeOfMode::RValue, IdCtx::Var)?;
 
             let callee = self.expand_top_ref(span, Cow::Owned(callee))?.into_owned();
 
@@ -2747,7 +2747,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                     };
                     let mut a = self.analyzer.with_ctx(ctx);
                     let obj = a.expand_fully(*span, *obj_ty.clone(), true).report(&mut a.storage);
-                    if let Some(obj) = obj {
+                    if let Some(obj) = &obj {
                         if let Some(actual_ty) = a
                             .access_property(
                                 *span,

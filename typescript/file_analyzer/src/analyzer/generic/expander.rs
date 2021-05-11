@@ -828,7 +828,7 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
 
                 if let Ok(prop_ty) =
                     self.analyzer
-                        .access_property(span, *ty.obj_type.clone(), &key, TypeOfMode::RValue, IdCtx::Var)
+                        .access_property(span, &ty.obj_type, &key, TypeOfMode::RValue, IdCtx::Var)
                 {
                     return prop_ty;
                 }

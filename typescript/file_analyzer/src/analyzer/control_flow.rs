@@ -782,7 +782,7 @@ impl Analyzer<'_, '_> {
                         RObjectPatProp::KeyValue(kv) => {
                             let key = kv.key.validate_with(self)?;
                             let prop_ty = self
-                                .access_property(span, ty.clone(), &key, TypeOfMode::RValue, IdCtx::Var)
+                                .access_property(span, ty, &key, TypeOfMode::RValue, IdCtx::Var)
                                 .unwrap_or_else(|_| Type::any(span));
 
                             self.try_assign_pat_with_opts(span, &kv.value, &prop_ty, opts)
@@ -794,7 +794,7 @@ impl Analyzer<'_, '_> {
                                 sym: a.key.sym.clone(),
                             };
                             let prop_ty = self
-                                .access_property(span, ty.clone(), &key, TypeOfMode::RValue, IdCtx::Var)
+                                .access_property(span, ty, &key, TypeOfMode::RValue, IdCtx::Var)
                                 .unwrap_or_else(|_| Type::any(span));
 
                             self.try_assign_pat_with_opts(
@@ -928,7 +928,7 @@ impl Analyzer<'_, '_> {
 
         let prop_res = self.access_property(
             src.span(),
-            src.clone(),
+            src,
             &Key::Normal {
                 span: DUMMY_SP,
                 sym: property.clone(),
@@ -983,7 +983,7 @@ impl Analyzer<'_, '_> {
                     for obj in &u.types {
                         if let Ok(prop_ty) = self.access_property(
                             obj.span(),
-                            obj.clone(),
+                            obj,
                             &Key::Normal {
                                 span: ty.span(),
                                 sym: ids[1].sym().clone(),

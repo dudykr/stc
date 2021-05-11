@@ -237,7 +237,7 @@ impl Analyzer<'_, '_> {
                 return self
                     .access_property(
                         span,
-                        iterator.clone().into_owned(),
+                        &iterator,
                         &Key::Num(RNumber { span, value: n as _ }),
                         TypeOfMode::RValue,
                         IdCtx::Var,
@@ -278,7 +278,7 @@ impl Analyzer<'_, '_> {
         let mut elem_ty = self
             .access_property(
                 span,
-                next_ret_ty,
+                &next_ret_ty,
                 &Key::Normal {
                     span,
                     sym: "value".into(),
@@ -578,7 +578,7 @@ impl Analyzer<'_, '_> {
         let mut elem_ty = self
             .access_property(
                 span,
-                next_ret_ty,
+                &next_ret_ty,
                 &Key::Normal {
                     span,
                     sym: "value".into(),

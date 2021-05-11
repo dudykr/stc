@@ -304,7 +304,7 @@ impl Analyzer<'_, '_> {
                                 Some(ty) => self
                                     .access_property(
                                         elem.span(),
-                                        ty.clone(),
+                                        &ty,
                                         &Key::Num(RNumber {
                                             span: elem.span(),
                                             value: idx as f64,
@@ -372,7 +372,7 @@ impl Analyzer<'_, '_> {
 
                             let prop_ty = match &ty {
                                 Some(ty) => self
-                                    .access_property(span, ty.clone(), &key, TypeOfMode::RValue, IdCtx::Var)
+                                    .access_property(span, ty, &key, TypeOfMode::RValue, IdCtx::Var)
                                     .convert_err(|err| match err {
                                         Error::NoSuchProperty { span, .. } if prop.value.is_none() => {
                                             Error::NoSuchPropertyWhileDeclWithBidningPat { span }
@@ -431,7 +431,7 @@ impl Analyzer<'_, '_> {
 
                             let prop_ty = match &ty {
                                 Some(ty) => self
-                                    .access_property(span, ty.clone(), &key, TypeOfMode::RValue, IdCtx::Var)
+                                    .access_property(span, &ty, &key, TypeOfMode::RValue, IdCtx::Var)
                                     .map(Some)
                                     .context("tried to access property to declare variables using an object pattern")
                                     .report(&mut self.storage)
