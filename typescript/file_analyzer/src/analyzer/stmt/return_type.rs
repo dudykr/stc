@@ -54,7 +54,7 @@ pub(in crate::analyzer) struct ReturnValues {
     /// strictNullChecks mode if they need a type for the sent value.
     /// NOTE: In non-strictNullChecks mode, `undefined` (the default sent value)
     /// is assignable to everything.
-    pub(super) can_fallback_to_iterable_iterator: bool,
+    pub(super) cannot_fallback_to_iterable_iterator: bool,
 }
 
 impl AddAssign for ReturnValues {
