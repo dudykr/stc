@@ -205,6 +205,9 @@ pub(crate) struct Ctx {
     super_references_super_class: bool,
 
     in_class_with_super: bool,
+
+    /// `true` if the value of an exprssion is going to be used.
+    is_value_used: bool,
 }
 
 impl Ctx {
@@ -509,6 +512,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 skip_identical_while_inferencing: false,
                 super_references_super_class: false,
                 in_class_with_super: false,
+                is_value_used: false,
             },
             loader,
             is_builtin,
