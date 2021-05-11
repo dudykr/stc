@@ -366,7 +366,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RWhileStmt) {
         let test = {
             let ctx = Ctx {
-                in_cond: true,
+                in_cond_of_cond_expr: true,
                 ..self.ctx
             };
             let test = node.test.validate_with_default(&mut *self.with_ctx(ctx));

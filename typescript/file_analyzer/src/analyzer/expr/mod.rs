@@ -2772,7 +2772,7 @@ impl Analyzer<'_, '_> {
                 let obj_ctx = Ctx {
                     allow_module_var: true,
                     in_opt_chain: is_obj_opt_chain,
-                    should_store_truthy_for_access: self.ctx.in_cond && !is_obj_opt_chain,
+                    should_store_truthy_for_access: self.ctx.in_cond_of_cond_expr && !is_obj_opt_chain,
                     ..self.ctx
                 };
 
@@ -2837,7 +2837,7 @@ impl Analyzer<'_, '_> {
                 self.exclude_types_using_fact(&name, &mut ty);
             }
 
-            if self.ctx.in_cond && self.ctx.should_store_truthy_for_access {
+            if self.ctx.in_cond_of_cond_expr && self.ctx.should_store_truthy_for_access {
                 // Add type facts.
                 match obj {
                     RExprOrSuper::Expr(obj) => {

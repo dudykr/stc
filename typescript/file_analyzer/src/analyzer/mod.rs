@@ -125,7 +125,7 @@ pub(crate) struct Ctx {
     in_shorthand: bool,
 
     /// `true` for condition of conditional expression or of an if statement.
-    in_cond: bool,
+    in_cond_of_cond_expr: bool,
     should_store_truthy_for_access: bool,
     in_switch_case_test: bool,
 
@@ -470,7 +470,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 cannot_be_tuple: false,
                 should_not_create_indexed_type_from_ty_els: false,
                 in_shorthand: false,
-                in_cond: false,
+                in_cond_of_cond_expr: false,
                 should_store_truthy_for_access: false,
                 in_switch_case_test: false,
                 in_computed_prop_name: false,

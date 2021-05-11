@@ -309,7 +309,7 @@ impl Analyzer<'_, '_> {
                     (l, r) => Some((extract_name_for_assignment(l)?, r_ty)),
                 }) {
                     Some((l, r_ty)) => {
-                        if self.ctx.in_cond {
+                        if self.ctx.in_cond_of_cond_expr {
                             let (name, mut r) = self.calc_type_facts_for_equality(l, r_ty)?;
                             if op == op!("===") {
                                 self.cur_facts
@@ -370,7 +370,7 @@ impl Analyzer<'_, '_> {
                                 _ => false,
                             };
 
-                        if self.ctx.in_cond && !cannot_narrow {
+                        if self.ctx.in_cond_of_cond_expr && !cannot_narrow {
                             let narrowed_ty = self
                                 .narrow_with_instanceof(span, ty.clone(), &orig_ty)
                                 .context("tried to narrow type with instanceof")?
@@ -614,7 +614,7 @@ impl Analyzer<'_, '_> {
             }
 
             op!("in") => {
-                if self.ctx.in_cond {
+                if self.ctx.in_cond_of_cond_expr {
                     let left = match &**left {
                         RExpr::Lit(RLit::Str(s)) => Some(s.value.clone()),
                         RExpr::Tpl(t) if t.quasis.len() == 1 => t.quasis[0].cooked.clone().map(|v| v.value),
