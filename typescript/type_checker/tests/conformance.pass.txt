@@ -1307,6 +1307,7 @@ functions/strictBindCallApply2.ts
 generators/generatorImplicitAny.ts
 generators/generatorReturnTypeFallback.1.ts
 generators/generatorReturnTypeFallback.2.ts
+generators/generatorReturnTypeFallback.3.ts
 generators/generatorReturnTypeFallback.4.ts
 generators/generatorReturnTypeFallback.5.ts
 generators/generatorReturnTypeIndirectReferenceToGlobalType.ts
