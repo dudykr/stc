@@ -555,6 +555,7 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2304
     NoSuchType {
         span: Span,
         name: Id,
