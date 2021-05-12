@@ -1777,14 +1777,22 @@ impl Analyzer<'_, '_> {
             // TODO
             Ok(())
         } else {
-            // For iifes, not providing some arguemnts are allowed.
-            if min_param <= args.len() || self.ctx.is_calling_iife {
+            if min_param <= args.len() {
                 if let Some(max) = max_param {
                     if args.len() <= max {
                         return Ok(());
                     }
                 } else {
                     return Ok(());
+                }
+            }
+
+            // For iifes, not providing some arguemnts are allowed.
+            if self.ctx.is_calling_iife {
+                if let Some(max) = max_param {
+                    if args.len() <= max {
+                        return Ok(());
+                    }
                 }
             }
 
