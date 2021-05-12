@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2701
+    RestArgMustBeVarOrMemberAccess {
+        span: Span,
+    },
+
     /// TS2501
     BindingPatNotAllowedInRestPatArg {
         span: Span,
@@ -1525,6 +1530,8 @@ impl Error {
             Error::DeleteOperandMustBeOptional { .. } => 2790,
 
             Error::BindingPatNotAllowedInRestPatArg { .. } => 2501,
+
+            Error::RestArgMustBeVarOrMemberAccess { .. } => 2701,
 
             _ => 0,
         }

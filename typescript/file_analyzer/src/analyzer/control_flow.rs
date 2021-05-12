@@ -819,14 +819,29 @@ impl Analyzer<'_, '_> {
                             match &*r.arg {
                                 RPat::Ident(_) => {}
 
-                                RPat::Array(_) | RPat::Object(_) => {
+                                RPat::Array(_) => {
                                     self.storage
                                         .report(Error::BindingPatNotAllowedInRestPatArg { span: r.arg.span() });
                                 }
 
-                                RPat::Expr(_) | RPat::Invalid(_) => {
+                                RPat::Object(_) => {
+                                    self.storage.report(Error::MustHaveSymbolIteratorThatReturnsIterator {
+                                        span: r.arg.span(),
+                                    });
                                     self.storage
                                         .report(Error::BindingPatNotAllowedInRestPatArg { span: r.arg.span() });
+                                }
+
+                                RPat::Expr(_) => {
+                                    self.storage
+                                        .report(Error::BindingPatNotAllowedInRestPatArg { span: r.arg.span() });
+                                }
+
+                                RPat::Invalid(_) => {
+                                    self.storage
+                                        .report(Error::BindingPatNotAllowedInRestPatArg { span: r.arg.span() });
+                                    self.storage
+                                        .report(Error::RestArgMustBeVarOrMemberAccess { span: r.arg.span() });
                                 }
 
                                 _ => {}
