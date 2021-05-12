@@ -21,6 +21,7 @@ use stc_ts_ast_rnode::RTsTypeAliasDecl;
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
+use stc_ts_type_ops::Fix;
 use stc_ts_types::name::Name;
 use stc_ts_types::Array;
 use stc_ts_types::ClassDef;
@@ -959,6 +960,8 @@ impl Analyzer<'_, '_> {
         for excluded in excludes {
             self.exclude_type(ty, &excluded);
         }
+
+        ty.fix();
     }
 
     pub(crate) fn fill_known_type_names<N>(&mut self, node: N)
