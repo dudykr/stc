@@ -27,7 +27,6 @@ use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_ast_rnode::RYieldExpr;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
-use stc_ts_types::Id;
 use stc_ts_types::Key;
 use stc_ts_types::ModuleId;
 use stc_ts_types::{
