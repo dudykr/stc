@@ -130,18 +130,18 @@ impl Analyzer<'_, '_> {
         {
             match &*ty {
                 Type::Ref(_) => {
-                    let ty = self
+                    let new_ty = self
                         .expand_top_ref(actual_span, Cow::Borrowed(&ty))
                         .context("tried to expand a ref type as a part of normalization")?;
 
-                    if ty.normalize().is_ref_type() {
+                    if new_ty.type_eq(&*ty) {
                         panic!(
-                            "normalize: expand_top_ref returned a reference type: {}",
-                            dump_type_as_string(&self.cm, &ty)
+                            "normalize: expand_top_ref returned an identical reference type: {}",
+                            dump_type_as_string(&self.cm, &new_ty)
                         )
                     }
 
-                    return Ok(Cow::Owned(self.normalize(span, ty, opts)?.into_owned()));
+                    return Ok(Cow::Owned(self.normalize(span, new_ty, opts)?.into_owned()));
                 }
 
                 Type::Keyword(k) => {
