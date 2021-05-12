@@ -574,6 +574,8 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult<()> {
         let span = opts.span;
 
+        let mut errors = vec![];
+
         for (i, m) in lhs.into_iter().enumerate().filter(|(_, m)| m.key().is_some()) {
             let res = self
                 .assign_type_elements_to_type_element(data, opts, missing_fields, unhandled_rhs, m, rhs)
@@ -582,11 +584,13 @@ impl Analyzer<'_, '_> {
             match res {
                 Ok(()) => {}
                 Err(Error::Errors { ref errors, .. }) if errors.is_empty() => {}
-                Err(err) => return Err(err),
+                Err(err) => errors.push(err),
             }
         }
 
-        let mut errors = vec![];
+        if !errors.is_empty() {
+            return Err(Error::Errors { span, errors });
+        }
 
         // Index signature can eat multiple rhs.
         for m in lhs.iter().filter(|m| m.key().is_none()) {
