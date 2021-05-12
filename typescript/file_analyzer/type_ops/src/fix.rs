@@ -3,6 +3,7 @@ use rnode::VisitMutWith;
 use stc_ts_types::Array;
 use stc_ts_types::Intersection;
 use stc_ts_types::Type;
+use stc_ts_types::TypeOrSpread;
 use stc_ts_types::Union;
 use swc_common::TypeEq;
 
@@ -12,6 +13,15 @@ pub trait Fix: Sized {
     fn fixed(mut self) -> Self {
         self.fix();
         self
+    }
+}
+
+impl<T> Fix for Vec<T>
+where
+    T: Fix,
+{
+    fn fix(&mut self) {
+        self.iter_mut().for_each(|item| item.fix())
     }
 }
 
@@ -29,6 +39,7 @@ impl_fix!(Type);
 impl_fix!(Array);
 impl_fix!(Union);
 impl_fix!(Intersection);
+impl_fix!(TypeOrSpread);
 
 struct Fixer;
 
