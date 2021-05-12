@@ -366,19 +366,21 @@ impl Analyzer<'_, '_> {
                     _ => obj_type,
                 };
 
-                return self.call_property(
-                    span,
-                    kind,
-                    expr,
-                    &obj_type,
-                    &obj_type,
-                    &prop,
-                    type_args.as_ref(),
-                    args,
-                    &arg_types,
-                    &spread_arg_types,
-                    type_ann,
-                );
+                return self
+                    .call_property(
+                        span,
+                        kind,
+                        expr,
+                        &obj_type,
+                        &obj_type,
+                        &prop,
+                        type_args.as_ref(),
+                        args,
+                        &arg_types,
+                        &spread_arg_types,
+                        type_ann,
+                    )
+                    .map(|ty| ty.fixed());
             }
             _ => {}
         }
