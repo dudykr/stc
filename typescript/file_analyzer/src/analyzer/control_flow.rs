@@ -824,7 +824,7 @@ impl Analyzer<'_, '_> {
                                         .report(Error::BindingPatNotAllowedInRestPatArg { span: r.arg.span() });
                                 }
 
-                                RPat::Expr(_) => {
+                                RPat::Expr(_) | RPat::Invalid(_) => {
                                     self.storage
                                         .report(Error::BindingPatNotAllowedInRestPatArg { span: r.arg.span() });
                                 }
