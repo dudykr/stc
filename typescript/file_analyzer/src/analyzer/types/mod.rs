@@ -40,6 +40,7 @@ use stc_ts_types::TypeParam;
 use stc_ts_types::TypeParamInstantiation;
 use stc_ts_types::Union;
 use stc_ts_utils::MapWithMut;
+use stc_utils::error;
 use stc_utils::error::context;
 use stc_utils::ext::SpanExt;
 use stc_utils::stack;
@@ -102,6 +103,7 @@ impl Analyzer<'_, '_> {
         }
 
         let _stack = stack::track(actual_span)?;
+        let _context = error::context(format!("Normalize: {}", dump_type_as_string(&self.cm, &ty)));
 
         if ty.is_arc() {
             let ty = self.normalize(span, Cow::Borrowed(ty.normalize()), opts)?.into_owned();
