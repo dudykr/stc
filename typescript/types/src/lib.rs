@@ -1244,6 +1244,24 @@ impl Type {
     }
 }
 
+struct AssertValid;
+
+impl Visit<Union> for AssertValid {
+    fn visit(&mut self, ty: &Union) {
+        ty.visit_children_with(self);
+
+        ty.assert_valid();
+    }
+}
+
+impl Visit<Intersection> for AssertValid {
+    fn visit(&mut self, ty: &Intersection) {
+        ty.visit_children_with(self);
+
+        ty.assert_valid();
+    }
+}
+
 impl Type {
     /// Panics if type is invalid.
     ///
@@ -1258,11 +1276,7 @@ impl Type {
 
         let _ctx = context(format!("{:?}", self));
 
-        match self.normalize() {
-            Type::Union(ty) => ty.assert_valid(),
-            Type::Intersection(ty) => ty.assert_valid(),
-            _ => {}
-        }
+        self.visit_with(&mut AssertValid);
     }
 
     pub fn is_global_this(&self) -> bool {
