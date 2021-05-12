@@ -134,7 +134,7 @@ impl Analyzer<'_, '_> {
 
                     if ty.normalize().is_ref_type() {
                         panic!(
-                            "expand_top_ref returned a reference type: {}",
+                            "normalize: expand_top_ref returned a reference type: {}",
                             dump_type_as_string(&self.cm, &ty)
                         )
                     }
@@ -327,7 +327,7 @@ impl Analyzer<'_, '_> {
 
                                 if ty.normalize().is_query() {
                                     panic!(
-                                        "resolve_typeof returned a query type: {}",
+                                        "normalize: resolve_typeof returned a query type: {}",
                                         dump_type_as_string(&self.cm, &ty)
                                     )
                                 }
