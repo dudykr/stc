@@ -27,6 +27,7 @@ use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_ast_rnode::RYieldExpr;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
+use stc_ts_types::Id;
 use stc_ts_types::Key;
 use stc_ts_types::ModuleId;
 use stc_ts_types::{
@@ -179,7 +180,14 @@ impl Analyzer<'_, '_> {
                     type_name: if is_async {
                         RTsEntityName::Ident(RIdent::new("AsyncGenerator".into(), DUMMY_SP))
                     } else {
-                        if self.env.get_global_type(span, &"Generator".into()).is_ok() {
+                        if used_yield_value || self.env.get_global_type(span, &"Generator".into()).is_ok() {
+                            if self.env.get_global_type(span, &"Generator".into()).is_err() {
+                                self.storage.report(Error::NoSuchType {
+                                    span,
+                                    name: Id::word("Generator".into()),
+                                })
+                            }
+
                             RTsEntityName::Ident(RIdent::new("Generator".into(), DUMMY_SP))
                         } else {
                             RTsEntityName::Ident(RIdent::new("IterableIterator".into(), DUMMY_SP))
@@ -332,7 +340,9 @@ impl Analyzer<'_, '_> {
 
                 // Generator
                 (false, true) => {
-                    let name = if self.env.get_global_type(node.span, &"Generator".into()).is_ok() {
+                    let name = if self.ctx.cannot_fallback_to_iterable_iterator
+                        || self.env.get_global_type(node.span, &"Generator".into()).is_ok()
+                    {
                         "Generator"
                     } else {
                         "IterableIterator"
