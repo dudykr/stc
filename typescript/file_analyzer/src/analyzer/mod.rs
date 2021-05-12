@@ -208,6 +208,14 @@ pub(crate) struct Ctx {
 
     /// `true` if the value of an exprssion is going to be used.
     is_value_used: bool,
+
+    /// `generatorReturnTypeFallback.3.ts` says
+    ///
+    /// Do not allow generators to fallback to IterableIterator while in
+    /// strictNullChecks mode if they need a type for the sent value.
+    /// NOTE: In non-strictNullChecks mode, `undefined` (the default sent value)
+    /// is assignable to everything.
+    cannot_fallback_to_iterable_iterator: bool,
 }
 
 impl Ctx {
@@ -513,6 +521,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 super_references_super_class: false,
                 in_class_with_super: false,
                 is_value_used: false,
+                cannot_fallback_to_iterable_iterator: false,
             },
             loader,
             is_builtin,
