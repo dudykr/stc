@@ -817,6 +817,10 @@ impl Union {
                 }
             }
         }
+
+        if self.types.len() <= 1 {
+            panic!("A union type should have multiple items. Got {:?}", self.types);
+        }
     }
 }
 
@@ -855,6 +859,10 @@ impl Intersection {
                     panic!("An intersection type has duplicate elements: ({:?})", t1)
                 }
             }
+        }
+
+        if self.types.len() <= 1 {
+            panic!("A union type should have multiple items. Got {:?}", self.types);
         }
     }
 }
