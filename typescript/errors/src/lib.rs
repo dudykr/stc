@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2501
+    BindingPatNotAllowedInRestPatArg {
+        span: Span,
+    },
+
     /// TS2790
     DeleteOperandMustBeOptional {
         span: Span,
@@ -1518,6 +1523,8 @@ impl Error {
             Error::SuperCannotUseTypeArgs { .. } => 2754,
 
             Error::DeleteOperandMustBeOptional { .. } => 2790,
+
+            Error::BindingPatNotAllowedInRestPatArg { .. } => 2501,
 
             _ => 0,
         }
