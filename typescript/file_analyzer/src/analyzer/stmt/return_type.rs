@@ -183,13 +183,6 @@ impl Analyzer<'_, '_> {
                         if cannot_fallback_to_iterable_iterator
                             || self.env.get_global_type(span, &"Generator".into()).is_ok()
                         {
-                            if self.env.get_global_type(span, &"Generator".into()).is_err() {
-                                self.storage.report(Error::NoSuchType {
-                                    span,
-                                    name: Id::word("Generator".into()),
-                                })
-                            }
-
                             RTsEntityName::Ident(RIdent::new("Generator".into(), DUMMY_SP))
                         } else {
                             RTsEntityName::Ident(RIdent::new("IterableIterator".into(), DUMMY_SP))
