@@ -77,7 +77,7 @@ impl Analyzer<'_, '_> {
         slog::debug!(self.logger, "visit_stmts_for_return()");
         debug_assert!(!self.is_builtin, "builtin: visit_stmts_for_return should not be called");
 
-        let used_yield_value = {
+        let cannot_fallback_to_iterable_iterator = self.rule().strict_null_checks && {
             let mut v = YieldValueUsageFinder::default();
 
             stmts.visit_with(&mut v);
@@ -91,7 +91,7 @@ impl Analyzer<'_, '_> {
             let mut values: ReturnValues = {
                 let ctx = Ctx {
                     preserve_ref: true,
-                    cannot_fallback_to_iterable_iterator: used_yield_value,
+                    cannot_fallback_to_iterable_iterator,
                     ..self.ctx
                 };
                 self.with_ctx(ctx).with(|analyzer: &mut Analyzer| {
@@ -180,7 +180,9 @@ impl Analyzer<'_, '_> {
                     type_name: if is_async {
                         RTsEntityName::Ident(RIdent::new("AsyncGenerator".into(), DUMMY_SP))
                     } else {
-                        if used_yield_value || self.env.get_global_type(span, &"Generator".into()).is_ok() {
+                        if cannot_fallback_to_iterable_iterator
+                            || self.env.get_global_type(span, &"Generator".into()).is_ok()
+                        {
                             if self.env.get_global_type(span, &"Generator".into()).is_err() {
                                 self.storage.report(Error::NoSuchType {
                                     span,
