@@ -462,7 +462,7 @@ impl Analyzer<'_, '_> {
                 type_ann,
             )?;
 
-            return Ok(expanded_ty);
+            return Ok(expanded_ty.fixed());
         })
     }
 
