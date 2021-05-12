@@ -1248,17 +1248,37 @@ struct AssertValid;
 
 impl Visit<Union> for AssertValid {
     fn visit(&mut self, ty: &Union) {
+        if !cfg!(debug_assertions) {
+            return;
+        }
+
         ty.visit_children_with(self);
 
         ty.assert_valid();
+
+        for item in ty.types.iter() {
+            if item.normalize().is_union_type() {
+                panic!("A union type should not have a union item")
+            }
+        }
     }
 }
 
 impl Visit<Intersection> for AssertValid {
     fn visit(&mut self, ty: &Intersection) {
+        if !cfg!(debug_assertions) {
+            return;
+        }
+
         ty.visit_children_with(self);
 
         ty.assert_valid();
+
+        for item in ty.types.iter() {
+            if item.normalize().is_union_type() {
+                panic!("An intersection type should not have an intersection item")
+            }
+        }
     }
 }
 
