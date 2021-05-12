@@ -815,6 +815,24 @@ impl Analyzer<'_, '_> {
                                     m.for_pats.entry(r.node_id).or_default().ty = Some(Type::any(span));
                                 }
                             }
+
+                            match &*r.arg {
+                                RPat::Ident(_) => {}
+
+                                RPat::Array(_) | RPat::Object(_) => {
+                                    self.storage
+                                        .report(Error::BindingPatNotAllowedInRestPatArg { span: r.arg.span() });
+                                }
+
+                                RPat::Expr(_) => {
+                                    self.storage
+                                        .report(Error::BindingPatNotAllowedInRestPatArg { span: r.arg.span() });
+                                }
+
+                                _ => {
+                                    dbg!(&r.arg);
+                                }
+                            }
                             // TODO
                             // self.try_assign_pat_with_opts(span, lhs,
                             // &prop_ty).report(&mut self.storage);
