@@ -318,6 +318,9 @@ impl Analyzer<'_, '_> {
         right: &Type,
         opts: AssignOpts,
     ) -> ValidationResult<()> {
+        left.assert_valid();
+        right.assert_valid();
+
         let l = dump_type_as_string(&self.cm, &left);
         let r = dump_type_as_string(&self.cm, &right);
 
