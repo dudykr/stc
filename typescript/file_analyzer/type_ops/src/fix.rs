@@ -105,7 +105,8 @@ impl VisitMut<Type> for Fixer {
                     return;
                 }
                 1 => {
-                    let elem = u.types.drain(..).next().unwrap();
+                    let mut elem = u.types.drain(..).next().unwrap();
+                    elem.respan(u.span);
                     *ty = elem;
                     return;
                 }
@@ -118,7 +119,8 @@ impl VisitMut<Type> for Fixer {
                     return;
                 }
                 1 => {
-                    let elem = i.types.drain(..).next().unwrap();
+                    let mut elem = i.types.drain(..).next().unwrap();
+                    elem.respan(i.span);
                     *ty = elem;
                     return;
                 }
