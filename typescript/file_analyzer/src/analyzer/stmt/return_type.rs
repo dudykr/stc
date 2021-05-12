@@ -72,12 +72,16 @@ impl Analyzer<'_, '_> {
         slog::debug!(self.logger, "visit_stmts_for_return()");
         debug_assert!(!self.is_builtin, "builtin: visit_stmts_for_return should not be called");
 
+        // TODO: Check if yield value is assigned to something.
+        let used_yield_value = false;
+
         // let mut old_ret_tys = self.scope.return_types.take();
 
         let ret_ty = (|| -> ValidationResult<_> {
             let mut values: ReturnValues = {
                 let ctx = Ctx {
                     preserve_ref: true,
+                    cannot_fallback_to_iterable_iterator: used_yield_value,
                     ..self.ctx
                 };
                 self.with_ctx(ctx).with(|analyzer: &mut Analyzer| {
