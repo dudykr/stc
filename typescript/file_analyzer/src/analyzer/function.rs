@@ -21,6 +21,7 @@ use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
+use stc_ts_type_ops::Fix;
 use stc_ts_types::CallSignature;
 use stc_ts_types::Class;
 use stc_ts_types::ClassDef;
@@ -401,7 +402,7 @@ impl Analyzer<'_, '_> {
         };
 
         match fn_ty {
-            Ok(ty) => Type::Function(ty).cheap(),
+            Ok(ty) => Type::Function(ty).fixed().cheap(),
             Err(err) => {
                 self.storage.report(err);
                 Type::any(f.span)
