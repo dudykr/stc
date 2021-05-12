@@ -1,4 +1,5 @@
 use crate::analyzer::assign::AssignOpts;
+use crate::analyzer::stmt::return_type::yield_check::YieldValueUsageFinder;
 use crate::analyzer::util::ResultExt;
 use crate::util::type_ext::TypeVecExt;
 use crate::{
@@ -12,6 +13,7 @@ use rnode::Fold;
 use rnode::FoldWith;
 use rnode::NodeId;
 use rnode::Visit;
+use rnode::VisitWith;
 use stc_ts_ast_rnode::RBreakStmt;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RReturnStmt;
@@ -36,6 +38,8 @@ use std::{mem::take, ops::AddAssign};
 use swc_common::TypeEq;
 use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
+
+mod yield_check;
 
 #[derive(Debug, Default)]
 pub(in crate::analyzer) struct ReturnValues {
@@ -72,8 +76,13 @@ impl Analyzer<'_, '_> {
         slog::debug!(self.logger, "visit_stmts_for_return()");
         debug_assert!(!self.is_builtin, "builtin: visit_stmts_for_return should not be called");
 
-        // TODO: Check if yield value is assigned to something.
-        let used_yield_value = false;
+        let used_yield_value = {
+            let mut v = YieldValueUsageFinder::default();
+
+            stmts.visit_with(&mut v);
+
+            v.found
+        };
 
         // let mut old_ret_tys = self.scope.return_types.take();
 
