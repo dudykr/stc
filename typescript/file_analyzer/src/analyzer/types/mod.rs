@@ -131,6 +131,14 @@ impl Analyzer<'_, '_> {
                     let ty = self
                         .expand_top_ref(actual_span, Cow::Borrowed(&ty))
                         .context("tried to expand a ref type as a part of normalization")?;
+
+                    if ty.normalize().is_ref_type() {
+                        panic!(
+                            "expand_top_ref returned a reference type: {}",
+                            dump_type_as_string(&self.cm, &ty)
+                        )
+                    }
+
                     return Ok(Cow::Owned(self.normalize(span, ty, opts)?.into_owned()));
                 }
 
@@ -316,6 +324,13 @@ impl Analyzer<'_, '_> {
                                 let ty = self
                                     .resolve_typeof(actual_span, e)
                                     .context("tried to resolve typeof as a part of normalization")?;
+
+                                if ty.normalize().is_query() {
+                                    panic!(
+                                        "resolve_typeof returned a query type: {}",
+                                        dump_type_as_string(&self.cm, &ty)
+                                    )
+                                }
 
                                 return Ok(self
                                     .normalize(span, Cow::Owned(ty), opts)
