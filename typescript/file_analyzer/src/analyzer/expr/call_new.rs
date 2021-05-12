@@ -1799,6 +1799,9 @@ impl Analyzer<'_, '_> {
             if max_param.is_none() {
                 return Err(Error::ExpectedAtLeastNArgsButGotM { span, min: min_param });
             }
+
+            let span = args.get(min_param).map(|arg| arg.expr.span()).unwrap_or(span);
+
             return Err(Error::ExpectedNArgsButGotM {
                 span,
                 min: min_param,
