@@ -41,6 +41,18 @@ impl VisitMut<Union> for Fixer {
             if new.iter().any(|stored| stored.type_eq(&ty)) {
                 continue;
             }
+
+            if ty.normalize().is_union_type() {
+                let u = ty.foldable().union_type().unwrap();
+                for ty in u.types {
+                    if new.iter().any(|stored| stored.type_eq(&ty)) {
+                        continue;
+                    }
+                    new.push(ty);
+                }
+                continue;
+            }
+
             new.push(ty);
         }
         u.types = new;
@@ -56,6 +68,18 @@ impl VisitMut<Intersection> for Fixer {
             if new.iter().any(|stored| stored.type_eq(&ty)) {
                 continue;
             }
+
+            if ty.normalize().is_intersection_type() {
+                let i = ty.foldable().intersection_type().unwrap();
+                for ty in i.types {
+                    if new.iter().any(|stored| stored.type_eq(&ty)) {
+                        continue;
+                    }
+                    new.push(ty);
+                }
+                continue;
+            }
+
             new.push(ty);
         }
         ty.types = new;
