@@ -862,7 +862,7 @@ impl Intersection {
         }
 
         if self.types.len() <= 1 {
-            panic!("A union type should have multiple items. Got {:?}", self.types);
+            panic!("An intersection type should have multiple items. Got {:?}", self.types);
         }
     }
 }
