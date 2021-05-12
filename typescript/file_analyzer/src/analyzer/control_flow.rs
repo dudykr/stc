@@ -829,9 +829,7 @@ impl Analyzer<'_, '_> {
                                         .report(Error::BindingPatNotAllowedInRestPatArg { span: r.arg.span() });
                                 }
 
-                                _ => {
-                                    dbg!(&r.arg);
-                                }
+                                _ => {}
                             }
                             // TODO
                             // self.try_assign_pat_with_opts(span, lhs,
