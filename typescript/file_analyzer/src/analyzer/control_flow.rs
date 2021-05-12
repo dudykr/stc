@@ -820,14 +820,12 @@ impl Analyzer<'_, '_> {
                                 RPat::Ident(_) => {}
 
                                 RPat::Array(_) => {
+                                    self.storage.report(Error::NotArrayType { span: r.arg.span() });
                                     self.storage
                                         .report(Error::BindingPatNotAllowedInRestPatArg { span: r.arg.span() });
                                 }
 
                                 RPat::Object(_) => {
-                                    self.storage.report(Error::MustHaveSymbolIteratorThatReturnsIterator {
-                                        span: r.arg.span(),
-                                    });
                                     self.storage
                                         .report(Error::BindingPatNotAllowedInRestPatArg { span: r.arg.span() });
                                 }
