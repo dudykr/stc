@@ -794,7 +794,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, ty: &RTsType) -> ValidationResult {
         self.record(ty);
 
-        let _ctx = error::context(format!("validate\nTsType: {:?}", e));
+        let _ctx = error::context(format!("validate\nTsType: {:?}", ty));
 
         let ty = match ty {
             RTsType::TsThisType(this) => Type::This(this.clone()),
