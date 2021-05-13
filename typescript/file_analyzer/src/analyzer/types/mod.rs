@@ -144,6 +144,8 @@ impl Analyzer<'_, '_> {
                         )
                     }
 
+                    new_ty.assert_valid();
+
                     return Ok(Cow::Owned(self.normalize(span, new_ty, opts)?.into_owned()));
                 }
 
@@ -160,6 +162,7 @@ impl Analyzer<'_, '_> {
 
                         if let Some(name) = name {
                             let global = self.env.get_global_type(actual_span, &name)?;
+                            global.assert_valid();
 
                             return Ok(Cow::Owned(global));
                         }
@@ -193,6 +196,9 @@ impl Analyzer<'_, '_> {
                         .normalize(span, Cow::Borrowed(&arr.elem_type), opts)
                         .context("tried to normalize the type of the element of an array type")?
                         .into_owned();
+
+                    elem_type.assert_valid();
+
                     return Ok(Cow::Owned(Type::Array(Array {
                         span: arr.span,
                         elem_type,
@@ -254,6 +260,8 @@ impl Analyzer<'_, '_> {
                                     types,
                                 });
 
+                                new.assert_valid();
+
                                 return Ok(Cow::Owned(new));
                             }
                         }
@@ -311,8 +319,10 @@ impl Analyzer<'_, '_> {
                                         let mut params = HashMap::default();
                                         params.insert(name.clone(), check_type);
                                         let c = self.expand_type_params(&params, c.clone())?;
+                                        let c = Type::Conditional(c);
+                                        c.assert_valid();
 
-                                        return Ok(Cow::Owned(Type::Conditional(c)));
+                                        return Ok(Cow::Owned(c));
                                     }
                                 }
                                 _ => {}
@@ -365,6 +375,7 @@ impl Analyzer<'_, '_> {
                     let keys_ty = self
                         .keyof(actual_span, &ty)
                         .context("tried to get keys of a type as a part of normalization")?;
+                    keys_ty.assert_valid();
                     return Ok(Cow::Owned(keys_ty));
                 }
 
