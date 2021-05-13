@@ -1275,7 +1275,7 @@ impl Visit<Intersection> for AssertValid {
         ty.assert_valid();
 
         for item in ty.types.iter() {
-            if item.normalize().is_union_type() {
+            if item.normalize().is_intersection_type() {
                 panic!("An intersection type should not have an intersection item")
             }
         }
