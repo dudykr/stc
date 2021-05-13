@@ -254,11 +254,11 @@ impl Analyzer<'_, '_> {
                             }
 
                             if all {
-                                types.dedup_type();
                                 let new = Type::Union(Union {
                                     span: actual_span,
                                     types,
-                                });
+                                })
+                                .fixed();
 
                                 new.assert_valid();
 
