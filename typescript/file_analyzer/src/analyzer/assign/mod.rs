@@ -215,6 +215,9 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
+        left.assert_valid();
+        right.assert_valid();
+
         let _stack = stack::track(opts.span)?;
 
         // if cfg!(debug_assertions) && span.is_dummy() {
