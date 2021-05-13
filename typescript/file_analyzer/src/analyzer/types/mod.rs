@@ -94,6 +94,8 @@ impl Analyzer<'_, '_> {
         ty: Cow<'a, Type>,
         mut opts: NormalizeTypeOpts,
     ) -> ValidationResult<Cow<'a, Type>> {
+        ty.assert_valid();
+
         let actual_span = span.unwrap_or_else(|| ty.span());
         if !self.is_builtin {
             debug_assert!(
