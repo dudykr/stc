@@ -510,8 +510,13 @@ impl Analyzer<'_, '_> {
                     return Ok(Cow::Owned(Type::any(tuple.span)));
                 }
                 let mut types = tuple.elems.iter().map(|e| *e.ty.clone()).collect_vec();
-                types.dedup_type();
-                return Ok(Cow::Owned(Type::union(types)));
+                return Ok(Cow::Owned(
+                    Type::Union(Union {
+                        span: tuple.span,
+                        types,
+                    })
+                    .fixed(),
+                ));
             }
             Type::Union(u) => {
                 let mut types = u
@@ -522,9 +527,8 @@ impl Analyzer<'_, '_> {
                     })
                     .map(|ty| ty.map(Cow::into_owned))
                     .collect::<Result<Vec<_>, _>>()?;
-                types.dedup_type();
 
-                return Ok(Cow::Owned(Type::Union(Union { span: u.span, types })));
+                return Ok(Cow::Owned(Type::Union(Union { span: u.span, types }).fixed()));
             }
 
             Type::Intersection(i) => {
