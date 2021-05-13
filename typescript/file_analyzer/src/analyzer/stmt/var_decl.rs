@@ -317,6 +317,8 @@ impl Analyzer<'_, '_> {
 
                         slog::debug!(self.logger, "var: user did not declare type");
                         let mut ty = self.rename_type_params(span, ty, None)?;
+                        ty.fix();
+
                         if !(self.ctx.var_kind == VarDeclKind::Const && ty.is_lit()) {
                             if self.may_generalize(&ty) {
                                 // Vars behave differently based on the context.
