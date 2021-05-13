@@ -1,6 +1,7 @@
 use rnode::VisitMut;
 use rnode::VisitMutWith;
 use stc_ts_types::Array;
+use stc_ts_types::Conditional;
 use stc_ts_types::Intersection;
 use stc_ts_types::Type;
 use stc_ts_types::TypeOrSpread;
@@ -40,6 +41,7 @@ impl_fix!(Array);
 impl_fix!(Union);
 impl_fix!(Intersection);
 impl_fix!(TypeOrSpread);
+impl_fix!(Conditional);
 
 struct Fixer;
 

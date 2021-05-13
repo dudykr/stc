@@ -86,9 +86,9 @@ impl Analyzer<'_, '_> {
 
     pub(in super::super) fn expand_type_params<T>(&mut self, params: &FxHashMap<Id, Type>, ty: T) -> ValidationResult<T>
     where
-        T: for<'aa, 'bb, 'cc, 'dd> FoldWith<GenericExpander<'aa, 'bb, 'cc, 'dd>>,
+        T: for<'aa, 'bb, 'cc, 'dd> FoldWith<GenericExpander<'aa, 'bb, 'cc, 'dd>> + Fix,
     {
-        let ty = self.expand_type_params_inner(params, ty, false)?;
+        let ty = self.expand_type_params_inner(params, ty, false)?.fixed();
         Ok(ty)
     }
 
