@@ -613,6 +613,8 @@ es6/destructuring/nonIterableRestElement3.ts
 es6/destructuring/objectBindingPatternKeywordIdentifiers05.ts
 es6/destructuring/objectBindingPatternKeywordIdentifiers06.ts
 es6/destructuring/optionalBindingParameters1.ts
+es6/destructuring/optionalBindingParameters2.ts
+es6/destructuring/optionalBindingParametersInOverloads2.ts
 es6/destructuring/restElementWithAssignmentPattern1.ts
 es6/destructuring/restElementWithAssignmentPattern2.ts
 es6/destructuring/restElementWithAssignmentPattern3.ts
@@ -2198,3 +2200,4 @@ types/union/unionTypeCallSignatures2.ts
 types/union/unionTypeFromArrayLiteral.ts
 types/union/unionTypeReduction.ts
 types/uniqueSymbol/uniqueSymbolsDeclarationsErrors.ts
+types/unknown/unknownType2.ts
