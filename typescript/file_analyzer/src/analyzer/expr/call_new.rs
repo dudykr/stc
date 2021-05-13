@@ -2191,6 +2191,14 @@ impl Analyzer<'_, '_> {
             };
             let ret_ty = self.with_ctx(ctx).expand(span, ret_ty)?;
 
+            for item in &expanded_param_types {
+                item.ty.assert_valid();
+            }
+
+            for item in spread_arg_types {
+                item.ty.assert_valid();
+            }
+
             self.validate_arg_types(&expanded_param_types, &spread_arg_types);
 
             print_type(&logger, "Return", &self.cm, &ret_ty);
