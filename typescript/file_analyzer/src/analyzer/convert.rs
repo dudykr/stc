@@ -189,7 +189,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, ann: &RTsTypeAnn) -> ValidationResult {
         self.record(ann);
 
-        ann.type_ann.validate_with(self)
+        ann.type_ann.validate_with(self).map(|ty: Type| ty.fixed())
     }
 }
 
