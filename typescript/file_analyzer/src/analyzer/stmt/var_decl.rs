@@ -319,6 +319,7 @@ impl Analyzer<'_, '_> {
                         slog::debug!(self.logger, "var: user did not declare type");
                         let mut ty = self.rename_type_params(span, ty, None)?;
                         ty.fix();
+                        ty.assert_valid();
 
                         if !(self.ctx.var_kind == VarDeclKind::Const && ty.is_lit()) {
                             if self.may_generalize(&ty) {
@@ -330,6 +331,8 @@ impl Analyzer<'_, '_> {
                                 }
                             }
                         }
+
+                        ty.assert_valid();
 
                         slog::debug!(
                             self.logger,
@@ -394,6 +397,8 @@ impl Analyzer<'_, '_> {
                             }
                             _ => {}
                         }
+
+                        ty.assert_valid();
 
                         if self.scope.is_root() {
                             let ty = Some(forced_type_ann.unwrap_or_else(|| {
@@ -519,6 +524,8 @@ impl Analyzer<'_, '_> {
                                 ty = self.with_ctx(ctx).expand(span, ty)?;
                             }
                         }
+                        ty.assert_valid();
+
                         self.check_rvalue(span, &v.name, &ty);
 
                         let mut type_errors = Errors::default();
@@ -564,6 +571,8 @@ impl Analyzer<'_, '_> {
                             }
                             _ => {}
                         }
+
+                        ty.assert_valid();
 
                         if !type_errors.is_empty() {
                             self.storage.report_all(type_errors);
