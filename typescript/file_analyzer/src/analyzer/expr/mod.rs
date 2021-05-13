@@ -271,9 +271,13 @@ impl Analyzer<'_, '_> {
                     return e.validate_with(self);
                 }
 
-                RExpr::TsNonNull(RTsNonNullExpr { ref expr, .. }) => Ok(expr
-                    .validate_with_args(self, (mode, type_args, type_ann))?
-                    .remove_falsy()),
+                RExpr::TsNonNull(RTsNonNullExpr { span, ref expr, .. }) => {
+                    let mut ty = expr
+                        .validate_with_args(self, (mode, type_args, type_ann))?
+                        .remove_falsy();
+                    ty.reposition(*span);
+                    Ok(ty)
+                }
 
                 RExpr::Object(e) => {
                     return e.validate_with_args(self, type_ann);
