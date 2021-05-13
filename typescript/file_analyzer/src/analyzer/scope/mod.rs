@@ -1344,6 +1344,8 @@ impl Analyzer<'_, '_> {
         ty: Type,
         actual_ty: Option<Type>,
     ) -> ValidationResult<()> {
+        ty.assert_valid();
+
         let span = pat.span();
 
         if match pat {
