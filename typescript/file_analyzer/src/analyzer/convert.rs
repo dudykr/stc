@@ -97,6 +97,7 @@ use stc_ts_types::TypeParamInstantiation;
 use stc_ts_types::Union;
 use stc_ts_utils::OptionExt;
 use stc_ts_utils::PatExt;
+use stc_utils::error;
 use stc_utils::FastHashSet;
 use swc_atoms::js_word;
 use swc_common::Spanned;
@@ -792,6 +793,8 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, ty: &RTsType) -> ValidationResult {
         self.record(ty);
+
+        let _ctx = error::context(format!("validate\nTsType: {:?}", e));
 
         let ty = match ty {
             RTsType::TsThisType(this) => Type::This(this.clone()),
