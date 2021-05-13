@@ -16,6 +16,7 @@ use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
+use stc_ts_type_ops::Fix;
 use stc_ts_types::Function;
 use stc_ts_types::IdCtx;
 use stc_ts_types::Interface;
@@ -804,7 +805,8 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
             }
 
             Type::IndexedAccessType(ty) => {
-                let ty = ty.fold_with(self);
+                let mut ty = ty.fold_with(self);
+                ty.obj_type.fix();
 
                 let key = match ty.index_type.normalize() {
                     Type::Lit(RTsLitType {
