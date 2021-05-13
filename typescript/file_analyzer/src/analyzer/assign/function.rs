@@ -323,6 +323,10 @@ impl Analyzer<'_, '_> {
 
         let l_ty = self.normalize(Some(opts.span), Cow::Borrowed(&l.ty), Default::default())?;
         let r_ty = self.normalize(Some(opts.span), Cow::Borrowed(&r.ty), Default::default())?;
+
+        l_ty.assert_valid();
+        r_ty.assert_valid();
+
         let reverse = match (l_ty.normalize(), r_ty.normalize()) {
             (Type::Union(..), Type::Union(..)) => false,
             (_, Type::Union(..)) => true,
