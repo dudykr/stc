@@ -102,7 +102,6 @@ use stc_utils::FastHashSet;
 use swc_atoms::js_word;
 use swc_common::EqIgnoreSpan;
 use swc_common::Spanned;
-use swc_common::TypeEq;
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::VarDeclKind;
 
@@ -293,7 +292,12 @@ impl Analyzer<'_, '_> {
                 for prev in &keys {
                     if prev.eq_ignore_span(key) {
                         self.storage.report(Error::DuplicateName {
-                            span: member.span(),
+                            span: prev.span(),
+                            name: Id::word("".into()),
+                        });
+
+                        self.storage.report(Error::DuplicateName {
+                            span: key.span(),
                             name: Id::word("".into()),
                         });
                     }
