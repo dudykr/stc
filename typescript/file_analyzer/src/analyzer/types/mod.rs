@@ -810,6 +810,7 @@ impl Analyzer<'_, '_> {
                 ctxt: self.ctx.module_id,
                 type_args: type_args.cloned().map(Box::new),
             }),
+            RTsEntityName::Ident(i) if &*i.sym == "globalThis" => return Ok(()),
             RTsEntityName::Ident(_) => Err(Error::TypeNotFound {
                 span,
                 name: box type_name.clone().into(),
