@@ -1153,6 +1153,14 @@ impl Analyzer<'_, '_> {
         );
 
         match kind {
+            ExtractKind::Call => match ty.normalize() {
+                Type::Interface(i) if i.name == "Function" => return Ok(Type::any(span)),
+                _ => {}
+            },
+            _ => {}
+        }
+
+        match kind {
             ExtractKind::New => match ty.normalize() {
                 Type::ClassDef(ref cls) => {
                     if cls.is_abstract {
