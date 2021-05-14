@@ -691,6 +691,7 @@ es6/memberFunctionDeclarations/MemberFunctionDeclaration3_es6.ts
 es6/memberFunctionDeclarations/MemberFunctionDeclaration7_es6.ts
 es6/modules/defaultExportWithOverloads01.ts
 es6/modules/importEmptyFromModuleNotExisted.ts
+es6/modules/multipleDefaultExports03.ts
 es6/propertyAccess/propertyAccessNumericLiterals.es6.ts
 es6/restParameters/emitRestParametersFunction.ts
 es6/restParameters/emitRestParametersFunctionES6.ts
