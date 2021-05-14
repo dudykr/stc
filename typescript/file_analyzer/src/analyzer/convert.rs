@@ -278,9 +278,11 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, lit: &RTsTypeLit) -> ValidationResult<TypeLit> {
+        let members = lit.members.validate_with(self)?;
+
         Ok(TypeLit {
             span: lit.span,
-            members: lit.members.validate_with(self)?,
+            members,
             metadata: TypeLitMetadata {
                 specified: true,
                 ..Default::default()
