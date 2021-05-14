@@ -1,1 +1,6 @@
-conformance::types::literal::enumLiteralTypes3.ts
+conformance::types::literal::literalTypeWidening.ts
+conformance::types::literal::literalTypes2.ts
+conformance::types::literal::numericLiteralTypes3.ts
+conformance::types::literal::stringEnumLiteralTypes3.ts
+conformance::types::literal::stringLiteralsWithSwitchStatements03.ts
+conformance::types::localTypes::localTypes4.ts
