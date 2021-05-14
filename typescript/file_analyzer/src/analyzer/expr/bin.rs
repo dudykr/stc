@@ -1197,8 +1197,15 @@ impl Analyzer<'_, '_> {
     fn calc_type_facts_for_equality(&mut self, name: Name, equals_to: &Type) -> ValidationResult<(Name, Type)> {
         // For comparison of variables like `if (a === 'foo');`, we just return the type
         // itself.
+
         if name.len() == 1 {
-            return Ok((name, equals_to.clone()));
+            let orig_ty = self.type_of_var(&name.as_ids()[0].clone().into(), TypeOfMode::RValue, None)?;
+
+            let narrowed = self
+                .narrow_with_equality(orig_ty, equals_to)
+                .context("tried to narrow type with equality")?;
+
+            return Ok((name, narrowed));
         }
 
         let span = equals_to.span();
@@ -1248,6 +1255,18 @@ impl Analyzer<'_, '_> {
         }
 
         Ok((name, eq_ty.clone()))
+    }
+
+    /// Returns new type of the variable after comparision with `===`.
+    ///
+    /// # Parameters
+    ///
+    /// ## orig_ty
+    ///
+    /// Original type of the variable.
+    fn narrow_with_equality(&mut self, orig_ty: Type, equals_to: &Type) -> ValidationResult<Type> {
+        // Defaults to new type.
+        Ok(equals_to.clone())
     }
 
     fn validate_bin_inner(&mut self, span: Span, op: BinaryOp, lt: Option<&Type>, rt: Option<&Type>) {
