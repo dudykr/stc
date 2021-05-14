@@ -395,7 +395,7 @@ impl Analyzer<'_, '_> {
                     right_ident: opts.right_ident_span,
                     cause: vec![],
                 })
-                .with_context(|| format!("failed called from {}", line!()));
+                .with_context(|| format!("`fail!()` called from {}", line!()));
             }};
         }
 
