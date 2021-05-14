@@ -32,11 +32,10 @@ impl Analyzer<'_, '_> {
 
                 for item in &l.quasis {
                     let q = &item.cooked.as_ref().unwrap().value;
-
                     match r.value[start..].find(&**q) {
                         Some(pos) => {
                             positions.push(pos);
-                            start = pos;
+                            start += pos + 1;
                         }
                         None => return Err(Error::SimpleAssignFailed { span }),
                     }
