@@ -1093,7 +1093,10 @@ impl Analyzer<'_, '_> {
                     _ => false,
                 });
                 let errors = results.into_iter().map(Result::unwrap_err).collect();
-                let should_use_single_error = normalized || types.iter().all(|ty| ty.normalize().is_lit());
+                let should_use_single_error = normalized
+                    || types.iter().all(|ty| {
+                        ty.normalize().is_lit() || ty.normalize().is_enum_variant() || ty.normalize().is_ref_type()
+                    });
 
                 if should_use_single_error {
                     return Err(Error::AssignFailed {
