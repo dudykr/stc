@@ -639,7 +639,9 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         self.prepend_stmts.extend(prepend_stmts);
         self.append_stmts.extend(append_stmts);
         self.data = data;
-        self.data.for_module = module_data;
+        if kind == ScopeKind::Module {
+            self.data.for_module = module_data;
+        }
 
         // Move return types from child to parent
         match kind {
