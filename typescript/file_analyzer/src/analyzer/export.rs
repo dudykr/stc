@@ -298,8 +298,34 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
+    /// Currently noop because we need to know if a function is last item among
+    /// overloads
+    fn check_for_duplicate_export_of_var(&mut self, span: Span, sym: JsWord) {
+        if self.ctx.reevaluating() {
+            return;
+        }
+        let mut v = self
+            .data
+            .for_module
+            .exports_spans
+            .entry((sym.clone(), IdCtx::Var))
+            .or_default();
+        v.push(span);
+
+        // TODO: Optimize this by emitting same error only once.
+        if v.len() >= 2 {
+            for &span in &*v {
+                self.storage.report(Error::DuplicateDefaultExport { span });
+            }
+        }
+    }
+
     #[extra_validator]
-    fn export_var(&mut self, span: Span, name: Id, orig_name: Option<Id>) {
+    fn export_var(&mut self, span: Span, name: Id, orig_name: Option<Id>, check_duplicate: bool) {
+        if check_duplicate {
+            self.check_for_duplicate_export_of_var(span, name.sym().clone());
+        }
+
         self.storage
             .export_var(span, self.ctx.module_id, name.clone(), orig_name.unwrap_or(name));
     }

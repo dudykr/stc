@@ -289,6 +289,12 @@ struct AnalyzerData {
     /// Spans of functions **with body**.
     fn_impl_spans: FxHashMap<Id, Vec<Span>>,
 
+    /// One instance of each module (typescript `module` keyword).
+    for_module: PerModuleData,
+}
+
+#[derive(Debug, Default)]
+struct PerModuleData {
     /// Spans exported items.
     exports_spans: FxHashMap<(JsWord, IdCtx), Vec<Span>>,
 }
@@ -564,6 +570,11 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         let imports_by_id = take(&mut self.imports_by_id);
         let mutations = self.mutations.take();
         let cur_facts = take(&mut self.cur_facts);
+        let module_data = if kind == ScopeKind::Module {
+            take(&mut self.data.for_module)
+        } else {
+            Default::default()
+        };
         let data = take(&mut self.data);
 
         let child_scope = Scope::new(&self.scope, kind, facts);
@@ -628,6 +639,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         self.prepend_stmts.extend(prepend_stmts);
         self.append_stmts.extend(append_stmts);
         self.data = data;
+        self.data.for_module = module_data;
 
         // Move return types from child to parent
         match kind {
