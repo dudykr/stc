@@ -160,6 +160,7 @@ pub enum Type {
     EnumVariant(EnumVariant),
 
     Interface(Interface),
+
     #[is(name = "enum_type")]
     Enum(Enum),
 
@@ -885,7 +886,8 @@ pub struct EnumVariant {
     pub span: Span,
     pub ctxt: ModuleId,
     pub enum_name: Id,
-    pub name: JsWord,
+    /// [None] if for the general instance type of an enum.
+    pub name: Option<JsWord>,
 }
 
 assert_eq_size!(EnumVariant, [u8; 40]);

@@ -458,16 +458,24 @@ impl From<TypeParam> for RTsType {
 
 impl From<EnumVariant> for RTsType {
     fn from(t: EnumVariant) -> Self {
-        RTsType::TsTypeRef(RTsTypeRef {
-            node_id: NodeId::invalid(),
-            span: t.span,
-            type_name: RTsEntityName::TsQualifiedName(box RTsQualifiedName {
+        match t.name {
+            Some(name) => RTsType::TsTypeRef(RTsTypeRef {
                 node_id: NodeId::invalid(),
-                left: t.enum_name.into(),
-                right: RIdent::new(t.name, DUMMY_SP),
+                span: t.span,
+                type_name: RTsEntityName::TsQualifiedName(box RTsQualifiedName {
+                    node_id: NodeId::invalid(),
+                    left: t.enum_name.into(),
+                    right: RIdent::new(name, DUMMY_SP),
+                }),
+                type_params: None,
             }),
-            type_params: None,
-        })
+            None => RTsType::TsTypeRef(RTsTypeRef {
+                node_id: NodeId::invalid(),
+                span: t.span,
+                type_name: RTsEntityName::Ident(t.enum_name.into()),
+                type_params: None,
+            }),
+        }
     }
 }
 
