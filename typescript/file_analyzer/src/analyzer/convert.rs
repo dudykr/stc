@@ -100,7 +100,9 @@ use stc_ts_utils::PatExt;
 use stc_utils::error;
 use stc_utils::FastHashSet;
 use swc_atoms::js_word;
+use swc_common::EqIgnoreSpan;
 use swc_common::Spanned;
+use swc_common::TypeEq;
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::VarDeclKind;
 
@@ -279,6 +281,27 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, lit: &RTsTypeLit) -> ValidationResult<TypeLit> {
         let members = lit.members.validate_with(self)?;
+
+        let mut keys: Vec<Key> = vec![];
+
+        for member in &members {
+            match member {
+                TypeElement::Method(..) => continue,
+                _ => {}
+            }
+            if let Some(key) = member.key() {
+                for prev in &keys {
+                    if prev.eq_ignore_span(key) {
+                        self.storage.report(Error::DuplicateName {
+                            span: member.span(),
+                            name: Id::word("".into()),
+                        });
+                    }
+                }
+
+                keys.push(key.clone());
+            }
+        }
 
         Ok(TypeLit {
             span: lit.span,
