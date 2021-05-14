@@ -1641,6 +1641,7 @@ parser/ecmascript5/Statements/parserES5ForOfStatement9.ts
 parser/ecmascript5/Statements/parserForInStatement5.ts
 parser/ecmascript5/Statements/parserForStatement2.ts
 parser/ecmascript5/Statements/parserForStatement3.ts
+parser/ecmascript5/Statements/parserForStatement4.ts
 parser/ecmascript5/Statements/parserForStatement5.ts
 parser/ecmascript5/Statements/parserForStatement6.ts
 parser/ecmascript5/Statements/parserForStatement7.ts
