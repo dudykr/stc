@@ -116,6 +116,8 @@ pub(crate) struct Ctx {
 
     allow_module_var: bool,
 
+    check_for_implicit_any: bool,
+
     /// If `true`, expression validator will not emit tuple.
     cannot_be_tuple: bool,
 
@@ -484,6 +486,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 disallow_optional_object_property: false,
                 use_undefined_for_empty_tuple: false,
                 allow_module_var: false,
+                check_for_implicit_any: false,
                 cannot_be_tuple: false,
                 should_not_create_indexed_type_from_ty_els: false,
                 in_shorthand: false,

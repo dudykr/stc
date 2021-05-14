@@ -82,7 +82,7 @@ impl Analyzer<'_, '_> {
             TypeOfMode::RValue,
             None,
             match op {
-                op!("??") | op!("&&") | op!("||") => type_ann,
+                op!("??") | op!("||") => type_ann,
                 _ => None,
             },
         );

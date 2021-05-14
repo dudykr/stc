@@ -925,7 +925,7 @@ impl Analyzer<'_, '_> {
             let no_type_ann = !self.ctx.in_argument
                 && !(self.ctx.in_return_arg && self.ctx.in_fn_with_return_type)
                 && !self.ctx.in_assign_rhs;
-            if no_type_ann || self.ctx.in_useless_expr_for_seq {
+            if no_type_ann || self.ctx.in_useless_expr_for_seq || self.ctx.check_for_implicit_any {
                 self.storage.report(Error::ImplicitAny { span: i.id.span });
             }
         }
