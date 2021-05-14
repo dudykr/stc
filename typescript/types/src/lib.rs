@@ -27,6 +27,7 @@ use stc_ts_ast_rnode::RNumber;
 use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RPrivateName;
 use stc_ts_ast_rnode::RStr;
+use stc_ts_ast_rnode::RTplElement;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsEnumMemberId;
 use stc_ts_ast_rnode::RTsKeywordType;
@@ -182,6 +183,8 @@ pub enum Type {
     Optional(OptionalType),
 
     Symbol(Symbol),
+
+    Tpl(TplType),
 }
 
 assert_eq_size!(Type, [u8; 128]);
@@ -1240,6 +1243,8 @@ impl Type {
             Type::StaticThis(ty) => ty.span = span,
 
             Type::Instance(ty) => ty.span = span,
+
+            Type::Tpl(ty) => ty.span = span,
         }
     }
 }
@@ -1884,6 +1889,17 @@ pub struct StaticThis {
 }
 
 assert_eq_size!(StaticThis, [u8; 12]);
+
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+pub struct TplType {
+    pub span: Span,
+
+    #[use_eq_ignore_span]
+    pub quasis: Vec<RTplElement>,
+    pub types: Vec<Type>,
+}
+
+assert_eq_size!(TplType, [u8; 64]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq)]
 pub struct Freezed {

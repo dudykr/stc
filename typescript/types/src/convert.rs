@@ -27,6 +27,7 @@ use super::Union;
 use crate::ClassDef;
 use crate::Id;
 use crate::Key;
+use crate::TplType;
 use crate::{OptionalType, RestType, StaticThis, Symbol};
 use rnode::NodeId;
 use stc_ts_ast_rnode::RArrayPat;
@@ -54,6 +55,8 @@ use stc_ts_ast_rnode::RTsIndexedAccessType;
 use stc_ts_ast_rnode::RTsInferType;
 use stc_ts_ast_rnode::RTsIntersectionType;
 use stc_ts_ast_rnode::RTsKeywordType;
+use stc_ts_ast_rnode::RTsLit;
+use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_ast_rnode::RTsMappedType;
 use stc_ts_ast_rnode::RTsMethodSignature;
 use stc_ts_ast_rnode::RTsModuleName;
@@ -63,6 +66,7 @@ use stc_ts_ast_rnode::RTsPropertySignature;
 use stc_ts_ast_rnode::RTsQualifiedName;
 use stc_ts_ast_rnode::RTsRestType;
 use stc_ts_ast_rnode::RTsThisType;
+use stc_ts_ast_rnode::RTsTplLitType;
 use stc_ts_ast_rnode::RTsTupleElement;
 use stc_ts_ast_rnode::RTsTupleType;
 use stc_ts_ast_rnode::RTsType;
@@ -127,6 +131,7 @@ impl From<Type> for RTsType {
             Type::Rest(t) => t.into(),
             Type::Symbol(t) => t.into(),
             Type::StaticThis(t) => t.into(),
+            Type::Tpl(t) => t.into(),
         }
     }
 }
@@ -759,6 +764,33 @@ impl From<StaticThis> for RTsThisType {
 impl From<StaticThis> for RTsType {
     fn from(t: StaticThis) -> Self {
         RTsType::TsThisType(t.into())
+    }
+}
+
+impl From<TplType> for RTsType {
+    fn from(t: TplType) -> Self {
+        RTsType::TsLitType(t.into())
+    }
+}
+
+impl From<TplType> for RTsLitType {
+    fn from(t: TplType) -> Self {
+        RTsLitType {
+            node_id: NodeId::invalid(),
+            span: t.span,
+            lit: RTsLit::Tpl(t.into()),
+        }
+    }
+}
+
+impl From<TplType> for RTsTplLitType {
+    fn from(t: TplType) -> Self {
+        RTsTplLitType {
+            node_id: NodeId::invalid(),
+            span: t.span,
+            quasis: t.quasis,
+            types: t.types.into_iter().map(From::from).collect(),
+        }
     }
 }
 
