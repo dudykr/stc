@@ -3020,6 +3020,14 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RTpl) -> ValidationResult {
         e.exprs.visit_with(self);
 
+        if e.exprs.is_empty() {
+            return Ok(Type::Lit(RTsLitType {
+                node_id: NodeId::invalid(),
+                span: e.span,
+                lit: RTsLit::Str(e.quasis[0].cooked.clone().unwrap_or_else(|| e.quasis[0].raw.clone())),
+            }));
+        }
+
         Ok(Type::Keyword(RTsKeywordType {
             span: e.span,
             kind: TsKeywordTypeKind::TsStringKeyword,
