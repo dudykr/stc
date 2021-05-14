@@ -1305,6 +1305,8 @@ externalModules/exportClassNameWithObjectUMD.ts
 externalModules/exportDefaultClassNameWithObject.ts
 externalModules/multipleExportDefault1.ts
 externalModules/multipleExportDefault2.ts
+externalModules/multipleExportDefault3.ts
+externalModules/multipleExportDefault4.ts
 externalModules/multipleExportDefault6.ts
 functions/functionOverloadCompatibilityWithVoid01.ts
 functions/functionOverloadCompatibilityWithVoid02.ts
