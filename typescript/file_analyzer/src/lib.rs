@@ -31,6 +31,7 @@ use swc_common::Span;
 pub mod analyzer;
 pub mod env;
 pub mod loader;
+mod passes;
 #[cfg(test)]
 mod tests;
 pub mod ty;
