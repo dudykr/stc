@@ -277,13 +277,27 @@ impl Analyzer<'_, '_> {
 
                 self.scope.this_class_name = id.clone();
 
-                let id = id.unwrap_or_else(|| Id::word(js_word!("default")));
+                let var_name = id.unwrap_or_else(|| Id::word(js_word!("default")));
 
                 let class_ty = c.class.validate_with(self)?;
-                self.register_type(id.clone(), Type::ClassDef(class_ty));
+                let class_ty = Type::ClassDef(class_ty).cheap();
+                self.register_type(var_name.clone(), class_ty.clone());
 
-                self.export(span, Id::word(js_word!("default")), Some(id));
-                self.export_var(c.span(), Id::word(js_word!("default")), orig_name, true);
+                self.export(span, Id::word(js_word!("default")), Some(var_name.clone()));
+
+                self.declare_var(
+                    span,
+                    VarDeclKind::Var,
+                    var_name.clone(),
+                    Some(class_ty),
+                    None,
+                    true,
+                    true,
+                    false,
+                )
+                .report(&mut self.storage);
+
+                self.export_var(c.span(), var_name, orig_name, true);
             }
             RDefaultDecl::TsInterfaceDecl(ref i) => {
                 let i = i.id.clone().into();
