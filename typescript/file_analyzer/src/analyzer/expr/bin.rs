@@ -35,6 +35,7 @@ use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_type_ops::is_str_lit_or_union;
+use stc_ts_type_ops::Fix;
 use stc_ts_types::name::Name;
 use stc_ts_types::Class;
 use stc_ts_types::Intersection;
@@ -1202,7 +1203,7 @@ impl Analyzer<'_, '_> {
             let orig_ty = self.type_of_var(&name.as_ids()[0].clone().into(), TypeOfMode::RValue, None)?;
 
             let narrowed = self
-                .narrow_with_equality(orig_ty, equals_to)
+                .narrow_with_equality(&orig_ty, equals_to)
                 .context("tried to narrow type with equality")?;
 
             return Ok((name, narrowed));
@@ -1264,9 +1265,49 @@ impl Analyzer<'_, '_> {
     /// ## orig_ty
     ///
     /// Original type of the variable.
-    fn narrow_with_equality(&mut self, orig_ty: Type, equals_to: &Type) -> ValidationResult<Type> {
+    fn narrow_with_equality(&mut self, orig_ty: &Type, equals_to: &Type) -> ValidationResult<Type> {
+        let span = equals_to.span();
+
+        if orig_ty.type_eq(&equals_to) {
+            return Ok(orig_ty.clone());
+        }
+
+        let orig_ty = self.normalize(Some(span), Cow::Borrowed(orig_ty), Default::default())?;
+        let equals_to = self.normalize(Some(span), Cow::Borrowed(equals_to), Default::default())?;
+
+        if orig_ty.type_eq(&equals_to) {
+            return Ok(orig_ty.into_owned());
+        }
+
+        // Exclude nevers.
+        match &*orig_ty {
+            Type::Union(orig) => {
+                let mut types = vec![];
+                // We
+                for orig in &orig.types {
+                    let new_ty = self
+                        .narrow_with_equality(&orig, &equals_to)
+                        .context("tried to narrow element of a union type")?;
+
+                    if new_ty.is_never() {
+                        continue;
+                    }
+                    types.push(new_ty);
+                }
+
+                return Ok(Type::Union(Union { span, types }).fixed());
+            }
+            _ => {}
+        }
+
+        // At here two variants are different from each other because we checked with
+        // type_eq above.
+        if orig_ty.is_enum_variant() && equals_to.is_enum_variant() {
+            return Ok(Type::never(span));
+        }
+
         // Defaults to new type.
-        Ok(equals_to.clone())
+        Ok(equals_to.into_owned())
     }
 
     fn validate_bin_inner(&mut self, span: Span, op: BinaryOp, lt: Option<&Type>, rt: Option<&Type>) {
