@@ -665,7 +665,9 @@ impl Analyzer<'_, '_> {
                 dbg!();
                 return Err(Error::InvalidLValue { span: to.span() });
             }
-            Type::Enum(..) | Type::EnumVariant(EnumVariant { name: None, .. }) => {
+            Type::Enum(..) => fail!(),
+
+            Type::EnumVariant(EnumVariant { name: None, .. }) => {
                 let enum_name = match to {
                     Type::EnumVariant(e) => e.enum_name.clone(),
                     Type::Enum(e) => e.id.clone().into(),
