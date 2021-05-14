@@ -921,7 +921,6 @@ impl Analyzer<'_, '_> {
         }
 
         if self.env.rule().no_implicit_any {
-            dbg!(&self.ctx);
             let no_type_ann = !self.ctx.in_argument
                 && !(self.ctx.in_return_arg && self.ctx.in_fn_with_return_type)
                 && !self.ctx.in_assign_rhs;
