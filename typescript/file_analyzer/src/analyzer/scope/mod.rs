@@ -41,6 +41,7 @@ use stc_ts_types::Array;
 use stc_ts_types::Class;
 use stc_ts_types::ClassDef;
 use stc_ts_types::ClassProperty;
+use stc_ts_types::EnumVariant;
 use stc_ts_types::Intersection;
 use stc_ts_types::Key;
 use stc_ts_types::TypeElement;
@@ -2173,8 +2174,18 @@ impl Expander<'_, '_, '_> {
             was_top_level,
             trying_primitive_expansion,
         )?;
+
         if let Some(ty) = &mut ty {
             ty.reposition(r_span);
+
+            if let Type::Enum(e) = ty.normalize() {
+                return Ok(Some(Type::EnumVariant(EnumVariant {
+                    span,
+                    ctxt,
+                    enum_name: e.id.clone().into(),
+                    name: None,
+                })));
+            }
         }
 
         Ok(ty)
