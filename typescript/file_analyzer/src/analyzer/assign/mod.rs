@@ -1319,41 +1319,6 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            Type::Enum(..) | Type::EnumVariant(EnumVariant { name: None, .. }) => {
-                let enum_name = match to {
-                    Type::EnumVariant(e) => e.enum_name.clone(),
-                    Type::Enum(e) => e.id.clone().into(),
-                    _ => unreachable!(),
-                };
-                //
-                match *rhs {
-                    Type::EnumVariant(ref r) => {
-                        if r.enum_name == enum_name {
-                            return Ok(());
-                        }
-                    }
-                    Type::Lit(..)
-                    | Type::TypeLit(..)
-                    | Type::Keyword(RTsKeywordType {
-                        kind: TsKeywordTypeKind::TsVoidKeyword,
-                        ..
-                    })
-                    | Type::Keyword(RTsKeywordType {
-                        kind: TsKeywordTypeKind::TsStringKeyword,
-                        ..
-                    })
-                    | Type::Keyword(RTsKeywordType {
-                        kind: TsKeywordTypeKind::TsNumberKeyword,
-                        ..
-                    })
-                    | Type::Keyword(RTsKeywordType {
-                        kind: TsKeywordTypeKind::TsBooleanKeyword,
-                        ..
-                    }) => fail!(),
-                    _ => {}
-                }
-            }
-
             Type::EnumVariant(ref l @ EnumVariant { name: Some(..), .. }) => match *rhs {
                 Type::EnumVariant(ref r) => {
                     if l.enum_name == r.enum_name && l.name == r.name {
