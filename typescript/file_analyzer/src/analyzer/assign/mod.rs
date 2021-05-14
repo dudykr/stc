@@ -665,7 +665,13 @@ impl Analyzer<'_, '_> {
                 dbg!();
                 return Err(Error::InvalidLValue { span: to.span() });
             }
-            Type::Enum(ref e) => {
+            Type::Enum(..) | Type::EnumVariant(EnumVariant { name: None, .. }) => {
+                let enum_name = match to {
+                    Type::EnumVariant(e) => e.enum_name.clone(),
+                    Type::Enum(e) => e.id.clone().into(),
+                    _ => unreachable!(),
+                };
+
                 match rhs.normalize() {
                     Type::Lit(RTsLitType {
                         lit: RTsLit::Number(..),
@@ -679,7 +685,7 @@ impl Analyzer<'_, '_> {
                         return Ok(());
                     }
                     Type::EnumVariant(rhs) => {
-                        if rhs.enum_name == e.id {
+                        if rhs.enum_name == enum_name {
                             return Ok(());
                         }
                         fail!()
