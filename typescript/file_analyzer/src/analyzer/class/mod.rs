@@ -2,7 +2,7 @@ use self::type_param::StaticTypeParamValidator;
 use super::assign::AssignOpts;
 use super::expr::TypeOfMode;
 use super::props::ComputedPropMode;
-use super::util::instantiate_class;
+use super::util::make_instance_type;
 use super::util::is_prop_name_eq;
 use super::util::ResultExt;
 use super::util::VarVisitor;
@@ -1239,7 +1239,7 @@ impl Analyzer<'_, '_> {
 
                 child.scope.super_class = super_class
                     .clone()
-                    .map(|ty| instantiate_class(child.ctx.module_id, *ty));
+                    .map(|ty| make_instance_type(child.ctx.module_id, *ty));
                 {
                     // Validate constructors
                     let mut constructor_spans = vec![];

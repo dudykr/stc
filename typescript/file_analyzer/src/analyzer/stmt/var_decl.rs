@@ -1,6 +1,6 @@
 use super::super::{pat::PatMode, Analyzer, Ctx};
 use crate::analyzer::assign::AssignOpts;
-use crate::analyzer::util::instantiate_class;
+use crate::analyzer::util::make_instance_type;
 use crate::util::type_ext::TypeVecExt;
 use crate::{
     analyzer::{
@@ -243,7 +243,7 @@ impl Analyzer<'_, '_> {
                         };
                         let ty = self.expand(span, ty)?;
                         ty.assert_valid();
-                        let ty = instantiate_class(self.ctx.module_id, ty);
+                        let ty = make_instance_type(self.ctx.module_id, ty);
                         ty.assert_valid();
                         self.check_rvalue(span, &v.name, &ty);
 

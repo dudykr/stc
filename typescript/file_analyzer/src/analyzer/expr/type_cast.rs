@@ -2,7 +2,7 @@ use super::{super::Analyzer, TypeOfMode};
 use crate::analyzer::assign::AssignOpts;
 use crate::analyzer::util::ResultExt;
 use crate::util::is_str_or_union;
-use crate::{analyzer::util::instantiate_class, ty::Type, validator, validator::ValidateWith, ValidationResult};
+use crate::{analyzer::util::make_instance_type, ty::Type, validator, validator::ValidateWith, ValidationResult};
 use stc_ts_ast_rnode::RTsAsExpr;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
@@ -72,7 +72,7 @@ impl Analyzer<'_, '_> {
     fn validate_type_cast(&mut self, span: Span, orig_ty: Type, casted_ty: Type) -> ValidationResult {
         let orig_ty = self.expand_fully(span, orig_ty, true)?;
 
-        let mut casted_ty = instantiate_class(self.ctx.module_id, casted_ty);
+        let mut casted_ty = make_instance_type(self.ctx.module_id, casted_ty);
         self.prevent_inference_while_simplifying(&mut casted_ty);
         casted_ty = self.simplify(casted_ty);
 

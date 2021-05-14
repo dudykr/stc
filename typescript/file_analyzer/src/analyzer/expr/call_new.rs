@@ -6,7 +6,7 @@ use crate::{
     analyzer::{
         expr::TypeOfMode,
         marks::MarkExt,
-        util::{instantiate_class, ResultExt},
+        util::{make_instance_type, ResultExt},
         Ctx, ScopeKind,
     },
     ty,
@@ -1277,7 +1277,7 @@ impl Analyzer<'_, '_> {
         match ty.normalize() {
             Type::Intersection(..) if kind == ExtractKind::New => {
                 // TODO: Check if all types has constructor signature
-                return Ok(instantiate_class(self.ctx.module_id, ty.clone()));
+                return Ok(make_instance_type(self.ctx.module_id, ty.clone()));
             }
 
             Type::Keyword(RTsKeywordType {
