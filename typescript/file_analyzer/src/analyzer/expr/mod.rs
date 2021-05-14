@@ -735,6 +735,25 @@ impl Analyzer<'_, '_> {
                     return self.check_if_type_matches_key(span, declared, &cur, allow_union);
                 }
             }
+
+            Type::EnumVariant(EnumVariant {
+                enum_name, name: None, ..
+            }) => {
+                if let Ok(Some(types)) = self.find_type(self.ctx.module_id, enum_name) {
+                    for ty in types {
+                        match ty.normalize() {
+                            Type::Enum(e) => {
+                                let e = e.clone();
+                                return self.check_if_type_matches_key(span, declared, &Type::Enum(e), allow_union);
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+
+                let cur = self.expand_top_ref(span, Cow::Borrowed(key_ty));
+            }
+
             Type::Enum(e) if allow_union => {
                 //
                 for m in &e.members {

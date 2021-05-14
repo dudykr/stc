@@ -665,11 +665,7 @@ impl Analyzer<'_, '_> {
                 dbg!();
                 return Err(Error::InvalidLValue { span: to.span() });
             }
-
-            // Assignment to enum declaration itself is not allowed.
-            Type::Enum(..) => fail!(),
-
-            Type::EnumVariant(EnumVariant { name: None, .. }) => {
+            Type::Enum(..) | Type::EnumVariant(EnumVariant { name: None, .. }) => {
                 let enum_name = match to {
                     Type::EnumVariant(e) => e.enum_name.clone(),
                     Type::Enum(e) => e.id.clone().into(),
