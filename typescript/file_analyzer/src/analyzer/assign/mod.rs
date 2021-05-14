@@ -38,6 +38,7 @@ mod cast;
 mod class;
 mod function;
 mod query;
+mod tpl;
 mod type_el;
 
 /// Context used for `=` assignments.
@@ -1712,6 +1713,15 @@ impl Analyzer<'_, '_> {
             || rhs.is_kwd(TsKeywordTypeKind::TsVoidKeyword)
         {
             fail!()
+        }
+
+        match (to, rhs) {
+            (Type::Tpl(l), r) => {
+                return self
+                    .assign_to_tpl(l, r, opts)
+                    .context("tried to assign to a template type")
+            }
+            _ => {}
         }
 
         // TODO: Implement full type checker
