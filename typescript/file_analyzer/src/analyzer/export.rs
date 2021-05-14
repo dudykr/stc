@@ -161,7 +161,7 @@ impl Analyzer<'_, '_> {
                 RDecl::Fn(ref f) => {
                     f.visit_with(a);
                     // self.export(f.span(), f.ident.clone().into(), None);
-                    a.export_var(f.span(), f.ident.clone().into(), None);
+                    a.export_var(f.span(), f.ident.clone().into(), None, f.function.body.is_some());
                 }
                 RDecl::TsInterface(ref i) => {
                     i.visit_with(a);
@@ -172,7 +172,7 @@ impl Analyzer<'_, '_> {
                 RDecl::Class(ref c) => {
                     c.visit_with(a);
                     a.export(c.span(), c.ident.clone().into(), None);
-                    a.export_var(c.span(), c.ident.clone().into(), None);
+                    a.export_var(c.span(), c.ident.clone().into(), None, true);
                 }
                 RDecl::Var(ref var) => {
                     let span = var.span;
@@ -181,7 +181,7 @@ impl Analyzer<'_, '_> {
                     let ids: Vec<Id> = find_ids_in_pat(&var.decls);
 
                     for id in ids {
-                        a.export_var(span, id, None)
+                        a.export_var(span, id, None, true)
                     }
                 }
                 RDecl::TsEnum(ref e) => {
@@ -264,7 +264,12 @@ impl Analyzer<'_, '_> {
                 )
                 .report(&mut self.storage);
 
-                self.export_var(f.span(), Id::word(js_word!("default")), Some(i));
+                self.export_var(
+                    f.span(),
+                    Id::word(js_word!("default")),
+                    Some(i),
+                    f.function.body.is_some(),
+                );
             }
             RDefaultDecl::Class(ref c) => {
                 let id = c.ident.as_ref().map(|v| v.into());
@@ -296,7 +301,7 @@ impl Analyzer<'_, '_> {
     /// Currently noop because we need to know if a function is last item among
     /// overloads
     fn check_for_duplicate_export_of_var(&mut self, span: Span, sym: JsWord) {
-        if self.ctx.reevaluating() || true {
+        if self.ctx.reevaluating() {
             return;
         }
         let mut v = self.data.exports_spans.entry((sym.clone(), IdCtx::Var)).or_default();
@@ -311,8 +316,10 @@ impl Analyzer<'_, '_> {
     }
 
     #[extra_validator]
-    fn export_var(&mut self, span: Span, name: Id, orig_name: Option<Id>) {
-        self.check_for_duplicate_export_of_var(span, name.sym().clone());
+    fn export_var(&mut self, span: Span, name: Id, orig_name: Option<Id>, check_duplicate: bool) {
+        if check_duplicate {
+            self.check_for_duplicate_export_of_var(span, name.sym().clone());
+        }
 
         self.storage
             .export_var(span, self.ctx.module_id, name.clone(), orig_name.unwrap_or(name));
