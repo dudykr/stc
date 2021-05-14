@@ -2641,7 +2641,8 @@ impl Analyzer<'_, '_> {
                             | Type::Keyword(_)
                             | Type::Optional(_)
                             | Type::Rest(_)
-                            | Type::Lit(_) => {
+                            | Type::Lit(_)
+                            | Type::Tpl(_) => {
                                 let mut ty = ty.into_owned().clone();
                                 let mut params = None;
                                 if let Some(type_args) = type_args {

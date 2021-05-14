@@ -126,7 +126,8 @@ impl Analyzer<'_, '_> {
             | Type::EnumVariant(..)
             | Type::Enum(..)
             | Type::Param(_)
-            | Type::Module(_) => return Ok(ty),
+            | Type::Module(_)
+            | Type::Tpl(..) => return Ok(ty),
             _ => {}
         }
 

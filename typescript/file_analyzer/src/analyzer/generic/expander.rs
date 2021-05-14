@@ -856,7 +856,8 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
             | Type::ClassDef(..)
             | Type::Optional(..)
             | Type::Rest(..)
-            | Type::Mapped(..) => return ty.fold_children_with(self),
+            | Type::Mapped(..)
+            | Type::Tpl(..) => return ty.fold_children_with(self),
 
             Type::Arc(a) => return (*a.ty).clone().fold_with(self),
         }
