@@ -6,6 +6,8 @@ publish = false
 version = "0.1.0"
 
 [dependencies]
+ahash = "0.7.2"
+fxhash = "0.2.1"
 rnode = {path = "../../rnode"}
 stc_ts_ast_rnode = {path = "../ast_rnode"}
 stc_ts_errors = {path = "../errors"}
