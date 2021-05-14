@@ -149,6 +149,8 @@ impl Analyzer<'_, '_> {
     fn validate_lhs_of_for_in_of_loop_expr(&mut self, e: &RExpr, kind: ForHeadKind) -> ValidationResult<()> {
         match e {
             RExpr::Ident(..) | RExpr::This(..) | RExpr::Member(..) => Ok(()),
+            // We use different error code for this.
+            RExpr::Assign(..) => Ok(()),
             _ => match kind {
                 ForHeadKind::In => Err(Error::InvalidExprOfLhsOfForIn { span: e.span() }),
                 ForHeadKind::Of => Err(Error::InvalidExprOfLhsOfForOf { span: e.span() }),
