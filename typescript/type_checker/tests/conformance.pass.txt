@@ -1469,6 +1469,7 @@ parser/ecmascript5/ExportAssignments/parserExportAssignment6.ts
 parser/ecmascript5/ExportAssignments/parserExportAssignment7.ts
 parser/ecmascript5/ExportAssignments/parserExportAssignment8.ts
 parser/ecmascript5/Expressions/parserAssignmentExpression1.ts
+parser/ecmascript5/Expressions/parserConditionalExpression1.ts
 parser/ecmascript5/Expressions/parserInvocationOfMemberAccessOffOfObjectCreationExpression1.ts
 parser/ecmascript5/Expressions/parserObjectCreation2.ts
 parser/ecmascript5/Expressions/parserUnaryExpression1.ts
