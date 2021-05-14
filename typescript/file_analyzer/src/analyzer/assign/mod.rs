@@ -1104,6 +1104,43 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                // Same operation as above, but for enums.
+                match rhs {
+                    Type::EnumVariant(EnumVariant {
+                        enum_name, name: None, ..
+                    }) => {
+                        // If `types` contains all variant of the enum, the
+                        // assignment is valid.
+                        let patched_types = types
+                            .iter()
+                            .map(|ty| {
+                                self.normalize(Some(span), Cow::Borrowed(ty), Default::default())
+                                    .map(Cow::into_owned)
+                            })
+                            .collect::<Result<Vec<_>, _>>()?;
+
+                        if patched_types.iter().all(|ty| match ty.normalize() {
+                            Type::EnumVariant(ev) => ev.enum_name == *enum_name,
+                            _ => false,
+                        }) {
+                            if let Ok(Some(lhs)) = self.find_type(self.ctx.module_id, &enum_name) {
+                                for ty in lhs {
+                                    match ty.normalize() {
+                                        Type::Enum(e) => {
+                                            if e.members.len() == types.len() {
+                                                return Ok(());
+                                            }
+                                        }
+                                        _ => {}
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    _ => {}
+                }
+
                 let results = types
                     .iter()
                     .map(|to| {
