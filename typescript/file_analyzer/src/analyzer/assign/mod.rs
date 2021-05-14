@@ -684,12 +684,29 @@ impl Analyzer<'_, '_> {
                         // validEnumAssignments.ts insists that this is valid.
                         return Ok(());
                     }
+
                     Type::EnumVariant(rhs) => {
                         if rhs.enum_name == enum_name {
                             return Ok(());
                         }
                         fail!()
                     }
+
+                    Type::Lit(..)
+                    | Type::TypeLit(..)
+                    | Type::Keyword(RTsKeywordType {
+                        kind: TsKeywordTypeKind::TsVoidKeyword,
+                        ..
+                    })
+                    | Type::Keyword(RTsKeywordType {
+                        kind: TsKeywordTypeKind::TsStringKeyword,
+                        ..
+                    })
+                    | Type::Keyword(RTsKeywordType {
+                        kind: TsKeywordTypeKind::TsBooleanKeyword,
+                        ..
+                    }) => fail!(),
+
                     _ => {}
                 }
             }
