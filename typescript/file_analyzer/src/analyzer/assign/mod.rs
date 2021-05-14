@@ -394,7 +394,8 @@ impl Analyzer<'_, '_> {
                     right: box rhs.clone(),
                     right_ident: opts.right_ident_span,
                     cause: vec![],
-                });
+                })
+                .with_context(|| format!("failed called from {}", line!()));
             }};
         }
 
