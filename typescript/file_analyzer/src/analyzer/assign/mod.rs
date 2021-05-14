@@ -420,56 +420,64 @@ impl Analyzer<'_, '_> {
                 }
 
                 if !e.has_str && !e.has_num {
-                    return self.assign_inner(
-                        data,
-                        to,
-                        &Type::Keyword(RTsKeywordType {
-                            span,
-                            kind: TsKeywordTypeKind::TsNumberKeyword,
-                        }),
-                        opts,
-                    );
+                    return self
+                        .assign_inner(
+                            data,
+                            to,
+                            &Type::Keyword(RTsKeywordType {
+                                span,
+                                kind: TsKeywordTypeKind::TsNumberKeyword,
+                            }),
+                            opts,
+                        )
+                        .context("tried to assign enum as `number`");
                 }
 
                 if !e.has_num {
-                    return self.assign_inner(
-                        data,
-                        to,
-                        &Type::Keyword(RTsKeywordType {
-                            span,
-                            kind: TsKeywordTypeKind::TsStringKeyword,
-                        }),
-                        opts,
-                    );
+                    return self
+                        .assign_inner(
+                            data,
+                            to,
+                            &Type::Keyword(RTsKeywordType {
+                                span,
+                                kind: TsKeywordTypeKind::TsStringKeyword,
+                            }),
+                            opts,
+                        )
+                        .context("tried to assign enum as `string`");
                 }
 
                 if !e.has_str {
-                    return self.assign_inner(
-                        data,
-                        to,
-                        &Type::Keyword(RTsKeywordType {
-                            span,
-                            kind: TsKeywordTypeKind::TsNumberKeyword,
-                        }),
-                        opts,
-                    );
+                    return self
+                        .assign_inner(
+                            data,
+                            to,
+                            &Type::Keyword(RTsKeywordType {
+                                span,
+                                kind: TsKeywordTypeKind::TsNumberKeyword,
+                            }),
+                            opts,
+                        )
+                        .context("tried to assign enum as `number`");
                 }
 
-                return self.assign_inner(
-                    data,
-                    to,
-                    &Type::union(vec![
-                        Type::Keyword(RTsKeywordType {
-                            span,
-                            kind: TsKeywordTypeKind::TsNumberKeyword,
-                        }),
-                        Type::Keyword(RTsKeywordType {
-                            span,
-                            kind: TsKeywordTypeKind::TsStringKeyword,
-                        }),
-                    ]),
-                    opts,
-                );
+                return self
+                    .assign_inner(
+                        data,
+                        to,
+                        &Type::union(vec![
+                            Type::Keyword(RTsKeywordType {
+                                span,
+                                kind: TsKeywordTypeKind::TsNumberKeyword,
+                            }),
+                            Type::Keyword(RTsKeywordType {
+                                span,
+                                kind: TsKeywordTypeKind::TsStringKeyword,
+                            }),
+                        ]),
+                        opts,
+                    )
+                    .context("tried to assign enum as `number | string`");
             }};
         }
 
