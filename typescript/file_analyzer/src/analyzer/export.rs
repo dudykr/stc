@@ -272,7 +272,8 @@ impl Analyzer<'_, '_> {
                 );
             }
             RDefaultDecl::Class(ref c) => {
-                let id = c.ident.as_ref().map(|v| v.into());
+                let id: Option<Id> = c.ident.as_ref().map(|v| v.into());
+                let orig_name = id.clone();
 
                 self.scope.this_class_name = id.clone();
 
@@ -282,6 +283,7 @@ impl Analyzer<'_, '_> {
                 self.register_type(id.clone(), Type::ClassDef(class_ty));
 
                 self.export(span, Id::word(js_word!("default")), Some(id));
+                self.export_var(c.span(), Id::word(js_word!("default")), orig_name, true);
             }
             RDefaultDecl::TsInterfaceDecl(ref i) => {
                 let i = i.id.clone().into();
