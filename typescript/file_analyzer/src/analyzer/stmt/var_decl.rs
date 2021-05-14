@@ -33,6 +33,7 @@ use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_type_ops::Fix;
+use stc_ts_types::EnumVariant;
 use stc_ts_types::QueryExpr;
 use stc_ts_types::QueryType;
 use stc_ts_types::{Array, Id, Operator, Symbol};
@@ -586,7 +587,10 @@ impl Analyzer<'_, '_> {
                                     if let Some(items) = self.find_type(self.ctx.module_id, &v.enum_name)? {
                                         for ty in items {
                                             if let Type::Enum(ref e) = ty.normalize() {
-                                                return Ok(Type::Enum(e.clone()));
+                                                return Ok(Type::EnumVariant(EnumVariant {
+                                                    name: None,
+                                                    ..v.clone()
+                                                }));
                                             }
                                         }
                                     }

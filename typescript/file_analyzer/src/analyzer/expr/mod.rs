@@ -1252,7 +1252,7 @@ impl Analyzer<'_, '_> {
                             },
                             ctxt: self.ctx.module_id,
                             enum_name: e.id.clone().into(),
-                            name: sym.clone(),
+                            name: Some(sym.clone()),
                         }));
                     }
                     Key::Num(RNumber { value, .. }) => {
