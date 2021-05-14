@@ -35,12 +35,14 @@ use stc_ts_ast_rnode::RTsInferType;
 use stc_ts_ast_rnode::RTsInterfaceBody;
 use stc_ts_ast_rnode::RTsInterfaceDecl;
 use stc_ts_ast_rnode::RTsIntersectionType;
+use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsMappedType;
 use stc_ts_ast_rnode::RTsMethodSignature;
 use stc_ts_ast_rnode::RTsOptionalType;
 use stc_ts_ast_rnode::RTsParenthesizedType;
 use stc_ts_ast_rnode::RTsPropertySignature;
 use stc_ts_ast_rnode::RTsRestType;
+use stc_ts_ast_rnode::RTsTplLitType;
 use stc_ts_ast_rnode::RTsTupleElement;
 use stc_ts_ast_rnode::RTsTupleType;
 use stc_ts_ast_rnode::RTsType;
@@ -84,6 +86,7 @@ use stc_ts_types::QueryExpr;
 use stc_ts_types::QueryType;
 use stc_ts_types::Ref;
 use stc_ts_types::RestType;
+use stc_ts_types::TplType;
 use stc_ts_types::TsExpr;
 use stc_ts_types::Tuple;
 use stc_ts_types::TupleElement;
@@ -820,6 +823,23 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
+    fn validate(&mut self, t: &RTsTplLitType) -> ValidationResult<TplType> {
+        let types = t
+            .types
+            .iter()
+            .map(|ty| ty.validate_with(self))
+            .collect::<Result<_, _>>()?;
+
+        Ok(TplType {
+            span: t.span,
+            quasis: t.quasis.clone(),
+            types,
+        })
+    }
+}
+
+#[validator]
+impl Analyzer<'_, '_> {
     fn validate(&mut self, ty: &RTsType) -> ValidationResult {
         self.record(ty);
 
@@ -828,6 +848,10 @@ impl Analyzer<'_, '_> {
         let ty = match ty {
             RTsType::TsThisType(this) => Type::This(this.clone()),
             RTsType::TsLitType(ty) => {
+                match &ty.lit {
+                    RTsLit::Tpl(t) => return Ok(t.validate_with(self)?.into()),
+                    _ => {}
+                }
                 let mut ty = Type::Lit(ty.clone());
                 self.prevent_generalize(&mut ty);
                 ty
