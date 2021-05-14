@@ -297,7 +297,7 @@ impl Analyzer<'_, '_> {
                 )
                 .report(&mut self.storage);
 
-                self.export_var(c.span(), var_name, orig_name, true);
+                self.export_var(c.span(), Id::word(js_word!("default")), orig_name, true);
             }
             RDefaultDecl::TsInterfaceDecl(ref i) => {
                 let i = i.id.clone().into();
