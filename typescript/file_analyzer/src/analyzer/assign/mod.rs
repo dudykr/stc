@@ -678,7 +678,7 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
             }
-            Type::EnumVariant(ref e) => {
+            Type::EnumVariant(ref e @ EnumVariant { name: Some(..), .. }) => {
                 dbg!();
                 return Err(Error::InvalidLValue { span: e.span });
             }
@@ -1304,11 +1304,16 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            Type::Enum(ref e) => {
+            Type::Enum(..) | Type::EnumVariant(EnumVariant { name: None, .. }) => {
+                let enum_name = match to {
+                    Type::EnumVariant(e) => e.enum_name.clone(),
+                    Type::Enum(e) => e.id.clone().into(),
+                    _ => unreachable!(),
+                };
                 //
                 match *rhs {
                     Type::EnumVariant(ref r) => {
-                        if r.enum_name == e.id {
+                        if r.enum_name == enum_name {
                             return Ok(());
                         }
                     }
@@ -1334,7 +1339,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            Type::EnumVariant(ref l) => match *rhs {
+            Type::EnumVariant(ref l @ EnumVariant { name: Some(..), .. }) => match *rhs {
                 Type::EnumVariant(ref r) => {
                     if l.enum_name == r.enum_name && l.name == r.name {
                         return Ok(());
