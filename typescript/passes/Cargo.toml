@@ -1,0 +1,12 @@
+[package]
+authors = ["강동윤 <kdy1@dudy.kr>"]
+edition = "2018"
+name = "stc_ts_passes"
+publish = false
+version = "0.1.0"
+
+[dependencies]
+rnode = {path = "../../rnode"}
+stc_ts_ast_rnode = {path = "../ast_rnode"}
+stc_ts_errors = {path = "../errors"}
+swc_common = "0.10.19"
