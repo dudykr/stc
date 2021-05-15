@@ -258,6 +258,14 @@ impl Analyzer<'_, '_> {
                 }))
             }
 
+            Type::Mapped(m) => {
+                //
+                match m.type_param.constraint.as_deref() {
+                    Some(ty) => return self.keyof(span, ty),
+                    _ => {}
+                }
+            }
+
             _ => {}
         }
 
