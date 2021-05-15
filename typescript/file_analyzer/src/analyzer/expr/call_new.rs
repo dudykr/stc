@@ -2571,7 +2571,30 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
+    fn is_subtype_in_fn_call(&mut self, span: Span, arg: &Type, param: &Type) -> bool {
+        if arg.type_eq(param) {
+            return true;
+        }
+
+        if arg.is_any() {
+            return false;
+        }
+
+        if param.is_any() {
+            return true;
+        }
+
+        self.assign(&mut Default::default(), &arg, &param, span).is_err()
+    }
+
     /// This method return [Err] if call is invalid
+    ///
+    ///
+    /// # Implementation notes
+    ///
+    /// `anyAssignabilityInInheritance.ts` says `any, not a subtype of number so
+    /// it skips that overload, is a subtype of itself so it picks second (if
+    /// truly ambiguous it would pick first overload)`
     fn check_call_args(
         &mut self,
         span: Span,
@@ -2630,10 +2653,8 @@ impl Analyzer<'_, '_> {
                         {
                             return ArgCheckResult::ArgTypeMismatch;
                         }
-                        if analyzer
-                            .assign(&mut Default::default(), &arg.ty, &param.ty, span)
-                            .is_err()
-                        {
+
+                        if !analyzer.is_subtype_in_fn_call(span, &arg.ty, &param.ty) {
                             exact = false;
                         }
                     }
