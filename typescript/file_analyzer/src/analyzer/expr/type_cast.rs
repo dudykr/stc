@@ -284,6 +284,24 @@ impl Analyzer<'_, '_> {
                     lit: RTsLit::Number(..),
                     ..
                 }),
+            )
+            | (
+                Type::Lit(RTsLitType {
+                    lit: RTsLit::Str(..), ..
+                }),
+                Type::Lit(RTsLitType {
+                    lit: RTsLit::Str(..), ..
+                }),
+            )
+            | (
+                Type::Lit(RTsLitType {
+                    lit: RTsLit::BigInt(..),
+                    ..
+                }),
+                Type::Lit(RTsLitType {
+                    lit: RTsLit::BigInt(..),
+                    ..
+                }),
             ) => return Ok(false),
             _ => {}
         }
