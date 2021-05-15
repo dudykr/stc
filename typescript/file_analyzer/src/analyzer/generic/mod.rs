@@ -1,6 +1,7 @@
 pub(crate) use self::expander::ExtendsOpts;
 use super::Analyzer;
 use super::Ctx;
+use crate::analyzer::assign::AssignOpts;
 use crate::util::RemoveTypes;
 use crate::ValidationResult;
 use fxhash::FxHashMap;
@@ -562,12 +563,22 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
-                let arg = arg.clone();
                 slog::info!(self.logger, "({}): infer: {} = {:?}", self.scope.depth(), name, arg);
 
                 match inferred.type_params.entry(name.clone()) {
                     Entry::Occupied(e) => {
-                        if e.get().iter_union().any(|prev| prev.type_eq(&arg)) {
+                        if e.get().iter_union().any(|prev| {
+                            self.assign_with_opts(
+                                &mut Default::default(),
+                                AssignOpts {
+                                    span,
+                                    ..Default::default()
+                                },
+                                prev,
+                                &arg,
+                            )
+                            .is_ok()
+                        }) {
                             return Ok(());
                         }
 
@@ -593,6 +604,8 @@ impl Analyzer<'_, '_> {
                         }
                     }
                     Entry::Vacant(e) => {
+                        let arg = arg.clone();
+
                         e.insert(arg);
                     }
                 }
