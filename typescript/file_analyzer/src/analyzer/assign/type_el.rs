@@ -611,6 +611,25 @@ impl Analyzer<'_, '_> {
     }
 
     /// This method assigns each property to corresponding property.
+
+    ///
+    ///
+    ///
+    /// # Implementation notes
+    ///
+    ///
+    /// ## Methods
+    ///
+    /// ### Type parameters
+    ///
+    /// ```ts
+    /// interface T {
+    ///     f(x: number): void;
+    /// }
+    /// var t: T;
+    /// t = { f: <T>(x:T) => 1 };
+    /// ```
+    /// This is valid.
     fn assign_type_elements_to_type_element(
         &mut self,
         data: &mut AssignData,
