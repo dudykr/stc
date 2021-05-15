@@ -710,8 +710,16 @@ impl Analyzer<'_, '_> {
 
                                     if let Some(l_ret_ty) = &lm.ret_ty {
                                         if let Some(r_ret_ty) = &rm.ret_ty {
-                                            self.assign_with_opts(data, opts, &l_ret_ty, &r_ret_ty)
-                                                .context("tried to assign return type of a method")?;
+                                            self.assign_with_opts(
+                                                data,
+                                                AssignOpts {
+                                                    allow_assignment_to_void: true,
+                                                    ..opts
+                                                },
+                                                &l_ret_ty,
+                                                &r_ret_ty,
+                                            )
+                                            .context("tried to assign return type of a method")?;
                                         }
                                     }
                                     // TODO: Return type

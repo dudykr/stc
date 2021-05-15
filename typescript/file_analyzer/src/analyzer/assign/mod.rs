@@ -80,6 +80,9 @@ pub(crate) struct AssignOpts {
     /// If `true`, assignment will success if rhs is `void`.
     pub allow_assignment_of_void: bool,
 
+    /// If `true`, assignment will success if lhs is `void`.
+    pub allow_assignment_to_void: bool,
+
     pub allow_assignment_of_array_to_optional_type_lit: bool,
 
     pub use_missing_fields_for_class: bool,
@@ -376,6 +379,10 @@ impl Analyzer<'_, '_> {
         }
 
         if opts.allow_unknown_type && rhs.is_unknown() {
+            return Ok(());
+        }
+
+        if opts.allow_assignment_to_void && to.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
             return Ok(());
         }
 
