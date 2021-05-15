@@ -9,6 +9,8 @@ use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RPropName;
 use stc_ts_ast_rnode::RStr;
+use stc_ts_ast_rnode::RTsEntityName;
+use stc_ts_ast_rnode::RTsType;
 use stc_ts_errors::Error;
 use stc_ts_storage::Storage;
 use stc_ts_type_ops::is_str_lit_or_union;
@@ -360,4 +362,14 @@ impl Visit<RIdent> for VarVisitor<'_> {
     fn visit(&mut self, i: &RIdent) {
         self.names.push(i.into())
     }
+}
+
+/// Noop as we don't care about types.
+impl Visit<RTsType> for VarVisitor<'_> {
+    fn visit(&mut self, _: &RTsType) {}
+}
+
+/// Noop as we don't care about types.
+impl Visit<RTsEntityName> for VarVisitor<'_> {
+    fn visit(&mut self, _: &RTsEntityName) {}
 }
