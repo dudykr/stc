@@ -46,13 +46,14 @@ enum ForHeadKind {
 
 impl Analyzer<'_, '_> {
     fn validate_loop_body_with_scope(&mut self, body: &RStmt) -> ValidationResult<()> {
-        let orig_facts = self.cur_facts.take();
+        let mut orig_facts = self.cur_facts.take();
 
         let mut prev_facts = orig_facts.true_facts.clone();
+        let mut prev_false_facts = orig_facts.false_facts.take();
 
         // TODO: Loop again if required.
         for i in 0..2 {
-            let facts_from_body: CondFacts =
+            let mut facts_from_body: CondFacts =
                 self.with_child(ScopeKind::LoopBody, prev_facts.clone(), |child: &mut Analyzer| {
                     child.ctx.reevaluating_loop_body |= i != 0;
 
@@ -61,12 +62,15 @@ impl Analyzer<'_, '_> {
                     Ok(child.cur_facts.true_facts.take())
                 })?;
 
+            facts_from_body.excludes.clear();
+
             // We copy `actual` types and type facts from the child scope.
 
             prev_facts += facts_from_body;
         }
 
         self.cur_facts.true_facts += prev_facts;
+        self.cur_facts.false_facts += prev_false_facts;
 
         Ok(())
     }
