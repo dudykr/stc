@@ -452,7 +452,8 @@ impl Analyzer<'_, '_> {
 
         if opts.for_overload {
             if required_li.clone().count() > required_ri.clone().count() {
-                return Err(Error::SimpleAssignFailed { span });
+                return Err(Error::SimpleAssignFailed { span })
+                    .context("l.params.required.len > r.params.required.len");
             }
         }
 
@@ -463,7 +464,8 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
 
-            return Err(Error::SimpleAssignFailed { span });
+            return Err(Error::SimpleAssignFailed { span }
+                .context("!l_has_rest && l.params.required.len < r.params.required.len"));
         }
 
         for pair in li.zip_longest(ri) {
