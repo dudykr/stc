@@ -2,6 +2,7 @@ use rnode::VisitMut;
 use rnode::VisitMutWith;
 use stc_ts_types::Array;
 use stc_ts_types::Conditional;
+use stc_ts_types::FnParam;
 use stc_ts_types::Intersection;
 use stc_ts_types::Type;
 use stc_ts_types::TypeOrSpread;
@@ -26,6 +27,18 @@ where
     }
 }
 
+impl<T> Fix for Option<T>
+where
+    T: Fix,
+{
+    fn fix(&mut self) {
+        match self {
+            Some(v) => v.fix(),
+            None => {}
+        }
+    }
+}
+
 macro_rules! impl_fix {
     ($T:ty) => {
         impl Fix for $T {
@@ -42,6 +55,7 @@ impl_fix!(Union);
 impl_fix!(Intersection);
 impl_fix!(TypeOrSpread);
 impl_fix!(Conditional);
+impl_fix!(FnParam);
 
 struct Fixer;
 
