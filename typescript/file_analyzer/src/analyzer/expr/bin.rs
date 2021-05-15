@@ -649,16 +649,15 @@ impl Analyzer<'_, '_> {
                 }
 
                 let can_generalize = type_ann.is_none()
-                    && self.ctx.can_generalize_literals()
                     && match (&**left, &**right) {
                         (_, RExpr::Ident(..)) => false,
                         _ => true,
                     };
 
-                if can_generalize || self.may_generalize(&lt) {
+                if self.ctx.can_generalize_literals() && (can_generalize || self.may_generalize(&lt)) {
                     lt = lt.generalize_lit();
                 }
-                if can_generalize || self.may_generalize(&rt) {
+                if self.ctx.can_generalize_literals() && (can_generalize || self.may_generalize(&rt)) {
                     rt = rt.generalize_lit();
                 }
 
