@@ -375,8 +375,7 @@ impl Analyzer<'_, '_> {
                 }) => {
                     let keys_ty = self
                         .keyof(actual_span, &ty)
-                        .context("tried to get keys of a type as a part of normalization")?
-                        .fixed();
+                        .context("tried to get keys of a type as a part of normalization")?;
                     keys_ty.assert_valid();
                     return Ok(Cow::Owned(keys_ty));
                 }
