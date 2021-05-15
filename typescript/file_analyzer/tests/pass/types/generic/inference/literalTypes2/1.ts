@@ -1,4 +1,8 @@
 
+function makeArray<T>(x: T): T[] {
+    return [x];
+}
+
 function append<T>(a: T[], x: T): T[] {
     let result = a.slice();
     result.push(x);
