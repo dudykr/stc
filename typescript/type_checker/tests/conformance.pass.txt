@@ -1892,6 +1892,7 @@ types/literal/stringLiteralsWithEqualityChecks03.ts
 types/literal/stringLiteralsWithEqualityChecks04.ts
 types/literal/stringLiteralsWithSwitchStatements01.ts
 types/literal/stringLiteralsWithSwitchStatements02.ts
+types/literal/stringLiteralsWithSwitchStatements03.ts
 types/literal/stringLiteralsWithSwitchStatements04.ts
 types/literal/stringLiteralsWithTypeAssertions01.ts
 types/literal/templateLiteralTypesPatternsPrefixSuffixAssignability.ts
