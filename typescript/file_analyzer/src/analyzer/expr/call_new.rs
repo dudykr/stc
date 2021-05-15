@@ -2584,7 +2584,7 @@ impl Analyzer<'_, '_> {
             return true;
         }
 
-        self.assign(&mut Default::default(), &arg, &param, span).is_err()
+        self.assign(&mut Default::default(), &arg, &param, span).is_ok()
     }
 
     /// This method return [Err] if call is invalid
