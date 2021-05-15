@@ -16,10 +16,27 @@ use stc_ts_types::FnParam;
 use stc_ts_types::Function;
 use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
+use stc_ts_types::TypeParamDecl;
 use std::borrow::Cow;
 use swc_atoms::js_word;
 
 impl Analyzer<'_, '_> {
+    /// Not used, because I'm not sure if same rule apllies for any kind of
+    /// functions.
+    pub(super) fn assign_to_fn_like(
+        &mut self,
+        data: &mut AssignData,
+        opts: AssignOpts,
+        l_type_params: Option<&TypeParamDecl>,
+        l_params: &FnParam,
+        l_return_type: Option<&Type>,
+        r_type_params: Option<&TypeParamDecl>,
+        r_params: &FnParam,
+        r_return_type: Option<&Type>,
+    ) -> ValidationResult<()> {
+        unimplemented!()
+    }
+
     /// ```ts
     /// class Base {}
     /// class Derived extends Base {
