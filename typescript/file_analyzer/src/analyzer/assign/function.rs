@@ -103,6 +103,7 @@ impl Analyzer<'_, '_> {
                     r_ret_ty,
                     AssignOpts {
                         allow_assignment_of_void: true,
+                        allow_assignment_to_void: true,
                         ..opts
                     },
                 )
