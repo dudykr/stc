@@ -567,6 +567,7 @@ impl Analyzer<'_, '_> {
 
                 match inferred.type_params.entry(name.clone()) {
                     Entry::Occupied(e) => {
+                        // If we inferred T as `number`, we don't need to add `1`.
                         if e.get().iter_union().any(|prev| {
                             self.assign_with_opts(
                                 &mut Default::default(),
