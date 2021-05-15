@@ -457,15 +457,17 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if !l_has_rest && required_li.clone().count() < required_ri.clone().count() {
-            // I don't know why, but overload signature does not need to match overloaded
-            // signature.
-            if opts.for_overload {
-                return Ok(());
-            }
+        if li.clone().count() != ri.clone().count() {
+            if !l_has_rest && required_li.clone().count() < required_ri.clone().count() {
+                // I don't know why, but overload signature does not need to match overloaded
+                // signature.
+                if opts.for_overload {
+                    return Ok(());
+                }
 
-            return Err(Error::SimpleAssignFailed { span }
-                .context("!l_has_rest && l.params.required.len < r.params.required.len"));
+                return Err(Error::SimpleAssignFailed { span }
+                    .context("!l_has_rest && l.params.required.len < r.params.required.len"));
+            }
         }
 
         for pair in li.zip_longest(ri) {
