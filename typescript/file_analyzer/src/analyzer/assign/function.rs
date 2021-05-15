@@ -21,20 +21,96 @@ use std::borrow::Cow;
 use swc_atoms::js_word;
 
 impl Analyzer<'_, '_> {
-    /// Not used, because I'm not sure if same rule apllies for any kind of
-    /// functions.
     pub(super) fn assign_to_fn_like(
         &mut self,
         data: &mut AssignData,
         opts: AssignOpts,
         l_type_params: Option<&TypeParamDecl>,
-        l_params: &FnParam,
-        l_return_type: Option<&Type>,
+        l_params: &[FnParam],
+        l_ret_ty: Option<&Type>,
         r_type_params: Option<&TypeParamDecl>,
-        r_params: &FnParam,
-        r_return_type: Option<&Type>,
+        r_params: &[FnParam],
+        r_ret_ty: Option<&Type>,
     ) -> ValidationResult<()> {
-        unimplemented!()
+        let span = opts.span;
+
+        let new_r_params;
+        let new_r_ret_ty;
+        let (r_params, r_ret_ty) = match (&l_type_params, r_type_params) {
+            (Some(lt), Some(rt)) => {
+                //
+                let map = lt
+                    .params
+                    .iter()
+                    .zip(rt.params.iter())
+                    .map(|(l, r)| (r.name.clone(), Type::Param(l.clone()).cheap()))
+                    .collect::<FxHashMap<_, _>>();
+                new_r_params = self
+                    .expand_type_params(&map, r_params.to_vec())
+                    .context("tried to expand type parameters as a step of function assignemnt")?;
+                new_r_ret_ty = self
+                    .expand_type_params(&map, r_ret_ty.cloned())
+                    .context("tried to expand return type of rhs as a step of function assignemnt")?;
+                (&*new_r_params, new_r_ret_ty.as_ref())
+            }
+
+            // Assigning `(a: 1) => string` to `<Z>(a: Z) => string` is valid.
+            (None, Some(rt)) => {
+                let lf = Type::Function(Function {
+                    span,
+                    type_params: None,
+                    params: l_params.to_vec(),
+                    ret_ty: box l_ret_ty.cloned().unwrap_or_else(|| Type::any(span)),
+                });
+                let rf = Type::Function(Function {
+                    span,
+                    type_params: None,
+                    params: r_params.to_vec(),
+                    ret_ty: box r_ret_ty.cloned().unwrap_or_else(|| Type::any(span)),
+                });
+
+                let map = self.infer_type_with_types(span, &*rt.params, &rf, &lf)?;
+                new_r_params = self
+                    .expand_type_params(&map, r_params.to_vec())
+                    .context("tried to expand type parameters of rhs as a step of function assignemnt")?;
+                new_r_ret_ty = self
+                    .expand_type_params(&map, r_ret_ty.cloned())
+                    .context("tried to expand return type of rhs as a step of function assignemnt")?;
+                (&*new_r_params, new_r_ret_ty.as_ref())
+            }
+
+            _ => (r_params, r_ret_ty),
+        };
+
+        // () => void
+        //
+        // is assignable to
+        //
+        // (t: unknown, t1: unknown) => void
+        //
+        // So we check for length first.
+        if r_params.len() != 0 {
+            self.assign_params(data, opts, l_params, &r_params)
+                .context("tried to assign parameters of a function to parameters of another function")?;
+        }
+
+        if let Some(l_ret_ty) = l_ret_ty {
+            if let Some(r_ret_ty) = r_ret_ty {
+                // TODO: Verify type parameters.
+                self.assign_inner(
+                    data,
+                    l_ret_ty,
+                    r_ret_ty,
+                    AssignOpts {
+                        allow_assignment_of_void: true,
+                        ..opts
+                    },
+                )
+                .context("tried to assign the return type of a function to the return type of another function")?;
+            }
+        }
+
+        return Ok(());
     }
 
     /// ```ts
@@ -68,59 +144,17 @@ impl Analyzer<'_, '_> {
                 ret_ty: r_ret_ty,
                 ..
             }) => {
-                let new_r;
-                let (r_params, r_ret_ty) = match (&l.type_params, r_type_params) {
-                    (Some(lt), Some(rt)) => {
-                        //
-                        let map = lt
-                            .params
-                            .iter()
-                            .zip(rt.params.iter())
-                            .map(|(l, r)| (r.name.clone(), Type::Param(l.clone()).cheap()))
-                            .collect::<FxHashMap<_, _>>();
-                        let r = self
-                            .expand_type_params(&map, r.clone())
-                            .context("tried to expand type parameters as a step of function assignemnt")?;
-                        new_r = r.function().unwrap();
-                        (&new_r.params, &new_r.ret_ty)
-                    }
-
-                    // Assigning `(a: 1) => string` to `<Z>(a: Z) => string` is valid.
-                    (None, Some(rt)) => {
-                        let map = self.infer_type_with_types(span, &*rt.params, r, lt)?;
-                        let r = self
-                            .expand_type_params(&map, r.clone())
-                            .context("tried to expand type parameters of rhs as a step of function assignemnt")?;
-                        new_r = r.function().unwrap();
-                        (&new_r.params, &new_r.ret_ty)
-                    }
-
-                    _ => (r_params, r_ret_ty),
-                };
-
-                // () => void
-                //
-                // is assignable to
-                //
-                // (t: unknown, t1: unknown) => void
-                //
-                // So we check for length first.
-                if r_params.len() != 0 {
-                    self.assign_params(data, opts, &l.params, &r_params)
-                        .context("tried to assign parameters of a function to parameters of another function")?;
-                }
-
-                // TODO: Verify type parameters.
-                self.assign_inner(
+                self.assign_to_fn_like(
                     data,
-                    &l.ret_ty,
-                    r_ret_ty,
-                    AssignOpts {
-                        allow_assignment_of_void: true,
-                        ..opts
-                    },
+                    opts,
+                    l.type_params.as_ref(),
+                    &l.params,
+                    Some(&l.ret_ty),
+                    r_type_params.as_ref(),
+                    r_params,
+                    Some(r_ret_ty),
                 )
-                .context("tried to assign the return type of a function to the return type of another function")?;
+                .context("tried to assign to a function type")?;
 
                 return Ok(());
             }
