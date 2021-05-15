@@ -435,7 +435,8 @@ impl Analyzer<'_, '_> {
                 Ok(a.visit_fn(Some(&f.ident), &f.function).cheap())
             })?;
 
-        match self.declare_var(
+        let mut a = self.with_ctx(ctx);
+        match a.declare_var(
             f.span(),
             VarDeclKind::Var,
             f.ident.clone().into(),
@@ -447,7 +448,7 @@ impl Analyzer<'_, '_> {
         ) {
             Ok(()) => {}
             Err(err) => {
-                self.storage.report(err);
+                a.storage.report(err);
             }
         }
 
