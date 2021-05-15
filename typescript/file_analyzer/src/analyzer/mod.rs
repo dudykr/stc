@@ -226,7 +226,7 @@ impl Ctx {
     }
 
     pub fn can_generalize_literals(self) -> bool {
-        !self.in_argument
+        !self.in_argument && !self.in_cond_of_cond_expr
     }
 }
 
