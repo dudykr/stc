@@ -232,6 +232,10 @@ impl Analyzer<'_, '_> {
             return Ok(true);
         }
 
+        if from.type_eq(to) {
+            return Ok(true);
+        }
+
         match (from, to) {
             (
                 Type::Lit(RTsLitType {
@@ -271,18 +275,22 @@ impl Analyzer<'_, '_> {
                     ..
                 }),
             ) => return Ok(true),
+            (
+                Type::Lit(RTsLitType {
+                    lit: RTsLit::Number(..),
+                    ..
+                }),
+                Type::Lit(RTsLitType {
+                    lit: RTsLit::Number(..),
+                    ..
+                }),
+            ) => return Ok(false),
             _ => {}
         }
 
         // TODO: More check
         if from.is_function() && to.is_function() {
             return Ok(false);
-        }
-
-        if from.is_num() {
-            if self.can_be_casted_to_number_in_rhs(span, &to) {
-                return Ok(true);
-            }
         }
 
         match (from, to) {
@@ -363,6 +371,12 @@ impl Analyzer<'_, '_> {
                 return Ok(false);
             }
             _ => {}
+        }
+
+        if from.is_num() {
+            if self.can_be_casted_to_number_in_rhs(span, &to) {
+                return Ok(true);
+            }
         }
 
         if from.is_class() && to.is_interface() {
