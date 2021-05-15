@@ -747,13 +747,20 @@ impl Analyzer<'_, '_> {
                                 TypeElement::Property(rp) => {
                                     // Allow assigning property with callable type to methods.
                                     if let Some(rp_ty) = &rp.type_ann {
-                                        if let Type::Function(rp_ty) = rp_ty.normalize() {
-                                            self.assign_params(data, opts, &lm.params, &rp_ty.params).context(
-                                                "tried to assign parameters of a property with callable type to a \
-                                                 method parameters",
+                                        if let Type::Function(rf) = rp_ty.normalize() {
+                                            self.assign_to_fn_like(
+                                                data,
+                                                opts,
+                                                lm.type_params.as_ref(),
+                                                &lm.params,
+                                                lm.ret_ty.as_deref(),
+                                                rf.type_params.as_ref(),
+                                                &rf.params,
+                                                Some(&rf.ret_ty),
+                                            )
+                                            .context(
+                                                "tried to assign a property with callable type to a method property",
                                             )?;
-
-                                            // TODO: Return type
                                         }
                                     }
                                     if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
