@@ -520,19 +520,17 @@ impl Analyzer<'_, '_> {
 
         assert!(exprs.len() >= 1);
 
-        let first_span = exprs[0].span();
         let len = exprs.len();
 
         let mut is_any = false;
         for (i, e) in exprs.iter().enumerate() {
+            let span = e.span();
             let is_last = i == len - 1;
 
             if !is_last {
                 match **e {
                     RExpr::Arrow(..) if !self.rule().allow_unreachable_code => {
-                        self.storage.report(Error::UselessSeqExpr {
-                            span: span.with_lo(first_span.lo()),
-                        });
+                        self.storage.report(Error::UselessSeqExpr { span });
                     }
                     RExpr::Ident(..)
                     | RExpr::Cond(..)
@@ -547,9 +545,7 @@ impl Analyzer<'_, '_> {
                     | RExpr::Unary(RUnaryExpr { op: op!("typeof"), .. })
                         if !self.rule().allow_unreachable_code =>
                     {
-                        self.storage.report(Error::UselessSeqExpr {
-                            span: span.with_lo(first_span.lo()),
-                        });
+                        self.storage.report(Error::UselessSeqExpr { span });
                     }
 
                     _ => {}
