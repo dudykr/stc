@@ -54,6 +54,7 @@ use stc_ts_types::TypeParamInstantiation;
 use stc_ts_types::Union;
 use stc_ts_utils::MapWithMut;
 use stc_utils::error::context;
+use stc_utils::stack;
 use std::borrow::Cow;
 use std::collections::hash_map::Entry;
 use std::mem::take;
@@ -396,6 +397,10 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
+        let _stack = match stack::track(span) {
+            Ok(v) => v,
+            Err(_) => return Ok(()),
+        };
         let _ctx = context(format!(
             "infer_type()\nParam: {}\nArg: {}",
             dump_type_as_string(&self.cm, &param),
