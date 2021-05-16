@@ -19,6 +19,7 @@ use stc_ts_types::TypeElement;
 use stc_ts_types::TypeParamDecl;
 use std::borrow::Cow;
 use swc_atoms::js_word;
+use swc_common::TypeEq;
 
 impl Analyzer<'_, '_> {
     pub(super) fn assign_to_fn_like(
@@ -208,43 +209,21 @@ impl Analyzer<'_, '_> {
 
         match r {
             Type::Constructor(rc) => {
-                let new_r;
-                let (r_params, r_type_ann) = match (&l.type_params, &rc.type_params) {
-                    (Some(lt), Some(rt)) => {
-                        //
-                        let map = lt
-                            .params
-                            .iter()
-                            .zip(rt.params.iter())
-                            .map(|(l, r)| (r.name.clone(), Type::Param(l.clone()).cheap()))
-                            .collect::<FxHashMap<_, _>>();
-                        let r = self
-                            .expand_type_params(&map, r.clone())
-                            .context("tried to expand type parameters as a step of constructor assignemnt")?;
-                        new_r = r.constructor().unwrap();
-                        (&new_r.params, &new_r.type_ann)
-                    }
+                if l.type_eq(rc) {
+                    return Ok(());
+                }
 
-                    // Assigning `(a: 1) => string` to `<Z>(a: Z) => string` is valid.
-                    (None, Some(rt)) => {
-                        let map = self.infer_type_with_types(span, &*rt.params, r, lt)?;
-                        let r = self
-                            .expand_type_params(&map, r.clone())
-                            .context("tried to expand type parameters of rhs as a step of constructor assignemnt")?;
-                        new_r = r.constructor().unwrap();
-                        (&new_r.params, &new_r.type_ann)
-                    }
-
-                    _ => (&rc.params, &rc.type_ann),
-                };
-
-                self.assign_params(data, opts, &l.params, &r_params).context(
-                    "tried to assign the parameters of constructor to the parameters of another constructor",
-                )?;
-
-                self.assign_with_opts(data, opts, &l.type_ann, &r_type_ann).context(
-                    "tried to assign the return type of constructor to the return type of another constructor",
-                )?;
+                self.assign_to_fn_like(
+                    data,
+                    opts,
+                    l.type_params.as_ref(),
+                    &l.params,
+                    Some(&l.type_ann),
+                    rc.type_params.as_ref(),
+                    &rc.params,
+                    Some(&rc.type_ann),
+                )
+                .context("tried to assign a constructor to another one")?;
 
                 return Ok(());
             }
