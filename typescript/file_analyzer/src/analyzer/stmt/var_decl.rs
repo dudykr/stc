@@ -1,7 +1,6 @@
 use super::super::{pat::PatMode, Analyzer, Ctx};
 use crate::analyzer::assign::AssignOpts;
 use crate::analyzer::util::make_instance_type;
-use crate::util::type_ext::TypeVecExt;
 use crate::{
     analyzer::{
         expr::TypeOfMode,
