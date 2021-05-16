@@ -1064,6 +1064,11 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
+        if param.is_str_lit() {
+            // Prevent logging
+            return Ok(());
+        }
+
         if param.is_predicate() && arg.is_bool() {
             // Prevent logging
             return Ok(());
