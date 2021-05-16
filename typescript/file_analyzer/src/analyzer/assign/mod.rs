@@ -1863,45 +1863,42 @@ impl Analyzer<'_, '_> {
         data: &mut AssignData,
         opts: AssignOpts,
         l: &Mapped,
-        rhs: &Type,
+        r: &Type,
     ) -> ValidationResult<()> {
         let span = opts.span;
-        let rhs = self
+        let r = self
             .normalize(
                 Some(span),
-                Cow::Borrowed(&rhs),
+                Cow::Borrowed(&r),
                 NormalizeTypeOpts { ..Default::default() },
             )
             .context("tried to normalize rhs of assignment (to a mapped type)")?;
 
         let res: ValidationResult<_> = try {
             // Validate keys
-            match &l.type_param.constraint {
-                Some(constraint) => self.assign_keys(data, opts, &constraint, &rhs)?,
-                None => {}
-            }
 
             let l_ty = match &l.ty {
                 Some(v) => v.normalize(),
                 None => return Ok(()),
             };
 
-            match rhs.normalize() {
+            match r.normalize() {
                 Type::Interface(..) | Type::Class(..) | Type::ClassDef(..) | Type::Intersection(..) => {
-                    if let Some(r) = self
-                        .type_to_type_lit(span, &rhs)?
-                        .map(Cow::into_owned)
-                        .map(Type::TypeLit)
-                    {
+                    if let Some(r) = self.type_to_type_lit(span, &r)?.map(Cow::into_owned).map(Type::TypeLit) {
                         self.assign_to_mapped(data, opts, l, &r)
                             .context("tried to assign a type to a mapped type by converting it to a type literal")?;
                         return Ok(());
                     }
                 }
 
-                Type::TypeLit(rhs) => {
+                Type::TypeLit(rt) => {
+                    match &l.type_param.constraint {
+                        Some(constraint) => self.assign_keys(data, opts, &constraint, &r)?,
+                        None => {}
+                    }
+
                     //
-                    for member in &rhs.members {
+                    for member in &rt.members {
                         match member {
                             TypeElement::Property(prop) => {
                                 if let Some(prop_ty) = &prop.type_ann {
@@ -1962,12 +1959,7 @@ impl Analyzer<'_, '_> {
             })?
         };
 
-        res.with_context(|| {
-            format!(
-                "tried to assign {} to a mapped type",
-                dump_type_as_string(&self.cm, &rhs)
-            )
-        })
+        res.with_context(|| format!("tried to assign {} to a mapped type", dump_type_as_string(&self.cm, &r)))
     }
 
     /// Returns true for `A | B | | C = A | B` and simillar cases.
