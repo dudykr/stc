@@ -140,6 +140,12 @@ impl Analyzer<'_, '_> {
                     let allow_unknown_rhs = opts.allow_unknown_rhs || rhs_metadata.inexact;
                     for r in rhs_members {
                         if !allow_unknown_rhs {
+                            // optional members do not have effect.
+                            match r {
+                                TypeElement::Property(PropertySignature { optional: true, .. })
+                                | TypeElement::Method(MethodSignature { optional: true, .. }) => continue,
+                                _ => {}
+                            }
                             unhandled_rhs.push(r.span());
                         }
                     }
