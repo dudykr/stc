@@ -1308,7 +1308,7 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        for orig in orig.iter_union().flat_map(|ty| ty.iter_union()) {
+        for orig in orig.iter_union() {
             match orig.normalize() {
                 Type::Function(..) => {
                     let res: ValidationResult<_> = try {
