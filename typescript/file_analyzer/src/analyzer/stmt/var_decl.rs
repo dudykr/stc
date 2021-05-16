@@ -349,27 +349,6 @@ impl Analyzer<'_, '_> {
                                     Type::Function(stc_ts_types::Function { ret_ty, ..f.clone() })
                                 }
 
-                                Type::Tuple(tuple)
-                                    if !tuple.elems.is_empty()
-                                        && tuple.elems.iter().all(|e| match &*e.ty {
-                                            Type::Keyword(..) => true,
-                                            _ => false,
-                                        }) =>
-                                {
-                                    let mut types = tuple.elems.iter().map(|e| *e.ty.clone()).collect::<Vec<_>>();
-                                    types.dedup_type();
-
-                                    let has_other = types.iter().any(|ty| !ty.is_null_or_undefined());
-                                    if has_other {
-                                        types.retain(|ty| !ty.is_null_or_undefined());
-                                    }
-
-                                    Type::Array(Array {
-                                        span: tuple.span,
-                                        elem_type: box Type::union(types),
-                                    })
-                                }
-
                                 _ => ty,
                             };
                         }
