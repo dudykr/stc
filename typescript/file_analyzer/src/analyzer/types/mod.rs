@@ -905,6 +905,19 @@ impl Analyzer<'_, '_> {
             return;
         }
 
+        if ty.normalize().is_alias() {
+            match ty.normalize_mut() {
+                Type::Alias(alias) => {
+                    self.exclude_type(&mut alias.ty, excluded);
+                    *ty = alias.ty.take();
+                    return;
+                }
+                _ => {
+                    unreachable!()
+                }
+            }
+        }
+
         match ty.normalize() {
             Type::Ref(..) => {
                 // We ignore errors.
