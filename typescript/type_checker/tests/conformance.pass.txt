@@ -1921,6 +1921,7 @@ types/namedTypes/classWithOnlyPublicMembersEquivalentToInterface2.ts
 types/namedTypes/classWithOptionalParameter.ts
 types/namedTypes/genericInstantiationEquivalentToObjectLiteral.ts
 types/namedTypes/optionalMethods.ts
+types/never/neverInference.ts
 types/never/neverType.ts
 types/never/neverUnionIntersection.ts
 types/nonPrimitive/assignObjectToNonPrimitive.ts
