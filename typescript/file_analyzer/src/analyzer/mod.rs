@@ -293,6 +293,13 @@ struct AnalyzerData {
 
     /// One instance of each module (typescript `module` keyword).
     for_module: PerModuleData,
+
+    /// When multiple overloads are wrong, tsc reports an error only for first
+    /// one.
+    ///
+    /// We mimic it by storing names of wrong overloads.
+    /// Only first wrong overload should be added to this set.
+    known_wrong_overloads: FxHashSet<Id>,
 }
 
 #[derive(Debug, Default)]

@@ -1210,9 +1210,19 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
-                if let Some(orig) = &v.ty {
-                    if let Some(ty) = &ty {
-                        self.validate_with(|a| a.validate_fn_overloads(span, orig, ty));
+                if !self.data.known_wrong_overloads.contains(&name) {
+                    if let Some(orig) = &v.ty {
+                        if let Some(ty) = &ty {
+                            self.validate_with(|a| {
+                                let res = a.validate_fn_overloads(span, orig, ty);
+
+                                if res.is_err() {
+                                    a.data.known_wrong_overloads.insert(name.clone());
+                                }
+
+                                res
+                            });
+                        }
                     }
                 }
 
@@ -1301,6 +1311,7 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
+    /// Returns [Err] if overload is wrong.
     fn validate_fn_overloads(&mut self, span: Span, orig: &Type, new: &Type) -> ValidationResult<()> {
         // We validates using the signature of implementing function.
         // TODO: Validate using last element, when there's a no function decl with body.
@@ -1311,25 +1322,21 @@ impl Analyzer<'_, '_> {
         for orig in orig.iter_union() {
             match orig.normalize() {
                 Type::Function(..) => {
-                    let res: ValidationResult<_> = try {
-                        self.assign_with_opts(
-                            &mut Default::default(),
-                            AssignOpts {
-                                span,
-                                for_overload: true,
-                                ..Default::default()
-                            },
-                            &new,
-                            &orig,
-                        )
-                        .context("tried to validate signatures of overloaded functions")?;
-                    };
-
-                    res.convert_err(|err| Error::ImcompatibleFnOverload {
+                    self.assign_with_opts(
+                        &mut Default::default(),
+                        AssignOpts {
+                            span,
+                            for_overload: true,
+                            ..Default::default()
+                        },
+                        &new,
+                        &orig,
+                    )
+                    .convert_err(|err| Error::ImcompatibleFnOverload {
                         span: orig.span(),
                         cause: box err,
                     })
-                    .report(&mut self.storage);
+                    .context("tried to validate signatures of overloaded functions")?;
                 }
                 _ => {}
             }
