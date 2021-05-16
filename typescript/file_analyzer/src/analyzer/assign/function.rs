@@ -257,31 +257,27 @@ impl Analyzer<'_, '_> {
                 for (idx, rm) in rt.members.iter().enumerate() {
                     match rm {
                         TypeElement::Constructor(rc) => {
-                            if let Err(err) = self.assign_params(data, opts, &l.params, &rc.params).with_context(|| {
-                                format!(
-                                    "tried to assign parameters of a constructor to them of another constructor ({}th \
-                                     element)",
-                                    idx
+                            if let Err(err) = self
+                                .assign_to_fn_like(
+                                    data,
+                                    opts,
+                                    l.type_params.as_ref(),
+                                    &l.params,
+                                    Some(&l.type_ann),
+                                    rc.type_params.as_ref(),
+                                    &rc.params,
+                                    rc.ret_ty.as_deref(),
                                 )
-                            }) {
+                                .with_context(|| {
+                                    format!(
+                                        "tried to assign parameters of a constructor to them of another constructor \
+                                         ({}th element)",
+                                        idx
+                                    )
+                                })
+                            {
                                 errors.push(err);
                                 continue;
-                            }
-
-                            if let Some(r_ret_ty) = &rc.ret_ty {
-                                if let Err(err) = self
-                                    .assign_with_opts(data, opts, &l.type_ann, &r_ret_ty)
-                                    .with_context(|| {
-                                        format!(
-                                            "tried to  assign the return type of a constructor to it of another \
-                                             constructor ({}th element)",
-                                            idx,
-                                        )
-                                    })
-                                {
-                                    errors.push(err);
-                                    continue;
-                                }
                             }
 
                             return Ok(());
