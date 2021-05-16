@@ -9,10 +9,14 @@ use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RPropName;
 use stc_ts_ast_rnode::RStr;
+use stc_ts_ast_rnode::RTsEntityName;
+use stc_ts_ast_rnode::RTsType;
 use stc_ts_errors::Error;
 use stc_ts_storage::Storage;
 use stc_ts_type_ops::is_str_lit_or_union;
 use stc_ts_types::Class;
+use stc_ts_types::Enum;
+use stc_ts_types::EnumVariant;
 use stc_ts_types::TypeElement;
 use stc_ts_types::{Id, IndexedAccessType, Intersection, ModuleId, QueryExpr, QueryType, Ref, Tuple};
 use std::iter::once;
@@ -148,18 +152,18 @@ impl Analyzer<'_, '_> {
     }
 }
 
-pub(crate) fn instantiate_class(module_id: ModuleId, ty: Type) -> Type {
+pub(crate) fn make_instance_type(module_id: ModuleId, ty: Type) -> Type {
     let span = ty.span();
 
-    match *ty.normalize() {
+    match ty.normalize() {
         Type::Tuple(Tuple { ref elems, span }) => Type::Tuple(Tuple {
-            span,
+            span: *span,
             elems: elems
                 .iter()
                 .cloned()
                 .map(|mut element| {
                     // TODO: Remove clone
-                    element.ty = box instantiate_class(module_id, *element.ty);
+                    element.ty = box make_instance_type(module_id, *element.ty);
                     element
                 })
                 .collect(),
@@ -173,7 +177,7 @@ pub(crate) fn instantiate_class(module_id: ModuleId, ty: Type) -> Type {
             let types = i
                 .types
                 .iter()
-                .map(|ty| instantiate_class(module_id, ty.clone()))
+                .map(|ty| make_instance_type(module_id, ty.clone()))
                 .collect();
 
             Type::Intersection(Intersection { span: i.span, types })
@@ -183,10 +187,17 @@ pub(crate) fn instantiate_class(module_id: ModuleId, ty: Type) -> Type {
             span,
             expr: box QueryExpr::TsEntityName(ref type_name),
         }) => Type::Ref(Ref {
-            span,
+            span: *span,
             ctxt: module_id,
             type_name: type_name.clone(),
             type_args: Default::default(),
+        }),
+
+        Type::Enum(Enum { id, .. }) => Type::EnumVariant(EnumVariant {
+            span,
+            ctxt: module_id,
+            enum_name: id.into(),
+            name: None,
         }),
 
         _ => return ty,
@@ -351,4 +362,14 @@ impl Visit<RIdent> for VarVisitor<'_> {
     fn visit(&mut self, i: &RIdent) {
         self.names.push(i.into())
     }
+}
+
+/// Noop as we don't care about types.
+impl Visit<RTsType> for VarVisitor<'_> {
+    fn visit(&mut self, _: &RTsType) {}
+}
+
+/// Noop as we don't care about types.
+impl Visit<RTsEntityName> for VarVisitor<'_> {
+    fn visit(&mut self, _: &RTsEntityName) {}
 }

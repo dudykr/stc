@@ -89,7 +89,11 @@ impl Analyzer<'_, '_> {
                 match f.body {
                     RBlockStmtOrExpr::Expr(ref e) => Some({
                         let ty = e.validate_with_default(child)?;
-                        if !child.ctx.in_argument && child.may_generalize(&ty) {
+                        if !child.ctx.in_argument
+                            && f.return_type.is_none()
+                            && type_ann.is_none()
+                            && child.may_generalize(&ty)
+                        {
                             ty.generalize_lit()
                         } else {
                             ty

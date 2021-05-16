@@ -6,7 +6,7 @@ use crate::{
     analyzer::{
         expr::TypeOfMode,
         marks::MarkExt,
-        util::{instantiate_class, ResultExt},
+        util::{make_instance_type, ResultExt},
         Ctx, ScopeKind,
     },
     ty,
@@ -106,7 +106,13 @@ impl Analyzer<'_, '_> {
 
         let callee = match callee {
             RExprOrSuper::Super(..) => {
-                self.report_error_for_super_reference(span, true);
+                self.report_error_for_super_refs_without_supers(span, true);
+                self.report_error_for_super_reference_in_compute_keys(span, true);
+
+                if type_args.is_some() {
+                    // super<T>() is invalid.
+                    self.storage.report(Error::SuperCannotUseTypeArgs { span })
+                }
 
                 return Ok(Type::any(span));
             }
@@ -360,19 +366,21 @@ impl Analyzer<'_, '_> {
                     _ => obj_type,
                 };
 
-                return self.call_property(
-                    span,
-                    kind,
-                    expr,
-                    &obj_type,
-                    &obj_type,
-                    &prop,
-                    type_args.as_ref(),
-                    args,
-                    &arg_types,
-                    &spread_arg_types,
-                    type_ann,
-                );
+                return self
+                    .call_property(
+                        span,
+                        kind,
+                        expr,
+                        &obj_type,
+                        &obj_type,
+                        &prop,
+                        type_args.as_ref(),
+                        args,
+                        &arg_types,
+                        &spread_arg_types,
+                        type_ann,
+                    )
+                    .map(|ty| ty.fixed());
             }
             _ => {}
         }
@@ -456,7 +464,7 @@ impl Analyzer<'_, '_> {
                 type_ann,
             )?;
 
-            return Ok(expanded_ty);
+            return Ok(expanded_ty.fixed());
         })
     }
 
@@ -753,9 +761,9 @@ impl Analyzer<'_, '_> {
                 diallow_unknown_object_property: true,
                 ..self.ctx
             };
-            let callee =
-                self.with_ctx(ctx)
-                    .access_property(span, obj_type.clone(), &prop, TypeOfMode::RValue, IdCtx::Var)?;
+            let callee = self
+                .with_ctx(ctx)
+                .access_property(span, obj_type, &prop, TypeOfMode::RValue, IdCtx::Var)?;
 
             let callee = self.expand_top_ref(span, Cow::Owned(callee))?.into_owned();
 
@@ -918,6 +926,12 @@ impl Analyzer<'_, '_> {
     ) {
         match m {
             TypeElement::Method(m) if kind == ExtractKind::Call => {
+                if self.ctx.disallow_optional_object_property && m.optional {
+                    // See: for-of29.ts
+                    // Optional properties cannot be called.
+                    return;
+                }
+
                 // We are interested only on methods named `prop`
                 if let Ok(()) = self.assign(&mut Default::default(), &m.key.ty(), &prop.ty(), span) {
                     candidates.push(CallCandidate {
@@ -929,6 +943,12 @@ impl Analyzer<'_, '_> {
             }
 
             TypeElement::Property(p) if kind == ExtractKind::Call => {
+                if self.ctx.disallow_optional_object_property && p.optional {
+                    // See: for-of29.ts
+                    // Optional properties cannot be called.
+                    return;
+                }
+
                 if let Ok(()) = self.assign(&mut Default::default(), &p.key.ty(), &prop.ty(), span) {
                     // TODO: Remove useless clone
                     let ty = *p.type_ann.as_ref().cloned().unwrap_or(box Type::any(m.span()));
@@ -1109,7 +1129,7 @@ impl Analyzer<'_, '_> {
 
         match ty.normalize() {
             Type::Ref(..) | Type::Query(..) => {
-                let ty = self.normalize(None, ty, Default::default())?;
+                let ty = self.normalize(None, Cow::Borrowed(ty), Default::default())?;
                 return self.extract(
                     span,
                     expr,
@@ -1131,6 +1151,14 @@ impl Analyzer<'_, '_> {
             "[exprs/call] Calling {}",
             dump_type_as_string(&self.cm, &ty)
         );
+
+        match kind {
+            ExtractKind::Call => match ty.normalize() {
+                Type::Interface(i) if i.name == "Function" => return Ok(Type::any(span)),
+                _ => {}
+            },
+            _ => {}
+        }
 
         match kind {
             ExtractKind::New => match ty.normalize() {
@@ -1249,7 +1277,7 @@ impl Analyzer<'_, '_> {
         match ty.normalize() {
             Type::Intersection(..) if kind == ExtractKind::New => {
                 // TODO: Check if all types has constructor signature
-                return Ok(instantiate_class(self.ctx.module_id, ty.clone()));
+                return Ok(make_instance_type(self.ctx.module_id, ty.clone()));
             }
 
             Type::Keyword(RTsKeywordType {
@@ -1712,11 +1740,6 @@ impl Analyzer<'_, '_> {
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
     ) -> ValidationResult<()> {
-        // Argument counts are not checked if it's an iife.
-        if self.ctx.is_calling_iife {
-            return Ok(());
-        }
-
         let mut min_param = 0;
         let mut max_param = Some(params.len());
         for param in params {
@@ -1774,9 +1797,21 @@ impl Analyzer<'_, '_> {
                 }
             }
 
+            // For iifes, not providing some arguemnts are allowed.
+            if self.ctx.is_calling_iife {
+                if let Some(max) = max_param {
+                    if args.len() <= max {
+                        return Ok(());
+                    }
+                }
+            }
+
             if max_param.is_none() {
                 return Err(Error::ExpectedAtLeastNArgsButGotM { span, min: min_param });
             }
+
+            let span = args.get(min_param).map(|arg| arg.expr.span()).unwrap_or(span);
+
             return Err(Error::ExpectedNArgsButGotM {
                 span,
                 min: min_param,
@@ -2075,7 +2110,11 @@ impl Analyzer<'_, '_> {
                         }
 
                         slog::info!(self.logger, "Inferring type of function expr with updated type");
-                        let mut ty = box Type::Function(fn_expr.function.validate_with(&mut *self.with_ctx(ctx))?);
+                        let mut ty = box Type::Function(
+                            fn_expr
+                                .function
+                                .validate_with_args(&mut *self.with_ctx(ctx), fn_expr.ident.as_ref())?,
+                        );
                         self.add_required_type_params(&mut ty);
                         ty
                     }
@@ -2144,8 +2183,12 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                new_arg_types.fix();
+
                 &*new_arg_types
             } else {
+                new_args.fix();
+
                 &*new_args
             };
 
@@ -2155,6 +2198,14 @@ impl Analyzer<'_, '_> {
                 ..self.ctx
             };
             let ret_ty = self.with_ctx(ctx).expand(span, ret_ty)?;
+
+            for item in &expanded_param_types {
+                item.ty.assert_valid();
+            }
+
+            for item in spread_arg_types {
+                item.ty.assert_valid();
+            }
 
             self.validate_arg_types(&expanded_param_types, &spread_arg_types);
 
@@ -2520,7 +2571,30 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
+    fn is_subtype_in_fn_call(&mut self, span: Span, arg: &Type, param: &Type) -> bool {
+        if arg.type_eq(param) {
+            return true;
+        }
+
+        if arg.is_any() {
+            return false;
+        }
+
+        if param.is_any() {
+            return true;
+        }
+
+        self.assign(&mut Default::default(), &arg, &param, span).is_ok()
+    }
+
     /// This method return [Err] if call is invalid
+    ///
+    ///
+    /// # Implementation notes
+    ///
+    /// `anyAssignabilityInInheritance.ts` says `any, not a subtype of number so
+    /// it skips that overload, is a subtype of itself so it picks second (if
+    /// truly ambiguous it would pick first overload)`
     fn check_call_args(
         &mut self,
         span: Span,
@@ -2579,10 +2653,8 @@ impl Analyzer<'_, '_> {
                         {
                             return ArgCheckResult::ArgTypeMismatch;
                         }
-                        if analyzer
-                            .assign(&mut Default::default(), &arg.ty, &param.ty, span)
-                            .is_err()
-                        {
+
+                        if !analyzer.is_subtype_in_fn_call(span, &arg.ty, &param.ty) {
                             exact = false;
                         }
                     }
@@ -2725,7 +2797,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                     };
                     let mut a = self.analyzer.with_ctx(ctx);
                     let obj = a.expand_fully(*span, *obj_ty.clone(), true).report(&mut a.storage);
-                    if let Some(obj) = obj {
+                    if let Some(obj) = &obj {
                         if let Some(actual_ty) = a
                             .access_property(
                                 *span,

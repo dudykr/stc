@@ -36,6 +36,7 @@ use stc_ts_types::Key;
 use stc_ts_types::PrivateName;
 use stc_ts_types::TypeParam;
 use stc_ts_utils::PatExt;
+use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::Span;
 use swc_common::Spanned;
@@ -292,7 +293,7 @@ impl Analyzer<'_, '_> {
             Type::Function(..) => return false,
             _ => {}
         }
-        let ty = self.normalize(None, &ty, Default::default());
+        let ty = self.normalize(None, Cow::Owned(ty), Default::default());
         let ty = match ty {
             Ok(v) => v,
             _ => return true,
@@ -457,7 +458,7 @@ impl Analyzer<'_, '_> {
                     _ => false,
                 };
                 let method_type_ann = object_type.and_then(|obj| {
-                    self.access_property(span, obj.clone(), &key, TypeOfMode::RValue, IdCtx::Var)
+                    self.access_property(span, &obj, &key, TypeOfMode::RValue, IdCtx::Var)
                         .ok()
                 });
 

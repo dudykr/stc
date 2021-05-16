@@ -25,9 +25,11 @@ use stc_ts_ast_rnode::RVarDeclarator;
 use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::Id;
+use stc_ts_types::IdCtx;
 use stc_ts_types::ModuleId;
 use stc_ts_utils::find_ids_in_pat;
 use swc_atoms::js_word;
+use swc_atoms::JsWord;
 use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
 
@@ -136,8 +138,12 @@ impl Analyzer<'_, '_> {
         };
         self.storage
             .store_private_var(self.ctx.module_id, Id::word(js_word!("default")), ty);
-        self.storage
-            .export_var(span, self.ctx.module_id, Id::word(js_word!("default")));
+        self.storage.export_var(
+            span,
+            self.ctx.module_id,
+            Id::word(js_word!("default")),
+            Id::word(js_word!("default")),
+        );
     }
 }
 
@@ -155,7 +161,7 @@ impl Analyzer<'_, '_> {
                 RDecl::Fn(ref f) => {
                     f.visit_with(a);
                     // self.export(f.span(), f.ident.clone().into(), None);
-                    a.export_var(f.span(), f.ident.clone().into());
+                    a.export_var(f.span(), f.ident.clone().into(), None, f.function.body.is_some());
                 }
                 RDecl::TsInterface(ref i) => {
                     i.visit_with(a);
@@ -166,7 +172,7 @@ impl Analyzer<'_, '_> {
                 RDecl::Class(ref c) => {
                     c.visit_with(a);
                     a.export(c.span(), c.ident.clone().into(), None);
-                    a.export_var(c.span(), c.ident.clone().into());
+                    a.export_var(c.span(), c.ident.clone().into(), None, true);
                 }
                 RDecl::Var(ref var) => {
                     let span = var.span;
@@ -175,7 +181,7 @@ impl Analyzer<'_, '_> {
                     let ids: Vec<Id> = find_ids_in_pat(&var.decls);
 
                     for id in ids {
-                        a.export_var(span, id)
+                        a.export_var(span, id, None, true)
                     }
                 }
                 RDecl::TsEnum(ref e) => {
@@ -231,7 +237,7 @@ impl Analyzer<'_, '_> {
                     .as_ref()
                     .map(|v| v.into())
                     .unwrap_or_else(|| Id::word(js_word!("default")));
-                let fn_ty = match f.function.validate_with(self) {
+                let fn_ty = match f.function.validate_with_args(self, f.ident.as_ref()) {
                     Ok(ty) => ty,
                     Err(err) => {
                         self.storage.report(err);
@@ -245,25 +251,53 @@ impl Analyzer<'_, '_> {
                         }
                     }
                 }
-                self.register_type(i.clone(), fn_ty.clone().into());
-                if let Some(ref i) = f.ident {
-                    self.override_var(VarDeclKind::Var, i.into(), fn_ty.into())
-                        .report(&mut self.storage);
-                }
 
-                self.export(f.span(), Id::word(js_word!("default")), Some(i))
+                self.declare_var(
+                    span,
+                    VarDeclKind::Var,
+                    i.clone(),
+                    Some(fn_ty.into()),
+                    None,
+                    true,
+                    true,
+                    false,
+                )
+                .report(&mut self.storage);
+
+                self.export_var(
+                    f.span(),
+                    Id::word(js_word!("default")),
+                    Some(i),
+                    f.function.body.is_some(),
+                );
             }
             RDefaultDecl::Class(ref c) => {
-                let id = c.ident.as_ref().map(|v| v.into());
+                let id: Option<Id> = c.ident.as_ref().map(|v| v.into());
+                let orig_name = id.clone();
 
                 self.scope.this_class_name = id.clone();
 
-                let id = id.unwrap_or_else(|| Id::word(js_word!("default")));
+                let var_name = id.unwrap_or_else(|| Id::word(js_word!("default")));
 
                 let class_ty = c.class.validate_with(self)?;
-                self.register_type(id.clone(), Type::ClassDef(class_ty));
+                let class_ty = Type::ClassDef(class_ty).cheap();
+                self.register_type(var_name.clone(), class_ty.clone());
 
-                self.export(span, Id::word(js_word!("default")), Some(id));
+                self.export(span, Id::word(js_word!("default")), Some(var_name.clone()));
+
+                self.declare_var(
+                    span,
+                    VarDeclKind::Var,
+                    var_name.clone(),
+                    Some(class_ty),
+                    None,
+                    true,
+                    true,
+                    false,
+                )
+                .report(&mut self.storage);
+
+                self.export_var(c.span(), Id::word(js_word!("default")), orig_name, true);
             }
             RDefaultDecl::TsInterfaceDecl(ref i) => {
                 let i = i.id.clone().into();
@@ -280,9 +314,36 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
+    /// Currently noop because we need to know if a function is last item among
+    /// overloads
+    fn check_for_duplicate_export_of_var(&mut self, span: Span, sym: JsWord) {
+        if self.ctx.reevaluating() {
+            return;
+        }
+        let mut v = self
+            .data
+            .for_module
+            .exports_spans
+            .entry((sym.clone(), IdCtx::Var))
+            .or_default();
+        v.push(span);
+
+        // TODO: Optimize this by emitting same error only once.
+        if v.len() >= 2 {
+            for &span in &*v {
+                self.storage.report(Error::DuplicateDefaultExport { span });
+            }
+        }
+    }
+
     #[extra_validator]
-    fn export_var(&mut self, span: Span, name: Id) {
-        self.storage.export_var(span, self.ctx.module_id, name);
+    fn export_var(&mut self, span: Span, name: Id, orig_name: Option<Id>, check_duplicate: bool) {
+        if check_duplicate {
+            self.check_for_duplicate_export_of_var(span, name.sym().clone());
+        }
+
+        self.storage
+            .export_var(span, self.ctx.module_id, name.clone(), orig_name.unwrap_or(name));
     }
 
     /// Exports a type.
@@ -328,6 +389,8 @@ impl Analyzer<'_, '_> {
 
     /// Exports a variable.
     fn export_expr(&mut self, name: Id, item_node_id: NodeId, e: &RExpr) -> ValidationResult<()> {
+        self.check_for_duplicate_export_of_var(e.span(), name.sym().clone());
+
         let ty = e.validate_with_default(self)?;
 
         if *name.sym() == js_word!("default") {
@@ -501,7 +564,9 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn export_named(&mut self, span: Span, ctxt: ModuleId, orig: Id, id: Id) {
         if self.storage.get_local_var(ctxt, orig.clone()).is_some() {
-            self.storage.export_var(span, ctxt, id.clone());
+            self.check_for_duplicate_export_of_var(span, id.sym().clone());
+
+            self.storage.export_var(span, ctxt, id.clone(), orig.clone());
         }
 
         if self.storage.get_local_type(ctxt, orig).is_some() {

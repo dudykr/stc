@@ -71,6 +71,12 @@ impl From<Id> for RTsEntityName {
     }
 }
 
+impl PartialEq<&'_ str> for Id {
+    fn eq(&self, other: &&'_ str) -> bool {
+        *self.sym == **other
+    }
+}
+
 /// This makes life easier.
 impl Display for Id {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {

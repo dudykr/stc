@@ -1,6 +1,6 @@
 use super::super::{pat::PatMode, Analyzer, Ctx};
 use crate::analyzer::assign::AssignOpts;
-use crate::analyzer::util::instantiate_class;
+use crate::analyzer::util::make_instance_type;
 use crate::util::type_ext::TypeVecExt;
 use crate::{
     analyzer::{
@@ -32,11 +32,14 @@ use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
+use stc_ts_type_ops::Fix;
+use stc_ts_types::EnumVariant;
 use stc_ts_types::QueryExpr;
 use stc_ts_types::QueryType;
 use stc_ts_types::{Array, Id, Operator, Symbol};
 use stc_ts_utils::find_ids_in_pat;
 use stc_ts_utils::PatExt;
+use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::Spanned;
 use swc_ecma_ast::*;
@@ -240,7 +243,7 @@ impl Analyzer<'_, '_> {
                         };
                         let ty = self.expand(span, ty)?;
                         ty.assert_valid();
-                        let ty = instantiate_class(self.ctx.module_id, ty);
+                        let ty = make_instance_type(self.ctx.module_id, ty);
                         ty.assert_valid();
                         self.check_rvalue(span, &v.name, &ty);
 
@@ -316,6 +319,9 @@ impl Analyzer<'_, '_> {
 
                         slog::debug!(self.logger, "var: user did not declare type");
                         let mut ty = self.rename_type_params(span, ty, None)?;
+                        ty.fix();
+                        ty.assert_valid();
+
                         if !(self.ctx.var_kind == VarDeclKind::Const && ty.is_lit()) {
                             if self.may_generalize(&ty) {
                                 // Vars behave differently based on the context.
@@ -326,6 +332,8 @@ impl Analyzer<'_, '_> {
                                 }
                             }
                         }
+
+                        ty.assert_valid();
 
                         slog::debug!(
                             self.logger,
@@ -390,6 +398,8 @@ impl Analyzer<'_, '_> {
                             }
                             _ => {}
                         }
+
+                        ty.assert_valid();
 
                         if self.scope.is_root() {
                             let ty = Some(forced_type_ann.unwrap_or_else(|| {
@@ -515,6 +525,8 @@ impl Analyzer<'_, '_> {
                                 ty = self.with_ctx(ctx).expand(span, ty)?;
                             }
                         }
+                        ty.assert_valid();
+
                         self.check_rvalue(span, &v.name, &ty);
 
                         let mut type_errors = Errors::default();
@@ -561,6 +573,8 @@ impl Analyzer<'_, '_> {
                             _ => {}
                         }
 
+                        ty.assert_valid();
+
                         if !type_errors.is_empty() {
                             self.storage.report_all(type_errors);
                             remove_declaring!();
@@ -573,7 +587,10 @@ impl Analyzer<'_, '_> {
                                     if let Some(items) = self.find_type(self.ctx.module_id, &v.enum_name)? {
                                         for ty in items {
                                             if let Type::Enum(ref e) = ty.normalize() {
-                                                return Ok(Type::Enum(e.clone()));
+                                                return Ok(Type::EnumVariant(EnumVariant {
+                                                    name: None,
+                                                    ..v.clone()
+                                                }));
                                             }
                                         }
                                     }
@@ -620,7 +637,8 @@ impl Analyzer<'_, '_> {
                         if !self.is_builtin {
                             // Report error if type is not found.
                             if let Some(ty) = &ty {
-                                self.normalize(None, &ty, Default::default()).report(&mut self.storage);
+                                self.normalize(None, Cow::Borrowed(ty), Default::default())
+                                    .report(&mut self.storage);
                             }
                         }
 

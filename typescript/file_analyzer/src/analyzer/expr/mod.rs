@@ -1,3 +1,4 @@
+pub(crate) use self::array::GetIteratorOpts;
 use self::bin::extract_name_for_assignment;
 use super::{marks::MarkExt, Analyzer};
 use crate::analyzer::scope::ScopeKind;
@@ -78,6 +79,7 @@ use swc_ecma_ast::EsVersion;
 use swc_ecma_ast::TruePlusMinus;
 use swc_ecma_ast::TsKeywordTypeKind;
 use swc_ecma_ast::TsTypeOperatorOp;
+use swc_ecma_ast::VarDeclKind;
 use ty::TypeExt;
 
 mod array;
@@ -171,10 +173,14 @@ impl Analyzer<'_, '_> {
                         self.storage.report(Error::ThisRefToModuleOrNamespace { span })
                     }
 
+                    // Use globalThis
                     if !self.scope.is_this_defined() {
-                        return Ok(Type::Keyword(RTsKeywordType {
+                        return Ok(Type::Query(QueryType {
                             span,
-                            kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                            expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(RIdent::new(
+                                "globalThis".into(),
+                                span.with_ctxt(SyntaxContext::empty()),
+                            ))),
                         }));
                     }
 
@@ -265,9 +271,13 @@ impl Analyzer<'_, '_> {
                     return e.validate_with(self);
                 }
 
-                RExpr::TsNonNull(RTsNonNullExpr { ref expr, .. }) => Ok(expr
-                    .validate_with_args(self, (mode, type_args, type_ann))?
-                    .remove_falsy()),
+                RExpr::TsNonNull(RTsNonNullExpr { span, ref expr, .. }) => {
+                    let mut ty = expr
+                        .validate_with_args(self, (mode, type_args, type_ann))?
+                        .remove_falsy();
+                    ty.reposition(*span);
+                    Ok(ty)
+                }
 
                 RExpr::Object(e) => {
                     return e.validate_with_args(self, type_ann);
@@ -510,19 +520,17 @@ impl Analyzer<'_, '_> {
 
         assert!(exprs.len() >= 1);
 
-        let first_span = exprs[0].span();
         let len = exprs.len();
 
         let mut is_any = false;
         for (i, e) in exprs.iter().enumerate() {
+            let span = e.span();
             let is_last = i == len - 1;
 
             if !is_last {
                 match **e {
                     RExpr::Arrow(..) if !self.rule().allow_unreachable_code => {
-                        self.storage.report(Error::UselessSeqExpr {
-                            span: span.with_lo(first_span.lo()),
-                        });
+                        self.storage.report(Error::UselessSeqExpr { span });
                     }
                     RExpr::Ident(..)
                     | RExpr::Cond(..)
@@ -537,9 +545,7 @@ impl Analyzer<'_, '_> {
                     | RExpr::Unary(RUnaryExpr { op: op!("typeof"), .. })
                         if !self.rule().allow_unreachable_code =>
                     {
-                        self.storage.report(Error::UselessSeqExpr {
-                            span: span.with_lo(first_span.lo()),
-                        });
+                        self.storage.report(Error::UselessSeqExpr { span });
                     }
 
                     _ => {}
@@ -555,12 +561,17 @@ impl Analyzer<'_, '_> {
             }
 
             if !is_last {
-                match e.validate_with_default(self) {
+                let ctx = Ctx {
+                    in_useless_expr_for_seq: true,
+                    ..self.ctx
+                };
+                let mut a = self.with_ctx(ctx);
+                match e.validate_with_default(&mut *a) {
                     Ok(..) => {}
                     Err(Error::ReferencedInInit { .. }) => {
                         is_any = true;
                     }
-                    Err(err) => self.storage.report(err),
+                    Err(err) => a.storage.report(err),
                 }
             }
         }
@@ -720,6 +731,25 @@ impl Analyzer<'_, '_> {
                     return self.check_if_type_matches_key(span, declared, &cur, allow_union);
                 }
             }
+
+            Type::EnumVariant(EnumVariant {
+                enum_name, name: None, ..
+            }) => {
+                if let Ok(Some(types)) = self.find_type(self.ctx.module_id, enum_name) {
+                    for ty in types {
+                        match ty.normalize() {
+                            Type::Enum(e) => {
+                                let e = e.clone();
+                                return self.check_if_type_matches_key(span, declared, &Type::Enum(e), allow_union);
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+
+                let cur = self.expand_top_ref(span, Cow::Borrowed(key_ty));
+            }
+
             Type::Enum(e) if allow_union => {
                 //
                 for m in &e.members {
@@ -829,7 +859,7 @@ impl Analyzer<'_, '_> {
 
             let obj = self.env.get_global_type(span, &js_word!("Function"))?;
 
-            if let Ok(v) = self.access_property(span, obj, prop, type_mode, IdCtx::Var) {
+            if let Ok(v) = self.access_property(span, &obj, prop, type_mode, IdCtx::Var) {
                 return Ok(Some(v));
             }
         }
@@ -914,7 +944,7 @@ impl Analyzer<'_, '_> {
     pub(super) fn access_property(
         &mut self,
         span: Span,
-        obj: Type,
+        obj: &Type,
         prop: &Key,
         type_mode: TypeOfMode,
         id_ctx: IdCtx,
@@ -957,7 +987,7 @@ impl Analyzer<'_, '_> {
     fn access_property_inner(
         &mut self,
         span: Span,
-        obj: Type,
+        obj: &Type,
         prop: &Key,
         type_mode: TypeOfMode,
         id_ctx: IdCtx,
@@ -1069,7 +1099,7 @@ impl Analyzer<'_, '_> {
                             };
                             let super_class = self.with_ctx(ctx).expand_fully(span, super_class, true)?;
 
-                            if let Ok(v) = self.access_property(span, super_class, prop, type_mode, IdCtx::Var) {
+                            if let Ok(v) = self.access_property(span, &super_class, prop, type_mode, IdCtx::Var) {
                                 return Ok(v);
                             }
                         }
@@ -1090,7 +1120,7 @@ impl Analyzer<'_, '_> {
                         };
                         let super_class = self.with_ctx(ctx).expand_fully(span, super_class, true)?;
 
-                        if let Ok(v) = self.access_property(span, super_class, prop, type_mode, IdCtx::Var) {
+                        if let Ok(v) = self.access_property(span, &super_class, prop, type_mode, IdCtx::Var) {
                             return Ok(v);
                         }
                     }
@@ -1159,7 +1189,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     return self
-                        .access_property(span, this, prop, type_mode, id_ctx)
+                        .access_property(span, &this, prop, type_mode, id_ctx)
                         .context("tried to access property of `this`");
                 }
             }
@@ -1174,10 +1204,10 @@ impl Analyzer<'_, '_> {
             ..self.ctx
         };
         let obj = match obj.normalize() {
-            Type::Conditional(..) => self.normalize(None, &obj, Default::default())?.into_owned(),
-            _ => obj,
+            Type::Conditional(..) => self.normalize(None, Cow::Borrowed(obj), Default::default())?,
+            _ => Cow::Borrowed(obj),
         };
-        let obj = self.with_ctx(ctx).expand(span, obj)?.generalize_lit();
+        let obj = self.with_ctx(ctx).expand(span, obj.into_owned())?.generalize_lit();
 
         match obj.normalize() {
             Type::Lit(..) => unreachable!(),
@@ -1237,7 +1267,7 @@ impl Analyzer<'_, '_> {
                             },
                             ctxt: self.ctx.module_id,
                             enum_name: e.id.clone().into(),
-                            name: sym.clone(),
+                            name: Some(sym.clone()),
                         }));
                     }
                     Key::Num(RNumber { value, .. }) => {
@@ -1257,7 +1287,7 @@ impl Analyzer<'_, '_> {
                                         _ => unreachable!(),
                                     },
                                 });
-                                return self.access_property(span, new_obj_ty, prop, type_mode, id_ctx);
+                                return self.access_property(span, &new_obj_ty, prop, type_mode, id_ctx);
                             }
                         }
                         return Ok(Type::Keyword(RTsKeywordType {
@@ -1313,7 +1343,7 @@ impl Analyzer<'_, '_> {
                                                 _ => unreachable!(),
                                             },
                                         });
-                                        return self.access_property(*span, new_obj_ty, prop, type_mode, id_ctx);
+                                        return self.access_property(*span, &new_obj_ty, prop, type_mode, id_ctx);
                                     }
                                 }
                             }
@@ -1395,7 +1425,7 @@ impl Analyzer<'_, '_> {
                 if let Some(super_ty) = &c.def.super_class {
                     let super_ty = self.instantiate_class(span, &super_ty)?;
 
-                    if let Ok(v) = self.access_property(span, super_ty, prop, type_mode, id_ctx) {
+                    if let Ok(v) = self.access_property(span, &super_ty, prop, type_mode, id_ctx) {
                         return Ok(v);
                     }
                 }
@@ -1423,7 +1453,7 @@ impl Analyzer<'_, '_> {
                             };
                             if let Ok(ty) =
                                 self.with_ctx(ctx)
-                                    .access_property(span, *constraint.clone(), prop, type_mode, id_ctx)
+                                    .access_property(span, &constraint, prop, type_mode, id_ctx)
                             {
                                 return Ok(ty);
                             }
@@ -1490,6 +1520,26 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Keyword(RTsKeywordType { kind, .. }) if !self.is_builtin => {
+                match prop {
+                    Key::Computed(prop) => match (*kind, prop.ty.normalize()) {
+                        (
+                            TsKeywordTypeKind::TsObjectKeyword,
+                            Type::Keyword(RTsKeywordType {
+                                kind: TsKeywordTypeKind::TsStringKeyword,
+                                ..
+                            }),
+                        ) => {
+                            if self.rule().no_implicit_any && !self.rule().suppress_implicit_any_index_errors {
+                                self.storage.report(Error::ImplicitAnyBecauseIndexTypeIsWrong { span });
+                            }
+
+                            return Ok(Type::any(span));
+                        }
+                        _ => {}
+                    },
+                    _ => {}
+                }
+
                 let word = match kind {
                     TsKeywordTypeKind::TsStringKeyword => js_word!("String"),
                     TsKeywordTypeKind::TsNumberKeyword => js_word!("Number"),
@@ -1508,7 +1558,7 @@ impl Analyzer<'_, '_> {
                 };
                 let interface = self.env.get_global_type(span, &word)?;
 
-                let err = match self.access_property(span, interface, prop, type_mode, id_ctx) {
+                let err = match self.access_property(span, &interface, prop, type_mode, id_ctx) {
                     Ok(v) => return Ok(v),
                     Err(err) => err,
                 };
@@ -1545,7 +1595,7 @@ impl Analyzer<'_, '_> {
 
                 let array_ty = self.env.get_global_type(span, &js_word!("Array"))?;
 
-                return self.access_property(span, array_ty, prop, type_mode, id_ctx);
+                return self.access_property(span, &array_ty, prop, type_mode, id_ctx);
             }
 
             Type::Interface(Interface { ref body, extends, .. }) => {
@@ -1566,7 +1616,7 @@ impl Analyzer<'_, '_> {
                         .context("tried to instantiate parents of an interface to access property")?;
 
                     // TODO: Check if multiple interface has same property.
-                    if let Ok(ty) = self.access_property(span, obj, prop, type_mode, id_ctx) {
+                    if let Ok(ty) = self.access_property(span, &obj, prop, type_mode, id_ctx) {
                         return Ok(ty);
                     }
                 }
@@ -1577,7 +1627,7 @@ impl Analyzer<'_, '_> {
                     // Constructor extends prototype of `Function` (global interface)
                     if let Ok(ty) = self.access_property(
                         span,
-                        Type::Ref(Ref {
+                        &Type::Ref(Ref {
                             span: span.with_ctxt(Default::default()),
                             ctxt: ModuleId::builtin(),
                             type_name: RTsEntityName::Ident(RIdent::new(js_word!("Function"), DUMMY_SP)),
@@ -1607,7 +1657,7 @@ impl Analyzer<'_, '_> {
                     // Constructor extends prototype of `Function` (global interface)
                     if let Ok(ty) = self.access_property(
                         span,
-                        Type::Ref(Ref {
+                        &Type::Ref(Ref {
                             span: span.with_ctxt(Default::default()),
                             ctxt: ModuleId::builtin(),
                             type_name: RTsEntityName::Ident(RIdent::new(js_word!("Function"), DUMMY_SP)),
@@ -1662,7 +1712,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    match self.access_property(span, ty.clone(), prop, type_mode, id_ctx) {
+                    match self.access_property(span, ty, prop, type_mode, id_ctx) {
                         Ok(ty) => tys.push(ty),
                         Err(err) => errors.push(err),
                     }
@@ -1733,7 +1783,7 @@ impl Analyzer<'_, '_> {
                         elem_type: box Type::union(types),
                     });
 
-                    return self.access_property(span, obj, prop, type_mode, id_ctx);
+                    return self.access_property(span, &obj, prop, type_mode, id_ctx);
                 }
             },
 
@@ -1782,7 +1832,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 if let Some(super_ty) = &cls.super_class {
-                    if let Ok(v) = self.access_property(span, *super_ty.clone(), prop, type_mode, id_ctx) {
+                    if let Ok(v) = self.access_property(span, &super_ty, prop, type_mode, id_ctx) {
                         return Ok(v);
                     }
                 }
@@ -1790,7 +1840,7 @@ impl Analyzer<'_, '_> {
                 // Classes extends prototype of `Function` (global interface)
                 if let Ok(ty) = self.access_property(
                     span,
-                    Type::Ref(Ref {
+                    &Type::Ref(Ref {
                         span: span.with_ctxt(Default::default()),
                         ctxt: ModuleId::builtin(),
                         type_name: RTsEntityName::Ident(RIdent::new(js_word!("Function"), DUMMY_SP)),
@@ -1850,7 +1900,7 @@ impl Analyzer<'_, '_> {
                         unreachable!("this() should not be `this`")
                     }
 
-                    return self.access_property(span, this, prop, type_mode, id_ctx);
+                    return self.access_property(span, &this, prop, type_mode, id_ctx);
                 } else if self.ctx.in_argument {
                     // We will adjust `this` using information from callee.
                     return Ok(Type::any(span));
@@ -1859,7 +1909,10 @@ impl Analyzer<'_, '_> {
                 let scope = if self.ctx.in_computed_prop_name {
                     self.scope.scope_of_computed_props()
                 } else {
-                    Some(&self.scope)
+                    self.scope.first(|scope| match scope.kind() {
+                        ScopeKind::TypeParams | ScopeKind::Flow => false,
+                        _ => true,
+                    })
                 };
 
                 match scope.map(|scope| scope.kind()) {
@@ -1881,8 +1934,8 @@ impl Analyzer<'_, '_> {
                 // TODO: Verify if multiple type has field
                 let mut new = vec![];
                 for ty in types {
-                    let ty = self.expand_top_ref(span, Cow::Borrowed(ty))?.into_owned();
-                    if let Some(v) = self.access_property(span, ty, prop, type_mode, id_ctx).ok() {
+                    let ty = self.expand_top_ref(span, Cow::Borrowed(ty))?;
+                    if let Some(v) = self.access_property(span, &ty, prop, type_mode, id_ctx).ok() {
                         new.push(v);
                     }
                 }
@@ -1924,7 +1977,7 @@ impl Analyzer<'_, '_> {
                         ..
                     })) => {
                         if let Ok(obj) = self.env.get_global_type(span, &js_word!("Array")) {
-                            return self.access_property(span, obj, prop, type_mode, id_ctx);
+                            return self.access_property(span, &obj, prop, type_mode, id_ctx);
                         }
                     }
 
@@ -1968,7 +2021,7 @@ impl Analyzer<'_, '_> {
                     .expand_mapped(span, m)
                     .context("tried to expand a mapped type to access property")?;
 
-                if let Some(obj) = expanded {
+                if let Some(obj) = &expanded {
                     return self.access_property_inner(span, obj, prop, type_mode, id_ctx);
                 }
 
@@ -2003,7 +2056,7 @@ impl Analyzer<'_, '_> {
                                 if class == *i {
                                     return self.access_property(
                                         span,
-                                        Type::StaticThis(StaticThis { span }),
+                                        &Type::StaticThis(StaticThis { span }),
                                         prop,
                                         type_mode,
                                         id_ctx,
@@ -2016,10 +2069,9 @@ impl Analyzer<'_, '_> {
 
                 let obj = self
                     .expand_top_ref(span, Cow::Borrowed(&obj))
-                    .context("tried to expand reference to access property")?
-                    .into_owned();
+                    .context("tried to expand reference to access property")?;
 
-                return self.access_property(span, obj, prop, type_mode, id_ctx);
+                return self.access_property(span, &obj, prop, type_mode, id_ctx);
             }
 
             Type::IndexedAccessType(..) => {
@@ -2047,14 +2099,14 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {
                 let obj = self.type_of_ts_entity_name(span, self.ctx.module_id, name, None)?;
-                return self.access_property(span, obj, prop, type_mode, id_ctx);
+                return self.access_property(span, &obj, prop, type_mode, id_ctx);
             }
 
             Type::Function(f) if type_mode == TypeOfMode::RValue => {
                 // Use builtin type `Function`
                 let interface = self.env.get_global_type(f.span, &js_word!("Function"))?;
                 print_backtrace();
-                return self.access_property(span, interface, prop, type_mode, id_ctx);
+                return self.access_property(span, &interface, prop, type_mode, id_ctx);
             }
 
             Type::Constructor(c) => match prop {
@@ -2081,7 +2133,7 @@ impl Analyzer<'_, '_> {
                     dump_type_as_string(&self.cm, &rest.ty)
                 );
                 return self
-                    .access_property(span, *rest.ty.clone(), prop, type_mode, id_ctx)
+                    .access_property(span, &rest.ty, prop, type_mode, id_ctx)
                     .context("tried to access property of a rest type");
             }
 
@@ -2089,7 +2141,7 @@ impl Analyzer<'_, '_> {
                 // Classes extends prototype of `Function` (global interface)
                 if let Ok(ty) = self.access_property(
                     span,
-                    Type::Ref(Ref {
+                    &Type::Ref(Ref {
                         span: span.with_ctxt(Default::default()),
                         ctxt: ModuleId::builtin(),
                         type_name: RTsEntityName::Ident(RIdent::new(js_word!("Function"), DUMMY_SP)),
@@ -2367,7 +2419,12 @@ impl Analyzer<'_, '_> {
         }
 
         if let Some(ty) = self.find_imported_var(&i.into())? {
-            println!("({}) type_of({}): resolved import", self.scope.depth(), Id::from(i));
+            slog::debug!(
+                self.logger,
+                "({}) type_of({}): resolved import",
+                self.scope.depth(),
+                Id::from(i)
+            );
             return Ok(ty.clone());
         }
 
@@ -2392,7 +2449,47 @@ impl Analyzer<'_, '_> {
 
         // Check `declaring` before checking variables.
         if self.scope.is_declaring(&i.into()) {
-            println!("({}) reference in initialization: {}", self.scope.depth(), i.sym);
+            slog::debug!(
+                self.logger,
+                "({}) reference in initialization: {}",
+                self.scope.depth(),
+                i.sym
+            );
+
+            // Report an error if a variable is used before initialization.
+            (|| {
+                match self.ctx.var_kind {
+                    VarDeclKind::Let | VarDeclKind::Const => {}
+                    _ => return,
+                }
+
+                // If a method or a function scope exists before the scope declaring the
+                // variable, it means current statement will be evaluated after the variable is
+                // initialized.
+                if let Some(scope) = self.scope.first(|scope| {
+                    if scope.declaring.contains(&i.into()) {
+                        return true;
+                    }
+
+                    match scope.kind() {
+                        ScopeKind::Method { .. } | ScopeKind::Fn | ScopeKind::ArrowFn | ScopeKind::Constructor => {
+                            return true;
+                        }
+                        _ => false,
+                    }
+                }) {
+                    if !scope.is_root() {
+                        match scope.kind() {
+                            ScopeKind::Method { .. } | ScopeKind::Fn | ScopeKind::ArrowFn | ScopeKind::Constructor => {
+                                return
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+
+                self.storage.report(Error::BlockScopedVarUsedBeforeInit { span })
+            })();
 
             if self.ctx.allow_ref_declaring {
                 if self.rule().no_implicit_any {
@@ -2559,7 +2656,8 @@ impl Analyzer<'_, '_> {
                             | Type::Keyword(_)
                             | Type::Optional(_)
                             | Type::Rest(_)
-                            | Type::Lit(_) => {
+                            | Type::Lit(_)
+                            | Type::Tpl(_) => {
                                 let mut ty = ty.into_owned().clone();
                                 let mut params = None;
                                 if let Some(type_args) = type_args {
@@ -2660,7 +2758,7 @@ impl Analyzer<'_, '_> {
 
                 self.access_property(
                     span,
-                    obj_ty,
+                    &obj_ty,
                     &Key::Normal {
                         span: qname.right.span,
                         sym: qname.right.sym.clone(),
@@ -2693,7 +2791,7 @@ impl Analyzer<'_, '_> {
                 let obj_ctx = Ctx {
                     allow_module_var: true,
                     in_opt_chain: is_obj_opt_chain,
-                    should_store_truthy_for_access: self.ctx.in_cond && !is_obj_opt_chain,
+                    should_store_truthy_for_access: self.ctx.in_cond_of_cond_expr && !is_obj_opt_chain,
                     ..self.ctx
                 };
 
@@ -2720,7 +2818,7 @@ impl Analyzer<'_, '_> {
             }
 
             RExprOrSuper::Super(RSuper { span, .. }) => {
-                self.report_error_for_super_reference(span, false);
+                self.report_error_for_super_reference_in_compute_keys(span, false);
 
                 if let Some(v) = self.scope.get_super_class() {
                     v.clone()
@@ -2742,11 +2840,11 @@ impl Analyzer<'_, '_> {
 
         let ty = if computed {
             self.with_ctx(prop_access_ctx)
-                .access_property(span, obj_ty, &prop, type_mode, IdCtx::Var)?
+                .access_property(span, &obj_ty, &prop, type_mode, IdCtx::Var)?
         } else {
             let mut ty = self
                 .with_ctx(prop_access_ctx)
-                .access_property(span, obj_ty.clone(), &prop, type_mode, IdCtx::Var)
+                .access_property(span, &obj_ty, &prop, type_mode, IdCtx::Var)
                 .context(
                     "tried to access property of an object to calculate type of a non-computed member expression",
                 )?;
@@ -2758,7 +2856,7 @@ impl Analyzer<'_, '_> {
                 self.exclude_types_using_fact(&name, &mut ty);
             }
 
-            if self.ctx.in_cond && self.ctx.should_store_truthy_for_access {
+            if self.ctx.in_cond_of_cond_expr && self.ctx.should_store_truthy_for_access {
                 // Add type facts.
                 match obj {
                     RExprOrSuper::Expr(obj) => {
@@ -2851,7 +2949,17 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    pub(crate) fn report_error_for_super_reference(&mut self, span: Span, is_super_call: bool) {
+    pub(crate) fn report_error_for_super_refs_without_supers(&mut self, span: Span, is_super_call: bool) {
+        let res: ValidationResult<_> = try {
+            if !self.ctx.in_class_with_super && self.ctx.super_references_super_class {
+                Err(Error::SuperInClassWithoutSuper { span })?
+            }
+        };
+
+        res.report(&mut self.storage);
+    }
+
+    pub(crate) fn report_error_for_super_reference_in_compute_keys(&mut self, span: Span, is_super_call: bool) {
         if !self.ctx.in_computed_prop_name {
             return;
         }
@@ -2927,6 +3035,14 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RTpl) -> ValidationResult {
         e.exprs.visit_with(self);
+
+        if e.exprs.is_empty() {
+            return Ok(Type::Lit(RTsLitType {
+                node_id: NodeId::invalid(),
+                span: e.span,
+                lit: RTsLit::Str(e.quasis[0].cooked.clone().unwrap_or_else(|| e.quasis[0].raw.clone())),
+            }));
+        }
 
         Ok(Type::Keyword(RTsKeywordType {
             span: e.span,

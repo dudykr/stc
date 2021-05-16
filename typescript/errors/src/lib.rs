@@ -59,6 +59,41 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2701
+    RestArgMustBeVarOrMemberAccess {
+        span: Span,
+    },
+
+    /// TS2501
+    BindingPatNotAllowedInRestPatArg {
+        span: Span,
+    },
+
+    /// TS2790
+    DeleteOperandMustBeOptional {
+        span: Span,
+    },
+
+    /// TS2754
+    SuperCannotUseTypeArgs {
+        span: Span,
+    },
+
+    /// TS2448
+    BlockScopedVarUsedBeforeInit {
+        span: Span,
+    },
+
+    /// TS2528
+    DuplicateDefaultExport {
+        span: Span,
+    },
+
+    /// TS2393
+    DuplicateFnImpl {
+        span: Span,
+    },
+
     /// TS2392
     DuplciateConstructor {
         span: Span,
@@ -280,7 +315,7 @@ pub enum Error {
     },
 
     /// TS2302
-    StaticMethodCannotUseTypeParamOfClass {
+    StaticMemberCannotUseTypeParamOfClass {
         span: Span,
     },
 
@@ -329,6 +364,7 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2678
     SwitchCaseTestNotCompatible {
         span: Span,
     },
@@ -500,6 +536,16 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS7052
+    ImplicitAnyBecauseNoIndexSignatureExists {
+        span: Span,
+    },
+
+    /// TS7053
+    ImplicitAnyBecauseIndexTypeIsWrong {
+        span: Span,
+    },
+
     /// TS7022
     ImplicitAnyBecauseOfSelfRef {
         span: Span,
@@ -519,6 +565,7 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2304
     NoSuchType {
         span: Span,
         name: Id,
@@ -854,10 +901,6 @@ pub enum Error {
         ty: Box<Type>,
     },
 
-    TS2356 {
-        span: Span,
-    },
-
     TS2369 {
         span: Span,
     },
@@ -978,7 +1021,13 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2703
     InvalidDeleteOperand {
+        span: Span,
+    },
+
+    /// TS2489
+    NoMethodNamedNext {
         span: Span,
     },
 
@@ -1109,6 +1158,52 @@ impl Debug for DebugContext {
 }
 
 impl Error {
+    pub fn normalize_error_code(code: usize) -> usize {
+        match code {
+            // TS2304: Type not found.
+            // TS2318: Type not found and name is global.
+            // TS2552: Type not found with recommendation.
+            // TS2580: Type not found with recommendation for package to instsall.
+            // TS2581: Type not found with recommendation for jQuery.
+            // TS2582: Type not found with recommendation for jest or mocha.
+            // TS2583: Type not found with recommendation to change target library.
+            // TS2584: Type not found with recommendation to change target library to include `dom`.
+            2318 | 2552 | 2580 | 2581 | 2582 | 2583 | 2584 => 2304,
+
+            // TS2339: Property not found.
+            // TS2550: Property not found with a suggestion to change `lib`.
+            // TS2551: Property not found with a suggestion.
+            2550 | 2551 => 2339,
+
+            // TS2693: Type used as a variable.
+            // TS2585: Type used as a variable with a suggestion to change 'lib',
+            2585 => 2693,
+
+            // TS2307: Module not found.
+            // TS2792: Module not found with recommendation to change module resolution.
+            2792 => 2307,
+
+            // TS2372: Referenced while initialization.
+            // TS2448: Referenced while initialization and the variable is declared with let or const.
+            2448 => 2372,
+
+            // ===== ===== ===== For convinience ===== ===== =====
+
+            // TS2461: Not an array type.
+            // TS2548: Not an array or no Symbol.iterator
+            // TS2549: Not an array, string or no Symbol.iterator
+            // TS2569: Not an array, string or no Symbol.iterator but downlevel iteration will work.
+            2548 | 2549 | 2569 => 2461,
+
+            // TS7005; No implicit any for variables.
+            // TS7006; No implicit any for parameters.
+            // TS7008; No implicit any for members.
+            7005 | 7006 | 7008 => 7005,
+
+            _ => code,
+        }
+    }
+
     #[track_caller]
     pub fn context(self, context: impl Display) -> Self {
         if !cfg!(debug_assertions) {
@@ -1184,7 +1279,7 @@ impl Error {
             Error::ConstructorImplMissingOrNotFollowedByDecl { .. } => 2390,
             Error::FnImplMissingOrNotFollowedByDecl { .. } => 2391,
             Error::InvalidTypeForComputedProperty { .. } => 2464,
-            Error::TS2356 { .. } => 2356,
+
             Error::TS2369 { .. } => 2369,
             Error::TS2389 { .. } => 2389,
             Error::TS2447 { .. } => 2447,
@@ -1323,7 +1418,7 @@ impl Error {
             Error::CannotReferenceSuperInComputedPropName { .. } => 2466,
             Error::DeclaringTypeParamReferencedByComputedPropName { .. } => 2467,
 
-            Error::StaticMethodCannotUseTypeParamOfClass { .. } => 2302,
+            Error::StaticMemberCannotUseTypeParamOfClass { .. } => 2302,
 
             Error::InvalidImplOfInterface { .. } => 2416,
 
@@ -1373,7 +1468,11 @@ impl Error {
 
             Error::ThisInStaticPropertyInitializer { .. } => 2334,
 
-            Error::ImplicitAny { .. } => 7008,
+            Error::ImplicitAny { .. } => 7005,
+
+            Error::ImplicitAnyBecauseNoIndexSignatureExists { .. } => 7052,
+
+            Error::ImplicitAnyBecauseIndexTypeIsWrong { .. } => 7053,
 
             Error::ImplicitAnyBecauseOfSelfRef { .. } => 7022,
 
@@ -1404,6 +1503,8 @@ impl Error {
 
             Error::NoCallabelPropertyWithName { .. } => 2349,
 
+            Error::NoMethodNamedNext { .. } => 2489,
+
             Error::NotGeneric { .. } => 2315,
 
             Error::ReadOnly { .. } => 2546,
@@ -1417,6 +1518,20 @@ impl Error {
             Error::ModuleNotFound { .. } => 2307,
 
             Error::DuplciateConstructor { .. } => 2392,
+
+            Error::DuplicateFnImpl { .. } => 2393,
+
+            Error::DuplicateDefaultExport { .. } => 2528,
+
+            Error::BlockScopedVarUsedBeforeInit { .. } => 2448,
+
+            Error::SuperCannotUseTypeArgs { .. } => 2754,
+
+            Error::DeleteOperandMustBeOptional { .. } => 2790,
+
+            Error::BindingPatNotAllowedInRestPatArg { .. } => 2501,
+
+            Error::RestArgMustBeVarOrMemberAccess { .. } => 2701,
 
             _ => 0,
         }
@@ -1444,20 +1559,6 @@ impl Error {
 
     fn msg(&self) -> Cow<'static, str> {
         match self {
-            Self::FnImplMissingOrNotFollowedByDecl { .. } => {
-                "Function implementation is missing or not immediately following the declaration".into()
-            }
-            Self::NonOverlappingTypeCast { .. } => "Conversion of type may be a mistake because neither type \
-                                                    sufficiently overlaps with the other. If this was intentional, \
-                                                    convert the expression to 'unknown' first."
-                .into(),
-
-            Self::AssignOpCannotBeApplied { op, .. } => format!("Operator '{}' cannot be applied to types", op).into(),
-
-            Self::NonSymbolComputedPropInFormOfSymbol { .. } => {
-                "A computed property name of the form '{TODO}' must be of type 'symbol'.".into()
-            }
-
             Self::Unimplemented { msg, .. } => format!("unimplemented: {}", msg).into(),
 
             _ => format!("{:#?}", self).into(),
@@ -1468,7 +1569,11 @@ impl Error {
     pub fn emit(self, h: &Handler) {
         let span = self.span();
 
-        let mut err = h.struct_span_err_with_code(span, &self.msg(), DiagnosticId::Error(format!("TS{}", self.code())));
+        let mut err = h.struct_span_err_with_code(
+            span,
+            &self.msg(),
+            DiagnosticId::Error(format!("TS{}", Self::normalize_error_code(self.code()))),
+        );
 
         err.emit();
     }

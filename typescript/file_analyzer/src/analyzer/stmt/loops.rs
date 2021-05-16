@@ -46,13 +46,14 @@ enum ForHeadKind {
 
 impl Analyzer<'_, '_> {
     fn validate_loop_body_with_scope(&mut self, body: &RStmt) -> ValidationResult<()> {
-        let orig_facts = self.cur_facts.take();
+        let mut orig_facts = self.cur_facts.take();
 
         let mut prev_facts = orig_facts.true_facts.clone();
+        let mut prev_false_facts = orig_facts.false_facts.take();
 
         // TODO: Loop again if required.
         for i in 0..2 {
-            let facts_from_body: CondFacts =
+            let mut facts_from_body: CondFacts =
                 self.with_child(ScopeKind::LoopBody, prev_facts.clone(), |child: &mut Analyzer| {
                     child.ctx.reevaluating_loop_body |= i != 0;
 
@@ -61,12 +62,15 @@ impl Analyzer<'_, '_> {
                     Ok(child.cur_facts.true_facts.take())
                 })?;
 
+            facts_from_body.excludes.clear();
+
             // We copy `actual` types and type facts from the child scope.
 
             prev_facts += facts_from_body;
         }
 
         self.cur_facts.true_facts += prev_facts;
+        self.cur_facts.false_facts += prev_false_facts;
 
         Ok(())
     }
@@ -149,6 +153,8 @@ impl Analyzer<'_, '_> {
     fn validate_lhs_of_for_in_of_loop_expr(&mut self, e: &RExpr, kind: ForHeadKind) -> ValidationResult<()> {
         match e {
             RExpr::Ident(..) | RExpr::This(..) | RExpr::Member(..) => Ok(()),
+            // We use different error code for this.
+            RExpr::Assign(..) => Ok(()),
             _ => match kind {
                 ForHeadKind::In => Err(Error::InvalidExprOfLhsOfForIn { span: e.span() }),
                 ForHeadKind::Of => Err(Error::InvalidExprOfLhsOfForOf { span: e.span() }),
@@ -165,7 +171,7 @@ impl Analyzer<'_, '_> {
         let rhs = self
             .normalize(
                 None,
-                rhs,
+                Cow::Borrowed(rhs),
                 NormalizeTypeOpts {
                     preserve_mapped: true,
                     ..Default::default()
@@ -280,6 +286,7 @@ impl Analyzer<'_, '_> {
 
                 let rhs_ctx = Ctx {
                     cannot_be_tuple: true,
+                    // use_undefined_for_empty_tuple: true,
                     ..child.ctx
                 };
 
@@ -365,7 +372,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RWhileStmt) {
         let test = {
             let ctx = Ctx {
-                in_cond: true,
+                in_cond_of_cond_expr: true,
                 ..self.ctx
             };
             let test = node.test.validate_with_default(&mut *self.with_ctx(ctx));

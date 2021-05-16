@@ -1,5 +1,7 @@
 use super::assign::AssignOpts;
+use super::class::ClassState;
 use super::{control_flow::CondFacts, expr::TypeOfMode, stmt::return_type::ReturnValues, Analyzer, Ctx};
+use crate::analyzer::expr::GetIteratorOpts;
 use crate::analyzer::expr::IdCtx;
 use crate::analyzer::ResultExt;
 use crate::{
@@ -39,6 +41,7 @@ use stc_ts_types::Array;
 use stc_ts_types::Class;
 use stc_ts_types::ClassDef;
 use stc_ts_types::ClassProperty;
+use stc_ts_types::EnumVariant;
 use stc_ts_types::Intersection;
 use stc_ts_types::Key;
 use stc_ts_types::TypeElement;
@@ -124,6 +127,9 @@ pub(crate) struct Scope<'a> {
     /// It means we need a way to know which module we are in, and this field is
     /// used to store module name.
     pub(super) cur_module_name: Option<Id>,
+
+    /// All states related to validation of a class.
+    pub(super) class: ClassState,
 }
 
 impl Scope<'_> {
@@ -378,6 +384,7 @@ impl Scope<'_> {
             is_call_arg_count_unknown: self.is_call_arg_count_unknown,
             type_params: self.type_params,
             cur_module_name: self.cur_module_name,
+            class: self.class,
         }
     }
 
@@ -798,7 +805,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub fn declare_vars(&mut self, kind: VarDeclKind, pat: &RPat) -> ValidationResult<()> {
-        self.declare_vars_inner_with_ty(kind, pat, false, None, None)
+        self.declare_vars_inner_with_ty(kind, pat, None, None)
     }
 
     pub fn declare_vars_with_ty(
@@ -808,11 +815,11 @@ impl Analyzer<'_, '_> {
         ty: Option<Type>,
         actual_ty: Option<Type>,
     ) -> ValidationResult<()> {
-        self.declare_vars_inner_with_ty(kind, pat, false, ty, actual_ty)
+        self.declare_vars_inner_with_ty(kind, pat, ty, actual_ty)
     }
 
-    pub(super) fn declare_vars_inner(&mut self, kind: VarDeclKind, pat: &RPat, export: bool) -> ValidationResult<()> {
-        self.declare_vars_inner_with_ty(kind, pat, export, None, None)
+    pub(super) fn declare_vars_inner(&mut self, kind: VarDeclKind, pat: &RPat) -> ValidationResult<()> {
+        self.declare_vars_inner_with_ty(kind, pat, None, None)
     }
 
     pub(super) fn resolve_typeof(&mut self, span: Span, name: &RTsEntityName) -> ValidationResult {
@@ -840,7 +847,7 @@ impl Analyzer<'_, '_> {
 
                 self.access_property(
                     span,
-                    obj,
+                    &obj,
                     &Key::Normal {
                         span: i.span,
                         sym: i.sym.clone(),
@@ -1338,6 +1345,8 @@ impl Analyzer<'_, '_> {
         ty: Type,
         actual_ty: Option<Type>,
     ) -> ValidationResult<()> {
+        ty.assert_valid();
+
         let span = pat.span();
 
         if match pat {
@@ -1390,7 +1399,14 @@ impl Analyzer<'_, '_> {
                 //
 
                 let ty = self
-                    .get_iterator(span, Cow::Owned(ty))
+                    .get_iterator(
+                        span,
+                        Cow::Owned(ty),
+                        GetIteratorOpts {
+                            disallow_str: true,
+                            ..Default::default()
+                        },
+                    )
                     .context("tried to convert a type to an iterator to assign with an array pattern.")
                     .unwrap_or_else(|err| {
                         self.storage.report(err);
@@ -1435,13 +1451,9 @@ impl Analyzer<'_, '_> {
                                 diallow_unknown_object_property: true,
                                 ..self.ctx
                             };
-                            let prop_ty = self.with_ctx(ctx).access_property(
-                                span,
-                                ty.clone(),
-                                &key,
-                                TypeOfMode::RValue,
-                                IdCtx::Var,
-                            );
+                            let prop_ty =
+                                self.with_ctx(ctx)
+                                    .access_property(span, &ty, &key, TypeOfMode::RValue, IdCtx::Var);
 
                             match prop_ty {
                                 Ok(ty) => {
@@ -1461,7 +1473,7 @@ impl Analyzer<'_, '_> {
                                         _ => err,
                                     }));
 
-                                    self.declare_vars_inner_with_ty(kind, &prop.value, false, None, None)
+                                    self.declare_vars_inner_with_ty(kind, &prop.value, None, None)
                                         .report(&mut self.storage);
                                 }
                             }
@@ -1478,13 +1490,9 @@ impl Analyzer<'_, '_> {
                                 diallow_unknown_object_property: true,
                                 ..self.ctx
                             };
-                            let prop_ty = self.with_ctx(ctx).access_property(
-                                span,
-                                ty.clone(),
-                                &key,
-                                TypeOfMode::RValue,
-                                IdCtx::Var,
-                            );
+                            let prop_ty =
+                                self.with_ctx(ctx)
+                                    .access_property(span, &ty, &key, TypeOfMode::RValue, IdCtx::Var);
 
                             match prop_ty {
                                 Ok(prop_ty) => {
@@ -1492,6 +1500,11 @@ impl Analyzer<'_, '_> {
 
                                     match &prop.value {
                                         Some(default) => {
+                                            let default_value_type = default
+                                                .validate_with_default(self)
+                                                .context("tried to validate default value of an assignment pattern")
+                                                .report(&mut self.storage);
+
                                             self.declare_complex_vars(
                                                 kind,
                                                 &RPat::Ident(RBindingIdent {
@@ -1503,10 +1516,6 @@ impl Analyzer<'_, '_> {
                                                 None,
                                             )
                                             .report(&mut self.storage);
-
-                                            let default_value_type = default
-                                                .validate_with_default(self)
-                                                .context("tried to validate default value of an assignment pattern")?;
 
                                             self.try_assign_pat(
                                                 span,
@@ -1554,7 +1563,6 @@ impl Analyzer<'_, '_> {
                                             id: prop.key.clone(),
                                             type_ann: None,
                                         }),
-                                        false,
                                         None,
                                         None,
                                     )
@@ -1776,7 +1784,6 @@ impl<'a> Scope<'a> {
         Scope {
             logger,
             parent,
-
             kind,
             declaring: Default::default(),
             declared_return_type: None,
@@ -1796,6 +1803,7 @@ impl<'a> Scope<'a> {
             is_call_arg_count_unknown: false,
             type_params: Default::default(),
             cur_module_name: None,
+            class: Default::default(),
         }
     }
 
@@ -2118,7 +2126,7 @@ impl Expander<'_, '_, '_> {
                 let left =
                     self.expand_ts_entity_name(span, ctxt, left, None, was_top_level, trying_primitive_expansion)?;
 
-                if let Some(left) = left {
+                if let Some(left) = &left {
                     let ty = self
                         .analyzer
                         .access_property(
@@ -2166,8 +2174,18 @@ impl Expander<'_, '_, '_> {
             was_top_level,
             trying_primitive_expansion,
         )?;
+
         if let Some(ty) = &mut ty {
             ty.reposition(r_span);
+
+            if let Type::Enum(e) = ty.normalize() {
+                return Ok(Some(Type::EnumVariant(EnumVariant {
+                    span,
+                    ctxt,
+                    enum_name: e.id.clone().into(),
+                    name: None,
+                })));
+            }
         }
 
         Ok(ty)

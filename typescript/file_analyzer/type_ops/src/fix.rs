@@ -1,8 +1,11 @@
 use rnode::VisitMut;
 use rnode::VisitMutWith;
 use stc_ts_types::Array;
+use stc_ts_types::Conditional;
+use stc_ts_types::FnParam;
 use stc_ts_types::Intersection;
 use stc_ts_types::Type;
+use stc_ts_types::TypeOrSpread;
 use stc_ts_types::Union;
 use swc_common::TypeEq;
 
@@ -12,6 +15,27 @@ pub trait Fix: Sized {
     fn fixed(mut self) -> Self {
         self.fix();
         self
+    }
+}
+
+impl<T> Fix for Vec<T>
+where
+    T: Fix,
+{
+    fn fix(&mut self) {
+        self.iter_mut().for_each(|item| item.fix())
+    }
+}
+
+impl<T> Fix for Option<T>
+where
+    T: Fix,
+{
+    fn fix(&mut self) {
+        match self {
+            Some(v) => v.fix(),
+            None => {}
+        }
     }
 }
 
@@ -29,6 +53,9 @@ impl_fix!(Type);
 impl_fix!(Array);
 impl_fix!(Union);
 impl_fix!(Intersection);
+impl_fix!(TypeOrSpread);
+impl_fix!(Conditional);
+impl_fix!(FnParam);
 
 struct Fixer;
 
@@ -41,6 +68,18 @@ impl VisitMut<Union> for Fixer {
             if new.iter().any(|stored| stored.type_eq(&ty)) {
                 continue;
             }
+
+            if ty.normalize().is_union_type() {
+                let u = ty.foldable().union_type().unwrap();
+                for ty in u.types {
+                    if new.iter().any(|stored| stored.type_eq(&ty)) {
+                        continue;
+                    }
+                    new.push(ty);
+                }
+                continue;
+            }
+
             new.push(ty);
         }
         u.types = new;
@@ -56,6 +95,18 @@ impl VisitMut<Intersection> for Fixer {
             if new.iter().any(|stored| stored.type_eq(&ty)) {
                 continue;
             }
+
+            if ty.normalize().is_intersection_type() {
+                let i = ty.foldable().intersection_type().unwrap();
+                for ty in i.types {
+                    if new.iter().any(|stored| stored.type_eq(&ty)) {
+                        continue;
+                    }
+                    new.push(ty);
+                }
+                continue;
+            }
+
             new.push(ty);
         }
         ty.types = new;
@@ -81,7 +132,8 @@ impl VisitMut<Type> for Fixer {
                     return;
                 }
                 1 => {
-                    let elem = u.types.drain(..).next().unwrap();
+                    let mut elem = u.types.drain(..).next().unwrap();
+                    elem.respan(u.span);
                     *ty = elem;
                     return;
                 }
@@ -94,7 +146,8 @@ impl VisitMut<Type> for Fixer {
                     return;
                 }
                 1 => {
-                    let elem = i.types.drain(..).next().unwrap();
+                    let mut elem = i.types.drain(..).next().unwrap();
+                    elem.respan(i.span);
                     *ty = elem;
                     return;
                 }

@@ -282,7 +282,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, stmt: &RIfStmt) -> ValidationResult<()> {
         {
             let ctx = Ctx {
-                in_cond: true,
+                in_cond_of_cond_expr: true,
                 should_store_truthy_for_access: true,
                 ..self.ctx
             };
@@ -473,7 +473,7 @@ impl Analyzer<'_, '_> {
                         right: test.clone(),
                     });
                     let ctx = Ctx {
-                        in_cond: true,
+                        in_cond_of_cond_expr: true,
                         in_switch_case_test: true,
                         should_store_truthy_for_access: true,
                         ..self.ctx
@@ -523,8 +523,11 @@ impl Analyzer<'_, '_> {
         let res: ValidationResult<()> = try {
             match *lhs {
                 RPatOrExpr::Expr(ref expr) | RPatOrExpr::Pat(box RPat::Expr(ref expr)) => {
-                    let lhs_ty = expr.validate_with_args(self, (TypeOfMode::LValue, None, None))?;
-                    let lhs_ty = self.expand(span, lhs_ty)?;
+                    let lhs_ty = expr.validate_with_args(self, (TypeOfMode::LValue, None, None));
+                    let lhs_ty = match lhs_ty {
+                        Ok(v) => v,
+                        _ => return,
+                    };
 
                     if op == op!("=") {
                         self.assign(&mut Default::default(), &lhs_ty, &ty, span)?;
@@ -548,8 +551,11 @@ impl Analyzer<'_, '_> {
                         // TODO
                         match &**pat {
                             RPat::Ident(left) => {
-                                let lhs = self.type_of_var(&left.id, TypeOfMode::LValue, None)?;
-                                self.assign_with_op(span, op, &lhs, &ty)?;
+                                let lhs = self.type_of_var(&left.id, TypeOfMode::LValue, None);
+
+                                if let Ok(lhs) = lhs {
+                                    self.assign_with_op(span, op, &lhs, &ty)?;
+                                }
                             }
                             _ => Err(Error::InvalidOperatorForLhs { span, op })?,
                         }
@@ -577,7 +583,7 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult<()> {
         let is_in_loop = self.scope.is_in_loop_body();
         let ty = self
-            .normalize(Some(ty.span().or_else(|| span)), ty, Default::default())
+            .normalize(Some(ty.span().or_else(|| span)), Cow::Borrowed(ty), Default::default())
             .context("tried to normalize a type to assign it to a pattern")?;
         let ty = ty.normalize();
 
@@ -706,8 +712,10 @@ impl Analyzer<'_, '_> {
 
             RPat::Array(ref arr) => {
                 let ty = self
-                    .get_iterator(span, Cow::Borrowed(&ty))
-                    .context("tried to convert a type to an iterator to assign with an array pattern")?;
+                    .get_iterator(span, Cow::Borrowed(&ty), Default::default())
+                    .context("tried to convert a type to an iterator to assign with an array pattern")
+                    .report(&mut self.storage)
+                    .unwrap_or_else(|| Cow::Owned(Type::any(span)));
                 //
                 for (i, elem) in arr.elems.iter().enumerate() {
                     if let Some(elem) = elem {
@@ -739,17 +747,27 @@ impl Analyzer<'_, '_> {
                         match ty.normalize() {
                             Type::Tuple(Tuple { elems, .. }) => {
                                 if elems.len() > i {
-                                    self.try_assign_pat_with_opts(span, elem, &elems[i].ty, opts)?;
+                                    self.try_assign_pat_with_opts(span, elem, &elems[i].ty, opts)
+                                        .report(&mut self.storage);
+                                } else {
+                                    self.storage.report(Error::TupleIndexError {
+                                        span,
+                                        len: elems.len() as _,
+                                        index: i as _,
+                                    });
                                 }
                             }
 
                             _ => {
                                 let elem_ty = self
                                     .get_element_from_iterator(span, Cow::Borrowed(&ty), i)
-                                    .context("tried to get an element of type to assign with an array pattern")?;
-
-                                self.try_assign_pat_with_opts(span, elem, &elem_ty, opts)
-                                    .context("tried to assign an element of an array pattern")?;
+                                    .context("tried to get an element of type to assign with an array pattern")
+                                    .report(&mut self.storage);
+                                if let Some(elem_ty) = elem_ty {
+                                    self.try_assign_pat_with_opts(span, elem, &elem_ty, opts)
+                                        .context("tried to assign an element of an array pattern")
+                                        .report(&mut self.storage);
+                                }
                             }
                         }
                     }
@@ -764,7 +782,7 @@ impl Analyzer<'_, '_> {
                         RObjectPatProp::KeyValue(kv) => {
                             let key = kv.key.validate_with(self)?;
                             let prop_ty = self
-                                .access_property(span, ty.clone(), &key, TypeOfMode::RValue, IdCtx::Var)
+                                .access_property(span, ty, &key, TypeOfMode::RValue, IdCtx::Var)
                                 .unwrap_or_else(|_| Type::any(span));
 
                             self.try_assign_pat_with_opts(span, &kv.value, &prop_ty, opts)
@@ -776,7 +794,7 @@ impl Analyzer<'_, '_> {
                                 sym: a.key.sym.clone(),
                             };
                             let prop_ty = self
-                                .access_property(span, ty.clone(), &key, TypeOfMode::RValue, IdCtx::Var)
+                                .access_property(span, ty, &key, TypeOfMode::RValue, IdCtx::Var)
                                 .unwrap_or_else(|_| Type::any(span));
 
                             self.try_assign_pat_with_opts(
@@ -796,6 +814,35 @@ impl Analyzer<'_, '_> {
                                 if let Some(m) = &mut self.mutations {
                                     m.for_pats.entry(r.node_id).or_default().ty = Some(Type::any(span));
                                 }
+                            }
+
+                            match &*r.arg {
+                                RPat::Ident(_) => {}
+
+                                RPat::Array(_) => {
+                                    self.storage.report(Error::NotArrayType { span: r.arg.span() });
+                                    self.storage
+                                        .report(Error::BindingPatNotAllowedInRestPatArg { span: r.arg.span() });
+                                }
+
+                                RPat::Object(_) => {
+                                    self.storage
+                                        .report(Error::BindingPatNotAllowedInRestPatArg { span: r.arg.span() });
+                                }
+
+                                RPat::Expr(_) => {
+                                    self.storage
+                                        .report(Error::BindingPatNotAllowedInRestPatArg { span: r.arg.span() });
+                                }
+
+                                RPat::Invalid(_) => {
+                                    self.storage
+                                        .report(Error::BindingPatNotAllowedInRestPatArg { span: r.arg.span() });
+                                    self.storage
+                                        .report(Error::RestArgMustBeVarOrMemberAccess { span: r.arg.span() });
+                                }
+
+                                _ => {}
                             }
                             // TODO
                             // self.try_assign_pat_with_opts(span, lhs,
@@ -910,7 +957,7 @@ impl Analyzer<'_, '_> {
 
         let prop_res = self.access_property(
             src.span(),
-            src.clone(),
+            src,
             &Key::Normal {
                 span: DUMMY_SP,
                 sym: property.clone(),
@@ -965,7 +1012,7 @@ impl Analyzer<'_, '_> {
                     for obj in &u.types {
                         if let Ok(prop_ty) = self.access_property(
                             obj.span(),
-                            obj.clone(),
+                            obj,
                             &Key::Normal {
                                 span: ty.span(),
                                 sym: ids[1].sym().clone(),
@@ -1008,7 +1055,7 @@ impl Analyzer<'_, '_> {
 
         self.validate_with(|a| {
             let ctx = Ctx {
-                in_cond: true,
+                in_cond_of_cond_expr: true,
                 should_store_truthy_for_access: true,
                 ..a.ctx
             };

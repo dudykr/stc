@@ -21,6 +21,7 @@ use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
+use stc_ts_type_ops::Fix;
 use stc_ts_types::CallSignature;
 use stc_ts_types::Class;
 use stc_ts_types::ClassDef;
@@ -37,8 +38,22 @@ mod return_type;
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, f: &RFunction) -> ValidationResult<ty::Function> {
+    fn validate(&mut self, f: &RFunction, name: Option<&RIdent>) -> ValidationResult<ty::Function> {
         self.record(f);
+
+        if !self.ctx.reevaluating() && f.body.is_some() {
+            if let Some(id) = name {
+                let v = self.data.fn_impl_spans.entry(id.into()).or_default();
+
+                v.push(f.span);
+                // TODO: Make this efficient by report same error only once.
+                if v.len() >= 2 {
+                    for &span in &*v {
+                        self.storage.report(Error::DuplicateFnImpl { span })
+                    }
+                }
+            }
+        }
 
         self.with_child(ScopeKind::Fn, Default::default(), |child: &mut Analyzer| {
             child.ctx.in_fn_with_return_type = f.return_type.is_some();
@@ -337,7 +352,7 @@ impl Analyzer<'_, '_> {
                 self.scope.declaring_fn = Some(name.into());
             }
 
-            let mut fn_ty: ty::Function = f.validate_with(self)?;
+            let mut fn_ty: ty::Function = f.validate_with_args(self, name)?;
             // Handle type parameters in return type.
             fn_ty.ret_ty = fn_ty.ret_ty.fold_with(&mut TypeParamHandler {
                 params: fn_ty.type_params.as_ref().map(|v| &*v.params),
@@ -387,7 +402,7 @@ impl Analyzer<'_, '_> {
         };
 
         match fn_ty {
-            Ok(ty) => Type::Function(ty).cheap(),
+            Ok(ty) => Type::Function(ty).fixed().cheap(),
             Err(err) => {
                 self.storage.report(err);
                 Type::any(f.span)
@@ -414,27 +429,30 @@ impl Analyzer<'_, '_> {
             in_declare: self.ctx.in_declare || f.declare || f.function.body.is_none(),
             ..self.ctx
         };
-        self.with_ctx(ctx).with(|a: &mut Analyzer| {
-            let fn_ty = a.visit_fn(Some(&f.ident), &f.function).cheap();
+        let fn_ty = self
+            .with_ctx(ctx)
+            .with_child(ScopeKind::Fn, Default::default(), |a: &mut Analyzer| {
+                Ok(a.visit_fn(Some(&f.ident), &f.function).cheap())
+            })?;
 
-            match a.declare_var(
-                f.span(),
-                VarDeclKind::Var,
-                f.ident.clone().into(),
-                Some(fn_ty),
-                None,
-                true,
-                true,
-                false,
-            ) {
-                Ok(()) => {}
-                Err(err) => {
-                    a.storage.report(err);
-                }
+        let mut a = self.with_ctx(ctx);
+        match a.declare_var(
+            f.span(),
+            VarDeclKind::Var,
+            f.ident.clone().into(),
+            Some(fn_ty),
+            None,
+            true,
+            true,
+            false,
+        ) {
+            Ok(()) => {}
+            Err(err) => {
+                a.storage.report(err);
             }
+        }
 
-            Ok(())
-        })
+        Ok(())
     }
 }
 

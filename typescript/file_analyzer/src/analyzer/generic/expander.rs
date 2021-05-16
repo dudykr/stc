@@ -16,6 +16,7 @@ use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
+use stc_ts_type_ops::Fix;
 use stc_ts_types::Function;
 use stc_ts_types::IdCtx;
 use stc_ts_types::Interface;
@@ -85,9 +86,9 @@ impl Analyzer<'_, '_> {
 
     pub(in super::super) fn expand_type_params<T>(&mut self, params: &FxHashMap<Id, Type>, ty: T) -> ValidationResult<T>
     where
-        T: for<'aa, 'bb, 'cc, 'dd> FoldWith<GenericExpander<'aa, 'bb, 'cc, 'dd>>,
+        T: for<'aa, 'bb, 'cc, 'dd> FoldWith<GenericExpander<'aa, 'bb, 'cc, 'dd>> + Fix,
     {
-        let ty = self.expand_type_params_inner(params, ty, false)?;
+        let ty = self.expand_type_params_inner(params, ty, false)?.fixed();
         Ok(ty)
     }
 
@@ -804,7 +805,8 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
             }
 
             Type::IndexedAccessType(ty) => {
-                let ty = ty.fold_with(self);
+                let mut ty = ty.fold_with(self);
+                ty.obj_type.fix();
 
                 let key = match ty.index_type.normalize() {
                     Type::Lit(RTsLitType {
@@ -828,7 +830,7 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
 
                 if let Ok(prop_ty) =
                     self.analyzer
-                        .access_property(span, *ty.obj_type.clone(), &key, TypeOfMode::RValue, IdCtx::Var)
+                        .access_property(span, &ty.obj_type, &key, TypeOfMode::RValue, IdCtx::Var)
                 {
                     return prop_ty;
                 }
@@ -854,7 +856,8 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
             | Type::ClassDef(..)
             | Type::Optional(..)
             | Type::Rest(..)
-            | Type::Mapped(..) => return ty.fold_children_with(self),
+            | Type::Mapped(..)
+            | Type::Tpl(..) => return ty.fold_children_with(self),
 
             Type::Arc(a) => return (*a.ty).clone().fold_with(self),
         }

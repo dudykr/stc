@@ -21,6 +21,7 @@ use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RPropName;
 use stc_ts_ast_rnode::RRestPat;
 use stc_ts_ast_rnode::RStmt;
+use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsType;
 use stc_ts_ast_rnode::RTsTypeAnn;
 use swc_common::Spanned;
@@ -170,6 +171,11 @@ impl<'a, I: From<RIdent>> Visit<RIdent> for DestructuringFinder<'a, I> {
 /// No-op, as we don't care about types.
 impl<'a, I: From<RIdent>> Visit<RTsType> for DestructuringFinder<'a, I> {
     fn visit(&mut self, _: &RTsType) {}
+}
+
+/// No-op, as we don't care about types.
+impl<'a, I: From<RIdent>> Visit<RTsEntityName> for DestructuringFinder<'a, I> {
+    fn visit(&mut self, _: &RTsEntityName) {}
 }
 
 pub trait PatExt {

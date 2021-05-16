@@ -1,7 +1,8 @@
+use self::type_param::StaticTypeParamValidator;
 use super::assign::AssignOpts;
 use super::expr::TypeOfMode;
 use super::props::ComputedPropMode;
-use super::util::instantiate_class;
+use super::util::make_instance_type;
 use super::util::is_prop_name_eq;
 use super::util::ResultExt;
 use super::util::VarVisitor;
@@ -74,6 +75,7 @@ use stc_ts_types::TsExpr;
 use stc_ts_types::Type;
 use stc_ts_utils::PatExt;
 use stc_utils::TryOpt;
+use std::borrow::Cow;
 use std::mem::replace;
 use std::mem::take;
 use swc_atoms::js_word;
@@ -86,6 +88,15 @@ use swc_ecma_ast::*;
 use swc_ecma_utils::private_ident;
 
 mod order;
+mod type_param;
+
+#[derive(Debug, Default)]
+pub(crate) struct ClassState {
+    /// Used only while valdiation consturctors.
+    ///
+    /// `false` means `this` can be used.
+    pub need_super_call: bool,
+}
 
 impl Analyzer<'_, '_> {
     fn validate_type_of_class_property(
@@ -153,6 +164,14 @@ impl Analyzer<'_, '_> {
         let value = self
             .validate_type_of_class_property(p.span, p.readonly, p.is_static, &p.type_ann, &p.value)?
             .map(Box::new);
+
+        if p.is_static {
+            value.visit_with(&mut StaticTypeParamValidator {
+                span: p.span,
+                analyzer: self,
+            });
+        }
+
         match p.accessibility {
             Some(Accessibility::Private) => {}
             _ => {
@@ -1040,6 +1059,8 @@ impl Analyzer<'_, '_> {
                     self.storage.report(Error::InvalidClassName { span: c.span });
                 }
                 "Object" if self.env.target() <= EsVersion::Es5 => match self.env.module() {
+                    ModuleConfig::None if self.ctx.in_declare => {}
+
                     ModuleConfig::None
                     | ModuleConfig::Umd
                     | ModuleConfig::System
@@ -1063,6 +1084,9 @@ impl Analyzer<'_, '_> {
             ScopeKind::Class,
             Default::default(),
             |child: &mut Analyzer| -> ValidationResult<_> {
+                child.ctx.super_references_super_class = true;
+                child.ctx.in_class_with_super = c.super_class.is_some();
+
                 child.scope.declaring_type_params.extend(
                     c.type_params
                         .iter()
@@ -1215,7 +1239,7 @@ impl Analyzer<'_, '_> {
 
                 child.scope.super_class = super_class
                     .clone()
-                    .map(|ty| instantiate_class(child.ctx.module_id, *ty));
+                    .map(|ty| make_instance_type(child.ctx.module_id, *ty));
                 {
                     // Validate constructors
                     let mut constructor_spans = vec![];
@@ -1686,7 +1710,7 @@ impl Analyzer<'_, '_> {
                 _ => {}
             }
 
-            let ty = self.normalize(None, ty, Default::default())?;
+            let ty = self.normalize(None, Cow::Borrowed(ty), Default::default())?;
 
             match ty.normalize() {
                 Type::Function(..) => Err(Error::NotConstructorType { span: ty.span() })?,

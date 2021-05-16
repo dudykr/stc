@@ -8,6 +8,8 @@ pub mod ext;
 pub mod panic_context;
 pub mod stack;
 
+pub type ABuilderHasher = ahash::RandomState;
+
 pub type FastHashMap<K, V> = HashMap<K, V, ahash::RandomState>;
 
 pub type FastHashSet<V> = HashSet<V, ahash::RandomState>;

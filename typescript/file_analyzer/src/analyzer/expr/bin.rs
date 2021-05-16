@@ -35,6 +35,7 @@ use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_type_ops::is_str_lit_or_union;
+use stc_ts_type_ops::Fix;
 use stc_ts_types::name::Name;
 use stc_ts_types::Class;
 use stc_ts_types::Intersection;
@@ -75,6 +76,7 @@ impl Analyzer<'_, '_> {
 
         let ctx = Ctx {
             should_store_truthy_for_access: false,
+            check_for_implicit_any: true,
             ..self.ctx
         };
 
@@ -82,7 +84,7 @@ impl Analyzer<'_, '_> {
             TypeOfMode::RValue,
             None,
             match op {
-                op!("??") | op!("&&") | op!("||") => type_ann,
+                op!("??") | op!("||") => type_ann,
                 _ => None,
             },
         );
@@ -258,7 +260,7 @@ impl Analyzer<'_, '_> {
                     right: (&**right, rt.normalize()),
                 };
 
-                if !self.has_overlap(span, &lt, &rt)? {
+                if !self.is_valid_for_switch_case(span, &lt, &rt)? {
                     if self.ctx.in_switch_case_test {
                         self.storage.report(Error::SwitchCaseTestNotCompatible { span })
                     } else {
@@ -309,7 +311,7 @@ impl Analyzer<'_, '_> {
                     (l, r) => Some((extract_name_for_assignment(l)?, r_ty)),
                 }) {
                     Some((l, r_ty)) => {
-                        if self.ctx.in_cond {
+                        if self.ctx.in_cond_of_cond_expr {
                             let (name, mut r) = self.calc_type_facts_for_equality(l, r_ty)?;
                             if op == op!("===") {
                                 self.cur_facts
@@ -370,7 +372,7 @@ impl Analyzer<'_, '_> {
                                 _ => false,
                             };
 
-                        if self.ctx.in_cond && !cannot_narrow {
+                        if self.ctx.in_cond_of_cond_expr && !cannot_narrow {
                             let narrowed_ty = self
                                 .narrow_with_instanceof(span, ty.clone(), &orig_ty)
                                 .context("tried to narrow type with instanceof")?
@@ -614,7 +616,7 @@ impl Analyzer<'_, '_> {
             }
 
             op!("in") => {
-                if self.ctx.in_cond {
+                if self.ctx.in_cond_of_cond_expr {
                     let left = match &**left {
                         RExpr::Lit(RLit::Str(s)) => Some(s.value.clone()),
                         RExpr::Tpl(t) if t.quasis.len() == 1 => t.quasis[0].cooked.clone().map(|v| v.value),
@@ -642,11 +644,25 @@ impl Analyzer<'_, '_> {
                 let mut lt = lt;
                 let mut rt = rt;
 
-                if self.may_generalize(&lt) {
+                if lt.type_eq(&rt) {
+                    return Ok(lt);
+                }
+
+                let can_generalize = type_ann.is_none()
+                    && match (&**left, &**right) {
+                        (_, RExpr::Ident(..)) => false,
+                        _ => true,
+                    };
+
+                if self.ctx.can_generalize_literals() && (can_generalize || self.may_generalize(&lt)) {
                     lt = lt.generalize_lit();
                 }
-                if self.may_generalize(&rt) {
+                if self.ctx.can_generalize_literals() && (can_generalize || self.may_generalize(&rt)) {
                     rt = rt.generalize_lit();
+                }
+
+                if lt.type_eq(&rt) {
+                    return Ok(lt);
                 }
 
                 match lt.normalize() {
@@ -661,10 +677,6 @@ impl Analyzer<'_, '_> {
                 match op {
                     op!("||") => {
                         if lt.is_never() {
-                            return Ok(lt);
-                        }
-
-                        if lt.type_eq(&rt) {
                             return Ok(lt);
                         }
 
@@ -733,6 +745,18 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
+    fn is_valid_for_switch_case(&mut self, span: Span, disc_ty: &Type, case_ty: &Type) -> ValidationResult<bool> {
+        if disc_ty.type_eq(case_ty) {
+            return Ok(true);
+        }
+
+        if disc_ty.is_num_lit() && case_ty.is_num_lit() {
+            return Ok(false);
+        }
+
+        self.has_overlap(span, &disc_ty, &case_ty)
+    }
+
     /// We have to check for inheritnace.
     ///
     /// ```ts
@@ -770,7 +794,7 @@ impl Analyzer<'_, '_> {
 
         match orig_ty {
             Type::Ref(..) | Type::Query(..) => {
-                let orig_ty = self.normalize(None, orig_ty, Default::default())?;
+                let orig_ty = self.normalize(None, Cow::Borrowed(orig_ty), Default::default())?;
                 return self.narrow_with_instanceof(span, ty, &orig_ty);
             }
 
@@ -1173,8 +1197,15 @@ impl Analyzer<'_, '_> {
     fn calc_type_facts_for_equality(&mut self, name: Name, equals_to: &Type) -> ValidationResult<(Name, Type)> {
         // For comparison of variables like `if (a === 'foo');`, we just return the type
         // itself.
+
         if name.len() == 1 {
-            return Ok((name, equals_to.clone()));
+            let orig_ty = self.type_of_var(&name.as_ids()[0].clone().into(), TypeOfMode::RValue, None)?;
+
+            let narrowed = self
+                .narrow_with_equality(&orig_ty, equals_to)
+                .context("tried to narrow type with equality")?;
+
+            return Ok((name, narrowed));
         }
 
         let span = equals_to.span();
@@ -1199,7 +1230,7 @@ impl Analyzer<'_, '_> {
             Type::Union(u) => {
                 let mut candidates = vec![];
                 for ty in &u.types {
-                    let prop_res = self.access_property(span, ty.clone(), &prop, TypeOfMode::RValue, super::IdCtx::Var);
+                    let prop_res = self.access_property(span, ty, &prop, TypeOfMode::RValue, super::IdCtx::Var);
 
                     match prop_res {
                         Ok(prop_ty) => {
@@ -1224,6 +1255,58 @@ impl Analyzer<'_, '_> {
         }
 
         Ok((name, eq_ty.clone()))
+    }
+
+    /// Returns new type of the variable after comparision with `===`.
+    ///
+    /// # Parameters
+    ///
+    /// ## orig_ty
+    ///
+    /// Original type of the variable.
+    fn narrow_with_equality(&mut self, orig_ty: &Type, equals_to: &Type) -> ValidationResult<Type> {
+        let span = equals_to.span();
+
+        if orig_ty.type_eq(&equals_to) {
+            return Ok(orig_ty.clone());
+        }
+
+        let orig_ty = self.normalize(Some(span), Cow::Borrowed(orig_ty), Default::default())?;
+        let equals_to = self.normalize(Some(span), Cow::Borrowed(equals_to), Default::default())?;
+
+        if orig_ty.type_eq(&equals_to) {
+            return Ok(orig_ty.into_owned());
+        }
+
+        // Exclude nevers.
+        match &*orig_ty {
+            Type::Union(orig) => {
+                let mut types = vec![];
+                // We
+                for orig in &orig.types {
+                    let new_ty = self
+                        .narrow_with_equality(&orig, &equals_to)
+                        .context("tried to narrow element of a union type")?;
+
+                    if new_ty.is_never() {
+                        continue;
+                    }
+                    types.push(new_ty);
+                }
+
+                return Ok(Type::Union(Union { span, types }).fixed());
+            }
+            _ => {}
+        }
+
+        // At here two variants are different from each other because we checked with
+        // type_eq above.
+        if orig_ty.is_enum_variant() && equals_to.is_enum_variant() {
+            return Ok(Type::never(span));
+        }
+
+        // Defaults to new type.
+        Ok(equals_to.into_owned())
     }
 
     fn validate_bin_inner(&mut self, span: Span, op: BinaryOp, lt: Option<&Type>, rt: Option<&Type>) {

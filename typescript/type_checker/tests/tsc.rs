@@ -159,40 +159,11 @@ fn load_expected_errors(ts_file: &Path) -> Result<Vec<RefError>, Error> {
                 .context("failed to parse errors.txt.json")?;
 
         for err in &mut errors {
-            match &*err.code {
-                // TS2304: Type not found.
-                // TS2318: Type not found and name is global.
-                // TS2552: Type not found with recommendation.
-                // TS2580: Type not found with recommendation for package to instsall.
-                // TS2581: Type not found with recommendation for jQuery.
-                // TS2582: Type not found with recommendation for jest or mocha.
-                // TS2583: Type not found with recommendation to change target library.
-                // TS2584: Type not found with recommendation to change target library to include `dom`.
-                "TS2318" | "TS2552" | "TS2580" | "TS2581" | "TS2582" | "TS2583" | "TS2584" => {
-                    // TS2304: Type not found without recommendation.
-                    err.code = "TS2304".to_string();
-                }
+            let orig_code = err.code.replace("TS", "").parse().expect("failed to parse error code");
+            let code = stc_ts_errors::Error::normalize_error_code(orig_code);
 
-                // TS2339: Property not found.
-                // TS2550: Property not found with a suggestion to change `lib`.
-                // TS2551: Property not found with a suggestion.
-                "TS2550" | "TS2551" => {
-                    err.code = "TS2339".to_string();
-                }
-
-                // TS2693: Type used as a variable.
-                // TS2585: Type used as a variable with a suggestion to change 'lib',
-                "TS2585" => {
-                    err.code = "TS2693".to_string();
-                }
-
-                // TS2307: Module not found.
-                // TS2792: Module not found with recommendation to change module resolution.
-                "TS2792" => {
-                    err.code = "TS2307".to_string();
-                }
-
-                _ => {}
+            if orig_code != code {
+                err.code = format!("TS{}", code);
             }
         }
 
@@ -286,18 +257,26 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
                     .iter()
                     .position(|cmt| cmt.text.trim().starts_with("@"))
                     .unwrap_or(0);
+                let cmt_start_line = if directive_start == 0 {
+                    0
+                } else {
+                    cmts.iter()
+                        .find(|cmt| cmt.text.trim().starts_with("@"))
+                        .map(|cmt| cm.lookup_char_pos(cmt.span.hi).line)
+                        .unwrap_or(0)
+                };
 
                 for cmt in cmts.iter().skip(directive_start) {
                     let s = cmt.text.trim();
                     if !s.starts_with("@") {
                         if had_comment {
-                            err_shift_n = cm.lookup_char_pos(cmt.span.hi).line - 1;
+                            err_shift_n = cm.lookup_char_pos(cmt.span.hi).line - 1 - cmt_start_line;
                             break;
                         }
                         continue;
                     }
                     had_comment = true;
-                    err_shift_n = cm.lookup_char_pos(cmt.span.hi + BytePos(1)).line;
+                    err_shift_n = cm.lookup_char_pos(cmt.span.hi + BytePos(1)).line - cmt_start_line;
                     let s = &s[1..]; // '@'
 
                     if s.starts_with("target:") || s.starts_with("Target:") {
