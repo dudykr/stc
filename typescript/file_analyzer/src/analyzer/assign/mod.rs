@@ -1856,6 +1856,7 @@ impl Analyzer<'_, '_> {
         let rhs_keys = self.extract_keys(opts.span, &rhs)?;
 
         self.assign_with_opts(data, opts, &keys, &rhs_keys)
+            .context("tried to assign keys")
     }
 
     fn assign_to_mapped(
