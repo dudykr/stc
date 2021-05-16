@@ -196,6 +196,12 @@ impl Analyzer<'_, '_> {
             Type::TypeLit(arg) => {
                 self.infer_type_using_type_elements_and_type_elements(span, inferred, &param.body, &arg.members)?;
             }
+            Type::Tuple(..) => {
+                // Convert to a type literal.
+                if let Some(arg) = self.type_to_type_lit(span, arg)? {
+                    self.infer_type_using_type_elements_and_type_elements(span, inferred, &param.body, &arg.members)?;
+                }
+            }
             _ => {
                 unimplemented!()
             }
