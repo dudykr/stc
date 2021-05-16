@@ -11,6 +11,7 @@ use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
+use stc_ts_type_ops::Fix;
 use stc_ts_types::Array;
 use stc_ts_types::Class;
 use stc_ts_types::ClassDef;
@@ -26,6 +27,7 @@ use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
 use stc_ts_types::TypeLitMetadata;
 use stc_ts_types::TypeParamInstantiation;
+use stc_ts_types::Union;
 use stc_utils::ext::SpanExt;
 use std::borrow::Cow;
 use swc_atoms::js_word;
@@ -227,7 +229,44 @@ impl Analyzer<'_, '_> {
                                 .context("tried to assign an array as interface to type elements");
                         }
 
-                        Type::Tuple(..) => {
+                        Type::Tuple(r_tuple) => {
+                            {
+                                // Try assigning as an array.
+
+                                let r_elem_type = Type::Union(Union {
+                                    span: r_tuple.span,
+                                    types: r_tuple.elems.iter().map(|el| *el.ty.clone()).collect(),
+                                })
+                                .fixed();
+
+                                //
+                                let r_arr = Type::Ref(Ref {
+                                    span,
+                                    ctxt: ModuleId::builtin(),
+                                    type_name: RTsEntityName::Ident(RIdent::new("Array".into(), DUMMY_SP)),
+                                    type_args: Some(box TypeParamInstantiation {
+                                        span: DUMMY_SP,
+                                        params: vec![r_elem_type],
+                                    }),
+                                });
+
+                                let rhs = self.normalize(None, Cow::Owned(r_arr), Default::default())?;
+
+                                if let Ok(()) = self.assign_to_type_elements(
+                                    data,
+                                    AssignOpts {
+                                        allow_unknown_rhs: true,
+                                        ..opts
+                                    },
+                                    lhs_span,
+                                    lhs,
+                                    &rhs,
+                                    lhs_metadata,
+                                ) {
+                                    return Ok(());
+                                }
+                            }
+
                             if let Some(rhs) = self
                                 .type_to_type_lit(span, rhs)?
                                 .map(Cow::into_owned)
