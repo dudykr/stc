@@ -1861,18 +1861,18 @@ impl Analyzer<'_, '_> {
         &mut self,
         data: &mut AssignData,
         opts: AssignOpts,
-        to: &Mapped,
+        l: &Mapped,
         rhs: &Type,
     ) -> ValidationResult<()> {
         let rhs = rhs.normalize();
 
         // Validate keys
-        match &to.type_param.constraint {
+        match &l.type_param.constraint {
             Some(constraint) => self.assign_keys(data, opts, &constraint, rhs)?,
             None => {}
         }
 
-        let ty = match &to.ty {
+        let l_ty = match &l.ty {
             Some(v) => v.normalize(),
             None => return Ok(()),
         };
@@ -1884,7 +1884,7 @@ impl Analyzer<'_, '_> {
                     match member {
                         TypeElement::Property(prop) => {
                             if let Some(prop_ty) = &prop.type_ann {
-                                self.assign_with_opts(data, opts, &ty, &prop_ty)?;
+                                self.assign_with_opts(data, opts, &l_ty, &prop_ty)?;
                             }
                         }
                         _ => {
@@ -1897,6 +1897,11 @@ impl Analyzer<'_, '_> {
                 }
 
                 return Ok(());
+            }
+            Type::Mapped(r) => {
+                if l.type_eq(r) {
+                    return Ok(());
+                }
             }
             _ => {}
         }
