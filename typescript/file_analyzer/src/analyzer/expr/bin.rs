@@ -757,8 +757,10 @@ impl Analyzer<'_, '_> {
             return Ok(false);
         }
 
-        if disc_ty.is_intersection_type() {
-            return Ok(true);
+        if self.ctx.in_switch_case_test {
+            if disc_ty.is_intersection_type() {
+                return Ok(true);
+            }
         }
 
         self.has_overlap(span, &disc_ty, &case_ty)
