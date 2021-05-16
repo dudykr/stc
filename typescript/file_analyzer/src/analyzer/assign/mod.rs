@@ -1858,7 +1858,7 @@ impl Analyzer<'_, '_> {
         self.assign_with_opts(
             data,
             AssignOpts {
-                allow_iterable_on_rhs: true,
+                allow_unknown_rhs: true,
                 ..opts
             },
             &keys,
