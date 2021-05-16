@@ -39,6 +39,15 @@ where
     }
 }
 
+impl<T> Fix for Box<T>
+where
+    T: Fix,
+{
+    fn fix(&mut self) {
+        (**self).fix()
+    }
+}
+
 macro_rules! impl_fix {
     ($T:ty) => {
         impl Fix for $T {
