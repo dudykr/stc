@@ -1864,51 +1864,65 @@ impl Analyzer<'_, '_> {
         l: &Mapped,
         rhs: &Type,
     ) -> ValidationResult<()> {
-        let rhs = rhs.normalize();
+        let span = opts.span;
+        let rhs = self
+            .normalize(
+                Some(span),
+                Cow::Borrowed(&rhs),
+                NormalizeTypeOpts { ..Default::default() },
+            )
+            .context("tried to normalize rhs of assignment (to a mapped type)")?;
 
-        // Validate keys
-        match &l.type_param.constraint {
-            Some(constraint) => self.assign_keys(data, opts, &constraint, rhs)?,
-            None => {}
-        }
+        let res: ValidationResult<_> = try {
+            // Validate keys
+            match &l.type_param.constraint {
+                Some(constraint) => self.assign_keys(data, opts, &constraint, &rhs)?,
+                None => {}
+            }
 
-        let l_ty = match &l.ty {
-            Some(v) => v.normalize(),
-            None => return Ok(()),
-        };
+            let l_ty = match &l.ty {
+                Some(v) => v.normalize(),
+                None => return Ok(()),
+            };
 
-        match rhs {
-            Type::TypeLit(rhs) => {
-                //
-                for member in &rhs.members {
-                    match member {
-                        TypeElement::Property(prop) => {
-                            if let Some(prop_ty) = &prop.type_ann {
-                                self.assign_with_opts(data, opts, &l_ty, &prop_ty)?;
+            match rhs.normalize() {
+                Type::TypeLit(rhs) => {
+                    //
+                    for member in &rhs.members {
+                        match member {
+                            TypeElement::Property(prop) => {
+                                if let Some(prop_ty) = &prop.type_ann {
+                                    self.assign_with_opts(data, opts, &l_ty, &prop_ty)?;
+                                }
                             }
-                        }
-                        _ => {
-                            return Err(Error::Unimplemented {
+                            _ => Err(Error::Unimplemented {
                                 span: opts.span,
                                 msg: format!("Assignment to mapped type: type element - {:?}", member),
-                            })
+                            })?,
                         }
                     }
-                }
 
-                return Ok(());
-            }
-            Type::Mapped(r) => {
-                if l.type_eq(r) {
                     return Ok(());
                 }
+                Type::Mapped(r) => {
+                    if l.type_eq(r) {
+                        return Ok(());
+                    }
+                }
+                _ => {}
             }
-            _ => {}
-        }
 
-        Err(Error::Unimplemented {
-            span: opts.span,
-            msg: format!("Assignment to mapped type"),
+            Err(Error::Unimplemented {
+                span: opts.span,
+                msg: format!("Assignment to mapped type"),
+            })?
+        };
+
+        res.with_context(|| {
+            format!(
+                "tried to assign {} to a mapped type",
+                dump_type_as_string(&self.cm, &rhs)
+            )
         })
     }
 
