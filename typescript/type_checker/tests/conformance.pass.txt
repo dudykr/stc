@@ -1702,6 +1702,7 @@ parser/ecmascript5/parserObjectCreationArrayLiteral4.ts
 parser/ecmascript5/parserOptionalTypeMembers1.ts
 parser/ecmascript5/parserOverloadOnConstants1.ts
 parser/ecmascript5/parserParenthesizedVariableAndFunctionInTernary.ts
+parser/ecmascript5/parserS7.2_A1.5_T2.ts
 parser/ecmascript5/parserS7.3_A1.1_T2.ts
 parser/ecmascript5/parserS7.6.1.1_A1.10.ts
 parser/ecmascript5/parserS7.6_A4.2_T1.ts
@@ -1769,6 +1770,7 @@ scanner/ecmascript5/scannerNonAsciiHorizontalWhitespace.ts
 scanner/ecmascript5/scannerNumericLiteral1.ts
 scanner/ecmascript5/scannerNumericLiteral5.ts
 scanner/ecmascript5/scannerNumericLiteral7.ts
+scanner/ecmascript5/scannerS7.2_A1.5_T2.ts
 scanner/ecmascript5/scannerS7.3_A1.1_T2.ts
 scanner/ecmascript5/scannerS7.6_A4.2_T1.ts
 scanner/ecmascript5/scannerStringLiteralWithContainingNullCharacter1.ts
