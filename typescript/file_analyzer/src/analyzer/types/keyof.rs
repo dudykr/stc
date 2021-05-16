@@ -246,6 +246,7 @@ impl Analyzer<'_, '_> {
                         })
                         .collect::<Result<Vec<_>, _>>()?;
 
+                    // I concluded that tsc is just crazy.
                     if key_types.iter().all(|ty| is_str_lit_or_union(&ty)) {
                         return Ok(self.intersection(span, key_types));
                     }
