@@ -158,7 +158,7 @@ impl Analyzer<'_, '_> {
                     r_params,
                     Some(r_ret_ty),
                 )
-                .context("tried to assign to a function type")?;
+                .context("tried to assign a function to another one")?;
 
                 return Ok(());
             }
