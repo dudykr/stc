@@ -177,11 +177,9 @@ impl Analyzer<'_, '_> {
                     return Err(Error::SimpleAssignFailed { span });
                 }
 
-                Type::Tuple(..) if lhs.is_empty() => return Ok(()),
+                Type::Tuple(..) | Type::Array(..) if lhs.is_empty() => return Ok(()),
 
-                Type::Array(..) if lhs.is_empty() => return Ok(()),
-
-                Type::Array(r_arr) => {
+                Type::Array(..) | Type::Tuple(..) => {
                     if opts.allow_assignment_of_array_to_optional_type_lit {
                         if lhs.iter().all(|el| match el {
                             TypeElement::Property(PropertySignature { optional: true, .. })
@@ -199,53 +197,59 @@ impl Analyzer<'_, '_> {
                         return Err(Error::SimpleAssignFailed { span });
                     }
 
-                    //
-                    let r_arr = Type::Ref(Ref {
-                        span,
-                        ctxt: ModuleId::builtin(),
-                        type_name: RTsEntityName::Ident(RIdent::new("Array".into(), DUMMY_SP)),
-                        type_args: Some(box TypeParamInstantiation {
-                            span: DUMMY_SP,
-                            params: vec![*r_arr.elem_type.clone()],
-                        }),
-                    });
+                    match rhs {
+                        Type::Array(r_arr) => {
+                            //
+                            let r_arr = Type::Ref(Ref {
+                                span,
+                                ctxt: ModuleId::builtin(),
+                                type_name: RTsEntityName::Ident(RIdent::new("Array".into(), DUMMY_SP)),
+                                type_args: Some(box TypeParamInstantiation {
+                                    span: DUMMY_SP,
+                                    params: vec![*r_arr.elem_type.clone()],
+                                }),
+                            });
 
-                    let rhs = self.normalize(None, Cow::Owned(r_arr), Default::default())?;
+                            let rhs = self.normalize(None, Cow::Owned(r_arr), Default::default())?;
 
-                    return self
-                        .assign_to_type_elements(
-                            data,
-                            AssignOpts {
-                                allow_unknown_rhs: true,
-                                ..opts
-                            },
-                            lhs_span,
-                            lhs,
-                            &rhs,
-                            lhs_metadata,
-                        )
-                        .context("tried to assign an array as interface to type elements");
-                }
+                            return self
+                                .assign_to_type_elements(
+                                    data,
+                                    AssignOpts {
+                                        allow_unknown_rhs: true,
+                                        ..opts
+                                    },
+                                    lhs_span,
+                                    lhs,
+                                    &rhs,
+                                    lhs_metadata,
+                                )
+                                .context("tried to assign an array as interface to type elements");
+                        }
 
-                Type::Tuple(..) => {
-                    if let Some(rhs) = self
-                        .type_to_type_lit(span, rhs)?
-                        .map(Cow::into_owned)
-                        .map(Type::TypeLit)
-                    {
-                        return self
-                            .assign_to_type_elements(
-                                data,
-                                AssignOpts {
-                                    allow_unknown_rhs: true,
-                                    ..opts
-                                },
-                                lhs_span,
-                                lhs,
-                                &rhs,
-                                lhs_metadata,
-                            )
-                            .context("tried to assign a tuple as type literal to type elements");
+                        Type::Tuple(..) => {
+                            if let Some(rhs) = self
+                                .type_to_type_lit(span, rhs)?
+                                .map(Cow::into_owned)
+                                .map(Type::TypeLit)
+                            {
+                                return self
+                                    .assign_to_type_elements(
+                                        data,
+                                        AssignOpts {
+                                            allow_unknown_rhs: true,
+                                            ..opts
+                                        },
+                                        lhs_span,
+                                        lhs,
+                                        &rhs,
+                                        lhs_metadata,
+                                    )
+                                    .context("tried to assign a tuple as type literal to type elements");
+                            }
+                        }
+
+                        _ => unreachable!(),
                     }
 
                     // TODO: Check for literal properties
