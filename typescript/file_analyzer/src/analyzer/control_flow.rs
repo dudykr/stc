@@ -443,7 +443,7 @@ impl Analyzer<'_, '_> {
         let discriminant_ty = self.check_switch_discriminant(stmt).report(&mut self.storage);
 
         let mut false_facts = CondFacts::default();
-        let mut true_facts = CondFacts::default();
+        let mut base_true_facts = self.cur_facts.true_facts.take();
         // Declared at here as it's important to know if last one ends with return.
         let mut ends_with_ret = false;
         let len = stmt.cases.len();
@@ -491,16 +491,20 @@ impl Analyzer<'_, '_> {
                 None => {}
             }
 
-            true_facts = true_facts | self.cur_facts.true_facts.take();
-            self.with_child(ScopeKind::Flow, true_facts.clone(), |child| {
+            let true_facts_created_by_case = self.cur_facts.true_facts.take();
+            let false_facts_created_by_case = self.cur_facts.false_facts.take();
+
+            let mut facts_for_body = base_true_facts.clone();
+            facts_for_body += true_facts_created_by_case;
+
+            self.with_child(ScopeKind::Flow, facts_for_body, |child| {
                 cons.visit_with(child);
                 Ok(())
             })?;
-            false_facts += self.cur_facts.false_facts.take();
 
             if ends_with_ret || last {
-                true_facts = CondFacts::default();
-                true_facts += false_facts.clone();
+                false_facts += false_facts_created_by_case.clone();
+                base_true_facts += false_facts_created_by_case;
             }
         }
 
