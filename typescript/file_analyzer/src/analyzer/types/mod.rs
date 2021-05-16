@@ -905,19 +905,6 @@ impl Analyzer<'_, '_> {
             return;
         }
 
-        if ty.normalize().is_alias() {
-            match ty.normalize_mut() {
-                Type::Alias(alias) => {
-                    self.exclude_type(&mut alias.ty, excluded);
-                    *ty = alias.ty.take();
-                    return;
-                }
-                _ => {
-                    unreachable!()
-                }
-            }
-        }
-
         match ty.normalize() {
             Type::Ref(..) => {
                 // We ignore errors.
@@ -980,6 +967,19 @@ impl Analyzer<'_, '_> {
     }
 
     fn exclude_types(&mut self, ty: &mut Type, excludes: Option<Vec<Type>>) {
+        if ty.normalize().is_alias() {
+            match ty.normalize_mut() {
+                Type::Alias(alias) => {
+                    self.exclude_types(&mut alias.ty, excludes);
+                    *ty = alias.ty.take();
+                    return;
+                }
+                _ => {
+                    unreachable!()
+                }
+            }
+        }
+
         let excludes = match excludes {
             Some(v) => v,
             None => return,
