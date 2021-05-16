@@ -746,12 +746,19 @@ impl Analyzer<'_, '_> {
 
 impl Analyzer<'_, '_> {
     fn is_valid_for_switch_case(&mut self, span: Span, disc_ty: &Type, case_ty: &Type) -> ValidationResult<bool> {
+        let disc_ty = disc_ty.normalize();
+        let case_ty = case_ty.normalize();
+
         if disc_ty.type_eq(case_ty) {
             return Ok(true);
         }
 
         if disc_ty.is_num_lit() && case_ty.is_num_lit() {
             return Ok(false);
+        }
+
+        if disc_ty.is_intersection_type() {
+            return Ok(true);
         }
 
         self.has_overlap(span, &disc_ty, &case_ty)
