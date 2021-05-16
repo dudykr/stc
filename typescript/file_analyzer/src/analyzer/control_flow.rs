@@ -1085,7 +1085,11 @@ impl Analyzer<'_, '_> {
             return Ok(cons);
         }
 
-        let new_types = self.adjust_ternary_type(span, vec![cons, alt])?;
+        let new_types = if type_ann.is_none() {
+            self.adjust_ternary_type(span, vec![cons, alt])?
+        } else {
+            vec![cons, alt]
+        };
         let mut ty = Type::union(new_types);
         ty.reposition(span);
         Ok(ty)
