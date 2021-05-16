@@ -1064,6 +1064,11 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
+        if param.is_predicate() && arg.is_bool() {
+            // Prevent logging
+            return Ok(());
+        }
+
         slog::error!(
             self.logger,
             "infer_arg_type: unimplemented\nparam  = {}\narg = {}",
