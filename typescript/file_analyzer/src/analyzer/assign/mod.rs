@@ -1886,6 +1886,18 @@ impl Analyzer<'_, '_> {
             };
 
             match rhs.normalize() {
+                Type::Interface(..) | Type::Class(..) | Type::ClassDef(..) | Type::Intersection(..) => {
+                    if let Some(r) = self
+                        .type_to_type_lit(span, &rhs)?
+                        .map(Cow::into_owned)
+                        .map(Type::TypeLit)
+                    {
+                        self.assign_to_mapped(data, opts, l, &r)
+                            .context("tried to assign a type to a mapped type by converting it to a type literal")?;
+                        return Ok(());
+                    }
+                }
+
                 Type::TypeLit(rhs) => {
                     //
                     for member in &rhs.members {
