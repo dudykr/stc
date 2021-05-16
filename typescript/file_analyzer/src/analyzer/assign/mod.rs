@@ -38,6 +38,7 @@ mod cast;
 mod class;
 mod function;
 mod query;
+mod tpl;
 mod type_el;
 
 /// Context used for `=` assignments.
@@ -67,6 +68,8 @@ pub(crate) struct AssignOpts {
 
     pub for_overload: bool,
 
+    pub for_castablity: bool,
+
     /// If true, assignment of a class to another class without inheritance
     /// relation will fail, even if the class is empty.
     pub disallow_different_classes: bool,
@@ -76,6 +79,9 @@ pub(crate) struct AssignOpts {
 
     /// If `true`, assignment will success if rhs is `void`.
     pub allow_assignment_of_void: bool,
+
+    /// If `true`, assignment will success if lhs is `void`.
+    pub allow_assignment_to_void: bool,
 
     pub allow_assignment_of_array_to_optional_type_lit: bool,
 
@@ -166,6 +172,12 @@ impl Analyzer<'_, '_> {
 
         match op {
             op!("+=") => {}
+
+            op!("??=") | op!("&&=") => {
+                if rhs.is_bool() {
+                    return Ok(());
+                }
+            }
             _ => {}
         }
 
@@ -206,6 +218,9 @@ impl Analyzer<'_, '_> {
         if self.is_builtin {
             return Ok(());
         }
+
+        left.assert_valid();
+        right.assert_valid();
 
         let _stack = stack::track(opts.span)?;
 
@@ -291,7 +306,7 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {
                 let ty = self
-                    .normalize(Some(span), &ty, Default::default())
+                    .normalize(Some(span), Cow::Borrowed(ty), Default::default())
                     .context("tried to normalize a type for assignment")?
                     .into_owned();
 
@@ -310,6 +325,9 @@ impl Analyzer<'_, '_> {
         right: &Type,
         opts: AssignOpts,
     ) -> ValidationResult<()> {
+        left.assert_valid();
+        right.assert_valid();
+
         let l = dump_type_as_string(&self.cm, &left);
         let r = dump_type_as_string(&self.cm, &right);
 
@@ -364,6 +382,10 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
+        if opts.allow_assignment_to_void && to.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
+            return Ok(());
+        }
+
         // debug_assert!(!span.is_dummy(), "\n\t{:?}\n<-\n\t{:?}", to, rhs);
         let to = self.normalize_for_assign(span, to)?;
         let rhs = self.normalize_for_assign(span, rhs)?;
@@ -379,7 +401,8 @@ impl Analyzer<'_, '_> {
                     right: box rhs.clone(),
                     right_ident: opts.right_ident_span,
                     cause: vec![],
-                });
+                })
+                .with_context(|| format!("`fail!()` called from {}", line!()));
             }};
         }
 
@@ -405,56 +428,64 @@ impl Analyzer<'_, '_> {
                 }
 
                 if !e.has_str && !e.has_num {
-                    return self.assign_inner(
-                        data,
-                        to,
-                        &Type::Keyword(RTsKeywordType {
-                            span,
-                            kind: TsKeywordTypeKind::TsNumberKeyword,
-                        }),
-                        opts,
-                    );
+                    return self
+                        .assign_inner(
+                            data,
+                            to,
+                            &Type::Keyword(RTsKeywordType {
+                                span,
+                                kind: TsKeywordTypeKind::TsNumberKeyword,
+                            }),
+                            opts,
+                        )
+                        .context("tried to assign enum as `number`");
                 }
 
                 if !e.has_num {
-                    return self.assign_inner(
-                        data,
-                        to,
-                        &Type::Keyword(RTsKeywordType {
-                            span,
-                            kind: TsKeywordTypeKind::TsStringKeyword,
-                        }),
-                        opts,
-                    );
+                    return self
+                        .assign_inner(
+                            data,
+                            to,
+                            &Type::Keyword(RTsKeywordType {
+                                span,
+                                kind: TsKeywordTypeKind::TsStringKeyword,
+                            }),
+                            opts,
+                        )
+                        .context("tried to assign enum as `string`");
                 }
 
                 if !e.has_str {
-                    return self.assign_inner(
-                        data,
-                        to,
-                        &Type::Keyword(RTsKeywordType {
-                            span,
-                            kind: TsKeywordTypeKind::TsNumberKeyword,
-                        }),
-                        opts,
-                    );
+                    return self
+                        .assign_inner(
+                            data,
+                            to,
+                            &Type::Keyword(RTsKeywordType {
+                                span,
+                                kind: TsKeywordTypeKind::TsNumberKeyword,
+                            }),
+                            opts,
+                        )
+                        .context("tried to assign enum as `number`");
                 }
 
-                return self.assign_inner(
-                    data,
-                    to,
-                    &Type::union(vec![
-                        Type::Keyword(RTsKeywordType {
-                            span,
-                            kind: TsKeywordTypeKind::TsNumberKeyword,
-                        }),
-                        Type::Keyword(RTsKeywordType {
-                            span,
-                            kind: TsKeywordTypeKind::TsStringKeyword,
-                        }),
-                    ]),
-                    opts,
-                );
+                return self
+                    .assign_inner(
+                        data,
+                        to,
+                        &Type::union(vec![
+                            Type::Keyword(RTsKeywordType {
+                                span,
+                                kind: TsKeywordTypeKind::TsNumberKeyword,
+                            }),
+                            Type::Keyword(RTsKeywordType {
+                                span,
+                                kind: TsKeywordTypeKind::TsStringKeyword,
+                            }),
+                        ]),
+                        opts,
+                    )
+                    .context("tried to assign enum as `number | string`");
             }};
         }
 
@@ -513,7 +544,13 @@ impl Analyzer<'_, '_> {
                         fail!()
                     }
                 }
-                _ => {}
+                _ => {
+                    if opts.for_castablity {
+                        if rhs.is_kwd(TsKeywordTypeKind::TsStringKeyword) {
+                            return Ok(());
+                        }
+                    }
+                }
             },
 
             Type::Ref(left) => {
@@ -635,7 +672,15 @@ impl Analyzer<'_, '_> {
                 dbg!();
                 return Err(Error::InvalidLValue { span: to.span() });
             }
-            Type::Enum(ref e) => {
+            Type::Enum(..) => fail!(),
+
+            Type::EnumVariant(EnumVariant { name: None, .. }) => {
+                let enum_name = match to {
+                    Type::EnumVariant(e) => e.enum_name.clone(),
+                    Type::Enum(e) => e.id.clone().into(),
+                    _ => unreachable!(),
+                };
+
                 match rhs.normalize() {
                     Type::Lit(RTsLitType {
                         lit: RTsLit::Number(..),
@@ -648,16 +693,33 @@ impl Analyzer<'_, '_> {
                         // validEnumAssignments.ts insists that this is valid.
                         return Ok(());
                     }
+
                     Type::EnumVariant(rhs) => {
-                        if rhs.enum_name == e.id {
+                        if rhs.enum_name == enum_name {
                             return Ok(());
                         }
                         fail!()
                     }
+
+                    Type::Lit(..)
+                    | Type::TypeLit(..)
+                    | Type::Keyword(RTsKeywordType {
+                        kind: TsKeywordTypeKind::TsVoidKeyword,
+                        ..
+                    })
+                    | Type::Keyword(RTsKeywordType {
+                        kind: TsKeywordTypeKind::TsStringKeyword,
+                        ..
+                    })
+                    | Type::Keyword(RTsKeywordType {
+                        kind: TsKeywordTypeKind::TsBooleanKeyword,
+                        ..
+                    }) => fail!(),
+
                     _ => {}
                 }
             }
-            Type::EnumVariant(ref e) => {
+            Type::EnumVariant(ref e @ EnumVariant { name: Some(..), .. }) => {
                 dbg!();
                 return Err(Error::InvalidLValue { span: e.span });
             }
@@ -679,13 +741,16 @@ impl Analyzer<'_, '_> {
                             rhs,
                         )
                         .context("tried to assign to an element of an intersection type")
+                        .convert_err(|err| Error::SimpleAssignFailed { span: err.span() })
                     {
                         Ok(..) => {}
                         Err(err) => errors.push(err),
                     }
                 }
 
-                if !opts.allow_unknown_rhs {
+                let left_contains_object = i.types.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword));
+
+                if !left_contains_object && !opts.allow_unknown_rhs {
                     let lhs = self.type_to_type_lit(span, to)?;
                     if let Some(lhs) = lhs {
                         self.assign_to_type_elements(data, opts, lhs.span, &lhs.members, &rhs, lhs.metadata)
@@ -695,7 +760,8 @@ impl Analyzer<'_, '_> {
                                      type:\nLHS: {}",
                                     dump_type_as_string(&self.cm, &Type::TypeLit(lhs.into_owned()))
                                 )
-                            })?;
+                            })
+                            .convert_err(|err| Error::SimpleAssignFailed { span: err.span() })?;
 
                         errors.retain(|err| match err.actual() {
                             Error::UnknownPropertyInObjectLiteralAssignment { .. } => false,
@@ -994,7 +1060,7 @@ impl Analyzer<'_, '_> {
                     if opts.allow_iterable_on_rhs {
                         let res: ValidationResult<_> = try {
                             let r = self
-                                .get_iterator(span, Cow::Borrowed(&rhs))
+                                .get_iterator(span, Cow::Borrowed(&rhs), Default::default())
                                 .context("tried to convert a type to an iterator to assign to a tuple")?;
                             //
                             let rhs_el = self
@@ -1045,6 +1111,43 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                // Same operation as above, but for enums.
+                match rhs {
+                    Type::EnumVariant(EnumVariant {
+                        enum_name, name: None, ..
+                    }) => {
+                        // If `types` contains all variant of the enum, the
+                        // assignment is valid.
+                        let patched_types = types
+                            .iter()
+                            .map(|ty| {
+                                self.normalize(Some(span), Cow::Borrowed(ty), Default::default())
+                                    .map(Cow::into_owned)
+                            })
+                            .collect::<Result<Vec<_>, _>>()?;
+
+                        if patched_types.iter().all(|ty| match ty.normalize() {
+                            Type::EnumVariant(ev) => ev.enum_name == *enum_name,
+                            _ => false,
+                        }) {
+                            if let Ok(Some(lhs)) = self.find_type(self.ctx.module_id, &enum_name) {
+                                for ty in lhs {
+                                    match ty.normalize() {
+                                        Type::Enum(e) => {
+                                            if e.members.len() == types.len() {
+                                                return Ok(());
+                                            }
+                                        }
+                                        _ => {}
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    _ => {}
+                }
+
                 let results = types
                     .iter()
                     .map(|to| {
@@ -1068,7 +1171,12 @@ impl Analyzer<'_, '_> {
                     _ => false,
                 });
                 let errors = results.into_iter().map(Result::unwrap_err).collect();
-                if normalized {
+                let should_use_single_error = normalized
+                    || types.iter().all(|ty| {
+                        ty.normalize().is_lit() || ty.normalize().is_enum_variant() || ty.normalize().is_ref_type()
+                    });
+
+                if should_use_single_error {
                     return Err(Error::AssignFailed {
                         span,
                         cause: errors,
@@ -1274,37 +1382,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            Type::Enum(ref e) => {
-                //
-                match *rhs {
-                    Type::EnumVariant(ref r) => {
-                        if r.enum_name == e.id {
-                            return Ok(());
-                        }
-                    }
-                    Type::Lit(..)
-                    | Type::TypeLit(..)
-                    | Type::Keyword(RTsKeywordType {
-                        kind: TsKeywordTypeKind::TsVoidKeyword,
-                        ..
-                    })
-                    | Type::Keyword(RTsKeywordType {
-                        kind: TsKeywordTypeKind::TsStringKeyword,
-                        ..
-                    })
-                    | Type::Keyword(RTsKeywordType {
-                        kind: TsKeywordTypeKind::TsNumberKeyword,
-                        ..
-                    })
-                    | Type::Keyword(RTsKeywordType {
-                        kind: TsKeywordTypeKind::TsBooleanKeyword,
-                        ..
-                    }) => fail!(),
-                    _ => {}
-                }
-            }
-
-            Type::EnumVariant(ref l) => match *rhs {
+            Type::EnumVariant(ref l @ EnumVariant { name: Some(..), .. }) => match *rhs {
                 Type::EnumVariant(ref r) => {
                     if l.enum_name == r.enum_name && l.name == r.name {
                         return Ok(());
@@ -1574,7 +1652,7 @@ impl Analyzer<'_, '_> {
                         // Try to assign by converting rhs to an iterable.
                         if opts.allow_iterable_on_rhs {
                             let r = self
-                                .get_iterator(span, Cow::Borrowed(&rhs))
+                                .get_iterator(span, Cow::Borrowed(&rhs), Default::default())
                                 .context("tried to convert a type to an iterator to assign to a tuple")?;
                             //
                             for (i, elem) in elems.iter().enumerate() {
@@ -1688,6 +1766,15 @@ impl Analyzer<'_, '_> {
             fail!()
         }
 
+        match (to, rhs) {
+            (Type::Tpl(l), r) => {
+                return self
+                    .assign_to_tpl(l, r, opts)
+                    .context("tried to assign to a template type")
+            }
+            _ => {}
+        }
+
         // TODO: Implement full type checker
         slog::error!(self.logger, "unimplemented: assign: \nLeft: {:?}\nRight: {:?}", to, rhs);
         Ok(())
@@ -1697,7 +1784,7 @@ impl Analyzer<'_, '_> {
     fn extract_keys(&mut self, span: Span, ty: &Type) -> ValidationResult {
         let ty = self.normalize(
             Some(span),
-            &ty,
+            Cow::Borrowed(&ty),
             NormalizeTypeOpts {
                 normalize_keywords: true,
                 ..Default::default()

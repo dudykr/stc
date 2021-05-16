@@ -204,7 +204,7 @@ impl Analyzer<'_, '_> {
                         }),
                     });
 
-                    let rhs = self.normalize(None, &r_arr, Default::default())?;
+                    let rhs = self.normalize(None, Cow::Owned(r_arr), Default::default())?;
 
                     return self
                         .assign_to_type_elements(
@@ -574,6 +574,8 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult<()> {
         let span = opts.span;
 
+        let mut errors = vec![];
+
         for (i, m) in lhs.into_iter().enumerate().filter(|(_, m)| m.key().is_some()) {
             let res = self
                 .assign_type_elements_to_type_element(data, opts, missing_fields, unhandled_rhs, m, rhs)
@@ -582,11 +584,13 @@ impl Analyzer<'_, '_> {
             match res {
                 Ok(()) => {}
                 Err(Error::Errors { ref errors, .. }) if errors.is_empty() => {}
-                Err(err) => return Err(err),
+                Err(err) => errors.push(err),
             }
         }
 
-        let mut errors = vec![];
+        if !errors.is_empty() {
+            return Err(Error::Errors { span, errors });
+        }
 
         // Index signature can eat multiple rhs.
         for m in lhs.iter().filter(|m| m.key().is_none()) {
@@ -607,6 +611,25 @@ impl Analyzer<'_, '_> {
     }
 
     /// This method assigns each property to corresponding property.
+
+    ///
+    ///
+    ///
+    /// # Implementation notes
+    ///
+    ///
+    /// ## Methods
+    ///
+    /// ### Type parameters
+    ///
+    /// ```ts
+    /// interface T {
+    ///     f(x: number): void;
+    /// }
+    /// var t: T;
+    /// t = { f: <T>(x:T) => 1 };
+    /// ```
+    /// This is valid.
     fn assign_type_elements_to_type_element(
         &mut self,
         data: &mut AssignData,
@@ -629,21 +652,43 @@ impl Analyzer<'_, '_> {
                     if l_key.type_eq(&*r_key) {
                         match lm {
                             TypeElement::Property(ref lp) => match rm {
-                                TypeElement::Property(ref r_el) => {
-                                    if lp.accessibility != r_el.accessibility {
+                                TypeElement::Property(ref rp) => {
+                                    if lp.accessibility != rp.accessibility {
                                         if lp.accessibility == Some(Accessibility::Private)
-                                            || r_el.accessibility == Some(Accessibility::Private)
+                                            || rp.accessibility == Some(Accessibility::Private)
                                         {
                                             return Err(Error::AssignFailedDueToAccessibility { span });
                                         }
                                     }
 
-                                    self.assign_inner(
-                                        data,
-                                        lp.type_ann.as_deref().unwrap_or(&Type::any(span)),
-                                        r_el.type_ann.as_deref().unwrap_or(&Type::any(span)),
-                                        opts,
-                                    )?;
+                                    // Allow assigning undefined to optional properties.
+                                    (|| {
+                                        if opts.for_castablity {
+                                            if lp.optional {
+                                                if let Some(r_ty) = &rp.type_ann {
+                                                    if r_ty.is_undefined() {
+                                                        return Ok(());
+                                                    }
+                                                }
+                                            }
+
+                                            if rp.optional {
+                                                if let Some(lt) = &lp.type_ann {
+                                                    if lt.is_undefined() {
+                                                        return Ok(());
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        self.assign_inner(
+                                            data,
+                                            lp.type_ann.as_deref().unwrap_or(&Type::any(span)),
+                                            rp.type_ann.as_deref().unwrap_or(&Type::any(span)),
+                                            opts,
+                                        )
+                                    })()?;
+
                                     if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
                                         unhandled_rhs.remove(pos);
                                     }
@@ -679,15 +724,17 @@ impl Analyzer<'_, '_> {
                                 TypeElement::Method(ref rm) => {
                                     //
 
-                                    self.assign_params(data, opts, &lm.params, &rm.params)
-                                        .context("tried to assign parameters of a method")?;
-
-                                    if let Some(l_ret_ty) = &lm.ret_ty {
-                                        if let Some(r_ret_ty) = &rm.ret_ty {
-                                            self.assign_with_opts(data, opts, &l_ret_ty, &r_ret_ty)
-                                                .context("tried to assign return type of a method")?;
-                                        }
-                                    }
+                                    self.assign_to_fn_like(
+                                        data,
+                                        opts,
+                                        lm.type_params.as_ref(),
+                                        &lm.params,
+                                        lm.ret_ty.as_deref(),
+                                        rm.type_params.as_ref(),
+                                        &rm.params,
+                                        rm.ret_ty.as_deref(),
+                                    )
+                                    .context("tried to assign to callable type element")?;
                                     // TODO: Return type
 
                                     if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
@@ -700,13 +747,20 @@ impl Analyzer<'_, '_> {
                                 TypeElement::Property(rp) => {
                                     // Allow assigning property with callable type to methods.
                                     if let Some(rp_ty) = &rp.type_ann {
-                                        if let Type::Function(rp_ty) = rp_ty.normalize() {
-                                            self.assign_params(data, opts, &lm.params, &rp_ty.params).context(
-                                                "tried to assign parameters of a property with callable type to a \
-                                                 method parameters",
+                                        if let Type::Function(rf) = rp_ty.normalize() {
+                                            self.assign_to_fn_like(
+                                                data,
+                                                opts,
+                                                lm.type_params.as_ref(),
+                                                &lm.params,
+                                                lm.ret_ty.as_deref(),
+                                                rf.type_params.as_ref(),
+                                                &rf.params,
+                                                Some(&rf.ret_ty),
+                                            )
+                                            .context(
+                                                "tried to assign a property with callable type to a method property",
                                             )?;
-
-                                            // TODO: Return type
                                         }
                                     }
                                     if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {

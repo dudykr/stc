@@ -31,7 +31,7 @@ impl Analyzer<'_, '_> {
                 };
                 let ty = self
                     .with_ctx(ctx)
-                    .access_property(span, obj, &prop, TypeOfMode::RValue, IdCtx::Var)?;
+                    .access_property(span, &obj, &prop, TypeOfMode::RValue, IdCtx::Var)?;
 
                 //
 

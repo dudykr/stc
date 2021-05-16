@@ -27,6 +27,7 @@ use stc_ts_ast_rnode::RNumber;
 use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RPrivateName;
 use stc_ts_ast_rnode::RStr;
+use stc_ts_ast_rnode::RTplElement;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsEnumMemberId;
 use stc_ts_ast_rnode::RTsKeywordType;
@@ -159,6 +160,7 @@ pub enum Type {
     EnumVariant(EnumVariant),
 
     Interface(Interface),
+
     #[is(name = "enum_type")]
     Enum(Enum),
 
@@ -182,6 +184,8 @@ pub enum Type {
     Optional(OptionalType),
 
     Symbol(Symbol),
+
+    Tpl(TplType),
 }
 
 assert_eq_size!(Type, [u8; 128]);
@@ -817,6 +821,10 @@ impl Union {
                 }
             }
         }
+
+        if self.types.len() <= 1 {
+            panic!("A union type should have multiple items. Got {:?}", self.types);
+        }
     }
 }
 
@@ -856,6 +864,10 @@ impl Intersection {
                 }
             }
         }
+
+        if self.types.len() <= 1 {
+            panic!("An intersection type should have multiple items. Got {:?}", self.types);
+        }
     }
 }
 
@@ -874,7 +886,8 @@ pub struct EnumVariant {
     pub span: Span,
     pub ctxt: ModuleId,
     pub enum_name: Id,
-    pub name: JsWord,
+    /// [None] if for the general instance type of an enum.
+    pub name: Option<JsWord>,
 }
 
 assert_eq_size!(EnumVariant, [u8; 40]);
@@ -1232,6 +1245,46 @@ impl Type {
             Type::StaticThis(ty) => ty.span = span,
 
             Type::Instance(ty) => ty.span = span,
+
+            Type::Tpl(ty) => ty.span = span,
+        }
+    }
+}
+
+struct AssertValid;
+
+impl Visit<Union> for AssertValid {
+    fn visit(&mut self, ty: &Union) {
+        if !cfg!(debug_assertions) {
+            return;
+        }
+
+        ty.visit_children_with(self);
+
+        ty.assert_valid();
+
+        for item in ty.types.iter() {
+            if item.normalize().is_union_type() {
+                panic!("A union type should not have a union item")
+            }
+        }
+    }
+}
+
+impl Visit<Intersection> for AssertValid {
+    fn visit(&mut self, ty: &Intersection) {
+        if !cfg!(debug_assertions) {
+            return;
+        }
+
+        ty.visit_children_with(self);
+
+        ty.assert_valid();
+
+        for item in ty.types.iter() {
+            if item.normalize().is_intersection_type() {
+                panic!("An intersection type should not have an intersection item")
+            }
         }
     }
 }
@@ -1250,10 +1303,16 @@ impl Type {
 
         let _ctx = context(format!("{:?}", self));
 
+        self.visit_with(&mut AssertValid);
+    }
+
+    pub fn is_global_this(&self) -> bool {
         match self.normalize() {
-            Type::Union(ty) => ty.assert_valid(),
-            Type::Intersection(ty) => ty.assert_valid(),
-            _ => {}
+            Type::Query(QueryType {
+                expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(i)),
+                ..
+            }) => &*i.sym == "globalThis",
+            _ => false,
         }
     }
 }
@@ -1409,6 +1468,7 @@ impl<'a> Iterator for Iter<'a> {
 impl FusedIterator for Iter<'_> {}
 
 impl Type {
+    /// Returns true if `self` is a `string` or a string literal.
     pub fn is_str(&self) -> bool {
         match self.normalize() {
             Type::Keyword(RTsKeywordType {
@@ -1416,6 +1476,15 @@ impl Type {
                 ..
             })
             | Type::Lit(RTsLitType {
+                lit: RTsLit::Str(..), ..
+            }) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_str_lit(&self) -> bool {
+        match self.normalize() {
+            Type::Lit(RTsLitType {
                 lit: RTsLit::Str(..), ..
             }) => true,
             _ => false,
@@ -1431,6 +1500,30 @@ impl Type {
             | Type::Lit(RTsLitType {
                 lit: RTsLit::Number(..),
                 ..
+            }) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_num_lit(&self) -> bool {
+        match self.normalize() {
+            Type::Lit(RTsLitType {
+                lit: RTsLit::Number(..),
+                ..
+            }) => true,
+            _ => false,
+        }
+    }
+
+    /// Returns true if `self` is a `boolean` or a boolean literal.
+    pub fn is_bool(&self) -> bool {
+        match self.normalize() {
+            Type::Keyword(RTsKeywordType {
+                kind: TsKeywordTypeKind::TsBooleanKeyword,
+                ..
+            })
+            | Type::Lit(RTsLitType {
+                lit: RTsLit::Bool(..), ..
             }) => true,
             _ => false,
         }
@@ -1798,6 +1891,17 @@ pub struct StaticThis {
 }
 
 assert_eq_size!(StaticThis, [u8; 12]);
+
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+pub struct TplType {
+    pub span: Span,
+
+    #[use_eq_ignore_span]
+    pub quasis: Vec<RTplElement>,
+    pub types: Vec<Type>,
+}
+
+assert_eq_size!(TplType, [u8; 64]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq)]
 pub struct Freezed {

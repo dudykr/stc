@@ -41,6 +41,7 @@ use stc_ts_errors::Error;
 use stc_ts_storage::Builtin;
 use stc_ts_storage::Info;
 use stc_ts_storage::Storage;
+use stc_ts_types::IdCtx;
 use stc_ts_types::{Id, ModuleId, ModuleTypeData, SymbolIdGenerator};
 use stc_utils::FastHashMap;
 use std::mem::take;
@@ -109,8 +110,13 @@ pub(crate) struct Ctx {
     phase: Phase,
 
     diallow_unknown_object_property: bool,
+    disallow_optional_object_property: bool,
+
+    use_undefined_for_empty_tuple: bool,
 
     allow_module_var: bool,
+
+    check_for_implicit_any: bool,
 
     /// If `true`, expression validator will not emit tuple.
     cannot_be_tuple: bool,
@@ -121,7 +127,7 @@ pub(crate) struct Ctx {
     in_shorthand: bool,
 
     /// `true` for condition of conditional expression or of an if statement.
-    in_cond: bool,
+    in_cond_of_cond_expr: bool,
     should_store_truthy_for_access: bool,
     in_switch_case_test: bool,
 
@@ -138,6 +144,8 @@ pub(crate) struct Ctx {
     in_generator: bool,
 
     is_calling_iife: bool,
+
+    in_useless_expr_for_seq: bool,
 
     in_ts_fn_type: bool,
 
@@ -195,6 +203,31 @@ pub(crate) struct Ctx {
     skip_union_while_inferencing: bool,
 
     skip_identical_while_inferencing: bool,
+
+    super_references_super_class: bool,
+
+    in_class_with_super: bool,
+
+    /// `true` if the value of an exprssion is going to be used.
+    is_value_used: bool,
+
+    /// `generatorReturnTypeFallback.3.ts` says
+    ///
+    /// Do not allow generators to fallback to IterableIterator while in
+    /// strictNullChecks mode if they need a type for the sent value.
+    /// NOTE: In non-strictNullChecks mode, `undefined` (the default sent value)
+    /// is assignable to everything.
+    cannot_fallback_to_iterable_iterator: bool,
+}
+
+impl Ctx {
+    pub fn reevaluating(self) -> bool {
+        self.reevaluating_argument || self.reevaluating_call_or_new || self.reevaluating_loop_body
+    }
+
+    pub fn can_generalize_literals(self) -> bool {
+        !self.in_argument && !self.in_cond_of_cond_expr
+    }
 }
 
 /// Note: All methods named `validate_*` return [Err] iff it's not recoverable.
@@ -254,6 +287,18 @@ struct AnalyzerData {
 
     /// Spans of declared variables.
     var_spans: FastHashMap<Id, Vec<Span>>,
+
+    /// Spans of functions **with body**.
+    fn_impl_spans: FxHashMap<Id, Vec<Span>>,
+
+    /// One instance of each module (typescript `module` keyword).
+    for_module: PerModuleData,
+}
+
+#[derive(Debug, Default)]
+struct PerModuleData {
+    /// Spans exported items.
+    exports_spans: FxHashMap<(JsWord, IdCtx), Vec<Span>>,
 }
 
 /// TODO
@@ -438,11 +483,14 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 module_id: ModuleId::builtin(),
                 phase: Default::default(),
                 diallow_unknown_object_property: false,
+                disallow_optional_object_property: false,
+                use_undefined_for_empty_tuple: false,
                 allow_module_var: false,
+                check_for_implicit_any: false,
                 cannot_be_tuple: false,
                 should_not_create_indexed_type_from_ty_els: false,
                 in_shorthand: false,
-                in_cond: false,
+                in_cond_of_cond_expr: false,
                 should_store_truthy_for_access: false,
                 in_switch_case_test: false,
                 in_computed_prop_name: false,
@@ -454,6 +502,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 in_async: false,
                 in_generator: false,
                 is_calling_iife: false,
+                in_useless_expr_for_seq: false,
                 in_ts_fn_type: false,
                 in_actual_type: false,
                 report_error_for_non_local_vars: false,
@@ -478,6 +527,10 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 ignore_errors: false,
                 skip_union_while_inferencing: false,
                 skip_identical_while_inferencing: false,
+                super_references_super_class: false,
+                in_class_with_super: false,
+                is_value_used: false,
+                cannot_fallback_to_iterable_iterator: false,
             },
             loader,
             is_builtin,
@@ -520,6 +573,11 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         let imports_by_id = take(&mut self.imports_by_id);
         let mutations = self.mutations.take();
         let cur_facts = take(&mut self.cur_facts);
+        let module_data = if kind == ScopeKind::Module {
+            take(&mut self.data.for_module)
+        } else {
+            Default::default()
+        };
         let data = take(&mut self.data);
 
         let child_scope = Scope::new(&self.scope, kind, facts);
@@ -584,6 +642,9 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         self.prepend_stmts.extend(prepend_stmts);
         self.append_stmts.extend(append_stmts);
         self.data = data;
+        if kind == ScopeKind::Module {
+            self.data.for_module = module_data;
+        }
 
         // Move return types from child to parent
         match kind {

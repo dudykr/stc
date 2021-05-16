@@ -16,10 +16,104 @@ use stc_ts_types::FnParam;
 use stc_ts_types::Function;
 use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
+use stc_ts_types::TypeParamDecl;
 use std::borrow::Cow;
 use swc_atoms::js_word;
 
 impl Analyzer<'_, '_> {
+    pub(super) fn assign_to_fn_like(
+        &mut self,
+        data: &mut AssignData,
+        opts: AssignOpts,
+        l_type_params: Option<&TypeParamDecl>,
+        l_params: &[FnParam],
+        l_ret_ty: Option<&Type>,
+        r_type_params: Option<&TypeParamDecl>,
+        r_params: &[FnParam],
+        r_ret_ty: Option<&Type>,
+    ) -> ValidationResult<()> {
+        let span = opts.span;
+
+        let new_r_params;
+        let new_r_ret_ty;
+        let (r_params, r_ret_ty) = match (&l_type_params, r_type_params) {
+            (Some(lt), Some(rt)) => {
+                //
+                let map = lt
+                    .params
+                    .iter()
+                    .zip(rt.params.iter())
+                    .map(|(l, r)| (r.name.clone(), Type::Param(l.clone()).cheap()))
+                    .collect::<FxHashMap<_, _>>();
+                new_r_params = self
+                    .expand_type_params(&map, r_params.to_vec())
+                    .context("tried to expand type parameters as a step of function assignemnt")?;
+                new_r_ret_ty = self
+                    .expand_type_params(&map, r_ret_ty.cloned())
+                    .context("tried to expand return type of rhs as a step of function assignemnt")?;
+                (&*new_r_params, new_r_ret_ty.as_ref())
+            }
+
+            // Assigning `(a: 1) => string` to `<Z>(a: Z) => string` is valid.
+            (None, Some(rt)) => {
+                let lf = Type::Function(Function {
+                    span,
+                    type_params: None,
+                    params: l_params.to_vec(),
+                    ret_ty: box l_ret_ty.cloned().unwrap_or_else(|| Type::any(span)),
+                });
+                let rf = Type::Function(Function {
+                    span,
+                    type_params: None,
+                    params: r_params.to_vec(),
+                    ret_ty: box r_ret_ty.cloned().unwrap_or_else(|| Type::any(span)),
+                });
+
+                let map = self.infer_type_with_types(span, &*rt.params, &rf, &lf)?;
+                new_r_params = self
+                    .expand_type_params(&map, r_params.to_vec())
+                    .context("tried to expand type parameters of rhs as a step of function assignemnt")?;
+                new_r_ret_ty = self
+                    .expand_type_params(&map, r_ret_ty.cloned())
+                    .context("tried to expand return type of rhs as a step of function assignemnt")?;
+                (&*new_r_params, new_r_ret_ty.as_ref())
+            }
+
+            _ => (r_params, r_ret_ty),
+        };
+
+        // () => void
+        //
+        // is assignable to
+        //
+        // (t: unknown, t1: unknown) => void
+        //
+        // So we check for length first.
+        if r_params.len() != 0 {
+            self.assign_params(data, opts, l_params, &r_params)
+                .context("tried to assign parameters of a function to parameters of another function")?;
+        }
+
+        if let Some(l_ret_ty) = l_ret_ty {
+            if let Some(r_ret_ty) = r_ret_ty {
+                // TODO: Verify type parameters.
+                self.assign_inner(
+                    data,
+                    l_ret_ty,
+                    r_ret_ty,
+                    AssignOpts {
+                        allow_assignment_of_void: true,
+                        allow_assignment_to_void: true,
+                        ..opts
+                    },
+                )
+                .context("tried to assign the return type of a function to the return type of another function")?;
+            }
+        }
+
+        return Ok(());
+    }
+
     /// ```ts
     /// class Base {}
     /// class Derived extends Base {
@@ -51,59 +145,17 @@ impl Analyzer<'_, '_> {
                 ret_ty: r_ret_ty,
                 ..
             }) => {
-                let new_r;
-                let (r_params, r_ret_ty) = match (&l.type_params, r_type_params) {
-                    (Some(lt), Some(rt)) => {
-                        //
-                        let map = lt
-                            .params
-                            .iter()
-                            .zip(rt.params.iter())
-                            .map(|(l, r)| (r.name.clone(), Type::Param(l.clone()).cheap()))
-                            .collect::<FxHashMap<_, _>>();
-                        let r = self
-                            .expand_type_params(&map, r.clone())
-                            .context("tried to expand type parameters as a step of function assignemnt")?;
-                        new_r = r.function().unwrap();
-                        (&new_r.params, &new_r.ret_ty)
-                    }
-
-                    // Assigning `(a: 1) => string` to `<Z>(a: Z) => string` is valid.
-                    (None, Some(rt)) => {
-                        let map = self.infer_type_with_types(span, &*rt.params, r, lt)?;
-                        let r = self
-                            .expand_type_params(&map, r.clone())
-                            .context("tried to expand type parameters of rhs as a step of function assignemnt")?;
-                        new_r = r.function().unwrap();
-                        (&new_r.params, &new_r.ret_ty)
-                    }
-
-                    _ => (r_params, r_ret_ty),
-                };
-
-                // () => void
-                //
-                // is assignable to
-                //
-                // (t: unknown, t1: unknown) => void
-                //
-                // So we check for length first.
-                if r_params.len() != 0 {
-                    self.assign_params(data, opts, &l.params, &r_params)
-                        .context("tried to assign parameters of a function to parameters of another function")?;
-                }
-
-                // TODO: Verify type parameters.
-                self.assign_inner(
+                self.assign_to_fn_like(
                     data,
-                    &l.ret_ty,
-                    r_ret_ty,
-                    AssignOpts {
-                        allow_assignment_of_void: true,
-                        ..opts
-                    },
+                    opts,
+                    l.type_params.as_ref(),
+                    &l.params,
+                    Some(&l.ret_ty),
+                    r_type_params.as_ref(),
+                    r_params,
+                    Some(r_ret_ty),
                 )
-                .context("tried to assign the return type of a function to the return type of another function")?;
+                .context("tried to assign to a function type")?;
 
                 return Ok(());
             }
@@ -321,8 +373,12 @@ impl Analyzer<'_, '_> {
 
         // TODO: Change this to extends call.
 
-        let l_ty = self.normalize(Some(opts.span), &l.ty, Default::default())?;
-        let r_ty = self.normalize(Some(opts.span), &r.ty, Default::default())?;
+        let l_ty = self.normalize(Some(opts.span), Cow::Borrowed(&l.ty), Default::default())?;
+        let r_ty = self.normalize(Some(opts.span), Cow::Borrowed(&r.ty), Default::default())?;
+
+        l_ty.assert_valid();
+        r_ty.assert_valid();
+
         let reverse = match (l_ty.normalize(), r_ty.normalize()) {
             (Type::Union(..), Type::Union(..)) => false,
             (_, Type::Union(..)) => true,
@@ -396,18 +452,23 @@ impl Analyzer<'_, '_> {
 
         if opts.for_overload {
             if required_li.clone().count() > required_ri.clone().count() {
-                return Err(Error::SimpleAssignFailed { span });
+                return Err(Error::SimpleAssignFailed { span })
+                    .context("l.params.required.len > r.params.required.len");
             }
         }
 
-        if !l_has_rest && required_li.clone().count() < required_ri.clone().count() {
-            // I don't know why, but overload signature does not need to match overloaded
-            // signature.
-            if opts.for_overload {
-                return Ok(());
-            }
+        // Don't ask why.
+        if li.clone().count() < required_ri.clone().count() {
+            if !l_has_rest && required_li.clone().count() < required_ri.clone().count() {
+                // I don't know why, but overload signature does not need to match overloaded
+                // signature.
+                if opts.for_overload {
+                    return Ok(());
+                }
 
-            return Err(Error::SimpleAssignFailed { span });
+                return Err(Error::SimpleAssignFailed { span }
+                    .context("!l_has_rest && l.params.required.len < r.params.required.len"));
+            }
         }
 
         for pair in li.zip_longest(ri) {

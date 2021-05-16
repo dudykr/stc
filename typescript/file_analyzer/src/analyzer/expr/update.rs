@@ -53,6 +53,8 @@ impl Analyzer<'_, '_> {
                 | Type::This(..)
                 | Type::Function(..) => Err(Error::TypeInvalidForUpdateArg { span: e.arg.span() }),
 
+                _ if ty.is_global_this() => Err(Error::TypeInvalidForUpdateArg { span: e.arg.span() }),
+
                 Type::Enum(..) => Err(Error::CannotAssignToNonVariable { span: e.arg.span() }),
 
                 Type::Lit(RTsLitType {

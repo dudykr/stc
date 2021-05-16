@@ -35,12 +35,14 @@ use stc_ts_ast_rnode::RTsInferType;
 use stc_ts_ast_rnode::RTsInterfaceBody;
 use stc_ts_ast_rnode::RTsInterfaceDecl;
 use stc_ts_ast_rnode::RTsIntersectionType;
+use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsMappedType;
 use stc_ts_ast_rnode::RTsMethodSignature;
 use stc_ts_ast_rnode::RTsOptionalType;
 use stc_ts_ast_rnode::RTsParenthesizedType;
 use stc_ts_ast_rnode::RTsPropertySignature;
 use stc_ts_ast_rnode::RTsRestType;
+use stc_ts_ast_rnode::RTsTplLitType;
 use stc_ts_ast_rnode::RTsTupleElement;
 use stc_ts_ast_rnode::RTsTupleType;
 use stc_ts_ast_rnode::RTsType;
@@ -84,6 +86,7 @@ use stc_ts_types::QueryExpr;
 use stc_ts_types::QueryType;
 use stc_ts_types::Ref;
 use stc_ts_types::RestType;
+use stc_ts_types::TplType;
 use stc_ts_types::TsExpr;
 use stc_ts_types::Tuple;
 use stc_ts_types::TupleElement;
@@ -97,7 +100,10 @@ use stc_ts_types::TypeParamInstantiation;
 use stc_ts_types::Union;
 use stc_ts_utils::OptionExt;
 use stc_ts_utils::PatExt;
+use stc_utils::error;
+use stc_utils::FastHashSet;
 use swc_atoms::js_word;
+use swc_common::EqIgnoreSpan;
 use swc_common::Spanned;
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::VarDeclKind;
@@ -115,6 +121,25 @@ impl Analyzer<'_, '_> {
                 params: decl.params.validate_with(self)?,
             })
         } else {
+            {
+                // Check for duplicates
+                let mut names = decl.params.iter().map(|param| param.name.clone()).collect::<Vec<_>>();
+                let mut found = FastHashSet::default();
+
+                for name in names {
+                    if !found.insert(name.sym.clone()) {
+                        self.storage.report(
+                            Error::DuplicateName {
+                                span: name.span,
+                                name: name.into(),
+                            }
+                            .context("tried to validate duplicate entries of a type parameter declaration"),
+                        );
+                    }
+                }
+                //
+            }
+
             for param in &decl.params {
                 let name: Id = param.name.clone().into();
                 self.register_type(
@@ -169,7 +194,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, ann: &RTsTypeAnn) -> ValidationResult {
         self.record(ann);
 
-        ann.type_ann.validate_with(self)
+        ann.type_ann.validate_with(self).map(|ty: Type| ty.fixed())
     }
 }
 
@@ -257,9 +282,37 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, lit: &RTsTypeLit) -> ValidationResult<TypeLit> {
+        let members = lit.members.validate_with(self)?;
+
+        let mut keys: Vec<Key> = vec![];
+
+        for member in &members {
+            match member {
+                TypeElement::Method(..) => continue,
+                _ => {}
+            }
+            if let Some(key) = member.key() {
+                for prev in &keys {
+                    if prev.eq_ignore_span(key) {
+                        self.storage.report(Error::DuplicateName {
+                            span: prev.span(),
+                            name: Id::word("".into()),
+                        });
+
+                        self.storage.report(Error::DuplicateName {
+                            span: key.span(),
+                            name: Id::word("".into()),
+                        });
+                    }
+                }
+
+                keys.push(key.clone());
+            }
+        }
+
         Ok(TypeLit {
             span: lit.span,
-            members: lit.members.validate_with(self)?,
+            members,
             metadata: TypeLitMetadata {
                 specified: true,
                 ..Default::default()
@@ -770,12 +823,35 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
+    fn validate(&mut self, t: &RTsTplLitType) -> ValidationResult<TplType> {
+        let types = t
+            .types
+            .iter()
+            .map(|ty| ty.validate_with(self))
+            .collect::<Result<_, _>>()?;
+
+        Ok(TplType {
+            span: t.span,
+            quasis: t.quasis.clone(),
+            types,
+        })
+    }
+}
+
+#[validator]
+impl Analyzer<'_, '_> {
     fn validate(&mut self, ty: &RTsType) -> ValidationResult {
         self.record(ty);
+
+        let _ctx = error::context(format!("validate\nTsType: {:?}", ty));
 
         let ty = match ty {
             RTsType::TsThisType(this) => Type::This(this.clone()),
             RTsType::TsLitType(ty) => {
+                match &ty.lit {
+                    RTsLit::Tpl(t) => return Ok(t.validate_with(self)?.into()),
+                    _ => {}
+                }
                 let mut ty = Type::Lit(ty.clone());
                 self.prevent_generalize(&mut ty);
                 ty
@@ -842,7 +918,7 @@ impl Analyzer<'_, '_> {
 
         if static_method.is_some() {
             self.storage
-                .report(Error::StaticMethodCannotUseTypeParamOfClass { span })
+                .report(Error::StaticMemberCannotUseTypeParamOfClass { span })
         }
     }
 
@@ -869,10 +945,10 @@ impl Analyzer<'_, '_> {
         }
 
         if self.env.rule().no_implicit_any {
-            if !self.ctx.in_argument
+            let no_type_ann = !self.ctx.in_argument
                 && !(self.ctx.in_return_arg && self.ctx.in_fn_with_return_type)
-                && !self.ctx.in_assign_rhs
-            {
+                && !self.ctx.in_assign_rhs;
+            if no_type_ann || self.ctx.in_useless_expr_for_seq || self.ctx.check_for_implicit_any {
                 self.storage.report(Error::ImplicitAny { span: i.id.span });
             }
         }

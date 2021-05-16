@@ -38,7 +38,7 @@ pub trait TypeStore: Send + Sync {
     fn store_private_var(&mut self, ctxt: ModuleId, id: Id, ty: Type);
 
     fn export_type(&mut self, span: Span, ctxt: ModuleId, id: Id);
-    fn export_var(&mut self, span: Span, ctxt: ModuleId, id: Id);
+    fn export_var(&mut self, span: Span, ctxt: ModuleId, id: Id, orig_name: Id);
 
     fn reexport_type(&mut self, span: Span, ctxt: ModuleId, id: JsWord, ty: Type);
     fn reexport_var(&mut self, span: Span, ctxt: ModuleId, id: JsWord, ty: Type);
@@ -105,8 +105,8 @@ where
         (**self).export_type(span, ctxt, id)
     }
 
-    fn export_var(&mut self, span: Span, ctxt: ModuleId, id: Id) {
-        (**self).export_var(span, ctxt, id)
+    fn export_var(&mut self, span: Span, ctxt: ModuleId, id: Id, orig_name: Id) {
+        (**self).export_var(span, ctxt, id, orig_name)
     }
 
     fn take_info(&mut self, ctxt: ModuleId) -> ModuleTypeData {
@@ -196,10 +196,10 @@ impl TypeStore for Single<'_> {
         }
     }
 
-    fn export_var(&mut self, span: Span, ctxt: ModuleId, id: Id) {
+    fn export_var(&mut self, span: Span, ctxt: ModuleId, id: Id, orig_name: Id) {
         debug_assert_eq!(ctxt, self.id);
 
-        match self.info.exports.private_vars.get(&id).cloned() {
+        match self.info.exports.private_vars.get(&orig_name).cloned() {
             Some(ty) => match self.info.exports.vars.insert(id.sym().clone(), ty) {
                 Some(..) => {}
                 None => {}
@@ -352,9 +352,9 @@ impl TypeStore for Group<'_> {
         }
     }
 
-    fn export_var(&mut self, span: Span, ctxt: ModuleId, id: Id) {
+    fn export_var(&mut self, span: Span, ctxt: ModuleId, id: Id, orig_name: Id) {
         let e = self.info.entry(ctxt).or_default();
-        match e.private_vars.get(&id) {
+        match e.private_vars.get(&orig_name) {
             Some(v) => {
                 e.vars.insert(id.sym().clone(), v.clone());
             }
@@ -492,7 +492,7 @@ impl TypeStore for Builtin {
         }
     }
 
-    fn export_var(&mut self, _: Span, _: ModuleId, _: Id) {}
+    fn export_var(&mut self, _: Span, _: ModuleId, _: Id, _: Id) {}
 
     fn export_type(&mut self, _: Span, _: ModuleId, _: Id) {}
 

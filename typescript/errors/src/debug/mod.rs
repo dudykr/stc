@@ -14,6 +14,7 @@ use stc_ts_types::TypeLit;
 use stc_ts_types::TypeParam;
 use std::collections::HashSet;
 use std::fmt::Write;
+use swc_common::TypeEq;
 use swc_common::{sync::Lrc, SourceMap, DUMMY_SP};
 use swc_ecma_ast::*;
 use swc_ecma_codegen::{text_writer::JsWriter, Emitter};
@@ -195,6 +196,7 @@ fn filter(mut bt: Backtrace) -> Backtrace {
 #[derive(Default)]
 struct Visualizer {
     done: HashSet<Id>,
+    done_types: Vec<Type>,
 }
 impl Fold<Id> for Visualizer {
     fn fold(&mut self, id: Id) -> Id {
@@ -214,6 +216,12 @@ impl Fold<TypeParam> for Visualizer {
 
 impl Fold<Type> for Visualizer {
     fn fold(&mut self, mut ty: Type) -> Type {
+        if self.done_types.iter().any(|prev| prev.type_eq(&ty)) {
+            return ty;
+        }
+
+        self.done_types.push(ty.clone());
+
         ty = ty.fold_children_with(self);
 
         match ty {

@@ -1,0 +1,112 @@
+warning: Type
+ --> $DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:3:13
+  |
+3 |     return [x];
+  |             ^
+  |
+  = note: T
+
+warning: Type
+ --> $DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:3:12
+  |
+3 |     return [x];
+  |            ^^^
+  |
+  = note: [T]
+
+warning: Type
+ --> $DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:7:18
+  |
+7 |     let result = a.slice();
+  |                  ^
+  |
+  = note: T[]
+
+warning: Type
+ --> $DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:7:18
+  |
+7 |     let result = a.slice();
+  |                  ^^^^^^^^^
+  |
+  = note: T[]
+
+warning: Type
+ --> $DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:8:17
+  |
+8 |     result.push(x);
+  |                 ^
+  |
+  = note: T
+
+warning: Type
+ --> $DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:8:5
+  |
+8 |     result.push(x);
+  |     ^^^^^^
+  |
+  = note: T[]
+
+warning: Type
+ --> $DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:8:5
+  |
+8 |     result.push(x);
+  |     ^^^^^^^^^^^^^^
+  |
+  = note: number
+
+warning: Type
+ --> $DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:9:12
+  |
+9 |     return result;
+  |            ^^^^^^
+  |
+  = note: T[]
+
+warning: Type
+  --> $DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:14:10
+   |
+14 | let aa = makeArray<Bit>(0);
+   |          ^^^^^^^^^
+   |
+   = note: <T>(x: T) => T[]
+
+warning: Type
+  --> $DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:14:10
+   |
+14 | let aa = makeArray<Bit>(0);
+   |          ^^^^^^^^^^^^^^^^^
+   |
+   = note: Bit[]
+
+warning: Type
+  --> $DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:15:13
+   |
+15 | aa = append(aa, 1);
+   |             ^^
+   |
+   = note: Bit[]
+
+warning: Type
+  --> $DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:15:6
+   |
+15 | aa = append(aa, 1);
+   |      ^^^^^^
+   |
+   = note: <T>(a: T[], x: T) => T[]
+
+warning: Type
+  --> $DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:15:6
+   |
+15 | aa = append(aa, 1);
+   |      ^^^^^^^^^^^^^
+   |
+   = note: Bit[]
+
+warning: Type
+  --> $DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:15:1
+   |
+15 | aa = append(aa, 1);
+   | ^^^^^^^^^^^^^^^^^^
+   |
+   = note: Bit[]
+

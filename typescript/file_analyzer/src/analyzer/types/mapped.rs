@@ -220,7 +220,7 @@ impl Analyzer<'_, '_> {
         let ty = self
             .normalize(
                 None,
-                ty,
+                Cow::Borrowed(ty),
                 NormalizeTypeOpts {
                     normalize_keywords: true,
                     ..Default::default()

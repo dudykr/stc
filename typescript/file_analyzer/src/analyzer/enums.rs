@@ -366,7 +366,7 @@ impl Analyzer<'_, '_> {
                     // TODO: Store context in `Enum`
                     ctxt: self.ctx.module_id,
                     enum_name: e.id.clone().into(),
-                    name: key.sym,
+                    name: Some(key.sym),
                 })),
                 type_params: Default::default(),
             }))
@@ -407,6 +407,7 @@ impl Analyzer<'_, '_> {
     // Check for rvalue of assignments.
     pub(super) fn check_rvalue(&mut self, span: Span, lhs: &RPat, rhs_ty: &Type) {
         match *rhs_ty.normalize() {
+            // Report an error for `a = G` where G is name of the const enum itself.
             Type::Enum(ref e) if e.is_const => {
                 self.storage.report(Error::InvalidUseOfConstEnum { span });
             }
@@ -516,26 +517,28 @@ impl Analyzer<'_, '_> {
     pub(super) fn expand_enum_variant(&self, ty: Type) -> ValidationResult {
         match ty.normalize() {
             Type::EnumVariant(ref v) => {
-                if let Some(types) = self.find_type(v.ctxt, &v.enum_name)? {
-                    for ty in types {
-                        if let Type::Enum(Enum { members, .. }) = ty.normalize() {
-                            if let Some(v) = members.iter().find(|m| match m.id {
-                                RTsEnumMemberId::Ident(RIdent { ref sym, .. })
-                                | RTsEnumMemberId::Str(RStr { value: ref sym, .. }) => *sym == v.name,
-                            }) {
-                                match *v.val {
-                                    RExpr::Lit(RLit::Str(..)) | RExpr::Lit(RLit::Num(..)) => {
-                                        return Ok(Type::Lit(RTsLitType {
-                                            node_id: NodeId::invalid(),
-                                            span: v.span,
-                                            lit: match *v.val.clone() {
-                                                RExpr::Lit(RLit::Str(s)) => RTsLit::Str(s),
-                                                RExpr::Lit(RLit::Num(n)) => RTsLit::Number(n),
-                                                _ => unreachable!(),
-                                            },
-                                        }));
+                if let Some(variant_name) = &v.name {
+                    if let Some(types) = self.find_type(v.ctxt, &v.enum_name)? {
+                        for ty in types {
+                            if let Type::Enum(Enum { members, .. }) = ty.normalize() {
+                                if let Some(v) = members.iter().find(|m| match m.id {
+                                    RTsEnumMemberId::Ident(RIdent { ref sym, .. })
+                                    | RTsEnumMemberId::Str(RStr { value: ref sym, .. }) => sym == variant_name,
+                                }) {
+                                    match *v.val {
+                                        RExpr::Lit(RLit::Str(..)) | RExpr::Lit(RLit::Num(..)) => {
+                                            return Ok(Type::Lit(RTsLitType {
+                                                node_id: NodeId::invalid(),
+                                                span: v.span,
+                                                lit: match *v.val.clone() {
+                                                    RExpr::Lit(RLit::Str(s)) => RTsLit::Str(s),
+                                                    RExpr::Lit(RLit::Num(n)) => RTsLit::Number(n),
+                                                    _ => unreachable!(),
+                                                },
+                                            }));
+                                        }
+                                        _ => {}
                                     }
-                                    _ => {}
                                 }
                             }
                         }

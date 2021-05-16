@@ -25,6 +25,7 @@ use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
+use stc_ts_type_ops::Fix;
 use stc_ts_types::Id;
 use stc_ts_types::Key;
 use stc_ts_types::ModuleId;
@@ -44,118 +45,122 @@ use swc_ecma_ast::VarDeclKind;
 
 impl Analyzer<'_, '_> {
     pub(crate) fn exclude_props(&mut self, span: Span, ty: &Type, keys: &[Key]) -> ValidationResult<Type> {
-        let ty = self.normalize(
-            None,
-            &ty,
-            NormalizeTypeOpts {
-                preserve_mapped: false,
-                ..Default::default()
-            },
-        )?;
+        let ty = (|| -> ValidationResult<_> {
+            let ty = self.normalize(
+                None,
+                Cow::Borrowed(ty),
+                NormalizeTypeOpts {
+                    preserve_mapped: false,
+                    ..Default::default()
+                },
+            )?;
 
-        if ty.is_any() || ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword) {
-            return Ok(ty.into_owned());
-        }
+            if ty.is_any() || ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword) {
+                return Ok(ty.into_owned());
+            }
 
-        match ty.normalize() {
-            Type::TypeLit(lit) => {
-                let mut new_members = vec![];
-                'outer: for m in &lit.members {
-                    if let Some(key) = m.key() {
-                        for prop in keys {
-                            if self.key_matches(span, &key, prop, false) {
-                                continue 'outer;
+            match ty.normalize() {
+                Type::TypeLit(lit) => {
+                    let mut new_members = vec![];
+                    'outer: for m in &lit.members {
+                        if let Some(key) = m.key() {
+                            for prop in keys {
+                                if self.key_matches(span, &key, prop, false) {
+                                    continue 'outer;
+                                }
                             }
-                        }
 
-                        new_members.push(m.clone());
+                            new_members.push(m.clone());
+                        }
+                    }
+
+                    return Ok(Type::TypeLit(TypeLit {
+                        span: lit.span,
+                        members: new_members,
+                        metadata: lit.metadata,
+                    }));
+                }
+
+                Type::Union(u) => {
+                    let types = u
+                        .types
+                        .iter()
+                        .map(|ty| self.exclude_props(span, ty, keys))
+                        .collect::<Result<_, _>>()?;
+
+                    return Ok(Type::Union(Union { span: u.span, types }));
+                }
+
+                Type::Intersection(..) | Type::Class(..) | Type::Interface(..) | Type::ClassDef(..) => {
+                    let ty = self
+                        .type_to_type_lit(ty.span(), &ty)?
+                        .map(Cow::into_owned)
+                        .map(Type::TypeLit);
+                    if let Some(ty) = ty {
+                        return self.exclude_props(span, &ty, keys);
                     }
                 }
-
-                return Ok(Type::TypeLit(TypeLit {
-                    span: lit.span,
-                    members: new_members,
-                    metadata: lit.metadata,
-                }));
-            }
-
-            Type::Union(u) => {
-                let types = u
-                    .types
-                    .iter()
-                    .map(|ty| self.exclude_props(span, ty, keys))
-                    .collect::<Result<_, _>>()?;
-
-                return Ok(Type::Union(Union { span: u.span, types }));
-            }
-
-            Type::Intersection(..) | Type::Class(..) | Type::Interface(..) | Type::ClassDef(..) => {
-                let ty = self
-                    .type_to_type_lit(ty.span(), &ty)?
-                    .map(Cow::into_owned)
-                    .map(Type::TypeLit);
-                if let Some(ty) = ty {
-                    return self.exclude_props(span, &ty, keys);
+                // TODO
+                Type::Function(..) | Type::Constructor(..) => {
+                    return Ok(Type::TypeLit(TypeLit {
+                        span: ty.span(),
+                        members: vec![],
+                        metadata: Default::default(),
+                    }))
                 }
-            }
-            // TODO
-            Type::Function(..) | Type::Constructor(..) => {
-                return Ok(Type::TypeLit(TypeLit {
-                    span: ty.span(),
-                    members: vec![],
-                    metadata: Default::default(),
-                }))
-            }
 
-            // Create Omit<T, 'foo' | 'bar'>
-            Type::Param(..) => {
-                let mut key_types = keys
-                    .iter()
-                    .filter_map(|key| match key {
-                        Key::BigInt(v) => Some(Type::Lit(RTsLitType {
-                            node_id: NodeId::invalid(),
-                            span: v.span,
-                            lit: RTsLit::BigInt(v.clone()),
-                        })),
-                        Key::Num(v) => Some(Type::Lit(RTsLitType {
-                            node_id: NodeId::invalid(),
-                            span: v.span,
-                            lit: RTsLit::Number(v.clone()),
-                        })),
-                        Key::Normal { span, sym } => Some(Type::Lit(RTsLitType {
-                            node_id: NodeId::invalid(),
-                            span: *span,
-                            lit: RTsLit::Str(RStr {
+                // Create Omit<T, 'foo' | 'bar'>
+                Type::Param(..) => {
+                    let mut key_types = keys
+                        .iter()
+                        .filter_map(|key| match key {
+                            Key::BigInt(v) => Some(Type::Lit(RTsLitType {
+                                node_id: NodeId::invalid(),
+                                span: v.span,
+                                lit: RTsLit::BigInt(v.clone()),
+                            })),
+                            Key::Num(v) => Some(Type::Lit(RTsLitType {
+                                node_id: NodeId::invalid(),
+                                span: v.span,
+                                lit: RTsLit::Number(v.clone()),
+                            })),
+                            Key::Normal { span, sym } => Some(Type::Lit(RTsLitType {
+                                node_id: NodeId::invalid(),
                                 span: *span,
-                                value: sym.clone(),
-                                has_escape: false,
-                                kind: Default::default(),
-                            }),
-                        })),
+                                lit: RTsLit::Str(RStr {
+                                    span: *span,
+                                    value: sym.clone(),
+                                    has_escape: false,
+                                    kind: Default::default(),
+                                }),
+                            })),
 
-                        // TODO
-                        _ => None,
-                    })
-                    .collect_vec();
-                if key_types.is_empty() {
-                    return Ok(ty.into_owned());
-                }
-                let keys = Type::Union(Union { span, types: key_types });
+                            // TODO
+                            _ => None,
+                        })
+                        .collect_vec();
+                    if key_types.is_empty() {
+                        return Ok(ty.into_owned());
+                    }
+                    let keys = Type::Union(Union { span, types: key_types });
 
-                return Ok(Type::Ref(Ref {
-                    span,
-                    ctxt: ModuleId::builtin(),
-                    type_name: RTsEntityName::Ident(RIdent::new("Omit".into(), DUMMY_SP)),
-                    type_args: Some(box TypeParamInstantiation {
+                    return Ok(Type::Ref(Ref {
                         span,
-                        params: vec![ty.clone().into_owned(), keys],
-                    }),
-                }));
+                        ctxt: ModuleId::builtin(),
+                        type_name: RTsEntityName::Ident(RIdent::new("Omit".into(), DUMMY_SP)),
+                        type_args: Some(box TypeParamInstantiation {
+                            span,
+                            params: vec![ty.clone().into_owned(), keys],
+                        }),
+                    }));
+                }
+                _ => {}
             }
-            _ => {}
-        }
 
-        unimplemented!("exclude_props: {:#?}", ty)
+            unimplemented!("exclude_props: {:#?}", ty)
+        })()?;
+
+        Ok(ty.fixed())
     }
 
     /// Updates variable list.
@@ -166,7 +171,6 @@ impl Analyzer<'_, '_> {
         &mut self,
         kind: VarDeclKind,
         pat: &RPat,
-        export: bool,
         ty: Option<Type>,
         actual_ty: Option<Type>,
     ) -> ValidationResult<()> {
@@ -208,14 +212,7 @@ impl Analyzer<'_, '_> {
                     kind == VarDeclKind::Var,
                     false,
                 )?;
-                if export {
-                    self.storage.store_private_var(
-                        self.ctx.module_id,
-                        name.clone(),
-                        ty.unwrap_or(Type::any(i.id.span)),
-                    );
-                    self.storage.export_var(span, self.ctx.module_id, name);
-                }
+
                 return Ok(());
             }
             RPat::Assign(ref p) => {
@@ -226,7 +223,7 @@ impl Analyzer<'_, '_> {
                     p.left,
                     ty
                 );
-                self.declare_vars_inner_with_ty(kind, &p.left, export, ty, actual_ty)
+                self.declare_vars_inner_with_ty(kind, &p.left, ty, actual_ty)
                     .report(&mut self.storage);
 
                 return Ok(());
@@ -300,7 +297,7 @@ impl Analyzer<'_, '_> {
                                         None => None,
                                     };
 
-                                    self.declare_vars_inner_with_ty(kind, &elem.arg, export, type_for_rest_arg, None)
+                                    self.declare_vars_inner_with_ty(kind, &elem.arg, type_for_rest_arg, None)
                                         .context("tried to declare lefting elements to the arugment of a rest pattern")
                                         .report(&mut self.storage);
                                     break;
@@ -312,7 +309,7 @@ impl Analyzer<'_, '_> {
                                 Some(ty) => self
                                     .access_property(
                                         elem.span(),
-                                        ty.clone(),
+                                        &ty,
                                         &Key::Num(RNumber {
                                             span: elem.span(),
                                             value: idx as f64,
@@ -326,7 +323,7 @@ impl Analyzer<'_, '_> {
                             };
 
                             // TODO: actual_ty
-                            self.declare_vars_inner_with_ty(kind, elem, export, elem_ty, None)
+                            self.declare_vars_inner_with_ty(kind, elem, elem_ty, None)
                                 .report(&mut self.storage);
                         }
                         // Skip
@@ -380,7 +377,7 @@ impl Analyzer<'_, '_> {
 
                             let prop_ty = match &ty {
                                 Some(ty) => self
-                                    .access_property(span, ty.clone(), &key, TypeOfMode::RValue, IdCtx::Var)
+                                    .access_property(span, ty, &key, TypeOfMode::RValue, IdCtx::Var)
                                     .convert_err(|err| match err {
                                         Error::NoSuchProperty { span, .. } if prop.value.is_none() => {
                                             Error::NoSuchPropertyWhileDeclWithBidningPat { span }
@@ -406,7 +403,6 @@ impl Analyzer<'_, '_> {
                                             id: prop.key.clone(),
                                             type_ann: None,
                                         }),
-                                        export,
                                         prop_ty,
                                         None,
                                     )
@@ -424,7 +420,6 @@ impl Analyzer<'_, '_> {
                                             id: prop.key.clone(),
                                             type_ann: None,
                                         }),
-                                        export,
                                         prop_ty,
                                         None,
                                     )
@@ -441,7 +436,7 @@ impl Analyzer<'_, '_> {
 
                             let prop_ty = match &ty {
                                 Some(ty) => self
-                                    .access_property(span, ty.clone(), &key, TypeOfMode::RValue, IdCtx::Var)
+                                    .access_property(span, &ty, &key, TypeOfMode::RValue, IdCtx::Var)
                                     .map(Some)
                                     .context("tried to access property to declare variables using an object pattern")
                                     .report(&mut self.storage)
@@ -451,7 +446,7 @@ impl Analyzer<'_, '_> {
                             };
 
                             // TODO: actual_ty
-                            self.declare_vars_inner_with_ty(kind, &p.value, export, prop_ty, None)
+                            self.declare_vars_inner_with_ty(kind, &p.value, prop_ty, None)
                                 .context("tried to declare a variable from key-value property in an object pattern")
                                 .report(&mut self.storage);
                         }
@@ -468,7 +463,7 @@ impl Analyzer<'_, '_> {
                             }
                             None => {
                                 return self
-                                    .declare_vars_inner_with_ty(kind, &pat.arg, export, None, None)
+                                    .declare_vars_inner_with_ty(kind, &pat.arg, None, None)
                                     .context("tried to declare vars with an object rest pattern without types");
                             }
                         },
@@ -493,7 +488,7 @@ impl Analyzer<'_, '_> {
             }) => {
                 let mut arg = arg.clone();
 
-                self.declare_vars_inner(kind, &arg, export).report(&mut self.storage);
+                self.declare_vars_inner(kind, &arg).report(&mut self.storage);
 
                 let new_ty = arg.get_mut_ty().take();
                 if ty.is_none() {

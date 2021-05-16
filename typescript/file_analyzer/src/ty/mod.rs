@@ -10,6 +10,7 @@ use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_type_ops::is_str_lit_or_union;
+use stc_ts_type_ops::Fix;
 pub(crate) use stc_ts_types::*;
 use swc_ecma_ast::TsKeywordTypeKind;
 
@@ -140,7 +141,7 @@ impl Fold<TypeLit> for LitGeneralizer {
 
 pub trait TypeExt: Into<Type> {
     fn generalize_lit(self) -> Type {
-        self.into().fold_with(&mut LitGeneralizer)
+        self.into().fold_with(&mut LitGeneralizer).fixed()
     }
 
     fn generalize_tuple(self) -> Type {

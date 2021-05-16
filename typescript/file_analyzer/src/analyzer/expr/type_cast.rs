@@ -1,12 +1,14 @@
 use super::{super::Analyzer, TypeOfMode};
 use crate::analyzer::assign::AssignOpts;
 use crate::analyzer::util::ResultExt;
-use crate::{analyzer::util::instantiate_class, ty::Type, validator, validator::ValidateWith, ValidationResult};
+use crate::util::is_str_or_union;
+use crate::{analyzer::util::make_instance_type, ty::Type, validator, validator::ValidateWith, ValidationResult};
 use stc_ts_ast_rnode::RTsAsExpr;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_ast_rnode::RTsTypeAssertion;
+use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeParamInstantiation;
@@ -70,7 +72,7 @@ impl Analyzer<'_, '_> {
     fn validate_type_cast(&mut self, span: Span, orig_ty: Type, casted_ty: Type) -> ValidationResult {
         let orig_ty = self.expand_fully(span, orig_ty, true)?;
 
-        let mut casted_ty = instantiate_class(self.ctx.module_id, casted_ty);
+        let mut casted_ty = make_instance_type(self.ctx.module_id, casted_ty);
         self.prevent_inference_while_simplifying(&mut casted_ty);
         casted_ty = self.simplify(casted_ty);
 
@@ -85,7 +87,7 @@ impl Analyzer<'_, '_> {
     fn validate_type_cast_inner(&mut self, span: Span, orig: &Type, casted: &Type) -> ValidationResult<()> {
         // I don't know why this is valid, but `stringLiteralsWithTypeAssertions01.ts`
         // has some tests for this.
-        if orig.is_str() && casted.is_str() {
+        if is_str_or_union(&orig) && casted.is_str() {
             return Ok(());
         }
 
@@ -192,11 +194,15 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        if self.castable(span, &orig, &casted)? {
-            return Ok(());
-        }
-
-        Err(Error::NonOverlappingTypeCast { span })
+        self.castable(span, &orig, &casted)
+            .and_then(|castable| {
+                if castable {
+                    Ok(())
+                } else {
+                    Err(Error::NonOverlappingTypeCast { span })
+                }
+            })
+            .convert_err(|err| Error::NonOverlappingTypeCast { span })
     }
 
     pub(crate) fn has_overlap(&mut self, span: Span, l: &Type, r: &Type) -> ValidationResult<bool> {
@@ -223,6 +229,10 @@ impl Analyzer<'_, '_> {
             || from.is_kwd(TsKeywordTypeKind::TsNullKeyword)
             || from.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
         {
+            return Ok(true);
+        }
+
+        if from.type_eq(to) {
             return Ok(true);
         }
 
@@ -265,18 +275,40 @@ impl Analyzer<'_, '_> {
                     ..
                 }),
             ) => return Ok(true),
+            (
+                Type::Lit(RTsLitType {
+                    lit: RTsLit::Number(..),
+                    ..
+                }),
+                Type::Lit(RTsLitType {
+                    lit: RTsLit::Number(..),
+                    ..
+                }),
+            )
+            | (
+                Type::Lit(RTsLitType {
+                    lit: RTsLit::Str(..), ..
+                }),
+                Type::Lit(RTsLitType {
+                    lit: RTsLit::Str(..), ..
+                }),
+            )
+            | (
+                Type::Lit(RTsLitType {
+                    lit: RTsLit::BigInt(..),
+                    ..
+                }),
+                Type::Lit(RTsLitType {
+                    lit: RTsLit::BigInt(..),
+                    ..
+                }),
+            ) => return Ok(false),
             _ => {}
         }
 
         // TODO: More check
         if from.is_function() && to.is_function() {
             return Ok(false);
-        }
-
-        if from.is_num() {
-            if self.can_be_casted_to_number_in_rhs(span, &to) {
-                return Ok(true);
-            }
         }
 
         match (from, to) {
@@ -359,6 +391,12 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
+        if from.is_num() {
+            if self.can_be_casted_to_number_in_rhs(span, &to) {
+                return Ok(true);
+            }
+        }
+
         if from.is_class() && to.is_interface() {
             return Ok(false);
         }
@@ -371,6 +409,7 @@ impl Analyzer<'_, '_> {
             &mut Default::default(),
             AssignOpts {
                 span,
+                for_castablity: true,
                 ..Default::default()
             },
             from,
