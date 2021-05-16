@@ -80,8 +80,13 @@ impl Analyzer<'_, '_> {
 
                     let ty = expr.validate_with_args(self, (mode, type_args, elem_type_ann.as_deref()))?;
                     match ty.normalize() {
-                        Type::TypeLit(..) | Type::Function(..) => {
+                        Type::TypeLit(..) => {
                             can_be_tuple = false;
+                        }
+                        Type::Function(..) => {
+                            if type_ann.is_none() {
+                                can_be_tuple = false;
+                            }
                         }
                         _ => {}
                     }
