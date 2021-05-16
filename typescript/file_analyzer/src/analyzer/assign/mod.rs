@@ -1926,6 +1926,10 @@ impl Analyzer<'_, '_> {
                     // return type is identical.
                     //
                     if l.type_param.constraint.type_eq(&r.type_param.constraint) {
+                        if l.ty.type_eq(&r.ty) {
+                            return Ok(());
+                        }
+
                         let mut map = HashMap::default();
                         map.insert(r.type_param.name.clone(), Type::Param(l.type_param.clone()));
 
@@ -1933,6 +1937,19 @@ impl Analyzer<'_, '_> {
 
                         if l.ty.type_eq(&new_r_ty) {
                             return Ok(());
+                        }
+
+                        if let Some(l) = &l.ty {
+                            if let Some(r) = &new_r_ty {
+                                Err(Error::Unimplemented {
+                                    span: opts.span,
+                                    msg: format!(
+                                        "Assignment to mapped type\n{}\n{}",
+                                        dump_type_as_string(&self.cm, l),
+                                        dump_type_as_string(&self.cm, r),
+                                    ),
+                                })?
+                            }
                         }
                     }
                 }
