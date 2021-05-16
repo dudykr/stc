@@ -55,8 +55,10 @@ use stc_ts_types::Union;
 use stc_ts_utils::MapWithMut;
 use stc_utils::error::context;
 use stc_utils::stack;
+use stc_utils::ABuilderHasher;
 use std::borrow::Cow;
 use std::collections::hash_map::Entry;
+use std::collections::HashSet;
 use std::mem::take;
 use swc_common::EqIgnoreSpan;
 use swc_common::Span;
@@ -98,6 +100,8 @@ pub(super) struct InferData {
     /// });
     /// ```
     defaults: FxHashMap<Id, Type>,
+
+    dejavu: Vec<(Type, Type)>,
 }
 
 /// Type inference for arguments.
@@ -401,11 +405,21 @@ impl Analyzer<'_, '_> {
             Ok(v) => v,
             Err(_) => return Ok(()),
         };
+
         let _ctx = context(format!(
             "infer_type()\nParam: {}\nArg: {}",
             dump_type_as_string(&self.cm, &param),
             dump_type_as_string(&self.cm, &arg)
         ));
+
+        if inferred
+            .dejavu
+            .iter()
+            .any(|(prev_param, prev_arg)| prev_param.type_eq(param) && prev_arg.type_eq(arg))
+        {
+            return Ok(());
+        }
+        inferred.dejavu.push((param.clone(), arg.clone()));
 
         debug_assert!(!span.is_dummy(), "infer_type: `span` should not be dummy");
 
