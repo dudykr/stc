@@ -26,6 +26,7 @@ use stc_ts_types::{
 };
 use stc_utils::stack;
 use std::borrow::Cow;
+use std::collections::HashMap;
 use swc_atoms::js_word;
 use swc_common::EqIgnoreSpan;
 use swc_common::TypeEq;
@@ -1919,6 +1920,20 @@ impl Analyzer<'_, '_> {
                 Type::Mapped(r) => {
                     if l.type_eq(r) {
                         return Ok(());
+                    }
+
+                    // If constraint is identical, we replace type parameter of rhs and see if
+                    // return type is identical.
+                    //
+                    if l.type_param.constraint.type_eq(&r.type_param.constraint) {
+                        let mut map = HashMap::default();
+                        map.insert(r.type_param.name.clone(), Type::Param(l.type_param.clone()));
+
+                        let new_r_ty = self.expand_type_params(&map, r.ty.clone())?;
+
+                        if l.ty.type_eq(&new_r_ty) {
+                            return Ok(());
+                        }
                     }
                 }
                 _ => {}
