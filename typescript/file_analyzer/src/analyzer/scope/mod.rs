@@ -528,6 +528,7 @@ impl Scope<'_> {
                                     }
 
                                     prev.types.push(ty);
+                                    prev.fix();
                                 }
                                 _ => {
                                     unreachable!()
