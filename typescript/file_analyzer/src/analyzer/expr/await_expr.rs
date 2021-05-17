@@ -1,29 +1,49 @@
+use super::TypeOfMode;
 use crate::analyzer::Analyzer;
 use crate::validator::ValidateWith;
 use crate::ValidationResult;
 use stc_ts_ast_rnode::RAwaitExpr;
-use stc_ts_ast_rnode::RTsEntityName;
+use stc_ts_errors::DebugExt;
 use stc_ts_file_analyzer_macros::validator;
-use stc_ts_types::Ref;
+use stc_ts_types::IdCtx;
+use stc_ts_types::Key;
 use stc_ts_types::Type;
-use swc_atoms::js_word;
 
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RAwaitExpr) -> ValidationResult {
+        let span = e.span;
         self.with(|a: &mut Analyzer| -> ValidationResult<_> {
-            let arg_ty = e.arg.validate_with_default(a)?;
+            let arg_ty = e
+                .arg
+                .validate_with_default(a)
+                .context("tried to validate the argument of an await expr")?;
 
-            // TODO: Check if the `Promise` is that of global.
-            match &arg_ty {
-                Type::Ref(Ref {
-                    type_name: RTsEntityName::Ident(i),
-                    type_args: Some(type_args),
-                    ..
-                }) => {
-                    if i.sym == js_word!("Promise") {
-                        if !type_args.params.is_empty() {
-                            return Ok(type_args.params[0].clone());
+            let then_ty = match a.access_property(
+                span,
+                &arg_ty,
+                &Key::Normal {
+                    span,
+                    sym: "then".into(),
+                },
+                TypeOfMode::RValue,
+                IdCtx::Var,
+            ) {
+                Ok(v) => v,
+                Err(..) => {
+                    // If `then` does not exists, the type itself is used
+                    return Ok(arg_ty);
+                }
+            };
+
+            match then_ty.normalize() {
+                Type::Function(f) => {
+                    // Default type of the first type parameter is awaited type.
+                    if let Some(type_params) = &f.type_params {
+                        if let Some(ty) = type_params.params.first() {
+                            if let Some(ty) = &ty.default {
+                                return Ok(*ty.clone());
+                            }
                         }
                     }
                 }
