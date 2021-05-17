@@ -2435,6 +2435,8 @@ impl Analyzer<'_, '_> {
             match type_mode {
                 TypeOfMode::LValue => {
                     if let Some(ty) = &v.ty {
+                        ty.assert_valid();
+
                         slog::debug!(self.logger, "Type of var: {:?}", ty);
                         return Ok(ty.clone());
                     }
@@ -2442,6 +2444,8 @@ impl Analyzer<'_, '_> {
 
                 TypeOfMode::RValue => {
                     if let Some(ty) = &v.actual_ty {
+                        ty.assert_valid();
+
                         slog::debug!(self.logger, "Type of var: {:?}", ty);
                         return Ok(ty.clone());
                     }
