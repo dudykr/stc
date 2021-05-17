@@ -33,6 +33,7 @@ use stc_ts_ast_rnode::RSwitchStmt;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
+use stc_ts_type_ops::Fix;
 use stc_ts_types::name::Name;
 use stc_ts_types::Array;
 use stc_ts_types::Id;
@@ -524,6 +525,8 @@ pub(crate) struct PatAssignOpts {
 
 impl Analyzer<'_, '_> {
     pub(super) fn try_assign(&mut self, span: Span, op: AssignOp, lhs: &RPatOrExpr, ty: &Type) {
+        ty.assert_valid();
+
         let res: ValidationResult<()> = try {
             match *lhs {
                 RPatOrExpr::Expr(ref expr) | RPatOrExpr::Pat(box RPat::Expr(ref expr)) => {
@@ -575,6 +578,8 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn try_assign_pat(&mut self, span: Span, lhs: &RPat, ty: &Type) -> ValidationResult<()> {
+        ty.assert_valid();
+
         self.try_assign_pat_with_opts(span, lhs, ty, Default::default())
     }
 
@@ -590,6 +595,8 @@ impl Analyzer<'_, '_> {
             .normalize(Some(ty.span().or_else(|| span)), Cow::Borrowed(ty), Default::default())
             .context("tried to normalize a type to assign it to a pattern")?;
         let ty = ty.normalize();
+
+        ty.assert_valid();
 
         // Update variable's type
         match lhs {
@@ -663,6 +670,10 @@ impl Analyzer<'_, '_> {
                         });
                     }
                     return Ok(());
+                }
+
+                if let Some(ty) = &actual_ty {
+                    ty.assert_valid();
                 }
 
                 // Update actual types.
@@ -895,11 +906,16 @@ impl Analyzer<'_, '_> {
 
     pub(super) fn add_type_fact(&mut self, sym: &Id, ty: Type) {
         slog::info!(self.logger, "add_type_fact({}); ty = {:?}", sym, ty);
+
+        ty.assert_valid();
+
         self.cur_facts.insert_var(sym, ty, false);
     }
 
     pub(super) fn add_deep_type_fact(&mut self, name: Name, ty: Type, is_for_true: bool) {
         debug_assert!(!self.is_builtin);
+
+        ty.assert_valid();
 
         if let Some((name, ty)) = self
             .determine_type_fact_by_field_fact(&name, &ty)
@@ -933,6 +949,8 @@ impl Analyzer<'_, '_> {
         property: &JsWord,
         type_facts: Option<TypeFacts>,
     ) -> ValidationResult<Type> {
+        src.assert_valid();
+
         match src.normalize() {
             Type::Ref(..) => {
                 let src = self.expand_top_ref(src.span(), Cow::Borrowed(src))?;
@@ -1000,6 +1018,8 @@ impl Analyzer<'_, '_> {
     }
 
     fn determine_type_fact_by_field_fact(&mut self, name: &Name, ty: &Type) -> ValidationResult<Option<(Name, Type)>> {
+        ty.assert_valid();
+
         if name.len() == 1 {
             return Ok(None);
         }
@@ -1033,8 +1053,10 @@ impl Analyzer<'_, '_> {
                     if new_obj_types.is_empty() {
                         return Ok(None);
                     }
+                    let mut ty = Type::union(new_obj_types);
+                    ty.fix();
 
-                    return Ok(Some((Name::from(ids[0].clone()), Type::union(new_obj_types))));
+                    return Ok(Some((Name::from(ids[0].clone()), ty)));
                 }
             }
             _ => {}
@@ -1094,14 +1116,17 @@ impl Analyzer<'_, '_> {
         } else {
             vec![cons, alt]
         };
-        let mut ty = Type::union(new_types);
+        let mut ty = Type::union(new_types).fixed();
         ty.reposition(span);
+        ty.assert_valid();
         Ok(ty)
     }
 }
 
 impl Facts {
     fn insert_var<N: Into<Name>>(&mut self, name: N, ty: Type, negate: bool) {
+        ty.assert_valid();
+
         let name = name.into();
 
         if negate {
