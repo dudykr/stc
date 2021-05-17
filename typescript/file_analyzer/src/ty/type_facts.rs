@@ -12,6 +12,7 @@ use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_errors::debug::dump_type_as_string;
+use stc_ts_type_ops::Fix;
 use stc_ts_types::ClassMember;
 use stc_ts_types::Constructor;
 use stc_ts_types::FnParam;
@@ -96,7 +97,7 @@ impl Analyzer<'_, '_> {
 
         slog::debug!(self.logger, "[types/fact] {} => {}", before, after);
 
-        ty
+        ty.fixed()
     }
 }
 
