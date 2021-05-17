@@ -645,6 +645,8 @@ impl Analyzer<'_, '_> {
                     .or_else(|| self.scope.search_parent(&i.id.clone().into()))
                 {
                     if let Some(declared_ty) = &var_info.ty {
+                        declared_ty.assert_valid();
+
                         if declared_ty.is_any()
                             || ty.is_kwd(TsKeywordTypeKind::TsNullKeyword)
                             || ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
@@ -656,11 +658,16 @@ impl Analyzer<'_, '_> {
 
                         let ty = ty.clone();
                         let ty = self.apply_type_facts_to_type(TypeFacts::NEUndefined | TypeFacts::NENull, ty);
+
+                        ty.assert_valid();
+
                         if ty.is_never() {
                             return Ok(());
                         }
 
-                        actual_ty = Some(self.narrowed_type_of_assignment(span, declared_ty, &ty)?);
+                        let narrowed_ty = self.narrowed_type_of_assignment(span, declared_ty, &ty)?;
+                        narrowed_ty.assert_valid();
+                        actual_ty = Some(narrowed_ty);
                     }
                 } else {
                     if !opts.ignore_lhs_errors {
