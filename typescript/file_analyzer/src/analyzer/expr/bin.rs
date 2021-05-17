@@ -1232,7 +1232,11 @@ impl Analyzer<'_, '_> {
             sym: ids[ids.len() - 1].sym().clone(),
         };
 
-        let ty = self.type_of_var(&ids[0].clone().into(), TypeOfMode::RValue, None)?;
+        let mut id: RIdent = ids[0].clone().into();
+        id.span.lo = span.lo;
+        id.span.hi = span.hi;
+
+        let ty = self.type_of_var(&id, TypeOfMode::RValue, None)?;
         let ty = self.expand_top_ref(span, Cow::Owned(ty))?.into_owned();
 
         match ty.normalize() {

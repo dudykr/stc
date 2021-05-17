@@ -2300,7 +2300,7 @@ impl Analyzer<'_, '_> {
         ty = self.type_to_query_if_required(span, i, ty);
 
         if !self.is_builtin {
-            self.exclude_types_using_fact(&name, &mut ty);
+            self.exclude_types_using_fact(span, &name, &mut ty);
         }
 
         if !modules.is_empty() {
@@ -2843,10 +2843,12 @@ impl Analyzer<'_, '_> {
                 )?;
 
             let name: Option<Name> = expr.try_into().ok();
-            if let Some(name) = name {
-                ty = self.apply_type_facts(&name, ty);
+            if !self.is_builtin {
+                if let Some(name) = name {
+                    ty = self.apply_type_facts(&name, ty);
 
-                self.exclude_types_using_fact(&name, &mut ty);
+                    self.exclude_types_using_fact(span, &name, &mut ty);
+                }
             }
 
             if self.ctx.in_cond_of_cond_expr && self.ctx.should_store_truthy_for_access {

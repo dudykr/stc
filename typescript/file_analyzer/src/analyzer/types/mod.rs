@@ -451,7 +451,9 @@ impl Analyzer<'_, '_> {
         })
     }
 
-    pub(crate) fn exclude_types_using_fact(&mut self, name: &Name, ty: &mut Type) {
+    pub(crate) fn exclude_types_using_fact(&mut self, span: Span, name: &Name, ty: &mut Type) {
+        debug_assert!(!span.is_dummy(), "exclude_types should not be called with a dummy span");
+
         let mut types_to_exclude = vec![];
         let mut s = Some(&self.scope);
 
@@ -471,7 +473,7 @@ impl Analyzer<'_, '_> {
         );
 
         let before = dump_type_as_string(&self.cm, &ty);
-        self.exclude_types(ty, Some(types_to_exclude));
+        self.exclude_types(span, ty, Some(types_to_exclude));
         let after = dump_type_as_string(&self.cm, &ty);
 
         slog::debug!(self.logger, "[types/facts] Excluded types: {} => {}", before, after);
@@ -899,17 +901,23 @@ impl Analyzer<'_, '_> {
     ///     // To use the fact that `a` is not `P`, we check for the parent type of `ty
     /// }
     /// ```
-    fn exclude_type(&mut self, ty: &mut Type, excluded: &Type) {
+    fn exclude_type(&mut self, span: Span, ty: &mut Type, excluded: &Type) {
         if ty.type_eq(excluded) {
             *ty = Type::never(ty.span());
             return;
         }
 
+        let res = self.normalize(Some(span), Cow::Borrowed(excluded), Default::default());
+        let excluded = match res {
+            Ok(v) => v,
+            Err(..) => Cow::Borrowed(excluded),
+        };
+
         match ty.normalize() {
             Type::Ref(..) => {
                 // We ignore errors.
                 if let Ok(mut expanded_ty) = self.expand_top_ref(ty.span(), Cow::Borrowed(&*ty)).map(Cow::into_owned) {
-                    self.exclude_type(&mut expanded_ty, excluded);
+                    self.exclude_type(span, &mut expanded_ty, &excluded);
                     *ty = expanded_ty;
                     return;
                 }
@@ -921,7 +929,7 @@ impl Analyzer<'_, '_> {
             Type::Union(excluded) => {
                 //
                 for excluded in &excluded.types {
-                    self.exclude_type(ty, &excluded)
+                    self.exclude_type(span, ty, &excluded)
                 }
 
                 return;
@@ -932,19 +940,18 @@ impl Analyzer<'_, '_> {
         match ty.normalize_mut() {
             Type::Union(ty) => {
                 for ty in &mut ty.types {
-                    self.exclude_type(ty, excluded);
+                    self.exclude_type(span, ty, &excluded);
                 }
                 ty.types.retain(|element| !element.is_never());
             }
 
             Type::Param(TypeParam {
-                span,
                 constraint: Some(constraint),
                 ..
             }) => {
-                self.exclude_type(constraint, excluded);
+                self.exclude_type(span, constraint, &excluded);
                 if constraint.is_never() {
-                    *ty = Type::never(*span);
+                    *ty = Type::never(span);
                     return;
                 }
             }
@@ -953,7 +960,7 @@ impl Analyzer<'_, '_> {
                 //
                 if let Some(super_def) = &cls.def.super_class {
                     if let Ok(mut super_instance) = self.instantiate_class(cls.span, &super_def) {
-                        self.exclude_type(&mut super_instance, excluded);
+                        self.exclude_type(span, &mut super_instance, &excluded);
                         if super_instance.is_never() {
                             *ty = Type::never(cls.span);
                             return;
@@ -966,19 +973,20 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn exclude_types(&mut self, ty: &mut Type, excludes: Option<Vec<Type>>) {
-        if ty.normalize().is_alias() {
-            match ty.normalize_mut() {
-                Type::Alias(alias) => {
-                    self.exclude_types(&mut alias.ty, excludes);
-                    *ty = alias.ty.take();
-                    return;
-                }
-                _ => {
-                    unreachable!()
-                }
-            }
-        }
+    fn exclude_types(&mut self, span: Span, ty: &mut Type, excludes: Option<Vec<Type>>) {
+        let mut mapped_ty = self.normalize(
+            Some(span),
+            Cow::Borrowed(&*ty),
+            NormalizeTypeOpts {
+                // `typeof` can  result in a stack overflow, because it calls `type_of_var`.
+                preserve_typeof: true,
+                ..Default::default()
+            },
+        );
+        let mut mapped_ty = match mapped_ty {
+            Ok(v) => v,
+            Err(_) => Cow::Borrowed(&*ty),
+        };
 
         let excludes = match excludes {
             Some(v) => v,
@@ -986,9 +994,10 @@ impl Analyzer<'_, '_> {
         };
 
         for excluded in excludes {
-            self.exclude_type(ty, &excluded);
+            self.exclude_type(span, mapped_ty.to_mut(), &excluded);
         }
 
+        *ty = mapped_ty.into_owned();
         ty.fix();
     }
 
