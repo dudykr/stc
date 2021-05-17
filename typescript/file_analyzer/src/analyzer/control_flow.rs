@@ -954,6 +954,8 @@ impl Analyzer<'_, '_> {
             .report(&mut self.storage)
             .flatten()
         {
+            ty.assert_valid();
+
             if is_for_true {
                 self.cur_facts.true_facts.vars.insert(name, ty);
             } else {

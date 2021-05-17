@@ -926,12 +926,18 @@ impl Analyzer<'_, '_> {
                 // Ambient module members are always exported with or without export keyword
                 if decl.declare {
                     for (id, var) in take(&mut exports.private_vars) {
+                        var.assert_valid();
+
                         if !exports.vars.contains_key(id.sym()) {
                             exports.vars.insert(id.sym().clone(), var);
                         }
                     }
 
                     for (id, ty) in take(&mut exports.private_types) {
+                        for ty in &ty {
+                            ty.assert_valid();
+                        }
+
                         if !exports.types.contains_key(id.sym()) {
                             exports.types.insert(id.sym().clone(), ty);
                         }

@@ -378,6 +378,8 @@ impl Analyzer<'_, '_> {
                                 .context("tried to narrow type with instanceof")?
                                 .cheap();
 
+                            narrowed_ty.assert_valid();
+
                             // TODO(kdy1): Maybe we need to check for intersection or union
                             if orig_ty.normalize().is_type_param() {
                                 self.cur_facts.true_facts.vars.insert(
@@ -386,6 +388,7 @@ impl Analyzer<'_, '_> {
                                         span,
                                         types: vec![orig_ty, narrowed_ty],
                                     })
+                                    .fixed()
                                     .cheap(),
                                 );
                             } else {
