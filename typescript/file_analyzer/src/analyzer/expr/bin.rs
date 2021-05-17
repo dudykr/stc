@@ -5,7 +5,6 @@ use super::super::{
 use super::TypeOfMode;
 use crate::analyzer::assign::AssignOpts;
 use crate::analyzer::generic::ExtendsOpts;
-use crate::util::type_ext::TypeVecExt;
 use crate::{
     analyzer::{Ctx, ScopeKind},
     ty::{Operator, Type, TypeExt},
@@ -819,12 +818,11 @@ impl Analyzer<'_, '_> {
 
                 new_types.retain(|ty| !ty.is_never());
 
-                new_types.dedup_type();
-
                 return Ok(Type::Union(Union {
                     span: orig.span,
                     types: new_types,
-                }));
+                })
+                .fixed());
             }
 
             _ => {}
