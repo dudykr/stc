@@ -1099,6 +1099,10 @@ impl Analyzer<'_, '_> {
             slog::debug!(self.logger, "[vars]: Declaring {} without type", name,);
         }
 
+        if let Some(ty) = &actual_ty {
+            ty.assert_valid();
+        }
+
         if !self.is_builtin
             && !is_override
             && !allow_multiple
@@ -1353,6 +1357,9 @@ impl Analyzer<'_, '_> {
         actual_ty: Option<Type>,
     ) -> ValidationResult<()> {
         ty.assert_valid();
+        if let Some(ty) = &actual_ty {
+            ty.assert_valid();
+        }
 
         let span = pat.span();
 
