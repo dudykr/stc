@@ -180,6 +180,12 @@ impl Analyzer<'_, '_> {
             }
             _ => {}
         }
+        match &actual_ty {
+            Some(ty) => {
+                ty.assert_valid();
+            }
+            _ => {}
+        }
 
         let span = ty
             .as_ref()
@@ -200,6 +206,7 @@ impl Analyzer<'_, '_> {
                     None => try_opt!(i.type_ann.as_ref().map(|v| v.type_ann.validate_with(self))),
                     Some(ty) => Some(ty),
                 };
+
                 self.declare_var(
                     span,
                     kind,
