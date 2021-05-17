@@ -2246,8 +2246,10 @@ impl Analyzer<'_, '_> {
 
         let mut modules = vec![];
         let mut ty = self.type_of_raw_var(i, type_mode)?;
+        ty.assert_valid();
         if let Some(type_args) = type_args {
             ty = self.expand_type_args(span, ty, type_args)?;
+            ty.fix();
         }
         let mut need_intersection = true;
 
@@ -2297,11 +2299,17 @@ impl Analyzer<'_, '_> {
             ty = self.apply_type_facts(&name, ty);
         }
 
+        ty.assert_valid();
+
         ty = self.type_to_query_if_required(span, i, ty);
+
+        ty.assert_valid();
 
         if !self.is_builtin {
             self.exclude_types_using_fact(span, &name, &mut ty);
         }
+
+        ty.assert_valid();
 
         if !modules.is_empty() {
             modules.push(ty);
@@ -2309,6 +2317,7 @@ impl Analyzer<'_, '_> {
                 span: i.span,
                 types: modules,
             });
+            ty.fix();
             ty.make_cheap();
         }
 
