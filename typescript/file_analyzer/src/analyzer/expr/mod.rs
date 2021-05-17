@@ -2509,6 +2509,8 @@ impl Analyzer<'_, '_> {
         }
 
         if let Some(ty) = self.find_var_type(&i.into(), type_mode) {
+            ty.assert_valid();
+
             let ty_str = dump_type_as_string(&self.cm, &ty);
             slog::debug!(self.logger, "find_var_type returned a type: {}", ty_str);
             let mut span = span;
@@ -2579,6 +2581,7 @@ impl Analyzer<'_, '_> {
         if let Ok(Some(types)) = self.find_type(self.ctx.module_id, &i.into()) {
             for ty in types {
                 debug_assert!(ty.is_clone_cheap());
+                ty.assert_valid();
 
                 match ty.normalize() {
                     Type::Module(..) => return Ok(ty.clone().into_owned()),
