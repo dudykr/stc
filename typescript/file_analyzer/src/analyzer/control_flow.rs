@@ -135,11 +135,15 @@ impl Facts {
         self.false_facts.assert_valid();
     }
     pub fn clear(&mut self) {
+        self.assert_valid();
+
         self.true_facts.clear();
         self.false_facts.clear();
     }
 
     pub fn take(&mut self) -> Self {
+        self.assert_valid();
+
         Self {
             true_facts: self.true_facts.take(),
             false_facts: self.false_facts.take(),
