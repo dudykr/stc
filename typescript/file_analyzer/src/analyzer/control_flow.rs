@@ -64,6 +64,22 @@ pub(crate) struct CondFacts {
 }
 
 impl CondFacts {
+    pub(crate) fn assert_valid(&self) {
+        for (_, ty) in &self.vars {
+            ty.assert_valid();
+        }
+
+        for (_, types) in &self.excludes {
+            for ty in types {
+                ty.assert_valid();
+            }
+        }
+
+        for (_, ty) in &self.types {
+            ty.assert_valid();
+        }
+    }
+
     pub fn take(&mut self) -> Self {
         Self {
             facts: take(&mut self.facts),
@@ -113,6 +129,10 @@ pub(super) struct Facts {
 }
 
 impl Facts {
+    pub(crate) fn assert_valid(&self) {
+        self.true_facts.assert_valid();
+        self.false_facts.assert_valid();
+    }
     pub fn clear(&mut self) {
         self.true_facts.clear();
         self.false_facts.clear();
