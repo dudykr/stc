@@ -1204,11 +1204,14 @@ impl Analyzer<'_, '_> {
 
     /// We should create a type fact for `foo` in `if (foo.type === 'bar');`.
     fn calc_type_facts_for_equality(&mut self, name: Name, equals_to: &Type) -> ValidationResult<(Name, Type)> {
-        // For comparison of variables like `if (a === 'foo');`, we just return the type
-        // itself.
+        let span = equals_to.span();
+
+        let mut id: RIdent = name.as_ids()[0].clone().into();
+        id.span.lo = span.lo;
+        id.span.hi = span.hi;
 
         if name.len() == 1 {
-            let orig_ty = self.type_of_var(&name.as_ids()[0].clone().into(), TypeOfMode::RValue, None)?;
+            let orig_ty = self.type_of_var(&id, TypeOfMode::RValue, None)?;
 
             let narrowed = self
                 .narrow_with_equality(&orig_ty, equals_to)
@@ -1217,7 +1220,6 @@ impl Analyzer<'_, '_> {
             return Ok((name, narrowed));
         }
 
-        let span = equals_to.span();
         let eq_ty = equals_to.normalize();
 
         // We create a type fact for `foo` in `if (foo.type === 'bar');`
@@ -1231,10 +1233,6 @@ impl Analyzer<'_, '_> {
             span,
             sym: ids[ids.len() - 1].sym().clone(),
         };
-
-        let mut id: RIdent = ids[0].clone().into();
-        id.span.lo = span.lo;
-        id.span.hi = span.hi;
 
         let ty = self.type_of_var(&id, TypeOfMode::RValue, None)?;
         let ty = self.expand_top_ref(span, Cow::Owned(ty))?.into_owned();
