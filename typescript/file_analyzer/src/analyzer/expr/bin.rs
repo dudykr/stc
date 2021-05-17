@@ -285,9 +285,9 @@ impl Analyzer<'_, '_> {
                 }) {
                     Some((Ok(name), ty)) => {
                         if is_eq {
-                            self.add_deep_type_fact(name.clone(), ty.clone(), false);
+                            self.add_deep_type_fact(span, name.clone(), ty.clone(), false);
                         } else {
-                            self.add_deep_type_fact(name.clone(), ty.clone(), true);
+                            self.add_deep_type_fact(span, name.clone(), ty.clone(), true);
                         }
                     }
                     _ => {}
@@ -322,7 +322,7 @@ impl Analyzer<'_, '_> {
                                     .push(r.clone());
 
                                 self.prevent_generalize(&mut r);
-                                self.add_deep_type_fact(name, r, true);
+                                self.add_deep_type_fact(span, name, r, true);
                             } else if !is_eq {
                                 // Remove from union
                                 self.cur_facts
@@ -333,7 +333,7 @@ impl Analyzer<'_, '_> {
                                     .push(r.clone());
 
                                 self.prevent_generalize(&mut r);
-                                self.add_deep_type_fact(name, r, false);
+                                self.add_deep_type_fact(span, name, r, false);
                             }
                         }
                     }
@@ -628,7 +628,7 @@ impl Analyzer<'_, '_> {
                         if let Some(property) = left {
                             let mut new_ty = self.filter_types_with_property(&rt, &property, None)?.cheap();
 
-                            self.add_deep_type_fact(name.clone(), new_ty.clone(), true);
+                            self.add_deep_type_fact(span, name.clone(), new_ty.clone(), true);
                         }
                     }
                 }

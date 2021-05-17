@@ -2888,7 +2888,7 @@ impl Analyzer<'_, '_> {
                                     .or_default()
                                     .push(next_ty.clone());
 
-                                self.add_deep_type_fact(name, next_ty, true);
+                                self.add_deep_type_fact(span, name, next_ty, true);
                             }
                         }
                     }

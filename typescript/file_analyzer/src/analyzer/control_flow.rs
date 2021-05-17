@@ -24,6 +24,7 @@ use stc_ts_ast_rnode::RBinExpr;
 use stc_ts_ast_rnode::RBindingIdent;
 use stc_ts_ast_rnode::RCondExpr;
 use stc_ts_ast_rnode::RExpr;
+use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RIfStmt;
 use stc_ts_ast_rnode::RObjectPatProp;
 use stc_ts_ast_rnode::RPat;
@@ -939,13 +940,13 @@ impl Analyzer<'_, '_> {
         self.cur_facts.insert_var(sym, ty, false);
     }
 
-    pub(super) fn add_deep_type_fact(&mut self, name: Name, ty: Type, is_for_true: bool) {
+    pub(super) fn add_deep_type_fact(&mut self, span: Span, name: Name, ty: Type, is_for_true: bool) {
         debug_assert!(!self.is_builtin);
 
         ty.assert_valid();
 
         if let Some((name, ty)) = self
-            .determine_type_fact_by_field_fact(&name, &ty)
+            .determine_type_fact_by_field_fact(span, &name, &ty)
             .report(&mut self.storage)
             .flatten()
         {
@@ -1044,7 +1045,12 @@ impl Analyzer<'_, '_> {
         Ok(src.clone())
     }
 
-    fn determine_type_fact_by_field_fact(&mut self, name: &Name, ty: &Type) -> ValidationResult<Option<(Name, Type)>> {
+    fn determine_type_fact_by_field_fact(
+        &mut self,
+        span: Span,
+        name: &Name,
+        ty: &Type,
+    ) -> ValidationResult<Option<(Name, Type)>> {
         ty.assert_valid();
 
         if name.len() == 1 {
@@ -1052,7 +1058,11 @@ impl Analyzer<'_, '_> {
         }
 
         let ids = name.as_ids();
-        let obj = self.type_of_var(&ids[0].clone().into(), TypeOfMode::RValue, None)?;
+        let mut id: RIdent = ids[0].clone().into();
+        id.span.lo = span.lo;
+        id.span.hi = span.hi;
+
+        let obj = self.type_of_var(&id, TypeOfMode::RValue, None)?;
         let obj = self.expand_top_ref(ty.span(), Cow::Owned(obj))?;
 
         match obj.normalize() {
