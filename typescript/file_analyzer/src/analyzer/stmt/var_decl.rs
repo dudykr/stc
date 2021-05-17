@@ -273,6 +273,8 @@ impl Analyzer<'_, '_> {
 
                                 let actual_ty = self.narrowed_type_of_assignment(span, ty.clone(), &value_ty)?;
 
+                                actual_ty.assert_valid();
+
                                 // let ty = ty.fold_with(&mut Generalizer::default());
                                 match self.declare_complex_vars(kind, &v.name, ty, Some(actual_ty)) {
                                     Ok(()) => {}

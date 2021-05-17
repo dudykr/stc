@@ -2818,7 +2818,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                     }
                 }
 
-                *ty = Type::Union(Union { span, types }).fixed();
+                *ty = Type::Union(Union { span: *span, types }).fixed();
                 return;
             }
 

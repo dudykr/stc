@@ -413,6 +413,14 @@ impl Scope<'_> {
         }
 
         for (name, var) in child.vars.drain() {
+            if let Some(ty) = &var.ty {
+                ty.assert_valid();
+            }
+
+            if let Some(ty) = &var.actual_ty {
+                ty.assert_valid();
+            }
+
             if var.copied {
                 match self.vars.entry(name.clone()) {
                     Entry::Occupied(mut e) => {
@@ -1072,6 +1080,10 @@ impl Analyzer<'_, '_> {
         let var = self.find_var(&name);
         let ty = var.and_then(|var| var.ty.clone());
 
+        if let Some(ty) = &ty {
+            ty.assert_valid();
+        }
+
         op(self.scope.vars.entry(name).or_insert_with(|| VarInfo {
             kind: VarDeclKind::Let,
             initialized: true,
@@ -1193,6 +1205,10 @@ impl Analyzer<'_, '_> {
             })
             .map(|ty| ty.cheap());
 
+        if let Some(ty) = &actual_ty {
+            ty.assert_valid();
+        }
+
         if self.ctx.in_global {
             if let Some(ty) = ty.clone() {
                 self.env.declare_global_var(name.sym().clone(), ty.clone());
@@ -1216,6 +1232,13 @@ impl Analyzer<'_, '_> {
                     () => {{
                         self.scope.vars.insert(k, v);
                     }};
+                }
+
+                if let Some(ty) = &v.ty {
+                    ty.assert_valid();
+                }
+                if let Some(ty) = &v.actual_ty {
+                    ty.assert_valid();
                 }
 
                 if !self.is_builtin && is_override {
