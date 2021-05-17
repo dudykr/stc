@@ -485,6 +485,14 @@ impl Scope<'_> {
     pub fn insert_var(&mut self, name: Id, v: VarInfo) {
         no_ref!(v.ty);
 
+        if let Some(v) = &v.ty {
+            v.assert_valid();
+        }
+
+        if let Some(v) = &v.actual_ty {
+            v.assert_valid();
+        }
+
         self.vars.insert(name, v);
     }
 
@@ -519,7 +527,7 @@ impl Scope<'_> {
                                         prev.types.remove(index);
                                     }
 
-                                    prev.types.push(ty)
+                                    prev.types.push(ty);
                                 }
                                 _ => {
                                     unreachable!()
