@@ -16,6 +16,9 @@ impl Analyzer<'_, '_> {
         declared: Type,
         actual: &Type,
     ) -> ValidationResult {
+        declared.assert_valid();
+        actual.assert_valid();
+
         match actual.normalize() {
             Type::Ref(..) => {
                 let actual = self
