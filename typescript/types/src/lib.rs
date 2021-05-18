@@ -817,13 +817,16 @@ impl Union {
                     continue;
                 }
                 if t1.type_eq(t2) {
-                    panic!("A union type has duplicate elements: ({:?})", t1)
+                    panic!("[INVALID_TYPE]: A union type has duplicate elements: ({:?})", t1)
                 }
             }
         }
 
         if self.types.len() <= 1 {
-            panic!("A union type should have multiple items. Got {:?}", self.types);
+            panic!(
+                "[INVALID_TYPE]: A union type should have multiple items. Got {:?}",
+                self.types
+            );
         }
     }
 }
@@ -860,13 +863,19 @@ impl Intersection {
                     continue;
                 }
                 if t1.type_eq(t2) {
-                    panic!("An intersection type has duplicate elements: ({:?})", t1)
+                    panic!(
+                        "[INVALID_TYPE]: An intersection type has duplicate elements: ({:?})",
+                        t1
+                    )
                 }
             }
         }
 
         if self.types.len() <= 1 {
-            panic!("An intersection type should have multiple items. Got {:?}", self.types);
+            panic!(
+                "[INVALID_TYPE]: An intersection type should have multiple items. Got {:?}",
+                self.types
+            );
         }
     }
 }
@@ -1265,7 +1274,7 @@ impl Visit<Union> for AssertValid {
 
         for item in ty.types.iter() {
             if item.normalize().is_union_type() {
-                panic!("A union type should not have a union item")
+                panic!("[INVALID_TYPE]: A union type should not have a union item")
             }
         }
     }
@@ -1283,7 +1292,7 @@ impl Visit<Intersection> for AssertValid {
 
         for item in ty.types.iter() {
             if item.normalize().is_intersection_type() {
-                panic!("An intersection type should not have an intersection item")
+                panic!("[INVALID_TYPE]: An intersection type should not have an intersection item")
             }
         }
     }
