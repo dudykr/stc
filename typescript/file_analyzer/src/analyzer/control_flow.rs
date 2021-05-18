@@ -615,6 +615,8 @@ impl Analyzer<'_, '_> {
         ty: &Type,
         opts: PatAssignOpts,
     ) -> ValidationResult<()> {
+        ty.assert_valid();
+
         let is_in_loop = self.scope.is_in_loop_body();
         let ty = self
             .normalize(Some(ty.span().or_else(|| span)), Cow::Borrowed(ty), Default::default())
