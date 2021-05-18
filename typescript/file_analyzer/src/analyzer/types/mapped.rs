@@ -30,6 +30,9 @@ impl Analyzer<'_, '_> {
     /// ```ts
     /// declare const a: Partial<Foo>;
     /// ```
+    ///
+    ///
+    /// TODO: Handle index signatures.
     pub(crate) fn expand_mapped(&mut self, span: Span, m: &Mapped) -> ValidationResult<Option<Type>> {
         let orig = dump_type_as_string(&self.cm, &Type::Mapped(m.clone()));
 
