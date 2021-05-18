@@ -74,6 +74,10 @@ impl VisitMut<Union> for Fixer {
 
         let mut new: Vec<Type> = Vec::with_capacity(u.types.capacity());
         for ty in u.types.drain(..) {
+            if ty.is_never() {
+                continue;
+            }
+
             if new.iter().any(|stored| stored.type_eq(&ty)) {
                 continue;
             }
@@ -82,6 +86,9 @@ impl VisitMut<Union> for Fixer {
                 let u = ty.foldable().union_type().unwrap();
                 for ty in u.types {
                     if new.iter().any(|stored| stored.type_eq(&ty)) {
+                        continue;
+                    }
+                    if ty.is_never() {
                         continue;
                     }
                     new.push(ty);
