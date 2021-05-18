@@ -129,8 +129,8 @@ impl VisitMut<Intersection> for Fixer {
     }
 }
 
-impl VisitMut<Type> for Fixer {
-    fn visit_mut(&mut self, ty: &mut Type) {
+impl Fixer {
+    fn fix_type(&mut self, ty: &mut Type) {
         {
             let ty = ty.normalize();
             if ty.is_keyword() || ty.is_lit() {
@@ -171,5 +171,13 @@ impl VisitMut<Type> for Fixer {
             },
             _ => {}
         }
+    }
+}
+
+impl VisitMut<Type> for Fixer {
+    fn visit_mut(&mut self, ty: &mut Type) {
+        self.fix_type(ty);
+
+        ty.assert_valid();
     }
 }
