@@ -2680,6 +2680,11 @@ impl Fold<Type> for Expander<'_, '_, '_> {
         }
         let before = dump_type_as_string(&self.analyzer.cm, &ty);
         let expanded = self.expand_type(ty);
+
+        if !self.analyzer.is_builtin {
+            expanded.assert_valid();
+        }
+
         slog::debug!(
             self.logger,
             "[expander]: {} => {}",
