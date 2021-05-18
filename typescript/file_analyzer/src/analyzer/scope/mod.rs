@@ -974,6 +974,8 @@ impl Analyzer<'_, '_> {
                     }
                     _ => {}
                 }
+
+                ty.fix();
             }
 
             return Some(Cow::Owned(ty));
