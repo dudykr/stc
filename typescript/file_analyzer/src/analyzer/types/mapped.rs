@@ -5,6 +5,7 @@ use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::DebugExt;
+use stc_ts_types::FnParam;
 use stc_ts_types::Id;
 use stc_ts_types::Key;
 use stc_ts_types::Mapped;
@@ -219,7 +220,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Get keys of `ty` as a proerty name.
-    fn get_property_names(&mut self, span: Span, ty: &Type) -> ValidationResult<Option<Vec<Key>>> {
+    fn get_property_names(&mut self, span: Span, ty: &Type) -> ValidationResult<Option<Vec<PropertyName>>> {
         let ty = self
             .normalize(
                 None,
@@ -243,12 +244,17 @@ impl Analyzer<'_, '_> {
                         TypeElement::Call(_) => {}
                         TypeElement::Constructor(_) => {}
                         TypeElement::Property(p) => {
-                            keys.push(p.key.clone());
+                            keys.push(p.key.clone().into());
                         }
                         TypeElement::Method(m) => {
-                            keys.push(m.key.clone());
+                            keys.push(m.key.clone().into());
                         }
-                        TypeElement::Index(_) => {}
+                        TypeElement::Index(i) => {
+                            keys.push(PropertyName::IndexSignature {
+                                span: i.span,
+                                params: i.params.clone(),
+                            });
+                        }
                     }
                 }
 
@@ -261,12 +267,17 @@ impl Analyzer<'_, '_> {
                         TypeElement::Call(_) => {}
                         TypeElement::Constructor(_) => {}
                         TypeElement::Property(p) => {
-                            keys.push(p.key.clone());
+                            keys.push(p.key.clone().into());
                         }
                         TypeElement::Method(m) => {
-                            keys.push(m.key.clone());
+                            keys.push(m.key.clone().into());
                         }
-                        TypeElement::Index(_) => {}
+                        TypeElement::Index(i) => {
+                            keys.push(PropertyName::IndexSignature {
+                                span: i.span,
+                                params: i.params.clone(),
+                            });
+                        }
                     }
                 }
 
@@ -287,7 +298,7 @@ impl Analyzer<'_, '_> {
             Type::Enum(e) => {
                 let mut keys = vec![];
                 for member in &e.members {
-                    keys.push(match &member.id {
+                    keys.push(PropertyName::Key(match &member.id {
                         RTsEnumMemberId::Ident(i) => Key::Normal {
                             span: i.span,
                             sym: i.sym.clone(),
@@ -296,7 +307,7 @@ impl Analyzer<'_, '_> {
                             span: s.span,
                             sym: s.value.clone(),
                         },
-                    })
+                    }))
                 }
 
                 return Ok(Some(keys));
@@ -377,5 +388,21 @@ impl Analyzer<'_, '_> {
             },
             None => {}
         }
+    }
+}
+
+#[derive(Debug, Clone, Spanned)]
+pub(crate) enum PropertyName {
+    Key(Key),
+    /// Created from an index signature.
+    IndexSignature {
+        span: Span,
+        params: Vec<FnParam>,
+    },
+}
+
+impl From<Key> for PropertyName {
+    fn from(key: Key) -> Self {
+        Self::Key(key)
     }
 }
