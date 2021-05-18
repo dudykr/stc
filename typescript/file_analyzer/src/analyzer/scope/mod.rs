@@ -444,9 +444,9 @@ impl Scope<'_> {
                                 types.extend(e.get().actual_ty.clone());
 
                                 if types.len() == 1 {
-                                    types.into_iter().next().unwrap()
+                                    types.into_iter().next().unwrap().fixed()
                                 } else {
-                                    Type::Union(Union { span: DUMMY_SP, types })
+                                    Type::Union(Union { span: DUMMY_SP, types }).fixed()
                                 }
                             } else {
                                 actual_ty
