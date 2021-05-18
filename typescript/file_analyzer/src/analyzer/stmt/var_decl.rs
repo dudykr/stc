@@ -344,6 +344,7 @@ impl Analyzer<'_, '_> {
 
                         if should_generalize_fully {
                             self.normalize_tuples(&mut ty);
+                            ty.assert_valid();
                             ty = match ty.normalize() {
                                 Type::Function(f) => {
                                     let ret_ty = box f.ret_ty.clone().generalize_lit();
@@ -369,6 +370,7 @@ impl Analyzer<'_, '_> {
                                     ..self.ctx
                                 };
                                 ty = self.with_ctx(ctx).expand(span, ty)?;
+                                ty.assert_valid();
 
                                 slog::debug!(
                                     self.logger,
