@@ -29,7 +29,7 @@ stc_utils = {path = "../../utils"}
 swc_atoms = "0.2.5"
 swc_common = {version = "0.10.12", features = ["concurrent", "tty-emitter"]}
 swc_ecma_ast = "0.45.0"
-swc_ecma_parser = "0.56.1"
+swc_ecma_parser = "0.57.1"
 swc_ecma_transforms = "0.50.0"
 swc_ecma_visit = "0.31.0"
 
