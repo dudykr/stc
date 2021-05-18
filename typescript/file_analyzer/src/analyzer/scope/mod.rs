@@ -452,6 +452,8 @@ impl Scope<'_> {
                                 actual_ty
                             };
 
+                            new_actual_type.assert_valid();
+
                             e.get_mut().actual_ty = Some(new_actual_type);
                         }
                     }
