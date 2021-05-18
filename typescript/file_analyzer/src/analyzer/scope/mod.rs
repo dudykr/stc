@@ -2178,7 +2178,7 @@ impl Expander<'_, '_, '_> {
 
                     if let Some(t) = stored_ref {
                         self.expand_top_level = true;
-                        return Ok(Some(t.into_owned().foldable().fold_with(self)));
+                        return Ok(Some(t.into_owned().foldable().fold_with(self).fixed()));
                     }
                 }
 
