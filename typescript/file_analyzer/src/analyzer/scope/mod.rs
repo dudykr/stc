@@ -650,6 +650,8 @@ impl Analyzer<'_, '_> {
             );
         }
 
+        ty.assert_valid();
+
         let _ctx = context(format!("expand: {}", dump_type_as_string(&self.cm, &ty)));
         let orig = dump_type_as_string(&self.cm, &ty);
 
@@ -689,6 +691,8 @@ impl Analyzer<'_, '_> {
                 ty
             );
         }
+
+        ty.assert_valid();
 
         let _ctx = context(format!("expand_fully: {}", dump_type_as_string(&self.cm, &ty)));
         let orig = dump_type_as_string(&self.cm, &ty);
