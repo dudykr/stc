@@ -767,6 +767,7 @@ impl Analyzer<'_, '_> {
     }
     pub(crate) fn normalize_tuples(&mut self, ty: &mut Type) {
         ty.visit_mut_with(&mut TupleNormalizer);
+        ty.fix();
     }
 
     pub(crate) fn kinds_of_type_elements(&mut self, els: &[TypeElement]) -> Vec<u8> {
