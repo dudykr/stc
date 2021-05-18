@@ -958,6 +958,7 @@ impl Analyzer<'_, '_> {
                     _ => return None,
                 },
             };
+            ty.assert_valid();
 
             if let Some(ref excludes) = self.scope.facts.excludes.get(&name) {
                 match ty.normalize_mut() {
@@ -980,6 +981,8 @@ impl Analyzer<'_, '_> {
 
         {
             if let Some(ty) = self.storage.get_local_var(self.ctx.module_id, name.clone()) {
+                ty.assert_valid();
+
                 slog::debug!(self.logger, "Scope.find_var_type({}): Handled with storage", name);
                 return Some(Cow::Owned(ty));
             }
