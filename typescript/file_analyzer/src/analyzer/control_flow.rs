@@ -251,6 +251,9 @@ where
 
 impl AddAssign for CondFacts {
     fn add_assign(&mut self, rhs: Self) {
+        self.assert_valid();
+        rhs.assert_valid();
+
         for (k, v) in rhs.facts {
             *self.facts.entry(k).or_insert(TypeFacts::None) |= v;
         }
@@ -282,6 +285,8 @@ impl AddAssign for CondFacts {
 
 impl AddAssign<Option<Self>> for CondFacts {
     fn add_assign(&mut self, rhs: Option<Self>) {
+        self.assert_valid();
+
         match rhs {
             Some(rhs) => {
                 *self += rhs;
