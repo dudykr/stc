@@ -713,15 +713,18 @@ impl Analyzer<'_, '_> {
                 // Update actual types.
                 if let Some(var_info) = self.scope.get_var_mut(&i.id.clone().into()) {
                     var_info.is_actual_type_modified_in_loop |= is_in_loop;
-                    var_info.actual_ty = Some(actual_ty.unwrap_or_else(|| ty.clone()));
+                    let new_ty = actual_ty.unwrap_or_else(|| ty.clone());
+                    new_ty.assert_valid();
+                    var_info.actual_ty = Some(new_ty);
                     return Ok(());
                 }
 
                 let var_info = if let Some(var_info) = self.scope.search_parent(&i.id.clone().into()) {
-                    let actual_ty = Some(actual_ty.unwrap_or_else(|| ty.clone()));
+                    let actual_ty = actual_ty.unwrap_or_else(|| ty.clone());
+                    actual_ty.assert_valid();
 
                     VarInfo {
-                        actual_ty,
+                        actual_ty: Some(actual_ty),
                         copied: true,
                         ..var_info.clone()
                     }

@@ -428,6 +428,8 @@ impl Scope<'_> {
                         let is_actual_type_modified_in_loop = e.get().is_actual_type_modified_in_loop;
 
                         if let Some(actual_ty) = var.actual_ty {
+                            actual_ty.assert_valid();
+
                             let new_actual_type = if is_actual_type_modified_in_loop {
                                 let mut types = vec![];
 
@@ -1334,6 +1336,12 @@ impl Analyzer<'_, '_> {
                         None
                     }
                 };
+                if let Some(ty) = &actual_ty {
+                    ty.assert_valid();
+                }
+                if let Some(ty) = &v.ty {
+                    ty.assert_valid();
+                }
                 // TODO: Use better logic
                 v.actual_ty = actual_ty.or_else(|| v.ty.clone());
 
