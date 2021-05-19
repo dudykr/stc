@@ -122,12 +122,12 @@ impl Analyzer<'_, '_> {
 
 impl Analyzer<'_, '_> {
     fn handle_import(&mut self, span: Span, ctxt: ModuleId, target: ModuleId, orig: Id, id: Id) {
-        let mut did_work = false;
+        let mut found_entry = false;
 
         if let Some(data) = self.imports.get(&(ctxt, target)) {
             for (i, ty) in &data.vars {
                 if orig.sym() == i {
-                    did_work = true;
+                    found_entry = true;
                     self.storage.store_private_var(ctxt, id.clone(), ty.clone());
                 }
             }
@@ -135,14 +135,27 @@ impl Analyzer<'_, '_> {
             for (i, types) in &data.types {
                 if orig.sym() == i {
                     for ty in types {
-                        did_work = true;
+                        found_entry = true;
                         self.storage.store_private_type(ctxt, id.clone(), ty.clone(), false);
                     }
                 }
             }
         }
 
-        if !did_work {
+        if !found_entry {
+            self.register_type(id.clone(), Type::any(span));
+            self.declare_var(
+                span,
+                swc_ecma_ast::VarDeclKind::Var,
+                id.clone(),
+                Some(Type::any(span)),
+                None,
+                true,
+                false,
+                false,
+            )
+            .report(&mut self.storage);
+
             self.storage.report(Error::ImportFailed { span, orig, id });
         }
     }
