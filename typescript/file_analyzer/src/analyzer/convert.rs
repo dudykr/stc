@@ -516,12 +516,14 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, ty: &RTsMappedType) -> ValidationResult<Mapped> {
+        let type_param = ty.type_param.validate_with(self)?;
+
         Ok(Mapped {
             span: ty.span,
             readonly: ty.readonly,
             optional: ty.optional,
             name_type: try_opt!(ty.name_type.validate_with(self)).map(Box::new),
-            type_param: ty.type_param.validate_with(self)?,
+            type_param,
             ty: try_opt!(ty.type_ann.validate_with(self)).map(Box::new),
         })
     }
