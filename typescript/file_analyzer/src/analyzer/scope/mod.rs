@@ -1138,12 +1138,18 @@ impl Analyzer<'_, '_> {
             ty.assert_valid();
             slog::debug!(
                 self.logger,
-                "[vars]: Declaring {} as {}",
+                "[({})/vars]: Declaring {} as {}",
+                self.scope.depth(),
                 name,
                 dump_type_as_string(&self.cm, ty)
             );
         } else {
-            slog::debug!(self.logger, "[vars]: Declaring {} without type", name,);
+            slog::debug!(
+                self.logger,
+                "[({})/vars]: Declaring {} without type",
+                self.scope.depth(),
+                name,
+            );
         }
 
         if let Some(ty) = &actual_ty {
