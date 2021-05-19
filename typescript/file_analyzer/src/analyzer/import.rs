@@ -28,25 +28,31 @@ use swc_common::Span;
 use swc_common::Spanned;
 
 impl Analyzer<'_, '_> {
-    /// Returns `(base, dep, dep_types)`
-    pub(crate) fn get_imported_items(
-        &mut self,
-        span: Span,
-        dst: &JsWord,
-    ) -> ValidationResult<(ModuleId, Arc<ModuleTypeData>)> {
+    /// Returns `(dep_module, dep_types)` if an import is valid, and returns
+    /// `(cur_mod_id, empty_data)` on import errors.
+    ////
+    pub(crate) fn get_imported_items(&mut self, span: Span, dst: &JsWord) -> (ModuleId, Arc<ModuleTypeData>) {
         let ctxt = self.ctx.module_id;
         let base = self.storage.path(ctxt);
         let dep_id = self.loader.module_id(&base, &dst);
         let dep_id = match dep_id {
             Some(v) => v,
-            None => return Err(Error::ModuleNotFound { span }),
+            None => {
+                self.storage.report(Error::ModuleNotFound { span });
+
+                return (ctxt, Default::default());
+            }
         };
         let data = match self.imports.get(&(ctxt, dep_id)).cloned() {
             Some(v) => v,
-            None => return Err(Error::ModuleNotFound { span }),
+            None => {
+                self.storage.report(Error::ModuleNotFound { span });
+
+                return (ctxt, Default::default());
+            }
         };
 
-        Ok((dep_id, data))
+        (dep_id, data)
     }
 
     pub(super) fn find_imported_var(&self, id: &Id) -> ValidationResult<Option<Type>> {
@@ -124,19 +130,22 @@ impl Analyzer<'_, '_> {
     fn handle_import(&mut self, span: Span, ctxt: ModuleId, target: ModuleId, orig: Id, id: Id) {
         let mut found_entry = false;
 
-        if let Some(data) = self.imports.get(&(ctxt, target)) {
-            for (i, ty) in &data.vars {
-                if orig.sym() == i {
-                    found_entry = true;
-                    self.storage.store_private_var(ctxt, id.clone(), ty.clone());
-                }
-            }
-
-            for (i, types) in &data.types {
-                if orig.sym() == i {
-                    for ty in types {
+        // Check for entry only if import was successful.
+        if ctxt != target {
+            if let Some(data) = self.imports.get(&(ctxt, target)) {
+                for (i, ty) in &data.vars {
+                    if orig.sym() == i {
                         found_entry = true;
-                        self.storage.store_private_type(ctxt, id.clone(), ty.clone(), false);
+                        self.storage.store_private_var(ctxt, id.clone(), ty.clone());
+                    }
+                }
+
+                for (i, types) in &data.types {
+                    if orig.sym() == i {
+                        for ty in types {
+                            found_entry = true;
+                            self.storage.store_private_type(ctxt, id.clone(), ty.clone(), false);
+                        }
                     }
                 }
             }
@@ -167,7 +176,7 @@ impl Analyzer<'_, '_> {
         let span = node.span;
         let base = self.ctx.module_id;
 
-        let (dep, data) = self.get_imported_items(span, &node.src.value)?;
+        let (dep, data) = self.get_imported_items(span, &node.src.value);
 
         for specifier in &node.specifiers {
             match specifier {
