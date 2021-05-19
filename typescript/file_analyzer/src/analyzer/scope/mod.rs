@@ -747,7 +747,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn register_type(&mut self, name: Id, ty: Type) -> Type {
-        slog::debug!(self.logger, "Registering: {:?}", name);
+        slog::debug!(self.logger, "[({})/types] Registering: {:?}", self.scope.depth(), name);
 
         let should_check_for_mixed = match ty.normalize() {
             Type::Param(..) => false,
