@@ -6,7 +6,7 @@
 
 use rnode::NodeIdGenerator;
 use rnode::RNode;
-use stc_testing::logger;
+use stc_testing::term_logger;
 use stc_ts_ast_rnode::RModule;
 use stc_ts_builtin_types::Lib;
 use stc_ts_errors::debug::debugger::Debugger;
@@ -35,7 +35,7 @@ use swc_ecma_visit::FoldWith;
 use testing::NormalizedOutput;
 
 /// If `for_error` is false, this function will run as type dump mode.
-fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
+fn run_test(file_name: PathBuf, logger: slog::Logger, for_error: bool) -> Option<NormalizedOutput> {
     let fname = file_name.display().to_string();
     println!("{}", fname);
 
@@ -115,7 +115,6 @@ fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
                 Some(&comments),
             );
             let mut parser = Parser::new_from(lexer);
-            let log = logger();
             let module = parser.parse_module().unwrap();
             let module = GLOBALS.set(stable_env.swc_globals(), || {
                 module.fold_with(&mut ts_resolver(stable_env.marks().top_level_mark()))
@@ -123,7 +122,7 @@ fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
             let module = RModule::from_orig(&mut node_id_gen, module);
             {
                 let mut analyzer = Analyzer::root(
-                    log.logger,
+                    logger,
                     env,
                     cm.clone(),
                     box &mut storage,
@@ -168,15 +167,17 @@ fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
 
 #[testing::fixture("visualize/**/*.ts", exclude(".*\\.\\.d.\\.ts"))]
 fn visualize(file_name: PathBuf) {
-    let res = run_test(file_name.clone(), false).unwrap();
+    let logger = term_logger();
+    let res = run_test(file_name.clone(), logger, false).unwrap();
     res.compare_to_file(&file_name.with_extension("stdout")).unwrap();
 }
 
 #[testing::fixture("pass/**/*.ts", exclude(".*\\.\\.d.\\.ts"))]
 fn pass(file_name: PathBuf) {
-    let res = run_test(file_name.clone(), false).unwrap();
+    let null_logger = slog::Logger::root(slog::Discard, slog::o!());
+    let res = run_test(file_name.clone(), null_logger, false).unwrap();
     println!("{}", res);
-    run_test(file_name.clone(), true);
+    run_test(file_name.clone(), term_logger(), true);
 
     res.compare_to_file(&file_name.with_extension("stdout")).unwrap();
 }
