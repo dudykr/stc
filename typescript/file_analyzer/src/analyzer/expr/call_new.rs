@@ -765,6 +765,7 @@ impl Analyzer<'_, '_> {
                 .with_ctx(ctx)
                 .access_property(span, obj_type, &prop, TypeOfMode::RValue, IdCtx::Var)?;
 
+            let callee_before_expanding = dump_type_as_string(&self.cm, &callee);
             let callee = self.expand_top_ref(span, Cow::Owned(callee))?.into_owned();
 
             match callee.normalize() {
@@ -802,9 +803,10 @@ impl Analyzer<'_, '_> {
             .with_context(|| {
                 format!(
                     "tried to call property by using access_property because the object type is not handled by \
-                     call_property: \nobj = {}\ncallee = {}",
+                     call_property: \nobj = {}\ncallee = {}\ncallee (before expanding): {}",
                     dump_type_as_string(&self.cm, &obj_type),
-                    callee_str
+                    callee_str,
+                    callee_before_expanding,
                 )
             })
         })();
