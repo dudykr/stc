@@ -1,4 +1,5 @@
 use crate::analyzer::assign::AssignOpts;
+use crate::analyzer::expr::TypeOfMode;
 use crate::analyzer::stmt::return_type::yield_check::YieldValueUsageFinder;
 use crate::analyzer::util::ResultExt;
 use crate::util::type_ext::TypeVecExt;
@@ -273,7 +274,10 @@ impl Analyzer<'_, '_> {
                 ..self.ctx
             };
             let mut a = self.with_ctx(ctx);
-            node.arg.validate_with_default(&mut *a)
+
+            let type_ann = a.scope.declared_return_type().cloned();
+            node.arg
+                .validate_with_args(&mut *a, (TypeOfMode::RValue, None, type_ann.as_ref()))
         } {
             res?
         } else {
