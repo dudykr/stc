@@ -800,6 +800,7 @@ impl Analyzer<'_, '_> {
 
         let is_resolved = self.data.all_local_type_names.contains(&top_id)
             || self.imports_by_id.contains_key(&top_id)
+            || self.data.unresolved_imports.contains(&top_id)
             || self.env.get_global_type(l.span, &top_id.sym()).is_ok();
 
         if is_resolved {
