@@ -167,7 +167,11 @@ impl Analyzer<'_, '_> {
             )
             .report(&mut self.storage);
 
-            self.storage.report(Error::ImportFailed { span, orig, id });
+            if ctxt != target {
+                // If import was successful but the entry is not found, the error should point
+                // the specifier.
+                self.storage.report(Error::ImportFailed { span, orig, id });
+            }
         }
     }
 }
