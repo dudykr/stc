@@ -7,6 +7,7 @@ use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::DebugExt;
 use stc_ts_types::FnParam;
 use stc_ts_types::Id;
+use stc_ts_types::IndexSignature;
 use stc_ts_types::Key;
 use stc_ts_types::Mapped;
 use stc_ts_types::Operator;
@@ -77,28 +78,57 @@ impl Analyzer<'_, '_> {
                     let members = keys
                         .into_iter()
                         .map(|key| -> ValidationResult<_> {
-                            let ty = match &m.ty {
-                                Some(mapped_ty) => self
-                                    .expand_key_in_mapped(m.type_param.name.clone(), &mapped_ty, &key)
-                                    .map(Box::new)
-                                    .map(Some)?,
-                                None => None,
-                            };
+                            match key {
+                                PropertyName::Key(key) => {
+                                    let ty = match &m.ty {
+                                        Some(mapped_ty) => self
+                                            .expand_key_in_mapped(m.type_param.name.clone(), &mapped_ty, &key)
+                                            .map(Box::new)
+                                            .map(Some)?,
+                                        None => None,
+                                    };
 
-                            let p = PropertySignature {
-                                span: key.span(),
-                                accessibility: None,
-                                readonly: false,
-                                key,
-                                optional: false,
-                                params: Default::default(),
-                                type_ann: ty,
-                                type_params: Default::default(),
-                            };
-                            let mut el = TypeElement::Property(p);
+                                    let p = PropertySignature {
+                                        span: key.span(),
+                                        accessibility: None,
+                                        readonly: false,
+                                        key,
+                                        optional: false,
+                                        params: Default::default(),
+                                        type_ann: ty,
+                                        type_params: Default::default(),
+                                    };
+                                    let mut el = TypeElement::Property(p);
 
-                            self.apply_mapped_flags(&mut el, m.optional, m.readonly);
-                            Ok(el)
+                                    self.apply_mapped_flags(&mut el, m.optional, m.readonly);
+                                    Ok(el)
+                                }
+                                PropertyName::IndexSignature { span, params, readonly } => {
+                                    let ty = match &m.ty {
+                                        Some(mapped_ty) => {
+                                            let mut map = HashMap::default();
+                                            map.insert(m.type_param.name.clone(), *params[0].ty.clone());
+                                            self.expand_type_params(&map, m.ty.clone())?
+                                        }
+                                        None => None,
+                                    };
+
+                                    Ok(TypeElement::Index(IndexSignature {
+                                        span,
+                                        is_static: false,
+                                        params,
+                                        type_ann: ty,
+                                        readonly: match m.readonly {
+                                            Some(v) => match v {
+                                                TruePlusMinus::True => true,
+                                                TruePlusMinus::Plus => true,
+                                                TruePlusMinus::Minus => false,
+                                            },
+                                            None => readonly,
+                                        },
+                                    }))
+                                }
+                            }
                         })
                         .collect::<Result<_, _>>()?;
 
@@ -253,6 +283,7 @@ impl Analyzer<'_, '_> {
                             keys.push(PropertyName::IndexSignature {
                                 span: i.span,
                                 params: i.params.clone(),
+                                readonly: i.readonly,
                             });
                         }
                     }
@@ -276,6 +307,7 @@ impl Analyzer<'_, '_> {
                             keys.push(PropertyName::IndexSignature {
                                 span: i.span,
                                 params: i.params.clone(),
+                                readonly: i.readonly,
                             });
                         }
                     }
@@ -398,6 +430,7 @@ pub(crate) enum PropertyName {
     IndexSignature {
         span: Span,
         params: Vec<FnParam>,
+        readonly: bool,
     },
 }
 
