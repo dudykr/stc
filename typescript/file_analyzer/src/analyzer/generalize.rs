@@ -10,6 +10,7 @@ use stc_ts_ast_rnode::RStr;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
+use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_type_ops::is_str_lit_or_union;
 use stc_ts_types::ClassDef;
 use stc_ts_types::Key;
@@ -78,7 +79,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn simplify(&self, ty: Type) -> Type {
-        slog::info!(self.logger, "Simplifying");
+        slog::info!(self.logger, "Simplifying {}", dump_type_as_string(self.cm, &ty));
         ty.fold_with(&mut Simplifier {
             env: &self.env,
             logger: self.logger.clone(),
