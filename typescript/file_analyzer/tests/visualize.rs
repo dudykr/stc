@@ -6,7 +6,7 @@
 
 use rnode::NodeIdGenerator;
 use rnode::RNode;
-use stc_testing::term_logger;
+use stc_testing::logger;
 use stc_ts_ast_rnode::RModule;
 use stc_ts_builtin_types::Lib;
 use stc_ts_errors::debug::debugger::Debugger;
@@ -167,8 +167,8 @@ fn run_test(file_name: PathBuf, logger: slog::Logger, for_error: bool) -> Option
 
 #[testing::fixture("visualize/**/*.ts", exclude(".*\\.\\.d.\\.ts"))]
 fn visualize(file_name: PathBuf) {
-    let logger = term_logger();
-    let res = run_test(file_name.clone(), logger, false).unwrap();
+    let log = logger();
+    let res = run_test(file_name.clone(), log.logger, false).unwrap();
     res.compare_to_file(&file_name.with_extension("stdout")).unwrap();
 }
 
@@ -176,8 +176,10 @@ fn visualize(file_name: PathBuf) {
 fn pass(file_name: PathBuf) {
     let null_logger = slog::Logger::root(slog::Discard, slog::o!());
     let res = run_test(file_name.clone(), null_logger, false).unwrap();
-    println!("{}", res);
-    run_test(file_name.clone(), term_logger(), true);
+    println!("TYPES: {}", res);
+
+    let log = logger();
+    run_test(file_name.clone(), log.logger, true);
 
     res.compare_to_file(&file_name.with_extension("stdout")).unwrap();
 }
