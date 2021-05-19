@@ -79,7 +79,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn simplify(&self, ty: Type) -> Type {
-        slog::info!(self.logger, "Simplifying {}", dump_type_as_string(self.cm, &ty));
+        slog::info!(self.logger, "Simplifying {}", dump_type_as_string(&self.cm, &ty));
         ty.fold_with(&mut Simplifier {
             env: &self.env,
             logger: self.logger.clone(),
