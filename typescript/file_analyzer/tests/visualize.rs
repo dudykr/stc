@@ -32,9 +32,10 @@ use swc_ecma_parser::Syntax;
 use swc_ecma_parser::TsConfig;
 use swc_ecma_transforms::resolver::ts_resolver;
 use swc_ecma_visit::FoldWith;
+use testing::NormalizedOutput;
 
 /// If `for_error` is false, this function will run as type dump mode.
-fn run_test(file_name: PathBuf, for_error: bool) {
+fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
     let fname = file_name.display().to_string();
     println!("{}", fname);
 
@@ -156,22 +157,26 @@ fn run_test(file_name: PathBuf, for_error: bool) {
 
     if for_error {
         if res.trim().is_empty() {
-            return;
+            return None;
         }
 
         panic!("Failed to validate.\n{}\n{}", res, file_name.display())
     } else {
-        res.compare_to_file(&file_name.with_extension("stdout")).unwrap();
+        return Some(res);
     }
 }
 
 #[testing::fixture("visualize/**/*.ts", exclude(".*\\.\\.d.\\.ts"))]
 fn visualize(file_name: PathBuf) {
-    run_test(file_name, false);
+    let res = run_test(file_name.clone(), false).unwrap();
+    res.compare_to_file(&file_name.with_extension("stdout")).unwrap();
 }
 
 #[testing::fixture("pass/**/*.ts", exclude(".*\\.\\.d.\\.ts"))]
 fn pass(file_name: PathBuf) {
+    let res = run_test(file_name.clone(), false).unwrap();
+    println!("{}", res);
     run_test(file_name.clone(), true);
-    run_test(file_name, false);
+
+    res.compare_to_file(&file_name.with_extension("stdout")).unwrap();
 }
