@@ -1904,6 +1904,7 @@ types/localTypes/localTypes1.ts
 types/localTypes/localTypes2.ts
 types/localTypes/localTypes3.ts
 types/localTypes/localTypes5.ts
+types/mapped/mappedTypeModifiers.ts
 types/mapped/mappedTypes1.ts
 types/mapped/mappedTypes2.ts
 types/mapped/mappedTypes3.ts
