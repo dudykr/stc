@@ -921,6 +921,7 @@ impl Analyzer<'_, '_> {
         if has_index_signature && !self.ctx.should_not_create_indexed_type_from_ty_els {
             // This check exists to prefer a specific property over generic index signature.
             if prop.is_computed() || matching_elements.is_empty() {
+                slog::warn!(self.logger, "Creating a indexed access type from a type literal");
                 let ty = Type::IndexedAccessType(IndexedAccessType {
                     span,
                     obj_type: box obj.clone(),
@@ -1126,6 +1127,8 @@ impl Analyzer<'_, '_> {
                     }
 
                     let prop_ty = prop.clone().computed().unwrap().ty;
+
+                    slog::warn!(self.logger, "Creating an indexed access type with this as the object");
 
                     // TODO: Handle string literals like
                     //
@@ -1492,6 +1495,11 @@ impl Analyzer<'_, '_> {
                 if is_str_lit_or_union(&prop_ty) {
                     self.prevent_generalize(&mut prop_ty);
                 }
+
+                slog::warn!(
+                    self.logger,
+                    "Creating an indexed access type with type parameter as the object"
+                );
 
                 return Ok(Type::IndexedAccessType(IndexedAccessType {
                     span,
@@ -2025,6 +2033,11 @@ impl Analyzer<'_, '_> {
                     return self.access_property_inner(span, obj, prop, type_mode, id_ctx);
                 }
 
+                slog::warn!(
+                    self.logger,
+                    "Creating an indexed access type with mapped type as the object"
+                );
+
                 return Ok(Type::IndexedAccessType(IndexedAccessType {
                     span,
                     readonly: false,
@@ -2038,6 +2051,12 @@ impl Analyzer<'_, '_> {
                     match obj.normalize() {
                         Type::Param(..) => {
                             let index_type = prop.ty.clone();
+
+                            slog::warn!(
+                                self.logger,
+                                "Creating an indexed access type with a type parameter as the object"
+                            );
+
                             // Return something like SimpleDBRecord<Flag>[Flag];
                             return Ok(Type::IndexedAccessType(IndexedAccessType {
                                 span,
