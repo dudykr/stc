@@ -101,7 +101,7 @@ use stc_ts_types::Union;
 use stc_ts_utils::OptionExt;
 use stc_ts_utils::PatExt;
 use stc_utils::error;
-use stc_utils::FastHashSet;
+use stc_utils::AHashSet;
 use swc_atoms::js_word;
 use swc_common::EqIgnoreSpan;
 use swc_common::Spanned;
@@ -124,7 +124,7 @@ impl Analyzer<'_, '_> {
             {
                 // Check for duplicates
                 let mut names = decl.params.iter().map(|param| param.name.clone()).collect::<Vec<_>>();
-                let mut found = FastHashSet::default();
+                let mut found = AHashSet::default();
 
                 for name in names {
                     if !found.insert(name.sym.clone()) {

@@ -152,6 +152,8 @@ impl Analyzer<'_, '_> {
         }
 
         if !found_entry {
+            self.data.unresolved_imports.insert(id.clone());
+
             self.register_type(id.clone(), Type::any(span));
             self.declare_var(
                 span,

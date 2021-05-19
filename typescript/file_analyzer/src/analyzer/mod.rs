@@ -43,7 +43,8 @@ use stc_ts_storage::Info;
 use stc_ts_storage::Storage;
 use stc_ts_types::IdCtx;
 use stc_ts_types::{Id, ModuleId, ModuleTypeData, SymbolIdGenerator};
-use stc_utils::FastHashMap;
+use stc_utils::AHashMap;
+use stc_utils::AHashSet;
 use std::mem::take;
 use std::{
     fmt::Debug,
@@ -285,8 +286,10 @@ struct AnalyzerData {
     /// Filled only once, by `fill_known_type_names`.
     all_local_type_names: FxHashSet<Id>,
 
+    unresolved_imports: AHashSet<Id>,
+
     /// Spans of declared variables.
-    var_spans: FastHashMap<Id, Vec<Span>>,
+    var_spans: AHashMap<Id, Vec<Span>>,
 
     /// Spans of functions **with body**.
     fn_impl_spans: FxHashMap<Id, Vec<Span>>,
