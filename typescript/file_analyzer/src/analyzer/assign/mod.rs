@@ -119,7 +119,8 @@ impl Analyzer<'_, '_> {
         let rhs = r.normalize();
 
         if op == op!("*=") || op == op!("/=") || op == op!("-=") {
-            self.deny_null_or_undefined(rhs.span(), rhs)?;
+            self.deny_null_or_undefined(rhs.span(), rhs)
+                .context("checking operands of a numeric assignment")?;
 
             let r_castable = self.can_be_casted_to_number_in_rhs(rhs.span(), &rhs);
             if r_castable {
