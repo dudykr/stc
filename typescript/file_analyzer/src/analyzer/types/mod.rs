@@ -489,7 +489,7 @@ impl Analyzer<'_, '_> {
                 .copied()
                 .unwrap_or(TypeFacts::None);
 
-        slog::debug!(self.logger, "[types/fact] Facts for {} is {:?}", name, type_facts);
+        slog::debug!(self.logger, "[types/fact] Facts for {:?} is {:?}", name, type_facts);
 
         self.apply_type_facts_to_type(type_facts, ty)
     }
