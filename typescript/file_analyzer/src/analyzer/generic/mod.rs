@@ -1815,6 +1815,21 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
+    /// Union-union inference is special, because
+    ///
+    /// `T | PromiseLike<T>` <= `void | PromiseLike<void>`
+    ///
+    /// should result in `T = void`, not `T = void | PromiseLike<void>`
+    fn infer_type_using_union_and_union(
+        &mut self,
+        span: Span,
+        inferred: &mut InferData,
+        param: &Union,
+        arg: &Union,
+    ) -> ValidationResult<()> {
+        for p in &param.types {}
+    }
+
     fn infer_type_of_fn_param(
         &mut self,
         span: Span,

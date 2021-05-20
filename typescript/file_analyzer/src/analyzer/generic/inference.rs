@@ -19,7 +19,6 @@ use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
 use stc_ts_types::TypeParam;
-use stc_ts_types::Union;
 use std::collections::hash_map::Entry;
 use swc_common::Span;
 use swc_common::Spanned;
@@ -28,20 +27,6 @@ use swc_ecma_ast::TsKeywordTypeKind;
 use swc_ecma_ast::TsTypeOperatorOp;
 
 impl Analyzer<'_, '_> {
-    /// Union-union inference is special, because
-    ///
-    /// `T | PromiseLike<T>` <= `void | PromiseLike<void>`
-    ///
-    /// should result in `T = void`, not `T = void | PromiseLike<void>`
-    pub(super) fn infer_type_using_union_and_union(
-        &mut self,
-        span: Span,
-        inferred: &mut InferData,
-        param: &Union,
-        arg: &Union,
-    ) -> ValidationResult<()> {
-    }
-
     /// # Rules
     ///
     /// ## Type literal
