@@ -1242,8 +1242,6 @@ impl Analyzer<'_, '_> {
                     .map(|ty| make_instance_type(child.ctx.module_id, *ty));
                 {
                     // Validate constructors
-                    let mut constructor_spans = vec![];
-                    let mut constructor_required_param_count = None;
                     let constructors_with_body = c
                         .body
                         .iter()
@@ -1266,45 +1264,13 @@ impl Analyzer<'_, '_> {
                                 if cons.body.is_none() {
                                     for p in &cons.params {
                                         match *p {
-                                            RParamOrTsParamProp::TsParamProp(..) => {
-                                                child.storage.report(Error::TS2369 { span: p.span() })
-                                            }
+                                            RParamOrTsParamProp::TsParamProp(..) => child.storage.report(
+                                                Error::ParamPropIsNotAllowedInAmbientConstructorx { span: p.span() },
+                                            ),
                                             _ => {}
                                         }
                                     }
                                 }
-
-                                if constructors_with_body.len() == 1 {
-                                    // Check parameter count
-                                    let required_param_count = cons
-                                        .params
-                                        .iter()
-                                        .filter(|p| match p {
-                                            RParamOrTsParamProp::Param(RParam {
-                                                pat:
-                                                    RPat::Ident(RBindingIdent {
-                                                        id: RIdent { optional: true, .. },
-                                                        ..
-                                                    }),
-                                                ..
-                                            }) => false,
-                                            _ => true,
-                                        })
-                                        .count();
-
-                                    match constructor_required_param_count {
-                                        Some(v) if required_param_count != v => {
-                                            for span in constructor_spans.drain(..) {
-                                                child.storage.report(Error::WrongOverloadSignature { span })
-                                            }
-                                        }
-
-                                        None => constructor_required_param_count = Some(required_param_count),
-                                        _ => {}
-                                    }
-                                }
-
-                                constructor_spans.push(cons.span);
                             }
 
                             _ => {}
@@ -1488,16 +1454,25 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    let mut cons: Vec<ConstructorSignature> = vec![];
-                    for (index, constructor) in c.body.iter().enumerate().filter_map(|(i, member)| match member {
-                        RClassMember::Constructor(c) => Some((i, c)),
-                        _ => None,
-                    }) {
-                        let member = constructor.validate_with(child)?;
-                        cons.push(member.clone());
-                        child.scope.this_class_members.push((index, member.into()));
+                    {
+                        let mut ambient_cons: Vec<ConstructorSignature> = vec![];
+                        let mut cons_with_body = None;
+                        for (index, constructor) in c.body.iter().enumerate().filter_map(|(i, member)| match member {
+                            RClassMember::Constructor(c) => Some((i, c)),
+                            _ => None,
+                        }) {
+                            let member = constructor.validate_with(child)?;
+                            if constructor.body.is_some() {
+                                ambient_cons.push(member.clone());
+                            } else {
+                                cons_with_body = Some(member.clone());
+                            }
+                            child.scope.this_class_members.push((index, member.into()));
+                        }
+                        child
+                            .validate_constructor_overloads(&ambient_cons, cons_with_body.as_ref())
+                            .report(&mut child.storage);
                     }
-                    child.validate_constructor_overloads(&cons).report(&mut child.storage);
 
                     // Handle user-declared method signatures.
                     for member in &c.body {}
@@ -1693,7 +1668,31 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
-    fn validate_constructor_overloads(&mut self, cons: &[ConstructorSignature]) -> ValidationResult<()> {
+    fn validate_constructor_overloads(
+        &mut self,
+        ambient: &[ConstructorSignature],
+        cons_with_body: Option<&ConstructorSignature>,
+    ) -> ValidationResult<()> {
+        if let Some(i) = cons_with_body {
+            for ambient in ambient {
+                self.assign_to_fn_like(
+                    &mut Default::default(),
+                    AssignOpts {
+                        span: ambient.span,
+                        for_overload: true,
+                        ..Default::default()
+                    },
+                    i.type_params.as_ref(),
+                    &i.params,
+                    i.ret_ty.as_deref(),
+                    ambient.type_params.as_ref(),
+                    &ambient.params,
+                    ambient.ret_ty.as_deref(),
+                )
+                .convert_err(|err| Error::WrongOverloadSignature { span: err.span() })?;
+            }
+        }
+
         Ok(())
     }
 

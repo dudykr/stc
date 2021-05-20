@@ -901,7 +901,8 @@ pub enum Error {
         ty: Box<Type>,
     },
 
-    TS2369 {
+    /// TS2369
+    ParamPropIsNotAllowedInAmbientConstructorx {
         span: Span,
     },
 
@@ -1280,7 +1281,7 @@ impl Error {
             Error::FnImplMissingOrNotFollowedByDecl { .. } => 2391,
             Error::InvalidTypeForComputedProperty { .. } => 2464,
 
-            Error::TS2369 { .. } => 2369,
+            Error::ParamPropIsNotAllowedInAmbientConstructorx { .. } => 2369,
             Error::TS2389 { .. } => 2389,
             Error::TS2447 { .. } => 2447,
             Error::TS2515 { .. } => 2515,

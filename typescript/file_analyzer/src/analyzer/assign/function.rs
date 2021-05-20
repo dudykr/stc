@@ -22,7 +22,7 @@ use swc_atoms::js_word;
 use swc_common::TypeEq;
 
 impl Analyzer<'_, '_> {
-    pub(super) fn assign_to_fn_like(
+    pub(crate) fn assign_to_fn_like(
         &mut self,
         data: &mut AssignData,
         opts: AssignOpts,
