@@ -394,6 +394,16 @@ impl Analyzer<'_, '_> {
     ///
     ///
     /// TODO: Optimize
+
+    ///
+    /// TODO
+    ///
+    /// Handle union properly.
+    /// `T#0#0 | PromiseLike<T>` <= `void | PromiseLike<void>`
+    ///
+    ///
+    /// should result in `T = void`, not `T = void | PromiseLike<void>`
+
     fn infer_type(&mut self, span: Span, inferred: &mut InferData, param: &Type, arg: &Type) -> ValidationResult<()> {
         if self.is_builtin {
             return Ok(());
