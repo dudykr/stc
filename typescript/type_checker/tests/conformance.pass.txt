@@ -251,6 +251,7 @@ controlFlow/controlFlowConditionalExpression.ts
 controlFlow/controlFlowDestructuringDeclaration.ts
 controlFlow/controlFlowDoWhileStatement.ts
 controlFlow/controlFlowElementAccess.ts
+controlFlow/controlFlowElementAccess2.ts
 controlFlow/controlFlowForInStatement.ts
 controlFlow/controlFlowIfStatement.ts
 controlFlow/controlFlowInstanceOfGuardPrimitives.ts
