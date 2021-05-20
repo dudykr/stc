@@ -174,10 +174,33 @@ impl Analyzer<'_, '_> {
         match op {
             op!("+=") => {}
 
-            op!("??=") | op!("&&=") => {
+            op!("&&=") => {
                 if rhs.is_bool() {
                     return Ok(());
                 }
+            }
+
+            op!("??=") => {
+                if rhs.is_bool() {
+                    return Ok(());
+                }
+
+                return self
+                    .assign_with_opts(
+                        &mut Default::default(),
+                        AssignOpts {
+                            span,
+                            ..Default::default()
+                        },
+                        lhs,
+                        rhs,
+                    )
+                    .convert_err(|err| Error::InvalidOpAssign {
+                        span,
+                        op,
+                        lhs: box l.into_owned().clone(),
+                        rhs: box r.into_owned().clone(),
+                    });
             }
             _ => {}
         }
