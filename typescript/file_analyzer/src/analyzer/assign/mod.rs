@@ -104,7 +104,7 @@ impl Analyzer<'_, '_> {
         let lhs = l.normalize();
         let rhs = r.normalize();
 
-        if op == op!("*=") {
+        if op == op!("*=") || op == op!("/=") || op == op!("-=") {
             if rhs.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
                 return Err(Error::ObjectIsPossiblyUndefined { span: rhs.span() });
             }
