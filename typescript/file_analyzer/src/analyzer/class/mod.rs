@@ -2,8 +2,8 @@ use self::type_param::StaticTypeParamValidator;
 use super::assign::AssignOpts;
 use super::expr::TypeOfMode;
 use super::props::ComputedPropMode;
-use super::util::make_instance_type;
 use super::util::is_prop_name_eq;
+use super::util::make_instance_type;
 use super::util::ResultExt;
 use super::util::VarVisitor;
 use super::Analyzer;
@@ -1488,13 +1488,16 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
+                    let mut cons: Vec<ConstructorSignature> = vec![];
                     for (index, constructor) in c.body.iter().enumerate().filter_map(|(i, member)| match member {
                         RClassMember::Constructor(c) => Some((i, c)),
                         _ => None,
                     }) {
                         let member = constructor.validate_with(child)?;
+                        cons.push(member.clone());
                         child.scope.this_class_members.push((index, member.into()));
                     }
+                    child.validate_constructor_overloads(&cons).report(&mut child.storage);
 
                     // Handle user-declared method signatures.
                     for member in &c.body {}
@@ -1690,6 +1693,10 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
+    fn validate_constructor_overloads(&mut self, cons: &[ConstructorSignature]) -> ValidationResult<()> {
+        Ok(())
+    }
+
     fn validate_super_class(&mut self, ty: &Type) {
         if self.is_builtin {
             return;
