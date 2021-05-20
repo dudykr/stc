@@ -67,6 +67,7 @@ use swc_ecma_ast::*;
 
 mod expander;
 mod inference;
+mod type_form;
 
 /// Lower value means higher priority and it contains lower value if the
 /// type parameter and the type argument are simpler.
@@ -1811,32 +1812,6 @@ impl Analyzer<'_, '_> {
                 EitherOrBoth::Right(_) => {}
             }
         }
-
-        Ok(())
-    }
-
-    /// Union-union inference is special, because
-    ///
-    /// `T | PromiseLike<T>` <= `void | PromiseLike<void>`
-    ///
-    /// should result in `T = void`, not `T = void | PromiseLike<void>`
-    fn infer_type_using_union_and_union(
-        &mut self,
-        span: Span,
-        inferred: &mut InferData,
-        param: &Union,
-        arg_ty: &Type,
-        arg: &Union,
-    ) -> ValidationResult<()> {
-        let mut datas = vec![];
-        for p in &param.types {
-            let mut data = InferData::default();
-            self.infer_type(span, &mut data, p, arg_ty)?;
-            // TODO: Remove
-            self.infer_type(span, inferred, p, arg_ty)?;
-            datas.push(data);
-        }
-        dbg!(&datas);
 
         Ok(())
     }

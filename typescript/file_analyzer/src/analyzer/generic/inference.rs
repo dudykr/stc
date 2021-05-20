@@ -27,6 +27,38 @@ use swc_ecma_ast::TsKeywordTypeKind;
 use swc_ecma_ast::TsTypeOperatorOp;
 
 impl Analyzer<'_, '_> {
+    /// Union-union inference is special, because
+    ///
+    /// `T | PromiseLike<T>` <= `void | PromiseLike<void>`
+    ///
+    /// should result in `T = void`, not `T = void | PromiseLike<void>`
+    pub(super) fn infer_type_using_union_and_union(
+        &mut self,
+        span: Span,
+        inferred: &mut InferData,
+        param: &Union,
+        arg_ty: &Type,
+        arg: &Union,
+    ) -> ValidationResult<()> {
+        let mut datas = vec![];
+        for p in &param.types {
+            let mut data = InferData::default();
+            self.infer_type(span, &mut data, p, arg_ty)?;
+            // TODO: Remove
+            self.infer_type(span, inferred, p, arg_ty)?;
+            datas.push(data);
+        }
+
+        for (param_ty, data) in param.types.iter().zip(datas.iter()) {
+            eprintln!("");
+            for (k, ty) in &data.type_params {
+                eprintln!("{}: {}", k, dump_type_as_string(&self.cm, &ty));
+            }
+        }
+
+        Ok(())
+    }
+
     /// # Rules
     ///
     /// ## Type literal
