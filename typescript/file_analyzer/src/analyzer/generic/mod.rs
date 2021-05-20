@@ -399,7 +399,7 @@ impl Analyzer<'_, '_> {
     /// TODO
     ///
     /// Handle union properly.
-    /// `T#0#0 | PromiseLike<T>` <= `void | PromiseLike<void>`
+    /// `T | PromiseLike<T>` <= `void | PromiseLike<void>`
     ///
     ///
     /// should result in `T = void`, not `T = void | PromiseLike<void>`
