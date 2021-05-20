@@ -1682,12 +1682,12 @@ impl Analyzer<'_, '_> {
                         for_overload: true,
                         ..Default::default()
                     },
-                    i.type_params.as_ref(),
-                    &i.params,
-                    i.ret_ty.as_deref(),
                     ambient.type_params.as_ref(),
                     &ambient.params,
                     ambient.ret_ty.as_deref(),
+                    i.type_params.as_ref(),
+                    &i.params,
+                    i.ret_ty.as_deref(),
                 )
                 .convert_err(|err| Error::WrongOverloadSignature { span: err.span() })?;
             }
