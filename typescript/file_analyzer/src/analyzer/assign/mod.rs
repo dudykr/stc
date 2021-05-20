@@ -95,7 +95,7 @@ pub struct AssignData {
 }
 
 impl Analyzer<'_, '_> {
-    pub(crate) fn deny_null_and_undefined(&mut self, span: Span, ty: &Type) -> ValidationResult<()> {
+    pub(crate) fn deny_null_or_undefined(&mut self, span: Span, ty: &Type) -> ValidationResult<()> {
         if ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
             return Err(Error::ObjectIsPossiblyUndefined { span });
         }
@@ -117,7 +117,7 @@ impl Analyzer<'_, '_> {
         let rhs = r.normalize();
 
         if op == op!("*=") || op == op!("/=") || op == op!("-=") {
-            self.deny_null_and_undefined(rhs.span(), rhs)?;
+            self.deny_null_or_undefined(rhs.span(), rhs)?;
 
             let r_castable = self.can_be_casted_to_number_in_rhs(rhs.span(), &rhs);
             if r_castable {
