@@ -95,7 +95,13 @@ impl Analyzer<'_, '_> {
 
         let after = dump_type_as_string(&self.cm, &ty);
 
-        slog::debug!(self.logger, "[types/fact] {} => {}", before, after);
+        slog::debug!(
+            self.logger,
+            "[types/fact] {} => {}\nTypeFacts: {:?}",
+            before,
+            after,
+            facts
+        );
 
         ty.fixed()
     }
