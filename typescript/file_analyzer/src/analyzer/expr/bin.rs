@@ -588,22 +588,11 @@ impl Analyzer<'_, '_> {
             op!("<=") | op!("<") | op!(">=") | op!(">") => {
                 no_unknown!();
 
-                let mut check_for_invalid_operand = |ty: &Type| match ty.normalize() {
-                    Type::Keyword(RTsKeywordType {
-                        span,
-                        kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                    }) => {
-                        self.storage.report(Error::ObjectIsPossiblyUndefined { span: *span });
-                    }
-
-                    Type::Keyword(RTsKeywordType {
-                        span,
-                        kind: TsKeywordTypeKind::TsNullKeyword,
-                    }) => {
-                        self.storage.report(Error::ObjectIsPossiblyNull { span: *span });
-                    }
-
-                    _ => {}
+                let mut check_for_invalid_operand = |ty: &Type| {
+                    let res: ValidationResult<_> = try {
+                        self.deny_null_and_undefined(span, ty)?;
+                    };
+                    res.report(&mut self.storage);
                 };
 
                 check_for_invalid_operand(&lt);
