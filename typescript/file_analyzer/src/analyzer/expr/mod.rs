@@ -309,7 +309,7 @@ impl Analyzer<'_, '_> {
                     if self.ctx.should_store_truthy_for_access {
                         if let Ok(name) = Name::try_from(&*expr) {
                             self.cur_facts.true_facts.facts.insert(name.clone(), TypeFacts::Truthy);
-                            self.cur_facts.true_facts.facts.insert(name, TypeFacts::Falsy);
+                            self.cur_facts.false_facts.facts.insert(name, TypeFacts::Falsy);
                         }
                     }
 
