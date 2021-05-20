@@ -394,16 +394,6 @@ impl Analyzer<'_, '_> {
     ///
     ///
     /// TODO: Optimize
-
-    ///
-    /// TODO
-    ///
-    /// Handle union properly.
-    /// `T | PromiseLike<T>` <= `void | PromiseLike<void>`
-    ///
-    ///
-    /// should result in `T = void`, not `T = void | PromiseLike<void>`
-
     fn infer_type(&mut self, span: Span, inferred: &mut InferData, param: &Type, arg: &Type) -> ValidationResult<()> {
         if self.is_builtin {
             return Ok(());
@@ -450,8 +440,14 @@ impl Analyzer<'_, '_> {
             _ => param,
         };
 
-        match param {
-            Type::Union(param) if !self.ctx.skip_union_while_inferencing => {
+        match (param, arg) {
+            (Type::Union(p), Type::Union(a)) => {
+                self.infer_type_using_union_and_union(span, inferred, p, a)?;
+
+                return Ok(());
+            }
+
+            (Type::Union(param), _) if !self.ctx.skip_union_while_inferencing => {
                 //
                 for p in &param.types {
                     self.infer_type(span, inferred, p, arg)?;
@@ -460,18 +456,15 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
 
-            Type::Intersection(param) => {
+            (Type::Intersection(param), _) => {
                 for param in &param.types {
                     self.infer_type(span, inferred, param, arg)?;
                 }
 
                 return Ok(());
             }
-            _ => {}
-        }
 
-        match arg {
-            Type::Union(arg) => {
+            (_, Type::Union(arg)) => {
                 //
                 for a in &arg.types {
                     self.infer_type(span, inferred, param, a)?;
