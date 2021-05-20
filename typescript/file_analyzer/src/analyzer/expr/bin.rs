@@ -128,7 +128,7 @@ impl Analyzer<'_, '_> {
         let rhs = self
             .with_child(
                 ScopeKind::Flow,
-                true_facts_for_rhs,
+                true_facts_for_rhs.clone(),
                 |child: &mut Analyzer| -> ValidationResult<_> {
                     child.ctx.should_store_truthy_for_access = false;
 
@@ -191,6 +191,8 @@ impl Analyzer<'_, '_> {
             }
 
             self.cur_facts += lhs_facts;
+        } else if op == op!("&&") {
+            self.cur_facts.true_facts += true_facts_for_rhs;
         }
 
         let (lt, rt): (Type, Type) = match (lt, rt) {
