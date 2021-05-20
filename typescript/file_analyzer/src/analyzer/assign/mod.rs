@@ -145,7 +145,7 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        // Addition to a string converts rhs into stirng.
+        // Addition to a string converts rhs into string.
         if op == op!("+=") {
             if lhs.is_str() {
                 return Ok(());
