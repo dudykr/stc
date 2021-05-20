@@ -146,8 +146,10 @@ impl Analyzer<'_, '_> {
         }
 
         // Addition to a string converts rhs into stirng.
-        if lhs.is_str() {
-            return Ok(());
+        if op == op!("+=") {
+            if lhs.is_str() {
+                return Ok(());
+            }
         }
 
         if lhs.is_num() || lhs.is_enum_variant() || lhs.is_enum_type() {
