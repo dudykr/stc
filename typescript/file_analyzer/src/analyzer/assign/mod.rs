@@ -95,6 +95,8 @@ pub struct AssignData {
 }
 
 impl Analyzer<'_, '_> {
+    /// Denies `null` and `undefined`. This method does not check for elements
+    /// of union.
     pub(crate) fn deny_null_or_undefined(&mut self, span: Span, ty: &Type) -> ValidationResult<()> {
         if ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
             return Err(Error::ObjectIsPossiblyUndefined { span });
