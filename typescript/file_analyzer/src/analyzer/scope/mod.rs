@@ -1451,7 +1451,18 @@ impl Analyzer<'_, '_> {
 
         match pat {
             // TODO
-            RPat::Assign(p) => return self.declare_complex_vars(kind, &p.left, ty, actual_ty),
+            RPat::Assign(p) => {
+                {
+                    // TODO: Use union of default value and rhs value.
+                    //
+                    // This is required to handle
+                    //
+                    // `let [{ [order(1)]: y } = order(0)] = [{}];`
+                    //
+                }
+
+                return self.declare_complex_vars(kind, &p.left, ty, actual_ty);
+            }
 
             RPat::Ident(ref i) => {
                 slog::debug!(
