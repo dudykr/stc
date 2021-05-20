@@ -2866,26 +2866,23 @@ impl Analyzer<'_, '_> {
             ..self.ctx
         };
 
-        let ty = if computed {
-            self.with_ctx(prop_access_ctx)
-                .access_property(span, &obj_ty, &prop, type_mode, IdCtx::Var)?
-        } else {
-            let mut ty = self
-                .with_ctx(prop_access_ctx)
-                .access_property(span, &obj_ty, &prop, type_mode, IdCtx::Var)
-                .context(
-                    "tried to access property of an object to calculate type of a non-computed member expression",
-                )?;
+        let mut ty = self
+            .with_ctx(prop_access_ctx)
+            .access_property(span, &obj_ty, &prop, type_mode, IdCtx::Var)
+            .context("tried to access property of an object to calculate type of a member expression")?;
 
-            let name: Option<Name> = expr.try_into().ok();
-            if !self.is_builtin {
-                if let Some(name) = name {
-                    ty = self.apply_type_facts(&name, ty);
+        let name: Option<Name> = expr.try_into().ok();
+        if !self.is_builtin {
+            if let Some(name) = name {
+                ty = self.apply_type_facts(&name, ty);
 
-                    self.exclude_types_using_fact(span, &name, &mut ty);
-                }
+                self.exclude_types_using_fact(span, &name, &mut ty);
             }
+        }
 
+        let ty = if computed {
+            ty
+        } else {
             if self.ctx.in_cond_of_cond_expr && self.ctx.should_store_truthy_for_access {
                 // Add type facts.
                 match obj {
