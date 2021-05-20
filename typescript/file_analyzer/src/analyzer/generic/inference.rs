@@ -1,8 +1,10 @@
 use super::InferData;
+use crate::analyzer::generic::type_form::TypeForm;
 use crate::analyzer::Analyzer;
 use crate::analyzer::Ctx;
 use crate::ValidationResult;
 use fxhash::FxHashMap;
+use itertools::Itertools;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::DebugExt;
@@ -41,20 +43,26 @@ impl Analyzer<'_, '_> {
         arg_ty: &Type,
         arg: &Union,
     ) -> ValidationResult<()> {
-        let mut datas = vec![];
-        for p in &param.types {
-            let mut data = InferData::default();
-            self.infer_type(span, &mut data, p, arg_ty)?;
-            // TODO: Remove
-            self.infer_type(span, inferred, p, arg_ty)?;
-            datas.push(data);
+        // If there's a top-level type parameters, check for `form`s of type.
+        if param.types.len() == arg.types.len() && param.types.iter().map(Type::normalize).any(|ty| ty.is_type_param())
+        {
+            // TODO: Sort types so `T | PromiseLike<T>` has same form as
+            // `PromiseLike<void> | void`.
+
+            let param_type_form = param.types.iter().map(TypeForm::from).collect_vec();
+            let arg_type_form = arg.types.iter().map(TypeForm::from).collect_vec();
+
+            if param_type_form == arg_type_form {
+                for (p, a) in param.types.iter().zip(arg.types.iter()) {
+                    self.infer_type(span, inferred, p, a)?;
+                }
+
+                return Ok(());
+            }
         }
 
-        for (param_ty, data) in param.types.iter().zip(datas.iter()) {
-            eprintln!("");
-            for (k, ty) in &data.type_params {
-                eprintln!("{}: {}", k, dump_type_as_string(&self.cm, &ty));
-            }
+        for p in &param.types {
+            self.infer_type(span, inferred, p, arg_ty)?;
         }
 
         Ok(())
