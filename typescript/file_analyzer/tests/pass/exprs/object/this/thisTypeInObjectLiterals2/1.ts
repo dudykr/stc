@@ -1,4 +1,12 @@
 
+type Point = {
+    x: number;
+    y: number;
+    z?: number;
+    moveBy(dx: number, dy: number, dz?: number): void;
+}
+
+
 export let p1 = {
     x: 10,
     y: 20,
