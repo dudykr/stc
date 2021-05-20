@@ -168,9 +168,8 @@ impl<'a> TryFrom<&'a RMemberExpr> for Name {
     type Error = ();
 
     fn try_from(e: &RMemberExpr) -> Result<Self, ()> {
-        let mut name = match &e.obj {
-            RExprOrSuper::Expr(box RExpr::Ident(i)) => Name::from(i),
-            RExprOrSuper::Expr(box RExpr::Member(member)) => member.try_into()?,
+        let mut name: Name = match &e.obj {
+            RExprOrSuper::Expr(e) => (&**e).try_into()?,
             _ => return Err(()),
         };
 
