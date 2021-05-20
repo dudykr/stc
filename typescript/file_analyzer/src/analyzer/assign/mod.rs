@@ -152,7 +152,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if lhs.is_num() || lhs.is_enum_variant() || lhs.is_enum_type() {
+        if lhs.is_num() || lhs.is_enum_variant() {
             // TODO: Check if actual value is number.
 
             if rhs.is_num() {
