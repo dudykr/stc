@@ -442,7 +442,7 @@ impl Analyzer<'_, '_> {
 
         match (param, arg) {
             (Type::Union(p), Type::Union(a)) => {
-                self.infer_type_using_union_and_union(span, inferred, p, a)?;
+                self.infer_type_using_union_and_union(span, inferred, p, arg, a)?;
 
                 return Ok(());
             }
@@ -1825,9 +1825,20 @@ impl Analyzer<'_, '_> {
         span: Span,
         inferred: &mut InferData,
         param: &Union,
+        arg_ty: &Type,
         arg: &Union,
     ) -> ValidationResult<()> {
-        for p in &param.types {}
+        let mut datas = vec![];
+        for p in &param.types {
+            let mut data = InferData::default();
+            self.infer_type(span, &mut data, p, arg_ty)?;
+            // TODO: Remove
+            self.infer_type(span, inferred, p, arg_ty)?;
+            datas.push(data);
+        }
+        dbg!(&datas);
+
+        Ok(())
     }
 
     fn infer_type_of_fn_param(
