@@ -19,6 +19,7 @@ use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
 use stc_ts_types::TypeParam;
+use stc_ts_types::Union;
 use std::collections::hash_map::Entry;
 use swc_common::Span;
 use swc_common::Spanned;
