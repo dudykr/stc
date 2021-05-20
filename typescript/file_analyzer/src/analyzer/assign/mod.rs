@@ -95,6 +95,18 @@ pub struct AssignData {
 }
 
 impl Analyzer<'_, '_> {
+    pub(crate) fn verify_null_or_undefined(&mut self, span: Span, ty: &Type) -> ValidationResult<()> {
+        if ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
+            return Err(Error::ObjectIsPossiblyUndefined { span });
+        }
+
+        if ty.is_kwd(TsKeywordTypeKind::TsNullKeyword) {
+            return Err(Error::ObjectIsPossiblyNull { span });
+        }
+
+        Ok(())
+    }
+
     pub(crate) fn assign_with_op(&mut self, span: Span, op: AssignOp, lhs: &Type, rhs: &Type) -> ValidationResult<()> {
         debug_assert_ne!(op, op!("="));
 
@@ -105,12 +117,7 @@ impl Analyzer<'_, '_> {
         let rhs = r.normalize();
 
         if op == op!("*=") || op == op!("/=") || op == op!("-=") {
-            if rhs.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
-                return Err(Error::ObjectIsPossiblyUndefined { span: rhs.span() });
-            }
-            if rhs.is_kwd(TsKeywordTypeKind::TsNullKeyword) {
-                return Err(Error::ObjectIsPossiblyNull { span: rhs.span() });
-            }
+            self.verify_null_or_undefined(rhs.span(), rhs)?;
 
             let r_castable = self.can_be_casted_to_number_in_rhs(rhs.span(), &rhs);
             if r_castable {
