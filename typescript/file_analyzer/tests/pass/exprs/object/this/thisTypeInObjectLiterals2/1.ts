@@ -7,7 +7,7 @@ type Point = {
 }
 
 
-export let p1 = {
+export let p1: Point = {
     x: 10,
     y: 20,
     moveBy(dx, dy, dz) {
