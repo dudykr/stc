@@ -238,17 +238,7 @@ impl Analyzer<'_, '_> {
             .map(|res| res.map(|ty| ty.cheap()))
             .try_opt()?;
 
-        let default_value_ty = if let RPat::Assign(assign_pat) = p {
-            let ctx = Ctx {
-                cannot_be_tuple: true,
-                ..self.ctx
-            };
-            let mut a = self.with_ctx(ctx);
-            assign_pat.right.validate_with_default(&mut *a).report(&mut a.storage)
-        } else {
-            None
-        };
-
+        let prev_declaring_len = self.scope.declaring.len();
         // Declaring names
         let mut names = vec![];
 
@@ -272,7 +262,24 @@ impl Analyzer<'_, '_> {
                 p.visit_with(&mut visitor);
 
                 self.scope.declaring.extend(names.clone());
+            }
 
+            PatMode::Assign => {}
+        }
+
+        let default_value_ty = if let RPat::Assign(assign_pat) = p {
+            let ctx = Ctx {
+                cannot_be_tuple: true,
+                ..self.ctx
+            };
+            let mut a = self.with_ctx(ctx);
+            assign_pat.right.validate_with_default(&mut *a).report(&mut a.storage)
+        } else {
+            None
+        };
+
+        match self.ctx.pat_mode {
+            PatMode::Decl => {
                 if !self.is_builtin {
                     match self.declare_vars_with_ty(VarDeclKind::Let, p, ty.clone(), None) {
                         Ok(()) => {}
@@ -285,6 +292,8 @@ impl Analyzer<'_, '_> {
 
             PatMode::Assign => {}
         }
+
+        self.scope.declaring.truncate(prev_declaring_len);
 
         // Mark pattern as optional if default value exists
         match p {
