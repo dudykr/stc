@@ -199,6 +199,10 @@ impl Analyzer<'_, '_> {
                 if rhs.is_bool() {
                     return Ok(());
                 }
+
+                if self.can_be_casted_to_number_in_rhs(span, &l) && self.can_be_casted_to_number_in_rhs(span, &r) {
+                    return Ok(());
+                }
             }
 
             op!("??=") => {
