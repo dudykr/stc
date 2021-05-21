@@ -1059,6 +1059,8 @@ es7/exponentiationOperator/exponentiationOperatorWithAnyAndNumber.ts
 es7/exponentiationOperator/exponentiationOperatorWithEnum.ts
 es7/exponentiationOperator/exponentiationOperatorWithEnumUnion.ts
 es7/exponentiationOperator/exponentiationOperatorWithNew.ts
+esnext/logicalAssignment/logicalAssignment2.ts
+esnext/logicalAssignment/logicalAssignment3.ts
 esnext/logicalAssignment/logicalAssignment9.ts
 expressions/arrayLiterals/arrayLiterals2ES5.ts
 expressions/arrayLiterals/arrayLiterals2ES6.ts
