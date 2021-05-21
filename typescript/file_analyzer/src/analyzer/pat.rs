@@ -359,8 +359,6 @@ impl Analyzer<'_, '_> {
             Ok(())
         })();
 
-        self.scope.remove_declaring(names);
-
         res?;
 
         let ty = match ty {
