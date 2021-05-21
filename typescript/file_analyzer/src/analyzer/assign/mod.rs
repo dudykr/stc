@@ -184,6 +184,15 @@ impl Analyzer<'_, '_> {
         }
 
         match op {
+            op!("||=") => {
+                if l.type_eq(&r) {
+                    return Ok(());
+                }
+            }
+            _ => {}
+        }
+
+        match op {
             op!("+=") => {}
 
             op!("&&=") => {
