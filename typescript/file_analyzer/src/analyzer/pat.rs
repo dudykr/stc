@@ -238,6 +238,17 @@ impl Analyzer<'_, '_> {
             .map(|res| res.map(|ty| ty.cheap()))
             .try_opt()?;
 
+        let default_value_ty = if let RPat::Assign(assign_pat) = p {
+            let ctx = Ctx {
+                cannot_be_tuple: true,
+                ..self.ctx
+            };
+            let mut a = self.with_ctx(ctx);
+            assign_pat.right.validate_with_default(&mut *a).report(&mut a.storage)
+        } else {
+            None
+        };
+
         // Declaring names
         let mut names = vec![];
 
@@ -301,37 +312,37 @@ impl Analyzer<'_, '_> {
         let res = (|| -> ValidationResult<()> {
             if let RPat::Assign(assign_pat) = p {
                 // Handle default value
+                if let Some(default_value_ty) = default_value_ty.clone() {
+                    let ty = assign_pat
+                        .left
+                        .get_ty()
+                        .map(|v| v.validate_with(self))
+                        .unwrap_or_else(|| {
+                            let mut ty = default_value_ty.generalize_lit().foldable();
 
-                let default_value_ty = assign_pat.right.validate_with_default(self)?;
+                            match ty {
+                                Type::Tuple(tuple) => {
+                                    let mut types =
+                                        tuple.elems.into_iter().map(|element| *element.ty).collect::<Vec<_>>();
 
-                let ty = assign_pat
-                    .left
-                    .get_ty()
-                    .map(|v| v.validate_with(self))
-                    .unwrap_or_else(|| {
-                        let mut ty = default_value_ty.generalize_lit().foldable();
+                                    types.dedup_type();
 
-                        match ty {
-                            Type::Tuple(tuple) => {
-                                let mut types = tuple.elems.into_iter().map(|element| *element.ty).collect::<Vec<_>>();
-
-                                types.dedup_type();
-
-                                ty = Type::Array(Array {
-                                    span: tuple.span,
-                                    elem_type: box Type::union(types),
-                                });
+                                    ty = Type::Array(Array {
+                                        span: tuple.span,
+                                        elem_type: box Type::union(types),
+                                    });
+                                }
+                                _ => {}
                             }
-                            _ => {}
+
+                            Ok(ty)
+                        })?;
+
+                    // Remove default value.
+                    if let Some(pat_node_id) = assign_pat.left.node_id() {
+                        if let Some(m) = &mut self.mutations {
+                            m.for_pats.entry(pat_node_id).or_default().ty = Some(ty)
                         }
-
-                        Ok(ty)
-                    })?;
-
-                // Remove default value.
-                if let Some(pat_node_id) = assign_pat.left.node_id() {
-                    if let Some(m) = &mut self.mutations {
-                        m.for_pats.entry(pat_node_id).or_default().ty = Some(ty)
                     }
                 }
             }
