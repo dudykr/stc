@@ -120,6 +120,12 @@ impl Analyzer<'_, '_> {
             Default::default()
         };
 
+        let additional_false_facts = if op == op!("&&") {
+            self.cur_facts.false_facts.take()
+        } else {
+            Default::default()
+        };
+
         let mut lhs_facts = if op == op!("||") {
             self.cur_facts.take()
         } else {
@@ -197,6 +203,8 @@ impl Analyzer<'_, '_> {
         } else if op == op!("&&") {
             self.cur_facts.true_facts += true_facts_for_rhs;
         }
+
+        self.cur_facts.false_facts += additional_false_facts;
 
         let (lt, rt): (Type, Type) = match (lt, rt) {
             (Some(l), Some(r)) => (l, r),
