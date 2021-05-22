@@ -2240,8 +2240,13 @@ impl Analyzer<'_, '_> {
 
         self.validate_arg_types(&params, &spread_arg_types);
 
+        print_type(&logger, "Return", &self.cm, &ret_ty);
+
         ret_ty.reposition(span);
         ret_ty.visit_mut_with(&mut ReturnTypeSimplifier { analyzer: self });
+
+        print_type(&logger, "Return, simplified", &self.cm, &ret_ty);
+
         self.add_required_type_params(&mut ret_ty);
 
         if kind == ExtractKind::Call {
