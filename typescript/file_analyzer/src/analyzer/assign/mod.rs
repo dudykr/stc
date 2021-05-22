@@ -189,12 +189,15 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
             }
+            op!("??=") => {
+                if rhs.is_bool() {
+                    return Ok(());
+                }
+            }
             _ => {}
         }
 
         match op {
-            op!("+=") => {}
-
             op!("&&=") => {
                 if rhs.is_bool() {
                     return Ok(());
@@ -204,12 +207,13 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
             }
+            _ => {}
+        }
 
-            op!("??=") => {
-                if rhs.is_bool() {
-                    return Ok(());
-                }
+        match op {
+            op!("+=") => {}
 
+            op!("??=") | op!("||=") | op!("&&=") => {
                 return self
                     .assign_with_opts(
                         &mut Default::default(),
