@@ -46,6 +46,27 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        let cnt = if facts.contains(TypeFacts::TypeofEQString) {
+            1
+        } else {
+            0
+        } + if facts.contains(TypeFacts::TypeofEQNumber) {
+            1
+        } else {
+            0
+        } + if facts.contains(TypeFacts::TypeofEQBigInt) {
+            1
+        } else {
+            0
+        } + if facts.contains(TypeFacts::TypeofEQBoolean) {
+            1
+        } else {
+            0
+        };
+        if cnt >= 2 {
+            return Type::never(ty.span());
+        }
+
         let before = dump_type_as_string(&self.cm, &ty);
         ty = ty.fold_with(&mut TypeFactsHandler { analyzer: self, facts });
 
