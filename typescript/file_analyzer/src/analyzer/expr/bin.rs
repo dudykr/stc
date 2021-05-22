@@ -120,7 +120,7 @@ impl Analyzer<'_, '_> {
             Default::default()
         };
 
-        let additional_false_facts = if op == op!("&&") {
+        let mut additional_false_facts = if op == op!("&&") {
             self.cur_facts.false_facts.take()
         } else {
             Default::default()
@@ -202,6 +202,15 @@ impl Analyzer<'_, '_> {
             self.cur_facts += lhs_facts;
         } else if op == op!("&&") {
             self.cur_facts.true_facts += true_facts_for_rhs;
+
+            for (k, v) in additional_false_facts.facts.drain() {
+                *self
+                    .cur_facts
+                    .false_facts
+                    .facts
+                    .entry(k.clone())
+                    .or_insert(TypeFacts::None) &= v;
+            }
         }
 
         self.cur_facts.false_facts += additional_false_facts;
