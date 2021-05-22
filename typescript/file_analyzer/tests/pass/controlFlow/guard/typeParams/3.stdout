@@ -1,0 +1,92 @@
+warning: Type
+ --> $DIR/tests/pass/controlFlow/guard/typeParams/3.ts:7:31
+  |
+7 |     const strings: string[] = [];
+  |                               ^^
+  |
+  = note: []
+
+warning: Type
+ --> $DIR/tests/pass/controlFlow/guard/typeParams/3.ts:8:23
+  |
+8 |     for (const key in item) {
+  |                       ^^^^
+  |
+  = note: {
+              [P in keyof T]: T[P];
+          }
+
+warning: Type
+ --> $DIR/tests/pass/controlFlow/guard/typeParams/3.ts:9:23
+  |
+9 |         const value = item[key];
+  |                       ^^^^
+  |
+  = note: {
+              [P in keyof T]: T[P];
+          }
+
+warning: Type
+ --> $DIR/tests/pass/controlFlow/guard/typeParams/3.ts:9:28
+  |
+9 |         const value = item[key];
+  |                            ^^^
+  |
+  = note: string
+
+warning: Type
+ --> $DIR/tests/pass/controlFlow/guard/typeParams/3.ts:9:23
+  |
+9 |         const value = item[key];
+  |                       ^^^^^^^^^
+  |
+  = note: T[P]
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/typeParams/3.ts:10:20
+   |
+10 |         if (typeof value === "string") {
+   |                    ^^^^^
+   |
+   = note: T[P]
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/typeParams/3.ts:10:13
+   |
+10 |         if (typeof value === "string") {
+   |             ^^^^^^^^^^^^
+   |
+   = note: string
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/typeParams/3.ts:10:13
+   |
+10 |         if (typeof value === "string") {
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: boolean
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/typeParams/3.ts:11:26
+   |
+11 |             strings.push(value);
+   |                          ^^^^^
+   |
+   = note: string
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/typeParams/3.ts:11:13
+   |
+11 |             strings.push(value);
+   |             ^^^^^^^
+   |
+   = note: string[]
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/typeParams/3.ts:11:13
+   |
+11 |             strings.push(value);
+   |             ^^^^^^^^^^^^^^^^^^^
+   |
+   = note: number
+
