@@ -255,7 +255,7 @@ impl AddAssign for CondFacts {
         rhs.assert_valid();
 
         for (k, v) in rhs.facts {
-            *self.facts.entry(k).or_insert(TypeFacts::None) &= v;
+            *self.facts.entry(k.clone()).or_insert(TypeFacts::None) |= v;
         }
 
         self.types.extend(rhs.types);
