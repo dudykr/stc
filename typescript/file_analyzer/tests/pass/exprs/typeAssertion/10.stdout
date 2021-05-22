@@ -14,7 +14,7 @@ warning: Type
 10 |     return 'some' in value;
    |                      ^^^^^
    |
-   = note: Optional<a>
+   = note: Some<a> | None
 
 warning: Type
   --> $DIR/tests/pass/exprs/typeAssertion/10.ts:10:12
@@ -72,7 +72,7 @@ warning: Type
 22 |         result = someFrom(isSome(result) ? result.some : makeSome());
    |                                  ^^^^^^
    |
-   = note: Optional<r>
+   = note: Some<r> | None
 
 warning: Type
   --> $DIR/tests/pass/exprs/typeAssertion/10.ts:22:27
@@ -96,7 +96,7 @@ warning: Type
 22 |         result = someFrom(isSome(result) ? result.some : makeSome());
    |                                            ^^^^^^
    |
-   = note: Some<r>
+   = note: Some
 
 warning: Type
   --> $DIR/tests/pass/exprs/typeAssertion/10.ts:22:44
