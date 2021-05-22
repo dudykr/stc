@@ -19,16 +19,6 @@ function someFrom<a>(some: a) {
     return { some };
 }
 
-export function fn<r>(makeSome: () => r): void {
-    let result: Optional<r> = none;
-    result;  // None
-    while (cond) {
-        result;  // Some<r> | None
-        result = someFrom(isSome(result) ? result.some : makeSome());
-        result;  // Some<r>
-    }
-}
-
 function f5(x: string | number) {
     if (typeof x === "string" && typeof x === "number") {
         x;  // number (guard as assertion)
