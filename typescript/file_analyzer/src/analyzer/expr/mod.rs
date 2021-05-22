@@ -1,6 +1,7 @@
 pub(crate) use self::array::GetIteratorOpts;
 use self::bin::extract_name_for_assignment;
 use super::{marks::MarkExt, Analyzer};
+use crate::analyzer::assign::AssignOpts;
 use crate::analyzer::scope::ScopeKind;
 use crate::analyzer::util::ResultExt;
 use crate::util::type_ext::TypeVecExt;
@@ -1992,8 +1993,24 @@ impl Analyzer<'_, '_> {
 
                     Some(Type::Operator(Operator {
                         op: TsTypeOperatorOp::KeyOf,
+                        ty,
                         ..
-                    })) => {}
+                    })) => {
+                        // Check if we can index the object with given key.
+                        if let Ok(index_type) = self.keyof(span, &ty) {
+                            if let Ok(()) = self.assign_with_opts(
+                                &mut Default::default(),
+                                AssignOpts {
+                                    span,
+                                    ..Default::default()
+                                },
+                                &index_type,
+                                &prop.ty(),
+                            ) {
+                                return Ok(m.ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(span)));
+                            }
+                        }
+                    }
 
                     Some(index @ Type::Keyword(..)) | Some(index @ Type::Param(..)) => {
                         // {

@@ -35,7 +35,7 @@ impl Analyzer<'_, '_> {
     ///
     /// ## `ty`
     /// Should be operand of `keyof`.
-    pub(super) fn keyof(&mut self, span: Span, ty: &Type) -> ValidationResult<Type> {
+    pub(crate) fn keyof(&mut self, span: Span, ty: &Type) -> ValidationResult<Type> {
         let _ctx = context(format!("keyof: {}", dump_type_as_string(&self.cm, ty)));
 
         if !self.is_builtin {
