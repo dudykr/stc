@@ -58,7 +58,9 @@ use swc_ecma_ast::*;
 /// Conditional facts
 #[derive(Debug, Clone, Default)]
 pub(crate) struct CondFacts {
-    pub facts: FxHashMap<Name, TypeFacts>,
+    /// Stored values are `a` or `b`. e.g. `typeof a === 'string' | typeof a ===
+    /// 'number'` is stored as `vec![TypeofEQString | TypeofEQNumber]`
+    pub facts: FxHashMap<Name, Vec<TypeFacts>>,
     pub vars: FxHashMap<Name, Type>,
     pub excludes: FxHashMap<Name, Vec<Type>>,
     pub types: FxHashMap<Id, Type>,
