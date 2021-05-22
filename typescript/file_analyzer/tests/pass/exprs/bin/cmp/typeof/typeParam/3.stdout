@@ -32,7 +32,7 @@ warning: Type
 9 |         const value = item[key];
   |                            ^^^
   |
-  = note: Extract<keyof T, string>
+  = note: string
 
 warning: Type
  --> $DIR/tests/pass/exprs/bin/cmp/typeof/typeParam/3.ts:9:23
@@ -42,7 +42,7 @@ warning: Type
   |
   = note: {
               [P in keyof T]: T[P];
-          }[keyof T extends string ? keyof T : never]
+          }[string]
 
 warning: Type
   --> $DIR/tests/pass/exprs/bin/cmp/typeof/typeParam/3.ts:10:20
@@ -52,7 +52,7 @@ warning: Type
    |
    = note: {
                [P in keyof T]: T[P];
-           }[keyof T extends string ? keyof T : never]
+           }[string]
 
 warning: Type
   --> $DIR/tests/pass/exprs/bin/cmp/typeof/typeParam/3.ts:10:13

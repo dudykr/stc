@@ -4,7 +4,12 @@ warning: Type
 4 |     if (!x.error) {
   |          ^
   |
-  = note: Result<number>
+  = note: {
+              error?: undefined;
+              value: number;
+          } | {
+              error: Error;
+          }
 
 warning: Type
  --> $DIR/tests/pass/exprs/bin/cmp/union/2.ts:4:10

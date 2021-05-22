@@ -47,14 +47,6 @@ warning: Type
   = note: number
 
 warning: Type
- --> $DIR/tests/pass/exprs/bin/addition/1.ts:3:5
-  |
-3 |     n += v[k]; // += should work the same way
-  |     ^
-  |
-  = note: number
-
-warning: Type
  --> $DIR/tests/pass/exprs/bin/addition/1.ts:3:10
   |
 3 |     n += v[k]; // += should work the same way
@@ -75,6 +67,14 @@ warning: Type
   |
 3 |     n += v[k]; // += should work the same way
   |          ^^^^
+  |
+  = note: number
+
+warning: Type
+ --> $DIR/tests/pass/exprs/bin/addition/1.ts:3:5
+  |
+3 |     n += v[k]; // += should work the same way
+  |     ^
   |
   = note: number
 
@@ -143,14 +143,6 @@ warning: Type
   = note: number
 
 warning: Type
- --> $DIR/tests/pass/exprs/bin/addition/1.ts:8:9
-  |
-8 |         n += v[k];
-  |         ^
-  |
-  = note: number
-
-warning: Type
  --> $DIR/tests/pass/exprs/bin/addition/1.ts:8:14
   |
 8 |         n += v[k];
@@ -171,6 +163,14 @@ warning: Type
   |
 8 |         n += v[k];
   |              ^^^^
+  |
+  = note: number
+
+warning: Type
+ --> $DIR/tests/pass/exprs/bin/addition/1.ts:8:9
+  |
+8 |         n += v[k];
+  |         ^
   |
   = note: number
 
