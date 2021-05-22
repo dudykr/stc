@@ -36,13 +36,6 @@ warning: Type
 6 | foo(class { static prop = "hello" }).length;
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   |
-  = note: T
-
-warning: Type
- --> $DIR/tests/visualize/exprs/class/static/typeArgumentInferenceWithClassExpression2/1.ts:6:1
-  |
-6 | foo(class { static prop = "hello" }).length;
-  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: T["length"]
+  = note: {
+          }
 
