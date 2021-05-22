@@ -4,7 +4,7 @@ warning: Type
 6 | export const c1 = Array.from(a)
   |                              ^
   |
-  = note: Set<A>
+  = note: Set
 
 warning: Type
  --> $DIR/tests/pass/exprs/array/from.ts:6:19

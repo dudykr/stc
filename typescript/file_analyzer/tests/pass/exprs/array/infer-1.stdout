@@ -32,7 +32,7 @@ warning: Type
 2 | export let b1: { x: boolean }[] = foo({ x: true }, { x: false });
   |                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   |
-  = note: ({
+  = note: {
               x: boolean;
-          })[]
+          }[]
 
