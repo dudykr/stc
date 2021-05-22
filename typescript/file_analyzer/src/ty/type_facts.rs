@@ -30,7 +30,7 @@ use swc_common::DUMMY_SP;
 use swc_ecma_ast::TsKeywordTypeKind;
 
 impl Analyzer<'_, '_> {
-    pub fn apply_type_facts_to_type(&mut self, facts: TypeFacts, mut ty: Type) -> Type {
+    pub(crate) fn apply_type_facts_to_type(&mut self, facts: TypeFacts, mut ty: Type) -> Type {
         if facts.contains(TypeFacts::TypeofEQNumber)
             || facts.contains(TypeFacts::TypeofEQString)
             || facts.contains(TypeFacts::TypeofEQBoolean)
