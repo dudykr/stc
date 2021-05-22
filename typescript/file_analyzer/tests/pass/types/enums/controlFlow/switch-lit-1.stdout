@@ -4,7 +4,13 @@ warning: Type
 8 |     switch (x.kind) {
   |             ^
   |
-  = note: Item
+  = note: {
+              kind: Choice.Yes;
+              a: string;
+          } | {
+              kind: Choice.No;
+              b: string;
+          }
 
 warning: Type
  --> $DIR/tests/pass/types/enums/controlFlow/switch-lit-1.ts:8:13

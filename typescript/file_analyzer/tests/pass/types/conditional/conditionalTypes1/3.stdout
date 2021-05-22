@@ -4,7 +4,7 @@ warning: Type
 2 |     x = y;
   |         ^
   |
-  = note: NonNullable<T>
+  = note: T extends null | undefined ? never : T
 
 warning: Type
  --> $DIR/tests/pass/types/conditional/conditionalTypes1/3.ts:2:5
@@ -12,5 +12,5 @@ warning: Type
 2 |     x = y;
   |     ^^^^^
   |
-  = note: NonNullable<T>
+  = note: T extends null | undefined ? never : T
 
