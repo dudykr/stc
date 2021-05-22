@@ -2739,26 +2739,6 @@ struct ReturnTypeSimplifier<'a, 'b, 'c> {
     analyzer: &'a mut Analyzer<'b, 'c>,
 }
 
-impl VisitMut<Union> for ReturnTypeSimplifier<'_, '_, '_> {
-    fn visit_mut(&mut self, union: &mut Union) {
-        let should_remove_null_and_undefined = union.types.iter().any(|ty| match ty.normalize() {
-            Type::TypeLit(..) => true,
-            Type::Ref(..) => true,
-            _ => false,
-        });
-
-        if should_remove_null_and_undefined {
-            union.types.retain(|ty| {
-                if ty.is_kwd(TsKeywordTypeKind::TsNullKeyword) | ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
-                    return false;
-                }
-
-                true
-            });
-        }
-    }
-}
-
 impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
     fn visit_mut(&mut self, ty: &mut Type) {
         ty.visit_mut_children_with(self);
