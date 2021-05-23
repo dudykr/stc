@@ -253,6 +253,7 @@ controlFlow/controlFlowDoWhileStatement.ts
 controlFlow/controlFlowElementAccess.ts
 controlFlow/controlFlowElementAccess2.ts
 controlFlow/controlFlowForInStatement.ts
+controlFlow/controlFlowForOfStatement.ts
 controlFlow/controlFlowIfStatement.ts
 controlFlow/controlFlowInstanceOfGuardPrimitives.ts
 controlFlow/controlFlowInstanceofExtendsFunction.ts
