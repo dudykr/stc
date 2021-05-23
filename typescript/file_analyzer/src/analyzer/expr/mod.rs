@@ -409,6 +409,7 @@ impl Analyzer<'_, '_> {
             let span = e.span();
             let mut mark_var_as_truthy = false;
 
+            let mut left_i = None;
             let ty_of_left;
             let (any_span, type_ann) = match e.left {
                 RPatOrExpr::Pat(box RPat::Ident(RBindingIdent { id: ref i, .. }))
@@ -420,6 +421,8 @@ impl Analyzer<'_, '_> {
                         None
                     };
 
+                    left_i = Some(i.clone());
+
                     ty_of_left = analyzer
                         .type_of_var(i, TypeOfMode::LValue, None)
                         .context("tried to get type of lhs of an assignment")
@@ -428,11 +431,6 @@ impl Analyzer<'_, '_> {
                             ty
                         })
                         .report(&mut analyzer.storage);
-
-                    // TODO: Deny changing type of const
-                    if mark_var_as_truthy {
-                        analyzer.mark_var_as_truthy(Id::from(i))?;
-                    }
 
                     (any_span, ty_of_left.as_ref())
                 }
@@ -495,6 +493,13 @@ impl Analyzer<'_, '_> {
                     Err(())
                 }
             };
+
+            // TODO: Deny changing type of const
+            if mark_var_as_truthy {
+                if let Some(i) = left_i {
+                    analyzer.mark_var_as_truthy(Id::from(i))?;
+                }
+            }
 
             analyzer.storage.report_all(errors);
 
