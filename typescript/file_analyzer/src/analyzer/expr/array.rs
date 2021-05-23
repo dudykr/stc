@@ -4,6 +4,7 @@ use super::TypeOfMode;
 use crate::analyzer::types::NormalizeTypeOpts;
 use crate::analyzer::Analyzer;
 use crate::analyzer::Ctx;
+use crate::ty::TypeExt;
 use crate::type_facts::TypeFacts;
 use crate::util::type_ext::TypeVecExt;
 use crate::validator;
@@ -168,7 +169,11 @@ impl Analyzer<'_, '_> {
                 }
                 true
             });
-            let mut types: Vec<_> = elements.into_iter().map(|element| *element.ty).collect();
+            let mut types: Vec<_> = elements
+                .into_iter()
+                .map(|element| *element.ty)
+                .map(|ty| if type_ann.is_none() { ty.generalize_lit() } else { ty })
+                .collect();
             types.dedup_type();
             if types.is_empty() {
                 types.push(if self.ctx.use_undefined_for_empty_tuple && is_empty {
