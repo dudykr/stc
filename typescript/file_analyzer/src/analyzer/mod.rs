@@ -612,9 +612,15 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
 
             let ret = op(&mut child);
 
+            let errors = if child.ctx.ignore_errors {
+                Default::default()
+            } else {
+                child.storage.take_errors()
+            };
+
             (
                 ret,
-                child.storage.take_errors(),
+                errors,
                 child.imports,
                 child.imports_by_id,
                 child.cur_facts,
