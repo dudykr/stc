@@ -52,7 +52,7 @@ warning: Type
 3 | while (x > 1) {
   |        ^
   |
-  = note: number | string
+  = note: number
 
 warning: Type
  --> $DIR/tests/pass/controlFlow/whileStmt/controlFlowWhileStatement/1.ts:4:5
@@ -60,7 +60,7 @@ warning: Type
 4 |     x; // string | number
   |     ^
   |
-  = note: number | string
+  = note: number
 
 warning: Type
  --> $DIR/tests/pass/controlFlow/whileStmt/controlFlowWhileStatement/1.ts:8:1
