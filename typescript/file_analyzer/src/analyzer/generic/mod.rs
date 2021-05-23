@@ -1899,9 +1899,9 @@ impl Analyzer<'_, '_> {
         }
         slog::debug!(
             self.logger,
-            "rename_type_params(has_ann = {:?}, ty = {:?})",
+            "rename_type_params(has_ann = {:?}, ty = {})",
             type_ann.is_some(),
-            ty
+            dump_type_as_string(&self.cm, &ty)
         );
 
         if ty.normalize().is_intersection_type() {
