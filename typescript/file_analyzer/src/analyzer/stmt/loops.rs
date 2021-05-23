@@ -90,6 +90,8 @@ impl Analyzer<'_, '_> {
 
             // We copy `actual` types and type facts from the child scope.
 
+            prev_facts.override_vars_using(&mut facts_from_body);
+
             prev_facts += facts_from_body;
         }
 

@@ -81,6 +81,19 @@ impl CondFacts {
         }
     }
 
+    pub fn override_vars_using(&mut self, r: &mut Self) {
+        for (k, ty) in r.vars.drain() {
+            match self.vars.entry(k) {
+                Entry::Occupied(mut e) => {
+                    *e.get_mut() = ty;
+                }
+                Entry::Vacant(e) => {
+                    e.insert(ty);
+                }
+            }
+        }
+    }
+
     pub fn take(&mut self) -> Self {
         Self {
             facts: take(&mut self.facts),
