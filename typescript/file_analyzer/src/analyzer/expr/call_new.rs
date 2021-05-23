@@ -2229,6 +2229,8 @@ impl Analyzer<'_, '_> {
 
             self.add_required_type_params(&mut ty);
 
+            print_type(&logger, "Return, after adding type params", &self.cm, &ty);
+
             if kind == ExtractKind::Call {
                 self.add_call_facts(&expanded_param_types, &args, &mut ty);
             }
