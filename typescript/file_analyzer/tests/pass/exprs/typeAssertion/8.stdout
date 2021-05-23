@@ -1,0 +1,256 @@
+warning: Type
+ --> $DIR/tests/pass/exprs/typeAssertion/8.ts:7:5
+  |
+7 |     x!.slice();
+  |     ^
+  |
+  = note: string | undefined | null
+
+warning: Type
+ --> $DIR/tests/pass/exprs/typeAssertion/8.ts:7:5
+  |
+7 |     x!.slice();
+  |     ^^
+  |
+  = note: string
+
+warning: Type
+ --> $DIR/tests/pass/exprs/typeAssertion/8.ts:7:5
+  |
+7 |     x!.slice();
+  |     ^^^^^^^^^^
+  |
+  = note: string
+
+warning: Type
+ --> $DIR/tests/pass/exprs/typeAssertion/8.ts:8:5
+  |
+8 |     x = "";
+  |     ^^^^^^
+  |
+  = note: ""
+
+warning: Type
+ --> $DIR/tests/pass/exprs/typeAssertion/8.ts:9:5
+  |
+9 |     x!.slice();
+  |     ^
+  |
+  = note: string
+
+warning: Type
+ --> $DIR/tests/pass/exprs/typeAssertion/8.ts:9:5
+  |
+9 |     x!.slice();
+  |     ^^
+  |
+  = note: string
+
+warning: Type
+ --> $DIR/tests/pass/exprs/typeAssertion/8.ts:9:5
+  |
+9 |     x!.slice();
+  |     ^^^^^^^^^^
+  |
+  = note: string
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/8.ts:10:9
+   |
+10 |     x = undefined;
+   |         ^^^^^^^^^
+   |
+   = note: undefined
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/8.ts:10:5
+   |
+10 |     x = undefined;
+   |     ^^^^^^^^^^^^^
+   |
+   = note: undefined
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/8.ts:11:5
+   |
+11 |     x!.slice();
+   |     ^
+   |
+   = note: string
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/8.ts:11:5
+   |
+11 |     x!.slice();
+   |     ^^
+   |
+   = note: string
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/8.ts:11:5
+   |
+11 |     x!.slice();
+   |     ^^^^^^^^^^
+   |
+   = note: string
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/8.ts:12:5
+   |
+12 |     x = null;
+   |     ^^^^^^^^
+   |
+   = note: null
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/8.ts:13:5
+   |
+13 |     x!.slice();
+   |     ^
+   |
+   = note: string
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/8.ts:13:5
+   |
+13 |     x!.slice();
+   |     ^^
+   |
+   = note: string
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/8.ts:13:5
+   |
+13 |     x!.slice();
+   |     ^^^^^^^^^^
+   |
+   = note: string
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/8.ts:14:27
+   |
+14 |     x = <undefined | null>undefined;
+   |                           ^^^^^^^^^
+   |
+   = note: undefined
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/8.ts:14:9
+   |
+14 |     x = <undefined | null>undefined;
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: undefined | null
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/8.ts:14:5
+   |
+14 |     x = <undefined | null>undefined;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: undefined | null
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/8.ts:15:5
+   |
+15 |     x!.slice();
+   |     ^
+   |
+   = note: string
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/8.ts:15:5
+   |
+15 |     x!.slice();
+   |     ^^
+   |
+   = note: string
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/8.ts:15:5
+   |
+15 |     x!.slice();
+   |     ^^^^^^^^^^
+   |
+   = note: string
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/8.ts:16:9
+   |
+16 |     x = <string | undefined>"";
+   |         ^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: string | undefined
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/8.ts:16:5
+   |
+16 |     x = <string | undefined>"";
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: string | undefined
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/8.ts:17:5
+   |
+17 |     x!.slice();
+   |     ^
+   |
+   = note: string
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/8.ts:17:5
+   |
+17 |     x!.slice();
+   |     ^^
+   |
+   = note: string
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/8.ts:17:5
+   |
+17 |     x!.slice();
+   |     ^^^^^^^^^^
+   |
+   = note: string
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/8.ts:18:9
+   |
+18 |     x = <string | null>"";
+   |         ^^^^^^^^^^^^^^^^^
+   |
+   = note: string | null
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/8.ts:18:5
+   |
+18 |     x = <string | null>"";
+   |     ^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: string | null
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/8.ts:19:5
+   |
+19 |     x!.slice();
+   |     ^
+   |
+   = note: string
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/8.ts:19:5
+   |
+19 |     x!.slice();
+   |     ^^
+   |
+   = note: string
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/8.ts:19:5
+   |
+19 |     x!.slice();
+   |     ^^^^^^^^^^
+   |
+   = note: string
+
