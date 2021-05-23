@@ -9,8 +9,8 @@ do
     if tsc --strictFunctionTypes --noImplicitAny --noEmit --downlevelIteration $F ; then
         echo "$F is a valid pass test"
     else
-        # ./scripts/test/move-pass-test.sh $F
-        code $F
+        ./scripts/test/move-pass-test.sh $F
+        # code $F
     fi
 done
 
