@@ -4,6 +4,15 @@ use bitflags::bitflags;
 use swc_common::add_bitflags;
 
 bitflags! {
+    /// ```ts
+    /// if (typeof a === 'string' || typeof a === 'nubmer') { return;}
+    /// a
+    /// ```
+    ///
+    /// Because of `||`, true facts for above code is \[TypeofEQString, TypeofNENumber\].
+    ///
+    /// Because of `||`, false facts for above code is \[TypeofNEString
+    /// & TypeofNENumber\].
     pub struct TypeFacts: u32 {
         const None = 0;
         /// typeof x === "string"
