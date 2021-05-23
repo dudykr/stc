@@ -9,7 +9,7 @@ do
     if tsc --strict --noEmit $F ; then
         echo "$F is a valid pass test"
     else
-        ./scripts/allow-error.sh $F
+        ./scripts/test/move-pass-test.sh $F
     fi
 done
 
