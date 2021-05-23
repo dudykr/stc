@@ -121,22 +121,23 @@ fn run_test(file_name: PathBuf, logger: slog::Logger, for_error: bool) -> Option
             });
             let module = RModule::from_orig(&mut node_id_gen, module);
             {
-                let mut analyzer = Analyzer::root(
-                    logger,
-                    env,
-                    cm.clone(),
-                    box &mut storage,
-                    &NoopLoader,
-                    if for_error {
-                        None
-                    } else {
-                        Some(Debugger {
-                            cm: cm.clone(),
-                            handler: handler.clone(),
-                        })
-                    },
-                );
                 GLOBALS.set(stable_env.swc_globals(), || {
+                    let mut analyzer = Analyzer::root(
+                        logger,
+                        env,
+                        cm.clone(),
+                        box &mut storage,
+                        &NoopLoader,
+                        if for_error {
+                            None
+                        } else {
+                            Some(Debugger {
+                                cm: cm.clone(),
+                                handler: handler.clone(),
+                            })
+                        },
+                    );
+
                     module.validate_with(&mut analyzer).unwrap();
                 });
             }

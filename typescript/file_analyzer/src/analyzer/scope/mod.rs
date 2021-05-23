@@ -1705,7 +1705,9 @@ impl Analyzer<'_, '_> {
     where
         T: VisitWith<MarkFinder>,
     {
-        contains_mark(ty, self.marks().contains_infer_type_mark)
+        swc_common::GLOBALS.set(self.env.shared().swc_globals(), || {
+            contains_mark(ty, self.marks().contains_infer_type_mark)
+        })
     }
 
     pub(crate) fn mark_as_infer_type_container(&self, span: Span) -> Span {
