@@ -946,7 +946,12 @@ impl Analyzer<'_, '_> {
                                     continue;
                                 }
                                 //
-                                self.storage.report(Error::CannotCompareWithOp { span, op });
+                                self.storage.report(Error::CannotCompareWithOp {
+                                    span,
+                                    op,
+                                    left: box l.clone(),
+                                    right: box r.clone(),
+                                });
                                 return;
                             }
                             _ => {}
@@ -963,7 +968,12 @@ impl Analyzer<'_, '_> {
             return;
         }
 
-        self.storage.report(Error::CannotCompareWithOp { span, op });
+        self.storage.report(Error::CannotCompareWithOp {
+            span,
+            op,
+            left: box l.clone(),
+            right: box r.clone(),
+        });
     }
 
     fn can_compare_relatively(&mut self, span: Span, l: &Type, r: &Type) -> ValidationResult<bool> {
