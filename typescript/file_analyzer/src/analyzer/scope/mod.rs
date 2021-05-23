@@ -408,11 +408,7 @@ impl Scope<'_> {
     pub fn move_vars_from_child(&mut self, child: &mut Scope) {
         match child.kind {
             // We don't copy variable information from nested function.
-            ScopeKind::Module
-            | ScopeKind::Method { .. }
-            | ScopeKind::Fn
-            | ScopeKind::ArrowFn
-            | ScopeKind::LoopBody { last: false } => return,
+            ScopeKind::Module | ScopeKind::Method { .. } | ScopeKind::Fn | ScopeKind::ArrowFn => return,
             _ => {}
         }
         let is_end_of_loop = match child.kind {
@@ -449,7 +445,11 @@ impl Scope<'_> {
                                     types.push(actual_ty);
                                 }
 
+                                dbg!(&e.get().actual_ty.clone());
+
                                 types.extend(e.get().actual_ty.clone());
+
+                                dbg!(&types);
 
                                 if types.len() == 1 {
                                     types.into_iter().next().unwrap().fixed()

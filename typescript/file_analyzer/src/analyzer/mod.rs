@@ -572,10 +572,27 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         .unwrap()
     }
 
-    /// TODO: Move return values to parent scope
     pub(crate) fn with_child<F, Ret>(&mut self, kind: ScopeKind, facts: CondFacts, op: F) -> ValidationResult<Ret>
     where
         F: for<'aa, 'bb> FnOnce(&mut Analyzer<'aa, 'bb>) -> ValidationResult<Ret>,
+    {
+        self.with_child_with_hook(kind, facts, op, |_| {})
+    }
+
+    ///
+    ///
+    ///
+    /// Hook is invoked with `self` (not child) after `op`.
+    pub(crate) fn with_child_with_hook<F, Ret, H>(
+        &mut self,
+        kind: ScopeKind,
+        facts: CondFacts,
+        op: F,
+        hook: H,
+    ) -> ValidationResult<Ret>
+    where
+        F: for<'aa, 'bb> FnOnce(&mut Analyzer<'aa, 'bb>) -> ValidationResult<Ret>,
+        H: for<'aa, 'bb> FnOnce(&mut Analyzer<'aa, 'bb>),
     {
         let ctx = self.ctx;
         let imports = take(&mut self.imports);
@@ -638,25 +655,15 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         self.imports_by_id = imports_by_id;
         self.cur_facts = cur_facts;
         self.mutations = mutations;
+        self.data = data;
 
-        // if !self.is_builtin {
-        //     assert_eq!(
-        //         info.exports.types,
-        //         Default::default(),
-        //         "child cannot export a type"
-        //     );
-        //     assert!(
-        //         info.exports.vars.is_empty(),
-        //         "child cannot export a variable"
-        //     );
-        // }
+        hook(self);
 
         self.duplicated_tracker.record_all(dup);
         self.scope.move_types_from_child(&mut child_scope);
         self.scope.move_vars_from_child(&mut child_scope);
         self.prepend_stmts.extend(prepend_stmts);
         self.append_stmts.extend(append_stmts);
-        self.data = data;
         if kind == ScopeKind::Module {
             self.data.for_module = module_data;
         }

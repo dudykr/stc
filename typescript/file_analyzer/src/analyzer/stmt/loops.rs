@@ -56,9 +56,10 @@ impl Analyzer<'_, '_> {
         let mut prev_false_facts = orig_facts.false_facts.take();
         let mut facts_of_prev_body_eval = CondFacts::default();
         let mut last = false;
+        let mut orig_vars = Some(self.scope.vars.clone());
 
         loop {
-            let mut facts_from_body: CondFacts = self.with_child(
+            let mut facts_from_body: CondFacts = self.with_child_with_hook(
                 ScopeKind::LoopBody { last },
                 prev_facts.clone(),
                 |child: &mut Analyzer| {
@@ -75,6 +76,11 @@ impl Analyzer<'_, '_> {
                     body.visit_with(child);
 
                     Ok(child.cur_facts.true_facts.take())
+                },
+                |analyzer: &mut Analyzer| {
+                    if last {
+                        analyzer.scope.vars = orig_vars.take().unwrap();
+                    }
                 },
             )?;
 
