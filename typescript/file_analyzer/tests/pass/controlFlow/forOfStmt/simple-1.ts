@@ -1,4 +1,3 @@
-//@target: ES6
 class Foo { }
 class FooIterator {
     next() {
