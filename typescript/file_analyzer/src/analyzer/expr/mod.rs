@@ -3021,7 +3021,7 @@ impl Analyzer<'_, '_> {
                 | ScopeKind::Flow
                 | ScopeKind::Call
                 | ScopeKind::Block
-                | ScopeKind::LoopBody
+                | ScopeKind::LoopBody { .. }
                 | ScopeKind::ObjectLit => false,
                 ScopeKind::Fn
                 | ScopeKind::Method { .. }

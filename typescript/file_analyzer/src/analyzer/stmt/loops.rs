@@ -58,8 +58,10 @@ impl Analyzer<'_, '_> {
         let mut last = false;
 
         loop {
-            let mut facts_from_body: CondFacts =
-                self.with_child(ScopeKind::LoopBody, prev_facts.clone(), |child: &mut Analyzer| {
+            let mut facts_from_body: CondFacts = self.with_child(
+                ScopeKind::LoopBody { last },
+                prev_facts.clone(),
+                |child: &mut Analyzer| {
                     child.ctx.ignore_errors = !last;
 
                     {
@@ -73,7 +75,8 @@ impl Analyzer<'_, '_> {
                     body.visit_with(child);
 
                     Ok(child.cur_facts.true_facts.take())
-                })?;
+                },
+            )?;
 
             facts_from_body.excludes.clear();
 

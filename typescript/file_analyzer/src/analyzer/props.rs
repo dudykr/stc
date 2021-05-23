@@ -266,9 +266,11 @@ impl Analyzer<'_, '_> {
                 | ScopeKind::ArrowFn
                 | ScopeKind::Class
                 | ScopeKind::ObjectLit => true,
-                ScopeKind::LoopBody | ScopeKind::Block | ScopeKind::Flow | ScopeKind::TypeParams | ScopeKind::Call => {
-                    false
-                }
+                ScopeKind::LoopBody { .. }
+                | ScopeKind::Block
+                | ScopeKind::Flow
+                | ScopeKind::TypeParams
+                | ScopeKind::Call => false,
             });
             if let Some(scope) = scope {
                 match scope.kind() {

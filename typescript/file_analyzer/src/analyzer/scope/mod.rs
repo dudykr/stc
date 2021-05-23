@@ -218,7 +218,7 @@ impl Scope<'_> {
             | ScopeKind::Module
             | ScopeKind::Call
             | ScopeKind::Constructor => Some(self),
-            ScopeKind::LoopBody => self.parent()?.scope_of_computed_props(),
+            ScopeKind::LoopBody { .. } => self.parent()?.scope_of_computed_props(),
             ScopeKind::Block | ScopeKind::Flow | ScopeKind::TypeParams => self.parent()?.scope_of_computed_props(),
         }
     }
@@ -314,7 +314,7 @@ impl Scope<'_> {
 
     pub fn is_in_loop_body(&self) -> bool {
         match self.kind {
-            ScopeKind::LoopBody => return true,
+            ScopeKind::LoopBody { .. } => return true,
             ScopeKind::Module | ScopeKind::ArrowFn | ScopeKind::Fn | ScopeKind::Class => return false,
             _ => {}
         }
@@ -408,9 +408,17 @@ impl Scope<'_> {
     pub fn move_vars_from_child(&mut self, child: &mut Scope) {
         match child.kind {
             // We don't copy variable information from nested function.
-            ScopeKind::Module | ScopeKind::Method { .. } | ScopeKind::Fn | ScopeKind::ArrowFn => return,
+            ScopeKind::Module
+            | ScopeKind::Method { .. }
+            | ScopeKind::Fn
+            | ScopeKind::ArrowFn
+            | ScopeKind::LoopBody { last: false } => return,
             _ => {}
         }
+        let is_end_of_loop = match child.kind {
+            ScopeKind::LoopBody { last: true } => true,
+            _ => false,
+        };
 
         for (name, var) in child.vars.drain() {
             if let Some(ty) = &var.ty {
@@ -430,7 +438,7 @@ impl Scope<'_> {
                         if let Some(actual_ty) = var.actual_ty {
                             actual_ty.assert_valid();
 
-                            let new_actual_type = if is_actual_type_modified_in_loop {
+                            let new_actual_type = if is_end_of_loop && is_actual_type_modified_in_loop {
                                 let mut types = vec![];
 
                                 if let Some(prev) = &e.get().actual_ty {
@@ -1831,7 +1839,7 @@ impl<'a> Scope<'a> {
             | ScopeKind::Flow
             | ScopeKind::Block
             | ScopeKind::Module
-            | ScopeKind::LoopBody => {}
+            | ScopeKind::LoopBody { .. } => {}
         }
 
         match self.parent {
@@ -1859,7 +1867,7 @@ impl<'a> Scope<'a> {
             | ScopeKind::Constructor
             | ScopeKind::Flow
             | ScopeKind::Block
-            | ScopeKind::LoopBody => {}
+            | ScopeKind::LoopBody { .. } => {}
         }
 
         match self.parent {
@@ -1983,7 +1991,9 @@ pub(crate) enum ScopeKind {
     Call,
     Module,
     /// Used to capture type facts created by loop bodies.
-    LoopBody,
+    LoopBody {
+        last: bool,
+    },
 }
 
 impl ScopeKind {
