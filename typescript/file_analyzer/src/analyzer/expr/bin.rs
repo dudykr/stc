@@ -192,7 +192,7 @@ impl Analyzer<'_, '_> {
                 match self.cur_facts.true_facts.facts.entry(k) {
                     // (typeof a === 'string' || typeof a === 'number')
                     Entry::Occupied(mut e) => {
-                        *e.get_mut() |= type_fact;
+                        *e.get_mut() &= type_fact;
                     }
                     // (typeof a === 'string' || a !== foo)
                     Entry::Vacant(..) => {}
