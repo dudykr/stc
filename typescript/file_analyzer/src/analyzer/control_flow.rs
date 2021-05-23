@@ -56,7 +56,7 @@ use swc_common::{Span, Spanned};
 use swc_ecma_ast::*;
 
 /// Conditional facts
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub(crate) struct CondFacts {
     pub facts: FxHashMap<Name, TypeFacts>,
     pub vars: FxHashMap<Name, Type>,

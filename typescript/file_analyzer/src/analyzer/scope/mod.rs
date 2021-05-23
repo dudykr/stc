@@ -1159,9 +1159,8 @@ impl Analyzer<'_, '_> {
         if !self.is_builtin
             && !is_override
             && !allow_multiple
-            && !self.ctx.reevaluating_call_or_new
-            && !self.ctx.reevaluating_argument
-            && !self.ctx.reevaluating_loop_body
+            && !self.ctx.ignore_errors
+            && !self.ctx.reevaluating()
             && !self.ctx.in_ts_fn_type
         {
             let spans = self.data.var_spans.entry(name.clone()).or_default();

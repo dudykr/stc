@@ -165,7 +165,10 @@ pub(crate) struct Ctx {
     reevaluating_call_or_new: bool,
     reevaluating_argument: bool,
 
-    reevaluating_loop_body: bool,
+    /// If true, all errors should be ignored.
+    ///
+    /// Used to prevent wrong errors while validate loop bodies or etc.
+    ignore_errors: bool,
 
     var_kind: VarDeclKind,
     pat_mode: PatMode,
@@ -198,9 +201,6 @@ pub(crate) struct Ctx {
     /// parameters.
     preserve_ret_ty: bool,
 
-    /// If true, **recovereable** errors are ignored. Used for trying.
-    ignore_errors: bool,
-
     skip_union_while_inferencing: bool,
 
     skip_identical_while_inferencing: bool,
@@ -223,7 +223,7 @@ pub(crate) struct Ctx {
 
 impl Ctx {
     pub fn reevaluating(self) -> bool {
-        self.reevaluating_argument || self.reevaluating_call_or_new || self.reevaluating_loop_body
+        self.reevaluating_argument || self.reevaluating_call_or_new
     }
 
     pub fn can_generalize_literals(self) -> bool {
@@ -519,7 +519,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 in_static_property_initializer: false,
                 reevaluating_call_or_new: false,
                 reevaluating_argument: false,
-                reevaluating_loop_body: false,
                 var_kind: VarDeclKind::Var,
                 pat_mode: PatMode::Assign,
                 computed_prop_mode: ComputedPropMode::Object,
