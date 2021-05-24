@@ -28,10 +28,12 @@ impl Analyzer<'_, '_> {
             };
             let mut a = self.with_ctx(ctx);
 
-            let ty = expr
+            let mut ty = expr
                 .expr
                 .validate_with_args(&mut *a, (mode, None, type_ann))
                 .context("tried to valid expression of a const assertion")?;
+
+            a.prevent_generalize(&mut ty);
 
             Ok(ty)
         } else {
