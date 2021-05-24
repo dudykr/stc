@@ -87,6 +87,7 @@ mod array;
 mod await_expr;
 mod bin;
 mod call_new;
+mod const_assertion;
 mod constraint_reducer;
 mod function;
 mod object;
@@ -323,19 +324,7 @@ impl Analyzer<'_, '_> {
 
                 RExpr::OptChain(expr) => expr.validate_with_args(self, type_ann),
 
-                RExpr::TsConstAssertion(expr) => {
-                    if mode == TypeOfMode::RValue {
-                        return expr.expr.validate_with_args(self, (mode, None, type_ann));
-                    } else {
-                        return Err(Error::Unimplemented {
-                            span,
-                            msg: format!(
-                                "Proper error reporting for using const assertion expression in left hand side of an \
-                                 assignment expression"
-                            ),
-                        });
-                    }
-                }
+                RExpr::TsConstAssertion(expr) => expr.validate_with_args(self, (mode, None, type_ann)),
 
                 _ => unimplemented!("typeof ({:?})", e),
             }
