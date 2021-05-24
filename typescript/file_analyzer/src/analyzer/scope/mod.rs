@@ -445,11 +445,7 @@ impl Scope<'_> {
                                     types.push(actual_ty);
                                 }
 
-                                dbg!(&e.get().actual_ty.clone());
-
                                 types.extend(e.get().actual_ty.clone());
-
-                                dbg!(&types);
 
                                 if types.len() == 1 {
                                     types.into_iter().next().unwrap().fixed()
