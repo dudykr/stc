@@ -326,10 +326,10 @@ impl Analyzer<'_, '_> {
                         if !(self.ctx.var_kind == VarDeclKind::Const && ty.is_lit()) {
                             if self.may_generalize(&ty) {
                                 // Vars behave differently based on the context.
-                                if self.ctx.in_argument {
-                                    ty = ty.fold_with(&mut Generalizer::default());
-                                } else {
+                                if self.ctx.can_generalize_literals() {
                                     ty = ty.generalize_lit();
+                                } else {
+                                    ty = ty.fold_with(&mut Generalizer::default());
                                 }
                             }
                         }
