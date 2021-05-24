@@ -110,6 +110,8 @@ pub(crate) struct Ctx {
 
     phase: Phase,
 
+    in_const_assertion: bool,
+
     diallow_unknown_object_property: bool,
     disallow_optional_object_property: bool,
 
@@ -227,7 +229,7 @@ impl Ctx {
     }
 
     pub fn can_generalize_literals(self) -> bool {
-        !self.in_argument && !self.in_cond_of_cond_expr
+        !self.in_const_assertion && !self.in_argument && !self.in_cond_of_cond_expr
     }
 }
 
@@ -492,6 +494,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             ctx: Ctx {
                 module_id: ModuleId::builtin(),
                 phase: Default::default(),
+                in_const_assertion: false,
                 diallow_unknown_object_property: false,
                 disallow_optional_object_property: false,
                 use_undefined_for_empty_tuple: false,
@@ -519,6 +522,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 in_static_property_initializer: false,
                 reevaluating_call_or_new: false,
                 reevaluating_argument: false,
+                ignore_errors: false,
                 var_kind: VarDeclKind::Var,
                 pat_mode: PatMode::Assign,
                 computed_prop_mode: ComputedPropMode::Object,
@@ -533,7 +537,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 ignore_expand_prevention_for_all: false,
                 preserve_params: false,
                 preserve_ret_ty: false,
-                ignore_errors: false,
                 skip_union_while_inferencing: false,
                 skip_identical_while_inferencing: false,
                 super_references_super_class: false,

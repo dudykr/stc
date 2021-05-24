@@ -1,6 +1,11 @@
 use super::TypeOfMode;
-use crate::{analyzer::Analyzer, validator::ValidateWith, ValidationResult};
+use crate::{
+    analyzer::{Analyzer, Ctx},
+    validator::ValidateWith,
+    ValidationResult,
+};
 use stc_ts_ast_rnode::RTsConstAssertion;
+use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::validator;
 use stc_ts_types::{Type, TypeParamInstantiation};
@@ -17,7 +22,18 @@ impl Analyzer<'_, '_> {
         let span = expr.span;
 
         if mode == TypeOfMode::RValue {
-            return expr.expr.validate_with_args(self, (mode, None, type_ann));
+            let ctx = Ctx {
+                in_const_assertion: true,
+                ..self.ctx
+            };
+            let mut a = self.with_ctx(ctx);
+
+            let ty = expr
+                .expr
+                .validate_with_args(&mut *a, (mode, None, type_ann))
+                .context("tried to valid expression of a const assertion")?;
+
+            Ok(ty)
         } else {
             return Err(Error::Unimplemented {
                 span,
