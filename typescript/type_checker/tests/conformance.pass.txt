@@ -1868,6 +1868,7 @@ types/any/anyPropertyAccess.ts
 types/any/assignEveryTypeToAny.ts
 types/conditional/conditionalTypesExcessProperties.ts
 types/conditional/inferTypes2.ts
+types/conditional/variance.ts
 types/contextualTypes/commaOperator/contextuallyTypeCommaOperator01.ts
 types/contextualTypes/commaOperator/contextuallyTypeCommaOperator02.ts
 types/contextualTypes/commaOperator/contextuallyTypeCommaOperator03.ts
