@@ -64,7 +64,7 @@ warning: Type
 27 |         x = typeof x === "string" ? x.slice() : "abc";
    |                    ^
    |
-   = note: string | number | boolean
+   = note: number
 
 warning: Type
   --> $DIR/tests/pass/controlFlow/guard/assertions/2.ts:27:13
@@ -81,6 +81,54 @@ warning: Type
    |             ^^^^^^^^^^^^^^^^^^^^^
    |
    = note: boolean
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/2.ts:27:37
+   |
+27 |         x = typeof x === "string" ? x.slice() : "abc";
+   |                                     ^
+   |
+   = note: never
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/2.ts:27:13
+   |
+27 |         x = typeof x === "string" ? x.slice() : "abc";
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: any | "abc"
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/2.ts:27:9
+   |
+27 |         x = typeof x === "string" ? x.slice() : "abc";
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: any | "abc"
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/2.ts:28:9
+   |
+28 |         x;  // string
+   |         ^
+   |
+   = note: string | number | boolean
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/2.ts:26:9
+   |
+26 |         x;  // number, then string | number
+   |         ^
+   |
+   = note: string | number | boolean
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/2.ts:27:20
+   |
+27 |         x = typeof x === "string" ? x.slice() : "abc";
+   |                    ^
+   |
+   = note: string | number | boolean
 
 warning: Type
   --> $DIR/tests/pass/controlFlow/guard/assertions/2.ts:27:37
@@ -121,14 +169,6 @@ warning: Type
    |         ^
    |
    = note: string
-
-warning: Type
-  --> $DIR/tests/pass/controlFlow/guard/assertions/2.ts:26:9
-   |
-26 |         x;  // number, then string | number
-   |         ^
-   |
-   = note: string | number
 
 warning: Type
   --> $DIR/tests/pass/controlFlow/guard/assertions/2.ts:30:5
