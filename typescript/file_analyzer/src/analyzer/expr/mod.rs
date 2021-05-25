@@ -952,6 +952,24 @@ impl Analyzer<'_, '_> {
 
         obj.assert_valid();
 
+        {
+            let try_non_computed = match obj.normalize() {
+                Type::Tuple(..) => true,
+                _ => false,
+            };
+
+            if try_non_computed && prop.is_computed() {
+                // See if key is number.
+                match prop.ty().normalize() {
+                    Type::Lit(RTsLitType {
+                        lit: RTsLit::Number(prop),
+                        ..
+                    }) => return self.access_property(span, obj, &Key::Num(prop.clone()), type_mode, id_ctx),
+                    _ => {}
+                }
+            }
+        }
+
         let obj_str = dump_type_as_string(&self.cm, &obj);
 
         // We use child scope to store type parameters.
@@ -1748,50 +1766,52 @@ impl Analyzer<'_, '_> {
                 return Ok(ty);
             }
 
-            Type::Tuple(Tuple { ref elems, .. }) => match prop {
-                Key::Num(n) => {
-                    let v = n.value.round() as i64;
+            Type::Tuple(Tuple { ref elems, .. }) => {
+                match prop {
+                    Key::Num(n) => {
+                        let v = n.value.round() as i64;
 
-                    if v < 0 {
-                        return Err(Error::TupleIndexError {
-                            span: n.span(),
-                            index: v,
-                            len: elems.len() as u64,
-                        });
-                    }
-
-                    if v as usize >= elems.len() {
-                        match elems.last() {
-                            Some(elem) => match elem.ty.normalize() {
-                                Type::Rest(rest_ty) => {
-                                    // debug_assert!(rest_ty.ty.is_clone_cheap());
-                                    return Ok(*rest_ty.ty.clone());
-                                }
-                                _ => {}
-                            },
-                            _ => {}
+                        if v < 0 {
+                            return Err(Error::TupleIndexError {
+                                span: n.span(),
+                                index: v,
+                                len: elems.len() as u64,
+                            });
                         }
 
-                        return Err(Error::TupleIndexError {
-                            span: n.span(),
-                            index: v,
-                            len: elems.len() as u64,
-                        });
+                        if v as usize >= elems.len() {
+                            match elems.last() {
+                                Some(elem) => match elem.ty.normalize() {
+                                    Type::Rest(rest_ty) => {
+                                        // debug_assert!(rest_ty.ty.is_clone_cheap());
+                                        return Ok(*rest_ty.ty.clone());
+                                    }
+                                    _ => {}
+                                },
+                                _ => {}
+                            }
+
+                            return Err(Error::TupleIndexError {
+                                span: n.span(),
+                                index: v,
+                                len: elems.len() as u64,
+                            });
+                        }
+
+                        return Ok(*elems[v as usize].ty.clone());
                     }
-
-                    return Ok(*elems[v as usize].ty.clone());
+                    _ => {}
                 }
-                _ => {
-                    let mut types = elems.iter().map(|e| *e.ty.clone()).collect::<Vec<_>>();
-                    types.dedup_type();
-                    let obj = Type::Array(Array {
-                        span,
-                        elem_type: box Type::union(types),
-                    });
 
-                    return self.access_property(span, &obj, prop, type_mode, id_ctx);
-                }
-            },
+                let mut types = elems.iter().map(|e| *e.ty.clone()).collect::<Vec<_>>();
+                types.dedup_type();
+                let obj = Type::Array(Array {
+                    span,
+                    elem_type: box Type::union(types),
+                });
+
+                return self.access_property(span, &obj, prop, type_mode, id_ctx);
+            }
 
             Type::ClassDef(cls) => {
                 match prop {
