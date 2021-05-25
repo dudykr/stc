@@ -565,6 +565,7 @@ impl Analyzer<'_, '_> {
                         if kind == ExtractKind::Call {
                             return Err(Error::NoCallabelPropertyWithName {
                                 span,
+                                obj: box obj_type.clone(),
                                 key: box prop.clone(),
                             });
                         } else {
@@ -748,6 +749,7 @@ impl Analyzer<'_, '_> {
                     return Err(match kind {
                         ExtractKind::Call => Error::NoCallabelPropertyWithName {
                             span,
+                            obj: box obj_type.clone(),
                             key: box prop.clone(),
                         },
                         ExtractKind::New => Error::NoSuchConstructor {
@@ -794,10 +796,12 @@ impl Analyzer<'_, '_> {
             .convert_err(|err| match err {
                 Error::NoCallSignature { span, .. } => Error::NoCallabelPropertyWithName {
                     span,
+                    obj: box obj_type.clone(),
                     key: box prop.clone(),
                 },
                 Error::NoNewSignature { span, .. } => Error::NoCallabelPropertyWithName {
                     span,
+                    obj: box obj_type.clone(),
                     key: box prop.clone(),
                 },
                 _ => err,

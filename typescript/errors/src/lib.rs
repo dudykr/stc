@@ -1036,6 +1036,7 @@ pub enum Error {
 
     NoCallabelPropertyWithName {
         span: Span,
+        obj: Box<Type>,
         key: Box<Key>,
     },
 
