@@ -8,6 +8,7 @@ use rnode::VisitWith;
 use slog::Logger;
 use stc_ts_ast_rnode::RTsType;
 use stc_ts_types::Id;
+use stc_ts_types::IndexedAccessType;
 use stc_ts_types::Ref;
 use stc_ts_types::Type;
 use stc_ts_types::TypeLit;
@@ -211,6 +212,13 @@ impl Fold<TypeParam> for Visualizer {
             return ty;
         }
         ty.fold_children_with(self)
+    }
+}
+
+/// Noop because of stack overflow.
+impl Fold<IndexedAccessType> for Visualizer {
+    fn fold(&mut self, ty: IndexedAccessType) -> IndexedAccessType {
+        ty
     }
 }
 
