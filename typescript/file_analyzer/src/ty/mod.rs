@@ -91,7 +91,9 @@ impl Fold<Type> for LitGeneralizer {
 
         match ty {
             Type::Lit(RTsLitType { span, ref lit, .. }) => {
-                if self.marks.prevent_generalization_mark.is_marked(span) {}
+                if self.marks.prevent_generalization_mark.is_marked(span) {
+                    return ty;
+                }
 
                 return Type::Keyword(RTsKeywordType {
                     span,
