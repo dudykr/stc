@@ -1,6 +1,7 @@
 use super::Analyzer;
 use crate::type_facts::TypeFacts;
 use crate::util::type_ext::TypeVecExt;
+use crate::Marks;
 use crate::ValidationResult;
 use fxhash::FxHashMap;
 use fxhash::FxHashSet;
@@ -768,7 +769,9 @@ impl Analyzer<'_, '_> {
         }))
     }
     pub(crate) fn normalize_tuples(&mut self, ty: &mut Type) {
-        ty.visit_mut_with(&mut TupleNormalizer);
+        let marks = self.marks();
+
+        ty.visit_mut_with(&mut TupleNormalizer { marks });
         ty.fix();
     }
 
@@ -1078,7 +1081,9 @@ impl Visit<RTsModuleDecl> for KnownTypeVisitor {
     }
 }
 
-struct TupleNormalizer;
+struct TupleNormalizer {
+    marks: Marks,
+}
 
 impl VisitMut<Type> for TupleNormalizer {
     fn visit_mut(&mut self, ty: &mut Type) {

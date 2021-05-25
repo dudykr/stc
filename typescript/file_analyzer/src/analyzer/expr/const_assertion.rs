@@ -34,6 +34,7 @@ impl Analyzer<'_, '_> {
                 .context("tried to valid expression of a const assertion")?;
 
             a.prevent_generalize(&mut ty);
+            a.prevent_tuple_to_array(&mut ty);
 
             Ok(ty)
         } else {

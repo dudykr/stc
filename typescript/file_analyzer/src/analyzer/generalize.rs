@@ -69,6 +69,13 @@ impl Analyzer<'_, '_> {
         });
     }
 
+    /// TODO: Optimize by visiting only tuple types.
+    pub(super) fn prevent_tuple_to_array(&self, ty: &mut Type) {
+        ty.visit_mut_with(&mut Marker {
+            mark: self.marks().prevent_tuple_to_array,
+        });
+    }
+
     pub(super) fn prevent_inference_while_simplifying(&self, ty: &mut Type) {
         ty.visit_mut_with(&mut Marker {
             mark: self.marks().prevent_complex_simplification_mark,
