@@ -1683,7 +1683,7 @@ impl Analyzer<'_, '_> {
                 self.assign_to_fn_like(
                     &mut Default::default(),
                     AssignOpts {
-                        span: ambient.span,
+                        span: i.span,
                         for_overload: true,
                         ..Default::default()
                     },
