@@ -63,7 +63,7 @@ impl Analyzer<'_, '_> {
                 ScopeKind::LoopBody { last },
                 prev_facts.clone(),
                 |child: &mut Analyzer| {
-                    child.ctx.ignore_errors = !last;
+                    child.ctx.ignore_errors |= !last;
 
                     {
                         let ctx = Ctx {
