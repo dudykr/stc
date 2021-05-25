@@ -1029,6 +1029,25 @@ impl Type {
         ty
     }
 
+    /// If `self` is [Type::Lit], convert it to [Type::Keyword].
+    pub fn force_generalize_top_level_literals(self) -> Self {
+        match self {
+            Type::Lit(lit) => Type::Keyword(RTsKeywordType {
+                span: lit.span,
+                kind: match lit.lit {
+                    RTsLit::BigInt(_) => TsKeywordTypeKind::TsBigIntKeyword,
+                    RTsLit::Number(_) => TsKeywordTypeKind::TsNumberKeyword,
+                    RTsLit::Str(_) => TsKeywordTypeKind::TsStringKeyword,
+                    RTsLit::Bool(_) => TsKeywordTypeKind::TsBooleanKeyword,
+                    RTsLit::Tpl(_) => {
+                        unreachable!()
+                    }
+                },
+            }),
+            _ => self,
+        }
+    }
+
     pub fn contains_void(&self) -> bool {
         match *self.normalize() {
             Type::Keyword(RTsKeywordType {
