@@ -1457,6 +1457,10 @@ impl Analyzer<'_, '_> {
         match pat {
             // TODO
             RPat::Assign(p) => {
+                let _right = p
+                    .right
+                    .validate_with_args(self, (TypeOfMode::RValue, None, None))
+                    .report(&mut self.storage);
                 {
                     // TODO: Use union of default value and rhs value.
                     //
