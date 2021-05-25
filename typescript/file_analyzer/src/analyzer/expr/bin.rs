@@ -1119,6 +1119,7 @@ impl Analyzer<'_, '_> {
             | Type::Class(..)
             | Type::This(..)
             | Type::Param(..)
+            | Type::Mapped(..)
             | Type::Ref(..) => true,
 
             Type::Intersection(ty) => ty.types.iter().all(|ty| self.is_valid_lhs_of_instanceof(span, ty)),
