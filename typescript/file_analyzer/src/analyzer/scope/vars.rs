@@ -225,6 +225,11 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
             RPat::Assign(ref p) => {
+                let right = p
+                    .right
+                    .validate_with_args(self, (TypeOfMode::RValue, None, None))
+                    .report(&mut self.storage);
+
                 slog::debug!(
                     self.logger,
                     "({}) declare_vars: Assign({:?}), ty = {:?}",
