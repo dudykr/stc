@@ -81,7 +81,7 @@ mod generalize;
 mod generic;
 mod hoisting;
 mod import;
-mod marks;
+pub(crate) mod marks;
 mod pat;
 mod props;
 mod scope;

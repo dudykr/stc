@@ -13,7 +13,7 @@ pub struct Marks {
     pub(crate) top_level_mark: Mark,
     /// If the mark is applied, it means that the type should not be
     /// generalized.
-    pub(super) prevent_generalization_mark: Mark,
+    pub(crate) prevent_generalization_mark: Mark,
 
     /// If this mark is applied, type will not be inferred (based on constraint)
     /// while simplifying.

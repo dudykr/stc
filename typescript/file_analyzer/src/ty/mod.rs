@@ -1,4 +1,5 @@
 use self::generalize::TupleToArray;
+use crate::analyzer::marks::MarkExt;
 use crate::util::type_ext::TypeVecExt;
 use crate::Marks;
 use retain_mut::RetainMut;
@@ -90,6 +91,8 @@ impl Fold<Type> for LitGeneralizer {
 
         match ty {
             Type::Lit(RTsLitType { span, ref lit, .. }) => {
+                if self.marks.prevent_generalization_mark.is_marked(span) {}
+
                 return Type::Keyword(RTsKeywordType {
                     span,
                     kind: match *lit {
@@ -99,7 +102,7 @@ impl Fold<Type> for LitGeneralizer {
                         RTsLit::Tpl(..) => TsKeywordTypeKind::TsStringKeyword,
                         RTsLit::BigInt(..) => TsKeywordTypeKind::TsBigIntKeyword,
                     },
-                })
+                });
             }
             _ => ty,
         }
