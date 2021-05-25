@@ -140,11 +140,9 @@ impl Analyzer<'_, '_> {
                         .expand_top_ref(actual_span, Cow::Borrowed(&ty))
                         .context("tried to expand a ref type as a part of normalization")?;
 
+                    // We are declaring, and expand_top_ref returned Type::Ref
                     if new_ty.type_eq(&*ty) {
-                        panic!(
-                            "normalize: expand_top_ref returned an identical reference type: {}",
-                            dump_type_as_string(&self.cm, &new_ty)
-                        )
+                        return Ok(ty);
                     }
 
                     new_ty.assert_valid();
