@@ -2029,27 +2029,6 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    Some(Type::Operator(Operator {
-                        op: TsTypeOperatorOp::KeyOf,
-                        ty,
-                        ..
-                    })) => {
-                        // Check if we can index the object with given key.
-                        if let Ok(index_type) = self.keyof(span, &ty) {
-                            if let Ok(()) = self.assign_with_opts(
-                                &mut Default::default(),
-                                AssignOpts {
-                                    span,
-                                    ..Default::default()
-                                },
-                                &index_type,
-                                &prop.ty(),
-                            ) {
-                                return Ok(m.ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(span)));
-                            }
-                        }
-                    }
-
                     Some(index @ Type::Keyword(..)) | Some(index @ Type::Param(..)) => {
                         // {
                         //     [P in string]: number;
@@ -2087,6 +2066,30 @@ impl Analyzer<'_, '_> {
 
                 if let Some(obj) = &expanded {
                     return self.access_property(span, obj, prop, type_mode, id_ctx);
+                }
+
+                match constraint.as_ref().map(Type::normalize) {
+                    Some(Type::Operator(Operator {
+                        op: TsTypeOperatorOp::KeyOf,
+                        ty,
+                        ..
+                    })) => {
+                        // Check if we can index the object with given key.
+                        if let Ok(index_type) = self.keyof(span, &ty) {
+                            if let Ok(()) = self.assign_with_opts(
+                                &mut Default::default(),
+                                AssignOpts {
+                                    span,
+                                    ..Default::default()
+                                },
+                                &index_type,
+                                &prop.ty(),
+                            ) {
+                                return Ok(m.ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(span)));
+                            }
+                        }
+                    }
+                    _ => {}
                 }
 
                 slog::warn!(
