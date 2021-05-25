@@ -376,6 +376,12 @@ impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
         let span = ty.span();
 
         match ty {
+            Type::Class(..) | Type::ClassDef(..) | Type::TypeLit(..)
+                if self.facts.contains(TypeFacts::TypeofNEObject) =>
+            {
+                return Type::never(span);
+            }
+
             Type::Union(ref u) if u.types.is_empty() => return Type::never(u.span),
             Type::Union(u) if u.types.len() == 1 => return u.types.into_iter().next().unwrap(),
             Type::Intersection(ref i) if i.types.iter().any(|ty| ty.is_never()) => return Type::never(i.span),
