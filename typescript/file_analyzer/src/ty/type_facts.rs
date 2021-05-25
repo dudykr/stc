@@ -352,6 +352,8 @@ impl Fold<Union> for TypeFactsHandler<'_, '_, '_> {
 
 impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
     fn fold(&mut self, mut ty: Type) -> Type {
+        let span = ty.span();
+
         // TODO: Don't do anything if type fact is none.
 
         match ty.normalize() {
@@ -382,17 +384,19 @@ impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
             }
         }
 
-        ty = ty.foldable();
-        ty = ty.fold_children_with(self);
-        let span = ty.span();
-
-        match ty {
+        match ty.normalize() {
             Type::Class(..) | Type::ClassDef(..) | Type::TypeLit(..)
                 if self.facts.contains(TypeFacts::TypeofNEObject) =>
             {
                 return Type::never(span);
             }
+            _ => {}
+        }
 
+        ty = ty.foldable();
+        ty = ty.fold_children_with(self);
+
+        match ty {
             Type::Union(ref u) if u.types.is_empty() => return Type::never(u.span),
             Type::Union(u) if u.types.len() == 1 => return u.types.into_iter().next().unwrap(),
             Type::Intersection(ref i) if i.types.iter().any(|ty| ty.is_never()) => return Type::never(i.span),
