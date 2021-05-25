@@ -263,7 +263,7 @@ pub struct Analyzer<'scope, 'b> {
 
     loader: &'b dyn Load,
 
-    is_builtin: bool,
+    pub(crate) is_builtin: bool,
 
     duplicated_tracker: DuplicateTracker,
 

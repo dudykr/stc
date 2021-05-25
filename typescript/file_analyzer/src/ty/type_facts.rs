@@ -20,6 +20,7 @@ use stc_ts_types::FnParam;
 use stc_ts_types::Function;
 use stc_ts_types::IndexedAccessType;
 use stc_ts_types::Intersection;
+use stc_ts_types::Mapped;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
 use stc_ts_types::Union;
@@ -32,6 +33,10 @@ use swc_ecma_ast::TsKeywordTypeKind;
 
 impl Analyzer<'_, '_> {
     pub fn apply_type_facts_to_type(&mut self, facts: TypeFacts, mut ty: Type) -> Type {
+        if self.is_builtin {
+            return ty;
+        }
+
         if facts.contains(TypeFacts::TypeofEQNumber)
             || facts.contains(TypeFacts::TypeofEQString)
             || facts.contains(TypeFacts::TypeofEQBoolean)
@@ -354,6 +359,13 @@ impl Fold<Union> for TypeFactsHandler<'_, '_, '_> {
 /// Noop because type facts should not be applied recursively.
 impl Fold<ClassDef> for TypeFactsHandler<'_, '_, '_> {
     fn fold(&mut self, ty: ClassDef) -> ClassDef {
+        ty
+    }
+}
+
+/// Noop because type facts should not be applied recursively.
+impl Fold<Mapped> for TypeFactsHandler<'_, '_, '_> {
+    fn fold(&mut self, ty: Mapped) -> Mapped {
         ty
     }
 }
