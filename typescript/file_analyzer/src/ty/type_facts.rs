@@ -15,6 +15,7 @@ use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::ClassDef;
 use stc_ts_types::ClassMember;
+use stc_ts_types::Conditional;
 use stc_ts_types::Constructor;
 use stc_ts_types::FnParam;
 use stc_ts_types::Function;
@@ -182,6 +183,13 @@ impl Fold<Constructor> for TypeFactsHandler<'_, '_, '_> {
     #[inline]
     fn fold(&mut self, m: Constructor) -> Constructor {
         m
+    }
+}
+
+impl Fold<Conditional> for TypeFactsHandler<'_, '_, '_> {
+    #[inline]
+    fn fold(&mut self, ty: Conditional) -> Conditional {
+        ty
     }
 }
 
