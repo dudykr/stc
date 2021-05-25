@@ -614,7 +614,7 @@ impl Analyzer<'_, '_> {
 
                 let mut check_for_invalid_operand = |ty: &Type| {
                     let res: ValidationResult<_> = try {
-                        self.deny_null_or_undefined(span, ty)?;
+                        self.deny_null_or_undefined(ty.span(), ty)?;
                     };
                     res.report(&mut self.storage);
                 };
