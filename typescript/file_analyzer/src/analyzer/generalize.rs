@@ -63,10 +63,9 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn prevent_generalize(&self, ty: &mut Type) {
-        let span = ty.span();
-        let span = span.apply_mark(self.marks().prevent_generalization_mark);
-
-        ty.respan(span)
+        ty.visit_mut_with(&mut Marker {
+            mark: self.marks().prevent_generalization_mark,
+        });
     }
 
     pub(super) fn prevent_inference_while_simplifying(&self, ty: &mut Type) {
