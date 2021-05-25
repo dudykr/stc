@@ -490,6 +490,8 @@ impl Analyzer<'_, '_> {
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
     ) -> ValidationResult {
+        obj_type.assert_valid();
+
         let old_this = self.scope.this.take();
         self.scope.this = Some(this.clone());
 
