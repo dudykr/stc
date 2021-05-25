@@ -43,7 +43,7 @@ impl Analyzer<'_, '_> {
 
         let marks = self.marks();
 
-        if !self.ctx.reevaluating() && f.body.is_some() {
+        if !self.ctx.reevaluating() && !self.ctx.ignore_errors && f.body.is_some() {
             if let Some(id) = name {
                 let v = self.data.fn_impl_spans.entry(id.into()).or_default();
 
