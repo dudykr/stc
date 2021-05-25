@@ -1,3 +1,4 @@
+use super::marks::MarkExt;
 use super::Analyzer;
 use crate::type_facts::TypeFacts;
 use crate::util::type_ext::TypeVecExt;
@@ -1091,6 +1092,10 @@ impl VisitMut<Type> for TupleNormalizer {
 
         match ty.normalize() {
             Type::Tuple(tuple) => {
+                if self.marks.prevent_tuple_to_array.is_marked(tuple.span) {
+                    return;
+                }
+
                 if tuple.elems.is_empty() {
                     return;
                 }
