@@ -2044,7 +2044,7 @@ impl Analyzer<'_, '_> {
                     .context("tried to expand a mapped type to access property")?;
 
                 if let Some(obj) = &expanded {
-                    return self.access_property_inner(span, obj, prop, type_mode, id_ctx);
+                    return self.access_property(span, obj, prop, type_mode, id_ctx);
                 }
 
                 slog::warn!(
