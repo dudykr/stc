@@ -393,14 +393,16 @@ impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
             _ => {}
         }
 
-        if ty.normalize().is_ref_type() {
-            if let Ok(ty) = self.analyzer.expand_top_ref(ty.span(), Cow::Borrowed(&ty)) {
-                if ty.normalize().is_ref_type() {
-                    return ty.into_owned();
+        if !span.is_dummy() {
+            if ty.normalize().is_ref_type() {
+                if let Ok(ty) = self.analyzer.expand_top_ref(ty.span(), Cow::Borrowed(&ty)) {
+                    if ty.normalize().is_ref_type() {
+                        return ty.into_owned();
+                    }
+                    return ty.into_owned().fold_with(self);
+                } else {
+                    return ty;
                 }
-                return ty.into_owned().fold_with(self);
-            } else {
-                return ty;
             }
         }
 
