@@ -62,6 +62,8 @@ impl Analyzer<'_, '_> {
         true
     }
 
+    /// TODO: Optimize by visiting only literal types.
+
     pub(super) fn prevent_generalize(&self, ty: &mut Type) {
         ty.visit_mut_with(&mut Marker {
             mark: self.marks().prevent_generalization_mark,
