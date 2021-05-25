@@ -13,6 +13,7 @@ use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_type_ops::Fix;
+use stc_ts_types::ClassDef;
 use stc_ts_types::ClassMember;
 use stc_ts_types::Constructor;
 use stc_ts_types::FnParam;
@@ -347,6 +348,13 @@ impl Fold<Union> for TypeFactsHandler<'_, '_, '_> {
         }
 
         u
+    }
+}
+
+/// Noop because type facts should not be applied recursively.
+impl Fold<ClassDef> for TypeFactsHandler<'_, '_, '_> {
+    fn fold(&mut self, ty: ClassDef) -> ClassDef {
+        ty
     }
 }
 
