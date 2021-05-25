@@ -671,9 +671,11 @@ impl Analyzer<'_, '_> {
 
                 if self.ctx.can_generalize_literals() && (can_generalize || self.may_generalize(&lt)) {
                     lt = lt.generalize_lit(marks);
+                    lt = lt.force_generalize_top_level_literals();
                 }
                 if self.ctx.can_generalize_literals() && (can_generalize || self.may_generalize(&rt)) {
                     rt = rt.generalize_lit(marks);
+                    rt = rt.force_generalize_top_level_literals();
                 }
 
                 if lt.type_eq(&rt) {
