@@ -1229,7 +1229,29 @@ impl Analyzer<'_, '_> {
         let obj = self.with_ctx(ctx).expand(span, obj.into_owned())?.generalize_lit(marks);
 
         match obj.normalize() {
-            Type::Lit(..) => unreachable!(),
+            Type::Lit(obj) => {
+                // Even if literal generalization is prevented, it should be
+                // expanded in this case.
+
+                return self.access_property(
+                    span,
+                    &Type::Keyword(RTsKeywordType {
+                        span: obj.span,
+                        kind: match &obj.lit {
+                            RTsLit::BigInt(_) => TsKeywordTypeKind::TsBigIntKeyword,
+                            RTsLit::Number(_) => TsKeywordTypeKind::TsNumberKeyword,
+                            RTsLit::Str(_) => TsKeywordTypeKind::TsStringKeyword,
+                            RTsLit::Bool(_) => TsKeywordTypeKind::TsBooleanKeyword,
+                            RTsLit::Tpl(_) => {
+                                unreachable!()
+                            }
+                        },
+                    }),
+                    prop,
+                    type_mode,
+                    id_ctx,
+                );
+            }
 
             Type::Enum(ref e) => {
                 // TODO: Check if variant exists.
