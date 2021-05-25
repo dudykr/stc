@@ -952,13 +952,12 @@ impl Analyzer<'_, '_> {
 
         obj.assert_valid();
 
-        {
-            let try_non_computed = match obj.normalize() {
+        // Try some easier assignments.
+        if prop.is_computed() {
+            if match obj.normalize() {
                 Type::Tuple(..) => true,
                 _ => false,
-            };
-
-            if try_non_computed && prop.is_computed() {
+            } {
                 // See if key is number.
                 match prop.ty().normalize() {
                     Type::Lit(RTsLitType {
@@ -967,6 +966,29 @@ impl Analyzer<'_, '_> {
                     }) => return self.access_property(span, obj, &Key::Num(prop.clone()), type_mode, id_ctx),
                     _ => {}
                 }
+            }
+
+            // See if key is string.
+            match prop.ty().normalize() {
+                Type::Lit(RTsLitType {
+                    lit: RTsLit::Str(prop), ..
+                }) => {
+                    // As some types has rules about computed propeties, we use the result only if
+                    // it sucesses.
+                    if let Ok(ty) = self.access_property(
+                        span,
+                        obj,
+                        &Key::Normal {
+                            span: prop.span,
+                            sym: prop.value.clone(),
+                        },
+                        type_mode,
+                        id_ctx,
+                    ) {
+                        return Ok(ty);
+                    }
+                }
+                _ => {}
             }
         }
 
