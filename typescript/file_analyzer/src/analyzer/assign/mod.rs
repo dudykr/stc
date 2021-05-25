@@ -440,8 +440,8 @@ impl Analyzer<'_, '_> {
         }
 
         // debug_assert!(!span.is_dummy(), "\n\t{:?}\n<-\n\t{:?}", to, rhs);
-        let to = self.normalize_for_assign(span, to)?;
-        let rhs = self.normalize_for_assign(span, rhs)?;
+        let to = self.normalize_for_assign(span, to).context("tried to normalize lhs")?;
+        let rhs = self.normalize_for_assign(span, rhs).context("tried to normalize rhs")?;
 
         let to = to.normalize();
         let rhs = rhs.normalize();
