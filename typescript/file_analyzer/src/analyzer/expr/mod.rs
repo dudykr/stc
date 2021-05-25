@@ -1,3 +1,4 @@
+pub(crate) use self::array::GetIteratorOpts;
 use self::bin::extract_name_for_assignment;
 use super::{marks::MarkExt, Analyzer};
 use crate::analyzer::assign::AssignOpts;

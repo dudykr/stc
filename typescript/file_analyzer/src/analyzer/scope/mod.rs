@@ -1,6 +1,7 @@
 use super::assign::AssignOpts;
 use super::class::ClassState;
 use super::{control_flow::CondFacts, expr::TypeOfMode, stmt::return_type::ReturnValues, Analyzer, Ctx};
+use crate::analyzer::expr::GetIteratorOpts;
 use crate::analyzer::expr::IdCtx;
 use crate::analyzer::ResultExt;
 use crate::{
@@ -22,6 +23,7 @@ use rnode::VisitMut;
 use rnode::VisitMutWith;
 use rnode::VisitWith;
 use slog::Logger;
+use stc_ts_ast_rnode::RArrayPat;
 use stc_ts_ast_rnode::RBindingIdent;
 use stc_ts_ast_rnode::RObjectPat;
 use stc_ts_ast_rnode::RObjectPatProp;
@@ -1490,7 +1492,43 @@ impl Analyzer<'_, '_> {
                 Ok(())
             }
 
-            RPat::Array(..) => return self.declare_vars_inner_with_ty(kind, pat, Some(ty), actual_ty),
+            RPat::Array(RArrayPat { ref elems, .. }) => {
+                // Handle tuple
+                //
+                //      const [a , setA] = useState();
+                //
+
+                let ty = self
+                    .get_iterator(
+                        span,
+                        Cow::Owned(ty),
+                        GetIteratorOpts {
+                            disallow_str: true,
+                            ..Default::default()
+                        },
+                    )
+                    .context("tried to convert a type to an iterator to assign with an array pattern.")
+                    .unwrap_or_else(|err| {
+                        self.storage.report(err);
+                        Cow::Owned(Type::any(span))
+                    });
+
+                for (i, elem) in elems.iter().enumerate() {
+                    if let Some(elem) = elem {
+                        let elem_ty = self
+                            .get_element_from_iterator(span, Cow::Borrowed(&ty), i)
+                            .context(
+                                "tried to get the type of nth element from iterator to declare vars with an array \
+                                 pattern",
+                            )?
+                            .into_owned();
+                        // TODO: actual_ty
+                        self.declare_complex_vars(kind, elem, elem_ty, None)?;
+                    }
+                }
+
+                Ok(())
+            }
 
             RPat::Object(RObjectPat { ref props, .. }) => {
                 let should_use_no_such_property = match ty.normalize() {
