@@ -142,6 +142,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, p: &RClassProp) -> ValidationResult<ClassProperty> {
+        let marks = self.marks();
         self.record(p);
 
         if !p.computed && p.is_static {
@@ -178,7 +179,7 @@ impl Analyzer<'_, '_> {
                 if p.type_ann.is_none() {
                     if let Some(m) = &mut self.mutations {
                         m.for_class_props.entry(p.node_id).or_default().ty =
-                            value.clone().map(|ty| ty.generalize_lit());
+                            value.clone().map(|ty| ty.generalize_lit(marks));
                     }
                 }
             }
@@ -498,6 +499,8 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, c: &RClassMethod) -> ValidationResult<ClassMember> {
         self.record(c);
 
+        let marks = self.marks();
+
         let key = c.key.validate_with(self)?;
 
         let c_span = c.span();
@@ -606,7 +609,7 @@ impl Analyzer<'_, '_> {
         }
 
         let ret_ty = box declared_ret_ty.unwrap_or_else(|| {
-            inferred_ret_ty.map(|ty| ty.generalize_lit()).unwrap_or_else(|| {
+            inferred_ret_ty.map(|ty| ty.generalize_lit(marks)).unwrap_or_else(|| {
                 Type::Keyword(RTsKeywordType {
                     span: c_span,
                     kind: if c.function.body.is_some() {
@@ -622,7 +625,7 @@ impl Analyzer<'_, '_> {
             let node_id = c.function.node_id;
 
             let ret_ty = if self.may_generalize(&ret_ty) {
-                ret_ty.clone().generalize_lit()
+                ret_ty.clone().generalize_lit(marks)
             } else {
                 *ret_ty.clone()
             };
@@ -1047,6 +1050,8 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, c: &RClass) -> ValidationResult<ClassDef> {
         self.record(c);
 
+        let marks = self.marks();
+
         self.ctx.computed_prop_mode = ComputedPropMode::Class {
             has_body: !self.ctx.in_declare,
         };
@@ -1322,7 +1327,7 @@ impl Analyzer<'_, '_> {
                                         declared_static_keys.push(key.into_owned());
                                     }
 
-                                    let member = member.fold_with(&mut LitGeneralizer);
+                                    let member = member.fold_with(&mut LitGeneralizer { marks });
                                     child.scope.this_class_members.push((index, member));
                                 }
                             }
@@ -1390,7 +1395,7 @@ impl Analyzer<'_, '_> {
                                             let mut ty = type_ann.clone().or_else(|| i.type_ann.clone());
                                             let mut ty = try_opt!(ty.validate_with(child));
                                             if ty.is_none() {
-                                                ty = Some(right.validate_with_default(child)?.generalize_lit());
+                                                ty = Some(right.validate_with_default(child)?.generalize_lit(marks));
                                             }
                                             (i, ty)
                                         }
@@ -1446,7 +1451,7 @@ impl Analyzer<'_, '_> {
                                         declared_instance_keys.push(key.into_owned());
                                     }
 
-                                    let member = member.fold_with(&mut LitGeneralizer);
+                                    let member = member.fold_with(&mut LitGeneralizer { marks });
                                     child.scope.this_class_members.push((index, member));
                                 }
                             }
@@ -1536,7 +1541,7 @@ impl Analyzer<'_, '_> {
                                     if let Some(param) = m.params.first_mut() {
                                         if param.ty.is_any() {
                                             if let Some(ty) = prop_types.get_prop_name(&m.key) {
-                                                let new_ty = ty.clone().generalize_lit();
+                                                let new_ty = ty.clone().generalize_lit(marks);
                                                 param.ty = box new_ty.clone();
                                                 match orig {
                                                     RClassMember::Method(ref method) => {

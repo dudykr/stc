@@ -24,6 +24,8 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, f: &RArrowExpr, type_ann: Option<&Type>) -> ValidationResult<Function> {
         self.record(f);
 
+        let marks = self.marks();
+
         let type_ann = self.expand_type_ann(type_ann)?;
 
         self.with_child(ScopeKind::ArrowFn, Default::default(), |child: &mut Analyzer| {
@@ -94,7 +96,7 @@ impl Analyzer<'_, '_> {
                             && type_ann.is_none()
                             && child.may_generalize(&ty)
                         {
-                            ty.generalize_lit()
+                            ty.generalize_lit(marks)
                         } else {
                             ty
                         }

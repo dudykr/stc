@@ -67,6 +67,8 @@ impl Analyzer<'_, '_> {
             ..
         } = *e;
 
+        let marks = self.marks();
+
         let prev_facts = self.cur_facts.clone();
 
         self.check_for_mixed_nullish_coalescing(e);
@@ -668,10 +670,10 @@ impl Analyzer<'_, '_> {
                     };
 
                 if self.ctx.can_generalize_literals() && (can_generalize || self.may_generalize(&lt)) {
-                    lt = lt.generalize_lit();
+                    lt = lt.generalize_lit(marks);
                 }
                 if self.ctx.can_generalize_literals() && (can_generalize || self.may_generalize(&rt)) {
-                    rt = rt.generalize_lit();
+                    rt = rt.generalize_lit(marks);
                 }
 
                 if lt.type_eq(&rt) {
@@ -736,10 +738,10 @@ impl Analyzer<'_, '_> {
                 let mut lt = lt.remove_falsy();
                 let mut rt = rt;
                 if may_generalize_lt {
-                    lt = lt.generalize_lit();
+                    lt = lt.generalize_lit(marks);
                 }
                 if self.may_generalize(&rt) {
-                    rt = rt.generalize_lit();
+                    rt = rt.generalize_lit(marks);
                 }
                 //
                 if lt.type_eq(&rt) {
@@ -911,6 +913,8 @@ impl Analyzer<'_, '_> {
 
     #[extra_validator]
     fn validate_relative_comparison_operands(&mut self, span: Span, op: BinaryOp, l: &Type, r: &Type) {
+        let marks = self.marks();
+
         let l = l.normalize();
         let r = r.normalize();
 
@@ -962,8 +966,8 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        let l = l.clone().generalize_lit();
-        let r = r.clone().generalize_lit();
+        let l = l.clone().generalize_lit(marks);
+        let r = r.clone().generalize_lit(marks);
         if self.can_compare_relatively(span, &l, &r)? {
             return;
         }

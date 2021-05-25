@@ -1138,6 +1138,8 @@ impl Analyzer<'_, '_> {
         allow_multiple: bool,
         is_override: bool,
     ) -> ValidationResult<()> {
+        let marks = self.marks();
+
         if let Some(ty) = &ty {
             ty.assert_valid();
             slog::debug!(
@@ -1309,7 +1311,7 @@ impl Analyzer<'_, '_> {
                                 unreachable!("module is not a variable")
                             }
                             _ => {
-                                let generalized_var_ty = var_ty.clone().generalize_lit();
+                                let generalized_var_ty = var_ty.clone().generalize_lit(marks);
 
                                 match var_ty.normalize() {
                                     // Allow overriding query type.

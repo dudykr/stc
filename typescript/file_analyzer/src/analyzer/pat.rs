@@ -193,6 +193,8 @@ impl Analyzer<'_, '_> {
             debug_assert_ne!(p.span(), DUMMY_SP, "A pattern should have a valid span");
         }
 
+        let marks = self.marks();
+
         if self.ctx.in_declare {
             match p {
                 RPat::Assign(p) => self
@@ -327,7 +329,7 @@ impl Analyzer<'_, '_> {
                         .get_ty()
                         .map(|v| v.validate_with(self))
                         .unwrap_or_else(|| {
-                            let mut ty = default_value_ty.generalize_lit().foldable();
+                            let mut ty = default_value_ty.generalize_lit(marks).foldable();
 
                             match ty {
                                 Type::Tuple(tuple) => {
@@ -364,7 +366,7 @@ impl Analyzer<'_, '_> {
         let ty = match ty {
             Some(v) => Some(v),
             None => match p {
-                RPat::Assign(p) => Some(p.right.validate_with_default(self)?.generalize_lit()),
+                RPat::Assign(p) => Some(p.right.validate_with_default(self)?.generalize_lit(marks)),
                 _ => None,
             },
         };

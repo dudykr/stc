@@ -103,6 +103,8 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, v: &RVarDeclarator) {
         self.record(v);
 
+        let marks = self.marks();
+
         let kind = self.ctx.var_kind;
         let node_id = v.node_id;
 
@@ -327,9 +329,9 @@ impl Analyzer<'_, '_> {
                             if self.may_generalize(&ty) {
                                 // Vars behave differently based on the context.
                                 if self.ctx.can_generalize_literals() {
-                                    ty = ty.generalize_lit();
+                                    ty = ty.generalize_lit(marks);
                                 } else {
-                                    ty = ty.fold_with(&mut Generalizer::default());
+                                    ty = ty.fold_with(&mut Generalizer { force: false, marks });
                                 }
                             }
                         }
@@ -347,7 +349,7 @@ impl Analyzer<'_, '_> {
                             ty.assert_valid();
                             ty = match ty.normalize() {
                                 Type::Function(f) => {
-                                    let ret_ty = box f.ret_ty.clone().generalize_lit();
+                                    let ret_ty = box f.ret_ty.clone().generalize_lit(marks);
                                     Type::Function(stc_ts_types::Function { ret_ty, ..f.clone() })
                                 }
 

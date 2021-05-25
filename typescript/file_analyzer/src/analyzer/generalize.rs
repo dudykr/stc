@@ -44,16 +44,6 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            Type::Tuple(ty) => {
-                if ty.elems.iter().any(|elem| !self.may_generalize(&elem.ty)) {
-                    return false;
-                }
-            }
-
-            Type::Array(ty) => {
-                return self.may_generalize(&ty.elem_type);
-            }
-
             _ => {}
         }
 

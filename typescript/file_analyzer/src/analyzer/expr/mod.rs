@@ -1001,6 +1001,8 @@ impl Analyzer<'_, '_> {
 
         let _stack = stack::track(span)?;
 
+        let marks = self.marks();
+
         let computed = prop.is_computed();
 
         if id_ctx == IdCtx::Var {
@@ -1206,7 +1208,7 @@ impl Analyzer<'_, '_> {
             Type::Conditional(..) => self.normalize(None, Cow::Borrowed(obj), Default::default())?,
             _ => Cow::Borrowed(obj),
         };
-        let obj = self.with_ctx(ctx).expand(span, obj.into_owned())?.generalize_lit();
+        let obj = self.with_ctx(ctx).expand(span, obj.into_owned())?.generalize_lit(marks);
 
         match obj.normalize() {
             Type::Lit(..) => unreachable!(),

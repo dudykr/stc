@@ -240,6 +240,8 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult {
         debug_assert_eq!(self.scope.kind(), ScopeKind::Call);
 
+        let marks = self.marks();
+
         slog::debug!(self.logger, "extract_call_new_expr_member");
 
         let type_args = match type_args {
@@ -346,7 +348,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 // Handle member expression
-                let obj_type = obj.validate_with_default(self)?.generalize_lit();
+                let obj_type = obj.validate_with_default(self)?.generalize_lit(marks);
 
                 let mut obj_type = match *obj_type.normalize() {
                     Type::Keyword(RTsKeywordType {
@@ -2728,7 +2730,7 @@ impl Fold<Type> for ReturnTypeGeneralizer<'_, '_, '_> {
 
         ty = ty.fold_children_with(self);
 
-        ty.generalize_lit()
+        ty.generalize_lit(self.analyzer.marks())
     }
 }
 

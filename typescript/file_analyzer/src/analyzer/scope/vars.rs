@@ -174,6 +174,8 @@ impl Analyzer<'_, '_> {
         ty: Option<Type>,
         actual_ty: Option<Type>,
     ) -> ValidationResult<()> {
+        let marks = self.marks();
+
         match &ty {
             Some(ty) => {
                 ty.assert_valid();
@@ -259,7 +261,7 @@ impl Analyzer<'_, '_> {
                                 .entry(*node_id)
                                 .or_default()
                                 .ty
-                                .fill_with(|| ty.generalize_lit().generalize_tuple().into());
+                                .fill_with(|| ty.generalize_lit(marks).generalize_tuple().into());
                         }
                     }
                 }

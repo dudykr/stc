@@ -660,7 +660,7 @@ impl Analyzer<'_, '_> {
             ];
 
             for (kwd, interface) in special_cases {
-                let rhs = rhs.clone().generalize_lit();
+                let rhs = rhs.clone().generalize_lit(self.marks());
                 match to {
                     Type::Keyword(k) if k.kind == *kwd => match rhs {
                         Type::Interface(ref i) => {

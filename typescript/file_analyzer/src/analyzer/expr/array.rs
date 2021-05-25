@@ -57,6 +57,8 @@ impl Analyzer<'_, '_> {
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
     ) -> ValidationResult {
+        let marks = self.marks();
+
         let span = arr.span;
         let elems = &arr.elems;
 
@@ -172,7 +174,13 @@ impl Analyzer<'_, '_> {
             let mut types: Vec<_> = elements
                 .into_iter()
                 .map(|element| *element.ty)
-                .map(|ty| if type_ann.is_none() { ty.generalize_lit() } else { ty })
+                .map(|ty| {
+                    if type_ann.is_none() {
+                        ty.generalize_lit(marks)
+                    } else {
+                        ty
+                    }
+                })
                 .collect();
             types.dedup_type();
             if types.is_empty() {

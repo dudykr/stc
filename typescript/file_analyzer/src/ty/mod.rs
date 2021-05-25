@@ -1,5 +1,6 @@
 use self::generalize::TupleToArray;
 use crate::util::type_ext::TypeVecExt;
+use crate::Marks;
 use retain_mut::RetainMut;
 use rnode::Fold;
 use rnode::FoldWith;
@@ -17,7 +18,9 @@ use swc_ecma_ast::TsKeywordTypeKind;
 mod generalize;
 pub mod type_facts;
 
-pub(crate) struct LitGeneralizer;
+pub(crate) struct LitGeneralizer {
+    pub marks: Marks,
+}
 
 impl Fold<Ref> for LitGeneralizer {
     fn fold(&mut self, mut r: Ref) -> Ref {
@@ -140,8 +143,8 @@ impl Fold<TypeLit> for LitGeneralizer {
 }
 
 pub trait TypeExt: Into<Type> {
-    fn generalize_lit(self) -> Type {
-        self.into().fold_with(&mut LitGeneralizer).fixed()
+    fn generalize_lit(self, marks: Marks) -> Type {
+        self.into().fold_with(&mut LitGeneralizer { marks }).fixed()
     }
 
     fn generalize_tuple(self) -> Type {

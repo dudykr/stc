@@ -1,5 +1,6 @@
 use super::Analyzer;
 use super::Ctx;
+use crate::Marks;
 use crate::ValidationResult;
 use crate::{analyzer::generic::is_literals, ty, ty::Type};
 use rnode::Fold;
@@ -204,9 +205,10 @@ pub(crate) fn make_instance_type(module_id: ModuleId, ty: Type) -> Type {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub(super) struct Generalizer {
     pub force: bool,
+    pub marks: Marks,
 }
 
 impl Fold<stc_ts_types::Function> for Generalizer {
@@ -240,7 +242,7 @@ impl Fold<Type> for Generalizer {
         ty = ty.fold_children_with(self);
         self.force = old;
 
-        ty.generalize_lit()
+        ty.generalize_lit(self.marks)
     }
 }
 
