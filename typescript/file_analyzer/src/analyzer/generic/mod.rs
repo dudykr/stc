@@ -422,11 +422,25 @@ impl Analyzer<'_, '_> {
 
         debug_assert!(!span.is_dummy(), "infer_type: `span` should not be dummy");
 
-        print_type(&self.logger, "param", &self.cm, &param);
-        print_type(&self.logger, "arg", &self.cm, &arg);
-
         let param = param.normalize();
         let arg = arg.normalize();
+
+        match param {
+            Type::Instance(param) => {
+                return self.infer_type(span, inferred, &param.ty, arg);
+            }
+            _ => {}
+        }
+
+        match arg {
+            Type::Instance(arg) => {
+                return self.infer_type(span, inferred, param, &arg.ty);
+            }
+            _ => {}
+        }
+
+        print_type(&self.logger, "param", &self.cm, &param);
+        print_type(&self.logger, "arg", &self.cm, &arg);
 
         if param.is_keyword() {
             return Ok(());
