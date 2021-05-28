@@ -29,6 +29,7 @@ use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_types::Array;
+use stc_ts_types::Instance;
 use stc_ts_types::Key;
 use stc_ts_types::PropertySignature;
 use stc_ts_types::Tuple;
@@ -234,7 +235,11 @@ impl Analyzer<'_, '_> {
                     _ => None,
                 }) {
                     None => None,
-                    Some(ty) => Some(ty.validate_with(self)),
+                    Some(ty) => Some({
+                        let span = ty.span();
+                        ty.validate_with(self)
+                            .map(|ty| Type::Instance(Instance { span, ty: box ty }))
+                    }),
                 }
             })
             .map(|res| res.map(|ty| ty.cheap()))

@@ -99,7 +99,7 @@ impl VisitMut<Type> for ThisReplacer<'_, '_, '_> {
                 *ty = self.this_ty.clone();
             }
             Type::Instance(i) => {
-                if let Ok(instantiated) = self.analyzer.instantiate_class(i.span, &i.of) {
+                if let Ok(instantiated) = self.analyzer.instantiate_class(i.span, &i.ty) {
                     *ty = instantiated;
                 }
             }

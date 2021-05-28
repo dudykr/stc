@@ -394,7 +394,7 @@ pub struct SymbolId(usize);
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Instance {
     pub span: Span,
-    pub of: Box<Type>,
+    pub ty: Box<Type>,
 }
 
 assert_eq_size!(Instance, [u8; 24]);

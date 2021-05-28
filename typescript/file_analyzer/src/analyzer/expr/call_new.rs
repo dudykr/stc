@@ -1255,7 +1255,7 @@ impl Analyzer<'_, '_> {
                 Type::This(..) => {
                     return Ok(Type::Instance(Instance {
                         span,
-                        of: box Type::This(RTsThisType { span }),
+                        ty: box Type::This(RTsThisType { span }),
                     }))
                 }
 
