@@ -26,6 +26,7 @@ use stc_ts_errors::Error;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::name::Name;
 use stc_ts_types::Array;
+use stc_ts_types::Class;
 use stc_ts_types::ClassDef;
 use stc_ts_types::ClassMember;
 use stc_ts_types::ConstructorSignature;
@@ -207,7 +208,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 // Not normalizable.
-                Type::Infer(_) | Type::Instance(_) | Type::StaticThis(_) | Type::This(_) => {}
+                Type::Infer(_) | Type::StaticThis(_) | Type::This(_) => {}
 
                 // Maybe it can be changed in future, but currently noop
                 Type::Union(_) | Type::Intersection(_) => {}
@@ -356,6 +357,22 @@ impl Analyzer<'_, '_> {
                         }
                     }
                     // TODO
+                }
+
+                Type::Instance(ty) => {
+                    let inner = self
+                        .normalize(span, Cow::Borrowed(&ty.ty), opts)
+                        .context("tried to normalize inner type of an instance type")?
+                        .into_owned()
+                        .foldable();
+
+                    return Ok(Cow::Owned(match inner {
+                        Type::ClassDef(def) => Type::Class(Class {
+                            span: ty.span,
+                            def: box def,
+                        }),
+                        _ => inner,
+                    }));
                 }
 
                 Type::Import(_) => {}
