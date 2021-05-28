@@ -1245,7 +1245,9 @@ impl Analyzer<'_, '_> {
             ..self.ctx
         };
         let obj = match obj.normalize() {
-            Type::Conditional(..) => self.normalize(None, Cow::Borrowed(obj), Default::default())?,
+            Type::Conditional(..) | Type::Instance(..) => {
+                self.normalize(None, Cow::Borrowed(obj), Default::default())?
+            }
             _ => Cow::Borrowed(obj),
         };
         let obj = self.with_ctx(ctx).expand(span, obj.into_owned())?.generalize_lit(marks);
