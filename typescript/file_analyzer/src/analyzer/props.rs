@@ -300,7 +300,11 @@ impl Analyzer<'_, '_> {
         let ty = self.normalize(None, Cow::Owned(ty), Default::default());
         let ty = match ty {
             Ok(v) => v,
-            _ => return true,
+            Err(err) => {
+                self.storage.report(err);
+                // Don't report more errors.
+                return true;
+            }
         };
         match ty.normalize() {
             Type::Keyword(RTsKeywordType {
