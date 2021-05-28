@@ -2653,6 +2653,7 @@ impl Analyzer<'_, '_> {
 
                 match param.ty.normalize() {
                     Type::Param(..) => {}
+                    Type::Instance(param) if param.ty.normalize().is_type_param() => {}
                     _ => {
                         if analyzer
                             .assign_with_opts(
