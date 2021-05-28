@@ -32,6 +32,7 @@ use stc_ts_types::ClassDef;
 use stc_ts_types::ClassMember;
 use stc_ts_types::ConstructorSignature;
 use stc_ts_types::Id;
+use stc_ts_types::Intersection;
 use stc_ts_types::Key;
 use stc_ts_types::MethodSignature;
 use stc_ts_types::Operator;
@@ -364,17 +365,12 @@ impl Analyzer<'_, '_> {
                     let inner = self
                         .normalize(span, Cow::Borrowed(&ty.ty), opts)
                         .context("tried to normalize inner type of an instance type")?
-                        .into_owned()
-                        .foldable();
+                        .into_owned();
 
-                    return Ok(Cow::Owned(match inner {
-                        Type::ClassDef(def) => Type::Class(Class {
-                            span: ty.span,
-                            def: box def,
-                        }),
-                        Type::StaticThis(ty) => Type::This(RTsThisType { span: ty.span }),
-                        _ => inner,
-                    }));
+                    let ty = self
+                        .instantiate_for_normalization(inner)
+                        .context("tried to instantiate for normalizations")?;
+                    return Ok(Cow::Owned(ty));
                 }
 
                 Type::Import(_) => {}
@@ -408,6 +404,40 @@ impl Analyzer<'_, '_> {
         }
 
         Ok(ty)
+    }
+
+    // This is part of normalization.
+    fn instantiate_for_normalization(&mut self, mut ty: Type) -> ValidationResult<Type> {
+        let span = ty.span();
+
+        ty.normalize_mut();
+
+        Ok(match ty {
+            Type::ClassDef(def) => Type::Class(Class { span, def: box def }),
+            Type::StaticThis(ty) => Type::This(RTsThisType { span }),
+
+            Type::Intersection(ty) => {
+                let types = ty
+                    .types
+                    .into_iter()
+                    .map(|ty| self.instantiate_for_normalization(ty))
+                    .collect::<Result<_, _>>()?;
+
+                Type::Intersection(Intersection { types, ..ty })
+            }
+
+            Type::Union(ty) => {
+                let types = ty
+                    .types
+                    .into_iter()
+                    .map(|ty| self.instantiate_for_normalization(ty))
+                    .collect::<Result<_, _>>()?;
+
+                Type::Union(Union { types, ..ty })
+            }
+
+            _ => ty,
+        })
     }
 
     pub(crate) fn expand_type_ann<'a>(&mut self, ty: Option<&'a Type>) -> ValidationResult<Option<Cow<'a, Type>>> {
