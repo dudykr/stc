@@ -362,13 +362,8 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::Instance(ty) => {
-                    let inner = self
-                        .normalize(span, Cow::Borrowed(&ty.ty), opts)
-                        .context("tried to normalize inner type of an instance type")?
-                        .into_owned();
-
                     let ty = self
-                        .instantiate_for_normalization(inner)
+                        .instantiate_for_normalization(span, &ty.ty)
                         .context("tried to instantiate for normalizations")?;
                     return Ok(Cow::Owned(ty));
                 }
@@ -407,20 +402,31 @@ impl Analyzer<'_, '_> {
     }
 
     // This is part of normalization.
-    fn instantiate_for_normalization(&mut self, mut ty: Type) -> ValidationResult<Type> {
-        let span = ty.span();
-
-        ty.normalize_mut();
+    fn instantiate_for_normalization(&mut self, span: Option<Span>, ty: &Type) -> ValidationResult<Type> {
+        let ty = self.normalize(
+            span,
+            Cow::Borrowed(ty),
+            NormalizeTypeOpts {
+                normalize_keywords: false,
+                ..Default::default()
+            },
+        )?;
+        let actual_span = ty.span();
+        let ty = ty.into_owned().foldable();
 
         Ok(match ty {
-            Type::ClassDef(def) => Type::Class(Class { span, def: box def }),
-            Type::StaticThis(ty) => Type::This(RTsThisType { span }),
+            Type::ClassDef(def) => Type::Class(Class {
+                span: actual_span,
+                def: box def,
+            }),
+
+            Type::StaticThis(ty) => Type::This(RTsThisType { span: actual_span }),
 
             Type::Intersection(ty) => {
                 let types = ty
                     .types
                     .into_iter()
-                    .map(|ty| self.instantiate_for_normalization(ty))
+                    .map(|ty| self.instantiate_for_normalization(span, &ty))
                     .collect::<Result<_, _>>()?;
 
                 Type::Intersection(Intersection { types, ..ty })
@@ -430,7 +436,7 @@ impl Analyzer<'_, '_> {
                 let types = ty
                     .types
                     .into_iter()
-                    .map(|ty| self.instantiate_for_normalization(ty))
+                    .map(|ty| self.instantiate_for_normalization(span, &ty))
                     .collect::<Result<_, _>>()?;
 
                 Type::Union(Union { types, ..ty })
