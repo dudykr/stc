@@ -354,6 +354,7 @@ impl Analyzer<'_, '_> {
             }
             Type::Conditional(..)
             | Type::Alias(..)
+            | Type::Instance(..)
             | Type::Operator(Operator {
                 op: TsTypeOperatorOp::KeyOf,
                 ..
