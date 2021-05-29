@@ -2318,37 +2318,50 @@ impl Analyzer<'_, '_> {
             match pair {
                 EitherOrBoth::Both(param, arg) => {
                     match &param.pat {
-                        RPat::Rest(..) => match param.ty.normalize() {
-                            Type::Array(arr) => {
-                                // We should change type if the parameter is a rest parameter.
-                                let res = self.assign(&mut Default::default(), &arr.elem_type, &arg.ty, arg.span());
-                                let err = match res {
-                                    Ok(()) => continue,
-                                    Err(err) => err,
-                                };
+                        RPat::Rest(..) => {
+                            let param_ty =
+                                self.normalize(Some(arg.span()), Cow::Borrowed(&param.ty), Default::default());
 
-                                let err = err.convert(|err| Error::WrongArgType {
-                                    span: arg.span(),
-                                    inner: box err,
-                                });
-                                self.storage.report(err);
-                                continue;
-                            }
-                            _ => {
-                                if let Ok(()) = self.assign_with_opts(
-                                    &mut Default::default(),
-                                    AssignOpts {
-                                        span: arg.span(),
-                                        allow_iterable_on_rhs: true,
-                                        ..Default::default()
-                                    },
-                                    &param.ty,
-                                    &arg.ty,
-                                ) {
+                            let param_ty = match param_ty {
+                                Ok(v) => v,
+                                Err(err) => {
+                                    self.storage.report(err);
                                     continue;
                                 }
+                            };
+
+                            match param_ty.normalize() {
+                                Type::Array(arr) => {
+                                    // We should change type if the parameter is a rest parameter.
+                                    let res = self.assign(&mut Default::default(), &arr.elem_type, &arg.ty, arg.span());
+                                    let err = match res {
+                                        Ok(()) => continue,
+                                        Err(err) => err,
+                                    };
+
+                                    let err = err.convert(|err| Error::WrongArgType {
+                                        span: arg.span(),
+                                        inner: box err,
+                                    });
+                                    self.storage.report(err);
+                                    continue;
+                                }
+                                _ => {
+                                    if let Ok(()) = self.assign_with_opts(
+                                        &mut Default::default(),
+                                        AssignOpts {
+                                            span: arg.span(),
+                                            allow_iterable_on_rhs: true,
+                                            ..Default::default()
+                                        },
+                                        &param.ty,
+                                        &arg.ty,
+                                    ) {
+                                        continue;
+                                    }
+                                }
                             }
-                        },
+                        }
                         _ => {}
                     }
 
