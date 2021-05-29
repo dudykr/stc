@@ -345,6 +345,37 @@ impl Analyzer<'_, '_> {
                 return Ok(Some(keys));
             }
             Type::Param(..) => Ok(None),
+
+            Type::Union(ty) => {
+                let keys_types = ty
+                    .types
+                    .iter()
+                    .map(|ty| -> ValidationResult<_> { self.get_property_names(span, &ty) })
+                    .collect::<Result<Vec<_>, _>>()?;
+
+                let mut result: Vec<PropertyName> = vec![];
+
+                if keys_types.iter().all(|keys| keys.is_none()) {
+                    return Ok(None);
+                }
+
+                for keys in keys_types {
+                    match keys {
+                        Some(keys) => {
+                            for key in keys {
+                                if result.iter().any(|prev| prev.type_eq(&key)) {
+                                    continue;
+                                }
+
+                                result.push(key);
+                            }
+                        }
+                        None => {}
+                    }
+                }
+
+                return Ok(Some(result));
+            }
             _ => {
                 unimplemented!("get_property_names: {:#?}", ty);
             }
@@ -423,7 +454,7 @@ impl Analyzer<'_, '_> {
     }
 }
 
-#[derive(Debug, Clone, Spanned)]
+#[derive(Debug, Clone, Spanned, TypeEq)]
 pub(crate) enum PropertyName {
     Key(Key),
     /// Created from an index signature.
