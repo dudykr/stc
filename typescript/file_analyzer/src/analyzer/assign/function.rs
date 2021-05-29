@@ -331,20 +331,27 @@ impl Analyzer<'_, '_> {
         r: &FnParam,
         opts: AssignOpts,
     ) -> ValidationResult<()> {
+        let span = opts.span;
         debug_assert!(
             !opts.span.is_dummy(),
             "Cannot assign function parameters with dummy span"
         );
 
         match l.pat {
-            RPat::Rest(..) => match l.ty.normalize() {
-                Type::Array(l_arr) => {
-                    if let Ok(()) = self.assign_with_opts(data, opts, &l_arr.elem_type, &r.ty) {
-                        return Ok(());
+            RPat::Rest(..) => {
+                let l_ty = self
+                    .normalize(Some(span), Cow::Borrowed(&l.ty), Default::default())
+                    .context("tried to normalize lhs")?;
+
+                match l_ty.normalize() {
+                    Type::Array(l_arr) => {
+                        if let Ok(()) = self.assign_with_opts(data, opts, &l_arr.elem_type, &r.ty) {
+                            return Ok(());
+                        }
                     }
+                    _ => {}
                 }
-                _ => {}
-            },
+            }
             _ => {}
         }
 
