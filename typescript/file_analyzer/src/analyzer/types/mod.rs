@@ -442,7 +442,7 @@ impl Analyzer<'_, '_> {
                     .map(|ty| self.instantiate_for_normalization(span, &ty))
                     .collect::<Result<_, _>>()?;
 
-                Type::Union(Union { types, ..ty })
+                Type::Union(Union { types, ..ty }).fixed()
             }
 
             Type::Array(ty) => {
