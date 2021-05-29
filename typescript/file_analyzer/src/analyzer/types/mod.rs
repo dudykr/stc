@@ -367,6 +367,7 @@ impl Analyzer<'_, '_> {
                     let ty = self
                         .instantiate_for_normalization(span, &ty.ty)
                         .context("tried to instantiate for normalizations")?;
+                    ty.assert_valid();
                     return Ok(Cow::Owned(ty));
                 }
 
