@@ -38,6 +38,8 @@ use stc_ts_types::MethodSignature;
 use stc_ts_types::Operator;
 use stc_ts_types::PropertySignature;
 use stc_ts_types::QueryExpr;
+use stc_ts_types::Tuple;
+use stc_ts_types::TupleElement;
 use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
@@ -440,6 +442,24 @@ impl Analyzer<'_, '_> {
                     .collect::<Result<_, _>>()?;
 
                 Type::Union(Union { types, ..ty })
+            }
+
+            Type::Array(ty) => {
+                let elem_type = box self.instantiate_for_normalization(span, &ty.elem_type)?;
+                Type::Array(Array { elem_type, ..ty })
+            }
+
+            Type::Tuple(ty) => {
+                let elems = ty
+                    .elems
+                    .into_iter()
+                    .map(|e| -> ValidationResult<_> {
+                        let ty = box self.instantiate_for_normalization(span, &e.ty)?;
+                        Ok(TupleElement { ty, ..e })
+                    })
+                    .collect::<Result<_, _>>()?;
+
+                Type::Tuple(Tuple { elems, ..ty })
             }
 
             _ => ty,
