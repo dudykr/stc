@@ -237,8 +237,12 @@ impl Analyzer<'_, '_> {
                     None => None,
                     Some(ty) => Some({
                         let span = ty.span();
-                        ty.validate_with(self)
-                            .map(|ty| Type::Instance(Instance { span, ty: box ty }))
+                        ty.validate_with(self).map(|ty| {
+                            if ty.normalize().is_type_param() {
+                                return ty;
+                            }
+                            Type::Instance(Instance { span, ty: box ty })
+                        })
                     }),
                 }
             })
