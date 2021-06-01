@@ -425,6 +425,9 @@ impl Analyzer<'_, '_> {
         let param = param.normalize();
         let arg = arg.normalize();
 
+        print_type(&self.logger, "param", &self.cm, &param);
+        print_type(&self.logger, "arg", &self.cm, &arg);
+
         match param {
             Type::Instance(param) => {
                 return self.infer_type(span, inferred, &param.ty, arg);
@@ -438,9 +441,6 @@ impl Analyzer<'_, '_> {
             }
             _ => {}
         }
-
-        print_type(&self.logger, "param", &self.cm, &param);
-        print_type(&self.logger, "arg", &self.cm, &arg);
 
         if param.is_keyword() {
             return Ok(());
