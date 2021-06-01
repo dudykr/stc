@@ -2606,12 +2606,12 @@ impl Analyzer<'_, '_> {
             return true;
         }
 
-        if arg.is_any() {
-            return false;
-        }
-
         if param.is_any() {
             return true;
+        }
+
+        if arg.is_any() {
+            return false;
         }
 
         self.assign(&mut Default::default(), &arg, &param, span).is_ok()
