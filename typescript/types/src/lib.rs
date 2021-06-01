@@ -1062,13 +1062,15 @@ impl Type {
     }
 
     pub fn is_any(&self) -> bool {
-        match *self.normalize() {
+        match self.normalize() {
             Type::Keyword(RTsKeywordType {
                 kind: TsKeywordTypeKind::TsAnyKeyword,
                 ..
             }) => true,
 
-            Type::Union(ref t) => t.types.iter().any(|t| t.is_any()),
+            Type::Union(t) => t.types.iter().any(|t| t.is_any()),
+
+            Type::Instance(ty) => ty.ty.is_any(),
 
             _ => false,
         }
