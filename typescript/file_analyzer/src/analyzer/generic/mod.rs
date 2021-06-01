@@ -429,15 +429,18 @@ impl Analyzer<'_, '_> {
         print_type(&self.logger, "arg", &self.cm, &arg);
 
         match param {
-            Type::Instance(param) => {
-                return self.infer_type(span, inferred, &param.ty, arg);
+            Type::Instance(..) => {
+                let param = self.normalize(Some(span), Cow::Borrowed(&param), Default::default())?;
+                return self.infer_type(span, inferred, &param, arg);
             }
             _ => {}
         }
 
         match arg {
-            Type::Instance(arg) => {
-                return self.infer_type(span, inferred, param, &arg.ty);
+            Type::Instance(..) => {
+                let arg = self.normalize(Some(span), Cow::Borrowed(&arg), Default::default())?;
+
+                return self.infer_type(span, inferred, param, &arg);
             }
             _ => {}
         }
