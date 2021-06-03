@@ -383,9 +383,9 @@ impl Analyzer<'_, '_> {
                     // TODO: Add option for this.
                 }
 
-                Type::IndexedAccessType(ty) => {
+                Type::IndexedAccessType(iat) => {
                     let index_ty = box self
-                        .normalize(span, Cow::Borrowed(&ty.index_type), opts)
+                        .normalize(span, Cow::Borrowed(&iat.index_type), opts)
                         .context("tried to normalize index type")?
                         .into_owned();
 
@@ -395,7 +395,7 @@ impl Analyzer<'_, '_> {
                     };
                     let prop_ty = self.with_ctx(ctx).access_property(
                         actual_span,
-                        &ty.obj_type,
+                        &iat.obj_type,
                         &Key::Computed(ComputedKey {
                             span: actual_span,
                             expr: box RExpr::Invalid(RInvalid { span: actual_span }),
@@ -405,10 +405,19 @@ impl Analyzer<'_, '_> {
                         IdCtx::Type,
                     );
                     if let Ok(prop_ty) = prop_ty {
+                        if ty.type_eq(&prop_ty) {
+                            return Ok(ty);
+                        }
+
+                        if prop_ty.normalize().is_indexed_access_type() {
+                            panic!("{:?}", prop_ty);
+                        }
+
                         let ty = self
                             .normalize(span, Cow::Owned(prop_ty), opts)
                             .context("tried to normalize the type of property")?
                             .into_owned();
+                        dbg!(&ty);
                         return Ok(Cow::Owned(ty));
                     }
                     // TODO:
