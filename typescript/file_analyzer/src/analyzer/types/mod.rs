@@ -405,7 +405,10 @@ impl Analyzer<'_, '_> {
                         IdCtx::Type,
                     );
                     if let Ok(prop_ty) = prop_ty {
-                        let ty = self.normalize(span, Cow::Owned(prop_ty), opts)?.into_owned();
+                        let ty = self
+                            .normalize(span, Cow::Owned(prop_ty), opts)
+                            .context("tried to normalize the type of property")?
+                            .into_owned();
                         return Ok(Cow::Owned(ty));
                     }
                     // TODO:
