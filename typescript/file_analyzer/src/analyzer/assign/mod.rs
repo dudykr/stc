@@ -353,6 +353,7 @@ impl Analyzer<'_, '_> {
                 })));
             }
             Type::Conditional(..)
+            | Type::IndexedAccessType(..)
             | Type::Alias(..)
             | Type::Instance(..)
             | Type::Operator(Operator {
