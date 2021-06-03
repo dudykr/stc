@@ -1,5 +1,7 @@
 use super::marks::MarkExt;
 use super::Analyzer;
+use crate::analyzer::expr::TypeOfMode;
+use crate::analyzer::Ctx;
 use crate::type_facts::TypeFacts;
 use crate::util::type_ext::TypeVecExt;
 use crate::Marks;
@@ -11,7 +13,9 @@ use rnode::VisitMut;
 use rnode::VisitMutWith;
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RClassDecl;
+use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RIdent;
+use stc_ts_ast_rnode::RInvalid;
 use stc_ts_ast_rnode::RNumber;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsEnumDecl;
@@ -30,8 +34,10 @@ use stc_ts_types::Array;
 use stc_ts_types::Class;
 use stc_ts_types::ClassDef;
 use stc_ts_types::ClassMember;
+use stc_ts_types::ComputedKey;
 use stc_ts_types::ConstructorSignature;
 use stc_ts_types::Id;
+use stc_ts_types::IdCtx;
 use stc_ts_types::Intersection;
 use stc_ts_types::Key;
 use stc_ts_types::MethodSignature;
@@ -377,7 +383,31 @@ impl Analyzer<'_, '_> {
                     // TODO: Add option for this.
                 }
 
-                Type::IndexedAccessType(_) => {
+                Type::IndexedAccessType(ty) => {
+                    let index_ty = box self
+                        .normalize(span, Cow::Borrowed(&ty.index_type), opts)
+                        .context("tried to normalize index type")?
+                        .into_owned();
+
+                    let ctx = Ctx {
+                        diallow_unknown_object_property: true,
+                        ..self.ctx
+                    };
+                    let prop_ty = self.with_ctx(ctx).access_property(
+                        actual_span,
+                        &ty.obj_type,
+                        &Key::Computed(ComputedKey {
+                            span: actual_span,
+                            expr: box RExpr::Invalid(RInvalid { span: actual_span }),
+                            ty: index_ty,
+                        }),
+                        TypeOfMode::RValue,
+                        IdCtx::Type,
+                    );
+                    if let Ok(prop_ty) = prop_ty {
+                        let ty = self.normalize(span, Cow::Owned(prop_ty), opts)?.into_owned();
+                        return Ok(Cow::Owned(ty));
+                    }
                     // TODO:
                 }
 
