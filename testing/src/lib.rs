@@ -5,6 +5,7 @@ use slog::Level;
 use slog::Logger;
 use slog_envlogger::EnvLogger;
 use std::fmt::Write;
+use std::fs::read_to_string;
 use std::io;
 use std::path::PathBuf;
 use std::process::Command;
@@ -123,4 +124,14 @@ pub fn get_git_root() -> PathBuf {
     });
 
     DIR.clone()
+}
+
+/// Used for loading golden txt files.
+pub fn load_txt(path: &str) -> Vec<String> {
+    let s = read_to_string(&path).expect("failed to load txt file");
+    s.lines()
+        .map(|s| s.trim())
+        .filter(|&s| s != "")
+        .map(|s| s.to_string())
+        .collect()
 }

@@ -4,8 +4,10 @@
 #![feature(box_syntax)]
 #![feature(specialization)]
 
+use once_cell::sync::Lazy;
 use rnode::NodeIdGenerator;
 use rnode::RNode;
+use stc_testing::load_txt;
 use stc_testing::logger;
 use stc_ts_ast_rnode::RModule;
 use stc_ts_builtin_types::Lib;
@@ -21,6 +23,8 @@ use stc_ts_storage::ErrorStore;
 use stc_ts_storage::Single;
 use stc_ts_types::module_id;
 use stc_ts_utils::StcComments;
+use std::env;
+use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Arc;
 use swc_common::input::SourceFileInput;
@@ -33,6 +37,16 @@ use swc_ecma_parser::TsConfig;
 use swc_ecma_transforms::resolver::ts_resolver;
 use swc_ecma_visit::FoldWith;
 use testing::NormalizedOutput;
+
+fn should_run(input: &Path) -> bool {
+    static GOLDENS: Lazy<Vec<String>> = Lazy::new(|| load_txt("tests/golden.txt"));
+
+    if env::var("GOLDEN_ONLY").unwrap_or_default() == "1" {
+        return GOLDENS.iter().any(|golden| input.to_string_lossy().contains(&**golden));
+    }
+
+    true
+}
 
 /// If `for_error` is false, this function will run as type dump mode.
 fn run_test(file_name: PathBuf, logger: slog::Logger, for_error: bool) -> Option<NormalizedOutput> {
@@ -168,13 +182,23 @@ fn run_test(file_name: PathBuf, logger: slog::Logger, for_error: bool) -> Option
 
 #[testing::fixture("visualize/**/*.ts", exclude(".*\\.\\.d.\\.ts"))]
 fn visualize(file_name: PathBuf) {
+    if !should_run(&file_name) {
+        return;
+    }
+
     let log = logger();
     let res = run_test(file_name.clone(), log.logger, false).unwrap();
     res.compare_to_file(&file_name.with_extension("stdout")).unwrap();
+
+    println!("[SUCCESS]{}", file_name.display())
 }
 
 #[testing::fixture("pass/**/*.ts", exclude(".*\\.\\.d.\\.ts"))]
 fn pass(file_name: PathBuf) {
+    if !should_run(&file_name) {
+        return;
+    }
+
     let null_logger = slog::Logger::root(slog::Discard, slog::o!());
     let res = run_test(file_name.clone(), null_logger, false).unwrap();
     println!("TYPES: {}", res);
@@ -183,4 +207,6 @@ fn pass(file_name: PathBuf) {
     run_test(file_name.clone(), log.logger, true);
 
     res.compare_to_file(&file_name.with_extension("stdout")).unwrap();
+
+    println!("[SUCCESS]{}", file_name.display())
 }
