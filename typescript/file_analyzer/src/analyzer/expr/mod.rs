@@ -1972,6 +1972,15 @@ impl Analyzer<'_, '_> {
                         unreachable!("this() should not be `this`")
                     }
 
+                    match this.normalize() {
+                        Type::Instance(ty) => {
+                            if ty.ty.normalize().is_this() {
+                                unreachable!("this() should not be `this`")
+                            }
+                        }
+                        _ => {}
+                    }
+
                     return self.access_property(span, &this, prop, type_mode, id_ctx);
                 } else if self.ctx.in_argument {
                     // We will adjust `this` using information from callee.
