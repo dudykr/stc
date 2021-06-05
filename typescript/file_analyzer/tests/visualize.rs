@@ -7,6 +7,7 @@
 use once_cell::sync::Lazy;
 use rnode::NodeIdGenerator;
 use rnode::RNode;
+use stc_testing::load_txt;
 use stc_testing::logger;
 use stc_ts_ast_rnode::RModule;
 use stc_ts_builtin_types::Lib;
@@ -23,7 +24,6 @@ use stc_ts_storage::Single;
 use stc_ts_types::module_id;
 use stc_ts_utils::StcComments;
 use std::env;
-use std::fs::read_to_string;
 use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -37,15 +37,6 @@ use swc_ecma_parser::TsConfig;
 use swc_ecma_transforms::resolver::ts_resolver;
 use swc_ecma_visit::FoldWith;
 use testing::NormalizedOutput;
-
-fn load_txt(path: &str) -> Vec<String> {
-    let s = read_to_string(&path).expect("failed to load txt file");
-    s.lines()
-        .map(|s| s.trim())
-        .filter(|&s| s != "")
-        .map(|s| s.to_string())
-        .collect()
-}
 
 fn should_run(input: &Path) -> bool {
     static GOLDENS: Lazy<Vec<String>> = Lazy::new(|| load_txt("tests/golden.txt"));
