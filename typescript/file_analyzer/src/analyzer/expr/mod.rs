@@ -995,15 +995,22 @@ impl Analyzer<'_, '_> {
         let obj_str = dump_type_as_string(&self.cm, &obj);
 
         // We use child scope to store type parameters.
-        let mut ty = self.with_scope_for_type_params(|analyzer: &mut Analyzer| -> ValidationResult<_> {
-            let mut ty = analyzer
-                .access_property_inner(span, obj, prop, type_mode, id_ctx)?
-                .fixed();
-            ty.assert_valid();
-            ty = analyzer.expand_type_params_using_scope(ty)?;
-            ty.assert_valid();
-            Ok(ty)
-        })?;
+        let mut ty = self
+            .with_scope_for_type_params(|analyzer: &mut Analyzer| -> ValidationResult<_> {
+                let mut ty = analyzer
+                    .access_property_inner(span, obj, prop, type_mode, id_ctx)?
+                    .fixed();
+                ty.assert_valid();
+                ty = analyzer.expand_type_params_using_scope(ty)?;
+                ty.assert_valid();
+                Ok(ty)
+            })
+            .with_context(|| {
+                format!(
+                    "tried to access property of an object ({})",
+                    dump_type_as_string(&self.cm, &obj)
+                )
+            })?;
         ty.assert_valid();
 
         let ty_str = dump_type_as_string(&self.cm, &ty);
