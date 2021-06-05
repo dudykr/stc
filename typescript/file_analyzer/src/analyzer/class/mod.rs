@@ -2,8 +2,8 @@ use self::type_param::StaticTypeParamValidator;
 use super::assign::AssignOpts;
 use super::expr::TypeOfMode;
 use super::props::ComputedPropMode;
-use super::util::make_instance_type;
 use super::util::is_prop_name_eq;
+use super::util::make_instance_type;
 use super::util::ResultExt;
 use super::util::VarVisitor;
 use super::Analyzer;
@@ -142,6 +142,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, p: &RClassProp) -> ValidationResult<ClassProperty> {
+        let marks = self.marks();
         self.record(p);
 
         if !p.computed && p.is_static {
@@ -178,7 +179,7 @@ impl Analyzer<'_, '_> {
                 if p.type_ann.is_none() {
                     if let Some(m) = &mut self.mutations {
                         m.for_class_props.entry(p.node_id).or_default().ty =
-                            value.clone().map(|ty| ty.generalize_lit());
+                            value.clone().map(|ty| ty.generalize_lit(marks));
                     }
                 }
             }
@@ -498,6 +499,8 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, c: &RClassMethod) -> ValidationResult<ClassMember> {
         self.record(c);
 
+        let marks = self.marks();
+
         let key = c.key.validate_with(self)?;
 
         let c_span = c.span();
@@ -606,7 +609,7 @@ impl Analyzer<'_, '_> {
         }
 
         let ret_ty = box declared_ret_ty.unwrap_or_else(|| {
-            inferred_ret_ty.map(|ty| ty.generalize_lit()).unwrap_or_else(|| {
+            inferred_ret_ty.map(|ty| ty.generalize_lit(marks)).unwrap_or_else(|| {
                 Type::Keyword(RTsKeywordType {
                     span: c_span,
                     kind: if c.function.body.is_some() {
@@ -622,7 +625,7 @@ impl Analyzer<'_, '_> {
             let node_id = c.function.node_id;
 
             let ret_ty = if self.may_generalize(&ret_ty) {
-                ret_ty.clone().generalize_lit()
+                ret_ty.clone().generalize_lit(marks)
             } else {
                 *ret_ty.clone()
             };
@@ -1047,6 +1050,8 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, c: &RClass) -> ValidationResult<ClassDef> {
         self.record(c);
 
+        let marks = self.marks();
+
         self.ctx.computed_prop_mode = ComputedPropMode::Class {
             has_body: !self.ctx.in_declare,
         };
@@ -1242,8 +1247,6 @@ impl Analyzer<'_, '_> {
                     .map(|ty| make_instance_type(child.ctx.module_id, *ty));
                 {
                     // Validate constructors
-                    let mut constructor_spans = vec![];
-                    let mut constructor_required_param_count = None;
                     let constructors_with_body = c
                         .body
                         .iter()
@@ -1266,45 +1269,13 @@ impl Analyzer<'_, '_> {
                                 if cons.body.is_none() {
                                     for p in &cons.params {
                                         match *p {
-                                            RParamOrTsParamProp::TsParamProp(..) => {
-                                                child.storage.report(Error::TS2369 { span: p.span() })
-                                            }
+                                            RParamOrTsParamProp::TsParamProp(..) => child.storage.report(
+                                                Error::ParamPropIsNotAllowedInAmbientConstructorx { span: p.span() },
+                                            ),
                                             _ => {}
                                         }
                                     }
                                 }
-
-                                if constructors_with_body.len() == 1 {
-                                    // Check parameter count
-                                    let required_param_count = cons
-                                        .params
-                                        .iter()
-                                        .filter(|p| match p {
-                                            RParamOrTsParamProp::Param(RParam {
-                                                pat:
-                                                    RPat::Ident(RBindingIdent {
-                                                        id: RIdent { optional: true, .. },
-                                                        ..
-                                                    }),
-                                                ..
-                                            }) => false,
-                                            _ => true,
-                                        })
-                                        .count();
-
-                                    match constructor_required_param_count {
-                                        Some(v) if required_param_count != v => {
-                                            for span in constructor_spans.drain(..) {
-                                                child.storage.report(Error::WrongOverloadSignature { span })
-                                            }
-                                        }
-
-                                        None => constructor_required_param_count = Some(required_param_count),
-                                        _ => {}
-                                    }
-                                }
-
-                                constructor_spans.push(cons.span);
                             }
 
                             _ => {}
@@ -1356,7 +1327,7 @@ impl Analyzer<'_, '_> {
                                         declared_static_keys.push(key.into_owned());
                                     }
 
-                                    let member = member.fold_with(&mut LitGeneralizer);
+                                    let member = member.fold_with(&mut LitGeneralizer { marks });
                                     child.scope.this_class_members.push((index, member));
                                 }
                             }
@@ -1424,7 +1395,7 @@ impl Analyzer<'_, '_> {
                                             let mut ty = type_ann.clone().or_else(|| i.type_ann.clone());
                                             let mut ty = try_opt!(ty.validate_with(child));
                                             if ty.is_none() {
-                                                ty = Some(right.validate_with_default(child)?.generalize_lit());
+                                                ty = Some(right.validate_with_default(child)?.generalize_lit(marks));
                                             }
                                             (i, ty)
                                         }
@@ -1480,7 +1451,7 @@ impl Analyzer<'_, '_> {
                                         declared_instance_keys.push(key.into_owned());
                                     }
 
-                                    let member = member.fold_with(&mut LitGeneralizer);
+                                    let member = member.fold_with(&mut LitGeneralizer { marks });
                                     child.scope.this_class_members.push((index, member));
                                 }
                             }
@@ -1488,12 +1459,24 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    for (index, constructor) in c.body.iter().enumerate().filter_map(|(i, member)| match member {
-                        RClassMember::Constructor(c) => Some((i, c)),
-                        _ => None,
-                    }) {
-                        let member = constructor.validate_with(child)?;
-                        child.scope.this_class_members.push((index, member.into()));
+                    {
+                        let mut ambient_cons: Vec<ConstructorSignature> = vec![];
+                        let mut cons_with_body = None;
+                        for (index, constructor) in c.body.iter().enumerate().filter_map(|(i, member)| match member {
+                            RClassMember::Constructor(c) => Some((i, c)),
+                            _ => None,
+                        }) {
+                            let member = constructor.validate_with(child)?;
+                            if constructor.body.is_some() {
+                                ambient_cons.push(member.clone());
+                            } else {
+                                cons_with_body = Some(member.clone());
+                            }
+                            child.scope.this_class_members.push((index, member.into()));
+                        }
+                        child
+                            .validate_constructor_overloads(&ambient_cons, cons_with_body.as_ref())
+                            .report(&mut child.storage);
                     }
 
                     // Handle user-declared method signatures.
@@ -1558,7 +1541,7 @@ impl Analyzer<'_, '_> {
                                     if let Some(param) = m.params.first_mut() {
                                         if param.ty.is_any() {
                                             if let Some(ty) = prop_types.get_prop_name(&m.key) {
-                                                let new_ty = ty.clone().generalize_lit();
+                                                let new_ty = ty.clone().generalize_lit(marks);
                                                 param.ty = box new_ty.clone();
                                                 match orig {
                                                     RClassMember::Method(ref method) => {
@@ -1690,6 +1673,34 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
+    fn validate_constructor_overloads(
+        &mut self,
+        ambient: &[ConstructorSignature],
+        cons_with_body: Option<&ConstructorSignature>,
+    ) -> ValidationResult<()> {
+        if let Some(i) = cons_with_body {
+            for ambient in ambient {
+                self.assign_to_fn_like(
+                    &mut Default::default(),
+                    AssignOpts {
+                        span: i.span,
+                        for_overload: true,
+                        ..Default::default()
+                    },
+                    ambient.type_params.as_ref(),
+                    &ambient.params,
+                    ambient.ret_ty.as_deref(),
+                    i.type_params.as_ref(),
+                    &i.params,
+                    i.ret_ty.as_deref(),
+                )
+                .convert_err(|err| Error::WrongOverloadSignature { span: err.span() })?;
+            }
+        }
+
+        Ok(())
+    }
+
     fn validate_super_class(&mut self, ty: &Type) {
         if self.is_builtin {
             return;

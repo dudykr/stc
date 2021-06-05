@@ -13,7 +13,8 @@ use std::{
 };
 use swc_atoms::js_word;
 use swc_atoms::JsWord;
-use swc_common::{iter::IdentifyLast, DUMMY_SP};
+use swc_common::iter::IdentifyLast;
+use swc_common::SyntaxContext;
 
 type Inner = SmallVec<[Id; 4]>;
 
@@ -139,6 +140,12 @@ impl TryFrom<&'_ RExpr> for Name {
         match e {
             RExpr::Ident(i) => Ok(i.into()),
             RExpr::Member(m) => m.try_into(),
+            RExpr::This(this) => Ok({
+                let this: Id = RIdent::new(js_word!("this"), this.span.with_ctxt(SyntaxContext::empty())).into();
+
+                this.into()
+            }),
+
             // TODO
             _ => Err(()),
         }
@@ -147,8 +154,11 @@ impl TryFrom<&'_ RExpr> for Name {
 
 impl From<&'_ RTsThisTypeOrIdent> for Name {
     fn from(ty: &RTsThisTypeOrIdent) -> Self {
-        match *ty {
-            RTsThisTypeOrIdent::TsThisType(..) => Name::from(RIdent::new(js_word!("this"), DUMMY_SP)),
+        match ty {
+            RTsThisTypeOrIdent::TsThisType(this) => Name::from(RIdent::new(
+                js_word!("this"),
+                this.span.with_ctxt(SyntaxContext::empty()),
+            )),
             RTsThisTypeOrIdent::Ident(ref i) => Name::from(i),
         }
     }
@@ -158,9 +168,8 @@ impl<'a> TryFrom<&'a RMemberExpr> for Name {
     type Error = ();
 
     fn try_from(e: &RMemberExpr) -> Result<Self, ()> {
-        let mut name = match &e.obj {
-            RExprOrSuper::Expr(box RExpr::Ident(i)) => Name::from(i),
-            RExprOrSuper::Expr(box RExpr::Member(member)) => member.try_into()?,
+        let mut name: Name = match &e.obj {
+            RExprOrSuper::Expr(e) => (&**e).try_into()?,
             _ => return Err(()),
         };
 

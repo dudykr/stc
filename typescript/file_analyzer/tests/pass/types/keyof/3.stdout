@@ -4,7 +4,7 @@ warning: Type
 15 | foo = keys
    |       ^^^^
    |
-   = note: Keys
+   = note: "a" | "c" | string | number | symbol
 
 warning: Type
   --> $DIR/tests/pass/types/keyof/3.ts:15:1
@@ -12,7 +12,7 @@ warning: Type
 15 | foo = keys
    | ^^^^^^^^^^
    |
-   = note: Keys
+   = note: "a" | "c" | string | number | symbol
 
 warning: Type
   --> $DIR/tests/pass/types/keyof/3.ts:16:8

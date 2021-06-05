@@ -486,15 +486,18 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RExportAll) {
         let span = node.span;
+        let ctxt = self.ctx.module_id;
 
-        let (dep, data) = self.get_imported_items(span, &node.src.value)?;
+        let (dep, data) = self.get_imported_items(span, &node.src.value);
 
-        for (id, ty) in data.vars.iter() {
-            self.storage.reexport_var(span, dep, id.clone(), ty.clone());
-        }
-        for (id, types) in data.types.iter() {
-            for ty in types {
-                self.storage.reexport_type(span, dep, id.clone(), ty.clone());
+        if ctxt != dep {
+            for (id, ty) in data.vars.iter() {
+                self.storage.reexport_var(span, dep, id.clone(), ty.clone());
+            }
+            for (id, types) in data.types.iter() {
+                for ty in types {
+                    self.storage.reexport_type(span, dep, id.clone(), ty.clone());
+                }
             }
         }
         Ok(())
@@ -515,7 +518,7 @@ impl Analyzer<'_, '_> {
                     // We need
                     match &node.src {
                         Some(src) => {
-                            let (dep, data) = self.get_imported_items(node.span, &src.value)?;
+                            let (dep, data) = self.get_imported_items(node.span, &src.value);
                         }
                         None => {}
                     }
@@ -526,7 +529,7 @@ impl Analyzer<'_, '_> {
 
                     match &node.src {
                         Some(src) => {
-                            let (dep, data) = self.get_imported_items(node.span, &src.value)?;
+                            let (dep, data) = self.get_imported_items(node.span, &src.value);
 
                             self.reexport(
                                 span,
@@ -576,6 +579,11 @@ impl Analyzer<'_, '_> {
 
     fn reexport(&mut self, span: Span, ctxt: ModuleId, from: ModuleId, orig: Id, id: Id) {
         let mut did_work = false;
+
+        // Dependency module is not found.
+        if ctxt == from {
+            return;
+        }
 
         if let Some(data) = self.imports.get(&(ctxt, from)) {
             if let Some(ty) = data.vars.get(orig.sym()) {

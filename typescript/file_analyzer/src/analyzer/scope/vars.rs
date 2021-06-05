@@ -174,7 +174,15 @@ impl Analyzer<'_, '_> {
         ty: Option<Type>,
         actual_ty: Option<Type>,
     ) -> ValidationResult<()> {
+        let marks = self.marks();
+
         match &ty {
+            Some(ty) => {
+                ty.assert_valid();
+            }
+            _ => {}
+        }
+        match &actual_ty {
             Some(ty) => {
                 ty.assert_valid();
             }
@@ -200,6 +208,7 @@ impl Analyzer<'_, '_> {
                     None => try_opt!(i.type_ann.as_ref().map(|v| v.type_ann.validate_with(self))),
                     Some(ty) => Some(ty),
                 };
+
                 self.declare_var(
                     span,
                     kind,
@@ -216,6 +225,11 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
             RPat::Assign(ref p) => {
+                let right = p
+                    .right
+                    .validate_with_args(self, (TypeOfMode::RValue, None, None))
+                    .report(&mut self.storage);
+
                 slog::debug!(
                     self.logger,
                     "({}) declare_vars: Assign({:?}), ty = {:?}",
@@ -252,7 +266,7 @@ impl Analyzer<'_, '_> {
                                 .entry(*node_id)
                                 .or_default()
                                 .ty
-                                .fill_with(|| ty.generalize_lit().generalize_tuple().into());
+                                .fill_with(|| ty.generalize_lit(marks).generalize_tuple().into());
                         }
                     }
                 }

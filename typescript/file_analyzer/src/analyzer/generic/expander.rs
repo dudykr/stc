@@ -10,6 +10,8 @@ use rnode::Fold;
 use rnode::FoldWith;
 use rnode::VisitWith;
 use slog::Logger;
+use stc_ts_ast_rnode::RExpr;
+use stc_ts_ast_rnode::RInvalid;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
@@ -17,6 +19,7 @@ use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
 use stc_ts_type_ops::Fix;
+use stc_ts_types::ComputedKey;
 use stc_ts_types::Function;
 use stc_ts_types::IdCtx;
 use stc_ts_types::Interface;
@@ -32,6 +35,7 @@ use swc_atoms::js_word;
 use swc_common::Span;
 use swc_common::Spanned;
 use swc_common::TypeEq;
+use swc_common::DUMMY_SP;
 use swc_ecma_ast::*;
 
 /// All fields default to false.
@@ -818,6 +822,23 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                     Type::Lit(RTsLitType {
                         lit: RTsLit::Number(v), ..
                     }) => Some(Key::Num(v.clone())),
+
+                    Type::Keyword(RTsKeywordType {
+                        kind: TsKeywordTypeKind::TsStringKeyword,
+                        ..
+                    })
+                    | Type::Keyword(RTsKeywordType {
+                        kind: TsKeywordTypeKind::TsNumberKeyword,
+                        ..
+                    })
+                    | Type::Keyword(RTsKeywordType {
+                        kind: TsKeywordTypeKind::TsBooleanKeyword,
+                        ..
+                    }) => Some(Key::Computed(ComputedKey {
+                        span: ty.index_type.span(),
+                        expr: box RExpr::Invalid(RInvalid { span: DUMMY_SP }),
+                        ty: ty.index_type.clone(),
+                    })),
                     _ => None,
                 };
 

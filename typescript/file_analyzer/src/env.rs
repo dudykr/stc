@@ -289,11 +289,13 @@ impl Env {
         CACHE.entry(libs.clone()).or_default();
         let cell = CACHE.get(&libs).unwrap();
 
-        let builtin = cell.get_or_init(|| {
-            let builtin = BuiltIn::from_ts_libs(&STABLE_ENV, &libs);
-            Arc::new(builtin)
+        let builtin = swc_common::GLOBALS.set(STABLE_ENV.swc_globals(), || {
+            let builtin = cell.get_or_init(|| {
+                let builtin = BuiltIn::from_ts_libs(&STABLE_ENV, &libs);
+                Arc::new(builtin)
+            });
+            (*builtin).clone()
         });
-        let builtin = (*builtin).clone();
 
         Self {
             stable: STABLE_ENV.clone(),

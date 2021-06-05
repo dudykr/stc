@@ -240,6 +240,8 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult {
         debug_assert_eq!(self.scope.kind(), ScopeKind::Call);
 
+        let marks = self.marks();
+
         slog::debug!(self.logger, "extract_call_new_expr_member");
 
         let type_args = match type_args {
@@ -346,7 +348,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 // Handle member expression
-                let obj_type = obj.validate_with_default(self)?.generalize_lit();
+                let obj_type = obj.validate_with_default(self)?.generalize_lit(marks);
 
                 let mut obj_type = match *obj_type.normalize() {
                     Type::Keyword(RTsKeywordType {
@@ -488,6 +490,8 @@ impl Analyzer<'_, '_> {
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
     ) -> ValidationResult {
+        obj_type.assert_valid();
+
         let old_this = self.scope.this.take();
         self.scope.this = Some(this.clone());
 
@@ -563,6 +567,7 @@ impl Analyzer<'_, '_> {
                         if kind == ExtractKind::Call {
                             return Err(Error::NoCallabelPropertyWithName {
                                 span,
+                                obj: box obj_type.clone(),
                                 key: box prop.clone(),
                             });
                         } else {
@@ -746,6 +751,7 @@ impl Analyzer<'_, '_> {
                     return Err(match kind {
                         ExtractKind::Call => Error::NoCallabelPropertyWithName {
                             span,
+                            obj: box obj_type.clone(),
                             key: box prop.clone(),
                         },
                         ExtractKind::New => Error::NoSuchConstructor {
@@ -765,6 +771,7 @@ impl Analyzer<'_, '_> {
                 .with_ctx(ctx)
                 .access_property(span, obj_type, &prop, TypeOfMode::RValue, IdCtx::Var)?;
 
+            let callee_before_expanding = dump_type_as_string(&self.cm, &callee);
             let callee = self.expand_top_ref(span, Cow::Owned(callee))?.into_owned();
 
             match callee.normalize() {
@@ -791,10 +798,12 @@ impl Analyzer<'_, '_> {
             .convert_err(|err| match err {
                 Error::NoCallSignature { span, .. } => Error::NoCallabelPropertyWithName {
                     span,
+                    obj: box obj_type.clone(),
                     key: box prop.clone(),
                 },
                 Error::NoNewSignature { span, .. } => Error::NoCallabelPropertyWithName {
                     span,
+                    obj: box obj_type.clone(),
                     key: box prop.clone(),
                 },
                 _ => err,
@@ -802,9 +811,10 @@ impl Analyzer<'_, '_> {
             .with_context(|| {
                 format!(
                     "tried to call property by using access_property because the object type is not handled by \
-                     call_property: \nobj = {}\ncallee = {}",
+                     call_property: \nobj = {}\ncallee = {}\ncallee (before expanding): {}",
                     dump_type_as_string(&self.cm, &obj_type),
-                    callee_str
+                    callee_str,
+                    callee_before_expanding,
                 )
             })
         })();
@@ -1245,7 +1255,7 @@ impl Analyzer<'_, '_> {
                 Type::This(..) => {
                     return Ok(Type::Instance(Instance {
                         span,
-                        of: box Type::This(RTsThisType { span }),
+                        ty: box Type::This(RTsThisType { span }),
                     }))
                 }
 
@@ -2227,6 +2237,8 @@ impl Analyzer<'_, '_> {
 
             self.add_required_type_params(&mut ty);
 
+            print_type(&logger, "Return, after adding type params", &self.cm, &ty);
+
             if kind == ExtractKind::Call {
                 self.add_call_facts(&expanded_param_types, &args, &mut ty);
             }
@@ -2238,8 +2250,13 @@ impl Analyzer<'_, '_> {
 
         self.validate_arg_types(&params, &spread_arg_types);
 
+        print_type(&logger, "Return", &self.cm, &ret_ty);
+
         ret_ty.reposition(span);
         ret_ty.visit_mut_with(&mut ReturnTypeSimplifier { analyzer: self });
+
+        print_type(&logger, "Return, simplified", &self.cm, &ret_ty);
+
         self.add_required_type_params(&mut ret_ty);
 
         if kind == ExtractKind::Call {
@@ -2301,37 +2318,50 @@ impl Analyzer<'_, '_> {
             match pair {
                 EitherOrBoth::Both(param, arg) => {
                     match &param.pat {
-                        RPat::Rest(..) => match param.ty.normalize() {
-                            Type::Array(arr) => {
-                                // We should change type if the parameter is a rest parameter.
-                                let res = self.assign(&mut Default::default(), &arr.elem_type, &arg.ty, arg.span());
-                                let err = match res {
-                                    Ok(()) => continue,
-                                    Err(err) => err,
-                                };
+                        RPat::Rest(..) => {
+                            let param_ty =
+                                self.normalize(Some(arg.span()), Cow::Borrowed(&param.ty), Default::default());
 
-                                let err = err.convert(|err| Error::WrongArgType {
-                                    span: arg.span(),
-                                    inner: box err,
-                                });
-                                self.storage.report(err);
-                                continue;
-                            }
-                            _ => {
-                                if let Ok(()) = self.assign_with_opts(
-                                    &mut Default::default(),
-                                    AssignOpts {
-                                        span: arg.span(),
-                                        allow_iterable_on_rhs: true,
-                                        ..Default::default()
-                                    },
-                                    &param.ty,
-                                    &arg.ty,
-                                ) {
+                            let param_ty = match param_ty {
+                                Ok(v) => v,
+                                Err(err) => {
+                                    self.storage.report(err);
                                     continue;
                                 }
+                            };
+
+                            match param_ty.normalize() {
+                                Type::Array(arr) => {
+                                    // We should change type if the parameter is a rest parameter.
+                                    let res = self.assign(&mut Default::default(), &arr.elem_type, &arg.ty, arg.span());
+                                    let err = match res {
+                                        Ok(()) => continue,
+                                        Err(err) => err,
+                                    };
+
+                                    let err = err.convert(|err| Error::WrongArgType {
+                                        span: arg.span(),
+                                        inner: box err,
+                                    });
+                                    self.storage.report(err);
+                                    continue;
+                                }
+                                _ => {
+                                    if let Ok(()) = self.assign_with_opts(
+                                        &mut Default::default(),
+                                        AssignOpts {
+                                            span: arg.span(),
+                                            allow_iterable_on_rhs: true,
+                                            ..Default::default()
+                                        },
+                                        &param.ty,
+                                        &arg.ty,
+                                    ) {
+                                        continue;
+                                    }
+                                }
                             }
-                        },
+                        }
                         _ => {}
                     }
 
@@ -2576,12 +2606,12 @@ impl Analyzer<'_, '_> {
             return true;
         }
 
-        if arg.is_any() {
-            return false;
-        }
-
         if param.is_any() {
             return true;
+        }
+
+        if arg.is_any() {
+            return false;
         }
 
         self.assign(&mut Default::default(), &arg, &param, span).is_ok()
@@ -2636,6 +2666,7 @@ impl Analyzer<'_, '_> {
 
                 match param.ty.normalize() {
                     Type::Param(..) => {}
+                    Type::Instance(param) if param.ty.normalize().is_type_param() => {}
                     _ => {
                         if analyzer
                             .assign_with_opts(
@@ -2719,7 +2750,7 @@ impl Fold<Type> for ReturnTypeGeneralizer<'_, '_, '_> {
 
         ty = ty.fold_children_with(self);
 
-        ty.generalize_lit()
+        ty.generalize_lit(self.analyzer.marks())
     }
 }
 
@@ -2730,26 +2761,6 @@ impl Fold<Type> for ReturnTypeGeneralizer<'_, '_, '_> {
 /// - `Shape['name']` => `string`
 struct ReturnTypeSimplifier<'a, 'b, 'c> {
     analyzer: &'a mut Analyzer<'b, 'c>,
-}
-
-impl VisitMut<Union> for ReturnTypeSimplifier<'_, '_, '_> {
-    fn visit_mut(&mut self, union: &mut Union) {
-        let should_remove_null_and_undefined = union.types.iter().any(|ty| match ty.normalize() {
-            Type::TypeLit(..) => true,
-            Type::Ref(..) => true,
-            _ => false,
-        });
-
-        if should_remove_null_and_undefined {
-            union.types.retain(|ty| {
-                if ty.is_kwd(TsKeywordTypeKind::TsNullKeyword) | ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
-                    return false;
-                }
-
-                true
-            });
-        }
-    }
 }
 
 impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
@@ -2818,7 +2829,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                     }
                 }
 
-                *ty = Type::union(types);
+                *ty = Type::Union(Union { span: *span, types }).fixed();
                 return;
             }
 

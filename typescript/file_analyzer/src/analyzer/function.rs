@@ -41,7 +41,9 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, f: &RFunction, name: Option<&RIdent>) -> ValidationResult<ty::Function> {
         self.record(f);
 
-        if !self.ctx.reevaluating() && f.body.is_some() {
+        let marks = self.marks();
+
+        if !self.ctx.reevaluating() && !self.ctx.ignore_errors && f.body.is_some() {
             if let Some(id) = name {
                 let v = self.data.fn_impl_spans.entry(id.into()).or_default();
 
@@ -179,7 +181,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         if child.may_generalize(&inferred_return_type) {
-                            inferred_return_type = inferred_return_type.generalize_lit();
+                            inferred_return_type = inferred_return_type.generalize_lit(marks);
                         }
                     }
 

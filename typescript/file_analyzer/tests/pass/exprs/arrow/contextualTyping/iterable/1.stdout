@@ -28,5 +28,5 @@ warning: Type
 1 | export var iter: Iterable<(x: string) => number> = [s => s.length];
   |                                                    ^^^^^^^^^^^^^^^
   |
-  = note: (s: string) => number[]
+  = note: [(s: string) => number]
 

@@ -1,0 +1,24 @@
+warning: Type
+ --> $DIR/tests/pass/types/inference/unionAndIntersectionInference2/1.ts:4:4
+  |
+4 | f1(b1); // string[]
+  |    ^^
+  |
+  = note: string | string[]
+
+warning: Type
+ --> $DIR/tests/pass/types/inference/unionAndIntersectionInference2/1.ts:4:1
+  |
+4 | f1(b1); // string[]
+  | ^^
+  |
+  = note: <T>(x: T | string) => T
+
+warning: Type
+ --> $DIR/tests/pass/types/inference/unionAndIntersectionInference2/1.ts:4:1
+  |
+4 | f1(b1); // string[]
+  | ^^^^^^
+  |
+  = note: string | string[]
+

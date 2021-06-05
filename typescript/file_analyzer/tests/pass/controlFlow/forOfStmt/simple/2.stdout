@@ -4,7 +4,7 @@ warning: Type
 1 | for (let v of ['a', 'b', 'c']) {
   |               ^^^^^^^^^^^^^^^
   |
-  = note: ['a', 'b', 'c']
+  = note: string[]
 
 warning: Type
  --> $DIR/tests/pass/controlFlow/forOfStmt/simple/2.ts:2:13
@@ -12,5 +12,5 @@ warning: Type
 2 |     var x = v;
   |             ^
   |
-  = note: 'a' | 'b' | 'c'
+  = note: string
 

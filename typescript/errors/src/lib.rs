@@ -394,6 +394,8 @@ pub enum Error {
     CannotCompareWithOp {
         span: Span,
         op: BinaryOp,
+        left: Box<Type>,
+        right: Box<Type>,
     },
 
     InvalidBinaryOp {
@@ -901,7 +903,8 @@ pub enum Error {
         ty: Box<Type>,
     },
 
-    TS2369 {
+    /// TS2369
+    ParamPropIsNotAllowedInAmbientConstructorx {
         span: Span,
     },
 
@@ -1033,6 +1036,7 @@ pub enum Error {
 
     NoCallabelPropertyWithName {
         span: Span,
+        obj: Box<Type>,
         key: Box<Key>,
     },
 
@@ -1280,7 +1284,7 @@ impl Error {
             Error::FnImplMissingOrNotFollowedByDecl { .. } => 2391,
             Error::InvalidTypeForComputedProperty { .. } => 2464,
 
-            Error::TS2369 { .. } => 2369,
+            Error::ParamPropIsNotAllowedInAmbientConstructorx { .. } => 2369,
             Error::TS2389 { .. } => 2389,
             Error::TS2447 { .. } => 2447,
             Error::TS2515 { .. } => 2515,

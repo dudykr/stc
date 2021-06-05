@@ -4,7 +4,13 @@ warning: Type
 8 |     if (x.kind === Choice.Yes) {
   |         ^
   |
-  = note: Item
+  = note: {
+              kind: Choice.Yes;
+              a: string;
+          } | {
+              kind: Choice.No;
+              b: string;
+          }
 
 warning: Type
  --> $DIR/tests/pass/types/enums/controlFlow/if-lit-1.ts:8:9

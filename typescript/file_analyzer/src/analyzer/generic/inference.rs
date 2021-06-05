@@ -1,8 +1,10 @@
 use super::InferData;
+use crate::analyzer::generic::type_form::TypeForm;
 use crate::analyzer::Analyzer;
 use crate::analyzer::Ctx;
 use crate::ValidationResult;
 use fxhash::FxHashMap;
+use itertools::Itertools;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::DebugExt;
@@ -19,6 +21,7 @@ use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
 use stc_ts_types::TypeParam;
+use stc_ts_types::Union;
 use std::collections::hash_map::Entry;
 use swc_common::Span;
 use swc_common::Spanned;
@@ -27,6 +30,44 @@ use swc_ecma_ast::TsKeywordTypeKind;
 use swc_ecma_ast::TsTypeOperatorOp;
 
 impl Analyzer<'_, '_> {
+    /// Union-union inference is special, because
+    ///
+    /// `T | PromiseLike<T>` <= `void | PromiseLike<void>`
+    ///
+    /// should result in `T = void`, not `T = void | PromiseLike<void>`
+    pub(super) fn infer_type_using_union_and_union(
+        &mut self,
+        span: Span,
+        inferred: &mut InferData,
+        param: &Union,
+        arg_ty: &Type,
+        arg: &Union,
+    ) -> ValidationResult<()> {
+        // If there's a top-level type parameters, check for `form`s of type.
+        if param.types.len() == arg.types.len() && param.types.iter().map(Type::normalize).any(|ty| ty.is_type_param())
+        {
+            // TODO: Sort types so `T | PromiseLike<T>` has same form as
+            // `PromiseLike<void> | void`.
+
+            let param_type_form = param.types.iter().map(TypeForm::from).collect_vec();
+            let arg_type_form = arg.types.iter().map(TypeForm::from).collect_vec();
+
+            if param_type_form == arg_type_form {
+                for (p, a) in param.types.iter().zip(arg.types.iter()) {
+                    self.infer_type(span, inferred, p, a)?;
+                }
+
+                return Ok(());
+            }
+        }
+
+        for p in &param.types {
+            self.infer_type(span, inferred, p, arg_ty)?;
+        }
+
+        Ok(())
+    }
+
     /// # Rules
     ///
     /// ## Type literal
@@ -195,6 +236,12 @@ impl Analyzer<'_, '_> {
             }
             Type::TypeLit(arg) => {
                 self.infer_type_using_type_elements_and_type_elements(span, inferred, &param.body, &arg.members)?;
+            }
+            Type::Tuple(..) => {
+                // Convert to a type literal.
+                if let Some(arg) = self.type_to_type_lit(span, arg)? {
+                    self.infer_type_using_type_elements_and_type_elements(span, inferred, &param.body, &arg.members)?;
+                }
             }
             _ => {
                 unimplemented!()

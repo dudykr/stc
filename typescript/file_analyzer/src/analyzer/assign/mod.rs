@@ -26,6 +26,7 @@ use stc_ts_types::{
 };
 use stc_utils::stack;
 use std::borrow::Cow;
+use std::collections::HashMap;
 use swc_atoms::js_word;
 use swc_common::EqIgnoreSpan;
 use swc_common::TypeEq;
@@ -94,6 +95,20 @@ pub struct AssignData {
 }
 
 impl Analyzer<'_, '_> {
+    /// Denies `null` and `undefined`. This method does not check for elements
+    /// of union.
+    pub(crate) fn deny_null_or_undefined(&mut self, span: Span, ty: &Type) -> ValidationResult<()> {
+        if ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
+            return Err(Error::ObjectIsPossiblyUndefined { span });
+        }
+
+        if ty.is_kwd(TsKeywordTypeKind::TsNullKeyword) {
+            return Err(Error::ObjectIsPossiblyNull { span });
+        }
+
+        Ok(())
+    }
+
     pub(crate) fn assign_with_op(&mut self, span: Span, op: AssignOp, lhs: &Type, rhs: &Type) -> ValidationResult<()> {
         debug_assert_ne!(op, op!("="));
 
@@ -103,13 +118,9 @@ impl Analyzer<'_, '_> {
         let lhs = l.normalize();
         let rhs = r.normalize();
 
-        if op == op!("*=") {
-            if rhs.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
-                return Err(Error::ObjectIsPossiblyUndefined { span: rhs.span() });
-            }
-            if rhs.is_kwd(TsKeywordTypeKind::TsNullKeyword) {
-                return Err(Error::ObjectIsPossiblyNull { span: rhs.span() });
-            }
+        if op == op!("*=") || op == op!("/=") || op == op!("-=") {
+            self.deny_null_or_undefined(rhs.span(), rhs)
+                .context("checking operands of a numeric assignment")?;
 
             let r_castable = self.can_be_casted_to_number_in_rhs(rhs.span(), &rhs);
             if r_castable {
@@ -134,12 +145,14 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        // Addition to a string converts rhs into stirng.
-        if lhs.is_str() {
-            return Ok(());
+        // Addition to a string converts rhs into string.
+        if op == op!("+=") {
+            if lhs.is_str() {
+                return Ok(());
+            }
         }
 
-        if lhs.is_num() || lhs.is_enum_variant() || lhs.is_enum_type() {
+        if lhs.is_num() || lhs.is_enum_variant() {
             // TODO: Check if actual value is number.
 
             if rhs.is_num() {
@@ -171,12 +184,52 @@ impl Analyzer<'_, '_> {
         }
 
         match op {
-            op!("+=") => {}
-
-            op!("??=") | op!("&&=") => {
+            op!("&&=") | op!("||=") => {
+                if l.type_eq(&r) {
+                    return Ok(());
+                }
+            }
+            op!("??=") => {
                 if rhs.is_bool() {
                     return Ok(());
                 }
+            }
+            _ => {}
+        }
+
+        match op {
+            op!("&&=") => {
+                if rhs.is_bool() {
+                    return Ok(());
+                }
+
+                if self.can_be_casted_to_number_in_rhs(span, &l) && self.can_be_casted_to_number_in_rhs(span, &r) {
+                    return Ok(());
+                }
+            }
+            _ => {}
+        }
+
+        match op {
+            op!("+=") => {}
+
+            op!("??=") | op!("||=") | op!("&&=") => {
+                return self
+                    .assign_with_opts(
+                        &mut Default::default(),
+                        AssignOpts {
+                            span,
+                            ..Default::default()
+                        },
+                        lhs,
+                        rhs,
+                    )
+                    .convert_err(|err| Error::InvalidOpAssign {
+                        span,
+                        op,
+                        lhs: box l.into_owned().clone(),
+                        rhs: box r.into_owned().clone(),
+                    });
             }
             _ => {}
         }
@@ -300,7 +353,9 @@ impl Analyzer<'_, '_> {
                 })));
             }
             Type::Conditional(..)
+            | Type::IndexedAccessType(..)
             | Type::Alias(..)
+            | Type::Instance(..)
             | Type::Operator(Operator {
                 op: TsTypeOperatorOp::KeyOf,
                 ..
@@ -387,8 +442,8 @@ impl Analyzer<'_, '_> {
         }
 
         // debug_assert!(!span.is_dummy(), "\n\t{:?}\n<-\n\t{:?}", to, rhs);
-        let to = self.normalize_for_assign(span, to)?;
-        let rhs = self.normalize_for_assign(span, rhs)?;
+        let to = self.normalize_for_assign(span, to).context("tried to normalize lhs")?;
+        let rhs = self.normalize_for_assign(span, rhs).context("tried to normalize rhs")?;
 
         let to = to.normalize();
         let rhs = rhs.normalize();
@@ -607,7 +662,7 @@ impl Analyzer<'_, '_> {
             ];
 
             for (kwd, interface) in special_cases {
-                let rhs = rhs.clone().generalize_lit();
+                let rhs = rhs.clone().generalize_lit(self.marks());
                 match to {
                     Type::Keyword(k) if k.kind == *kwd => match rhs {
                         Type::Interface(ref i) => {
@@ -789,6 +844,9 @@ impl Analyzer<'_, '_> {
                         .assign_to_class(data, opts, l, rhs)
                         .context("tried to assign a type to an instance of a class")
                 }
+                Type::ClassDef(..) => {
+                    fail!()
+                }
                 _ => {}
             },
             Type::ClassDef(l) => {
@@ -799,7 +857,7 @@ impl Analyzer<'_, '_> {
 
             Type::Lit(ref lhs) => match rhs.normalize() {
                 Type::Lit(rhs) if lhs.eq_ignore_span(&rhs) => return Ok(()),
-                Type::Ref(..) => {
+                Type::Ref(..) | Type::Query(..) | Type::Param(..) => {
                     // We should expand ref. We expand it with the match
                     // expression below.
                 }
@@ -1555,9 +1613,7 @@ impl Analyzer<'_, '_> {
                     fail!()
                 }
 
-                Type::Ref(..) => {
-                    // We use reference handler below.
-                }
+                Type::Ref(..) | Type::Param(..) | Type::Query(..) => {}
 
                 // TODO: allow
                 // let a: true | false = bool
@@ -1854,57 +1910,120 @@ impl Analyzer<'_, '_> {
 
         let rhs_keys = self.extract_keys(opts.span, &rhs)?;
 
-        self.assign_with_opts(data, opts, &keys, &rhs_keys)
+        self.assign_with_opts(
+            data,
+            AssignOpts {
+                allow_unknown_rhs: true,
+                ..opts
+            },
+            &keys,
+            &rhs_keys,
+        )
+        .context("tried to assign keys")
     }
 
     fn assign_to_mapped(
         &mut self,
         data: &mut AssignData,
         opts: AssignOpts,
-        to: &Mapped,
-        rhs: &Type,
+        l: &Mapped,
+        r: &Type,
     ) -> ValidationResult<()> {
-        let rhs = rhs.normalize();
+        let span = opts.span;
+        let r = self
+            .normalize(
+                Some(span),
+                Cow::Borrowed(&r),
+                NormalizeTypeOpts { ..Default::default() },
+            )
+            .context("tried to normalize rhs of assignment (to a mapped type)")?;
 
-        // Validate keys
-        match &to.type_param.constraint {
-            Some(constraint) => self.assign_keys(data, opts, &constraint, rhs)?,
-            None => {}
-        }
+        let res: ValidationResult<_> = try {
+            // Validate keys
 
-        let ty = match &to.ty {
-            Some(v) => v.normalize(),
-            None => return Ok(()),
-        };
+            let l_ty = match &l.ty {
+                Some(v) => v.normalize(),
+                None => return Ok(()),
+            };
 
-        match rhs {
-            Type::TypeLit(rhs) => {
-                //
-                for member in &rhs.members {
-                    match member {
-                        TypeElement::Property(prop) => {
-                            if let Some(prop_ty) = &prop.type_ann {
-                                self.assign_with_opts(data, opts, &ty, &prop_ty)?;
-                            }
-                        }
-                        _ => {
-                            return Err(Error::Unimplemented {
-                                span: opts.span,
-                                msg: format!("Assignment to mapped type: type element - {:?}", member),
-                            })
-                        }
+            match r.normalize() {
+                Type::Interface(..) | Type::Class(..) | Type::ClassDef(..) | Type::Intersection(..) => {
+                    if let Some(r) = self.type_to_type_lit(span, &r)?.map(Cow::into_owned).map(Type::TypeLit) {
+                        self.assign_to_mapped(data, opts, l, &r)
+                            .context("tried to assign a type to a mapped type by converting it to a type literal")?;
+                        return Ok(());
                     }
                 }
 
-                return Ok(());
-            }
-            _ => {}
-        }
+                Type::TypeLit(rt) => {
+                    match &l.type_param.constraint {
+                        Some(constraint) => self.assign_keys(data, opts, &constraint, &r)?,
+                        None => {}
+                    }
 
-        Err(Error::Unimplemented {
-            span: opts.span,
-            msg: format!("Assignment to mapped type"),
-        })
+                    //
+                    for member in &rt.members {
+                        match member {
+                            TypeElement::Property(prop) => {
+                                if let Some(prop_ty) = &prop.type_ann {
+                                    self.assign_with_opts(data, opts, &l_ty, &prop_ty)?;
+                                }
+                            }
+                            _ => Err(Error::Unimplemented {
+                                span: opts.span,
+                                msg: format!("Assignment to mapped type: type element - {:?}", member),
+                            })?,
+                        }
+                    }
+
+                    return Ok(());
+                }
+                Type::Mapped(r) => {
+                    if l.type_eq(r) {
+                        return Ok(());
+                    }
+
+                    // If constraint is identical, we replace type parameter of rhs and see if
+                    // return type is identical.
+                    //
+                    if l.type_param.constraint.type_eq(&r.type_param.constraint) {
+                        if l.ty.type_eq(&r.ty) {
+                            return Ok(());
+                        }
+
+                        let mut map = HashMap::default();
+                        map.insert(r.type_param.name.clone(), Type::Param(l.type_param.clone()));
+
+                        let new_r_ty = self.expand_type_params(&map, r.ty.clone())?;
+
+                        if l.ty.type_eq(&new_r_ty) {
+                            return Ok(());
+                        }
+
+                        if let Some(l) = &l.ty {
+                            if let Some(r) = &new_r_ty {
+                                Err(Error::Unimplemented {
+                                    span: opts.span,
+                                    msg: format!(
+                                        "Assignment to mapped type\n{}\n{}",
+                                        dump_type_as_string(&self.cm, l),
+                                        dump_type_as_string(&self.cm, r),
+                                    ),
+                                })?
+                            }
+                        }
+                    }
+                }
+                _ => {}
+            }
+
+            Err(Error::Unimplemented {
+                span: opts.span,
+                msg: format!("Assignment to mapped type"),
+            })?
+        };
+
+        res.with_context(|| format!("tried to assign {} to a mapped type", dump_type_as_string(&self.cm, &r)))
     }
 
     /// Returns true for `A | B | | C = A | B` and simillar cases.

@@ -20,7 +20,7 @@ warning: Type
 7 | x6_2.x
   | ^^^^
   |
-  = note: T6
+  = note: I6
 
 warning: Type
  --> $DIR/tests/pass/types/alias/simple-1.ts:7:1

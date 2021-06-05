@@ -5,7 +5,9 @@ use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::DebugExt;
+use stc_ts_types::FnParam;
 use stc_ts_types::Id;
+use stc_ts_types::IndexSignature;
 use stc_ts_types::Key;
 use stc_ts_types::Mapped;
 use stc_ts_types::Operator;
@@ -30,6 +32,9 @@ impl Analyzer<'_, '_> {
     /// ```ts
     /// declare const a: Partial<Foo>;
     /// ```
+    ///
+    ///
+    /// TODO: Handle index signatures.
     pub(crate) fn expand_mapped(&mut self, span: Span, m: &Mapped) -> ValidationResult<Option<Type>> {
         let orig = dump_type_as_string(&self.cm, &Type::Mapped(m.clone()));
 
@@ -73,28 +78,57 @@ impl Analyzer<'_, '_> {
                     let members = keys
                         .into_iter()
                         .map(|key| -> ValidationResult<_> {
-                            let ty = match &m.ty {
-                                Some(mapped_ty) => self
-                                    .expand_key_in_mapped(m.type_param.name.clone(), &mapped_ty, &key)
-                                    .map(Box::new)
-                                    .map(Some)?,
-                                None => None,
-                            };
+                            match key {
+                                PropertyName::Key(key) => {
+                                    let ty = match &m.ty {
+                                        Some(mapped_ty) => self
+                                            .expand_key_in_mapped(m.type_param.name.clone(), &mapped_ty, &key)
+                                            .map(Box::new)
+                                            .map(Some)?,
+                                        None => None,
+                                    };
 
-                            let p = PropertySignature {
-                                span: key.span(),
-                                accessibility: None,
-                                readonly: false,
-                                key,
-                                optional: false,
-                                params: Default::default(),
-                                type_ann: ty,
-                                type_params: Default::default(),
-                            };
-                            let mut el = TypeElement::Property(p);
+                                    let p = PropertySignature {
+                                        span: key.span(),
+                                        accessibility: None,
+                                        readonly: false,
+                                        key,
+                                        optional: false,
+                                        params: Default::default(),
+                                        type_ann: ty,
+                                        type_params: Default::default(),
+                                    };
+                                    let mut el = TypeElement::Property(p);
 
-                            self.apply_mapped_flags(&mut el, m.optional, m.readonly);
-                            Ok(el)
+                                    self.apply_mapped_flags(&mut el, m.optional, m.readonly);
+                                    Ok(el)
+                                }
+                                PropertyName::IndexSignature { span, params, readonly } => {
+                                    let ty = match &m.ty {
+                                        Some(mapped_ty) => {
+                                            let mut map = HashMap::default();
+                                            map.insert(m.type_param.name.clone(), *params[0].ty.clone());
+                                            self.expand_type_params(&map, m.ty.clone())?
+                                        }
+                                        None => None,
+                                    };
+
+                                    Ok(TypeElement::Index(IndexSignature {
+                                        span,
+                                        is_static: false,
+                                        params,
+                                        type_ann: ty,
+                                        readonly: match m.readonly {
+                                            Some(v) => match v {
+                                                TruePlusMinus::True => true,
+                                                TruePlusMinus::Plus => true,
+                                                TruePlusMinus::Minus => false,
+                                            },
+                                            None => readonly,
+                                        },
+                                    }))
+                                }
+                            }
                         })
                         .collect::<Result<_, _>>()?;
 
@@ -216,7 +250,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Get keys of `ty` as a proerty name.
-    fn get_property_names(&mut self, span: Span, ty: &Type) -> ValidationResult<Option<Vec<Key>>> {
+    fn get_property_names(&mut self, span: Span, ty: &Type) -> ValidationResult<Option<Vec<PropertyName>>> {
         let ty = self
             .normalize(
                 None,
@@ -240,12 +274,18 @@ impl Analyzer<'_, '_> {
                         TypeElement::Call(_) => {}
                         TypeElement::Constructor(_) => {}
                         TypeElement::Property(p) => {
-                            keys.push(p.key.clone());
+                            keys.push(p.key.clone().into());
                         }
                         TypeElement::Method(m) => {
-                            keys.push(m.key.clone());
+                            keys.push(m.key.clone().into());
                         }
-                        TypeElement::Index(_) => {}
+                        TypeElement::Index(i) => {
+                            keys.push(PropertyName::IndexSignature {
+                                span: i.span,
+                                params: i.params.clone(),
+                                readonly: i.readonly,
+                            });
+                        }
                     }
                 }
 
@@ -258,12 +298,18 @@ impl Analyzer<'_, '_> {
                         TypeElement::Call(_) => {}
                         TypeElement::Constructor(_) => {}
                         TypeElement::Property(p) => {
-                            keys.push(p.key.clone());
+                            keys.push(p.key.clone().into());
                         }
                         TypeElement::Method(m) => {
-                            keys.push(m.key.clone());
+                            keys.push(m.key.clone().into());
                         }
-                        TypeElement::Index(_) => {}
+                        TypeElement::Index(i) => {
+                            keys.push(PropertyName::IndexSignature {
+                                span: i.span,
+                                params: i.params.clone(),
+                                readonly: i.readonly,
+                            });
+                        }
                     }
                 }
 
@@ -284,7 +330,7 @@ impl Analyzer<'_, '_> {
             Type::Enum(e) => {
                 let mut keys = vec![];
                 for member in &e.members {
-                    keys.push(match &member.id {
+                    keys.push(PropertyName::Key(match &member.id {
                         RTsEnumMemberId::Ident(i) => Key::Normal {
                             span: i.span,
                             sym: i.sym.clone(),
@@ -293,12 +339,43 @@ impl Analyzer<'_, '_> {
                             span: s.span,
                             sym: s.value.clone(),
                         },
-                    })
+                    }))
                 }
 
                 return Ok(Some(keys));
             }
             Type::Param(..) => Ok(None),
+
+            Type::Union(ty) => {
+                let keys_types = ty
+                    .types
+                    .iter()
+                    .map(|ty| -> ValidationResult<_> { self.get_property_names(span, &ty) })
+                    .collect::<Result<Vec<_>, _>>()?;
+
+                let mut result: Vec<PropertyName> = vec![];
+
+                if keys_types.iter().all(|keys| keys.is_none()) {
+                    return Ok(None);
+                }
+
+                for keys in keys_types {
+                    match keys {
+                        Some(keys) => {
+                            for key in keys {
+                                if result.iter().any(|prev| prev.type_eq(&key)) {
+                                    continue;
+                                }
+
+                                result.push(key);
+                            }
+                        }
+                        None => {}
+                    }
+                }
+
+                return Ok(Some(result));
+            }
             _ => {
                 unimplemented!("get_property_names: {:#?}", ty);
             }
@@ -374,5 +451,22 @@ impl Analyzer<'_, '_> {
             },
             None => {}
         }
+    }
+}
+
+#[derive(Debug, Clone, Spanned, TypeEq)]
+pub(crate) enum PropertyName {
+    Key(Key),
+    /// Created from an index signature.
+    IndexSignature {
+        span: Span,
+        params: Vec<FnParam>,
+        readonly: bool,
+    },
+}
+
+impl From<Key> for PropertyName {
+    fn from(key: Key) -> Self {
+        Self::Key(key)
     }
 }

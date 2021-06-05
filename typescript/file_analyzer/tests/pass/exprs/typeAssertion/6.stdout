@@ -1,0 +1,56 @@
+warning: Type
+ --> $DIR/tests/pass/exprs/typeAssertion/6.ts:7:42
+  |
+7 |     let x: string | number | undefined = undefined;
+  |                                          ^^^^^^^^^
+  |
+  = note: undefined
+
+warning: Type
+ --> $DIR/tests/pass/exprs/typeAssertion/6.ts:8:5
+  |
+8 |     x;  // undefined
+  |     ^
+  |
+  = note: string | number | undefined
+
+warning: Type
+ --> $DIR/tests/pass/exprs/typeAssertion/6.ts:9:16
+  |
+9 |     if (typeof x === "boolean") {
+  |                ^
+  |
+  = note: string | number | undefined
+
+warning: Type
+ --> $DIR/tests/pass/exprs/typeAssertion/6.ts:9:9
+  |
+9 |     if (typeof x === "boolean") {
+  |         ^^^^^^^^
+  |
+  = note: string
+
+warning: Type
+ --> $DIR/tests/pass/exprs/typeAssertion/6.ts:9:9
+  |
+9 |     if (typeof x === "boolean") {
+  |         ^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: boolean
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/6.ts:10:9
+   |
+10 |         x;  // nothing (boolean not in declared type)
+   |         ^
+   |
+   = note: never
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/6.ts:12:5
+   |
+12 |     x;  // undefined
+   |     ^
+   |
+   = note: string | number | undefined
+

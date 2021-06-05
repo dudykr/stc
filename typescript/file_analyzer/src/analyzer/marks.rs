@@ -11,9 +11,11 @@ use swc_common::SyntaxContext;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Marks {
     pub(crate) top_level_mark: Mark,
-    /// If the mark is applied, it means that the type should not be
+    /// If the mark is applied, it means that the literal should not be
     /// generalized.
-    pub(super) prevent_generalization_mark: Mark,
+    pub(crate) prevent_generalization_mark: Mark,
+
+    pub(crate) prevent_tuple_to_array: Mark,
 
     /// If this mark is applied, type will not be inferred (based on constraint)
     /// while simplifying.
@@ -47,6 +49,7 @@ impl Marks {
         swc_common::GLOBALS.set(globals, || Self {
             top_level_mark: m(),
             prevent_generalization_mark: m(),
+            prevent_tuple_to_array: m(),
             prevent_complex_simplification_mark: m(),
             implicit_type_mark: m(),
             no_expand_mark: m(),

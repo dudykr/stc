@@ -24,6 +24,7 @@ use stc_ts_ast_rnode::RBinExpr;
 use stc_ts_ast_rnode::RBindingIdent;
 use stc_ts_ast_rnode::RCondExpr;
 use stc_ts_ast_rnode::RExpr;
+use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RIfStmt;
 use stc_ts_ast_rnode::RObjectPatProp;
 use stc_ts_ast_rnode::RPat;
@@ -33,6 +34,7 @@ use stc_ts_ast_rnode::RSwitchStmt;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
+use stc_ts_type_ops::Fix;
 use stc_ts_types::name::Name;
 use stc_ts_types::Array;
 use stc_ts_types::Id;
@@ -54,7 +56,7 @@ use swc_common::{Span, Spanned};
 use swc_ecma_ast::*;
 
 /// Conditional facts
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub(crate) struct CondFacts {
     pub facts: FxHashMap<Name, TypeFacts>,
     pub vars: FxHashMap<Name, Type>,
@@ -63,6 +65,35 @@ pub(crate) struct CondFacts {
 }
 
 impl CondFacts {
+    pub(crate) fn assert_valid(&self) {
+        for (_, ty) in &self.vars {
+            ty.assert_valid();
+        }
+
+        for (_, types) in &self.excludes {
+            for ty in types {
+                ty.assert_valid();
+            }
+        }
+
+        for (_, ty) in &self.types {
+            ty.assert_valid();
+        }
+    }
+
+    pub fn override_vars_using(&mut self, r: &mut Self) {
+        for (k, ty) in r.vars.drain() {
+            match self.vars.entry(k) {
+                Entry::Occupied(mut e) => {
+                    *e.get_mut() = ty;
+                }
+                Entry::Vacant(e) => {
+                    e.insert(ty);
+                }
+            }
+        }
+    }
+
     pub fn take(&mut self) -> Self {
         Self {
             facts: take(&mut self.facts),
@@ -112,12 +143,20 @@ pub(super) struct Facts {
 }
 
 impl Facts {
+    pub(crate) fn assert_valid(&self) {
+        self.true_facts.assert_valid();
+        self.false_facts.assert_valid();
+    }
     pub fn clear(&mut self) {
+        self.assert_valid();
+
         self.true_facts.clear();
         self.false_facts.clear();
     }
 
     pub fn take(&mut self) -> Self {
+        self.assert_valid();
+
         Self {
             true_facts: self.true_facts.take(),
             false_facts: self.false_facts.take(),
@@ -225,8 +264,11 @@ where
 
 impl AddAssign for CondFacts {
     fn add_assign(&mut self, rhs: Self) {
+        self.assert_valid();
+        rhs.assert_valid();
+
         for (k, v) in rhs.facts {
-            *self.facts.entry(k).or_insert(TypeFacts::None) |= v;
+            *self.facts.entry(k.clone()).or_insert(TypeFacts::None) |= v;
         }
 
         self.types.extend(rhs.types);
@@ -256,6 +298,8 @@ impl AddAssign for CondFacts {
 
 impl AddAssign<Option<Self>> for CondFacts {
     fn add_assign(&mut self, rhs: Option<Self>) {
+        self.assert_valid();
+
         match rhs {
             Some(rhs) => {
                 *self += rhs;
@@ -443,7 +487,7 @@ impl Analyzer<'_, '_> {
         let discriminant_ty = self.check_switch_discriminant(stmt).report(&mut self.storage);
 
         let mut false_facts = CondFacts::default();
-        let mut true_facts = CondFacts::default();
+        let mut base_true_facts = self.cur_facts.true_facts.take();
         // Declared at here as it's important to know if last one ends with return.
         let mut ends_with_ret = false;
         let len = stmt.cases.len();
@@ -491,16 +535,20 @@ impl Analyzer<'_, '_> {
                 None => {}
             }
 
-            true_facts = true_facts | self.cur_facts.true_facts.take();
-            self.with_child(ScopeKind::Flow, true_facts.clone(), |child| {
+            let true_facts_created_by_case = self.cur_facts.true_facts.take();
+            let false_facts_created_by_case = self.cur_facts.false_facts.take();
+
+            let mut facts_for_body = base_true_facts.clone();
+            facts_for_body += true_facts_created_by_case;
+
+            self.with_child(ScopeKind::Flow, facts_for_body, |child| {
                 cons.visit_with(child);
                 Ok(())
             })?;
-            false_facts += self.cur_facts.false_facts.take();
 
             if ends_with_ret || last {
-                true_facts = CondFacts::default();
-                true_facts += false_facts.clone();
+                false_facts += false_facts_created_by_case.clone();
+                base_true_facts += false_facts_created_by_case;
             }
         }
 
@@ -520,6 +568,8 @@ pub(crate) struct PatAssignOpts {
 
 impl Analyzer<'_, '_> {
     pub(super) fn try_assign(&mut self, span: Span, op: AssignOp, lhs: &RPatOrExpr, ty: &Type) {
+        ty.assert_valid();
+
         let res: ValidationResult<()> = try {
             match *lhs {
                 RPatOrExpr::Expr(ref expr) | RPatOrExpr::Pat(box RPat::Expr(ref expr)) => {
@@ -571,6 +621,8 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn try_assign_pat(&mut self, span: Span, lhs: &RPat, ty: &Type) -> ValidationResult<()> {
+        ty.assert_valid();
+
         self.try_assign_pat_with_opts(span, lhs, ty, Default::default())
     }
 
@@ -581,11 +633,15 @@ impl Analyzer<'_, '_> {
         ty: &Type,
         opts: PatAssignOpts,
     ) -> ValidationResult<()> {
+        ty.assert_valid();
+
         let is_in_loop = self.scope.is_in_loop_body();
         let ty = self
             .normalize(Some(ty.span().or_else(|| span)), Cow::Borrowed(ty), Default::default())
             .context("tried to normalize a type to assign it to a pattern")?;
         let ty = ty.normalize();
+
+        ty.assert_valid();
 
         // Update variable's type
         match lhs {
@@ -634,6 +690,8 @@ impl Analyzer<'_, '_> {
                     .or_else(|| self.scope.search_parent(&i.id.clone().into()))
                 {
                     if let Some(declared_ty) = &var_info.ty {
+                        declared_ty.assert_valid();
+
                         if declared_ty.is_any()
                             || ty.is_kwd(TsKeywordTypeKind::TsNullKeyword)
                             || ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
@@ -645,11 +703,16 @@ impl Analyzer<'_, '_> {
 
                         let ty = ty.clone();
                         let ty = self.apply_type_facts_to_type(TypeFacts::NEUndefined | TypeFacts::NENull, ty);
+
+                        ty.assert_valid();
+
                         if ty.is_never() {
                             return Ok(());
                         }
 
-                        actual_ty = Some(self.narrowed_type_of_assignment(span, declared_ty, &ty)?);
+                        let narrowed_ty = self.narrowed_type_of_assignment(span, declared_ty, &ty)?;
+                        narrowed_ty.assert_valid();
+                        actual_ty = Some(narrowed_ty);
                     }
                 } else {
                     if !opts.ignore_lhs_errors {
@@ -661,18 +724,25 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
+                if let Some(ty) = &actual_ty {
+                    ty.assert_valid();
+                }
+
                 // Update actual types.
                 if let Some(var_info) = self.scope.get_var_mut(&i.id.clone().into()) {
                     var_info.is_actual_type_modified_in_loop |= is_in_loop;
-                    var_info.actual_ty = Some(actual_ty.unwrap_or_else(|| ty.clone()));
+                    let new_ty = actual_ty.unwrap_or_else(|| ty.clone());
+                    new_ty.assert_valid();
+                    var_info.actual_ty = Some(new_ty);
                     return Ok(());
                 }
 
                 let var_info = if let Some(var_info) = self.scope.search_parent(&i.id.clone().into()) {
-                    let actual_ty = Some(actual_ty.unwrap_or_else(|| ty.clone()));
+                    let actual_ty = actual_ty.unwrap_or_else(|| ty.clone());
+                    actual_ty.assert_valid();
 
                     VarInfo {
-                        actual_ty,
+                        actual_ty: Some(actual_ty),
                         copied: true,
                         ..var_info.clone()
                     }
@@ -891,17 +961,24 @@ impl Analyzer<'_, '_> {
 
     pub(super) fn add_type_fact(&mut self, sym: &Id, ty: Type) {
         slog::info!(self.logger, "add_type_fact({}); ty = {:?}", sym, ty);
+
+        ty.assert_valid();
+
         self.cur_facts.insert_var(sym, ty, false);
     }
 
-    pub(super) fn add_deep_type_fact(&mut self, name: Name, ty: Type, is_for_true: bool) {
+    pub(super) fn add_deep_type_fact(&mut self, span: Span, name: Name, ty: Type, is_for_true: bool) {
         debug_assert!(!self.is_builtin);
 
+        ty.assert_valid();
+
         if let Some((name, ty)) = self
-            .determine_type_fact_by_field_fact(&name, &ty)
+            .determine_type_fact_by_field_fact(span, &name, &ty)
             .report(&mut self.storage)
             .flatten()
         {
+            ty.assert_valid();
+
             if is_for_true {
                 self.cur_facts.true_facts.vars.insert(name, ty);
             } else {
@@ -929,6 +1006,8 @@ impl Analyzer<'_, '_> {
         property: &JsWord,
         type_facts: Option<TypeFacts>,
     ) -> ValidationResult<Type> {
+        src.assert_valid();
+
         match src.normalize() {
             Type::Ref(..) => {
                 let src = self.expand_top_ref(src.span(), Cow::Borrowed(src))?;
@@ -955,7 +1034,11 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        let prop_res = self.access_property(
+        let ctx = Ctx {
+            should_not_create_indexed_type_from_ty_els: true,
+            ..self.ctx
+        };
+        let prop_res = self.with_ctx(ctx).access_property(
             src.span(),
             src,
             &Key::Normal {
@@ -995,13 +1078,24 @@ impl Analyzer<'_, '_> {
         Ok(src.clone())
     }
 
-    fn determine_type_fact_by_field_fact(&mut self, name: &Name, ty: &Type) -> ValidationResult<Option<(Name, Type)>> {
+    fn determine_type_fact_by_field_fact(
+        &mut self,
+        span: Span,
+        name: &Name,
+        ty: &Type,
+    ) -> ValidationResult<Option<(Name, Type)>> {
+        ty.assert_valid();
+
         if name.len() == 1 {
             return Ok(None);
         }
 
         let ids = name.as_ids();
-        let obj = self.type_of_var(&ids[0].clone().into(), TypeOfMode::RValue, None)?;
+        let mut id: RIdent = ids[0].clone().into();
+        id.span.lo = span.lo;
+        id.span.hi = span.hi;
+
+        let obj = self.type_of_var(&id, TypeOfMode::RValue, None)?;
         let obj = self.expand_top_ref(ty.span(), Cow::Owned(obj))?;
 
         match obj.normalize() {
@@ -1029,8 +1123,10 @@ impl Analyzer<'_, '_> {
                     if new_obj_types.is_empty() {
                         return Ok(None);
                     }
+                    let mut ty = Type::union(new_obj_types);
+                    ty.fix();
 
-                    return Ok(Some((Name::from(ids[0].clone()), Type::union(new_obj_types))));
+                    return Ok(Some((Name::from(ids[0].clone()), ty)));
                 }
             }
             _ => {}
@@ -1085,15 +1181,22 @@ impl Analyzer<'_, '_> {
             return Ok(cons);
         }
 
-        let new_types = self.adjust_ternary_type(span, vec![cons, alt])?;
-        let mut ty = Type::union(new_types);
+        let new_types = if type_ann.is_none() {
+            self.adjust_ternary_type(span, vec![cons, alt])?
+        } else {
+            vec![cons, alt]
+        };
+        let mut ty = Type::union(new_types).fixed();
         ty.reposition(span);
+        ty.assert_valid();
         Ok(ty)
     }
 }
 
 impl Facts {
     fn insert_var<N: Into<Name>>(&mut self, name: N, ty: Type, negate: bool) {
+        ty.assert_valid();
+
         let name = name.into();
 
         if negate {

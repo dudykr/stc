@@ -394,7 +394,7 @@ pub struct SymbolId(usize);
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Instance {
     pub span: Span,
-    pub of: Box<Type>,
+    pub ty: Box<Type>,
 }
 
 assert_eq_size!(Instance, [u8; 24]);
@@ -817,13 +817,16 @@ impl Union {
                     continue;
                 }
                 if t1.type_eq(t2) {
-                    panic!("A union type has duplicate elements: ({:?})", t1)
+                    panic!("[INVALID_TYPE]: A union type has duplicate elements: ({:?})", t1)
                 }
             }
         }
 
         if self.types.len() <= 1 {
-            panic!("A union type should have multiple items. Got {:?}", self.types);
+            panic!(
+                "[INVALID_TYPE]: A union type should have multiple items. Got {:?}",
+                self.types
+            );
         }
     }
 }
@@ -860,13 +863,19 @@ impl Intersection {
                     continue;
                 }
                 if t1.type_eq(t2) {
-                    panic!("An intersection type has duplicate elements: ({:?})", t1)
+                    panic!(
+                        "[INVALID_TYPE]: An intersection type has duplicate elements: ({:?})",
+                        t1
+                    )
                 }
             }
         }
 
         if self.types.len() <= 1 {
-            panic!("An intersection type should have multiple items. Got {:?}", self.types);
+            panic!(
+                "[INVALID_TYPE]: An intersection type should have multiple items. Got {:?}",
+                self.types
+            );
         }
     }
 }
@@ -1020,6 +1029,25 @@ impl Type {
         ty
     }
 
+    /// If `self` is [Type::Lit], convert it to [Type::Keyword].
+    pub fn force_generalize_top_level_literals(self) -> Self {
+        match self {
+            Type::Lit(lit) => Type::Keyword(RTsKeywordType {
+                span: lit.span,
+                kind: match lit.lit {
+                    RTsLit::BigInt(_) => TsKeywordTypeKind::TsBigIntKeyword,
+                    RTsLit::Number(_) => TsKeywordTypeKind::TsNumberKeyword,
+                    RTsLit::Str(_) => TsKeywordTypeKind::TsStringKeyword,
+                    RTsLit::Bool(_) => TsKeywordTypeKind::TsBooleanKeyword,
+                    RTsLit::Tpl(_) => {
+                        unreachable!()
+                    }
+                },
+            }),
+            _ => self,
+        }
+    }
+
     pub fn contains_void(&self) -> bool {
         match *self.normalize() {
             Type::Keyword(RTsKeywordType {
@@ -1034,13 +1062,15 @@ impl Type {
     }
 
     pub fn is_any(&self) -> bool {
-        match *self.normalize() {
+        match self.normalize() {
             Type::Keyword(RTsKeywordType {
                 kind: TsKeywordTypeKind::TsAnyKeyword,
                 ..
             }) => true,
 
-            Type::Union(ref t) => t.types.iter().any(|t| t.is_any()),
+            Type::Union(t) => t.types.iter().any(|t| t.is_any()),
+
+            Type::Instance(ty) => ty.ty.is_any(),
 
             _ => false,
         }
@@ -1265,7 +1295,7 @@ impl Visit<Union> for AssertValid {
 
         for item in ty.types.iter() {
             if item.normalize().is_union_type() {
-                panic!("A union type should not have a union item")
+                panic!("[INVALID_TYPE]: A union type should not have a union item")
             }
         }
     }
@@ -1283,7 +1313,7 @@ impl Visit<Intersection> for AssertValid {
 
         for item in ty.types.iter() {
             if item.normalize().is_intersection_type() {
-                panic!("An intersection type should not have an intersection item")
+                panic!("[INVALID_TYPE]: An intersection type should not have an intersection item")
             }
         }
     }

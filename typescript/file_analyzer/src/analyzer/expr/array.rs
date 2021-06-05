@@ -4,6 +4,7 @@ use super::TypeOfMode;
 use crate::analyzer::types::NormalizeTypeOpts;
 use crate::analyzer::Analyzer;
 use crate::analyzer::Ctx;
+use crate::ty::TypeExt;
 use crate::type_facts::TypeFacts;
 use crate::util::type_ext::TypeVecExt;
 use crate::validator;
@@ -56,6 +57,8 @@ impl Analyzer<'_, '_> {
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
     ) -> ValidationResult {
+        let marks = self.marks();
+
         let span = arr.span;
         let elems = &arr.elems;
 
@@ -80,8 +83,13 @@ impl Analyzer<'_, '_> {
 
                     let ty = expr.validate_with_args(self, (mode, type_args, elem_type_ann.as_deref()))?;
                     match ty.normalize() {
-                        Type::TypeLit(..) | Type::Function(..) => {
+                        Type::TypeLit(..) => {
                             can_be_tuple = false;
+                        }
+                        Type::Function(..) => {
+                            if type_ann.is_none() {
+                                can_be_tuple = false;
+                            }
                         }
                         _ => {}
                     }
@@ -163,7 +171,17 @@ impl Analyzer<'_, '_> {
                 }
                 true
             });
-            let mut types: Vec<_> = elements.into_iter().map(|element| *element.ty).collect();
+            let mut types: Vec<_> = elements
+                .into_iter()
+                .map(|element| *element.ty)
+                .map(|ty| {
+                    if type_ann.is_none() {
+                        ty.generalize_lit(marks)
+                    } else {
+                        ty
+                    }
+                })
+                .collect();
             types.dedup_type();
             if types.is_empty() {
                 types.push(if self.ctx.use_undefined_for_empty_tuple && is_empty {

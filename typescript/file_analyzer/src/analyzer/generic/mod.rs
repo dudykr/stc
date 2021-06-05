@@ -54,6 +54,7 @@ use stc_ts_types::TypeParamInstantiation;
 use stc_ts_types::Union;
 use stc_ts_utils::MapWithMut;
 use stc_utils::error::context;
+use stc_utils::stack;
 use std::borrow::Cow;
 use std::collections::hash_map::Entry;
 use std::mem::take;
@@ -66,6 +67,7 @@ use swc_ecma_ast::*;
 
 mod expander;
 mod inference;
+mod type_form;
 
 /// Lower value means higher priority and it contains lower value if the
 /// type parameter and the type argument are simpler.
@@ -97,6 +99,8 @@ pub(super) struct InferData {
     /// });
     /// ```
     defaults: FxHashMap<Id, Type>,
+
+    dejavu: Vec<(Type, Type)>,
 }
 
 /// Type inference for arguments.
@@ -396,19 +400,50 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
+        let _stack = match stack::track(span) {
+            Ok(v) => v,
+            Err(_) => return Ok(()),
+        };
+
         let _ctx = context(format!(
             "infer_type()\nParam: {}\nArg: {}",
             dump_type_as_string(&self.cm, &param),
             dump_type_as_string(&self.cm, &arg)
         ));
 
+        if inferred
+            .dejavu
+            .iter()
+            .any(|(prev_param, prev_arg)| prev_param.type_eq(param) && prev_arg.type_eq(arg))
+        {
+            return Ok(());
+        }
+        inferred.dejavu.push((param.clone(), arg.clone()));
+
         debug_assert!(!span.is_dummy(), "infer_type: `span` should not be dummy");
+
+        let param = param.normalize();
+        let arg = arg.normalize();
 
         print_type(&self.logger, "param", &self.cm, &param);
         print_type(&self.logger, "arg", &self.cm, &arg);
 
-        let param = param.normalize();
-        let arg = arg.normalize();
+        match param {
+            Type::Instance(..) => {
+                let param = self.normalize(Some(span), Cow::Borrowed(&param), Default::default())?;
+                return self.infer_type(span, inferred, &param, arg);
+            }
+            _ => {}
+        }
+
+        match arg {
+            Type::Instance(..) => {
+                let arg = self.normalize(Some(span), Cow::Borrowed(&arg), Default::default())?;
+
+                return self.infer_type(span, inferred, param, &arg);
+            }
+            _ => {}
+        }
 
         if param.is_keyword() {
             return Ok(());
@@ -423,8 +458,14 @@ impl Analyzer<'_, '_> {
             _ => param,
         };
 
-        match param {
-            Type::Union(param) if !self.ctx.skip_union_while_inferencing => {
+        match (param, arg) {
+            (Type::Union(p), Type::Union(a)) => {
+                self.infer_type_using_union_and_union(span, inferred, p, arg, a)?;
+
+                return Ok(());
+            }
+
+            (Type::Union(param), _) if !self.ctx.skip_union_while_inferencing => {
                 //
                 for p in &param.types {
                     self.infer_type(span, inferred, p, arg)?;
@@ -433,18 +474,15 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
 
-            Type::Intersection(param) => {
+            (Type::Intersection(param), _) => {
                 for param in &param.types {
                     self.infer_type(span, inferred, param, arg)?;
                 }
 
                 return Ok(());
             }
-            _ => {}
-        }
 
-        match arg {
-            Type::Union(arg) => {
+            (_, Type::Union(arg)) => {
                 //
                 for a in &arg.types {
                     self.infer_type(span, inferred, param, a)?;
@@ -616,7 +654,9 @@ impl Analyzer<'_, '_> {
 
             Type::Interface(param) => match arg {
                 Type::Interface(..) => self.infer_type_using_interface(span, inferred, param, arg)?,
-                Type::TypeLit(..) => return self.infer_type_using_interface(span, inferred, param, arg),
+                Type::TypeLit(..) | Type::Tuple(..) => {
+                    return self.infer_type_using_interface(span, inferred, param, arg)
+                }
                 _ => {}
             },
 
@@ -1043,6 +1083,16 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
             _ => {}
+        }
+
+        if param.is_str_lit() {
+            // Prevent logging
+            return Ok(());
+        }
+
+        if param.is_predicate() && arg.is_bool() {
+            // Prevent logging
+            return Ok(());
         }
 
         slog::error!(
@@ -1866,9 +1916,9 @@ impl Analyzer<'_, '_> {
         }
         slog::debug!(
             self.logger,
-            "rename_type_params(has_ann = {:?}, ty = {:?})",
+            "rename_type_params(has_ann = {:?}, ty = {})",
             type_ann.is_some(),
-            ty
+            dump_type_as_string(&self.cm, &ty)
         );
 
         if ty.normalize().is_intersection_type() {

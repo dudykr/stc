@@ -45,26 +45,61 @@ enum ForHeadKind {
 }
 
 impl Analyzer<'_, '_> {
-    fn validate_loop_body_with_scope(&mut self, body: &RStmt) -> ValidationResult<()> {
+    /// We evaluate loop bodies multiple time.
+    /// But actually we don't report errors
+    ///
+    /// If type does not change due to a loop, we evaluate
+    fn validate_loop_body_with_scope(&mut self, test: Option<&RExpr>, body: &RStmt) -> ValidationResult<()> {
         let mut orig_facts = self.cur_facts.take();
 
-        let mut prev_facts = orig_facts.true_facts.clone();
+        let mut prev_facts = orig_facts.true_facts.take();
         let mut prev_false_facts = orig_facts.false_facts.take();
+        let mut facts_of_prev_body_eval = CondFacts::default();
+        let mut last = false;
+        let mut orig_vars = Some(self.scope.vars.clone());
 
-        // TODO: Loop again if required.
-        for i in 0..2 {
-            let mut facts_from_body: CondFacts =
-                self.with_child(ScopeKind::LoopBody, prev_facts.clone(), |child: &mut Analyzer| {
-                    child.ctx.reevaluating_loop_body |= i != 0;
+        loop {
+            let mut facts_from_body: CondFacts = self.with_child_with_hook(
+                ScopeKind::LoopBody { last },
+                prev_facts.clone(),
+                |child: &mut Analyzer| {
+                    child.ctx.ignore_errors |= !last;
+
+                    {
+                        let ctx = Ctx {
+                            in_cond_of_cond_expr: true,
+                            ..child.ctx
+                        };
+                        test.visit_with(&mut *child.with_ctx(ctx));
+                    }
 
                     body.visit_with(child);
 
                     Ok(child.cur_facts.true_facts.take())
-                })?;
+                },
+                |analyzer: &mut Analyzer| {
+                    if last {
+                        analyzer.scope.vars = orig_vars.take().unwrap();
+                    }
+                },
+            )?;
 
             facts_from_body.excludes.clear();
 
+            if last {
+                prev_facts += facts_from_body;
+                break;
+            }
+
+            if facts_of_prev_body_eval == facts_from_body {
+                last = true;
+            } else {
+                facts_of_prev_body_eval = facts_from_body.clone();
+            }
+
             // We copy `actual` types and type facts from the child scope.
+
+            prev_facts.override_vars_using(&mut facts_from_body);
 
             prev_facts += facts_from_body;
         }
@@ -341,7 +376,9 @@ impl Analyzer<'_, '_> {
 
                 child.check_lhs_of_for_loop(left, &elem_ty, kind);
 
-                child.validate_loop_body_with_scope(&body).report(&mut child.storage);
+                child
+                    .validate_loop_body_with_scope(None, &body)
+                    .report(&mut child.storage);
 
                 Ok(())
             },
@@ -370,23 +407,8 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RWhileStmt) {
-        let test = {
-            let ctx = Ctx {
-                in_cond_of_cond_expr: true,
-                ..self.ctx
-            };
-            let test = node.test.validate_with_default(&mut *self.with_ctx(ctx));
-            match test {
-                Ok(v) => v,
-                Err(err) => {
-                    self.storage.report(err);
-                    Type::any(node.test.span())
-                }
-            }
-        };
-        self.check_for_inifinite_loop(&test, &node.body);
-
-        self.validate_loop_body_with_scope(&node.body).report(&mut self.storage);
+        self.validate_loop_body_with_scope(Some(&node.test), &node.body)
+            .report(&mut self.storage);
 
         Ok(())
     }
@@ -397,10 +419,8 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RDoWhileStmt) {
         node.body.visit_with(self);
 
-        let test = node.test.validate_with_default(self)?;
-        self.check_for_inifinite_loop(&test, &node.body);
-
-        self.validate_loop_body_with_scope(&node.body).report(&mut self.storage);
+        self.validate_loop_body_with_scope(Some(&node.test), &node.body)
+            .report(&mut self.storage);
 
         Ok(())
     }

@@ -76,7 +76,9 @@ warning: Type
 13 |     r1;
    |     ^^
    |
-   = note: Omit<T, "a">
+   = note: {
+               [P in keyof T extends "a" ? never : keyof T]: T[P];
+           }
 
 warning: Type
   --> $DIR/tests/pass/exprs/assign/objectPat/1.ts:14:5
@@ -108,7 +110,9 @@ warning: Type
 17 |     r3;
    |     ^^
    |
-   = note: Omit<T, "a">
+   = note: {
+               [P in keyof T extends "a" ? never : keyof T]: T[P];
+           }
 
 warning: Type
   --> $DIR/tests/pass/exprs/assign/objectPat/1.ts:18:5

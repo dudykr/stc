@@ -8,6 +8,7 @@ use rnode::VisitWith;
 use slog::Logger;
 use stc_ts_ast_rnode::RTsType;
 use stc_ts_types::Id;
+use stc_ts_types::IndexedAccessType;
 use stc_ts_types::Ref;
 use stc_ts_types::Type;
 use stc_ts_types::TypeLit;
@@ -73,6 +74,10 @@ pub fn dump_type_as_string(cm: &Lrc<SourceMap>, t: &Type) -> String {
             .unwrap();
     }
     let mut s = String::from_utf8_lossy(&buf).replace("TYPE as", "");
+
+    if t.normalize().is_instance() {
+        s = format!("instanceof {}", s)
+    }
 
     match t.normalize() {
         Type::ClassDef(..) => {
@@ -211,6 +216,13 @@ impl Fold<TypeParam> for Visualizer {
             return ty;
         }
         ty.fold_children_with(self)
+    }
+}
+
+/// Noop because of stack overflow.
+impl Fold<IndexedAccessType> for Visualizer {
+    fn fold(&mut self, ty: IndexedAccessType) -> IndexedAccessType {
+        ty
     }
 }
 

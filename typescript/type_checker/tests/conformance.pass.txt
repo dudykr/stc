@@ -22,6 +22,7 @@ async/es2017/asyncArrowFunction/asyncArrowFunction4_es2017.ts
 async/es2017/asyncArrowFunction/asyncArrowFunctionCapturesArguments_es2017.ts
 async/es2017/asyncArrowFunction/asyncArrowFunctionCapturesThis_es2017.ts
 async/es2017/asyncArrowFunction/asyncUnParenthesizedArrowFunction_es2017.ts
+async/es2017/asyncAwaitIsolatedModules_es2017.ts
 async/es2017/asyncAwait_es2017.ts
 async/es2017/asyncMethodWithSuperConflict_es6.ts
 async/es2017/asyncMethodWithSuper_es2017.ts
@@ -62,6 +63,7 @@ async/es5/asyncArrowFunction/asyncArrowFunction4_es5.ts
 async/es5/asyncArrowFunction/asyncArrowFunctionCapturesArguments_es5.ts
 async/es5/asyncArrowFunction/asyncArrowFunctionCapturesThis_es5.ts
 async/es5/asyncArrowFunction/asyncUnParenthesizedArrowFunction_es5.ts
+async/es5/asyncAwaitIsolatedModules_es5.ts
 async/es5/asyncAwait_es5.ts
 async/es5/asyncMethodWithSuper_es5.ts
 async/es5/asyncQualifiedReturnType_es5.ts
@@ -99,6 +101,7 @@ async/es6/asyncArrowFunction/asyncArrowFunction4_es6.ts
 async/es6/asyncArrowFunction/asyncArrowFunctionCapturesArguments_es6.ts
 async/es6/asyncArrowFunction/asyncArrowFunctionCapturesThis_es6.ts
 async/es6/asyncArrowFunction/asyncUnParenthesizedArrowFunction_es6.ts
+async/es6/asyncAwaitIsolatedModules_es6.ts
 async/es6/asyncAwait_es6.ts
 async/es6/asyncMethodWithSuper_es6.ts
 async/es6/asyncUseStrict_es6.ts
@@ -173,6 +176,7 @@ classes/constructorDeclarations/classConstructorAccessibility4.ts
 classes/constructorDeclarations/classConstructorParametersAccessibility3.ts
 classes/constructorDeclarations/classWithTwoConstructorDefinitions.ts
 classes/constructorDeclarations/constructorParameters/constructorImplementationWithDefaultValues.ts
+classes/constructorDeclarations/constructorParameters/constructorOverloadsWithDefaultValues.ts
 classes/constructorDeclarations/constructorParameters/constructorOverloadsWithOptionalParameters.ts
 classes/constructorDeclarations/constructorParameters/declarationEmitReadonly.ts
 classes/constructorDeclarations/constructorWithExpressionLessReturn.ts
@@ -242,12 +246,15 @@ controlFlow/constLocalsInFunctionExpressions.ts
 controlFlow/controlFlowAssignmentExpression.ts
 controlFlow/controlFlowBinaryAndExpression.ts
 controlFlow/controlFlowBinaryOrExpression.ts
+controlFlow/controlFlowBindingPatternOrder.ts
 controlFlow/controlFlowCommaOperator.ts
 controlFlow/controlFlowConditionalExpression.ts
 controlFlow/controlFlowDestructuringDeclaration.ts
 controlFlow/controlFlowDoWhileStatement.ts
 controlFlow/controlFlowElementAccess.ts
+controlFlow/controlFlowElementAccess2.ts
 controlFlow/controlFlowForInStatement.ts
+controlFlow/controlFlowForOfStatement.ts
 controlFlow/controlFlowIfStatement.ts
 controlFlow/controlFlowInstanceOfGuardPrimitives.ts
 controlFlow/controlFlowInstanceofExtendsFunction.ts
@@ -255,6 +262,7 @@ controlFlow/controlFlowIteration.ts
 controlFlow/controlFlowStringIndex.ts
 controlFlow/controlFlowSuperPropertyAccess.ts
 controlFlow/controlFlowTruthiness.ts
+controlFlow/controlFlowWhileStatement.ts
 controlFlow/controlFlowWithTemplateLiterals.ts
 controlFlow/switchWithConstrainedTypeVariable.ts
 controlFlow/typeGuardsAsAssertions.ts
@@ -400,6 +408,7 @@ es6/arrowFunction/emitArrowFunctionsAsIs.ts
 es6/arrowFunction/emitArrowFunctionsAsIsES6.ts
 es6/classDeclaration/classWithSemicolonClassElementES61.ts
 es6/classDeclaration/classWithSemicolonClassElementES62.ts
+es6/classDeclaration/emitClassDeclarationOverloadInES6.ts
 es6/classDeclaration/emitClassDeclarationWithConstructorInES6.ts
 es6/classDeclaration/emitClassDeclarationWithExtensionAndTypeArgumentInES6.ts
 es6/classDeclaration/emitClassDeclarationWithExtensionInES6.ts
@@ -411,6 +420,7 @@ es6/classDeclaration/emitClassDeclarationWithPropertyAssignmentInES6.ts
 es6/classDeclaration/emitClassDeclarationWithStaticPropertyAssignmentInES6.ts
 es6/classDeclaration/emitClassDeclarationWithSuperMethodCall01.ts
 es6/classDeclaration/emitClassDeclarationWithThisKeywordInES6.ts
+es6/classDeclaration/emitClassDeclarationWithTypeArgumentAndOverloadInES6.ts
 es6/classDeclaration/emitClassDeclarationWithTypeArgumentInES6.ts
 es6/classDeclaration/exportDefaultClassWithStaticPropertyAssignmentsInES6.ts
 es6/classDeclaration/superCallBeforeThisAccessing1.ts
@@ -1032,6 +1042,7 @@ es6/yieldExpressions/generatorTypeCheck9.ts
 es7/exponentiationOperator/compoundExponentiationAssignmentLHSIsReference.ts
 es7/exponentiationOperator/emitCompoundExponentiationAssignmentWithIndexingOnLHS1.ts
 es7/exponentiationOperator/emitCompoundExponentiationAssignmentWithIndexingOnLHS2.ts
+es7/exponentiationOperator/emitCompoundExponentiationAssignmentWithIndexingOnLHS3.ts
 es7/exponentiationOperator/emitCompoundExponentiationAssignmentWithIndexingOnLHS4.ts
 es7/exponentiationOperator/emitCompoundExponentiationAssignmentWithPropertyAccessingOnLHS1.ts
 es7/exponentiationOperator/emitCompoundExponentiationOperator1.ts
@@ -1051,6 +1062,9 @@ es7/exponentiationOperator/exponentiationOperatorWithAnyAndNumber.ts
 es7/exponentiationOperator/exponentiationOperatorWithEnum.ts
 es7/exponentiationOperator/exponentiationOperatorWithEnumUnion.ts
 es7/exponentiationOperator/exponentiationOperatorWithNew.ts
+esnext/logicalAssignment/logicalAssignment1.ts
+esnext/logicalAssignment/logicalAssignment2.ts
+esnext/logicalAssignment/logicalAssignment3.ts
 esnext/logicalAssignment/logicalAssignment9.ts
 expressions/arrayLiterals/arrayLiterals2ES5.ts
 expressions/arrayLiterals/arrayLiterals2ES6.ts
@@ -1203,8 +1217,10 @@ expressions/typeGuards/typeGuardNarrowsPrimitiveIntersection.ts
 expressions/typeGuards/typeGuardNarrowsToLiteralType.ts
 expressions/typeGuards/typeGuardNarrowsToLiteralTypeUnion.ts
 expressions/typeGuards/typeGuardNesting.ts
+expressions/typeGuards/typeGuardOfFormExpr1AndExpr2.ts
 expressions/typeGuards/typeGuardOfFormExpr1OrExpr2.ts
 expressions/typeGuards/typeGuardOfFormFunctionEquality.ts
+expressions/typeGuards/typeGuardOfFormNotExpr.ts
 expressions/typeGuards/typeGuardOfFormTypeOfBoolean.ts
 expressions/typeGuards/typeGuardOfFormTypeOfFunction.ts
 expressions/typeGuards/typeGuardOfFormTypeOfNumber.ts
@@ -1354,6 +1370,7 @@ interfaces/interfaceDeclarations/interfaceWithOverloadedCallAndConstructSignatur
 interfaces/interfaceDeclarations/interfaceWithPropertyOfEveryType.ts
 interfaces/interfaceDeclarations/interfaceWithSpecializedCallAndConstructSignatures.ts
 internalModules/DeclarationMerging/ClassAndModuleThatMergeWithStaticFunctionAndNonExportedFunctionThatShareAName.ts
+internalModules/DeclarationMerging/ClassAndModuleThatMergeWithStaticVariableAndNonExportedVarThatShareAName.ts
 internalModules/DeclarationMerging/ClassAndModuleThatMergeWithStringIndexerAndExportedFunctionWithTypeIncompatibleWithIndexer.ts
 internalModules/codeGeneration/exportCodeGen.ts
 internalModules/codeGeneration/nameCollision.ts
@@ -1583,6 +1600,7 @@ parser/ecmascript5/Protected/Protected3.ts
 parser/ecmascript5/Protected/Protected5.ts
 parser/ecmascript5/Protected/Protected8.ts
 parser/ecmascript5/Protected/Protected9.ts
+parser/ecmascript5/RSymbols/ES5SymbolType1.ts
 parser/ecmascript5/RegressionTests/parser509546.ts
 parser/ecmascript5/RegressionTests/parser509546_1.ts
 parser/ecmascript5/RegressionTests/parser509546_2.ts
@@ -1701,6 +1719,7 @@ parser/ecmascript5/parserObjectCreationArrayLiteral4.ts
 parser/ecmascript5/parserOptionalTypeMembers1.ts
 parser/ecmascript5/parserOverloadOnConstants1.ts
 parser/ecmascript5/parserParenthesizedVariableAndFunctionInTernary.ts
+parser/ecmascript5/parserS7.2_A1.5_T2.ts
 parser/ecmascript5/parserS7.3_A1.1_T2.ts
 parser/ecmascript5/parserS7.6.1.1_A1.10.ts
 parser/ecmascript5/parserS7.6_A4.2_T1.ts
@@ -1768,6 +1787,7 @@ scanner/ecmascript5/scannerNonAsciiHorizontalWhitespace.ts
 scanner/ecmascript5/scannerNumericLiteral1.ts
 scanner/ecmascript5/scannerNumericLiteral5.ts
 scanner/ecmascript5/scannerNumericLiteral7.ts
+scanner/ecmascript5/scannerS7.2_A1.5_T2.ts
 scanner/ecmascript5/scannerS7.3_A1.1_T2.ts
 scanner/ecmascript5/scannerS7.6_A4.2_T1.ts
 scanner/ecmascript5/scannerStringLiteralWithContainingNullCharacter1.ts
@@ -1850,6 +1870,7 @@ types/any/anyPropertyAccess.ts
 types/any/assignEveryTypeToAny.ts
 types/conditional/conditionalTypesExcessProperties.ts
 types/conditional/inferTypes2.ts
+types/conditional/variance.ts
 types/contextualTypes/commaOperator/contextuallyTypeCommaOperator01.ts
 types/contextualTypes/commaOperator/contextuallyTypeCommaOperator02.ts
 types/contextualTypes/commaOperator/contextuallyTypeCommaOperator03.ts
@@ -1900,7 +1921,11 @@ types/localTypes/localTypes1.ts
 types/localTypes/localTypes2.ts
 types/localTypes/localTypes3.ts
 types/localTypes/localTypes5.ts
+types/mapped/mappedTypeModifiers.ts
+types/mapped/mappedTypeWithAny.ts
 types/mapped/mappedTypes1.ts
+types/mapped/mappedTypes2.ts
+types/mapped/mappedTypes3.ts
 types/mapped/mappedTypes4.ts
 types/mapped/mappedTypesAndObjects.ts
 types/members/classWithProtectedProperty.ts
@@ -1918,6 +1943,7 @@ types/namedTypes/classWithOnlyPublicMembersEquivalentToInterface2.ts
 types/namedTypes/classWithOptionalParameter.ts
 types/namedTypes/genericInstantiationEquivalentToObjectLiteral.ts
 types/namedTypes/optionalMethods.ts
+types/never/neverInference.ts
 types/never/neverType.ts
 types/never/neverUnionIntersection.ts
 types/nonPrimitive/assignObjectToNonPrimitive.ts
@@ -1945,6 +1971,8 @@ types/objectTypeLiteral/callSignatures/stringLiteralTypesInImplementationSignatu
 types/objectTypeLiteral/callSignatures/typeParameterUsedAsTypeParameterConstraint.ts
 types/objectTypeLiteral/callSignatures/typeParameterUsedAsTypeParameterConstraint2.ts
 types/objectTypeLiteral/callSignatures/typeParameterUsedAsTypeParameterConstraint3.ts
+types/objectTypeLiteral/constructSignatures/constructSignaturesWithIdenticalOverloads.ts
+types/objectTypeLiteral/constructSignatures/constructSignaturesWithOverloads.ts
 types/objectTypeLiteral/constructSignatures/constructSignaturesWithOverloadsThatDifferOnlyByReturnType.ts
 types/objectTypeLiteral/objectTypeLiteralSyntax.ts
 types/objectTypeLiteral/propertySignatures/propertyNameWithoutTypeAnnotation.ts
@@ -2020,6 +2048,7 @@ types/stringLiteral/stringLiteralTypesInUnionTypes04.ts
 types/stringLiteral/stringLiteralTypesOverloads01.ts
 types/stringLiteral/stringLiteralTypesOverloads03.ts
 types/stringLiteral/stringLiteralTypesOverloads04.ts
+types/stringLiteral/stringLiteralTypesOverloads05.ts
 types/stringLiteral/stringLiteralTypesTypePredicates01.ts
 types/stringLiteral/stringLiteralTypesWithTemplateStrings01.ts
 types/stringLiteral/stringLiteralTypesWithTemplateStrings02.ts
@@ -2090,9 +2119,11 @@ types/typeRelationships/assignmentCompatibility/assignmentCompatWithCallSignatur
 types/typeRelationships/assignmentCompatibility/assignmentCompatWithConstructSignaturesWithOptionalParameters.ts
 types/typeRelationships/assignmentCompatibility/assignmentCompatWithGenericCallSignatures3.ts
 types/typeRelationships/assignmentCompatibility/assignmentCompatWithGenericCallSignaturesWithOptionalParameters.ts
+types/typeRelationships/assignmentCompatibility/assignmentCompatWithObjectMembers2.ts
 types/typeRelationships/assignmentCompatibility/assignmentCompatWithObjectMembers3.ts
 types/typeRelationships/assignmentCompatibility/assignmentCompatWithObjectMembers4.ts
 types/typeRelationships/assignmentCompatibility/assignmentCompatWithObjectMembers5.ts
+types/typeRelationships/assignmentCompatibility/assignmentCompatWithObjectMembersNumericNames.ts
 types/typeRelationships/assignmentCompatibility/assignmentCompatWithWithGenericConstructSignatures.ts
 types/typeRelationships/assignmentCompatibility/callSignatureAssignabilityInInheritance2.ts
 types/typeRelationships/assignmentCompatibility/callSignatureAssignabilityInInheritance4.ts
@@ -2110,15 +2141,18 @@ types/typeRelationships/assignmentCompatibility/undefinedAssignableToEveryType.t
 types/typeRelationships/bestCommonType/arrayLiteralWithMultipleBestCommonTypes.ts
 types/typeRelationships/bestCommonType/bestCommonTypeOfConditionalExpressions.ts
 types/typeRelationships/bestCommonType/bestCommonTypeOfConditionalExpressions2.ts
+types/typeRelationships/bestCommonType/bestCommonTypeOfTuple.ts
 types/typeRelationships/bestCommonType/bestCommonTypeOfTuple2.ts
 types/typeRelationships/bestCommonType/functionWithMultipleReturnStatements.ts
 types/typeRelationships/bestCommonType/functionWithMultipleReturnStatements2.ts
+types/typeRelationships/bestCommonType/heterogeneousArrayLiterals.ts
 types/typeRelationships/comparable/equalityStrictNulls.ts
 types/typeRelationships/comparable/equalityWithIntersectionTypes01.ts
 types/typeRelationships/comparable/equalityWithUnionTypes01.ts
 types/typeRelationships/comparable/independentPropertyVariance.ts
 types/typeRelationships/comparable/optionalProperties01.ts
 types/typeRelationships/comparable/optionalProperties02.ts
+types/typeRelationships/comparable/switchCaseWithIntersectionTypes01.ts
 types/typeRelationships/comparable/switchCaseWithUnionTypes01.ts
 types/typeRelationships/comparable/typeAssertionsWithIntersectionTypes01.ts
 types/typeRelationships/comparable/typeAssertionsWithUnionTypes01.ts
@@ -2210,6 +2244,7 @@ types/typeRelationships/typeInference/genericCallWithObjectTypeArgsAndStringInde
 types/typeRelationships/typeInference/genericCallWithOverloadedConstructorTypedArguments.ts
 types/typeRelationships/typeInference/genericCallWithOverloadedFunctionTypedArguments.ts
 types/typeRelationships/typeInference/genericClassWithObjectTypeArgsAndConstraints.ts
+types/typeRelationships/typeInference/genericContextualTypes1.ts
 types/typeRelationships/typeInference/genericFunctionParameters.ts
 types/typeRelationships/typeInference/keyofInferenceIntersectsResults.ts
 types/typeRelationships/typeInference/unionAndIntersectionInference2.ts
@@ -2220,6 +2255,7 @@ types/typeRelationships/widenedTypes/strictNullChecksNoWidening.ts
 types/union/contextualTypeWithUnionTypeCallSignatures.ts
 types/union/contextualTypeWithUnionTypeIndexSignatures.ts
 types/union/contextualTypeWithUnionTypeMembers.ts
+types/union/discriminatedUnionTypes1.ts
 types/union/unionTypeCallSignatures2.ts
 types/union/unionTypeFromArrayLiteral.ts
 types/union/unionTypeReduction.ts

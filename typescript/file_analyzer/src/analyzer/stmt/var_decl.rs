@@ -1,7 +1,6 @@
 use super::super::{pat::PatMode, Analyzer, Ctx};
 use crate::analyzer::assign::AssignOpts;
 use crate::analyzer::util::make_instance_type;
-use crate::util::type_ext::TypeVecExt;
 use crate::{
     analyzer::{
         expr::TypeOfMode,
@@ -103,6 +102,8 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, v: &RVarDeclarator) {
         self.record(v);
+
+        let marks = self.marks();
 
         let kind = self.ctx.var_kind;
         let node_id = v.node_id;
@@ -274,6 +275,8 @@ impl Analyzer<'_, '_> {
 
                                 let actual_ty = self.narrowed_type_of_assignment(span, ty.clone(), &value_ty)?;
 
+                                actual_ty.assert_valid();
+
                                 // let ty = ty.fold_with(&mut Generalizer::default());
                                 match self.declare_complex_vars(kind, &v.name, ty, Some(actual_ty)) {
                                     Ok(()) => {}
@@ -325,10 +328,10 @@ impl Analyzer<'_, '_> {
                         if !(self.ctx.var_kind == VarDeclKind::Const && ty.is_lit()) {
                             if self.may_generalize(&ty) {
                                 // Vars behave differently based on the context.
-                                if self.ctx.in_argument {
-                                    ty = ty.fold_with(&mut Generalizer::default());
+                                if self.ctx.can_generalize_literals() {
+                                    ty = ty.generalize_lit(marks);
                                 } else {
-                                    ty = ty.generalize_lit();
+                                    ty = ty.fold_with(&mut Generalizer { force: false, marks });
                                 }
                             }
                         }
@@ -343,31 +346,11 @@ impl Analyzer<'_, '_> {
 
                         if should_generalize_fully {
                             self.normalize_tuples(&mut ty);
+                            ty.assert_valid();
                             ty = match ty.normalize() {
                                 Type::Function(f) => {
-                                    let ret_ty = box f.ret_ty.clone().generalize_lit();
+                                    let ret_ty = box f.ret_ty.clone().generalize_lit(marks);
                                     Type::Function(stc_ts_types::Function { ret_ty, ..f.clone() })
-                                }
-
-                                Type::Tuple(tuple)
-                                    if !tuple.elems.is_empty()
-                                        && tuple.elems.iter().all(|e| match &*e.ty {
-                                            Type::Keyword(..) => true,
-                                            _ => false,
-                                        }) =>
-                                {
-                                    let mut types = tuple.elems.iter().map(|e| *e.ty.clone()).collect::<Vec<_>>();
-                                    types.dedup_type();
-
-                                    let has_other = types.iter().any(|ty| !ty.is_null_or_undefined());
-                                    if has_other {
-                                        types.retain(|ty| !ty.is_null_or_undefined());
-                                    }
-
-                                    Type::Array(Array {
-                                        span: tuple.span,
-                                        elem_type: box Type::union(types),
-                                    })
                                 }
 
                                 _ => ty,
@@ -389,6 +372,7 @@ impl Analyzer<'_, '_> {
                                     ..self.ctx
                                 };
                                 ty = self.with_ctx(ctx).expand(span, ty)?;
+                                ty.assert_valid();
 
                                 slog::debug!(
                                     self.logger,
