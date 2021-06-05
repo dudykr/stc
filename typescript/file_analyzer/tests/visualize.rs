@@ -189,6 +189,8 @@ fn visualize(file_name: PathBuf) {
     let log = logger();
     let res = run_test(file_name.clone(), log.logger, false).unwrap();
     res.compare_to_file(&file_name.with_extension("stdout")).unwrap();
+
+    println!("[SUCCESS]{}", file_name.display())
 }
 
 #[testing::fixture("pass/**/*.ts", exclude(".*\\.\\.d.\\.ts"))]
@@ -205,4 +207,6 @@ fn pass(file_name: PathBuf) {
     run_test(file_name.clone(), log.logger, true);
 
     res.compare_to_file(&file_name.with_extension("stdout")).unwrap();
+
+    println!("[SUCCESS]{}", file_name.display())
 }
