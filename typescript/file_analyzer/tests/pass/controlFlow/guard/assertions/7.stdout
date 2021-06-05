@@ -1,0 +1,92 @@
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/7.ts:12:27
+   |
+12 | export const none: None = { none: '' };
+   |                           ^^^^^^^^^^^^
+   |
+   = note: {
+               none: '';
+           }
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/7.ts:15:22
+   |
+15 |     return 'some' in value;
+   |                      ^^^^^
+   |
+   = note: Some<a> | None
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/7.ts:15:12
+   |
+15 |     return 'some' in value;
+   |            ^^^^^^^^^^^^^^^
+   |
+   = note: boolean
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/7.ts:19:12
+   |
+19 |     return { some };
+   |            ^^^^^^^^
+   |
+   = note: {
+               some: a;
+           }
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/7.ts:23:42
+   |
+23 |     let x: string | number | undefined = undefined;
+   |                                          ^^^^^^^^^
+   |
+   = note: undefined
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/7.ts:24:5
+   |
+24 |     x;  // undefined
+   |     ^
+   |
+   = note: string | number | undefined
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/7.ts:25:16
+   |
+25 |     if (typeof x === "boolean") {
+   |                ^
+   |
+   = note: string | number | undefined
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/7.ts:25:9
+   |
+25 |     if (typeof x === "boolean") {
+   |         ^^^^^^^^
+   |
+   = note: string
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/7.ts:25:9
+   |
+25 |     if (typeof x === "boolean") {
+   |         ^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: boolean
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/7.ts:26:9
+   |
+26 |         x;  // nothing (boolean not in declared type)
+   |         ^
+   |
+   = note: never
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/7.ts:28:5
+   |
+28 |     x;  // undefined
+   |     ^
+   |
+   = note: string | number | undefined
+

@@ -19,9 +19,10 @@ use stc_ts_types::TypeElement;
 use stc_ts_types::TypeParamDecl;
 use std::borrow::Cow;
 use swc_atoms::js_word;
+use swc_common::TypeEq;
 
 impl Analyzer<'_, '_> {
-    pub(super) fn assign_to_fn_like(
+    pub(crate) fn assign_to_fn_like(
         &mut self,
         data: &mut AssignData,
         opts: AssignOpts,
@@ -103,7 +104,9 @@ impl Analyzer<'_, '_> {
                     r_ret_ty,
                     AssignOpts {
                         allow_assignment_of_void: true,
-                        allow_assignment_to_void: true,
+                        allow_assignment_to_void: !opts.for_overload,
+                        // We are done with the overload context.
+                        for_overload: false,
                         ..opts
                     },
                 )
@@ -155,7 +158,7 @@ impl Analyzer<'_, '_> {
                     r_params,
                     Some(r_ret_ty),
                 )
-                .context("tried to assign to a function type")?;
+                .context("tried to assign a function to another one")?;
 
                 return Ok(());
             }
@@ -208,43 +211,21 @@ impl Analyzer<'_, '_> {
 
         match r {
             Type::Constructor(rc) => {
-                let new_r;
-                let (r_params, r_type_ann) = match (&l.type_params, &rc.type_params) {
-                    (Some(lt), Some(rt)) => {
-                        //
-                        let map = lt
-                            .params
-                            .iter()
-                            .zip(rt.params.iter())
-                            .map(|(l, r)| (r.name.clone(), Type::Param(l.clone()).cheap()))
-                            .collect::<FxHashMap<_, _>>();
-                        let r = self
-                            .expand_type_params(&map, r.clone())
-                            .context("tried to expand type parameters as a step of constructor assignemnt")?;
-                        new_r = r.constructor().unwrap();
-                        (&new_r.params, &new_r.type_ann)
-                    }
+                if l.type_eq(rc) {
+                    return Ok(());
+                }
 
-                    // Assigning `(a: 1) => string` to `<Z>(a: Z) => string` is valid.
-                    (None, Some(rt)) => {
-                        let map = self.infer_type_with_types(span, &*rt.params, r, lt)?;
-                        let r = self
-                            .expand_type_params(&map, r.clone())
-                            .context("tried to expand type parameters of rhs as a step of constructor assignemnt")?;
-                        new_r = r.constructor().unwrap();
-                        (&new_r.params, &new_r.type_ann)
-                    }
-
-                    _ => (&rc.params, &rc.type_ann),
-                };
-
-                self.assign_params(data, opts, &l.params, &r_params).context(
-                    "tried to assign the parameters of constructor to the parameters of another constructor",
-                )?;
-
-                self.assign_with_opts(data, opts, &l.type_ann, &r_type_ann).context(
-                    "tried to assign the return type of constructor to the return type of another constructor",
-                )?;
+                self.assign_to_fn_like(
+                    data,
+                    opts,
+                    l.type_params.as_ref(),
+                    &l.params,
+                    Some(&l.type_ann),
+                    rc.type_params.as_ref(),
+                    &rc.params,
+                    Some(&rc.type_ann),
+                )
+                .context("tried to assign a constructor to another one")?;
 
                 return Ok(());
             }
@@ -257,31 +238,27 @@ impl Analyzer<'_, '_> {
                 for (idx, rm) in rt.members.iter().enumerate() {
                     match rm {
                         TypeElement::Constructor(rc) => {
-                            if let Err(err) = self.assign_params(data, opts, &l.params, &rc.params).with_context(|| {
-                                format!(
-                                    "tried to assign parameters of a constructor to them of another constructor ({}th \
-                                     element)",
-                                    idx
+                            if let Err(err) = self
+                                .assign_to_fn_like(
+                                    data,
+                                    opts,
+                                    l.type_params.as_ref(),
+                                    &l.params,
+                                    Some(&l.type_ann),
+                                    rc.type_params.as_ref(),
+                                    &rc.params,
+                                    rc.ret_ty.as_deref(),
                                 )
-                            }) {
+                                .with_context(|| {
+                                    format!(
+                                        "tried to assign parameters of a constructor to them of another constructor \
+                                         ({}th element)",
+                                        idx
+                                    )
+                                })
+                            {
                                 errors.push(err);
                                 continue;
-                            }
-
-                            if let Some(r_ret_ty) = &rc.ret_ty {
-                                if let Err(err) = self
-                                    .assign_with_opts(data, opts, &l.type_ann, &r_ret_ty)
-                                    .with_context(|| {
-                                        format!(
-                                            "tried to  assign the return type of a constructor to it of another \
-                                             constructor ({}th element)",
-                                            idx,
-                                        )
-                                    })
-                                {
-                                    errors.push(err);
-                                    continue;
-                                }
                             }
 
                             return Ok(());
@@ -354,20 +331,27 @@ impl Analyzer<'_, '_> {
         r: &FnParam,
         opts: AssignOpts,
     ) -> ValidationResult<()> {
+        let span = opts.span;
         debug_assert!(
             !opts.span.is_dummy(),
             "Cannot assign function parameters with dummy span"
         );
 
         match l.pat {
-            RPat::Rest(..) => match l.ty.normalize() {
-                Type::Array(l_arr) => {
-                    if let Ok(()) = self.assign_with_opts(data, opts, &l_arr.elem_type, &r.ty) {
-                        return Ok(());
+            RPat::Rest(..) => {
+                let l_ty = self
+                    .normalize(Some(span), Cow::Borrowed(&l.ty), Default::default())
+                    .context("tried to normalize lhs")?;
+
+                match l_ty.normalize() {
+                    Type::Array(l_arr) => {
+                        if let Ok(()) = self.assign_with_opts(data, opts, &l_arr.elem_type, &r.ty) {
+                            return Ok(());
+                        }
                     }
+                    _ => {}
                 }
-                _ => {}
-            },
+            }
             _ => {}
         }
 

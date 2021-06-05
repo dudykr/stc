@@ -218,7 +218,7 @@ impl Scope<'_> {
             | ScopeKind::Module
             | ScopeKind::Call
             | ScopeKind::Constructor => Some(self),
-            ScopeKind::LoopBody => self.parent()?.scope_of_computed_props(),
+            ScopeKind::LoopBody { .. } => self.parent()?.scope_of_computed_props(),
             ScopeKind::Block | ScopeKind::Flow | ScopeKind::TypeParams => self.parent()?.scope_of_computed_props(),
         }
     }
@@ -314,7 +314,7 @@ impl Scope<'_> {
 
     pub fn is_in_loop_body(&self) -> bool {
         match self.kind {
-            ScopeKind::LoopBody => return true,
+            ScopeKind::LoopBody { .. } => return true,
             ScopeKind::Module | ScopeKind::ArrowFn | ScopeKind::Fn | ScopeKind::Class => return false,
             _ => {}
         }
@@ -411,8 +411,20 @@ impl Scope<'_> {
             ScopeKind::Module | ScopeKind::Method { .. } | ScopeKind::Fn | ScopeKind::ArrowFn => return,
             _ => {}
         }
+        let is_end_of_loop = match child.kind {
+            ScopeKind::LoopBody { last: true } => true,
+            _ => false,
+        };
 
         for (name, var) in child.vars.drain() {
+            if let Some(ty) = &var.ty {
+                ty.assert_valid();
+            }
+
+            if let Some(ty) = &var.actual_ty {
+                ty.assert_valid();
+            }
+
             if var.copied {
                 match self.vars.entry(name.clone()) {
                     Entry::Occupied(mut e) => {
@@ -420,7 +432,9 @@ impl Scope<'_> {
                         let is_actual_type_modified_in_loop = e.get().is_actual_type_modified_in_loop;
 
                         if let Some(actual_ty) = var.actual_ty {
-                            let new_actual_type = if is_actual_type_modified_in_loop {
+                            actual_ty.assert_valid();
+
+                            let new_actual_type = if is_end_of_loop && is_actual_type_modified_in_loop {
                                 let mut types = vec![];
 
                                 if let Some(prev) = &e.get().actual_ty {
@@ -434,13 +448,15 @@ impl Scope<'_> {
                                 types.extend(e.get().actual_ty.clone());
 
                                 if types.len() == 1 {
-                                    types.into_iter().next().unwrap()
+                                    types.into_iter().next().unwrap().fixed()
                                 } else {
-                                    Type::Union(Union { span: DUMMY_SP, types })
+                                    Type::Union(Union { span: DUMMY_SP, types }).fixed()
                                 }
                             } else {
                                 actual_ty
                             };
+
+                            new_actual_type.assert_valid();
 
                             e.get_mut().actual_ty = Some(new_actual_type);
                         }
@@ -485,6 +501,14 @@ impl Scope<'_> {
     pub fn insert_var(&mut self, name: Id, v: VarInfo) {
         no_ref!(v.ty);
 
+        if let Some(v) = &v.ty {
+            v.assert_valid();
+        }
+
+        if let Some(v) = &v.actual_ty {
+            v.assert_valid();
+        }
+
         self.vars.insert(name, v);
     }
 
@@ -519,7 +543,8 @@ impl Scope<'_> {
                                         prev.types.remove(index);
                                     }
 
-                                    prev.types.push(ty)
+                                    prev.types.push(ty);
+                                    prev.fix();
                                 }
                                 _ => {
                                     unreachable!()
@@ -631,7 +656,10 @@ impl Analyzer<'_, '_> {
             );
         }
 
+        ty.assert_valid();
+
         let _ctx = context(format!("expand: {}", dump_type_as_string(&self.cm, &ty)));
+        let orig = dump_type_as_string(&self.cm, &ty);
 
         let mut v = Expander {
             logger: self.logger.clone(),
@@ -642,7 +670,14 @@ impl Analyzer<'_, '_> {
             expand_union: false,
             expand_top_level: true,
         };
-        Ok(ty.foldable().fold_with(&mut v))
+
+        let ty = ty.foldable().fold_with(&mut v).fixed();
+        ty.assert_valid();
+
+        let new = dump_type_as_string(&self.cm, &ty);
+        slog::debug!(self.logger, "[expander] expand_fully: {} => {}", orig, new);
+
+        Ok(ty)
     }
 
     /// Expands
@@ -662,6 +697,8 @@ impl Analyzer<'_, '_> {
                 ty
             );
         }
+
+        ty.assert_valid();
 
         let _ctx = context(format!("expand_fully: {}", dump_type_as_string(&self.cm, &ty)));
         let orig = dump_type_as_string(&self.cm, &ty);
@@ -714,7 +751,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn register_type(&mut self, name: Id, ty: Type) -> Type {
-        slog::debug!(self.logger, "Registering: {:?}", name);
+        slog::debug!(self.logger, "[({})/types] Registering: {:?}", self.scope.depth(), name);
 
         let should_check_for_mixed = match ty.normalize() {
             Type::Param(..) => false,
@@ -892,6 +929,7 @@ impl Analyzer<'_, '_> {
 
     pub(super) fn find_var_type(&self, name: &Id, mode: TypeOfMode) -> Option<Cow<Type>> {
         if let Some(v) = self.cur_facts.true_facts.vars.get(&Name::from(name)) {
+            v.assert_valid();
             return Some(Cow::Borrowed(v));
         }
 
@@ -899,6 +937,8 @@ impl Analyzer<'_, '_> {
         let mut scope = Some(&self.scope);
         while let Some(s) = scope {
             if let Some(ref v) = s.facts.vars.get(&Name::from(name)) {
+                v.assert_valid();
+
                 slog::debug!(self.logger, "Scope.find_var_type({}): Handled from facts", name);
                 return Some(Cow::Borrowed(v));
             }
@@ -910,6 +950,8 @@ impl Analyzer<'_, '_> {
             // Improted variables
             if let Some(info) = self.imports_by_id.get(name) {
                 if let Some(var_ty) = info.data.vars.get(name.sym()) {
+                    var_ty.assert_valid();
+
                     slog::debug!(self.logger, "Scope.find_var_type({}): Handled with imports", name);
                     return Some(Cow::Borrowed(var_ty));
                 }
@@ -936,6 +978,7 @@ impl Analyzer<'_, '_> {
                     _ => return None,
                 },
             };
+            ty.assert_valid();
 
             if let Some(ref excludes) = self.scope.facts.excludes.get(&name) {
                 match ty.normalize_mut() {
@@ -951,6 +994,8 @@ impl Analyzer<'_, '_> {
                     }
                     _ => {}
                 }
+
+                ty.fix();
             }
 
             return Some(Cow::Owned(ty));
@@ -958,6 +1003,8 @@ impl Analyzer<'_, '_> {
 
         {
             if let Some(ty) = self.storage.get_local_var(self.ctx.module_id, name.clone()) {
+                ty.assert_valid();
+
                 slog::debug!(self.logger, "Scope.find_var_type({}): Handled with storage", name);
                 return Some(Cow::Owned(ty));
             }
@@ -1063,6 +1110,10 @@ impl Analyzer<'_, '_> {
         let var = self.find_var(&name);
         let ty = var.and_then(|var| var.ty.clone());
 
+        if let Some(ty) = &ty {
+            ty.assert_valid();
+        }
+
         op(self.scope.vars.entry(name).or_insert_with(|| VarInfo {
             kind: VarDeclKind::Let,
             initialized: true,
@@ -1087,24 +1138,35 @@ impl Analyzer<'_, '_> {
         allow_multiple: bool,
         is_override: bool,
     ) -> ValidationResult<()> {
+        let marks = self.marks();
+
         if let Some(ty) = &ty {
             ty.assert_valid();
             slog::debug!(
                 self.logger,
-                "[vars]: Declaring {} as {}",
+                "[({})/vars]: Declaring {} as {}",
+                self.scope.depth(),
                 name,
                 dump_type_as_string(&self.cm, ty)
             );
         } else {
-            slog::debug!(self.logger, "[vars]: Declaring {} without type", name,);
+            slog::debug!(
+                self.logger,
+                "[({})/vars]: Declaring {} without type",
+                self.scope.depth(),
+                name,
+            );
+        }
+
+        if let Some(ty) = &actual_ty {
+            ty.assert_valid();
         }
 
         if !self.is_builtin
             && !is_override
             && !allow_multiple
-            && !self.ctx.reevaluating_call_or_new
-            && !self.ctx.reevaluating_argument
-            && !self.ctx.reevaluating_loop_body
+            && !self.ctx.ignore_errors
+            && !self.ctx.reevaluating()
             && !self.ctx.in_ts_fn_type
         {
             let spans = self.data.var_spans.entry(name.clone()).or_default();
@@ -1180,6 +1242,10 @@ impl Analyzer<'_, '_> {
             })
             .map(|ty| ty.cheap());
 
+        if let Some(ty) = &actual_ty {
+            ty.assert_valid();
+        }
+
         if self.ctx.in_global {
             if let Some(ty) = ty.clone() {
                 self.env.declare_global_var(name.sym().clone(), ty.clone());
@@ -1205,14 +1271,31 @@ impl Analyzer<'_, '_> {
                     }};
                 }
 
+                if let Some(ty) = &v.ty {
+                    ty.assert_valid();
+                }
+                if let Some(ty) = &v.actual_ty {
+                    ty.assert_valid();
+                }
+
                 if !self.is_builtin && is_override {
                     v.ty = ty;
                     return Ok(());
                 }
 
-                if let Some(orig) = &v.ty {
-                    if let Some(ty) = &ty {
-                        self.validate_with(|a| a.validate_fn_overloads(span, orig, ty));
+                if !self.data.known_wrong_overloads.contains(&name) {
+                    if let Some(orig) = &v.ty {
+                        if let Some(ty) = &ty {
+                            self.validate_with(|a| {
+                                let res = a.validate_fn_overloads(span, orig, ty);
+
+                                if res.is_err() {
+                                    a.data.known_wrong_overloads.insert(name.clone());
+                                }
+
+                                res
+                            });
+                        }
                     }
                 }
 
@@ -1228,7 +1311,7 @@ impl Analyzer<'_, '_> {
                                 unreachable!("module is not a variable")
                             }
                             _ => {
-                                let generalized_var_ty = var_ty.clone().generalize_lit();
+                                let generalized_var_ty = var_ty.clone().generalize_lit(marks);
 
                                 match var_ty.normalize() {
                                     // Allow overriding query type.
@@ -1278,6 +1361,12 @@ impl Analyzer<'_, '_> {
                         None
                     }
                 };
+                if let Some(ty) = &actual_ty {
+                    ty.assert_valid();
+                }
+                if let Some(ty) = &v.ty {
+                    ty.assert_valid();
+                }
                 // TODO: Use better logic
                 v.actual_ty = actual_ty.or_else(|| v.ty.clone());
 
@@ -1301,6 +1390,7 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
+    /// Returns [Err] if overload is wrong.
     fn validate_fn_overloads(&mut self, span: Span, orig: &Type, new: &Type) -> ValidationResult<()> {
         // We validates using the signature of implementing function.
         // TODO: Validate using last element, when there's a no function decl with body.
@@ -1308,28 +1398,24 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        for orig in orig.iter_union().flat_map(|ty| ty.iter_union()) {
+        for orig in orig.iter_union() {
             match orig.normalize() {
                 Type::Function(..) => {
-                    let res: ValidationResult<_> = try {
-                        self.assign_with_opts(
-                            &mut Default::default(),
-                            AssignOpts {
-                                span,
-                                for_overload: true,
-                                ..Default::default()
-                            },
-                            &new,
-                            &orig,
-                        )
-                        .context("tried to validate signatures of overloaded functions")?;
-                    };
-
-                    res.convert_err(|err| Error::ImcompatibleFnOverload {
+                    self.assign_with_opts(
+                        &mut Default::default(),
+                        AssignOpts {
+                            span,
+                            for_overload: true,
+                            ..Default::default()
+                        },
+                        &new,
+                        &orig,
+                    )
+                    .convert_err(|err| Error::ImcompatibleFnOverload {
                         span: orig.span(),
                         cause: box err,
                     })
-                    .report(&mut self.storage);
+                    .context("tried to validate signatures of overloaded functions")?;
                 }
                 _ => {}
             }
@@ -1346,6 +1432,9 @@ impl Analyzer<'_, '_> {
         actual_ty: Option<Type>,
     ) -> ValidationResult<()> {
         ty.assert_valid();
+        if let Some(ty) = &actual_ty {
+            ty.assert_valid();
+        }
 
         let span = pat.span();
 
@@ -1367,7 +1456,22 @@ impl Analyzer<'_, '_> {
 
         match pat {
             // TODO
-            RPat::Assign(p) => return self.declare_complex_vars(kind, &p.left, ty, actual_ty),
+            RPat::Assign(p) => {
+                let _right = p
+                    .right
+                    .validate_with_args(self, (TypeOfMode::RValue, None, None))
+                    .report(&mut self.storage);
+                {
+                    // TODO: Use union of default value and rhs value.
+                    //
+                    // This is required to handle
+                    //
+                    // `let [{ [order(1)]: y } = order(0)] = [{}];`
+                    //
+                }
+
+                return self.declare_complex_vars(kind, &p.left, ty, actual_ty);
+            }
 
             RPat::Ident(ref i) => {
                 slog::debug!(
@@ -1611,7 +1715,9 @@ impl Analyzer<'_, '_> {
     where
         T: VisitWith<MarkFinder>,
     {
-        contains_mark(ty, self.marks().contains_infer_type_mark)
+        swc_common::GLOBALS.set(self.env.shared().swc_globals(), || {
+            contains_mark(ty, self.marks().contains_infer_type_mark)
+        })
     }
 
     pub(crate) fn mark_as_infer_type_container(&self, span: Span) -> Span {
@@ -1735,7 +1841,7 @@ impl<'a> Scope<'a> {
             | ScopeKind::Flow
             | ScopeKind::Block
             | ScopeKind::Module
-            | ScopeKind::LoopBody => {}
+            | ScopeKind::LoopBody { .. } => {}
         }
 
         match self.parent {
@@ -1763,7 +1869,7 @@ impl<'a> Scope<'a> {
             | ScopeKind::Constructor
             | ScopeKind::Flow
             | ScopeKind::Block
-            | ScopeKind::LoopBody => {}
+            | ScopeKind::LoopBody { .. } => {}
         }
 
         match self.parent {
@@ -1887,7 +1993,9 @@ pub(crate) enum ScopeKind {
     Call,
     Module,
     /// Used to capture type facts created by loop bodies.
-    LoopBody,
+    LoopBody {
+        last: bool,
+    },
 }
 
 impl ScopeKind {
@@ -2102,7 +2210,7 @@ impl Expander<'_, '_, '_> {
 
                     if let Some(t) = stored_ref {
                         self.expand_top_level = true;
-                        return Ok(Some(t.into_owned().foldable().fold_with(self)));
+                        return Ok(Some(t.into_owned().foldable().fold_with(self).fixed()));
                     }
                 }
 
@@ -2608,6 +2716,11 @@ impl Fold<Type> for Expander<'_, '_, '_> {
         }
         let before = dump_type_as_string(&self.analyzer.cm, &ty);
         let expanded = self.expand_type(ty);
+
+        if !self.analyzer.is_builtin {
+            expanded.assert_valid();
+        }
+
         slog::debug!(
             self.logger,
             "[expander]: {} => {}",

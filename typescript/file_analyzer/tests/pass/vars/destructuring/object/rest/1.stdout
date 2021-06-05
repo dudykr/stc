@@ -22,9 +22,9 @@ warning: Type
    |                                 ^^^
    |
    = note: {
-               foo: string;
-               baz: string;
-               quux: string;
+               readonly foo: string;
+               readonly baz: string;
+               readonly quux: string;
            }
 
 warning: Type
@@ -42,7 +42,7 @@ warning: Type
    | ^^^^
    |
    = note: {
-               baz: string;
-               quux: string;
+               readonly baz: string;
+               readonly quux: string;
            }
 

@@ -1,4 +1,5 @@
 use crate::analyzer::assign::AssignOpts;
+use crate::analyzer::expr::TypeOfMode;
 use crate::analyzer::stmt::return_type::yield_check::YieldValueUsageFinder;
 use crate::analyzer::util::ResultExt;
 use crate::util::type_ext::TypeVecExt;
@@ -73,6 +74,8 @@ impl Analyzer<'_, '_> {
         is_generator: bool,
         stmts: &Vec<RStmt>,
     ) -> Result<Option<Type>, Error> {
+        let marks = self.marks();
+
         slog::debug!(self.logger, "visit_stmts_for_return()");
         debug_assert!(!self.is_builtin, "builtin: visit_stmts_for_return should not be called");
 
@@ -148,7 +151,7 @@ impl Analyzer<'_, '_> {
             for mut ty in values.return_types {
                 ty = ty.fold_with(&mut KeyInliner { analyzer: self });
                 if values.should_generalize {
-                    ty = ty.generalize_lit();
+                    ty = ty.generalize_lit(marks);
                 }
 
                 actual.push(ty);
@@ -273,7 +276,10 @@ impl Analyzer<'_, '_> {
                 ..self.ctx
             };
             let mut a = self.with_ctx(ctx);
-            node.arg.validate_with_default(&mut *a)
+
+            let type_ann = a.scope.declared_return_type().cloned();
+            node.arg
+                .validate_with_args(&mut *a, (TypeOfMode::RValue, None, type_ann.as_ref()))
         } {
             res?
         } else {

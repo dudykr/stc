@@ -76,6 +76,8 @@ macro_rules! forward {
                         self.storage.report(err);
                     }
                 }
+
+                self.cur_facts.assert_valid();
             }
         }
     };

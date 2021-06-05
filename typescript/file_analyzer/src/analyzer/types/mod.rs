@@ -1,6 +1,10 @@
+use super::marks::MarkExt;
 use super::Analyzer;
+use crate::analyzer::expr::TypeOfMode;
+use crate::analyzer::Ctx;
 use crate::type_facts::TypeFacts;
 use crate::util::type_ext::TypeVecExt;
+use crate::Marks;
 use crate::ValidationResult;
 use fxhash::FxHashMap;
 use fxhash::FxHashSet;
@@ -9,7 +13,9 @@ use rnode::VisitMut;
 use rnode::VisitMutWith;
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RClassDecl;
+use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RIdent;
+use stc_ts_ast_rnode::RInvalid;
 use stc_ts_ast_rnode::RNumber;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsEnumDecl;
@@ -17,6 +23,7 @@ use stc_ts_ast_rnode::RTsInterfaceDecl;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsModuleDecl;
 use stc_ts_ast_rnode::RTsModuleName;
+use stc_ts_ast_rnode::RTsThisType;
 use stc_ts_ast_rnode::RTsTypeAliasDecl;
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::DebugExt;
@@ -24,15 +31,21 @@ use stc_ts_errors::Error;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::name::Name;
 use stc_ts_types::Array;
+use stc_ts_types::Class;
 use stc_ts_types::ClassDef;
 use stc_ts_types::ClassMember;
+use stc_ts_types::ComputedKey;
 use stc_ts_types::ConstructorSignature;
 use stc_ts_types::Id;
+use stc_ts_types::IdCtx;
+use stc_ts_types::Intersection;
 use stc_ts_types::Key;
 use stc_ts_types::MethodSignature;
 use stc_ts_types::Operator;
 use stc_ts_types::PropertySignature;
 use stc_ts_types::QueryExpr;
+use stc_ts_types::Tuple;
+use stc_ts_types::TupleElement;
 use stc_ts_types::Type;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
@@ -138,11 +151,9 @@ impl Analyzer<'_, '_> {
                         .expand_top_ref(actual_span, Cow::Borrowed(&ty))
                         .context("tried to expand a ref type as a part of normalization")?;
 
+                    // We are declaring, and expand_top_ref returned Type::Ref
                     if new_ty.type_eq(&*ty) {
-                        panic!(
-                            "normalize: expand_top_ref returned an identical reference type: {}",
-                            dump_type_as_string(&self.cm, &new_ty)
-                        )
+                        return Ok(ty);
                     }
 
                     new_ty.assert_valid();
@@ -207,7 +218,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 // Not normalizable.
-                Type::Infer(_) | Type::Instance(_) | Type::StaticThis(_) | Type::This(_) => {}
+                Type::Infer(_) | Type::StaticThis(_) | Type::This(_) => {}
 
                 // Maybe it can be changed in future, but currently noop
                 Type::Union(_) | Type::Intersection(_) => {}
@@ -358,13 +369,57 @@ impl Analyzer<'_, '_> {
                     // TODO
                 }
 
+                Type::Instance(ty) => {
+                    let ty = self
+                        .instantiate_for_normalization(span, &ty.ty)
+                        .context("tried to instantiate for normalizations")?;
+                    ty.assert_valid();
+                    return Ok(Cow::Owned(ty));
+                }
+
                 Type::Import(_) => {}
 
                 Type::Predicate(_) => {
                     // TODO: Add option for this.
                 }
 
-                Type::IndexedAccessType(_) => {
+                Type::IndexedAccessType(iat) => {
+                    let index_ty = box self
+                        .normalize(span, Cow::Borrowed(&iat.index_type), opts)
+                        .context("tried to normalize index type")?
+                        .into_owned();
+
+                    let ctx = Ctx {
+                        diallow_unknown_object_property: true,
+                        ..self.ctx
+                    };
+                    let prop_ty = self.with_ctx(ctx).access_property(
+                        actual_span,
+                        &iat.obj_type,
+                        &Key::Computed(ComputedKey {
+                            span: actual_span,
+                            expr: box RExpr::Invalid(RInvalid { span: actual_span }),
+                            ty: index_ty,
+                        }),
+                        TypeOfMode::RValue,
+                        IdCtx::Type,
+                    );
+                    if let Ok(prop_ty) = prop_ty {
+                        if ty.type_eq(&prop_ty) {
+                            return Ok(ty);
+                        }
+
+                        if prop_ty.normalize().is_indexed_access_type() {
+                            panic!("{:?}", prop_ty);
+                        }
+
+                        let ty = self
+                            .normalize(span, Cow::Owned(prop_ty), opts)
+                            .context("tried to normalize the type of property")?
+                            .into_owned();
+                        dbg!(&ty);
+                        return Ok(Cow::Owned(ty));
+                    }
                     // TODO:
                 }
 
@@ -389,6 +444,69 @@ impl Analyzer<'_, '_> {
         }
 
         Ok(ty)
+    }
+
+    // This is part of normalization.
+    fn instantiate_for_normalization(&mut self, span: Option<Span>, ty: &Type) -> ValidationResult<Type> {
+        let ty = self.normalize(
+            span,
+            Cow::Borrowed(ty),
+            NormalizeTypeOpts {
+                normalize_keywords: false,
+                ..Default::default()
+            },
+        )?;
+        let actual_span = ty.span();
+        let ty = ty.into_owned().foldable();
+
+        Ok(match ty {
+            Type::ClassDef(def) => Type::Class(Class {
+                span: actual_span,
+                def: box def,
+            }),
+
+            Type::StaticThis(ty) => Type::This(RTsThisType { span: actual_span }),
+
+            Type::Intersection(ty) => {
+                let types = ty
+                    .types
+                    .into_iter()
+                    .map(|ty| self.instantiate_for_normalization(span, &ty))
+                    .collect::<Result<_, _>>()?;
+
+                Type::Intersection(Intersection { types, ..ty })
+            }
+
+            Type::Union(ty) => {
+                let types = ty
+                    .types
+                    .into_iter()
+                    .map(|ty| self.instantiate_for_normalization(span, &ty))
+                    .collect::<Result<_, _>>()?;
+
+                Type::Union(Union { types, ..ty }).fixed()
+            }
+
+            Type::Array(ty) => {
+                let elem_type = box self.instantiate_for_normalization(span, &ty.elem_type)?;
+                Type::Array(Array { elem_type, ..ty })
+            }
+
+            Type::Tuple(ty) => {
+                let elems = ty
+                    .elems
+                    .into_iter()
+                    .map(|e| -> ValidationResult<_> {
+                        let ty = box self.instantiate_for_normalization(span, &e.ty)?;
+                        Ok(TupleElement { ty, ..e })
+                    })
+                    .collect::<Result<_, _>>()?;
+
+                Type::Tuple(Tuple { elems, ..ty })
+            }
+
+            _ => ty,
+        })
     }
 
     pub(crate) fn expand_type_ann<'a>(&mut self, ty: Option<&'a Type>) -> ValidationResult<Option<Cow<'a, Type>>> {
@@ -451,7 +569,9 @@ impl Analyzer<'_, '_> {
         })
     }
 
-    pub(crate) fn exclude_types_using_fact(&mut self, name: &Name, ty: &mut Type) {
+    pub(crate) fn exclude_types_using_fact(&mut self, span: Span, name: &Name, ty: &mut Type) {
+        debug_assert!(!span.is_dummy(), "exclude_types should not be called with a dummy span");
+
         let mut types_to_exclude = vec![];
         let mut s = Some(&self.scope);
 
@@ -471,7 +591,7 @@ impl Analyzer<'_, '_> {
         );
 
         let before = dump_type_as_string(&self.cm, &ty);
-        self.exclude_types(ty, Some(types_to_exclude));
+        self.exclude_types(span, ty, Some(types_to_exclude));
         let after = dump_type_as_string(&self.cm, &ty);
 
         slog::debug!(self.logger, "[types/facts] Excluded types: {} => {}", before, after);
@@ -486,6 +606,8 @@ impl Analyzer<'_, '_> {
                 .get(&name)
                 .copied()
                 .unwrap_or(TypeFacts::None);
+
+        slog::debug!(self.logger, "[types/fact] Facts for {:?} is {:?}", name, type_facts);
 
         self.apply_type_facts_to_type(type_facts, ty)
     }
@@ -764,7 +886,10 @@ impl Analyzer<'_, '_> {
         }))
     }
     pub(crate) fn normalize_tuples(&mut self, ty: &mut Type) {
-        ty.visit_mut_with(&mut TupleNormalizer);
+        let marks = self.marks();
+
+        ty.visit_mut_with(&mut TupleNormalizer { marks });
+        ty.fix();
     }
 
     pub(crate) fn kinds_of_type_elements(&mut self, els: &[TypeElement]) -> Vec<u8> {
@@ -797,6 +922,7 @@ impl Analyzer<'_, '_> {
 
         let is_resolved = self.data.all_local_type_names.contains(&top_id)
             || self.imports_by_id.contains_key(&top_id)
+            || self.data.unresolved_imports.contains(&top_id)
             || self.env.get_global_type(l.span, &top_id.sym()).is_ok();
 
         if is_resolved {
@@ -899,17 +1025,23 @@ impl Analyzer<'_, '_> {
     ///     // To use the fact that `a` is not `P`, we check for the parent type of `ty
     /// }
     /// ```
-    fn exclude_type(&mut self, ty: &mut Type, excluded: &Type) {
+    fn exclude_type(&mut self, span: Span, ty: &mut Type, excluded: &Type) {
         if ty.type_eq(excluded) {
             *ty = Type::never(ty.span());
             return;
         }
 
+        let res = self.normalize(Some(span), Cow::Borrowed(excluded), Default::default());
+        let excluded = match res {
+            Ok(v) => v,
+            Err(..) => Cow::Borrowed(excluded),
+        };
+
         match ty.normalize() {
             Type::Ref(..) => {
                 // We ignore errors.
                 if let Ok(mut expanded_ty) = self.expand_top_ref(ty.span(), Cow::Borrowed(&*ty)).map(Cow::into_owned) {
-                    self.exclude_type(&mut expanded_ty, excluded);
+                    self.exclude_type(span, &mut expanded_ty, &excluded);
                     *ty = expanded_ty;
                     return;
                 }
@@ -921,7 +1053,7 @@ impl Analyzer<'_, '_> {
             Type::Union(excluded) => {
                 //
                 for excluded in &excluded.types {
-                    self.exclude_type(ty, &excluded)
+                    self.exclude_type(span, ty, &excluded)
                 }
 
                 return;
@@ -932,19 +1064,18 @@ impl Analyzer<'_, '_> {
         match ty.normalize_mut() {
             Type::Union(ty) => {
                 for ty in &mut ty.types {
-                    self.exclude_type(ty, excluded);
+                    self.exclude_type(span, ty, &excluded);
                 }
                 ty.types.retain(|element| !element.is_never());
             }
 
             Type::Param(TypeParam {
-                span,
                 constraint: Some(constraint),
                 ..
             }) => {
-                self.exclude_type(constraint, excluded);
+                self.exclude_type(span, constraint, &excluded);
                 if constraint.is_never() {
-                    *ty = Type::never(*span);
+                    *ty = Type::never(span);
                     return;
                 }
             }
@@ -953,7 +1084,7 @@ impl Analyzer<'_, '_> {
                 //
                 if let Some(super_def) = &cls.def.super_class {
                     if let Ok(mut super_instance) = self.instantiate_class(cls.span, &super_def) {
-                        self.exclude_type(&mut super_instance, excluded);
+                        self.exclude_type(span, &mut super_instance, &excluded);
                         if super_instance.is_never() {
                             *ty = Type::never(cls.span);
                             return;
@@ -966,16 +1097,31 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn exclude_types(&mut self, ty: &mut Type, excludes: Option<Vec<Type>>) {
+    fn exclude_types(&mut self, span: Span, ty: &mut Type, excludes: Option<Vec<Type>>) {
+        let mut mapped_ty = self.normalize(
+            Some(span),
+            Cow::Borrowed(&*ty),
+            NormalizeTypeOpts {
+                // `typeof` can  result in a stack overflow, because it calls `type_of_var`.
+                preserve_typeof: true,
+                ..Default::default()
+            },
+        );
+        let mut mapped_ty = match mapped_ty {
+            Ok(v) => v,
+            Err(_) => Cow::Borrowed(&*ty),
+        };
+
         let excludes = match excludes {
             Some(v) => v,
             None => return,
         };
 
         for excluded in excludes {
-            self.exclude_type(ty, &excluded);
+            self.exclude_type(span, mapped_ty.to_mut(), &excluded);
         }
 
+        *ty = mapped_ty.into_owned();
         ty.fix();
     }
 
@@ -1052,7 +1198,9 @@ impl Visit<RTsModuleDecl> for KnownTypeVisitor {
     }
 }
 
-struct TupleNormalizer;
+struct TupleNormalizer {
+    marks: Marks,
+}
 
 impl VisitMut<Type> for TupleNormalizer {
     fn visit_mut(&mut self, ty: &mut Type) {
@@ -1060,6 +1208,10 @@ impl VisitMut<Type> for TupleNormalizer {
 
         match ty.normalize() {
             Type::Tuple(tuple) => {
+                if self.marks.prevent_tuple_to_array.is_marked(tuple.span) {
+                    return;
+                }
+
                 if tuple.elems.is_empty() {
                     return;
                 }

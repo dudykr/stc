@@ -101,7 +101,7 @@ use stc_ts_types::Union;
 use stc_ts_utils::OptionExt;
 use stc_ts_utils::PatExt;
 use stc_utils::error;
-use stc_utils::FastHashSet;
+use stc_utils::AHashSet;
 use swc_atoms::js_word;
 use swc_common::EqIgnoreSpan;
 use swc_common::Spanned;
@@ -124,7 +124,7 @@ impl Analyzer<'_, '_> {
             {
                 // Check for duplicates
                 let mut names = decl.params.iter().map(|param| param.name.clone()).collect::<Vec<_>>();
-                let mut found = FastHashSet::default();
+                let mut found = AHashSet::default();
 
                 for name in names {
                     if !found.insert(name.sym.clone()) {
@@ -516,12 +516,14 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, ty: &RTsMappedType) -> ValidationResult<Mapped> {
+        let type_param = ty.type_param.validate_with(self)?;
+
         Ok(Mapped {
             span: ty.span,
             readonly: ty.readonly,
             optional: ty.optional,
             name_type: try_opt!(ty.name_type.validate_with(self)).map(Box::new),
-            type_param: ty.type_param.validate_with(self)?,
+            type_param,
             ty: try_opt!(ty.type_ann.validate_with(self)).map(Box::new),
         })
     }

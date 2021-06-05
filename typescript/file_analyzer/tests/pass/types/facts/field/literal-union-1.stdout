@@ -4,7 +4,16 @@ warning: Type
 8 |     switch (x.kind) {
   |             ^
   |
-  = note: Item
+  = note: {
+              kind: 0;
+              a: string;
+          } | {
+              kind: 1;
+              b: string;
+          } | {
+              kind: 2;
+              c: string;
+          }
 
 warning: Type
  --> $DIR/tests/pass/types/facts/field/literal-union-1.ts:8:13

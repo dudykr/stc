@@ -20,7 +20,7 @@ warning: Type
 13 |         x;  // number, then string | number
    |         ^
    |
-   = note: string | number
+   = note: number
 
 warning: Type
   --> $DIR/tests/pass/exprs/typeAssertion/1.ts:14:20
@@ -85,6 +85,14 @@ warning: Type
    |         ^
    |
    = note: string
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/1.ts:13:9
+   |
+13 |         x;  // number, then string | number
+   |         ^
+   |
+   = note: string | number
 
 warning: Type
   --> $DIR/tests/pass/exprs/typeAssertion/1.ts:17:5

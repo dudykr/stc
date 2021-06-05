@@ -39,6 +39,15 @@ where
     }
 }
 
+impl<T> Fix for Box<T>
+where
+    T: Fix,
+{
+    fn fix(&mut self) {
+        (**self).fix()
+    }
+}
+
 macro_rules! impl_fix {
     ($T:ty) => {
         impl Fix for $T {
@@ -65,6 +74,10 @@ impl VisitMut<Union> for Fixer {
 
         let mut new: Vec<Type> = Vec::with_capacity(u.types.capacity());
         for ty in u.types.drain(..) {
+            if ty.is_never() {
+                continue;
+            }
+
             if new.iter().any(|stored| stored.type_eq(&ty)) {
                 continue;
             }
@@ -73,6 +86,9 @@ impl VisitMut<Union> for Fixer {
                 let u = ty.foldable().union_type().unwrap();
                 for ty in u.types {
                     if new.iter().any(|stored| stored.type_eq(&ty)) {
+                        continue;
+                    }
+                    if ty.is_never() {
                         continue;
                     }
                     new.push(ty);
@@ -113,8 +129,8 @@ impl VisitMut<Intersection> for Fixer {
     }
 }
 
-impl VisitMut<Type> for Fixer {
-    fn visit_mut(&mut self, ty: &mut Type) {
+impl Fixer {
+    fn fix_type(&mut self, ty: &mut Type) {
         {
             let ty = ty.normalize();
             if ty.is_keyword() || ty.is_lit() {
@@ -155,5 +171,13 @@ impl VisitMut<Type> for Fixer {
             },
             _ => {}
         }
+    }
+}
+
+impl VisitMut<Type> for Fixer {
+    fn visit_mut(&mut self, ty: &mut Type) {
+        self.fix_type(ty);
+
+        ty.assert_valid();
     }
 }

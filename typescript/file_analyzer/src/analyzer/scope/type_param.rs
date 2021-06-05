@@ -7,6 +7,7 @@ use rnode::VisitMutWith;
 use rnode::VisitWith;
 use stc_ts_generics::type_param::finder::TypeParamDeclFinder;
 use stc_ts_types::Id;
+use stc_ts_types::Mapped;
 use stc_ts_types::Type;
 use stc_ts_types::TypeLit;
 
@@ -106,6 +107,10 @@ struct TypeParamEscapeHandler<'a, 'b, 'c> {
 
     /// Type parameters declared by the type we are visiting.
     declared: FxHashSet<Id>,
+}
+
+impl VisitMut<Mapped> for TypeParamEscapeHandler<'_, '_, '_> {
+    fn visit_mut(&mut self, _: &mut Mapped) {}
 }
 
 impl VisitMut<Type> for TypeParamEscapeHandler<'_, '_, '_> {

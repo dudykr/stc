@@ -12,12 +12,16 @@ use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_errors::debug::dump_type_as_string;
+use stc_ts_type_ops::Fix;
+use stc_ts_types::ClassDef;
 use stc_ts_types::ClassMember;
+use stc_ts_types::Conditional;
 use stc_ts_types::Constructor;
 use stc_ts_types::FnParam;
 use stc_ts_types::Function;
 use stc_ts_types::IndexedAccessType;
 use stc_ts_types::Intersection;
+use stc_ts_types::Mapped;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
 use stc_ts_types::Union;
@@ -30,6 +34,10 @@ use swc_ecma_ast::TsKeywordTypeKind;
 
 impl Analyzer<'_, '_> {
     pub fn apply_type_facts_to_type(&mut self, facts: TypeFacts, mut ty: Type) -> Type {
+        if self.is_builtin {
+            return ty;
+        }
+
         if facts.contains(TypeFacts::TypeofEQNumber)
             || facts.contains(TypeFacts::TypeofEQString)
             || facts.contains(TypeFacts::TypeofEQBoolean)
@@ -43,6 +51,27 @@ impl Analyzer<'_, '_> {
                 }
                 _ => {}
             }
+        }
+
+        let cnt = if facts.contains(TypeFacts::TypeofEQString) {
+            1
+        } else {
+            0
+        } + if facts.contains(TypeFacts::TypeofEQNumber) {
+            1
+        } else {
+            0
+        } + if facts.contains(TypeFacts::TypeofEQBigInt) {
+            1
+        } else {
+            0
+        } + if facts.contains(TypeFacts::TypeofEQBoolean) {
+            1
+        } else {
+            0
+        };
+        if cnt >= 2 {
+            return Type::never(ty.span());
         }
 
         let before = dump_type_as_string(&self.cm, &ty);
@@ -94,9 +123,15 @@ impl Analyzer<'_, '_> {
 
         let after = dump_type_as_string(&self.cm, &ty);
 
-        slog::debug!(self.logger, "[types/fact] {} => {}", before, after);
+        slog::debug!(
+            self.logger,
+            "[types/fact] {} => {}\nTypeFacts: {:?}",
+            before,
+            after,
+            facts
+        );
 
-        ty
+        ty.fixed()
     }
 }
 
@@ -148,6 +183,13 @@ impl Fold<Constructor> for TypeFactsHandler<'_, '_, '_> {
     #[inline]
     fn fold(&mut self, m: Constructor) -> Constructor {
         m
+    }
+}
+
+impl Fold<Conditional> for TypeFactsHandler<'_, '_, '_> {
+    #[inline]
+    fn fold(&mut self, ty: Conditional) -> Conditional {
+        ty
     }
 }
 
@@ -322,8 +364,24 @@ impl Fold<Union> for TypeFactsHandler<'_, '_, '_> {
     }
 }
 
+/// Noop because type facts should not be applied recursively.
+impl Fold<ClassDef> for TypeFactsHandler<'_, '_, '_> {
+    fn fold(&mut self, ty: ClassDef) -> ClassDef {
+        ty
+    }
+}
+
+/// Noop because type facts should not be applied recursively.
+impl Fold<Mapped> for TypeFactsHandler<'_, '_, '_> {
+    fn fold(&mut self, ty: Mapped) -> Mapped {
+        ty
+    }
+}
+
 impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
     fn fold(&mut self, mut ty: Type) -> Type {
+        let span = ty.span();
+
         // TODO: Don't do anything if type fact is none.
 
         match ty.normalize() {
@@ -343,9 +401,30 @@ impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
             _ => {}
         }
 
+        if !span.is_dummy() {
+            if ty.normalize().is_ref_type() {
+                if let Ok(ty) = self.analyzer.expand_top_ref(ty.span(), Cow::Borrowed(&ty)) {
+                    if ty.normalize().is_ref_type() {
+                        return ty.into_owned();
+                    }
+                    return ty.into_owned().fold_with(self);
+                } else {
+                    return ty;
+                }
+            }
+        }
+
+        match ty.normalize() {
+            Type::Class(..) | Type::ClassDef(..) | Type::TypeLit(..)
+                if self.facts.contains(TypeFacts::TypeofNEObject) =>
+            {
+                return Type::never(span);
+            }
+            _ => {}
+        }
+
         ty = ty.foldable();
         ty = ty.fold_children_with(self);
-        let span = ty.span();
 
         match ty {
             Type::Union(ref u) if u.types.is_empty() => return Type::never(u.span),

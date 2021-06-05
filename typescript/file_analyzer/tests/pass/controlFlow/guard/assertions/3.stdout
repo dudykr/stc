@@ -1,0 +1,164 @@
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/3.ts:12:27
+   |
+12 | export const none: None = { none: '' };
+   |                           ^^^^^^^^^^^^
+   |
+   = note: {
+               none: '';
+           }
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/3.ts:15:22
+   |
+15 |     return 'some' in value;
+   |                      ^^^^^
+   |
+   = note: Some<a> | None
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/3.ts:15:12
+   |
+15 |     return 'some' in value;
+   |            ^^^^^^^^^^^^^^^
+   |
+   = note: boolean
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/3.ts:19:12
+   |
+19 |     return { some };
+   |            ^^^^^^^^
+   |
+   = note: {
+               some: a;
+           }
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/3.ts:24:5
+   |
+24 |     x;  // number
+   |     ^
+   |
+   = note: number
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/3.ts:25:12
+   |
+25 |     while (cond) {
+   |            ^^^^
+   |
+   = note: boolean
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/3.ts:26:9
+   |
+26 |         x;  // number, then string | number
+   |         ^
+   |
+   = note: number
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/3.ts:27:20
+   |
+27 |         if (typeof x === "string") {
+   |                    ^
+   |
+   = note: number
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/3.ts:27:13
+   |
+27 |         if (typeof x === "string") {
+   |             ^^^^^^^^
+   |
+   = note: string
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/3.ts:27:13
+   |
+27 |         if (typeof x === "string") {
+   |             ^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: boolean
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/3.ts:28:17
+   |
+28 |             x = x.slice();
+   |                 ^
+   |
+   = note: never
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/3.ts:28:13
+   |
+28 |             x = x.slice();
+   |             ^^^^^^^^^^^^^
+   |
+   = note: any
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/3.ts:31:13
+   |
+31 |             x = "abc";
+   |             ^^^^^^^^^
+   |
+   = note: "abc"
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/3.ts:33:9
+   |
+33 |         x;  // string
+   |         ^
+   |
+   = note: string
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/3.ts:26:9
+   |
+26 |         x;  // number, then string | number
+   |         ^
+   |
+   = note: string
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/3.ts:27:20
+   |
+27 |         if (typeof x === "string") {
+   |                    ^
+   |
+   = note: string
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/3.ts:28:17
+   |
+28 |             x = x.slice();
+   |                 ^
+   |
+   = note: string
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/3.ts:28:17
+   |
+28 |             x = x.slice();
+   |                 ^^^^^^^^^
+   |
+   = note: string
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/3.ts:28:13
+   |
+28 |             x = x.slice();
+   |             ^^^^^^^^^^^^^
+   |
+   = note: string
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/3.ts:35:5
+   |
+35 |     x;
+   |     ^
+   |
+   = note: string | number
+

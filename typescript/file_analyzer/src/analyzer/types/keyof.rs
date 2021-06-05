@@ -1,6 +1,7 @@
 use super::NormalizeTypeOpts;
 use crate::analyzer::Analyzer;
 use crate::ValidationResult;
+use itertools::Itertools;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
@@ -23,6 +24,7 @@ use stc_utils::error::context;
 use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::Span;
+use swc_common::TypeEq;
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::TsKeywordTypeKind;
 
@@ -33,7 +35,7 @@ impl Analyzer<'_, '_> {
     ///
     /// ## `ty`
     /// Should be operand of `keyof`.
-    pub(super) fn keyof(&mut self, span: Span, ty: &Type) -> ValidationResult<Type> {
+    pub(crate) fn keyof(&mut self, span: Span, ty: &Type) -> ValidationResult<Type> {
         let _ctx = context(format!("keyof: {}", dump_type_as_string(&self.cm, ty)));
 
         if !self.is_builtin {
@@ -247,7 +249,37 @@ impl Analyzer<'_, '_> {
                         .collect::<Result<Vec<_>, _>>()?;
 
                     if key_types.iter().all(|ty| is_str_lit_or_union(&ty)) {
-                        return Ok(self.intersection(span, key_types));
+                        let mut keys = key_types
+                            .into_iter()
+                            .map(|ty| match ty.foldable() {
+                                Type::Union(ty) => ty
+                                    .types
+                                    .into_iter()
+                                    .map(|ty| ty.foldable().lit().unwrap())
+                                    .collect_vec(),
+                                Type::Lit(l) => vec![l],
+                                _ => {
+                                    unreachable!()
+                                }
+                            })
+                            .collect_vec();
+
+                        let actual_keys = keys[0]
+                            .iter()
+                            .filter(|&key| {
+                                keys[1..]
+                                    .iter()
+                                    .all(|keys| keys.iter().any(|other_key| key.type_eq(other_key)))
+                            })
+                            .cloned()
+                            .map(Type::Lit)
+                            .collect_vec()
+                            .fixed();
+
+                        return Ok(Type::Union(Union {
+                            span,
+                            types: actual_keys,
+                        }));
                     }
 
                     return Ok(Type::union(key_types));

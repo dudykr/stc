@@ -1,5 +1,5 @@
 warning: Type
- --> $DIR/tests/visualize/controlFlow/element-access-1.ts:5:12
+ --> $DIR/tests/pass/controlFlow/element-access-1.ts:5:12
   |
 5 | if (typeof config['works'] !== 'boolean') {
   |            ^^^^^^
@@ -11,7 +11,7 @@ warning: Type
           }
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/element-access-1.ts:5:12
+ --> $DIR/tests/pass/controlFlow/element-access-1.ts:5:12
   |
 5 | if (typeof config['works'] !== 'boolean') {
   |            ^^^^^^^^^^^^^^^
@@ -21,7 +21,7 @@ warning: Type
           }
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/element-access-1.ts:5:5
+ --> $DIR/tests/pass/controlFlow/element-access-1.ts:5:5
   |
 5 | if (typeof config['works'] !== 'boolean') {
   |     ^^^^^^^^^^^^^^^^^^^^^^
@@ -29,7 +29,7 @@ warning: Type
   = note: string
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/element-access-1.ts:5:5
+ --> $DIR/tests/pass/controlFlow/element-access-1.ts:5:5
   |
 5 | if (typeof config['works'] !== 'boolean') {
   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -37,7 +37,7 @@ warning: Type
   = note: boolean
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/element-access-1.ts:6:5
+ --> $DIR/tests/pass/controlFlow/element-access-1.ts:6:5
   |
 6 |     config.works.prop = 'test'; // ok
   |     ^^^^^^
@@ -49,7 +49,7 @@ warning: Type
           }
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/element-access-1.ts:6:5
+ --> $DIR/tests/pass/controlFlow/element-access-1.ts:6:5
   |
 6 |     config.works.prop = 'test'; // ok
   |     ^^^^^^^^^^^^
@@ -59,7 +59,7 @@ warning: Type
           }
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/element-access-1.ts:6:5
+ --> $DIR/tests/pass/controlFlow/element-access-1.ts:6:5
   |
 6 |     config.works.prop = 'test'; // ok
   |     ^^^^^^^^^^^^^^^^^
@@ -67,7 +67,7 @@ warning: Type
   = note: string
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/element-access-1.ts:6:5
+ --> $DIR/tests/pass/controlFlow/element-access-1.ts:6:5
   |
 6 |     config.works.prop = 'test'; // ok
   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -75,7 +75,7 @@ warning: Type
   = note: 'test'
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/element-access-1.ts:7:5
+ --> $DIR/tests/pass/controlFlow/element-access-1.ts:7:5
   |
 7 |     config['works'].prop = 'test'; // error, config['works']: boolean | { 'prop': string }
   |     ^^^^^^
@@ -87,17 +87,25 @@ warning: Type
           }
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/element-access-1.ts:7:5
+ --> $DIR/tests/pass/controlFlow/element-access-1.ts:7:5
   |
 7 |     config['works'].prop = 'test'; // error, config['works']: boolean | { 'prop': string }
   |     ^^^^^^^^^^^^^^^
   |
-  = note: boolean | {
+  = note: {
               prop: string;
           }
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/element-access-1.ts:7:5
+ --> $DIR/tests/pass/controlFlow/element-access-1.ts:7:5
+  |
+7 |     config['works'].prop = 'test'; // error, config['works']: boolean | { 'prop': string }
+  |     ^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: string
+
+warning: Type
+ --> $DIR/tests/pass/controlFlow/element-access-1.ts:7:5
   |
 7 |     config['works'].prop = 'test'; // error, config['works']: boolean | { 'prop': string }
   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -105,7 +113,7 @@ warning: Type
   = note: 'test'
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/element-access-1.ts:9:12
+ --> $DIR/tests/pass/controlFlow/element-access-1.ts:9:12
   |
 9 | if (typeof config.works !== 'boolean') {
   |            ^^^^^^
@@ -117,7 +125,7 @@ warning: Type
           }
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/element-access-1.ts:9:12
+ --> $DIR/tests/pass/controlFlow/element-access-1.ts:9:12
   |
 9 | if (typeof config.works !== 'boolean') {
   |            ^^^^^^^^^^^^
@@ -127,7 +135,7 @@ warning: Type
           }
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/element-access-1.ts:9:5
+ --> $DIR/tests/pass/controlFlow/element-access-1.ts:9:5
   |
 9 | if (typeof config.works !== 'boolean') {
   |     ^^^^^^^^^^^^^^^^^^^
@@ -135,7 +143,7 @@ warning: Type
   = note: string
 
 warning: Type
- --> $DIR/tests/visualize/controlFlow/element-access-1.ts:9:5
+ --> $DIR/tests/pass/controlFlow/element-access-1.ts:9:5
   |
 9 | if (typeof config.works !== 'boolean') {
   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -143,7 +151,7 @@ warning: Type
   = note: boolean
 
 warning: Type
-  --> $DIR/tests/visualize/controlFlow/element-access-1.ts:10:5
+  --> $DIR/tests/pass/controlFlow/element-access-1.ts:10:5
    |
 10 |     config['works'].prop = 'test'; // error, config['works']: boolean | { 'prop': string }
    |     ^^^^^^
@@ -155,17 +163,25 @@ warning: Type
            }
 
 warning: Type
-  --> $DIR/tests/visualize/controlFlow/element-access-1.ts:10:5
+  --> $DIR/tests/pass/controlFlow/element-access-1.ts:10:5
    |
 10 |     config['works'].prop = 'test'; // error, config['works']: boolean | { 'prop': string }
    |     ^^^^^^^^^^^^^^^
    |
-   = note: boolean | {
+   = note: {
                prop: string;
            }
 
 warning: Type
-  --> $DIR/tests/visualize/controlFlow/element-access-1.ts:10:5
+  --> $DIR/tests/pass/controlFlow/element-access-1.ts:10:5
+   |
+10 |     config['works'].prop = 'test'; // error, config['works']: boolean | { 'prop': string }
+   |     ^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: string
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/element-access-1.ts:10:5
    |
 10 |     config['works'].prop = 'test'; // error, config['works']: boolean | { 'prop': string }
    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -173,7 +189,7 @@ warning: Type
    = note: 'test'
 
 warning: Type
-  --> $DIR/tests/visualize/controlFlow/element-access-1.ts:11:5
+  --> $DIR/tests/pass/controlFlow/element-access-1.ts:11:5
    |
 11 |     config.works.prop = 'test'; // ok
    |     ^^^^^^
@@ -185,7 +201,7 @@ warning: Type
            }
 
 warning: Type
-  --> $DIR/tests/visualize/controlFlow/element-access-1.ts:11:5
+  --> $DIR/tests/pass/controlFlow/element-access-1.ts:11:5
    |
 11 |     config.works.prop = 'test'; // ok
    |     ^^^^^^^^^^^^
@@ -195,7 +211,7 @@ warning: Type
            }
 
 warning: Type
-  --> $DIR/tests/visualize/controlFlow/element-access-1.ts:11:5
+  --> $DIR/tests/pass/controlFlow/element-access-1.ts:11:5
    |
 11 |     config.works.prop = 'test'; // ok
    |     ^^^^^^^^^^^^^^^^^
@@ -203,7 +219,7 @@ warning: Type
    = note: string
 
 warning: Type
-  --> $DIR/tests/visualize/controlFlow/element-access-1.ts:11:5
+  --> $DIR/tests/pass/controlFlow/element-access-1.ts:11:5
    |
 11 |     config.works.prop = 'test'; // ok
    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^

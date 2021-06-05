@@ -1,0 +1,98 @@
+warning: Type
+ --> $DIR/tests/pass/controlFlow/forInStmt/simple/2.ts:6:15
+  |
+6 |     const b = k in obj;
+  |               ^
+  |
+  = note: string
+
+warning: Type
+ --> $DIR/tests/pass/controlFlow/forInStmt/simple/2.ts:6:20
+  |
+6 |     const b = k in obj;
+  |                    ^^^
+  |
+  = note: {
+              [P in keyof T]: T[P];
+          }
+
+warning: Type
+ --> $DIR/tests/pass/controlFlow/forInStmt/simple/2.ts:6:15
+  |
+6 |     const b = k in obj;
+  |               ^^^^^^^^
+  |
+  = note: boolean
+
+warning: Type
+ --> $DIR/tests/pass/controlFlow/forInStmt/simple/2.ts:8:16
+  |
+8 |     for (k1 in obj) {
+  |                ^^^
+  |
+  = note: {
+              [P in keyof T]: T[P];
+          }
+
+warning: Type
+ --> $DIR/tests/pass/controlFlow/forInStmt/simple/2.ts:9:18
+  |
+9 |         let x1 = obj[k1];
+  |                  ^^^
+  |
+  = note: {
+              [P in keyof T]: T[P];
+          }
+
+warning: Type
+ --> $DIR/tests/pass/controlFlow/forInStmt/simple/2.ts:9:22
+  |
+9 |         let x1 = obj[k1];
+  |                      ^^
+  |
+  = note: string
+
+warning: Type
+ --> $DIR/tests/pass/controlFlow/forInStmt/simple/2.ts:9:18
+  |
+9 |         let x1 = obj[k1];
+  |                  ^^^^^^^
+  |
+  = note: T[P]
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/forInStmt/simple/2.ts:11:20
+   |
+11 |     for (let k2 in obj) {
+   |                    ^^^
+   |
+   = note: {
+               [P in keyof T]: T[P];
+           }
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/forInStmt/simple/2.ts:12:18
+   |
+12 |         let x2 = obj[k2];
+   |                  ^^^
+   |
+   = note: {
+               [P in keyof T]: T[P];
+           }
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/forInStmt/simple/2.ts:12:22
+   |
+12 |         let x2 = obj[k2];
+   |                      ^^
+   |
+   = note: string
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/forInStmt/simple/2.ts:12:18
+   |
+12 |         let x2 = obj[k2];
+   |                  ^^^^^^^
+   |
+   = note: T[P]
+

@@ -5,7 +5,6 @@ use super::super::{
 use super::TypeOfMode;
 use crate::analyzer::assign::AssignOpts;
 use crate::analyzer::generic::ExtendsOpts;
-use crate::util::type_ext::TypeVecExt;
 use crate::{
     analyzer::{Ctx, ScopeKind},
     ty::{Operator, Type, TypeExt},
@@ -68,6 +67,8 @@ impl Analyzer<'_, '_> {
             ..
         } = *e;
 
+        let marks = self.marks();
+
         let prev_facts = self.cur_facts.clone();
 
         self.check_for_mixed_nullish_coalescing(e);
@@ -75,7 +76,10 @@ impl Analyzer<'_, '_> {
         let mut errors = vec![];
 
         let ctx = Ctx {
-            should_store_truthy_for_access: false,
+            should_store_truthy_for_access: match op {
+                op!("&&") => true,
+                _ => false,
+            },
             check_for_implicit_any: true,
             ..self.ctx
         };
@@ -118,6 +122,12 @@ impl Analyzer<'_, '_> {
             Default::default()
         };
 
+        let mut additional_false_facts = if op == op!("&&") {
+            self.cur_facts.false_facts.take()
+        } else {
+            Default::default()
+        };
+
         let mut lhs_facts = if op == op!("||") {
             self.cur_facts.take()
         } else {
@@ -129,7 +139,7 @@ impl Analyzer<'_, '_> {
         let rhs = self
             .with_child(
                 ScopeKind::Flow,
-                true_facts_for_rhs,
+                true_facts_for_rhs.clone(),
                 |child: &mut Analyzer| -> ValidationResult<_> {
                     child.ctx.should_store_truthy_for_access = false;
 
@@ -184,7 +194,7 @@ impl Analyzer<'_, '_> {
                 match self.cur_facts.true_facts.facts.entry(k) {
                     // (typeof a === 'string' || typeof a === 'number')
                     Entry::Occupied(mut e) => {
-                        *e.get_mut() |= type_fact;
+                        *e.get_mut() &= type_fact;
                     }
                     // (typeof a === 'string' || a !== foo)
                     Entry::Vacant(..) => {}
@@ -192,7 +202,20 @@ impl Analyzer<'_, '_> {
             }
 
             self.cur_facts += lhs_facts;
+        } else if op == op!("&&") {
+            self.cur_facts.true_facts += true_facts_for_rhs;
+
+            for (k, v) in additional_false_facts.facts.drain() {
+                *self
+                    .cur_facts
+                    .false_facts
+                    .facts
+                    .entry(k.clone())
+                    .or_insert(TypeFacts::None) &= v;
+            }
         }
+
+        self.cur_facts.false_facts += additional_false_facts;
 
         let (lt, rt): (Type, Type) = match (lt, rt) {
             (Some(l), Some(r)) => (l, r),
@@ -285,9 +308,9 @@ impl Analyzer<'_, '_> {
                 }) {
                     Some((Ok(name), ty)) => {
                         if is_eq {
-                            self.add_deep_type_fact(name.clone(), ty.clone(), false);
+                            self.add_deep_type_fact(span, name.clone(), ty.clone(), false);
                         } else {
-                            self.add_deep_type_fact(name.clone(), ty.clone(), true);
+                            self.add_deep_type_fact(span, name.clone(), ty.clone(), true);
                         }
                     }
                     _ => {}
@@ -322,7 +345,7 @@ impl Analyzer<'_, '_> {
                                     .push(r.clone());
 
                                 self.prevent_generalize(&mut r);
-                                self.add_deep_type_fact(name, r, true);
+                                self.add_deep_type_fact(span, name, r, true);
                             } else if !is_eq {
                                 // Remove from union
                                 self.cur_facts
@@ -333,7 +356,7 @@ impl Analyzer<'_, '_> {
                                     .push(r.clone());
 
                                 self.prevent_generalize(&mut r);
-                                self.add_deep_type_fact(name, r, false);
+                                self.add_deep_type_fact(span, name, r, false);
                             }
                         }
                     }
@@ -378,6 +401,8 @@ impl Analyzer<'_, '_> {
                                 .context("tried to narrow type with instanceof")?
                                 .cheap();
 
+                            narrowed_ty.assert_valid();
+
                             // TODO(kdy1): Maybe we need to check for intersection or union
                             if orig_ty.normalize().is_type_param() {
                                 self.cur_facts.true_facts.vars.insert(
@@ -386,6 +411,7 @@ impl Analyzer<'_, '_> {
                                         span,
                                         types: vec![orig_ty, narrowed_ty],
                                     })
+                                    .fixed()
                                     .cheap(),
                                 );
                             } else {
@@ -586,22 +612,11 @@ impl Analyzer<'_, '_> {
             op!("<=") | op!("<") | op!(">=") | op!(">") => {
                 no_unknown!();
 
-                let mut check_for_invalid_operand = |ty: &Type| match ty.normalize() {
-                    Type::Keyword(RTsKeywordType {
-                        span,
-                        kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                    }) => {
-                        self.storage.report(Error::ObjectIsPossiblyUndefined { span: *span });
-                    }
-
-                    Type::Keyword(RTsKeywordType {
-                        span,
-                        kind: TsKeywordTypeKind::TsNullKeyword,
-                    }) => {
-                        self.storage.report(Error::ObjectIsPossiblyNull { span: *span });
-                    }
-
-                    _ => {}
+                let mut check_for_invalid_operand = |ty: &Type| {
+                    let res: ValidationResult<_> = try {
+                        self.deny_null_or_undefined(ty.span(), ty)?;
+                    };
+                    res.report(&mut self.storage);
                 };
 
                 check_for_invalid_operand(&lt);
@@ -628,7 +643,7 @@ impl Analyzer<'_, '_> {
                         if let Some(property) = left {
                             let mut new_ty = self.filter_types_with_property(&rt, &property, None)?.cheap();
 
-                            self.add_deep_type_fact(name.clone(), new_ty.clone(), true);
+                            self.add_deep_type_fact(span, name.clone(), new_ty.clone(), true);
                         }
                     }
                 }
@@ -655,10 +670,12 @@ impl Analyzer<'_, '_> {
                     };
 
                 if self.ctx.can_generalize_literals() && (can_generalize || self.may_generalize(&lt)) {
-                    lt = lt.generalize_lit();
+                    lt = lt.generalize_lit(marks);
+                    lt = lt.force_generalize_top_level_literals();
                 }
                 if self.ctx.can_generalize_literals() && (can_generalize || self.may_generalize(&rt)) {
-                    rt = rt.generalize_lit();
+                    rt = rt.generalize_lit(marks);
+                    rt = rt.force_generalize_top_level_literals();
                 }
 
                 if lt.type_eq(&rt) {
@@ -723,10 +740,10 @@ impl Analyzer<'_, '_> {
                 let mut lt = lt.remove_falsy();
                 let mut rt = rt;
                 if may_generalize_lt {
-                    lt = lt.generalize_lit();
+                    lt = lt.generalize_lit(marks);
                 }
                 if self.may_generalize(&rt) {
-                    rt = rt.generalize_lit();
+                    rt = rt.generalize_lit(marks);
                 }
                 //
                 if lt.type_eq(&rt) {
@@ -746,12 +763,21 @@ impl Analyzer<'_, '_> {
 
 impl Analyzer<'_, '_> {
     fn is_valid_for_switch_case(&mut self, span: Span, disc_ty: &Type, case_ty: &Type) -> ValidationResult<bool> {
+        let disc_ty = disc_ty.normalize();
+        let case_ty = case_ty.normalize();
+
         if disc_ty.type_eq(case_ty) {
             return Ok(true);
         }
 
         if disc_ty.is_num_lit() && case_ty.is_num_lit() {
             return Ok(false);
+        }
+
+        if self.ctx.in_switch_case_test {
+            if disc_ty.is_intersection_type() {
+                return Ok(true);
+            }
         }
 
         self.has_overlap(span, &disc_ty, &case_ty)
@@ -807,12 +833,11 @@ impl Analyzer<'_, '_> {
 
                 new_types.retain(|ty| !ty.is_never());
 
-                new_types.dedup_type();
-
                 return Ok(Type::Union(Union {
                     span: orig.span,
                     types: new_types,
-                }));
+                })
+                .fixed());
             }
 
             _ => {}
@@ -890,6 +915,8 @@ impl Analyzer<'_, '_> {
 
     #[extra_validator]
     fn validate_relative_comparison_operands(&mut self, span: Span, op: BinaryOp, l: &Type, r: &Type) {
+        let marks = self.marks();
+
         let l = l.normalize();
         let r = r.normalize();
 
@@ -925,7 +952,12 @@ impl Analyzer<'_, '_> {
                                     continue;
                                 }
                                 //
-                                self.storage.report(Error::CannotCompareWithOp { span, op });
+                                self.storage.report(Error::CannotCompareWithOp {
+                                    span,
+                                    op,
+                                    left: box l.clone(),
+                                    right: box r.clone(),
+                                });
                                 return;
                             }
                             _ => {}
@@ -936,13 +968,18 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        let l = l.clone().generalize_lit();
-        let r = r.clone().generalize_lit();
+        let l = l.clone().generalize_lit(marks);
+        let r = r.clone().generalize_lit(marks);
         if self.can_compare_relatively(span, &l, &r)? {
             return;
         }
 
-        self.storage.report(Error::CannotCompareWithOp { span, op });
+        self.storage.report(Error::CannotCompareWithOp {
+            span,
+            op,
+            left: box l.clone(),
+            right: box r.clone(),
+        });
     }
 
     fn can_compare_relatively(&mut self, span: Span, l: &Type, r: &Type) -> ValidationResult<bool> {
@@ -1084,6 +1121,7 @@ impl Analyzer<'_, '_> {
             | Type::Class(..)
             | Type::This(..)
             | Type::Param(..)
+            | Type::Mapped(..)
             | Type::Ref(..) => true,
 
             Type::Intersection(ty) => ty.types.iter().all(|ty| self.is_valid_lhs_of_instanceof(span, ty)),
@@ -1195,11 +1233,14 @@ impl Analyzer<'_, '_> {
 
     /// We should create a type fact for `foo` in `if (foo.type === 'bar');`.
     fn calc_type_facts_for_equality(&mut self, name: Name, equals_to: &Type) -> ValidationResult<(Name, Type)> {
-        // For comparison of variables like `if (a === 'foo');`, we just return the type
-        // itself.
+        let span = equals_to.span();
+
+        let mut id: RIdent = name.as_ids()[0].clone().into();
+        id.span.lo = span.lo;
+        id.span.hi = span.hi;
 
         if name.len() == 1 {
-            let orig_ty = self.type_of_var(&name.as_ids()[0].clone().into(), TypeOfMode::RValue, None)?;
+            let orig_ty = self.type_of_var(&id, TypeOfMode::RValue, None)?;
 
             let narrowed = self
                 .narrow_with_equality(&orig_ty, equals_to)
@@ -1208,7 +1249,6 @@ impl Analyzer<'_, '_> {
             return Ok((name, narrowed));
         }
 
-        let span = equals_to.span();
         let eq_ty = equals_to.normalize();
 
         // We create a type fact for `foo` in `if (foo.type === 'bar');`
@@ -1223,7 +1263,7 @@ impl Analyzer<'_, '_> {
             sym: ids[ids.len() - 1].sym().clone(),
         };
 
-        let ty = self.type_of_var(&ids[0].clone().into(), TypeOfMode::RValue, None)?;
+        let ty = self.type_of_var(&id, TypeOfMode::RValue, None)?;
         let ty = self.expand_top_ref(span, Cow::Owned(ty))?.into_owned();
 
         match ty.normalize() {

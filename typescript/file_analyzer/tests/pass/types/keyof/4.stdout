@@ -4,7 +4,7 @@ warning: Type
 10 | foo = keys
    |       ^^^^
    |
-   = note: Keys
+   = note: string | number | symbol
 
 warning: Type
   --> $DIR/tests/pass/types/keyof/4.ts:10:1
@@ -12,7 +12,7 @@ warning: Type
 10 | foo = keys
    | ^^^^^^^^^^
    |
-   = note: Keys
+   = note: string | number | symbol
 
 warning: Type
   --> $DIR/tests/pass/types/keyof/4.ts:11:8

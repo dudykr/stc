@@ -20,7 +20,7 @@ stc_ts_type_checker = {path = "./typescript/type_checker"}
 stc_utils = {path = "utils"}
 structopt = "0.3.20"
 swc_common = {version = "0.10.12", features = ["tty-emitter"]}
-swc_ecma_parser = "0.56.1"
+swc_ecma_parser = "0.57.1"
 
 [profile.release]
 codegen-units = 1
@@ -40,8 +40,17 @@ opt-level = 3
 [profile.dev.package."*"]
 opt-level = 3
 
+[profile.dev.package.stc_ts_types]
+opt-level = 3
+
+[profile.dev.package.stc_ts_ast_rnode]
+opt-level = 3
+
 [profile.test.build-override]
 opt-level = 3
 
-[profile.test.package."*"]
+[profile.test.package.stc_ts_types]
+opt-level = 3
+
+[profile.test.package.stc_ts_ast_rnode]
 opt-level = 3

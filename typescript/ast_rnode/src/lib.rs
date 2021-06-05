@@ -1235,6 +1235,7 @@ define_rnode!({
         pub is_export: bool,
         pub id: Ident,
         pub module_ref: TsModuleRef,
+        pub is_type_only: bool,
     }
     pub enum TsModuleRef {
         TsEntityName(TsEntityName),

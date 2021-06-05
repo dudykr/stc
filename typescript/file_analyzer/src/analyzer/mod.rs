@@ -43,7 +43,8 @@ use stc_ts_storage::Info;
 use stc_ts_storage::Storage;
 use stc_ts_types::IdCtx;
 use stc_ts_types::{Id, ModuleId, ModuleTypeData, SymbolIdGenerator};
-use stc_utils::FastHashMap;
+use stc_utils::AHashMap;
+use stc_utils::AHashSet;
 use std::mem::take;
 use std::{
     fmt::Debug,
@@ -80,7 +81,7 @@ mod generalize;
 mod generic;
 mod hoisting;
 mod import;
-mod marks;
+pub(crate) mod marks;
 mod pat;
 mod props;
 mod scope;
@@ -108,6 +109,8 @@ pub(crate) struct Ctx {
     module_id: ModuleId,
 
     phase: Phase,
+
+    in_const_assertion: bool,
 
     diallow_unknown_object_property: bool,
     disallow_optional_object_property: bool,
@@ -164,7 +167,10 @@ pub(crate) struct Ctx {
     reevaluating_call_or_new: bool,
     reevaluating_argument: bool,
 
-    reevaluating_loop_body: bool,
+    /// If true, all errors should be ignored.
+    ///
+    /// Used to prevent wrong errors while validate loop bodies or etc.
+    ignore_errors: bool,
 
     var_kind: VarDeclKind,
     pat_mode: PatMode,
@@ -197,9 +203,6 @@ pub(crate) struct Ctx {
     /// parameters.
     preserve_ret_ty: bool,
 
-    /// If true, **recovereable** errors are ignored. Used for trying.
-    ignore_errors: bool,
-
     skip_union_while_inferencing: bool,
 
     skip_identical_while_inferencing: bool,
@@ -222,11 +225,11 @@ pub(crate) struct Ctx {
 
 impl Ctx {
     pub fn reevaluating(self) -> bool {
-        self.reevaluating_argument || self.reevaluating_call_or_new || self.reevaluating_loop_body
+        self.reevaluating_argument || self.reevaluating_call_or_new
     }
 
     pub fn can_generalize_literals(self) -> bool {
-        !self.in_argument && !self.in_cond_of_cond_expr
+        !self.in_const_assertion && !self.in_argument && !self.in_cond_of_cond_expr
     }
 }
 
@@ -260,7 +263,7 @@ pub struct Analyzer<'scope, 'b> {
 
     loader: &'b dyn Load,
 
-    is_builtin: bool,
+    pub(crate) is_builtin: bool,
 
     duplicated_tracker: DuplicateTracker,
 
@@ -285,14 +288,23 @@ struct AnalyzerData {
     /// Filled only once, by `fill_known_type_names`.
     all_local_type_names: FxHashSet<Id>,
 
+    unresolved_imports: AHashSet<Id>,
+
     /// Spans of declared variables.
-    var_spans: FastHashMap<Id, Vec<Span>>,
+    var_spans: AHashMap<Id, Vec<Span>>,
 
     /// Spans of functions **with body**.
     fn_impl_spans: FxHashMap<Id, Vec<Span>>,
 
     /// One instance of each module (typescript `module` keyword).
     for_module: PerModuleData,
+
+    /// When multiple overloads are wrong, tsc reports an error only for first
+    /// one.
+    ///
+    /// We mimic it by storing names of wrong overloads.
+    /// Only first wrong overload should be added to this set.
+    known_wrong_overloads: FxHashSet<Id>,
 }
 
 #[derive(Debug, Default)]
@@ -482,6 +494,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             ctx: Ctx {
                 module_id: ModuleId::builtin(),
                 phase: Default::default(),
+                in_const_assertion: false,
                 diallow_unknown_object_property: false,
                 disallow_optional_object_property: false,
                 use_undefined_for_empty_tuple: false,
@@ -509,7 +522,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 in_static_property_initializer: false,
                 reevaluating_call_or_new: false,
                 reevaluating_argument: false,
-                reevaluating_loop_body: false,
+                ignore_errors: false,
                 var_kind: VarDeclKind::Var,
                 pat_mode: PatMode::Assign,
                 computed_prop_mode: ComputedPropMode::Object,
@@ -524,7 +537,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 ignore_expand_prevention_for_all: false,
                 preserve_params: false,
                 preserve_ret_ty: false,
-                ignore_errors: false,
                 skip_union_while_inferencing: false,
                 skip_identical_while_inferencing: false,
                 super_references_super_class: false,
@@ -563,10 +575,27 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         .unwrap()
     }
 
-    /// TODO: Move return values to parent scope
     pub(crate) fn with_child<F, Ret>(&mut self, kind: ScopeKind, facts: CondFacts, op: F) -> ValidationResult<Ret>
     where
         F: for<'aa, 'bb> FnOnce(&mut Analyzer<'aa, 'bb>) -> ValidationResult<Ret>,
+    {
+        self.with_child_with_hook(kind, facts, op, |_| {})
+    }
+
+    ///
+    ///
+    ///
+    /// Hook is invoked with `self` (not child) after `op`.
+    pub(crate) fn with_child_with_hook<F, Ret, H>(
+        &mut self,
+        kind: ScopeKind,
+        facts: CondFacts,
+        op: F,
+        hook: H,
+    ) -> ValidationResult<Ret>
+    where
+        F: for<'aa, 'bb> FnOnce(&mut Analyzer<'aa, 'bb>) -> ValidationResult<Ret>,
+        H: for<'aa, 'bb> FnOnce(&mut Analyzer<'aa, 'bb>),
     {
         let ctx = self.ctx;
         let imports = take(&mut self.imports);
@@ -603,9 +632,15 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
 
             let ret = op(&mut child);
 
+            let errors = if child.ctx.ignore_errors {
+                Default::default()
+            } else {
+                child.storage.take_errors()
+            };
+
             (
                 ret,
-                child.storage.take_errors(),
+                errors,
                 child.imports,
                 child.imports_by_id,
                 child.cur_facts,
@@ -623,25 +658,15 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         self.imports_by_id = imports_by_id;
         self.cur_facts = cur_facts;
         self.mutations = mutations;
+        self.data = data;
 
-        // if !self.is_builtin {
-        //     assert_eq!(
-        //         info.exports.types,
-        //         Default::default(),
-        //         "child cannot export a type"
-        //     );
-        //     assert!(
-        //         info.exports.vars.is_empty(),
-        //         "child cannot export a variable"
-        //     );
-        // }
+        hook(self);
 
         self.duplicated_tracker.record_all(dup);
         self.scope.move_types_from_child(&mut child_scope);
         self.scope.move_vars_from_child(&mut child_scope);
         self.prepend_stmts.extend(prepend_stmts);
         self.append_stmts.extend(append_stmts);
-        self.data = data;
         if kind == ScopeKind::Module {
             self.data.for_module = module_data;
         }
@@ -919,12 +944,18 @@ impl Analyzer<'_, '_> {
                 // Ambient module members are always exported with or without export keyword
                 if decl.declare {
                     for (id, var) in take(&mut exports.private_vars) {
+                        var.assert_valid();
+
                         if !exports.vars.contains_key(id.sym()) {
                             exports.vars.insert(id.sym().clone(), var);
                         }
                     }
 
                     for (id, ty) in take(&mut exports.private_types) {
+                        for ty in &ty {
+                            ty.assert_valid();
+                        }
+
                         if !exports.types.contains_key(id.sym()) {
                             exports.types.insert(id.sym().clone(), ty);
                         }

@@ -10,6 +10,7 @@ use stc_ts_ast_rnode::RStr;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
+use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_type_ops::is_str_lit_or_union;
 use stc_ts_types::ClassDef;
 use stc_ts_types::Key;
@@ -42,6 +43,7 @@ impl Analyzer<'_, '_> {
                     return false;
                 }
             }
+
             _ => {}
         }
 
@@ -60,11 +62,18 @@ impl Analyzer<'_, '_> {
         true
     }
 
+    /// TODO: Optimize by visiting only literal types.
     pub(super) fn prevent_generalize(&self, ty: &mut Type) {
-        let span = ty.span();
-        let span = span.apply_mark(self.marks().prevent_generalization_mark);
+        ty.visit_mut_with(&mut Marker {
+            mark: self.marks().prevent_generalization_mark,
+        });
+    }
 
-        ty.respan(span)
+    /// TODO: Optimize by visiting only tuple types.
+    pub(super) fn prevent_tuple_to_array(&self, ty: &mut Type) {
+        ty.visit_mut_with(&mut Marker {
+            mark: self.marks().prevent_tuple_to_array,
+        });
     }
 
     pub(super) fn prevent_inference_while_simplifying(&self, ty: &mut Type) {
@@ -78,7 +87,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn simplify(&self, ty: Type) -> Type {
-        slog::info!(self.logger, "Simplifying");
+        slog::info!(self.logger, "Simplifying {}", dump_type_as_string(&self.cm, &ty));
         ty.fold_with(&mut Simplifier {
             env: &self.env,
             logger: self.logger.clone(),

@@ -4,5 +4,5 @@ warning: Type
 6 | keys
   | ^^^^
   |
-  = note: Keys
+  = note: never
 

@@ -1,0 +1,8 @@
+warning: Type
+ --> $DIR/tests/visualize/controlFlow/refInInit/1.ts:1:16
+  |
+1 | for (var of of of) { }
+  |                ^^
+  |
+  = note: any
+

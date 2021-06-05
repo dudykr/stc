@@ -29,6 +29,7 @@ use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_types::Array;
+use stc_ts_types::Instance;
 use stc_ts_types::Key;
 use stc_ts_types::PropertySignature;
 use stc_ts_types::Tuple;
@@ -193,6 +194,8 @@ impl Analyzer<'_, '_> {
             debug_assert_ne!(p.span(), DUMMY_SP, "A pattern should have a valid span");
         }
 
+        let marks = self.marks();
+
         if self.ctx.in_declare {
             match p {
                 RPat::Assign(p) => self
@@ -232,12 +235,21 @@ impl Analyzer<'_, '_> {
                     _ => None,
                 }) {
                     None => None,
-                    Some(ty) => Some(ty.validate_with(self)),
+                    Some(ty) => Some({
+                        let span = ty.span();
+                        ty.validate_with(self).map(|ty| {
+                            if ty.normalize().is_type_param() || ty.normalize().is_query() {
+                                return ty;
+                            }
+                            Type::Instance(Instance { span, ty: box ty })
+                        })
+                    }),
                 }
             })
             .map(|res| res.map(|ty| ty.cheap()))
             .try_opt()?;
 
+        let prev_declaring_len = self.scope.declaring.len();
         // Declaring names
         let mut names = vec![];
 
@@ -261,7 +273,24 @@ impl Analyzer<'_, '_> {
                 p.visit_with(&mut visitor);
 
                 self.scope.declaring.extend(names.clone());
+            }
 
+            PatMode::Assign => {}
+        }
+
+        let default_value_ty = if let RPat::Assign(assign_pat) = p {
+            let ctx = Ctx {
+                cannot_be_tuple: true,
+                ..self.ctx
+            };
+            let mut a = self.with_ctx(ctx);
+            assign_pat.right.validate_with_default(&mut *a).report(&mut a.storage)
+        } else {
+            None
+        };
+
+        match self.ctx.pat_mode {
+            PatMode::Decl => {
                 if !self.is_builtin {
                     match self.declare_vars_with_ty(VarDeclKind::Let, p, ty.clone(), None) {
                         Ok(()) => {}
@@ -274,6 +303,8 @@ impl Analyzer<'_, '_> {
 
             PatMode::Assign => {}
         }
+
+        self.scope.declaring.truncate(prev_declaring_len);
 
         // Mark pattern as optional if default value exists
         match p {
@@ -301,37 +332,37 @@ impl Analyzer<'_, '_> {
         let res = (|| -> ValidationResult<()> {
             if let RPat::Assign(assign_pat) = p {
                 // Handle default value
+                if let Some(default_value_ty) = default_value_ty.clone() {
+                    let ty = assign_pat
+                        .left
+                        .get_ty()
+                        .map(|v| v.validate_with(self))
+                        .unwrap_or_else(|| {
+                            let mut ty = default_value_ty.generalize_lit(marks).foldable();
 
-                let default_value_ty = assign_pat.right.validate_with_default(self)?;
+                            match ty {
+                                Type::Tuple(tuple) => {
+                                    let mut types =
+                                        tuple.elems.into_iter().map(|element| *element.ty).collect::<Vec<_>>();
 
-                let ty = assign_pat
-                    .left
-                    .get_ty()
-                    .map(|v| v.validate_with(self))
-                    .unwrap_or_else(|| {
-                        let mut ty = default_value_ty.generalize_lit().foldable();
+                                    types.dedup_type();
 
-                        match ty {
-                            Type::Tuple(tuple) => {
-                                let mut types = tuple.elems.into_iter().map(|element| *element.ty).collect::<Vec<_>>();
-
-                                types.dedup_type();
-
-                                ty = Type::Array(Array {
-                                    span: tuple.span,
-                                    elem_type: box Type::union(types),
-                                });
+                                    ty = Type::Array(Array {
+                                        span: tuple.span,
+                                        elem_type: box Type::union(types),
+                                    });
+                                }
+                                _ => {}
                             }
-                            _ => {}
+
+                            Ok(ty)
+                        })?;
+
+                    // Remove default value.
+                    if let Some(pat_node_id) = assign_pat.left.node_id() {
+                        if let Some(m) = &mut self.mutations {
+                            m.for_pats.entry(pat_node_id).or_default().ty = Some(ty)
                         }
-
-                        Ok(ty)
-                    })?;
-
-                // Remove default value.
-                if let Some(pat_node_id) = assign_pat.left.node_id() {
-                    if let Some(m) = &mut self.mutations {
-                        m.for_pats.entry(pat_node_id).or_default().ty = Some(ty)
                     }
                 }
             }
@@ -339,14 +370,12 @@ impl Analyzer<'_, '_> {
             Ok(())
         })();
 
-        self.scope.remove_declaring(names);
-
         res?;
 
         let ty = match ty {
             Some(v) => Some(v),
             None => match p {
-                RPat::Assign(p) => Some(p.right.validate_with_default(self)?.generalize_lit()),
+                RPat::Assign(p) => Some(p.right.validate_with_default(self)?.generalize_lit(marks)),
                 _ => None,
             },
         };

@@ -3,6 +3,7 @@ use crate::analyzer::Analyzer;
 use crate::util::type_ext::TypeVecExt;
 use crate::ValidationResult;
 use stc_ts_errors::DebugExt;
+use stc_ts_type_ops::Fix;
 use stc_ts_types::Type;
 use stc_ts_types::Union;
 use std::borrow::Cow;
@@ -16,6 +17,9 @@ impl Analyzer<'_, '_> {
         declared: Type,
         actual: &Type,
     ) -> ValidationResult {
+        declared.assert_valid();
+        actual.assert_valid();
+
         match actual.normalize() {
             Type::Ref(..) => {
                 let actual = self
@@ -41,7 +45,8 @@ impl Analyzer<'_, '_> {
                 return Ok(Type::Union(Union {
                     span: actual.span,
                     types: new_types,
-                }));
+                })
+                .fixed());
             }
             _ => {}
         }
@@ -78,7 +83,8 @@ impl Analyzer<'_, '_> {
                 Ok(Type::Union(Union {
                     span: actual.span(),
                     types: new_types,
-                }))
+                })
+                .fixed())
             }
             _ => {
                 if let Ok(()) = self.assign_with_opts(

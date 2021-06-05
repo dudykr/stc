@@ -1,0 +1,116 @@
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/8.ts:12:27
+   |
+12 | export const none: None = { none: '' };
+   |                           ^^^^^^^^^^^^
+   |
+   = note: {
+               none: '';
+           }
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/8.ts:15:22
+   |
+15 |     return 'some' in value;
+   |                      ^^^^^
+   |
+   = note: Some<a> | None
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/8.ts:15:12
+   |
+15 |     return 'some' in value;
+   |            ^^^^^^^^^^^^^^^
+   |
+   = note: boolean
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/8.ts:19:12
+   |
+19 |     return { some };
+   |            ^^^^^^^^
+   |
+   = note: {
+               some: a;
+           }
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/8.ts:23:16
+   |
+23 |     if (typeof x === "string" && typeof x === "number") {
+   |                ^
+   |
+   = note: string | number
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/8.ts:23:9
+   |
+23 |     if (typeof x === "string" && typeof x === "number") {
+   |         ^^^^^^^^
+   |
+   = note: string
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/8.ts:23:9
+   |
+23 |     if (typeof x === "string" && typeof x === "number") {
+   |         ^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: boolean
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/8.ts:23:41
+   |
+23 |     if (typeof x === "string" && typeof x === "number") {
+   |                                         ^
+   |
+   = note: string
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/8.ts:23:34
+   |
+23 |     if (typeof x === "string" && typeof x === "number") {
+   |                                  ^^^^^^^^
+   |
+   = note: string
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/8.ts:23:34
+   |
+23 |     if (typeof x === "string" && typeof x === "number") {
+   |                                  ^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: boolean
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/8.ts:23:9
+   |
+23 |     if (typeof x === "string" && typeof x === "number") {
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: boolean
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/8.ts:24:9
+   |
+24 |         x;  // number (guard as assertion)
+   |         ^
+   |
+   = note: never
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/8.ts:27:9
+   |
+27 |         x;  // string | number
+   |         ^
+   |
+   = note: string | number
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/8.ts:29:5
+   |
+29 |     x;  // string | number
+   |     ^
+   |
+   = note: string | number
+

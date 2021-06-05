@@ -266,9 +266,11 @@ impl Analyzer<'_, '_> {
                 | ScopeKind::ArrowFn
                 | ScopeKind::Class
                 | ScopeKind::ObjectLit => true,
-                ScopeKind::LoopBody | ScopeKind::Block | ScopeKind::Flow | ScopeKind::TypeParams | ScopeKind::Call => {
-                    false
-                }
+                ScopeKind::LoopBody { .. }
+                | ScopeKind::Block
+                | ScopeKind::Flow
+                | ScopeKind::TypeParams
+                | ScopeKind::Call => false,
             });
             if let Some(scope) = scope {
                 match scope.kind() {
@@ -287,7 +289,9 @@ impl Analyzer<'_, '_> {
     }
 
     fn is_type_valid_for_computed_key(&mut self, span: Span, ty: &Type) -> bool {
-        let ty = ty.clone().generalize_lit();
+        let marks = self.marks();
+
+        let ty = ty.clone().generalize_lit(marks);
 
         match ty.normalize() {
             Type::Function(..) => return false,
@@ -296,7 +300,11 @@ impl Analyzer<'_, '_> {
         let ty = self.normalize(None, Cow::Owned(ty), Default::default());
         let ty = match ty {
             Ok(v) => v,
-            _ => return true,
+            Err(err) => {
+                self.storage.report(err);
+                // Don't report more errors.
+                return true;
+            }
         };
         match ty.normalize() {
             Type::Keyword(RTsKeywordType {

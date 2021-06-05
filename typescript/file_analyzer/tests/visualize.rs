@@ -32,9 +32,10 @@ use swc_ecma_parser::Syntax;
 use swc_ecma_parser::TsConfig;
 use swc_ecma_transforms::resolver::ts_resolver;
 use swc_ecma_visit::FoldWith;
+use testing::NormalizedOutput;
 
 /// If `for_error` is false, this function will run as type dump mode.
-fn run_test(file_name: PathBuf, for_error: bool) {
+fn run_test(file_name: PathBuf, logger: slog::Logger, for_error: bool) -> Option<NormalizedOutput> {
     let fname = file_name.display().to_string();
     println!("{}", fname);
 
@@ -114,29 +115,29 @@ fn run_test(file_name: PathBuf, for_error: bool) {
                 Some(&comments),
             );
             let mut parser = Parser::new_from(lexer);
-            let log = logger();
             let module = parser.parse_module().unwrap();
             let module = GLOBALS.set(stable_env.swc_globals(), || {
                 module.fold_with(&mut ts_resolver(stable_env.marks().top_level_mark()))
             });
             let module = RModule::from_orig(&mut node_id_gen, module);
             {
-                let mut analyzer = Analyzer::root(
-                    log.logger,
-                    env,
-                    cm.clone(),
-                    box &mut storage,
-                    &NoopLoader,
-                    if for_error {
-                        None
-                    } else {
-                        Some(Debugger {
-                            cm: cm.clone(),
-                            handler: handler.clone(),
-                        })
-                    },
-                );
                 GLOBALS.set(stable_env.swc_globals(), || {
+                    let mut analyzer = Analyzer::root(
+                        logger,
+                        env,
+                        cm.clone(),
+                        box &mut storage,
+                        &NoopLoader,
+                        if for_error {
+                            None
+                        } else {
+                            Some(Debugger {
+                                cm: cm.clone(),
+                                handler: handler.clone(),
+                            })
+                        },
+                    );
+
                     module.validate_with(&mut analyzer).unwrap();
                 });
             }
@@ -156,22 +157,30 @@ fn run_test(file_name: PathBuf, for_error: bool) {
 
     if for_error {
         if res.trim().is_empty() {
-            return;
+            return None;
         }
 
         panic!("Failed to validate.\n{}\n{}", res, file_name.display())
     } else {
-        res.compare_to_file(&file_name.with_extension("stdout")).unwrap();
+        return Some(res);
     }
 }
 
 #[testing::fixture("visualize/**/*.ts", exclude(".*\\.\\.d.\\.ts"))]
 fn visualize(file_name: PathBuf) {
-    run_test(file_name, false);
+    let log = logger();
+    let res = run_test(file_name.clone(), log.logger, false).unwrap();
+    res.compare_to_file(&file_name.with_extension("stdout")).unwrap();
 }
 
 #[testing::fixture("pass/**/*.ts", exclude(".*\\.\\.d.\\.ts"))]
 fn pass(file_name: PathBuf) {
-    run_test(file_name.clone(), true);
-    run_test(file_name, false);
+    let null_logger = slog::Logger::root(slog::Discard, slog::o!());
+    let res = run_test(file_name.clone(), null_logger, false).unwrap();
+    println!("TYPES: {}", res);
+
+    let log = logger();
+    run_test(file_name.clone(), log.logger, true);
+
+    res.compare_to_file(&file_name.with_extension("stdout")).unwrap();
 }
