@@ -38,6 +38,7 @@ use stc_ts_types::ComputedKey;
 use stc_ts_types::ConstructorSignature;
 use stc_ts_types::Id;
 use stc_ts_types::IdCtx;
+use stc_ts_types::Instance;
 use stc_ts_types::Intersection;
 use stc_ts_types::Key;
 use stc_ts_types::MethodSignature;
@@ -460,6 +461,12 @@ impl Analyzer<'_, '_> {
         let ty = ty.into_owned().foldable();
 
         Ok(match ty {
+            // For self-references in classes, we preserve `instanceof` type.
+            Type::Ref(..) => Type::Instance(Instance {
+                span: actual_span,
+                ty: box ty,
+            }),
+
             Type::ClassDef(def) => Type::Class(Class {
                 span: actual_span,
                 def: box def,
