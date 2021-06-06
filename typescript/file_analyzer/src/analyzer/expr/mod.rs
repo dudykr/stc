@@ -2483,12 +2483,7 @@ impl Analyzer<'_, '_> {
                     "Creating ref because we are currently defining a class: {}",
                     i.sym
                 );
-                return Ok(Type::Ref(Ref {
-                    span,
-                    ctxt: self.ctx.module_id,
-                    type_name: RTsEntityName::Ident(i.clone()),
-                    type_args: None,
-                }));
+                return Ok(Type::StaticThis(StaticThis { span }));
             }
         }
 
