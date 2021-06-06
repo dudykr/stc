@@ -16,6 +16,6 @@ proc-macro2 = "1"
 quote = "1"
 swc_common = "0.10.12"
 swc_ecma_ast = "0.45.0"
-swc_ecma_parser = "0.57.1"
+swc_ecma_parser = "0.57.3"
 swc_macros_common = "0.3"
 syn = {version = "1", features = ["full"]}

@@ -23,5 +23,5 @@ stc_ts_types = {path = "../types"}
 swc_atoms = "0.2.5"
 swc_common = {version = "0.10.12", features = ["concurrent"]}
 swc_ecma_ast = "0.45.0"
-swc_ecma_parser = "0.57.1"
+swc_ecma_parser = "0.57.3"
 swc_ecma_visit = "0.31.0"

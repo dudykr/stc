@@ -28,9 +28,9 @@ stc_ts_file_analyzer = {path = "../file_analyzer"}
 stc_ts_storage = {path = "../storage"}
 swc_common = "0.10.12"
 swc_ecma_ast = "0.45.0"
-swc_ecma_codegen = "0.55.1"
-swc_ecma_parser = "0.57.1"
-swc_ecma_transforms = "0.50.0"
+swc_ecma_codegen = "0.55.4"
+swc_ecma_parser = "0.57.3"
+swc_ecma_transforms = "0.50.2"
 swc_ecma_utils = "0.36.0"
 swc_ecma_visit = "0.31.0"
 testing = "0.10.2"

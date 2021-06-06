@@ -40,14 +40,14 @@ string_enum = "0.3.1"
 swc_atoms = "0.2.5"
 swc_common = {version = "0.10.12", features = ["concurrent"]}
 swc_ecma_ast = "0.45.0"
-swc_ecma_codegen = "0.55.1"
-swc_ecma_parser = "0.57.1"
+swc_ecma_codegen = "0.55.4"
+swc_ecma_parser = "0.57.3"
 swc_ecma_utils = "0.36.0"
 
 [dev-dependencies]
 stc_testing = {path = "../../testing"}
 stc_ts_testing = {path = "../testing"}
-swc_ecma_parser = "0.57.1"
-swc_ecma_transforms = "0.50.0"
+swc_ecma_parser = "0.57.3"
+swc_ecma_transforms = "0.50.2"
 swc_ecma_visit = "0.31.0"
 testing = "0.10.2"
