@@ -416,7 +416,15 @@ impl Analyzer<'_, '_> {
                     RPropName::Computed(_) => true,
                     _ => false,
                 };
-                let ty = kv.value.validate_with_default(self)?;
+
+                let type_ann = object_type.and_then(|obj| {
+                    self.access_property(span, &obj, &key, TypeOfMode::RValue, IdCtx::Var)
+                        .ok()
+                });
+
+                let ty = kv
+                    .value
+                    .validate_with_args(self, (TypeOfMode::RValue, None, type_ann.as_ref()))?;
 
                 PropertySignature {
                     span,
