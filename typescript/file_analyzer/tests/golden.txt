@@ -164,6 +164,8 @@ tests/pass/types/facts/field/literal-union-1.ts
 tests/pass/types/generic/call-chain-1.ts
 tests/pass/types/generic/extends/1.ts
 tests/pass/types/guards/nested-assignment-1.ts
+tests/pass/types/inference/generatedContextualTypings/1.ts
+tests/pass/types/inference/generatedContextualTypings/3.ts
 tests/pass/types/inference/generic/contextual/contextual-1-1.ts
 tests/pass/types/inference/generic/contextual/contextual-2-2.ts
 tests/pass/types/inference/generic/contextual/contextual-2-3-1.ts
