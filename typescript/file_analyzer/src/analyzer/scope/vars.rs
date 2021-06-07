@@ -225,9 +225,15 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
             RPat::Assign(ref p) => {
+                let type_ann = p.left.get_ty();
+                let type_ann = match type_ann {
+                    Some(v) => v.validate_with(self).report(&mut self.storage),
+                    None => None,
+                };
+
                 let right = p
                     .right
-                    .validate_with_args(self, (TypeOfMode::RValue, None, None))
+                    .validate_with_args(self, (TypeOfMode::RValue, None, type_ann.as_ref()))
                     .report(&mut self.storage);
 
                 slog::debug!(
