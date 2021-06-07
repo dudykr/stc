@@ -278,17 +278,6 @@ impl Analyzer<'_, '_> {
             PatMode::Assign => {}
         }
 
-        let default_value_ty = if let RPat::Assign(assign_pat) = p {
-            let ctx = Ctx {
-                cannot_be_tuple: true,
-                ..self.ctx
-            };
-            let mut a = self.with_ctx(ctx);
-            assign_pat.right.validate_with_default(&mut *a).report(&mut a.storage)
-        } else {
-            None
-        };
-
         match self.ctx.pat_mode {
             PatMode::Decl => {
                 if !self.is_builtin {
@@ -303,6 +292,22 @@ impl Analyzer<'_, '_> {
 
             PatMode::Assign => {}
         }
+
+        let default_value_ty = match self.ctx.pat_mode {
+            PatMode::Assign => {
+                if let RPat::Assign(assign_pat) = p {
+                    let ctx = Ctx {
+                        cannot_be_tuple: true,
+                        ..self.ctx
+                    };
+                    let mut a = self.with_ctx(ctx);
+                    assign_pat.right.validate_with_default(&mut *a).report(&mut a.storage)
+                } else {
+                    None
+                }
+            }
+            PatMode::Decl => None,
+        };
 
         self.scope.declaring.truncate(prev_declaring_len);
 
