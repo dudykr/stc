@@ -8,7 +8,7 @@ version = "0.1.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-backtrace = "0.3.55"
+backtrace = "0.3.60"
 bitflags = "1.2.1"
 dashmap = {version = "3", features = ["raw-api"]}
 derivative = "2.1.1"

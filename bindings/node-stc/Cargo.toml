@@ -11,7 +11,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 anyhow = "1"
-backtrace = "0.3"
+backtrace = "0.3.60"
 napi = {version = "1", features = ["serde-json"]}
 napi-derive = {version = "1"}
 stc = {path = "../../"}
