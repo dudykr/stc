@@ -284,7 +284,7 @@ impl Analyzer<'_, '_> {
                                 actual_ty.assert_valid();
 
                                 // let ty = ty.fold_with(&mut Generalizer::default());
-                                match self.declare_complex_vars(kind, &v.name, ty, Some(actual_ty)) {
+                                match self.declare_complex_vars(kind, &v.name, ty, Some(actual_ty), None) {
                                     Ok(()) => {}
                                     Err(err) => {
                                         self.storage.report(err);
@@ -296,7 +296,7 @@ impl Analyzer<'_, '_> {
                             Err(err) => {
                                 self.storage.report(err);
 
-                                match self.declare_complex_vars(kind, &v.name, ty, None) {
+                                match self.declare_complex_vars(kind, &v.name, ty, None, None) {
                                     Ok(()) => {}
                                     Err(err) => {
                                         self.storage.report(err);
@@ -591,7 +591,7 @@ impl Analyzer<'_, '_> {
                         })()?
                         .cheap();
 
-                        self.declare_complex_vars(kind, &v.name, var_ty.clone(), None)
+                        self.declare_complex_vars(kind, &v.name, var_ty.clone(), None, None)
                             .report(&mut self.storage);
                         remove_declaring!();
                         return Ok(());
@@ -606,7 +606,7 @@ impl Analyzer<'_, '_> {
                     .cloned();
 
                 if let Some(var_ty) = var_ty {
-                    self.declare_complex_vars(kind, &v.name, var_ty, None)
+                    self.declare_complex_vars(kind, &v.name, var_ty, None, None)
                         .report(&mut self.storage);
                     remove_declaring!();
                     return Ok(());
