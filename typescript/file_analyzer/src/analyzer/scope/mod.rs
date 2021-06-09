@@ -1650,15 +1650,13 @@ impl Analyzer<'_, '_> {
                                     }
                                 }
                                 Err(err) => {
-                                    self.storage.report(err.convert(|err| match err {
+                                    match err.actual() {
                                         Error::NoSuchProperty { span, .. }
-                                        | Error::NoSuchPropertyInClass { span, .. }
-                                            if !should_use_no_such_property =>
-                                        {
-                                            Error::NoInitAndNoDefault { span }
+                                        | Error::NoSuchPropertyInClass { span, .. } => {}
+                                        _ => {
+                                            self.storage.report(err);
                                         }
-                                        _ => err,
-                                    }));
+                                    }
 
                                     self.declare_vars_inner_with_ty(
                                         kind,
