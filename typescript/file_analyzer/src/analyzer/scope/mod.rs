@@ -1457,18 +1457,23 @@ impl Analyzer<'_, '_> {
         match pat {
             // TODO
             RPat::Assign(p) => {
-                let _right = p
+                let right = p
                     .right
                     .validate_with_args(self, (TypeOfMode::RValue, None, None))
                     .report(&mut self.storage);
-                {
-                    // TODO: Use union of default value and rhs value.
+                let ty = {
+                    //  Use union of default value and rhs value.
                     //
                     // This is required to handle
                     //
                     // `let [{ [order(1)]: y } = order(0)] = [{}];`
                     //
-                }
+                    Type::Union(Union {
+                        span: p.span,
+                        types: once(ty).chain(right).collect(),
+                    })
+                    .fixed()
+                };
 
                 return self.declare_complex_vars(kind, &p.left, ty, actual_ty);
             }
