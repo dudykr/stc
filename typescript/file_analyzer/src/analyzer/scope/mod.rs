@@ -1480,11 +1480,14 @@ impl Analyzer<'_, '_> {
                     i.id.sym,
                     dump_type_as_string(&self.cm, &ty)
                 );
+
+                let ty = opt_union(span, Some(ty), default_ty);
+
                 self.declare_var(
                     span,
                     kind,
                     i.id.clone().into(),
-                    Some(ty),
+                    ty,
                     actual_ty,
                     // initialized
                     true,
