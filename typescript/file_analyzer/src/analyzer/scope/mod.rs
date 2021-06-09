@@ -3,6 +3,7 @@ use super::class::ClassState;
 use super::{control_flow::CondFacts, expr::TypeOfMode, stmt::return_type::ReturnValues, Analyzer, Ctx};
 use crate::analyzer::expr::GetIteratorOpts;
 use crate::analyzer::expr::IdCtx;
+use crate::analyzer::util::opt_union;
 use crate::analyzer::ResultExt;
 use crate::{
     loader::ModuleInfo,
@@ -1425,6 +1426,7 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
+    /// TODO: Merge with declare_vars_*
     pub fn declare_complex_vars(
         &mut self,
         kind: VarDeclKind,
@@ -1631,6 +1633,12 @@ impl Analyzer<'_, '_> {
                                 self.with_ctx(ctx)
                                     .access_property(span, &ty, &key, TypeOfMode::RValue, IdCtx::Var);
 
+                            let default_prop_ty = default_ty.as_ref().and_then(|ty| {
+                                self.with_ctx(ctx)
+                                    .access_property(span, &ty, &key, TypeOfMode::RValue, IdCtx::Var)
+                                    .ok()
+                            });
+
                             match prop_ty {
                                 Ok(prop_ty) => {
                                     let prop_ty = prop_ty.cheap();
@@ -1642,15 +1650,18 @@ impl Analyzer<'_, '_> {
                                                 .context("tried to validate default value of an assignment pattern")
                                                 .report(&mut self.storage);
 
-                                            self.declare_complex_vars(
+                                            let default = opt_union(span, default_prop_ty, default_value_type);
+
+                                            self.declare_vars_inner_with_ty(
                                                 kind,
                                                 &RPat::Ident(RBindingIdent {
                                                     node_id: NodeId::invalid(),
                                                     id: prop.key.clone(),
                                                     type_ann: None,
                                                 }),
-                                                prop_ty.clone(),
+                                                Some(prop_ty.clone()),
                                                 None,
+                                                default,
                                             )
                                             .report(&mut self.storage);
 
@@ -1677,6 +1688,7 @@ impl Analyzer<'_, '_> {
                                                 }),
                                                 prop_ty,
                                                 None,
+                                                default_prop_ty,
                                             )
                                             .report(&mut self.storage);
                                         }
@@ -1702,6 +1714,7 @@ impl Analyzer<'_, '_> {
                                         }),
                                         None,
                                         None,
+                                        default_prop_ty,
                                     )
                                     .report(&mut self.storage);
                                 }
@@ -1712,8 +1725,11 @@ impl Analyzer<'_, '_> {
                                 .exclude_props(pat.span(), &ty, &used_keys)
                                 .context("tried to exclude keys for assignment with a object rest pattern")?;
 
+                            let default =
+                                default_ty.and_then(|ty| self.exclude_props(pat.span(), &ty, &used_keys).ok());
+
                             return self
-                                .declare_complex_vars(kind, &pat.arg, rest_ty, None)
+                                .declare_complex_vars(kind, &pat.arg, rest_ty, None, default)
                                 .context("tried to assign to an object rest pattern");
                         }
                     }
@@ -1737,6 +1753,7 @@ impl Analyzer<'_, '_> {
                             elem_type: box ty,
                         })
                     }),
+                    default_ty,
                 );
             }
 

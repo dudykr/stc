@@ -232,10 +232,11 @@ impl Analyzer<'_, '_> {
                     None => None,
                 };
 
-                let right = p
+                let right: Option<Type> = p
                     .right
                     .validate_with_args(self, (TypeOfMode::RValue, None, type_ann.as_ref()))
                     .report(&mut self.storage);
+                let right = right.unwrap_or_else(|| Type::any(span));
 
                 slog::debug!(
                     self.logger,
@@ -244,7 +245,7 @@ impl Analyzer<'_, '_> {
                     p.left,
                     ty
                 );
-                self.declare_vars_inner_with_ty(kind, &p.left, ty, actual_ty)
+                self.declare_vars_inner_with_ty(kind, &p.left, ty, actual_ty, Some(right))
                     .report(&mut self.storage);
 
                 return Ok(());
@@ -318,7 +319,19 @@ impl Analyzer<'_, '_> {
                                         None => None,
                                     };
 
-                                    self.declare_vars_inner_with_ty(kind, &elem.arg, type_for_rest_arg, None)
+                                    let default = match default_ty {
+                                        Some(ty) => self
+                                            .get_lefting_elements(Some(*span), Cow::Owned(ty), idx)
+                                            .context(
+                                                "tried to get lefting elements of an iterator to declare variables \
+                                                 using a rest pattern",
+                                            )
+                                            .map(Cow::into_owned)
+                                            .report(&mut self.storage),
+                                        None => None,
+                                    };
+
+                                    self.declare_vars_inner_with_ty(kind, &elem.arg, type_for_rest_arg, None, default)
                                         .context("tried to declare lefting elements to the arugment of a rest pattern")
                                         .report(&mut self.storage);
                                     break;
@@ -343,8 +356,25 @@ impl Analyzer<'_, '_> {
                                 None => None,
                             };
 
+                            let default = match &default_ty {
+                                Some(ty) => self
+                                    .access_property(
+                                        elem.span(),
+                                        &ty,
+                                        &Key::Num(RNumber {
+                                            span: elem.span(),
+                                            value: idx as f64,
+                                        }),
+                                        TypeOfMode::RValue,
+                                        IdCtx::Var,
+                                    )
+                                    .context("tried to access property to declare variables using an array pattern")
+                                    .report(&mut self.storage),
+                                None => None,
+                            };
+
                             // TODO: actual_ty
-                            self.declare_vars_inner_with_ty(kind, elem, elem_ty, None)
+                            self.declare_vars_inner_with_ty(kind, elem, elem_ty, None, default)
                                 .report(&mut self.storage);
                         }
                         // Skip
@@ -413,7 +443,7 @@ impl Analyzer<'_, '_> {
                             match &prop.value {
                                 Some(value) => {
                                     // TODO: Assign this
-                                    let _type_of_default_value =
+                                    let type_of_default_value =
                                         value.validate_with_default(self).report(&mut self.storage);
 
                                     // TODO: actual_ty
