@@ -1435,70 +1435,7 @@ impl Analyzer<'_, '_> {
         actual_ty: Option<Type>,
         default_ty: Option<Type>,
     ) -> ValidationResult<()> {
-        ty.assert_valid();
-        if let Some(ty) = &actual_ty {
-            ty.assert_valid();
-        }
-        if let Some(ty) = &default_ty {
-            ty.assert_valid();
-        }
-
-        let span = pat.span();
-
-        if match pat {
-            RPat::Ident(..) => false,
-            _ => true,
-        } {
-            match ty.normalize() {
-                Type::Ref(..) => {
-                    let ty = self
-                        .expand_top_ref(ty.span(), Cow::Borrowed(&ty))
-                        .context("tried to expand reference to declare a complex variable")?;
-
-                    return self.declare_complex_vars(kind, pat, ty.into_owned(), actual_ty, default_ty);
-                }
-                _ => {}
-            }
-        }
-
         match pat {
-            // TODO
-            RPat::Assign(p) => {
-                let right = p
-                    .right
-                    .validate_with_args(self, (TypeOfMode::RValue, None, None))
-                    .report(&mut self.storage)
-                    .unwrap_or_else(|| Type::any(span));
-
-                return self.declare_complex_vars(kind, &p.left, ty, actual_ty, Some(right));
-            }
-
-            RPat::Ident(ref i) => {
-                slog::debug!(
-                    &self.logger,
-                    "declare_complex_vars: declaring {} as {}",
-                    i.id.sym,
-                    dump_type_as_string(&self.cm, &ty)
-                );
-
-                let ty = opt_union(span, Some(ty), default_ty);
-
-                self.declare_var(
-                    span,
-                    kind,
-                    i.id.clone().into(),
-                    ty,
-                    actual_ty,
-                    // initialized
-                    true,
-                    // let/const declarations does not allow multiple declarations with
-                    // same name
-                    kind == VarDeclKind::Var,
-                    false,
-                )?;
-                Ok(())
-            }
-
             RPat::Array(RArrayPat { ref elems, .. }) => {
                 // Handle tuple
                 //

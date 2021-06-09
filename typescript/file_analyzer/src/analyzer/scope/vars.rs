@@ -24,6 +24,7 @@ use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
+use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_type_ops::Fix;
@@ -44,22 +45,111 @@ use swc_common::DUMMY_SP;
 use swc_ecma_ast::TsKeywordTypeKind;
 use swc_ecma_ast::VarDeclKind;
 
-/// All fields default to `false`.
+/// All bool fields default to `false`.
 #[derive(Debug, Default, Clone, Copy)]
 pub(crate) struct DeclareVarsOpts {
+    pub kind: Option<VarDeclKind>,
     pub use_iterator_for_array: bool,
 }
 
 impl Analyzer<'_, '_> {
     /// TODO: Rename to declare_vars
+    ///
+    /// # Parameters
+    ///
+    ///
+    /// ## actual
+    ///
+    /// The type of actual value.
+    ///
+    ///
+    /// ## default
+    ///
+    /// The type of default value specified by an assignment pattern.
     pub(crate) fn add_vars(
         &mut self,
         pat: &RPat,
         ty: Option<Type>,
-        actual_ty: Option<Type>,
-        default_ty: Option<Type>,
+        actual: Option<Type>,
+        default: Option<Type>,
         opts: DeclareVarsOpts,
     ) -> ValidationResult<()> {
+        if let Some(ty) = &ty {
+            ty.assert_valid();
+        }
+        if let Some(ty) = &actual {
+            ty.assert_valid();
+        }
+        if let Some(ty) = &default {
+            ty.assert_valid();
+        }
+
+        let span = pat.span();
+
+        if match pat {
+            RPat::Ident(..) => false,
+            _ => true,
+        } {
+            match ty.as_ref().map(Type::normalize) {
+                Some(ty @ Type::Ref(..)) => {
+                    let ty = self
+                        .expand_top_ref(ty.span(), Cow::Borrowed(&ty))
+                        .context("tried to expand reference to declare a complex variable")?;
+
+                    return self.add_vars(pat, Some(ty), actual, default, opts);
+                }
+                _ => {}
+            }
+        }
+
+        match pat {
+            RPat::Ident(i) => {
+                if let Some(ty) = &ty {
+                    slog::debug!(
+                        &self.logger,
+                        "[vars]: Declaring {} as {}",
+                        i.id.sym,
+                        dump_type_as_string(&self.cm, &ty)
+                    );
+                } else {
+                    slog::debug!(&self.logger, "[vars]: Declaring {} without type", i.id.sym);
+                }
+
+                let ty = opt_union(span, ty, default);
+
+                let kind = opts.kind.unwrap_or(VarDeclKind::Var);
+
+                self.declare_var(
+                    span,
+                    kind,
+                    i.id.clone().into(),
+                    ty,
+                    actual,
+                    // initialized
+                    true,
+                    // let/const declarations does not allow multiple declarations with
+                    // same name
+                    kind == VarDeclKind::Var,
+                    false,
+                )?;
+                Ok(())
+            }
+
+            RPat::Assign(p) => {
+                let right = p
+                    .right
+                    .validate_with_args(self, (TypeOfMode::RValue, None, None))
+                    .report(&mut self.storage)
+                    .unwrap_or_else(|| Type::any(span));
+
+                let default = opt_union(span, default, Some(right));
+
+                return self
+                    .add_vars(&p.left, ty, actual, default, opts)
+                    .context("tried to declare a variable with an assignment pattern");
+            }
+            _ => {}
+        }
     }
 
     pub(crate) fn exclude_props(&mut self, span: Span, ty: &Type, keys: &[Key]) -> ValidationResult<Type> {
