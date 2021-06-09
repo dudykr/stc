@@ -2,6 +2,7 @@ use crate::analyzer::expr::IdCtx;
 use crate::analyzer::expr::TypeOfMode;
 use crate::analyzer::pat::PatMode;
 use crate::analyzer::types::NormalizeTypeOpts;
+use crate::analyzer::util::opt_union;
 use crate::analyzer::util::ResultExt;
 use crate::analyzer::Analyzer;
 use crate::ty::TypeExt;
@@ -426,6 +427,11 @@ impl Analyzer<'_, '_> {
                             };
                             used_keys.push(key.clone());
 
+                            let default_prop_ty = default_ty.as_ref().and_then(|obj| {
+                                self.access_property(span, obj, &key, TypeOfMode::RValue, IdCtx::Var)
+                                    .ok()
+                            });
+
                             let prop_ty = match &ty {
                                 Some(ty) => self
                                     .access_property(span, ty, &key, TypeOfMode::RValue, IdCtx::Var)
@@ -446,6 +452,8 @@ impl Analyzer<'_, '_> {
                                     let type_of_default_value =
                                         value.validate_with_default(self).report(&mut self.storage);
 
+                                    let default = opt_union(span, default_prop_ty, type_of_default_value);
+
                                     // TODO: actual_ty
                                     self.declare_vars_inner_with_ty(
                                         kind,
@@ -456,6 +464,7 @@ impl Analyzer<'_, '_> {
                                         }),
                                         prop_ty,
                                         None,
+                                        default,
                                     )
                                     .context(
                                         "tried to declare a variable from an assignment property in an object pattern",
@@ -473,6 +482,7 @@ impl Analyzer<'_, '_> {
                                         }),
                                         prop_ty,
                                         None,
+                                        default_prop_ty,
                                     )
                                     .context("tried to declare a variable from a simple property in an object pattern")
                                     .report(&mut self.storage);
@@ -496,28 +506,39 @@ impl Analyzer<'_, '_> {
                                 None => None,
                             };
 
+                            let default = default_ty.as_ref().and_then(|obj| {
+                                self.access_property(span, obj, &key, TypeOfMode::RValue, IdCtx::Var)
+                                    .ok()
+                            });
+
                             // TODO: actual_ty
-                            self.declare_vars_inner_with_ty(kind, &p.value, prop_ty, None)
+                            self.declare_vars_inner_with_ty(kind, &p.value, prop_ty, None, default)
                                 .context("tried to declare a variable from key-value property in an object pattern")
                                 .report(&mut self.storage);
                         }
 
-                        RObjectPatProp::Rest(pat) => match ty {
-                            Some(ty) => {
-                                let rest_ty = self
-                                    .exclude_props(span, &ty, &used_keys)
-                                    .context("tried to exclude keys for declare vars with a object rest pattern")?;
+                        RObjectPatProp::Rest(pat) => {
+                            let default = default_ty
+                                .as_ref()
+                                .and_then(|ty| self.exclude_props(span, &ty, &used_keys).ok());
 
-                                return self
-                                    .declare_complex_vars(kind, &pat.arg, rest_ty, None)
-                                    .context("tried to declare vars with an object rest pattern");
+                            match ty {
+                                Some(ty) => {
+                                    let rest_ty = self
+                                        .exclude_props(span, &ty, &used_keys)
+                                        .context("tried to exclude keys for declare vars with a object rest pattern")?;
+
+                                    return self
+                                        .declare_complex_vars(kind, &pat.arg, rest_ty, None, default)
+                                        .context("tried to declare vars with an object rest pattern");
+                                }
+                                None => {
+                                    return self
+                                        .declare_vars_inner_with_ty(kind, &pat.arg, None, None, default)
+                                        .context("tried to declare vars with an object rest pattern without types");
+                                }
                             }
-                            None => {
-                                return self
-                                    .declare_vars_inner_with_ty(kind, &pat.arg, None, None)
-                                    .context("tried to declare vars with an object rest pattern without types");
-                            }
-                        },
+                        }
                     }
                 }
 
