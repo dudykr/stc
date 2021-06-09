@@ -173,6 +173,7 @@ impl Analyzer<'_, '_> {
         pat: &RPat,
         ty: Option<Type>,
         actual_ty: Option<Type>,
+        default_ty: Option<Type>,
     ) -> ValidationResult<()> {
         let marks = self.marks();
 

@@ -842,7 +842,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub fn declare_vars(&mut self, kind: VarDeclKind, pat: &RPat) -> ValidationResult<()> {
-        self.declare_vars_inner_with_ty(kind, pat, None, None)
+        self.declare_vars_inner_with_ty(kind, pat, None, None, None)
     }
 
     pub fn declare_vars_with_ty(
@@ -851,12 +851,13 @@ impl Analyzer<'_, '_> {
         pat: &RPat,
         ty: Option<Type>,
         actual_ty: Option<Type>,
+        default_ty: Option<Type>,
     ) -> ValidationResult<()> {
-        self.declare_vars_inner_with_ty(kind, pat, ty, actual_ty)
+        self.declare_vars_inner_with_ty(kind, pat, ty, actual_ty, default_ty)
     }
 
     pub(super) fn declare_vars_inner(&mut self, kind: VarDeclKind, pat: &RPat) -> ValidationResult<()> {
-        self.declare_vars_inner_with_ty(kind, pat, None, None)
+        self.declare_vars_inner_with_ty(kind, pat, None, None, None)
     }
 
     pub(super) fn resolve_typeof(&mut self, span: Span, name: &RTsEntityName) -> ValidationResult {
@@ -1430,9 +1431,13 @@ impl Analyzer<'_, '_> {
         pat: &RPat,
         ty: Type,
         actual_ty: Option<Type>,
+        default_ty: Option<Type>,
     ) -> ValidationResult<()> {
         ty.assert_valid();
         if let Some(ty) = &actual_ty {
+            ty.assert_valid();
+        }
+        if let Some(ty) = &default_ty {
             ty.assert_valid();
         }
 
@@ -1448,7 +1453,7 @@ impl Analyzer<'_, '_> {
                         .expand_top_ref(ty.span(), Cow::Borrowed(&ty))
                         .context("tried to expand reference to declare a complex variable")?;
 
-                    return self.declare_complex_vars(kind, pat, ty.into_owned(), actual_ty);
+                    return self.declare_complex_vars(kind, pat, ty.into_owned(), actual_ty, default_ty);
                 }
                 _ => {}
             }
@@ -1460,22 +1465,10 @@ impl Analyzer<'_, '_> {
                 let right = p
                     .right
                     .validate_with_args(self, (TypeOfMode::RValue, None, None))
-                    .report(&mut self.storage);
-                let ty = {
-                    //  Use union of default value and rhs value.
-                    //
-                    // This is required to handle
-                    //
-                    // `let [{ [order(1)]: y } = order(0)] = [{}];`
-                    //
-                    Type::Union(Union {
-                        span: p.span,
-                        types: once(ty).chain(right).collect(),
-                    })
-                    .fixed()
-                };
+                    .report(&mut self.storage)
+                    .unwrap_or_else(|| Type::any(span));
 
-                return self.declare_complex_vars(kind, &p.left, ty, actual_ty);
+                return self.declare_complex_vars(kind, &p.left, ty, actual_ty, Some(right));
             }
 
             RPat::Ident(ref i) => {
@@ -1522,6 +1515,22 @@ impl Analyzer<'_, '_> {
                         Cow::Owned(Type::any(span))
                     });
 
+                let default_ty = default_ty.map(|ty| {
+                    self.get_iterator(
+                        span,
+                        Cow::Owned(ty),
+                        GetIteratorOpts {
+                            disallow_str: true,
+                            ..Default::default()
+                        },
+                    )
+                    .context("tried to convert a type to an iterator to assign with an array pattern (default value)")
+                    .unwrap_or_else(|err| {
+                        self.storage.report(err);
+                        Cow::Owned(Type::any(span))
+                    })
+                });
+
                 for (i, elem) in elems.iter().enumerate() {
                     if let Some(elem) = elem {
                         let elem_ty = self
@@ -1531,8 +1540,21 @@ impl Analyzer<'_, '_> {
                                  pattern",
                             )?
                             .into_owned();
+
+                        let default_elem_ty = default_ty
+                            .as_ref()
+                            .and_then(|ty| {
+                                self.get_element_from_iterator(span, Cow::Borrowed(&ty), i)
+                                    .context(
+                                        "tried to get the type of nth element from iterator to declare vars with an \
+                                         array pattern (default value)",
+                                    )
+                                    .ok()
+                            })
+                            .map(Cow::into_owned);
+
                         // TODO: actual_ty
-                        self.declare_complex_vars(kind, elem, elem_ty, None)?;
+                        self.declare_complex_vars(kind, elem, elem_ty, None, default_elem_ty)?;
                     }
                 }
 
@@ -1564,10 +1586,16 @@ impl Analyzer<'_, '_> {
                                 self.with_ctx(ctx)
                                     .access_property(span, &ty, &key, TypeOfMode::RValue, IdCtx::Var);
 
+                            let default_prop_ty = default_ty.as_ref().and_then(|ty| {
+                                self.with_ctx(ctx)
+                                    .access_property(span, &ty, &key, TypeOfMode::RValue, IdCtx::Var)
+                                    .ok()
+                            });
+
                             match prop_ty {
                                 Ok(ty) => {
                                     // TODO: actual_ty
-                                    self.declare_complex_vars(kind, &prop.value, ty, None)
+                                    self.declare_complex_vars(kind, &prop.value, ty, None, default_prop_ty)
                                         .report(&mut self.storage);
                                 }
 
@@ -1582,7 +1610,7 @@ impl Analyzer<'_, '_> {
                                         _ => err,
                                     }));
 
-                                    self.declare_vars_inner_with_ty(kind, &prop.value, None, None)
+                                    self.declare_vars_inner_with_ty(kind, &prop.value, None, None, default_prop_ty)
                                         .report(&mut self.storage);
                                 }
                             }

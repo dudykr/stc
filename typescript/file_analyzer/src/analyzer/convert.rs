@@ -592,7 +592,7 @@ impl Analyzer<'_, '_> {
             if !child.is_builtin {
                 for param in params.iter() {
                     child
-                        .declare_complex_vars(VarDeclKind::Let, &param.pat, *param.ty.clone(), None)
+                        .declare_complex_vars(VarDeclKind::Let, &param.pat, *param.ty.clone(), None, None)
                         .report(&mut child.storage);
                 }
             }
