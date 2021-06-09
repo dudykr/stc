@@ -44,7 +44,24 @@ use swc_common::DUMMY_SP;
 use swc_ecma_ast::TsKeywordTypeKind;
 use swc_ecma_ast::VarDeclKind;
 
+/// All fields default to `false`.
+#[derive(Debug, Default, Clone, Copy)]
+pub(crate) struct DeclareVarsOpts {
+    pub use_iterator_for_array: bool,
+}
+
 impl Analyzer<'_, '_> {
+    /// TODO: Rename to declare_vars
+    pub(crate) fn add_vars(
+        &mut self,
+        pat: &RPat,
+        ty: Option<Type>,
+        actual_ty: Option<Type>,
+        default_ty: Option<Type>,
+        opts: DeclareVarsOpts,
+    ) -> ValidationResult<()> {
+    }
+
     pub(crate) fn exclude_props(&mut self, span: Span, ty: &Type, keys: &[Key]) -> ValidationResult<Type> {
         let ty = (|| -> ValidationResult<_> {
             let ty = self.normalize(
