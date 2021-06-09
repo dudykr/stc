@@ -29,13 +29,30 @@ pub fn early_error() -> bool {
     *EARLY_ERROR
 }
 
-pub trait TryOpt<T, E>: Sized + Into<Option<Result<T, E>>> {
-    fn try_opt(self) -> Result<Option<T>, E> {
+pub trait TryOpt<T>: Sized + Into<Option<T>> {
+    fn try_opt<U, E>(self) -> Result<Option<U>, E>
+    where
+        T: Into<Result<U, E>>,
+    {
         match self.into() {
-            Some(res) => Ok(Some(res?)),
+            Some(res) => Ok(Some(res.into()?)),
+            None => Ok(None),
+        }
+    }
+
+    fn try_map<F, U, E>(self, op: F) -> Result<Option<U>, E>
+    where
+        Self: Into<Option<T>>,
+        F: FnOnce(T) -> Result<U, E>,
+    {
+        match self.into() {
+            Some(v) => match op(v) {
+                Ok(v) => Ok(Some(v)),
+                Err(err) => Err(err),
+            },
             None => Ok(None),
         }
     }
 }
 
-impl<T, E> TryOpt<T, E> for Option<Result<T, E>> {}
+impl<T> TryOpt<T> for Option<T> {}
