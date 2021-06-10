@@ -676,7 +676,7 @@ impl Analyzer<'_, '_> {
         }
 
         match &*pat {
-            RPat::Ident(..) | RPat::Assign(..) | RPat::Array(..) | RPat::Object(..) => {
+            RPat::Ident(..) | RPat::Assign(..) | RPat::Array(..) | RPat::Object(..) | RPat::Rest(..) => {
                 return self.add_vars(
                     pat,
                     ty,
