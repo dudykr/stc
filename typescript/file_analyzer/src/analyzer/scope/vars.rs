@@ -113,6 +113,12 @@ impl Analyzer<'_, '_> {
 
                 let ty = opt_union(span, ty, default);
 
+                if let Some(ty) = &ty {
+                    if let Some(m) = &mut self.mutations {
+                        m.for_pats.entry(i.node_id).or_default().ty = Some(ty.clone());
+                    }
+                }
+
                 let kind = opts.kind.unwrap_or(VarDeclKind::Var);
 
                 self.declare_var(
