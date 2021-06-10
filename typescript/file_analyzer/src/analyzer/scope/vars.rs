@@ -140,7 +140,7 @@ impl Analyzer<'_, '_> {
             RPat::Assign(p) => {
                 let right = p
                     .right
-                    .validate_with_args(self, (TypeOfMode::RValue, None, None))
+                    .validate_with_args(self, (TypeOfMode::RValue, None, default.as_ref()))
                     .report(&mut self.storage)
                     .unwrap_or_else(|| Type::any(span));
 
