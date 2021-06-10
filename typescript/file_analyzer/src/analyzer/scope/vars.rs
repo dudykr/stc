@@ -29,6 +29,7 @@ use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_type_ops::Fix;
+use stc_ts_types::Array;
 use stc_ts_types::Id;
 use stc_ts_types::Key;
 use stc_ts_types::ModuleId;
@@ -224,6 +225,200 @@ impl Analyzer<'_, '_> {
                     Ok(())
                 } else {
                 }
+            }
+
+            RPat::Object(obj) => {
+                let should_use_no_such_property = match ty.normalize() {
+                    Type::TypeLit(..) => false,
+                    _ => true,
+                };
+
+                // TODO: Normalize static
+                //
+                let mut used_keys = vec![];
+
+                for prop in &obj.props {
+                    match prop {
+                        RObjectPatProp::KeyValue(prop) => {
+                            let mut key = prop.key.validate_with(self)?;
+                            used_keys.push(key.clone());
+
+                            let ctx = Ctx {
+                                should_not_create_indexed_type_from_ty_els: true,
+                                diallow_unknown_object_property: true,
+                                ..self.ctx
+                            };
+                            let prop_ty =
+                                self.with_ctx(ctx)
+                                    .access_property(span, &ty, &key, TypeOfMode::RValue, IdCtx::Var);
+
+                            let default_prop_ty = default_ty.as_ref().and_then(|ty| {
+                                self.with_ctx(ctx)
+                                    .access_property(span, &ty, &key, TypeOfMode::RValue, IdCtx::Var)
+                                    .ok()
+                            });
+
+                            match prop_ty {
+                                Ok(ty) => {
+                                    // TODO: actual_ty
+                                    self.declare_complex_vars(kind, &prop.value, ty, None, default_prop_ty)
+                                        .report(&mut self.storage);
+                                }
+
+                                Err(err) => {
+                                    self.storage.report(err.convert(|err| match err {
+                                        Error::NoSuchProperty { span, .. }
+                                        | Error::NoSuchPropertyInClass { span, .. }
+                                            if !should_use_no_such_property =>
+                                        {
+                                            Error::NoInitAndNoDefault { span }
+                                        }
+                                        _ => err,
+                                    }));
+
+                                    self.declare_vars_inner_with_ty(kind, &prop.value, None, None, default_prop_ty)
+                                        .report(&mut self.storage);
+                                }
+                            }
+                        }
+                        RObjectPatProp::Assign(prop) => {
+                            let mut key = Key::Normal {
+                                span: prop.key.span,
+                                sym: prop.key.sym.clone(),
+                            };
+                            used_keys.push(key.clone());
+
+                            let ctx = Ctx {
+                                should_not_create_indexed_type_from_ty_els: true,
+                                diallow_unknown_object_property: true,
+                                ..self.ctx
+                            };
+                            let prop_ty =
+                                self.with_ctx(ctx)
+                                    .access_property(span, &ty, &key, TypeOfMode::RValue, IdCtx::Var);
+
+                            let default_prop_ty = default_ty.as_ref().and_then(|ty| {
+                                self.with_ctx(ctx)
+                                    .access_property(span, &ty, &key, TypeOfMode::RValue, IdCtx::Var)
+                                    .ok()
+                            });
+
+                            match prop_ty {
+                                Ok(prop_ty) => {
+                                    let prop_ty = prop_ty.cheap();
+
+                                    match &prop.value {
+                                        Some(default) => {
+                                            let default_value_type = default
+                                                .validate_with_default(self)
+                                                .context("tried to validate default value of an assignment pattern")
+                                                .report(&mut self.storage);
+
+                                            let default = opt_union(span, default_prop_ty, default_value_type);
+
+                                            self.declare_vars_inner_with_ty(
+                                                kind,
+                                                &RPat::Ident(RBindingIdent {
+                                                    node_id: NodeId::invalid(),
+                                                    id: prop.key.clone(),
+                                                    type_ann: None,
+                                                }),
+                                                Some(prop_ty.clone()),
+                                                None,
+                                                default,
+                                            )
+                                            .report(&mut self.storage);
+
+                                            self.try_assign_pat(
+                                                span,
+                                                &RPat::Ident(RBindingIdent {
+                                                    node_id: NodeId::invalid(),
+                                                    id: prop.key.clone(),
+                                                    type_ann: None,
+                                                }),
+                                                &prop_ty,
+                                            )
+                                            .context("tried to assign default values")
+                                            .report(&mut self.storage);
+                                        }
+                                        None => {
+                                            // TODO: actual_ty
+                                            self.declare_complex_vars(
+                                                kind,
+                                                &RPat::Ident(RBindingIdent {
+                                                    node_id: NodeId::invalid(),
+                                                    id: prop.key.clone(),
+                                                    type_ann: None,
+                                                }),
+                                                prop_ty,
+                                                None,
+                                                default_prop_ty,
+                                            )
+                                            .report(&mut self.storage);
+                                        }
+                                    }
+                                }
+                                Err(err) => {
+                                    self.storage.report(err.convert(|err| match err {
+                                        Error::NoSuchProperty { span, .. }
+                                        | Error::NoSuchPropertyInClass { span, .. }
+                                            if !should_use_no_such_property =>
+                                        {
+                                            Error::NoInitAndNoDefault { span }
+                                        }
+                                        _ => err,
+                                    }));
+
+                                    self.declare_vars_inner_with_ty(
+                                        kind,
+                                        &RPat::Ident(RBindingIdent {
+                                            node_id: NodeId::invalid(),
+                                            id: prop.key.clone(),
+                                            type_ann: None,
+                                        }),
+                                        None,
+                                        None,
+                                        default_prop_ty,
+                                    )
+                                    .report(&mut self.storage);
+                                }
+                            }
+                        }
+                        RObjectPatProp::Rest(pat) => {
+                            let rest_ty = self
+                                .exclude_props(pat.span(), &ty, &used_keys)
+                                .context("tried to exclude keys for assignment with a object rest pattern")?;
+
+                            let default =
+                                default_ty.and_then(|ty| self.exclude_props(pat.span(), &ty, &used_keys).ok());
+
+                            return self
+                                .declare_complex_vars(kind, &pat.arg, rest_ty, None, default)
+                                .context("tried to assign to an object rest pattern");
+                        }
+                    }
+                }
+
+                Ok(())
+            }
+
+            RPat::Rest(pat) => {
+                let ty = Type::Array(Array {
+                    span,
+                    elem_type: box ty,
+                });
+                return self.add_vars(
+                    &pat.arg,
+                    ty,
+                    actual_ty.map(|ty| {
+                        Type::Array(Array {
+                            span,
+                            elem_type: box ty,
+                        })
+                    }),
+                    default_ty,
+                    opts,
+                );
             }
 
             _ => {}
