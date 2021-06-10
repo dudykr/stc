@@ -32,6 +32,7 @@ use stc_ts_types::Type;
 use stc_ts_types::TypeLit;
 use stc_ts_types::TypeParamInstantiation;
 use stc_ts_types::Union;
+use stc_ts_utils::PatExt;
 use stc_utils::TryOpt;
 use std::borrow::Cow;
 use swc_common::Span;
@@ -138,13 +139,25 @@ impl Analyzer<'_, '_> {
             }
 
             RPat::Assign(p) => {
+                let type_ann = p.left.get_ty();
+                let type_ann: Option<Type> = match type_ann {
+                    Some(v) => v.validate_with(self).report(&mut self.storage),
+                    None => None,
+                };
+                let is_typed = type_ann.is_some();
+                let type_ann = type_ann.or(default);
+
                 let right = p
                     .right
-                    .validate_with_args(self, (TypeOfMode::RValue, None, default.as_ref()))
+                    .validate_with_args(self, (TypeOfMode::RValue, None, type_ann.as_ref()))
                     .report(&mut self.storage)
                     .unwrap_or_else(|| Type::any(span));
 
-                let default = opt_union(span, default, Some(right));
+                let default = if is_typed {
+                    type_ann
+                } else {
+                    opt_union(span, type_ann, Some(right))
+                };
 
                 return self
                     .add_vars(&p.left, ty, actual, default, opts)
