@@ -1331,6 +1331,7 @@ functions/functionOverloadCompatibilityWithVoid01.ts
 functions/functionOverloadCompatibilityWithVoid02.ts
 functions/functionOverloadCompatibilityWithVoid03.ts
 functions/functionWithUseStrictAndSimpleParameterList.ts
+functions/parameterInitializersBackwardReferencing.ts
 functions/strictBindCallApply2.ts
 generators/generatorImplicitAny.ts
 generators/generatorReturnTypeFallback.1.ts
