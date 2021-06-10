@@ -372,15 +372,17 @@ impl Analyzer<'_, '_> {
                                 }
 
                                 Err(err) => {
-                                    self.storage.report(err.convert(|err| match err {
+                                    match err.actual() {
                                         Error::NoSuchProperty { span, .. }
                                         | Error::NoSuchPropertyInClass { span, .. }
                                             if !should_use_no_such_property =>
                                         {
-                                            Error::NoInitAndNoDefault { span }
+                                            if default_prop_ty.is_none() {
+                                                self.storage.report(Error::NoInitAndNoDefault { span: *span })
+                                            }
                                         }
-                                        _ => err,
-                                    }));
+                                        _ => self.storage.report(err),
+                                    }
 
                                     self.add_vars(&prop.value, None, None, default_prop_ty, opts)
                                         .report(&mut self.storage);
@@ -471,15 +473,17 @@ impl Analyzer<'_, '_> {
                                     }
                                 }
                                 Err(err) => {
-                                    self.storage.report(err.convert(|err| match err {
+                                    match err.actual() {
                                         Error::NoSuchProperty { span, .. }
                                         | Error::NoSuchPropertyInClass { span, .. }
                                             if !should_use_no_such_property =>
                                         {
-                                            Error::NoInitAndNoDefault { span }
+                                            if default_prop_ty.is_none() {
+                                                self.storage.report(Error::NoInitAndNoDefault { span: *span })
+                                            }
                                         }
-                                        _ => err,
-                                    }));
+                                        _ => self.storage.report(err),
+                                    }
 
                                     self.add_vars(
                                         &RPat::Ident(RBindingIdent {
