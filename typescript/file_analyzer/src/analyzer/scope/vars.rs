@@ -389,7 +389,10 @@ impl Analyzer<'_, '_> {
                                     match &prop.value {
                                         Some(default) => {
                                             let default_value_type = default
-                                                .validate_with_default(self)
+                                                .validate_with_args(
+                                                    self,
+                                                    (TypeOfMode::RValue, None, default_prop_ty.as_ref()),
+                                                )
                                                 .context("tried to validate default value of an assignment pattern")
                                                 .report(&mut self.storage);
 
