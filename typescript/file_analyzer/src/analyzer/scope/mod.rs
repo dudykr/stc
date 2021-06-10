@@ -1434,6 +1434,7 @@ impl Analyzer<'_, '_> {
                 actual_ty,
                 default_ty,
                 DeclareVarsOpts {
+                    kind: Some(kind),
                     use_iterator_for_array: true,
                     ..Default::default()
                 },
