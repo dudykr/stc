@@ -1436,72 +1436,7 @@ impl Analyzer<'_, '_> {
         default_ty: Option<Type>,
     ) -> ValidationResult<()> {
         match pat {
-            RPat::Array(RArrayPat { ref elems, .. }) => {
-                // Handle tuple
-                //
-                //      const [a , setA] = useState();
-                //
-
-                let ty = self
-                    .get_iterator(
-                        span,
-                        Cow::Owned(ty),
-                        GetIteratorOpts {
-                            disallow_str: true,
-                            ..Default::default()
-                        },
-                    )
-                    .context("tried to convert a type to an iterator to assign with an array pattern.")
-                    .unwrap_or_else(|err| {
-                        self.storage.report(err);
-                        Cow::Owned(Type::any(span))
-                    });
-
-                let default_ty = default_ty.map(|ty| {
-                    self.get_iterator(
-                        span,
-                        Cow::Owned(ty),
-                        GetIteratorOpts {
-                            disallow_str: true,
-                            ..Default::default()
-                        },
-                    )
-                    .context("tried to convert a type to an iterator to assign with an array pattern (default value)")
-                    .unwrap_or_else(|err| {
-                        self.storage.report(err);
-                        Cow::Owned(Type::any(span))
-                    })
-                });
-
-                for (i, elem) in elems.iter().enumerate() {
-                    if let Some(elem) = elem {
-                        let elem_ty = self
-                            .get_element_from_iterator(span, Cow::Borrowed(&ty), i)
-                            .context(
-                                "tried to get the type of nth element from iterator to declare vars with an array \
-                                 pattern",
-                            )?
-                            .into_owned();
-
-                        let default_elem_ty = default_ty
-                            .as_ref()
-                            .and_then(|ty| {
-                                self.get_element_from_iterator(span, Cow::Borrowed(&ty), i)
-                                    .context(
-                                        "tried to get the type of nth element from iterator to declare vars with an \
-                                         array pattern (default value)",
-                                    )
-                                    .ok()
-                            })
-                            .map(Cow::into_owned);
-
-                        // TODO: actual_ty
-                        self.declare_complex_vars(kind, elem, elem_ty, None, default_elem_ty)?;
-                    }
-                }
-
-                Ok(())
-            }
+            RPat::Array(RArrayPat { ref elems, .. }) => {}
 
             RPat::Object(RObjectPat { ref props, .. }) => {
                 let should_use_no_such_property = match ty.normalize() {

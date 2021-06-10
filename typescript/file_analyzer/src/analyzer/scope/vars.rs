@@ -1,3 +1,4 @@
+use crate::analyzer::expr::GetIteratorOpts;
 use crate::analyzer::expr::IdCtx;
 use crate::analyzer::expr::TypeOfMode;
 use crate::analyzer::pat::PatMode;
@@ -38,6 +39,7 @@ use stc_ts_types::TypeParamInstantiation;
 use stc_ts_types::Union;
 use stc_ts_utils::OptionExt;
 use stc_ts_utils::PatExt;
+use stc_utils::TryOpt;
 use std::borrow::Cow;
 use swc_common::Span;
 use swc_common::Spanned;
@@ -148,6 +150,82 @@ impl Analyzer<'_, '_> {
                     .add_vars(&p.left, ty, actual, default, opts)
                     .context("tried to declare a variable with an assignment pattern");
             }
+
+            RPat::Array(arr) => {
+                if opts.use_iterator_for_array {
+                    // Handle tuple
+                    //
+                    //      const [a , setA] = useState();
+                    //
+
+                    let ty = ty.map(|ty| {
+                        self.get_iterator(
+                            span,
+                            Cow::Owned(ty),
+                            GetIteratorOpts {
+                                disallow_str: true,
+                                ..Default::default()
+                            },
+                        )
+                        .context("tried to convert a type to an iterator to assign with an array pattern.")
+                        .unwrap_or_else(|err| {
+                            self.storage.report(err);
+                            Cow::Owned(Type::any(span))
+                        })
+                    });
+
+                    let default = default.map(|ty| {
+                        self.get_iterator(
+                            span,
+                            Cow::Owned(ty),
+                            GetIteratorOpts {
+                                disallow_str: true,
+                                ..Default::default()
+                            },
+                        )
+                        .context(
+                            "tried to convert a type to an iterator to assign with an array pattern (default value)",
+                        )
+                        .unwrap_or_else(|err| {
+                            self.storage.report(err);
+                            Cow::Owned(Type::any(span))
+                        })
+                    });
+
+                    for (i, elem) in arr.elems.iter().enumerate() {
+                        if let Some(elem) = elem {
+                            let elem_ty = ty.as_ref().try_map(|ty| {
+                                Ok(self
+                                    .get_element_from_iterator(span, Cow::Borrowed(&ty), i)
+                                    .context(
+                                        "tried to get the type of nth element from iterator to declare vars with an \
+                                         array pattern",
+                                    )?
+                                    .into_owned())
+                            })?;
+
+                            let default_elem_ty = default
+                                .as_ref()
+                                .and_then(|ty| {
+                                    self.get_element_from_iterator(span, Cow::Borrowed(&ty), i)
+                                        .context(
+                                            "tried to get the type of nth element from iterator to declare vars with \
+                                             an array pattern (default value)",
+                                        )
+                                        .ok()
+                                })
+                                .map(Cow::into_owned);
+
+                            // TODO: actual_ty
+                            self.add_vars(elem, elem_ty, None, default_elem_ty, opts)?;
+                        }
+                    }
+
+                    Ok(())
+                } else {
+                }
+            }
+
             _ => {}
         }
     }
