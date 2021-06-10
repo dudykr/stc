@@ -1,17 +1,14 @@
 use super::assign::AssignOpts;
 use super::class::ClassState;
 use super::{control_flow::CondFacts, expr::TypeOfMode, stmt::return_type::ReturnValues, Analyzer, Ctx};
-use crate::analyzer::expr::GetIteratorOpts;
 use crate::analyzer::expr::IdCtx;
 use crate::analyzer::scope::vars::DeclareVarsOpts;
-use crate::analyzer::util::opt_union;
 use crate::analyzer::ResultExt;
 use crate::{
     loader::ModuleInfo,
     ty::{self, Alias, Interface, PropertySignature, Ref, Tuple, Type, TypeExt, TypeLit, Union},
     type_facts::TypeFacts,
     util::{contains_infer_type, contains_mark, MarkFinder, RemoveTypes},
-    validator::ValidateWith,
     ValidationResult,
 };
 use fxhash::{FxHashMap, FxHashSet};
@@ -19,16 +16,11 @@ use iter::once;
 use once_cell::sync::Lazy;
 use rnode::Fold;
 use rnode::FoldWith;
-use rnode::NodeId;
 use rnode::Visit;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
 use rnode::VisitWith;
 use slog::Logger;
-use stc_ts_ast_rnode::RArrayPat;
-use stc_ts_ast_rnode::RBindingIdent;
-use stc_ts_ast_rnode::RObjectPat;
-use stc_ts_ast_rnode::RObjectPatProp;
 use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
@@ -39,7 +31,6 @@ use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::name::Name;
-use stc_ts_types::Array;
 use stc_ts_types::Class;
 use stc_ts_types::ClassDef;
 use stc_ts_types::ClassProperty;
