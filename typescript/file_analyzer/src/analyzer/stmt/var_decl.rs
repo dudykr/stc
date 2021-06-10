@@ -548,12 +548,14 @@ impl Analyzer<'_, '_> {
                                         match v.name {
                                             RPat::Ident(ref i) => {
                                                 let span = i.id.span;
-                                                type_errors.push(Error::ImplicitAny { span });
+                                                type_errors
+                                                    .push(Error::ImplicitAny { span }.context("tuple type widenning"));
                                                 break;
                                             }
                                             RPat::Array(RArrayPat { ref elems, .. }) => {
                                                 let span = elems[i].span();
-                                                type_errors.push(Error::ImplicitAny { span });
+                                                type_errors
+                                                    .push(Error::ImplicitAny { span }.context("tuple type widenning"));
                                             }
                                             _ => {}
                                         }

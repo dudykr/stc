@@ -313,7 +313,8 @@ impl Analyzer<'_, '_> {
                 if let Some(default) = default {
                     args.params.push(default);
                 } else {
-                    self.storage.report(Error::ImplicitAny { span });
+                    self.storage
+                        .report(Error::ImplicitAny { span }.context("qualify_ref_type_args"));
                     args.params.push(Type::any(span));
                 }
             }
