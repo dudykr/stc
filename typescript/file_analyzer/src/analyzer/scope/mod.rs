@@ -1439,7 +1439,7 @@ impl Analyzer<'_, '_> {
         match pat {
             RPat::Assign(..) | RPat::Ident(..) | RPat::Array(..) | RPat::Object(..) | RPat::Rest(..) => self.add_vars(
                 pat,
-                ty,
+                Some(ty),
                 actual_ty,
                 default_ty,
                 DeclareVarsOpts {

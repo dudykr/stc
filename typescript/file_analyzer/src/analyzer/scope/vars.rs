@@ -6,6 +6,7 @@ use crate::analyzer::types::NormalizeTypeOpts;
 use crate::analyzer::util::opt_union;
 use crate::analyzer::util::ResultExt;
 use crate::analyzer::Analyzer;
+use crate::analyzer::Ctx;
 use crate::ty::TypeExt;
 use crate::validator::ValidateWith;
 use crate::ValidationResult;
@@ -97,7 +98,8 @@ impl Analyzer<'_, '_> {
                 Some(ty @ Type::Ref(..)) => {
                     let ty = self
                         .expand_top_ref(ty.span(), Cow::Borrowed(&ty))
-                        .context("tried to expand reference to declare a complex variable")?;
+                        .context("tried to expand reference to declare a complex variable")?
+                        .into_owned();
 
                     return self.add_vars(pat, Some(ty), actual, default, opts);
                 }
@@ -228,8 +230,8 @@ impl Analyzer<'_, '_> {
             }
 
             RPat::Object(obj) => {
-                let should_use_no_such_property = match ty.normalize() {
-                    Type::TypeLit(..) => false,
+                let should_use_no_such_property = match ty.as_ref().map(Type::normalize) {
+                    Some(Type::TypeLit(..)) => false,
                     _ => true,
                 };
 
@@ -248,20 +250,21 @@ impl Analyzer<'_, '_> {
                                 diallow_unknown_object_property: true,
                                 ..self.ctx
                             };
-                            let prop_ty =
+                            let prop_ty = ty.as_ref().try_map(|ty| {
                                 self.with_ctx(ctx)
-                                    .access_property(span, &ty, &key, TypeOfMode::RValue, IdCtx::Var);
+                                    .access_property(span, &ty, &key, TypeOfMode::RValue, IdCtx::Var)
+                            });
 
-                            let default_prop_ty = default_ty.as_ref().and_then(|ty| {
+                            let default_prop_ty = default.as_ref().and_then(|ty| {
                                 self.with_ctx(ctx)
                                     .access_property(span, &ty, &key, TypeOfMode::RValue, IdCtx::Var)
                                     .ok()
                             });
 
                             match prop_ty {
-                                Ok(ty) => {
+                                Ok(prop_ty) => {
                                     // TODO: actual_ty
-                                    self.declare_complex_vars(kind, &prop.value, ty, None, default_prop_ty)
+                                    self.add_vars(&prop.value, prop_ty, None, default_prop_ty, opts)
                                         .report(&mut self.storage);
                                 }
 
@@ -276,7 +279,7 @@ impl Analyzer<'_, '_> {
                                         _ => err,
                                     }));
 
-                                    self.declare_vars_inner_with_ty(kind, &prop.value, None, None, default_prop_ty)
+                                    self.add_vars(&prop.value, None, None, default_prop_ty, opts)
                                         .report(&mut self.storage);
                                 }
                             }
@@ -293,11 +296,12 @@ impl Analyzer<'_, '_> {
                                 diallow_unknown_object_property: true,
                                 ..self.ctx
                             };
-                            let prop_ty =
+                            let prop_ty = ty.as_ref().try_map(|ty| {
                                 self.with_ctx(ctx)
-                                    .access_property(span, &ty, &key, TypeOfMode::RValue, IdCtx::Var);
+                                    .access_property(span, &ty, &key, TypeOfMode::RValue, IdCtx::Var)
+                            });
 
-                            let default_prop_ty = default_ty.as_ref().and_then(|ty| {
+                            let default_prop_ty = default.as_ref().and_then(|ty| {
                                 self.with_ctx(ctx)
                                     .access_property(span, &ty, &key, TypeOfMode::RValue, IdCtx::Var)
                                     .ok()
@@ -305,7 +309,7 @@ impl Analyzer<'_, '_> {
 
                             match prop_ty {
                                 Ok(prop_ty) => {
-                                    let prop_ty = prop_ty.cheap();
+                                    let prop_ty = prop_ty.map(Type::cheap);
 
                                     match &prop.value {
                                         Some(default) => {
@@ -316,35 +320,36 @@ impl Analyzer<'_, '_> {
 
                                             let default = opt_union(span, default_prop_ty, default_value_type);
 
-                                            self.declare_vars_inner_with_ty(
-                                                kind,
+                                            self.add_vars(
                                                 &RPat::Ident(RBindingIdent {
                                                     node_id: NodeId::invalid(),
                                                     id: prop.key.clone(),
                                                     type_ann: None,
                                                 }),
-                                                Some(prop_ty.clone()),
+                                                prop_ty.clone(),
                                                 None,
                                                 default,
+                                                opts,
                                             )
                                             .report(&mut self.storage);
 
-                                            self.try_assign_pat(
-                                                span,
-                                                &RPat::Ident(RBindingIdent {
-                                                    node_id: NodeId::invalid(),
-                                                    id: prop.key.clone(),
-                                                    type_ann: None,
-                                                }),
-                                                &prop_ty,
-                                            )
-                                            .context("tried to assign default values")
-                                            .report(&mut self.storage);
+                                            if let Some(prop_ty) = &prop_ty {
+                                                self.try_assign_pat(
+                                                    span,
+                                                    &RPat::Ident(RBindingIdent {
+                                                        node_id: NodeId::invalid(),
+                                                        id: prop.key.clone(),
+                                                        type_ann: None,
+                                                    }),
+                                                    &prop_ty,
+                                                )
+                                                .context("tried to assign default values")
+                                                .report(&mut self.storage);
+                                            }
                                         }
                                         None => {
                                             // TODO: actual_ty
-                                            self.declare_complex_vars(
-                                                kind,
+                                            self.add_vars(
                                                 &RPat::Ident(RBindingIdent {
                                                     node_id: NodeId::invalid(),
                                                     id: prop.key.clone(),
@@ -353,6 +358,7 @@ impl Analyzer<'_, '_> {
                                                 prop_ty,
                                                 None,
                                                 default_prop_ty,
+                                                opts,
                                             )
                                             .report(&mut self.storage);
                                         }
@@ -369,8 +375,7 @@ impl Analyzer<'_, '_> {
                                         _ => err,
                                     }));
 
-                                    self.declare_vars_inner_with_ty(
-                                        kind,
+                                    self.add_vars(
                                         &RPat::Ident(RBindingIdent {
                                             node_id: NodeId::invalid(),
                                             id: prop.key.clone(),
@@ -379,21 +384,22 @@ impl Analyzer<'_, '_> {
                                         None,
                                         None,
                                         default_prop_ty,
+                                        opts,
                                     )
                                     .report(&mut self.storage);
                                 }
                             }
                         }
                         RObjectPatProp::Rest(pat) => {
-                            let rest_ty = self
-                                .exclude_props(pat.span(), &ty, &used_keys)
-                                .context("tried to exclude keys for assignment with a object rest pattern")?;
+                            let rest_ty = ty.as_ref().try_map(|ty| {
+                                self.exclude_props(pat.span(), &ty, &used_keys)
+                                    .context("tried to exclude keys for assignment with a object rest pattern")
+                            })?;
 
-                            let default =
-                                default_ty.and_then(|ty| self.exclude_props(pat.span(), &ty, &used_keys).ok());
+                            let default = default.and_then(|ty| self.exclude_props(pat.span(), &ty, &used_keys).ok());
 
                             return self
-                                .declare_complex_vars(kind, &pat.arg, rest_ty, None, default)
+                                .add_vars(&pat.arg, rest_ty, None, default, opts)
                                 .context("tried to assign to an object rest pattern");
                         }
                     }
@@ -403,25 +409,34 @@ impl Analyzer<'_, '_> {
             }
 
             RPat::Rest(pat) => {
-                let ty = Type::Array(Array {
-                    span,
-                    elem_type: box ty,
+                let ty = ty.map(|ty| {
+                    Type::Array(Array {
+                        span,
+                        elem_type: box ty,
+                    })
                 });
                 return self.add_vars(
                     &pat.arg,
                     ty,
-                    actual_ty.map(|ty| {
+                    actual.map(|ty| {
                         Type::Array(Array {
                             span,
                             elem_type: box ty,
                         })
                     }),
-                    default_ty,
+                    default.map(|ty| {
+                        Type::Array(Array {
+                            span,
+                            elem_type: box ty,
+                        })
+                    }),
                     opts,
                 );
             }
 
-            _ => {}
+            _ => {
+                unimplemented!("declare_vars({:#?}, {:#?})", pat, ty)
+            }
         }
     }
 
