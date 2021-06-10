@@ -3,6 +3,7 @@ use super::class::ClassState;
 use super::{control_flow::CondFacts, expr::TypeOfMode, stmt::return_type::ReturnValues, Analyzer, Ctx};
 use crate::analyzer::expr::GetIteratorOpts;
 use crate::analyzer::expr::IdCtx;
+use crate::analyzer::scope::vars::DeclareVarsOpts;
 use crate::analyzer::util::opt_union;
 use crate::analyzer::ResultExt;
 use crate::{
@@ -1436,7 +1437,16 @@ impl Analyzer<'_, '_> {
         default_ty: Option<Type>,
     ) -> ValidationResult<()> {
         match pat {
-            RPat::Array(RArrayPat { ref elems, .. }) => {}
+            RPat::Assign(..) | RPat::Ident(..) | RPat::Array(..) => self.add_vars(
+                pat,
+                ty,
+                actual_ty,
+                default_ty,
+                DeclareVarsOpts {
+                    use_iterator_for_array: true,
+                    ..Default::default()
+                },
+            ),
 
             RPat::Object(RObjectPat { ref props, .. }) => {
                 let should_use_no_such_property = match ty.normalize() {
