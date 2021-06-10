@@ -8,6 +8,7 @@
 #![feature(specialization)]
 
 pub use self::convert::rprop_name_to_expr;
+pub use self::metadata::TypeElMetadata;
 pub use self::metadata::TypeLitMetadata;
 pub use self::{id::Id, module_id::ModuleId};
 use fxhash::FxHashMap;
@@ -759,6 +760,7 @@ pub struct PropertySignature {
     pub params: Vec<FnParam>,
     pub type_ann: Option<Box<Type>>,
     pub type_params: Option<TypeParamDecl>,
+    pub metadata: TypeElMetadata,
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
@@ -773,6 +775,7 @@ pub struct MethodSignature {
     pub params: Vec<FnParam>,
     pub ret_ty: Option<Box<Type>>,
     pub type_params: Option<TypeParamDecl>,
+    pub metadata: TypeElMetadata,
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]

@@ -611,6 +611,7 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                                                             }),
                                                         }),
                                                         type_params: Default::default(),
+                                                        metadata: Default::default(),
                                                     }))
                                                 }
                                                 _ => {}
@@ -770,6 +771,7 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                                                 params: vec![],
                                                 type_ann: m.ty.clone().map(|v| v),
                                                 type_params: None,
+                                                metadata: Default::default(),
                                             }));
                                         }
                                         TypeElement::Property(p) => {

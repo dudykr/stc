@@ -378,6 +378,7 @@ impl UnionNormalizer<'_, '_, '_> {
                                     kind: swc_ecma_ast::TsKeywordTypeKind::TsUndefinedKeyword,
                                 })),
                                 type_params: Default::default(),
+                                metadata: Default::default(),
                             }))
                         }
                     }

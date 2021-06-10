@@ -369,6 +369,7 @@ impl Analyzer<'_, '_> {
                     name: Some(key.sym),
                 })),
                 type_params: Default::default(),
+                metadata: Default::default(),
             }))
         }
         {

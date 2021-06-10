@@ -34,6 +34,7 @@ use stc_ts_types::Key;
 use stc_ts_types::PropertySignature;
 use stc_ts_types::Tuple;
 use stc_ts_types::TupleElement;
+use stc_ts_types::TypeElMetadata;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
 use stc_ts_utils::PatExt;
@@ -131,6 +132,7 @@ impl Analyzer<'_, '_> {
                                 params: vec![],
                                 type_ann: Some(ty),
                                 type_params: None,
+                                metadata: Default::default(),
                             }))
                         }
                         RObjectPatProp::Assign(RAssignPatProp { key, .. }) => {
@@ -147,6 +149,10 @@ impl Analyzer<'_, '_> {
                                 params: vec![],
                                 type_ann: None,
                                 type_params: None,
+                                metadata: TypeElMetadata {
+                                    has_default: true,
+                                    ..Default::default()
+                                },
                             }))
                         }
                         RObjectPatProp::Rest(..) => {}

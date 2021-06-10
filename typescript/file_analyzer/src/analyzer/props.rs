@@ -406,6 +406,7 @@ impl Analyzer<'_, '_> {
                     params: Default::default(),
                     type_ann: shorthand_type_ann,
                     type_params: Default::default(),
+                    metadata: Default::default(),
                 }
                 .into()
             }
@@ -435,6 +436,7 @@ impl Analyzer<'_, '_> {
                     params: Default::default(),
                     type_ann: Some(box ty),
                     type_params: Default::default(),
+                    metadata: Default::default(),
                 }
                 .into()
             }
@@ -461,6 +463,7 @@ impl Analyzer<'_, '_> {
                             params: vec![param.validate_with(child)?],
                             type_ann: Some(box Type::any(param_span)),
                             type_params: Default::default(),
+                            metadata: Default::default(),
                         }
                         .into())
                     }
@@ -573,6 +576,7 @@ impl Analyzer<'_, '_> {
                             params,
                             ret_ty,
                             type_params,
+                            metadata: Default::default(),
                         }
                         .into())
                     }
@@ -624,6 +628,7 @@ impl Analyzer<'_, '_> {
                 Some(box Type::any(n.span))
             },
             type_params: Default::default(),
+            metadata: Default::default(),
         }
         .into())
     }

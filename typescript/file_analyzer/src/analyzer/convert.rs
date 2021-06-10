@@ -389,6 +389,7 @@ impl Analyzer<'_, '_> {
                 type_params,
                 params: d.params.validate_with(child)?,
                 ret_ty: try_opt!(d.type_ann.validate_with(child)).map(Box::new),
+                metadata: Default::default(),
             })
         })
     }
@@ -443,6 +444,7 @@ impl Analyzer<'_, '_> {
                 }
             },
             type_params,
+            metadata: Default::default(),
         })
     }
 }
@@ -1057,6 +1059,7 @@ impl Analyzer<'_, '_> {
                         params: vec![],
                         type_ann: ty,
                         type_params: None,
+                        metadata: Default::default(),
                     }))
                 }
                 RObjectPatProp::Assign(RAssignPatProp { key, .. }) => {
@@ -1073,6 +1076,7 @@ impl Analyzer<'_, '_> {
                         params: vec![],
                         type_ann: None,
                         type_params: None,
+                        metadata: Default::default(),
                     }))
                 }
                 RObjectPatProp::Rest(..) => {}

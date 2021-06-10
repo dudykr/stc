@@ -1379,6 +1379,7 @@ impl Analyzer<'_, '_> {
                                         params: Default::default(),
                                         type_ann,
                                         type_params: Default::default(),
+                                        metadata: Default::default(),
                                     }));
                                 }
 

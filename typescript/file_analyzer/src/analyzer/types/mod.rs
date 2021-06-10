@@ -560,6 +560,7 @@ impl Analyzer<'_, '_> {
                         params: Default::default(),
                         type_ann,
                         type_params: Default::default(),
+                        metadata: Default::default(),
                     }))
                 }
                 ClassMember::IndexSignature(_) => {}
@@ -831,6 +832,7 @@ impl Analyzer<'_, '_> {
                         params: Default::default(),
                         type_ann: Some(e.ty.clone()),
                         type_params: Default::default(),
+                        metadata: Default::default(),
                     }));
                 }
 
@@ -850,6 +852,7 @@ impl Analyzer<'_, '_> {
                         kind: TsKeywordTypeKind::TsNumberKeyword,
                     })),
                     type_params: Default::default(),
+                    metadata: Default::default(),
                 }));
 
                 Cow::Owned(TypeLit {
@@ -980,6 +983,7 @@ impl Analyzer<'_, '_> {
                         params: m.params.clone(),
                         ret_ty: Some(m.ret_ty.clone()),
                         type_params: m.type_params.clone(),
+                        metadata: Default::default(),
                     }),
                     MethodKind::Getter => TypeElement::Property(PropertySignature {
                         span: m.span,
@@ -991,6 +995,7 @@ impl Analyzer<'_, '_> {
                         // TODO: Check for setter property with same key.
                         type_ann: Some(m.ret_ty.clone()),
                         type_params: None,
+                        metadata: Default::default(),
                     }),
                     MethodKind::Setter => return Ok(None),
                 }
@@ -1009,6 +1014,7 @@ impl Analyzer<'_, '_> {
                     params: vec![],
                     type_ann: p.value.clone(),
                     type_params: None,
+                    metadata: Default::default(),
                 })
             }
             ClassMember::IndexSignature(i) => TypeElement::Index(i.clone()),
