@@ -160,7 +160,16 @@ impl Analyzer<'_, '_> {
                 };
 
                 return self
-                    .add_vars(&p.left, ty, actual, default, opts)
+                    .add_vars(
+                        &p.left,
+                        ty,
+                        actual,
+                        default,
+                        DeclareVarsOpts {
+                            use_iterator_for_array: true,
+                            ..opts
+                        },
+                    )
                     .context("tried to declare a variable with an assignment pattern");
             }
 
