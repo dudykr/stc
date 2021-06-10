@@ -197,7 +197,7 @@ impl Analyzer<'_, '_> {
 
                     for (i, elem) in arr.elems.iter().enumerate() {
                         if let Some(elem) = elem {
-                            let elem_ty = ty.as_ref().try_map(|ty| {
+                            let elem_ty = ty.as_ref().try_map(|ty| -> ValidationResult<_> {
                                 Ok(self
                                     .get_element_from_iterator(span, Cow::Borrowed(&ty), i)
                                     .context(
@@ -226,6 +226,90 @@ impl Analyzer<'_, '_> {
 
                     Ok(())
                 } else {
+                    for (idx, elem) in arr.elems.iter().enumerate() {
+                        match elem {
+                            Some(elem) => {
+                                match elem {
+                                    RPat::Rest(elem) => {
+                                        // Rest element is special.
+                                        let type_for_rest_arg = match ty {
+                                            Some(ty) => self
+                                                .get_lefting_elements(Some(span), Cow::Owned(ty), idx)
+                                                .context(
+                                                    "tried to get lefting elements of an iterator to declare \
+                                                     variables using a rest pattern",
+                                                )
+                                                .map(Cow::into_owned)
+                                                .report(&mut self.storage),
+                                            None => None,
+                                        };
+
+                                        let default = match default {
+                                            Some(ty) => self
+                                                .get_lefting_elements(Some(span), Cow::Owned(ty), idx)
+                                                .context(
+                                                    "tried to get lefting elements of an iterator to declare \
+                                                     variables using a rest pattern",
+                                                )
+                                                .map(Cow::into_owned)
+                                                .report(&mut self.storage),
+                                            None => None,
+                                        };
+
+                                        self.add_vars(&elem.arg, type_for_rest_arg, None, default, opts)
+                                            .context(
+                                                "tried to declare lefting elements to the arugment of a rest pattern",
+                                            )
+                                            .report(&mut self.storage);
+                                        break;
+                                    }
+                                    _ => {}
+                                }
+
+                                let elem_ty = match &ty {
+                                    Some(ty) => self
+                                        .access_property(
+                                            elem.span(),
+                                            &ty,
+                                            &Key::Num(RNumber {
+                                                span: elem.span(),
+                                                value: idx as f64,
+                                            }),
+                                            TypeOfMode::RValue,
+                                            IdCtx::Var,
+                                        )
+                                        .context("tried to access property to declare variables using an array pattern")
+                                        .report(&mut self.storage),
+                                    None => None,
+                                };
+
+                                let default = match &default {
+                                    Some(ty) => self
+                                        .access_property(
+                                            elem.span(),
+                                            &ty,
+                                            &Key::Num(RNumber {
+                                                span: elem.span(),
+                                                value: idx as f64,
+                                            }),
+                                            TypeOfMode::RValue,
+                                            IdCtx::Var,
+                                        )
+                                        .context("tried to access property to declare variables using an array pattern")
+                                        .report(&mut self.storage),
+                                    None => None,
+                                };
+
+                                // TODO: actual_ty
+                                self.add_vars(elem, elem_ty, None, default, opts)
+                                    .report(&mut self.storage);
+                            }
+                            // Skip
+                            None => {}
+                        }
+                    }
+
+                    Ok(())
                 }
             }
 
@@ -559,10 +643,6 @@ impl Analyzer<'_, '_> {
         Ok(ty.fixed())
     }
 
-    /// Updates variable list.
-    ///
-    /// This method should be called for function parameters including error
-    /// variable from a catch clause.
     pub(super) fn declare_vars_inner_with_ty(
         &mut self,
         kind: VarDeclKind,
@@ -572,19 +652,6 @@ impl Analyzer<'_, '_> {
         default_ty: Option<Type>,
     ) -> ValidationResult<()> {
         let marks = self.marks();
-
-        match &ty {
-            Some(ty) => {
-                ty.assert_valid();
-            }
-            _ => {}
-        }
-        match &actual_ty {
-            Some(ty) => {
-                ty.assert_valid();
-            }
-            _ => {}
-        }
 
         let span = ty
             .as_ref()
@@ -596,380 +663,17 @@ impl Analyzer<'_, '_> {
         }
 
         match &*pat {
-            RPat::Ident(i) => {
-                let name: Id = Id::from(i.id.clone());
-                if !self.is_builtin {
-                    debug_assert_ne!(span, DUMMY_SP);
-                }
-                let ty = match ty {
-                    None => try_opt!(i.type_ann.as_ref().map(|v| v.type_ann.validate_with(self))),
-                    Some(ty) => Some(ty),
-                };
-
-                self.declare_var(
-                    span,
-                    kind,
-                    name.clone(),
-                    ty.clone(),
+            RPat::Ident(..) | RPat::Assign(..) | RPat::Array(..) | RPat::Object(..) => {
+                return self.add_vars(
+                    pat,
+                    ty,
                     actual_ty,
-                    // initialized
-                    true,
-                    // allow_multiple
-                    kind == VarDeclKind::Var,
-                    false,
-                )?;
-
-                return Ok(());
-            }
-            RPat::Assign(ref p) => {
-                let type_ann = p.left.get_ty();
-                let type_ann = match type_ann {
-                    Some(v) => v.validate_with(self).report(&mut self.storage),
-                    None => None,
-                };
-
-                let right: Option<Type> = p
-                    .right
-                    .validate_with_args(self, (TypeOfMode::RValue, None, type_ann.as_ref()))
-                    .report(&mut self.storage);
-                let right = right.unwrap_or_else(|| Type::any(span));
-
-                slog::debug!(
-                    self.logger,
-                    "({}) declare_vars: Assign({:?}), ty = {:?}",
-                    self.scope.depth(),
-                    p.left,
-                    ty
+                    default_ty,
+                    DeclareVarsOpts {
+                        kind: Some(kind),
+                        use_iterator_for_array: false,
+                    },
                 );
-                self.declare_vars_inner_with_ty(kind, &p.left, ty, actual_ty, Some(right))
-                    .report(&mut self.storage);
-
-                return Ok(());
-            }
-
-            RPat::Array(RArrayPat {
-                span,
-                ref elems,
-                ref type_ann,
-                ref optional,
-                node_id,
-                ..
-            }) => {
-                let ty = match ty {
-                    None => try_opt!(type_ann.as_ref().map(|v| v.type_ann.validate_with(self))),
-                    Some(ty) => Some(ty),
-                };
-
-                // TODO: Handle type annotation
-
-                if type_ann.is_none() {
-                    if let Some(ty) = ty.clone() {
-                        if let Some(m) = &mut self.mutations {
-                            m.for_pats.entry(*node_id).or_default().optional = Some(true);
-                            m.for_pats
-                                .entry(*node_id)
-                                .or_default()
-                                .ty
-                                .fill_with(|| ty.generalize_lit(marks).generalize_tuple().into());
-                        }
-                    }
-                }
-
-                if type_ann.is_none() {
-                    let ctxt = self.ctx.module_id;
-                    if let Some(m) = &mut self.mutations {
-                        //
-                        m.for_pats.entry(*node_id).or_default().ty.fill_with(|| {
-                            Type::Ref(Ref {
-                                span: *span,
-                                ctxt,
-                                type_name: RTsEntityName::Ident(RIdent::new("Iterable".into(), DUMMY_SP)),
-                                type_args: Some(box TypeParamInstantiation {
-                                    span: *span,
-                                    params: vec![Type::Keyword(RTsKeywordType {
-                                        span: DUMMY_SP,
-                                        kind: TsKeywordTypeKind::TsAnyKeyword,
-                                    })],
-                                }),
-                            })
-                        });
-                    }
-                }
-
-                // TODO: Store type.
-                for (idx, elem) in elems.iter().enumerate() {
-                    match elem {
-                        Some(elem) => {
-                            match elem {
-                                RPat::Rest(elem) => {
-                                    // Rest element is special.
-                                    let type_for_rest_arg = match ty {
-                                        Some(ty) => self
-                                            .get_lefting_elements(Some(*span), Cow::Owned(ty), idx)
-                                            .context(
-                                                "tried to get lefting elements of an iterator to declare variables \
-                                                 using a rest pattern",
-                                            )
-                                            .map(Cow::into_owned)
-                                            .report(&mut self.storage),
-                                        None => None,
-                                    };
-
-                                    let default = match default_ty {
-                                        Some(ty) => self
-                                            .get_lefting_elements(Some(*span), Cow::Owned(ty), idx)
-                                            .context(
-                                                "tried to get lefting elements of an iterator to declare variables \
-                                                 using a rest pattern",
-                                            )
-                                            .map(Cow::into_owned)
-                                            .report(&mut self.storage),
-                                        None => None,
-                                    };
-
-                                    self.declare_vars_inner_with_ty(kind, &elem.arg, type_for_rest_arg, None, default)
-                                        .context("tried to declare lefting elements to the arugment of a rest pattern")
-                                        .report(&mut self.storage);
-                                    break;
-                                }
-                                _ => {}
-                            }
-
-                            let elem_ty = match &ty {
-                                Some(ty) => self
-                                    .access_property(
-                                        elem.span(),
-                                        &ty,
-                                        &Key::Num(RNumber {
-                                            span: elem.span(),
-                                            value: idx as f64,
-                                        }),
-                                        TypeOfMode::RValue,
-                                        IdCtx::Var,
-                                    )
-                                    .context("tried to access property to declare variables using an array pattern")
-                                    .report(&mut self.storage),
-                                None => None,
-                            };
-
-                            let default = match &default_ty {
-                                Some(ty) => self
-                                    .access_property(
-                                        elem.span(),
-                                        &ty,
-                                        &Key::Num(RNumber {
-                                            span: elem.span(),
-                                            value: idx as f64,
-                                        }),
-                                        TypeOfMode::RValue,
-                                        IdCtx::Var,
-                                    )
-                                    .context("tried to access property to declare variables using an array pattern")
-                                    .report(&mut self.storage),
-                                None => None,
-                            };
-
-                            // TODO: actual_ty
-                            self.declare_vars_inner_with_ty(kind, elem, elem_ty, None, default)
-                                .report(&mut self.storage);
-                        }
-                        // Skip
-                        None => {}
-                    }
-                }
-
-                return Ok(());
-            }
-
-            RPat::Object(RObjectPat {
-                ref props,
-                ref type_ann,
-                node_id,
-                ..
-            }) => {
-                // if self.ctx.in_declare {
-                //     self.storage.report(Error::DestructuringAssignInAmbientContext { span });
-                // }
-
-                let ty = match ty {
-                    None => try_opt!(type_ann.as_ref().map(|v| v.type_ann.validate_with(self))),
-                    Some(mut ty) => {
-                        ty.respan(span);
-                        Some(ty)
-                    }
-                };
-
-                if type_ann.is_none() {
-                    if let Some(m) = &mut self.mutations {
-                        m.for_pats.entry(*node_id).or_default().ty = Some(Type::TypeLit(TypeLit {
-                            span,
-                            // TODO: Fill it
-                            members: vec![],
-                            metadata: Default::default(),
-                        }));
-                    }
-                }
-
-                let mut used_keys = vec![];
-
-                for prop in props {
-                    match prop {
-                        RObjectPatProp::Assign(prop) => {
-                            let span = prop.span;
-                            let mut key = Key::Normal {
-                                span: prop.key.span,
-                                sym: prop.key.sym.clone(),
-                            };
-                            used_keys.push(key.clone());
-
-                            let default_prop_ty = default_ty.as_ref().and_then(|obj| {
-                                self.access_property(span, obj, &key, TypeOfMode::RValue, IdCtx::Var)
-                                    .ok()
-                            });
-
-                            let prop_ty = match &ty {
-                                Some(ty) => self
-                                    .access_property(span, ty, &key, TypeOfMode::RValue, IdCtx::Var)
-                                    .convert_err(|err| match err {
-                                        Error::NoSuchProperty { span, .. } if prop.value.is_none() => {
-                                            Error::NoSuchPropertyWhileDeclWithBidningPat { span }
-                                        }
-                                        _ => err,
-                                    })
-                                    .context("tried to access property to declare variables using an object pattern")
-                                    .report(&mut self.storage),
-                                None => None,
-                            };
-
-                            match &prop.value {
-                                Some(value) => {
-                                    // TODO: Assign this
-                                    let type_of_default_value =
-                                        value.validate_with_default(self).report(&mut self.storage);
-
-                                    let default = opt_union(span, default_prop_ty, type_of_default_value);
-
-                                    // TODO: actual_ty
-                                    self.declare_vars_inner_with_ty(
-                                        kind,
-                                        &RPat::Ident(RBindingIdent {
-                                            node_id: NodeId::invalid(),
-                                            id: prop.key.clone(),
-                                            type_ann: None,
-                                        }),
-                                        prop_ty,
-                                        None,
-                                        default,
-                                    )
-                                    .context(
-                                        "tried to declare a variable from an assignment property in an object pattern",
-                                    )
-                                    .report(&mut self.storage);
-                                }
-                                None => {
-                                    // TODO: actual_ty
-                                    self.declare_vars_inner_with_ty(
-                                        kind,
-                                        &RPat::Ident(RBindingIdent {
-                                            node_id: NodeId::invalid(),
-                                            id: prop.key.clone(),
-                                            type_ann: None,
-                                        }),
-                                        prop_ty,
-                                        None,
-                                        default_prop_ty,
-                                    )
-                                    .context("tried to declare a variable from a simple property in an object pattern")
-                                    .report(&mut self.storage);
-                                }
-                            }
-                        }
-
-                        RObjectPatProp::KeyValue(p) => {
-                            let span = p.span();
-                            let key = p.key.validate_with(self)?;
-                            used_keys.push(key.clone());
-
-                            let prop_ty = match &ty {
-                                Some(ty) => self
-                                    .access_property(span, &ty, &key, TypeOfMode::RValue, IdCtx::Var)
-                                    .map(Some)
-                                    .context("tried to access property to declare variables using an object pattern")
-                                    .report(&mut self.storage)
-                                    .flatten()
-                                    .or_else(|| Some(Type::any(span))),
-                                None => None,
-                            };
-
-                            let default = default_ty.as_ref().and_then(|obj| {
-                                self.access_property(span, obj, &key, TypeOfMode::RValue, IdCtx::Var)
-                                    .ok()
-                            });
-
-                            // TODO: actual_ty
-                            self.declare_vars_inner_with_ty(kind, &p.value, prop_ty, None, default)
-                                .context("tried to declare a variable from key-value property in an object pattern")
-                                .report(&mut self.storage);
-                        }
-
-                        RObjectPatProp::Rest(pat) => {
-                            let default = default_ty
-                                .as_ref()
-                                .and_then(|ty| self.exclude_props(span, &ty, &used_keys).ok());
-
-                            match ty {
-                                Some(ty) => {
-                                    let rest_ty = self
-                                        .exclude_props(span, &ty, &used_keys)
-                                        .context("tried to exclude keys for declare vars with a object rest pattern")?;
-
-                                    return self
-                                        .declare_complex_vars(kind, &pat.arg, rest_ty, None, default)
-                                        .context("tried to declare vars with an object rest pattern");
-                                }
-                                None => {
-                                    return self
-                                        .declare_vars_inner_with_ty(kind, &pat.arg, None, None, default)
-                                        .context("tried to declare vars with an object rest pattern without types");
-                                }
-                            }
-                        }
-                    }
-                }
-
-                match self.ctx.pat_mode {
-                    PatMode::Decl => {
-                        // TODO: Report errors for unused properties
-                    }
-                    _ => {}
-                }
-
-                return Ok(());
-            }
-
-            RPat::Rest(RRestPat {
-                ref arg,
-                type_ann: ref ty,
-                node_id,
-                ..
-            }) => {
-                let mut arg = arg.clone();
-
-                self.declare_vars_inner(kind, &arg).report(&mut self.storage);
-
-                let new_ty = arg.get_mut_ty().take();
-                if ty.is_none() {
-                    if let Some(arg_node_id) = arg.node_id() {
-                        if let Some(m) = &mut self.mutations {
-                            let ty = m.for_pats.entry(arg_node_id).or_default().ty.take();
-                            if let Some(ty) = ty {
-                                m.for_pats.entry(*node_id).or_default().ty = Some(ty);
-                            }
-                        }
-                    }
-                }
-
-                return Ok(());
             }
 
             RPat::Invalid(..) | RPat::Expr(box RExpr::Invalid(..)) => Ok(()),
