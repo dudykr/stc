@@ -2482,6 +2482,12 @@ impl Analyzer<'_, '_> {
 
         ty.reposition(i.span);
 
+        {
+            let span = ty.span();
+            let span = span.apply_mark(self.marks().resolved_from_var);
+            ty.respan(span);
+        }
+
         Ok(ty)
     }
 
