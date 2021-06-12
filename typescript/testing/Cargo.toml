@@ -13,8 +13,8 @@ stc_ts_ast_rnode = { path = "../ast_rnode" }
 stc_ts_types = { path = "../types" }
 swc_atoms = "0.2.5"
 swc_common = "0.10.12"
-swc_ecma_ast = "0.45.0"
-swc_ecma_codegen = "0.55.4"
-swc_ecma_parser = "0.57.3"
-swc_ecma_utils = "0.36.0"
-swc_ecma_visit = "0.31.0"
+swc_ecma_ast = "0.46.0"
+swc_ecma_codegen = "0.57.0"
+swc_ecma_parser = "0.59.0"
+swc_ecma_utils = "0.37.0"
+swc_ecma_visit = "0.32.0"

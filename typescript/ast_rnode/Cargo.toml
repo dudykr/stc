@@ -14,4 +14,4 @@ stc_utils = {path = "../../utils"}
 stc_visit = {path = "../../visit"}
 swc_atoms = "0.2.5"
 swc_common = "0.10.12"
-swc_ecma_ast = "0.45.0"
+swc_ecma_ast = "0.46.0"
