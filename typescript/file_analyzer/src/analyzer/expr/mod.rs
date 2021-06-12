@@ -860,6 +860,14 @@ impl Analyzer<'_, '_> {
                                     return Ok(Some(Type::any(span)));
                                 }
                             }
+                        } else {
+                            let prop_num = lexical::parse_radix::<f64, _>(prop_sym.as_bytes(), 10);
+
+                            if let Ok(prop_num) = prop_num {
+                                if key.value == prop_num {
+                                    return Ok(Some(Type::any(span)));
+                                }
+                            }
                         }
                     }
                     _ => {}
