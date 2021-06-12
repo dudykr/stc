@@ -381,6 +381,7 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
                         JscTarget::Es2018 => Lib::load("es2018.full"),
                         JscTarget::Es2019 => Lib::load("es2019.full"),
                         JscTarget::Es2020 => Lib::load("es2020.full"),
+                        JscTarget::Es2021 => Lib::load("es2021.full"),
                     }
                 } else {
                     if specified {
