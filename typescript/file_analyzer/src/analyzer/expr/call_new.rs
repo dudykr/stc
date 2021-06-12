@@ -2269,6 +2269,8 @@ impl Analyzer<'_, '_> {
     fn validate_arg_types(&mut self, params: &[FnParam], spread_arg_types: &[TypeOrSpread]) {
         slog::info!(self.logger, "[exprs] Validating arguments");
 
+        let marks = self.marks();
+
         let rest_idx = {
             let mut rest_idx = None;
             let mut shift = 0;
@@ -2378,10 +2380,11 @@ impl Analyzer<'_, '_> {
                             _ => {}
                         }
                     } else {
-                        let mut allow_unknown_rhs = match arg.ty.normalize() {
-                            Type::TypeLit(..) => false,
-                            _ => true,
-                        };
+                        let mut allow_unknown_rhs = marks.resolved_from_var.is_marked(arg.ty.span())
+                            || match arg.ty.normalize() {
+                                Type::TypeLit(..) => false,
+                                _ => true,
+                            };
                         if let Err(err) = self.assign_with_opts(
                             &mut Default::default(),
                             AssignOpts {
