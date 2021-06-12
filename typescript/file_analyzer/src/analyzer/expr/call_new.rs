@@ -817,7 +817,13 @@ impl Analyzer<'_, '_> {
                     callee_before_expanding,
                 )
             })
-        })();
+        })()
+        .with_context(|| {
+            format!(
+                "tried to call a property of an object ({})",
+                dump_type_as_string(&self.cm, &obj_type)
+            )
+        });
         self.scope.this = old_this;
         res
     }
