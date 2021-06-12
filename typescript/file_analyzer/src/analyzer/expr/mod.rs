@@ -837,6 +837,33 @@ impl Analyzer<'_, '_> {
                         _ => unimplemented!("TypeElement {:?}", el),
                     }
                 }
+
+                match (key, prop) {
+                    (
+                        Key::Num(key),
+                        Key::Normal {
+                            span: prop_span,
+                            sym: prop_sym,
+                        },
+                    ) => {
+                        // If we are accessing an object which has 0b11010 (26,
+                        // binary number) and the accessor is "26" (string), it
+                        // should be any.
+                        //
+                        //
+
+                        if prop_sym.starts_with("0b") || prop_sym.starts_with("0B") {
+                            let prop_num = lexical::parse_radix::<f64, _>(prop_sym[2..].as_bytes(), 2);
+
+                            if let Ok(prop_num) = prop_num {
+                                if key.value == prop_num {
+                                    return Ok(Some(Type::any(span)));
+                                }
+                            }
+                        }
+                    }
+                    _ => {}
+                }
             }
         }
 
