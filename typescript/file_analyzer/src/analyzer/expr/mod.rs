@@ -1720,7 +1720,33 @@ impl Analyzer<'_, '_> {
 
                 let array_ty = self.env.get_global_type(span, &js_word!("Array"))?;
 
+                let has_better_default = match prop.ty().normalize() {
+                    // newWithSpreadES5.ts contains
+                    //
+                    //
+                    // var i: C[][];
+                    // new i["a-b"][1](1, 2, "string");
+                    // new i["a-b"][1](1, 2, ...a);
+                    // new i["a-b"][1](1, 2, ...a, "string");
+                    //
+                    //
+                    // and it's not error.
+                    Type::Keyword(RTsKeywordType {
+                        kind: TsKeywordTypeKind::TsStringKeyword,
+                        ..
+                    })
+                    | Type::Lit(RTsLitType {
+                        lit: RTsLit::Str(..), ..
+                    }) => true,
+                    _ => false,
+                };
+
+                let ctx = Ctx {
+                    diallow_unknown_object_property: self.ctx.diallow_unknown_object_property || has_better_default,
+                    ..self.ctx
+                };
                 return self
+                    .with_ctx(ctx)
                     .access_property(span, &array_ty, prop, type_mode, id_ctx)
                     .or_else(|err| {
                         match prop.ty().normalize() {
