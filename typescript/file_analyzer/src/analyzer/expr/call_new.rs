@@ -1583,15 +1583,12 @@ impl Analyzer<'_, '_> {
         kind: ExtractKind,
         callee: &Type,
     ) -> ValidationResult<Vec<CallCandidate>> {
-        let callee = callee.normalize();
+        let callee = self
+            .normalize(Some(span), Cow::Borrowed(callee), Default::default())
+            .context("tried to normalize to extract callee")?;
 
         // TODO: Check if signature match.
-        match callee {
-            Type::Ref(..) => {
-                let callee = self.expand_top_ref(span, Cow::Borrowed(callee))?.into_owned();
-                return Ok(self.extract_callee_candidates(span, kind, &callee)?);
-            }
-
+        match callee.normalize() {
             Type::Intersection(i) => {
                 let candidates = i
                     .types
@@ -1647,7 +1644,7 @@ impl Analyzer<'_, '_> {
 
             Type::Interface(..) => {
                 let callee = self
-                    .type_to_type_lit(span, callee)?
+                    .type_to_type_lit(span, &callee)?
                     .map(Cow::into_owned)
                     .map(Type::TypeLit);
                 if let Some(callee) = callee {
