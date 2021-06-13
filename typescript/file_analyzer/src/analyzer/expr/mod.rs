@@ -1711,6 +1711,24 @@ impl Analyzer<'_, '_> {
                             ..
                         }) => return Ok(elem_type.clone()),
 
+                        // newWithSpreadES5.ts contains
+                        //
+                        //
+                        // var i: C[][];
+                        // new i["a-b"][1](1, 2, "string");
+                        // new i["a-b"][1](1, 2, ...a);
+                        // new i["a-b"][1](1, 2, ...a, "string");
+                        //
+                        //
+                        // and it's not error.
+                        Type::Keyword(RTsKeywordType {
+                            kind: TsKeywordTypeKind::TsStringKeyword,
+                            ..
+                        })
+                        | Type::Lit(RTsLitType {
+                            lit: RTsLit::Str(..), ..
+                        }) => return Ok(Type::any(span)),
+
                         _ => {}
                     }
                 }
