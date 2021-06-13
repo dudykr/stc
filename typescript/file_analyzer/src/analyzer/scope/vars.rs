@@ -350,6 +350,7 @@ impl Analyzer<'_, '_> {
 
                             let ctx = Ctx {
                                 should_not_create_indexed_type_from_ty_els: true,
+                                disallow_indexing_array_with_string: true,
                                 diallow_unknown_object_property: true,
                                 ..self.ctx
                             };
