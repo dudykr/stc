@@ -21,8 +21,3 @@ if command -v osascript &> /dev/null
 then
     osascript -e 'display notification "Check done!"'
 fi
-
-
-TEST='' cargo test --test tsc \
-  | grep 'ts .\.\. FAILED$' \
-  | sed -e 's!test conformance::!!'
