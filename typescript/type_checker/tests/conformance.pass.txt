@@ -1186,6 +1186,8 @@ expressions/elementAccess/letIdentifierInElementAccess01.ts
 expressions/elementAccess/stringEnumInElementAccess01.ts
 expressions/functionCalls/callOverload.ts
 expressions/functionCalls/grammarAmbiguities.ts
+expressions/functionCalls/newWithSpreadES5.ts
+expressions/functionCalls/newWithSpreadES6.ts
 expressions/functionCalls/typeArgumentInferenceErrors.ts
 expressions/functionCalls/typeArgumentInferenceTransitiveConstraints.ts
 expressions/functions/arrowFunctionExpressions.ts
