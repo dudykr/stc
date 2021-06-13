@@ -602,7 +602,12 @@ impl Analyzer<'_, '_> {
             })
             .context("tried calling `next()` to get element type of iterator")?;
 
+        let ctx = Ctx {
+            disallow_indexing_array_with_string: true,
+            ..self.ctx
+        };
         let mut elem_ty = self
+            .with_ctx(ctx)
             .access_property(
                 span,
                 &next_ret_ty,
