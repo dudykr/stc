@@ -74,7 +74,10 @@ fn record_stat(stats: Stats) -> Stats {
     let stats = (*guard).clone();
 
     let content = format!("{:#?}", stats);
-    fs::write("tests/wip-stats.rust-debug", &content).unwrap();
+
+    if env::var("WIP_STATS").unwrap_or_default() == "1" {
+        fs::write("tests/wip-stats.rust-debug", &content).unwrap();
+    }
 
     // If we are testing everything, update stats file.
     if env::var("TEST").map(|s| s == "").unwrap_or(false) {

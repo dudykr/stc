@@ -9,7 +9,7 @@ export RUST_LOG=debug
 # We prevent regression using faster checks
 GOLDEN_ONLY=1 cargo test -p stc_ts_file_analyzer --test visualize
 
-cargo test --color always -q --test tsc
+WIP_STATS=1 cargo test --color always -q --test tsc
 
 if command -v osascript &> /dev/null
 then
