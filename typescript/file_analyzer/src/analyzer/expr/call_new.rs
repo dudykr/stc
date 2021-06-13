@@ -207,7 +207,7 @@ impl Analyzer<'_, '_> {
                 &e.tag,
                 ExtractKind::Call,
                 args.as_ref(),
-                Default::default(),
+                e.type_params.as_ref(),
                 Default::default(),
             )
         });
