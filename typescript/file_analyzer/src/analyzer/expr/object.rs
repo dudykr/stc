@@ -479,7 +479,7 @@ impl Analyzer<'_, '_> {
             return Ok(to);
         }
         if rhs.is_any() || rhs.is_unknown() {
-            return Ok(to);
+            return Ok(rhs);
         }
 
         if rhs.is_kwd(TsKeywordTypeKind::TsNullKeyword) || rhs.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
