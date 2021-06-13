@@ -1718,30 +1718,32 @@ impl Analyzer<'_, '_> {
                     return Ok(elem_type.clone());
                 }
 
-                match prop.ty().normalize() {
-                    // newWithSpreadES5.ts contains
-                    //
-                    //
-                    // var i: C[][];
-                    // new i["a-b"][1](1, 2, "string");
-                    // new i["a-b"][1](1, 2, ...a);
-                    // new i["a-b"][1](1, 2, ...a, "string");
-                    //
-                    //
-                    // and it's not error.
-                    Type::Keyword(RTsKeywordType {
-                        kind: TsKeywordTypeKind::TsStringKeyword,
-                        ..
-                    })
-                    | Type::Lit(RTsLitType {
-                        lit: RTsLit::Str(..), ..
-                    }) => return Ok(Type::any(span)),
-                    _ => {}
-                }
-
                 let array_ty = self.env.get_global_type(span, &js_word!("Array"))?;
 
-                return self.access_property(span, &array_ty, prop, type_mode, id_ctx);
+                return self
+                    .access_property(span, &array_ty, prop, type_mode, id_ctx)
+                    .or_else(|err| {
+                        match prop.ty().normalize() {
+                            // newWithSpreadES5.ts contains
+                            //
+                            //
+                            // var i: C[][];
+                            // new i["a-b"][1](1, 2, "string");
+                            // new i["a-b"][1](1, 2, ...a);
+                            // new i["a-b"][1](1, 2, ...a, "string");
+                            //
+                            //
+                            // and it's not error.
+                            Type::Keyword(RTsKeywordType {
+                                kind: TsKeywordTypeKind::TsStringKeyword,
+                                ..
+                            })
+                            | Type::Lit(RTsLitType {
+                                lit: RTsLit::Str(..), ..
+                            }) => Ok(Type::any(span)),
+                            _ => Err(err),
+                        }
+                    });
             }
 
             Type::Interface(Interface { ref body, extends, .. }) => {
