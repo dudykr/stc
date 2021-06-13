@@ -1711,29 +1711,32 @@ impl Analyzer<'_, '_> {
                             ..
                         }) => return Ok(elem_type.clone()),
 
-                        // newWithSpreadES5.ts contains
-                        //
-                        //
-                        // var i: C[][];
-                        // new i["a-b"][1](1, 2, "string");
-                        // new i["a-b"][1](1, 2, ...a);
-                        // new i["a-b"][1](1, 2, ...a, "string");
-                        //
-                        //
-                        // and it's not error.
-                        Type::Keyword(RTsKeywordType {
-                            kind: TsKeywordTypeKind::TsStringKeyword,
-                            ..
-                        })
-                        | Type::Lit(RTsLitType {
-                            lit: RTsLit::Str(..), ..
-                        }) => return Ok(Type::any(span)),
-
                         _ => {}
                     }
                 }
                 if let Key::Num(n) = prop {
                     return Ok(elem_type.clone());
+                }
+
+                match prop.ty() {
+                    // newWithSpreadES5.ts contains
+                    //
+                    //
+                    // var i: C[][];
+                    // new i["a-b"][1](1, 2, "string");
+                    // new i["a-b"][1](1, 2, ...a);
+                    // new i["a-b"][1](1, 2, ...a, "string");
+                    //
+                    //
+                    // and it's not error.
+                    Type::Keyword(RTsKeywordType {
+                        kind: TsKeywordTypeKind::TsStringKeyword,
+                        ..
+                    })
+                    | Type::Lit(RTsLitType {
+                        lit: RTsLit::Str(..), ..
+                    }) => return Ok(Type::any(span)),
+                    _ => {}
                 }
 
                 let array_ty = self.env.get_global_type(span, &js_word!("Array"))?;
