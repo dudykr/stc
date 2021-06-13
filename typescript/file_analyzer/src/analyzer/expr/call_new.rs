@@ -63,6 +63,7 @@ use stc_ts_type_ops::Fix;
 use stc_ts_types::Array;
 use stc_ts_types::Class;
 use stc_ts_types::ClassDef;
+use stc_ts_types::ClassMember;
 use stc_ts_types::ClassProperty;
 use stc_ts_types::Instance;
 use stc_ts_types::Interface;
@@ -831,9 +832,7 @@ impl Analyzer<'_, '_> {
     fn extract_callable_properties_of_class(
         &mut self,
         span: Span,
-        expr: ReevalMode,
         kind: ExtractKind,
-        this: &Type,
         c: &ClassDef,
         prop: &Key,
         is_static_call: bool,
@@ -895,7 +894,7 @@ impl Analyzer<'_, '_> {
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
     ) -> ValidationResult<Option<Type>> {
-        let candidates = self.extract_callable_properties_of_class(span, expr, kind, this, c, prop, is_static_call)?;
+        let candidates = self.extract_callable_properties_of_class(span, kind, c, prop, is_static_call)?;
 
         if let Some(v) = self.select_and_invoke(
             span,
@@ -1207,7 +1206,7 @@ impl Analyzer<'_, '_> {
 
                         // Infer type arguments using constructors.
                         let constructors = cls.body.iter().filter_map(|member| match member {
-                            stc_ts_types::ClassMember::Constructor(c) => Some(c),
+                            ClassMember::Constructor(c) => Some(c),
                             _ => None,
                         });
 
@@ -1680,6 +1679,42 @@ impl Analyzer<'_, '_> {
                         }
                         _ => {}
                     }
+                }
+
+                return Ok(candidates);
+            }
+
+            Type::ClassDef(cls) => {
+                let mut candidates = vec![];
+                for body in &cls.body {
+                    match body {
+                        ClassMember::Constructor(c) => {
+                            candidates.push(CallCandidate {
+                                type_params: c.type_params.clone().map(|v| v.params),
+                                params: c.params.clone(),
+                                ret_ty: c
+                                    .ret_ty
+                                    .clone()
+                                    .map(|v| *v)
+                                    .unwrap_or_else(|| callee.clone().into_owned()),
+                            });
+                        }
+                        _ => {}
+                    }
+                }
+
+                if candidates.is_empty() {
+                    if let Some(sc) = &cls.super_class {
+                        candidates.extend(self.extract_callee_candidates(span, kind, sc)?);
+                    }
+                }
+
+                if candidates.is_empty() {
+                    candidates.push(CallCandidate {
+                        type_params: Default::default(),
+                        params: Default::default(),
+                        ret_ty: callee.clone().into_owned(),
+                    });
                 }
 
                 return Ok(candidates);
