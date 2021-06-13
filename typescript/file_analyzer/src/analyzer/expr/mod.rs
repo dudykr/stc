@@ -861,6 +861,14 @@ impl Analyzer<'_, '_> {
                                     return Ok(Some(Type::any(span)));
                                 }
                             }
+                        } else if prop_sym.starts_with("0o") || prop_sym.starts_with("0O") {
+                            let prop_num = lexical::parse_radix::<f64, _>(prop_sym[2..].as_bytes(), 8);
+
+                            if let Ok(prop_num) = prop_num {
+                                if key.value == prop_num {
+                                    return Ok(Some(Type::any(span)));
+                                }
+                            }
                         } else {
                             let prop_num = lexical::parse_radix::<f64, _>(prop_sym.as_bytes(), 10);
 
