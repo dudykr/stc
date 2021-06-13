@@ -973,8 +973,9 @@ impl Analyzer<'_, '_> {
                         .normalize(Some(span), Cow::Borrowed(&ty), Default::default())
                         .map(Cow::into_owned)
                         .unwrap_or_else(|_| ty);
+                    let ty = ty.foldable();
 
-                    match ty.foldable() {
+                    match ty {
                         Type::Keyword(RTsKeywordType {
                             kind: TsKeywordTypeKind::TsAnyKeyword,
                             ..
