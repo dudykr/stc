@@ -2437,7 +2437,7 @@ impl Analyzer<'_, '_> {
             match pair {
                 EitherOrBoth::Both(param, arg) => {
                     match &param.pat {
-                        RPat::Rest(..) if arg.spread.is_none() => {
+                        RPat::Rest(..) => {
                             let param_ty =
                                 self.normalize(Some(arg.span()), Cow::Borrowed(&param.ty), Default::default());
 
@@ -2516,7 +2516,8 @@ impl Analyzer<'_, '_> {
                             .convert_err(|err| Error::WrongArgType {
                                 span: err.span(),
                                 inner: box err,
-                            });
+                            })
+                            .context("arg is spread");
                         if let Err(err) = res {
                             self.storage.report(err)
                         }
