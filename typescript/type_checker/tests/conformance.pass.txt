@@ -406,6 +406,10 @@ es6/arrowFunction/emitArrowFunctionWhenUsingArguments19.ts
 es6/arrowFunction/emitArrowFunctionWhenUsingArguments19_ES6.ts
 es6/arrowFunction/emitArrowFunctionsAsIs.ts
 es6/arrowFunction/emitArrowFunctionsAsIsES6.ts
+es6/binaryAndOctalIntegerLiteral/binaryIntegerLiteral.ts
+es6/binaryAndOctalIntegerLiteral/binaryIntegerLiteralES6.ts
+es6/binaryAndOctalIntegerLiteral/octalIntegerLiteral.ts
+es6/binaryAndOctalIntegerLiteral/octalIntegerLiteralES6.ts
 es6/classDeclaration/classWithSemicolonClassElementES61.ts
 es6/classDeclaration/classWithSemicolonClassElementES62.ts
 es6/classDeclaration/emitClassDeclarationOverloadInES6.ts
