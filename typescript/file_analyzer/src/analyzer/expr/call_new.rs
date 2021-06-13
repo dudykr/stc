@@ -968,7 +968,7 @@ impl Analyzer<'_, '_> {
 
                 if let Ok(()) = self.assign(&mut Default::default(), &p.key.ty(), &prop.ty(), span) {
                     // TODO: Remove useless clone
-                    let ty = *p.type_ann.as_ref().cloned().unwrap_or(box Type::any(m.span()));
+                    let ty = *p.type_ann.clone().unwrap_or(box Type::any(m.span()));
                     let ty = self
                         .normalize(Some(span), Cow::Borrowed(&ty), Default::default())
                         .map(Cow::into_owned)
