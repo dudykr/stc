@@ -2502,6 +2502,24 @@ impl Analyzer<'_, '_> {
                             }
                             _ => {}
                         }
+
+                        let res = self
+                            .assign_with_opts(
+                                &mut Default::default(),
+                                AssignOpts {
+                                    span: arg.span(),
+                                    ..Default::default()
+                                },
+                                &param.ty,
+                                &arg.ty,
+                            )
+                            .convert_err(|err| Error::WrongArgType {
+                                span: err.span(),
+                                inner: box err,
+                            });
+                        if let Err(err) = res {
+                            self.storage.report(err)
+                        }
                     } else {
                         let mut allow_unknown_rhs = marks.resolved_from_var.is_marked(arg.ty.span())
                             || match arg.ty.normalize() {
