@@ -894,7 +894,61 @@ impl Analyzer<'_, '_> {
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
     ) -> ValidationResult<Option<Type>> {
-        let candidates = self.extract_callable_properties_of_class(span, kind, c, prop, is_static_call)?;
+        let candidates = {
+            // TODO: Deduplicate.
+            // This is duplicated intentionally because of regresions.
+
+            let mut candidates: Vec<CallCandidate> = vec![];
+            for member in c.body.iter() {
+                match member {
+                    ty::ClassMember::Method(Method {
+                        key,
+                        ret_ty,
+                        type_params,
+                        params,
+                        is_static,
+                        ..
+                    }) if *is_static == is_static_call => {
+                        if self.key_matches(span, key, prop, false) {
+                            candidates.push(CallCandidate {
+                                type_params: type_params.as_ref().map(|v| v.params.clone()),
+                                params: params.clone(),
+                                ret_ty: *ret_ty.clone(),
+                            });
+                        }
+                    }
+                    ty::ClassMember::Property(ClassProperty {
+                        key, value, is_static, ..
+                    }) if *is_static == is_static_call => {
+                        if self.key_matches(span, key, prop, false) {
+                            // Check for properties with callable type.
+
+                            // TODO: Change error message from no callable
+                            // property to property exists but not callable.
+
+                            if let Some(ty) = value.as_deref().map(Type::normalize) {
+                                return self
+                                    .extract(
+                                        span,
+                                        expr,
+                                        ty,
+                                        kind,
+                                        args,
+                                        arg_types,
+                                        spread_arg_types,
+                                        type_args,
+                                        type_ann,
+                                    )
+                                    .map(Some);
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+            }
+
+            candidates
+        };
 
         if let Some(v) = self.select_and_invoke(
             span,
