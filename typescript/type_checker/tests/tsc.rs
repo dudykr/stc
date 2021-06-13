@@ -13,6 +13,7 @@ use self::common::SwcComments;
 use anyhow::Context;
 use anyhow::Error;
 use once_cell::sync::Lazy;
+use parking_lot::Mutex;
 use serde::Deserialize;
 use stc_testing::logger;
 use stc_ts_builtin_types::Lib;
@@ -51,6 +52,25 @@ struct RefError {
     pub line: usize,
     pub column: usize,
     pub code: String,
+}
+
+#[derive(Debug, Default, Clone)]
+struct Stats {
+    required_error: usize,
+    matched_error: usize,
+    extra_error: usize,
+}
+
+/// Add stats and return total stats.
+fn record_stat(stats: Stats) -> Stats {
+    static STATS: Lazy<Mutex<Stats>> = Lazy::new(|| Default::default());
+
+    let mut guard = STATS.lock();
+    guard.required_error += stats.required_error;
+    guard.matched_error += stats.matched_error;
+    guard.extra_error += stats.extra_error;
+
+    (*guard).clone()
 }
 
 /// Retunrs **path**s (separated by `/`) of tests.
@@ -421,6 +441,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
         module_config,
     } in specs
     {
+        let mut stats = Stats::default();
         dbg!(&libs);
         for err in &mut expected_errors {
             // This error use special span.
@@ -497,6 +518,8 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
                 .iter()
                 .position(|err| (err.line == line || err.line == 0) && err.code == error_code)
             {
+                stats.matched_error += 1;
+
                 let is_zero_line = expected_errors[idx].line == 0;
                 expected_errors.remove(idx);
                 if let Some(idx) = actual_errors
@@ -533,7 +556,13 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
             Err(err) => err,
         };
 
-        let err_count = actual_errors.len();
+        let extra_err_count = actual_errors.len();
+        stats.required_error += expected_errors.len();
+        stats.extra_error += extra_err_count;
+
+        let stats = record_stat(stats);
+
+        println!("[STATS] {:#?}", stats);
 
         if expected_errors.is_empty() {
             println!("[REMOVE_ONLY]{}", file_name.display());
@@ -547,7 +576,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
                 err,
                 expected_errors.len(),
                 full_ref_err_cnt,
-                err_count,
+                extra_err_count,
                 expected_errors,
                 actual_errors,
                 full_ref_errors,
