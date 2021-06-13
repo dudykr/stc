@@ -1685,6 +1685,10 @@ impl Analyzer<'_, '_> {
             }
 
             Type::ClassDef(cls) => {
+                if kind == ExtractKind::Call {
+                    return Ok(vec![]);
+                }
+
                 let mut candidates = vec![];
                 for body in &cls.body {
                     match body {
