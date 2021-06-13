@@ -966,7 +966,7 @@ impl Analyzer<'_, '_> {
                     return;
                 }
 
-                if let Ok(()) = self.assign(&mut Default::default(), &p.key.ty(), &prop.ty(), span) {
+                if self.key_matches(span, &p.key, &prop, false) {
                     // TODO: Remove useless clone
                     let ty = *p.type_ann.clone().unwrap_or(box Type::any(m.span()));
                     let ty = self
