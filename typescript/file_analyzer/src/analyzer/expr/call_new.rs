@@ -2449,6 +2449,21 @@ impl Analyzer<'_, '_> {
                                 }
                             };
 
+                            if arg.spread.is_some() {
+                                if let Ok(()) = self.assign_with_opts(
+                                    &mut Default::default(),
+                                    AssignOpts {
+                                        span: arg.span(),
+                                        allow_iterable_on_rhs: true,
+                                        ..Default::default()
+                                    },
+                                    &param.ty,
+                                    &arg.ty,
+                                ) {
+                                    continue;
+                                }
+                            }
+
                             match param_ty.normalize() {
                                 Type::Array(arr) => {
                                     // We should change type if the parameter is a rest parameter.
