@@ -988,6 +988,10 @@ impl Analyzer<'_, '_> {
                             });
                         }
 
+                        Type::TypeLit(type_lit) => {
+                            self.check_type_element_for_call(span, kind, candidates, m, prop);
+                        }
+
                         _ => {}
                     }
                 }
