@@ -1718,7 +1718,7 @@ impl Analyzer<'_, '_> {
                     return Ok(elem_type.clone());
                 }
 
-                match prop.ty() {
+                match prop.ty().normalize() {
                     // newWithSpreadES5.ts contains
                     //
                     //
