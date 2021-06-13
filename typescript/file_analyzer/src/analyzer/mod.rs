@@ -127,6 +127,8 @@ pub(crate) struct Ctx {
     /// If `true`, `access_property` will not produce types like `Array['b']`
     should_not_create_indexed_type_from_ty_els: bool,
 
+    disallow_indexing_array_with_string: bool,
+
     in_shorthand: bool,
 
     /// `true` for condition of conditional expression or of an if statement.
@@ -502,6 +504,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 check_for_implicit_any: false,
                 cannot_be_tuple: false,
                 should_not_create_indexed_type_from_ty_els: false,
+                disallow_indexing_array_with_string: false,
                 in_shorthand: false,
                 in_cond_of_cond_expr: false,
                 should_store_truthy_for_access: false,
