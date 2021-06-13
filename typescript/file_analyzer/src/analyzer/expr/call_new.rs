@@ -993,21 +993,9 @@ impl Analyzer<'_, '_> {
                             });
                         }
 
-                        Type::TypeLit(type_lit) => {
-                            if recuree {
-                                for m in &type_lit.members {
-                                    self.check_type_element_for_call(span, kind, candidates, m, prop, false);
-                                }
-                            }
-                        }
-
-                        Type::Interface(i) => {
-                            if recuree {
-                                for m in &i.body {
-                                    self.check_type_element_for_call(span, kind, candidates, m, prop, false);
-                                }
-
-                                // TODO: Handle parents
+                        Type::TypeLit(..) | Type::Interface(..) => {
+                            if let Ok(cs) = self.extract_callee_candidates(span, kind, &ty) {
+                                candidates.extend(cs);
                             }
                         }
 
