@@ -1742,7 +1742,8 @@ impl Analyzer<'_, '_> {
                 };
 
                 let ctx = Ctx {
-                    diallow_unknown_object_property: self.ctx.diallow_unknown_object_property || has_better_default,
+                    should_not_create_indexed_type_from_ty_els: self.ctx.should_not_create_indexed_type_from_ty_els
+                        || has_better_default,
                     ..self.ctx
                 };
                 return self
