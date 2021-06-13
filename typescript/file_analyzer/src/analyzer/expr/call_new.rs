@@ -939,6 +939,7 @@ impl Analyzer<'_, '_> {
         candidates: &mut Vec<CallCandidate>,
         m: &'a TypeElement,
         prop: &Key,
+        recuree: bool,
     ) {
         match m {
             TypeElement::Method(m) if kind == ExtractKind::Call => {
@@ -989,7 +990,9 @@ impl Analyzer<'_, '_> {
                         }
 
                         Type::TypeLit(type_lit) => {
-                            self.check_type_element_for_call(span, kind, candidates, m, prop);
+                            if recuree {
+                                self.check_type_element_for_call(span, kind, candidates, m, prop, false);
+                            }
                         }
 
                         _ => {}
@@ -1022,7 +1025,7 @@ impl Analyzer<'_, '_> {
         let mut candidates = Vec::with_capacity(4);
 
         for m in members {
-            self.check_type_element_for_call(span, kind, &mut candidates, m, prop);
+            self.check_type_element_for_call(span, kind, &mut candidates, m, prop, true);
         }
 
         // TODO: Move this to caller to prevent checking members of `Object` every time
@@ -1041,7 +1044,7 @@ impl Analyzer<'_, '_> {
 
             // TODO: Remove clone
             for m in methods {
-                self.check_type_element_for_call(span, kind, &mut candidates, m, prop);
+                self.check_type_element_for_call(span, kind, &mut candidates, m, prop, true);
             }
         }
 
