@@ -760,6 +760,7 @@ es6/templates/taggedTemplateStringsWithTypedTagsES6.ts
 es6/templates/taggedTemplateUntypedTagCall01.ts
 es6/templates/taggedTemplateWithConstructableTag01.ts
 es6/templates/taggedTemplateWithConstructableTag02.ts
+es6/templates/taggedTemplatesWithTypeArguments1.ts
 es6/templates/templateStringBinaryOperations.ts
 es6/templates/templateStringBinaryOperationsES6.ts
 es6/templates/templateStringBinaryOperationsES6Invalid.ts
@@ -1076,6 +1077,7 @@ es7/exponentiationOperator/exponentiationOperatorWithEnum.ts
 es7/exponentiationOperator/exponentiationOperatorWithEnumUnion.ts
 es7/exponentiationOperator/exponentiationOperatorWithNew.ts
 esnext/logicalAssignment/logicalAssignment1.ts
+esnext/logicalAssignment/logicalAssignment10.ts
 esnext/logicalAssignment/logicalAssignment2.ts
 esnext/logicalAssignment/logicalAssignment3.ts
 esnext/logicalAssignment/logicalAssignment9.ts
