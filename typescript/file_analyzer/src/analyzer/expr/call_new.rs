@@ -1696,11 +1696,12 @@ impl Analyzer<'_, '_> {
                             candidates.push(CallCandidate {
                                 type_params: c.type_params.clone().map(|v| v.params),
                                 params: c.params.clone(),
-                                ret_ty: c
-                                    .ret_ty
-                                    .clone()
-                                    .map(|v| *v)
-                                    .unwrap_or_else(|| callee.clone().into_owned()),
+                                ret_ty: c.ret_ty.clone().map(|v| *v).unwrap_or_else(|| {
+                                    Type::Class(Class {
+                                        span,
+                                        def: box cls.clone(),
+                                    })
+                                }),
                             });
                         }
                         _ => {}
@@ -1717,7 +1718,10 @@ impl Analyzer<'_, '_> {
                     candidates.push(CallCandidate {
                         type_params: Default::default(),
                         params: Default::default(),
-                        ret_ty: callee.clone().into_owned(),
+                        ret_ty: Type::Class(Class {
+                            span,
+                            def: box cls.clone(),
+                        }),
                     });
                 }
 
