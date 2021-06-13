@@ -2339,7 +2339,7 @@ impl Analyzer<'_, '_> {
             match pair {
                 EitherOrBoth::Both(param, arg) => {
                     match &param.pat {
-                        RPat::Rest(..) => {
+                        RPat::Rest(..) if arg.spread.is_none() => {
                             let param_ty =
                                 self.normalize(Some(arg.span()), Cow::Borrowed(&param.ty), Default::default());
 
@@ -2360,9 +2360,15 @@ impl Analyzer<'_, '_> {
                                         Err(err) => err,
                                     };
 
-                                    let err = err.convert(|err| Error::WrongArgType {
-                                        span: arg.span(),
-                                        inner: box err,
+                                    let err = err.convert(|err| {
+                                        Error::WrongArgType {
+                                            span: arg.span(),
+                                            inner: box err,
+                                        }
+                                        .context(
+                                            "tried assigning elem type of an array because parameter is declared as a \
+                                             rest pattern",
+                                        )
                                     });
                                     self.storage.report(err);
                                     continue;
