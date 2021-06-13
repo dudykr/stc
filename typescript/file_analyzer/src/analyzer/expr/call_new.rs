@@ -1066,7 +1066,8 @@ impl Analyzer<'_, '_> {
             span,
             obj: Some(box obj.clone()),
             prop: Some(box prop.clone()),
-        })
+        }
+        .context("failed to call property of type elements"))
     }
 
     /// Returns `()`
