@@ -1449,7 +1449,6 @@ parser/ecmascript5/ClassDeclarations/parserClass1.ts
 parser/ecmascript5/ClassDeclarations/parserClass2.ts
 parser/ecmascript5/ClassDeclarations/parserClassDeclaration10.ts
 parser/ecmascript5/ClassDeclarations/parserClassDeclaration11.ts
-parser/ecmascript5/ClassDeclarations/parserClassDeclaration12.ts
 parser/ecmascript5/ClassDeclarations/parserClassDeclaration13.ts
 parser/ecmascript5/ClassDeclarations/parserClassDeclaration14.ts
 parser/ecmascript5/ClassDeclarations/parserClassDeclaration15.ts
