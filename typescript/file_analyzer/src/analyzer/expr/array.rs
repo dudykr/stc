@@ -261,7 +261,7 @@ impl Analyzer<'_, '_> {
                         IdCtx::Var,
                     )
                     .map(Cow::Owned)
-                    .context("tried to access property of a type to calculate element type")
+                    .context("tried to access property of a type to calculate element type");
             }
             _ => {}
         }
@@ -293,7 +293,12 @@ impl Analyzer<'_, '_> {
             })
             .context("tried calling `next()` to get element type of nth element of an iterator")?;
 
+        let ctx = Ctx {
+            disallow_indexing_array_with_string: true,
+            ..self.ctx
+        };
         let mut elem_ty = self
+            .with_ctx(ctx)
             .access_property(
                 span,
                 &next_ret_ty,
