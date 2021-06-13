@@ -130,3 +130,9 @@ impl Debug for Id {
         Display::fmt(self, f)
     }
 }
+
+impl PartialEq<str> for Id {
+    fn eq(&self, other: &str) -> bool {
+        self.sym == *other
+    }
+}
