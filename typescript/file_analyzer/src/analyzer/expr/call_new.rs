@@ -828,7 +828,7 @@ impl Analyzer<'_, '_> {
         res
     }
 
-    fn call_property_of_class(
+    fn extract_callable_properties_of_class(
         &mut self,
         span: Span,
         expr: ReevalMode,
@@ -837,12 +837,7 @@ impl Analyzer<'_, '_> {
         c: &ClassDef,
         prop: &Key,
         is_static_call: bool,
-        type_args: Option<&TypeParamInstantiation>,
-        args: &[RExprOrSpread],
-        arg_types: &[TypeOrSpread],
-        spread_arg_types: &[TypeOrSpread],
-        type_ann: Option<&Type>,
-    ) -> ValidationResult<Option<Type>> {
+    ) -> ValidationResult<Vec<CallCandidate>> {
         let mut candidates: Vec<CallCandidate> = vec![];
         for member in c.body.iter() {
             match member {
@@ -870,26 +865,37 @@ impl Analyzer<'_, '_> {
 
                         // TODO: Change error message from no callable
                         // property to property exists but not callable.
-                        if let Some(ty) = &value {
-                            return self
-                                .extract(
-                                    span,
-                                    expr,
-                                    ty,
-                                    kind,
-                                    args,
-                                    arg_types,
-                                    spread_arg_types,
-                                    type_args,
-                                    type_ann,
-                                )
-                                .map(Some);
+
+                        if let Some(prop_ty) = value.as_deref().map(Type::normalize) {
+                            if let Ok(cs) = self.extract_callee_candidates(span, kind, prop_ty) {
+                                candidates.extend(cs);
+                            }
                         }
                     }
                 }
                 _ => {}
             }
         }
+
+        return Ok(candidates);
+    }
+
+    fn call_property_of_class(
+        &mut self,
+        span: Span,
+        expr: ReevalMode,
+        kind: ExtractKind,
+        this: &Type,
+        c: &ClassDef,
+        prop: &Key,
+        is_static_call: bool,
+        type_args: Option<&TypeParamInstantiation>,
+        args: &[RExprOrSpread],
+        arg_types: &[TypeOrSpread],
+        spread_arg_types: &[TypeOrSpread],
+        type_ann: Option<&Type>,
+    ) -> ValidationResult<Option<Type>> {
+        let candidates = self.extract_callable_properties_of_class(span, expr, kind, this, c, prop, is_static_call)?;
 
         if let Some(v) = self.select_and_invoke(
             span,
