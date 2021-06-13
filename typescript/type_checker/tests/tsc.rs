@@ -24,6 +24,7 @@ use stc_ts_module_loader::resolver::node::NodeResolver;
 use stc_ts_type_checker::Checker;
 use std::collections::HashSet;
 use std::env;
+use std::fs;
 use std::fs::read_to_string;
 use std::fs::File;
 use std::panic::catch_unwind;
@@ -70,7 +71,12 @@ fn record_stat(stats: Stats) -> Stats {
     guard.matched_error += stats.matched_error;
     guard.extra_error += stats.extra_error;
 
-    (*guard).clone()
+    let stats = (*guard).clone();
+
+    let content = format!("{:#?}", stats);
+    fs::write("tests/stats.rust-debug", content).unwrap();
+
+    stats
 }
 
 /// Retunrs **path**s (separated by `/`) of tests.
