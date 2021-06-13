@@ -1796,6 +1796,10 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                if type_mode == TypeOfMode::LValue {
+                    return Ok(Type::any(span));
+                }
+
                 dbg!();
                 return Err(Error::NoSuchProperty {
                     span,
