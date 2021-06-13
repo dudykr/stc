@@ -969,6 +969,10 @@ impl Analyzer<'_, '_> {
                 if let Ok(()) = self.assign(&mut Default::default(), &p.key.ty(), &prop.ty(), span) {
                     // TODO: Remove useless clone
                     let ty = *p.type_ann.as_ref().cloned().unwrap_or(box Type::any(m.span()));
+                    let ty = self
+                        .normalize(Some(span), Cow::Borrowed(&ty), Default::default())
+                        .map(Cow::into_owned)
+                        .unwrap_or_else(|_| ty);
 
                     match ty.foldable() {
                         Type::Keyword(RTsKeywordType {
@@ -991,7 +995,19 @@ impl Analyzer<'_, '_> {
 
                         Type::TypeLit(type_lit) => {
                             if recuree {
-                                self.check_type_element_for_call(span, kind, candidates, m, prop, false);
+                                for m in &type_lit.members {
+                                    self.check_type_element_for_call(span, kind, candidates, m, prop, false);
+                                }
+                            }
+                        }
+
+                        Type::Interface(i) => {
+                            if recuree {
+                                for m in &i.body {
+                                    self.check_type_element_for_call(span, kind, candidates, m, prop, false);
+                                }
+
+                                // TODO: Handle parents
                             }
                         }
 
