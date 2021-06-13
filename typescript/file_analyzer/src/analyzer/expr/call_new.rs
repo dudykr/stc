@@ -994,13 +994,11 @@ impl Analyzer<'_, '_> {
                             });
                         }
 
-                        Type::TypeLit(..) | Type::Interface(..) => {
+                        _ => {
                             if let Ok(cs) = self.extract_callee_candidates(span, kind, &ty) {
                                 candidates.extend(cs);
                             }
                         }
-
-                        _ => {}
                     }
                 }
             }
