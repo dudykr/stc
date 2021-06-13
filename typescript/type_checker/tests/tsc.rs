@@ -62,6 +62,10 @@ struct Stats {
     extra_error: usize,
 }
 
+fn is_all_test_enabled() -> bool {
+    env::var("TEST").map(|s| s == "").unwrap_or(false)
+}
+
 /// Add stats and return total stats.
 fn record_stat(stats: Stats) -> Stats {
     static STATS: Lazy<Mutex<Stats>> = Lazy::new(|| Default::default());
@@ -80,7 +84,7 @@ fn record_stat(stats: Stats) -> Stats {
     }
 
     // If we are testing everything, update stats file.
-    if env::var("TEST").map(|s| s == "").unwrap_or(false) {
+    if is_all_test_enabled() {
         fs::write("tests/tsc-stats.rust-debug", &content).unwrap();
     }
 
@@ -138,6 +142,20 @@ fn create_test(path: PathBuf) -> Option<Box<dyn FnOnce() + Send + Sync>> {
         return None;
     }
 
+    if let Ok(errors) = load_expected_errors(&path) {
+        for err in errors {
+            if err.code.starts_with("TS1") && err.code.len() == 6 {
+                return None;
+            }
+
+            // These are actually parser test.
+            match &*err.code {
+                "TS2369" => return None,
+                _ => {}
+            }
+        }
+    }
+
     let str_name = path.display().to_string();
 
     // If parser returns error, ignore it for now.
@@ -147,6 +165,13 @@ fn create_test(path: PathBuf) -> Option<Box<dyn FnOnce() + Send + Sync>> {
 
     // Postpone multi-file tests.
     if fm.src.to_lowercase().contains("@filename") || fm.src.contains("<reference path") {
+        if is_all_test_enabled() {
+            record_stat(Stats {
+                required_error: load_expected_errors(&path).map(|v| v.len()).unwrap_or_default(),
+                ..Default::default()
+            });
+        }
+
         return None;
     }
 
@@ -162,20 +187,6 @@ fn create_test(path: PathBuf) -> Option<Box<dyn FnOnce() + Send + Sync>> {
         parser.parse_module().ok()
     })
     .ok()??;
-
-    if let Ok(errors) = load_expected_errors(&path) {
-        for err in errors {
-            if err.code.starts_with("TS1") && err.code.len() == 6 {
-                return None;
-            }
-
-            // These are actually parser test.
-            match &*err.code {
-                "TS2369" => return None,
-                _ => {}
-            }
-        }
-    }
 
     Some(box move || {
         do_test(&path).unwrap();
