@@ -851,8 +851,9 @@ impl Analyzer<'_, '_> {
                         // should be any.
                         //
                         //
-
-                        if prop_sym.starts_with("0b") || prop_sym.starts_with("0B") {
+                        if *prop_sym == js_word!("Infinity") {
+                            return Ok(Some(Type::any(span)));
+                        } else if prop_sym.starts_with("0b") || prop_sym.starts_with("0B") {
                             let prop_num = lexical::parse_radix::<f64, _>(prop_sym[2..].as_bytes(), 2);
 
                             if let Ok(prop_num) = prop_num {
