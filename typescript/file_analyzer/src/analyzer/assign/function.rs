@@ -20,6 +20,7 @@ use stc_ts_types::TypeParamDecl;
 use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::TypeEq;
+use swc_ecma_ast::TsKeywordTypeKind;
 
 impl Analyzer<'_, '_> {
     pub(crate) fn assign_to_fn_like(
@@ -431,8 +432,12 @@ impl Analyzer<'_, '_> {
 
         // TODO: Consider optional parameters.
 
-        let required_li = li.clone().filter(|i| i.required);
-        let required_ri = ri.clone().filter(|i| i.required);
+        let required_li = li
+            .clone()
+            .filter(|i| i.required && !i.ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword));
+        let required_ri = ri
+            .clone()
+            .filter(|i| i.required && !i.ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword));
 
         if opts.for_overload {
             if required_li.clone().count() > required_ri.clone().count() {
