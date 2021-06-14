@@ -1006,7 +1006,12 @@ impl Analyzer<'_, '_> {
                 Type::Lit(RTsLitType {
                     lit: RTsLit::Str(prop), ..
                 }) => {
-                    let res = self.access_property(
+                    let ctx = Ctx {
+                        should_not_create_indexed_type_from_ty_els: true,
+                        disallow_indexing_array_with_string: true,
+                        ..self.ctx
+                    };
+                    let res = self.with_ctx(ctx).access_property(
                         span,
                         obj,
                         &Key::Normal {
