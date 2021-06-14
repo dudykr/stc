@@ -8,7 +8,7 @@ use crate::{
     loader::ModuleInfo,
     ty::{self, Alias, Interface, PropertySignature, Ref, Tuple, Type, TypeExt, TypeLit, Union},
     type_facts::TypeFacts,
-    util::{contains_infer_type, contains_mark, MarkFinder, RemoveTypes},
+    util::{contains_infer_type, contains_mark, MarkFinder},
     ValidationResult,
 };
 use fxhash::{FxHashMap, FxHashSet};
@@ -1090,9 +1090,10 @@ impl Analyzer<'_, '_> {
         None
     }
 
+    /// TODO: Restore this(?)
     pub(super) fn mark_var_as_truthy(&mut self, name: Id) -> ValidationResult<()> {
         self.modify_var(name, |var| {
-            var.ty = var.ty.take().map(|ty| ty.remove_falsy());
+            // var.ty = var.ty.take().map(|ty| ty.remove_falsy());
             Ok(())
         })
     }
