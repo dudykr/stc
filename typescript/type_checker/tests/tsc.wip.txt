@@ -1,7 +1,3 @@
-expressions/functions/voidParamAssignmentCompatibility.ts
-expressions/optionalChaining/callChain/callChain.2.ts
-expressions/optionalChaining/callChain/callChain.ts
-expressions/propertyAccess/propertyAccessStringIndexSignature.ts
 expressions/superPropertyAccess/superPropertyAccessNoError.ts
 expressions/superPropertyAccess/superSymbolIndexedAccess6.ts
 expressions/typeGuards/nullOrUndefinedTypeGuardIsOrderIndependent.ts
