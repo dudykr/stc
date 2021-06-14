@@ -926,7 +926,10 @@ impl Analyzer<'_, '_> {
             Type::Intersection(Intersection { types, .. }) => {
                 let errors = types
                     .iter()
-                    .map(|rhs| self.assign_inner(data, to, rhs, opts))
+                    .map(|rhs| {
+                        self.assign_inner(data, to, rhs, opts)
+                            .context("tried to assign an element of an intersection type to another type")
+                    })
                     .collect::<Vec<_>>();
                 if errors.iter().any(Result::is_ok) {
                     return Ok(());
