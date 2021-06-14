@@ -1328,6 +1328,7 @@ externalModules/es6/es6modulekindWithES5Target5.ts
 externalModules/es6/es6modulekindWithES5Target6.ts
 externalModules/es6/es6modulekindWithES5Target7.ts
 externalModules/es6/es6modulekindWithES5Target8.ts
+externalModules/es6/es6modulekindWithES5Target9.ts
 externalModules/esnext/esnextmodulekind.ts
 externalModules/esnext/esnextmodulekindWithES2015Target.ts
 externalModules/esnext/esnextmodulekindWithES5Target12.ts
@@ -1337,6 +1338,7 @@ externalModules/esnext/esnextmodulekindWithES5Target5.ts
 externalModules/esnext/esnextmodulekindWithES5Target6.ts
 externalModules/esnext/esnextmodulekindWithES5Target7.ts
 externalModules/esnext/esnextmodulekindWithES5Target8.ts
+externalModules/esnext/esnextmodulekindWithES5Target9.ts
 externalModules/esnext/exnextmodulekindExportClassNameWithObject.ts
 externalModules/exportAmbientClassNameWithObject.ts
 externalModules/exportClassNameWithObjectAMD.ts

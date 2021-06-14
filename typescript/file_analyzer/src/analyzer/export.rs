@@ -511,7 +511,10 @@ impl Analyzer<'_, '_> {
         let span = node.span;
         let base = self.ctx.module_id;
 
-        node.specifiers.visit_with(self);
+        // Visit export specifiers only if it's not a reexport.
+        if node.src.is_none() {
+            node.specifiers.visit_with(self);
+        }
 
         for specifier in &node.specifiers {
             match specifier {
