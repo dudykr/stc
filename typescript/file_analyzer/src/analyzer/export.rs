@@ -22,7 +22,7 @@ use stc_ts_ast_rnode::RTsModuleName;
 use stc_ts_ast_rnode::RTsTypeAnn;
 use stc_ts_ast_rnode::RVarDecl;
 use stc_ts_ast_rnode::RVarDeclarator;
-use stc_ts_errors::Error;
+use stc_ts_errors::{DebugExt, Error};
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::Id;
 use stc_ts_types::IdCtx;
@@ -471,7 +471,8 @@ impl Analyzer<'_, '_> {
             ..self.ctx
         };
         self.with_ctx(ctx).validate_with(|a| {
-            a.type_of_var(&node.orig, TypeOfMode::RValue, None)?;
+            a.type_of_var(&node.orig, TypeOfMode::RValue, None)
+                .context("failed to reexport with named export specifier")?;
 
             Ok(())
         });
