@@ -324,12 +324,7 @@ impl Analyzer<'_, '_> {
                         }),
                         _,
                     )
-                    | (
-                        RExpr::Ident(RIdent {
-                            sym: js_word!("null"), ..
-                        }),
-                        _,
-                    ) => None,
+                    | (RExpr::Lit(RLit::Null(..)), _) => None,
 
                     (l, r) => Some((extract_name_for_assignment(l)?, r_ty)),
                 }) {
