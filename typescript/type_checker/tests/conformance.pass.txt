@@ -344,6 +344,7 @@ es6/Symbols/symbolProperty51.ts
 es6/Symbols/symbolProperty52.ts
 es6/Symbols/symbolProperty54.ts
 es6/Symbols/symbolProperty55.ts
+es6/Symbols/symbolProperty57.ts
 es6/Symbols/symbolProperty59.ts
 es6/Symbols/symbolProperty6.ts
 es6/Symbols/symbolProperty60.ts
@@ -1220,6 +1221,7 @@ expressions/optionalChaining/optionalChainingInference.ts
 expressions/optionalChaining/propertyAccessChain/propertyAccessChain.2.ts
 expressions/optionalChaining/propertyAccessChain/propertyAccessChain.ts
 expressions/propertyAccess/propertyAccessNumericLiterals.ts
+expressions/propertyAccess/propertyAccessStringIndexSignature.ts
 expressions/superCalls/superCalls.ts
 expressions/superPropertyAccess/superSymbolIndexedAccess1.ts
 expressions/superPropertyAccess/superSymbolIndexedAccess2.ts
