@@ -8,10 +8,6 @@ es6/templates/taggedTemplatesWithTypeArguments1.ts
 es6/yieldExpressions/YieldExpression6_es6.ts
 esnext/logicalAssignment/logicalAssignment10.ts
 expressions/contextualTyping/functionExpressionContextualTyping2.ts
-expressions/functionCalls/callWithSpread.ts
-expressions/functionCalls/callWithSpreadES6.ts
-expressions/functionCalls/newWithSpreadES5.ts
-expressions/functionCalls/newWithSpreadES6.ts
 expressions/functions/voidParamAssignmentCompatibility.ts
 expressions/optionalChaining/callChain/callChain.2.ts
 expressions/optionalChaining/callChain/callChain.ts
