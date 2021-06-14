@@ -1231,6 +1231,7 @@ expressions/typeAssertions/duplicatePropertiesInTypeAssertions01.ts
 expressions/typeAssertions/duplicatePropertiesInTypeAssertions02.ts
 expressions/typeGuards/TypeGuardWithArrayUnion.ts
 expressions/typeGuards/TypeGuardWithEnumUnion.ts
+expressions/typeGuards/nullOrUndefinedTypeGuardIsOrderIndependent.ts
 expressions/typeGuards/typeGuardEnums.ts
 expressions/typeGuards/typeGuardFunction.ts
 expressions/typeGuards/typeGuardFunctionGenerics.ts
