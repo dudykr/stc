@@ -1052,7 +1052,9 @@ impl Type {
     }
 
     pub fn contains_void(&self) -> bool {
-        match *self.normalize() {
+        match self.normalize() {
+            Type::Instance(ty) => ty.ty.contains_void(),
+
             Type::Keyword(RTsKeywordType {
                 kind: TsKeywordTypeKind::TsVoidKeyword,
                 ..
@@ -1140,8 +1142,9 @@ impl Type {
     }
 
     pub fn is_kwd(&self, k: TsKeywordTypeKind) -> bool {
-        match *self.normalize() {
-            Type::Keyword(RTsKeywordType { kind, .. }) if kind == k => true,
+        match self.normalize() {
+            Type::Instance(ty) => ty.ty.is_kwd(k),
+            Type::Keyword(RTsKeywordType { kind, .. }) if *kind == k => true,
             _ => false,
         }
     }
