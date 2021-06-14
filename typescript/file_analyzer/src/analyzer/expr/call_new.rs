@@ -2638,6 +2638,13 @@ impl Analyzer<'_, '_> {
     }
 
     fn narrow_with_predicate(&mut self, span: Span, orig_ty: &Type, new_ty: Type) -> ValidationResult {
+        let orig_ty = self
+            .normalize(Some(span), Cow::Borrowed(orig_ty), Default::default())
+            .context("tried to normalize original type")?;
+        let new_ty = self
+            .normalize(Some(span), Cow::Owned(new_ty), Default::default())
+            .context("tried to normalize new type")?;
+
         let use_simple_intersection = (|| {
             match (orig_ty.normalize(), new_ty.normalize()) {
                 (Type::Interface(orig), Type::Interface(new)) => {
@@ -2654,29 +2661,18 @@ impl Analyzer<'_, '_> {
         if use_simple_intersection {
             return Ok(Type::Intersection(Intersection {
                 span,
-                types: vec![orig_ty.clone(), new_ty],
+                types: vec![orig_ty.into_owned(), new_ty.into_owned()],
             }));
         }
 
         match new_ty.normalize() {
-            Type::Ref(..) => {
-                let new_ty = self
-                    .expand_top_ref(span, Cow::Owned(new_ty))
-                    .context("tried to expand ref type in new_ty to narrow type with predicate")?
-                    .into_owned();
-                return self.narrow_with_predicate(span, orig_ty, new_ty);
-            }
-
             Type::Keyword(..) | Type::Lit(..) => {}
             _ => {
                 match orig_ty.normalize() {
                     Type::Union(..) | Type::Interface(..) => {}
-                    Type::Ref(..) => {
-                        let orig_ty = self.expand_top_ref(span, Cow::Borrowed(orig_ty))?;
-                        return self.narrow_with_predicate(span, &orig_ty, new_ty);
-                    }
+
                     _ => {
-                        if let Some(v) = self.extends(span, Default::default(), orig_ty, &new_ty) {
+                        if let Some(v) = self.extends(span, Default::default(), &orig_ty, &new_ty) {
                             if v {
                                 match orig_ty.normalize() {
                                     Type::ClassDef(def) => {
@@ -2687,11 +2683,11 @@ impl Analyzer<'_, '_> {
                                     }
                                     _ => {}
                                 }
-                                return Ok(orig_ty.clone());
+                                return Ok(orig_ty.into_owned());
                             }
                         }
 
-                        return Ok(new_ty);
+                        return Ok(new_ty.into_owned());
                     }
                 }
 
@@ -2710,7 +2706,7 @@ impl Analyzer<'_, '_> {
 
                 // TODO: Use super class instread of
                 if !upcasted {
-                    new_types.push(new_ty.clone());
+                    new_types.push(new_ty.clone().into_owned());
                 }
 
                 new_types.dedup_type();
@@ -2736,7 +2732,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        Ok(new_ty)
+        Ok(new_ty.into_owned())
     }
 
     #[extra_validator]
