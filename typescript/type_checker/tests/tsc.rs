@@ -114,7 +114,9 @@ fn is_ignored(path: &Path) -> bool {
     static PASS: Lazy<Vec<String>> = Lazy::new(|| {
         let mut v = load_list("tests/conformance.pass.txt");
         v.extend(load_list("tests/compiler.pass.txt"));
-        v.extend(load_list("tests/tsc.wip.txt"));
+        if env::var("STC_IGNORE_WIP").unwrap_or_default() != "1" {
+            v.extend(load_list("tests/tsc.wip.txt"));
+        }
         v
     });
 
