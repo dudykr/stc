@@ -7,7 +7,7 @@
 
 set -eu
 
-export CARGO_COLOR=always
+export CARGO_TERM_COLOR=always
 
 TEST='' cargo test --test tsc \
   | tee /dev/stderr \
