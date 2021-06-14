@@ -196,6 +196,8 @@ impl Analyzer<'_, '_> {
                     a.register_type(e.id.clone().into(), ty);
 
                     a.storage.export_type(span, a.ctx.module_id, e.id.clone().into());
+                    a.storage
+                        .export_var(span, a.ctx.module_id, e.id.clone().into(), e.id.clone().into());
                 }
                 RDecl::TsModule(module) => {
                     module.visit_with(a);
