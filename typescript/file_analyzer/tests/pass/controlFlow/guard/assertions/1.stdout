@@ -96,7 +96,7 @@ warning: Type
 27 |         result = someFrom(isSome(result) ? result.some : makeSome());
    |                                            ^^^^^^
    |
-   = note: Some
+   = note: None & Some
 
 warning: Type
   --> $DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:44
@@ -191,6 +191,14 @@ warning: Type
    |                           ^^^^^^^^^^^^^^
    |
    = note: value is Some<r>
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:44
+   |
+27 |         result = someFrom(isSome(result) ? result.some : makeSome());
+   |                                            ^^^^^^
+   |
+   = note: Some
 
 warning: Type
   --> $DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:44
