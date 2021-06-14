@@ -1838,6 +1838,10 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                if prop.is_computed() {
+                    return Ok(Type::any(span));
+                }
+
                 return Err(Error::NoSuchProperty {
                     span,
                     obj: Some(box obj),
