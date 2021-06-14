@@ -19,13 +19,14 @@ use stc_ts_ast_rnode::RStr;
 use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_storage::Storage;
-use stc_ts_types::ModuleId;
 use stc_ts_types::ModuleTypeData;
 use stc_ts_types::{Id, Type};
+use stc_ts_types::{Module, ModuleId};
 use swc_atoms::js_word;
 use swc_atoms::JsWord;
 use swc_common::Span;
 use swc_common::Spanned;
+use swc_ecma_ast::VarDeclKind;
 
 impl Analyzer<'_, '_> {
     /// Returns `(dep_module, dep_types)` if an import is valid, and returns
@@ -157,7 +158,7 @@ impl Analyzer<'_, '_> {
             self.register_type(id.clone(), Type::any(span));
             self.declare_var(
                 span,
-                swc_ecma_ast::VarDeclKind::Var,
+                VarDeclKind::Var,
                 id.clone(),
                 Some(Type::any(span)),
                 None,
@@ -206,7 +207,36 @@ impl Analyzer<'_, '_> {
                         Id::from(&default.local),
                     );
                 }
-                RImportSpecifier::Namespace(ns) => {}
+                RImportSpecifier::Namespace(ns) => {
+                    if base == dep {
+                        // Import failed
+                        self.declare_var(
+                            ns.span,
+                            VarDeclKind::Var,
+                            ns.local.clone().into(),
+                            Some(Type::any(ns.span)),
+                            None,
+                            true,
+                            false,
+                            false,
+                        )?;
+                    } else {
+                        self.declare_var(
+                            ns.span,
+                            VarDeclKind::Var,
+                            ns.local.clone().into(),
+                            Some(Type::Module(Module {
+                                span: ns.span,
+                                name: ns.local.clone().into(),
+                                exports: box (*data).clone(),
+                            })),
+                            None,
+                            true,
+                            false,
+                            false,
+                        )?;
+                    }
+                }
             }
         }
 
