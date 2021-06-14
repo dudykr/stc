@@ -3,4 +3,4 @@
 set -eu
 
 export STC_IGNORE_WIP=1
-(cd typescript/type_checker && ./scripts/test.sh)
+(cd ./typescript/type_checker && ./scripts/test.sh)
