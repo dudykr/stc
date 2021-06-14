@@ -1,5 +1,3 @@
-expressions/superPropertyAccess/superPropertyAccessNoError.ts
-expressions/superPropertyAccess/superSymbolIndexedAccess6.ts
 expressions/typeGuards/nullOrUndefinedTypeGuardIsOrderIndependent.ts
 expressions/typeGuards/typeGuardFunctionOfFormThis.ts
 expressions/typeGuards/typeGuardIntersectionTypes.ts
