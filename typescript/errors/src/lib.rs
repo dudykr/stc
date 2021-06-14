@@ -381,6 +381,8 @@ pub enum Error {
     /// TS2356
     TypeInvalidForUpdateArg {
         span: Span,
+        /// Type of the arugment.
+        ty: Box<Type>,
     },
 
     PrivatePropertyIsDifferent {

@@ -51,9 +51,15 @@ impl Analyzer<'_, '_> {
                 | Type::Array(..)
                 | Type::Tuple(..)
                 | Type::This(..)
-                | Type::Function(..) => Err(Error::TypeInvalidForUpdateArg { span: e.arg.span() }),
+                | Type::Function(..) => Err(Error::TypeInvalidForUpdateArg {
+                    span: e.arg.span(),
+                    ty: box ty.clone(),
+                }),
 
-                _ if ty.is_global_this() => Err(Error::TypeInvalidForUpdateArg { span: e.arg.span() }),
+                _ if ty.is_global_this() => Err(Error::TypeInvalidForUpdateArg {
+                    span: e.arg.span(),
+                    ty: box ty.clone(),
+                }),
 
                 Type::Enum(..) => Err(Error::CannotAssignToNonVariable { span: e.arg.span() }),
 
