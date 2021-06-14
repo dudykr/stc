@@ -1342,6 +1342,14 @@ impl Analyzer<'_, '_> {
                 );
             }
 
+            Type::Symbol(..) => {
+                return Err(Error::NoSuchProperty {
+                    span,
+                    obj: Some(box obj.clone()),
+                    prop: Some(box prop.clone()),
+                })
+            }
+
             Type::Enum(ref e) => {
                 // TODO: Check if variant exists.
 
