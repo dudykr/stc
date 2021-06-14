@@ -1028,7 +1028,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     match obj.normalize() {
-                        Type::Enum(..) => return res,
+                        Type::Enum(..) | Type::Symbol(..) => return res,
                         _ => {}
                     }
                 }
