@@ -432,12 +432,8 @@ impl Analyzer<'_, '_> {
 
         // TODO: Consider optional parameters.
 
-        let required_li = li
-            .clone()
-            .filter(|i| i.required && !i.ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword));
-        let required_ri = ri
-            .clone()
-            .filter(|i| i.required && !i.ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword));
+        let required_li = li.clone().filter(|i| i.required);
+        let required_ri = ri.clone().filter(|i| i.required);
 
         let required_non_void_li = li
             .clone()
