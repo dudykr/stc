@@ -455,8 +455,13 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
-                return Err(Error::SimpleAssignFailed { span }
-                    .context("!l_has_rest && l.params.required.len < r.params.required.len"));
+                return Err(Error::SimpleAssignFailed { span }).with_context(|| {
+                    format!(
+                        "!l_has_rest && l.params.required.len < r.params.required.len\nLeft: {:?}\nRight: {:?}\n",
+                        required_li.collect_vec(),
+                        required_ri.collect_vec()
+                    )
+                });
             }
         }
 
