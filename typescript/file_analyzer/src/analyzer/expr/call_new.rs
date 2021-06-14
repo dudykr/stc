@@ -67,6 +67,7 @@ use stc_ts_types::ClassMember;
 use stc_ts_types::ClassProperty;
 use stc_ts_types::Instance;
 use stc_ts_types::Interface;
+use stc_ts_types::Intersection;
 use stc_ts_types::Key;
 use stc_ts_types::ModuleId;
 use stc_ts_types::{Alias, Id, IndexedAccessType, Ref, Symbol, Union};
@@ -2637,6 +2638,26 @@ impl Analyzer<'_, '_> {
     }
 
     fn narrow_with_predicate(&mut self, span: Span, orig_ty: &Type, new_ty: Type) -> ValidationResult {
+        let use_simple_intersection = (|| {
+            match (orig_ty.normalize(), new_ty.normalize()) {
+                (Type::Interface(orig), Type::Interface(new)) => {
+                    if orig.extends.is_empty() && new.extends.is_empty() {
+                        return true;
+                    }
+                }
+                _ => {}
+            }
+
+            false
+        })();
+
+        if use_simple_intersection {
+            return Ok(Type::Intersection(Intersection {
+                span,
+                types: vec![orig_ty.clone(), new_ty],
+            }));
+        }
+
         match new_ty.normalize() {
             Type::Ref(..) => {
                 let new_ty = self
