@@ -1,4 +1,4 @@
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
-(cd typescript/type_checker && ./scripts/check.sh)
+(cd typescript/type_checker && ./scripts/test.sh)
