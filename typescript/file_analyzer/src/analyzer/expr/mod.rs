@@ -1006,9 +1006,7 @@ impl Analyzer<'_, '_> {
                 Type::Lit(RTsLitType {
                     lit: RTsLit::Str(prop), ..
                 }) => {
-                    // As some types has rules about computed propeties, we use the result only if
-                    // it sucesses.
-                    if let Ok(ty) = self.access_property(
+                    let res = self.access_property(
                         span,
                         obj,
                         &Key::Normal {
@@ -1017,8 +1015,16 @@ impl Analyzer<'_, '_> {
                         },
                         type_mode,
                         id_ctx,
-                    ) {
+                    );
+                    // As some types has rules about computed propeties, we use the result only if
+                    // it sucesses.
+                    if let Ok(ty) = res {
                         return Ok(ty);
+                    }
+
+                    match obj.normalize() {
+                        Type::Enum(..) => return res,
+                        _ => {}
                     }
                 }
 
