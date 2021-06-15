@@ -1540,6 +1540,7 @@ parser/ecmascript5/Generics/parserAmbiguity3.ts
 parser/ecmascript5/Generics/parserAmbiguityWithBinaryOperator1.ts
 parser/ecmascript5/Generics/parserAmbiguityWithBinaryOperator2.ts
 parser/ecmascript5/Generics/parserAmbiguityWithBinaryOperator3.ts
+parser/ecmascript5/Generics/parserAmbiguityWithBinaryOperator4.ts
 parser/ecmascript5/Generics/parserConstructorAmbiguity1.ts
 parser/ecmascript5/Generics/parserConstructorAmbiguity2.ts
 parser/ecmascript5/Generics/parserConstructorAmbiguity4.ts

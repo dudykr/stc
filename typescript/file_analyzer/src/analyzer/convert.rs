@@ -646,6 +646,8 @@ impl Analyzer<'_, '_> {
         let type_args = try_opt!(t.type_params.validate_with(self)).map(Box::new);
         let mut contains_infer = false;
 
+        let mut reported_type_not_founf = false;
+
         match t.type_name {
             RTsEntityName::Ident(ref i) if i.sym == js_word!("Array") && type_args.is_some() => {
                 if type_args.as_ref().unwrap().params.len() == 1 {
@@ -677,14 +679,16 @@ impl Analyzer<'_, '_> {
                     if !self.is_builtin && !found && self.ctx.in_actual_type {
                         if let Some(..) = self.scope.get_var(&i.into()) {
                             self.storage
-                                .report(Error::NoSuchTypeButVarExists { span, name: i.into() })
+                                .report(Error::NoSuchTypeButVarExists { span, name: i.into() });
+                            reported_type_not_founf = true;
                         }
                     }
                 } else {
                     if !self.is_builtin && self.ctx.in_actual_type {
                         if let Some(..) = self.scope.get_var(&i.into()) {
                             self.storage
-                                .report(Error::NoSuchTypeButVarExists { span, name: i.into() })
+                                .report(Error::NoSuchTypeButVarExists { span, name: i.into() });
+                            reported_type_not_founf = true;
                         }
                     }
                 }
@@ -696,8 +700,10 @@ impl Analyzer<'_, '_> {
         if !self.is_builtin {
             slog::warn!(self.logger, "Crating a ref from TsTypeRef: {:?}", t.type_name);
 
-            self.report_error_for_unresolve_type(t.span, &t.type_name, type_args.as_deref())
-                .report(&mut self.storage);
+            if !reported_type_not_founf {
+                self.report_error_for_unresolve_type(t.span, &t.type_name, type_args.as_deref())
+                    .report(&mut self.storage);
+            }
         }
         let mut span = t.span;
         if contains_infer {
