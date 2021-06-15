@@ -879,19 +879,44 @@ impl Analyzer<'_, '_> {
                         .unwrap_or_else(|err| {
                             analyzer.storage.report(err);
                             Type::any(node.span)
-                        });
+                        })
+                        .cheap();
                     ty.assert_valid();
 
-                    analyzer.declare_var(
-                        node.span,
-                        VarDeclKind::Const,
-                        node.id.clone().into(),
-                        Some(ty),
-                        None,
-                        true,
-                        false,
-                        false,
-                    )?;
+                    match ty.normalize() {
+                        Type::Module(..) | Type::Namespace(..) => {
+                            analyzer.register_type(node.id.clone().into(), ty.clone());
+                            if node.is_export {
+                                analyzer.storage.reexport_type(
+                                    node.span,
+                                    analyzer.ctx.module_id,
+                                    node.id.sym.clone(),
+                                    ty,
+                                )
+                            }
+                        }
+                        _ => {
+                            analyzer.declare_var(
+                                node.span,
+                                VarDeclKind::Const,
+                                node.id.clone().into(),
+                                Some(ty.clone()),
+                                None,
+                                true,
+                                false,
+                                false,
+                            )?;
+
+                            if node.is_export {
+                                analyzer.storage.reexport_var(
+                                    node.span,
+                                    analyzer.ctx.module_id,
+                                    node.id.sym.clone(),
+                                    ty,
+                                )
+                            }
+                        }
+                    }
                 }
                 _ => {}
             }
