@@ -941,12 +941,20 @@ impl Analyzer<'_, '_> {
         let span = l.span.or_else(|| span);
 
         match type_name {
-            RTsEntityName::TsQualifiedName(_) => Err(Error::NamspaceNotFound {
-                span,
-                name: box type_name.clone().into(),
-                ctxt: self.ctx.module_id,
-                type_args: type_args.cloned().map(Box::new),
-            }),
+            RTsEntityName::TsQualifiedName(_) => {
+                if let Ok(var) = self.type_of_var(&l, TypeOfMode::RValue, None) {
+                    if var.normalize().is_module() {
+                        return Ok(());
+                    }
+                }
+
+                Err(Error::NamspaceNotFound {
+                    span,
+                    name: box type_name.clone().into(),
+                    ctxt: self.ctx.module_id,
+                    type_args: type_args.cloned().map(Box::new),
+                })
+            }
             RTsEntityName::Ident(i) if &*i.sym == "globalThis" => return Ok(()),
             RTsEntityName::Ident(_) => Err(Error::TypeNotFound {
                 span,
