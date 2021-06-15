@@ -864,7 +864,9 @@ impl Analyzer<'_, '_> {
                     return Ok(Type::any(span));
                 }
                 let mut i = i.clone();
-                i.span = span;
+                if i.span.is_dummy() {
+                    i.span = span;
+                }
                 self.type_of_var(&i, TypeOfMode::RValue, None)?
             }
             RTsEntityName::TsQualifiedName(n) => {
