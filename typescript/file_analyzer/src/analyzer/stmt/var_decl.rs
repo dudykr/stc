@@ -644,7 +644,7 @@ impl Analyzer<'_, '_> {
                         if !self.is_builtin {
                             // Report error if type is not found.
                             if let Some(ty) = &ty {
-                                self.normalize(None, Cow::Borrowed(ty), Default::default())
+                                self.normalize(Some(i.id.span), Cow::Borrowed(ty), Default::default())
                                     .report(&mut self.storage);
                             }
                         }
