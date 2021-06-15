@@ -623,6 +623,7 @@ impl Analyzer<'_, '_> {
                         //
                         let sym: Id = (&i.id).into();
                         let mut ty = try_opt!(i.type_ann.validate_with(self));
+                        ty = ty.map(|ty| make_instance_type(self.ctx.module_id, ty));
                         match ty {
                             Some(ref mut ty) => {
                                 self.prevent_expansion(&mut *ty);
