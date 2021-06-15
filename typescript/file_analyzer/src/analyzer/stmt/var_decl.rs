@@ -624,6 +624,7 @@ impl Analyzer<'_, '_> {
                         //
                         let sym: Id = (&i.id).into();
                         let mut ty = try_opt!(i.type_ann.validate_with(self));
+                        ty.fix();
                         ty = ty.map(|ty| {
                             if !should_instantiate_type_ann(&ty) {
                                 return ty;

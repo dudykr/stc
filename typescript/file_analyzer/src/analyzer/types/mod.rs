@@ -481,7 +481,7 @@ impl Analyzer<'_, '_> {
                     .map(|ty| self.instantiate_for_normalization(span, &ty))
                     .collect::<Result<_, _>>()?;
 
-                Type::Intersection(Intersection { types, ..ty })
+                Type::Intersection(Intersection { types, ..ty }).fixed()
             }
 
             Type::Union(ty) => {
