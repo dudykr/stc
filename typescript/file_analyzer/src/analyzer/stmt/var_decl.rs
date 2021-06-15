@@ -32,10 +32,10 @@ use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_type_ops::Fix;
-use stc_ts_types::EnumVariant;
 use stc_ts_types::QueryExpr;
 use stc_ts_types::QueryType;
 use stc_ts_types::{Array, Id, Operator, Symbol};
+use stc_ts_types::{EnumVariant, Instance};
 use stc_ts_utils::find_ids_in_pat;
 use stc_ts_utils::PatExt;
 use std::borrow::Cow;
@@ -623,7 +623,16 @@ impl Analyzer<'_, '_> {
                         //
                         let sym: Id = (&i.id).into();
                         let mut ty = try_opt!(i.type_ann.validate_with(self));
-                        ty = ty.map(|ty| make_instance_type(self.ctx.module_id, ty));
+                        ty = ty.map(|ty| {
+                            if ty.normalize().is_type_param() || ty.normalize().is_query() {
+                                return ty;
+                            }
+
+                            Type::Instance(Instance {
+                                span: i.id.span,
+                                ty: box ty,
+                            })
+                        });
                         match ty {
                             Some(ref mut ty) => {
                                 self.prevent_expansion(&mut *ty);
