@@ -883,38 +883,39 @@ impl Analyzer<'_, '_> {
                         .cheap();
                     ty.assert_valid();
 
-                    match ty.normalize() {
-                        Type::Module(..) | Type::Namespace(..) => {
-                            analyzer.register_type(node.id.clone().into(), ty.clone());
-                            if node.is_export {
-                                analyzer.storage.reexport_type(
-                                    node.span,
-                                    analyzer.ctx.module_id,
-                                    node.id.sym.clone(),
-                                    ty,
-                                )
-                            }
-                        }
-                        _ => {
-                            analyzer.declare_var(
-                                node.span,
-                                VarDeclKind::Const,
-                                node.id.clone().into(),
-                                Some(ty.clone()),
-                                None,
-                                true,
-                                false,
-                                false,
-                            )?;
+                    let (is_type, is_var) = match ty.normalize() {
+                        Type::Module(..) | Type::Namespace(..) => (true, false),
+                        _ => (false, true),
+                    };
 
-                            if node.is_export {
-                                analyzer.storage.reexport_var(
-                                    node.span,
-                                    analyzer.ctx.module_id,
-                                    node.id.sym.clone(),
-                                    ty,
-                                )
-                            }
+                    if is_type {
+                        analyzer.register_type(node.id.clone().into(), ty.clone());
+                        if node.is_export {
+                            analyzer.storage.reexport_type(
+                                node.span,
+                                analyzer.ctx.module_id,
+                                node.id.sym.clone(),
+                                ty.clone(),
+                            )
+                        }
+                    }
+
+                    if is_var {
+                        analyzer.declare_var(
+                            node.span,
+                            VarDeclKind::Const,
+                            node.id.clone().into(),
+                            Some(ty.clone()),
+                            None,
+                            true,
+                            false,
+                            false,
+                        )?;
+
+                        if node.is_export {
+                            analyzer
+                                .storage
+                                .reexport_var(node.span, analyzer.ctx.module_id, node.id.sym.clone(), ty)
                         }
                     }
                 }
