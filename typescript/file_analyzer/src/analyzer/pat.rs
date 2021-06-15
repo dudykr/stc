@@ -1,5 +1,6 @@
 use super::{Analyzer, Ctx};
 use crate::ty::TypeExt;
+use crate::util::should_instantiate_type_ann;
 use crate::util::type_ext::TypeVecExt;
 use crate::{
     analyzer::util::{ResultExt, VarVisitor},
@@ -244,7 +245,7 @@ impl Analyzer<'_, '_> {
                     Some(ty) => Some({
                         let span = ty.span();
                         ty.validate_with(self).map(|ty| {
-                            if ty.normalize().is_type_param() || ty.normalize().is_query() {
+                            if !should_instantiate_type_ann(&ty) {
                                 return ty;
                             }
                             Type::Instance(Instance { span, ty: box ty })

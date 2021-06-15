@@ -1,6 +1,7 @@
 use super::super::{pat::PatMode, Analyzer, Ctx};
 use crate::analyzer::assign::AssignOpts;
 use crate::analyzer::util::make_instance_type;
+use crate::util::should_instantiate_type_ann;
 use crate::{
     analyzer::{
         expr::TypeOfMode,
@@ -624,7 +625,7 @@ impl Analyzer<'_, '_> {
                         let sym: Id = (&i.id).into();
                         let mut ty = try_opt!(i.type_ann.validate_with(self));
                         ty = ty.map(|ty| {
-                            if ty.normalize().is_type_param() || ty.normalize().is_query() {
+                            if !should_instantiate_type_ann(&ty) {
                                 return ty;
                             }
 
