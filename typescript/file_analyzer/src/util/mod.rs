@@ -348,5 +348,9 @@ impl rnode::Visit<TypeParam> for TypeParamFinder<'_> {
 pub(crate) fn should_instantiate_type_ann(ty: &Type) -> bool {
     let ty = ty.normalize();
 
-    !ty.is_type_param() && !ty.is_query() && !ty.is_keyword()
+    match ty {
+        Type::Query(..) | Type::Param(..) | Type::Keyword(..) => false,
+
+        _ => true,
+    }
 }
