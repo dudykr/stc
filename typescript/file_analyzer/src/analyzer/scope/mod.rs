@@ -863,7 +863,9 @@ impl Analyzer<'_, '_> {
                 if i.sym == js_word!("undefined") {
                     return Ok(Type::any(span));
                 }
-                self.type_of_var(i, TypeOfMode::RValue, None)?
+                let mut i = i.clone();
+                i.span = span;
+                self.type_of_var(&i, TypeOfMode::RValue, None)?
             }
             RTsEntityName::TsQualifiedName(n) => {
                 let ctx = Ctx {
