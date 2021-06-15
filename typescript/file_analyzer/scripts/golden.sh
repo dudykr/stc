@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -eu
+set -u
 
 export RUST_BACKTRACE=0
 export RUST_LOG=0

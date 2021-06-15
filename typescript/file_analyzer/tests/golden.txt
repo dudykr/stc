@@ -20,6 +20,7 @@ tests/pass/controlFlow/forInStmt/simple/1.ts
 tests/pass/controlFlow/forInStmt/simple/2.ts
 tests/pass/controlFlow/forInStmt/simple/3.ts
 tests/pass/controlFlow/forOfStmt/hoisting-1.ts
+tests/pass/controlFlow/forOfStmt/intersection/1.ts
 tests/pass/controlFlow/forOfStmt/object-entries/1.ts
 tests/pass/controlFlow/forOfStmt/simple-1.ts
 tests/pass/controlFlow/forOfStmt/simple/2.ts
@@ -50,6 +51,7 @@ tests/pass/controlFlow/ifStmt/instanceof-2.ts
 tests/pass/controlFlow/ifStmt/object/controlFlowElementAccess2/1.ts
 tests/pass/controlFlow/ifStmt/object/controlFlowElementAccess2/2.ts
 tests/pass/controlFlow/ifStmt/object/prop-1.ts
+tests/pass/controlFlow/ifStmt/subTypes/reduction-1.ts
 tests/pass/controlFlow/ifStmt/typeof-1.ts
 tests/pass/controlFlow/ifStmt/typeof-2.ts
 tests/pass/controlFlow/ifStmt/typeof-3.ts
@@ -201,8 +203,10 @@ tests/pass/types/mapped/5.ts
 tests/pass/types/mapped/6.ts
 tests/pass/types/mapped/7-1.ts
 tests/pass/types/mapped/7.ts
+tests/pass/types/null/var/1.ts
 tests/pass/types/predicate/type-guard-1.ts
 tests/pass/types/predicate/type-guard-2.ts
+tests/pass/types/ref/import/1.ts
 tests/pass/types/this/class/chained-1.ts
 tests/pass/types/this/class/static/members-1.ts
 tests/pass/types/this/class/static/members-2.ts
