@@ -2897,7 +2897,9 @@ impl Analyzer<'_, '_> {
                 if let Some(types) = self.find_type(ctxt, &i.into())? {
                     for ty in types {
                         match ty.normalize() {
-                            Type::Instance(..)
+                            Type::Namespace(_)
+                            | Type::Module(_)
+                            | Type::Instance(..)
                             | Type::Interface(_)
                             | Type::Class(_)
                             | Type::ClassDef(_)
@@ -2984,8 +2986,6 @@ impl Analyzer<'_, '_> {
                             Type::Operator(_) => {}
                             Type::Mapped(_) => {}
                             Type::Alias(_) => {}
-                            Type::Namespace(_) => {}
-                            Type::Module(_) => {}
                             Type::Arc(_) => {}
                         }
                     }
