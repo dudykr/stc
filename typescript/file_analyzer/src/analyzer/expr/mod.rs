@@ -2085,6 +2085,16 @@ impl Analyzer<'_, '_> {
                                 return Ok(item.clone());
                             }
                         }
+
+                        if let Key::Normal { sym, .. } = prop {
+                            if let Some(types) = exports.types.get(sym) {
+                                for ty in types.iter() {
+                                    if ty.normalize().is_module() {
+                                        return Ok(ty.clone());
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
 
