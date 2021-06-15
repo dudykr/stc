@@ -8,6 +8,7 @@ use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
+use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
@@ -330,7 +331,12 @@ impl Analyzer<'_, '_> {
                             Error::MissingFields { span, .. } => Error::SimpleAssignFailed { span },
                             _ => err,
                         })
-                        .context("tried to assign a class definition to type elements");
+                        .with_context(|| {
+                            format!(
+                                "tried to assign a class definition to type elements\nRHS = {}",
+                                dump_type_as_string(&self.cm, &rhs),
+                            )
+                        });
                 }
 
                 Type::Class(rhs_cls) => {
