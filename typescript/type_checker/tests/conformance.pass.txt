@@ -1906,6 +1906,7 @@ types/any/anyPropertyAccess.ts
 types/any/assignEveryTypeToAny.ts
 types/conditional/inferTypes2.ts
 types/conditional/variance.ts
+types/contextualTypes/asyncFunctions/contextuallyTypeAsyncFunctionAwaitOperand.ts
 types/contextualTypes/commaOperator/contextuallyTypeCommaOperator01.ts
 types/contextualTypes/commaOperator/contextuallyTypeCommaOperator02.ts
 types/contextualTypes/commaOperator/contextuallyTypeCommaOperator03.ts

@@ -2,21 +2,36 @@ use super::TypeOfMode;
 use crate::analyzer::Analyzer;
 use crate::validator::ValidateWith;
 use crate::ValidationResult;
-use stc_ts_ast_rnode::RAwaitExpr;
+use stc_ts_ast_rnode::{RAwaitExpr, RIdent, RTsEntityName};
 use stc_ts_errors::DebugExt;
 use stc_ts_file_analyzer_macros::validator;
-use stc_ts_types::IdCtx;
-use stc_ts_types::Key;
-use stc_ts_types::Type;
+use stc_ts_types::{IdCtx, Ref};
+use stc_ts_types::{Key, ModuleId};
+use stc_ts_types::{Type, TypeParamInstantiation};
+use swc_common::SyntaxContext;
 
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RAwaitExpr, type_ann: Option<&Type>) -> ValidationResult {
         let span = e.span;
+
+        let arg_type_ann = type_ann.map(|item| {
+            let spane = span.with_ctxt(SyntaxContext::empty());
+            Type::Ref(Ref {
+                ctxt: ModuleId::builtin(),
+                span,
+                type_name: RTsEntityName::Ident(RIdent::new("PromiseLike".into(), span)),
+                type_args: Some(box TypeParamInstantiation {
+                    span,
+                    params: vec![item.clone()],
+                }),
+            })
+        });
+
         self.with(|a: &mut Analyzer| -> ValidationResult<_> {
             let arg_ty = e
                 .arg
-                .validate_with_default(a)
+                .validate_with_args(a, (TypeOfMode::RValue, None, arg_type_ann.as_ref()))
                 .context("tried to validate the argument of an await expr")?;
 
             let then_ty = match a.access_property(
