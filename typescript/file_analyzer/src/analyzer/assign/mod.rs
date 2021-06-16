@@ -97,7 +97,7 @@ pub(crate) struct AssignOpts {
     ///     return p
     /// }
     /// ```
-    pub may_unwrap_promise_on_lhs: bool,
+    pub may_unwrap_promise: bool,
 }
 
 #[derive(Default)]

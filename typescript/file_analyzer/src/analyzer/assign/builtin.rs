@@ -159,9 +159,21 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        if opts.may_unwrap_promise_on_lhs {
+        if opts.may_unwrap_promise {
             if let Some(l) = unwrap_ref_with_single_arg(l, "Promise") {
                 // We are in return type of an async function.
+
+                if let Ok(()) = self.assign_with_opts(
+                    data,
+                    AssignOpts {
+                        may_unwrap_promise: false,
+                        ..opts
+                    },
+                    l,
+                    &r,
+                ) {
+                    return Some(Ok(()));
+                }
 
                 if let Some(r) = unwrap_ref_with_single_arg(r, "Promise") {
                     let r = self.normalize_promise_arg(r);
@@ -169,7 +181,7 @@ impl Analyzer<'_, '_> {
                     if let Ok(()) = self.assign_with_opts(
                         data,
                         AssignOpts {
-                            may_unwrap_promise_on_lhs: false,
+                            may_unwrap_promise: false,
                             ..opts
                         },
                         l,
