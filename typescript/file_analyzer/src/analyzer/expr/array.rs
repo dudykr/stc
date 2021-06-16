@@ -373,6 +373,10 @@ impl Analyzer<'_, '_> {
         slog::debug!(self.logger, "[exprs/array] get_iterator({})", ty_str);
         ty.assert_valid();
 
+        let ty = self
+            .normalize(Some(span), ty, Default::default())
+            .context("tried to normalize type to get iterator")?;
+
         let res: ValidationResult<_> = (|| {
             if ty.is_str() {
                 if !opts.disallow_str {
