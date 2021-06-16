@@ -121,12 +121,20 @@ pub fn assert_no_ref(ty: &Type) {
 
 pub fn print_backtrace() {
     if cfg!(debug_assertions) {
+        let s = dump_backtace();
+
+        println!("{}", s);
+    }
+}
+
+pub fn dump_backtace() -> String {
+    if cfg!(debug_assertions) {
         let bt = Backtrace::new();
         let bt = filter(bt);
 
-        let s = format!("{:?}", bt);
-
-        println!("{}", s);
+        format!("{:?}", bt)
+    } else {
+        String::new()
     }
 }
 
