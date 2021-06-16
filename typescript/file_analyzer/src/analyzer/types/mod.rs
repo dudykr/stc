@@ -912,11 +912,9 @@ impl Analyzer<'_, '_> {
                     let first = u.types[0].normalize();
                     let second = u.types[1].normalize();
 
-                    if first.is_type_param() {
-                        if let Some(second_arg) = unwrap_ref_with_single_arg(&second, "PromiseLike") {
-                            if second_arg.type_eq(first) {
-                                return Cow::Borrowed(first);
-                            }
+                    if let Some(second_arg) = unwrap_ref_with_single_arg(&second, "PromiseLike") {
+                        if second_arg.type_eq(first) {
+                            return Cow::Borrowed(first);
                         }
                     }
                 }
