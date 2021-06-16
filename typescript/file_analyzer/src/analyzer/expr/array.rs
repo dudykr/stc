@@ -407,6 +407,10 @@ impl Analyzer<'_, '_> {
             .get_iterator_element_type(span, ty, true)
             .context("tried to get element of iterator as a fallback logic for async iterator")?;
 
+        if let Some(elem_ty) = unwrap_ref_with_single_arg(&elem_ty, "Promise") {
+            return Ok(Cow::Owned(elem_ty.clone()));
+        }
+
         Ok(Cow::Owned(elem_ty.into_owned()))
     }
 
