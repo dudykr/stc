@@ -179,7 +179,8 @@ impl Analyzer<'_, '_> {
                     Type::Keyword(RTsKeywordType {
                         kind: TsKeywordTypeKind::TsSymbolKeyword,
                         ..
-                    }) => {}
+                    })
+                    | Type::Symbol(..) => {}
                     Type::Operator(Operator {
                         op: TsTypeOperatorOp::Unique,
                         ty,
