@@ -44,15 +44,13 @@ use stc_visit::Visitable;
 use std::borrow::Cow;
 use std::fmt;
 use std::fmt::Formatter;
+use std::sync::atomic::AtomicU64;
 use std::{
     fmt::Debug,
     iter::FusedIterator,
     mem::{replace, transmute},
     ops::AddAssign,
-    sync::{
-        atomic::{AtomicUsize, Ordering::SeqCst},
-        Arc,
-    },
+    sync::{atomic::Ordering::SeqCst, Arc},
 };
 use swc_atoms::js_word;
 use swc_atoms::JsWord;
@@ -275,22 +273,6 @@ fn _assert_send_sync() {
     assert::<Symbol>();
 }
 
-#[derive(Debug, Default)]
-pub struct SymbolIdGenerator {
-    inner: AtomicUsize,
-}
-
-impl SymbolIdGenerator {
-    /// Creates a new symbol id.
-    ///
-    /// Do **not** mix with symbol ids from other generator.
-    pub fn generate(&self) -> SymbolId {
-        let id = self.inner.fetch_add(1, SeqCst);
-
-        SymbolId(id)
-    }
-}
-
 #[derive(Debug, Clone, PartialEq, EqIgnoreSpan, TypeEq, Visit, Is, Spanned)]
 pub enum Key {
     Computed(ComputedKey),
@@ -380,7 +362,17 @@ pub struct ComputedKey {
 assert_eq_size!(ComputedKey, [u8; 32]);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EqIgnoreSpan, TypeEq, Visit)]
-pub struct SymbolId(usize);
+pub struct SymbolId(u64);
+
+impl SymbolId {
+    pub fn generate() -> Self {
+        static GENERATOR: AtomicU64 = AtomicU64::new(0);
+
+        let id = GENERATOR.fetch_add(1, SeqCst);
+
+        SymbolId(id)
+    }
+}
 
 /// Used to handle code like
 ///
@@ -407,6 +399,15 @@ pub struct Symbol {
 }
 
 assert_eq_size!(Symbol, [u8; 24]);
+
+impl Symbol {
+    pub fn generate(span: Span) -> Self {
+        Symbol {
+            span,
+            id: SymbolId::generate(),
+        }
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct RestType {
