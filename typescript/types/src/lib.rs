@@ -10,6 +10,7 @@
 pub use self::convert::rprop_name_to_expr;
 pub use self::metadata::TypeElMetadata;
 pub use self::metadata::TypeLitMetadata;
+pub use self::symbol::SymbolId;
 pub use self::{id::Id, module_id::ModuleId};
 use fxhash::FxHashMap;
 use is_macro::Is;
@@ -44,13 +45,12 @@ use stc_visit::Visitable;
 use std::borrow::Cow;
 use std::fmt;
 use std::fmt::Formatter;
-use std::sync::atomic::AtomicU64;
 use std::{
     fmt::Debug,
     iter::FusedIterator,
     mem::{replace, transmute},
     ops::AddAssign,
-    sync::{atomic::Ordering::SeqCst, Arc},
+    sync::Arc,
 };
 use swc_atoms::js_word;
 use swc_atoms::JsWord;
@@ -69,6 +69,7 @@ pub mod macros;
 mod metadata;
 pub mod module_id;
 pub mod name;
+mod symbol;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum IdCtx {
@@ -360,19 +361,6 @@ pub struct ComputedKey {
 }
 
 assert_eq_size!(ComputedKey, [u8; 32]);
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EqIgnoreSpan, TypeEq, Visit)]
-pub struct SymbolId(u64);
-
-impl SymbolId {
-    pub fn generate() -> Self {
-        static GENERATOR: AtomicU64 = AtomicU64::new(0);
-
-        let id = GENERATOR.fetch_add(1, SeqCst);
-
-        SymbolId(id)
-    }
-}
 
 /// Used to handle code like
 ///
