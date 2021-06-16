@@ -338,15 +338,15 @@ impl Analyzer<'_, '_> {
         let ty = self
             .normalize(Some(span), ty, Default::default())
             .context("tried to normalize type to calculate element type of an async iterator")?;
-        let ctx = Ctx {
-            disallow_optional_object_property: true,
-            ..self.ctx
-        };
 
         if ty.is_any() {
             return Ok(ty);
         }
 
+        let ctx = Ctx {
+            disallow_optional_object_property: true,
+            ..self.ctx
+        };
         let async_iterator = self
             .with_ctx(ctx)
             .call_property(
@@ -381,40 +381,45 @@ impl Analyzer<'_, '_> {
                 &[],
                 None,
             )
-            .map(Cow::Owned)
-            .context("tried to call `[Symbol.asyncIterator]()`")?;
+            .map(Cow::Owned);
 
-        let item_promise = self
-            .call_property(
-                span,
-                ExtractKind::Call,
-                ReevalMode::NoReeval,
-                &async_iterator,
-                &async_iterator,
-                &Key::Normal {
+        if let Ok(async_iterator) = async_iterator {
+            let item_promise = self
+                .call_property(
                     span,
-                    sym: "next".into(),
-                },
-                Default::default(),
-                Default::default(),
-                Default::default(),
-                Default::default(),
-                Default::default(),
-            )
-            .context("tried to get the type of `next` of an async iterator")?;
+                    ExtractKind::Call,
+                    ReevalMode::NoReeval,
+                    &async_iterator,
+                    &async_iterator,
+                    &Key::Normal {
+                        span,
+                        sym: "next".into(),
+                    },
+                    Default::default(),
+                    Default::default(),
+                    Default::default(),
+                    Default::default(),
+                    Default::default(),
+                )
+                .context("tried to get the type of `next` of an async iterator")?;
 
-        dbg!(&item_promise);
+            let item = unwrap_ref_with_single_arg(&item_promise, "Promise")
+                .ok_or_else(|| Error::Unimplemented {
+                    span,
+                    msg: format!("proper error reporting for wrong interface impl"),
+                })
+                .context("tried to unwrap `Promise` to calculate the element type of an async iterator")?;
 
-        let item = unwrap_ref_with_single_arg(&item_promise, "Promise")
-            .ok_or_else(|| Error::Unimplemented {
-                span,
-                msg: format!("proper error reporting for wrong interface impl"),
-            })
-            .context("tried to unwrap `Promise` to calculate the element type of an async iterator")?;
+            let elem_ty = self
+                .get_value_type_from_iterator_result(span, Cow::Borrowed(&item))
+                .context("tried to get element type of an async iterator")?;
+
+            return Ok(Cow::Owned(elem_ty.into_owned()));
+        }
 
         let elem_ty = self
-            .get_value_type_from_iterator_result(span, Cow::Borrowed(&item))
-            .context("tried to get element type of an async iterator")?;
+            .get_iterator_element_type(span, ty, true)
+            .context("tried to get element of iterator as a fallback logic for async iterator")?;
 
         Ok(Cow::Owned(elem_ty.into_owned()))
     }
