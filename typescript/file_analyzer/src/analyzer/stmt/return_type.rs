@@ -328,6 +328,7 @@ impl Analyzer<'_, '_> {
                         &declared,
                         &ty,
                     )
+                    .context("tried to validate the return type of an async function")
                     .report(&mut self.storage);
                 }
 
