@@ -31,3 +31,4 @@ macro_rules! known {
 }
 
 known!(iterator, "iterator");
+known!(async_generator, "asyncGenrator");
