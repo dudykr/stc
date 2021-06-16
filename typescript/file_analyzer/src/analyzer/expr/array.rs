@@ -358,7 +358,7 @@ impl Analyzer<'_, '_> {
                     expr: box RExpr::Invalid(RInvalid { span }),
                     ty: box Type::Symbol(Symbol {
                         span,
-                        id: SymbolId::async_generator(),
+                        id: SymbolId::async_iterator(),
                     }),
                 }),
                 None,

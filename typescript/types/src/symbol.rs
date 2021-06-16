@@ -52,5 +52,16 @@ macro_rules! known {
 
 known!(
     iterator => "iterator",
-    async_generator => "asyncGenrator",
+    async_iterator => "asyncIterator",
+    has_instance => "hasInstance",
+    is_concat_spreadable => "isConcatSpreadable",
+    r#match => "match",
+    replace => "replace",
+    search => "search",
+    species => "species",
+    split => "split",
+    to_primitive => "toPrimitive",
+    to_string_tag => "toStringTag",
+    unscopables => "unscopables",
+    match_all => "matchAll",
 );
