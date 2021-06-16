@@ -361,3 +361,24 @@ pub(crate) fn should_instantiate_type_ann(ty: &Type) -> bool {
         _ => true,
     }
 }
+
+pub(crate) fn unwrap_ref_with_single_arg<'a>(ty: &'a Type, wanted_ref_name: &str) -> Option<&'a Type> {
+    match ty.normalize() {
+        Type::Ref(Ref {
+            type_name: RTsEntityName::Ident(l_type_name),
+            type_args: l_type_args,
+            ..
+        }) if l_type_name.sym == *wanted_ref_name => match l_type_args {
+            Some(l_type_args) => {
+                if l_type_args.params.len() == 1 {
+                    return Some(&l_type_args.params[0]);
+                }
+            }
+            None => {}
+        },
+
+        _ => {}
+    }
+
+    None
+}

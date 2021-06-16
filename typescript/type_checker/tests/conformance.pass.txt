@@ -1892,6 +1892,7 @@ statements/for-ofStatements/ES5For-ofTypeCheck7.ts
 statements/for-ofStatements/ES5For-ofTypeCheck8.ts
 statements/for-ofStatements/ES5For-ofTypeCheck9.ts
 statements/for-ofStatements/ES5for-of32.ts
+statements/for-ofStatements/ESSymbols/ES5SymbolType1.ts
 statements/forStatements/forStatements.ts
 statements/ifDoWhileStatements/ifDoWhileStatements.ts
 statements/returnStatements/returnStatements.ts

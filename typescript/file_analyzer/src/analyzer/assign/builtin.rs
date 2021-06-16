@@ -1,6 +1,7 @@
 use super::AssignData;
 use super::AssignOpts;
 use crate::analyzer::Analyzer;
+use crate::util::unwrap_ref_with_single_arg;
 use crate::ValidationResult;
 use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RTsEntityName;
@@ -158,6 +159,28 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
+        if opts.may_unwrap_promise_on_lhs {
+            if let Some(l) = unwrap_ref_with_single_arg(l, "Promise") {
+                // We are in return type of an async function.
+
+                if let Some(r) = unwrap_ref_with_single_arg(r, "Promise") {
+                    let r = self.normalize_promise_arg(r);
+
+                    if let Ok(()) = self.assign_with_opts(
+                        data,
+                        AssignOpts {
+                            may_unwrap_promise_on_lhs: false,
+                            ..opts
+                        },
+                        l,
+                        &r,
+                    ) {
+                        return Some(Ok(()));
+                    }
+                }
+            }
+        }
+
         if let Some(l) = unwrap_ref_with_single_arg(l, "Promise") {
             if let Some(r) = unwrap_ref_with_single_arg(r, "Promise") {
                 return Some(
@@ -167,43 +190,6 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if opts.may_unwrap_promise_on_lhs {
-            if let Some(l) = unwrap_ref_with_single_arg(l, "Promise") {
-                if let Ok(()) = self.assign_with_opts(
-                    data,
-                    AssignOpts {
-                        may_unwrap_promise_on_lhs: false,
-                        ..opts
-                    },
-                    l,
-                    r,
-                ) {
-                    return Some(Ok(()));
-                }
-            }
-        }
-
         None
     }
-}
-
-fn unwrap_ref_with_single_arg<'a>(ty: &'a Type, wanted_ref_name: &str) -> Option<&'a Type> {
-    match ty.normalize() {
-        Type::Ref(Ref {
-            type_name: RTsEntityName::Ident(l_type_name),
-            type_args: l_type_args,
-            ..
-        }) if l_type_name.sym == *wanted_ref_name => match l_type_args {
-            Some(l_type_args) => {
-                if l_type_args.params.len() == 1 {
-                    return Some(&l_type_args.params[0]);
-                }
-            }
-            None => {}
-        },
-
-        _ => {}
-    }
-
-    None
 }
