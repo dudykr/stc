@@ -8,6 +8,7 @@ use stc_ts_file_analyzer_macros::validator;
 use stc_ts_types::{IdCtx, Ref};
 use stc_ts_types::{Key, ModuleId};
 use stc_ts_types::{Type, TypeParamInstantiation};
+use swc_atoms::js_word;
 use swc_common::SyntaxContext;
 
 #[validator]
@@ -15,18 +16,42 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RAwaitExpr, type_ann: Option<&Type>) -> ValidationResult {
         let span = e.span;
 
-        let arg_type_ann = type_ann.map(|item| {
-            let spane = span.with_ctxt(SyntaxContext::empty());
-            Type::Ref(Ref {
-                ctxt: ModuleId::builtin(),
-                span,
-                type_name: RTsEntityName::Ident(RIdent::new("PromiseLike".into(), span)),
-                type_args: Some(box TypeParamInstantiation {
-                    span,
-                    params: vec![item.clone()],
-                }),
+        let arg_type_ann = type_ann
+            .map(|ty| {
+                // If type annotation is Promise<T>, we use PromiseLike<T> as the annotation.
+
+                match ty.normalize() {
+                    Type::Ref(Ref {
+                        type_name:
+                            RTsEntityName::Ident(RIdent {
+                                sym: js_word!("Promise"),
+                                ..
+                            }),
+                        type_args: Some(type_args),
+                        ..
+                    }) => {
+                        if let Some(ty) = type_args.params.first() {
+                            return ty;
+                        }
+                    }
+                    _ => {}
+                }
+
+                ty
             })
-        });
+            .map(|item| {
+                let spane = span.with_ctxt(SyntaxContext::empty());
+
+                Type::Ref(Ref {
+                    ctxt: ModuleId::builtin(),
+                    span,
+                    type_name: RTsEntityName::Ident(RIdent::new("PromiseLike".into(), span)),
+                    type_args: Some(box TypeParamInstantiation {
+                        span,
+                        params: vec![item.clone()],
+                    }),
+                })
+            });
 
         self.with(|a: &mut Analyzer| -> ValidationResult<_> {
             let arg_ty = e
