@@ -251,7 +251,16 @@ impl Analyzer<'_, '_> {
                         };
                         let ty = self.expand(span, ty)?;
                         ty.assert_valid();
-                        let ty = make_instance_type(self.ctx.module_id, ty);
+                        let ty = (|| {
+                            if !should_instantiate_type_ann(&ty) {
+                                return ty;
+                            }
+
+                            Type::Instance(Instance {
+                                span: ty.span(),
+                                ty: box ty,
+                            })
+                        })();
                         ty.assert_valid();
                         self.check_rvalue(span, &v.name, &ty);
 

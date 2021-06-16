@@ -135,6 +135,7 @@ async/es6/functionDeclarations/asyncFunctionDeclaration8_es6.ts
 classes/classDeclarations/classAbstractKeyword/classAbstractAsIdentifier.ts
 classes/classDeclarations/classAbstractKeyword/classAbstractAssignabilityConstructorFunction.ts
 classes/classDeclarations/classAbstractKeyword/classAbstractClinterfaceAssignability.ts
+classes/classDeclarations/classAbstractKeyword/classAbstractConstructorAssignability.ts
 classes/classDeclarations/classAbstractKeyword/classAbstractExtends.ts
 classes/classDeclarations/classAbstractKeyword/classAbstractFactoryFunction.ts
 classes/classDeclarations/classAbstractKeyword/classAbstractImportInstantiation.ts
@@ -1421,6 +1422,7 @@ internalModules/exportDeclarations/ExportVariableWithInaccessibleTypeInTypeAnnot
 internalModules/exportDeclarations/ModuleWithExportedAndNonExportedClasses.ts
 internalModules/exportDeclarations/ModuleWithExportedAndNonExportedEnums.ts
 internalModules/exportDeclarations/ModuleWithExportedAndNonExportedFunctions.ts
+internalModules/exportDeclarations/ModuleWithExportedAndNonExportedImportAlias.ts
 internalModules/exportDeclarations/ModuleWithExportedAndNonExportedVariables.ts
 internalModules/importDeclarations/importAliasIdentifiers.ts
 internalModules/moduleBody/moduleWithStatementsOfEveryKind.ts
@@ -1822,6 +1824,7 @@ scanner/ecmascript5/scannerS7.2_A1.5_T2.ts
 scanner/ecmascript5/scannerS7.3_A1.1_T2.ts
 scanner/ecmascript5/scannerS7.6_A4.2_T1.ts
 scanner/ecmascript5/scannerStringLiteralWithContainingNullCharacter1.ts
+statements/VariableStatements/everyTypeWithAnnotationAndInitializer.ts
 statements/VariableStatements/everyTypeWithInitializer.ts
 statements/VariableStatements/recursiveInitializer.ts
 statements/breakStatements/doWhileBreakStatements.ts
@@ -1889,6 +1892,7 @@ statements/for-ofStatements/ES5For-ofTypeCheck7.ts
 statements/for-ofStatements/ES5For-ofTypeCheck8.ts
 statements/for-ofStatements/ES5For-ofTypeCheck9.ts
 statements/for-ofStatements/ES5for-of32.ts
+statements/forStatements/forStatements.ts
 statements/ifDoWhileStatements/ifDoWhileStatements.ts
 statements/returnStatements/returnStatements.ts
 statements/throwStatements/throwInEnclosingStatements.ts
@@ -2291,5 +2295,7 @@ types/union/unionTypeCallSignatures2.ts
 types/union/unionTypeCallSignatures3.ts
 types/union/unionTypeFromArrayLiteral.ts
 types/union/unionTypeReduction.ts
+types/uniqueSymbol/uniqueSymbols.ts
+types/uniqueSymbol/uniqueSymbolsDeclarations.ts
 types/uniqueSymbol/uniqueSymbolsDeclarationsErrors.ts
 types/unknown/unknownType2.ts
