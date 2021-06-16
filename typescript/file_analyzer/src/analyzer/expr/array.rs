@@ -13,13 +13,10 @@ use crate::validator;
 use crate::validator::ValidateWith;
 use crate::ValidationResult;
 use itertools::Itertools;
-use rnode::NodeId;
 use stc_ts_ast_rnode::RArrayLit;
 use stc_ts_ast_rnode::RExpr;
 use stc_ts_ast_rnode::RExprOrSpread;
-use stc_ts_ast_rnode::RExprOrSuper;
-use stc_ts_ast_rnode::RIdent;
-use stc_ts_ast_rnode::RMemberExpr;
+use stc_ts_ast_rnode::RInvalid;
 use stc_ts_ast_rnode::RNumber;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
@@ -32,6 +29,8 @@ use stc_ts_types::Array;
 use stc_ts_types::ComputedKey;
 use stc_ts_types::Intersection;
 use stc_ts_types::Key;
+use stc_ts_types::Symbol;
+use stc_ts_types::SymbolId;
 use stc_ts_types::Tuple;
 use stc_ts_types::TupleElement;
 use stc_ts_types::Type;
@@ -40,7 +39,6 @@ use stc_ts_types::Union;
 use std::borrow::Cow;
 use swc_common::Span;
 use swc_common::Spanned;
-use swc_common::SyntaxContext;
 use swc_ecma_ast::TsKeywordTypeKind;
 
 #[derive(Debug, Clone, Copy, Default)]
@@ -357,22 +355,10 @@ impl Analyzer<'_, '_> {
                 &ty,
                 &Key::Computed(ComputedKey {
                     span,
-                    expr: box RExpr::Member(RMemberExpr {
-                        node_id: NodeId::invalid(),
+                    expr: box RExpr::Invalid(RInvalid { span }),
+                    ty: box Type::Symbol(Symbol {
                         span,
-                        obj: RExprOrSuper::Expr(box RExpr::Ident(RIdent::new(
-                            "Symbol".into(),
-                            span.with_ctxt(SyntaxContext::empty()),
-                        ))),
-                        computed: false,
-                        prop: box RExpr::Ident(RIdent::new(
-                            "asyncIterator".into(),
-                            span.with_ctxt(SyntaxContext::empty()),
-                        )),
-                    }),
-                    ty: box Type::Keyword(RTsKeywordType {
-                        span,
-                        kind: TsKeywordTypeKind::TsSymbolKeyword,
+                        id: SymbolId::async_generator(),
                     }),
                 }),
                 None,
@@ -594,22 +580,10 @@ impl Analyzer<'_, '_> {
                     &ty,
                     &Key::Computed(ComputedKey {
                         span,
-                        expr: box RExpr::Member(RMemberExpr {
-                            node_id: NodeId::invalid(),
+                        expr: box RExpr::Invalid(RInvalid { span }),
+                        ty: box Type::Symbol(Symbol {
                             span,
-                            obj: RExprOrSuper::Expr(box RExpr::Ident(RIdent::new(
-                                "Symbol".into(),
-                                span.with_ctxt(SyntaxContext::empty()),
-                            ))),
-                            computed: false,
-                            prop: box RExpr::Ident(RIdent::new(
-                                "iterator".into(),
-                                span.with_ctxt(SyntaxContext::empty()),
-                            )),
-                        }),
-                        ty: box Type::Keyword(RTsKeywordType {
-                            span,
-                            kind: TsKeywordTypeKind::TsSymbolKeyword,
+                            id: SymbolId::iterator(),
                         }),
                     }),
                     None,
