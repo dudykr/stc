@@ -898,19 +898,9 @@ impl Analyzer<'_, '_> {
     }
 
     ///
-    /// - `Promise<Promise<T>>` => `Promise<T>`
-    /// - `Promise<T | PromiseLike<T>>` => `Promise<T>`
-    ///
-    /// Returns `(new_type, changed)`
-    pub(crate) fn normalize_promise<'a>(&mut self, ty: &'a Type) -> Cow<'a, Type> {
-        if let Some(arg) = unwrap_ref_with_single_arg(&ty, "Promise") {
-            let new_arg = self.normlaize_promise_arg(&arg);
-        }
-
-        Cow::Borrowed(ty)
-    }
-
-    fn normlaize_promise_arg<'a>(&mut self, arg: &'a Type) -> Cow<'a, Type> {
+    /// - `Promise<T>` => `T`
+    /// - `T | PromiseLike<T>` => `T`
+    pub(crate) fn normlaize_promise_arg<'a>(&mut self, arg: &'a Type) -> Cow<'a, Type> {
         if let Some(arg) = unwrap_ref_with_single_arg(&arg, "Promise") {
             return self.normlaize_promise_arg(&arg);
         }
