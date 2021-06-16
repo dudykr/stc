@@ -1,3 +1,4 @@
+use once_cell::sync::Lazy;
 use stc_visit::Visit;
 use std::sync::atomic::AtomicU64;
 use std::sync::atomic::Ordering::SeqCst;
@@ -16,3 +17,17 @@ impl SymbolId {
         SymbolId(id)
     }
 }
+
+macro_rules! known {
+    ($name:ident, $str_name:expr) => {
+        impl SymbolId {
+            pub fn $name() -> Self {
+                static CACHED: Lazy<SymbolId> = Lazy::new(|| SymbolId::generate());
+
+                *CACHED
+            }
+        }
+    };
+}
+
+known!(iterator, "iterator");
