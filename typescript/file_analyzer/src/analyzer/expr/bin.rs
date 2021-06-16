@@ -1545,7 +1545,8 @@ impl Analyzer<'_, '_> {
             | Type::Operator(Operator {
                 op: TsTypeOperatorOp::KeyOf,
                 ..
-            }) => true,
+            })
+            | Type::Symbol(..) => true,
 
             Type::Union(ref u) => u.types.iter().all(|ty| self.is_valid_lhs_of_in(&ty)),
 
