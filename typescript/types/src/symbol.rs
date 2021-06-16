@@ -19,16 +19,38 @@ impl SymbolId {
 }
 
 macro_rules! known {
-    ($name:ident, $str_name:expr) => {
-        impl SymbolId {
-            pub fn $name() -> Self {
-                static CACHED: Lazy<SymbolId> = Lazy::new(|| SymbolId::generate());
+    (
+        $(
+            $name:ident => $str_name:expr,
+        )*
+    ) => {
 
-                *CACHED
+        /// Known symbols.
+        impl SymbolId {
+            $(
+                pub fn $name() -> Self {
+                    static CACHED: Lazy<SymbolId> = Lazy::new(|| SymbolId::generate());
+
+                    *CACHED
+                }
+            )*
+
+            pub fn known(s:&str) -> Self {
+                match s {
+                    $(
+                        $str_name => Self::$name(),
+                    )*
+
+                    _ => {
+                        panic!("Unknown builtin symbol {}", s)
+                    }
+                }
             }
         }
     };
 }
 
-known!(iterator, "iterator");
-known!(async_generator, "asyncGenrator");
+known!(
+    iterator => "iterator",
+    async_generator => "asyncGenrator",
+);
