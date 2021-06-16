@@ -87,6 +87,17 @@ pub(crate) struct AssignOpts {
     pub allow_assignment_of_array_to_optional_type_lit: bool,
 
     pub use_missing_fields_for_class: bool,
+
+    /// The code below is valid.
+    ///
+    /// ```ts
+    /// declare var p: Promise<Promise<string>>
+    ///
+    /// async function foo(): Promise<string> {
+    ///     return p
+    /// }
+    /// ```
+    pub may_unwrap_promise_on_lhs: bool,
 }
 
 #[derive(Default)]

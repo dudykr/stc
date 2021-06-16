@@ -322,18 +322,11 @@ impl Analyzer<'_, '_> {
                         AssignOpts {
                             span: node.span,
                             allow_unknown_rhs: true,
+                            may_unwrap_promise_on_lhs: true,
                             ..Default::default()
                         },
                         &declared,
-                        &Type::Ref(Ref {
-                            span: node.span,
-                            ctxt: ModuleId::builtin(),
-                            type_name: RTsEntityName::Ident(RIdent::new("Promise".into(), node.span)),
-                            type_args: Some(box TypeParamInstantiation {
-                                span: node.span,
-                                params: vec![ty.clone()],
-                            }),
-                        }),
+                        &ty,
                     )
                     .report(&mut self.storage);
                 }

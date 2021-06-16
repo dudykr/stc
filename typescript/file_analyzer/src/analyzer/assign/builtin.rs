@@ -167,6 +167,22 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        if opts.may_unwrap_promise_on_lhs {
+            if let Some(l) = unwrap_ref_with_single_arg(l, "Promise") {
+                if let Ok(()) = self.assign_with_opts(
+                    data,
+                    AssignOpts {
+                        may_unwrap_promise_on_lhs: false,
+                        ..opts
+                    },
+                    l,
+                    r,
+                ) {
+                    return Some(Ok(()));
+                }
+            }
+        }
+
         None
     }
 }
