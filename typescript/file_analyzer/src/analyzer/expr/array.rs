@@ -1,6 +1,7 @@
 use super::call_new::ExtractKind;
 use super::IdCtx;
 use super::TypeOfMode;
+use crate::analyzer::expr::call_new::ReevalMode;
 use crate::analyzer::types::NormalizeTypeOpts;
 use crate::analyzer::Analyzer;
 use crate::analyzer::Ctx;
@@ -384,17 +385,25 @@ impl Analyzer<'_, '_> {
             .context("tried to call `[Symbol.asyncIterator]()`")?;
 
         let item_promise = self
-            .access_property(
+            .call_property(
                 span,
+                ExtractKind::Call,
+                ReevalMode::NoReeval,
+                &async_iterator,
                 &async_iterator,
                 &Key::Normal {
                     span,
                     sym: "next".into(),
                 },
-                TypeOfMode::RValue,
-                IdCtx::Var,
+                Default::default(),
+                Default::default(),
+                Default::default(),
+                Default::default(),
+                Default::default(),
             )
             .context("tried to get the type of `next` of an async iterator")?;
+
+        dbg!(&item_promise);
 
         let item = unwrap_ref_with_single_arg(&item_promise, "Promise")
             .ok_or_else(|| Error::Unimplemented {
