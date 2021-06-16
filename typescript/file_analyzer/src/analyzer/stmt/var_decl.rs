@@ -1,6 +1,5 @@
 use super::super::{pat::PatMode, Analyzer, Ctx};
 use crate::analyzer::assign::AssignOpts;
-use crate::analyzer::util::make_instance_type;
 use crate::util::should_instantiate_type_ann;
 use crate::{
     analyzer::{
