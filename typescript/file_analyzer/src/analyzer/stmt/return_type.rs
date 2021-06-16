@@ -251,6 +251,7 @@ impl Analyzer<'_, '_> {
                     AssignOpts {
                         span,
                         allow_unknown_rhs: true,
+                        may_unwrap_promise: true,
                         ..Default::default()
                     },
                     &declared,
