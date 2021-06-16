@@ -158,7 +158,9 @@ impl Analyzer<'_, '_> {
                                 _ if is_valid_key => {}
                                 Type::Lit(..) => {}
                                 Type::EnumVariant(..) => {}
-                                _ if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) || ty.is_unique_symbol() => {}
+                                _ if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword)
+                                    || ty.is_unique_symbol()
+                                    || ty.normalize().is_symbol() => {}
                                 _ => match mode {
                                     ComputedPropMode::Interface => {
                                         errors.push(Error::TS1169 { span: node.span });
