@@ -1051,6 +1051,10 @@ pub enum Error {
         span: Span,
     },
 
+    MustHaveSymbolAsycIteratorThatReturnsIterator {
+        span: Span,
+    },
+
     NoSuchConstructor {
         span: Span,
         key: Box<Key>,
@@ -1407,6 +1411,8 @@ impl Error {
             Error::MissingFields { .. } => 2741,
 
             Error::MustHaveSymbolIteratorThatReturnsIterator { .. } => 2488,
+
+            Error::MustHaveSymbolAsycIteratorThatReturnsIterator { .. } => 2504,
 
             Error::MustHaveSymbolIteratorThatReturnsIteratorOrMustBeArray { .. } => 2548,
 
