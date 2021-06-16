@@ -400,15 +400,6 @@ pub struct Symbol {
 
 assert_eq_size!(Symbol, [u8; 24]);
 
-impl Symbol {
-    pub fn generate(span: Span) -> Self {
-        Symbol {
-            span,
-            id: SymbolId::generate(),
-        }
-    }
-}
-
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct RestType {
     pub span: Span,

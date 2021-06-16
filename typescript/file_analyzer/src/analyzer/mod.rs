@@ -42,7 +42,7 @@ use stc_ts_storage::Builtin;
 use stc_ts_storage::Info;
 use stc_ts_storage::Storage;
 use stc_ts_types::IdCtx;
-use stc_ts_types::{Id, ModuleId, ModuleTypeData, SymbolIdGenerator};
+use stc_ts_types::{Id, ModuleId, ModuleTypeData};
 use stc_utils::AHashMap;
 use stc_utils::AHashSet;
 use std::mem::take;
@@ -271,8 +271,6 @@ pub struct Analyzer<'scope, 'b> {
 
     cur_facts: Facts,
 
-    symbols: Arc<SymbolIdGenerator>,
-
     /// Used while inferencing types.
     mapped_type_param_name: Vec<Id>,
 
@@ -422,7 +420,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             loader,
             Scope::root(logger),
             false,
-            Default::default(),
             debugger,
             Default::default(),
         )
@@ -446,7 +443,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             &NoopLoader,
             Scope::root(logger),
             true,
-            Default::default(),
             None,
             Default::default(),
         )
@@ -462,7 +458,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             self.loader,
             scope,
             self.is_builtin,
-            self.symbols.clone(),
             self.debugger.clone(),
             data,
         )
@@ -477,7 +472,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         loader: &'b dyn Load,
         scope: Scope<'scope>,
         is_builtin: bool,
-        symbols: Arc<SymbolIdGenerator>,
         debugger: Option<Debugger>,
         data: AnalyzerData,
     ) -> Self {
@@ -551,7 +545,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             is_builtin,
             duplicated_tracker: Default::default(),
             cur_facts: Default::default(),
-            symbols,
             mapped_type_param_name: vec![],
             imports_by_id: Default::default(),
             debugger,

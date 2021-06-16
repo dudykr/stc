@@ -70,6 +70,7 @@ use stc_ts_types::Interface;
 use stc_ts_types::Intersection;
 use stc_ts_types::Key;
 use stc_ts_types::ModuleId;
+use stc_ts_types::SymbolId;
 use stc_ts_types::{Alias, Id, IndexedAccessType, Ref, Symbol, Union};
 use stc_ts_utils::PatExt;
 use std::borrow::Cow;
@@ -320,7 +321,7 @@ impl Analyzer<'_, '_> {
 
                 return Ok(Type::Symbol(Symbol {
                     span,
-                    id: self.symbols.generate(),
+                    id: SymbolId::generate(),
                 }));
             }
 
