@@ -900,9 +900,9 @@ impl Analyzer<'_, '_> {
     ///
     /// - `Promise<T>` => `T`
     /// - `T | PromiseLike<T>` => `T`
-    pub(crate) fn normlaize_promise_arg<'a>(&mut self, arg: &'a Type) -> Cow<'a, Type> {
+    pub(crate) fn normalize_promise_arg<'a>(&mut self, arg: &'a Type) -> Cow<'a, Type> {
         if let Some(arg) = unwrap_ref_with_single_arg(&arg, "Promise") {
-            return self.normlaize_promise_arg(&arg);
+            return self.normalize_promise_arg(&arg);
         }
 
         match arg.normalize() {
