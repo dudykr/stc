@@ -11,9 +11,11 @@ use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RModuleDecl;
 use stc_ts_ast_rnode::RModuleItem;
 use stc_ts_ast_rnode::RStmt;
+use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
+use stc_ts_types::Ref;
 use stc_ts_types::{Id, InferType, TypeParam};
 use swc_common::{Mark, Span, Spanned, SyntaxContext};
 use swc_ecma_ast::*;
@@ -349,6 +351,11 @@ pub(crate) fn should_instantiate_type_ann(ty: &Type) -> bool {
     let ty = ty.normalize();
 
     match ty {
+        Type::Ref(Ref {
+            type_name: RTsEntityName::Ident(name),
+            ..
+        }) if name.sym == *"ReadonlyArray" => false,
+
         Type::Query(..) | Type::Param(..) | Type::Keyword(..) => false,
 
         _ => true,
