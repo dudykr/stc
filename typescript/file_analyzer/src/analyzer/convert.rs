@@ -86,6 +86,8 @@ use stc_ts_types::QueryExpr;
 use stc_ts_types::QueryType;
 use stc_ts_types::Ref;
 use stc_ts_types::RestType;
+use stc_ts_types::Symbol;
+use stc_ts_types::SymbolId;
 use stc_ts_types::TplType;
 use stc_ts_types::TsExpr;
 use stc_ts_types::Tuple;
@@ -106,6 +108,7 @@ use swc_atoms::js_word;
 use swc_common::EqIgnoreSpan;
 use swc_common::Spanned;
 use swc_common::DUMMY_SP;
+use swc_ecma_ast::TsKeywordTypeKind;
 use swc_ecma_ast::VarDeclKind;
 
 /// We analyze dependencies between type parameters, and fold parameter in
@@ -423,26 +426,48 @@ impl Analyzer<'_, '_> {
             .visit_with(self);
         }
 
+        let params = d.params.validate_with(self)?;
+
+        let type_ann = {
+            // TODO: implicit any
+            match d.type_ann.validate_with(self) {
+                Some(v) => match v {
+                    Ok(mut ty) => {
+                        // Handle some symbol types.
+                        if self.is_builtin {
+                            if ty.is_unique_symbol() || ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) {
+                                let key = match &key {
+                                    Key::Normal { sym, .. } => sym,
+                                    _ => {
+                                        unreachable!("builtin: non-string key for symbol type")
+                                    }
+                                };
+                                ty = Type::Symbol(Symbol {
+                                    span: DUMMY_SP,
+                                    id: SymbolId::known(&key),
+                                });
+                            }
+                        }
+
+                        Some(box ty)
+                    }
+                    Err(e) => {
+                        self.storage.report(e);
+                        Some(box Type::any(d.span))
+                    }
+                },
+                None => Some(box Type::any(d.span)),
+            }
+        };
+
         Ok(PropertySignature {
             accessibility: None,
             span: d.span,
             key,
             optional: d.optional,
-            params: d.params.validate_with(self)?,
+            params,
             readonly: d.readonly,
-            type_ann: {
-                // TODO: implicit any
-                match d.type_ann.validate_with(self) {
-                    Some(v) => match v {
-                        Ok(v) => Some(box v),
-                        Err(e) => {
-                            self.storage.report(e);
-                            Some(box Type::any(d.span))
-                        }
-                    },
-                    None => Some(box Type::any(d.span)),
-                }
-            },
+            type_ann,
             type_params,
             metadata: Default::default(),
         })
