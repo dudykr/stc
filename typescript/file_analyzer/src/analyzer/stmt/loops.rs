@@ -41,7 +41,7 @@ use swc_ecma_ast::VarDeclKind;
 #[derive(Clone, Copy)]
 enum ForHeadKind {
     In,
-    Of,
+    Of { is_awaited: bool },
 }
 
 impl Analyzer<'_, '_> {
@@ -178,7 +178,7 @@ impl Analyzer<'_, '_> {
         match p {
             RPat::Object(..) | RPat::Array(..) => match kind {
                 ForHeadKind::In => Err(Error::DestructuringBindingNotAllowedInLhsOfForIn { span: p.span() }),
-                ForHeadKind::Of => Ok(()),
+                ForHeadKind::Of { .. } => Ok(()),
             },
             RPat::Expr(e) => self.validate_lhs_of_for_in_of_loop_expr(e, kind),
             _ => Ok(()),
@@ -192,7 +192,7 @@ impl Analyzer<'_, '_> {
             RExpr::Assign(..) => Ok(()),
             _ => match kind {
                 ForHeadKind::In => Err(Error::InvalidExprOfLhsOfForIn { span: e.span() }),
-                ForHeadKind::Of => Err(Error::InvalidExprOfLhsOfForOf { span: e.span() }),
+                ForHeadKind::Of { .. } => Err(Error::InvalidExprOfLhsOfForOf { span: e.span() }),
             },
         }
     }
@@ -307,7 +307,7 @@ impl Analyzer<'_, '_> {
                                             .storage
                                             .report(Error::TypeAnnOnLhsOfForInLoops { span: decls[0].span });
                                     }
-                                    ForHeadKind::Of => {
+                                    ForHeadKind::Of { .. } => {
                                         child
                                             .storage
                                             .report(Error::TypeAnnOnLhsOfForOfLoops { span: decls[0].span });
@@ -331,7 +331,7 @@ impl Analyzer<'_, '_> {
                 let rty = rty.report(&mut child.storage).unwrap_or_else(|| Type::any(span));
 
                 match kind {
-                    ForHeadKind::Of => {
+                    ForHeadKind::Of { is_awaited: false } => {
                         if child.env.target() < EsVersion::Es5 {
                             if rty
                                 .iter_union()
@@ -347,7 +347,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 let elem_ty = match kind {
-                    ForHeadKind::Of => child
+                    ForHeadKind::Of { is_awaited: false } => child
                         .get_iterator_element_type(rhs.span(), Cow::Owned(rty), false)
                         .convert_err(|err| match err {
                             Error::NotArrayType { span }
@@ -363,6 +363,13 @@ impl Analyzer<'_, '_> {
                         .context("tried to get the element type of an iterator to calculate type for a for-of loop")
                         .report(&mut child.storage)
                         .unwrap_or_else(|| Cow::Owned(Type::any(span))),
+
+                    ForHeadKind::Of { is_awaited: true } => child
+                        .get_async_iterator_elem_type(rhs.span(), Cow::Owned(rty))
+                        .context("tried to get element type of an iteratro")
+                        .report(&mut child.storage)
+                        .unwrap_or_else(|| Cow::Owned(Type::any(span))),
+
                     ForHeadKind::In => Cow::Owned(
                         child
                             .get_element_type_of_for_in(&rty)
@@ -398,7 +405,15 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, s: &RForOfStmt) {
-        self.check_for_of_in_loop(s.span, &s.left, &s.right, ForHeadKind::Of, &s.body);
+        self.check_for_of_in_loop(
+            s.span,
+            &s.left,
+            &s.right,
+            ForHeadKind::Of {
+                is_awaited: s.await_token.is_some(),
+            },
+            &s.body,
+        );
 
         Ok(())
     }
