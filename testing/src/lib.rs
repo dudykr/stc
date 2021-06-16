@@ -71,7 +71,7 @@ pub fn logger() -> LogGuard {
     let log_dir = Path::new("logs");
     let _ = create_dir_all(&log_dir);
 
-    let log_path = format!("logs/{}.log", thread::current().name().unwrap());
+    let log_path = format!("logs/{}.ans", thread::current().name().unwrap());
     eprintln!("Log: {}", log_path);
     let log_file = OpenOptions::new()
         .create(true)
