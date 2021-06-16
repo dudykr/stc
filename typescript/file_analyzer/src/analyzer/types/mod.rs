@@ -4,6 +4,7 @@ use crate::analyzer::expr::TypeOfMode;
 use crate::analyzer::Ctx;
 use crate::type_facts::TypeFacts;
 use crate::util::type_ext::TypeVecExt;
+use crate::util::unwrap_ref_with_single_arg;
 use crate::Marks;
 use crate::ValidationResult;
 use fxhash::FxHashMap;
@@ -895,6 +896,47 @@ impl Analyzer<'_, '_> {
             }
         }))
     }
+
+    ///
+    /// - `Promise<Promise<T>>` => `Promise<T>`
+    /// - `Promise<T | PromiseLike<T>>` => `Promise<T>`
+    ///
+    /// Returns `(new_type, changed)`
+    pub(crate) fn normalize_promise<'a>(&mut self, ty: &'a Type) -> Cow<'a, Type> {
+        if let Some(arg) = unwrap_ref_with_single_arg(&ty, "Promise") {
+            let new_arg = self.normlaize_promise_arg(&arg);
+        }
+
+        Cow::Borrowed(ty)
+    }
+
+    fn normlaize_promise_arg<'a>(&mut self, arg: &'a Type) -> Cow<'a, Type> {
+        if let Some(arg) = unwrap_ref_with_single_arg(&arg, "Promise") {
+            return self.normlaize_promise_arg(&arg);
+        }
+
+        match arg.normalize() {
+            Type::Union(u) => {
+                // Part of `Promise<T | PromiseLike<T>> => Promise<T>`
+                if u.types.len() == 2 {
+                    let first = u.types[0].normalize();
+                    let second = u.types[1].normalize();
+
+                    if first.is_type_param() {
+                        if let Some(second_arg) = unwrap_ref_with_single_arg(&second, "PromiseLike") {
+                            if second_arg.type_eq(first) {
+                                return Cow::Borrowed(first);
+                            }
+                        }
+                    }
+                }
+            }
+            _ => {}
+        }
+
+        Cow::Borrowed(arg)
+    }
+
     pub(crate) fn normalize_tuples(&mut self, ty: &mut Type) {
         let marks = self.marks();
 
