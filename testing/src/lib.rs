@@ -31,6 +31,7 @@ impl LogGuard {
 
 struct LogWriter {
     receiver: Receiver<String>,
+    log_path: String,
     log_file: File,
 }
 
@@ -43,6 +44,7 @@ impl Drop for LogWriter {
                 self.log_file.write_all(data.as_bytes()).expect("failed to write");
             }
         }
+        eprintln!("Log: {}", self.log_path);
     }
 }
 
@@ -70,11 +72,12 @@ pub fn logger() -> LogGuard {
     let _ = create_dir_all(&log_dir);
 
     let log_path = format!("logs/{}.log", thread::current().name().unwrap());
+    eprintln!("Log: {}", log_path);
     let log_file = OpenOptions::new()
         .create(true)
         .write(true)
         .truncate(true)
-        .open(log_path)
+        .open(&log_path)
         .unwrap();
 
     let (sender, receiver) = channel::<String>();
@@ -89,7 +92,11 @@ pub fn logger() -> LogGuard {
 
     LogGuard {
         logger,
-        _writer: LogWriter { receiver, log_file },
+        _writer: LogWriter {
+            receiver,
+            log_path,
+            log_file,
+        },
     }
 }
 
