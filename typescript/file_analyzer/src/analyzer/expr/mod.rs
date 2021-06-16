@@ -291,7 +291,7 @@ impl Analyzer<'_, '_> {
                     return Ok(Type::any(span));
                 }
 
-                RExpr::Await(e) => e.validate_with(self),
+                RExpr::Await(e) => e.validate_with_args(self, type_ann),
 
                 RExpr::Class(RClassExpr {
                     ref ident, ref class, ..

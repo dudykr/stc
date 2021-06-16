@@ -11,7 +11,7 @@ use stc_ts_types::Type;
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RAwaitExpr) -> ValidationResult {
+    fn validate(&mut self, e: &RAwaitExpr, type_ann: Option<&Type>) -> ValidationResult {
         let span = e.span;
         self.with(|a: &mut Analyzer| -> ValidationResult<_> {
             let arg_ty = e
