@@ -145,7 +145,7 @@ impl Analyzer<'_, '_> {
                     None => None,
                 };
                 let is_typed = type_ann.is_some();
-                let type_ann = type_ann.or(default);
+                let type_ann = type_ann.or(default).or_else(|| ty.clone());
 
                 let right = p
                     .right
