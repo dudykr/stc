@@ -83,7 +83,7 @@ impl Analyzer<'_, '_> {
                 .map(Cow::Owned);
         }
 
-        let then_ty = self
+        Ok(self
             .access_property(
                 span,
                 &ty,
@@ -94,22 +94,24 @@ impl Analyzer<'_, '_> {
                 TypeOfMode::RValue,
                 IdCtx::Var,
             )
-            .context("failed to access property `then`")?;
-
-        match then_ty.normalize() {
-            Type::Function(f) => {
-                // Default type of the first type parameter is awaited type.
-                if let Some(type_params) = &f.type_params {
-                    if let Some(ty) = type_params.params.first() {
-                        if let Some(ty) = &ty.default {
-                            return Ok(Cow::Owned(*ty.clone()));
+            .ok()
+            .and_then(|then_ty| {
+                match then_ty.normalize() {
+                    Type::Function(f) => {
+                        // Default type of the first type parameter is awaited type.
+                        if let Some(type_params) = &f.type_params {
+                            if let Some(ty) = type_params.params.first() {
+                                if let Some(ty) = &ty.default {
+                                    return Some(Cow::Owned(*ty.clone()));
+                                }
+                            }
                         }
                     }
+                    _ => {}
                 }
-            }
-            _ => {}
-        }
 
-        Ok(ty)
+                None
+            })
+            .unwrap_or(ty))
     }
 }
