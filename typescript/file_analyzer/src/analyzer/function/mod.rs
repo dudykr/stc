@@ -8,6 +8,7 @@ use crate::{
     validator::ValidateWith,
     ValidationResult,
 };
+use itertools::{EitherOrBoth, Itertools};
 use rnode::Fold;
 use rnode::FoldWith;
 use stc_ts_ast_rnode::RBindingIdent;
@@ -29,6 +30,7 @@ use stc_ts_types::Function;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
 use stc_ts_types::{Alias, Interface, Ref};
+use stc_ts_utils::PatExt;
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::TsKeywordTypeKind;
 use swc_ecma_ast::VarDeclKind;
@@ -328,6 +330,29 @@ impl Analyzer<'_, '_> {
     fn visit_fn(&mut self, name: Option<&RIdent>, f: &RFunction, type_ann: Option<&Type>) -> Type {
         let fn_ty: Result<_, _> = try {
             let no_implicit_any_span = name.as_ref().map(|name| name.span);
+
+            match type_ann.as_ref().map(|ty| ty.normalize()) {
+                Some(Type::Function(ty)) => {
+                    for p in f.params.iter().zip_longest(ty.params.iter()) {
+                        match p {
+                            EitherOrBoth::Both(param, ty) => {
+                                // Store type infomations, so the pattern validator can use correct type.
+                                if let Some(pat_node_id) = param.pat.node_id() {
+                                    if let Some(m) = &mut self.mutations {
+                                        m.for_pats
+                                            .entry(pat_node_id)
+                                            .or_default()
+                                            .ty
+                                            .get_or_insert_with(|| *ty.ty.clone());
+                                    }
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+                _ => {}
+            }
 
             // if let Some(name) = name {
             //     // We use `typeof function` to infer recursive function's return type.
