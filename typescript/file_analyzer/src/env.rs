@@ -339,7 +339,7 @@ impl Env {
         match self.get_global_type(ty.span(), &name) {
             Ok(prev_ty) => {
                 self.global_types
-                    .insert(name, Type::intersection(DUMMY_SP, vec![prev_ty, ty]).cheap());
+                    .insert(name, Type::intersection(DUMMY_SP, vec![prev_ty, ty]).fixed().cheap());
             }
             Err(_) => {
                 self.global_types.insert(name, ty);
