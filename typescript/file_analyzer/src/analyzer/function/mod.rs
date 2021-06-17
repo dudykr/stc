@@ -325,7 +325,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO: Handle recursive funciton
-    fn visit_fn(&mut self, name: Option<&RIdent>, f: &RFunction) -> Type {
+    fn visit_fn(&mut self, name: Option<&RIdent>, f: &RFunction, type_ann: Option<&Type>) -> Type {
         let fn_ty: Result<_, _> = try {
             let no_implicit_any_span = name.as_ref().map(|name| name.span);
 
@@ -436,7 +436,7 @@ impl Analyzer<'_, '_> {
         let fn_ty = self
             .with_ctx(ctx)
             .with_child(ScopeKind::Fn, Default::default(), |a: &mut Analyzer| {
-                Ok(a.visit_fn(Some(&f.ident), &f.function).cheap())
+                Ok(a.visit_fn(Some(&f.ident), &f.function, None).cheap())
             })?;
 
         let mut a = self.with_ctx(ctx);
@@ -463,8 +463,8 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     /// NOTE: This method **should not call f.fold_children_with(self)**
-    fn validate(&mut self, f: &RFnExpr) -> ValidationResult<Type> {
-        Ok(self.visit_fn(f.ident.as_ref(), &f.function))
+    fn validate(&mut self, f: &RFnExpr, type_ann: Option<&Type>) -> ValidationResult<Type> {
+        Ok(self.visit_fn(f.ident.as_ref(), &f.function, type_ann))
     }
 }
 

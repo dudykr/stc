@@ -303,7 +303,7 @@ impl Analyzer<'_, '_> {
                 RExpr::Arrow(ref e) => return Ok(e.validate_with_args(self, type_ann)?.into()),
 
                 RExpr::Fn(f) => {
-                    return Ok(f.validate_with(self)?.into());
+                    return Ok(f.validate_with_args(self, type_ann)?.into());
                 }
 
                 RExpr::Member(ref expr) => {
