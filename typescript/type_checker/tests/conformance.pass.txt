@@ -345,6 +345,7 @@ es6/Symbols/symbolProperty51.ts
 es6/Symbols/symbolProperty52.ts
 es6/Symbols/symbolProperty54.ts
 es6/Symbols/symbolProperty55.ts
+es6/Symbols/symbolProperty56.ts
 es6/Symbols/symbolProperty57.ts
 es6/Symbols/symbolProperty59.ts
 es6/Symbols/symbolProperty6.ts
@@ -1971,6 +1972,7 @@ types/mapped/mappedTypes2.ts
 types/mapped/mappedTypes3.ts
 types/mapped/mappedTypes4.ts
 types/mapped/mappedTypesAndObjects.ts
+types/members/augmentedTypeBracketAccessIndexSignature.ts
 types/members/classWithProtectedProperty.ts
 types/members/classWithPublicProperty.ts
 types/members/objectTypeHidingMembersOfObject.ts
@@ -2046,6 +2048,7 @@ types/primitives/void/invalidAssignmentsToVoid.ts
 types/primitives/void/invalidVoidValues.ts
 types/primitives/void/validVoidAssignments.ts
 types/primitives/void/validVoidValues.ts
+types/rest/genericObjectRest.ts
 types/rest/objectRest2.ts
 types/rest/objectRestAssignment.ts
 types/rest/objectRestCatchES5.ts
