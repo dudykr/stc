@@ -1876,6 +1876,13 @@ impl Analyzer<'_, '_> {
                     return Ok(Type::any(span));
                 }
 
+                if members.iter().any(|e| e.is_call()) {
+                    let obj = self.env.get_global_type(span, &js_word!("Function"))?;
+                    if let Ok(v) = self.access_property(span, &obj, prop, type_mode, IdCtx::Var) {
+                        return Ok(v);
+                    }
+                }
+
                 {
                     let obj = self.env.get_global_type(span, &js_word!("Object"))?;
                     if let Ok(v) = self.access_property(span, &obj, prop, type_mode, IdCtx::Var) {
