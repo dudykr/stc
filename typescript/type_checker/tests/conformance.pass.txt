@@ -1918,6 +1918,7 @@ types/contextualTypes/logicalAnd/contextuallyTypeLogicalAnd03.ts
 types/contextualTypes/partiallyAnnotatedFunction/partiallyAnnotatedFunctionInferenceError.ts
 types/contextualTypes/partiallyAnnotatedFunction/partiallyAnnotatedFunctionInferenceWithTypeParameter.ts
 types/contextualTypes/partiallyAnnotatedFunction/partiallyAnnotatedFunctionWitoutTypeParameter.ts
+types/forAwait/types.forAwait.es2018.1.ts
 types/forAwait/types.forAwait.es2018.2.ts
 types/forAwait/types.forAwait.es2018.3.ts
 types/intersection/contextualIntersectionType.ts
