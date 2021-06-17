@@ -8,7 +8,6 @@ use crate::analyzer::Ctx;
 use crate::ty::TypeExt;
 use crate::type_facts::TypeFacts;
 use crate::util::type_ext::TypeVecExt;
-use crate::util::unwrap_ref_with_single_arg;
 use crate::validator;
 use crate::validator::ValidateWith;
 use crate::ValidationResult;
@@ -389,11 +388,8 @@ impl Analyzer<'_, '_> {
                 )
                 .context("tried to get the type of `next` of an async iterator")?;
 
-            let item = unwrap_ref_with_single_arg(&item_promise, "Promise")
-                .ok_or_else(|| Error::Unimplemented {
-                    span,
-                    msg: format!("proper error reporting for wrong interface impl"),
-                })
+            let item = self
+                .get_awaited_type(span, Cow::Owned(item_promise))
                 .context("tried to unwrap `Promise` to calculate the element type of an async iterator")?;
 
             let elem_ty = self
@@ -413,8 +409,11 @@ impl Analyzer<'_, '_> {
                 _ => err,
             })?;
 
-        if let Some(elem_ty) = unwrap_ref_with_single_arg(&elem_ty, "Promise") {
-            return Ok(Cow::Owned(elem_ty.clone()));
+        if let Ok(elem_ty) = self
+            .get_awaited_type(span, Cow::Borrowed(&elem_ty))
+            .map(Cow::into_owned)
+        {
+            return Ok(Cow::Owned(elem_ty));
         }
 
         Ok(Cow::Owned(elem_ty.into_owned()))
