@@ -9,7 +9,6 @@ use crate::analyzer::Ctx;
 use crate::validator::ValidateWith;
 use crate::ValidationResult;
 use itertools::Itertools;
-use petgraph::matrix_graph::Nullable;
 use rnode::NodeId;
 use stc_ts_ast_rnode::RBindingIdent;
 use stc_ts_ast_rnode::RExpr;
