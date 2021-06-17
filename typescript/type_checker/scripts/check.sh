@@ -9,6 +9,9 @@ set -eu
 
 export CARGO_TERM_COLOR=always
 
+# We prevent regression using faster checks
+GOLDEN_ONLY=1 cargo test -q -p stc_ts_file_analyzer --test visualize
+
 TEST='' cargo test --test tsc \
   | tee /dev/stderr \
   | grep 'ts .\.\. ok$' \
