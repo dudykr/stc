@@ -1876,7 +1876,15 @@ impl Analyzer<'_, '_> {
                     return Ok(Type::any(span));
                 }
 
+                {
+                    let obj = self.env.get_global_type(span, &js_word!("Object"))?;
+                    if let Ok(v) = self.access_property(span, &obj, prop, type_mode, IdCtx::Var) {
+                        return Ok(v);
+                    }
+                }
+
                 dbg!();
+
                 return Err(Error::NoSuchProperty {
                     span,
                     obj: Some(box obj),
