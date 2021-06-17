@@ -9,6 +9,7 @@ use crate::analyzer::Ctx;
 use crate::validator::ValidateWith;
 use crate::ValidationResult;
 use itertools::Itertools;
+use petgraph::matrix_graph::Nullable;
 use rnode::NodeId;
 use stc_ts_ast_rnode::RBindingIdent;
 use stc_ts_ast_rnode::RExpr;
@@ -145,11 +146,11 @@ impl Analyzer<'_, '_> {
                     None => None,
                 };
                 let is_typed = type_ann.is_some();
-                let type_ann = type_ann.or(default).or_else(|| ty.clone());
+                let type_ann = type_ann.or(default);
 
                 let right = p
                     .right
-                    .validate_with_args(self, (TypeOfMode::RValue, None, type_ann.as_ref()))
+                    .validate_with_args(self, (TypeOfMode::RValue, None, type_ann.as_ref().or(ty.as_ref())))
                     .report(&mut self.storage)
                     .unwrap_or_else(|| Type::any(span));
 
