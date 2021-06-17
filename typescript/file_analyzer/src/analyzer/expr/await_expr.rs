@@ -1,5 +1,6 @@
 use super::TypeOfMode;
 use crate::analyzer::Analyzer;
+use crate::util::unwrap_ref_with_single_arg;
 use crate::validator::ValidateWith;
 use crate::ValidationResult;
 use stc_ts_ast_rnode::{RAwaitExpr, RIdent, RTsEntityName};
@@ -8,8 +9,9 @@ use stc_ts_file_analyzer_macros::validator;
 use stc_ts_types::{IdCtx, Ref};
 use stc_ts_types::{Key, ModuleId};
 use stc_ts_types::{Type, TypeParamInstantiation};
+use std::borrow::Cow;
 use swc_atoms::js_word;
-use swc_common::SyntaxContext;
+use swc_common::{Span, SyntaxContext};
 
 #[validator]
 impl Analyzer<'_, '_> {
@@ -59,35 +61,8 @@ impl Analyzer<'_, '_> {
                 .validate_with_args(a, (TypeOfMode::RValue, None, arg_type_ann.as_ref()))
                 .context("tried to validate the argument of an await expr")?;
 
-            let then_ty = match a.access_property(
-                span,
-                &arg_ty,
-                &Key::Normal {
-                    span,
-                    sym: "then".into(),
-                },
-                TypeOfMode::RValue,
-                IdCtx::Var,
-            ) {
-                Ok(v) => v,
-                Err(..) => {
-                    // If `then` does not exists, the type itself is used
-                    return Ok(arg_ty);
-                }
-            };
-
-            match then_ty.normalize() {
-                Type::Function(f) => {
-                    // Default type of the first type parameter is awaited type.
-                    if let Some(type_params) = &f.type_params {
-                        if let Some(ty) = type_params.params.first() {
-                            if let Some(ty) = &ty.default {
-                                return Ok(*ty.clone());
-                            }
-                        }
-                    }
-                }
-                _ => {}
+            if let Ok(arg) = a.get_awaited_type(span, Cow::Borrowed(&arg_ty)) {
+                return Ok(arg.into_owned());
             }
 
             Ok(arg_ty)
@@ -96,5 +71,45 @@ impl Analyzer<'_, '_> {
             ty.reposition(e.span);
             ty
         })
+    }
+}
+
+impl Analyzer<'_, '_> {
+    pub(crate) fn get_awaited_type<'a>(&mut self, span: Span, ty: Cow<'a, Type>) -> ValidationResult<Cow<'a, Type>> {
+        if let Some(arg) = unwrap_ref_with_single_arg(&ty, "Promise") {
+            return self
+                .get_awaited_type(span, Cow::Borrowed(arg))
+                .map(Cow::into_owned)
+                .map(Cow::Owned);
+        }
+
+        let then_ty = self
+            .access_property(
+                span,
+                &ty,
+                &Key::Normal {
+                    span,
+                    sym: "then".into(),
+                },
+                TypeOfMode::RValue,
+                IdCtx::Var,
+            )
+            .context("failed to access property `then`")?;
+
+        match then_ty.normalize() {
+            Type::Function(f) => {
+                // Default type of the first type parameter is awaited type.
+                if let Some(type_params) = &f.type_params {
+                    if let Some(ty) = type_params.params.first() {
+                        if let Some(ty) = &ty.default {
+                            return Ok(Cow::Owned(*ty.clone()));
+                        }
+                    }
+                }
+            }
+            _ => {}
+        }
+
+        Ok(ty)
     }
 }
