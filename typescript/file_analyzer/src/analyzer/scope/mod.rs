@@ -821,7 +821,12 @@ impl Analyzer<'_, '_> {
                     .store_private_type(self.ctx.module_id, name.clone(), ty.clone(), should_override);
 
                 match *name.sym() {
-                    js_word!("Array") | js_word!("Number") | js_word!("Boolean") | js_word!("String") => {
+                    js_word!("Object")
+                    | js_word!("Function")
+                    | js_word!("Array")
+                    | js_word!("Number")
+                    | js_word!("Boolean")
+                    | js_word!("String") => {
                         self.env.declare_global_type(name.sym().clone(), ty.clone());
                     }
                     _ => {}
