@@ -640,6 +640,7 @@ es6/destructuring/restElementWithAssignmentPattern4.ts
 es6/destructuring/restElementWithAssignmentPattern5.ts
 es6/destructuring/restElementWithBindingPattern.ts
 es6/destructuring/restElementWithBindingPattern2.ts
+es6/destructuring/restElementWithNullInitializer.ts
 es6/destructuring/restPropertyWithBindingPattern.ts
 es6/for-ofStatements/for-of1.ts
 es6/for-ofStatements/for-of10.ts
