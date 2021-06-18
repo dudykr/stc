@@ -1251,6 +1251,11 @@ impl Analyzer<'_, '_> {
         match kind {
             ExtractKind::New => match ty.normalize() {
                 Type::ClassDef(ref cls) => {
+                    self.scope.this = Some(Type::Class(Class {
+                        span,
+                        def: box cls.clone(),
+                    }));
+
                     if cls.is_abstract {
                         self.storage.report(Error::CannotCreateInstanceOfAbstractClass { span })
                     }
