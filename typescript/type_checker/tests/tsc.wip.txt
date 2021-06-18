@@ -52,4 +52,3 @@ types/thisType/thisTypeInObjectLiterals.ts
 types/thisType/thisTypeInObjectLiterals2.ts
 types/typeRelationships/assignmentCompatibility/assignmentCompatWithDiscriminatedUnion.ts
 types/typeRelationships/assignmentCompatibility/assignmentCompatWithGenericCallSignatures.ts
-types/union/unionTypeIndexSignature.ts
