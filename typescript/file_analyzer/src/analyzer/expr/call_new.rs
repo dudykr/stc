@@ -72,6 +72,7 @@ use stc_ts_types::ModuleId;
 use stc_ts_types::SymbolId;
 use stc_ts_types::{Alias, Id, IndexedAccessType, Ref, Symbol, Union};
 use stc_ts_utils::PatExt;
+use stc_utils::TryOpt;
 use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::SyntaxContext;
@@ -1258,35 +1259,60 @@ impl Analyzer<'_, '_> {
                         for param in &type_params.params {
                             self.register_type(param.name.clone(), Type::Param(param.clone()));
                         }
+                    }
 
-                        // Infer type arguments using constructors.
-                        let constructors = cls.body.iter().filter_map(|member| match member {
-                            ClassMember::Constructor(c) => Some(c),
-                            _ => None,
-                        });
+                    // Infer type arguments using constructors.
+                    let constructors = cls.body.iter().filter_map(|member| match member {
+                        ClassMember::Constructor(c) => Some(c),
+                        _ => None,
+                    });
 
-                        for constructor in constructors {
-                            //
-                            let inferred = self.infer_arg_types(
-                                span,
-                                type_args,
-                                &type_params.params,
-                                &constructor.params,
-                                spread_arg_types,
-                                Some(&Type::Keyword(RTsKeywordType {
+                    for constructor in constructors {
+                        if let Some(type_params) = &constructor.type_params {}
+                        //
+                        let type_args = constructor
+                            .type_params
+                            .as_ref()
+                            .or_else(|| cls.type_params.as_ref())
+                            .map(|v| &*v.params)
+                            .try_map(|type_params| {
+                                let inferred = self.infer_arg_types(
                                     span,
-                                    kind: TsKeywordTypeKind::TsUnknownKeyword,
-                                })),
-                            )?;
+                                    type_args,
+                                    type_params,
+                                    &constructor.params,
+                                    spread_arg_types,
+                                    Some(&Type::Keyword(RTsKeywordType {
+                                        span,
+                                        kind: TsKeywordTypeKind::TsUnknownKeyword,
+                                    })),
+                                )?;
 
-                            let type_args = self.instantiate(span, &type_params.params, inferred)?;
+                                self.instantiate(span, &type_params, inferred)
+                            })?;
+                        // TODO: Constructor's return type.
 
-                            return Ok(Type::Class(Class {
+                        return self
+                            .get_return_type(
                                 span,
-                                def: box cls.clone(),
-                            }));
-                        }
+                                kind,
+                                expr,
+                                None,
+                                &[],
+                                Type::Class(Class {
+                                    span,
+                                    def: box cls.clone(),
+                                }),
+                                type_args.as_ref(),
+                                args,
+                                arg_types,
+                                spread_arg_types,
+                                type_ann,
+                            )
+                            .context("tried to instantiate a class using constructor");
+                    }
 
+                    if let Some(type_params) = &cls.type_params {
                         let ret_ty = self.get_return_type(
                             span,
                             kind,
@@ -1307,10 +1333,24 @@ impl Analyzer<'_, '_> {
                         return Ok(ret_ty);
                     }
 
-                    return Ok(Type::Class(Class {
-                        span,
-                        def: box cls.clone(),
-                    }));
+                    return self
+                        .get_return_type(
+                            span,
+                            kind,
+                            expr,
+                            None,
+                            &[],
+                            Type::Class(Class {
+                                span,
+                                def: box cls.clone(),
+                            }),
+                            type_args,
+                            args,
+                            arg_types,
+                            spread_arg_types,
+                            type_ann,
+                        )
+                        .context("tried to instantiate a class without any contructor with call");
                 }
 
                 Type::Constructor(c) => {
