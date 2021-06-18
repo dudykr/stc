@@ -1908,9 +1908,26 @@ impl Analyzer<'_, '_> {
         let mut max_param = Some(params.len());
         for param in params {
             match param.pat {
-                RPat::Rest(..) => {
-                    max_param = None;
-                }
+                RPat::Rest(..) => match param.ty.normalize() {
+                    Type::Tuple(param_ty) => {
+                        for elem in &param_ty.elems {
+                            match elem.ty.normalize() {
+                                Type::Rest(..) => {
+                                    max_param = None;
+                                    break;
+                                }
+                                Type::Optional(..) => {}
+                                _ => {
+                                    min_param += 1;
+                                }
+                            }
+                        }
+                        continue;
+                    }
+                    _ => {
+                        max_param = None;
+                    }
+                },
                 RPat::Ident(RBindingIdent {
                     id: RIdent {
                         sym: js_word!("this"), ..
