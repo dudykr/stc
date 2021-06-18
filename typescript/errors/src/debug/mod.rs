@@ -80,7 +80,7 @@ pub fn dump_type_as_string(cm: &Lrc<SourceMap>, t: &Type) -> String {
     }
 
     match t.normalize() {
-        Type::ClassDef(..) => {
+        Type::ClassDef(..) | Type::Class(..) => {
             writeln!(s, "\n{:?}", t.normalize()).unwrap();
         }
         _ => {}
