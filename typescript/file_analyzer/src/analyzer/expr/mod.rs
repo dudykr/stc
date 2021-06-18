@@ -1578,6 +1578,33 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                let has_better_default = !self.ctx.disallow_indexing_class_with_computed
+                    && prop.is_computed()
+                    && match prop.ty().normalize() {
+                        // newWithSpreadES5.ts contains
+                        //
+                        //
+                        // var i: C[][];
+                        // new i["a-b"][1](1, 2, "string");
+                        // new i["a-b"][1](1, 2, ...a);
+                        // new i["a-b"][1](1, 2, ...a, "string");
+                        //
+                        //
+                        // and it's not error.
+                        Type::Keyword(RTsKeywordType {
+                            kind: TsKeywordTypeKind::TsStringKeyword,
+                            ..
+                        })
+                        | Type::Lit(RTsLitType {
+                            lit: RTsLit::Str(..), ..
+                        }) => true,
+                        _ => false,
+                    };
+
+                if has_better_default {
+                    return Ok(Type::any(span));
+                }
+
                 return Err(Error::NoSuchPropertyInClass {
                     span,
                     class_name: c.def.name.clone(),

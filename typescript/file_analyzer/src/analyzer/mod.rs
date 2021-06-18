@@ -129,6 +129,8 @@ pub(crate) struct Ctx {
 
     disallow_indexing_array_with_string: bool,
 
+    disallow_indexing_class_with_computed: bool,
+
     in_shorthand: bool,
 
     /// `true` for condition of conditional expression or of an if statement.
@@ -499,6 +501,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 cannot_be_tuple: false,
                 should_not_create_indexed_type_from_ty_els: false,
                 disallow_indexing_array_with_string: false,
+                disallow_indexing_class_with_computed: false,
                 in_shorthand: false,
                 in_cond_of_cond_expr: false,
                 should_store_truthy_for_access: false,
