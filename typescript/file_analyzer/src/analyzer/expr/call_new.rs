@@ -1324,33 +1324,12 @@ impl Analyzer<'_, '_> {
                             .context("tried to instantiate a class using constructor");
                     }
 
-                    if let Some(type_params) = &cls.type_params {
-                        let ret_ty = self.get_return_type(
-                            span,
-                            kind,
-                            expr,
-                            Some(&type_params.params),
-                            &[],
-                            Type::Class(Class {
-                                span,
-                                def: box cls.clone(),
-                            }),
-                            type_args,
-                            args,
-                            arg_types,
-                            spread_arg_types,
-                            type_ann,
-                        )?;
-
-                        return Ok(ret_ty);
-                    }
-
                     return self
                         .get_return_type(
                             span,
                             kind,
                             expr,
-                            None,
+                            cls.type_params.as_ref().map(|v| &*v.params),
                             &[],
                             Type::Class(Class {
                                 span,
