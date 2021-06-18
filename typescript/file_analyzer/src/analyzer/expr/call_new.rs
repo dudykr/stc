@@ -72,7 +72,6 @@ use stc_ts_types::ModuleId;
 use stc_ts_types::SymbolId;
 use stc_ts_types::{Alias, Id, IndexedAccessType, Ref, Symbol, Union};
 use stc_ts_utils::PatExt;
-use stc_utils::TryOpt;
 use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::SyntaxContext;
@@ -1274,26 +1273,11 @@ impl Analyzer<'_, '_> {
 
                     for constructor in constructors {
                         //
-                        let type_args = constructor
+                        let type_params = constructor
                             .type_params
                             .as_ref()
                             .or_else(|| cls.type_params.as_ref())
-                            .map(|v| &*v.params)
-                            .try_map(|type_params| {
-                                let inferred = self.infer_arg_types(
-                                    span,
-                                    type_args,
-                                    type_params,
-                                    &constructor.params,
-                                    spread_arg_types,
-                                    Some(&Type::Keyword(RTsKeywordType {
-                                        span,
-                                        kind: TsKeywordTypeKind::TsUnknownKeyword,
-                                    })),
-                                )?;
-
-                                self.instantiate(span, &type_params, inferred)
-                            })?;
+                            .map(|v| &*v.params);
                         // TODO: Constructor's return type.
 
                         return self
@@ -1301,13 +1285,13 @@ impl Analyzer<'_, '_> {
                                 span,
                                 kind,
                                 expr,
-                                None,
+                                type_params,
                                 &constructor.params,
                                 Type::Class(Class {
                                     span,
                                     def: box cls.clone(),
                                 }),
-                                type_args.as_ref(),
+                                type_args,
                                 args,
                                 arg_types,
                                 spread_arg_types,
