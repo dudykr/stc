@@ -7,6 +7,16 @@
 
 set -eu
 
+err_handler () {
+   if command -v osascript &> /dev/null
+  then
+      osascript -e 'display notification "Check failed!"'
+  fi
+   exit
+}
+
+trap err_handler ERR
+
 export CARGO_TERM_COLOR=always
 
 # We prevent regression using faster checks
