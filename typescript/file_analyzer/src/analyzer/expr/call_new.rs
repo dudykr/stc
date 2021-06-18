@@ -1324,7 +1324,12 @@ impl Analyzer<'_, '_> {
                             .context("tried to instantiate a class using constructor");
                     }
 
+                    let ctx = Ctx {
+                        is_instantiating_class: true,
+                        ..self.ctx
+                    };
                     return self
+                        .with_ctx(ctx)
                         .get_return_type(
                             span,
                             kind,

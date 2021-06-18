@@ -133,6 +133,9 @@ pub(crate) struct Ctx {
 
     in_shorthand: bool,
 
+    /// Used to make type parameters `unknown` when it cannot be inferred.
+    is_instantiating_class: bool,
+
     /// `true` for condition of conditional expression or of an if statement.
     in_cond_of_cond_expr: bool,
     should_store_truthy_for_access: bool,
@@ -503,6 +506,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 disallow_indexing_array_with_string: false,
                 disallow_indexing_class_with_computed: false,
                 in_shorthand: false,
+                is_instantiating_class: false,
                 in_cond_of_cond_expr: false,
                 should_store_truthy_for_access: false,
                 in_switch_case_test: false,
