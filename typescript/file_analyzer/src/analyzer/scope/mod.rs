@@ -2463,7 +2463,7 @@ impl Fold<Type> for Expander<'_, '_, '_> {
             _ => {}
         }
         let before = dump_type_as_string(&self.analyzer.cm, &ty);
-        let expanded = self.expand_type(ty);
+        let expanded = self.expand_type(ty).fixed();
 
         if !self.analyzer.is_builtin {
             expanded.assert_valid();
