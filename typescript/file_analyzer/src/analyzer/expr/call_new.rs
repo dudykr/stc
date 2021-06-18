@@ -20,7 +20,6 @@ use crate::{
     ValidationResult,
 };
 use fxhash::FxHashMap;
-use itertools::EitherOrBoth;
 use itertools::Itertools;
 use rnode::Fold;
 use rnode::FoldWith;
@@ -2423,21 +2422,23 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        for pair in params
-            .iter()
-            .filter(|param| match param.pat {
-                RPat::Ident(RBindingIdent {
-                    id: RIdent {
-                        sym: js_word!("this"), ..
-                    },
-                    ..
-                }) => false,
-                _ => true,
-            })
-            .zip_longest(spread_arg_types)
-        {
-            match pair {
-                EitherOrBoth::Both(param, arg) => {
+        let mut params_iter = params.iter().filter(|param| match param.pat {
+            RPat::Ident(RBindingIdent {
+                id: RIdent {
+                    sym: js_word!("this"), ..
+                },
+                ..
+            }) => false,
+            _ => true,
+        });
+        let mut args_iter = spread_arg_types.into_iter();
+
+        loop {
+            let param = params_iter.next();
+            let arg = args_iter.next();
+
+            match (param, arg) {
+                (Some(param), Some(arg)) => {
                     match &param.pat {
                         RPat::Rest(..) => {
                             let param_ty =
