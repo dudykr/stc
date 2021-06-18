@@ -2537,6 +2537,7 @@ impl Analyzer<'_, '_> {
                                                 &mut Default::default(),
                                                 AssignOpts {
                                                     span: arg.span(),
+                                                    allow_iterable_on_rhs: true,
                                                     ..Default::default()
                                                 },
                                                 &param_ty.elems[0].ty,
@@ -2567,6 +2568,7 @@ impl Analyzer<'_, '_> {
                                                     &mut Default::default(),
                                                     AssignOpts {
                                                         span: arg.span(),
+                                                        allow_iterable_on_rhs: true,
                                                         ..Default::default()
                                                     },
                                                     &param_elem.ty,
