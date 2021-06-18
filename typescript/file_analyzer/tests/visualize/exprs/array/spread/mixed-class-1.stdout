@@ -61,3 +61,11 @@ warning: Type
    |
    = note: SymbolIterator
 
+warning: Type
+  --> $DIR/tests/visualize/exprs/array/spread/mixed-class-1.ts:14:30
+   |
+14 | export var array: number[] = [0, 1, ...new SymbolIterator];
+   |                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: (0 | 1 | symbol)[]
+
