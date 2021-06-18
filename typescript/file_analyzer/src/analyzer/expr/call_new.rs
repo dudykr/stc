@@ -2171,7 +2171,7 @@ impl Analyzer<'_, '_> {
             };
 
             slog::debug!(self.logger, "Inferring arg types for a call");
-            let inferred = self.infer_arg_types(span, type_args, type_params, &params, &spread_arg_types, None)?;
+            let mut inferred = self.infer_arg_types(span, type_args, type_params, &params, &spread_arg_types, None)?;
 
             let expanded_param_types = params
                 .into_iter()
@@ -2372,6 +2372,20 @@ impl Analyzer<'_, '_> {
             }
 
             self.validate_arg_types(&expanded_param_types, &spread_arg_types);
+
+            if self.ctx.is_instantiating_class {
+                for tp in type_params.iter() {
+                    if !inferred.contains_key(&tp.name) {
+                        inferred.insert(
+                            tp.name.clone(),
+                            Type::Keyword(RTsKeywordType {
+                                span: tp.span,
+                                kind: TsKeywordTypeKind::TsUnknownKeyword,
+                            }),
+                        );
+                    }
+                }
+            }
 
             print_type(&logger, "Return", &self.cm, &ret_ty);
             let mut ty = self.expand_type_params(&inferred, ret_ty)?;
