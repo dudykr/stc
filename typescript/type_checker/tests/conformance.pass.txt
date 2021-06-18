@@ -2099,6 +2099,7 @@ types/stringLiteral/stringLiteralTypesInUnionTypes02.ts
 types/stringLiteral/stringLiteralTypesInUnionTypes03.ts
 types/stringLiteral/stringLiteralTypesInUnionTypes04.ts
 types/stringLiteral/stringLiteralTypesOverloads01.ts
+types/stringLiteral/stringLiteralTypesOverloads02.ts
 types/stringLiteral/stringLiteralTypesOverloads03.ts
 types/stringLiteral/stringLiteralTypesOverloads04.ts
 types/stringLiteral/stringLiteralTypesOverloads05.ts
