@@ -2584,6 +2584,7 @@ impl Analyzer<'_, '_> {
                                     span: arg.span(),
                                     inner: box err,
                                 }
+                                .context("tried basical argument assignment")
                             });
                             self.storage.report(err);
                         }
