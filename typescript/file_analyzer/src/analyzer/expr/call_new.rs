@@ -2456,6 +2456,71 @@ impl Analyzer<'_, '_> {
                                 }
                             };
 
+                            // Handle
+                            //
+                            //   param: (...x: [boolean, sting, ...number])
+                            //   arg: (true, 'str')
+                            //      or
+                            //   arg: (true, 'str', 10)
+                            if arg.spread.is_none() {
+                                match param_ty.normalize() {
+                                    Type::Tuple(param_ty) if !param_ty.elems.is_empty() => {
+                                        let res = self
+                                            .assign_with_opts(
+                                                &mut Default::default(),
+                                                AssignOpts {
+                                                    span: arg.span(),
+                                                    ..Default::default()
+                                                },
+                                                &param_ty.elems[0].ty,
+                                                &arg.ty,
+                                            )
+                                            .convert_err(|err| Error::WrongArgType {
+                                                span: arg.span(),
+                                                inner: box err,
+                                            })
+                                            .context("tried to assign to first element of a tuple type of a parameter");
+
+                                        res.report(&mut self.storage);
+
+                                        for param_elem in param_ty.elems.iter().skip(1) {
+                                            let arg = match args_iter.next() {
+                                                Some(v) => v,
+                                                None => {
+                                                    // TODO: Arugment count
+                                                    break;
+                                                }
+                                            };
+
+                                            // TODO: Check if arg.spread is none.
+                                            // The logic below is correct only if the arg is not spread.
+
+                                            let res = self
+                                                .assign_with_opts(
+                                                    &mut Default::default(),
+                                                    AssignOpts {
+                                                        span: arg.span(),
+                                                        ..Default::default()
+                                                    },
+                                                    &param_elem.ty,
+                                                    &arg.ty,
+                                                )
+                                                .convert_err(|err| Error::WrongArgType {
+                                                    span: arg.span(),
+                                                    inner: box err,
+                                                })
+                                                .context("tried to assign to element of a tuple type of a parameter");
+
+                                            res.report(&mut self.storage);
+                                        }
+
+                                        // Skip default type checking logic.
+                                        continue;
+                                    }
+                                    _ => {}
+                                }
+                            }
+
                             if arg.spread.is_some() {
                                 if let Ok(()) = self.assign_with_opts(
                                     &mut Default::default(),
