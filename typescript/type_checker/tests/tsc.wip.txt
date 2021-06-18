@@ -1,4 +1,3 @@
-classes/members/privateNames/privateNamesUseBeforeDef.ts
 es6/Symbols/symbolProperty58.ts
 es6/computedProperties/computedPropertyNamesWithStaticProperty.ts
 es6/destructuring/destructuringParameterDeclaration5.ts
