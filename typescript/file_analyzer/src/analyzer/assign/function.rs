@@ -364,11 +364,12 @@ impl Analyzer<'_, '_> {
         l_ty.assert_valid();
         r_ty.assert_valid();
 
-        let reverse = match (l_ty.normalize(), r_ty.normalize()) {
-            (Type::Union(..), Type::Union(..)) => false,
-            (_, Type::Union(..)) => true,
-            _ => false,
-        };
+        let reverse = !opts.for_overload
+            && match (l_ty.normalize_instance(), r_ty.normalize_instance()) {
+                (Type::Union(..), Type::Union(..)) => false,
+                (_, Type::Union(..)) => true,
+                _ => false,
+            };
 
         if reverse {
             self.assign_with_opts(data, opts, &r.ty, &l.ty)
