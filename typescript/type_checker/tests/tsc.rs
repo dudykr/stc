@@ -518,7 +518,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
             })
             .expect_err("");
 
-        let mut actual_errors = diagnostics
+        let mut extra_errors = diagnostics
             .iter()
             .map(|d| {
                 let span = d.span.primary_span().unwrap();
@@ -538,7 +538,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
             })
             .collect::<Vec<_>>();
 
-        let full_actual_errors = actual_errors.clone();
+        let full_actual_errors = extra_errors.clone();
 
         for (line, error_code) in full_actual_errors.clone() {
             if let Some(idx) = expected_errors
@@ -549,11 +549,11 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
 
                 let is_zero_line = expected_errors[idx].line == 0;
                 expected_errors.remove(idx);
-                if let Some(idx) = actual_errors
+                if let Some(idx) = extra_errors
                     .iter()
                     .position(|(r_line, r_code)| (line == *r_line || is_zero_line) && error_code == *r_code)
                 {
-                    actual_errors.remove(idx);
+                    extra_errors.remove(idx);
                 }
             }
         }
@@ -561,7 +561,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
         //
         //      - All reference errors are matched
         //      - Actual errors does not remain
-        let success = expected_errors.is_empty() && actual_errors.is_empty();
+        let success = expected_errors.is_empty() && extra_errors.is_empty();
 
         let res: Result<(), _> = tester.print_errors(|_, handler| {
             // If we failed, we only emit errors which has wrong line.
@@ -569,7 +569,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
             for (d, line_col) in diagnostics.into_iter().zip(full_actual_errors.clone()) {
                 if success
                     || env::var("PRINT_ALL").unwrap_or(String::from("")) == "1"
-                    || actual_errors.contains(&line_col)
+                    || extra_errors.contains(&line_col)
                 {
                     DiagnosticBuilder::new_diagnostic(&handler, d).emit();
                 }
@@ -583,7 +583,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
             Err(err) => err,
         };
 
-        let extra_err_count = actual_errors.len();
+        let extra_err_count = extra_errors.len();
         stats.required_error += expected_errors.len();
         stats.extra_error += extra_err_count;
 
@@ -605,7 +605,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
                 full_ref_err_cnt,
                 extra_err_count,
                 expected_errors,
-                actual_errors,
+                extra_errors,
                 full_ref_errors,
                 full_actual_errors,
             );
