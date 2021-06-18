@@ -829,7 +829,12 @@ impl Analyzer<'_, '_> {
                     | js_word!("String") => {
                         self.env.declare_global_type(name.sym().clone(), ty.clone());
                     }
-                    _ => {}
+                    _ => match &**name.sym() {
+                        "SymbolConstructor" => {
+                            self.env.declare_global_type(name.sym().clone(), ty.clone());
+                        }
+                        _ => {}
+                    },
                 }
             }
 
