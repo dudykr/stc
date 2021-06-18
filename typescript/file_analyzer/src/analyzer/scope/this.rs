@@ -81,6 +81,11 @@ struct ThisReplacer<'a, 'b, 'c> {
     analyzer: &'a mut Analyzer<'b, 'c>,
 }
 
+/// Noop.
+impl VisitMut<ClassMember> for ThisReplacer<'_, '_, '_> {
+    fn visit_mut(&mut self, _: &mut ClassMember) {}
+}
+
 impl VisitMut<Type> for ThisReplacer<'_, '_, '_> {
     fn visit_mut(&mut self, ty: &mut Type) {
         // Fast path.
