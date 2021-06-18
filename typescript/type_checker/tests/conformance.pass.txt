@@ -614,6 +614,7 @@ es6/destructuring/iterableArrayPattern21.ts
 es6/destructuring/iterableArrayPattern22.ts
 es6/destructuring/iterableArrayPattern23.ts
 es6/destructuring/iterableArrayPattern24.ts
+es6/destructuring/iterableArrayPattern25.ts
 es6/destructuring/iterableArrayPattern26.ts
 es6/destructuring/iterableArrayPattern27.ts
 es6/destructuring/iterableArrayPattern29.ts
