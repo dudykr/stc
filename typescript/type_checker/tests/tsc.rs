@@ -595,6 +595,15 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
             println!("[REMOVE_ONLY]{}", file_name.display());
         }
 
+        if extra_errors.len() == expected_errors.len() {
+            let expected_lines = expected_errors.iter().map(|v| v.line).collect::<Vec<_>>();
+            let extra_lines = extra_errors.iter().map(|(v, _)| *v).collect::<Vec<_>>();
+
+            if expected_lines == extra_lines {
+                println!("[ERROR_CODE_ONLY]{}", file_name.display());
+            }
+        }
+
         if !success {
             panic!(
                 "\n============================================================\n{:?}
