@@ -1256,7 +1256,15 @@ impl Analyzer<'_, '_> {
                     }));
 
                     if cls.is_abstract {
-                        self.storage.report(Error::CannotCreateInstanceOfAbstractClass { span })
+                        self.storage.report(Error::CannotCreateInstanceOfAbstractClass { span });
+                        // The test classAbstractInstantiation1.ts says
+                        //
+                        //  new A(1); // should report 1 error
+                        //
+                        return Ok(Type::Class(Class {
+                            span,
+                            def: box cls.clone(),
+                        }));
                     }
 
                     if let Some(type_params) = &cls.type_params {
