@@ -2437,6 +2437,10 @@ impl Analyzer<'_, '_> {
             let param = params_iter.next();
             let arg = args_iter.next();
 
+            if param.is_none() || arg.is_none() {
+                break;
+            }
+
             match (param, arg) {
                 (Some(param), Some(arg)) => {
                     match &param.pat {
