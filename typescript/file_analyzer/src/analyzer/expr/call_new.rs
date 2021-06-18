@@ -1266,9 +1266,25 @@ impl Analyzer<'_, '_> {
                     }
 
                     // Infer type arguments using constructors.
-                    let constructors = cls.body.iter().filter_map(|member| match member {
-                        ClassMember::Constructor(c) => Some(c),
-                        _ => None,
+                    let mut constructors = cls
+                        .body
+                        .iter()
+                        .filter_map(|member| match member {
+                            ClassMember::Constructor(c) => Some(c),
+                            _ => None,
+                        })
+                        .collect_vec();
+
+                    constructors.sort_by_cached_key(|c| {
+                        self.check_call_args(
+                            span,
+                            c.type_params.as_ref().map(|v| &*v.params),
+                            &c.params,
+                            type_args,
+                            args,
+                            arg_types,
+                            spread_arg_types,
+                        )
                     });
 
                     for constructor in constructors {
