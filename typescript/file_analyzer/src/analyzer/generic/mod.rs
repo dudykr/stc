@@ -1971,6 +1971,10 @@ impl Analyzer<'_, '_> {
                 f.type_params = decl;
             }
 
+            Type::ClassDef(..) | Type::Class(..) => {
+                return Ok(ty);
+            }
+
             _ => {}
         }
 
