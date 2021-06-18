@@ -1415,7 +1415,7 @@ impl Type {
         self
     }
 
-    /// `Type::Static` is normalized.
+    /// [Type::Arc] is normalized.
     pub fn normalize<'s, 'c>(&'s self) -> &'c Type
     where
         's: 'c,
@@ -1429,6 +1429,18 @@ impl Type {
                 // Shorten lifetimes
                 transmute::<&'s Self, &'c Type>(self)
             },
+        }
+    }
+
+    /// [Type::Arc] and [Type::Instance] are normalized.
+    pub fn normalize_instance<'s, 'c>(&'s self) -> &'c Type
+    where
+        's: 'c,
+    {
+        let ty = self.normalize();
+        match ty {
+            Type::Instance(ty) => ty.ty.normalize_instance(),
+            _ => ty,
         }
     }
 
