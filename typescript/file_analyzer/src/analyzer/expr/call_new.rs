@@ -1268,7 +1268,6 @@ impl Analyzer<'_, '_> {
                     });
 
                     for constructor in constructors {
-                        if let Some(type_params) = &constructor.type_params {}
                         //
                         let type_args = constructor
                             .type_params
@@ -1298,7 +1297,7 @@ impl Analyzer<'_, '_> {
                                 kind,
                                 expr,
                                 None,
-                                &[],
+                                &constructor.params,
                                 Type::Class(Class {
                                     span,
                                     def: box cls.clone(),
