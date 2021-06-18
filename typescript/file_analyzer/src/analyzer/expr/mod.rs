@@ -658,6 +658,15 @@ impl Analyzer<'_, '_> {
         }
 
         match (declared, cur) {
+            (Key::Normal { sym, .. }, Key::Num(RNumber { value, .. })) => {
+                if &**sym == value.to_string() {
+                    return true;
+                }
+            }
+            _ => {}
+        }
+
+        match (declared, cur) {
             (
                 Key::Num(RNumber {
                     value: declared_value, ..
@@ -684,6 +693,7 @@ impl Analyzer<'_, '_> {
                     return true;
                 }
             }
+
             _ => {}
         }
 
