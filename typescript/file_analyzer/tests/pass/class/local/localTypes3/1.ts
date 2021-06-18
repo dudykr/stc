@@ -7,6 +7,8 @@ function f<X>(x: X) {
 }
 let C = f(10);
 let v = new C("hello");
+v.x;
+v.y;
 
 
 export { }
