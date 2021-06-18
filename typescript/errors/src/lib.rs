@@ -1200,10 +1200,11 @@ impl Error {
             // ===== ===== ===== For convinience ===== ===== =====
 
             // TS2461: Not an array type.
+            // TS2488: Need Symbol.iterator
             // TS2548: Not an array or no Symbol.iterator
             // TS2549: Not an array, string or no Symbol.iterator
             // TS2569: Not an array, string or no Symbol.iterator but downlevel iteration will work.
-            2548 | 2549 | 2569 => 2461,
+            2461 | 2488 | 2548 | 2549 | 2569 => 2461,
 
             // TS7005; No implicit any for variables.
             // TS7006; No implicit any for parameters.
