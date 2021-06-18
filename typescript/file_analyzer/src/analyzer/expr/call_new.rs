@@ -1918,9 +1918,16 @@ impl Analyzer<'_, '_> {
                                 }
                                 Type::Optional(..) => {}
                                 _ => {
+                                    if let Some(max) = &mut max_param {
+                                        *max += 1;
+                                    }
+
                                     min_param += 1;
                                 }
                             }
+                        }
+                        if let Some(max) = &mut max_param {
+                            *max -= 1;
                         }
                         continue;
                     }
