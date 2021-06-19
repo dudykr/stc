@@ -1413,7 +1413,7 @@ impl Analyzer<'_, '_> {
                             _ => errors.push(if is_left {
                                 Error::TS2362 { span: ty.span() }
                             } else {
-                                Error::TS2363 { span: ty.span() }
+                                Error::WrongTypeForRhsOfNumericOperation { span: ty.span() }
                             }),
                         }
                     };

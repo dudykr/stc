@@ -133,6 +133,11 @@ impl Analyzer<'_, '_> {
             self.deny_null_or_undefined(rhs.span(), rhs)
                 .context("checking operands of a numeric assignment")?;
 
+            match rhs.normalize() {
+                Type::TypeLit(..) => return Err(Error::WrongTypeForRhsOfNumericOperation { span }),
+                _ => {}
+            }
+
             let r_castable = self.can_be_casted_to_number_in_rhs(rhs.span(), &rhs);
             if r_castable {
                 if l.is_num() {

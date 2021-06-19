@@ -895,7 +895,7 @@ pub enum Error {
         span: Span,
     },
 
-    TS2363 {
+    WrongTypeForRhsOfNumericOperation {
         span: Span,
     },
 
@@ -1315,7 +1315,7 @@ impl Error {
             Error::TS2360 { .. } => 2360,
             Error::TS2361 { .. } => 2361,
             Error::TS2362 { .. } => 2362,
-            Error::TS2363 { .. } => 2363,
+            Error::WrongTypeForRhsOfNumericOperation { .. } => 2363,
             Error::TS2365 { .. } => 2365,
             Error::TS2370 { .. } => 2370,
             Error::WrongOverloadSignature { .. } => 2394,
