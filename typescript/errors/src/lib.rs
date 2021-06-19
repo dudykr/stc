@@ -64,6 +64,11 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2490
+    NextOfItertorShouldReturnTypeWithPropertyValue {
+        span: Span,
+    },
+
     /// TS2631
     CannotAssignToModule {
         span: Span,
@@ -1560,7 +1565,19 @@ impl Error {
 
             Error::ReturnPropertyOfIteratorMustBeMethod { .. } => 2767,
 
+            Error::NextOfItertorShouldReturnTypeWithPropertyValue { .. } => 2490,
+
             _ => 0,
+        }
+    }
+
+    pub fn is_property_not_found(&self) -> bool {
+        match self.actual() {
+            Error::NoSuchProperty { span, .. }
+            | Error::NoSuchPropertyInClass { span, .. }
+            | Error::NoSuchPropertyInModule { span, .. }
+            | Error::NoSuchPropertyInThis { span, .. } => true,
+            _ => false,
         }
     }
 
