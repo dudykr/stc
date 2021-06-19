@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2411
+    ClassMemeberNotCompatibleWithIndexSignature {
+        span: Span,
+    },
+
     /// TS2403
     AssignFailedBecauseTupleLengthDiffers {
         span: Span,
@@ -1580,6 +1585,8 @@ impl Error {
             Error::InvalidUsageOfNewTarget { .. } => 17013,
 
             Error::AssignFailedBecauseTupleLengthDiffers { .. } => 2403,
+
+            Error::ClassMemeberNotCompatibleWithIndexSignature { .. } => 2411,
 
             _ => 0,
         }
