@@ -36,6 +36,7 @@ use stc_ts_types::Type;
 use stc_ts_types::TypeParamInstantiation;
 use stc_ts_types::Union;
 use std::borrow::Cow;
+use swc_atoms::js_word;
 use swc_common::Span;
 use swc_common::Spanned;
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -493,6 +494,40 @@ impl Analyzer<'_, '_> {
     }
 
     pub(crate) fn get_iterator<'a>(
+        &mut self,
+        span: Span,
+        ty: Cow<'a, Type>,
+        opts: GetIteratorOpts,
+    ) -> ValidationResult<Cow<'a, Type>> {
+        let iterator = self
+            .get_iterator_inner(span, ty, opts)
+            .context("tried to get iterator")?;
+
+        match iterator.normalize() {
+            Type::Class(..) => {
+                if let Ok(return_prop_ty) = self.access_property(
+                    span,
+                    &iterator,
+                    &Key::Normal {
+                        span,
+                        sym: js_word!("return"),
+                    },
+                    TypeOfMode::RValue,
+                    IdCtx::Var,
+                ) {
+                    if !return_prop_ty.normalize().is_function() {
+                        self.storage
+                            .report(Error::ReturnPropertyOfIteratorMustBeMethod { span })
+                    }
+                }
+            }
+            _ => {}
+        }
+
+        Ok(iterator)
+    }
+
+    fn get_iterator_inner<'a>(
         &mut self,
         span: Span,
         ty: Cow<'a, Type>,
