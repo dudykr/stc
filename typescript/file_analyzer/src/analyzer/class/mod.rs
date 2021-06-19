@@ -1736,7 +1736,39 @@ impl Analyzer<'_, '_> {
                         }
                     })?;
                 }
-                ClassMember::Property(_) => {}
+
+                ClassMember::Property(ClassProperty {
+                    key,
+                    value: Some(value),
+                    ..
+                }) => {
+                    let span = key.span();
+
+                    if !index.params[0].ty.is_kwd(TsKeywordTypeKind::TsStringKeyword)
+                        && self
+                            .assign(&mut Default::default(), &index.params[0].ty, &key.ty(), span)
+                            .is_err()
+                    {
+                        continue;
+                    }
+
+                    self.assign_with_opts(
+                        &mut Default::default(),
+                        AssignOpts {
+                            span,
+                            ..Default::default()
+                        },
+                        &index_ret_ty,
+                        &value,
+                    )
+                    .convert_err(|_err| {
+                        if index.params[0].ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword) {
+                            Error::ClassMemeberNotCompatibleWithNumericIndexSignature { span }
+                        } else {
+                            Error::ClassMemeberNotCompatibleWithStringIndexSignature { span }
+                        }
+                    })?;
+                }
                 _ => {}
             }
         }
