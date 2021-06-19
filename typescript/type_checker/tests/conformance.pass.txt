@@ -663,6 +663,7 @@ es6/for-ofStatements/for-of27.ts
 es6/for-ofStatements/for-of28.ts
 es6/for-ofStatements/for-of29.ts
 es6/for-ofStatements/for-of3.ts
+es6/for-ofStatements/for-of30.ts
 es6/for-ofStatements/for-of31.ts
 es6/for-ofStatements/for-of32.ts
 es6/for-ofStatements/for-of36.ts
