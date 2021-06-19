@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2631
+    CannotAssignToModule {
+        span: Span,
+    },
+
     /// TS2701
     RestArgMustBeVarOrMemberAccess {
         span: Span,
@@ -1545,6 +1550,8 @@ impl Error {
             Error::BindingPatNotAllowedInRestPatArg { .. } => 2501,
 
             Error::RestArgMustBeVarOrMemberAccess { .. } => 2701,
+
+            Error::CannotAssignToModule { .. } => 2631,
 
             _ => 0,
         }
