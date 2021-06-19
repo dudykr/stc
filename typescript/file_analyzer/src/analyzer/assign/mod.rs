@@ -1685,6 +1685,11 @@ impl Analyzer<'_, '_> {
                         if elems.len() < rhs_elems.len() {
                             fail!();
                         }
+
+                        if elems.len() > rhs_elems.len() {
+                            return Err(Error::AssignFailedBecauseTupleLengthDiffers { span });
+                        }
+
                         if !elems.is_empty() && rhs_elems.is_empty() {
                             fail!();
                         }
