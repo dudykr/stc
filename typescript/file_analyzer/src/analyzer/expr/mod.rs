@@ -2041,6 +2041,28 @@ impl Analyzer<'_, '_> {
 
                         return Ok(*elems[v as usize].ty.clone());
                     }
+
+                    Key::Normal {
+                        sym: js_word!("length"),
+                        ..
+                    } => {
+                        if elems.iter().any(|el| el.ty.normalize().is_rest()) {
+                            return Ok(Type::Keyword(RTsKeywordType {
+                                span,
+                                kind: TsKeywordTypeKind::TsNumberKeyword,
+                            }));
+                        }
+
+                        return Ok(Type::Lit(RTsLitType {
+                            node_id: NodeId::invalid(),
+                            span,
+                            lit: RTsLit::Number(RNumber {
+                                span,
+                                value: elems.len() as _,
+                            }),
+                        }));
+                    }
+
                     _ => {}
                 }
 
