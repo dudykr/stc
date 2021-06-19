@@ -1587,6 +1587,10 @@ impl Analyzer<'_, '_> {
 
                 let body = body.into_iter().map(|v| v.1).collect_vec();
 
+                child
+                    .validate_index_signature_of_class(c.span, &body)
+                    .report(&mut child.storage);
+
                 let class = ClassDef {
                     span: c.span,
                     name,
@@ -1680,6 +1684,12 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
+    /// If a class have an index signature, properties should be compatible with
+    /// it.
+    fn validate_index_signature_of_class(&mut self, span: Span, members: &[ClassMember]) -> ValidationResult<()> {
+        Ok(())
+    }
+
     fn validate_constructor_overloads(
         &mut self,
         ambient: &[ConstructorSignature],
