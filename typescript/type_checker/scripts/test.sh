@@ -2,7 +2,7 @@
 set -eux
 
 err_handler () {
-    ./scrtips/_/notify.sh 'Test failed!'
+    ./scripts/_/notify.sh 'Test failed!'
     exit
 }
 
