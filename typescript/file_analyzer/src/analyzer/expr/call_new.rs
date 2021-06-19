@@ -1907,7 +1907,7 @@ impl Analyzer<'_, '_> {
         spread_arg_types: &[TypeOrSpread],
     ) -> ValidationResult<()> {
         /// Count required parameter count.
-        fn count_pat(p: &RPat) -> usize {
+        fn count_required_pat(p: &RPat) -> usize {
             match p {
                 RPat::Rest(p) => match &*p.arg {
                     RPat::Array(arr) => arr
@@ -1959,7 +1959,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let min_param: usize = params.iter().map(|v| &v.pat).map(count_pat).sum();
+        let min_param: usize = params.iter().map(|v| &v.pat).map(count_required_pat).sum();
 
         let mut max_param = Some(params.len());
         for param in params {
