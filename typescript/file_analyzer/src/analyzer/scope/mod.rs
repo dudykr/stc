@@ -743,6 +743,8 @@ impl Analyzer<'_, '_> {
             .map(Cow::Owned)
     }
 
+    /// This should be called after calling `register_type`.
+
     pub(crate) fn store_unmergedable_type_span(&mut self, id: Id, span: Span) {
         if self.is_builtin {
             return;
@@ -780,8 +782,11 @@ impl Analyzer<'_, '_> {
 
                 if let Some(spans) = self.data.local_type_decls.get(&name) {
                     self.storage.report(Error::ExportMixedWithLocal { span: ty.span() });
-                    for span in spans.iter().copied() {
-                        self.storage.report(Error::ExportMixedWithLocal { span })
+                    for (i, span) in spans.iter().copied().enumerate() {
+                        self.storage.report(Error::ExportMixedWithLocal { span });
+                        if i == 0 {
+                            self.data.unmergable_type_decls.remove(&name);
+                        }
                     }
                 }
             } else {
@@ -794,8 +799,12 @@ impl Analyzer<'_, '_> {
                 if let Some(spans) = self.data.exported_type_decls.get(&name) {
                     self.storage.report(Error::ExportMixedWithLocal { span: ty.span() });
 
-                    for span in spans.iter().copied() {
-                        self.storage.report(Error::ExportMixedWithLocal { span })
+                    for (i, span) in spans.iter().copied().enumerate() {
+                        self.storage.report(Error::ExportMixedWithLocal { span });
+
+                        if i == 0 {
+                            self.data.unmergable_type_decls.remove(&name);
+                        }
                     }
                 }
             }

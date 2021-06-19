@@ -208,8 +208,6 @@ impl Analyzer<'_, '_> {
         self.record(d);
         let mut span = d.span;
 
-        self.store_unmergedable_type_span(d.id.clone().into(), d.id.span);
-
         let alias = {
             self.with_child(
                 ScopeKind::Flow,
@@ -236,6 +234,8 @@ impl Analyzer<'_, '_> {
             )?
         };
         self.register_type(d.id.clone().into(), Type::Alias(alias.clone()));
+
+        self.store_unmergedable_type_span(d.id.clone().into(), d.id.span);
 
         Ok(alias)
     }
