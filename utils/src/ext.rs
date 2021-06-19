@@ -1,7 +1,7 @@
 use swc_common::Span;
 
 pub trait ValueExt: Sized {
-    fn as_ok(self) -> Result<Self, !> {
+    fn as_ok<E>(self) -> Result<Self, E> {
         Ok(self)
     }
 
