@@ -459,7 +459,8 @@ impl Analyzer<'_, '_> {
                 self.with_child(ScopeKind::Method { is_static: false }, Default::default(), {
                     |child: &mut Analyzer| -> ValidationResult<_> {
                         child.ctx.pat_mode = PatMode::Decl;
-                        p.param.visit_with(child);
+                        let param = param.validate_with(child)?;
+
                         p.body.visit_with(child);
 
                         Ok(PropertySignature {
@@ -468,7 +469,7 @@ impl Analyzer<'_, '_> {
                             readonly: false,
                             key,
                             optional: false,
-                            params: vec![param.validate_with(child)?],
+                            params: vec![param],
                             type_ann: Some(box Type::any(param_span)),
                             type_params: Default::default(),
                             metadata: Default::default(),
