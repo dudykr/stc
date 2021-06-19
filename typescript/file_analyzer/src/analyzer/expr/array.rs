@@ -427,6 +427,7 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult<Cow<'a, Type>> {
         let ctx = Ctx {
             disallow_indexing_array_with_string: true,
+            should_not_create_indexed_type_from_ty_els: true,
             ..self.ctx
         };
         let mut elem_ty = self
@@ -441,7 +442,8 @@ impl Analyzer<'_, '_> {
                 TypeOfMode::RValue,
                 IdCtx::Var,
             )
-            .context("tried to get the type of property named `value` to determine the type of an iterator")?;
+            .context("tried to get the type of property named `value` to determine the type of an iterator")
+            .convert_err(|err| Error::NextOfItertorShouldReturnTypeWithPropertyValue { span: err.span() })?;
 
         // TODO: Remove `done: true` instead of removing `any` from value.
         match elem_ty.normalize_mut() {
