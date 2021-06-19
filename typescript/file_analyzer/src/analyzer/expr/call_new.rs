@@ -1909,25 +1909,31 @@ impl Analyzer<'_, '_> {
         /// Count required parameter count.
         fn count_required_pat(p: &RPat) -> usize {
             match p {
-                RPat::Rest(p) => match &*p.arg {
-                    RPat::Array(arr) => arr
-                        .elems
-                        .iter()
-                        .map(|v| {
-                            v.as_ref()
-                                .map(|pat| match pat {
-                                    RPat::Array(RArrayPat { optional: false, .. })
-                                    | RPat::Object(RObjectPat { optional: false, .. }) => 1,
+                RPat::Rest(p) => {
+                    if p.type_ann.is_some() {
+                        return 0;
+                    }
 
-                                    RPat::Ident(..) => 0,
+                    match &*p.arg {
+                        RPat::Array(arr) => arr
+                            .elems
+                            .iter()
+                            .map(|v| {
+                                v.as_ref()
+                                    .map(|pat| match pat {
+                                        RPat::Array(RArrayPat { optional: false, .. })
+                                        | RPat::Object(RObjectPat { optional: false, .. }) => 1,
 
-                                    _ => 0,
-                                })
-                                .unwrap_or(1)
-                        })
-                        .sum(),
-                    _ => 0,
-                },
+                                        RPat::Ident(..) => 0,
+
+                                        _ => 0,
+                                    })
+                                    .unwrap_or(1)
+                            })
+                            .sum(),
+                        _ => 0,
+                    }
+                }
                 RPat::Ident(RBindingIdent {
                     id: RIdent {
                         sym: js_word!("this"), ..
