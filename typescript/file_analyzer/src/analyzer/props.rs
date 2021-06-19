@@ -1,5 +1,6 @@
 use super::{marks::MarkExt, scope::ScopeKind, Analyzer};
 use crate::analyzer::expr::IdCtx;
+use crate::analyzer::pat::PatMode;
 use crate::{
     analyzer::{expr::TypeOfMode, util::ResultExt, Ctx},
     ty::{MethodSignature, Operator, PropertySignature, Type, TypeElement, TypeExt},
@@ -457,6 +458,8 @@ impl Analyzer<'_, '_> {
 
                 self.with_child(ScopeKind::Method { is_static: false }, Default::default(), {
                     |child: &mut Analyzer| -> ValidationResult<_> {
+                        child.ctx.pat_mode = PatMode::Decl;
+                        p.param.visit_with(child);
                         p.body.visit_with(child);
 
                         Ok(PropertySignature {
