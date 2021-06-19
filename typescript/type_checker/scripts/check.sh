@@ -9,7 +9,7 @@ set -eu
 
 err_handler () {
    ./scripts/_/notify.sh 'Check failed!'
-   exit
+   exit 1
 }
 
 trap err_handler ERR

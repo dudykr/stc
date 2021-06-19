@@ -3,7 +3,7 @@ set -eux
 
 err_handler () {
     ./scripts/_/notify.sh 'Test failed!'
-    exit
+    exit 1
 }
 
 trap err_handler ERR
