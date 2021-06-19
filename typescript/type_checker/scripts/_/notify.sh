@@ -11,5 +11,5 @@ fi
 
 if command -v osascript &> /dev/null
 then
-    osascript -e "display notification '$1'"
+    osascript -e "display alert '$1'"
 fi
