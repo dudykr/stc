@@ -1694,7 +1694,7 @@ impl Analyzer<'_, '_> {
             Some(v) => v,
             None => return Ok(()),
         };
-        let index_ret_ty = match index.type_ann {
+        let index_ret_ty = match &index.type_ann {
             Some(v) => v,
             // It's `any`, so we don't have to verify.
             None => return Ok(()),
@@ -1728,7 +1728,13 @@ impl Analyzer<'_, '_> {
                         &index_ret_ty,
                         &ret_ty,
                     )
-                    .convert_err(|_err| Error::ClassMemeberNotCompatibleWithIndexSignature { span })?;
+                    .convert_err(|_err| {
+                        if index.params[0].ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword) {
+                            Error::ClassMemeberNotCompatibleWithNumericIndexSignature { span }
+                        } else {
+                            Error::ClassMemeberNotCompatibleWithStringIndexSignature { span }
+                        }
+                    })?;
                 }
                 ClassMember::Property(_) => {}
                 _ => {}

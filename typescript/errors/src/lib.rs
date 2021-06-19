@@ -60,7 +60,12 @@ impl Errors {
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
     /// TS2411
-    ClassMemeberNotCompatibleWithIndexSignature {
+    ClassMemeberNotCompatibleWithStringIndexSignature {
+        span: Span,
+    },
+
+    /// TS2412
+    ClassMemeberNotCompatibleWithNumericIndexSignature {
         span: Span,
     },
 
@@ -1586,7 +1591,9 @@ impl Error {
 
             Error::AssignFailedBecauseTupleLengthDiffers { .. } => 2403,
 
-            Error::ClassMemeberNotCompatibleWithIndexSignature { .. } => 2411,
+            Error::ClassMemeberNotCompatibleWithStringIndexSignature { .. } => 2411,
+
+            Error::ClassMemeberNotCompatibleWithNumericIndexSignature { .. } => 2412,
 
             _ => 0,
         }
