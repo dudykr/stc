@@ -496,6 +496,8 @@ impl Analyzer<'_, '_> {
                     ..
                 }) => return Ok(()),
 
+                Type::EnumVariant(..) => return Err(Error::SimpleAssignFailed { span }),
+
                 _ => {
                     return Err(Error::Unimplemented {
                         span,
