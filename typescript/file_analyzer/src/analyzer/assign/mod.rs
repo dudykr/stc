@@ -135,6 +135,7 @@ impl Analyzer<'_, '_> {
 
             match rhs.normalize() {
                 Type::TypeLit(..) => return Err(Error::WrongTypeForRhsOfNumericOperation { span }),
+                ty if ty.is_bool() => return Err(Error::WrongTypeForRhsOfNumericOperation { span }),
                 _ => {}
             }
 
