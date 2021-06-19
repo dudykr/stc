@@ -2,11 +2,8 @@
 set -eux
 
 err_handler () {
-   if command -v osascript &> /dev/null
-  then
-      osascript -e 'display notification "Test failed!"'
-  fi
-   exit
+    ./scrtips/_/notify.sh 'Test failed!'
+    exit
 }
 
 trap err_handler ERR
@@ -21,7 +18,4 @@ GOLDEN_ONLY=1 cargo test -q -p stc_ts_file_analyzer --test visualize
 
 WIP_STATS=1 cargo test --color always -q --test tsc
 
-if command -v osascript &> /dev/null
-then
-    osascript -e 'display notification "Test finished!"'
-fi
+./scrtips/_/notify.sh 'Test finished!'
