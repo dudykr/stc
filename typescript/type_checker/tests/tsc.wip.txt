@@ -1,0 +1,16 @@
+es6::computedProperties::computedPropertyNames36_ES5.ts
+es6::computedProperties::computedPropertyNames36_ES6.ts
+es6::computedProperties::computedPropertyNames38_ES5.ts
+es6::computedProperties::computedPropertyNames38_ES6.ts
+es6::computedProperties::computedPropertyNames39_ES5.ts
+es6::computedProperties::computedPropertyNames39_ES6.ts
+es6::computedProperties::computedPropertyNames40_ES5.ts
+es6::computedProperties::computedPropertyNames40_ES6.ts
+es6::computedProperties::computedPropertyNames42_ES5.ts
+es6::computedProperties::computedPropertyNames42_ES6.ts
+es6::computedProperties::computedPropertyNames43_ES5.ts
+es6::computedProperties::computedPropertyNames43_ES6.ts
+es6::computedProperties::computedPropertyNames44_ES5.ts
+es6::computedProperties::computedPropertyNames44_ES6.ts
+es6::computedProperties::computedPropertyNames45_ES5.ts
+es6::computedProperties::computedPropertyNames45_ES6.ts
