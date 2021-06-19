@@ -27,6 +27,7 @@ use std::env;
 use std::fs;
 use std::fs::read_to_string;
 use std::fs::File;
+use std::mem;
 use std::panic::catch_unwind;
 use std::path::Path;
 use std::path::PathBuf;
@@ -47,6 +48,16 @@ use swc_ecma_visit::Fold;
 use test::test_main;
 use testing::StdErr;
 use testing::Tester;
+
+struct RecordOnPanic {
+    stats: Stats,
+}
+
+impl Drop for RecordOnPanic {
+    fn drop(&mut self) {
+        record_stat(self.stats.clone());
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 struct RefError {
@@ -468,6 +479,13 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
         module_config,
     } in specs
     {
+        let stat_guard = RecordOnPanic {
+            stats: Stats {
+                required_error: expected_errors.len(),
+                ..Default::default()
+            },
+        };
+
         let mut stats = Stats::default();
         dbg!(&libs);
         for err in &mut expected_errors {
@@ -517,6 +535,8 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
                 return Err(());
             })
             .expect_err("");
+
+        mem::forget(stat_guard);
 
         let mut extra_errors = diagnostics
             .iter()
