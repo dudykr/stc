@@ -60,6 +60,7 @@ impl Analyzer<'_, '_> {
         }
 
         self.with_child(ScopeKind::Fn, Default::default(), |child: &mut Analyzer| {
+            child.ctx.allow_new_target = true;
             child.ctx.in_fn_with_return_type = f.return_type.is_some();
             child.ctx.in_async = f.is_async;
             child.ctx.in_generator = f.is_generator;
