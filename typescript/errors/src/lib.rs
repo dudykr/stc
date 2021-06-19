@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2403
+    AssignFailedBecauseTupleLengthDiffers {
+        span: Span,
+    },
+
     /// TS17013
     InvalidUsageOfNewTarget {
         span: Span,
@@ -1573,6 +1578,8 @@ impl Error {
             Error::NextOfItertorShouldReturnTypeWithPropertyValue { .. } => 2490,
 
             Error::InvalidUsageOfNewTarget { .. } => 17013,
+
+            Error::AssignFailedBecauseTupleLengthDiffers { .. } => 2403,
 
             _ => 0,
         }
