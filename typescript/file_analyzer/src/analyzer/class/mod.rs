@@ -245,77 +245,81 @@ impl Analyzer<'_, '_> {
 
         let c_span = c.span();
 
-        self.with_child(ScopeKind::Constructor, Default::default(), |child: &mut Analyzer| {
-            child.ctx.in_declare |= c.body.is_none();
+        let ctx = Ctx {
+            in_declare: self.ctx.in_declare || c.body.is_none(),
+            allow_new_target: true,
+            ..self.ctx
+        };
+        self.with_ctx(ctx)
+            .with_child(ScopeKind::Constructor, Default::default(), |child: &mut Analyzer| {
+                let RConstructor { params, body, .. } = c;
 
-            let RConstructor { params, body, .. } = c;
+                {
+                    // Validate params
+                    // TODO: Move this to parser
+                    let mut has_optional = false;
+                    for p in params.iter() {
+                        if has_optional {
+                            match p {
+                                RParamOrTsParamProp::Param(RParam { pat, .. }) => match pat {
+                                    RPat::Ident(RBindingIdent {
+                                        id: RIdent { optional: true, .. },
+                                        ..
+                                    })
+                                    | RPat::Rest(..) => {}
+                                    _ => {
+                                        child.storage.report(Error::TS1016 { span: p.span() });
+                                    }
+                                },
+                                _ => {}
+                            }
+                        }
 
-            {
-                // Validate params
-                // TODO: Move this to parser
-                let mut has_optional = false;
-                for p in params.iter() {
-                    if has_optional {
-                        match p {
-                            RParamOrTsParamProp::Param(RParam { pat, .. }) => match pat {
-                                RPat::Ident(RBindingIdent {
-                                    id: RIdent { optional: true, .. },
-                                    ..
-                                })
-                                | RPat::Rest(..) => {}
-                                _ => {
-                                    child.storage.report(Error::TS1016 { span: p.span() });
+                        match *p {
+                            RParamOrTsParamProp::Param(RParam {
+                                pat:
+                                    RPat::Ident(RBindingIdent {
+                                        id: RIdent { optional, .. },
+                                        ..
+                                    }),
+                                ..
+                            }) => {
+                                if optional {
+                                    has_optional = true;
                                 }
-                            },
+                            }
                             _ => {}
                         }
                     }
-
-                    match *p {
-                        RParamOrTsParamProp::Param(RParam {
-                            pat:
-                                RPat::Ident(RBindingIdent {
-                                    id: RIdent { optional, .. },
-                                    ..
-                                }),
-                            ..
-                        }) => {
-                            if optional {
-                                has_optional = true;
-                            }
-                        }
-                        _ => {}
-                    }
                 }
-            }
 
-            let mut ps = Vec::with_capacity(params.len());
-            for param in params.iter() {
-                let mut names = vec![];
+                let mut ps = Vec::with_capacity(params.len());
+                for param in params.iter() {
+                    let mut names = vec![];
 
-                let mut visitor = VarVisitor { names: &mut names };
+                    let mut visitor = VarVisitor { names: &mut names };
 
-                param.visit_with(&mut visitor);
+                    param.visit_with(&mut visitor);
 
-                child.scope.declaring.extend(names.clone());
+                    child.scope.declaring.extend(names.clone());
 
-                let p: FnParam = param.validate_with(child)?;
+                    let p: FnParam = param.validate_with(child)?;
 
-                ps.push(p);
+                    ps.push(p);
 
-                child.scope.remove_declaring(names);
-            }
+                    child.scope.remove_declaring(names);
+                }
 
-            c.body.visit_with(child);
+                c.body.visit_with(child);
 
-            Ok(ConstructorSignature {
-                accessibility: c.accessibility,
-                span: c.span,
-                params: ps,
-                ret_ty: None,
-                type_params: None,
+                Ok(ConstructorSignature {
+                    accessibility: c.accessibility,
+                    span: c.span,
+                    params: ps,
+                    ret_ty: None,
+                    type_params: None,
+                })
             })
-        })
     }
 }
 
