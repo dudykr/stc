@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2767
+    ReturnPropertyOfIteratorMustBeMethod {
+        span: Span,
+    },
+
     /// TS2631
     CannotAssignToModule {
         span: Span,
@@ -1552,6 +1557,8 @@ impl Error {
             Error::RestArgMustBeVarOrMemberAccess { .. } => 2701,
 
             Error::CannotAssignToModule { .. } => 2631,
+
+            Error::ReturnPropertyOfIteratorMustBeMethod { .. } => 2767,
 
             _ => 0,
         }
