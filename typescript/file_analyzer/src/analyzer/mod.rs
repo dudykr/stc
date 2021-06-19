@@ -287,8 +287,13 @@ pub struct Analyzer<'scope, 'b> {
 }
 #[derive(Debug, Default)]
 struct AnalyzerData {
+    /// Used to check mixed exports.
+    ///
     /// e.g. `A` for `type A = {}`
     local_type_decls: FxHashMap<Id, Vec<Span>>,
+
+    /// Used to check mixed exports.
+    ///
     /// e.g. `A` for `export type A = {}`
     exported_type_decls: FxHashMap<Id, Vec<Span>>,
 
