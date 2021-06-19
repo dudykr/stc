@@ -1585,13 +1585,15 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                let body = body.into_iter().map(|v| v.1).collect_vec();
+
                 let class = ClassDef {
                     span: c.span,
                     name,
                     is_abstract: c.is_abstract,
                     super_class,
                     type_params,
-                    body: body.into_iter().map(|v| v.1).collect(),
+                    body,
                     implements,
                 };
 
