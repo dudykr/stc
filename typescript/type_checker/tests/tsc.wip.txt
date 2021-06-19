@@ -1,4 +1,3 @@
-types::stringLiteral::stringLiteralTypesWithVariousOperators02.ts
 types::stringLiteral::typeArgumentsWithStringLiteralTypes01.ts
 types::tuple::arityAndOrderCompatibility01.ts
 types::tuple::castingTuple.ts
@@ -9,7 +8,3 @@ types::tuple::wideningTuples2.ts
 types::tuple::wideningTuples3.ts
 types::tuple::wideningTuples5.ts
 types::tuple::wideningTuples7.ts
-types::typeAliases::directDependenceBetweenTypeAliases.ts
-types::typeAliases::intrinsicKeyword.ts
-types::typeAliases::intrinsicTypes.ts
-types::typeAliases::typeAliasesForObjectTypes.ts
