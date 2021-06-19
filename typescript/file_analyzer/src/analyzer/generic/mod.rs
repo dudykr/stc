@@ -225,7 +225,9 @@ impl Analyzer<'_, '_> {
                                 ty: elem.ty.clone(),
                             }));
                         }
-                        _ => unimplemented!("spread argument typed other than tuple.\nType: {:#?}", arg.ty),
+                        _ => {
+                            actual_args.push(arg.clone());
+                        }
                     }
                 } else {
                     actual_args.push(arg.clone());
