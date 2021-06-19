@@ -1711,6 +1711,14 @@ impl Analyzer<'_, '_> {
                 }) => {
                     let span = key.span();
 
+                    if !index.params[0].ty.is_kwd(TsKeywordTypeKind::TsStringKeyword)
+                        && self
+                            .assign(&mut Default::default(), &index.params[0].ty, &key.ty(), span)
+                            .is_err()
+                    {
+                        continue;
+                    }
+
                     self.assign_with_opts(
                         &mut Default::default(),
                         AssignOpts {
