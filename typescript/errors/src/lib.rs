@@ -1573,10 +1573,10 @@ impl Error {
 
     pub fn is_property_not_found(&self) -> bool {
         match self.actual() {
-            Error::NoSuchProperty { span, .. }
-            | Error::NoSuchPropertyInClass { span, .. }
-            | Error::NoSuchPropertyInModule { span, .. }
-            | Error::NoSuchPropertyInThis { span, .. } => true,
+            Error::NoSuchProperty { .. }
+            | Error::NoSuchPropertyInClass { .. }
+            | Error::NoSuchPropertyInModule { .. }
+            | Error::NoSuchPropertyInThis { .. } => true,
             _ => false,
         }
     }
