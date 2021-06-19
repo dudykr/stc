@@ -352,6 +352,45 @@ impl Analyzer<'_, '_> {
             }
             Type::Param(..) => Ok(None),
 
+            Type::Intersection(ty) => {
+                let keys_types = ty
+                    .types
+                    .iter()
+                    .map(|ty| -> ValidationResult<_> { self.get_property_names_for_mapped_type(span, &ty) })
+                    .collect::<Result<Vec<_>, _>>()?;
+
+                if keys_types.is_empty() {
+                    return Ok(None);
+                }
+
+                let mut result: Vec<PropertyName> = vec![];
+
+                if keys_types.iter().all(|keys| keys.is_none()) {
+                    return Ok(None);
+                }
+
+                let sets = &keys_types[1..];
+
+                for key in keys_types[0].iter().flatten().filter(|item| {
+                    {
+                        sets.iter()
+                            .all(|set| set.is_none() || set.as_ref().unwrap().contains(item))
+                    }
+                }) {
+                    if result.iter().any(|prev| prev.type_eq(&key)) {
+                        continue;
+                    }
+
+                    result.push(key.clone());
+                }
+
+                if result.is_empty() {
+                    return Ok(None);
+                }
+
+                return Ok(Some(result));
+            }
+
             Type::Union(ty) => {
                 let keys_types = ty
                     .types
@@ -383,7 +422,7 @@ impl Analyzer<'_, '_> {
                 return Ok(Some(result));
             }
             _ => {
-                unimplemented!("get_property_names: {:#?}", ty);
+                unimplemented!("get_property_names_for_mapped_type: {:#?}", ty);
             }
         }
     }
@@ -460,7 +499,7 @@ impl Analyzer<'_, '_> {
     }
 }
 
-#[derive(Debug, Clone, Spanned, TypeEq)]
+#[derive(Debug, Clone, Spanned, TypeEq, PartialEq)]
 pub(crate) enum PropertyName {
     Key(Key),
     /// Created from an index signature.
