@@ -27,6 +27,7 @@ use rnode::NodeId;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
 use rnode::VisitWith;
+use stc_ts_ast_rnode::RArrayPat;
 use stc_ts_ast_rnode::RBindingIdent;
 use stc_ts_ast_rnode::RCallExpr;
 use stc_ts_ast_rnode::RExpr;
@@ -37,6 +38,7 @@ use stc_ts_ast_rnode::RInvalid;
 use stc_ts_ast_rnode::RLit;
 use stc_ts_ast_rnode::RMemberExpr;
 use stc_ts_ast_rnode::RNewExpr;
+use stc_ts_ast_rnode::RObjectPat;
 use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RStr;
 use stc_ts_ast_rnode::RTaggedTpl;
@@ -1904,10 +1906,64 @@ impl Analyzer<'_, '_> {
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
     ) -> ValidationResult<()> {
-        let mut min_param = 0;
+        /// Count required parameter count.
+        fn count_pat(p: &RPat) -> usize {
+            match p {
+                RPat::Rest(p) => match &*p.arg {
+                    RPat::Array(arr) => arr
+                        .elems
+                        .iter()
+                        .map(|v| {
+                            v.as_ref()
+                                .map(|pat| match pat {
+                                    RPat::Array(RArrayPat { optional: false, .. })
+                                    | RPat::Object(RObjectPat { optional: false, .. }) => 1,
+
+                                    RPat::Ident(..) => 0,
+
+                                    _ => 0,
+                                })
+                                .unwrap_or(1)
+                        })
+                        .sum(),
+                    _ => 0,
+                },
+                RPat::Ident(RBindingIdent {
+                    id: RIdent {
+                        sym: js_word!("this"), ..
+                    },
+                    ..
+                }) => 0,
+                RPat::Ident(v) => {
+                    if v.id.optional {
+                        0
+                    } else {
+                        1
+                    }
+                }
+                RPat::Array(v) => {
+                    if v.optional {
+                        0
+                    } else {
+                        1
+                    }
+                }
+                RPat::Object(v) => {
+                    if v.optional {
+                        0
+                    } else {
+                        1
+                    }
+                }
+                RPat::Assign(..) | RPat::Invalid(_) | RPat::Expr(_) => 0,
+            }
+        }
+
+        let min_param: usize = params.iter().map(|v| &v.pat).map(count_pat).sum();
+
         let mut max_param = Some(params.len());
         for param in params {
-            match param.pat {
+            match &param.pat {
                 RPat::Rest(..) => match param.ty.normalize() {
                     Type::Tuple(param_ty) => {
                         for elem in &param_ty.elems {
@@ -1921,8 +1977,6 @@ impl Analyzer<'_, '_> {
                                     if let Some(max) = &mut max_param {
                                         *max += 1;
                                     }
-
-                                    min_param += 1;
                                 }
                             }
                         }
@@ -1965,8 +2019,6 @@ impl Analyzer<'_, '_> {
                     // Reduce min_params if the type of parameter accepts void.
                     continue;
                 }
-
-                min_param += 1;
             }
         }
 
