@@ -287,6 +287,8 @@ pub struct Analyzer<'scope, 'b> {
 }
 #[derive(Debug, Default)]
 struct AnalyzerData {
+    unmergable_type_decls: FxHashMap<Id, Vec<Span>>,
+
     /// Used to check mixed exports.
     ///
     /// e.g. `A` for `type A = {}`

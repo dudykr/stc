@@ -743,6 +743,21 @@ impl Analyzer<'_, '_> {
             .map(Cow::Owned)
     }
 
+    pub(crate) fn store_unmergedable_type_span(&mut self, id: Id, span: Span) {
+        if self.is_builtin {
+            return;
+        }
+
+        let v = self.data.unmergable_type_decls.entry(id.clone()).or_default();
+        v.push(span);
+
+        if v.len() >= 2 {
+            for span in v.iter().copied() {
+                self.storage.report(Error::DuplicateName { span, name: id.clone() })
+            }
+        }
+    }
+
     pub(super) fn register_type(&mut self, name: Id, ty: Type) -> Type {
         slog::debug!(self.logger, "[({})/types] Registering: {:?}", self.scope.depth(), name);
 
