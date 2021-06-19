@@ -456,7 +456,9 @@ impl Analyzer<'_, '_> {
                 let mut param = &p.param;
 
                 self.with_child(ScopeKind::Method { is_static: false }, Default::default(), {
-                    |child| -> ValidationResult<_> {
+                    |child: &mut Analyzer| -> ValidationResult<_> {
+                        p.body.visit_with(child);
+
                         Ok(PropertySignature {
                             span,
                             accessibility: None,
