@@ -1,6 +1,7 @@
 use crate::{analyzer::Analyzer, ValidationResult};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
-use stc_ts_types::{ClassDef, IndexSignature, Type};
+use stc_ts_types::{ClassDef, ClassMember, IndexSignature, Type};
+use stc_utils::ext::ValueExt;
 use std::borrow::Cow;
 use swc_common::Span;
 
@@ -27,6 +28,17 @@ impl Analyzer<'_, '_> {
         span: Span,
         class: &ClassDef,
     ) -> ValidationResult<Option<IndexSignature>> {
+        for member in &class.body {
+            match member {
+                ClassMember::IndexSignature(i) => return i.clone().as_some().as_ok(),
+                _ => {}
+            }
+        }
+
+        if let Some(super_class) = &class.super_class {
+            return self.get_index_signature(span, &super_class);
+        }
+
         Ok(None)
     }
 }
