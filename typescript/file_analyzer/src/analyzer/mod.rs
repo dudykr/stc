@@ -228,6 +228,8 @@ pub(crate) struct Ctx {
     /// NOTE: In non-strictNullChecks mode, `undefined` (the default sent value)
     /// is assignable to everything.
     cannot_fallback_to_iterable_iterator: bool,
+
+    allow_new_target: bool,
 }
 
 impl Ctx {
@@ -547,6 +549,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 in_class_with_super: false,
                 is_value_used: false,
                 cannot_fallback_to_iterable_iterator: false,
+                allow_new_target: false,
             },
             loader,
             is_builtin,
