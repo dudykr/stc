@@ -1681,7 +1681,7 @@ impl Analyzer<'_, '_> {
                         elems: ref rhs_elems, ..
                     }) => {
                         if elems.len() < rhs_elems.len() {
-                            fail!();
+                            return Err(Error::AssignFailedBecauseTupleLengthDiffers { span });
                         }
 
                         if elems.len() > rhs_elems.len() {
