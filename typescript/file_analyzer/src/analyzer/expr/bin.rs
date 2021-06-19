@@ -986,6 +986,10 @@ impl Analyzer<'_, '_> {
             return Ok(true);
         }
 
+        if l.is_str_lit() && r.is_str_lit() {
+            return Ok(true);
+        }
+
         let c = Comparator { left: l, right: r };
 
         if let Some(v) = c.take_if_any_matches(|l, r| {
