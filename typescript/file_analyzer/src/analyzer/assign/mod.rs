@@ -302,21 +302,19 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        res.map_err(|err| {
-            err.convert(|err| match err {
-                Error::AssignFailed { .. }
-                | Error::Errors { .. }
-                | Error::Unimplemented { .. }
-                | Error::TupleAssignError { .. }
-                | Error::ObjectAssignFailed { .. } => err,
-                _ => Error::AssignFailed {
-                    span: opts.span,
-                    left: box left.clone(),
-                    right: box right.clone(),
-                    right_ident: opts.right_ident_span,
-                    cause: vec![err],
-                },
-            })
+        res.convert_err(|err| match err {
+            Error::AssignFailed { .. }
+            | Error::Errors { .. }
+            | Error::Unimplemented { .. }
+            | Error::TupleAssignError { .. }
+            | Error::ObjectAssignFailed { .. } => err,
+            _ => Error::AssignFailed {
+                span: opts.span,
+                left: box left.clone(),
+                right: box right.clone(),
+                right_ident: opts.right_ident_span,
+                cause: vec![err],
+            },
         })
     }
 
