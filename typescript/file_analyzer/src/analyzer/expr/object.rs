@@ -482,7 +482,10 @@ impl Analyzer<'_, '_> {
             return Ok(rhs);
         }
 
-        if rhs.is_kwd(TsKeywordTypeKind::TsNullKeyword) || rhs.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
+        if rhs.is_kwd(TsKeywordTypeKind::TsNullKeyword)
+            || rhs.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
+            || rhs.is_kwd(TsKeywordTypeKind::TsVoidKeyword)
+        {
             return Ok(to);
         }
 
