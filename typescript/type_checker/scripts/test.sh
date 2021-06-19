@@ -18,4 +18,4 @@ GOLDEN_ONLY=1 cargo test -q -p stc_ts_file_analyzer --test visualize
 
 WIP_STATS=1 cargo test --color always -q --test tsc
 
-./scrtips/_/notify.sh 'Test finished!'
+./scripts/_/notify.sh 'Test finished!'
