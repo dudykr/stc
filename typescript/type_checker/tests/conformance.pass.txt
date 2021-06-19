@@ -2152,6 +2152,7 @@ types/typeAliases/classDoesNotDependOnBaseTypes.ts
 types/typeAliases/interfaceDoesNotDependOnBaseTypes.ts
 types/typeAliases/typeAliases.ts
 types/typeAliases/typeAliasesDoNotMerge.ts
+types/typeAliases/typeAliasesForObjectTypes.ts
 types/typeParameters/recurringTypeParamForContainerOfBase01.ts
 types/typeParameters/typeArgumentLists/callGenericFunctionWithZeroTypeArguments.ts
 types/typeParameters/typeArgumentLists/constraintSatisfactionWithAny.ts
