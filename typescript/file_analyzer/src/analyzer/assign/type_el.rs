@@ -445,7 +445,11 @@ impl Analyzer<'_, '_> {
                 | Type::Lit(RTsLitType {
                     lit: RTsLit::Bool(..), ..
                 })
-                | Type::Param(..) => return Err(Error::SimpleAssignFailed { span }),
+                | Type::Param(..)
+                | Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsVoidKeyword,
+                    ..
+                }) => return Err(Error::SimpleAssignFailed { span }),
 
                 // TODO: Strict mode
                 Type::Keyword(RTsKeywordType {
