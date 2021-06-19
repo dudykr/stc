@@ -85,7 +85,7 @@ impl Analyzer<'_, '_> {
             .report(&mut self.storage);
 
         if let Some(ty) = ty {
-            if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) {
+            if let Some(false) = self.is_update_operand_valid(&ty).report(&mut self.storage) {
                 self.storage.report(Error::InvalidNumericOperand { span: e.arg.span() })
             }
         }
@@ -94,5 +94,15 @@ impl Analyzer<'_, '_> {
             kind: TsKeywordTypeKind::TsNumberKeyword,
             span,
         }))
+    }
+}
+
+impl Analyzer<'_, '_> {
+    fn is_update_operand_valid(&mut self, arg: &Type) -> ValidationResult<bool> {
+        if arg.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) {
+            return Ok(false);
+        }
+
+        Ok(true)
     }
 }
