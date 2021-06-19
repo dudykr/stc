@@ -2,6 +2,8 @@ tests/pass/async/promise/asyncAwaitnestedClasses_es5/1.ts
 tests/pass/builltin/array/ext/1.ts
 tests/pass/builltin/array/map/simple.ts
 tests/pass/class/inheritance/methods-from-object-1.ts
+tests/pass/class/local/localTypes3/1.ts
+tests/pass/class/local/localTypes3/2.ts
 tests/pass/class/member/interface/merging/1.ts
 tests/pass/class/member/interface/merging/2.ts
 tests/pass/class/member/interface/merging/3.ts
@@ -19,6 +21,7 @@ tests/pass/controlFlow/element-access-1.ts
 tests/pass/controlFlow/forInStmt/simple/1.ts
 tests/pass/controlFlow/forInStmt/simple/2.ts
 tests/pass/controlFlow/forInStmt/simple/3.ts
+tests/pass/controlFlow/forOfStmt/async/types.forAwait.es2018.1/1.ts
 tests/pass/controlFlow/forOfStmt/hoisting-1.ts
 tests/pass/controlFlow/forOfStmt/intersection/1.ts
 tests/pass/controlFlow/forOfStmt/object-entries/1.ts
@@ -164,6 +167,7 @@ tests/pass/types/alias/base-1-3.ts
 tests/pass/types/alias/simple-1.ts
 tests/pass/types/alias/simple-2.ts
 tests/pass/types/alias/wierd/1.ts
+tests/pass/types/builtin/extension/array-1.ts
 tests/pass/types/builtin/extension/inference-1.ts
 tests/pass/types/builtin/extension/simple-1.ts
 tests/pass/types/conditional/conditionalTypes1/1.ts
@@ -243,5 +247,7 @@ tests/visualize/tuple-1-2.ts
 tests/visualize/tuple-1.ts
 tests/visualize/types/inference/generic/interface/methods-1.ts
 tests/visualize/types/mapped/7-1.ts
+tests/visualize/types/tuple/strictTupleLength/1.ts
+tests/visualize/types/tuple/strictTupleLength/2.ts
 tests/visualize/types/tuple/widening/1.ts
 tests/visualize/types/typeLit/1.ts
