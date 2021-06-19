@@ -8,10 +8,7 @@
 set -eu
 
 err_handler () {
-   if command -v osascript &> /dev/null
-  then
-      osascript -e 'display notification "Check failed!"'
-  fi
+   ./scripts/_/notify.sh 'Check failed!'
    exit
 }
 
@@ -33,7 +30,4 @@ RUST_LOG=0 TEST='' cargo test --test tsc \
 
 ./scripts/sort.sh
 
-if command -v osascript &> /dev/null
-then
-    osascript -e 'display notification "Check done!"'
-fi
+./scripts/_/notify.sh 'Check done!'
