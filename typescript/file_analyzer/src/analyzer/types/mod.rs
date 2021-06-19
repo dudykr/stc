@@ -72,6 +72,7 @@ use swc_ecma_ast::MethodKind;
 use swc_ecma_ast::TsKeywordTypeKind;
 use swc_ecma_ast::TsTypeOperatorOp;
 
+mod index_signature;
 mod keyof;
 mod mapped;
 mod narrowing;
