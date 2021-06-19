@@ -1587,10 +1587,6 @@ impl Analyzer<'_, '_> {
 
                 let body = body.into_iter().map(|v| v.1).collect_vec();
 
-                child
-                    .validate_index_signature_of_class(c.span, &body)
-                    .report(&mut child.storage);
-
                 let class = ClassDef {
                     span: c.span,
                     name,
@@ -1600,6 +1596,10 @@ impl Analyzer<'_, '_> {
                     body,
                     implements,
                 };
+
+                child
+                    .validate_index_signature_of_class(&class)
+                    .report(&mut child.storage);
 
                 child.validate_inherited_members_from_super_class(None, &class);
                 child.validate_inherited_members_from_interfaces(None, &class);
@@ -1686,7 +1686,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     /// If a class have an index signature, properties should be compatible with
     /// it.
-    fn validate_index_signature_of_class(&mut self, span: Span, members: &[ClassMember]) -> ValidationResult<()> {
+    fn validate_index_signature_of_class(&mut self, class: &ClassDef) -> ValidationResult<()> {
         Ok(())
     }
 
