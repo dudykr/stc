@@ -1687,6 +1687,46 @@ impl Analyzer<'_, '_> {
     /// If a class have an index signature, properties should be compatible with
     /// it.
     fn validate_index_signature_of_class(&mut self, class: &ClassDef) -> ValidationResult<()> {
+        let index = match self
+            .get_index_signature_from_class(class.span, class)
+            .context("tried to get index signature from a class")?
+        {
+            Some(v) => v,
+            None => return Ok(()),
+        };
+        let index_ret_ty = match index.type_ann {
+            Some(v) => v,
+            // It's `any`, so we don't have to verify.
+            None => return Ok(()),
+        };
+
+        for member in &class.body {
+            match member {
+                // This is actually property.
+                ClassMember::Method(Method {
+                    kind: MethodKind::Getter,
+                    key,
+                    ret_ty,
+                    ..
+                }) => {
+                    let span = key.span();
+
+                    self.assign_with_opts(
+                        &mut Default::default(),
+                        AssignOpts {
+                            span,
+                            ..Default::default()
+                        },
+                        &index_ret_ty,
+                        &ret_ty,
+                    )
+                    .convert_err(|_err| Error::ClassMemeberNotCompatibleWithIndexSignature { span })?;
+                }
+                ClassMember::Property(_) => {}
+                _ => {}
+            }
+        }
+
         Ok(())
     }
 
