@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS17013
+    InvalidUsageOfNewTarget {
+        span: Span,
+    },
+
     /// TS2767
     ReturnPropertyOfIteratorMustBeMethod {
         span: Span,
@@ -1566,6 +1571,8 @@ impl Error {
             Error::ReturnPropertyOfIteratorMustBeMethod { .. } => 2767,
 
             Error::NextOfItertorShouldReturnTypeWithPropertyValue { .. } => 2490,
+
+            Error::InvalidUsageOfNewTarget { .. } => 17013,
 
             _ => 0,
         }
