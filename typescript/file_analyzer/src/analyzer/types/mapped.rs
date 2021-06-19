@@ -73,7 +73,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                let keys = self.get_property_names(span, ty)?;
+                let keys = self.get_property_names_for_mapped_type(span, ty)?;
                 if let Some(keys) = keys {
                     let members = keys
                         .into_iter()
@@ -252,7 +252,11 @@ impl Analyzer<'_, '_> {
     }
 
     /// Get keys of `ty` as a proerty name.
-    fn get_property_names(&mut self, span: Span, ty: &Type) -> ValidationResult<Option<Vec<PropertyName>>> {
+    fn get_property_names_for_mapped_type(
+        &mut self,
+        span: Span,
+        ty: &Type,
+    ) -> ValidationResult<Option<Vec<PropertyName>>> {
         let ty = self
             .normalize(
                 None,
@@ -322,7 +326,7 @@ impl Analyzer<'_, '_> {
                         &parent.expr,
                         parent.type_args.as_deref(),
                     )?;
-                    if let Some(parent_keys) = self.get_property_names(span, &parent)? {
+                    if let Some(parent_keys) = self.get_property_names_for_mapped_type(span, &parent)? {
                         keys.extend(parent_keys);
                     }
                 }
@@ -352,7 +356,7 @@ impl Analyzer<'_, '_> {
                 let keys_types = ty
                     .types
                     .iter()
-                    .map(|ty| -> ValidationResult<_> { self.get_property_names(span, &ty) })
+                    .map(|ty| -> ValidationResult<_> { self.get_property_names_for_mapped_type(span, &ty) })
                     .collect::<Result<Vec<_>, _>>()?;
 
                 let mut result: Vec<PropertyName> = vec![];
