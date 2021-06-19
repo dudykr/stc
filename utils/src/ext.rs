@@ -1,5 +1,17 @@
 use swc_common::Span;
 
+pub trait ValueExt: Sized {
+    fn as_ok(self) -> Result<Self, !> {
+        Ok(self)
+    }
+
+    fn as_some(self) -> Option<Self> {
+        Some(self)
+    }
+}
+
+impl<T> ValueExt for T {}
+
 pub trait SpanExt: Into<Span> + Copy {
     /// If `self` is dummy, use span from `other`.
     fn or_else<F>(self, other: F) -> Span
