@@ -2118,6 +2118,7 @@ types/stringLiteral/stringLiteralTypesTypePredicates01.ts
 types/stringLiteral/stringLiteralTypesWithTemplateStrings01.ts
 types/stringLiteral/stringLiteralTypesWithTemplateStrings02.ts
 types/stringLiteral/stringLiteralTypesWithVariousOperators01.ts
+types/stringLiteral/stringLiteralTypesWithVariousOperators02.ts
 types/thisType/contextualThisType.ts
 types/thisType/fluentClasses.ts
 types/thisType/fluentInterfaces.ts
