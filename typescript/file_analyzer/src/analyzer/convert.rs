@@ -1,3 +1,4 @@
+use super::marks::MarkExt;
 use super::props::ComputedPropMode;
 use super::Analyzer;
 use super::Ctx;
@@ -505,8 +506,13 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsTupleType) -> ValidationResult<Tuple> {
+        let marks = self.marks();
+
+        let span = t.span;
+        let span = marks.prevent_tuple_to_array.apply_to_span(span);
+
         Ok(Tuple {
-            span: t.span,
+            span,
             elems: t.elem_types.validate_with(self)?,
         })
     }
