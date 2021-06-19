@@ -349,7 +349,7 @@ impl Analyzer<'_, '_> {
                             used_keys.push(key.clone());
 
                             let ctx = Ctx {
-                                should_not_create_indexed_type_from_ty_els: true,
+                                disallow_creating_indexed_type_from_ty_els: true,
                                 disallow_indexing_array_with_string: true,
                                 diallow_unknown_object_property: true,
                                 ..self.ctx
@@ -398,7 +398,7 @@ impl Analyzer<'_, '_> {
                             used_keys.push(key.clone());
 
                             let ctx = Ctx {
-                                should_not_create_indexed_type_from_ty_els: true,
+                                disallow_creating_indexed_type_from_ty_els: true,
                                 disallow_indexing_array_with_string: true,
                                 diallow_unknown_object_property: true,
                                 ..self.ctx

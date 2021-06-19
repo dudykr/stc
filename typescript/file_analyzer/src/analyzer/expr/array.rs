@@ -427,7 +427,7 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult<Cow<'a, Type>> {
         let ctx = Ctx {
             disallow_indexing_array_with_string: true,
-            should_not_create_indexed_type_from_ty_els: true,
+            disallow_creating_indexed_type_from_ty_els: true,
             ..self.ctx
         };
         let mut elem_ty = self

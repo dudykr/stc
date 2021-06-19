@@ -125,7 +125,7 @@ pub(crate) struct Ctx {
     cannot_be_tuple: bool,
 
     /// If `true`, `access_property` will not produce types like `Array['b']`
-    should_not_create_indexed_type_from_ty_els: bool,
+    disallow_creating_indexed_type_from_ty_els: bool,
 
     disallow_indexing_array_with_string: bool,
 
@@ -502,7 +502,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 allow_module_var: false,
                 check_for_implicit_any: false,
                 cannot_be_tuple: false,
-                should_not_create_indexed_type_from_ty_els: false,
+                disallow_creating_indexed_type_from_ty_els: false,
                 disallow_indexing_array_with_string: false,
                 disallow_indexing_class_with_computed: false,
                 in_shorthand: false,

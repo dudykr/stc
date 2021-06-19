@@ -957,7 +957,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if has_index_signature && !self.ctx.should_not_create_indexed_type_from_ty_els {
+        if has_index_signature && !self.ctx.disallow_creating_indexed_type_from_ty_els {
             // This check exists to prefer a specific property over generic index signature.
             if prop.is_computed() || matching_elements.is_empty() {
                 slog::warn!(self.logger, "Creating a indexed access type from a type literal");
@@ -1017,7 +1017,7 @@ impl Analyzer<'_, '_> {
                     lit: RTsLit::Str(prop), ..
                 }) => {
                     let ctx = Ctx {
-                        should_not_create_indexed_type_from_ty_els: true,
+                        disallow_creating_indexed_type_from_ty_els: true,
                         disallow_indexing_array_with_string: true,
                         ..self.ctx
                     };
@@ -1805,7 +1805,7 @@ impl Analyzer<'_, '_> {
                     };
 
                 let ctx = Ctx {
-                    should_not_create_indexed_type_from_ty_els: self.ctx.should_not_create_indexed_type_from_ty_els
+                    disallow_creating_indexed_type_from_ty_els: self.ctx.disallow_creating_indexed_type_from_ty_els
                         || has_better_default,
                     ..self.ctx
                 };

@@ -1045,7 +1045,7 @@ impl Analyzer<'_, '_> {
         }
 
         let ctx = Ctx {
-            should_not_create_indexed_type_from_ty_els: true,
+            disallow_creating_indexed_type_from_ty_els: true,
             ..self.ctx
         };
         let prop_res = self.with_ctx(ctx).access_property(
