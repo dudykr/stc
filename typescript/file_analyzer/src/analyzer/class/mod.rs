@@ -729,9 +729,9 @@ impl Analyzer<'_, '_> {
 
             let mut spans = vec![];
             let mut name: Option<&RPropName> = None;
-            let mut last_body_was_none = false;
+            let mut last_was_abstract = false;
 
-            for (last, m) in c.body.iter().identify_last() {
+            for (last, (idx, m)) in c.body.iter().enumerate().identify_last() {
                 match m {
                     RClassMember::Method(m) => {
                         let span = m.key.span();
@@ -739,17 +739,17 @@ impl Analyzer<'_, '_> {
                         if name.is_none() {
                             name = Some(&m.key);
                             spans.push((span, m.is_abstract));
-                            last_body_was_none = false;
+                            last_was_abstract = m.is_abstract;
                             continue;
                         }
 
                         if last {
                             spans.push((span, m.is_abstract));
-                            last_body_was_none = m.function.body.is_none();
+                            last_was_abstract = m.is_abstract;
                         }
 
                         if last || !name.unwrap().eq_ignore_span(&m.key) {
-                            let report_error_for_abstract = last_body_was_none;
+                            let report_error_for_abstract = !last_was_abstract;
 
                             let spans = take(&mut spans);
 
@@ -774,11 +774,28 @@ impl Analyzer<'_, '_> {
 
                         // At this point, previous name is identical with current name.
 
-                        last_body_was_none = m.function.body.is_none();
+                        last_was_abstract = m.is_abstract;
 
                         spans.push((span, m.is_abstract));
                     }
-                    _ => {}
+                    _ => {
+                        // Other than method.
+
+                        if name.is_none() {
+                            continue;
+                        }
+
+                        let is_not_finished = c.body[idx..].iter().any(|member| match member {
+                            RClassMember::Method(m) => m.key.eq_ignore_span(&name.unwrap()),
+                            _ => false,
+                        });
+
+                        if is_not_finished {
+                            // In this case, we report `abstract methods must be
+                            // sequential`
+                            if let Some((span, _)) = spans.last() {}
+                        }
+                    }
                 }
             }
         }
