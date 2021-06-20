@@ -130,7 +130,8 @@ impl Analyzer<'_, '_> {
         let rhs = r.normalize();
 
         match op {
-            op!("*=")
+            op!("+=")
+            | op!("*=")
             | op!("**=")
             | op!("/=")
             | op!("%=")
