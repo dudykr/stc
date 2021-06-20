@@ -1,6 +1,3 @@
-ambient::ambientExternalModuleInsideNonAmbient.ts
-ambient::ambientExternalModuleInsideNonAmbientExternalModule.ts
-async::es5::functionDeclarations::asyncFunctionDeclarationCapturesArguments_es5.ts
 classes::classDeclarations::classAbstractKeyword::classAbstractGeneric.ts
 classes::classDeclarations::classAbstractKeyword::classAbstractInheritance.ts
 classes::classDeclarations::classAbstractKeyword::classAbstractMergedDeclaration.ts
