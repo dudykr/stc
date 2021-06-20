@@ -895,6 +895,7 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2363
     WrongTypeForRhsOfNumericOperation {
         span: Span,
     },
