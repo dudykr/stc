@@ -133,6 +133,7 @@ impl Analyzer<'_, '_> {
             op!("*=")
             | op!("**=")
             | op!("/=")
+            | op!("%=")
             | op!("-=")
             | op!("&=")
             | op!("|=")
@@ -148,7 +149,7 @@ impl Analyzer<'_, '_> {
         }
 
         match op {
-            op!("*=") | op!("**=") | op!("/=") | op!("-=") => {
+            op!("*=") | op!("**=") | op!("/=") | op!("%=") | op!("-=") => {
                 self.deny_null_or_undefined(rhs.span(), rhs)
                     .context("checking operands of a numeric assignment")?;
 
