@@ -1,4 +1,3 @@
-classes::classDeclarations::classAbstractKeyword::classAbstractGeneric.ts
 classes::classDeclarations::classAbstractKeyword::classAbstractInheritance.ts
 classes::classDeclarations::classAbstractKeyword::classAbstractMergedDeclaration.ts
 classes::classDeclarations::classAbstractKeyword::classAbstractOverloads.ts
