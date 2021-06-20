@@ -1025,7 +1025,12 @@ impl Analyzer<'_, '_> {
                                 }
                             }
 
-                            errors.push(Error::ClassDoesNotImplementMemeber { span: name_span });
+                            if let Some(key) = sm.key() {
+                                errors.push(Error::ClassDoesNotImplementMemeber {
+                                    span: name_span,
+                                    key: box key.into_owned(),
+                                });
+                            }
 
                             if sc.is_abstract {
                                 // TODO: Check super class of super class

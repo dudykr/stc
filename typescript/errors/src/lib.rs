@@ -963,6 +963,7 @@ pub enum Error {
     /// TS2515
     ClassDoesNotImplementMemeber {
         span: Span,
+        key: Box<Key>,
     },
 
     TS2531 {
