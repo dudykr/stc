@@ -722,6 +722,8 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
+        let mut ignore_not_following_for = vec![];
+
         {
             // Check for mixed `abstract`.
             //
@@ -757,6 +759,8 @@ impl Analyzer<'_, '_> {
                             let has_concrete = spans_for_error.iter().any(|(_, v)| *v == false);
 
                             if has_abstract && has_concrete {
+                                ignore_not_following_for.push(name.unwrap().clone());
+
                                 for (span, is_abstract) in spans_for_error {
                                     if report_error_for_abstract && is_abstract {
                                         self.storage.report(Error::AbstractAndConcreteIsMixed { span })
@@ -897,6 +901,13 @@ impl Analyzer<'_, '_> {
                     }
                 }
                 RClassMember::Method(ref m @ RClassMethod { is_abstract: false, .. }) => {
+                    if ignore_not_following_for
+                        .iter()
+                        .any(|item| is_prop_name_eq_include_computed(&item, &m.key))
+                    {
+                        continue;
+                    }
+
                     check!(m, m.function.body, false)
                 }
                 _ => {}
