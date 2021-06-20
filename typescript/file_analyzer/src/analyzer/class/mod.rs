@@ -746,7 +746,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         if last {
-                            if !name.unwrap().eq_ignore_span(&m.key) {
+                            if name.unwrap().eq_ignore_span(&m.key) {
                                 spans.push((span, m.is_abstract));
                                 last_was_abstract = m.is_abstract;
                             }
