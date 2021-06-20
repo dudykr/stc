@@ -994,6 +994,15 @@ impl Analyzer<'_, '_> {
     }
 
     fn validate_class_impls(&mut self, span: Span, members: &[ClassMember], super_ty: &Type) {
+        let super_ty = self.normalize(Some(span), Cow::Borrowed(super_ty), Default::default());
+        let super_ty = match super_ty {
+            Ok(v) => v,
+            Err(err) => {
+                self.storage.report(err);
+                return;
+            }
+        };
+
         let mut errors = Errors::default();
 
         let res: ValidationResult<()> = try {
@@ -1037,12 +1046,12 @@ impl Analyzer<'_, '_> {
                                 key: box key.into_owned(),
                             });
                         }
+                    }
 
-                        if sc.is_abstract {
-                            // Check super class of super class
-                            if let Some(super_ty) = &sc.super_class {
-                                self.validate_class_impls(span, members, &super_ty);
-                            }
+                    if sc.is_abstract {
+                        // Check super class of super class
+                        if let Some(super_ty) = &sc.super_class {
+                            self.validate_class_impls(span, members, &super_ty);
                         }
                     }
                 }
