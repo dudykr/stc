@@ -806,7 +806,7 @@ impl Analyzer<'_, '_> {
         let mut spans = vec![];
         let mut name: Option<&RPropName> = None;
 
-        for (idx, m) in c.body.iter().enumerate() {
+        for (last, (idx, m)) in c.body.iter().enumerate().identify_last() {
             macro_rules! check {
                 ($m:expr, $body:expr, $is_constructor:expr) => {{
                     let m = $m;
@@ -890,14 +890,16 @@ impl Analyzer<'_, '_> {
                 }};
             }
 
-            if !c.is_abstract {
-                match *m {
-                    RClassMember::Constructor(ref m) => check!(m, m.body, true),
-                    RClassMember::Method(ref m @ RClassMethod { is_abstract: false, .. }) => {
-                        check!(m, m.function.body, false)
+            match *m {
+                RClassMember::Constructor(ref m) => {
+                    if !c.is_abstract {
+                        check!(m, m.body, true)
                     }
-                    _ => {}
                 }
+                RClassMember::Method(ref m @ RClassMethod { is_abstract: false, .. }) => {
+                    check!(m, m.function.body, false)
+                }
+                _ => {}
             }
         }
 
