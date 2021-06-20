@@ -129,42 +129,45 @@ impl Analyzer<'_, '_> {
         let lhs = l.normalize();
         let rhs = r.normalize();
 
-        if op == op!("*=") || op == op!("**=") || op == op!("/=") || op == op!("-=") {
-            self.deny_null_or_undefined(rhs.span(), rhs)
-                .context("checking operands of a numeric assignment")?;
-
-            match lhs {
-                Type::TypeLit(..) => return Err(Error::WrongTypeForLhsOfNumericOperation { span }),
-                ty if ty.is_bool() || ty.is_str() || ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword) => {
-                    return Err(Error::WrongTypeForLhsOfNumericOperation { span });
-                }
-                _ => {}
-            }
-
-            match rhs {
-                Type::TypeLit(..) => return Err(Error::WrongTypeForRhsOfNumericOperation { span }),
-                ty if ty.is_bool() || ty.is_str() || ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword) => {
-                    return Err(Error::WrongTypeForRhsOfNumericOperation { span })
-                }
-                _ => {}
-            }
-
-            let r_castable = self.can_be_casted_to_number_in_rhs(rhs.span(), &rhs);
-            if r_castable {
-                if l.is_num() {
-                    return Ok(());
-                }
+        match op {
+            op!("*=") | op!("**=") | op!("/=") | op!("-=") => {
+                self.deny_null_or_undefined(rhs.span(), rhs)
+                    .context("checking operands of a numeric assignment")?;
 
                 match lhs {
-                    Type::Enum(l) => {
-                        //
-                        if !l.has_str {
-                            return Ok(());
-                        }
+                    Type::TypeLit(..) => return Err(Error::WrongTypeForLhsOfNumericOperation { span }),
+                    ty if ty.is_bool() || ty.is_str() || ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword) => {
+                        return Err(Error::WrongTypeForLhsOfNumericOperation { span });
                     }
                     _ => {}
                 }
+
+                match rhs {
+                    Type::TypeLit(..) => return Err(Error::WrongTypeForRhsOfNumericOperation { span }),
+                    ty if ty.is_bool() || ty.is_str() || ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword) => {
+                        return Err(Error::WrongTypeForRhsOfNumericOperation { span })
+                    }
+                    _ => {}
+                }
+
+                let r_castable = self.can_be_casted_to_number_in_rhs(rhs.span(), &rhs);
+                if r_castable {
+                    if l.is_num() {
+                        return Ok(());
+                    }
+
+                    match lhs {
+                        Type::Enum(l) => {
+                            //
+                            if !l.has_str {
+                                return Ok(());
+                            }
+                        }
+                        _ => {}
+                    }
+                }
             }
+            _ => {}
         }
 
         // Trivial
