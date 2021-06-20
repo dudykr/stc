@@ -167,6 +167,13 @@ impl Analyzer<'_, '_> {
                     }
                 }
             }
+
+            op!("&=") | op!("|=") | op!("^=") => {
+                if lhs.is_symbol() || lhs.is_unique_symbol() || lhs.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) {
+                    return Err(Error::WrongTypeForLhsOfNumericOperation { span });
+                }
+            }
+
             _ => {}
         }
 
