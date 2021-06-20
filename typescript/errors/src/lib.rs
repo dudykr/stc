@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2365
+    OperatorCannotBeAppliedToTypes {
+        span: Span,
+    },
+
     /// TS2516
     AbstractClassMethodShouldBeSequntial {
         span: Span,
@@ -1619,6 +1624,8 @@ impl Error {
             Error::AbstractAndConcreteIsMixed { .. } => 2512,
 
             Error::AbstractClassMethodShouldBeSequntial { .. } => 2516,
+
+            Error::OperatorCannotBeAppliedToTypes { .. } => 2365,
 
             _ => 0,
         }
