@@ -751,13 +751,13 @@ impl Analyzer<'_, '_> {
                         if last || !name.unwrap().eq_ignore_span(&m.key) {
                             let report_error_for_abstract = !last_was_abstract;
 
-                            let spans = take(&mut spans);
+                            let spans_for_error = take(&mut spans);
 
-                            let has_abstract = spans.iter().any(|(_, v)| *v == true);
-                            let has_concrete = spans.iter().any(|(_, v)| *v == false);
+                            let has_abstract = spans_for_error.iter().any(|(_, v)| *v == true);
+                            let has_concrete = spans_for_error.iter().any(|(_, v)| *v == false);
 
                             if has_abstract && has_concrete {
-                                for (span, is_abstract) in spans {
+                                for (span, is_abstract) in spans_for_error {
                                     if report_error_for_abstract && is_abstract {
                                         self.storage.report(Error::AbstractAndConcreteIsMixed { span })
                                     } else if !report_error_for_abstract && !is_abstract {
@@ -768,7 +768,8 @@ impl Analyzer<'_, '_> {
 
                             name = None;
 
-                            // We don't add (span, is_abstract)
+                            // Note: This span is for next name.
+                            spans.push((span, m.is_abstract));
                             continue;
                         }
 
