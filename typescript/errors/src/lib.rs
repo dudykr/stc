@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2516
+    AbstractClassMethodShouldBeSequntial {
+        span: Span,
+    },
+
     /// TS2411
     ClassMemeberNotCompatibleWithStringIndexSignature {
         span: Span,
@@ -1612,6 +1617,8 @@ impl Error {
             Error::ClassMemeberNotCompatibleWithNumericIndexSignature { .. } => 2412,
 
             Error::AbstractAndConcreteIsMixed { .. } => 2512,
+
+            Error::AbstractClassMethodShouldBeSequntial { .. } => 2516,
 
             _ => 0,
         }
