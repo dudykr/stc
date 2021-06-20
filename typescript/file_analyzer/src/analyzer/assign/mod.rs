@@ -134,7 +134,8 @@ impl Analyzer<'_, '_> {
                 .context("checking operands of a numeric assignment")?;
 
             match lhs {
-                ty if ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword) => {
+                Type::TypeLit(..) => return Err(Error::WrongTypeForLhsOfNumericOperation { span }),
+                ty if ty.is_bool() || ty.is_str() || ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword) => {
                     return Err(Error::WrongTypeForLhsOfNumericOperation { span });
                 }
                 _ => {}
