@@ -981,64 +981,72 @@ impl Analyzer<'_, '_> {
             return;
         }
 
-        let name_span = name.unwrap_or_else(|| {
+        let span = name.unwrap_or_else(|| {
             // TODD: c.span().lo() + BytePos(5) (aka class token)
             class.span
         });
+
+        if let Some(super_ty) = &class.super_class {
+            self.validate_super_class(super_ty);
+
+            self.validate_class_impls(span, &class.body, &super_ty)
+        }
+    }
+
+    fn validate_class_impls(&mut self, span: Span, members: &[ClassMember], super_ty: &Type) {
         let mut errors = Errors::default();
 
         let res: ValidationResult<()> = try {
-            if let Some(ref super_ty) = class.super_class {
-                self.validate_super_class(super_ty);
+            match super_ty.normalize() {
+                Type::ClassDef(sc) => {
+                    'outer: for sm in &sc.body {
+                        match sm {
+                            ClassMember::Method(sm) => {
+                                if sm.is_optional || !sm.is_abstract {
+                                    // TODO: Validate parameters
 
-                match super_ty.normalize() {
-                    Type::ClassDef(sc) => {
-                        'outer: for sm in &sc.body {
-                            match sm {
-                                ClassMember::Method(sm) => {
-                                    if sm.is_optional || !sm.is_abstract {
-                                        // TODO: Validate parameters
-
-                                        // TODO: Validate return type
-                                        continue 'outer;
-                                    }
-
-                                    for m in &class.body {
-                                        match m {
-                                            ClassMember::Method(ref m) => {
-                                                if !&m.key.type_eq(&sm.key) {
-                                                    continue;
-                                                }
-
-                                                // TODO: Validate parameters
-
-                                                // TODO: Validate return type
-                                                continue 'outer;
-                                            }
-                                            _ => {}
-                                        }
-                                    }
-                                }
-                                _ => {
-                                    // TODO: Verify
+                                    // TODO: Validate return type
                                     continue 'outer;
                                 }
-                            }
 
-                            if let Some(key) = sm.key() {
-                                errors.push(Error::ClassDoesNotImplementMemeber {
-                                    span: name_span,
-                                    key: box key.into_owned(),
-                                });
-                            }
+                                for m in members {
+                                    match m {
+                                        ClassMember::Method(ref m) => {
+                                            if !&m.key.type_eq(&sm.key) {
+                                                continue;
+                                            }
 
-                            if sc.is_abstract {
-                                // TODO: Check super class of super class
+                                            // TODO: Validate parameters
+
+                                            // TODO: Validate return type
+                                            continue 'outer;
+                                        }
+                                        _ => {}
+                                    }
+                                }
+                            }
+                            _ => {
+                                // TODO: Verify
+                                continue 'outer;
+                            }
+                        }
+
+                        if let Some(key) = sm.key() {
+                            errors.push(Error::ClassDoesNotImplementMemeber {
+                                span,
+                                key: box key.into_owned(),
+                            });
+                        }
+
+                        if sc.is_abstract {
+                            // Check super class of super class
+                            if let Some(super_ty) = &sc.super_class {
+                                self.validate_class_impls(span, members, &super_ty);
                             }
                         }
                     }
-                    _ => {}
                 }
+                _ => {}
             }
         };
 
