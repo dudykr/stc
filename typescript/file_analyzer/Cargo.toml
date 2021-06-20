@@ -38,17 +38,17 @@ stc_ts_types = {path = "../types"}
 stc_ts_utils = {path = "../utils"}
 stc_utils = {path = "../../utils"}
 string_enum = "0.3.1"
-swc_atoms = "0.2.5"
-swc_common = {version = "0.10.12", features = ["concurrent"]}
+swc_atoms = "0.2.6"
+swc_common = { version = "0.10.21", features = ["concurrent"] }
 swc_ecma_ast = "0.46.0"
-swc_ecma_codegen = "0.57.0"
-swc_ecma_parser = "0.59.0"
-swc_ecma_utils = "0.37.0"
+swc_ecma_codegen = "0.59.0"
+swc_ecma_parser = "0.60.0"
+swc_ecma_utils = "0.37.1"
 
 [dev-dependencies]
 stc_testing = {path = "../../testing"}
 stc_ts_testing = {path = "../testing"}
-swc_ecma_parser = "0.59.0"
-swc_ecma_transforms = "0.52.0"
+swc_ecma_parser = "0.60.0"
+swc_ecma_transforms = "0.54.0"
 swc_ecma_visit = "0.32.0"
 testing = "0.10.2"
