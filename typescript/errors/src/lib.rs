@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2513
+    CannotAccessAbstractMemeber {
+        span: Span,
+    },
+
     /// TS2365
     OperatorCannotBeAppliedToTypes {
         span: Span,
@@ -1626,6 +1631,8 @@ impl Error {
             Error::AbstractClassMethodShouldBeSequntial { .. } => 2516,
 
             Error::OperatorCannotBeAppliedToTypes { .. } => 2365,
+
+            Error::CannotAccessAbstractMemeber { .. } => 2513,
 
             _ => 0,
         }
