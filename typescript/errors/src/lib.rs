@@ -621,6 +621,11 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2522
+    ArgumentsCannotBeUsedInAsyncFnInEs3OrEs5 {
+        span: Span,
+    },
+
     NoSuchVar {
         span: Span,
         name: Id,
@@ -1491,6 +1496,8 @@ impl Error {
             Error::InvalidInterfaceName { .. } => 2427,
 
             Error::InvalidUseOfArgumentsInEs3OrEs5 { .. } => 2496,
+
+            Error::ArgumentsCannotBeUsedInAsyncFnInEs3OrEs5 { .. } => 2522,
 
             Error::NoMatchingOverload { .. } => 2769,
 

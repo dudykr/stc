@@ -2726,12 +2726,32 @@ impl Analyzer<'_, '_> {
                                 _ => None,
                             }
                         });
+                    let arguments_points_async_fn = Some(true) == {
+                        let ctx = self.ctx;
+
+                        self.scope.matches(|scope| {
+                            if scope.is_root() {
+                                return Some(false);
+                            }
+
+                            match scope.kind() {
+                                ScopeKind::Fn => Some(ctx.in_async),
+                                ScopeKind::ArrowFn | ScopeKind::Constructor | ScopeKind::Method { .. } => Some(false),
+                                _ => None,
+                            }
+                        })
+                    };
+
                     let is_argument_defined_in_current_scope = self.scope.vars.contains_key(&i.clone().into());
 
                     if !self.scope.is_arguments_implicitly_defined() {
                         self.storage.report(Error::InvalidUseOfArgumentsInEs3OrEs5 { span })
                     } else if arguments_point_to_arrow && !is_argument_defined_in_current_scope {
                         self.storage.report(Error::InvalidUseOfArgumentsInEs3OrEs5 { span });
+                        return Ok(Type::any(span));
+                    } else if arguments_points_async_fn && !is_argument_defined_in_current_scope {
+                        self.storage
+                            .report(Error::ArgumentsCannotBeUsedInAsyncFnInEs3OrEs5 { span });
                         return Ok(Type::any(span));
                     }
                 }
