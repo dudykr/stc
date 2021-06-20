@@ -457,6 +457,8 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, f: &RFnDecl) {
         let ctx = Ctx {
             in_declare: self.ctx.in_declare || f.declare || f.function.body.is_none(),
+            in_async: f.function.is_async,
+            in_generator: f.function.is_generator,
             ..self.ctx
         };
         let fn_ty = self
