@@ -129,7 +129,7 @@ impl Analyzer<'_, '_> {
         let lhs = l.normalize();
         let rhs = r.normalize();
 
-        if op == op!("*=") || op == op!("/=") || op == op!("-=") {
+        if op == op!("*=") || op == op!("**=") || op == op!("/=") || op == op!("-=") {
             self.deny_null_or_undefined(rhs.span(), rhs)
                 .context("checking operands of a numeric assignment")?;
 
