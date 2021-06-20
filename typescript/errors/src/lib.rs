@@ -1104,6 +1104,11 @@ pub enum Error {
         key: Box<Key>,
     },
 
+    /// TS2512
+    AbstractAndConcreteIsMixed {
+        span: Span,
+    },
+
     DebugContext(DebugContext),
 }
 
@@ -1605,6 +1610,8 @@ impl Error {
             Error::ClassMemeberNotCompatibleWithStringIndexSignature { .. } => 2411,
 
             Error::ClassMemeberNotCompatibleWithNumericIndexSignature { .. } => 2412,
+
+            Error::AbstractAndConcreteIsMixed { .. } => 2512,
 
             _ => 0,
         }
