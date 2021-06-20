@@ -79,6 +79,7 @@ use std::borrow::Cow;
 use std::mem::replace;
 use std::mem::take;
 use swc_atoms::js_word;
+use swc_common::iter::IdentifyLast;
 use swc_common::EqIgnoreSpan;
 use swc_common::Span;
 use swc_common::Spanned;
@@ -719,6 +720,67 @@ impl Analyzer<'_, '_> {
         //      }
         if declare {
             return Ok(());
+        }
+
+        {
+            // Check for mixed `abstract`.
+            //
+            // Class members with same name should be all abstract or all concrete.
+
+            let mut spans = vec![];
+            let mut name: Option<&RPropName> = None;
+            let mut last_body_was_none = false;
+
+            for (last, m) in c.body.iter().identify_last() {
+                match m {
+                    RClassMember::Method(m) => {
+                        let span = m.key.span();
+
+                        if name.is_none() {
+                            name = Some(&m.key);
+                            spans.push((span, m.is_abstract));
+                            last_body_was_none = false;
+                            continue;
+                        }
+
+                        if last {
+                            spans.push((span, m.is_abstract));
+                            last_body_was_none = m.function.body.is_none();
+                        }
+
+                        if last || !name.unwrap().eq_ignore_span(&m.key) {
+                            let report_error_for_abstract = last_body_was_none;
+
+                            let spans = take(&mut spans);
+
+                            let has_abstract = spans.iter().any(|(_, v)| *v == true);
+                            let has_concrete = spans.iter().any(|(_, v)| *v == false);
+
+                            if has_abstract && has_concrete {
+                                for (span, is_abstract) in spans {
+                                    if report_error_for_abstract && is_abstract {
+                                        self.storage.report(Error::AbstractAndConcreteIsMixed { span })
+                                    } else if !report_error_for_abstract && !is_abstract {
+                                        self.storage.report(Error::AbstractAndConcreteIsMixed { span })
+                                    }
+                                }
+                            }
+
+                            name = None;
+
+                            // We don't add (span, is_abstract)
+                            continue;
+                        }
+
+                        // At this point, previous name is identical with current name.
+
+                        last_body_was_none = m.function.body.is_none();
+
+                        spans.push((span, m.is_abstract));
+                    }
+                    _ => {}
+                }
+            }
         }
 
         let mut errors = Errors::default();
