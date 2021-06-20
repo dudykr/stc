@@ -130,8 +130,10 @@ impl Analyzer<'_, '_> {
         let rhs = r.normalize();
 
         if op == op!("+=") {
-            if lhs.is_enum_variant() && rhs.is_type_lit() {
-                return Err(Error::OperatorCannotBeAppliedToTypes { span });
+            if lhs.is_enum_variant() {
+                if rhs.is_type_lit() || rhs.is_num() || rhs.is_bool() {
+                    return Err(Error::OperatorCannotBeAppliedToTypes { span });
+                }
             }
         }
 
