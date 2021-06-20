@@ -1025,7 +1025,7 @@ impl Analyzer<'_, '_> {
                                 }
                             }
 
-                            errors.push(Error::TS2515 { span: name_span });
+                            errors.push(Error::ClassDoesNotImplementMemeber { span: name_span });
 
                             if sc.is_abstract {
                                 // TODO: Check super class of super class

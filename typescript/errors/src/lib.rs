@@ -960,7 +960,8 @@ pub enum Error {
         span: Span,
     },
 
-    TS2515 {
+    /// TS2515
+    ClassDoesNotImplementMemeber {
         span: Span,
     },
 
@@ -1336,7 +1337,7 @@ impl Error {
             Error::ParamPropIsNotAllowedInAmbientConstructorx { .. } => 2369,
             Error::TS2389 { .. } => 2389,
             Error::TS2447 { .. } => 2447,
-            Error::TS2515 { .. } => 2515,
+            Error::ClassDoesNotImplementMemeber { .. } => 2515,
             Error::TS2531 { .. } => 2531,
             Error::TS2532 { .. } => 2532,
             Error::TS2567 { .. } => 2567,
