@@ -760,8 +760,6 @@ impl Analyzer<'_, '_> {
                             let has_abstract = spans_for_error.iter().any(|(_, v)| *v == true);
                             let has_concrete = spans_for_error.iter().any(|(_, v)| *v == false);
 
-                            dbg!(&spans_for_error);
-
                             if has_abstract && has_concrete {
                                 ignore_not_following_for.push(name.unwrap().clone());
 
