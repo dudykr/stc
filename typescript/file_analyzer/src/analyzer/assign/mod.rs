@@ -133,9 +133,18 @@ impl Analyzer<'_, '_> {
             self.deny_null_or_undefined(rhs.span(), rhs)
                 .context("checking operands of a numeric assignment")?;
 
-            match rhs.normalize() {
+            match lhs {
+                ty if ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword) => {
+                    return Err(Error::WrongTypeForLhsOfNumericOperation { span });
+                }
+                _ => {}
+            }
+
+            match rhs {
                 Type::TypeLit(..) => return Err(Error::WrongTypeForRhsOfNumericOperation { span }),
-                ty if ty.is_bool() || ty.is_str() => return Err(Error::WrongTypeForRhsOfNumericOperation { span }),
+                ty if ty.is_bool() || ty.is_str() || ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword) => {
+                    return Err(Error::WrongTypeForRhsOfNumericOperation { span })
+                }
                 _ => {}
             }
 
