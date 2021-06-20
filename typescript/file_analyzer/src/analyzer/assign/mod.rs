@@ -130,6 +130,24 @@ impl Analyzer<'_, '_> {
         let rhs = r.normalize();
 
         match op {
+            op!("*=")
+            | op!("**=")
+            | op!("/=")
+            | op!("-=")
+            | op!("&=")
+            | op!("|=")
+            | op!("^=")
+            | op!("<<=")
+            | op!(">>=")
+            | op!(">>>=") => {
+                if lhs.is_symbol() || lhs.is_unique_symbol() || lhs.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) {
+                    return Err(Error::WrongTypeForLhsOfNumericOperation { span });
+                }
+            }
+            _ => {}
+        }
+
+        match op {
             op!("*=") | op!("**=") | op!("/=") | op!("-=") => {
                 self.deny_null_or_undefined(rhs.span(), rhs)
                     .context("checking operands of a numeric assignment")?;
@@ -165,12 +183,6 @@ impl Analyzer<'_, '_> {
                         }
                         _ => {}
                     }
-                }
-            }
-
-            op!("&=") | op!("|=") | op!("^=") | op!("<<=") | op!(">>=") | op!(">>>=") => {
-                if lhs.is_symbol() || lhs.is_unique_symbol() || lhs.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) {
-                    return Err(Error::WrongTypeForLhsOfNumericOperation { span });
                 }
             }
 
