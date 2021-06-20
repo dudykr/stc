@@ -131,7 +131,7 @@ impl Analyzer<'_, '_> {
 
         if op == op!("+=") {
             if lhs.is_enum_variant() {
-                if rhs.is_type_lit() || rhs.is_num() || rhs.is_bool() {
+                if rhs.is_type_lit() || rhs.is_bool() || rhs.is_symbol() || rhs.is_unique_symbol() {
                     return Err(Error::OperatorCannotBeAppliedToTypes { span });
                 }
             }
