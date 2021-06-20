@@ -129,6 +129,12 @@ impl Analyzer<'_, '_> {
         let lhs = l.normalize();
         let rhs = r.normalize();
 
+        if op == op!("+=") {
+            if lhs.is_enum_variant() && rhs.is_type_lit() {
+                return Err(Error::OperatorCannotBeAppliedToTypes { span });
+            }
+        }
+
         match op {
             op!("+=")
             | op!("*=")
