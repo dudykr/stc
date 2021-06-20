@@ -810,12 +810,14 @@ impl Analyzer<'_, '_> {
                 }};
             }
 
-            match *m {
-                RClassMember::Constructor(ref m) => check!(m, m.body, true),
-                RClassMember::Method(ref m @ RClassMethod { is_abstract: false, .. }) => {
-                    check!(m, m.function.body, false)
+            if !c.is_abstract {
+                match *m {
+                    RClassMember::Constructor(ref m) => check!(m, m.body, true),
+                    RClassMember::Method(ref m @ RClassMethod { is_abstract: false, .. }) => {
+                        check!(m, m.function.body, false)
+                    }
+                    _ => {}
                 }
-                _ => {}
             }
         }
 
