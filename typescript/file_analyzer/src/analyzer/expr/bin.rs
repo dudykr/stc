@@ -1411,7 +1411,7 @@ impl Analyzer<'_, '_> {
                             }
 
                             _ => errors.push(if is_left {
-                                Error::TS2362 { span: ty.span() }
+                                Error::WrongTypeForLhsOfNumericOperation { span: ty.span() }
                             } else {
                                 Error::WrongTypeForRhsOfNumericOperation { span: ty.span() }
                             }),

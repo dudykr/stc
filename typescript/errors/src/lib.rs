@@ -891,7 +891,8 @@ pub enum Error {
         span: Span,
     },
 
-    TS2362 {
+    /// TS2362
+    WrongTypeForLhsOfNumericOperation {
         span: Span,
     },
 
@@ -1315,7 +1316,7 @@ impl Error {
             Error::AnyTypeUsedAsCalleeWithTypeArgs { .. } => 2347,
             Error::TS2360 { .. } => 2360,
             Error::TS2361 { .. } => 2361,
-            Error::TS2362 { .. } => 2362,
+            Error::WrongTypeForLhsOfNumericOperation { .. } => 2362,
             Error::WrongTypeForRhsOfNumericOperation { .. } => 2363,
             Error::TS2365 { .. } => 2365,
             Error::TS2370 { .. } => 2370,
