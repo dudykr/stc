@@ -1097,14 +1097,19 @@ impl Analyzer<'_, '_> {
         };
 
         let mut errors = Errors::default();
+        let mut new_members = vec![];
 
         let res: ValidationResult<()> = try {
             match super_ty.normalize() {
                 Type::ClassDef(sc) => {
                     'outer: for sm in &sc.body {
                         match sm {
-                            ClassMember::Method(sm) => {
-                                if sm.is_optional || !sm.is_abstract {
+                            ClassMember::Method(super_method) => {
+                                if !super_method.is_abstract {
+                                    new_members.push(sm.clone());
+                                    continue 'outer;
+                                }
+                                if super_method.is_optional {
                                     // TODO: Validate parameters
 
                                     // TODO: Validate return type
@@ -1114,7 +1119,7 @@ impl Analyzer<'_, '_> {
                                 for m in members {
                                     match m {
                                         ClassMember::Method(ref m) => {
-                                            if !&m.key.type_eq(&sm.key) {
+                                            if !&m.key.type_eq(&super_method.key) {
                                                 continue;
                                             }
 
@@ -1144,7 +1149,8 @@ impl Analyzer<'_, '_> {
                     if sc.is_abstract {
                         // Check super class of super class
                         if let Some(super_ty) = &sc.super_class {
-                            self.validate_class_impls(span, members, &super_ty);
+                            new_members.extend(members.to_vec());
+                            self.validate_class_impls(span, &new_members, &super_ty);
                         }
                     }
                 }
