@@ -960,7 +960,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, decl: &RTsModuleDecl) {
+    fn validate(&mut self, decl: &RTsModuleDecl) -> ValidationResult<Option<Type>> {
         let span = decl.span;
         let ctxt = self.ctx.module_id;
         let global = decl.global;
@@ -970,7 +970,7 @@ impl Analyzer<'_, '_> {
             in_declare: self.ctx.in_declare || decl.declare,
             ..self.ctx
         };
-        let ty = self
+        let mut ty = self
             .with_ctx(ctx)
             .with_child(ScopeKind::Module, Default::default(), |child: &mut Analyzer| {
                 child.scope.cur_module_name = match &decl.id {
@@ -1015,10 +1015,14 @@ impl Analyzer<'_, '_> {
                 Ok(None)
             })?;
 
-        if let Some(ty) = ty {
+        if let Some(ty) = &mut ty {
+            ty.make_cheap();
+        }
+
+        if let Some(ty) = &ty {
             match &decl.id {
                 RTsModuleName::Ident(i) => {
-                    self.register_type(i.into(), ty);
+                    self.register_type(i.into(), ty.clone());
                 }
                 RTsModuleName::Str(s) => {
                     let name: &str = &*s.value;
@@ -1030,12 +1034,10 @@ impl Analyzer<'_, '_> {
                             }
                         }
                     }
-                    //TODO
-                    return Ok(());
                 }
             }
         }
 
-        Ok(())
+        Ok(ty)
     }
 }

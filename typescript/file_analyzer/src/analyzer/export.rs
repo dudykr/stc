@@ -199,18 +199,25 @@ impl Analyzer<'_, '_> {
                     a.storage
                         .export_var(span, a.ctx.module_id, e.id.clone().into(), e.id.clone().into());
                 }
-                RDecl::TsModule(module) => {
-                    module.visit_with(a);
+                RDecl::TsModule(module) => match &module.id {
+                    RTsModuleName::Ident(id) => {
+                        module.visit_with(a);
 
-                    match &module.id {
-                        RTsModuleName::Ident(id) => {
-                            a.storage.export_type(span, a.ctx.module_id, id.clone().into());
-                        }
-                        RTsModuleName::Str(_) => {
-                            unimplemented!("export module with string name")
-                        }
+                        a.storage.export_type(span, a.ctx.module_id, id.clone().into());
                     }
-                }
+                    RTsModuleName::Str(..) => {
+                        let module: Option<Type> = module.validate_with(a)?;
+                        let module = match module {
+                            Some(v) => v,
+                            None => {
+                                unreachable!("global modules cannot be exported")
+                            }
+                        };
+                        // a.storage.export_wildcard_module(s.span, s.value,
+                        // module);
+                        todo!("Exporting module with a wildcard: {:?}", module)
+                    }
+                },
                 RDecl::TsTypeAlias(ref decl) => {
                     decl.visit_with(a);
                     // export type Foo = 'a' | 'b';
