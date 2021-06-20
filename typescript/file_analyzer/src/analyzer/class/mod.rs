@@ -800,7 +800,10 @@ impl Analyzer<'_, '_> {
                         if is_not_finished {
                             // In this case, we report `abstract methods must be
                             // sequential`
-                            if let Some((span, _)) = spans.last() {}
+                            if let Some((span, _)) = spans.last() {
+                                self.storage
+                                    .report(Error::AbstractClassMethodShouldBeSequntial { span: *span })
+                            }
                         }
                     }
                 }
