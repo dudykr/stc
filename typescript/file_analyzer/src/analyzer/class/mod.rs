@@ -345,13 +345,37 @@ impl Analyzer<'_, '_> {
         }
 
         match &p.param {
-            RTsParamPropParam::Ident(ref i)
-            | RTsParamPropParam::Assign(RAssignPat {
+            RTsParamPropParam::Ident(ref i) => {
+                let ty: Option<Type> = i.type_ann.validate_with(self).try_opt()?;
+                let ty = ty.map(|ty| ty.cheap());
+
+                self.declare_var(
+                    i.id.span,
+                    VarKind::Param,
+                    i.id.clone().into(),
+                    ty.clone(),
+                    None,
+                    true,
+                    false,
+                    false,
+                )?;
+
+                Ok(FnParam {
+                    span: p.span,
+                    required: !i.id.optional,
+                    pat: RPat::Ident(i.clone()),
+                    ty: box ty.unwrap_or_else(|| Type::any(i.id.span)),
+                })
+            }
+            RTsParamPropParam::Assign(RAssignPat {
                 left: box RPat::Ident(ref i),
+                right,
                 ..
             }) => {
                 let ty: Option<Type> = i.type_ann.validate_with(self).try_opt()?;
                 let ty = ty.map(|ty| ty.cheap());
+
+                let right = right.validate_with_default(self).report(&mut self.storage);
 
                 self.declare_var(
                     i.id.span,
