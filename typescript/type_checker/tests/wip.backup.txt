@@ -1,13 +1,3 @@
-classes::constructorDeclarations::constructorParameters::constructorDefaultValuesReferencingThis.ts
-classes::constructorDeclarations::constructorParameters::constructorImplementationWithDefaultValues2.ts
-classes::constructorDeclarations::constructorParameters::constructorParameterProperties.ts
-classes::constructorDeclarations::constructorParameters::constructorParameterProperties2.ts
-classes::constructorDeclarations::constructorParameters::readonlyConstructorAssignment.ts
-classes::constructorDeclarations::constructorWithAssignableReturnExpression.ts
-classes::constructorDeclarations::superCalls::derivedClassConstructorWithoutSuperCall.ts
-classes::constructorDeclarations::superCalls::derivedClassParameterProperties.ts
-classes::constructorDeclarations::superCalls::derivedClassSuperCallsWithThisArg.ts
-classes::constructorDeclarations::superCalls::superPropertyInConstructorBeforeSuperCall.ts
 classes::members::accessibility::privateClassPropertyAccessibleWithinNestedClass.ts
 classes::members::accessibility::privateProtectedMembersAreNotAccessibleDestructuring.ts
 classes::members::accessibility::privateStaticMemberAccessibility.ts
