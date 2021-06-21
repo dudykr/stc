@@ -3197,6 +3197,10 @@ impl Analyzer<'_, '_> {
             }
 
             RExprOrSuper::Super(RSuper { span, .. }) => {
+                if self.scope.cannot_use_this_because_super_not_called() {
+                    self.storage.report(Error::SuperUsedBeforeCallingSuper { span })
+                }
+
                 self.report_error_for_super_reference_in_compute_keys(span, false);
 
                 if let Some(v) = self.scope.get_super_class() {

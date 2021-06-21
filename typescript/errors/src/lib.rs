@@ -64,6 +64,11 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS17011
+    SuperUsedBeforeCallingSuper {
+        span: Span,
+    },
+
     /// TS2337
     SuperInNestedFunction {
         span: Span,
@@ -1668,6 +1673,7 @@ impl Error {
 
             Error::ThisUsedBeforeCallingSuper { .. } => 17009,
 
+            Error::SuperUsedBeforeCallingSuper { .. } => 17011,
             _ => 0,
         }
     }
