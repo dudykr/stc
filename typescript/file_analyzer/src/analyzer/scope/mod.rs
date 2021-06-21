@@ -1151,7 +1151,7 @@ impl Analyzer<'_, '_> {
         }
 
         op(self.scope.vars.entry(name).or_insert_with(|| VarInfo {
-            kind: VarDeclKind::Let,
+            kind: VarKind::Error,
             initialized: true,
             ty: ty.clone(),
             actual_ty: ty,
@@ -1221,7 +1221,7 @@ impl Analyzer<'_, '_> {
         }
 
         match kind {
-            VarDeclKind::Let | VarDeclKind::Const => {
+            VarKind::Decl(VarDeclKind::Let | VarDeclKind::Const) => {
                 if *name.sym() == js_word!("let") || *name.sym() == js_word!("const") {
                     self.storage
                         .report(Error::LetOrConstIsNotValidIdInLetOrConstVarDecls { span });
@@ -1463,7 +1463,7 @@ impl Analyzer<'_, '_> {
     /// TODO: Merge with declare_vars_*
     pub fn declare_complex_vars(
         &mut self,
-        kind: VarDeclKind,
+        kind: VarKind,
         pat: &RPat,
         ty: Type,
         actual_ty: Option<Type>,
@@ -1476,9 +1476,8 @@ impl Analyzer<'_, '_> {
                 actual_ty,
                 default_ty,
                 DeclareVarsOpts {
-                    kind: Some(kind),
+                    kind,
                     use_iterator_for_array: true,
-                    ..Default::default()
                 },
             ),
 

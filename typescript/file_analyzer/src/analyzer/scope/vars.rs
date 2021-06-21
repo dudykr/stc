@@ -55,7 +55,7 @@ pub(crate) enum VarKind {
 }
 
 /// All bool fields default to `false`.
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct DeclareVarsOpts {
     pub kind: VarKind,
     pub use_iterator_for_array: bool,

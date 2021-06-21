@@ -3,6 +3,7 @@ use super::props::ComputedPropMode;
 use super::Analyzer;
 use super::Ctx;
 use super::ScopeKind;
+use crate::analyzer::scope::VarKind;
 use crate::analyzer::util::ResultExt;
 use crate::util::contains_infer_type;
 use crate::util::type_ext::TypeVecExt;
@@ -627,7 +628,7 @@ impl Analyzer<'_, '_> {
             if !child.is_builtin {
                 for param in params.iter() {
                     child
-                        .declare_complex_vars(VarDeclKind::Let, &param.pat, *param.ty.clone(), None, None)
+                        .declare_complex_vars(VarKind::Param, &param.pat, *param.ty.clone(), None, None)
                         .report(&mut child.storage);
                 }
             }
