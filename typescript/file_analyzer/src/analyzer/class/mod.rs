@@ -722,7 +722,13 @@ impl Analyzer<'_, '_> {
             RClassMember::PrivateProp(m) => Some(m.validate_with(self).map(From::from)?),
             RClassMember::Empty(..) => None,
 
-            RClassMember::Constructor(v) => unreachable!("constructors should be handled by class handler"),
+            RClassMember::Constructor(v) => {
+                if self.is_builtin {
+                    Some(v.validate_with_default(self).map(From::from)?)
+                } else {
+                    unreachable!("constructors should be handled by class handler")
+                }
+            }
             RClassMember::Method(method) => {
                 let v = method.validate_with(self)?;
 
