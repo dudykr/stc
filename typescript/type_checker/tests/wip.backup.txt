@@ -1,13 +1,3 @@
-classes::constructorDeclarations::automaticConstructors::derivedClassWithoutExplicitConstructor.ts
-classes::constructorDeclarations::automaticConstructors::derivedClassWithoutExplicitConstructor2.ts
-classes::constructorDeclarations::automaticConstructors::derivedClassWithoutExplicitConstructor3.ts
-classes::constructorDeclarations::classConstructorAccessibility.ts
-classes::constructorDeclarations::classConstructorAccessibility2.ts
-classes::constructorDeclarations::classConstructorAccessibility3.ts
-classes::constructorDeclarations::classConstructorAccessibility5.ts
-classes::constructorDeclarations::classConstructorOverloadsAccessibility.ts
-classes::constructorDeclarations::classConstructorParametersAccessibility.ts
-classes::constructorDeclarations::classConstructorParametersAccessibility2.ts
 classes::constructorDeclarations::constructorParameters::constructorDefaultValuesReferencingThis.ts
 classes::constructorDeclarations::constructorParameters::constructorImplementationWithDefaultValues2.ts
 classes::constructorDeclarations::constructorParameters::constructorParameterProperties.ts
