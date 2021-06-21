@@ -230,6 +230,8 @@ pub(crate) struct Ctx {
     cannot_fallback_to_iterable_iterator: bool,
 
     allow_new_target: bool,
+
+    disallow_invoking_implicit_constructors: bool,
 }
 
 impl Ctx {
@@ -557,6 +559,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 is_value_used: false,
                 cannot_fallback_to_iterable_iterator: false,
                 allow_new_target: false,
+                disallow_invoking_implicit_constructors: false,
             },
             loader,
             is_builtin,

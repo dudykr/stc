@@ -1326,6 +1326,36 @@ impl Analyzer<'_, '_> {
                             .context("tried to instantiate a class using constructor");
                     }
 
+                    // Check for consturctors decalred in the super class.
+                    if let Some(super_class) = &cls.super_class {
+                        //
+                        let ctx = Ctx {
+                            disallow_invoking_implicit_constructors: true,
+                            ..self.ctx
+                        };
+
+                        if let Ok(v) = self.with_ctx(ctx).extract(
+                            span,
+                            expr,
+                            &super_class,
+                            kind,
+                            args,
+                            arg_types,
+                            spread_arg_types,
+                            type_args,
+                            type_ann,
+                        ) {
+                            return Ok(v);
+                        }
+                    }
+
+                    if self.ctx.disallow_invoking_implicit_constructors {
+                        return Err(Error::NoNewSignature {
+                            span,
+                            callee: box ty.clone(),
+                        });
+                    }
+
                     let ctx = Ctx {
                         is_instantiating_class: true,
                         ..self.ctx
