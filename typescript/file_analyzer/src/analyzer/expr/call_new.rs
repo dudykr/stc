@@ -1258,6 +1258,13 @@ impl Analyzer<'_, '_> {
                     }));
 
                     if cls.is_abstract {
+                        if self.ctx.disallow_invoking_implicit_constructors {
+                            return Err(Error::NoNewSignature {
+                                span,
+                                callee: box ty.clone(),
+                            });
+                        }
+
                         self.storage.report(Error::CannotCreateInstanceOfAbstractClass { span });
                         // The test classAbstractInstantiation1.ts says
                         //
