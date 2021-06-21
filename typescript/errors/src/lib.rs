@@ -59,6 +59,16 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2337
+    SuperInNestedFunction {
+        span: Span,
+    },
+
+    /// TS2377
+    SuperNotCalled {
+        span: Span,
+    },
+
     /// TS2513
     CannotAccessAbstractMemeber {
         span: Span,
@@ -1646,6 +1656,10 @@ impl Error {
             Error::OperatorCannotBeAppliedToTypes { .. } => 2365,
 
             Error::CannotAccessAbstractMemeber { .. } => 2513,
+
+            Error::SuperNotCalled { .. } => 2377,
+
+            Error::SuperInNestedFunction { .. } => 2337,
 
             _ => 0,
         }
