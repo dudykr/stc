@@ -346,7 +346,11 @@ impl Analyzer<'_, '_> {
                     child.scope.remove_declaring(names);
                 }
 
-                c.body.visit_with(child);
+                if let Some(body) = &c.body {
+                    child
+                        .visit_stmts_for_return(c.span, false, false, &body.stmts)
+                        .report(&mut child.storage);
+                }
 
                 Ok(ConstructorSignature {
                     accessibility: c.accessibility,
