@@ -41,10 +41,23 @@ use swc_common::DUMMY_SP;
 use swc_ecma_ast::TsKeywordTypeKind;
 use swc_ecma_ast::VarDeclKind;
 
+/// The kind of binding.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub(crate) enum VarKind {
+    Decl(VarDeclKind),
+    Param,
+    Class,
+    /// [stc_ts_ast_rnode::RFnDecl]
+    Fn,
+    Import,
+    Enum,
+    Error,
+}
+
 /// All bool fields default to `false`.
 #[derive(Debug, Default, Clone, Copy)]
 pub(crate) struct DeclareVarsOpts {
-    pub kind: Option<VarDeclKind>,
+    pub kind: VarKind,
     pub use_iterator_for_array: bool,
 }
 
