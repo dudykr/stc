@@ -1,4 +1,5 @@
 use super::{Analyzer, Ctx};
+use crate::analyzer::scope::VarKind;
 use crate::ty::TypeExt;
 use crate::util::should_instantiate_type_ann;
 use crate::util::type_ext::TypeVecExt;
@@ -288,7 +289,7 @@ impl Analyzer<'_, '_> {
         match self.ctx.pat_mode {
             PatMode::Decl => {
                 if !self.is_builtin {
-                    match self.declare_vars_with_ty(VarDeclKind::Let, p, ty.clone(), None, None) {
+                    match self.declare_vars_with_ty(VarKind::Param, p, ty.clone(), None, None) {
                         Ok(()) => {}
                         Err(err) => {
                             self.storage.report(err);

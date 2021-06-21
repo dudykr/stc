@@ -128,7 +128,7 @@ impl Analyzer<'_, '_> {
                 () => {
                     // Declare variable with type any
                     match self.declare_complex_vars(
-                        kind,
+                        VarKind::Decl(kind),
                         &v.name,
                         Type::any(v_span),
                         Some(Type::any(v_span)),
@@ -298,7 +298,8 @@ impl Analyzer<'_, '_> {
                                 actual_ty.assert_valid();
 
                                 // let ty = ty.fold_with(&mut Generalizer::default());
-                                match self.declare_complex_vars(kind, &v.name, ty, Some(actual_ty), None) {
+                                match self.declare_complex_vars(VarKind::Decl(kind), &v.name, ty, Some(actual_ty), None)
+                                {
                                     Ok(()) => {}
                                     Err(err) => {
                                         self.storage.report(err);
@@ -310,7 +311,7 @@ impl Analyzer<'_, '_> {
                             Err(err) => {
                                 self.storage.report(err);
 
-                                match self.declare_complex_vars(kind, &v.name, ty, None, None) {
+                                match self.declare_complex_vars(VarKind::Decl(kind), &v.name, ty, None, None) {
                                     Ok(()) => {}
                                     Err(err) => {
                                         self.storage.report(err);
@@ -607,7 +608,7 @@ impl Analyzer<'_, '_> {
                         })()?
                         .cheap();
 
-                        self.declare_complex_vars(kind, &v.name, var_ty.clone(), None, None)
+                        self.declare_complex_vars(VarKind::Decl(kind), &v.name, var_ty.clone(), None, None)
                             .report(&mut self.storage);
                         remove_declaring!();
                         return Ok(());
@@ -622,7 +623,7 @@ impl Analyzer<'_, '_> {
                     .cloned();
 
                 if let Some(var_ty) = var_ty {
-                    self.declare_complex_vars(kind, &v.name, var_ty, None, None)
+                    self.declare_complex_vars(VarKind::Decl(kind), &v.name, var_ty, None, None)
                         .report(&mut self.storage);
                     remove_declaring!();
                     return Ok(());
@@ -680,7 +681,7 @@ impl Analyzer<'_, '_> {
                     _ => {
                         // For ambient contexts and loops, we add variables to the scope.
 
-                        match self.declare_vars(kind, &v.name) {
+                        match self.declare_vars(VarKind::Decl(kind), &v.name) {
                             Ok(()) => {}
                             Err(err) => {
                                 self.storage.report(err);
@@ -694,7 +695,8 @@ impl Analyzer<'_, '_> {
 
             debug_assert_eq!(self.ctx.allow_ref_declaring, true);
             if v.name.get_ty().is_none() {
-                self.declare_vars(kind, &v.name).report(&mut self.storage);
+                self.declare_vars(VarKind::Decl(kind), &v.name)
+                    .report(&mut self.storage);
             }
 
             remove_declaring!();

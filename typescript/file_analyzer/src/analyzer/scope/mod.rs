@@ -871,13 +871,13 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    pub fn declare_vars(&mut self, kind: VarDeclKind, pat: &RPat) -> ValidationResult<()> {
+    pub fn declare_vars(&mut self, kind: VarKind, pat: &RPat) -> ValidationResult<()> {
         self.declare_vars_inner_with_ty(kind, pat, None, None, None)
     }
 
     pub fn declare_vars_with_ty(
         &mut self,
-        kind: VarDeclKind,
+        kind: VarKind,
         pat: &RPat,
         ty: Option<Type>,
         actual_ty: Option<Type>,
@@ -886,7 +886,7 @@ impl Analyzer<'_, '_> {
         self.declare_vars_inner_with_ty(kind, pat, ty, actual_ty, default_ty)
     }
 
-    pub(super) fn declare_vars_inner(&mut self, kind: VarDeclKind, pat: &RPat) -> ValidationResult<()> {
+    pub(super) fn declare_vars_inner(&mut self, kind: VarKind, pat: &RPat) -> ValidationResult<()> {
         self.declare_vars_inner_with_ty(kind, pat, None, None, None)
     }
 

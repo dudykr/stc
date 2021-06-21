@@ -43,7 +43,7 @@ use swc_ecma_ast::VarDeclKind;
 
 /// The kind of binding.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub(crate) enum VarKind {
+pub enum VarKind {
     Decl(VarDeclKind),
     Param,
     Class,
@@ -133,11 +133,9 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                let kind = opts.kind.unwrap_or(VarDeclKind::Var);
-
                 self.declare_var(
                     span,
-                    kind,
+                    opts.kind,
                     i.id.clone().into(),
                     ty,
                     actual,
@@ -145,7 +143,7 @@ impl Analyzer<'_, '_> {
                     true,
                     // let/const declarations does not allow multiple declarations with
                     // same name
-                    kind == VarDeclKind::Var,
+                    opts.kind == VarKind::Decl(VarDeclKind::Var),
                     false,
                 )?;
                 Ok(())
@@ -690,7 +688,7 @@ impl Analyzer<'_, '_> {
 
     pub(super) fn declare_vars_inner_with_ty(
         &mut self,
-        kind: VarDeclKind,
+        kind: VarKind,
         pat: &RPat,
         ty: Option<Type>,
         actual_ty: Option<Type>,
@@ -715,7 +713,7 @@ impl Analyzer<'_, '_> {
                     actual_ty,
                     default_ty,
                     DeclareVarsOpts {
-                        kind: Some(kind),
+                        kind,
                         use_iterator_for_array: false,
                     },
                 );

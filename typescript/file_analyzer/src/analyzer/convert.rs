@@ -111,7 +111,6 @@ use swc_common::EqIgnoreSpan;
 use swc_common::Spanned;
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::TsKeywordTypeKind;
-use swc_ecma_ast::VarDeclKind;
 
 /// We analyze dependencies between type parameters, and fold parameter in
 /// topological order.
