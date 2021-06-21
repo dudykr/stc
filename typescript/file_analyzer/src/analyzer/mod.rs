@@ -305,7 +305,7 @@ struct AnalyzerData {
     unresolved_imports: AHashSet<Id>,
 
     /// Spans of declared variables.
-    var_spans: AHashMap<Id, Vec<Span>>,
+    var_spans: AHashMap<Id, Vec<(VarKind, Span)>>,
 
     /// Spans of functions **with body**.
     fn_impl_spans: FxHashMap<Id, Vec<Span>>,

@@ -1198,6 +1198,28 @@ impl Analyzer<'_, '_> {
             ty.assert_valid();
         }
 
+        let allow_multiple = allow_multiple && {
+            // Consult previous variable declarations to know if we can declare
+            // this variable.
+
+            let prev_vars = self.data.var_spans.entry(name.clone()).or_default();
+
+            (|| match kind {
+                VarKind::Var(v) => v == VarDeclKind::Var,
+                VarKind::Param => true,
+                // TODO: Allow if previous is class / enum (decl merging)
+                VarKind::Class => true,
+                VarKind::Fn => true,
+
+                VarKind::Import => true,
+
+                // TODO: Allow if previous is class / enum (decl merging)
+                VarKind::Enum => true,
+
+                VarKind::Error => true,
+            })()
+        };
+
         if !self.is_builtin
             && !is_override
             && !allow_multiple
@@ -1208,13 +1230,13 @@ impl Analyzer<'_, '_> {
             let spans = self.data.var_spans.entry(name.clone()).or_default();
             let err = !spans.is_empty();
 
-            spans.push(span);
+            spans.push((kind, span));
 
             if err {
-                for &span in &**spans {
+                for (_, span) in &**spans {
                     self.storage.report(Error::DuplicateVar {
                         name: name.clone(),
-                        span,
+                        span: *span,
                     });
                 }
             }
