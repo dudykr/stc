@@ -178,7 +178,7 @@ pub(crate) struct Ctx {
 
     /// If true, all errors should be ignored.
     ///
-    /// Used to prevent wrong errors while validate loop bodies or etc.
+    /// Used to prevent wrong errors while validating loop bodies or etc.
     ignore_errors: bool,
 
     var_kind: VarDeclKind,
