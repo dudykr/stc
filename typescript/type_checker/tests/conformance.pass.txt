@@ -445,6 +445,7 @@ es6/classDeclaration/exportDefaultClassWithStaticPropertyAssignmentsInES6.ts
 es6/classDeclaration/superCallBeforeThisAccessing1.ts
 es6/classDeclaration/superCallBeforeThisAccessing2.ts
 es6/classDeclaration/superCallBeforeThisAccessing5.ts
+es6/classDeclaration/superCallBeforeThisAccessing7.ts
 es6/classDeclaration/superCallBeforeThisAccessing8.ts
 es6/classDeclaration/superCallFromClassThatHasNoBaseTypeButWithSameSymbolInterface.ts
 es6/classExpressions/classExpressionES61.ts
