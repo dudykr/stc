@@ -45,6 +45,7 @@ use swc_ecma_ast::VarDeclKind;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum VarKind {
     Var(VarDeclKind),
+    /// Function parameters.
     Param,
     Class,
     /// [stc_ts_ast_rnode::RFnDecl]
