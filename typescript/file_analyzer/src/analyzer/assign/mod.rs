@@ -88,8 +88,6 @@ pub(crate) struct AssignOpts {
 
     pub use_missing_fields_for_class: bool,
 
-    /// If `true`, assignment to parameter successes if rhs is assignable to the
-    /// constraint.
     pub disallow_assignment_to_param_constraint: bool,
 
     /// The code below is valid.
@@ -1076,17 +1074,15 @@ impl Analyzer<'_, '_> {
 
                 match *constraint {
                     Some(ref c) => {
-                        if !opts.disallow_assignment_to_param_constraint {
-                            return self.assign_inner(
-                                data,
-                                to,
-                                c,
-                                AssignOpts {
-                                    allow_unknown_rhs: true,
-                                    ..opts
-                                },
-                            );
-                        }
+                        return self.assign_inner(
+                            data,
+                            to,
+                            c,
+                            AssignOpts {
+                                allow_unknown_rhs: true,
+                                ..opts
+                            },
+                        );
                     }
                     None => match to.normalize() {
                         Type::TypeLit(TypeLit { ref members, .. }) if members.is_empty() => return Ok(()),
@@ -1114,15 +1110,19 @@ impl Analyzer<'_, '_> {
                 constraint: Some(ref c),
                 ..
             }) => {
-                return self.assign_inner(
-                    data,
-                    c,
-                    rhs,
-                    AssignOpts {
-                        allow_assignment_to_param: true,
-                        ..opts
-                    },
-                )
+                if !opts.disallow_assignment_to_param_constraint {
+                    return self.assign_inner(
+                        data,
+                        c,
+                        rhs,
+                        AssignOpts {
+                            allow_assignment_to_param: true,
+                            ..opts
+                        },
+                    );
+                }
+
+                fail!()
             }
 
             Type::Param(..) => {
