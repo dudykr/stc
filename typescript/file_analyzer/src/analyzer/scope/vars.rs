@@ -1,3 +1,4 @@
+use crate::analyzer::assign::AssignOpts;
 use crate::analyzer::expr::GetIteratorOpts;
 use crate::analyzer::expr::IdCtx;
 use crate::analyzer::expr::TypeOfMode;
@@ -164,6 +165,19 @@ impl Analyzer<'_, '_> {
                     .validate_with_args(self, (TypeOfMode::RValue, None, type_ann.as_ref().or(ty.as_ref())))
                     .report(&mut self.storage)
                     .unwrap_or_else(|| Type::any(span));
+
+                if let Some(left) = &type_ann {
+                    self.assign_with_opts(
+                        &mut Default::default(),
+                        AssignOpts {
+                            span: p.right.span(),
+                            ..Default::default()
+                        },
+                        &left,
+                        &right,
+                    )
+                    .report(&mut self.storage);
+                }
 
                 let default = if is_typed {
                     type_ann
