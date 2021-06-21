@@ -171,6 +171,7 @@ impl Analyzer<'_, '_> {
                         &mut Default::default(),
                         AssignOpts {
                             span: p.right.span(),
+                            disallow_assignment_to_param_constraint: true,
                             ..Default::default()
                         },
                         &left,
