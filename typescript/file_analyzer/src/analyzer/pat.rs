@@ -1,4 +1,5 @@
 use super::{Analyzer, Ctx};
+use crate::analyzer::assign::AssignOpts;
 use crate::analyzer::scope::VarKind;
 use crate::ty::TypeExt;
 use crate::util::should_instantiate_type_ann;
@@ -346,30 +347,44 @@ impl Analyzer<'_, '_> {
             if let RPat::Assign(assign_pat) = p {
                 // Handle default value
                 if let Some(default_value_ty) = default_value_ty.clone() {
-                    let ty = assign_pat
-                        .left
-                        .get_ty()
-                        .map(|v| v.validate_with(self))
-                        .unwrap_or_else(|| {
-                            let mut ty = default_value_ty.generalize_lit(marks).foldable();
+                    let ty = assign_pat.left.get_ty().map(|v| v.validate_with(self));
 
-                            match ty {
-                                Type::Tuple(tuple) => {
-                                    let mut types =
-                                        tuple.elems.into_iter().map(|element| *element.ty).collect::<Vec<_>>();
+                    // If pat mode is declare, assignment of default value will be handled by
+                    // variable declator function.
+                    if let PatMode::Assign = self.ctx.pat_mode {
+                        if let Some(Ok(ty)) = &ty {
+                            self.assign_with_opts(
+                                &mut Default::default(),
+                                AssignOpts {
+                                    span: assign_pat.span,
+                                    ..Default::default()
+                                },
+                                &ty,
+                                &default_value_ty,
+                            )
+                            .report(&mut self.storage);
+                        }
+                    }
 
-                                    types.dedup_type();
+                    let ty = ty.unwrap_or_else(|| {
+                        let mut ty = default_value_ty.generalize_lit(marks).foldable();
 
-                                    ty = Type::Array(Array {
-                                        span: tuple.span,
-                                        elem_type: box Type::union(types),
-                                    });
-                                }
-                                _ => {}
+                        match ty {
+                            Type::Tuple(tuple) => {
+                                let mut types = tuple.elems.into_iter().map(|element| *element.ty).collect::<Vec<_>>();
+
+                                types.dedup_type();
+
+                                ty = Type::Array(Array {
+                                    span: tuple.span,
+                                    elem_type: box Type::union(types),
+                                });
                             }
+                            _ => {}
+                        }
 
-                            Ok(ty)
-                        })?;
+                        Ok(ty)
+                    })?;
 
                     // Remove default value.
                     if let Some(pat_node_id) = assign_pat.left.node_id() {
@@ -388,7 +403,10 @@ impl Analyzer<'_, '_> {
         let ty = match ty {
             Some(v) => Some(v),
             None => match p {
-                RPat::Assign(p) => Some(p.right.validate_with_default(self)?.generalize_lit(marks)),
+                RPat::Assign(p) => match self.ctx.pat_mode {
+                    PatMode::Decl => Some(p.right.validate_with_default(self)?.generalize_lit(marks)),
+                    PatMode::Assign => Some(default_value_ty.unwrap_or_else(|| Type::any(p.span))),
+                },
                 _ => None,
             },
         };
