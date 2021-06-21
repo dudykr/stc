@@ -77,6 +77,7 @@ use stc_ts_types::Type;
 use stc_ts_utils::PatExt;
 use stc_utils::TryOpt;
 use std::borrow::Cow;
+use std::cell::RefCell;
 use std::mem::replace;
 use std::mem::take;
 use swc_atoms::js_word;
@@ -97,7 +98,7 @@ pub(crate) struct ClassState {
     /// Used only while valdiation consturctors.
     ///
     /// `false` means `this` can be used.
-    pub need_super_call: bool,
+    pub need_super_call: RefCell<bool>,
 }
 
 impl Analyzer<'_, '_> {
@@ -263,6 +264,9 @@ impl Analyzer<'_, '_> {
             c.visit_with(&mut v);
             if !v.has_valid_super_call {
                 self.storage.report(Error::SuperNotCalled { span: c.span });
+            } else {
+                debug_assert_eq!(self.scope.kind(), ScopeKind::Class);
+                *self.scope.class.need_super_call.borrow_mut() = true;
             }
 
             for span in v.nested_super_calls {

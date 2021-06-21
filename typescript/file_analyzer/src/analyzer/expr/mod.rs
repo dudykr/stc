@@ -166,6 +166,10 @@ impl Analyzer<'_, '_> {
                         self.storage.report(Error::ThisInConstructorParam { span })
                     }
 
+                    if self.scope.cannot_use_this_because_super_not_called() {
+                        self.storage.report(Error::ThisUsedBeforeCallingSuper { span })
+                    }
+
                     let is_ref_to_module = match self.scope.kind() {
                         ScopeKind::Module => true,
                         _ => false,

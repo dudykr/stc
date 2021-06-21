@@ -628,6 +628,29 @@ impl Scope<'_> {
 
         None
     }
+
+    pub fn mark_as_super_called(&self) {
+        if self.kind == ScopeKind::Class {
+            *self.class.need_super_call.borrow_mut() = false;
+            return;
+        }
+
+        if let Some(parent) = self.parent {
+            parent.mark_as_super_called()
+        }
+    }
+
+    pub fn cannot_use_this_because_super_not_called(&self) -> bool {
+        let first = self.first(|scope| match scope.kind {
+            ScopeKind::Class => true,
+            _ => false,
+        });
+
+        match first {
+            Some(s) => *s.class.need_super_call.borrow(),
+            None => false,
+        }
+    }
 }
 
 impl Analyzer<'_, '_> {

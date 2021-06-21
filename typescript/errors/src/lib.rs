@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS17009
+    ThisUsedBeforeCallingSuper {
+        span: Span,
+    },
+
     /// TS2337
     SuperInNestedFunction {
         span: Span,
@@ -1660,6 +1665,8 @@ impl Error {
             Error::SuperNotCalled { .. } => 2377,
 
             Error::SuperInNestedFunction { .. } => 2337,
+
+            Error::ThisUsedBeforeCallingSuper { .. } => 17009,
 
             _ => 0,
         }

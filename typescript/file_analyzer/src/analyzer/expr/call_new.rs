@@ -118,6 +118,8 @@ impl Analyzer<'_, '_> {
                     self.storage.report(Error::SuperCannotUseTypeArgs { span })
                 }
 
+                self.scope.mark_as_super_called();
+
                 return Ok(Type::any(span));
             }
             RExprOrSuper::Expr(callee) => callee,
