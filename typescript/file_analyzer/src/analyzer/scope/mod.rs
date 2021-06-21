@@ -459,7 +459,7 @@ impl Scope<'_> {
                         e.insert(var);
                     }
                 }
-            } else if let VarKind::Decl(VarDeclKind::Var) | VarKind::Fn = var.kind {
+            } else if let VarKind::Var(VarDeclKind::Var) | VarKind::Fn = var.kind {
                 self.vars.insert(name, var);
             }
         }
@@ -1221,7 +1221,7 @@ impl Analyzer<'_, '_> {
         }
 
         match kind {
-            VarKind::Decl(VarDeclKind::Let | VarDeclKind::Const) => {
+            VarKind::Var(VarDeclKind::Let | VarDeclKind::Const) => {
                 if *name.sym() == js_word!("let") || *name.sym() == js_word!("const") {
                     self.storage
                         .report(Error::LetOrConstIsNotValidIdInLetOrConstVarDecls { span });

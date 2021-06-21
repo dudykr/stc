@@ -44,7 +44,7 @@ use swc_ecma_ast::VarDeclKind;
 /// The kind of binding.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum VarKind {
-    Decl(VarDeclKind),
+    Var(VarDeclKind),
     Param,
     Class,
     /// [stc_ts_ast_rnode::RFnDecl]
@@ -143,7 +143,7 @@ impl Analyzer<'_, '_> {
                     true,
                     // let/const declarations does not allow multiple declarations with
                     // same name
-                    opts.kind == VarKind::Decl(VarDeclKind::Var),
+                    opts.kind == VarKind::Var(VarDeclKind::Var),
                     false,
                 )?;
                 Ok(())
