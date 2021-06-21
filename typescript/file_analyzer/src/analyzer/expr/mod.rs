@@ -1534,12 +1534,12 @@ impl Analyzer<'_, '_> {
                                 return Ok(Type::any(span));
                             }
 
-                            if mtd.is_abstract {
-                                self.storage.report(Error::CannotAccessAbstractMemeber { span });
-                                return Ok(Type::any(span));
-                            }
-
                             if self.key_matches(span, &mtd.key, prop, false) {
+                                if mtd.is_abstract {
+                                    self.storage.report(Error::CannotAccessAbstractMemeber { span });
+                                    return Ok(Type::any(span));
+                                }
+
                                 return Ok(Type::Function(stc_ts_types::Function {
                                     span: mtd.span,
                                     type_params: mtd.type_params.clone(),
