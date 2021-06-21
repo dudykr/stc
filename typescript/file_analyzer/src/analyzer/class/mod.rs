@@ -242,7 +242,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, c: &RConstructor) -> ValidationResult<ConstructorSignature> {
+    fn validate(&mut self, c: &RConstructor, super_class: Option<&Type>) -> ValidationResult<ConstructorSignature> {
         self.record(c);
 
         let c_span = c.span();
@@ -722,7 +722,7 @@ impl Analyzer<'_, '_> {
             RClassMember::PrivateProp(m) => Some(m.validate_with(self).map(From::from)?),
             RClassMember::Empty(..) => None,
 
-            RClassMember::Constructor(v) => Some(ClassMember::Constructor(v.validate_with(self)?)),
+            RClassMember::Constructor(v) => unreachable!("constructors should be handled by class handler"),
             RClassMember::Method(method) => {
                 let v = method.validate_with(self)?;
 
@@ -1658,7 +1658,7 @@ impl Analyzer<'_, '_> {
                             RClassMember::Constructor(c) => Some((i, c)),
                             _ => None,
                         }) {
-                            let member = constructor.validate_with(child)?;
+                            let member = constructor.validate_with_args(child, super_class.as_deref())?;
                             if constructor.body.is_some() {
                                 ambient_cons.push(member.clone());
                             } else {
