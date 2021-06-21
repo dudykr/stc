@@ -643,11 +643,12 @@ impl Scope<'_> {
     pub fn cannot_use_this_because_super_not_called(&self) -> bool {
         let first = self.first(|scope| match scope.kind {
             ScopeKind::Class => true,
+            ScopeKind::ArrowFn | ScopeKind::Fn => true,
             _ => false,
         });
 
         match first {
-            Some(s) => *s.class.need_super_call.borrow(),
+            Some(s) => s.kind == ScopeKind::Class && *s.class.need_super_call.borrow(),
             None => false,
         }
     }
