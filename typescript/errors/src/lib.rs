@@ -587,6 +587,10 @@ pub enum Error {
         right: Span,
     },
 
+    CannotAssignToReadonlyProperty {
+        span: Span,
+    },
+
     ReadOnly {
         span: Span,
     },
@@ -1592,6 +1596,8 @@ impl Error {
             Error::NoMethodNamedNext { .. } => 2489,
 
             Error::NotGeneric { .. } => 2315,
+
+            Error::CannotAssignToReadonlyProperty { .. } => 2540,
 
             Error::ReadOnly { .. } => 2546,
 
