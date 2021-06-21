@@ -18,14 +18,11 @@ use crate::validator;
 use crate::validator::ValidateWith;
 use crate::ValidationResult;
 use itertools::Itertools;
-use rnode::FoldWith;
 use rnode::IntoRNode;
 use rnode::NodeId;
 use rnode::NodeIdGenerator;
 use rnode::VisitWith;
-use stc_ts_ast_rnode::RAssignPat;
-use stc_ts_ast_rnode::RBindingIdent;
-use stc_ts_ast_rnode::RClass;
+use rnode::{FoldWith, Visit};
 use stc_ts_ast_rnode::RClassDecl;
 use stc_ts_ast_rnode::RClassExpr;
 use stc_ts_ast_rnode::RClassMember;
@@ -53,6 +50,9 @@ use stc_ts_ast_rnode::RTsTypeAliasDecl;
 use stc_ts_ast_rnode::RTsTypeAnn;
 use stc_ts_ast_rnode::RVarDecl;
 use stc_ts_ast_rnode::RVarDeclarator;
+use stc_ts_ast_rnode::{RArrowExpr, RClass};
+use stc_ts_ast_rnode::{RAssignPat, RSuper};
+use stc_ts_ast_rnode::{RBindingIdent, RFunction};
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
@@ -246,6 +246,18 @@ impl Analyzer<'_, '_> {
         self.record(c);
 
         let c_span = c.span();
+
+        if self.ctx.in_class_with_super {
+            let mut v = ConstructorSuperCallFinder::default();
+            c.visit_with(&mut v);
+            if !v.has_valid_super_call {
+                self.storage.report(Error::SuperNotCalled { span: c.span });
+            }
+
+            for span in v.nested_super_calls {
+                self.storage.report(Error::SuperInNestedFunction { span })
+            }
+        }
 
         let ctx = Ctx {
             in_declare: self.ctx.in_declare || c.body.is_none(),
@@ -2071,4 +2083,50 @@ fn from_pat(pat: RPat) -> RTsFnParam {
         RPat::Assign(v) => from_pat(*v.left),
         _ => unreachable!("constructor with parameter {:?}", pat),
     }
+}
+
+#[derive(Debug, Default)]
+struct ConstructorSuperCallFinder {
+    has_valid_super_call: bool,
+
+    in_nested: bool,
+    nested_super_calls: Vec<Span>,
+}
+
+impl Visit<RSuper> for ConstructorSuperCallFinder {
+    fn visit(&mut self, s: &RSuper) {
+        if self.in_nested {
+            self.nested_super_calls.push(s.span);
+        } else {
+            self.has_valid_super_call = true;
+        }
+    }
+}
+
+impl Visit<RFunction> for ConstructorSuperCallFinder {
+    fn visit(&mut self, f: &RFunction) {
+        f.decorators.visit_with(self);
+        f.params.visit_with(self);
+
+        let old = self.in_nested;
+        self.in_nested = true;
+        f.body.visit_with(self);
+        self.in_nested = old;
+    }
+}
+
+impl Visit<RArrowExpr> for ConstructorSuperCallFinder {
+    fn visit(&mut self, f: &RArrowExpr) {
+        f.params.visit_with(self);
+
+        let old = self.in_nested;
+        self.in_nested = true;
+        f.body.visit_with(self);
+        self.in_nested = old;
+    }
+}
+
+/// Ignore nested classes.
+impl Visit<RClass> for ConstructorSuperCallFinder {
+    fn visit(&mut self, _: &RClass) {}
 }
