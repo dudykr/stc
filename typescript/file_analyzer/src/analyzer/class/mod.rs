@@ -377,6 +377,21 @@ impl Analyzer<'_, '_> {
 
                 let right = right.validate_with_default(self).report(&mut self.storage);
 
+                if let Some(ty) = &ty {
+                    if let Some(right) = right {
+                        self.assign_with_opts(
+                            &mut Default::default(),
+                            AssignOpts {
+                                span: right.span(),
+                                ..Default::default()
+                            },
+                            &ty,
+                            &right,
+                        )
+                        .report(&mut self.storage);
+                    }
+                }
+
                 self.declare_var(
                     i.id.span,
                     VarKind::Param,
