@@ -245,6 +245,11 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2333
+    ThisInConstructorParam {
+        span: Span,
+    },
+
     /// TS2334
     ThisInStaticPropertyInitializer {
         span: Span,
@@ -1544,6 +1549,8 @@ impl Error {
             Error::WithStmtNotSupported { .. } => 2410,
 
             Error::InvalidSuperClass { .. } => 2507,
+
+            Error::ThisInConstructorParam { .. } => 2333,
 
             Error::ThisInStaticPropertyInitializer { .. } => 2334,
 

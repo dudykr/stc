@@ -305,7 +305,14 @@ impl Analyzer<'_, '_> {
 
                     child.scope.declaring.extend(names.clone());
 
-                    let p: FnParam = param.validate_with(child)?;
+                    let p: FnParam = {
+                        let ctx = Ctx {
+                            in_constructor_param: true,
+                            ..child.ctx
+                        };
+
+                        param.validate_with(&mut *child.with_ctx(ctx))?
+                    };
 
                     ps.push(p);
 

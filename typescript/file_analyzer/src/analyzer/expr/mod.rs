@@ -162,6 +162,8 @@ impl Analyzer<'_, '_> {
 
                     if self.ctx.in_static_property_initializer {
                         self.storage.report(Error::ThisInStaticPropertyInitializer { span })
+                    } else if self.ctx.in_constructor_param {
+                        self.storage.report(Error::ThisInConstructorParam { span })
                     }
 
                     let is_ref_to_module = match self.scope.kind() {

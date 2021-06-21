@@ -112,6 +112,8 @@ pub(crate) struct Ctx {
 
     in_const_assertion: bool,
 
+    in_constructor_param: bool,
+
     diallow_unknown_object_property: bool,
     disallow_optional_object_property: bool,
 
@@ -507,6 +509,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 module_id: ModuleId::builtin(),
                 phase: Default::default(),
                 in_const_assertion: false,
+                in_constructor_param: false,
                 diallow_unknown_object_property: false,
                 disallow_optional_object_property: false,
                 use_undefined_for_empty_tuple: false,
