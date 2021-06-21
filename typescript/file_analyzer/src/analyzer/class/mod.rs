@@ -9,6 +9,7 @@ use super::util::VarVisitor;
 use super::Analyzer;
 use super::Ctx;
 use super::ScopeKind;
+use crate::analyzer::scope::VarKind;
 use crate::env::ModuleConfig;
 use crate::ty::LitGeneralizer;
 use crate::ty::TypeExt;
@@ -347,7 +348,7 @@ impl Analyzer<'_, '_> {
 
                 self.declare_var(
                     i.id.span,
-                    VarDeclKind::Let,
+                    VarKind::Param,
                     i.id.clone().into(),
                     ty.clone(),
                     None,
@@ -1767,7 +1768,7 @@ impl Analyzer<'_, '_> {
 
                     match analyzer.declare_var(
                         ty.span(),
-                        VarDeclKind::Var,
+                        VarKind::Class,
                         i.into(),
                         Some(ty),
                         None,
@@ -1995,7 +1996,7 @@ impl Analyzer<'_, '_> {
 
         match self.declare_var(
             ty.span(),
-            VarDeclKind::Var,
+            VarKind::Class,
             c.ident.clone().into(),
             Some(ty),
             None,

@@ -1,3 +1,4 @@
+use super::scope::VarKind;
 use super::Analyzer;
 use crate::analyzer::util::ResultExt;
 use crate::{
@@ -33,7 +34,6 @@ use stc_ts_types::{Alias, Interface, Ref};
 use stc_ts_utils::PatExt;
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::TsKeywordTypeKind;
-use swc_ecma_ast::VarDeclKind;
 use ty::TypeExt;
 
 mod return_type;
@@ -470,7 +470,7 @@ impl Analyzer<'_, '_> {
         let mut a = self.with_ctx(ctx);
         match a.declare_var(
             f.span(),
-            VarDeclKind::Var,
+            VarKind::Fn,
             f.ident.clone().into(),
             Some(fn_ty),
             None,

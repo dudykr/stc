@@ -1,5 +1,6 @@
 use super::expr::TypeOfMode;
 use super::{Analyzer, Ctx};
+use crate::analyzer::scope::VarKind;
 use crate::{analyzer::util::ResultExt, ty::Type, validator, validator::ValidateWith, ValidationResult};
 use rnode::NodeId;
 use rnode::VisitWith;
@@ -263,7 +264,7 @@ impl Analyzer<'_, '_> {
 
                 self.declare_var(
                     span,
-                    VarDeclKind::Var,
+                    VarKind::Fn,
                     i.clone(),
                     Some(fn_ty.into()),
                     None,
@@ -296,7 +297,7 @@ impl Analyzer<'_, '_> {
 
                 self.declare_var(
                     span,
-                    VarDeclKind::Var,
+                    VarKind::Class,
                     var_name.clone(),
                     Some(class_ty),
                     None,

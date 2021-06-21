@@ -1,3 +1,4 @@
+pub(crate) use self::vars::VarKind;
 use super::assign::AssignOpts;
 use super::class::ClassState;
 use super::{control_flow::CondFacts, expr::TypeOfMode, stmt::return_type::ReturnValues, Analyzer, Ctx};
@@ -458,7 +459,7 @@ impl Scope<'_> {
                         e.insert(var);
                     }
                 }
-            } else if var.kind == VarDeclKind::Var {
+            } else if let VarKind::Decl(VarDeclKind::Var) | VarKind::Fn = var.kind {
                 self.vars.insert(name, var);
             }
         }
@@ -631,7 +632,7 @@ impl Scope<'_> {
 
 impl Analyzer<'_, '_> {
     /// Overrides a variable. Used for updating types.
-    pub(super) fn override_var(&mut self, kind: VarDeclKind, name: Id, ty: Type) -> ValidationResult<()> {
+    pub(super) fn override_var(&mut self, kind: VarKind, name: Id, ty: Type) -> ValidationResult<()> {
         self.declare_var(ty.span(), kind, name, Some(ty), None, true, true, true)?;
 
         Ok(())
@@ -835,9 +836,11 @@ impl Analyzer<'_, '_> {
                 });
 
             // Override class definitions.
-            if should_override && self.scope.get_var(&name).is_some() {
-                self.override_var(VarDeclKind::Let, name.clone(), ty.clone())
-                    .report(&mut self.storage);
+            if should_override {
+                if let Some(kind) = self.scope.get_var(&name).map(|v| v.kind) {
+                    self.override_var(kind, name.clone(), ty.clone())
+                        .report(&mut self.storage);
+                }
             }
 
             if (self.scope.is_root() || self.scope.is_module()) && !ty.normalize().is_type_param() {
@@ -935,7 +938,7 @@ impl Analyzer<'_, '_> {
         static ANY_VAR: Lazy<VarInfo> = Lazy::new(|| VarInfo {
             ty: Some(Type::any(DUMMY_SP)),
             actual_ty: Some(Type::any(DUMMY_SP)),
-            kind: VarDeclKind::Const,
+            kind: VarKind::Error,
             initialized: true,
             copied: false,
             is_actual_type_modified_in_loop: false,
@@ -1163,7 +1166,7 @@ impl Analyzer<'_, '_> {
     pub fn declare_var(
         &mut self,
         span: Span,
-        kind: VarDeclKind,
+        kind: VarKind,
         name: Id,
         ty: Option<Type>,
         actual_ty: Option<Type>,
@@ -1571,7 +1574,7 @@ impl Analyzer<'_, '_> {
 
 #[derive(Debug, Clone)]
 pub(crate) struct VarInfo {
-    pub kind: VarDeclKind,
+    pub kind: VarKind,
     pub initialized: bool,
 
     /// Declared type.

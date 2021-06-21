@@ -4,7 +4,7 @@ use self::{
     control_flow::{CondFacts, Facts},
     pat::PatMode,
     props::ComputedPropMode,
-    scope::Scope,
+    scope::{Scope, VarKind},
     util::ResultExt,
 };
 use crate::env::ModuleConfig;
@@ -914,7 +914,7 @@ impl Analyzer<'_, '_> {
                     if is_var {
                         analyzer.declare_var(
                             node.span,
-                            VarDeclKind::Const,
+                            VarKind::Import,
                             node.id.clone().into(),
                             Some(ty.clone()),
                             None,

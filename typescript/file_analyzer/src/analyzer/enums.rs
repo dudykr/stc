@@ -1,4 +1,4 @@
-use super::Analyzer;
+use super::{scope::VarKind, Analyzer};
 use crate::{
     analyzer::util::ResultExt,
     ty::{Enum, EnumMember, Type},
@@ -145,7 +145,7 @@ impl Analyzer<'_, '_> {
 
         self.declare_var(
             e.span,
-            VarDeclKind::Let,
+            VarKind::Enum,
             name.clone(),
             Some(stored_ty),
             None,

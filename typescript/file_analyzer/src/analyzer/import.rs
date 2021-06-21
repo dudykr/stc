@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use super::scope::VarKind;
 use super::{util::ResultExt, Analyzer};
 use crate::DepInfo;
 use crate::{loader::ModuleInfo, validator, ValidationResult};
@@ -26,7 +27,6 @@ use swc_atoms::js_word;
 use swc_atoms::JsWord;
 use swc_common::Span;
 use swc_common::Spanned;
-use swc_ecma_ast::VarDeclKind;
 
 impl Analyzer<'_, '_> {
     /// Returns `(dep_module, dep_types)` if an import is valid, and returns
@@ -158,7 +158,7 @@ impl Analyzer<'_, '_> {
             self.register_type(id.clone(), Type::any(span));
             self.declare_var(
                 span,
-                VarDeclKind::Var,
+                VarKind::Import,
                 id.clone(),
                 Some(Type::any(span)),
                 None,
@@ -212,7 +212,7 @@ impl Analyzer<'_, '_> {
                         // Import failed
                         self.declare_var(
                             ns.span,
-                            VarDeclKind::Var,
+                            VarKind::Import,
                             ns.local.clone().into(),
                             Some(Type::any(ns.span)),
                             None,
@@ -223,7 +223,7 @@ impl Analyzer<'_, '_> {
                     } else {
                         self.declare_var(
                             ns.span,
-                            VarDeclKind::Var,
+                            VarKind::Import,
                             ns.local.clone().into(),
                             Some(Type::Module(Module {
                                 span: ns.span,
