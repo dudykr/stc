@@ -23,7 +23,6 @@ use rnode::NodeId;
 use rnode::NodeIdGenerator;
 use rnode::VisitWith;
 use rnode::{FoldWith, Visit};
-use stc_ts_ast_rnode::RClassDecl;
 use stc_ts_ast_rnode::RClassExpr;
 use stc_ts_ast_rnode::RClassMember;
 use stc_ts_ast_rnode::RClassMethod;
@@ -53,6 +52,7 @@ use stc_ts_ast_rnode::RVarDeclarator;
 use stc_ts_ast_rnode::{RArrowExpr, RClass};
 use stc_ts_ast_rnode::{RAssignPat, RSuper};
 use stc_ts_ast_rnode::{RBindingIdent, RFunction};
+use stc_ts_ast_rnode::{RClassDecl, RSeqExpr};
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
@@ -247,7 +247,18 @@ impl Analyzer<'_, '_> {
 
         let c_span = c.span();
 
-        if self.ctx.in_class_with_super {
+        if !self.is_builtin
+            && !self.ctx.ignore_errors
+            && self.ctx.in_class_with_super
+            && c.body.is_some()
+            && match super_class.map(Type::normalize) {
+                Some(Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsNullKeyword | TsKeywordTypeKind::TsUndefinedKeyword,
+                    ..
+                })) => false,
+                _ => true,
+            }
+        {
             let mut v = ConstructorSuperCallFinder::default();
             c.visit_with(&mut v);
             if !v.has_valid_super_call {
@@ -2135,4 +2146,18 @@ impl Visit<RArrowExpr> for ConstructorSuperCallFinder {
 /// Ignore nested classes.
 impl Visit<RClass> for ConstructorSuperCallFinder {
     fn visit(&mut self, _: &RClass) {}
+}
+
+/// computedPropertyNames30_ES5.ts says
+///
+/// `Ideally, we would capture this. But the reference is
+/// illegal, and not capturing this is consistent with
+/// treatment of other similar violations.`
+impl Visit<RSeqExpr> for ConstructorSuperCallFinder {
+    fn visit(&mut self, v: &RSeqExpr) {
+        if self.in_nested {
+            return;
+        }
+        v.visit_children_with(self);
+    }
 }
