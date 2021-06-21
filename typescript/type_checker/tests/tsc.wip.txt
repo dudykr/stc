@@ -1,7 +1,3 @@
-classes::constructorDeclarations::constructorParameters::constructorDefaultValuesReferencingThis.ts
-classes::constructorDeclarations::constructorParameters::constructorImplementationWithDefaultValues2.ts
-classes::constructorDeclarations::constructorParameters::constructorParameterProperties.ts
-classes::constructorDeclarations::constructorParameters::constructorParameterProperties2.ts
 classes::constructorDeclarations::constructorParameters::readonlyConstructorAssignment.ts
 classes::constructorDeclarations::constructorWithAssignableReturnExpression.ts
 classes::constructorDeclarations::superCalls::derivedClassConstructorWithoutSuperCall.ts
