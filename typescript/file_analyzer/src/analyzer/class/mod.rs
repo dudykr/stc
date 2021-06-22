@@ -1409,7 +1409,10 @@ impl Analyzer<'_, '_> {
                                                 continue;
                                             }
 
-                                            if p.accessor != super_property.accessor {
+                                            if !p.is_static
+                                                && !super_property.is_static
+                                                && p.accessor != super_property.accessor
+                                            {
                                                 self.storage
                                                     .report(Error::DefinedWitHAccessorInSuper { span: p.key.span() })
                                             }
