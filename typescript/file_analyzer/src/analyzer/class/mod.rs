@@ -1341,6 +1341,27 @@ impl Analyzer<'_, '_> {
                 Type::ClassDef(sc) => {
                     'outer: for sm in &sc.body {
                         match sm {
+                            ClassMember::Property(super_property) => {
+                                for m in members {
+                                    match m {
+                                        ClassMember::Property(ref p) => {
+                                            if !&p.key.type_eq(&super_property.key) {
+                                                continue;
+                                            }
+
+                                            if p.accessor != super_property.accessor {
+                                                self.storage
+                                                    .report(Error::DefinedWitHAccessorInSuper { span: p.key.span() })
+                                            }
+
+                                            continue 'outer;
+                                        }
+                                        _ => {}
+                                    }
+                                }
+
+                                continue 'outer;
+                            }
                             ClassMember::Method(super_method) => {
                                 if !super_method.is_abstract {
                                     new_members.push(sm.clone());

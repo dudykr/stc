@@ -24,7 +24,7 @@ use stc_utils::{error, error::context, ext::SpanExt, stack, TryOpt};
 use std::{borrow::Cow, collections::HashMap};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
-use swc_ecma_ast::{MethodKind, TsKeywordTypeKind, TsTypeOperatorOp};
+use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
 
 mod index_signature;
 mod keyof;
@@ -1006,37 +1006,17 @@ impl Analyzer<'_, '_> {
                     return Ok(None);
                 }
 
-                match m.kind {
-                    MethodKind::Method => TypeElement::Method(MethodSignature {
-                        span: m.span,
-                        accessibility: m.accessibility,
-                        readonly: false,
-                        key: m.key.clone(),
-                        optional: m.is_optional,
-                        params: m.params.clone(),
-                        ret_ty: Some(m.ret_ty.clone()),
-                        type_params: m.type_params.clone(),
-                        metadata: Default::default(),
-                    }),
-                    MethodKind::Getter => TypeElement::Property(PropertySignature {
-                        span: m.span,
-                        accessibility: m.accessibility,
-                        readonly: false,
-                        key: m.key.clone(),
-                        optional: m.is_optional,
-                        params: vec![],
-                        // TODO: Check for setter property with same key.
-                        type_ann: Some(m.ret_ty.clone()),
-                        type_params: None,
-                        metadata: Default::default(),
-                        accessor: Accessor {
-                            getter: true,
-                            setter: false,
-                        },
-                    }),
-                    // TODO
-                    MethodKind::Setter => return Ok(None),
-                }
+                TypeElement::Method(MethodSignature {
+                    span: m.span,
+                    accessibility: m.accessibility,
+                    readonly: false,
+                    key: m.key.clone(),
+                    optional: m.is_optional,
+                    params: m.params.clone(),
+                    ret_ty: Some(m.ret_ty.clone()),
+                    type_params: m.type_params.clone(),
+                    metadata: Default::default(),
+                })
             }
             ClassMember::Property(p) => {
                 if p.is_static != static_mode {

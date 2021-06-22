@@ -37,7 +37,7 @@ use std::{
 };
 use swc_atoms::{js_word, JsWord};
 use swc_common::{EqIgnoreSpan, FromVariant, Span, Spanned, TypeEq, DUMMY_SP};
-use swc_ecma_ast::{Accessibility, MethodKind, TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp};
+use swc_ecma_ast::{Accessibility, TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp};
 use swc_ecma_utils::{
     Value,
     Value::{Known, Unknown},
@@ -537,8 +537,6 @@ pub struct Method {
     pub type_params: Option<TypeParamDecl>,
     pub params: Vec<FnParam>,
     pub ret_ty: Box<Type>,
-    #[use_eq]
-    pub kind: MethodKind,
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]

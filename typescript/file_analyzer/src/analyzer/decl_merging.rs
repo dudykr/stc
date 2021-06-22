@@ -32,7 +32,6 @@ impl Analyzer<'_, '_> {
                 type_params: m.type_params.clone(),
                 params: m.params.clone(),
                 ret_ty: m.ret_ty.clone().unwrap_or_else(|| box Type::any(m.span)),
-                kind: swc_ecma_ast::MethodKind::Method,
             }))),
             TypeElement::Index(i) => Ok(Some(ClassMember::IndexSignature(i.clone()))),
         }
