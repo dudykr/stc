@@ -4,10 +4,6 @@ controlFlow::controlFlowForOfStatement.ts
 controlFlow::controlFlowForStatement.ts
 controlFlow::controlFlowIIFE.ts
 controlFlow::controlFlowIterationErrors.ts
-controlFlow::controlFlowNullishCoalesce.ts
-controlFlow::controlFlowOptionalChain.ts
-controlFlow::exhaustiveSwitchStatements1.ts
-controlFlow::neverReturningFunctions1.ts
 declarationEmit::typePredicates::declarationEmitThisPredicates01.ts
 declarationEmit::typePredicates::declarationEmitThisPredicates02.ts
 declarationEmit::typePredicates::declarationEmitThisPredicatesWithPrivateName01.ts
