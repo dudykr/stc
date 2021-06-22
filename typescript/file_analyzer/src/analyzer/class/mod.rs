@@ -733,6 +733,75 @@ impl Analyzer<'_, '_> {
 
 impl Analyzer<'_, '_> {
     fn check_static_mixed_with_instance(&mut self, c: &RClass) -> ValidationResult<()> {
+        if self.ctx.in_declare {
+            return Ok(());
+        }
+
+        let mut spans = vec![];
+        let mut name: Option<&RPropName> = None;
+
+        for (last, (idx, m)) in c.body.iter().enumerate().identify_last() {
+            match m {
+                RClassMember::Method(m) => {
+                    let span = m.key.span();
+
+                    if m.function.body.is_some() {
+                        spans.clear();
+                        name = None;
+                        continue;
+                    }
+
+                    if name.is_none() {
+                        name = Some(&m.key);
+                        spans.push((span, m.is_static));
+                        continue;
+                    }
+
+                    if last {
+                        if name.unwrap().eq_ignore_span(&m.key) {
+                            spans.push((span, m.is_static));
+                        }
+                    }
+
+                    if last || !name.unwrap().eq_ignore_span(&m.key) {
+                        let spans_for_error = take(&mut spans);
+
+                        let has_static = spans_for_error.iter().any(|(_, v)| *v == true);
+                        let has_instance = spans_for_error.iter().any(|(_, v)| *v == false);
+
+                        if has_static && has_instance {
+                            let report_error_for_static = !spans_for_error.first().unwrap().1;
+
+                            for (span, is_staitc) in spans_for_error {
+                                if report_error_for_static && is_staitc {
+                                    self.storage.report(Error::ShouldBeInstanceMethod { span })
+                                } else if !report_error_for_static && !is_staitc {
+                                    self.storage.report(Error::ShouldBeStaticMethod { span })
+                                }
+                            }
+                        }
+
+                        name = None;
+
+                        // Note: This span is for next name.
+                        spans.push((span, m.is_static));
+                        continue;
+                    }
+
+                    // At this point, previous name is identical with current name.
+
+                    spans.push((span, m.is_static));
+                }
+                _ => {
+                    // Other than method.
+
+                    if name.is_none() {
+                        continue;
+                    }
+                }
+            }
+        }
+
         Ok(())
     }
 
@@ -785,7 +854,6 @@ impl Analyzer<'_, '_> {
             let mut spans = vec![];
             let mut name: Option<&RPropName> = None;
             let mut last_was_abstract = false;
-            let mut last_was_static = false;
 
             for (last, (idx, m)) in c.body.iter().enumerate().identify_last() {
                 match m {
@@ -796,7 +864,6 @@ impl Analyzer<'_, '_> {
                             name = Some(&m.key);
                             spans.push((span, m.is_abstract));
                             last_was_abstract = m.is_abstract;
-                            last_was_static = m.is_static;
                             continue;
                         }
 
@@ -804,7 +871,6 @@ impl Analyzer<'_, '_> {
                             if name.unwrap().eq_ignore_span(&m.key) {
                                 spans.push((span, m.is_abstract));
                                 last_was_abstract = m.is_abstract;
-                                last_was_static = m.is_static;
                             }
                         }
 
@@ -840,7 +906,6 @@ impl Analyzer<'_, '_> {
                         // At this point, previous name is identical with current name.
 
                         last_was_abstract = m.is_abstract;
-                        last_was_static = m.is_static;
 
                         spans.push((span, m.is_abstract));
                     }
