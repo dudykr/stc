@@ -120,6 +120,14 @@ impl Analyzer<'_, '_> {
             .validate_type_of_class_property(p.span, p.readonly, p.is_static, &p.type_ann, &p.value)?
             .map(Box::new);
 
+        if !self.is_builtin {
+            // Report error if type is not found.
+            if let Some(ty) = &value {
+                self.normalize(Some(p.key.span()), Cow::Borrowed(ty), Default::default())
+                    .report(&mut self.storage);
+            }
+        }
+
         if p.is_static {
             value.visit_with(&mut StaticTypeParamValidator {
                 span: p.span,
