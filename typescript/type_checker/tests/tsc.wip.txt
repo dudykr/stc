@@ -1,7 +1,1 @@
-conformance::classes::propertyMemberDeclarations::propertyAndFunctionWithSameName.ts
-conformance::classes::propertyMemberDeclarations::propertyOverridesAccessors.ts
-conformance::classes::propertyMemberDeclarations::propertyOverridesAccessors2.ts
-conformance::classes::propertyMemberDeclarations::propertyOverridesAccessors3.ts
-conformance::classes::propertyMemberDeclarations::propertyOverridesAccessors4.ts
-conformance::classes::propertyMemberDeclarations::propertyOverridesAccessors5.ts
 conformance::classes::propertyMemberDeclarations::strictPropertyInitialization.ts
