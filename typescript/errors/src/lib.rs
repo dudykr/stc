@@ -58,6 +58,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2454
+    VarMayNotBeInitialized {
+        span: Span,
+    },
+
     /// TS2564
     ClassPropNotInistalized {
         span: Span,
@@ -1713,6 +1718,8 @@ impl Error {
             Error::DefinedWitHAccessorInSuper { .. } => 2610,
 
             Error::ClassPropNotInistalized { .. } => 2564,
+
+            Error::VarMayNotBeInitialized { .. } => 2454,
             _ => 0,
         }
     }
