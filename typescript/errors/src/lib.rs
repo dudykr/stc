@@ -59,7 +59,7 @@ impl Errors {
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
     /// TS2564
-    ClassPropNotInistalize {
+    ClassPropNotInistalized {
         span: Span,
     },
 
@@ -1712,7 +1712,7 @@ impl Error {
 
             Error::DefinedWitHAccessorInSuper { .. } => 2610,
 
-            Error::ClassPropNotInistalize { .. } => 2564,
+            Error::ClassPropNotInistalized { .. } => 2564,
             _ => 0,
         }
     }
