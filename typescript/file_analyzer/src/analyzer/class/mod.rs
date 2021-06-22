@@ -2118,6 +2118,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        // TODO: Optimize if intersection is empty
         if getters.is_empty() && setters.is_empty() {
             return body;
         }
