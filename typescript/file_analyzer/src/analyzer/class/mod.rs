@@ -1622,7 +1622,7 @@ impl Analyzer<'_, '_> {
                             RClassMember::ClassProp(RClassProp { is_static: false, .. })
                             | RClassMember::PrivateProp(RPrivateProp { is_static: false, .. }) => {
                                 //
-                                let class_member = member.validate_with(child)?;
+                                let class_member = member.validate_with(child).report(&mut child.storage).flatten();
                                 if let Some(member) = class_member {
                                     // Check for duplicate property names.
                                     if let Some(key) = member.key() {
