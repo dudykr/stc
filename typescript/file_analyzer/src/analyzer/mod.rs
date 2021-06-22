@@ -410,10 +410,14 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         logger: Logger,
         env: Env,
         cm: Arc<SourceMap>,
-        storage: Storage<'b>,
+        mut storage: Storage<'b>,
         loader: &'b dyn Load,
         debugger: Option<Debugger>,
     ) -> Self {
+        if env.rule().use_define_property_for_class_fields && env.target() == EsVersion::Es3 {
+            storage.report(Error::OptionInvalidForEs3 { span: DUMMY_SP })
+        }
+
         Self::new_inner(
             logger.clone(),
             env,

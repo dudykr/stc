@@ -47,7 +47,10 @@ impl Errors {
             _ => {}
         }
 
-        if err.span().is_dummy() {
+        let code = err.code();
+        if 5000 <= code && code < 6000 {
+            // This is error for invalid options.
+        } else if err.span().is_dummy() {
             panic!("Error with a dummy span found: {:?}", err)
         }
     }
