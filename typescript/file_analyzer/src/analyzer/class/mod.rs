@@ -31,7 +31,7 @@ use stc_ts_types::{
     Method, Operator, QueryExpr, QueryType, Ref, TsExpr, Type,
 };
 use stc_ts_utils::PatExt;
-use stc_utils::TryOpt;
+use stc_utils::{AHashSet, TryOpt};
 use std::{
     borrow::Cow,
     cell::RefCell,
@@ -736,6 +736,8 @@ impl Analyzer<'_, '_> {
     fn check_duplicate_of_class(&mut self, c: &RClass) -> ValidationResult<()> {
         let mut keys = vec![];
         let mut private_keys = vec![];
+        let mut is_props = AHashSet::default();
+        let mut is_private_props = AHashSet::default();
 
         for member in &c.body {
             match member {
@@ -767,10 +769,12 @@ impl Analyzer<'_, '_> {
                     is_static,
                     ..
                 }) => {
+                    is_props.insert(keys.len());
                     keys.push((Cow::Owned(RPropName::Ident(key.clone())), *is_static));
                 }
 
                 RClassMember::ClassProp(m) => {
+                    is_props.insert(keys.len());
                     keys.push((
                         Cow::Owned(RPropName::Computed(RComputedPropName {
                             node_id: NodeId::invalid(),
@@ -781,6 +785,7 @@ impl Analyzer<'_, '_> {
                     ));
                 }
                 RClassMember::PrivateProp(m) => {
+                    is_private_props.insert(private_keys.len());
                     private_keys.push((&m.key, m.is_static));
                 }
                 _ => {}
@@ -794,6 +799,14 @@ impl Analyzer<'_, '_> {
                 }
 
                 if is_prop_name_eq(&l.0, &r.0) && l.1 == r.1 {
+                    if is_props.contains(&i) {
+                        continue;
+                    }
+                    // We use different error for duplicate functions
+                    if !is_props.contains(&i) && !is_props.contains(&j) {
+                        continue;
+                    }
+
                     self.storage
                         .report(Error::DuplicateNameWithoutName { span: l.0.span() });
                 }
@@ -807,6 +820,15 @@ impl Analyzer<'_, '_> {
                 }
 
                 if l.0.eq_ignore_span(&r.0) && l.1 == r.1 {
+                    if is_private_props.contains(&i) {
+                        continue;
+                    }
+
+                    // We use different error for duplicate functions
+                    if !is_private_props.contains(&i) && !is_private_props.contains(&j) {
+                        continue;
+                    }
+
                     self.storage
                         .report(Error::DuplicateNameWithoutName { span: l.0.span() });
                 }
