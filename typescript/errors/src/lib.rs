@@ -1157,6 +1157,16 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2387
+    ShouldBeStaticMethod {
+        span: Span,
+    },
+
+    /// TS2388
+    ShouldBeInstanceMethod {
+        span: Span,
+    },
+
     DebugContext(DebugContext),
 }
 
@@ -1680,6 +1690,10 @@ impl Error {
             Error::SuperUsedBeforeCallingSuper { .. } => 17011,
 
             Error::OptionInvalidForEs3 { .. } => 5048,
+
+            Error::ShouldBeStaticMethod { .. } => 2387,
+
+            Error::ShouldBeInstanceMethod { .. } => 2388,
             _ => 0,
         }
     }
