@@ -70,6 +70,20 @@ impl Analyzer<'_, '_> {
             try_opt!(value.validate_with_args(&mut *self.with_ctx(ctx), (TypeOfMode::RValue, None, ty.as_ref())))
         };
 
+        if !self.is_builtin {
+            // Report error if type is not found.
+            if let Some(ty) = &ty {
+                self.normalize(Some(span), Cow::Borrowed(ty), Default::default())
+                    .report(&mut self.storage);
+            }
+
+            // Report error if type is not found.
+            if let Some(ty) = &value_ty {
+                self.normalize(Some(span), Cow::Borrowed(ty), Default::default())
+                    .report(&mut self.storage);
+            }
+        }
+
         if readonly {
             if let Some(ty) = &mut ty {
                 self.prevent_generalize(ty);
@@ -119,14 +133,6 @@ impl Analyzer<'_, '_> {
         let value = self
             .validate_type_of_class_property(p.span, p.readonly, p.is_static, &p.type_ann, &p.value)?
             .map(Box::new);
-
-        if !self.is_builtin {
-            // Report error if type is not found.
-            if let Some(ty) = &value {
-                self.normalize(Some(p.key.span()), Cow::Borrowed(ty), Default::default())
-                    .report(&mut self.storage);
-            }
-        }
 
         if p.is_static {
             value.visit_with(&mut StaticTypeParamValidator {
