@@ -57,9 +57,7 @@ impl Analyzer<'_, '_> {
 
                 let new_body;
                 let r_body = if rc.super_class.is_some() {
-                    let excluded = rc.body.iter().collect_vec();
-
-                    if let Some(members) = self.collect_class_members(&excluded, r)? {
+                    if let Some(members) = self.collect_class_members(&[], r)? {
                         new_body = members;
                         &*new_body
                     } else {
@@ -152,8 +150,7 @@ impl Analyzer<'_, '_> {
 
                 let new_body;
                 let r_body = if rc.def.super_class.is_some() {
-                    let excluded = rc.def.body.iter().collect_vec();
-                    if let Some(members) = self.collect_class_members(&excluded, r)? {
+                    if let Some(members) = self.collect_class_members(&[], r)? {
                         new_body = members;
                         &*new_body
                     } else {
