@@ -49,3 +49,9 @@ yarn.lock
 
 *.trace
 Cargo.lock
+
+# We use *.ans for logging (in tests)
+*.ans
+
+# Used by scripts
+tmp.txt

@@ -851,7 +851,12 @@ impl Analyzer<'_, '_> {
                     match prop {
                         RObjectPatProp::KeyValue(kv) => {
                             let key = kv.key.validate_with(self)?;
+                            let ctx = Ctx {
+                                disallow_indexing_array_with_string: true,
+                                ..self.ctx
+                            };
                             let prop_ty = self
+                                .with_ctx(ctx)
                                 .access_property(span, ty, &key, TypeOfMode::RValue, IdCtx::Var)
                                 .unwrap_or_else(|_| Type::any(span));
 
@@ -863,7 +868,12 @@ impl Analyzer<'_, '_> {
                                 span: a.key.span,
                                 sym: a.key.sym.clone(),
                             };
+                            let ctx = Ctx {
+                                disallow_indexing_array_with_string: true,
+                                ..self.ctx
+                            };
                             let prop_ty = self
+                                .with_ctx(ctx)
                                 .access_property(span, ty, &key, TypeOfMode::RValue, IdCtx::Var)
                                 .unwrap_or_else(|_| Type::any(span));
 
@@ -1035,7 +1045,7 @@ impl Analyzer<'_, '_> {
         }
 
         let ctx = Ctx {
-            should_not_create_indexed_type_from_ty_els: true,
+            disallow_creating_indexed_type_from_ty_els: true,
             ..self.ctx
         };
         let prop_res = self.with_ctx(ctx).access_property(

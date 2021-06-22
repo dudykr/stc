@@ -14,7 +14,7 @@ warning: Type
 15 |     return 'some' in value;
    |                      ^^^^^
    |
-   = note: Some<a> | None
+   = note: Some | None
 
 warning: Type
   --> $DIR/tests/pass/controlFlow/guard/assertions/3.ts:15:12

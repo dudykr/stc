@@ -1,5 +1,8 @@
 use super::{Analyzer, Ctx};
+use crate::analyzer::assign::AssignOpts;
+use crate::analyzer::scope::VarKind;
 use crate::ty::TypeExt;
+use crate::util::should_instantiate_type_ann;
 use crate::util::type_ext::TypeVecExt;
 use crate::{
     analyzer::util::{ResultExt, VarVisitor},
@@ -34,6 +37,7 @@ use stc_ts_types::Key;
 use stc_ts_types::PropertySignature;
 use stc_ts_types::Tuple;
 use stc_ts_types::TupleElement;
+use stc_ts_types::TypeElMetadata;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
 use stc_ts_utils::PatExt;
@@ -131,6 +135,7 @@ impl Analyzer<'_, '_> {
                                 params: vec![],
                                 type_ann: Some(ty),
                                 type_params: None,
+                                metadata: Default::default(),
                             }))
                         }
                         RObjectPatProp::Assign(RAssignPatProp { key, .. }) => {
@@ -147,6 +152,10 @@ impl Analyzer<'_, '_> {
                                 params: vec![],
                                 type_ann: None,
                                 type_params: None,
+                                metadata: TypeElMetadata {
+                                    has_default: true,
+                                    ..Default::default()
+                                },
                             }))
                         }
                         RObjectPatProp::Rest(..) => {}
@@ -238,7 +247,7 @@ impl Analyzer<'_, '_> {
                     Some(ty) => Some({
                         let span = ty.span();
                         ty.validate_with(self).map(|ty| {
-                            if ty.normalize().is_type_param() || ty.normalize().is_query() {
+                            if !should_instantiate_type_ann(&ty) {
                                 return ty;
                             }
                             Type::Instance(Instance { span, ty: box ty })
@@ -278,21 +287,10 @@ impl Analyzer<'_, '_> {
             PatMode::Assign => {}
         }
 
-        let default_value_ty = if let RPat::Assign(assign_pat) = p {
-            let ctx = Ctx {
-                cannot_be_tuple: true,
-                ..self.ctx
-            };
-            let mut a = self.with_ctx(ctx);
-            assign_pat.right.validate_with_default(&mut *a).report(&mut a.storage)
-        } else {
-            None
-        };
-
         match self.ctx.pat_mode {
             PatMode::Decl => {
                 if !self.is_builtin {
-                    match self.declare_vars_with_ty(VarDeclKind::Let, p, ty.clone(), None) {
+                    match self.declare_vars_with_ty(VarKind::Param, p, ty.clone(), None, None) {
                         Ok(()) => {}
                         Err(err) => {
                             self.storage.report(err);
@@ -303,6 +301,22 @@ impl Analyzer<'_, '_> {
 
             PatMode::Assign => {}
         }
+
+        let default_value_ty = match self.ctx.pat_mode {
+            PatMode::Assign => {
+                if let RPat::Assign(assign_pat) = p {
+                    let ctx = Ctx {
+                        cannot_be_tuple: true,
+                        ..self.ctx
+                    };
+                    let mut a = self.with_ctx(ctx);
+                    assign_pat.right.validate_with_default(&mut *a).report(&mut a.storage)
+                } else {
+                    None
+                }
+            }
+            PatMode::Decl => None,
+        };
 
         self.scope.declaring.truncate(prev_declaring_len);
 
@@ -333,30 +347,44 @@ impl Analyzer<'_, '_> {
             if let RPat::Assign(assign_pat) = p {
                 // Handle default value
                 if let Some(default_value_ty) = default_value_ty.clone() {
-                    let ty = assign_pat
-                        .left
-                        .get_ty()
-                        .map(|v| v.validate_with(self))
-                        .unwrap_or_else(|| {
-                            let mut ty = default_value_ty.generalize_lit(marks).foldable();
+                    let ty = assign_pat.left.get_ty().map(|v| v.validate_with(self));
 
-                            match ty {
-                                Type::Tuple(tuple) => {
-                                    let mut types =
-                                        tuple.elems.into_iter().map(|element| *element.ty).collect::<Vec<_>>();
+                    // If pat mode is declare, assignment of default value will be handled by
+                    // variable declator function.
+                    if let PatMode::Assign = self.ctx.pat_mode {
+                        if let Some(Ok(ty)) = &ty {
+                            self.assign_with_opts(
+                                &mut Default::default(),
+                                AssignOpts {
+                                    span: assign_pat.span,
+                                    ..Default::default()
+                                },
+                                &ty,
+                                &default_value_ty,
+                            )
+                            .report(&mut self.storage);
+                        }
+                    }
 
-                                    types.dedup_type();
+                    let ty = ty.unwrap_or_else(|| {
+                        let mut ty = default_value_ty.generalize_lit(marks).foldable();
 
-                                    ty = Type::Array(Array {
-                                        span: tuple.span,
-                                        elem_type: box Type::union(types),
-                                    });
-                                }
-                                _ => {}
+                        match ty {
+                            Type::Tuple(tuple) => {
+                                let mut types = tuple.elems.into_iter().map(|element| *element.ty).collect::<Vec<_>>();
+
+                                types.dedup_type();
+
+                                ty = Type::Array(Array {
+                                    span: tuple.span,
+                                    elem_type: box Type::union(types),
+                                });
                             }
+                            _ => {}
+                        }
 
-                            Ok(ty)
-                        })?;
+                        Ok(ty)
+                    })?;
 
                     // Remove default value.
                     if let Some(pat_node_id) = assign_pat.left.node_id() {
@@ -375,7 +403,10 @@ impl Analyzer<'_, '_> {
         let ty = match ty {
             Some(v) => Some(v),
             None => match p {
-                RPat::Assign(p) => Some(p.right.validate_with_default(self)?.generalize_lit(marks)),
+                RPat::Assign(p) => match self.ctx.pat_mode {
+                    PatMode::Decl => Some(p.right.validate_with_default(self)?.generalize_lit(marks)),
+                    PatMode::Assign => Some(default_value_ty.unwrap_or_else(|| Type::any(p.span))),
+                },
                 _ => None,
             },
         };

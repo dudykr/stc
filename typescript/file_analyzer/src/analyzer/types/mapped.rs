@@ -73,7 +73,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                let keys = self.get_property_names(span, ty)?;
+                let keys = self.get_property_names_for_mapped_type(span, ty)?;
                 if let Some(keys) = keys {
                     let members = keys
                         .into_iter()
@@ -97,6 +97,7 @@ impl Analyzer<'_, '_> {
                                         params: Default::default(),
                                         type_ann: ty,
                                         type_params: Default::default(),
+                                        metadata: Default::default(),
                                     };
                                     let mut el = TypeElement::Property(p);
 
@@ -161,6 +162,7 @@ impl Analyzer<'_, '_> {
                                     params: Default::default(),
                                     type_ann: ty,
                                     type_params: Default::default(),
+                                    metadata: Default::default(),
                                 };
                                 let mut el = TypeElement::Property(p);
                                 self.apply_mapped_flags(&mut el, m.optional, m.readonly);
@@ -250,7 +252,11 @@ impl Analyzer<'_, '_> {
     }
 
     /// Get keys of `ty` as a proerty name.
-    fn get_property_names(&mut self, span: Span, ty: &Type) -> ValidationResult<Option<Vec<PropertyName>>> {
+    fn get_property_names_for_mapped_type(
+        &mut self,
+        span: Span,
+        ty: &Type,
+    ) -> ValidationResult<Option<Vec<PropertyName>>> {
         let ty = self
             .normalize(
                 None,
@@ -320,7 +326,7 @@ impl Analyzer<'_, '_> {
                         &parent.expr,
                         parent.type_args.as_deref(),
                     )?;
-                    if let Some(parent_keys) = self.get_property_names(span, &parent)? {
+                    if let Some(parent_keys) = self.get_property_names_for_mapped_type(span, &parent)? {
                         keys.extend(parent_keys);
                     }
                 }
@@ -346,11 +352,50 @@ impl Analyzer<'_, '_> {
             }
             Type::Param(..) => Ok(None),
 
+            Type::Intersection(ty) => {
+                let keys_types = ty
+                    .types
+                    .iter()
+                    .map(|ty| -> ValidationResult<_> { self.get_property_names_for_mapped_type(span, &ty) })
+                    .collect::<Result<Vec<_>, _>>()?;
+
+                if keys_types.is_empty() {
+                    return Ok(None);
+                }
+
+                let mut result: Vec<PropertyName> = vec![];
+
+                if keys_types.iter().all(|keys| keys.is_none()) {
+                    return Ok(None);
+                }
+
+                let sets = &keys_types[1..];
+
+                for key in keys_types[0].iter().flatten().filter(|item| {
+                    {
+                        sets.iter()
+                            .all(|set| set.is_none() || set.as_ref().unwrap().contains(item))
+                    }
+                }) {
+                    if result.iter().any(|prev| prev.type_eq(&key)) {
+                        continue;
+                    }
+
+                    result.push(key.clone());
+                }
+
+                if result.is_empty() {
+                    return Ok(None);
+                }
+
+                return Ok(Some(result));
+            }
+
             Type::Union(ty) => {
                 let keys_types = ty
                     .types
                     .iter()
-                    .map(|ty| -> ValidationResult<_> { self.get_property_names(span, &ty) })
+                    .map(|ty| -> ValidationResult<_> { self.get_property_names_for_mapped_type(span, &ty) })
                     .collect::<Result<Vec<_>, _>>()?;
 
                 let mut result: Vec<PropertyName> = vec![];
@@ -377,7 +422,7 @@ impl Analyzer<'_, '_> {
                 return Ok(Some(result));
             }
             _ => {
-                unimplemented!("get_property_names: {:#?}", ty);
+                unimplemented!("get_property_names_for_mapped_type: {:#?}", ty);
             }
         }
     }
@@ -454,7 +499,7 @@ impl Analyzer<'_, '_> {
     }
 }
 
-#[derive(Debug, Clone, Spanned, TypeEq)]
+#[derive(Debug, Clone, Spanned, TypeEq, PartialEq)]
 pub(crate) enum PropertyName {
     Key(Key),
     /// Created from an index signature.

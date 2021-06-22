@@ -45,9 +45,19 @@ impl Analyzer<'_, '_> {
     /// This method is called at the end of each call and each `T` is converted
     /// to `{}` even though span hygiene differs.
     pub(crate) fn replace_invalid_type_params(&mut self, ty: &mut Type) {
+        if self.is_builtin {
+            return;
+        }
+
+        let declared = {
+            let mut v = TypeParamDeclFinder::default();
+            ty.visit_with(&mut v);
+            v.params
+        };
+
         let mut v = TypeParamEscapeHandler {
             analyzer: self,
-            declared: Default::default(),
+            declared,
         };
 
         ty.visit_mut_with(&mut v);
@@ -115,17 +125,11 @@ impl VisitMut<Mapped> for TypeParamEscapeHandler<'_, '_, '_> {
 
 impl VisitMut<Type> for TypeParamEscapeHandler<'_, '_, '_> {
     fn visit_mut(&mut self, ty: &mut Type) {
-        let declared = {
-            let mut v = TypeParamDeclFinder::default();
-            ty.visit_with(&mut v);
-            v.params
-        };
-
         if !ty.normalize().is_type_param() {
             // Fast path
             let mut v = TypeParamEscapeVisitor {
                 analyzer: self.analyzer,
-                declared: &declared,
+                declared: &self.declared,
                 should_work: false,
             };
             ty.visit_with(&mut v);
@@ -139,6 +143,10 @@ impl VisitMut<Type> for TypeParamEscapeHandler<'_, '_, '_> {
 
         match ty {
             Type::Param(param) => {
+                if self.declared.contains(&param.name) {
+                    return;
+                }
+
                 if self.analyzer.is_type_param_dead(&param.name) {
                     *ty = Type::TypeLit(TypeLit {
                         span: param.span,

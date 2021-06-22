@@ -1,6 +1,7 @@
 use super::super::{pat::PatMode, Analyzer, Ctx};
 use crate::analyzer::assign::AssignOpts;
-use crate::analyzer::util::make_instance_type;
+use crate::analyzer::scope::VarKind;
+use crate::util::should_instantiate_type_ann;
 use crate::{
     analyzer::{
         expr::TypeOfMode,
@@ -32,10 +33,10 @@ use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
 use stc_ts_type_ops::Fix;
-use stc_ts_types::EnumVariant;
 use stc_ts_types::QueryExpr;
 use stc_ts_types::QueryType;
 use stc_ts_types::{Array, Id, Operator, Symbol};
+use stc_ts_types::{EnumVariant, Instance};
 use stc_ts_utils::find_ids_in_pat;
 use stc_ts_utils::PatExt;
 use std::borrow::Cow;
@@ -126,7 +127,13 @@ impl Analyzer<'_, '_> {
             macro_rules! inject_any {
                 () => {
                     // Declare variable with type any
-                    match self.declare_complex_vars(kind, &v.name, Type::any(v_span), Some(Type::any(v_span))) {
+                    match self.declare_complex_vars(
+                        VarKind::Var(kind),
+                        &v.name,
+                        Type::any(v_span),
+                        Some(Type::any(v_span)),
+                        None,
+                    ) {
                         Ok(()) => {}
                         Err(err) => {
                             self.storage.report(err);
@@ -244,7 +251,16 @@ impl Analyzer<'_, '_> {
                         };
                         let ty = self.expand(span, ty)?;
                         ty.assert_valid();
-                        let ty = make_instance_type(self.ctx.module_id, ty);
+                        let ty = (|| {
+                            if !should_instantiate_type_ann(&ty) {
+                                return ty;
+                            }
+
+                            Type::Instance(Instance {
+                                span: ty.span(),
+                                ty: box ty,
+                            })
+                        })();
                         ty.assert_valid();
                         self.check_rvalue(span, &v.name, &ty);
 
@@ -259,7 +275,11 @@ impl Analyzer<'_, '_> {
                         let opts = AssignOpts {
                             span: v_span,
                             allow_unknown_rhs: match &**init {
-                                RExpr::Ident(..) | RExpr::Member(..) | RExpr::MetaProp(..) | RExpr::New(..) => true,
+                                RExpr::Ident(..)
+                                | RExpr::Member(..)
+                                | RExpr::MetaProp(..)
+                                | RExpr::New(..)
+                                | RExpr::Call(..) => true,
                                 _ => false,
                             },
                             ..Default::default()
@@ -278,7 +298,8 @@ impl Analyzer<'_, '_> {
                                 actual_ty.assert_valid();
 
                                 // let ty = ty.fold_with(&mut Generalizer::default());
-                                match self.declare_complex_vars(kind, &v.name, ty, Some(actual_ty)) {
+                                match self.declare_complex_vars(VarKind::Var(kind), &v.name, ty, Some(actual_ty), None)
+                                {
                                     Ok(()) => {}
                                     Err(err) => {
                                         self.storage.report(err);
@@ -290,7 +311,7 @@ impl Analyzer<'_, '_> {
                             Err(err) => {
                                 self.storage.report(err);
 
-                                match self.declare_complex_vars(kind, &v.name, ty, None) {
+                                match self.declare_complex_vars(VarKind::Var(kind), &v.name, ty, None, None) {
                                     Ok(()) => {}
                                     Err(err) => {
                                         self.storage.report(err);
@@ -542,12 +563,14 @@ impl Analyzer<'_, '_> {
                                         match v.name {
                                             RPat::Ident(ref i) => {
                                                 let span = i.id.span;
-                                                type_errors.push(Error::ImplicitAny { span });
+                                                type_errors
+                                                    .push(Error::ImplicitAny { span }.context("tuple type widenning"));
                                                 break;
                                             }
                                             RPat::Array(RArrayPat { ref elems, .. }) => {
                                                 let span = elems[i].span();
-                                                type_errors.push(Error::ImplicitAny { span });
+                                                type_errors
+                                                    .push(Error::ImplicitAny { span }.context("tuple type widenning"));
                                             }
                                             _ => {}
                                         }
@@ -585,7 +608,7 @@ impl Analyzer<'_, '_> {
                         })()?
                         .cheap();
 
-                        self.declare_complex_vars(kind, &v.name, var_ty.clone(), None)
+                        self.declare_complex_vars(VarKind::Var(kind), &v.name, var_ty.clone(), None, None)
                             .report(&mut self.storage);
                         remove_declaring!();
                         return Ok(());
@@ -600,7 +623,7 @@ impl Analyzer<'_, '_> {
                     .cloned();
 
                 if let Some(var_ty) = var_ty {
-                    self.declare_complex_vars(kind, &v.name, var_ty, None)
+                    self.declare_complex_vars(VarKind::Var(kind), &v.name, var_ty, None, None)
                         .report(&mut self.storage);
                     remove_declaring!();
                     return Ok(());
@@ -611,6 +634,17 @@ impl Analyzer<'_, '_> {
                         //
                         let sym: Id = (&i.id).into();
                         let mut ty = try_opt!(i.type_ann.validate_with(self));
+                        ty.fix();
+                        ty = ty.map(|ty| {
+                            if !should_instantiate_type_ann(&ty) {
+                                return ty;
+                            }
+
+                            Type::Instance(Instance {
+                                span: i.id.span,
+                                ty: box ty,
+                            })
+                        });
                         match ty {
                             Some(ref mut ty) => {
                                 self.prevent_expansion(&mut *ty);
@@ -621,14 +655,14 @@ impl Analyzer<'_, '_> {
                         if !self.is_builtin {
                             // Report error if type is not found.
                             if let Some(ty) = &ty {
-                                self.normalize(None, Cow::Borrowed(ty), Default::default())
+                                self.normalize(Some(i.id.span), Cow::Borrowed(ty), Default::default())
                                     .report(&mut self.storage);
                             }
                         }
 
                         match self.declare_var(
                             i.id.span,
-                            kind,
+                            VarKind::Var(kind),
                             sym,
                             ty,
                             None,
@@ -647,7 +681,7 @@ impl Analyzer<'_, '_> {
                     _ => {
                         // For ambient contexts and loops, we add variables to the scope.
 
-                        match self.declare_vars(kind, &v.name) {
+                        match self.declare_vars(VarKind::Var(kind), &v.name) {
                             Ok(()) => {}
                             Err(err) => {
                                 self.storage.report(err);
@@ -661,7 +695,7 @@ impl Analyzer<'_, '_> {
 
             debug_assert_eq!(self.ctx.allow_ref_declaring, true);
             if v.name.get_ty().is_none() {
-                self.declare_vars(kind, &v.name).report(&mut self.storage);
+                self.declare_vars(VarKind::Var(kind), &v.name).report(&mut self.storage);
             }
 
             remove_declaring!();

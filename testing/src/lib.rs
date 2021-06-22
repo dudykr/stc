@@ -5,14 +5,19 @@ use slog::Level;
 use slog::Logger;
 use slog_envlogger::EnvLogger;
 use std::fmt::Write;
+use std::fs::create_dir_all;
 use std::fs::read_to_string;
+use std::fs::File;
+use std::fs::OpenOptions;
 use std::io;
+use std::path::Path;
 use std::path::PathBuf;
 use std::process::Command;
 use std::sync::mpsc::channel;
 use std::sync::mpsc::Receiver;
 use std::sync::mpsc::Sender;
 use std::sync::Mutex;
+use std::thread;
 
 pub struct LogGuard {
     pub logger: Logger,
@@ -26,13 +31,20 @@ impl LogGuard {
 
 struct LogWriter {
     receiver: Receiver<String>,
+    log_path: String,
+    log_file: File,
 }
 
 impl Drop for LogWriter {
     fn drop(&mut self) {
         while let Ok(data) = self.receiver.try_recv() {
             print!("{}", data);
+            {
+                use std::io::Write;
+                self.log_file.write_all(data.as_bytes()).expect("failed to write");
+            }
         }
+        eprintln!("Log: {}", self.log_path);
     }
 }
 
@@ -56,7 +68,20 @@ pub fn term_logger() -> Logger {
 }
 
 pub fn logger() -> LogGuard {
+    let log_dir = Path::new("logs");
+    let _ = create_dir_all(&log_dir);
+
+    let log_path = format!("logs/{}.ans", thread::current().name().unwrap());
+    eprintln!("Log: {}", log_path);
+    let log_file = OpenOptions::new()
+        .create(true)
+        .write(true)
+        .truncate(true)
+        .open(&log_path)
+        .unwrap();
+
     let (sender, receiver) = channel::<String>();
+
     let drain = TestDrain { sender };
 
     let drain = slog_envlogger::new(drain);
@@ -67,7 +92,11 @@ pub fn logger() -> LogGuard {
 
     LogGuard {
         logger,
-        _writer: LogWriter { receiver },
+        _writer: LogWriter {
+            receiver,
+            log_path,
+            log_file,
+        },
     }
 }
 

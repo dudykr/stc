@@ -51,9 +51,7 @@ warning: Type
 7 | for (const norest of array.map(a => ({ ...a, x: 'a string' }))) {
   |                                      ^^^^^^^^^^^^^^^^^^^^^^^
   |
-  = note: {
-              x: 'a string';
-          }
+  = note: any
 
 warning: Type
  --> $DIR/tests/pass/vars/forOf/rest/2.ts:7:37
@@ -61,9 +59,7 @@ warning: Type
 7 | for (const norest of array.map(a => ({ ...a, x: 'a string' }))) {
   |                                     ^^^^^^^^^^^^^^^^^^^^^^^^^
   |
-  = note: {
-              x: 'a string';
-          }
+  = note: any
 
 warning: Type
  --> $DIR/tests/pass/vars/forOf/rest/2.ts:7:32
@@ -71,9 +67,7 @@ warning: Type
 7 | for (const norest of array.map(a => ({ ...a, x: 'a string' }))) {
   |                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   |
-  = note: (a: any) => {
-              x: 'a string';
-          }
+  = note: (a: any) => any
 
 warning: Type
  --> $DIR/tests/pass/vars/forOf/rest/2.ts:7:22

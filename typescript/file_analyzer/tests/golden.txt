@@ -2,6 +2,8 @@ tests/pass/async/promise/asyncAwaitnestedClasses_es5/1.ts
 tests/pass/builltin/array/ext/1.ts
 tests/pass/builltin/array/map/simple.ts
 tests/pass/class/inheritance/methods-from-object-1.ts
+tests/pass/class/local/localTypes3/1.ts
+tests/pass/class/local/localTypes3/2.ts
 tests/pass/class/member/interface/merging/1.ts
 tests/pass/class/member/interface/merging/2.ts
 tests/pass/class/member/interface/merging/3.ts
@@ -19,7 +21,9 @@ tests/pass/controlFlow/element-access-1.ts
 tests/pass/controlFlow/forInStmt/simple/1.ts
 tests/pass/controlFlow/forInStmt/simple/2.ts
 tests/pass/controlFlow/forInStmt/simple/3.ts
+tests/pass/controlFlow/forOfStmt/async/types.forAwait.es2018.1/1.ts
 tests/pass/controlFlow/forOfStmt/hoisting-1.ts
+tests/pass/controlFlow/forOfStmt/intersection/1.ts
 tests/pass/controlFlow/forOfStmt/object-entries/1.ts
 tests/pass/controlFlow/forOfStmt/simple-1.ts
 tests/pass/controlFlow/forOfStmt/simple/2.ts
@@ -28,6 +32,16 @@ tests/pass/controlFlow/forOfStmt/union/1.ts
 tests/pass/controlFlow/forOfStmt/union/2.ts
 tests/pass/controlFlow/forOfStmt/union/3.ts
 tests/pass/controlFlow/forOfStmt/union/4.ts
+tests/pass/controlFlow/guard/assertions/1.ts
+tests/pass/controlFlow/guard/assertions/10.ts
+tests/pass/controlFlow/guard/assertions/2.ts
+tests/pass/controlFlow/guard/assertions/3.ts
+tests/pass/controlFlow/guard/assertions/4.ts
+tests/pass/controlFlow/guard/assertions/5.ts
+tests/pass/controlFlow/guard/assertions/6.ts
+tests/pass/controlFlow/guard/assertions/7.ts
+tests/pass/controlFlow/guard/assertions/8.ts
+tests/pass/controlFlow/guard/assertions/9.ts
 tests/pass/controlFlow/guard/primitive-1.ts
 tests/pass/controlFlow/guard/tpl-in-1.ts
 tests/pass/controlFlow/guard/tpl-typoeof-1.ts
@@ -40,6 +54,7 @@ tests/pass/controlFlow/ifStmt/instanceof-2.ts
 tests/pass/controlFlow/ifStmt/object/controlFlowElementAccess2/1.ts
 tests/pass/controlFlow/ifStmt/object/controlFlowElementAccess2/2.ts
 tests/pass/controlFlow/ifStmt/object/prop-1.ts
+tests/pass/controlFlow/ifStmt/subTypes/reduction-1.ts
 tests/pass/controlFlow/ifStmt/typeof-1.ts
 tests/pass/controlFlow/ifStmt/typeof-2.ts
 tests/pass/controlFlow/ifStmt/typeof-3.ts
@@ -83,6 +98,8 @@ tests/pass/exprs/class/generic/genericClassExpressionInFunction/1.ts
 tests/pass/exprs/class/generic/genericClassExpressionInFunction/2.ts
 tests/pass/exprs/class/generic/genericClassExpressionInFunction/3.ts
 tests/pass/exprs/class/nested-super-1.ts
+tests/pass/exprs/constAssertion/controlFLowBindingPatternOrder/1-1.ts
+tests/pass/exprs/constAssertion/controlFLowBindingPatternOrder/1.ts
 tests/pass/exprs/constAssertion/controlFLowBindingPatternOrder/2.ts
 tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/2.ts
 tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/3.ts
@@ -150,6 +167,7 @@ tests/pass/types/alias/base-1-3.ts
 tests/pass/types/alias/simple-1.ts
 tests/pass/types/alias/simple-2.ts
 tests/pass/types/alias/wierd/1.ts
+tests/pass/types/builtin/extension/array-1.ts
 tests/pass/types/builtin/extension/inference-1.ts
 tests/pass/types/builtin/extension/simple-1.ts
 tests/pass/types/conditional/conditionalTypes1/1.ts
@@ -164,6 +182,10 @@ tests/pass/types/facts/field/literal-union-1.ts
 tests/pass/types/generic/call-chain-1.ts
 tests/pass/types/generic/extends/1.ts
 tests/pass/types/guards/nested-assignment-1.ts
+tests/pass/types/inference/generatedContextualTypings/1.ts
+tests/pass/types/inference/generatedContextualTypings/2.ts
+tests/pass/types/inference/generatedContextualTypings/3.ts
+tests/pass/types/inference/generatedContextualTypings/4.ts
 tests/pass/types/inference/generic/contextual/contextual-1-1.ts
 tests/pass/types/inference/generic/contextual/contextual-2-2.ts
 tests/pass/types/inference/generic/contextual/contextual-2-3-1.ts
@@ -185,8 +207,10 @@ tests/pass/types/mapped/5.ts
 tests/pass/types/mapped/6.ts
 tests/pass/types/mapped/7-1.ts
 tests/pass/types/mapped/7.ts
+tests/pass/types/null/var/1.ts
 tests/pass/types/predicate/type-guard-1.ts
 tests/pass/types/predicate/type-guard-2.ts
+tests/pass/types/ref/import/1.ts
 tests/pass/types/this/class/chained-1.ts
 tests/pass/types/this/class/static/members-1.ts
 tests/pass/types/this/class/static/members-2.ts
@@ -223,5 +247,7 @@ tests/visualize/tuple-1-2.ts
 tests/visualize/tuple-1.ts
 tests/visualize/types/inference/generic/interface/methods-1.ts
 tests/visualize/types/mapped/7-1.ts
+tests/visualize/types/tuple/strictTupleLength/1.ts
+tests/visualize/types/tuple/strictTupleLength/2.ts
 tests/visualize/types/tuple/widening/1.ts
 tests/visualize/types/typeLit/1.ts

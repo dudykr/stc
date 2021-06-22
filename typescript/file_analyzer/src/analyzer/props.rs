@@ -1,5 +1,6 @@
 use super::{marks::MarkExt, scope::ScopeKind, Analyzer};
 use crate::analyzer::expr::IdCtx;
+use crate::analyzer::pat::PatMode;
 use crate::{
     analyzer::{expr::TypeOfMode, util::ResultExt, Ctx},
     ty::{MethodSignature, Operator, PropertySignature, Type, TypeElement, TypeExt},
@@ -158,7 +159,9 @@ impl Analyzer<'_, '_> {
                                 _ if is_valid_key => {}
                                 Type::Lit(..) => {}
                                 Type::EnumVariant(..) => {}
-                                _ if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) || ty.is_unique_symbol() => {}
+                                _ if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword)
+                                    || ty.is_unique_symbol()
+                                    || ty.normalize().is_symbol() => {}
                                 _ => match mode {
                                     ComputedPropMode::Interface => {
                                         errors.push(Error::TS1169 { span: node.span });
@@ -179,7 +182,8 @@ impl Analyzer<'_, '_> {
                     Type::Keyword(RTsKeywordType {
                         kind: TsKeywordTypeKind::TsSymbolKeyword,
                         ..
-                    }) => {}
+                    })
+                    | Type::Symbol(..) => {}
                     Type::Operator(Operator {
                         op: TsTypeOperatorOp::Unique,
                         ty,
@@ -406,6 +410,7 @@ impl Analyzer<'_, '_> {
                     params: Default::default(),
                     type_ann: shorthand_type_ann,
                     type_params: Default::default(),
+                    metadata: Default::default(),
                 }
                 .into()
             }
@@ -416,7 +421,15 @@ impl Analyzer<'_, '_> {
                     RPropName::Computed(_) => true,
                     _ => false,
                 };
-                let ty = kv.value.validate_with_default(self)?;
+
+                let type_ann = object_type.and_then(|obj| {
+                    self.access_property(span, &obj, &key, TypeOfMode::RValue, IdCtx::Var)
+                        .ok()
+                });
+
+                let ty = kv
+                    .value
+                    .validate_with_args(self, (TypeOfMode::RValue, None, type_ann.as_ref()))?;
 
                 PropertySignature {
                     span,
@@ -427,6 +440,7 @@ impl Analyzer<'_, '_> {
                     params: Default::default(),
                     type_ann: Some(box ty),
                     type_params: Default::default(),
+                    metadata: Default::default(),
                 }
                 .into()
             }
@@ -443,16 +457,22 @@ impl Analyzer<'_, '_> {
                 let mut param = &p.param;
 
                 self.with_child(ScopeKind::Method { is_static: false }, Default::default(), {
-                    |child| -> ValidationResult<_> {
+                    |child: &mut Analyzer| -> ValidationResult<_> {
+                        child.ctx.pat_mode = PatMode::Decl;
+                        let param = param.validate_with(child)?;
+
+                        p.body.visit_with(child);
+
                         Ok(PropertySignature {
                             span,
                             accessibility: None,
                             readonly: false,
                             key,
                             optional: false,
-                            params: vec![param.validate_with(child)?],
+                            params: vec![param],
                             type_ann: Some(box Type::any(param_span)),
                             type_params: Default::default(),
+                            metadata: Default::default(),
                         }
                         .into())
                     }
@@ -565,6 +585,7 @@ impl Analyzer<'_, '_> {
                             params,
                             ret_ty,
                             type_params,
+                            metadata: Default::default(),
                         }
                         .into())
                     }
@@ -616,6 +637,7 @@ impl Analyzer<'_, '_> {
                 Some(box Type::any(n.span))
             },
             type_params: Default::default(),
+            metadata: Default::default(),
         }
         .into())
     }

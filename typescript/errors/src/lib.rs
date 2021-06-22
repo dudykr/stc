@@ -59,6 +59,76 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS17009
+    ThisUsedBeforeCallingSuper {
+        span: Span,
+    },
+
+    /// TS17011
+    SuperUsedBeforeCallingSuper {
+        span: Span,
+    },
+
+    /// TS2337
+    SuperInNestedFunction {
+        span: Span,
+    },
+
+    /// TS2377
+    SuperNotCalled {
+        span: Span,
+    },
+
+    /// TS2513
+    CannotAccessAbstractMemeber {
+        span: Span,
+    },
+
+    /// TS2365
+    OperatorCannotBeAppliedToTypes {
+        span: Span,
+    },
+
+    /// TS2516
+    AbstractClassMethodShouldBeSequntial {
+        span: Span,
+    },
+
+    /// TS2411
+    ClassMemeberNotCompatibleWithStringIndexSignature {
+        span: Span,
+    },
+
+    /// TS2412
+    ClassMemeberNotCompatibleWithNumericIndexSignature {
+        span: Span,
+    },
+
+    /// TS2403
+    AssignFailedBecauseTupleLengthDiffers {
+        span: Span,
+    },
+
+    /// TS17013
+    InvalidUsageOfNewTarget {
+        span: Span,
+    },
+
+    /// TS2767
+    ReturnPropertyOfIteratorMustBeMethod {
+        span: Span,
+    },
+
+    /// TS2490
+    NextOfItertorShouldReturnTypeWithPropertyValue {
+        span: Span,
+    },
+
+    /// TS2631
+    CannotAssignToModule {
+        span: Span,
+    },
+
     /// TS2701
     RestArgMustBeVarOrMemberAccess {
         span: Span,
@@ -192,6 +262,11 @@ pub enum Error {
 
     /// TS18022
     PrivateIdUsedAsMethodName {
+        span: Span,
+    },
+
+    /// TS2333
+    ThisInConstructorParam {
         span: Span,
     },
 
@@ -381,6 +456,8 @@ pub enum Error {
     /// TS2356
     TypeInvalidForUpdateArg {
         span: Span,
+        /// Type of the arugment.
+        ty: Box<Type>,
     },
 
     PrivatePropertyIsDifferent {
@@ -530,6 +607,10 @@ pub enum Error {
         right: Span,
     },
 
+    CannotAssignToReadonlyProperty {
+        span: Span,
+    },
+
     ReadOnly {
         span: Span,
     },
@@ -581,6 +662,11 @@ pub enum Error {
 
     /// TS2496
     InvalidUseOfArgumentsInEs3OrEs5 {
+        span: Span,
+    },
+
+    /// TS2522
+    ArgumentsCannotBeUsedInAsyncFnInEs3OrEs5 {
         span: Span,
     },
 
@@ -854,11 +940,13 @@ pub enum Error {
         span: Span,
     },
 
-    TS2362 {
+    /// TS2362
+    WrongTypeForLhsOfNumericOperation {
         span: Span,
     },
 
-    TS2363 {
+    /// TS2363
+    WrongTypeForRhsOfNumericOperation {
         span: Span,
     },
 
@@ -916,8 +1004,10 @@ pub enum Error {
         span: Span,
     },
 
-    TS2515 {
+    /// TS2515
+    ClassDoesNotImplementMemeber {
         span: Span,
+        key: Box<Key>,
     },
 
     TS2531 {
@@ -1049,9 +1139,18 @@ pub enum Error {
         span: Span,
     },
 
+    MustHaveSymbolAsycIteratorThatReturnsIterator {
+        span: Span,
+    },
+
     NoSuchConstructor {
         span: Span,
         key: Box<Key>,
+    },
+
+    /// TS2512
+    AbstractAndConcreteIsMixed {
+        span: Span,
     },
 
     DebugContext(DebugContext),
@@ -1194,10 +1293,11 @@ impl Error {
             // ===== ===== ===== For convinience ===== ===== =====
 
             // TS2461: Not an array type.
+            // TS2488: Need Symbol.iterator
             // TS2548: Not an array or no Symbol.iterator
             // TS2549: Not an array, string or no Symbol.iterator
             // TS2569: Not an array, string or no Symbol.iterator but downlevel iteration will work.
-            2548 | 2549 | 2569 => 2461,
+            2461 | 2488 | 2548 | 2549 | 2569 => 2461,
 
             // TS7005; No implicit any for variables.
             // TS7006; No implicit any for parameters.
@@ -1272,8 +1372,8 @@ impl Error {
             Error::AnyTypeUsedAsCalleeWithTypeArgs { .. } => 2347,
             Error::TS2360 { .. } => 2360,
             Error::TS2361 { .. } => 2361,
-            Error::TS2362 { .. } => 2362,
-            Error::TS2363 { .. } => 2363,
+            Error::WrongTypeForLhsOfNumericOperation { .. } => 2362,
+            Error::WrongTypeForRhsOfNumericOperation { .. } => 2363,
             Error::TS2365 { .. } => 2365,
             Error::TS2370 { .. } => 2370,
             Error::WrongOverloadSignature { .. } => 2394,
@@ -1287,7 +1387,7 @@ impl Error {
             Error::ParamPropIsNotAllowedInAmbientConstructorx { .. } => 2369,
             Error::TS2389 { .. } => 2389,
             Error::TS2447 { .. } => 2447,
-            Error::TS2515 { .. } => 2515,
+            Error::ClassDoesNotImplementMemeber { .. } => 2515,
             Error::TS2531 { .. } => 2531,
             Error::TS2532 { .. } => 2532,
             Error::TS2567 { .. } => 2567,
@@ -1406,6 +1506,8 @@ impl Error {
 
             Error::MustHaveSymbolIteratorThatReturnsIterator { .. } => 2488,
 
+            Error::MustHaveSymbolAsycIteratorThatReturnsIterator { .. } => 2504,
+
             Error::MustHaveSymbolIteratorThatReturnsIteratorOrMustBeArray { .. } => 2548,
 
             Error::NoSuchPropertyWhileDeclWithBidningPat { .. } => 2525,
@@ -1446,6 +1548,8 @@ impl Error {
 
             Error::InvalidUseOfArgumentsInEs3OrEs5 { .. } => 2496,
 
+            Error::ArgumentsCannotBeUsedInAsyncFnInEs3OrEs5 { .. } => 2522,
+
             Error::NoMatchingOverload { .. } => 2769,
 
             Error::NoSuchVarForShorthand { .. } => 18004,
@@ -1469,6 +1573,8 @@ impl Error {
             Error::WithStmtNotSupported { .. } => 2410,
 
             Error::InvalidSuperClass { .. } => 2507,
+
+            Error::ThisInConstructorParam { .. } => 2333,
 
             Error::ThisInStaticPropertyInitializer { .. } => 2334,
 
@@ -1511,6 +1617,8 @@ impl Error {
 
             Error::NotGeneric { .. } => 2315,
 
+            Error::CannotAssignToReadonlyProperty { .. } => 2540,
+
             Error::ReadOnly { .. } => 2546,
 
             Error::ClassNameCannotBeObjectWhenTargetingEs5WithModule { .. } => 2725,
@@ -1537,7 +1645,46 @@ impl Error {
 
             Error::RestArgMustBeVarOrMemberAccess { .. } => 2701,
 
+            Error::CannotAssignToModule { .. } => 2631,
+
+            Error::ReturnPropertyOfIteratorMustBeMethod { .. } => 2767,
+
+            Error::NextOfItertorShouldReturnTypeWithPropertyValue { .. } => 2490,
+
+            Error::InvalidUsageOfNewTarget { .. } => 17013,
+
+            Error::AssignFailedBecauseTupleLengthDiffers { .. } => 2403,
+
+            Error::ClassMemeberNotCompatibleWithStringIndexSignature { .. } => 2411,
+
+            Error::ClassMemeberNotCompatibleWithNumericIndexSignature { .. } => 2412,
+
+            Error::AbstractAndConcreteIsMixed { .. } => 2512,
+
+            Error::AbstractClassMethodShouldBeSequntial { .. } => 2516,
+
+            Error::OperatorCannotBeAppliedToTypes { .. } => 2365,
+
+            Error::CannotAccessAbstractMemeber { .. } => 2513,
+
+            Error::SuperNotCalled { .. } => 2377,
+
+            Error::SuperInNestedFunction { .. } => 2337,
+
+            Error::ThisUsedBeforeCallingSuper { .. } => 17009,
+
+            Error::SuperUsedBeforeCallingSuper { .. } => 17011,
             _ => 0,
+        }
+    }
+
+    pub fn is_property_not_found(&self) -> bool {
+        match self.actual() {
+            Error::NoSuchProperty { .. }
+            | Error::NoSuchPropertyInClass { .. }
+            | Error::NoSuchPropertyInModule { .. }
+            | Error::NoSuchPropertyInThis { .. } => true,
+            _ => false,
         }
     }
 

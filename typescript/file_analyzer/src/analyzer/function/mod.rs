@@ -1,3 +1,4 @@
+use super::scope::VarKind;
 use super::Analyzer;
 use crate::analyzer::util::ResultExt;
 use crate::{
@@ -8,6 +9,7 @@ use crate::{
     validator::ValidateWith,
     ValidationResult,
 };
+use itertools::{EitherOrBoth, Itertools};
 use rnode::Fold;
 use rnode::FoldWith;
 use stc_ts_ast_rnode::RBindingIdent;
@@ -29,9 +31,9 @@ use stc_ts_types::Function;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeLit;
 use stc_ts_types::{Alias, Interface, Ref};
+use stc_ts_utils::PatExt;
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::TsKeywordTypeKind;
-use swc_ecma_ast::VarDeclKind;
 use ty::TypeExt;
 
 mod return_type;
@@ -58,6 +60,7 @@ impl Analyzer<'_, '_> {
         }
 
         self.with_child(ScopeKind::Fn, Default::default(), |child: &mut Analyzer| {
+            child.ctx.allow_new_target = true;
             child.ctx.in_fn_with_return_type = f.return_type.is_some();
             child.ctx.in_async = f.is_async;
             child.ctx.in_generator = f.is_generator;
@@ -121,10 +124,11 @@ impl Analyzer<'_, '_> {
 
             let mut declared_ret_ty = try_opt!(f.return_type.validate_with(child));
 
+            child.scope.declared_return_type = declared_ret_ty.clone();
+
             if let Some(ty) = &mut declared_ret_ty {
                 ty.make_cheap();
 
-                child.scope.declared_return_type = Some(ty.clone());
                 child.expand_return_type_of_fn(ty).report(&mut child.storage);
             }
 
@@ -313,7 +317,8 @@ impl Analyzer<'_, '_> {
                 if let Some(default) = default {
                     args.params.push(default);
                 } else {
-                    self.storage.report(Error::ImplicitAny { span });
+                    self.storage
+                        .report(Error::ImplicitAny { span }.context("qualify_ref_type_args"));
                     args.params.push(Type::any(span));
                 }
             }
@@ -323,9 +328,32 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO: Handle recursive funciton
-    fn visit_fn(&mut self, name: Option<&RIdent>, f: &RFunction) -> Type {
+    fn visit_fn(&mut self, name: Option<&RIdent>, f: &RFunction, type_ann: Option<&Type>) -> Type {
         let fn_ty: Result<_, _> = try {
             let no_implicit_any_span = name.as_ref().map(|name| name.span);
+
+            match type_ann.as_ref().map(|ty| ty.normalize()) {
+                Some(Type::Function(ty)) => {
+                    for p in f.params.iter().zip_longest(ty.params.iter()) {
+                        match p {
+                            EitherOrBoth::Both(param, ty) => {
+                                // Store type infomations, so the pattern validator can use correct type.
+                                if let Some(pat_node_id) = param.pat.node_id() {
+                                    if let Some(m) = &mut self.mutations {
+                                        m.for_pats
+                                            .entry(pat_node_id)
+                                            .or_default()
+                                            .ty
+                                            .get_or_insert_with(|| *ty.ty.clone());
+                                    }
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+                _ => {}
+            }
 
             // if let Some(name) = name {
             //     // We use `typeof function` to infer recursive function's return type.
@@ -429,18 +457,20 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, f: &RFnDecl) {
         let ctx = Ctx {
             in_declare: self.ctx.in_declare || f.declare || f.function.body.is_none(),
+            in_async: f.function.is_async,
+            in_generator: f.function.is_generator,
             ..self.ctx
         };
         let fn_ty = self
             .with_ctx(ctx)
             .with_child(ScopeKind::Fn, Default::default(), |a: &mut Analyzer| {
-                Ok(a.visit_fn(Some(&f.ident), &f.function).cheap())
+                Ok(a.visit_fn(Some(&f.ident), &f.function, None).cheap())
             })?;
 
         let mut a = self.with_ctx(ctx);
         match a.declare_var(
             f.span(),
-            VarDeclKind::Var,
+            VarKind::Fn,
             f.ident.clone().into(),
             Some(fn_ty),
             None,
@@ -461,8 +491,8 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     /// NOTE: This method **should not call f.fold_children_with(self)**
-    fn validate(&mut self, f: &RFnExpr) -> ValidationResult<Type> {
-        Ok(self.visit_fn(f.ident.as_ref(), &f.function))
+    fn validate(&mut self, f: &RFnExpr, type_ann: Option<&Type>) -> ValidationResult<Type> {
+        Ok(self.visit_fn(f.ident.as_ref(), &f.function, type_ann))
     }
 }
 

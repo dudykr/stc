@@ -1,0 +1,8 @@
+warning: Type
+ --> $DIR/tests/pass/controlFlow/forOfStmt/async/types.forAwait.es2018.1/1.ts:4:21
+  |
+4 |     for await (y of iterableOfPromise) {
+  |                     ^^^^^^^^^^^^^^^^^
+  |
+  = note: Iterable
+

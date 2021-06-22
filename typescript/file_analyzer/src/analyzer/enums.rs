@@ -1,4 +1,4 @@
-use super::Analyzer;
+use super::{scope::VarKind, Analyzer};
 use crate::{
     analyzer::util::ResultExt,
     ty::{Enum, EnumMember, Type},
@@ -61,7 +61,7 @@ impl Analyzer<'_, '_> {
             self.validate_with(|a| a.validate_enum_memeber_name(&m.id));
         }
 
-        let mut default = 0;
+        let mut default = 0.0;
         let mut values = Default::default();
         let ty: Result<_, _> = try {
             let members = e
@@ -73,7 +73,7 @@ impl Analyzer<'_, '_> {
                         .map(|val| {
                             match &val {
                                 RTsLit::Number(n) => {
-                                    default = n.value as i32 + 1;
+                                    default = n.value + 1.0;
                                 }
                                 _ => {}
                             }
@@ -145,7 +145,7 @@ impl Analyzer<'_, '_> {
 
         self.declare_var(
             e.span,
-            VarDeclKind::Let,
+            VarKind::Enum,
             name.clone(),
             Some(stored_ty),
             None,
@@ -180,7 +180,7 @@ fn compute(
     e: &RTsEnumDecl,
     span: Span,
     values: &mut EnumValues,
-    default: Option<i32>,
+    default: Option<f64>,
     init: Option<&RExpr>,
 ) -> Result<RTsLit, Error> {
     fn compute_bin(e: &RTsEnumDecl, span: Span, values: &mut EnumValues, expr: &RBinExpr) -> Result<RTsLit, Error> {
@@ -369,6 +369,7 @@ impl Analyzer<'_, '_> {
                     name: Some(key.sym),
                 })),
                 type_params: Default::default(),
+                metadata: Default::default(),
             }))
         }
         {

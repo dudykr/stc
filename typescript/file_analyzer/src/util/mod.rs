@@ -11,9 +11,11 @@ use stc_ts_ast_rnode::RIdent;
 use stc_ts_ast_rnode::RModuleDecl;
 use stc_ts_ast_rnode::RModuleItem;
 use stc_ts_ast_rnode::RStmt;
+use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_ast_rnode::RTsLitType;
+use stc_ts_types::Ref;
 use stc_ts_types::{Id, InferType, TypeParam};
 use swc_common::{Mark, Span, Spanned, SyntaxContext};
 use swc_ecma_ast::*;
@@ -343,4 +345,37 @@ impl rnode::Visit<TypeParam> for TypeParamFinder<'_> {
             p.visit_children_with(self)
         }
     }
+}
+
+pub(crate) fn should_instantiate_type_ann(ty: &Type) -> bool {
+    let ty = ty.normalize();
+
+    match ty {
+        Type::Ref(Ref {
+            type_name: RTsEntityName::Ident(name),
+            ..
+        }) if name.sym == *"ReadonlyArray" => false,
+
+        Type::Query(..) | Type::Param(..) | Type::Keyword(..) => false,
+
+        _ => true,
+    }
+}
+
+pub(crate) fn unwrap_ref_with_single_arg<'a>(ty: &'a Type, wanted_ref_name: &str) -> Option<&'a Type> {
+    match ty.normalize() {
+        Type::Ref(Ref {
+            type_name: RTsEntityName::Ident(n),
+            type_args: Some(type_args),
+            ..
+        }) if n.sym == *wanted_ref_name => {
+            if type_args.params.len() == 1 {
+                return Some(&type_args.params[0]);
+            }
+        }
+
+        _ => {}
+    }
+
+    None
 }

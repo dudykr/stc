@@ -48,6 +48,7 @@ impl Fold<MethodSignature> for TypeParamRenamer {
             params,
             ret_ty,
             type_params,
+            metadata: m.metadata,
         }
     }
 }

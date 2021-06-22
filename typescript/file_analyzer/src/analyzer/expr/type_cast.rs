@@ -10,6 +10,7 @@ use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_ast_rnode::RTsTypeAssertion;
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
+use stc_ts_types::Interface;
 use stc_ts_types::TypeElement;
 use stc_ts_types::TypeParamInstantiation;
 use std::borrow::Cow;
@@ -303,6 +304,8 @@ impl Analyzer<'_, '_> {
                     ..
                 }),
             ) => return Ok(false),
+
+            (Type::Function(..), Type::Interface(Interface { name, .. })) if name == "Function" => return Ok(true),
             _ => {}
         }
 

@@ -323,6 +323,7 @@ impl Fold<Type> for Simplifier<'_> {
                             params: Default::default(),
                             type_ann: ty.clone(),
                             type_params: Default::default(),
+                            metadata: Default::default(),
                         })
                     })
                     .collect();

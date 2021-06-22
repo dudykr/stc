@@ -90,6 +90,7 @@ mod call_new;
 mod const_assertion;
 mod constraint_reducer;
 mod function;
+mod meta_prop;
 mod object;
 mod optional_chaining;
 mod type_cast;
@@ -161,6 +162,12 @@ impl Analyzer<'_, '_> {
 
                     if self.ctx.in_static_property_initializer {
                         self.storage.report(Error::ThisInStaticPropertyInitializer { span })
+                    } else if self.ctx.in_constructor_param {
+                        self.storage.report(Error::ThisInConstructorParam { span })
+                    }
+
+                    if self.scope.cannot_use_this_because_super_not_called() {
+                        self.storage.report(Error::ThisUsedBeforeCallingSuper { span })
                     }
 
                     let is_ref_to_module = match self.scope.kind() {
@@ -291,7 +298,7 @@ impl Analyzer<'_, '_> {
                     return Ok(Type::any(span));
                 }
 
-                RExpr::Await(e) => e.validate_with(self),
+                RExpr::Await(e) => e.validate_with_args(self, type_ann),
 
                 RExpr::Class(RClassExpr {
                     ref ident, ref class, ..
@@ -303,7 +310,7 @@ impl Analyzer<'_, '_> {
                 RExpr::Arrow(ref e) => return Ok(e.validate_with_args(self, type_ann)?.into()),
 
                 RExpr::Fn(f) => {
-                    return Ok(f.validate_with(self)?.into());
+                    return Ok(f.validate_with_args(self, type_ann)?.into());
                 }
 
                 RExpr::Member(ref expr) => {
@@ -318,7 +325,7 @@ impl Analyzer<'_, '_> {
                     return self.type_of_member_expr(expr, mode);
                 }
 
-                RExpr::MetaProp(..) => unimplemented!("typeof(MetaProp)"),
+                RExpr::MetaProp(e) => return e.validate_with(self),
 
                 RExpr::Invalid(ref i) => return Ok(Type::any(i.span())),
 
@@ -605,17 +612,6 @@ impl Analyzer<'_, '_> {
 
     pub(crate) fn validate_key(&mut self, prop: &RExpr, computed: bool) -> ValidationResult<Key> {
         if computed {
-            match prop {
-                RExpr::Lit(RLit::Str(s)) => {
-                    return Ok(Key::Normal {
-                        span: s.span,
-                        sym: s.value.clone(),
-                    })
-                }
-                RExpr::Lit(RLit::Num(n)) => return Ok(Key::Num(n.clone())),
-                _ => {}
-            }
-
             prop.validate_with_default(self)
                 .and_then(|ty| self.expand_top_ref(ty.span(), Cow::Owned(ty)).map(Cow::into_owned))
                 .and_then(|ty| self.expand_enum(ty))
@@ -669,6 +665,15 @@ impl Analyzer<'_, '_> {
         }
 
         match (declared, cur) {
+            (Key::Normal { sym, .. }, Key::Num(RNumber { value, .. })) => {
+                if &**sym == value.to_string() {
+                    return true;
+                }
+            }
+            _ => {}
+        }
+
+        match (declared, cur) {
             (
                 Key::Num(RNumber {
                     value: declared_value, ..
@@ -695,6 +700,7 @@ impl Analyzer<'_, '_> {
                     return true;
                 }
             }
+
             _ => {}
         }
 
@@ -837,6 +843,50 @@ impl Analyzer<'_, '_> {
                         _ => unimplemented!("TypeElement {:?}", el),
                     }
                 }
+
+                match (key, prop) {
+                    (
+                        Key::Num(key),
+                        Key::Normal {
+                            span: prop_span,
+                            sym: prop_sym,
+                        },
+                    ) => {
+                        // If we are accessing an object which has 0b11010 (26,
+                        // binary number) and the accessor is "26" (string), it
+                        // should be any.
+                        //
+                        //
+                        if *prop_sym == js_word!("Infinity") {
+                            return Ok(Some(Type::any(span)));
+                        } else if prop_sym.starts_with("0b") || prop_sym.starts_with("0B") {
+                            let prop_num = lexical::parse_radix::<f64, _>(prop_sym[2..].as_bytes(), 2);
+
+                            if let Ok(prop_num) = prop_num {
+                                if key.value == prop_num {
+                                    return Ok(Some(Type::any(span)));
+                                }
+                            }
+                        } else if prop_sym.starts_with("0o") || prop_sym.starts_with("0O") {
+                            let prop_num = lexical::parse_radix::<f64, _>(prop_sym[2..].as_bytes(), 8);
+
+                            if let Ok(prop_num) = prop_num {
+                                if key.value == prop_num {
+                                    return Ok(Some(Type::any(span)));
+                                }
+                            }
+                        } else {
+                            let prop_num = lexical::parse_radix::<f64, _>(prop_sym.as_bytes(), 10);
+
+                            if let Ok(prop_num) = prop_num {
+                                if key.value == prop_num {
+                                    return Ok(Some(Type::any(span)));
+                                }
+                            }
+                        }
+                    }
+                    _ => {}
+                }
             }
         }
 
@@ -914,7 +964,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if has_index_signature && !self.ctx.should_not_create_indexed_type_from_ty_els {
+        if has_index_signature && !self.ctx.disallow_creating_indexed_type_from_ty_els {
             // This check exists to prefer a specific property over generic index signature.
             if prop.is_computed() || matching_elements.is_empty() {
                 slog::warn!(self.logger, "Creating a indexed access type from a type literal");
@@ -973,9 +1023,12 @@ impl Analyzer<'_, '_> {
                 Type::Lit(RTsLitType {
                     lit: RTsLit::Str(prop), ..
                 }) => {
-                    // As some types has rules about computed propeties, we use the result only if
-                    // it sucesses.
-                    if let Ok(ty) = self.access_property(
+                    let ctx = Ctx {
+                        disallow_creating_indexed_type_from_ty_els: true,
+                        disallow_indexing_array_with_string: true,
+                        ..self.ctx
+                    };
+                    let res = self.with_ctx(ctx).access_property(
                         span,
                         obj,
                         &Key::Normal {
@@ -984,7 +1037,25 @@ impl Analyzer<'_, '_> {
                         },
                         type_mode,
                         id_ctx,
-                    ) {
+                    );
+                    // As some types has rules about computed propeties, we use the result only if
+                    // it sucesses.
+                    if let Ok(ty) = res {
+                        return Ok(ty);
+                    }
+
+                    match obj.normalize() {
+                        Type::Enum(..) | Type::Symbol(..) => return res,
+                        _ => {}
+                    }
+                }
+
+                Type::Lit(RTsLitType {
+                    lit: RTsLit::Number(n), ..
+                }) => {
+                    // As some types has rules about computed propeties, we use the result only if
+                    // it sucesses.
+                    if let Ok(ty) = self.access_property(span, obj, &Key::Num(n.clone()), type_mode, id_ctx) {
                         return Ok(ty);
                     }
                 }
@@ -1288,6 +1359,14 @@ impl Analyzer<'_, '_> {
                 );
             }
 
+            Type::Symbol(..) => {
+                return Err(Error::NoSuchProperty {
+                    span,
+                    obj: Some(box obj.clone()),
+                    prop: Some(box prop.clone()),
+                })
+            }
+
             Type::Enum(ref e) => {
                 // TODO: Check if variant exists.
 
@@ -1462,6 +1541,11 @@ impl Analyzer<'_, '_> {
                             }
 
                             if self.key_matches(span, &mtd.key, prop, false) {
+                                if mtd.is_abstract {
+                                    self.storage.report(Error::CannotAccessAbstractMemeber { span });
+                                    return Ok(Type::any(span));
+                                }
+
                                 return Ok(Type::Function(stc_ts_types::Function {
                                     span: mtd.span,
                                     type_params: mtd.type_params.clone(),
@@ -1485,9 +1569,16 @@ impl Analyzer<'_, '_> {
 
                         ClassMember::IndexSignature(index) => {
                             if index.params.len() == 1 {
-                                if let Ok(()) =
-                                    self.assign(&mut Default::default(), &index.params[0].ty, &prop.ty(), span)
-                                {
+                                // `[s: string]: boolean` can be indexed with a number.
+
+                                let index_ty = &index.params[0].ty;
+
+                                let prop_ty = prop.ty();
+
+                                let indexed = (index_ty.is_kwd(TsKeywordTypeKind::TsStringKeyword) && prop_ty.is_num())
+                                    || self.assign(&mut Default::default(), &index_ty, &prop_ty, span).is_ok();
+
+                                if indexed {
                                     return Ok(index.type_ann.clone().map(|v| *v).unwrap_or_else(|| Type::any(span)));
                                 }
                             }
@@ -1504,6 +1595,33 @@ impl Analyzer<'_, '_> {
                     if let Ok(v) = self.access_property(span, &super_ty, prop, type_mode, id_ctx) {
                         return Ok(v);
                     }
+                }
+
+                let has_better_default = !self.ctx.disallow_indexing_class_with_computed
+                    && prop.is_computed()
+                    && match prop.ty().normalize() {
+                        // newWithSpreadES5.ts contains
+                        //
+                        //
+                        // var i: C[][];
+                        // new i["a-b"][1](1, 2, "string");
+                        // new i["a-b"][1](1, 2, ...a);
+                        // new i["a-b"][1](1, 2, ...a, "string");
+                        //
+                        //
+                        // and it's not error.
+                        Type::Keyword(RTsKeywordType {
+                            kind: TsKeywordTypeKind::TsStringKeyword,
+                            ..
+                        })
+                        | Type::Lit(RTsLitType {
+                            lit: RTsLit::Str(..), ..
+                        }) => true,
+                        _ => false,
+                    };
+
+                if has_better_default {
+                    return Ok(Type::any(span));
                 }
 
                 return Err(Error::NoSuchPropertyInClass {
@@ -1676,7 +1794,61 @@ impl Analyzer<'_, '_> {
 
                 let array_ty = self.env.get_global_type(span, &js_word!("Array"))?;
 
-                return self.access_property(span, &array_ty, prop, type_mode, id_ctx);
+                let has_better_default = !self.ctx.disallow_indexing_array_with_string
+                    && match prop.ty().normalize() {
+                        // newWithSpreadES5.ts contains
+                        //
+                        //
+                        // var i: C[][];
+                        // new i["a-b"][1](1, 2, "string");
+                        // new i["a-b"][1](1, 2, ...a);
+                        // new i["a-b"][1](1, 2, ...a, "string");
+                        //
+                        //
+                        // and it's not error.
+                        Type::Keyword(RTsKeywordType {
+                            kind: TsKeywordTypeKind::TsStringKeyword,
+                            ..
+                        })
+                        | Type::Lit(RTsLitType {
+                            lit: RTsLit::Str(..), ..
+                        }) => true,
+                        _ => false,
+                    };
+
+                let ctx = Ctx {
+                    disallow_creating_indexed_type_from_ty_els: self.ctx.disallow_creating_indexed_type_from_ty_els
+                        || has_better_default,
+                    ..self.ctx
+                };
+                return self
+                    .with_ctx(ctx)
+                    .access_property(span, &array_ty, prop, type_mode, id_ctx)
+                    .or_else(|err| {
+                        if !has_better_default {
+                            return Err(err);
+                        }
+                        match prop.ty().normalize() {
+                            // newWithSpreadES5.ts contains
+                            //
+                            //
+                            // var i: C[][];
+                            // new i["a-b"][1](1, 2, "string");
+                            // new i["a-b"][1](1, 2, ...a);
+                            // new i["a-b"][1](1, 2, ...a, "string");
+                            //
+                            //
+                            // and it's not error.
+                            Type::Keyword(RTsKeywordType {
+                                kind: TsKeywordTypeKind::TsStringKeyword,
+                                ..
+                            })
+                            | Type::Lit(RTsLitType {
+                                lit: RTsLit::Str(..), ..
+                            }) => Ok(Type::any(span)),
+                            _ => Err(err),
+                        }
+                    });
             }
 
             Type::Interface(Interface { ref body, extends, .. }) => {
@@ -1722,6 +1894,10 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                if prop.is_computed() {
+                    return Ok(Type::any(span));
+                }
+
                 return Err(Error::NoSuchProperty {
                     span,
                     obj: Some(box obj),
@@ -1752,7 +1928,26 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                if type_mode == TypeOfMode::LValue {
+                    return Ok(Type::any(span));
+                }
+
+                if members.iter().any(|e| e.is_call()) {
+                    let obj = self.env.get_global_type(span, &js_word!("Function"))?;
+                    if let Ok(v) = self.access_property(span, &obj, prop, type_mode, IdCtx::Var) {
+                        return Ok(v);
+                    }
+                }
+
+                {
+                    let obj = self.env.get_global_type(span, &js_word!("Object"))?;
+                    if let Ok(v) = self.access_property(span, &obj, prop, type_mode, IdCtx::Var) {
+                        return Ok(v);
+                    }
+                }
+
                 dbg!();
+
                 return Err(Error::NoSuchProperty {
                     span,
                     obj: Some(box obj),
@@ -1857,6 +2052,28 @@ impl Analyzer<'_, '_> {
 
                         return Ok(*elems[v as usize].ty.clone());
                     }
+
+                    Key::Normal {
+                        sym: js_word!("length"),
+                        ..
+                    } => {
+                        if elems.iter().any(|el| el.ty.normalize().is_rest()) {
+                            return Ok(Type::Keyword(RTsKeywordType {
+                                span,
+                                kind: TsKeywordTypeKind::TsNumberKeyword,
+                            }));
+                        }
+
+                        return Ok(Type::Lit(RTsLitType {
+                            node_id: NodeId::invalid(),
+                            span,
+                            lit: RTsLit::Number(RNumber {
+                                span,
+                                value: elems.len() as _,
+                            }),
+                        }));
+                    }
+
                     _ => {}
                 }
 
@@ -1959,6 +2176,16 @@ impl Analyzer<'_, '_> {
                         if let Key::Normal { sym, .. } = prop {
                             if let Some(item) = exports.vars.get(sym) {
                                 return Ok(item.clone());
+                            }
+                        }
+
+                        if let Key::Normal { sym, .. } = prop {
+                            if let Some(types) = exports.types.get(sym) {
+                                for ty in types.iter() {
+                                    if ty.normalize().is_module() {
+                                        return Ok(ty.clone());
+                                    }
+                                }
                             }
                         }
                     }
@@ -2447,6 +2674,12 @@ impl Analyzer<'_, '_> {
 
         ty.reposition(i.span);
 
+        {
+            let span = ty.span();
+            let span = span.apply_mark(self.marks().resolved_from_var);
+            ty.respan(span);
+        }
+
         Ok(ty)
     }
 
@@ -2483,12 +2716,7 @@ impl Analyzer<'_, '_> {
                     "Creating ref because we are currently defining a class: {}",
                     i.sym
                 );
-                return Ok(Type::Ref(Ref {
-                    span,
-                    ctxt: self.ctx.module_id,
-                    type_name: RTsEntityName::Ident(i.clone()),
-                    type_args: None,
-                }));
+                return Ok(Type::StaticThis(StaticThis { span }));
             }
         }
 
@@ -2509,12 +2737,32 @@ impl Analyzer<'_, '_> {
                                 _ => None,
                             }
                         });
+                    let arguments_points_async_fn = Some(true) == {
+                        let ctx = self.ctx;
+
+                        self.scope.matches(|scope| {
+                            if scope.is_root() {
+                                return Some(false);
+                            }
+
+                            match scope.kind() {
+                                ScopeKind::Fn => Some(ctx.in_async),
+                                ScopeKind::ArrowFn | ScopeKind::Constructor | ScopeKind::Method { .. } => Some(false),
+                                _ => None,
+                            }
+                        })
+                    };
+
                     let is_argument_defined_in_current_scope = self.scope.vars.contains_key(&i.clone().into());
 
                     if !self.scope.is_arguments_implicitly_defined() {
                         self.storage.report(Error::InvalidUseOfArgumentsInEs3OrEs5 { span })
                     } else if arguments_point_to_arrow && !is_argument_defined_in_current_scope {
                         self.storage.report(Error::InvalidUseOfArgumentsInEs3OrEs5 { span });
+                        return Ok(Type::any(span));
+                    } else if arguments_points_async_fn && !is_argument_defined_in_current_scope {
+                        self.storage
+                            .report(Error::ArgumentsCannotBeUsedInAsyncFnInEs3OrEs5 { span });
                         return Ok(Type::any(span));
                     }
                 }
@@ -2772,7 +3020,9 @@ impl Analyzer<'_, '_> {
                 if let Some(types) = self.find_type(ctxt, &i.into())? {
                     for ty in types {
                         match ty.normalize() {
-                            Type::Instance(..)
+                            Type::Namespace(_)
+                            | Type::Module(_)
+                            | Type::Instance(..)
                             | Type::Interface(_)
                             | Type::Class(_)
                             | Type::ClassDef(_)
@@ -2859,8 +3109,6 @@ impl Analyzer<'_, '_> {
                             Type::Operator(_) => {}
                             Type::Mapped(_) => {}
                             Type::Alias(_) => {}
-                            Type::Namespace(_) => {}
-                            Type::Module(_) => {}
                             Type::Arc(_) => {}
                         }
                     }
@@ -2949,6 +3197,10 @@ impl Analyzer<'_, '_> {
             }
 
             RExprOrSuper::Super(RSuper { span, .. }) => {
+                if self.scope.cannot_use_this_because_super_not_called() {
+                    self.storage.report(Error::SuperUsedBeforeCallingSuper { span })
+                }
+
                 self.report_error_for_super_reference_in_compute_keys(span, false);
 
                 if let Some(v) = self.scope.get_super_class() {

@@ -1,7 +1,9 @@
+use super::marks::MarkExt;
 use super::props::ComputedPropMode;
 use super::Analyzer;
 use super::Ctx;
 use super::ScopeKind;
+use crate::analyzer::scope::VarKind;
 use crate::analyzer::util::ResultExt;
 use crate::util::contains_infer_type;
 use crate::util::type_ext::TypeVecExt;
@@ -86,6 +88,8 @@ use stc_ts_types::QueryExpr;
 use stc_ts_types::QueryType;
 use stc_ts_types::Ref;
 use stc_ts_types::RestType;
+use stc_ts_types::Symbol;
+use stc_ts_types::SymbolId;
 use stc_ts_types::TplType;
 use stc_ts_types::TsExpr;
 use stc_ts_types::Tuple;
@@ -106,7 +110,7 @@ use swc_atoms::js_word;
 use swc_common::EqIgnoreSpan;
 use swc_common::Spanned;
 use swc_common::DUMMY_SP;
-use swc_ecma_ast::VarDeclKind;
+use swc_ecma_ast::TsKeywordTypeKind;
 
 /// We analyze dependencies between type parameters, and fold parameter in
 /// topological order.
@@ -230,6 +234,8 @@ impl Analyzer<'_, '_> {
             )?
         };
         self.register_type(d.id.clone().into(), Type::Alias(alias.clone()));
+
+        self.store_unmergedable_type_span(d.id.clone().into(), d.id.span);
 
         Ok(alias)
     }
@@ -389,6 +395,7 @@ impl Analyzer<'_, '_> {
                 type_params,
                 params: d.params.validate_with(child)?,
                 ret_ty: try_opt!(d.type_ann.validate_with(child)).map(Box::new),
+                metadata: Default::default(),
             })
         })
     }
@@ -422,27 +429,50 @@ impl Analyzer<'_, '_> {
             .visit_with(self);
         }
 
+        let params = d.params.validate_with(self)?;
+
+        let type_ann = {
+            // TODO: implicit any
+            match d.type_ann.validate_with(self) {
+                Some(v) => match v {
+                    Ok(mut ty) => {
+                        // Handle some symbol types.
+                        if self.is_builtin {
+                            if ty.is_unique_symbol() || ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) {
+                                let key = match &key {
+                                    Key::Normal { sym, .. } => sym,
+                                    _ => {
+                                        unreachable!("builtin: non-string key for symbol type")
+                                    }
+                                };
+                                ty = Type::Symbol(Symbol {
+                                    span: DUMMY_SP,
+                                    id: SymbolId::known(&key),
+                                });
+                            }
+                        }
+
+                        Some(box ty)
+                    }
+                    Err(e) => {
+                        self.storage.report(e);
+                        Some(box Type::any(d.span))
+                    }
+                },
+                None => Some(box Type::any(d.span)),
+            }
+        };
+
         Ok(PropertySignature {
             accessibility: None,
             span: d.span,
             key,
             optional: d.optional,
-            params: d.params.validate_with(self)?,
+            params,
             readonly: d.readonly,
-            type_ann: {
-                // TODO: implicit any
-                match d.type_ann.validate_with(self) {
-                    Some(v) => match v {
-                        Ok(v) => Some(box v),
-                        Err(e) => {
-                            self.storage.report(e);
-                            Some(box Type::any(d.span))
-                        }
-                    },
-                    None => Some(box Type::any(d.span)),
-                }
-            },
+            type_ann,
             type_params,
+            metadata: Default::default(),
         })
     }
 }
@@ -476,8 +506,13 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, t: &RTsTupleType) -> ValidationResult<Tuple> {
+        let marks = self.marks();
+
+        let span = t.span;
+        let span = marks.prevent_tuple_to_array.apply_to_span(span);
+
         Ok(Tuple {
-            span: t.span,
+            span,
             elems: t.elem_types.validate_with(self)?,
         })
     }
@@ -592,7 +627,7 @@ impl Analyzer<'_, '_> {
             if !child.is_builtin {
                 for param in params.iter() {
                     child
-                        .declare_complex_vars(VarDeclKind::Let, &param.pat, *param.ty.clone(), None)
+                        .declare_complex_vars(VarKind::Param, &param.pat, *param.ty.clone(), None, None)
                         .report(&mut child.storage);
                 }
             }
@@ -644,6 +679,8 @@ impl Analyzer<'_, '_> {
         let type_args = try_opt!(t.type_params.validate_with(self)).map(Box::new);
         let mut contains_infer = false;
 
+        let mut reported_type_not_founf = false;
+
         match t.type_name {
             RTsEntityName::Ident(ref i) if i.sym == js_word!("Array") && type_args.is_some() => {
                 if type_args.as_ref().unwrap().params.len() == 1 {
@@ -675,14 +712,16 @@ impl Analyzer<'_, '_> {
                     if !self.is_builtin && !found && self.ctx.in_actual_type {
                         if let Some(..) = self.scope.get_var(&i.into()) {
                             self.storage
-                                .report(Error::NoSuchTypeButVarExists { span, name: i.into() })
+                                .report(Error::NoSuchTypeButVarExists { span, name: i.into() });
+                            reported_type_not_founf = true;
                         }
                     }
                 } else {
                     if !self.is_builtin && self.ctx.in_actual_type {
                         if let Some(..) = self.scope.get_var(&i.into()) {
                             self.storage
-                                .report(Error::NoSuchTypeButVarExists { span, name: i.into() })
+                                .report(Error::NoSuchTypeButVarExists { span, name: i.into() });
+                            reported_type_not_founf = true;
                         }
                     }
                 }
@@ -694,8 +733,10 @@ impl Analyzer<'_, '_> {
         if !self.is_builtin {
             slog::warn!(self.logger, "Crating a ref from TsTypeRef: {:?}", t.type_name);
 
-            self.report_error_for_unresolve_type(t.span, &t.type_name, type_args.as_deref())
-                .report(&mut self.storage);
+            if !reported_type_not_founf {
+                self.report_error_for_unresolve_type(t.span, &t.type_name, type_args.as_deref())
+                    .report(&mut self.storage);
+            }
         }
         let mut span = t.span;
         if contains_infer {
@@ -951,7 +992,8 @@ impl Analyzer<'_, '_> {
                 && !(self.ctx.in_return_arg && self.ctx.in_fn_with_return_type)
                 && !self.ctx.in_assign_rhs;
             if no_type_ann || self.ctx.in_useless_expr_for_seq || self.ctx.check_for_implicit_any {
-                self.storage.report(Error::ImplicitAny { span: i.id.span });
+                self.storage
+                    .report(Error::ImplicitAny { span: i.id.span }.context("default type"));
             }
         }
         let implicit_type_mark = self.marks().implicit_type_mark;
@@ -1056,6 +1098,7 @@ impl Analyzer<'_, '_> {
                         params: vec![],
                         type_ann: ty,
                         type_params: None,
+                        metadata: Default::default(),
                     }))
                 }
                 RObjectPatProp::Assign(RAssignPatProp { key, .. }) => {
@@ -1072,6 +1115,7 @@ impl Analyzer<'_, '_> {
                         params: vec![],
                         type_ann: None,
                         type_params: None,
+                        metadata: Default::default(),
                     }))
                 }
                 RObjectPatProp::Rest(..) => {}

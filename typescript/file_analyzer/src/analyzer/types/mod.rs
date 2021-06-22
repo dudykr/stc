@@ -4,6 +4,7 @@ use crate::analyzer::expr::TypeOfMode;
 use crate::analyzer::Ctx;
 use crate::type_facts::TypeFacts;
 use crate::util::type_ext::TypeVecExt;
+use crate::util::unwrap_ref_with_single_arg;
 use crate::Marks;
 use crate::ValidationResult;
 use fxhash::FxHashMap;
@@ -38,6 +39,7 @@ use stc_ts_types::ComputedKey;
 use stc_ts_types::ConstructorSignature;
 use stc_ts_types::Id;
 use stc_ts_types::IdCtx;
+use stc_ts_types::Instance;
 use stc_ts_types::Intersection;
 use stc_ts_types::Key;
 use stc_ts_types::MethodSignature;
@@ -70,6 +72,7 @@ use swc_ecma_ast::MethodKind;
 use swc_ecma_ast::TsKeywordTypeKind;
 use swc_ecma_ast::TsTypeOperatorOp;
 
+mod index_signature;
 mod keyof;
 mod mapped;
 mod narrowing;
@@ -460,6 +463,12 @@ impl Analyzer<'_, '_> {
         let ty = ty.into_owned().foldable();
 
         Ok(match ty {
+            // For self-references in classes, we preserve `instanceof` type.
+            Type::Ref(..) => Type::Instance(Instance {
+                span: actual_span,
+                ty: box ty,
+            }),
+
             Type::ClassDef(def) => Type::Class(Class {
                 span: actual_span,
                 def: box def,
@@ -474,7 +483,7 @@ impl Analyzer<'_, '_> {
                     .map(|ty| self.instantiate_for_normalization(span, &ty))
                     .collect::<Result<_, _>>()?;
 
-                Type::Intersection(Intersection { types, ..ty })
+                Type::Intersection(Intersection { types, ..ty }).fixed()
             }
 
             Type::Union(ty) => {
@@ -553,6 +562,7 @@ impl Analyzer<'_, '_> {
                         params: Default::default(),
                         type_ann,
                         type_params: Default::default(),
+                        metadata: Default::default(),
                     }))
                 }
                 ClassMember::IndexSignature(_) => {}
@@ -824,6 +834,7 @@ impl Analyzer<'_, '_> {
                         params: Default::default(),
                         type_ann: Some(e.ty.clone()),
                         type_params: Default::default(),
+                        metadata: Default::default(),
                     }));
                 }
 
@@ -843,6 +854,7 @@ impl Analyzer<'_, '_> {
                         kind: TsKeywordTypeKind::TsNumberKeyword,
                     })),
                     type_params: Default::default(),
+                    metadata: Default::default(),
                 }));
 
                 Cow::Owned(TypeLit {
@@ -885,6 +897,35 @@ impl Analyzer<'_, '_> {
             }
         }))
     }
+
+    ///
+    /// - `Promise<T>` => `T`
+    /// - `T | PromiseLike<T>` => `T`
+    pub(crate) fn normalize_promise_arg<'a>(&mut self, arg: &'a Type) -> Cow<'a, Type> {
+        if let Some(arg) = unwrap_ref_with_single_arg(&arg, "Promise") {
+            return self.normalize_promise_arg(&arg);
+        }
+
+        match arg.normalize() {
+            Type::Union(u) => {
+                // Part of `Promise<T | PromiseLike<T>> => Promise<T>`
+                if u.types.len() == 2 {
+                    let first = u.types[0].normalize();
+                    let second = u.types[1].normalize();
+
+                    if let Some(second_arg) = unwrap_ref_with_single_arg(&second, "PromiseLike") {
+                        if second_arg.type_eq(first) {
+                            return Cow::Borrowed(first);
+                        }
+                    }
+                }
+            }
+            _ => {}
+        }
+
+        Cow::Borrowed(arg)
+    }
+
     pub(crate) fn normalize_tuples(&mut self, ty: &mut Type) {
         let marks = self.marks();
 
@@ -931,12 +972,20 @@ impl Analyzer<'_, '_> {
         let span = l.span.or_else(|| span);
 
         match type_name {
-            RTsEntityName::TsQualifiedName(_) => Err(Error::NamspaceNotFound {
-                span,
-                name: box type_name.clone().into(),
-                ctxt: self.ctx.module_id,
-                type_args: type_args.cloned().map(Box::new),
-            }),
+            RTsEntityName::TsQualifiedName(_) => {
+                if let Ok(var) = self.type_of_var(&l, TypeOfMode::RValue, None) {
+                    if var.normalize().is_module() {
+                        return Ok(());
+                    }
+                }
+
+                Err(Error::NamspaceNotFound {
+                    span,
+                    name: box type_name.clone().into(),
+                    ctxt: self.ctx.module_id,
+                    type_args: type_args.cloned().map(Box::new),
+                })
+            }
             RTsEntityName::Ident(i) if &*i.sym == "globalThis" => return Ok(()),
             RTsEntityName::Ident(_) => Err(Error::TypeNotFound {
                 span,
@@ -973,6 +1022,7 @@ impl Analyzer<'_, '_> {
                         params: m.params.clone(),
                         ret_ty: Some(m.ret_ty.clone()),
                         type_params: m.type_params.clone(),
+                        metadata: Default::default(),
                     }),
                     MethodKind::Getter => TypeElement::Property(PropertySignature {
                         span: m.span,
@@ -984,6 +1034,7 @@ impl Analyzer<'_, '_> {
                         // TODO: Check for setter property with same key.
                         type_ann: Some(m.ret_ty.clone()),
                         type_params: None,
+                        metadata: Default::default(),
                     }),
                     MethodKind::Setter => return Ok(None),
                 }
@@ -1002,6 +1053,7 @@ impl Analyzer<'_, '_> {
                     params: vec![],
                     type_ann: p.value.clone(),
                     type_params: None,
+                    metadata: Default::default(),
                 })
             }
             ClassMember::IndexSignature(i) => TypeElement::Index(i.clone()),

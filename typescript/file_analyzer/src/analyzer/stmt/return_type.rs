@@ -251,6 +251,7 @@ impl Analyzer<'_, '_> {
                     AssignOpts {
                         span,
                         allow_unknown_rhs: true,
+                        may_unwrap_promise: true,
                         ..Default::default()
                     },
                     &declared,
@@ -322,19 +323,13 @@ impl Analyzer<'_, '_> {
                         AssignOpts {
                             span: node.span,
                             allow_unknown_rhs: true,
+                            may_unwrap_promise: true,
                             ..Default::default()
                         },
                         &declared,
-                        &Type::Ref(Ref {
-                            span: node.span,
-                            ctxt: ModuleId::builtin(),
-                            type_name: RTsEntityName::Ident(RIdent::new("Promise".into(), node.span)),
-                            type_args: Some(box TypeParamInstantiation {
-                                span: node.span,
-                                params: vec![ty.clone()],
-                            }),
-                        }),
+                        &ty,
                     )
+                    .context("tried to validate the return type of an async function")
                     .report(&mut self.storage);
                 }
 

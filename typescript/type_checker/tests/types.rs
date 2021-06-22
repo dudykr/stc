@@ -151,6 +151,7 @@ fn do_test(path: &Path) -> Result<(), StdErr> {
                                 JscTarget::Es2018 => Lib::load("es2018"),
                                 JscTarget::Es2019 => Lib::load("es2019"),
                                 JscTarget::Es2020 => Lib::load("es2020"),
+                                JscTarget::Es2021 => Lib::load("es2021"),
                             };
                         } else if s.starts_with("strict:") {
                             let strict = s["strict:".len()..].trim().parse().unwrap();

@@ -1,5 +1,6 @@
 use super::expr::TypeOfMode;
 use super::{Analyzer, Ctx};
+use crate::analyzer::scope::VarKind;
 use crate::{analyzer::util::ResultExt, ty::Type, validator, validator::ValidateWith, ValidationResult};
 use rnode::NodeId;
 use rnode::VisitWith;
@@ -22,7 +23,7 @@ use stc_ts_ast_rnode::RTsModuleName;
 use stc_ts_ast_rnode::RTsTypeAnn;
 use stc_ts_ast_rnode::RVarDecl;
 use stc_ts_ast_rnode::RVarDeclarator;
-use stc_ts_errors::Error;
+use stc_ts_errors::{DebugExt, Error};
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::Id;
 use stc_ts_types::IdCtx;
@@ -196,19 +197,28 @@ impl Analyzer<'_, '_> {
                     a.register_type(e.id.clone().into(), ty);
 
                     a.storage.export_type(span, a.ctx.module_id, e.id.clone().into());
+                    a.storage
+                        .export_var(span, a.ctx.module_id, e.id.clone().into(), e.id.clone().into());
                 }
-                RDecl::TsModule(module) => {
-                    module.visit_with(a);
+                RDecl::TsModule(module) => match &module.id {
+                    RTsModuleName::Ident(id) => {
+                        module.visit_with(a);
 
-                    match &module.id {
-                        RTsModuleName::Ident(id) => {
-                            a.storage.export_type(span, a.ctx.module_id, id.clone().into());
-                        }
-                        RTsModuleName::Str(_) => {
-                            unimplemented!("export module with string name")
-                        }
+                        a.storage.export_type(span, a.ctx.module_id, id.clone().into());
                     }
-                }
+                    RTsModuleName::Str(..) => {
+                        let module: Option<Type> = module.validate_with(a)?;
+                        let module = match module {
+                            Some(v) => v,
+                            None => {
+                                unreachable!("global modules cannot be exported")
+                            }
+                        };
+                        // a.storage.export_wildcard_module(s.span, s.value,
+                        // module);
+                        todo!("Exporting module with a wildcard: {:?}", module)
+                    }
+                },
                 RDecl::TsTypeAlias(ref decl) => {
                     decl.visit_with(a);
                     // export type Foo = 'a' | 'b';
@@ -254,7 +264,7 @@ impl Analyzer<'_, '_> {
 
                 self.declare_var(
                     span,
-                    VarDeclKind::Var,
+                    VarKind::Fn,
                     i.clone(),
                     Some(fn_ty.into()),
                     None,
@@ -287,7 +297,7 @@ impl Analyzer<'_, '_> {
 
                 self.declare_var(
                     span,
-                    VarDeclKind::Var,
+                    VarKind::Class,
                     var_name.clone(),
                     Some(class_ty),
                     None,
@@ -471,7 +481,8 @@ impl Analyzer<'_, '_> {
             ..self.ctx
         };
         self.with_ctx(ctx).validate_with(|a| {
-            a.type_of_var(&node.orig, TypeOfMode::RValue, None)?;
+            a.type_of_var(&node.orig, TypeOfMode::RValue, None)
+                .context("failed to reexport with named export specifier")?;
 
             Ok(())
         });
@@ -510,7 +521,10 @@ impl Analyzer<'_, '_> {
         let span = node.span;
         let base = self.ctx.module_id;
 
-        node.specifiers.visit_with(self);
+        // Visit export specifiers only if it's not a reexport.
+        if node.src.is_none() {
+            node.specifiers.visit_with(self);
+        }
 
         for specifier in &node.specifiers {
             match specifier {

@@ -378,6 +378,7 @@ impl UnionNormalizer<'_, '_, '_> {
                                     kind: swc_ecma_ast::TsKeywordTypeKind::TsUndefinedKeyword,
                                 })),
                                 type_params: Default::default(),
+                                metadata: Default::default(),
                             }))
                         }
                     }
@@ -478,10 +479,13 @@ impl Analyzer<'_, '_> {
             return Ok(to);
         }
         if rhs.is_any() || rhs.is_unknown() {
-            return Ok(to);
+            return Ok(rhs);
         }
 
-        if rhs.is_kwd(TsKeywordTypeKind::TsNullKeyword) || rhs.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
+        if rhs.is_kwd(TsKeywordTypeKind::TsNullKeyword)
+            || rhs.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
+            || rhs.is_kwd(TsKeywordTypeKind::TsVoidKeyword)
+        {
             return Ok(to);
         }
 

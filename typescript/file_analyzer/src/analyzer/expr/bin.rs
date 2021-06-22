@@ -76,10 +76,11 @@ impl Analyzer<'_, '_> {
         let mut errors = vec![];
 
         let ctx = Ctx {
-            should_store_truthy_for_access: match op {
-                op!("&&") => true,
-                _ => false,
-            },
+            should_store_truthy_for_access: self.ctx.should_store_truthy_for_access
+                && match op {
+                    op!("&&") => true,
+                    _ => false,
+                },
             check_for_implicit_any: true,
             ..self.ctx
         };
@@ -324,12 +325,7 @@ impl Analyzer<'_, '_> {
                         }),
                         _,
                     )
-                    | (
-                        RExpr::Ident(RIdent {
-                            sym: js_word!("null"), ..
-                        }),
-                        _,
-                    ) => None,
+                    | (RExpr::Lit(RLit::Null(..)), _) => None,
 
                     (l, r) => Some((extract_name_for_assignment(l)?, r_ty)),
                 }) {
@@ -990,6 +986,10 @@ impl Analyzer<'_, '_> {
             return Ok(true);
         }
 
+        if l.is_str_lit() && r.is_str_lit() {
+            return Ok(true);
+        }
+
         let c = Comparator { left: l, right: r };
 
         if let Some(v) = c.take_if_any_matches(|l, r| {
@@ -1411,9 +1411,9 @@ impl Analyzer<'_, '_> {
                             }
 
                             _ => errors.push(if is_left {
-                                Error::TS2362 { span: ty.span() }
+                                Error::WrongTypeForLhsOfNumericOperation { span: ty.span() }
                             } else {
-                                Error::TS2363 { span: ty.span() }
+                                Error::WrongTypeForRhsOfNumericOperation { span: ty.span() }
                             }),
                         }
                     };
@@ -1549,7 +1549,8 @@ impl Analyzer<'_, '_> {
             | Type::Operator(Operator {
                 op: TsTypeOperatorOp::KeyOf,
                 ..
-            }) => true,
+            })
+            | Type::Symbol(..) => true,
 
             Type::Union(ref u) => u.types.iter().all(|ty| self.is_valid_lhs_of_in(&ty)),
 
