@@ -70,6 +70,32 @@ impl Analyzer<'_, '_> {
         };
 
         if !self.is_builtin {
+            // Disabled because of false positives when the constructor initializes the
+            // field.
+            if false && self.rule().strict_null_checks {
+                if value.is_none() {
+                    if let Some(ty) = &ty {
+                        if self
+                            .assign_with_opts(
+                                &mut Default::default(),
+                                AssignOpts {
+                                    span,
+                                    ..Default::default()
+                                },
+                                &ty,
+                                &Type::Keyword(RTsKeywordType {
+                                    span,
+                                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                                }),
+                            )
+                            .is_err()
+                        {
+                            self.storage.report(Error::ClassPropNotInistalized { span })
+                        }
+                    }
+                }
+            }
+
             // Report error if type is not found.
             if let Some(ty) = &ty {
                 self.normalize(Some(span), Cow::Borrowed(ty), Default::default())
