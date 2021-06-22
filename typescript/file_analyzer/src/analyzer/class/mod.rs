@@ -799,7 +799,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 if is_prop_name_eq(&l.0, &r.0) && l.1 == r.1 {
-                    if is_props.contains(&i) {
+                    if is_props.contains(&i) && is_props.contains(&j) {
                         continue;
                     }
                     // We use different error for duplicate functions
@@ -820,7 +820,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 if l.0.eq_ignore_span(&r.0) && l.1 == r.1 {
-                    if is_private_props.contains(&i) {
+                    if is_private_props.contains(&i) && is_private_props.contains(&j) {
                         continue;
                     }
 
