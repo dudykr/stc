@@ -6,6 +6,7 @@ use crate::{
     Marks, ValidationResult,
 };
 use fxhash::{FxHashMap, FxHashSet};
+use itertools::Itertools;
 use rnode::{Visit, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{
     RClassDecl, RExpr, RIdent, RInvalid, RNumber, RTsEntityName, RTsEnumDecl, RTsInterfaceDecl, RTsKeywordType,
@@ -575,27 +576,61 @@ impl Analyzer<'_, '_> {
         self.apply_type_facts_to_type(type_facts, ty)
     }
 
-    pub(crate) fn collect_class_members(&mut self, ty: &Type) -> ValidationResult<Option<Vec<ClassMember>>> {
+    ///
+    /// # Parmeters
+    ///
+    /// ## excluded
+    ///
+    /// Memebers of base class.
+    pub(crate) fn collect_class_members(
+        &mut self,
+        excluded: &[&ClassMember],
+        ty: &Type,
+    ) -> ValidationResult<Option<Vec<ClassMember>>> {
+        if self.is_builtin {
+            return Ok(None);
+        }
+
         let ty = ty.normalize();
         match ty {
             Type::ClassDef(c) => {
+                let mut members = c
+                    .body
+                    .iter()
+                    .filter(|&super_member| {
+                        if let Some(super_key) = super_member.key() {
+                            for excluded in excluded {
+                                if let Some(exc_key) = excluded.key() {
+                                    if self.key_matches(super_key.span(), &super_key, &exc_key, false) {
+                                        return false;
+                                    }
+                                }
+                            }
+                        }
+
+                        true
+                    })
+                    .cloned()
+                    .collect_vec();
+
                 match &c.super_class {
                     Some(sc) => {
-                        let mut members = c.body.clone();
+                        let mut excluded = excluded.to_vec();
+                        excluded.extend(members.iter());
                         // TODO: Override
 
-                        if let Some(super_members) = self.collect_class_members(&sc)? {
+                        if let Some(super_members) = self.collect_class_members(&excluded, &sc)? {
                             members.extend(super_members)
                         }
 
                         return Ok(Some(members));
                     }
                     None => {
-                        return Ok(Some(c.body.clone()));
+                        return Ok(Some(members));
                     }
                 }
             }
-            Type::Class(c) => self.collect_class_members(&Type::ClassDef(*c.def.clone())),
+            Type::Class(c) => self.collect_class_members(excluded, &Type::ClassDef(*c.def.clone())),
             _ => {
                 slog::error!(self.logger, "unimplemented: collect_class_members: {:?}", ty);
                 return Ok(None);

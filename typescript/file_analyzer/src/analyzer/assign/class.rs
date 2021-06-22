@@ -1,5 +1,6 @@
 use super::{AssignData, AssignOpts};
 use crate::{analyzer::Analyzer, ValidationResult};
+use itertools::Itertools;
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_types::{Class, ClassDef, ClassMember, QueryExpr, Type, TypeLitMetadata};
 use std::borrow::Cow;
@@ -56,7 +57,9 @@ impl Analyzer<'_, '_> {
 
                 let new_body;
                 let r_body = if rc.super_class.is_some() {
-                    if let Some(members) = self.collect_class_members(r)? {
+                    let excluded = rc.body.iter().collect_vec();
+
+                    if let Some(members) = self.collect_class_members(&excluded, r)? {
                         new_body = members;
                         &*new_body
                     } else {
@@ -147,24 +150,10 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
-                if !rc.def.is_abstract {
-                    // class Child extends Parent
-                    // let c: Child;
-                    // let p: Parent;
-                    // `p = c` is valid
-                    if let Some(parent) = &rc.def.super_class {
-                        let parent = self
-                            .instantiate_class(opts.span, &parent)
-                            .context("tried to instanitate class to asssign the super class to a class")?;
-                        if self.assign_to_class(data, opts, l, &parent).is_ok() {
-                            return Ok(());
-                        }
-                    }
-                }
-
                 let new_body;
                 let r_body = if rc.def.super_class.is_some() {
-                    if let Some(members) = self.collect_class_members(r)? {
+                    let excluded = rc.def.body.iter().collect_vec();
+                    if let Some(members) = self.collect_class_members(&excluded, r)? {
                         new_body = members;
                         &*new_body
                     } else {
@@ -185,6 +174,21 @@ impl Analyzer<'_, '_> {
                                 i, lm, r_body
                             )
                         })?;
+                }
+
+                if !rc.def.is_abstract {
+                    // class Child extends Parent
+                    // let c: Child;
+                    // let p: Parent;
+                    // `p = c` is valid
+                    if let Some(parent) = &rc.def.super_class {
+                        let parent = self
+                            .instantiate_class(opts.span, &parent)
+                            .context("tried to instanitate class to asssign the super class to a class")?;
+                        if self.assign_to_class(data, opts, l, &parent).is_ok() {
+                            return Ok(());
+                        }
+                    }
                 }
 
                 if opts.disallow_different_classes {
@@ -278,16 +282,16 @@ impl Analyzer<'_, '_> {
                 }
             }
             ClassMember::Method(lm) => {
-                if lm.accessibility == Some(Accessibility::Private) || lm.key.is_private() {
-                    return Err(Error::PrivateMethodIsDifferent { span });
-                }
-
                 for rmember in r {
                     match rmember {
                         ClassMember::Constructor(_) => {}
                         ClassMember::Method(rm) => {
                             //
                             if self.key_matches(span, &lm.key, &rm.key, false) {
+                                if lm.span.lo == rm.span.lo && lm.span.hi == rm.span.hi {
+                                    return Ok(());
+                                }
+
                                 if rm.accessibility == Some(Accessibility::Private) || rm.key.is_private() {
                                     return Err(Error::PrivateMethodIsDifferent { span });
                                 }
@@ -304,6 +308,10 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                if lm.accessibility == Some(Accessibility::Private) || lm.key.is_private() {
+                    return Err(Error::PrivateMethodIsDifferent { span });
+                }
+
                 if lm.is_optional {
                     return Ok(());
                 }
@@ -311,10 +319,6 @@ impl Analyzer<'_, '_> {
                 return Err(Error::SimpleAssignFailed { span });
             }
             ClassMember::Property(lp) => {
-                if lp.accessibility == Some(Accessibility::Private) || lp.key.is_private() {
-                    return Err(Error::PrivatePropertyIsDifferent { span });
-                }
-
                 for rm in r {
                     match rm {
                         ClassMember::Constructor(_) => {}
@@ -324,6 +328,10 @@ impl Analyzer<'_, '_> {
                                 && lp.is_static == rp.is_static
                                 && self.key_matches(span, &lp.key, &rp.key, false)
                             {
+                                if lp.span.lo == rp.span.lo && lp.span.hi == rp.span.hi {
+                                    return Ok(());
+                                }
+
                                 if rp.accessibility == Some(Accessibility::Private) || rp.key.is_private() {
                                     return Err(Error::PrivatePropertyIsDifferent { span });
                                 }
@@ -339,6 +347,10 @@ impl Analyzer<'_, '_> {
                         }
                         ClassMember::IndexSignature(_) => {}
                     }
+                }
+
+                if lp.accessibility == Some(Accessibility::Private) || lp.key.is_private() {
+                    return Err(Error::PrivatePropertyIsDifferent { span });
                 }
 
                 if lp.is_optional {
