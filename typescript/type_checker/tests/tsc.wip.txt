@@ -1,9 +1,7 @@
-classes::propertyMemberDeclarations::initializerReferencingConstructorParameters.ts
-classes::propertyMemberDeclarations::memberFunctionDeclarations::memberFunctionOverloadMixingStaticAndInstance.ts
-classes::propertyMemberDeclarations::propertyAndFunctionWithSameName.ts
-classes::propertyMemberDeclarations::propertyOverridesAccessors.ts
-classes::propertyMemberDeclarations::propertyOverridesAccessors2.ts
-classes::propertyMemberDeclarations::propertyOverridesAccessors3.ts
-classes::propertyMemberDeclarations::propertyOverridesAccessors4.ts
-classes::propertyMemberDeclarations::propertyOverridesAccessors5.ts
-classes::propertyMemberDeclarations::strictPropertyInitialization.ts
+conformance::classes::propertyMemberDeclarations::propertyAndFunctionWithSameName.ts
+conformance::classes::propertyMemberDeclarations::propertyOverridesAccessors.ts
+conformance::classes::propertyMemberDeclarations::propertyOverridesAccessors2.ts
+conformance::classes::propertyMemberDeclarations::propertyOverridesAccessors3.ts
+conformance::classes::propertyMemberDeclarations::propertyOverridesAccessors4.ts
+conformance::classes::propertyMemberDeclarations::propertyOverridesAccessors5.ts
+conformance::classes::propertyMemberDeclarations::strictPropertyInitialization.ts
