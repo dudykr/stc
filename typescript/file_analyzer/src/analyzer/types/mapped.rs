@@ -1,27 +1,10 @@
-use crate::analyzer::Analyzer;
-use crate::ValidationResult;
-use stc_ts_ast_rnode::RTsEnumMemberId;
-use stc_ts_ast_rnode::RTsLit;
-use stc_ts_ast_rnode::RTsLitType;
-use stc_ts_errors::debug::dump_type_as_string;
-use stc_ts_errors::DebugExt;
-use stc_ts_types::FnParam;
-use stc_ts_types::Id;
-use stc_ts_types::IndexSignature;
-use stc_ts_types::Key;
-use stc_ts_types::Mapped;
-use stc_ts_types::Operator;
-use stc_ts_types::PropertySignature;
-use stc_ts_types::Type;
-use stc_ts_types::TypeElement;
-use stc_ts_types::TypeLit;
-use std::borrow::Cow;
-use std::collections::HashMap;
-use swc_common::Span;
-use swc_common::Spanned;
-use swc_common::TypeEq;
-use swc_ecma_ast::TruePlusMinus;
-use swc_ecma_ast::TsTypeOperatorOp;
+use crate::{analyzer::Analyzer, ValidationResult};
+use stc_ts_ast_rnode::{RTsEnumMemberId, RTsLit, RTsLitType};
+use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
+use stc_ts_types::{FnParam, Id, IndexSignature, Key, Mapped, Operator, PropertySignature, Type, TypeElement, TypeLit};
+use std::{borrow::Cow, collections::HashMap};
+use swc_common::{Span, Spanned, TypeEq};
+use swc_ecma_ast::{TruePlusMinus, TsTypeOperatorOp};
 
 use super::NormalizeTypeOpts;
 

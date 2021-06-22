@@ -1,58 +1,40 @@
-use super::assign::AssignOpts;
-use super::util::ResultExt;
-use super::Ctx;
 use super::{
+    assign::AssignOpts,
     expr::TypeOfMode,
     marks::MarkExt,
     scope::{ScopeKind, VarInfo},
-    Analyzer,
+    util::ResultExt,
+    Analyzer, Ctx,
 };
-use crate::analyzer::expr::IdCtx;
-use crate::util::type_ext::TypeVecExt;
 use crate::{
+    analyzer::expr::IdCtx,
     ty::{Tuple, Type},
     type_facts::TypeFacts,
-    util::EndsWithRet,
+    util::{type_ext::TypeVecExt, EndsWithRet},
     validator,
     validator::ValidateWith,
     ValidationResult,
 };
 use fxhash::FxHashMap;
-use rnode::NodeId;
-use rnode::VisitWith;
-use stc_ts_ast_rnode::RBinExpr;
-use stc_ts_ast_rnode::RBindingIdent;
-use stc_ts_ast_rnode::RCondExpr;
-use stc_ts_ast_rnode::RExpr;
-use stc_ts_ast_rnode::RIdent;
-use stc_ts_ast_rnode::RIfStmt;
-use stc_ts_ast_rnode::RObjectPatProp;
-use stc_ts_ast_rnode::RPat;
-use stc_ts_ast_rnode::RPatOrExpr;
-use stc_ts_ast_rnode::RSwitchCase;
-use stc_ts_ast_rnode::RSwitchStmt;
-use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_errors::DebugExt;
-use stc_ts_errors::Error;
+use rnode::{NodeId, VisitWith};
+use stc_ts_ast_rnode::{
+    RBinExpr, RBindingIdent, RCondExpr, RExpr, RIdent, RIfStmt, RObjectPatProp, RPat, RPatOrExpr, RSwitchCase,
+    RSwitchStmt, RTsKeywordType,
+};
+use stc_ts_errors::{DebugExt, Error};
 use stc_ts_type_ops::Fix;
-use stc_ts_types::name::Name;
-use stc_ts_types::Array;
-use stc_ts_types::Id;
-use stc_ts_types::Key;
-use stc_ts_types::Union;
+use stc_ts_types::{name::Name, Array, Id, Key, Union};
 use stc_ts_utils::MapWithMut;
 use stc_utils::ext::SpanExt;
-use std::borrow::Cow;
 use std::{
+    borrow::Cow,
     collections::hash_map::Entry,
     hash::Hash,
     mem::{replace, take},
     ops::{AddAssign, BitOr, Not},
 };
 use swc_atoms::JsWord;
-use swc_common::TypeEq;
-use swc_common::DUMMY_SP;
-use swc_common::{Span, Spanned};
+use swc_common::{Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
 
 /// Conditional facts

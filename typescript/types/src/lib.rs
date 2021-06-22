@@ -7,56 +7,36 @@
 #![feature(box_patterns)]
 #![feature(specialization)]
 
-pub use self::convert::rprop_name_to_expr;
-pub use self::metadata::TypeElMetadata;
-pub use self::metadata::TypeLitMetadata;
 use self::type_id::SymbolId;
-pub use self::{id::Id, module_id::ModuleId};
+pub use self::{
+    convert::rprop_name_to_expr,
+    id::Id,
+    metadata::{TypeElMetadata, TypeLitMetadata},
+    module_id::ModuleId,
+};
 use fxhash::FxHashMap;
 use is_macro::Is;
 use num_bigint::BigInt;
 use num_traits::Zero;
-use rnode::FoldWith;
-use rnode::NodeId;
-use rnode::VisitMut;
-use rnode::VisitMutWith;
-use rnode::VisitWith;
+use rnode::{FoldWith, NodeId, VisitMut, VisitMutWith, VisitWith};
 use static_assertions::assert_eq_size;
-use stc_ts_ast_rnode::RBigInt;
-use stc_ts_ast_rnode::RExpr;
-use stc_ts_ast_rnode::RIdent;
-use stc_ts_ast_rnode::RNumber;
-use stc_ts_ast_rnode::RPat;
-use stc_ts_ast_rnode::RPrivateName;
-use stc_ts_ast_rnode::RStr;
-use stc_ts_ast_rnode::RTplElement;
-use stc_ts_ast_rnode::RTsEntityName;
-use stc_ts_ast_rnode::RTsEnumMemberId;
-use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_ast_rnode::RTsLit;
-use stc_ts_ast_rnode::RTsLitType;
-use stc_ts_ast_rnode::RTsModuleName;
-use stc_ts_ast_rnode::RTsNamespaceDecl;
-use stc_ts_ast_rnode::RTsThisType;
-use stc_ts_ast_rnode::RTsThisTypeOrIdent;
+use stc_ts_ast_rnode::{
+    RBigInt, RExpr, RIdent, RNumber, RPat, RPrivateName, RStr, RTplElement, RTsEntityName, RTsEnumMemberId,
+    RTsKeywordType, RTsLit, RTsLitType, RTsModuleName, RTsNamespaceDecl, RTsThisType, RTsThisTypeOrIdent,
+};
 use stc_utils::error::context;
-use stc_visit::Visit;
-use stc_visit::Visitable;
-use std::borrow::Cow;
-use std::fmt;
-use std::fmt::Formatter;
+use stc_visit::{Visit, Visitable};
 use std::{
-    fmt::Debug,
+    borrow::Cow,
+    fmt,
+    fmt::{Debug, Formatter},
     iter::FusedIterator,
     mem::{replace, transmute},
     ops::AddAssign,
     sync::Arc,
 };
-use swc_atoms::js_word;
-use swc_atoms::JsWord;
-use swc_common::EqIgnoreSpan;
-use swc_common::TypeEq;
-use swc_common::{FromVariant, Span, Spanned, DUMMY_SP};
+use swc_atoms::{js_word, JsWord};
+use swc_common::{EqIgnoreSpan, FromVariant, Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::{Accessibility, MethodKind, TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp};
 use swc_ecma_utils::{
     Value,

@@ -1,27 +1,20 @@
-use crate::util::type_ext::TypeVecExt;
-use crate::{analyzer::Analyzer, env::Env, ty::Type, util::Marker};
-use rnode::Fold;
-use rnode::FoldWith;
-use rnode::NodeId;
-use rnode::VisitMutWith;
+use crate::{
+    analyzer::Analyzer,
+    env::Env,
+    ty::Type,
+    util::{type_ext::TypeVecExt, Marker},
+};
+use rnode::{Fold, FoldWith, NodeId, VisitMutWith};
 use slog::Logger;
-use stc_ts_ast_rnode::RNumber;
-use stc_ts_ast_rnode::RStr;
-use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_ast_rnode::RTsLit;
-use stc_ts_ast_rnode::RTsLitType;
+use stc_ts_ast_rnode::{RNumber, RStr, RTsKeywordType, RTsLit, RTsLitType};
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_type_ops::is_str_lit_or_union;
-use stc_ts_types::ClassDef;
-use stc_ts_types::Key;
-use stc_ts_types::TypeLitMetadata;
 use stc_ts_types::{
-    Array, Class, ClassMember, IndexedAccessType, Mapped, Operator, PropertySignature, TypeElement, TypeLit, TypeParam,
-    Union,
+    Array, Class, ClassDef, ClassMember, IndexedAccessType, Key, Mapped, Operator, PropertySignature, TypeElement,
+    TypeLit, TypeLitMetadata, TypeParam, Union,
 };
 use swc_atoms::js_word;
-use swc_common::EqIgnoreSpan;
-use swc_common::{Mark, Span, Spanned};
+use swc_common::{EqIgnoreSpan, Mark, Span, Spanned};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
 
 impl Analyzer<'_, '_> {

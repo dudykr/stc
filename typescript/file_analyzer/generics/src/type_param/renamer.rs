@@ -1,12 +1,6 @@
-use fxhash::FxHashMap;
-use fxhash::FxHashSet;
-use rnode::Fold;
-use rnode::FoldWith;
-use stc_ts_types::Function;
-use stc_ts_types::Id;
-use stc_ts_types::MethodSignature;
-use stc_ts_types::Type;
-use stc_ts_types::TypeParamDecl;
+use fxhash::{FxHashMap, FxHashSet};
+use rnode::{Fold, FoldWith};
+use stc_ts_types::{Function, Id, MethodSignature, Type, TypeParamDecl};
 
 #[derive(Debug)]
 pub struct TypeParamRenamer {

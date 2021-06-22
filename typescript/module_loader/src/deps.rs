@@ -1,9 +1,7 @@
 use swc_atoms::JsWord;
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::*;
-use swc_ecma_visit::Node;
-use swc_ecma_visit::Visit;
-use swc_ecma_visit::VisitWith;
+use swc_ecma_visit::{Node, Visit, VisitWith};
 
 pub(crate) fn find_deps(m: &Module) -> Vec<JsWord> {
     let mut v = DepFinder::default();

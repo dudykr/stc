@@ -1,9 +1,8 @@
 //! Handles new expressions and call expressions.
-use super::super::Analyzer;
-use super::IdCtx;
-use crate::analyzer::assign::AssignOpts;
+use super::{super::Analyzer, IdCtx};
 use crate::{
     analyzer::{
+        assign::AssignOpts,
         expr::TypeOfMode,
         marks::MarkExt,
         util::{make_instance_type, ResultExt},
@@ -21,65 +20,27 @@ use crate::{
 };
 use fxhash::FxHashMap;
 use itertools::Itertools;
-use rnode::Fold;
-use rnode::FoldWith;
-use rnode::NodeId;
-use rnode::VisitMut;
-use rnode::VisitMutWith;
-use rnode::VisitWith;
-use stc_ts_ast_rnode::RArrayPat;
-use stc_ts_ast_rnode::RBindingIdent;
-use stc_ts_ast_rnode::RCallExpr;
-use stc_ts_ast_rnode::RExpr;
-use stc_ts_ast_rnode::RExprOrSpread;
-use stc_ts_ast_rnode::RExprOrSuper;
-use stc_ts_ast_rnode::RIdent;
-use stc_ts_ast_rnode::RInvalid;
-use stc_ts_ast_rnode::RLit;
-use stc_ts_ast_rnode::RMemberExpr;
-use stc_ts_ast_rnode::RNewExpr;
-use stc_ts_ast_rnode::RObjectPat;
-use stc_ts_ast_rnode::RPat;
-use stc_ts_ast_rnode::RStr;
-use stc_ts_ast_rnode::RTaggedTpl;
-use stc_ts_ast_rnode::RTsAsExpr;
-use stc_ts_ast_rnode::RTsEntityName;
-use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_ast_rnode::RTsLit;
-use stc_ts_ast_rnode::RTsLitType;
-use stc_ts_ast_rnode::RTsThisType;
-use stc_ts_ast_rnode::RTsThisTypeOrIdent;
-use stc_ts_ast_rnode::RTsType;
-use stc_ts_ast_rnode::RTsTypeParamInstantiation;
-use stc_ts_ast_rnode::RTsTypeRef;
-use stc_ts_errors::debug::dump_type_as_string;
-use stc_ts_errors::debug::print_backtrace;
-use stc_ts_errors::debug::print_type;
-use stc_ts_errors::DebugExt;
-use stc_ts_errors::Error;
+use rnode::{Fold, FoldWith, NodeId, VisitMut, VisitMutWith, VisitWith};
+use stc_ts_ast_rnode::{
+    RArrayPat, RBindingIdent, RCallExpr, RExpr, RExprOrSpread, RExprOrSuper, RIdent, RInvalid, RLit, RMemberExpr,
+    RNewExpr, RObjectPat, RPat, RStr, RTaggedTpl, RTsAsExpr, RTsEntityName, RTsKeywordType, RTsLit, RTsLitType,
+    RTsThisType, RTsThisTypeOrIdent, RTsType, RTsTypeParamInstantiation, RTsTypeRef,
+};
+use stc_ts_errors::{
+    debug::{dump_type_as_string, print_backtrace, print_type},
+    DebugExt, Error,
+};
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
-use stc_ts_type_ops::is_str_lit_or_union;
-use stc_ts_type_ops::Fix;
-use stc_ts_types::type_id::SymbolId;
-use stc_ts_types::Array;
-use stc_ts_types::Class;
-use stc_ts_types::ClassDef;
-use stc_ts_types::ClassMember;
-use stc_ts_types::ClassProperty;
-use stc_ts_types::Instance;
-use stc_ts_types::Interface;
-use stc_ts_types::Intersection;
-use stc_ts_types::Key;
-use stc_ts_types::ModuleId;
-use stc_ts_types::{Alias, Id, IndexedAccessType, Ref, Symbol, Union};
+use stc_ts_type_ops::{is_str_lit_or_union, Fix};
+use stc_ts_types::{
+    type_id::SymbolId, Alias, Array, Class, ClassDef, ClassMember, ClassProperty, Id, IndexedAccessType, Instance,
+    Interface, Intersection, Key, ModuleId, Ref, Symbol, Union,
+};
 use stc_ts_utils::PatExt;
 use std::borrow::Cow;
 use swc_atoms::js_word;
-use swc_common::SyntaxContext;
-use swc_common::TypeEq;
-use swc_common::DUMMY_SP;
-use swc_common::{Span, Spanned};
+use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
 use ty::TypeExt;
 

@@ -6,25 +6,21 @@
 pub use self::result_ext::DebugExt;
 use fmt::Formatter;
 use static_assertions::assert_eq_size;
-use stc_ts_types::name::Name;
-use stc_ts_types::Id;
-use stc_ts_types::Key;
-use stc_ts_types::ModuleId;
-use stc_ts_types::Type;
-use stc_ts_types::TypeElement;
-use stc_ts_types::TypeParamInstantiation;
+use stc_ts_types::{name::Name, Id, Key, ModuleId, Type, TypeElement, TypeParamInstantiation};
 use stc_utils::stack::StackOverflowError;
-use std::borrow::Cow;
-use std::fmt;
-use std::fmt::Debug;
-use std::fmt::Display;
-use std::{ops::RangeInclusive, path::PathBuf};
+use std::{
+    borrow::Cow,
+    fmt,
+    fmt::{Debug, Display},
+    ops::RangeInclusive,
+    path::PathBuf,
+};
 use swc_atoms::JsWord;
-use swc_common::errors::DiagnosticId;
-use swc_common::{errors::Handler, Span, Spanned, DUMMY_SP};
-use swc_ecma_ast::AssignOp;
-use swc_ecma_ast::BinaryOp;
-use swc_ecma_ast::{UnaryOp, UpdateOp};
+use swc_common::{
+    errors::{DiagnosticId, Handler},
+    Span, Spanned, DUMMY_SP,
+};
+use swc_ecma_ast::{AssignOp, BinaryOp, UnaryOp, UpdateOp};
 
 pub mod debug;
 mod result_ext;

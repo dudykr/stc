@@ -1,8 +1,6 @@
 use stc_visit::Visit;
-use std::sync::atomic::AtomicU64;
-use std::sync::atomic::Ordering::SeqCst;
-use swc_common::EqIgnoreSpan;
-use swc_common::TypeEq;
+use std::sync::atomic::{AtomicU64, Ordering::SeqCst};
+use swc_common::{EqIgnoreSpan, TypeEq};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EqIgnoreSpan, TypeEq, Visit)]
 pub struct ClassId(u64);

@@ -1,34 +1,23 @@
 #![feature(option_expect_none)]
 
-use self::deps::find_deps;
-use self::resolver::Resolve;
-use anyhow::bail;
-use anyhow::Context;
-use anyhow::Error;
+use self::{deps::find_deps, resolver::Resolve};
+use anyhow::{bail, Context, Error};
 use dashmap::DashMap;
-use fxhash::FxBuildHasher;
-use fxhash::FxHashSet;
-use parking_lot::Mutex;
-use parking_lot::RwLock;
+use fxhash::{FxBuildHasher, FxHashSet};
+use parking_lot::{Mutex, RwLock};
 use petgraph::{algo::all_simple_paths, graphmap::DiGraphMap};
 use rayon::prelude::*;
 use slog::Logger;
-use stc_ts_types::module_id;
-use stc_ts_types::ModuleId;
-use std::collections::HashSet;
-use std::path::Path;
-use std::path::PathBuf;
-use std::sync::Arc;
+use stc_ts_types::{module_id, ModuleId};
+use std::{
+    collections::HashSet,
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 use swc_atoms::JsWord;
-use swc_common::comments::Comments;
-use swc_common::SourceMap;
+use swc_common::{comments::Comments, SourceMap};
 use swc_ecma_ast::Module;
-use swc_ecma_parser::lexer::Lexer;
-use swc_ecma_parser::JscTarget;
-use swc_ecma_parser::Parser;
-use swc_ecma_parser::StringInput;
-use swc_ecma_parser::Syntax;
-use swc_ecma_parser::TsConfig;
+use swc_ecma_parser::{lexer::Lexer, JscTarget, Parser, StringInput, Syntax, TsConfig};
 
 mod deps;
 pub mod resolver;

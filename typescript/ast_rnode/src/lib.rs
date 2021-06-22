@@ -1,11 +1,7 @@
 use num_bigint::BigInt as BigIntValue;
-use rnode::define_rnode;
-use rnode::NodeId;
-use swc_atoms::js_word;
-use swc_atoms::JsWord;
-use swc_common::EqIgnoreSpan;
-use swc_common::Span;
-use swc_common::TypeEq;
+use rnode::{define_rnode, NodeId};
+use swc_atoms::{js_word, JsWord};
+use swc_common::{EqIgnoreSpan, Span, TypeEq};
 use swc_ecma_ast::*;
 
 impl RIdent {

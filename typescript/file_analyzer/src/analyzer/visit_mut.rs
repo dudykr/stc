@@ -2,66 +2,17 @@
 
 use super::Analyzer;
 use crate::{validator, validator::ValidateWith};
-use rnode::Visit;
-use rnode::VisitWith;
-use stc_ts_ast_rnode::RArrowExpr;
-use stc_ts_ast_rnode::RBlockStmt;
-use stc_ts_ast_rnode::RCatchClause;
-use stc_ts_ast_rnode::RClass;
-use stc_ts_ast_rnode::RClassDecl;
-use stc_ts_ast_rnode::RClassExpr;
-use stc_ts_ast_rnode::RClassMember;
-use stc_ts_ast_rnode::RClassMethod;
-use stc_ts_ast_rnode::RComputedPropName;
-use stc_ts_ast_rnode::RConstructor;
-use stc_ts_ast_rnode::RDoWhileStmt;
-use stc_ts_ast_rnode::RExportAll;
-use stc_ts_ast_rnode::RExportDecl;
-use stc_ts_ast_rnode::RExportDefaultDecl;
-use stc_ts_ast_rnode::RExportDefaultExpr;
-use stc_ts_ast_rnode::RExportNamedSpecifier;
-use stc_ts_ast_rnode::RExpr;
-use stc_ts_ast_rnode::RFnDecl;
-use stc_ts_ast_rnode::RFnExpr;
-use stc_ts_ast_rnode::RForInStmt;
-use stc_ts_ast_rnode::RForOfStmt;
-use stc_ts_ast_rnode::RForStmt;
-use stc_ts_ast_rnode::RFunction;
-use stc_ts_ast_rnode::RIfStmt;
-use stc_ts_ast_rnode::RImportDecl;
-use stc_ts_ast_rnode::RModule;
-use stc_ts_ast_rnode::RModuleItem;
-use stc_ts_ast_rnode::RNamedExport;
-use stc_ts_ast_rnode::RObjectLit;
-use stc_ts_ast_rnode::RParam;
-use stc_ts_ast_rnode::RParamOrTsParamProp;
-use stc_ts_ast_rnode::RPrivateMethod;
-use stc_ts_ast_rnode::RPrivateProp;
-use stc_ts_ast_rnode::RPropName;
-use stc_ts_ast_rnode::RReturnStmt;
-use stc_ts_ast_rnode::RSeqExpr;
-use stc_ts_ast_rnode::RStmt;
-use stc_ts_ast_rnode::RSwitchStmt;
-use stc_ts_ast_rnode::RTpl;
-use stc_ts_ast_rnode::RTsEnumDecl;
-use stc_ts_ast_rnode::RTsExportAssignment;
-use stc_ts_ast_rnode::RTsFnParam;
-use stc_ts_ast_rnode::RTsFnType;
-use stc_ts_ast_rnode::RTsImportEqualsDecl;
-use stc_ts_ast_rnode::RTsInterfaceBody;
-use stc_ts_ast_rnode::RTsInterfaceDecl;
-use stc_ts_ast_rnode::RTsModuleDecl;
-use stc_ts_ast_rnode::RTsNamespaceDecl;
-use stc_ts_ast_rnode::RTsParamProp;
-use stc_ts_ast_rnode::RTsTplLitType;
-use stc_ts_ast_rnode::RTsType;
-use stc_ts_ast_rnode::RTsTypeAliasDecl;
-use stc_ts_ast_rnode::RTsTypeElement;
-use stc_ts_ast_rnode::RVarDecl;
-use stc_ts_ast_rnode::RVarDeclarator;
-use stc_ts_ast_rnode::RWhileStmt;
-use stc_ts_ast_rnode::RWithStmt;
-use stc_ts_ast_rnode::RYieldExpr;
+use rnode::{Visit, VisitWith};
+use stc_ts_ast_rnode::{
+    RArrowExpr, RBlockStmt, RCatchClause, RClass, RClassDecl, RClassExpr, RClassMember, RClassMethod,
+    RComputedPropName, RConstructor, RDoWhileStmt, RExportAll, RExportDecl, RExportDefaultDecl, RExportDefaultExpr,
+    RExportNamedSpecifier, RExpr, RFnDecl, RFnExpr, RForInStmt, RForOfStmt, RForStmt, RFunction, RIfStmt, RImportDecl,
+    RModule, RModuleItem, RNamedExport, RObjectLit, RParam, RParamOrTsParamProp, RPrivateMethod, RPrivateProp,
+    RPropName, RReturnStmt, RSeqExpr, RStmt, RSwitchStmt, RTpl, RTsEnumDecl, RTsExportAssignment, RTsFnParam,
+    RTsFnType, RTsImportEqualsDecl, RTsInterfaceBody, RTsInterfaceDecl, RTsModuleDecl, RTsNamespaceDecl, RTsParamProp,
+    RTsTplLitType, RTsType, RTsTypeAliasDecl, RTsTypeElement, RVarDecl, RVarDeclarator, RWhileStmt, RWithStmt,
+    RYieldExpr,
+};
 
 macro_rules! forward {
     ($name:ident,$T:ty) => {

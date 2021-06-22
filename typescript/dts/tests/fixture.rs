@@ -6,33 +6,28 @@
 extern crate test;
 
 use anyhow::Context;
-use rnode::NodeIdGenerator;
-use rnode::RNode;
-use stc_testing::get_git_root;
-use stc_testing::logger;
+use rnode::{NodeIdGenerator, RNode};
+use stc_testing::{get_git_root, logger};
 use stc_ts_ast_rnode::RModule;
 use stc_ts_builtin_types::Lib;
-use stc_ts_dts::apply_mutations;
-use stc_ts_dts::cleanup_module_for_dts;
-use stc_ts_file_analyzer::analyzer::Analyzer;
-use stc_ts_file_analyzer::analyzer::NoopLoader;
-use stc_ts_file_analyzer::env::Env;
-use stc_ts_file_analyzer::env::ModuleConfig;
-use stc_ts_file_analyzer::validator::ValidateWith;
+use stc_ts_dts::{apply_mutations, cleanup_module_for_dts};
+use stc_ts_file_analyzer::{
+    analyzer::{Analyzer, NoopLoader},
+    env::{Env, ModuleConfig},
+    validator::ValidateWith,
+};
 use stc_ts_storage::Single;
 use stc_ts_types::module_id;
 use stc_ts_utils::StcComments;
-use std::fs::read_to_string;
 use std::{
     env,
-    fs::{self, canonicalize, File},
+    fs::{self, canonicalize, read_to_string, File},
     io::Read,
     path::{Path, PathBuf},
     process::Command,
     sync::Arc,
 };
-use swc_common::GLOBALS;
-use swc_common::{input::SourceFileInput, FileName, SyntaxContext};
+use swc_common::{input::SourceFileInput, FileName, SyntaxContext, GLOBALS};
 use swc_ecma_ast::{Ident, Module, TsIntersectionType, TsKeywordTypeKind, TsLit, TsLitType, TsType, TsUnionType};
 use swc_ecma_codegen::{text_writer::JsWriter, Emitter};
 use swc_ecma_parser::{lexer::Lexer, JscTarget, Parser, StringInput, Syntax, TsConfig};

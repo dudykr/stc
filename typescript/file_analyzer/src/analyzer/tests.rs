@@ -1,30 +1,21 @@
 use super::Analyzer;
-use crate::env::Env;
-use crate::env::ModuleConfig;
-use crate::loader::Load;
-use crate::loader::ModuleInfo;
-use crate::tests::GLOBALS;
-use crate::tests::MARKS;
-use crate::ValidationResult;
+use crate::{
+    env::{Env, ModuleConfig},
+    loader::{Load, ModuleInfo},
+    tests::{GLOBALS, MARKS},
+    ValidationResult,
+};
 use once_cell::sync::Lazy;
 use rnode::NodeIdGenerator;
 use stc_testing::logger;
 use stc_ts_builtin_types::Lib;
 use stc_ts_storage::Single;
-use stc_ts_types::ModuleId;
-use stc_ts_types::ModuleTypeData;
-use std::path::PathBuf;
-use std::sync::Arc;
+use stc_ts_types::{ModuleId, ModuleTypeData};
+use std::{path::PathBuf, sync::Arc};
 use swc_atoms::JsWord;
-use swc_common::FileName;
-use swc_common::SourceMap;
+use swc_common::{FileName, SourceMap};
 use swc_ecma_ast::Module;
-use swc_ecma_parser::lexer::Lexer;
-use swc_ecma_parser::JscTarget;
-use swc_ecma_parser::Parser;
-use swc_ecma_parser::StringInput;
-use swc_ecma_parser::Syntax;
-use swc_ecma_parser::TsConfig;
+use swc_ecma_parser::{lexer::Lexer, JscTarget, Parser, StringInput, Syntax, TsConfig};
 use swc_ecma_transforms::resolver::ts_resolver;
 use swc_ecma_visit::FoldWith;
 use testing::StdErr;

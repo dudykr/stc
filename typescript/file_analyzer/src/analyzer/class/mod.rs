@@ -1,92 +1,43 @@
 use self::type_param::StaticTypeParamValidator;
-use super::assign::AssignOpts;
-use super::expr::TypeOfMode;
-use super::props::ComputedPropMode;
-use super::util::is_prop_name_eq;
-use super::util::make_instance_type;
-use super::util::ResultExt;
-use super::util::VarVisitor;
-use super::Analyzer;
-use super::Ctx;
-use super::ScopeKind;
-use crate::analyzer::scope::VarKind;
-use crate::env::ModuleConfig;
-use crate::ty::LitGeneralizer;
-use crate::ty::TypeExt;
-use crate::util::property_map::PropertyMap;
-use crate::validator;
-use crate::validator::ValidateWith;
-use crate::ValidationResult;
+use super::{
+    assign::AssignOpts,
+    expr::TypeOfMode,
+    props::ComputedPropMode,
+    util::{is_prop_name_eq, make_instance_type, ResultExt, VarVisitor},
+    Analyzer, Ctx, ScopeKind,
+};
+use crate::{
+    analyzer::scope::VarKind,
+    env::ModuleConfig,
+    ty::{LitGeneralizer, TypeExt},
+    util::property_map::PropertyMap,
+    validator,
+    validator::ValidateWith,
+    ValidationResult,
+};
 use itertools::Itertools;
-use rnode::IntoRNode;
-use rnode::NodeId;
-use rnode::NodeIdGenerator;
-use rnode::VisitWith;
-use rnode::{FoldWith, Visit};
-use stc_ts_ast_rnode::RClassExpr;
-use stc_ts_ast_rnode::RClassMember;
-use stc_ts_ast_rnode::RClassMethod;
-use stc_ts_ast_rnode::RClassProp;
-use stc_ts_ast_rnode::RConstructor;
-use stc_ts_ast_rnode::RDecl;
-use stc_ts_ast_rnode::RExpr;
-use stc_ts_ast_rnode::RExprOrSuper;
-use stc_ts_ast_rnode::RIdent;
-use stc_ts_ast_rnode::RMemberExpr;
-use stc_ts_ast_rnode::RParam;
-use stc_ts_ast_rnode::RParamOrTsParamProp;
-use stc_ts_ast_rnode::RPat;
-use stc_ts_ast_rnode::RPrivateMethod;
-use stc_ts_ast_rnode::RPrivateProp;
-use stc_ts_ast_rnode::RPropName;
-use stc_ts_ast_rnode::RStmt;
-use stc_ts_ast_rnode::RTsEntityName;
-use stc_ts_ast_rnode::RTsFnParam;
-use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_ast_rnode::RTsParamProp;
-use stc_ts_ast_rnode::RTsParamPropParam;
-use stc_ts_ast_rnode::RTsTypeAliasDecl;
-use stc_ts_ast_rnode::RTsTypeAnn;
-use stc_ts_ast_rnode::RVarDecl;
-use stc_ts_ast_rnode::RVarDeclarator;
-use stc_ts_ast_rnode::{RArrowExpr, RClass};
-use stc_ts_ast_rnode::{RAssignPat, RSuper};
-use stc_ts_ast_rnode::{RBindingIdent, RFunction};
-use stc_ts_ast_rnode::{RClassDecl, RSeqExpr};
-use stc_ts_errors::DebugExt;
-use stc_ts_errors::Error;
-use stc_ts_errors::Errors;
+use rnode::{FoldWith, IntoRNode, NodeId, NodeIdGenerator, Visit, VisitWith};
+use stc_ts_ast_rnode::{
+    RArrowExpr, RAssignPat, RBindingIdent, RClass, RClassDecl, RClassExpr, RClassMember, RClassMethod, RClassProp,
+    RConstructor, RDecl, RExpr, RExprOrSuper, RFunction, RIdent, RMemberExpr, RParam, RParamOrTsParamProp, RPat,
+    RPrivateMethod, RPrivateProp, RPropName, RSeqExpr, RStmt, RSuper, RTsEntityName, RTsFnParam, RTsKeywordType,
+    RTsParamProp, RTsParamPropParam, RTsTypeAliasDecl, RTsTypeAnn, RVarDecl, RVarDeclarator,
+};
+use stc_ts_errors::{DebugExt, Error, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
-use stc_ts_types::Class;
-use stc_ts_types::ClassDef;
-use stc_ts_types::ClassMember;
-use stc_ts_types::ClassProperty;
-use stc_ts_types::ComputedKey;
-use stc_ts_types::ConstructorSignature;
-use stc_ts_types::FnParam;
-use stc_ts_types::Id;
-use stc_ts_types::Intersection;
-use stc_ts_types::Key;
-use stc_ts_types::Method;
-use stc_ts_types::Operator;
-use stc_ts_types::QueryExpr;
-use stc_ts_types::QueryType;
-use stc_ts_types::Ref;
-use stc_ts_types::TsExpr;
-use stc_ts_types::Type;
+use stc_ts_types::{
+    Class, ClassDef, ClassMember, ClassProperty, ComputedKey, ConstructorSignature, FnParam, Id, Intersection, Key,
+    Method, Operator, QueryExpr, QueryType, Ref, TsExpr, Type,
+};
 use stc_ts_utils::PatExt;
 use stc_utils::TryOpt;
-use std::borrow::Cow;
-use std::cell::RefCell;
-use std::mem::replace;
-use std::mem::take;
+use std::{
+    borrow::Cow,
+    cell::RefCell,
+    mem::{replace, take},
+};
 use swc_atoms::js_word;
-use swc_common::iter::IdentifyLast;
-use swc_common::EqIgnoreSpan;
-use swc_common::Span;
-use swc_common::Spanned;
-use swc_common::TypeEq;
-use swc_common::DUMMY_SP;
+use swc_common::{iter::IdentifyLast, EqIgnoreSpan, Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
 use swc_ecma_utils::private_ident;
 

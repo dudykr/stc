@@ -5,17 +5,10 @@ use crate::{
     validator,
     validator::ValidateWith,
 };
-use rnode::NodeId;
-use rnode::VisitWith;
-use stc_ts_ast_rnode::RBlockStmt;
-use stc_ts_ast_rnode::RBool;
-use stc_ts_ast_rnode::RForStmt;
-use stc_ts_ast_rnode::RModuleItem;
-use stc_ts_ast_rnode::RStmt;
-use stc_ts_ast_rnode::RTsExprWithTypeArgs;
-use stc_ts_ast_rnode::RTsLit;
-use stc_ts_ast_rnode::RTsLitType;
-use stc_ts_ast_rnode::RWithStmt;
+use rnode::{NodeId, VisitWith};
+use stc_ts_ast_rnode::{
+    RBlockStmt, RBool, RForStmt, RModuleItem, RStmt, RTsExprWithTypeArgs, RTsLit, RTsLitType, RWithStmt,
+};
 use stc_ts_errors::Error;
 use stc_ts_types::Type;
 use stc_utils::stack;

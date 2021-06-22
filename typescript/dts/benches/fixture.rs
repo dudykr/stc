@@ -3,17 +3,16 @@
 
 extern crate test;
 
-use rnode::NodeIdGenerator;
-use rnode::RNode;
+use rnode::{NodeIdGenerator, RNode};
 use slog::Logger;
 use stc_ts_ast_rnode::RModule;
 use stc_ts_builtin_types::Lib;
 use stc_ts_dts::cleanup_module_for_dts;
-use stc_ts_file_analyzer::analyzer::Analyzer;
-use stc_ts_file_analyzer::analyzer::NoopLoader;
-use stc_ts_file_analyzer::env::Env;
-use stc_ts_file_analyzer::env::ModuleConfig;
-use stc_ts_file_analyzer::validator::ValidateWith;
+use stc_ts_file_analyzer::{
+    analyzer::{Analyzer, NoopLoader},
+    env::{Env, ModuleConfig},
+    validator::ValidateWith,
+};
 use stc_ts_storage::Single;
 use stc_ts_types::module_id;
 use stc_ts_utils::StcComments;
@@ -23,12 +22,8 @@ use std::{
     path::{Path, PathBuf},
     sync::Arc,
 };
-use swc_common::input::SourceFileInput;
-use swc_common::GLOBALS;
-use swc_ecma_parser::lexer::Lexer;
-use swc_ecma_parser::Parser;
-use swc_ecma_parser::Syntax;
-use swc_ecma_parser::{JscTarget, TsConfig};
+use swc_common::{input::SourceFileInput, GLOBALS};
+use swc_ecma_parser::{lexer::Lexer, JscTarget, Parser, Syntax, TsConfig};
 use swc_ecma_transforms::resolver::ts_resolver;
 use swc_ecma_visit::FoldWith;
 use test::Bencher;

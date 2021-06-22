@@ -7,9 +7,8 @@ use self::{
     scope::{Scope, VarKind},
     util::ResultExt,
 };
-use crate::env::ModuleConfig;
 use crate::{
-    env::{Env, StableEnv},
+    env::{Env, ModuleConfig, StableEnv},
     loader::{Load, ModuleInfo},
     ty,
     ty::Type,
@@ -17,43 +16,29 @@ use crate::{
     validator::ValidateWith,
     Rule, ValidationResult,
 };
-use fxhash::FxHashMap;
-use fxhash::FxHashSet;
+use fxhash::{FxHashMap, FxHashSet};
 use rnode::VisitWith;
 use slog::Logger;
-use stc_ts_ast_rnode::RDecorator;
-use stc_ts_ast_rnode::RExpr;
-use stc_ts_ast_rnode::RModule;
-use stc_ts_ast_rnode::RModuleDecl;
-use stc_ts_ast_rnode::RModuleItem;
-use stc_ts_ast_rnode::RScript;
-use stc_ts_ast_rnode::RStmt;
-use stc_ts_ast_rnode::RStr;
-use stc_ts_ast_rnode::RTsImportEqualsDecl;
-use stc_ts_ast_rnode::RTsModuleDecl;
-use stc_ts_ast_rnode::RTsModuleName;
-use stc_ts_ast_rnode::RTsModuleRef;
-use stc_ts_ast_rnode::RTsNamespaceDecl;
+use stc_ts_ast_rnode::{
+    RDecorator, RExpr, RModule, RModuleDecl, RModuleItem, RScript, RStmt, RStr, RTsImportEqualsDecl, RTsModuleDecl,
+    RTsModuleName, RTsModuleRef, RTsNamespaceDecl,
+};
 use stc_ts_dts_mutations::Mutations;
-use stc_ts_errors::debug::debugger::Debugger;
-use stc_ts_errors::debug::duplicate::DuplicateTracker;
-use stc_ts_errors::Error;
-use stc_ts_storage::Builtin;
-use stc_ts_storage::Info;
-use stc_ts_storage::Storage;
-use stc_ts_types::IdCtx;
-use stc_ts_types::{Id, ModuleId, ModuleTypeData};
-use stc_utils::AHashMap;
-use stc_utils::AHashSet;
-use std::mem::take;
+use stc_ts_errors::{
+    debug::{debugger::Debugger, duplicate::DuplicateTracker},
+    Error,
+};
+use stc_ts_storage::{Builtin, Info, Storage};
+use stc_ts_types::{Id, IdCtx, ModuleId, ModuleTypeData};
+use stc_utils::{AHashMap, AHashSet};
 use std::{
     fmt::Debug,
+    mem::take,
     ops::{Deref, DerefMut},
     path::PathBuf,
     sync::Arc,
 };
-use swc_atoms::js_word;
-use swc_atoms::JsWord;
+use swc_atoms::{js_word, JsWord};
 use swc_common::{SourceMap, Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
 use swc_ecma_parser::JscTarget;

@@ -1,36 +1,22 @@
-use super::expr::TypeOfMode;
-use super::{Analyzer, Ctx};
-use crate::analyzer::scope::VarKind;
-use crate::{analyzer::util::ResultExt, ty::Type, validator, validator::ValidateWith, ValidationResult};
-use rnode::NodeId;
-use rnode::VisitWith;
-use stc_ts_ast_rnode::RBindingIdent;
-use stc_ts_ast_rnode::RDecl;
-use stc_ts_ast_rnode::RDefaultDecl;
-use stc_ts_ast_rnode::RExportAll;
-use stc_ts_ast_rnode::RExportDecl;
-use stc_ts_ast_rnode::RExportDefaultDecl;
-use stc_ts_ast_rnode::RExportDefaultExpr;
-use stc_ts_ast_rnode::RExportNamedSpecifier;
-use stc_ts_ast_rnode::RExportSpecifier;
-use stc_ts_ast_rnode::RExpr;
-use stc_ts_ast_rnode::RIdent;
-use stc_ts_ast_rnode::RNamedExport;
-use stc_ts_ast_rnode::RPat;
-use stc_ts_ast_rnode::RStmt;
-use stc_ts_ast_rnode::RTsExportAssignment;
-use stc_ts_ast_rnode::RTsModuleName;
-use stc_ts_ast_rnode::RTsTypeAnn;
-use stc_ts_ast_rnode::RVarDecl;
-use stc_ts_ast_rnode::RVarDeclarator;
+use super::{expr::TypeOfMode, Analyzer, Ctx};
+use crate::{
+    analyzer::{scope::VarKind, util::ResultExt},
+    ty::Type,
+    validator,
+    validator::ValidateWith,
+    ValidationResult,
+};
+use rnode::{NodeId, VisitWith};
+use stc_ts_ast_rnode::{
+    RBindingIdent, RDecl, RDefaultDecl, RExportAll, RExportDecl, RExportDefaultDecl, RExportDefaultExpr,
+    RExportNamedSpecifier, RExportSpecifier, RExpr, RIdent, RNamedExport, RPat, RStmt, RTsExportAssignment,
+    RTsModuleName, RTsTypeAnn, RVarDecl, RVarDeclarator,
+};
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_file_analyzer_macros::extra_validator;
-use stc_ts_types::Id;
-use stc_ts_types::IdCtx;
-use stc_ts_types::ModuleId;
+use stc_ts_types::{Id, IdCtx, ModuleId};
 use stc_ts_utils::find_ids_in_pat;
-use swc_atoms::js_word;
-use swc_atoms::JsWord;
+use swc_atoms::{js_word, JsWord};
 use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
 

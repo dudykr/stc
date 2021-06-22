@@ -1,68 +1,25 @@
 pub(crate) use self::expander::ExtendsOpts;
-use super::Analyzer;
-use super::Ctx;
-use crate::analyzer::assign::AssignOpts;
-use crate::util::RemoveTypes;
-use crate::ValidationResult;
+use super::{Analyzer, Ctx};
+use crate::{analyzer::assign::AssignOpts, util::RemoveTypes, ValidationResult};
 use fxhash::FxHashMap;
-use itertools::EitherOrBoth;
-use itertools::Itertools;
-use rnode::Fold;
-use rnode::FoldWith;
-use rnode::NodeId;
-use rnode::VisitMut;
-use rnode::VisitMutWith;
-use rnode::VisitWith;
-use stc_ts_ast_rnode::RIdent;
-use stc_ts_ast_rnode::RPat;
-use stc_ts_ast_rnode::RStr;
-use stc_ts_ast_rnode::RTsEntityName;
-use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_ast_rnode::RTsLit;
-use stc_ts_ast_rnode::RTsLitType;
-use stc_ts_errors::debug::dump_type_as_string;
-use stc_ts_errors::debug::print_backtrace;
-use stc_ts_errors::debug::print_type;
-use stc_ts_errors::DebugExt;
-use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
-use stc_ts_generics::type_param::remover::TypeParamRemover;
-use stc_ts_generics::type_param::renamer::TypeParamRenamer;
+use itertools::{EitherOrBoth, Itertools};
+use rnode::{Fold, FoldWith, NodeId, VisitMut, VisitMutWith, VisitWith};
+use stc_ts_ast_rnode::{RIdent, RPat, RStr, RTsEntityName, RTsKeywordType, RTsLit, RTsLitType};
+use stc_ts_errors::{
+    debug::{dump_type_as_string, print_backtrace, print_type},
+    DebugExt,
+};
+use stc_ts_generics::type_param::{finder::TypeParamUsageFinder, remover::TypeParamRemover, renamer::TypeParamRenamer};
 use stc_ts_type_ops::Fix;
-use stc_ts_types::Array;
-use stc_ts_types::FnParam;
-use stc_ts_types::Function;
-use stc_ts_types::Id;
-use stc_ts_types::IndexSignature;
-use stc_ts_types::IndexedAccessType;
-use stc_ts_types::Intersection;
-use stc_ts_types::Key;
-use stc_ts_types::Mapped;
-use stc_ts_types::ModuleId;
-use stc_ts_types::Operator;
-use stc_ts_types::OptionalType;
-use stc_ts_types::PropertySignature;
-use stc_ts_types::Ref;
-use stc_ts_types::Tuple;
-use stc_ts_types::TupleElement;
-use stc_ts_types::Type;
-use stc_ts_types::TypeElement;
-use stc_ts_types::TypeLit;
-use stc_ts_types::TypeOrSpread;
-use stc_ts_types::TypeParam;
-use stc_ts_types::TypeParamDecl;
-use stc_ts_types::TypeParamInstantiation;
-use stc_ts_types::Union;
+use stc_ts_types::{
+    Array, FnParam, Function, Id, IndexSignature, IndexedAccessType, Intersection, Key, Mapped, ModuleId, Operator,
+    OptionalType, PropertySignature, Ref, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeOrSpread, TypeParam,
+    TypeParamDecl, TypeParamInstantiation, Union,
+};
 use stc_ts_utils::MapWithMut;
-use stc_utils::error::context;
-use stc_utils::stack;
-use std::borrow::Cow;
-use std::collections::hash_map::Entry;
-use std::mem::take;
-use swc_common::EqIgnoreSpan;
-use swc_common::Span;
-use swc_common::Spanned;
-use swc_common::TypeEq;
-use swc_common::DUMMY_SP;
+use stc_utils::{error::context, stack};
+use std::{borrow::Cow, collections::hash_map::Entry, mem::take};
+use swc_common::{EqIgnoreSpan, Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
 
 mod expander;

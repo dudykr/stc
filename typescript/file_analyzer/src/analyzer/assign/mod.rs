@@ -1,37 +1,20 @@
 use super::Analyzer;
-use crate::analyzer::types::NormalizeTypeOpts;
-use crate::{ty::TypeExt, ValidationResult};
+use crate::{analyzer::types::NormalizeTypeOpts, ty::TypeExt, ValidationResult};
 use rnode::NodeId;
-use stc_ts_ast_rnode::RBool;
-use stc_ts_ast_rnode::RExpr;
-use stc_ts_ast_rnode::RIdent;
-use stc_ts_ast_rnode::RStr;
-use stc_ts_ast_rnode::RTsEntityName;
-use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_ast_rnode::RTsLit;
-use stc_ts_ast_rnode::RTsLitType;
-use stc_ts_ast_rnode::RTsThisType;
-use stc_ts_errors::debug::dump_type_as_string;
-use stc_ts_errors::debug::print_backtrace;
-use stc_ts_errors::DebugExt;
-use stc_ts_errors::Error;
+use stc_ts_ast_rnode::{RBool, RExpr, RIdent, RStr, RTsEntityName, RTsKeywordType, RTsLit, RTsLitType, RTsThisType};
+use stc_ts_errors::{
+    debug::{dump_type_as_string, print_backtrace},
+    DebugExt, Error,
+};
 use stc_ts_file_analyzer_macros::context;
-use stc_ts_types::Key;
-use stc_ts_types::Mapped;
-use stc_ts_types::Operator;
-use stc_ts_types::PropertySignature;
-use stc_ts_types::Ref;
 use stc_ts_types::{
-    Array, EnumVariant, FnParam, Interface, Intersection, Tuple, Type, TypeElement, TypeLit, TypeParam, Union,
+    Array, EnumVariant, FnParam, Interface, Intersection, Key, Mapped, Operator, PropertySignature, Ref, Tuple, Type,
+    TypeElement, TypeLit, TypeParam, Union,
 };
 use stc_utils::stack;
-use std::borrow::Cow;
-use std::collections::HashMap;
+use std::{borrow::Cow, collections::HashMap};
 use swc_atoms::js_word;
-use swc_common::EqIgnoreSpan;
-use swc_common::TypeEq;
-use swc_common::DUMMY_SP;
-use swc_common::{Span, Spanned};
+use swc_common::{EqIgnoreSpan, Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
 
 mod builtin;

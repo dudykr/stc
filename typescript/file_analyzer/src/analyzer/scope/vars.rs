@@ -1,46 +1,27 @@
-use crate::analyzer::assign::AssignOpts;
-use crate::analyzer::expr::GetIteratorOpts;
-use crate::analyzer::expr::IdCtx;
-use crate::analyzer::expr::TypeOfMode;
-use crate::analyzer::types::NormalizeTypeOpts;
-use crate::analyzer::util::opt_union;
-use crate::analyzer::util::ResultExt;
-use crate::analyzer::Analyzer;
-use crate::analyzer::Ctx;
-use crate::validator::ValidateWith;
-use crate::ValidationResult;
+use crate::{
+    analyzer::{
+        assign::AssignOpts,
+        expr::{GetIteratorOpts, IdCtx, TypeOfMode},
+        types::NormalizeTypeOpts,
+        util::{opt_union, ResultExt},
+        Analyzer, Ctx,
+    },
+    validator::ValidateWith,
+    ValidationResult,
+};
 use itertools::Itertools;
 use rnode::NodeId;
-use stc_ts_ast_rnode::RBindingIdent;
-use stc_ts_ast_rnode::RExpr;
-use stc_ts_ast_rnode::RIdent;
-use stc_ts_ast_rnode::RNumber;
-use stc_ts_ast_rnode::RObjectPatProp;
-use stc_ts_ast_rnode::RPat;
-use stc_ts_ast_rnode::RStr;
-use stc_ts_ast_rnode::RTsEntityName;
-use stc_ts_ast_rnode::RTsLit;
-use stc_ts_ast_rnode::RTsLitType;
-use stc_ts_errors::debug::dump_type_as_string;
-use stc_ts_errors::DebugExt;
-use stc_ts_errors::Error;
+use stc_ts_ast_rnode::{
+    RBindingIdent, RExpr, RIdent, RNumber, RObjectPatProp, RPat, RStr, RTsEntityName, RTsLit, RTsLitType,
+};
+use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_type_ops::Fix;
-use stc_ts_types::Array;
-use stc_ts_types::Key;
-use stc_ts_types::ModuleId;
-use stc_ts_types::Ref;
-use stc_ts_types::Type;
-use stc_ts_types::TypeLit;
-use stc_ts_types::TypeParamInstantiation;
-use stc_ts_types::Union;
+use stc_ts_types::{Array, Key, ModuleId, Ref, Type, TypeLit, TypeParamInstantiation, Union};
 use stc_ts_utils::PatExt;
 use stc_utils::TryOpt;
 use std::borrow::Cow;
-use swc_common::Span;
-use swc_common::Spanned;
-use swc_common::DUMMY_SP;
-use swc_ecma_ast::TsKeywordTypeKind;
-use swc_ecma_ast::VarDeclKind;
+use swc_common::{Span, Spanned, DUMMY_SP};
+use swc_ecma_ast::{TsKeywordTypeKind, VarDeclKind};
 
 /// The kind of binding.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]

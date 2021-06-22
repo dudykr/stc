@@ -2,15 +2,10 @@
 #![feature(specialization)]
 
 use self::types::Sortable;
-use fxhash::FxBuildHasher;
-use fxhash::FxHashMap;
-use fxhash::FxHashSet;
+use fxhash::{FxBuildHasher, FxHashMap, FxHashSet};
 use indexmap::IndexSet;
-use petgraph::algo::all_simple_paths;
-use petgraph::graphmap::DiGraphMap;
-use petgraph::EdgeDirection::Outgoing;
-use std::collections::VecDeque;
-use std::iter::from_fn;
+use petgraph::{algo::all_simple_paths, graphmap::DiGraphMap, EdgeDirection::Outgoing};
+use std::{collections::VecDeque, iter::from_fn};
 
 mod class;
 mod object;

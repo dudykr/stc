@@ -1,21 +1,11 @@
 #![feature(box_syntax)]
 
 use fxhash::FxHashMap;
-use stc_ts_errors::Error;
-use stc_ts_errors::Errors;
-use stc_ts_types::Id;
-use stc_ts_types::ModuleId;
-use stc_ts_types::ModuleTypeData;
-use stc_ts_types::Type;
-use std::collections::hash_map::Entry;
-use std::mem::take;
-use std::path::PathBuf;
-use std::sync::Arc;
+use stc_ts_errors::{Error, Errors};
+use stc_ts_types::{Id, ModuleId, ModuleTypeData, Type};
+use std::{collections::hash_map::Entry, mem::take, path::PathBuf, sync::Arc};
 use swc_atoms::JsWord;
-use swc_common::iter::IdentifyLast;
-use swc_common::Span;
-use swc_common::TypeEq;
-use swc_common::DUMMY_SP;
+use swc_common::{iter::IdentifyLast, Span, TypeEq, DUMMY_SP};
 
 #[derive(Debug, Default)]
 pub struct Info {

@@ -1,115 +1,35 @@
-use super::marks::MarkExt;
-use super::props::ComputedPropMode;
-use super::Analyzer;
-use super::Ctx;
-use super::ScopeKind;
-use crate::analyzer::scope::VarKind;
-use crate::analyzer::util::ResultExt;
-use crate::util::contains_infer_type;
-use crate::util::type_ext::TypeVecExt;
-use crate::validator;
-use crate::validator::ValidateWith;
-use crate::ValidationResult;
-use rnode::NodeId;
-use rnode::VisitWith;
-use stc_ts_ast_rnode::RArrayPat;
-use stc_ts_ast_rnode::RAssignPatProp;
-use stc_ts_ast_rnode::RBindingIdent;
-use stc_ts_ast_rnode::RComputedPropName;
-use stc_ts_ast_rnode::RIdent;
-use stc_ts_ast_rnode::RObjectPat;
-use stc_ts_ast_rnode::RObjectPatProp;
-use stc_ts_ast_rnode::RPat;
-use stc_ts_ast_rnode::RTsArrayType;
-use stc_ts_ast_rnode::RTsCallSignatureDecl;
-use stc_ts_ast_rnode::RTsConditionalType;
-use stc_ts_ast_rnode::RTsConstructSignatureDecl;
-use stc_ts_ast_rnode::RTsConstructorType;
-use stc_ts_ast_rnode::RTsEntityName;
-use stc_ts_ast_rnode::RTsExprWithTypeArgs;
-use stc_ts_ast_rnode::RTsFnOrConstructorType;
-use stc_ts_ast_rnode::RTsFnParam;
-use stc_ts_ast_rnode::RTsFnType;
-use stc_ts_ast_rnode::RTsImportType;
-use stc_ts_ast_rnode::RTsIndexSignature;
-use stc_ts_ast_rnode::RTsIndexedAccessType;
-use stc_ts_ast_rnode::RTsInferType;
-use stc_ts_ast_rnode::RTsInterfaceBody;
-use stc_ts_ast_rnode::RTsInterfaceDecl;
-use stc_ts_ast_rnode::RTsIntersectionType;
-use stc_ts_ast_rnode::RTsLit;
-use stc_ts_ast_rnode::RTsMappedType;
-use stc_ts_ast_rnode::RTsMethodSignature;
-use stc_ts_ast_rnode::RTsOptionalType;
-use stc_ts_ast_rnode::RTsParenthesizedType;
-use stc_ts_ast_rnode::RTsPropertySignature;
-use stc_ts_ast_rnode::RTsRestType;
-use stc_ts_ast_rnode::RTsTplLitType;
-use stc_ts_ast_rnode::RTsTupleElement;
-use stc_ts_ast_rnode::RTsTupleType;
-use stc_ts_ast_rnode::RTsType;
-use stc_ts_ast_rnode::RTsTypeAliasDecl;
-use stc_ts_ast_rnode::RTsTypeAnn;
-use stc_ts_ast_rnode::RTsTypeElement;
-use stc_ts_ast_rnode::RTsTypeLit;
-use stc_ts_ast_rnode::RTsTypeOperator;
-use stc_ts_ast_rnode::RTsTypeParam;
-use stc_ts_ast_rnode::RTsTypeParamDecl;
-use stc_ts_ast_rnode::RTsTypeParamInstantiation;
-use stc_ts_ast_rnode::RTsTypePredicate;
-use stc_ts_ast_rnode::RTsTypeQuery;
-use stc_ts_ast_rnode::RTsTypeQueryExpr;
-use stc_ts_ast_rnode::RTsTypeRef;
-use stc_ts_ast_rnode::RTsUnionOrIntersectionType;
-use stc_ts_ast_rnode::RTsUnionType;
+use super::{marks::MarkExt, props::ComputedPropMode, Analyzer, Ctx, ScopeKind};
+use crate::{
+    analyzer::{scope::VarKind, util::ResultExt},
+    util::{contains_infer_type, type_ext::TypeVecExt},
+    validator,
+    validator::ValidateWith,
+    ValidationResult,
+};
+use rnode::{NodeId, VisitWith};
+use stc_ts_ast_rnode::{
+    RArrayPat, RAssignPatProp, RBindingIdent, RComputedPropName, RIdent, RObjectPat, RObjectPatProp, RPat,
+    RTsArrayType, RTsCallSignatureDecl, RTsConditionalType, RTsConstructSignatureDecl, RTsConstructorType,
+    RTsEntityName, RTsExprWithTypeArgs, RTsFnOrConstructorType, RTsFnParam, RTsFnType, RTsImportType,
+    RTsIndexSignature, RTsIndexedAccessType, RTsInferType, RTsInterfaceBody, RTsInterfaceDecl, RTsIntersectionType,
+    RTsLit, RTsMappedType, RTsMethodSignature, RTsOptionalType, RTsParenthesizedType, RTsPropertySignature,
+    RTsRestType, RTsTplLitType, RTsTupleElement, RTsTupleType, RTsType, RTsTypeAliasDecl, RTsTypeAnn, RTsTypeElement,
+    RTsTypeLit, RTsTypeOperator, RTsTypeParam, RTsTypeParamDecl, RTsTypeParamInstantiation, RTsTypePredicate,
+    RTsTypeQuery, RTsTypeQueryExpr, RTsTypeRef, RTsUnionOrIntersectionType, RTsUnionType,
+};
 use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_type_ops::Fix;
-use stc_ts_types::type_id::SymbolId;
-use stc_ts_types::Alias;
-use stc_ts_types::Array;
-use stc_ts_types::CallSignature;
-use stc_ts_types::Conditional;
-use stc_ts_types::ConstructorSignature;
-use stc_ts_types::Id;
-use stc_ts_types::ImportType;
-use stc_ts_types::IndexSignature;
-use stc_ts_types::IndexedAccessType;
-use stc_ts_types::InferType;
-use stc_ts_types::Interface;
-use stc_ts_types::Intersection;
-use stc_ts_types::Key;
-use stc_ts_types::Mapped;
-use stc_ts_types::MethodSignature;
-use stc_ts_types::Operator;
-use stc_ts_types::OptionalType;
-use stc_ts_types::Predicate;
-use stc_ts_types::PropertySignature;
-use stc_ts_types::QueryExpr;
-use stc_ts_types::QueryType;
-use stc_ts_types::Ref;
-use stc_ts_types::RestType;
-use stc_ts_types::Symbol;
-use stc_ts_types::TplType;
-use stc_ts_types::TsExpr;
-use stc_ts_types::Tuple;
-use stc_ts_types::TupleElement;
-use stc_ts_types::Type;
-use stc_ts_types::TypeElement;
-use stc_ts_types::TypeLit;
-use stc_ts_types::TypeLitMetadata;
-use stc_ts_types::TypeParam;
-use stc_ts_types::TypeParamDecl;
-use stc_ts_types::TypeParamInstantiation;
-use stc_ts_types::Union;
-use stc_ts_utils::OptionExt;
-use stc_ts_utils::PatExt;
-use stc_utils::error;
-use stc_utils::AHashSet;
+use stc_ts_types::{
+    type_id::SymbolId, Alias, Array, CallSignature, Conditional, ConstructorSignature, Id, ImportType, IndexSignature,
+    IndexedAccessType, InferType, Interface, Intersection, Key, Mapped, MethodSignature, Operator, OptionalType,
+    Predicate, PropertySignature, QueryExpr, QueryType, Ref, RestType, Symbol, TplType, TsExpr, Tuple, TupleElement,
+    Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamDecl, TypeParamInstantiation, Union,
+};
+use stc_ts_utils::{OptionExt, PatExt};
+use stc_utils::{error, AHashSet};
 use swc_atoms::js_word;
-use swc_common::EqIgnoreSpan;
-use swc_common::Spanned;
-use swc_common::DUMMY_SP;
+use swc_common::{EqIgnoreSpan, Spanned, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
 
 /// We analyze dependencies between type parameters, and fold parameter in

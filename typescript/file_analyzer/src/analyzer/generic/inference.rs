@@ -1,33 +1,19 @@
 use super::InferData;
-use crate::analyzer::generic::type_form::TypeForm;
-use crate::analyzer::Analyzer;
-use crate::analyzer::Ctx;
-use crate::ValidationResult;
+use crate::{
+    analyzer::{generic::type_form::TypeForm, Analyzer, Ctx},
+    ValidationResult,
+};
 use fxhash::FxHashMap;
 use itertools::Itertools;
 use stc_ts_ast_rnode::RTsEntityName;
-use stc_ts_errors::debug::dump_type_as_string;
-use stc_ts_errors::DebugExt;
+use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
 use stc_ts_type_ops::is_str_lit_or_union;
-use stc_ts_types::Array;
-use stc_ts_types::Class;
-use stc_ts_types::ClassDef;
-use stc_ts_types::ClassMember;
-use stc_ts_types::Id;
-use stc_ts_types::Interface;
-use stc_ts_types::Operator;
-use stc_ts_types::Ref;
-use stc_ts_types::Type;
-use stc_ts_types::TypeElement;
-use stc_ts_types::TypeLit;
-use stc_ts_types::TypeParam;
-use stc_ts_types::Union;
+use stc_ts_types::{
+    Array, Class, ClassDef, ClassMember, Id, Interface, Operator, Ref, Type, TypeElement, TypeLit, TypeParam, Union,
+};
 use std::collections::hash_map::Entry;
-use swc_common::Span;
-use swc_common::Spanned;
-use swc_common::TypeEq;
-use swc_ecma_ast::TsKeywordTypeKind;
-use swc_ecma_ast::TsTypeOperatorOp;
+use swc_common::{Span, Spanned, TypeEq};
+use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
 
 impl Analyzer<'_, '_> {
     /// Union-union inference is special, because

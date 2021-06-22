@@ -1,6 +1,5 @@
 use crate::analyzer::Analyzer;
-use rnode::VisitMut;
-use rnode::VisitMutWith;
+use rnode::{VisitMut, VisitMutWith};
 use stc_ts_types::Type;
 use swc_common::TypeEq;
 

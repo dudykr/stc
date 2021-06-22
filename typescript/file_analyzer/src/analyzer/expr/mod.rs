@@ -1,86 +1,45 @@
 pub(crate) use self::array::GetIteratorOpts;
 use self::bin::extract_name_for_assignment;
 use super::{marks::MarkExt, Analyzer};
-use crate::analyzer::assign::AssignOpts;
-use crate::analyzer::scope::ScopeKind;
-use crate::analyzer::util::ResultExt;
-use crate::util::type_ext::TypeVecExt;
-use crate::util::RemoveTypes;
 use crate::{
-    analyzer::{pat::PatMode, Ctx},
+    analyzer::{assign::AssignOpts, pat::PatMode, scope::ScopeKind, util::ResultExt, Ctx},
     ty,
     ty::{
         Array, EnumVariant, IndexSignature, IndexedAccessType, Interface, Intersection, Ref, Tuple, Type, TypeElement,
         TypeLit, TypeParam, TypeParamInstantiation,
     },
     type_facts::TypeFacts,
+    util::{type_ext::TypeVecExt, RemoveTypes},
     validator,
     validator::ValidateWith,
     ValidationResult,
 };
 use optional_chaining::is_obj_opt_chaining;
-use rnode::NodeId;
-use rnode::VisitWith;
-use stc_ts_ast_rnode::RAssignExpr;
-use stc_ts_ast_rnode::RBindingIdent;
-use stc_ts_ast_rnode::RClassExpr;
-use stc_ts_ast_rnode::RExpr;
-use stc_ts_ast_rnode::RExprOrSuper;
-use stc_ts_ast_rnode::RIdent;
-use stc_ts_ast_rnode::RInvalid;
-use stc_ts_ast_rnode::RLit;
-use stc_ts_ast_rnode::RMemberExpr;
-use stc_ts_ast_rnode::RNull;
-use stc_ts_ast_rnode::RNumber;
-use stc_ts_ast_rnode::RParenExpr;
-use stc_ts_ast_rnode::RPat;
-use stc_ts_ast_rnode::RPatOrExpr;
-use stc_ts_ast_rnode::RSeqExpr;
-use stc_ts_ast_rnode::RStr;
-use stc_ts_ast_rnode::RSuper;
-use stc_ts_ast_rnode::RThisExpr;
-use stc_ts_ast_rnode::RTpl;
-use stc_ts_ast_rnode::RTsEntityName;
-use stc_ts_ast_rnode::RTsEnumMemberId;
-use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_ast_rnode::RTsLit;
-use stc_ts_ast_rnode::RTsLitType;
-use stc_ts_ast_rnode::RTsNonNullExpr;
-use stc_ts_ast_rnode::RTsThisType;
-use stc_ts_ast_rnode::RUnaryExpr;
-use stc_ts_errors::debug::dump_type_as_string;
-use stc_ts_errors::debug::print_backtrace;
-use stc_ts_errors::DebugExt;
-use stc_ts_errors::Error;
-use stc_ts_errors::Errors;
-use stc_ts_type_ops::is_str_lit_or_union;
-use stc_ts_type_ops::Fix;
-use stc_ts_types::name::Name;
-use stc_ts_types::Alias;
-use stc_ts_types::Class;
-use stc_ts_types::ClassDef;
-use stc_ts_types::ClassMember;
-use stc_ts_types::ComputedKey;
+use rnode::{NodeId, VisitWith};
+use stc_ts_ast_rnode::{
+    RAssignExpr, RBindingIdent, RClassExpr, RExpr, RExprOrSuper, RIdent, RInvalid, RLit, RMemberExpr, RNull, RNumber,
+    RParenExpr, RPat, RPatOrExpr, RSeqExpr, RStr, RSuper, RThisExpr, RTpl, RTsEntityName, RTsEnumMemberId,
+    RTsKeywordType, RTsLit, RTsLitType, RTsNonNullExpr, RTsThisType, RUnaryExpr,
+};
+use stc_ts_errors::{
+    debug::{dump_type_as_string, print_backtrace},
+    DebugExt, Error, Errors,
+};
+use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 pub use stc_ts_types::IdCtx;
-use stc_ts_types::Key;
-use stc_ts_types::PropertySignature;
-use stc_ts_types::{ClassProperty, Id, Method, ModuleId, Operator, QueryExpr, QueryType, StaticThis};
-use stc_utils::error::context;
-use stc_utils::stack;
-use std::borrow::Cow;
-use std::collections::HashMap;
-use std::convert::TryFrom;
-use std::convert::TryInto;
+use stc_ts_types::{
+    name::Name, Alias, Class, ClassDef, ClassMember, ClassProperty, ComputedKey, Id, Key, Method, ModuleId, Operator,
+    PropertySignature, QueryExpr, QueryType, StaticThis,
+};
+use stc_utils::{error::context, stack};
+use std::{
+    borrow::Cow,
+    collections::HashMap,
+    convert::{TryFrom, TryInto},
+};
 use swc_atoms::js_word;
-use swc_common::SyntaxContext;
-use swc_common::TypeEq;
-use swc_common::{Span, Spanned, DUMMY_SP};
-use swc_ecma_ast::op;
-use swc_ecma_ast::EsVersion;
-use swc_ecma_ast::TruePlusMinus;
-use swc_ecma_ast::TsKeywordTypeKind;
-use swc_ecma_ast::TsTypeOperatorOp;
-use swc_ecma_ast::VarDeclKind;
+use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
+use swc_ecma_ast::{op, EsVersion, TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp, VarDeclKind};
 use ty::TypeExt;
 
 mod array;

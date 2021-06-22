@@ -1,11 +1,10 @@
 pub(crate) use self::vars::VarKind;
-use super::assign::AssignOpts;
-use super::class::ClassState;
-use super::{control_flow::CondFacts, expr::TypeOfMode, stmt::return_type::ReturnValues, Analyzer, Ctx};
-use crate::analyzer::expr::IdCtx;
-use crate::analyzer::scope::vars::DeclareVarsOpts;
-use crate::analyzer::ResultExt;
+use super::{
+    assign::AssignOpts, class::ClassState, control_flow::CondFacts, expr::TypeOfMode, stmt::return_type::ReturnValues,
+    Analyzer, Ctx,
+};
 use crate::{
+    analyzer::{expr::IdCtx, scope::vars::DeclareVarsOpts, ResultExt},
     loader::ModuleInfo,
     ty::{self, Alias, Interface, PropertySignature, Ref, Tuple, Type, TypeExt, TypeLit, Union},
     type_facts::TypeFacts,
@@ -15,44 +14,29 @@ use crate::{
 use fxhash::{FxHashMap, FxHashSet};
 use iter::once;
 use once_cell::sync::Lazy;
-use rnode::Fold;
-use rnode::FoldWith;
-use rnode::Visit;
-use rnode::VisitMut;
-use rnode::VisitMutWith;
-use rnode::VisitWith;
+use rnode::{Fold, FoldWith, Visit, VisitMut, VisitMutWith, VisitWith};
 use slog::Logger;
-use stc_ts_ast_rnode::RPat;
-use stc_ts_ast_rnode::RTsEntityName;
-use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_ast_rnode::RTsQualifiedName;
-use stc_ts_errors::debug::dump_type_as_string;
-use stc_ts_errors::debug::print_backtrace;
-use stc_ts_errors::DebugExt;
-use stc_ts_errors::Error;
-use stc_ts_type_ops::Fix;
-use stc_ts_types::name::Name;
-use stc_ts_types::Class;
-use stc_ts_types::ClassDef;
-use stc_ts_types::ClassProperty;
-use stc_ts_types::EnumVariant;
-use stc_ts_types::Intersection;
-use stc_ts_types::Key;
-use stc_ts_types::TypeElement;
-use stc_ts_types::TypeParamInstantiation;
-use stc_ts_types::{
-    Conditional, FnParam, Id, IndexedAccessType, Mapped, ModuleId, Operator, QueryExpr, QueryType, StaticThis,
-    TypeParam,
+use stc_ts_ast_rnode::{RPat, RTsEntityName, RTsKeywordType, RTsQualifiedName};
+use stc_ts_errors::{
+    debug::{dump_type_as_string, print_backtrace},
+    DebugExt, Error,
 };
-use stc_utils::error::context;
-use stc_utils::stack;
-use std::mem::replace;
-use std::mem::take;
-use std::{borrow::Cow, collections::hash_map::Entry, fmt::Debug, iter, slice};
+use stc_ts_type_ops::Fix;
+use stc_ts_types::{
+    name::Name, Class, ClassDef, ClassProperty, Conditional, EnumVariant, FnParam, Id, IndexedAccessType, Intersection,
+    Key, Mapped, ModuleId, Operator, QueryExpr, QueryType, StaticThis, TypeElement, TypeParam, TypeParamInstantiation,
+};
+use stc_utils::{error::context, stack};
+use std::{
+    borrow::Cow,
+    collections::hash_map::Entry,
+    fmt::Debug,
+    iter,
+    mem::{replace, take},
+    slice,
+};
 use swc_atoms::js_word;
-use swc_common::Spanned;
-use swc_common::TypeEq;
-use swc_common::{util::move_map::MoveMap, Mark, Span, SyntaxContext, DUMMY_SP};
+use swc_common::{util::move_map::MoveMap, Mark, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
 
 mod this;

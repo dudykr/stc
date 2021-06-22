@@ -1,8 +1,6 @@
 use fxhash::FxHashMap;
 use rnode::NodeId;
-use stc_ts_ast_rnode::RClassMember;
-use stc_ts_ast_rnode::RExpr;
-use stc_ts_ast_rnode::RStmt;
+use stc_ts_ast_rnode::{RClassMember, RExpr, RStmt};
 use stc_ts_types::Type;
 
 /// Stores ast mutation informations.

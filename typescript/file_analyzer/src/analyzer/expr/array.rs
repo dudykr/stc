@@ -1,44 +1,24 @@
-use super::call_new::ExtractKind;
-use super::IdCtx;
-use super::TypeOfMode;
-use crate::analyzer::expr::call_new::ReevalMode;
-use crate::analyzer::types::NormalizeTypeOpts;
-use crate::analyzer::Analyzer;
-use crate::analyzer::Ctx;
-use crate::ty::TypeExt;
-use crate::type_facts::TypeFacts;
-use crate::util::type_ext::TypeVecExt;
-use crate::validator;
-use crate::validator::ValidateWith;
-use crate::ValidationResult;
+use super::{call_new::ExtractKind, IdCtx, TypeOfMode};
+use crate::{
+    analyzer::{expr::call_new::ReevalMode, types::NormalizeTypeOpts, Analyzer, Ctx},
+    ty::TypeExt,
+    type_facts::TypeFacts,
+    util::type_ext::TypeVecExt,
+    validator,
+    validator::ValidateWith,
+    ValidationResult,
+};
 use itertools::Itertools;
-use stc_ts_ast_rnode::RArrayLit;
-use stc_ts_ast_rnode::RExpr;
-use stc_ts_ast_rnode::RExprOrSpread;
-use stc_ts_ast_rnode::RInvalid;
-use stc_ts_ast_rnode::RNumber;
-use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_ast_rnode::RTsLit;
-use stc_ts_ast_rnode::RTsLitType;
-use stc_ts_errors::debug::dump_type_as_string;
-use stc_ts_errors::DebugExt;
-use stc_ts_errors::Error;
+use stc_ts_ast_rnode::{RArrayLit, RExpr, RExprOrSpread, RInvalid, RNumber, RTsKeywordType, RTsLit, RTsLitType};
+use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_type_ops::Fix;
-use stc_ts_types::type_id::SymbolId;
-use stc_ts_types::Array;
-use stc_ts_types::ComputedKey;
-use stc_ts_types::Intersection;
-use stc_ts_types::Key;
-use stc_ts_types::Symbol;
-use stc_ts_types::Tuple;
-use stc_ts_types::TupleElement;
-use stc_ts_types::Type;
-use stc_ts_types::TypeParamInstantiation;
-use stc_ts_types::Union;
+use stc_ts_types::{
+    type_id::SymbolId, Array, ComputedKey, Intersection, Key, Symbol, Tuple, TupleElement, Type,
+    TypeParamInstantiation, Union,
+};
 use std::borrow::Cow;
 use swc_atoms::js_word;
-use swc_common::Span;
-use swc_common::Spanned;
+use swc_common::{Span, Spanned};
 use swc_ecma_ast::TsKeywordTypeKind;
 
 #[derive(Debug, Clone, Copy, Default)]

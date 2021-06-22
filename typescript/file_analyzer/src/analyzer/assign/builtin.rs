@@ -1,16 +1,8 @@
-use super::AssignData;
-use super::AssignOpts;
-use crate::analyzer::Analyzer;
-use crate::util::unwrap_ref_with_single_arg;
-use crate::ValidationResult;
-use stc_ts_ast_rnode::RIdent;
-use stc_ts_ast_rnode::RTsEntityName;
-use stc_ts_errors::DebugExt;
-use stc_ts_errors::Error;
-use stc_ts_types::Array;
-use stc_ts_types::Ref;
-use stc_ts_types::Type;
-use stc_ts_types::TypeElement;
+use super::{AssignData, AssignOpts};
+use crate::{analyzer::Analyzer, util::unwrap_ref_with_single_arg, ValidationResult};
+use stc_ts_ast_rnode::{RIdent, RTsEntityName};
+use stc_ts_errors::{DebugExt, Error};
+use stc_ts_types::{Array, Ref, Type, TypeElement};
 use swc_atoms::js_word;
 
 impl Analyzer<'_, '_> {

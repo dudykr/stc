@@ -1,44 +1,20 @@
-use super::AssignData;
-use super::AssignOpts;
-use crate::analyzer::util::ResultExt;
-use crate::analyzer::Analyzer;
-use crate::ValidationResult;
-use stc_ts_ast_rnode::RIdent;
-use stc_ts_ast_rnode::RTsEntityName;
-use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_ast_rnode::RTsLit;
-use stc_ts_ast_rnode::RTsLitType;
-use stc_ts_errors::debug::dump_type_as_string;
-use stc_ts_errors::DebugExt;
-use stc_ts_errors::Error;
-use stc_ts_errors::Errors;
+use super::{AssignData, AssignOpts};
+use crate::{
+    analyzer::{util::ResultExt, Analyzer},
+    ValidationResult,
+};
+use stc_ts_ast_rnode::{RIdent, RTsEntityName, RTsKeywordType, RTsLit, RTsLitType};
+use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error, Errors};
 use stc_ts_type_ops::Fix;
-use stc_ts_types::Array;
-use stc_ts_types::Class;
-use stc_ts_types::ClassDef;
-use stc_ts_types::ClassMember;
-use stc_ts_types::MethodSignature;
-use stc_ts_types::ModuleId;
-use stc_ts_types::Operator;
-use stc_ts_types::PropertySignature;
-use stc_ts_types::Ref;
-use stc_ts_types::Tuple;
-use stc_ts_types::Type;
-use stc_ts_types::TypeElement;
-use stc_ts_types::TypeLit;
-use stc_ts_types::TypeLitMetadata;
-use stc_ts_types::TypeParamInstantiation;
-use stc_ts_types::Union;
+use stc_ts_types::{
+    Array, Class, ClassDef, ClassMember, MethodSignature, ModuleId, Operator, PropertySignature, Ref, Tuple, Type,
+    TypeElement, TypeLit, TypeLitMetadata, TypeParamInstantiation, Union,
+};
 use stc_utils::ext::SpanExt;
 use std::borrow::Cow;
 use swc_atoms::js_word;
-use swc_common::Span;
-use swc_common::Spanned;
-use swc_common::TypeEq;
-use swc_common::DUMMY_SP;
-use swc_ecma_ast::Accessibility;
-use swc_ecma_ast::TsKeywordTypeKind;
-use swc_ecma_ast::TsTypeOperatorOp;
+use swc_common::{Span, Spanned, TypeEq, DUMMY_SP};
+use swc_ecma_ast::{Accessibility, TsKeywordTypeKind, TsTypeOperatorOp};
 
 impl Analyzer<'_, '_> {
     /// This method is called when lhs of assignment is interface or type

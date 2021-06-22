@@ -1,46 +1,29 @@
 use super::{marks::MarkExt, scope::ScopeKind, Analyzer};
-use crate::analyzer::expr::IdCtx;
-use crate::analyzer::pat::PatMode;
 use crate::{
-    analyzer::{expr::TypeOfMode, util::ResultExt, Ctx},
+    analyzer::{
+        expr::{IdCtx, TypeOfMode},
+        pat::PatMode,
+        util::ResultExt,
+        Ctx,
+    },
     ty::{MethodSignature, Operator, PropertySignature, Type, TypeElement, TypeExt},
     validator,
     validator::ValidateWith,
     ValidationResult,
 };
-use itertools::EitherOrBoth;
-use itertools::Itertools;
-use rnode::Visit;
-use rnode::VisitWith;
-use stc_ts_ast_rnode::RAssignProp;
-use stc_ts_ast_rnode::RComputedPropName;
-use stc_ts_ast_rnode::RExpr;
-use stc_ts_ast_rnode::RExprOrSuper;
-use stc_ts_ast_rnode::RGetterProp;
-use stc_ts_ast_rnode::RIdent;
-use stc_ts_ast_rnode::RKeyValueProp;
-use stc_ts_ast_rnode::RLit;
-use stc_ts_ast_rnode::RMemberExpr;
-use stc_ts_ast_rnode::RMethodProp;
-use stc_ts_ast_rnode::RNumber;
-use stc_ts_ast_rnode::RPrivateName;
-use stc_ts_ast_rnode::RProp;
-use stc_ts_ast_rnode::RPropName;
-use stc_ts_ast_rnode::RSetterProp;
-use stc_ts_ast_rnode::RStr;
-use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_errors::Error;
-use stc_ts_errors::Errors;
+use itertools::{EitherOrBoth, Itertools};
+use rnode::{Visit, VisitWith};
+use stc_ts_ast_rnode::{
+    RAssignProp, RComputedPropName, RExpr, RExprOrSuper, RGetterProp, RIdent, RKeyValueProp, RLit, RMemberExpr,
+    RMethodProp, RNumber, RPrivateName, RProp, RPropName, RSetterProp, RStr, RTsKeywordType,
+};
+use stc_ts_errors::{Error, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
-use stc_ts_types::ComputedKey;
-use stc_ts_types::Key;
-use stc_ts_types::PrivateName;
-use stc_ts_types::TypeParam;
+use stc_ts_types::{ComputedKey, Key, PrivateName, TypeParam};
 use stc_ts_utils::PatExt;
 use std::borrow::Cow;
 use swc_atoms::js_word;
-use swc_common::Span;
-use swc_common::Spanned;
+use swc_common::{Span, Spanned};
 use swc_ecma_ast::*;
 
 #[derive(Debug, Clone, Copy)]

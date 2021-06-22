@@ -1,35 +1,15 @@
 //! Dependency analyzer for statements.
 
 use crate::types::Sortable;
-use fxhash::FxHashMap;
-use fxhash::FxHashSet;
-use rnode::Visit;
-use rnode::VisitWith;
-use stc_ts_ast_rnode::RBindingIdent;
-use stc_ts_ast_rnode::RDecl;
-use stc_ts_ast_rnode::RExpr;
-use stc_ts_ast_rnode::RForInStmt;
-use stc_ts_ast_rnode::RForOfStmt;
-use stc_ts_ast_rnode::RIdent;
-use stc_ts_ast_rnode::RMemberExpr;
-use stc_ts_ast_rnode::RModuleDecl;
-use stc_ts_ast_rnode::RModuleItem;
-use stc_ts_ast_rnode::RProp;
-use stc_ts_ast_rnode::RStmt;
-use stc_ts_ast_rnode::RTsEntityName;
-use stc_ts_ast_rnode::RTsExprWithTypeArgs;
-use stc_ts_ast_rnode::RTsIndexSignature;
-use stc_ts_ast_rnode::RTsModuleDecl;
-use stc_ts_ast_rnode::RTsModuleName;
-use stc_ts_ast_rnode::RTsTypeRef;
-use stc_ts_ast_rnode::RVarDecl;
-use stc_ts_ast_rnode::RVarDeclOrExpr;
-use stc_ts_ast_rnode::RVarDeclOrPat;
-use stc_ts_ast_rnode::RVarDeclarator;
-use stc_ts_types::Id;
-use stc_ts_types::IdCtx;
-use stc_ts_utils::find_ids_in_pat;
-use stc_ts_utils::AsModuleDecl;
+use fxhash::{FxHashMap, FxHashSet};
+use rnode::{Visit, VisitWith};
+use stc_ts_ast_rnode::{
+    RBindingIdent, RDecl, RExpr, RForInStmt, RForOfStmt, RIdent, RMemberExpr, RModuleDecl, RModuleItem, RProp, RStmt,
+    RTsEntityName, RTsExprWithTypeArgs, RTsIndexSignature, RTsModuleDecl, RTsModuleName, RTsTypeRef, RVarDecl,
+    RVarDeclOrExpr, RVarDeclOrPat, RVarDeclarator,
+};
+use stc_ts_types::{Id, IdCtx};
+use stc_ts_utils::{find_ids_in_pat, AsModuleDecl};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TypedId {

@@ -1,43 +1,27 @@
-use crate::analyzer::assign::AssignOpts;
-use crate::analyzer::expr::TypeOfMode;
-use crate::analyzer::stmt::return_type::yield_check::YieldValueUsageFinder;
-use crate::analyzer::util::ResultExt;
-use crate::util::type_ext::TypeVecExt;
 use crate::{
-    analyzer::{Analyzer, Ctx},
+    analyzer::{
+        assign::AssignOpts, expr::TypeOfMode, stmt::return_type::yield_check::YieldValueUsageFinder, util::ResultExt,
+        Analyzer, Ctx,
+    },
     ty::{Array, Type, TypeExt},
+    util::type_ext::TypeVecExt,
     validator,
     validator::ValidateWith,
     ValidationResult,
 };
-use rnode::Fold;
-use rnode::FoldWith;
-use rnode::NodeId;
-use rnode::Visit;
-use rnode::VisitWith;
-use stc_ts_ast_rnode::RBreakStmt;
-use stc_ts_ast_rnode::RIdent;
-use stc_ts_ast_rnode::RReturnStmt;
-use stc_ts_ast_rnode::RStmt;
-use stc_ts_ast_rnode::RStr;
-use stc_ts_ast_rnode::RThrowStmt;
-use stc_ts_ast_rnode::RTsEntityName;
-use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_ast_rnode::RTsLit;
-use stc_ts_ast_rnode::RTsLitType;
-use stc_ts_ast_rnode::RYieldExpr;
-use stc_ts_errors::DebugExt;
-use stc_ts_errors::Error;
-use stc_ts_types::Key;
-use stc_ts_types::ModuleId;
+use rnode::{Fold, FoldWith, NodeId, Visit, VisitWith};
+use stc_ts_ast_rnode::{
+    RBreakStmt, RIdent, RReturnStmt, RStmt, RStr, RThrowStmt, RTsEntityName, RTsKeywordType, RTsLit, RTsLitType,
+    RYieldExpr,
+};
+use stc_ts_errors::{DebugExt, Error};
 use stc_ts_types::{
-    IndexedAccessType, MethodSignature, Operator, PropertySignature, Ref, TypeElement, TypeParamInstantiation,
+    IndexedAccessType, Key, MethodSignature, ModuleId, Operator, PropertySignature, Ref, TypeElement,
+    TypeParamInstantiation,
 };
 use stc_utils::ext::SpanExt;
-use std::borrow::Cow;
-use std::{mem::take, ops::AddAssign};
-use swc_common::TypeEq;
-use swc_common::{Span, Spanned, DUMMY_SP};
+use std::{borrow::Cow, mem::take, ops::AddAssign};
+use swc_common::{Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
 
 mod yield_check;

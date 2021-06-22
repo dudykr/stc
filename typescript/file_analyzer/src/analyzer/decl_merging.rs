@@ -1,19 +1,9 @@
 use super::Analyzer;
 use crate::ValidationResult;
 use fxhash::FxHashMap;
-use stc_ts_errors::debug::dump_type_as_string;
-use stc_ts_errors::DebugExt;
-use stc_ts_types::ClassDef;
-use stc_ts_types::ClassMember;
-use stc_ts_types::ClassProperty;
-use stc_ts_types::Id;
-use stc_ts_types::Interface;
-use stc_ts_types::Method;
-use stc_ts_types::Type;
-use stc_ts_types::TypeElement;
-use stc_ts_types::TypeParam;
-use swc_common::Span;
-use swc_common::Spanned;
+use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
+use stc_ts_types::{ClassDef, ClassMember, ClassProperty, Id, Interface, Method, Type, TypeElement, TypeParam};
+use swc_common::{Span, Spanned};
 
 impl Analyzer<'_, '_> {
     fn type_element_to_class_member(&mut self, el: &TypeElement) -> ValidationResult<Option<ClassMember>> {

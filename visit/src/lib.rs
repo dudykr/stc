@@ -1,10 +1,12 @@
 #![allow(incomplete_features)]
 #![feature(specialization)]
 
-pub use self::fold::{Fold, FoldWith};
-pub use self::visit::{Visit, VisitWith};
-pub use self::visit_mut::{VisitMut, VisitMutWith};
-pub use self::visitable::Visitable;
+pub use self::{
+    fold::{Fold, FoldWith},
+    visit::{Visit, VisitWith},
+    visit_mut::{VisitMut, VisitMutWith},
+    visitable::Visitable,
+};
 use num_bigint::BigInt;
 pub use stc_visit_macros::Visit;
 use swc_atoms::JsWord;

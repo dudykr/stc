@@ -2,12 +2,8 @@ use crate::analyzer::Analyzer;
 use fxhash::FxBuildHasher;
 use indexmap::IndexSet;
 use itertools::Itertools;
-use rnode::Visit;
-use rnode::VisitWith;
-use stc_ts_types::Id;
-use stc_ts_types::Type;
-use stc_ts_types::TypeParam;
-use stc_ts_types::TypeParamDecl;
+use rnode::{Visit, VisitWith};
+use stc_ts_types::{Id, Type, TypeParam, TypeParamDecl};
 use swc_common::DUMMY_SP;
 
 impl Analyzer<'_, '_> {

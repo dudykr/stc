@@ -1,47 +1,30 @@
 //! Full type checker with dependency support.
 #![feature(box_syntax)]
 
-use dashmap::DashMap;
-use dashmap::DashSet;
-use dashmap::SharedValue;
-use fxhash::FxBuildHasher;
-use fxhash::FxHashMap;
+use dashmap::{DashMap, DashSet, SharedValue};
+use fxhash::{FxBuildHasher, FxHashMap};
 use once_cell::sync::OnceCell;
-use parking_lot::Mutex;
-use parking_lot::RwLock;
-use rnode::NodeIdGenerator;
-use rnode::RNode;
-use rnode::VisitWith;
+use parking_lot::{Mutex, RwLock};
+use rnode::{NodeIdGenerator, RNode, VisitWith};
 use slog::Logger;
 use stc_ts_ast_rnode::RModule;
-use stc_ts_dts::apply_mutations;
-use stc_ts_dts::cleanup_module_for_dts;
-use stc_ts_errors::debug::debugger::Debugger;
-use stc_ts_errors::Error;
-use stc_ts_file_analyzer::analyzer::Analyzer;
-use stc_ts_file_analyzer::env::Env;
-use stc_ts_file_analyzer::loader::Load;
-use stc_ts_file_analyzer::loader::ModuleInfo;
-use stc_ts_file_analyzer::validator::ValidateWith;
-use stc_ts_file_analyzer::ModuleTypeData;
-use stc_ts_file_analyzer::ValidationResult;
-use stc_ts_module_loader::resolver::Resolve;
-use stc_ts_module_loader::ModuleGraph;
-use stc_ts_storage::ErrorStore;
-use stc_ts_storage::File;
-use stc_ts_storage::Group;
-use stc_ts_storage::Single;
+use stc_ts_dts::{apply_mutations, cleanup_module_for_dts};
+use stc_ts_errors::{debug::debugger::Debugger, Error};
+use stc_ts_file_analyzer::{
+    analyzer::Analyzer,
+    env::Env,
+    loader::{Load, ModuleInfo},
+    validator::ValidateWith,
+    ModuleTypeData, ValidationResult,
+};
+use stc_ts_module_loader::{resolver::Resolve, ModuleGraph};
+use stc_ts_storage::{ErrorStore, File, Group, Single};
 use stc_ts_types::ModuleId;
 use stc_ts_utils::StcComments;
 use stc_utils::early_error;
-use std::mem::take;
-use std::path::PathBuf;
-use std::sync::Arc;
-use std::time::Instant;
+use std::{mem::take, path::PathBuf, sync::Arc, time::Instant};
 use swc_atoms::JsWord;
-use swc_common::errors::Handler;
-use swc_common::SourceMap;
-use swc_common::Spanned;
+use swc_common::{errors::Handler, SourceMap, Spanned};
 use swc_ecma_ast::Module;
 use swc_ecma_parser::TsConfig;
 use swc_ecma_transforms::resolver::ts_resolver;

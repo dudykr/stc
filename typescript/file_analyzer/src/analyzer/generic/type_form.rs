@@ -1,5 +1,4 @@
-use stc_ts_types::name::Name;
-use stc_ts_types::Type;
+use stc_ts_types::{name::Name, Type};
 
 /// Used to detect `form` of union types.
 ///

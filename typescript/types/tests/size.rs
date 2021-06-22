@@ -1,7 +1,4 @@
-use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_ast_rnode::RTsLitType;
-use stc_ts_ast_rnode::RTsNamespaceDecl;
-use stc_ts_ast_rnode::RTsThisType;
+use stc_ts_ast_rnode::{RTsKeywordType, RTsLitType, RTsNamespaceDecl, RTsThisType};
 use std::mem::size_of;
 
 #[test]

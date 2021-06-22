@@ -1,12 +1,10 @@
-use crate::analyzer::scope::VarInfo;
-use crate::analyzer::Analyzer;
-use crate::ValidationResult;
-use rnode::VisitMut;
-use rnode::VisitMutWith;
+use crate::{
+    analyzer::{scope::VarInfo, Analyzer},
+    ValidationResult,
+};
+use rnode::{VisitMut, VisitMutWith};
 use stc_ts_ast_rnode::RTsEntityName;
-use stc_ts_types::QueryExpr;
-use stc_ts_types::QueryType;
-use stc_ts_types::Type;
+use stc_ts_types::{QueryExpr, QueryType, Type};
 
 impl Analyzer<'_, '_> {
     pub(crate) fn expand_return_type_of_fn(&mut self, ret_ty: &mut Type) -> ValidationResult<()> {

@@ -10,56 +10,16 @@ use self::{
 };
 pub use crate::mutations::apply_mutations;
 use fxhash::FxHashSet;
-use rnode::NodeId;
-use rnode::Visit;
-use rnode::VisitMut;
-use rnode::VisitMutWith;
-use rnode::VisitWith;
-use stc_ts_ast_rnode::RArrayPat;
-use stc_ts_ast_rnode::RAssignPat;
-use stc_ts_ast_rnode::RBlockStmt;
-use stc_ts_ast_rnode::RClass;
-use stc_ts_ast_rnode::RClassDecl;
-use stc_ts_ast_rnode::RClassMember;
-use stc_ts_ast_rnode::RClassProp;
-use stc_ts_ast_rnode::RDecl;
-use stc_ts_ast_rnode::RExportDecl;
-use stc_ts_ast_rnode::RExportDefaultExpr;
-use stc_ts_ast_rnode::RExpr;
-use stc_ts_ast_rnode::RExprOrSuper;
-use stc_ts_ast_rnode::RFnDecl;
-use stc_ts_ast_rnode::RIdent;
-use stc_ts_ast_rnode::RImportDecl;
-use stc_ts_ast_rnode::RImportSpecifier;
-use stc_ts_ast_rnode::RLit;
-use stc_ts_ast_rnode::RMemberExpr;
-use stc_ts_ast_rnode::RModuleDecl;
-use stc_ts_ast_rnode::RModuleItem;
-use stc_ts_ast_rnode::RNamedExport;
-use stc_ts_ast_rnode::RParamOrTsParamProp;
-use stc_ts_ast_rnode::RPat;
-use stc_ts_ast_rnode::RPrivateName;
-use stc_ts_ast_rnode::RPrivateProp;
-use stc_ts_ast_rnode::RPropName;
-use stc_ts_ast_rnode::RStmt;
-use stc_ts_ast_rnode::RTsEntityName;
-use stc_ts_ast_rnode::RTsEnumDecl;
-use stc_ts_ast_rnode::RTsIndexSignature;
-use stc_ts_ast_rnode::RTsInterfaceDecl;
-use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_ast_rnode::RTsModuleDecl;
-use stc_ts_ast_rnode::RTsParamProp;
-use stc_ts_ast_rnode::RTsParamPropParam;
-use stc_ts_ast_rnode::RTsPropertySignature;
-use stc_ts_ast_rnode::RTsType;
-use stc_ts_ast_rnode::RTsTypeAliasDecl;
-use stc_ts_ast_rnode::RTsTypeAnn;
-use stc_ts_ast_rnode::RVarDecl;
-use stc_ts_ast_rnode::RVarDeclarator;
-use stc_ts_types::Id;
-use stc_ts_types::ModuleTypeData;
-use stc_ts_utils::find_ids_in_pat;
-use stc_ts_utils::MapWithMut;
+use rnode::{NodeId, Visit, VisitMut, VisitMutWith, VisitWith};
+use stc_ts_ast_rnode::{
+    RArrayPat, RAssignPat, RBlockStmt, RClass, RClassDecl, RClassMember, RClassProp, RDecl, RExportDecl,
+    RExportDefaultExpr, RExpr, RExprOrSuper, RFnDecl, RIdent, RImportDecl, RImportSpecifier, RLit, RMemberExpr,
+    RModuleDecl, RModuleItem, RNamedExport, RParamOrTsParamProp, RPat, RPrivateName, RPrivateProp, RPropName, RStmt,
+    RTsEntityName, RTsEnumDecl, RTsIndexSignature, RTsInterfaceDecl, RTsKeywordType, RTsModuleDecl, RTsParamProp,
+    RTsParamPropParam, RTsPropertySignature, RTsType, RTsTypeAliasDecl, RTsTypeAnn, RVarDecl, RVarDeclarator,
+};
+use stc_ts_types::{Id, ModuleTypeData};
+use stc_ts_utils::{find_ids_in_pat, MapWithMut};
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::*;
 

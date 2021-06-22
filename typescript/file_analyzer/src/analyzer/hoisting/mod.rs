@@ -1,24 +1,13 @@
 use crate::{analyzer::Analyzer, util::ModuleItemOrStmt};
 use fxhash::{FxHashMap, FxHashSet};
-use petgraph::graphmap::DiGraphMap;
-use petgraph::EdgeDirection::Outgoing;
-use rnode::Visit;
-use rnode::VisitWith;
-use stc_ts_ast_rnode::RDecl;
-use stc_ts_ast_rnode::RExportDecl;
-use stc_ts_ast_rnode::RForInStmt;
-use stc_ts_ast_rnode::RForOfStmt;
-use stc_ts_ast_rnode::RForStmt;
-use stc_ts_ast_rnode::RIdent;
-use stc_ts_ast_rnode::RModuleDecl;
-use stc_ts_ast_rnode::RStmt;
-use stc_ts_ast_rnode::RVarDeclOrExpr;
-use stc_ts_ast_rnode::RVarDeclOrPat;
-use stc_ts_ordering::stmt::TypedId;
-use stc_ts_ordering::types::Sortable;
+use petgraph::{graphmap::DiGraphMap, EdgeDirection::Outgoing};
+use rnode::{Visit, VisitWith};
+use stc_ts_ast_rnode::{
+    RDecl, RExportDecl, RForInStmt, RForOfStmt, RForStmt, RIdent, RModuleDecl, RStmt, RVarDeclOrExpr, RVarDeclOrPat,
+};
+use stc_ts_ordering::{stmt::TypedId, types::Sortable};
 use stc_ts_types::Id;
-use stc_ts_utils::AsModuleDecl;
-use stc_ts_utils::HasNodeId;
+use stc_ts_utils::{AsModuleDecl, HasNodeId};
 
 #[cfg(test)]
 mod tests;

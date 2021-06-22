@@ -1,8 +1,6 @@
-use super::scope::VarKind;
-use super::Analyzer;
-use crate::analyzer::util::ResultExt;
+use super::{scope::VarKind, Analyzer};
 use crate::{
-    analyzer::{pat::PatMode, Ctx, ScopeKind},
+    analyzer::{pat::PatMode, util::ResultExt, Ctx, ScopeKind},
     ty,
     ty::{FnParam, Tuple, Type, TypeParam},
     validator,
@@ -10,27 +8,13 @@ use crate::{
     ValidationResult,
 };
 use itertools::{EitherOrBoth, Itertools};
-use rnode::Fold;
-use rnode::FoldWith;
-use stc_ts_ast_rnode::RBindingIdent;
-use stc_ts_ast_rnode::RFnDecl;
-use stc_ts_ast_rnode::RFnExpr;
-use stc_ts_ast_rnode::RFunction;
-use stc_ts_ast_rnode::RIdent;
-use stc_ts_ast_rnode::RParamOrTsParamProp;
-use stc_ts_ast_rnode::RPat;
-use stc_ts_ast_rnode::RTsEntityName;
-use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_errors::Error;
-use stc_ts_errors::Errors;
+use rnode::{Fold, FoldWith};
+use stc_ts_ast_rnode::{
+    RBindingIdent, RFnDecl, RFnExpr, RFunction, RIdent, RParamOrTsParamProp, RPat, RTsEntityName, RTsKeywordType,
+};
+use stc_ts_errors::{Error, Errors};
 use stc_ts_type_ops::Fix;
-use stc_ts_types::CallSignature;
-use stc_ts_types::Class;
-use stc_ts_types::ClassDef;
-use stc_ts_types::Function;
-use stc_ts_types::TypeElement;
-use stc_ts_types::TypeLit;
-use stc_ts_types::{Alias, Interface, Ref};
+use stc_ts_types::{Alias, CallSignature, Class, ClassDef, Function, Interface, Ref, TypeElement, TypeLit};
 use stc_ts_utils::PatExt;
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::TsKeywordTypeKind;

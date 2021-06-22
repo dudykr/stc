@@ -8,46 +8,38 @@ extern crate test;
 #[path = "common/mod.rs"]
 mod common;
 
-use self::common::load_fixtures;
-use self::common::SwcComments;
-use anyhow::Context;
-use anyhow::Error;
+use self::common::{load_fixtures, SwcComments};
+use anyhow::{Context, Error};
 use once_cell::sync::Lazy;
 use parking_lot::Mutex;
 use serde::Deserialize;
 use stc_testing::logger;
 use stc_ts_builtin_types::Lib;
-use stc_ts_file_analyzer::env::Env;
-use stc_ts_file_analyzer::env::ModuleConfig;
-use stc_ts_file_analyzer::Rule;
+use stc_ts_file_analyzer::{
+    env::{Env, ModuleConfig},
+    Rule,
+};
 use stc_ts_module_loader::resolver::node::NodeResolver;
 use stc_ts_type_checker::Checker;
-use std::collections::HashSet;
-use std::env;
-use std::fs;
-use std::fs::read_to_string;
-use std::fs::File;
-use std::mem;
-use std::panic::catch_unwind;
-use std::path::Path;
-use std::path::PathBuf;
-use std::sync::Arc;
-use swc_common::errors::DiagnosticBuilder;
-use swc_common::errors::DiagnosticId;
-use swc_common::input::SourceFileInput;
-use swc_common::BytePos;
-use swc_common::SourceMap;
-use swc_common::Span;
-use swc_common::Spanned;
+use std::{
+    collections::HashSet,
+    env, fs,
+    fs::{read_to_string, File},
+    mem,
+    panic::catch_unwind,
+    path::{Path, PathBuf},
+    sync::Arc,
+};
+use swc_common::{
+    errors::{DiagnosticBuilder, DiagnosticId},
+    input::SourceFileInput,
+    BytePos, SourceMap, Span, Spanned,
+};
 use swc_ecma_ast::EsVersion;
-use swc_ecma_parser::JscTarget;
-use swc_ecma_parser::Parser;
-use swc_ecma_parser::Syntax;
-use swc_ecma_parser::TsConfig;
+use swc_ecma_parser::{JscTarget, Parser, Syntax, TsConfig};
 use swc_ecma_visit::Fold;
 use test::test_main;
-use testing::StdErr;
-use testing::Tester;
+use testing::{StdErr, Tester};
 
 struct RecordOnPanic {
     stats: Stats,
