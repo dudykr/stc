@@ -10,7 +10,7 @@
 pub use self::convert::rprop_name_to_expr;
 pub use self::metadata::TypeElMetadata;
 pub use self::metadata::TypeLitMetadata;
-pub use self::symbol_id::SymbolId;
+pub use self::type_id::SymbolId;
 pub use self::{id::Id, module_id::ModuleId};
 use fxhash::FxHashMap;
 use is_macro::Is;
@@ -69,7 +69,6 @@ pub mod macros;
 mod metadata;
 pub mod module_id;
 pub mod name;
-mod symbol_id;
 pub mod type_id;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
