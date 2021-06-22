@@ -58,6 +58,10 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2610
+    DefinedWitHAccessorInSuper {
+        span: Span,
+    },
     /// TS5048
     OptionInvalidForEs3 {
         span: Span,
@@ -1700,6 +1704,8 @@ impl Error {
             Error::ShouldBeStaticMethod { .. } => 2387,
 
             Error::ShouldBeInstanceMethod { .. } => 2388,
+
+            Error::DefinedWitHAccessorInSuper { .. } => 2610,
             _ => 0,
         }
     }
