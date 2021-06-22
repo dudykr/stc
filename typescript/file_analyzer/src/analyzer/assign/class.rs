@@ -332,18 +332,19 @@ impl Analyzer<'_, '_> {
                                 && lp.is_static == rp.is_static
                                 && self.key_matches(span, &lp.key, &rp.key, false)
                             {
+                                if let Some(lt) = &lp.value {
+                                    if let Some(rt) = &rp.value {
+                                        self.assign_inner(data, &lt, &rt, opts)
+                                            .context("tried to assign a class proeprty to another")?;
+                                    }
+                                }
+
                                 if lp.span.lo == rp.span.lo && lp.span.hi == rp.span.hi {
                                     return Ok(());
                                 }
 
                                 if rp.accessibility == Some(Accessibility::Private) || rp.key.is_private() {
                                     return Err(Error::PrivatePropertyIsDifferent { span });
-                                }
-
-                                if let Some(lt) = &lp.value {
-                                    if let Some(rt) = &rp.value {
-                                        return self.assign_inner(data, &lt, &rt, opts);
-                                    }
                                 }
 
                                 return Ok(());
