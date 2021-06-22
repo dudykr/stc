@@ -81,6 +81,7 @@ impl Analyzer<'_, '_> {
                                         type_ann: ty,
                                         type_params: Default::default(),
                                         metadata: Default::default(),
+                                        accessor: Default::default(),
                                     };
                                     let mut el = TypeElement::Property(p);
 
@@ -146,6 +147,7 @@ impl Analyzer<'_, '_> {
                                     type_ann: ty,
                                     type_params: Default::default(),
                                     metadata: Default::default(),
+                                    accessor: Default::default(),
                                 };
                                 let mut el = TypeElement::Property(p);
                                 self.apply_mapped_flags(&mut el, m.optional, m.readonly);

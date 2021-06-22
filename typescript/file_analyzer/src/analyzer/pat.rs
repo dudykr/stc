@@ -116,6 +116,7 @@ impl Analyzer<'_, '_> {
                                 type_ann: Some(ty),
                                 type_params: None,
                                 metadata: Default::default(),
+                                accessor: Default::default(),
                             }))
                         }
                         RObjectPatProp::Assign(RAssignPatProp { key, .. }) => {
@@ -136,6 +137,7 @@ impl Analyzer<'_, '_> {
                                     has_default: true,
                                     ..Default::default()
                                 },
+                                accessor: Default::default(),
                             }))
                         }
                         RObjectPatProp::Rest(..) => {}
