@@ -37,6 +37,15 @@ pub enum VarKind {
     Error,
 }
 
+impl VarKind {
+    pub(crate) fn requires_init(self) -> bool {
+        match self {
+            VarKind::Var(_) => true,
+            _ => false,
+        }
+    }
+}
+
 /// All bool fields default to `false`.
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct DeclareVarsOpts {
