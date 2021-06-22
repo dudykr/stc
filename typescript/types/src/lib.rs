@@ -10,7 +10,7 @@
 pub use self::convert::rprop_name_to_expr;
 pub use self::metadata::TypeElMetadata;
 pub use self::metadata::TypeLitMetadata;
-pub use self::type_id::SymbolId;
+use self::type_id::SymbolId;
 pub use self::{id::Id, module_id::ModuleId};
 use fxhash::FxHashMap;
 use is_macro::Is;
