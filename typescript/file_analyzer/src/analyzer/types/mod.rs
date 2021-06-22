@@ -1042,6 +1042,7 @@ impl Analyzer<'_, '_> {
                     type_ann: p.value.clone(),
                     type_params: None,
                     metadata: Default::default(),
+                    accessor: p.accessor,
                 })
             }
             ClassMember::IndexSignature(i) => TypeElement::Index(i.clone()),

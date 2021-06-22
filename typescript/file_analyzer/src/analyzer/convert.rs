@@ -393,6 +393,7 @@ impl Analyzer<'_, '_> {
             type_ann,
             type_params,
             metadata: Default::default(),
+            accessor: Default::default(),
         })
     }
 }

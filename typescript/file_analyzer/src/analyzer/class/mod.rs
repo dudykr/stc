@@ -166,6 +166,7 @@ impl Analyzer<'_, '_> {
             is_optional: p.is_optional,
             readonly: p.readonly,
             definite: p.definite,
+            accessor: Default::default(),
         })
     }
 }
@@ -203,6 +204,7 @@ impl Analyzer<'_, '_> {
             is_optional: p.is_optional,
             readonly: p.readonly,
             definite: p.definite,
+            accessor: Default::default(),
         })
     }
 }
