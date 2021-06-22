@@ -2118,6 +2118,10 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        if getters.is_empty() && setters.is_empty() {
+            return body;
+        }
+
         body.into_iter()
             .filter_map(|(idx, mut member)| {
                 // We combine setters into getters.
