@@ -70,6 +70,7 @@ mod metadata;
 pub mod module_id;
 pub mod name;
 mod symbol_id;
+pub mod type_id;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum IdCtx {
