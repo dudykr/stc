@@ -1963,6 +1963,8 @@ impl Analyzer<'_, '_> {
                     take(&mut child.scope.this_class_members)
                 };
 
+                let body = child.combine_class_properties(body);
+
                 if !additional_members.is_empty() {
                     // Add private parameter properties to .d.ts file
 
@@ -2074,6 +2076,85 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
+    fn combine_class_properties(&mut self, body: Vec<(usize, ClassMember)>) -> Vec<(usize, ClassMember)> {
+        let mut getters = vec![];
+        let mut setters = vec![];
+
+        for (_, body) in &body {
+            match body {
+                ClassMember::Property(ClassProperty {
+                    accessor:
+                        Accessor {
+                            setter: true,
+                            getter: true,
+                        },
+                    ..
+                }) => {
+                    unreachable!("At this moment, getters and setters should not be combined")
+                }
+                _ => {}
+            }
+
+            match body {
+                ClassMember::Property(ClassProperty {
+                    key,
+                    accessor: Accessor { setter: true, .. },
+                    ..
+                }) => {
+                    setters.push(key.clone());
+                }
+                _ => {}
+            }
+
+            match body {
+                ClassMember::Property(ClassProperty {
+                    key,
+                    accessor: Accessor { getter: true, .. },
+                    ..
+                }) => {
+                    getters.push(key.clone());
+                }
+                _ => {}
+            }
+        }
+
+        body.into_iter()
+            .filter_map(|(idx, mut member)| {
+                // We combine setters into getters.
+
+                match member {
+                    ClassMember::Property(ClassProperty {
+                        ref key,
+                        accessor:
+                            Accessor {
+                                getter: true,
+                                ref mut setter,
+                            },
+                        ..
+                    }) => {
+                        if setters.iter().any(|setter_key| setter_key.type_eq(key)) {
+                            *setter = true;
+                        }
+
+                        Some((idx, member))
+                    }
+                    ClassMember::Property(ClassProperty {
+                        ref key,
+                        accessor: Accessor { setter: true, .. },
+                        ..
+                    }) => {
+                        if getters.iter().any(|getter_key| getter_key.type_eq(key)) {
+                            return None;
+                        }
+
+                        Some((idx, member))
+                    }
+                    _ => Some((idx, member)),
+                }
+            })
+            .collect()
+    }
+
     /// If a class have an index signature, properties should be compatible with
     /// it.
     fn validate_index_signature_of_class(&mut self, class: &ClassDef) -> ValidationResult<()> {
