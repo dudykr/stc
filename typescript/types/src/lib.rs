@@ -541,6 +541,11 @@ pub struct Method {
     pub kind: MethodKind,
 }
 
+/// # Getter and setter
+///
+/// ## `getter = false`, `setter = false`
+///
+/// Property declared without getter or setter.
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct ClassProperty {
     pub span: Span,
@@ -554,6 +559,9 @@ pub struct ClassProperty {
     pub is_optional: bool,
     pub readonly: bool,
     pub definite: bool,
+
+    pub getter: bool,
+    pub setter: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
