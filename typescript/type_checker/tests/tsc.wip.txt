@@ -4,3 +4,15 @@ classes::constructorDeclarations::superCalls::derivedClassConstructorWithoutSupe
 classes::constructorDeclarations::superCalls::derivedClassParameterProperties.ts
 classes::constructorDeclarations::superCalls::derivedClassSuperCallsWithThisArg.ts
 classes::constructorDeclarations::superCalls::superPropertyInConstructorBeforeSuperCall.ts
+classes::members::constructorFunctionTypes::classWithBaseClassButNoConstructor.ts
+classes::members::constructorFunctionTypes::classWithConstructors.ts
+classes::members::inheritanceAndOverriding::derivedClassOverridesPrivates.ts
+classes::members::inheritanceAndOverriding::derivedClassOverridesProtectedMembers2.ts
+classes::members::inheritanceAndOverriding::derivedClassOverridesProtectedMembers3.ts
+classes::members::inheritanceAndOverriding::derivedClassOverridesProtectedMembers4.ts
+classes::members::inheritanceAndOverriding::derivedClassTransitivity.ts
+classes::members::inheritanceAndOverriding::derivedClassTransitivity2.ts
+classes::members::inheritanceAndOverriding::derivedClassTransitivity3.ts
+classes::members::inheritanceAndOverriding::derivedClassTransitivity4.ts
+classes::members::inheritanceAndOverriding::derivedClassWithPrivateInstanceShadowingProtectedInstance.ts
+classes::members::inheritanceAndOverriding::derivedClassWithPrivateStaticShadowingProtectedStatic.ts
