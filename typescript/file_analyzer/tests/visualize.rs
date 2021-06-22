@@ -78,6 +78,7 @@ fn run_test(file_name: PathBuf, logger: slog::Logger, for_error: bool) -> Option
                 strict_null_checks: true,
                 suppress_excess_property_errors: false,
                 suppress_implicit_any_index_errors: false,
+                use_define_property_for_class_fields: false,
             };
 
             for line in fm.src.lines() {

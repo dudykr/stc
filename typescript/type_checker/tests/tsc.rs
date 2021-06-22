@@ -393,9 +393,10 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
                         module_config = v;
                     } else if s.to_lowercase().starts_with("notypesandsymbols") {
                         // Ignored as we don't generate them.
+                    } else if s.to_lowercase().starts_with("usedefineforclassfields") {
+                        rule.use_define_property_for_class_fields = true;
                     } else if s.to_lowercase().starts_with("noemit")
                         || s.to_lowercase().starts_with("jsx")
-                        || s.to_lowercase().starts_with("usedefineforclassfields")
                         || s.to_lowercase().starts_with("preserveconstenums")
                     {
                         // Ignored as we only checks type.
