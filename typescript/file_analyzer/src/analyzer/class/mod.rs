@@ -732,6 +732,8 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
+    fn check_static_mixed_with_instance(&mut self, c: &RClass) -> ValidationResult<()> {}
+
     fn check_ambient_methods(&mut self, c: &RClass, declare: bool) -> ValidationResult<()> {
         if self.ctx.in_declare {
             return Ok(());
@@ -1429,6 +1431,7 @@ impl Analyzer<'_, '_> {
                 // TODO: Check for implements
 
                 child.check_ambient_methods(c, false).report(&mut child.storage);
+                child.check_static_mixed_with_instance(&c).report(&mut child.storage);
 
                 child.scope.super_class = super_class
                     .clone()
