@@ -26,8 +26,8 @@ use stc_ts_ast_rnode::{
 use stc_ts_errors::{DebugExt, Error, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::{
-    Class, ClassDef, ClassMember, ClassProperty, ComputedKey, ConstructorSignature, FnParam, Id, Intersection, Key,
-    Method, Operator, QueryExpr, QueryType, Ref, TsExpr, Type,
+    Accessor, Class, ClassDef, ClassMember, ClassProperty, ComputedKey, ConstructorSignature, FnParam, Id,
+    Intersection, Key, Method, Operator, QueryExpr, QueryType, Ref, TsExpr, Type,
 };
 use stc_utils::{AHashSet, TryOpt};
 use std::{
@@ -472,7 +472,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, c: &RPrivateMethod) -> ValidationResult<Method> {
+    fn validate(&mut self, c: &RPrivateMethod) -> ValidationResult<ClassMember> {
         match c.key.id.sym {
             js_word!("constructor") => {
                 self.storage.report(Error::ConstructorIsKeyword { span: c.key.id.span });
@@ -529,18 +529,49 @@ impl Analyzer<'_, '_> {
             },
         )?;
 
-        Ok(Method {
-            span: c.span,
-            key,
-            type_params,
-            params,
-            ret_ty,
-            kind: c.kind,
-            accessibility: None,
-            is_static: c.is_static,
-            is_abstract: c.is_abstract,
-            is_optional: c.is_optional,
-        })
+        match c.kind {
+            MethodKind::Method => Ok(ClassMember::Method(Method {
+                span: c.span,
+                key,
+                type_params,
+                params,
+                ret_ty,
+                accessibility: None,
+                is_static: c.is_static,
+                is_abstract: c.is_abstract,
+                is_optional: c.is_optional,
+            })),
+            MethodKind::Getter => Ok(ClassMember::Property(ClassProperty {
+                span: c.span,
+                key,
+                value: Some(ret_ty),
+                is_static: c.is_static,
+                accessibility: c.accessibility,
+                is_abstract: c.is_abstract,
+                is_optional: c.is_optional,
+                readonly: false,
+                definite: false,
+                accessor: Accessor {
+                    getter: true,
+                    setter: false,
+                },
+            })),
+            MethodKind::Setter => Ok(ClassMember::Property(ClassProperty {
+                span: c.span,
+                key,
+                value: Some(ret_ty),
+                is_static: c.is_static,
+                accessibility: c.accessibility,
+                is_abstract: c.is_abstract,
+                is_optional: c.is_optional,
+                readonly: false,
+                definite: false,
+                accessor: Accessor {
+                    getter: false,
+                    setter: true,
+                },
+            })),
+        }
     }
 }
 
@@ -684,18 +715,49 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        Ok(ClassMember::Method(Method {
-            span: c_span,
-            key,
-            accessibility: c.accessibility,
-            is_static: c.is_static,
-            is_abstract: c.is_abstract,
-            is_optional: c.is_optional,
-            type_params,
-            params,
-            ret_ty,
-            kind: c.kind,
-        }))
+        match c.kind {
+            MethodKind::Method => Ok(ClassMember::Method(Method {
+                span: c_span,
+                key,
+                accessibility: c.accessibility,
+                is_static: c.is_static,
+                is_abstract: c.is_abstract,
+                is_optional: c.is_optional,
+                type_params,
+                params,
+                ret_ty,
+            })),
+            MethodKind::Getter => Ok(ClassMember::Property(ClassProperty {
+                span: c_span,
+                key,
+                value: Some(ret_ty),
+                is_static: c.is_static,
+                accessibility: c.accessibility,
+                is_abstract: c.is_abstract,
+                is_optional: c.is_optional,
+                readonly: false,
+                definite: false,
+                accessor: Accessor {
+                    getter: true,
+                    setter: false,
+                },
+            })),
+            MethodKind::Setter => Ok(ClassMember::Property(ClassProperty {
+                span: c_span,
+                key,
+                value: Some(ret_ty),
+                is_static: c.is_static,
+                accessibility: c.accessibility,
+                is_abstract: c.is_abstract,
+                is_optional: c.is_optional,
+                readonly: false,
+                definite: false,
+                accessor: Accessor {
+                    getter: false,
+                    setter: true,
+                },
+            })),
+        }
     }
 }
 
