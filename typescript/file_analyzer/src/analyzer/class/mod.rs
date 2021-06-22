@@ -19,9 +19,10 @@ use itertools::Itertools;
 use rnode::{FoldWith, IntoRNode, NodeId, NodeIdGenerator, Visit, VisitWith};
 use stc_ts_ast_rnode::{
     RArrowExpr, RAssignPat, RBindingIdent, RClass, RClassDecl, RClassExpr, RClassMember, RClassMethod, RClassProp,
-    RConstructor, RDecl, RExpr, RExprOrSuper, RFunction, RIdent, RMemberExpr, RParam, RParamOrTsParamProp, RPat,
-    RPrivateMethod, RPrivateProp, RPropName, RSeqExpr, RStmt, RSuper, RTsEntityName, RTsFnParam, RTsKeywordType,
-    RTsParamProp, RTsParamPropParam, RTsTypeAliasDecl, RTsTypeAnn, RVarDecl, RVarDeclarator,
+    RComputedPropName, RConstructor, RDecl, RExpr, RExprOrSuper, RFunction, RIdent, RMemberExpr, RParam,
+    RParamOrTsParamProp, RPat, RPrivateMethod, RPrivateProp, RPropName, RSeqExpr, RStmt, RSuper, RTsEntityName,
+    RTsFnParam, RTsKeywordType, RTsParamProp, RTsParamPropParam, RTsTypeAliasDecl, RTsTypeAnn, RVarDecl,
+    RVarDeclarator,
 };
 use stc_ts_errors::{DebugExt, Error, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
@@ -732,6 +733,89 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
+    fn check_duplicate_of_class(&mut self, c: &RClass) -> ValidationResult<()> {
+        let mut keys = vec![];
+        let mut private_keys = vec![];
+
+        for member in &c.body {
+            match member {
+                RClassMember::Method(
+                    m
+                    @
+                    RClassMethod {
+                        kind: MethodKind::Method,
+                        function: RFunction { body: Some(..), .. },
+                        ..
+                    },
+                ) => {
+                    keys.push((Cow::Borrowed(&m.key), m.is_static));
+                }
+                RClassMember::PrivateMethod(
+                    m
+                    @
+                    RPrivateMethod {
+                        function: RFunction { body: Some(..), .. },
+                        ..
+                    },
+                ) => {
+                    private_keys.push((&m.key, m.is_static));
+                }
+
+                RClassMember::ClassProp(RClassProp {
+                    computed: false,
+                    key: box RExpr::Ident(key),
+                    is_static,
+                    ..
+                }) => {
+                    keys.push((Cow::Owned(RPropName::Ident(key.clone())), *is_static));
+                }
+
+                RClassMember::ClassProp(m) => {
+                    keys.push((
+                        Cow::Owned(RPropName::Computed(RComputedPropName {
+                            node_id: NodeId::invalid(),
+                            span: DUMMY_SP,
+                            expr: m.key.clone(),
+                        })),
+                        m.is_static,
+                    ));
+                }
+                RClassMember::PrivateProp(m) => {
+                    private_keys.push((&m.key, m.is_static));
+                }
+                _ => {}
+            }
+        }
+
+        for (i, l) in keys.iter().enumerate() {
+            for (j, r) in keys.iter().enumerate() {
+                if i == j {
+                    continue;
+                }
+
+                if is_prop_name_eq(&l.0, &r.0) && l.1 == r.1 {
+                    self.storage
+                        .report(Error::DuplicateNameWithoutName { span: l.0.span() });
+                }
+            }
+        }
+
+        for (i, l) in private_keys.iter().enumerate() {
+            for (j, r) in private_keys.iter().enumerate() {
+                if i == j {
+                    continue;
+                }
+
+                if l.0.eq_ignore_span(&r.0) && l.1 == r.1 {
+                    self.storage
+                        .report(Error::DuplicateNameWithoutName { span: l.0.span() });
+                }
+            }
+        }
+
+        Ok(())
+    }
+
     fn check_static_mixed_with_instance(&mut self, c: &RClass) -> ValidationResult<()> {
         if self.ctx.in_declare {
             return Ok(());
@@ -1499,6 +1583,7 @@ impl Analyzer<'_, '_> {
 
                 child.check_ambient_methods(c, false).report(&mut child.storage);
                 child.check_static_mixed_with_instance(&c).report(&mut child.storage);
+                child.check_duplicate_of_class(&c).report(&mut child.storage);
 
                 child.scope.super_class = super_class
                     .clone()
