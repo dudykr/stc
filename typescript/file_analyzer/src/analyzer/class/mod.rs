@@ -781,6 +781,7 @@ impl Analyzer<'_, '_> {
             let mut spans = vec![];
             let mut name: Option<&RPropName> = None;
             let mut last_was_abstract = false;
+            let mut last_was_static = false;
 
             for (last, (idx, m)) in c.body.iter().enumerate().identify_last() {
                 match m {
@@ -791,6 +792,7 @@ impl Analyzer<'_, '_> {
                             name = Some(&m.key);
                             spans.push((span, m.is_abstract));
                             last_was_abstract = m.is_abstract;
+                            last_was_static = m.is_static;
                             continue;
                         }
 
@@ -798,6 +800,7 @@ impl Analyzer<'_, '_> {
                             if name.unwrap().eq_ignore_span(&m.key) {
                                 spans.push((span, m.is_abstract));
                                 last_was_abstract = m.is_abstract;
+                                last_was_static = m.is_static;
                             }
                         }
 
@@ -831,6 +834,7 @@ impl Analyzer<'_, '_> {
                         // At this point, previous name is identical with current name.
 
                         last_was_abstract = m.is_abstract;
+                        last_was_static = m.is_static;
 
                         spans.push((span, m.is_abstract));
                     }
