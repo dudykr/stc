@@ -685,8 +685,14 @@ pub enum Error {
         name: Id,
     },
 
+    /// TS2300
     DuplicateName {
         name: Id,
+        span: Span,
+    },
+
+    /// TS2300
+    DuplicateNameWithoutName {
         span: Span,
     },
 
@@ -1445,7 +1451,7 @@ impl Error {
 
             Error::InvalidDeleteOperand { .. } => 2703,
 
-            Error::DuplicateName { .. } => 2300,
+            Error::DuplicateName { .. } | Error::DuplicateNameWithoutName { .. } => 2300,
 
             Error::NoSuchVar { .. } => 2304,
             Error::NoSuchType { .. } => 2304,
