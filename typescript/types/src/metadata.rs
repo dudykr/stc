@@ -99,4 +99,14 @@ pub struct TypeLitMetadata {
     pub specified: bool,
 }
 
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct TypeElMetadata {
+    /// If `true`, it means the element has a default value.
+    ///
+    /// While assignment, missing property error will not occurr by the element
+    /// with this flag set to `true`.
+    pub has_default: bool,
+}
+
 impl_traits!(TypeLitMetadata);
+impl_traits!(TypeElMetadata);

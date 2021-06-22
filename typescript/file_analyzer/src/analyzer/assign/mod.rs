@@ -87,6 +87,19 @@ pub(crate) struct AssignOpts {
     pub allow_assignment_of_array_to_optional_type_lit: bool,
 
     pub use_missing_fields_for_class: bool,
+
+    pub disallow_assignment_to_param_constraint: bool,
+
+    /// The code below is valid.
+    ///
+    /// ```ts
+    /// declare var p: Promise<Promise<string>>
+    ///
+    /// async function foo(): Promise<string> {
+    ///     return p
+    /// }
+    /// ```
+    pub may_unwrap_promise: bool,
 }
 
 #[derive(Default)]
@@ -118,26 +131,74 @@ impl Analyzer<'_, '_> {
         let lhs = l.normalize();
         let rhs = r.normalize();
 
-        if op == op!("*=") || op == op!("/=") || op == op!("-=") {
-            self.deny_null_or_undefined(rhs.span(), rhs)
-                .context("checking operands of a numeric assignment")?;
-
-            let r_castable = self.can_be_casted_to_number_in_rhs(rhs.span(), &rhs);
-            if r_castable {
-                if l.is_num() {
-                    return Ok(());
+        if op == op!("+=") {
+            if lhs.is_enum_variant() {
+                if rhs.is_type_lit() || rhs.is_bool() || rhs.is_symbol() || rhs.is_unique_symbol() {
+                    return Err(Error::OperatorCannotBeAppliedToTypes { span });
                 }
+            }
+        }
+
+        match op {
+            op!("+=")
+            | op!("*=")
+            | op!("**=")
+            | op!("/=")
+            | op!("%=")
+            | op!("-=")
+            | op!("&=")
+            | op!("|=")
+            | op!("^=")
+            | op!("<<=")
+            | op!(">>=")
+            | op!(">>>=") => {
+                if lhs.is_symbol() || lhs.is_unique_symbol() || lhs.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) {
+                    return Err(Error::WrongTypeForLhsOfNumericOperation { span });
+                }
+            }
+            _ => {}
+        }
+
+        match op {
+            op!("*=") | op!("**=") | op!("/=") | op!("%=") | op!("-=") => {
+                self.deny_null_or_undefined(rhs.span(), rhs)
+                    .context("checking operands of a numeric assignment")?;
 
                 match lhs {
-                    Type::Enum(l) => {
-                        //
-                        if !l.has_str {
-                            return Ok(());
-                        }
+                    Type::TypeLit(..) => return Err(Error::WrongTypeForLhsOfNumericOperation { span }),
+                    ty if ty.is_bool() || ty.is_str() || ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword) => {
+                        return Err(Error::WrongTypeForLhsOfNumericOperation { span });
                     }
                     _ => {}
                 }
+
+                match rhs {
+                    Type::TypeLit(..) => return Err(Error::WrongTypeForRhsOfNumericOperation { span }),
+                    ty if ty.is_bool() || ty.is_str() || ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword) => {
+                        return Err(Error::WrongTypeForRhsOfNumericOperation { span })
+                    }
+                    _ => {}
+                }
+
+                let r_castable = self.can_be_casted_to_number_in_rhs(rhs.span(), &rhs);
+                if r_castable {
+                    if l.is_num() {
+                        return Ok(());
+                    }
+
+                    match lhs {
+                        Type::Enum(l) => {
+                            //
+                            if !l.has_str {
+                                return Ok(());
+                            }
+                        }
+                        _ => {}
+                    }
+                }
             }
+
+            _ => {}
         }
 
         // Trivial
@@ -291,21 +352,19 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        res.map_err(|err| {
-            err.convert(|err| match err {
-                Error::AssignFailed { .. }
-                | Error::Errors { .. }
-                | Error::Unimplemented { .. }
-                | Error::TupleAssignError { .. }
-                | Error::ObjectAssignFailed { .. } => err,
-                _ => Error::AssignFailed {
-                    span: opts.span,
-                    left: box left.clone(),
-                    right: box right.clone(),
-                    right_ident: opts.right_ident_span,
-                    cause: vec![err],
-                },
-            })
+        res.convert_err(|err| match err {
+            Error::AssignFailed { .. }
+            | Error::Errors { .. }
+            | Error::Unimplemented { .. }
+            | Error::TupleAssignError { .. }
+            | Error::ObjectAssignFailed { .. } => err,
+            _ => Error::AssignFailed {
+                span: opts.span,
+                left: box left.clone(),
+                right: box right.clone(),
+                right_ident: opts.right_ident_span,
+                cause: vec![err],
+            },
         })
     }
 
@@ -926,7 +985,10 @@ impl Analyzer<'_, '_> {
             Type::Intersection(Intersection { types, .. }) => {
                 let errors = types
                     .iter()
-                    .map(|rhs| self.assign_inner(data, to, rhs, opts))
+                    .map(|rhs| {
+                        self.assign_inner(data, to, rhs, opts)
+                            .context("tried to assign an element of an intersection type to another type")
+                    })
                     .collect::<Vec<_>>();
                 if errors.iter().any(Result::is_ok) {
                     return Ok(());
@@ -1048,15 +1110,19 @@ impl Analyzer<'_, '_> {
                 constraint: Some(ref c),
                 ..
             }) => {
-                return self.assign_inner(
-                    data,
-                    c,
-                    rhs,
-                    AssignOpts {
-                        allow_assignment_to_param: true,
-                        ..opts
-                    },
-                )
+                if !opts.disallow_assignment_to_param_constraint {
+                    return self.assign_inner(
+                        data,
+                        c,
+                        rhs,
+                        AssignOpts {
+                            allow_assignment_to_param: true,
+                            ..opts
+                        },
+                    );
+                }
+
+                fail!()
             }
 
             Type::Param(..) => {
@@ -1231,7 +1297,11 @@ impl Analyzer<'_, '_> {
                 let errors = results.into_iter().map(Result::unwrap_err).collect();
                 let should_use_single_error = normalized
                     || types.iter().all(|ty| {
-                        ty.normalize().is_lit() || ty.normalize().is_enum_variant() || ty.normalize().is_ref_type()
+                        ty.normalize().is_lit()
+                            || ty.normalize().is_enum_variant()
+                            || ty.normalize().is_ref_type()
+                            || ty.normalize().is_query()
+                            || ty.normalize().is_function()
                     });
 
                 if should_use_single_error {
@@ -1665,8 +1735,13 @@ impl Analyzer<'_, '_> {
                         elems: ref rhs_elems, ..
                     }) => {
                         if elems.len() < rhs_elems.len() {
-                            fail!();
+                            return Err(Error::AssignFailedBecauseTupleLengthDiffers { span });
                         }
+
+                        if elems.len() > rhs_elems.len() {
+                            return Err(Error::AssignFailedBecauseTupleLengthDiffers { span });
+                        }
+
                         if !elems.is_empty() && rhs_elems.is_empty() {
                             fail!();
                         }

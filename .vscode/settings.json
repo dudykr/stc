@@ -38,6 +38,8 @@
   "rust-analyzer.lens.methodReferences": true,
   "favorites.resources": [
     "typescript/errors/src/lib.rs",
-    "typescript/file_analyzer/tests"
+    "typescript/file_analyzer/tests",
+    "typescript/type_checker/tests/tsc-stats.rust-debug",
+    "typescript/type_checker/tests/wip-stats.rust-debug"
   ]
 }

@@ -24,6 +24,7 @@ use stc_ts_ast_rnode::RVarDecl;
 use stc_ts_builtin_types::Lib;
 use stc_ts_errors::Error;
 use stc_ts_storage::Builtin;
+use stc_ts_type_ops::Fix;
 use stc_ts_types::ClassDef;
 use stc_ts_types::{Id, ModuleTypeData, Type};
 use stc_utils::stack;
@@ -238,10 +239,12 @@ impl BuiltIn {
         }
 
         for (_, ty) in result.types.iter_mut() {
+            ty.fix();
             ty.make_cheap();
         }
 
         for (_, ty) in result.vars.iter_mut() {
+            ty.fix();
             ty.make_cheap();
         }
 
@@ -336,7 +339,7 @@ impl Env {
         match self.get_global_type(ty.span(), &name) {
             Ok(prev_ty) => {
                 self.global_types
-                    .insert(name, Type::intersection(DUMMY_SP, vec![prev_ty, ty]).cheap());
+                    .insert(name, Type::intersection(DUMMY_SP, vec![prev_ty, ty]).fixed().cheap());
             }
             Err(_) => {
                 self.global_types.insert(name, ty);

@@ -4,7 +4,7 @@ use self::{
     control_flow::{CondFacts, Facts},
     pat::PatMode,
     props::ComputedPropMode,
-    scope::Scope,
+    scope::{Scope, VarKind},
     util::ResultExt,
 };
 use crate::env::ModuleConfig;
@@ -42,7 +42,7 @@ use stc_ts_storage::Builtin;
 use stc_ts_storage::Info;
 use stc_ts_storage::Storage;
 use stc_ts_types::IdCtx;
-use stc_ts_types::{Id, ModuleId, ModuleTypeData, SymbolIdGenerator};
+use stc_ts_types::{Id, ModuleId, ModuleTypeData};
 use stc_utils::AHashMap;
 use stc_utils::AHashSet;
 use std::mem::take;
@@ -112,6 +112,8 @@ pub(crate) struct Ctx {
 
     in_const_assertion: bool,
 
+    in_constructor_param: bool,
+
     diallow_unknown_object_property: bool,
     disallow_optional_object_property: bool,
 
@@ -125,9 +127,16 @@ pub(crate) struct Ctx {
     cannot_be_tuple: bool,
 
     /// If `true`, `access_property` will not produce types like `Array['b']`
-    should_not_create_indexed_type_from_ty_els: bool,
+    disallow_creating_indexed_type_from_ty_els: bool,
+
+    disallow_indexing_array_with_string: bool,
+
+    disallow_indexing_class_with_computed: bool,
 
     in_shorthand: bool,
+
+    /// Used to make type parameters `unknown` when it cannot be inferred.
+    is_instantiating_class: bool,
 
     /// `true` for condition of conditional expression or of an if statement.
     in_cond_of_cond_expr: bool,
@@ -169,7 +178,7 @@ pub(crate) struct Ctx {
 
     /// If true, all errors should be ignored.
     ///
-    /// Used to prevent wrong errors while validate loop bodies or etc.
+    /// Used to prevent wrong errors while validating loop bodies or etc.
     ignore_errors: bool,
 
     var_kind: VarDeclKind,
@@ -221,6 +230,10 @@ pub(crate) struct Ctx {
     /// NOTE: In non-strictNullChecks mode, `undefined` (the default sent value)
     /// is assignable to everything.
     cannot_fallback_to_iterable_iterator: bool,
+
+    allow_new_target: bool,
+
+    disallow_invoking_implicit_constructors: bool,
 }
 
 impl Ctx {
@@ -269,8 +282,6 @@ pub struct Analyzer<'scope, 'b> {
 
     cur_facts: Facts,
 
-    symbols: Arc<SymbolIdGenerator>,
-
     /// Used while inferencing types.
     mapped_type_param_name: Vec<Id>,
 
@@ -280,8 +291,15 @@ pub struct Analyzer<'scope, 'b> {
 }
 #[derive(Debug, Default)]
 struct AnalyzerData {
+    unmergable_type_decls: FxHashMap<Id, Vec<Span>>,
+
+    /// Used to check mixed exports.
+    ///
     /// e.g. `A` for `type A = {}`
     local_type_decls: FxHashMap<Id, Vec<Span>>,
+
+    /// Used to check mixed exports.
+    ///
     /// e.g. `A` for `export type A = {}`
     exported_type_decls: FxHashMap<Id, Vec<Span>>,
 
@@ -291,7 +309,7 @@ struct AnalyzerData {
     unresolved_imports: AHashSet<Id>,
 
     /// Spans of declared variables.
-    var_spans: AHashMap<Id, Vec<Span>>,
+    var_spans: AHashMap<Id, Vec<(VarKind, Span)>>,
 
     /// Spans of functions **with body**.
     fn_impl_spans: FxHashMap<Id, Vec<Span>>,
@@ -420,7 +438,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             loader,
             Scope::root(logger),
             false,
-            Default::default(),
             debugger,
             Default::default(),
         )
@@ -444,7 +461,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             &NoopLoader,
             Scope::root(logger),
             true,
-            Default::default(),
             None,
             Default::default(),
         )
@@ -460,7 +476,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             self.loader,
             scope,
             self.is_builtin,
-            self.symbols.clone(),
             self.debugger.clone(),
             data,
         )
@@ -475,7 +490,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         loader: &'b dyn Load,
         scope: Scope<'scope>,
         is_builtin: bool,
-        symbols: Arc<SymbolIdGenerator>,
         debugger: Option<Debugger>,
         data: AnalyzerData,
     ) -> Self {
@@ -495,14 +509,18 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 module_id: ModuleId::builtin(),
                 phase: Default::default(),
                 in_const_assertion: false,
+                in_constructor_param: false,
                 diallow_unknown_object_property: false,
                 disallow_optional_object_property: false,
                 use_undefined_for_empty_tuple: false,
                 allow_module_var: false,
                 check_for_implicit_any: false,
                 cannot_be_tuple: false,
-                should_not_create_indexed_type_from_ty_els: false,
+                disallow_creating_indexed_type_from_ty_els: false,
+                disallow_indexing_array_with_string: false,
+                disallow_indexing_class_with_computed: false,
                 in_shorthand: false,
+                is_instantiating_class: false,
                 in_cond_of_cond_expr: false,
                 should_store_truthy_for_access: false,
                 in_switch_case_test: false,
@@ -543,12 +561,13 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 in_class_with_super: false,
                 is_value_used: false,
                 cannot_fallback_to_iterable_iterator: false,
+                allow_new_target: false,
+                disallow_invoking_implicit_constructors: false,
             },
             loader,
             is_builtin,
             duplicated_tracker: Default::default(),
             cur_facts: Default::default(),
-            symbols,
             mapped_type_param_name: vec![],
             imports_by_id: Default::default(),
             debugger,
@@ -876,19 +895,46 @@ impl Analyzer<'_, '_> {
                         .unwrap_or_else(|err| {
                             analyzer.storage.report(err);
                             Type::any(node.span)
-                        });
+                        })
+                        .cheap();
                     ty.assert_valid();
 
-                    analyzer.declare_var(
-                        node.span,
-                        VarDeclKind::Const,
-                        node.id.clone().into(),
-                        Some(ty),
-                        None,
-                        true,
-                        false,
-                        false,
-                    )?;
+                    let (is_type, is_var) = match ty.normalize() {
+                        Type::Module(..) | Type::Namespace(..) | Type::Interface(..) => (true, false),
+                        Type::ClassDef(..) => (true, true),
+                        _ => (false, true),
+                    };
+
+                    if is_type {
+                        analyzer.register_type(node.id.clone().into(), ty.clone());
+                        if node.is_export {
+                            analyzer.storage.reexport_type(
+                                node.span,
+                                analyzer.ctx.module_id,
+                                node.id.sym.clone(),
+                                ty.clone(),
+                            )
+                        }
+                    }
+
+                    if is_var {
+                        analyzer.declare_var(
+                            node.span,
+                            VarKind::Import,
+                            node.id.clone().into(),
+                            Some(ty.clone()),
+                            None,
+                            true,
+                            false,
+                            false,
+                        )?;
+
+                        if node.is_export {
+                            analyzer
+                                .storage
+                                .reexport_var(node.span, analyzer.ctx.module_id, node.id.sym.clone(), ty)
+                        }
+                    }
                 }
                 _ => {}
             }
@@ -920,7 +966,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, decl: &RTsModuleDecl) {
+    fn validate(&mut self, decl: &RTsModuleDecl) -> ValidationResult<Option<Type>> {
         let span = decl.span;
         let ctxt = self.ctx.module_id;
         let global = decl.global;
@@ -930,7 +976,7 @@ impl Analyzer<'_, '_> {
             in_declare: self.ctx.in_declare || decl.declare,
             ..self.ctx
         };
-        let ty = self
+        let mut ty = self
             .with_ctx(ctx)
             .with_child(ScopeKind::Module, Default::default(), |child: &mut Analyzer| {
                 child.scope.cur_module_name = match &decl.id {
@@ -975,10 +1021,14 @@ impl Analyzer<'_, '_> {
                 Ok(None)
             })?;
 
-        if let Some(ty) = ty {
+        if let Some(ty) = &mut ty {
+            ty.make_cheap();
+        }
+
+        if let Some(ty) = &ty {
             match &decl.id {
                 RTsModuleName::Ident(i) => {
-                    self.register_type(i.into(), ty);
+                    self.register_type(i.into(), ty.clone());
                 }
                 RTsModuleName::Str(s) => {
                     let name: &str = &*s.value;
@@ -990,12 +1040,10 @@ impl Analyzer<'_, '_> {
                             }
                         }
                     }
-                    //TODO
-                    return Ok(());
                 }
             }
         }
 
-        Ok(())
+        Ok(ty)
     }
 }

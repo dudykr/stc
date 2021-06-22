@@ -5,7 +5,7 @@ warning: Type
   |          ^^
   |
   = note: {
-              constructor();
+              new(): string;
           }[]
 
 warning: Type
@@ -15,7 +15,7 @@ warning: Type
   |          ^^^^^
   |
   = note: {
-              constructor();
+              new(): string;
           }
 
 warning: Type
@@ -25,7 +25,7 @@ warning: Type
   |              ^^
   |
   = note: {
-              constructor();
+              new(): string;
           }
 
 warning: Type

@@ -33,6 +33,11 @@ use swc_common::DUMMY_SP;
 use swc_ecma_ast::TsKeywordTypeKind;
 
 impl Analyzer<'_, '_> {
+    /// TODO: Note: This method preserves [Type::Ref] in some cases.
+    ///
+    /// Those are preserved if
+    ///
+    ///  - it's Promise<T>
     pub fn apply_type_facts_to_type(&mut self, facts: TypeFacts, mut ty: Type) -> Type {
         if self.is_builtin {
             return ty;

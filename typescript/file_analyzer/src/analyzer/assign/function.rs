@@ -20,6 +20,7 @@ use stc_ts_types::TypeParamDecl;
 use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::TypeEq;
+use swc_ecma_ast::TsKeywordTypeKind;
 
 impl Analyzer<'_, '_> {
     pub(crate) fn assign_to_fn_like(
@@ -363,11 +364,12 @@ impl Analyzer<'_, '_> {
         l_ty.assert_valid();
         r_ty.assert_valid();
 
-        let reverse = match (l_ty.normalize(), r_ty.normalize()) {
-            (Type::Union(..), Type::Union(..)) => false,
-            (_, Type::Union(..)) => true,
-            _ => false,
-        };
+        let reverse = !opts.for_overload
+            && match (l_ty.normalize_instance(), r_ty.normalize_instance()) {
+                (Type::Union(..), Type::Union(..)) => false,
+                (_, Type::Union(..)) => true,
+                _ => false,
+            };
 
         if reverse {
             self.assign_with_opts(data, opts, &r.ty, &l.ty)
@@ -434,6 +436,13 @@ impl Analyzer<'_, '_> {
         let required_li = li.clone().filter(|i| i.required);
         let required_ri = ri.clone().filter(|i| i.required);
 
+        let required_non_void_li = li
+            .clone()
+            .filter(|i| i.required && !i.ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword));
+        let required_non_void_ri = ri
+            .clone()
+            .filter(|i| i.required && !i.ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword));
+
         if opts.for_overload {
             if required_li.clone().count() > required_ri.clone().count() {
                 return Err(Error::SimpleAssignFailed { span })
@@ -443,15 +452,20 @@ impl Analyzer<'_, '_> {
 
         // Don't ask why.
         if li.clone().count() < required_ri.clone().count() {
-            if !l_has_rest && required_li.clone().count() < required_ri.clone().count() {
+            if !l_has_rest && required_non_void_li.clone().count() < required_non_void_ri.clone().count() {
                 // I don't know why, but overload signature does not need to match overloaded
                 // signature.
                 if opts.for_overload {
                     return Ok(());
                 }
 
-                return Err(Error::SimpleAssignFailed { span }
-                    .context("!l_has_rest && l.params.required.len < r.params.required.len"));
+                return Err(Error::SimpleAssignFailed { span }).with_context(|| {
+                    format!(
+                        "!l_has_rest && l.params.required.len < r.params.required.len\nLeft: {:?}\nRight: {:?}\n",
+                        required_non_void_li.collect_vec(),
+                        required_non_void_ri.collect_vec()
+                    )
+                });
             }
         }
 

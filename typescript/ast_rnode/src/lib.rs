@@ -1,6 +1,7 @@
 use num_bigint::BigInt as BigIntValue;
 use rnode::define_rnode;
 use rnode::NodeId;
+use swc_atoms::js_word;
 use swc_atoms::JsWord;
 use swc_common::EqIgnoreSpan;
 use swc_common::Span;
@@ -14,6 +15,24 @@ impl RIdent {
             span,
             optional: false,
             node_id: NodeId::invalid(),
+        }
+    }
+}
+
+impl RExpr {
+    pub fn is_new_target(&self) -> bool {
+        match self {
+            RExpr::MetaProp(RMetaPropExpr {
+                meta: RIdent {
+                    sym: js_word!("new"), ..
+                },
+                prop: RIdent {
+                    sym: js_word!("target"),
+                    ..
+                },
+                ..
+            }) => true,
+            _ => false,
         }
     }
 }

@@ -19,8 +19,8 @@ stc_ts_module_loader = {path = "./typescript/module_loader"}
 stc_ts_type_checker = {path = "./typescript/type_checker"}
 stc_utils = {path = "utils"}
 structopt = "0.3.20"
-swc_common = {version = "0.10.12", features = ["tty-emitter"]}
-swc_ecma_parser = "0.57.1"
+swc_common = { version = "0.10.21", features = ["tty-emitter"] }
+swc_ecma_parser = "0.60.0"
 
 [profile.release]
 codegen-units = 1
@@ -40,6 +40,9 @@ opt-level = 3
 [profile.dev.package."*"]
 opt-level = 3
 
+[profile.dev.package.stc_visit]
+opt-level = 3
+
 [profile.dev.package.stc_ts_types]
 opt-level = 3
 
@@ -47,6 +50,9 @@ opt-level = 3
 opt-level = 3
 
 [profile.test.build-override]
+opt-level = 3
+
+[profile.test.package.stc_visit]
 opt-level = 3
 
 [profile.test.package.stc_ts_types]

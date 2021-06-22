@@ -13,6 +13,7 @@ use self::common::SwcComments;
 use anyhow::Context;
 use anyhow::Error;
 use once_cell::sync::Lazy;
+use parking_lot::Mutex;
 use serde::Deserialize;
 use stc_testing::logger;
 use stc_ts_builtin_types::Lib;
@@ -23,8 +24,10 @@ use stc_ts_module_loader::resolver::node::NodeResolver;
 use stc_ts_type_checker::Checker;
 use std::collections::HashSet;
 use std::env;
+use std::fs;
 use std::fs::read_to_string;
 use std::fs::File;
+use std::mem;
 use std::panic::catch_unwind;
 use std::path::Path;
 use std::path::PathBuf;
@@ -46,11 +49,57 @@ use test::test_main;
 use testing::StdErr;
 use testing::Tester;
 
+struct RecordOnPanic {
+    stats: Stats,
+}
+
+impl Drop for RecordOnPanic {
+    fn drop(&mut self) {
+        record_stat(self.stats.clone());
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 struct RefError {
     pub line: usize,
     pub column: usize,
     pub code: String,
+}
+
+#[derive(Debug, Default, Clone)]
+struct Stats {
+    required_error: usize,
+    matched_error: usize,
+    extra_error: usize,
+}
+
+fn is_all_test_enabled() -> bool {
+    env::var("TEST").map(|s| s == "").unwrap_or(false)
+}
+
+/// Add stats and return total stats.
+fn record_stat(stats: Stats) -> Stats {
+    static STATS: Lazy<Mutex<Stats>> = Lazy::new(|| Default::default());
+
+    let mut guard = STATS.lock();
+    guard.required_error += stats.required_error;
+    guard.matched_error += stats.matched_error;
+    guard.extra_error += stats.extra_error;
+
+    let stats = (*guard).clone();
+
+    let content = format!("{:#?}", stats);
+
+    if env::var("WIP_STATS").unwrap_or_default() == "1" && env::var("STC_IGNORE_WIP").unwrap_or_default() != "1" {
+        fs::write("tests/wip-stats.rust-debug", &content).unwrap();
+    }
+
+    // If we are testing everything, update stats file.
+    if is_all_test_enabled() {
+        fs::write("tests/tsc-stats.rust-debug", &content).unwrap();
+    }
+
+    stats
 }
 
 /// Retunrs **path**s (separated by `/`) of tests.
@@ -76,7 +125,9 @@ fn is_ignored(path: &Path) -> bool {
     static PASS: Lazy<Vec<String>> = Lazy::new(|| {
         let mut v = load_list("tests/conformance.pass.txt");
         v.extend(load_list("tests/compiler.pass.txt"));
-        v.extend(load_list("tests/tsc.wip.txt"));
+        if env::var("STC_IGNORE_WIP").unwrap_or_default() != "1" {
+            v.extend(load_list("tests/tsc.wip.txt"));
+        }
         v
     });
 
@@ -104,6 +155,20 @@ fn create_test(path: PathBuf) -> Option<Box<dyn FnOnce() + Send + Sync>> {
         return None;
     }
 
+    if let Ok(errors) = load_expected_errors(&path) {
+        for err in errors {
+            if err.code.starts_with("TS1") && err.code.len() == 6 {
+                return None;
+            }
+
+            // These are actually parser test.
+            match &*err.code {
+                "TS2369" => return None,
+                _ => {}
+            }
+        }
+    }
+
     let str_name = path.display().to_string();
 
     // If parser returns error, ignore it for now.
@@ -113,6 +178,13 @@ fn create_test(path: PathBuf) -> Option<Box<dyn FnOnce() + Send + Sync>> {
 
     // Postpone multi-file tests.
     if fm.src.to_lowercase().contains("@filename") || fm.src.contains("<reference path") {
+        if is_all_test_enabled() {
+            record_stat(Stats {
+                required_error: load_expected_errors(&path).map(|v| v.len()).unwrap_or_default(),
+                ..Default::default()
+            });
+        }
+
         return None;
     }
 
@@ -128,20 +200,6 @@ fn create_test(path: PathBuf) -> Option<Box<dyn FnOnce() + Send + Sync>> {
         parser.parse_module().ok()
     })
     .ok()??;
-
-    if let Ok(errors) = load_expected_errors(&path) {
-        for err in errors {
-            if err.code.starts_with("TS1") && err.code.len() == 6 {
-                return None;
-            }
-
-            // These are actually parser test.
-            match &*err.code {
-                "TS2369" => return None,
-                _ => {}
-            }
-        }
-    }
 
     Some(box move || {
         do_test(&path).unwrap();
@@ -381,6 +439,7 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
                         JscTarget::Es2018 => Lib::load("es2018.full"),
                         JscTarget::Es2019 => Lib::load("es2019.full"),
                         JscTarget::Es2020 => Lib::load("es2020.full"),
+                        JscTarget::Es2021 => Lib::load("es2021.full"),
                     }
                 } else {
                     if specified {
@@ -420,6 +479,14 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
         module_config,
     } in specs
     {
+        let stat_guard = RecordOnPanic {
+            stats: Stats {
+                required_error: expected_errors.len(),
+                ..Default::default()
+            },
+        };
+
+        let mut stats = Stats::default();
         dbg!(&libs);
         for err in &mut expected_errors {
             // This error use special span.
@@ -469,7 +536,9 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
             })
             .expect_err("");
 
-        let mut actual_errors = diagnostics
+        mem::forget(stat_guard);
+
+        let mut extra_errors = diagnostics
             .iter()
             .map(|d| {
                 let span = d.span.primary_span().unwrap();
@@ -489,20 +558,22 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
             })
             .collect::<Vec<_>>();
 
-        let full_actual_errors = actual_errors.clone();
+        let full_actual_errors = extra_errors.clone();
 
         for (line, error_code) in full_actual_errors.clone() {
             if let Some(idx) = expected_errors
                 .iter()
                 .position(|err| (err.line == line || err.line == 0) && err.code == error_code)
             {
+                stats.matched_error += 1;
+
                 let is_zero_line = expected_errors[idx].line == 0;
                 expected_errors.remove(idx);
-                if let Some(idx) = actual_errors
+                if let Some(idx) = extra_errors
                     .iter()
                     .position(|(r_line, r_code)| (line == *r_line || is_zero_line) && error_code == *r_code)
                 {
-                    actual_errors.remove(idx);
+                    extra_errors.remove(idx);
                 }
             }
         }
@@ -510,7 +581,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
         //
         //      - All reference errors are matched
         //      - Actual errors does not remain
-        let success = expected_errors.is_empty() && actual_errors.is_empty();
+        let success = expected_errors.is_empty() && extra_errors.is_empty();
 
         let res: Result<(), _> = tester.print_errors(|_, handler| {
             // If we failed, we only emit errors which has wrong line.
@@ -518,7 +589,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
             for (d, line_col) in diagnostics.into_iter().zip(full_actual_errors.clone()) {
                 if success
                     || env::var("PRINT_ALL").unwrap_or(String::from("")) == "1"
-                    || actual_errors.contains(&line_col)
+                    || extra_errors.contains(&line_col)
                 {
                     DiagnosticBuilder::new_diagnostic(&handler, d).emit();
                 }
@@ -532,10 +603,25 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
             Err(err) => err,
         };
 
-        let err_count = actual_errors.len();
+        let extra_err_count = extra_errors.len();
+        stats.required_error += expected_errors.len();
+        stats.extra_error += extra_err_count;
+
+        let stats = record_stat(stats);
+
+        println!("[STATS] {:#?}", stats);
 
         if expected_errors.is_empty() {
             println!("[REMOVE_ONLY]{}", file_name.display());
+        }
+
+        if extra_errors.len() == expected_errors.len() {
+            let expected_lines = expected_errors.iter().map(|v| v.line).collect::<Vec<_>>();
+            let extra_lines = extra_errors.iter().map(|(v, _)| *v).collect::<Vec<_>>();
+
+            if expected_lines == extra_lines {
+                println!("[ERROR_CODE_ONLY]{}", file_name.display());
+            }
         }
 
         if !success {
@@ -546,9 +632,9 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
                 err,
                 expected_errors.len(),
                 full_ref_err_cnt,
-                err_count,
+                extra_err_count,
                 expected_errors,
-                actual_errors,
+                extra_errors,
                 full_ref_errors,
                 full_actual_errors,
             );

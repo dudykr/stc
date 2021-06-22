@@ -1,0 +1,80 @@
+warning: Type
+ --> $DIR/tests/pass/class/local/localTypes3/2.ts:4:24
+  |
+4 |             public x = x;
+  |                        ^
+  |
+  = note: X
+
+warning: Type
+ --> $DIR/tests/pass/class/local/localTypes3/2.ts:7:16
+  |
+7 |         return C;
+  |                ^
+  |
+  = note: typeof C
+
+warning: Type
+ --> $DIR/tests/pass/class/local/localTypes3/2.ts:9:13
+  |
+9 |     let C = f(10);
+  |             ^
+  |
+  = note: <X>(x: X) => typeof C
+
+warning: Type
+ --> $DIR/tests/pass/class/local/localTypes3/2.ts:9:13
+  |
+9 |     let C = f(10);
+  |             ^^^^^
+  |
+  = note: typeof C
+
+warning: Type
+  --> $DIR/tests/pass/class/local/localTypes3/2.ts:10:17
+   |
+10 |     let v = new C("hello");
+   |                 ^
+   |
+   = note: typeof C
+
+warning: Type
+  --> $DIR/tests/pass/class/local/localTypes3/2.ts:10:13
+   |
+10 |     let v = new C("hello");
+   |             ^^^^^^^^^^^^^^
+   |
+   = note: C
+
+warning: Type
+  --> $DIR/tests/pass/class/local/localTypes3/2.ts:11:13
+   |
+11 |     let x = v.x;
+   |             ^
+   |
+   = note: C
+
+warning: Type
+  --> $DIR/tests/pass/class/local/localTypes3/2.ts:11:13
+   |
+11 |     let x = v.x;
+   |             ^^^
+   |
+   = note: number
+
+warning: Type
+  --> $DIR/tests/pass/class/local/localTypes3/2.ts:12:13
+   |
+12 |     let y = v.y;
+   |             ^
+   |
+   = note: C
+
+warning: Type
+  --> $DIR/tests/pass/class/local/localTypes3/2.ts:12:13
+   |
+12 |     let y = v.y;
+   |             ^^^
+   |
+   = note: string
+

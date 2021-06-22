@@ -8,7 +8,9 @@
 #![feature(specialization)]
 
 pub use self::convert::rprop_name_to_expr;
+pub use self::metadata::TypeElMetadata;
 pub use self::metadata::TypeLitMetadata;
+pub use self::symbol::SymbolId;
 pub use self::{id::Id, module_id::ModuleId};
 use fxhash::FxHashMap;
 use is_macro::Is;
@@ -48,10 +50,7 @@ use std::{
     iter::FusedIterator,
     mem::{replace, transmute},
     ops::AddAssign,
-    sync::{
-        atomic::{AtomicUsize, Ordering::SeqCst},
-        Arc,
-    },
+    sync::Arc,
 };
 use swc_atoms::js_word;
 use swc_atoms::JsWord;
@@ -70,6 +69,7 @@ pub mod macros;
 mod metadata;
 pub mod module_id;
 pub mod name;
+mod symbol;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum IdCtx {
@@ -274,22 +274,6 @@ fn _assert_send_sync() {
     assert::<Symbol>();
 }
 
-#[derive(Debug, Default)]
-pub struct SymbolIdGenerator {
-    inner: AtomicUsize,
-}
-
-impl SymbolIdGenerator {
-    /// Creates a new symbol id.
-    ///
-    /// Do **not** mix with symbol ids from other generator.
-    pub fn generate(&self) -> SymbolId {
-        let id = self.inner.fetch_add(1, SeqCst);
-
-        SymbolId(id)
-    }
-}
-
 #[derive(Debug, Clone, PartialEq, EqIgnoreSpan, TypeEq, Visit, Is, Spanned)]
 pub enum Key {
     Computed(ComputedKey),
@@ -377,9 +361,6 @@ pub struct ComputedKey {
 }
 
 assert_eq_size!(ComputedKey, [u8; 32]);
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EqIgnoreSpan, TypeEq, Visit)]
-pub struct SymbolId(usize);
 
 /// Used to handle code like
 ///
@@ -759,6 +740,7 @@ pub struct PropertySignature {
     pub params: Vec<FnParam>,
     pub type_ann: Option<Box<Type>>,
     pub type_params: Option<TypeParamDecl>,
+    pub metadata: TypeElMetadata,
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
@@ -773,6 +755,7 @@ pub struct MethodSignature {
     pub params: Vec<FnParam>,
     pub ret_ty: Option<Box<Type>>,
     pub type_params: Option<TypeParamDecl>,
+    pub metadata: TypeElMetadata,
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
@@ -1049,7 +1032,9 @@ impl Type {
     }
 
     pub fn contains_void(&self) -> bool {
-        match *self.normalize() {
+        match self.normalize() {
+            Type::Instance(ty) => ty.ty.contains_void(),
+
             Type::Keyword(RTsKeywordType {
                 kind: TsKeywordTypeKind::TsVoidKeyword,
                 ..
@@ -1137,8 +1122,9 @@ impl Type {
     }
 
     pub fn is_kwd(&self, k: TsKeywordTypeKind) -> bool {
-        match *self.normalize() {
-            Type::Keyword(RTsKeywordType { kind, .. }) if kind == k => true,
+        match self.normalize() {
+            Type::Instance(ty) => ty.ty.is_kwd(k),
+            Type::Keyword(RTsKeywordType { kind, .. }) if *kind == k => true,
             _ => false,
         }
     }
@@ -1429,7 +1415,7 @@ impl Type {
         self
     }
 
-    /// `Type::Static` is normalized.
+    /// [Type::Arc] is normalized.
     pub fn normalize<'s, 'c>(&'s self) -> &'c Type
     where
         's: 'c,
@@ -1443,6 +1429,18 @@ impl Type {
                 // Shorten lifetimes
                 transmute::<&'s Self, &'c Type>(self)
             },
+        }
+    }
+
+    /// [Type::Arc] and [Type::Instance] are normalized.
+    pub fn normalize_instance<'s, 'c>(&'s self) -> &'c Type
+    where
+        's: 'c,
+    {
+        let ty = self.normalize();
+        match ty {
+            Type::Instance(ty) => ty.ty.normalize_instance(),
+            _ => ty,
         }
     }
 

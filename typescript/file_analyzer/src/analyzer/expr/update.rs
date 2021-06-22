@@ -12,6 +12,7 @@ use stc_ts_ast_rnode::RTsLitType;
 use stc_ts_ast_rnode::RUpdateExpr;
 use stc_ts_errors::Error;
 use stc_ts_types::Type;
+use std::borrow::Cow;
 use swc_common::Spanned;
 use swc_ecma_ast::TsKeywordTypeKind;
 
@@ -51,9 +52,15 @@ impl Analyzer<'_, '_> {
                 | Type::Array(..)
                 | Type::Tuple(..)
                 | Type::This(..)
-                | Type::Function(..) => Err(Error::TypeInvalidForUpdateArg { span: e.arg.span() }),
+                | Type::Function(..) => Err(Error::TypeInvalidForUpdateArg {
+                    span: e.arg.span(),
+                    ty: box ty.clone(),
+                }),
 
-                _ if ty.is_global_this() => Err(Error::TypeInvalidForUpdateArg { span: e.arg.span() }),
+                _ if ty.is_global_this() => Err(Error::TypeInvalidForUpdateArg {
+                    span: e.arg.span(),
+                    ty: box ty.clone(),
+                }),
 
                 Type::Enum(..) => Err(Error::CannotAssignToNonVariable { span: e.arg.span() }),
 
@@ -79,7 +86,7 @@ impl Analyzer<'_, '_> {
             .report(&mut self.storage);
 
         if let Some(ty) = ty {
-            if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) {
+            if let Some(false) = self.is_update_operand_valid(&ty).report(&mut self.storage) {
                 self.storage.report(Error::InvalidNumericOperand { span: e.arg.span() })
             }
         }
@@ -88,5 +95,32 @@ impl Analyzer<'_, '_> {
             kind: TsKeywordTypeKind::TsNumberKeyword,
             span,
         }))
+    }
+}
+
+impl Analyzer<'_, '_> {
+    fn is_update_operand_valid(&mut self, arg: &Type) -> ValidationResult<bool> {
+        let ty = self.normalize(Some(arg.span()), Cow::Borrowed(arg), Default::default())?;
+
+        if ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword)
+            || ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword)
+            || ty.is_str()
+            || ty.is_bool()
+        {
+            return Ok(false);
+        }
+
+        match ty.normalize() {
+            Type::Union(ty) => {
+                for ty in &ty.types {
+                    if !self.is_update_operand_valid(ty)? {
+                        return Ok(false);
+                    }
+                }
+            }
+            _ => {}
+        }
+
+        Ok(true)
     }
 }

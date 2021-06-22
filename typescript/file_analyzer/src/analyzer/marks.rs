@@ -34,6 +34,11 @@ pub struct Marks {
     pub(super) infected_by_this_in_object_literal: Mark,
 
     pub(super) prevent_converting_to_children: Mark,
+
+    /// This mark is applied to types resolved from variables.
+    ///
+    /// Used to distinguish object literal with a reference to object literal.
+    pub(crate) resolved_from_var: Mark,
 }
 
 impl Marks {
@@ -57,6 +62,7 @@ impl Marks {
             ignore_no_expand_mark: m(),
             infected_by_this_in_object_literal: m(),
             prevent_converting_to_children: m(),
+            resolved_from_var: m(),
         })
     }
 }

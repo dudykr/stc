@@ -225,7 +225,9 @@ impl Analyzer<'_, '_> {
                                 ty: elem.ty.clone(),
                             }));
                         }
-                        _ => unimplemented!("spread argument typed other than tuple.\nType: {:#?}", arg.ty),
+                        _ => {
+                            actual_args.push(arg.clone());
+                        }
                     }
                 } else {
                     actual_args.push(arg.clone());
@@ -1379,6 +1381,7 @@ impl Analyzer<'_, '_> {
                                         params: Default::default(),
                                         type_ann,
                                         type_params: Default::default(),
+                                        metadata: Default::default(),
                                     }));
                                 }
 
@@ -1968,6 +1971,10 @@ impl Analyzer<'_, '_> {
         match ty.normalize_mut() {
             Type::Function(ref mut f) => {
                 f.type_params = decl;
+            }
+
+            Type::ClassDef(..) | Type::Class(..) => {
+                return Ok(ty);
             }
 
             _ => {}

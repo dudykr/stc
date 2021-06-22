@@ -1,15 +1,15 @@
+pub(crate) use self::vars::VarKind;
 use super::assign::AssignOpts;
 use super::class::ClassState;
 use super::{control_flow::CondFacts, expr::TypeOfMode, stmt::return_type::ReturnValues, Analyzer, Ctx};
-use crate::analyzer::expr::GetIteratorOpts;
 use crate::analyzer::expr::IdCtx;
+use crate::analyzer::scope::vars::DeclareVarsOpts;
 use crate::analyzer::ResultExt;
 use crate::{
     loader::ModuleInfo,
     ty::{self, Alias, Interface, PropertySignature, Ref, Tuple, Type, TypeExt, TypeLit, Union},
     type_facts::TypeFacts,
-    util::{contains_infer_type, contains_mark, MarkFinder, RemoveTypes},
-    validator::ValidateWith,
+    util::{contains_infer_type, contains_mark, MarkFinder},
     ValidationResult,
 };
 use fxhash::{FxHashMap, FxHashSet};
@@ -17,16 +17,11 @@ use iter::once;
 use once_cell::sync::Lazy;
 use rnode::Fold;
 use rnode::FoldWith;
-use rnode::NodeId;
 use rnode::Visit;
 use rnode::VisitMut;
 use rnode::VisitMutWith;
 use rnode::VisitWith;
 use slog::Logger;
-use stc_ts_ast_rnode::RArrayPat;
-use stc_ts_ast_rnode::RBindingIdent;
-use stc_ts_ast_rnode::RObjectPat;
-use stc_ts_ast_rnode::RObjectPatProp;
 use stc_ts_ast_rnode::RPat;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_ast_rnode::RTsKeywordType;
@@ -37,7 +32,6 @@ use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::name::Name;
-use stc_ts_types::Array;
 use stc_ts_types::Class;
 use stc_ts_types::ClassDef;
 use stc_ts_types::ClassProperty;
@@ -465,7 +459,7 @@ impl Scope<'_> {
                         e.insert(var);
                     }
                 }
-            } else if var.kind == VarDeclKind::Var {
+            } else if let VarKind::Var(VarDeclKind::Var) | VarKind::Fn = var.kind {
                 self.vars.insert(name, var);
             }
         }
@@ -634,11 +628,35 @@ impl Scope<'_> {
 
         None
     }
+
+    pub fn mark_as_super_called(&self) {
+        if self.kind == ScopeKind::Class {
+            *self.class.need_super_call.borrow_mut() = false;
+            return;
+        }
+
+        if let Some(parent) = self.parent {
+            parent.mark_as_super_called()
+        }
+    }
+
+    pub fn cannot_use_this_because_super_not_called(&self) -> bool {
+        let first = self.first(|scope| match scope.kind {
+            ScopeKind::Class => true,
+            ScopeKind::ArrowFn | ScopeKind::Fn => true,
+            _ => false,
+        });
+
+        match first {
+            Some(s) => s.kind == ScopeKind::Class && *s.class.need_super_call.borrow(),
+            None => false,
+        }
+    }
 }
 
 impl Analyzer<'_, '_> {
     /// Overrides a variable. Used for updating types.
-    pub(super) fn override_var(&mut self, kind: VarDeclKind, name: Id, ty: Type) -> ValidationResult<()> {
+    pub(super) fn override_var(&mut self, kind: VarKind, name: Id, ty: Type) -> ValidationResult<()> {
         self.declare_var(ty.span(), kind, name, Some(ty), None, true, true, true)?;
 
         Ok(())
@@ -750,6 +768,23 @@ impl Analyzer<'_, '_> {
             .map(Cow::Owned)
     }
 
+    /// This should be called after calling `register_type`.
+
+    pub(crate) fn store_unmergedable_type_span(&mut self, id: Id, span: Span) {
+        if self.is_builtin {
+            return;
+        }
+
+        let v = self.data.unmergable_type_decls.entry(id.clone()).or_default();
+        v.push(span);
+
+        if v.len() >= 2 {
+            for span in v.iter().copied() {
+                self.storage.report(Error::DuplicateName { span, name: id.clone() })
+            }
+        }
+    }
+
     pub(super) fn register_type(&mut self, name: Id, ty: Type) -> Type {
         slog::debug!(self.logger, "[({})/types] Registering: {:?}", self.scope.depth(), name);
 
@@ -772,8 +807,11 @@ impl Analyzer<'_, '_> {
 
                 if let Some(spans) = self.data.local_type_decls.get(&name) {
                     self.storage.report(Error::ExportMixedWithLocal { span: ty.span() });
-                    for span in spans.iter().copied() {
-                        self.storage.report(Error::ExportMixedWithLocal { span })
+                    for (i, span) in spans.iter().copied().enumerate() {
+                        self.storage.report(Error::ExportMixedWithLocal { span });
+                        if i == 0 {
+                            self.data.unmergable_type_decls.remove(&name);
+                        }
                     }
                 }
             } else {
@@ -786,8 +824,12 @@ impl Analyzer<'_, '_> {
                 if let Some(spans) = self.data.exported_type_decls.get(&name) {
                     self.storage.report(Error::ExportMixedWithLocal { span: ty.span() });
 
-                    for span in spans.iter().copied() {
-                        self.storage.report(Error::ExportMixedWithLocal { span })
+                    for (i, span) in spans.iter().copied().enumerate() {
+                        self.storage.report(Error::ExportMixedWithLocal { span });
+
+                        if i == 0 {
+                            self.data.unmergable_type_decls.remove(&name);
+                        }
                     }
                 }
             }
@@ -818,9 +860,11 @@ impl Analyzer<'_, '_> {
                 });
 
             // Override class definitions.
-            if should_override && self.scope.get_var(&name).is_some() {
-                self.override_var(VarDeclKind::Let, name.clone(), ty.clone())
-                    .report(&mut self.storage);
+            if should_override {
+                if let Some(kind) = self.scope.get_var(&name).map(|v| v.kind) {
+                    self.override_var(kind, name.clone(), ty.clone())
+                        .report(&mut self.storage);
+                }
             }
 
             if (self.scope.is_root() || self.scope.is_module()) && !ty.normalize().is_type_param() {
@@ -828,10 +872,20 @@ impl Analyzer<'_, '_> {
                     .store_private_type(self.ctx.module_id, name.clone(), ty.clone(), should_override);
 
                 match *name.sym() {
-                    js_word!("Array") | js_word!("Number") | js_word!("Boolean") | js_word!("String") => {
+                    js_word!("Object")
+                    | js_word!("Function")
+                    | js_word!("Array")
+                    | js_word!("Number")
+                    | js_word!("Boolean")
+                    | js_word!("String") => {
                         self.env.declare_global_type(name.sym().clone(), ty.clone());
                     }
-                    _ => {}
+                    _ => match &**name.sym() {
+                        "SymbolConstructor" => {
+                            self.env.declare_global_type(name.sym().clone(), ty.clone());
+                        }
+                        _ => {}
+                    },
                 }
             }
 
@@ -841,22 +895,23 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    pub fn declare_vars(&mut self, kind: VarDeclKind, pat: &RPat) -> ValidationResult<()> {
-        self.declare_vars_inner_with_ty(kind, pat, None, None)
+    pub fn declare_vars(&mut self, kind: VarKind, pat: &RPat) -> ValidationResult<()> {
+        self.declare_vars_inner_with_ty(kind, pat, None, None, None)
     }
 
     pub fn declare_vars_with_ty(
         &mut self,
-        kind: VarDeclKind,
+        kind: VarKind,
         pat: &RPat,
         ty: Option<Type>,
         actual_ty: Option<Type>,
+        default_ty: Option<Type>,
     ) -> ValidationResult<()> {
-        self.declare_vars_inner_with_ty(kind, pat, ty, actual_ty)
+        self.declare_vars_inner_with_ty(kind, pat, ty, actual_ty, default_ty)
     }
 
-    pub(super) fn declare_vars_inner(&mut self, kind: VarDeclKind, pat: &RPat) -> ValidationResult<()> {
-        self.declare_vars_inner_with_ty(kind, pat, None, None)
+    pub(super) fn declare_vars_inner(&mut self, kind: VarKind, pat: &RPat) -> ValidationResult<()> {
+        self.declare_vars_inner_with_ty(kind, pat, None, None, None)
     }
 
     pub(super) fn resolve_typeof(&mut self, span: Span, name: &RTsEntityName) -> ValidationResult {
@@ -869,7 +924,11 @@ impl Analyzer<'_, '_> {
                 if i.sym == js_word!("undefined") {
                     return Ok(Type::any(span));
                 }
-                self.type_of_var(i, TypeOfMode::RValue, None)?
+                let mut i = i.clone();
+                if i.span.is_dummy() {
+                    i.span = span;
+                }
+                self.type_of_var(&i, TypeOfMode::RValue, None)?
             }
             RTsEntityName::TsQualifiedName(n) => {
                 let ctx = Ctx {
@@ -903,7 +962,7 @@ impl Analyzer<'_, '_> {
         static ANY_VAR: Lazy<VarInfo> = Lazy::new(|| VarInfo {
             ty: Some(Type::any(DUMMY_SP)),
             actual_ty: Some(Type::any(DUMMY_SP)),
-            kind: VarDeclKind::Const,
+            kind: VarKind::Error,
             initialized: true,
             copied: false,
             is_actual_type_modified_in_loop: false,
@@ -1096,9 +1155,10 @@ impl Analyzer<'_, '_> {
         None
     }
 
+    /// TODO: Restore this(?)
     pub(super) fn mark_var_as_truthy(&mut self, name: Id) -> ValidationResult<()> {
         self.modify_var(name, |var| {
-            var.ty = var.ty.take().map(|ty| ty.remove_falsy());
+            // var.ty = var.ty.take().map(|ty| ty.remove_falsy());
             Ok(())
         })
     }
@@ -1115,7 +1175,7 @@ impl Analyzer<'_, '_> {
         }
 
         op(self.scope.vars.entry(name).or_insert_with(|| VarInfo {
-            kind: VarDeclKind::Let,
+            kind: VarKind::Error,
             initialized: true,
             ty: ty.clone(),
             actual_ty: ty,
@@ -1130,7 +1190,7 @@ impl Analyzer<'_, '_> {
     pub fn declare_var(
         &mut self,
         span: Span,
-        kind: VarDeclKind,
+        kind: VarKind,
         name: Id,
         ty: Option<Type>,
         actual_ty: Option<Type>,
@@ -1162,6 +1222,28 @@ impl Analyzer<'_, '_> {
             ty.assert_valid();
         }
 
+        let allow_multiple = allow_multiple && {
+            // Consult previous variable declarations to know if we can declare
+            // this variable.
+
+            let prev_vars = self.data.var_spans.entry(name.clone()).or_default();
+
+            (|| match kind {
+                VarKind::Var(v) => v == VarDeclKind::Var,
+                VarKind::Param => true,
+                // TODO: Allow if previous is class / enum (decl merging)
+                VarKind::Class => true,
+                VarKind::Fn => true,
+
+                VarKind::Import => true,
+
+                // TODO: Allow if previous is class / enum (decl merging)
+                VarKind::Enum => true,
+
+                VarKind::Error => true,
+            })()
+        };
+
         if !self.is_builtin
             && !is_override
             && !allow_multiple
@@ -1172,20 +1254,20 @@ impl Analyzer<'_, '_> {
             let spans = self.data.var_spans.entry(name.clone()).or_default();
             let err = !spans.is_empty();
 
-            spans.push(span);
+            spans.push((kind, span));
 
             if err {
-                for &span in &**spans {
+                for (_, span) in &**spans {
                     self.storage.report(Error::DuplicateVar {
                         name: name.clone(),
-                        span,
+                        span: *span,
                     });
                 }
             }
         }
 
         match kind {
-            VarDeclKind::Let | VarDeclKind::Const => {
+            VarKind::Var(VarDeclKind::Let | VarDeclKind::Const) => {
                 if *name.sym() == js_word!("let") || *name.sym() == js_word!("const") {
                     self.storage
                         .report(Error::LetOrConstIsNotValidIdInLetOrConstVarDecls { span });
@@ -1424,288 +1506,26 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
+    /// TODO: Merge with declare_vars_*
     pub fn declare_complex_vars(
         &mut self,
-        kind: VarDeclKind,
+        kind: VarKind,
         pat: &RPat,
         ty: Type,
         actual_ty: Option<Type>,
+        default_ty: Option<Type>,
     ) -> ValidationResult<()> {
-        ty.assert_valid();
-        if let Some(ty) = &actual_ty {
-            ty.assert_valid();
-        }
-
-        let span = pat.span();
-
-        if match pat {
-            RPat::Ident(..) => false,
-            _ => true,
-        } {
-            match ty.normalize() {
-                Type::Ref(..) => {
-                    let ty = self
-                        .expand_top_ref(ty.span(), Cow::Borrowed(&ty))
-                        .context("tried to expand reference to declare a complex variable")?;
-
-                    return self.declare_complex_vars(kind, pat, ty.into_owned(), actual_ty);
-                }
-                _ => {}
-            }
-        }
-
         match pat {
-            // TODO
-            RPat::Assign(p) => {
-                let _right = p
-                    .right
-                    .validate_with_args(self, (TypeOfMode::RValue, None, None))
-                    .report(&mut self.storage);
-                {
-                    // TODO: Use union of default value and rhs value.
-                    //
-                    // This is required to handle
-                    //
-                    // `let [{ [order(1)]: y } = order(0)] = [{}];`
-                    //
-                }
-
-                return self.declare_complex_vars(kind, &p.left, ty, actual_ty);
-            }
-
-            RPat::Ident(ref i) => {
-                slog::debug!(
-                    &self.logger,
-                    "declare_complex_vars: declaring {} as {}",
-                    i.id.sym,
-                    dump_type_as_string(&self.cm, &ty)
-                );
-                self.declare_var(
-                    span,
+            RPat::Assign(..) | RPat::Ident(..) | RPat::Array(..) | RPat::Object(..) | RPat::Rest(..) => self.add_vars(
+                pat,
+                Some(ty),
+                actual_ty,
+                default_ty,
+                DeclareVarsOpts {
                     kind,
-                    i.id.clone().into(),
-                    Some(ty),
-                    actual_ty,
-                    // initialized
-                    true,
-                    // let/const declarations does not allow multiple declarations with
-                    // same name
-                    kind == VarDeclKind::Var,
-                    false,
-                )?;
-                Ok(())
-            }
-
-            RPat::Array(RArrayPat { ref elems, .. }) => {
-                // Handle tuple
-                //
-                //      const [a , setA] = useState();
-                //
-
-                let ty = self
-                    .get_iterator(
-                        span,
-                        Cow::Owned(ty),
-                        GetIteratorOpts {
-                            disallow_str: true,
-                            ..Default::default()
-                        },
-                    )
-                    .context("tried to convert a type to an iterator to assign with an array pattern.")
-                    .unwrap_or_else(|err| {
-                        self.storage.report(err);
-                        Cow::Owned(Type::any(span))
-                    });
-
-                for (i, elem) in elems.iter().enumerate() {
-                    if let Some(elem) = elem {
-                        let elem_ty = self
-                            .get_element_from_iterator(span, Cow::Borrowed(&ty), i)
-                            .context(
-                                "tried to get the type of nth element from iterator to declare vars with an array \
-                                 pattern",
-                            )?
-                            .into_owned();
-                        // TODO: actual_ty
-                        self.declare_complex_vars(kind, elem, elem_ty, None)?;
-                    }
-                }
-
-                Ok(())
-            }
-
-            RPat::Object(RObjectPat { ref props, .. }) => {
-                let should_use_no_such_property = match ty.normalize() {
-                    Type::TypeLit(..) => false,
-                    _ => true,
-                };
-
-                // TODO: Normalize static
-                //
-                let mut used_keys = vec![];
-
-                for prop in props {
-                    match prop {
-                        RObjectPatProp::KeyValue(prop) => {
-                            let mut key = prop.key.validate_with(self)?;
-                            used_keys.push(key.clone());
-
-                            let ctx = Ctx {
-                                should_not_create_indexed_type_from_ty_els: true,
-                                diallow_unknown_object_property: true,
-                                ..self.ctx
-                            };
-                            let prop_ty =
-                                self.with_ctx(ctx)
-                                    .access_property(span, &ty, &key, TypeOfMode::RValue, IdCtx::Var);
-
-                            match prop_ty {
-                                Ok(ty) => {
-                                    // TODO: actual_ty
-                                    self.declare_complex_vars(kind, &prop.value, ty, None)
-                                        .report(&mut self.storage);
-                                }
-
-                                Err(err) => {
-                                    self.storage.report(err.convert(|err| match err {
-                                        Error::NoSuchProperty { span, .. }
-                                        | Error::NoSuchPropertyInClass { span, .. }
-                                            if !should_use_no_such_property =>
-                                        {
-                                            Error::NoInitAndNoDefault { span }
-                                        }
-                                        _ => err,
-                                    }));
-
-                                    self.declare_vars_inner_with_ty(kind, &prop.value, None, None)
-                                        .report(&mut self.storage);
-                                }
-                            }
-                        }
-                        RObjectPatProp::Assign(prop) => {
-                            let mut key = Key::Normal {
-                                span: prop.key.span,
-                                sym: prop.key.sym.clone(),
-                            };
-                            used_keys.push(key.clone());
-
-                            let ctx = Ctx {
-                                should_not_create_indexed_type_from_ty_els: true,
-                                diallow_unknown_object_property: true,
-                                ..self.ctx
-                            };
-                            let prop_ty =
-                                self.with_ctx(ctx)
-                                    .access_property(span, &ty, &key, TypeOfMode::RValue, IdCtx::Var);
-
-                            match prop_ty {
-                                Ok(prop_ty) => {
-                                    let prop_ty = prop_ty.cheap();
-
-                                    match &prop.value {
-                                        Some(default) => {
-                                            let default_value_type = default
-                                                .validate_with_default(self)
-                                                .context("tried to validate default value of an assignment pattern")
-                                                .report(&mut self.storage);
-
-                                            self.declare_complex_vars(
-                                                kind,
-                                                &RPat::Ident(RBindingIdent {
-                                                    node_id: NodeId::invalid(),
-                                                    id: prop.key.clone(),
-                                                    type_ann: None,
-                                                }),
-                                                prop_ty.clone(),
-                                                None,
-                                            )
-                                            .report(&mut self.storage);
-
-                                            self.try_assign_pat(
-                                                span,
-                                                &RPat::Ident(RBindingIdent {
-                                                    node_id: NodeId::invalid(),
-                                                    id: prop.key.clone(),
-                                                    type_ann: None,
-                                                }),
-                                                &prop_ty,
-                                            )
-                                            .context("tried to assign default values")
-                                            .report(&mut self.storage);
-                                        }
-                                        None => {
-                                            // TODO: actual_ty
-                                            self.declare_complex_vars(
-                                                kind,
-                                                &RPat::Ident(RBindingIdent {
-                                                    node_id: NodeId::invalid(),
-                                                    id: prop.key.clone(),
-                                                    type_ann: None,
-                                                }),
-                                                prop_ty,
-                                                None,
-                                            )
-                                            .report(&mut self.storage);
-                                        }
-                                    }
-                                }
-                                Err(err) => {
-                                    self.storage.report(err.convert(|err| match err {
-                                        Error::NoSuchProperty { span, .. }
-                                        | Error::NoSuchPropertyInClass { span, .. }
-                                            if !should_use_no_such_property =>
-                                        {
-                                            Error::NoInitAndNoDefault { span }
-                                        }
-                                        _ => err,
-                                    }));
-
-                                    self.declare_vars_inner_with_ty(
-                                        kind,
-                                        &RPat::Ident(RBindingIdent {
-                                            node_id: NodeId::invalid(),
-                                            id: prop.key.clone(),
-                                            type_ann: None,
-                                        }),
-                                        None,
-                                        None,
-                                    )
-                                    .report(&mut self.storage);
-                                }
-                            }
-                        }
-                        RObjectPatProp::Rest(pat) => {
-                            let rest_ty = self
-                                .exclude_props(pat.span(), &ty, &used_keys)
-                                .context("tried to exclude keys for assignment with a object rest pattern")?;
-
-                            return self
-                                .declare_complex_vars(kind, &pat.arg, rest_ty, None)
-                                .context("tried to assign to an object rest pattern");
-                        }
-                    }
-                }
-
-                return Ok(());
-            }
-
-            RPat::Rest(pat) => {
-                let ty = Type::Array(Array {
-                    span,
-                    elem_type: box ty,
-                });
-                return self.declare_complex_vars(
-                    kind,
-                    &pat.arg,
-                    ty,
-                    actual_ty.map(|ty| {
-                        Type::Array(Array {
-                            span,
-                            elem_type: box ty,
-                        })
-                    }),
-                );
-            }
+                    use_iterator_for_array: true,
+                },
+            ),
 
             _ => unimplemented!("declare_complex_vars({:#?}, {:#?})", pat, ty),
         }
@@ -1799,7 +1619,7 @@ impl Analyzer<'_, '_> {
 
 #[derive(Debug, Clone)]
 pub(crate) struct VarInfo {
-    pub kind: VarDeclKind,
+    pub kind: VarKind,
     pub initialized: bool,
 
     /// Declared type.
@@ -2715,7 +2535,7 @@ impl Fold<Type> for Expander<'_, '_, '_> {
             _ => {}
         }
         let before = dump_type_as_string(&self.analyzer.cm, &ty);
-        let expanded = self.expand_type(ty);
+        let expanded = self.expand_type(ty).fixed();
 
         if !self.analyzer.is_builtin {
             expanded.assert_valid();

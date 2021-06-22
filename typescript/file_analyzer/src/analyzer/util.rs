@@ -15,10 +15,12 @@ use stc_ts_ast_rnode::RTsType;
 use stc_ts_errors::Error;
 use stc_ts_storage::Storage;
 use stc_ts_type_ops::is_str_lit_or_union;
+use stc_ts_type_ops::Fix;
 use stc_ts_types::Class;
 use stc_ts_types::Enum;
 use stc_ts_types::EnumVariant;
 use stc_ts_types::TypeElement;
+use stc_ts_types::Union;
 use stc_ts_types::{Id, IndexedAccessType, Intersection, ModuleId, QueryExpr, QueryType, Ref, Tuple};
 use std::iter::once;
 use swc_common::Span;
@@ -374,4 +376,20 @@ impl Visit<RTsType> for VarVisitor<'_> {
 /// Noop as we don't care about types.
 impl Visit<RTsEntityName> for VarVisitor<'_> {
     fn visit(&mut self, _: &RTsEntityName) {}
+}
+
+/// Returns union if both of `opt1` and `opt2` is [Some].
+pub(crate) fn opt_union(span: Span, opt1: Option<Type>, opt2: Option<Type>) -> Option<Type> {
+    match (opt1, opt2) {
+        (None, None) => None,
+        (None, Some(v)) => Some(v),
+        (Some(v), None) => Some(v),
+        (Some(t1), Some(t2)) => Some(
+            Type::Union(Union {
+                span,
+                types: vec![t1, t2],
+            })
+            .fixed(),
+        ),
+    }
 }

@@ -80,7 +80,7 @@ pub fn dump_type_as_string(cm: &Lrc<SourceMap>, t: &Type) -> String {
     }
 
     match t.normalize() {
-        Type::ClassDef(..) => {
+        Type::ClassDef(..) | Type::Class(..) => {
             writeln!(s, "\n{:?}", t.normalize()).unwrap();
         }
         _ => {}
@@ -121,12 +121,20 @@ pub fn assert_no_ref(ty: &Type) {
 
 pub fn print_backtrace() {
     if cfg!(debug_assertions) {
+        let s = dump_backtace();
+
+        println!("{}", s);
+    }
+}
+
+pub fn dump_backtace() -> String {
+    if cfg!(debug_assertions) {
         let bt = Backtrace::new();
         let bt = filter(bt);
 
-        let s = format!("{:?}", bt);
-
-        println!("{}", s);
+        format!("{:?}", bt)
+    } else {
+        String::new()
     }
 }
 

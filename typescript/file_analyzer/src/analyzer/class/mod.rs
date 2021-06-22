@@ -9,6 +9,7 @@ use super::util::VarVisitor;
 use super::Analyzer;
 use super::Ctx;
 use super::ScopeKind;
+use crate::analyzer::scope::VarKind;
 use crate::env::ModuleConfig;
 use crate::ty::LitGeneralizer;
 use crate::ty::TypeExt;
@@ -17,15 +18,11 @@ use crate::validator;
 use crate::validator::ValidateWith;
 use crate::ValidationResult;
 use itertools::Itertools;
-use rnode::FoldWith;
 use rnode::IntoRNode;
 use rnode::NodeId;
 use rnode::NodeIdGenerator;
 use rnode::VisitWith;
-use stc_ts_ast_rnode::RAssignPat;
-use stc_ts_ast_rnode::RBindingIdent;
-use stc_ts_ast_rnode::RClass;
-use stc_ts_ast_rnode::RClassDecl;
+use rnode::{FoldWith, Visit};
 use stc_ts_ast_rnode::RClassExpr;
 use stc_ts_ast_rnode::RClassMember;
 use stc_ts_ast_rnode::RClassMethod;
@@ -52,6 +49,10 @@ use stc_ts_ast_rnode::RTsTypeAliasDecl;
 use stc_ts_ast_rnode::RTsTypeAnn;
 use stc_ts_ast_rnode::RVarDecl;
 use stc_ts_ast_rnode::RVarDeclarator;
+use stc_ts_ast_rnode::{RArrowExpr, RClass};
+use stc_ts_ast_rnode::{RAssignPat, RSuper};
+use stc_ts_ast_rnode::{RBindingIdent, RFunction};
+use stc_ts_ast_rnode::{RClassDecl, RSeqExpr};
 use stc_ts_errors::DebugExt;
 use stc_ts_errors::Error;
 use stc_ts_errors::Errors;
@@ -76,9 +77,11 @@ use stc_ts_types::Type;
 use stc_ts_utils::PatExt;
 use stc_utils::TryOpt;
 use std::borrow::Cow;
+use std::cell::RefCell;
 use std::mem::replace;
 use std::mem::take;
 use swc_atoms::js_word;
+use swc_common::iter::IdentifyLast;
 use swc_common::EqIgnoreSpan;
 use swc_common::Span;
 use swc_common::Spanned;
@@ -95,7 +98,7 @@ pub(crate) struct ClassState {
     /// Used only while valdiation consturctors.
     ///
     /// `false` means `this` can be used.
-    pub need_super_call: bool,
+    pub need_super_call: RefCell<bool>,
 }
 
 impl Analyzer<'_, '_> {
@@ -219,7 +222,8 @@ impl Analyzer<'_, '_> {
 
         if !self.ctx.in_declare && self.rule().no_implicit_any {
             if value.is_none() {
-                self.storage.report(Error::ImplicitAny { span: key.span() })
+                self.storage
+                    .report(Error::ImplicitAny { span: key.span() }.context("private class proerty"))
             }
         }
 
@@ -239,82 +243,123 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, c: &RConstructor) -> ValidationResult<ConstructorSignature> {
+    fn validate(&mut self, c: &RConstructor, super_class: Option<&Type>) -> ValidationResult<ConstructorSignature> {
         self.record(c);
 
         let c_span = c.span();
 
-        self.with_child(ScopeKind::Constructor, Default::default(), |child: &mut Analyzer| {
-            child.ctx.in_declare |= c.body.is_none();
+        if !self.is_builtin
+            && !self.ctx.ignore_errors
+            && self.ctx.in_class_with_super
+            && c.body.is_some()
+            && match super_class.map(Type::normalize) {
+                Some(Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsNullKeyword | TsKeywordTypeKind::TsUndefinedKeyword,
+                    ..
+                })) => false,
+                _ => true,
+            }
+        {
+            let mut v = ConstructorSuperCallFinder::default();
+            c.visit_with(&mut v);
+            if !v.has_valid_super_call {
+                self.storage.report(Error::SuperNotCalled { span: c.span });
+            } else {
+                debug_assert_eq!(self.scope.kind(), ScopeKind::Class);
+                *self.scope.class.need_super_call.borrow_mut() = true;
+            }
 
-            let RConstructor { params, body, .. } = c;
+            for span in v.nested_super_calls {
+                self.storage.report(Error::SuperInNestedFunction { span })
+            }
+        }
 
-            {
-                // Validate params
-                // TODO: Move this to parser
-                let mut has_optional = false;
-                for p in params.iter() {
-                    if has_optional {
-                        match p {
-                            RParamOrTsParamProp::Param(RParam { pat, .. }) => match pat {
-                                RPat::Ident(RBindingIdent {
-                                    id: RIdent { optional: true, .. },
-                                    ..
-                                })
-                                | RPat::Rest(..) => {}
-                                _ => {
-                                    child.storage.report(Error::TS1016 { span: p.span() });
+        let ctx = Ctx {
+            in_declare: self.ctx.in_declare || c.body.is_none(),
+            allow_new_target: true,
+            ..self.ctx
+        };
+        self.with_ctx(ctx)
+            .with_child(ScopeKind::Constructor, Default::default(), |child: &mut Analyzer| {
+                let RConstructor { params, body, .. } = c;
+
+                {
+                    // Validate params
+                    // TODO: Move this to parser
+                    let mut has_optional = false;
+                    for p in params.iter() {
+                        if has_optional {
+                            match p {
+                                RParamOrTsParamProp::Param(RParam { pat, .. }) => match pat {
+                                    RPat::Ident(RBindingIdent {
+                                        id: RIdent { optional: true, .. },
+                                        ..
+                                    })
+                                    | RPat::Rest(..) => {}
+                                    _ => {
+                                        child.storage.report(Error::TS1016 { span: p.span() });
+                                    }
+                                },
+                                _ => {}
+                            }
+                        }
+
+                        match *p {
+                            RParamOrTsParamProp::Param(RParam {
+                                pat:
+                                    RPat::Ident(RBindingIdent {
+                                        id: RIdent { optional, .. },
+                                        ..
+                                    }),
+                                ..
+                            }) => {
+                                if optional {
+                                    has_optional = true;
                                 }
-                            },
+                            }
                             _ => {}
                         }
                     }
-
-                    match *p {
-                        RParamOrTsParamProp::Param(RParam {
-                            pat:
-                                RPat::Ident(RBindingIdent {
-                                    id: RIdent { optional, .. },
-                                    ..
-                                }),
-                            ..
-                        }) => {
-                            if optional {
-                                has_optional = true;
-                            }
-                        }
-                        _ => {}
-                    }
                 }
-            }
 
-            let mut ps = Vec::with_capacity(params.len());
-            for param in params.iter() {
-                let mut names = vec![];
+                let mut ps = Vec::with_capacity(params.len());
+                for param in params.iter() {
+                    let mut names = vec![];
 
-                let mut visitor = VarVisitor { names: &mut names };
+                    let mut visitor = VarVisitor { names: &mut names };
 
-                param.visit_with(&mut visitor);
+                    param.visit_with(&mut visitor);
 
-                child.scope.declaring.extend(names.clone());
+                    child.scope.declaring.extend(names.clone());
 
-                let p: FnParam = param.validate_with(child)?;
+                    let p: FnParam = {
+                        let ctx = Ctx {
+                            in_constructor_param: true,
+                            ..child.ctx
+                        };
 
-                ps.push(p);
+                        param.validate_with(&mut *child.with_ctx(ctx))?
+                    };
 
-                child.scope.remove_declaring(names);
-            }
+                    ps.push(p);
 
-            c.body.visit_with(child);
+                    child.scope.remove_declaring(names);
+                }
 
-            Ok(ConstructorSignature {
-                accessibility: c.accessibility,
-                span: c.span,
-                params: ps,
-                ret_ty: None,
-                type_params: None,
+                if let Some(body) = &c.body {
+                    child
+                        .visit_stmts_for_return(c.span, false, false, &body.stmts)
+                        .report(&mut child.storage);
+                }
+
+                Ok(ConstructorSignature {
+                    accessibility: c.accessibility,
+                    span: c.span,
+                    params: ps,
+                    ret_ty: None,
+                    type_params: None,
+                })
             })
-        })
     }
 }
 
@@ -331,17 +376,56 @@ impl Analyzer<'_, '_> {
         }
 
         match &p.param {
-            RTsParamPropParam::Ident(ref i)
-            | RTsParamPropParam::Assign(RAssignPat {
-                left: box RPat::Ident(ref i),
-                ..
-            }) => {
+            RTsParamPropParam::Ident(ref i) => {
                 let ty: Option<Type> = i.type_ann.validate_with(self).try_opt()?;
                 let ty = ty.map(|ty| ty.cheap());
 
                 self.declare_var(
                     i.id.span,
-                    VarDeclKind::Let,
+                    VarKind::Param,
+                    i.id.clone().into(),
+                    ty.clone(),
+                    None,
+                    true,
+                    false,
+                    false,
+                )?;
+
+                Ok(FnParam {
+                    span: p.span,
+                    required: !i.id.optional,
+                    pat: RPat::Ident(i.clone()),
+                    ty: box ty.unwrap_or_else(|| Type::any(i.id.span)),
+                })
+            }
+            RTsParamPropParam::Assign(RAssignPat {
+                left: box RPat::Ident(ref i),
+                right,
+                ..
+            }) => {
+                let ty: Option<Type> = i.type_ann.validate_with(self).try_opt()?;
+                let ty = ty.map(|ty| ty.cheap());
+
+                let right = right.validate_with_default(self).report(&mut self.storage);
+
+                if let Some(ty) = &ty {
+                    if let Some(right) = right {
+                        self.assign_with_opts(
+                            &mut Default::default(),
+                            AssignOpts {
+                                span: right.span(),
+                                ..Default::default()
+                            },
+                            &ty,
+                            &right,
+                        )
+                        .report(&mut self.storage);
+                    }
+                }
+
+                self.declare_var(
+                    i.id.span,
+                    VarKind::Param,
                     i.id.clone().into(),
                     ty.clone(),
                     None,
@@ -657,7 +741,13 @@ impl Analyzer<'_, '_> {
             RClassMember::PrivateProp(m) => Some(m.validate_with(self).map(From::from)?),
             RClassMember::Empty(..) => None,
 
-            RClassMember::Constructor(v) => Some(ClassMember::Constructor(v.validate_with(self)?)),
+            RClassMember::Constructor(v) => {
+                if self.is_builtin {
+                    Some(v.validate_with_default(self).map(From::from)?)
+                } else {
+                    unreachable!("constructors should be handled by class handler")
+                }
+            }
             RClassMember::Method(method) => {
                 let v = method.validate_with(self)?;
 
@@ -716,12 +806,100 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
+        let mut ignore_not_following_for = vec![];
+
+        {
+            // Check for mixed `abstract`.
+            //
+            // Class members with same name should be all abstract or all concrete.
+
+            let mut spans = vec![];
+            let mut name: Option<&RPropName> = None;
+            let mut last_was_abstract = false;
+
+            for (last, (idx, m)) in c.body.iter().enumerate().identify_last() {
+                match m {
+                    RClassMember::Method(m) => {
+                        let span = m.key.span();
+
+                        if name.is_none() {
+                            name = Some(&m.key);
+                            spans.push((span, m.is_abstract));
+                            last_was_abstract = m.is_abstract;
+                            continue;
+                        }
+
+                        if last {
+                            if name.unwrap().eq_ignore_span(&m.key) {
+                                spans.push((span, m.is_abstract));
+                                last_was_abstract = m.is_abstract;
+                            }
+                        }
+
+                        if last || !name.unwrap().eq_ignore_span(&m.key) {
+                            let report_error_for_abstract = !last_was_abstract;
+
+                            let spans_for_error = take(&mut spans);
+
+                            let has_abstract = spans_for_error.iter().any(|(_, v)| *v == true);
+                            let has_concrete = spans_for_error.iter().any(|(_, v)| *v == false);
+
+                            if has_abstract && has_concrete {
+                                ignore_not_following_for.push(name.unwrap().clone());
+
+                                for (span, is_abstract) in spans_for_error {
+                                    if report_error_for_abstract && is_abstract {
+                                        self.storage.report(Error::AbstractAndConcreteIsMixed { span })
+                                    } else if !report_error_for_abstract && !is_abstract {
+                                        self.storage.report(Error::AbstractAndConcreteIsMixed { span })
+                                    }
+                                }
+                            }
+
+                            name = None;
+
+                            // Note: This span is for next name.
+                            spans.push((span, m.is_abstract));
+                            continue;
+                        }
+
+                        // At this point, previous name is identical with current name.
+
+                        last_was_abstract = m.is_abstract;
+
+                        spans.push((span, m.is_abstract));
+                    }
+                    _ => {
+                        // Other than method.
+
+                        if name.is_none() {
+                            continue;
+                        }
+
+                        let is_not_finished = c.body[idx..].iter().any(|member| match member {
+                            RClassMember::Method(m) => m.key.eq_ignore_span(&name.unwrap()),
+                            _ => false,
+                        });
+
+                        if is_not_finished {
+                            // In this case, we report `abstract methods must be
+                            // sequential`
+                            if let Some((span, _)) = spans.last() {
+                                self.storage
+                                    .report(Error::AbstractClassMethodShouldBeSequntial { span: *span })
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         let mut errors = Errors::default();
         // Span of name
         let mut spans = vec![];
         let mut name: Option<&RPropName> = None;
 
-        for (idx, m) in c.body.iter().enumerate() {
+        for (last, (idx, m)) in c.body.iter().enumerate().identify_last() {
             macro_rules! check {
                 ($m:expr, $body:expr, $is_constructor:expr) => {{
                     let m = $m;
@@ -806,8 +984,19 @@ impl Analyzer<'_, '_> {
             }
 
             match *m {
-                RClassMember::Constructor(ref m) => check!(m, m.body, true),
+                RClassMember::Constructor(ref m) => {
+                    if !c.is_abstract {
+                        check!(m, m.body, true)
+                    }
+                }
                 RClassMember::Method(ref m @ RClassMethod { is_abstract: false, .. }) => {
+                    if ignore_not_following_for
+                        .iter()
+                        .any(|item| is_prop_name_eq_include_computed(&item, &m.key))
+                    {
+                        continue;
+                    }
+
                     check!(m, m.function.body, false)
                 }
                 _ => {}
@@ -974,59 +1163,87 @@ impl Analyzer<'_, '_> {
             return;
         }
 
-        let name_span = name.unwrap_or_else(|| {
+        let span = name.unwrap_or_else(|| {
             // TODD: c.span().lo() + BytePos(5) (aka class token)
             class.span
         });
+
+        if let Some(super_ty) = &class.super_class {
+            self.validate_super_class(super_ty);
+
+            self.validate_class_impls(span, &class.body, &super_ty)
+        }
+    }
+
+    fn validate_class_impls(&mut self, span: Span, members: &[ClassMember], super_ty: &Type) {
+        let super_ty = self.normalize(Some(span), Cow::Borrowed(super_ty), Default::default());
+        let super_ty = match super_ty {
+            Ok(v) => v,
+            Err(err) => {
+                self.storage.report(err);
+                return;
+            }
+        };
+
         let mut errors = Errors::default();
+        let mut new_members = vec![];
 
         let res: ValidationResult<()> = try {
-            if let Some(ref super_ty) = class.super_class {
-                self.validate_super_class(super_ty);
-
-                match super_ty.normalize() {
-                    Type::ClassDef(sc) => {
-                        'outer: for sm in &sc.body {
-                            match sm {
-                                ClassMember::Method(sm) => {
-                                    if sm.is_optional || !sm.is_abstract {
-                                        // TODO: Validate parameters
-
-                                        // TODO: Validate return type
-                                        continue 'outer;
-                                    }
-
-                                    for m in &class.body {
-                                        match m {
-                                            ClassMember::Method(ref m) => {
-                                                if !&m.key.type_eq(&sm.key) {
-                                                    continue;
-                                                }
-
-                                                // TODO: Validate parameters
-
-                                                // TODO: Validate return type
-                                                continue 'outer;
-                                            }
-                                            _ => {}
-                                        }
-                                    }
-                                }
-                                _ => {
-                                    // TODO: Verify
+            match super_ty.normalize() {
+                Type::ClassDef(sc) => {
+                    'outer: for sm in &sc.body {
+                        match sm {
+                            ClassMember::Method(super_method) => {
+                                if !super_method.is_abstract {
+                                    new_members.push(sm.clone());
                                     continue 'outer;
                                 }
+                                if super_method.is_optional {
+                                    // TODO: Validate parameters
+
+                                    // TODO: Validate return type
+                                    continue 'outer;
+                                }
+
+                                for m in members {
+                                    match m {
+                                        ClassMember::Method(ref m) => {
+                                            if !&m.key.type_eq(&super_method.key) {
+                                                continue;
+                                            }
+
+                                            // TODO: Validate parameters
+
+                                            // TODO: Validate return type
+                                            continue 'outer;
+                                        }
+                                        _ => {}
+                                    }
+                                }
                             }
-
-                            errors.push(Error::TS2515 { span: name_span });
-
-                            if sc.is_abstract {
-                                // TODO: Check super class of super class
+                            _ => {
+                                // TODO: Verify
+                                continue 'outer;
                             }
                         }
+
+                        if let Some(key) = sm.key() {
+                            errors.push(Error::ClassDoesNotImplementMemeber {
+                                span,
+                                key: box key.into_owned(),
+                            });
+                        }
                     }
-                    _ => {}
+
+                    if sc.is_abstract {
+                        // Check super class of super class
+                        if let Some(super_ty) = &sc.super_class {
+                            new_members.extend(members.to_vec());
+                            self.validate_class_impls(span, &new_members, &super_ty);
+                        }
+                    }
                 }
+                _ => {}
             }
         };
 
@@ -1240,7 +1457,7 @@ impl Analyzer<'_, '_> {
 
                 // TODO: Check for implements
 
-                child.check_ambient_methods(c, false)?;
+                child.check_ambient_methods(c, false).report(&mut child.storage);
 
                 child.scope.super_class = super_class
                     .clone()
@@ -1466,7 +1683,7 @@ impl Analyzer<'_, '_> {
                             RClassMember::Constructor(c) => Some((i, c)),
                             _ => None,
                         }) {
-                            let member = constructor.validate_with(child)?;
+                            let member = constructor.validate_with_args(child, super_class.as_deref())?;
                             if constructor.body.is_some() {
                                 ambient_cons.push(member.clone());
                             } else {
@@ -1580,15 +1797,21 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                let body = body.into_iter().map(|v| v.1).collect_vec();
+
                 let class = ClassDef {
                     span: c.span,
                     name,
                     is_abstract: c.is_abstract,
                     super_class,
                     type_params,
-                    body: body.into_iter().map(|v| v.1).collect(),
+                    body,
                     implements,
                 };
+
+                child
+                    .validate_index_signature_of_class(&class)
+                    .report(&mut child.storage);
 
                 child.validate_inherited_members_from_super_class(None, &class);
                 child.validate_inherited_members_from_interfaces(None, &class);
@@ -1628,7 +1851,7 @@ impl Analyzer<'_, '_> {
 
                     match analyzer.declare_var(
                         ty.span(),
-                        VarDeclKind::Var,
+                        VarKind::Class,
                         i.into(),
                         Some(ty),
                         None,
@@ -1673,6 +1896,98 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
+    /// If a class have an index signature, properties should be compatible with
+    /// it.
+    fn validate_index_signature_of_class(&mut self, class: &ClassDef) -> ValidationResult<()> {
+        let index = match self
+            .get_index_signature_from_class(class.span, class)
+            .context("tried to get index signature from a class")?
+        {
+            Some(v) => v,
+            None => return Ok(()),
+        };
+        let index_ret_ty = match &index.type_ann {
+            Some(v) => v,
+            // It's `any`, so we don't have to verify.
+            None => return Ok(()),
+        };
+
+        for member in &class.body {
+            match member {
+                // This is actually property.
+                ClassMember::Method(Method {
+                    kind: MethodKind::Getter,
+                    key,
+                    ret_ty,
+                    ..
+                }) => {
+                    let span = key.span();
+
+                    if !index.params[0].ty.is_kwd(TsKeywordTypeKind::TsStringKeyword)
+                        && self
+                            .assign(&mut Default::default(), &index.params[0].ty, &key.ty(), span)
+                            .is_err()
+                    {
+                        continue;
+                    }
+
+                    self.assign_with_opts(
+                        &mut Default::default(),
+                        AssignOpts {
+                            span,
+                            ..Default::default()
+                        },
+                        &index_ret_ty,
+                        &ret_ty,
+                    )
+                    .convert_err(|_err| {
+                        if index.params[0].ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword) {
+                            Error::ClassMemeberNotCompatibleWithNumericIndexSignature { span }
+                        } else {
+                            Error::ClassMemeberNotCompatibleWithStringIndexSignature { span }
+                        }
+                    })?;
+                }
+
+                ClassMember::Property(ClassProperty {
+                    key,
+                    value: Some(value),
+                    ..
+                }) => {
+                    let span = key.span();
+
+                    if !index.params[0].ty.is_kwd(TsKeywordTypeKind::TsStringKeyword)
+                        && self
+                            .assign(&mut Default::default(), &index.params[0].ty, &key.ty(), span)
+                            .is_err()
+                    {
+                        continue;
+                    }
+
+                    self.assign_with_opts(
+                        &mut Default::default(),
+                        AssignOpts {
+                            span,
+                            ..Default::default()
+                        },
+                        &index_ret_ty,
+                        &value,
+                    )
+                    .convert_err(|_err| {
+                        if index.params[0].ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword) {
+                            Error::ClassMemeberNotCompatibleWithNumericIndexSignature { span }
+                        } else {
+                            Error::ClassMemeberNotCompatibleWithStringIndexSignature { span }
+                        }
+                    })?;
+                }
+                _ => {}
+            }
+        }
+
+        Ok(())
+    }
+
     fn validate_constructor_overloads(
         &mut self,
         ambient: &[ConstructorSignature],
@@ -1764,7 +2079,7 @@ impl Analyzer<'_, '_> {
 
         match self.declare_var(
             ty.span(),
-            VarDeclKind::Var,
+            VarKind::Class,
             c.ident.clone().into(),
             Some(ty),
             None,
@@ -1792,5 +2107,65 @@ fn from_pat(pat: RPat) -> RTsFnParam {
         RPat::Object(v) => v.into(),
         RPat::Assign(v) => from_pat(*v.left),
         _ => unreachable!("constructor with parameter {:?}", pat),
+    }
+}
+
+#[derive(Debug, Default)]
+struct ConstructorSuperCallFinder {
+    has_valid_super_call: bool,
+
+    in_nested: bool,
+    nested_super_calls: Vec<Span>,
+}
+
+impl Visit<RSuper> for ConstructorSuperCallFinder {
+    fn visit(&mut self, s: &RSuper) {
+        if self.in_nested {
+            self.nested_super_calls.push(s.span);
+        } else {
+            self.has_valid_super_call = true;
+        }
+    }
+}
+
+impl Visit<RFunction> for ConstructorSuperCallFinder {
+    fn visit(&mut self, f: &RFunction) {
+        f.decorators.visit_with(self);
+        f.params.visit_with(self);
+
+        let old = self.in_nested;
+        self.in_nested = true;
+        f.body.visit_with(self);
+        self.in_nested = old;
+    }
+}
+
+impl Visit<RArrowExpr> for ConstructorSuperCallFinder {
+    fn visit(&mut self, f: &RArrowExpr) {
+        f.params.visit_with(self);
+
+        let old = self.in_nested;
+        self.in_nested = true;
+        f.body.visit_with(self);
+        self.in_nested = old;
+    }
+}
+
+/// Ignore nested classes.
+impl Visit<RClass> for ConstructorSuperCallFinder {
+    fn visit(&mut self, _: &RClass) {}
+}
+
+/// computedPropertyNames30_ES5.ts says
+///
+/// `Ideally, we would capture this. But the reference is
+/// illegal, and not capturing this is consistent with
+/// treatment of other similar violations.`
+impl Visit<RSeqExpr> for ConstructorSuperCallFinder {
+    fn visit(&mut self, v: &RSeqExpr) {
+        if self.in_nested {
+            return;
+        }
+        v.visit_children_with(self);
     }
 }
