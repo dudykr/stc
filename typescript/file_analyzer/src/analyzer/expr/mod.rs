@@ -2419,7 +2419,11 @@ impl Analyzer<'_, '_> {
 
             Type::Constructor(c) => match prop {
                 Key::Num(_) | Key::BigInt(_) => return Ok(Type::any(span)),
-                _ => {}
+                _ => {
+                    return self
+                        .access_property(span, &c.type_ann, prop, type_mode, id_ctx)
+                        .context("tried to access property of the return type of a constructor")
+                }
             },
 
             Type::Conditional(..) => match prop {
