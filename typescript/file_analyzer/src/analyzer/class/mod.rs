@@ -1793,6 +1793,7 @@ impl Analyzer<'_, '_> {
                                             is_optional: false,
                                             readonly: p.readonly,
                                             definite: false,
+                                            accessor: Default::default(),
                                         }),
                                     ));
                                 }

@@ -20,6 +20,7 @@ impl Analyzer<'_, '_> {
                 is_optional: p.optional,
                 readonly: p.readonly,
                 definite: false,
+                accessor: p.accessor,
             }))),
             TypeElement::Method(m) => Ok(Some(ClassMember::Method(Method {
                 span: m.span,

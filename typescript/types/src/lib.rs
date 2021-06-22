@@ -1964,7 +1964,7 @@ where
 ///
 /// [TypeEq] and [EqIgnoreSpan] always return true because this struct is
 /// metadata.
-#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Visit)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Visit)]
 pub struct Accessor {
     pub getter: bool,
     pub setter: bool,
