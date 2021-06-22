@@ -15,7 +15,7 @@ use stc_ts_ast_rnode::{
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    name::Name, Array, Class, ClassDef, ClassMember, ComputedKey, ConstructorSignature, Id, IdCtx, Instance,
+    name::Name, Accessor, Array, Class, ClassDef, ClassMember, ComputedKey, ConstructorSignature, Id, IdCtx, Instance,
     Intersection, Key, MethodSignature, Operator, PropertySignature, QueryExpr, Tuple, TupleElement, Type, TypeElement,
     TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
 };
@@ -823,6 +823,7 @@ impl Analyzer<'_, '_> {
                         type_ann: Some(e.ty.clone()),
                         type_params: Default::default(),
                         metadata: Default::default(),
+                        accessor: Default::default(),
                     }));
                 }
 
@@ -843,6 +844,10 @@ impl Analyzer<'_, '_> {
                     })),
                     type_params: Default::default(),
                     metadata: Default::default(),
+                    accessor: Accessor {
+                        getter: true,
+                        setter: false,
+                    },
                 }));
 
                 Cow::Owned(TypeLit {
@@ -1023,7 +1028,12 @@ impl Analyzer<'_, '_> {
                         type_ann: Some(m.ret_ty.clone()),
                         type_params: None,
                         metadata: Default::default(),
+                        accessor: Accessor {
+                            getter: true,
+                            setter: false,
+                        },
                     }),
+                    // TODO
                     MethodKind::Setter => return Ok(None),
                 }
             }

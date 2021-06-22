@@ -361,6 +361,7 @@ impl UnionNormalizer<'_, '_, '_> {
                                 })),
                                 type_params: Default::default(),
                                 metadata: Default::default(),
+                                accessor: Default::default(),
                             }))
                         }
                     }
