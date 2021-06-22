@@ -10,7 +10,6 @@ use crate::{
     analyzer::scope::VarKind,
     env::ModuleConfig,
     ty::{LitGeneralizer, TypeExt},
-    util::property_map::PropertyMap,
     validator,
     validator::ValidateWith,
     ValidationResult,
@@ -30,7 +29,6 @@ use stc_ts_types::{
     Class, ClassDef, ClassMember, ClassProperty, ComputedKey, ConstructorSignature, FnParam, Id, Intersection, Key,
     Method, Operator, QueryExpr, QueryType, Ref, TsExpr, Type,
 };
-use stc_ts_utils::PatExt;
 use stc_utils::{AHashSet, TryOpt};
 use std::{
     borrow::Cow,
@@ -1900,63 +1898,6 @@ impl Analyzer<'_, '_> {
                     take(&mut child.scope.this_class_members)
                 };
 
-                {
-                    // Change types of getter and setter
-
-                    let mut prop_types = PropertyMap::default();
-
-                    for (_, m) in body.iter_mut() {
-                        match m {
-                            ClassMember::IndexSignature(_) | ClassMember::Constructor(_) => continue,
-
-                            ClassMember::Method(m) => match m.kind {
-                                MethodKind::Getter => {
-                                    prop_types.insert(m.key.clone(), m.ret_ty.clone());
-                                }
-                                _ => {}
-                            },
-
-                            ClassMember::Property(_) => {}
-                        }
-                    }
-
-                    for (index, m) in body.iter_mut() {
-                        let orig = &c.body[*index];
-                        match m {
-                            ClassMember::IndexSignature(_) | ClassMember::Constructor(_) => continue,
-
-                            ClassMember::Method(m) => match m.kind {
-                                MethodKind::Setter => {
-                                    if let Some(param) = m.params.first_mut() {
-                                        if param.ty.is_any() {
-                                            if let Some(ty) = prop_types.get_prop_name(&m.key) {
-                                                let new_ty = ty.clone().generalize_lit(marks);
-                                                param.ty = box new_ty.clone();
-                                                match orig {
-                                                    RClassMember::Method(ref method) => {
-                                                        let node_id = method.function.params[0].pat.node_id();
-                                                        if let Some(node_id) = node_id {
-                                                            if let Some(m) = &mut child.mutations {
-                                                                m.for_pats.entry(node_id).or_default().ty =
-                                                                    Some(new_ty.clone())
-                                                            }
-                                                        }
-                                                    }
-                                                    _ => {}
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                                MethodKind::Method => continue,
-                                MethodKind::Getter => {}
-                            },
-
-                            ClassMember::Property(_) => {}
-                        }
-                    }
-                }
-
                 if !additional_members.is_empty() {
                     // Add private parameter properties to .d.ts file
 
@@ -2086,41 +2027,6 @@ impl Analyzer<'_, '_> {
 
         for member in &class.body {
             match member {
-                // This is actually property.
-                ClassMember::Method(Method {
-                    kind: MethodKind::Getter,
-                    key,
-                    ret_ty,
-                    ..
-                }) => {
-                    let span = key.span();
-
-                    if !index.params[0].ty.is_kwd(TsKeywordTypeKind::TsStringKeyword)
-                        && self
-                            .assign(&mut Default::default(), &index.params[0].ty, &key.ty(), span)
-                            .is_err()
-                    {
-                        continue;
-                    }
-
-                    self.assign_with_opts(
-                        &mut Default::default(),
-                        AssignOpts {
-                            span,
-                            ..Default::default()
-                        },
-                        &index_ret_ty,
-                        &ret_ty,
-                    )
-                    .convert_err(|_err| {
-                        if index.params[0].ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword) {
-                            Error::ClassMemeberNotCompatibleWithNumericIndexSignature { span }
-                        } else {
-                            Error::ClassMemeberNotCompatibleWithStringIndexSignature { span }
-                        }
-                    })?;
-                }
-
                 ClassMember::Property(ClassProperty {
                     key,
                     value: Some(value),
