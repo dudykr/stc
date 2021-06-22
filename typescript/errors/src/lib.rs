@@ -55,6 +55,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS5048
+    OptionInvalidForEs3 {
+        span: Span,
+    },
+
     /// TS17009
     ThisUsedBeforeCallingSuper {
         span: Span,
@@ -1670,6 +1675,8 @@ impl Error {
             Error::ThisUsedBeforeCallingSuper { .. } => 17009,
 
             Error::SuperUsedBeforeCallingSuper { .. } => 17011,
+
+            Error::OptionInvalidForEs3 { .. } => 5048,
             _ => 0,
         }
     }
