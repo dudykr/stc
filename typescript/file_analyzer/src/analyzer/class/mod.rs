@@ -732,7 +732,9 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
-    fn check_static_mixed_with_instance(&mut self, c: &RClass) -> ValidationResult<()> {}
+    fn check_static_mixed_with_instance(&mut self, c: &RClass) -> ValidationResult<()> {
+        Ok(())
+    }
 
     fn check_ambient_methods(&mut self, c: &RClass, declare: bool) -> ValidationResult<()> {
         if self.ctx.in_declare {
