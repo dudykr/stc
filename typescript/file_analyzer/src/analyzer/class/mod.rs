@@ -809,17 +809,19 @@ impl Analyzer<'_, '_> {
 
                             let spans_for_error = take(&mut spans);
 
-                            let has_abstract = spans_for_error.iter().any(|(_, v)| *v == true);
-                            let has_concrete = spans_for_error.iter().any(|(_, v)| *v == false);
+                            {
+                                let has_abstract = spans_for_error.iter().any(|(_, v)| *v == true);
+                                let has_concrete = spans_for_error.iter().any(|(_, v)| *v == false);
 
-                            if has_abstract && has_concrete {
-                                ignore_not_following_for.push(name.unwrap().clone());
+                                if has_abstract && has_concrete {
+                                    ignore_not_following_for.push(name.unwrap().clone());
 
-                                for (span, is_abstract) in spans_for_error {
-                                    if report_error_for_abstract && is_abstract {
-                                        self.storage.report(Error::AbstractAndConcreteIsMixed { span })
-                                    } else if !report_error_for_abstract && !is_abstract {
-                                        self.storage.report(Error::AbstractAndConcreteIsMixed { span })
+                                    for (span, is_abstract) in spans_for_error {
+                                        if report_error_for_abstract && is_abstract {
+                                            self.storage.report(Error::AbstractAndConcreteIsMixed { span })
+                                        } else if !report_error_for_abstract && !is_abstract {
+                                            self.storage.report(Error::AbstractAndConcreteIsMixed { span })
+                                        }
                                     }
                                 }
                             }
