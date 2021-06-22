@@ -256,6 +256,11 @@ classes/propertyMemberDeclarations/optionalProperty.ts
 classes/propertyMemberDeclarations/overrideInterfaceProperty.ts
 classes/propertyMemberDeclarations/propertyAndFunctionWithSameName.ts
 classes/propertyMemberDeclarations/propertyNamedPrototype.ts
+classes/propertyMemberDeclarations/propertyOverridesAccessors.ts
+classes/propertyMemberDeclarations/propertyOverridesAccessors2.ts
+classes/propertyMemberDeclarations/propertyOverridesAccessors3.ts
+classes/propertyMemberDeclarations/propertyOverridesAccessors4.ts
+classes/propertyMemberDeclarations/propertyOverridesAccessors5.ts
 classes/propertyMemberDeclarations/propertyOverridesMethod.ts
 classes/propertyMemberDeclarations/staticAndNonStaticPropertiesSameName.ts
 classes/propertyMemberDeclarations/staticMemberInitialization.ts
@@ -361,6 +366,7 @@ es6/Symbols/symbolProperty40.ts
 es6/Symbols/symbolProperty41.ts
 es6/Symbols/symbolProperty43.ts
 es6/Symbols/symbolProperty45.ts
+es6/Symbols/symbolProperty46.ts
 es6/Symbols/symbolProperty48.ts
 es6/Symbols/symbolProperty49.ts
 es6/Symbols/symbolProperty5.ts
@@ -526,6 +532,8 @@ es6/computedProperties/computedPropertyNames42_ES5.ts
 es6/computedProperties/computedPropertyNames42_ES6.ts
 es6/computedProperties/computedPropertyNames43_ES5.ts
 es6/computedProperties/computedPropertyNames43_ES6.ts
+es6/computedProperties/computedPropertyNames44_ES5.ts
+es6/computedProperties/computedPropertyNames44_ES6.ts
 es6/computedProperties/computedPropertyNames46_ES5.ts
 es6/computedProperties/computedPropertyNames46_ES6.ts
 es6/computedProperties/computedPropertyNames47_ES5.ts
