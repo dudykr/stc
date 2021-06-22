@@ -1,10 +1,3 @@
-classes::propertyMemberDeclarations::propertyAndFunctionWithSameName.ts
-classes::propertyMemberDeclarations::propertyOverridesAccessors.ts
-classes::propertyMemberDeclarations::propertyOverridesAccessors2.ts
-classes::propertyMemberDeclarations::propertyOverridesAccessors3.ts
-classes::propertyMemberDeclarations::propertyOverridesAccessors4.ts
-classes::propertyMemberDeclarations::propertyOverridesAccessors5.ts
-classes::propertyMemberDeclarations::strictPropertyInitialization.ts
 controlFlow::controlFlowAssignmentPatternOrder.ts
 controlFlow::controlFlowDeleteOperator.ts
 controlFlow::controlFlowForOfStatement.ts
