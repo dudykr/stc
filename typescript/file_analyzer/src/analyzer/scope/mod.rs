@@ -912,7 +912,13 @@ impl Analyzer<'_, '_> {
                 if i.span.is_dummy() {
                     i.span = span;
                 }
-                self.type_of_var(&i, TypeOfMode::RValue, None)?
+
+                let ctx = Ctx {
+                    disallow_suggesting_property_on_no_var: true,
+                    ..self.ctx
+                };
+
+                self.with_ctx(ctx).type_of_var(&i, TypeOfMode::RValue, None)?
             }
             RTsEntityName::TsQualifiedName(n) => {
                 let ctx = Ctx {

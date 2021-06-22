@@ -2926,7 +2926,7 @@ impl Analyzer<'_, '_> {
                 name: i.clone().into(),
             })
         } else {
-            if self.this_has_property_named(&i.clone().into()) {
+            if !self.ctx.disallow_suggesting_property_on_no_var && self.this_has_property_named(&i.clone().into()) {
                 dbg!();
                 Err(Error::NoSuchVarButThisHasSuchProperty {
                     span,
