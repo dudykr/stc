@@ -234,6 +234,7 @@ classes/members/privateNames/privateNamesUnique-1.ts
 classes/members/privateNames/privateNamesUnique-4.ts
 classes/members/privateNames/privateNamesUnique-5.ts
 classes/methodDeclarations/optionalMethodDeclarations.ts
+classes/mixinClassesAnonymous.ts
 classes/mixinClassesMembers.ts
 classes/propertyMemberDeclarations/accessorsOverrideProperty5.ts
 classes/propertyMemberDeclarations/constructorParameterShadowsOuterScopes2.ts
