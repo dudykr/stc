@@ -75,7 +75,7 @@ fn run_test(file_name: PathBuf, logger: slog::Logger, for_error: bool) -> Option
                 no_unused_locals: false,
                 no_unused_parameters: false,
                 strict_function_types: false,
-                strict_null_checks: true,
+                strict_null_checks: false,
                 suppress_excess_property_errors: false,
                 suppress_implicit_any_index_errors: false,
                 use_define_property_for_class_fields: false,
