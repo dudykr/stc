@@ -541,11 +541,6 @@ pub struct Method {
     pub kind: MethodKind,
 }
 
-/// # Getter and setter
-///
-/// ## `getter = false`, `setter = false`
-///
-/// Property declared without getter or setter.
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct ClassProperty {
     pub span: Span,
@@ -560,8 +555,7 @@ pub struct ClassProperty {
     pub readonly: bool,
     pub definite: bool,
 
-    pub getter: bool,
-    pub setter: bool,
+    pub accessor: Accessor,
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
@@ -729,6 +723,8 @@ pub struct PropertySignature {
     pub type_ann: Option<Box<Type>>,
     pub type_params: Option<TypeParamDecl>,
     pub metadata: TypeElMetadata,
+
+    pub accessor: Accessor,
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
@@ -1955,5 +1951,33 @@ where
     fn fold_children_with(mut self, v: &mut V) -> Self {
         self.span = self.span.fold_with(v);
         self
+    }
+}
+
+/// Getter and setter.
+///
+/// ## `getter = false`, `setter = false`
+///
+/// Property declared without getter or setter.
+///
+/// # Notes
+///
+/// [TypeEq] and [EqIgnoreSpan] always return true because this struct is
+/// metadata.
+#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Visit)]
+pub struct Accessor {
+    pub getter: bool,
+    pub setter: bool,
+}
+
+impl EqIgnoreSpan for Accessor {
+    fn eq_ignore_span(&self, _: &Self) -> bool {
+        true
+    }
+}
+
+impl TypeEq for Accessor {
+    fn type_eq(&self, _: &Self) -> bool {
+        true
     }
 }
