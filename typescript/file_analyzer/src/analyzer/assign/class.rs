@@ -1,6 +1,5 @@
 use super::{AssignData, AssignOpts};
 use crate::{analyzer::Analyzer, ValidationResult};
-use itertools::Itertools;
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_types::{Class, ClassDef, ClassMember, QueryExpr, Type, TypeLitMetadata};
 use std::borrow::Cow;
@@ -293,9 +292,17 @@ impl Analyzer<'_, '_> {
                                     return Err(Error::PrivateMethodIsDifferent { span });
                                 }
 
-                                // TODO: Parameters.
-                                self.assign_with_opts(data, opts, &lm.ret_ty, &rm.ret_ty)
-                                    .context("tried to assign return type of a class method")?;
+                                self.assign_to_fn_like(
+                                    data,
+                                    opts,
+                                    lm.type_params.as_ref(),
+                                    &lm.params,
+                                    Some(&lm.ret_ty),
+                                    rm.type_params.as_ref(),
+                                    &rm.params,
+                                    Some(&rm.ret_ty),
+                                )
+                                .context("tried to assign a class method to another one")?;
 
                                 return Ok(());
                             }
