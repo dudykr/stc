@@ -59,7 +59,7 @@ impl Analyzer<'_, '_> {
                     ret_ty: box r_ret_ty.cloned().unwrap_or_else(|| Type::any(span)),
                 });
 
-                let map = self.infer_type_with_types(span, &*rt.params, &rf, &lf)?;
+                let map = self.infer_type_with_types(span, &*rt.params, &rf, &lf, Default::default())?;
                 new_r_params = self
                     .expand_type_params(&map, r_params.to_vec())
                     .context("tried to expand type parameters of rhs as a step of function assignemnt")?;

@@ -2233,7 +2233,7 @@ impl Analyzer<'_, '_> {
 
             let inferred_from_return_type = match type_ann {
                 Some(type_ann) => self
-                    .infer_type_with_types(span, type_params, &ret_ty, type_ann)
+                    .infer_type_with_types(span, type_params, &ret_ty, type_ann, Default::default())
                     .map(Some)?,
                 None => None,
             };
