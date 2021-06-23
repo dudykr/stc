@@ -137,6 +137,7 @@ tests/pass/exprs/object/spread/readonly/1.ts
 tests/pass/exprs/object/this/1.ts
 tests/pass/exprs/object/this/3.ts
 tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts
+tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts
 tests/pass/exprs/optionalChaining/access-1.ts
 tests/pass/exprs/optionalChaining/access-2.ts
 tests/pass/exprs/optionalChaining/access-3-1.ts
