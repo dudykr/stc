@@ -307,6 +307,13 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        if !self.is_builtin {
+            // TODO: Normalize?
+            if ty.is_never() {
+                self.ctx.in_unreachable = true;
+            }
+        }
+
         ty.assert_valid();
 
         if type_ann.is_none() && need_type_param_handling {
