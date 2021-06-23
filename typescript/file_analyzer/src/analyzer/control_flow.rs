@@ -18,7 +18,7 @@ use crate::{
 use fxhash::FxHashMap;
 use rnode::{NodeId, VisitWith};
 use stc_ts_ast_rnode::{
-    RBinExpr, RBindingIdent, RCondExpr, RExpr, RIdent, RIfStmt, RObjectPatProp, RPat, RPatOrExpr, RSwitchCase,
+    RBinExpr, RBindingIdent, RCondExpr, RExpr, RIdent, RIfStmt, RObjectPatProp, RPat, RPatOrExpr, RStmt, RSwitchCase,
     RSwitchStmt, RTsKeywordType,
 };
 use stc_ts_errors::{DebugExt, Error};
@@ -27,7 +27,7 @@ use stc_ts_types::{name::Name, Array, Id, Key, Union};
 use stc_ts_utils::MapWithMut;
 use stc_utils::ext::SpanExt;
 use std::{
-    borrow::Cow,
+    borrow::{Borrow, Cow},
     collections::hash_map::Entry,
     hash::Hash,
     mem::{replace, take},
@@ -534,6 +534,13 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        if !errored {
+            self.ctx.in_unreachable |= stmt
+                .cases
+                .iter()
+                .all(|case| self.is_switch_case_body_unconditional_termination(&case.cons));
+        }
+
         if ends_with_ret {
             self.cur_facts.true_facts += false_facts;
         }
@@ -549,6 +556,33 @@ pub(crate) struct PatAssignOpts {
 }
 
 impl Analyzer<'_, '_> {
+    /// Returns true if a body of switch always ends with `return`, `throw` or
+    /// `continue`.
+    ///
+    /// TODO: Support break with other label.
+    fn is_switch_case_body_unconditional_termination<S>(&mut self, body: &[S]) -> bool
+    where
+        S: Borrow<RStmt>,
+    {
+        for stmt in body {
+            match stmt.borrow() {
+                RStmt::Return(..) | RStmt::Throw(..) | RStmt::Continue(..) => return true,
+                RStmt::Break(..) => return false,
+
+                RStmt::If(s) => match &s.alt {
+                    Some(alt) => {
+                        return self.is_switch_case_body_unconditional_termination(&[&*s.cons])
+                            && self.is_switch_case_body_unconditional_termination(&[&**alt]);
+                    }
+                    None => return self.is_switch_case_body_unconditional_termination(&[&*s.cons]),
+                },
+                _ => {}
+            }
+        }
+
+        false
+    }
+
     pub(super) fn try_assign(&mut self, span: Span, op: AssignOp, lhs: &RPatOrExpr, ty: &Type) {
         ty.assert_valid();
 
