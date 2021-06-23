@@ -1,27 +1,21 @@
 use anyhow::Error;
 use rayon::prelude::*;
-use std::fs::copy;
-use std::fs::create_dir_all;
-use std::panic::catch_unwind;
-use std::panic::AssertUnwindSafe;
-use std::path::Path;
-use std::path::PathBuf;
-use std::process::Command;
-use std::sync::Arc;
+use std::{
+    fs::{copy, create_dir_all},
+    panic::{catch_unwind, AssertUnwindSafe},
+    path::{Path, PathBuf},
+    process::Command,
+    sync::Arc,
+};
 use structopt::StructOpt;
-use swc_common::errors::ColorConfig;
-use swc_common::errors::Handler;
-use swc_common::input::SourceFileInput;
-use swc_common::SourceMap;
-use swc_common::DUMMY_SP;
+use swc_common::{
+    errors::{ColorConfig, Handler},
+    input::SourceFileInput,
+    SourceMap, DUMMY_SP,
+};
 use swc_ecma_ast::*;
-use swc_ecma_parser::lexer::Lexer;
-use swc_ecma_parser::Parser;
-use swc_ecma_parser::Syntax;
-use swc_ecma_parser::TsConfig;
-use swc_ecma_visit::Node;
-use swc_ecma_visit::Visit;
-use swc_ecma_visit::VisitWith;
+use swc_ecma_parser::{lexer::Lexer, Parser, Syntax, TsConfig};
+use swc_ecma_visit::{Node, Visit, VisitWith};
 use walkdir::WalkDir;
 
 #[derive(Debug, StructOpt)]

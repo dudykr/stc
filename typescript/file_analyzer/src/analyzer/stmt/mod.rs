@@ -5,21 +5,14 @@ use crate::{
     validator,
     validator::ValidateWith,
 };
-use rnode::NodeId;
-use rnode::VisitWith;
-use stc_ts_ast_rnode::RBlockStmt;
-use stc_ts_ast_rnode::RBool;
-use stc_ts_ast_rnode::RForStmt;
-use stc_ts_ast_rnode::RModuleItem;
-use stc_ts_ast_rnode::RStmt;
-use stc_ts_ast_rnode::RTsExprWithTypeArgs;
-use stc_ts_ast_rnode::RTsLit;
-use stc_ts_ast_rnode::RTsLitType;
-use stc_ts_ast_rnode::RWithStmt;
+use rnode::{NodeId, VisitWith};
+use stc_ts_ast_rnode::{
+    RBlockStmt, RBool, RForStmt, RModuleItem, RStmt, RTsExprWithTypeArgs, RTsLit, RTsLitType, RWithStmt,
+};
 use stc_ts_errors::Error;
 use stc_ts_types::Type;
 use stc_utils::stack;
-use swc_common::DUMMY_SP;
+use swc_common::{Spanned, DUMMY_SP};
 use swc_ecma_utils::Value::Known;
 
 mod ambient_decl;
@@ -44,10 +37,15 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, s: &RStmt) {
         slog::warn!(self.logger, "Statement start");
 
+        if self.rule().always_strict && !self.rule().allow_unreachable_code && self.ctx.in_unreachable {
+            self.storage.report(Error::UnreachableCode { span: s.span() });
+        }
+
         let old_in_conditional = self.scope.return_values.in_conditional;
         self.scope.return_values.in_conditional |= match s {
             RStmt::If(_) => true,
             RStmt::Switch(_) => true,
+            RStmt::While(..) | RStmt::DoWhile(..) | RStmt::For(..) | RStmt::ForIn(..) | RStmt::ForOf(..) => true,
             _ => false,
         };
 
@@ -71,7 +69,7 @@ impl Analyzer<'_, '_> {
             let has_break = v.found;
             if !has_break {
                 if let Known(v) = test.as_bool() {
-                    self.scope.return_values.forced_never = true;
+                    self.ctx.in_unreachable = true;
                     return;
                 }
             }

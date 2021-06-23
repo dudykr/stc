@@ -1,14 +1,9 @@
 use super::TypeOfMode;
-use crate::analyzer::Analyzer;
-use crate::util::unwrap_ref_with_single_arg;
-use crate::validator::ValidateWith;
-use crate::ValidationResult;
+use crate::{analyzer::Analyzer, util::unwrap_ref_with_single_arg, validator::ValidateWith, ValidationResult};
 use stc_ts_ast_rnode::{RAwaitExpr, RIdent, RTsEntityName};
 use stc_ts_errors::DebugExt;
 use stc_ts_file_analyzer_macros::validator;
-use stc_ts_types::{IdCtx, Ref};
-use stc_ts_types::{Key, ModuleId};
-use stc_ts_types::{Type, TypeParamInstantiation};
+use stc_ts_types::{IdCtx, Key, ModuleId, Ref, Type, TypeParamInstantiation};
 use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::{Span, SyntaxContext};

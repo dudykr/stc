@@ -1,41 +1,14 @@
 //! Dead code elimination for types.
 
 use fxhash::FxHashSet;
-use rnode::NodeId;
-use rnode::Visit;
-use rnode::VisitMut;
-use rnode::VisitMutWith;
-use rnode::VisitWith;
-use stc_ts_ast_rnode::RBlockStmt;
-use stc_ts_ast_rnode::RClassDecl;
-use stc_ts_ast_rnode::RClassMember;
-use stc_ts_ast_rnode::RClassMethod;
-use stc_ts_ast_rnode::RClassProp;
-use stc_ts_ast_rnode::RDecl;
-use stc_ts_ast_rnode::REmptyStmt;
-use stc_ts_ast_rnode::RExpr;
-use stc_ts_ast_rnode::RFnDecl;
-use stc_ts_ast_rnode::RFunction;
-use stc_ts_ast_rnode::RInvalid;
-use stc_ts_ast_rnode::RLit;
-use stc_ts_ast_rnode::RModuleDecl;
-use stc_ts_ast_rnode::RModuleItem;
-use stc_ts_ast_rnode::RPat;
-use stc_ts_ast_rnode::RPropName;
-use stc_ts_ast_rnode::RStmt;
-use stc_ts_ast_rnode::RTsEnumDecl;
-use stc_ts_ast_rnode::RTsEnumMember;
-use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_ast_rnode::RTsModuleDecl;
-use stc_ts_ast_rnode::RTsType;
-use stc_ts_ast_rnode::RTsTypeAliasDecl;
-use stc_ts_ast_rnode::RTsTypeAnn;
-use stc_ts_ast_rnode::RVarDecl;
-use stc_ts_ast_rnode::RVarDeclarator;
-use stc_ts_types::rprop_name_to_expr;
-use stc_ts_types::{Id, ModuleTypeData, Type};
-use stc_ts_utils::MapWithMut;
-use stc_ts_utils::PatExt;
+use rnode::{NodeId, Visit, VisitMut, VisitMutWith, VisitWith};
+use stc_ts_ast_rnode::{
+    RBlockStmt, RClassDecl, RClassMember, RClassMethod, RClassProp, RDecl, REmptyStmt, RExpr, RFnDecl, RFunction,
+    RInvalid, RLit, RModuleDecl, RModuleItem, RPat, RPropName, RStmt, RTsEnumDecl, RTsEnumMember, RTsKeywordType,
+    RTsModuleDecl, RTsType, RTsTypeAliasDecl, RTsTypeAnn, RVarDecl, RVarDeclarator,
+};
+use stc_ts_types::{rprop_name_to_expr, Id, ModuleTypeData, Type};
+use stc_ts_utils::{MapWithMut, PatExt};
 use swc_common::{Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
 

@@ -1,14 +1,13 @@
-use crate::analyzer::assign::AssignOpts;
-use crate::analyzer::Analyzer;
-use crate::util::type_ext::TypeVecExt;
-use crate::ValidationResult;
+use crate::{
+    analyzer::{assign::AssignOpts, Analyzer},
+    util::type_ext::TypeVecExt,
+    ValidationResult,
+};
 use stc_ts_errors::DebugExt;
 use stc_ts_type_ops::Fix;
-use stc_ts_types::Type;
-use stc_ts_types::Union;
+use stc_ts_types::{Type, Union};
 use std::borrow::Cow;
-use swc_common::Span;
-use swc_common::Spanned;
+use swc_common::{Span, Spanned};
 
 impl Analyzer<'_, '_> {
     pub(crate) fn narrowed_type_of_assignment(

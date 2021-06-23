@@ -2,8 +2,7 @@ use fxhash::FxHashMap;
 use parking_lot::Mutex;
 use stc_visit::Visit;
 use std::{path::PathBuf, sync::Arc};
-use swc_common::EqIgnoreSpan;
-use swc_common::TypeEq;
+use swc_common::{EqIgnoreSpan, TypeEq};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, EqIgnoreSpan, TypeEq, Visit)]
 pub struct ModuleId(u32);

@@ -1,22 +1,10 @@
-use super::AssignData;
-use super::AssignOpts;
-use crate::analyzer::Analyzer;
-use crate::ValidationResult;
+use super::{AssignData, AssignOpts};
+use crate::{analyzer::Analyzer, ValidationResult};
 use fxhash::FxHashMap;
-use itertools::EitherOrBoth;
-use itertools::Itertools;
-use stc_ts_ast_rnode::RBindingIdent;
-use stc_ts_ast_rnode::RIdent;
-use stc_ts_ast_rnode::RPat;
-use stc_ts_errors::DebugExt;
-use stc_ts_errors::Error;
-use stc_ts_types::ClassDef;
-use stc_ts_types::Constructor;
-use stc_ts_types::FnParam;
-use stc_ts_types::Function;
-use stc_ts_types::Type;
-use stc_ts_types::TypeElement;
-use stc_ts_types::TypeParamDecl;
+use itertools::{EitherOrBoth, Itertools};
+use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat};
+use stc_ts_errors::{DebugExt, Error};
+use stc_ts_types::{ClassDef, Constructor, FnParam, Function, Type, TypeElement, TypeParamDecl};
 use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::TypeEq;
@@ -71,7 +59,7 @@ impl Analyzer<'_, '_> {
                     ret_ty: box r_ret_ty.cloned().unwrap_or_else(|| Type::any(span)),
                 });
 
-                let map = self.infer_type_with_types(span, &*rt.params, &rf, &lf)?;
+                let map = self.infer_type_with_types(span, &*rt.params, &rf, &lf, Default::default())?;
                 new_r_params = self
                     .expand_type_params(&map, r_params.to_vec())
                     .context("tried to expand type parameters of rhs as a step of function assignemnt")?;

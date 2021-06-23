@@ -1,43 +1,25 @@
-use crate::analyzer::Analyzer;
-use crate::analyzer::ScopeKind;
-use crate::util::type_ext::TypeVecExt;
-use crate::validator::ValidateWith;
-use crate::ValidationResult;
+use crate::{
+    analyzer::{Analyzer, ScopeKind},
+    util::type_ext::TypeVecExt,
+    validator::ValidateWith,
+    ValidationResult,
+};
 use fxhash::FxHashMap;
 use indexmap::IndexSet;
 use itertools::Itertools;
-use rnode::FoldWith;
-use rnode::NodeId;
-use rnode::VisitMut;
-use rnode::VisitMutWith;
-use stc_ts_ast_rnode::RBindingIdent;
-use stc_ts_ast_rnode::RIdent;
-use stc_ts_ast_rnode::RObjectLit;
-use stc_ts_ast_rnode::RPat;
-use stc_ts_ast_rnode::RPropOrSpread;
-use stc_ts_ast_rnode::RSpreadElement;
-use stc_ts_ast_rnode::RTsKeywordType;
+use rnode::{FoldWith, NodeId, VisitMut, VisitMutWith};
+use stc_ts_ast_rnode::{RBindingIdent, RIdent, RObjectLit, RPat, RPropOrSpread, RSpreadElement, RTsKeywordType};
 use stc_ts_errors::DebugExt;
 use stc_ts_file_analyzer_macros::validator;
 use stc_ts_generics::type_param::replacer::TypeParamReplacer;
 use stc_ts_type_ops::Fix;
-use stc_ts_types::CallSignature;
-use stc_ts_types::FnParam;
-use stc_ts_types::Function;
-use stc_ts_types::Key;
-use stc_ts_types::PropertySignature;
-use stc_ts_types::Type;
-use stc_ts_types::TypeElement;
-use stc_ts_types::TypeLit;
-use stc_ts_types::TypeLitMetadata;
-use stc_ts_types::TypeParamDecl;
-use stc_ts_types::Union;
-use std::borrow::Cow;
-use std::iter::repeat;
+use stc_ts_types::{
+    CallSignature, FnParam, Function, Key, PropertySignature, Type, TypeElement, TypeLit, TypeLitMetadata,
+    TypeParamDecl, Union,
+};
+use std::{borrow::Cow, iter::repeat};
 use swc_atoms::JsWord;
-use swc_common::Spanned;
-use swc_common::TypeEq;
-use swc_common::DUMMY_SP;
+use swc_common::{Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
 
 #[validator]
@@ -379,6 +361,7 @@ impl UnionNormalizer<'_, '_, '_> {
                                 })),
                                 type_params: Default::default(),
                                 metadata: Default::default(),
+                                accessor: Default::default(),
                             }))
                         }
                     }

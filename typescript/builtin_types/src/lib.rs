@@ -4,8 +4,10 @@ use fxhash::FxHashMap;
 use once_cell::sync::Lazy;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use stc_ts_builtin_macro::builtin;
-use std::cmp::Ordering;
-use std::sync::{Arc, RwLock};
+use std::{
+    cmp::Ordering,
+    sync::{Arc, RwLock},
+};
 use swc_atoms::js_word;
 use swc_common::{FileName, FilePathMapping, SourceMap};
 use swc_ecma_ast::*;

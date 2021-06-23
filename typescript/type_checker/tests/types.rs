@@ -8,44 +8,36 @@ extern crate test;
 #[path = "common/mod.rs"]
 mod common;
 
-use self::common::load_fixtures;
-use self::common::SwcComments;
+use self::common::{load_fixtures, SwcComments};
 use once_cell::sync::Lazy;
 use stc_testing::logger;
 use stc_ts_builtin_types::Lib;
 use stc_ts_errors::debug::debugger::Debugger;
-use stc_ts_file_analyzer::env::Env;
-use stc_ts_file_analyzer::env::ModuleConfig;
-use stc_ts_file_analyzer::Rule;
+use stc_ts_file_analyzer::{
+    env::{Env, ModuleConfig},
+    Rule,
+};
 use stc_ts_module_loader::resolver::node::NodeResolver;
 use stc_ts_testing::tsc::TsTestCase;
 use stc_ts_type_checker::Checker;
-use std::collections::HashSet;
-use std::env;
-use std::fs::read_to_string;
-use std::io;
-use std::io::Write;
-use std::path::Path;
-use std::path::PathBuf;
-use std::sync::Arc;
-use std::sync::RwLock;
-use swc_common::errors::ColorConfig;
-use swc_common::errors::EmitterWriter;
-use swc_common::errors::Handler;
-use swc_common::errors::HandlerFlags;
-use swc_common::input::SourceFileInput;
-use swc_common::SourceMap;
-use swc_common::Span;
-use swc_ecma_parser::JscTarget;
-use swc_ecma_parser::Parser;
-use swc_ecma_parser::Syntax;
-use swc_ecma_parser::TsConfig;
+use std::{
+    collections::HashSet,
+    env,
+    fs::read_to_string,
+    io,
+    io::Write,
+    path::{Path, PathBuf},
+    sync::{Arc, RwLock},
+};
+use swc_common::{
+    errors::{ColorConfig, EmitterWriter, Handler, HandlerFlags},
+    input::SourceFileInput,
+    SourceMap, Span,
+};
+use swc_ecma_parser::{JscTarget, Parser, Syntax, TsConfig};
 use swc_ecma_visit::Fold;
 use test::test_main;
-use testing::run_test2;
-use testing::NormalizedOutput;
-use testing::StdErr;
-use testing::Tester;
+use testing::{run_test2, NormalizedOutput, StdErr, Tester};
 
 fn is_ignored(path: &Path) -> bool {
     static IGNORED: Lazy<Vec<String>> = Lazy::new(|| {

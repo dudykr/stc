@@ -1,6 +1,5 @@
 use dashmap::{DashMap, SharedValue};
-use std::hash::BuildHasher;
-use std::hash::Hash;
+use std::hash::{BuildHasher, Hash};
 
 pub(crate) trait DashMapExt<'a, K, V, H>
 where

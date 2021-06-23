@@ -13,7 +13,7 @@ rustflags = [
 git-fetch-with-cli = true
 
 [cargo-new]
-email = "kdy1@dudy.kr"
+email = "kdy1997.dev@gmail.com"
 name = "강동윤"
 
 [profile.dev]

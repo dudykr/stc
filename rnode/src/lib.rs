@@ -5,8 +5,7 @@ use std::sync::Arc;
 pub use rnode_macros::define_rnode;
 use stc_visit::Visitable;
 pub use stc_visit::{Fold, FoldWith, Visit, VisitMut, VisitMutWith, VisitWith};
-use swc_common::EqIgnoreSpan;
-use swc_common::TypeEq;
+use swc_common::{EqIgnoreSpan, TypeEq};
 
 /// Alternative for span. This is much more reliable than span.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]

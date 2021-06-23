@@ -1,12 +1,12 @@
-use super::super::{
-    util::{Comparator, ResultExt},
-    Analyzer,
+use super::{
+    super::{
+        util::{Comparator, ResultExt},
+        Analyzer,
+    },
+    TypeOfMode,
 };
-use super::TypeOfMode;
-use crate::analyzer::assign::AssignOpts;
-use crate::analyzer::generic::ExtendsOpts;
 use crate::{
-    analyzer::{Ctx, ScopeKind},
+    analyzer::{assign::AssignOpts, generic::ExtendsOpts, Ctx, ScopeKind},
     ty::{Operator, Type, TypeExt},
     type_facts::TypeFacts,
     util::{is_str_or_union, RemoveTypes},
@@ -14,46 +14,18 @@ use crate::{
     validator::ValidateWith,
     ValidationResult,
 };
-use stc_ts_ast_rnode::RBinExpr;
-use stc_ts_ast_rnode::RExpr;
-use stc_ts_ast_rnode::RExprOrSuper;
-use stc_ts_ast_rnode::RIdent;
-use stc_ts_ast_rnode::RLit;
-use stc_ts_ast_rnode::RMemberExpr;
-use stc_ts_ast_rnode::RPat;
-use stc_ts_ast_rnode::RPatOrExpr;
-use stc_ts_ast_rnode::RStr;
-use stc_ts_ast_rnode::RTpl;
-use stc_ts_ast_rnode::RTsEntityName;
-use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_ast_rnode::RTsLit;
-use stc_ts_ast_rnode::RTsLitType;
-use stc_ts_ast_rnode::RUnaryExpr;
-use stc_ts_errors::DebugExt;
-use stc_ts_errors::Error;
-use stc_ts_errors::Errors;
+use stc_ts_ast_rnode::{
+    RBinExpr, RExpr, RExprOrSuper, RIdent, RLit, RMemberExpr, RPat, RPatOrExpr, RStr, RTpl, RTsEntityName,
+    RTsKeywordType, RTsLit, RTsLitType, RUnaryExpr,
+};
+use stc_ts_errors::{DebugExt, Error, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
-use stc_ts_type_ops::is_str_lit_or_union;
-use stc_ts_type_ops::Fix;
-use stc_ts_types::name::Name;
-use stc_ts_types::Class;
-use stc_ts_types::Intersection;
-use stc_ts_types::Key;
-use stc_ts_types::ModuleId;
-use stc_ts_types::Ref;
-use stc_ts_types::TypeElement;
-use stc_ts_types::Union;
-use std::borrow::Cow;
-use std::collections::hash_map::Entry;
-use std::convert::TryFrom;
+use stc_ts_type_ops::{is_str_lit_or_union, Fix};
+use stc_ts_types::{name::Name, Class, Intersection, Key, ModuleId, Ref, TypeElement, Union};
+use std::{borrow::Cow, collections::hash_map::Entry, convert::TryFrom};
 use swc_atoms::js_word;
-use swc_common::SyntaxContext;
-use swc_common::TypeEq;
-use swc_common::{Span, Spanned};
-use swc_ecma_ast::op;
-use swc_ecma_ast::BinaryOp;
-use swc_ecma_ast::TsKeywordTypeKind;
-use swc_ecma_ast::TsTypeOperatorOp;
+use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
+use swc_ecma_ast::{op, BinaryOp, TsKeywordTypeKind, TsTypeOperatorOp};
 use swc_ecma_utils::Value::Known;
 
 #[validator]

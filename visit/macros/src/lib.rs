@@ -1,31 +1,8 @@
-use pmutil::q;
-use pmutil::IdentExt;
-use pmutil::SpanExt;
-use pmutil::ToTokensExt;
-use syn::parse;
-use syn::punctuated::Punctuated;
-use syn::spanned::Spanned;
-use syn::Arm;
-use syn::Block;
-use syn::Data;
-use syn::DeriveInput;
-use syn::Expr;
-use syn::ExprBlock;
-use syn::ExprMatch;
-use syn::Field;
-use syn::FieldPat;
-use syn::FieldValue;
-use syn::Fields;
-use syn::Ident;
-use syn::Index;
-use syn::Item;
-use syn::Member;
-use syn::Pat;
-use syn::PatPath;
-use syn::PatStruct;
-use syn::Path;
-use syn::Stmt;
-use syn::Token;
+use pmutil::{q, IdentExt, SpanExt, ToTokensExt};
+use syn::{
+    parse, punctuated::Punctuated, spanned::Spanned, Arm, Block, Data, DeriveInput, Expr, ExprBlock, ExprMatch, Field,
+    FieldPat, FieldValue, Fields, Ident, Index, Item, Member, Pat, PatPath, PatStruct, Path, Stmt, Token,
+};
 
 /// Note: This generates `FoldWith`, `VisitWith` and `VisitMutWith` although
 /// it's `#[deive(Visit)]`

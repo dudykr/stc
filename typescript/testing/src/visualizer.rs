@@ -1,15 +1,9 @@
-use rnode::RNode;
-use rnode::Visit;
-use rnode::VisitWith;
+use rnode::{RNode, Visit, VisitWith};
 use stc_ts_ast_rnode::RTsType;
 use stc_ts_types::Type;
 use std::sync::Arc;
-use swc_common::errors::Handler;
-use swc_common::SourceMap;
-use swc_common::Spanned;
-use swc_ecma_codegen::text_writer::JsWriter;
-use swc_ecma_codegen::Emitter;
-use swc_ecma_codegen::Node;
+use swc_common::{errors::Handler, SourceMap, Spanned};
+use swc_ecma_codegen::{text_writer::JsWriter, Emitter, Node};
 
 pub struct TypeVisualizer<'a> {
     pub cm: Arc<SourceMap>,

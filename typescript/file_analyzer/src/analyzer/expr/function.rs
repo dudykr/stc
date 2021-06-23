@@ -1,21 +1,14 @@
-use crate::analyzer::pat::PatMode;
-use crate::analyzer::Analyzer;
-use crate::analyzer::Ctx;
-use crate::analyzer::ScopeKind;
-use crate::ty::TypeExt;
-use crate::validator;
-use crate::validator::ValidateWith;
-use crate::ValidationResult;
-use itertools::EitherOrBoth;
-use itertools::Itertools;
-use stc_ts_ast_rnode::RArrowExpr;
-use stc_ts_ast_rnode::RBlockStmtOrExpr;
-use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_types::Class;
-use stc_ts_types::Function;
-use stc_ts_types::Type;
-use stc_ts_utils::OptionExt;
-use stc_ts_utils::PatExt;
+use crate::{
+    analyzer::{pat::PatMode, Analyzer, Ctx, ScopeKind},
+    ty::TypeExt,
+    validator,
+    validator::ValidateWith,
+    ValidationResult,
+};
+use itertools::{EitherOrBoth, Itertools};
+use stc_ts_ast_rnode::{RArrowExpr, RBlockStmtOrExpr, RTsKeywordType};
+use stc_ts_types::{Class, Function, Type};
+use stc_ts_utils::{OptionExt, PatExt};
 use swc_common::Spanned;
 use swc_ecma_ast::TsKeywordTypeKind;
 

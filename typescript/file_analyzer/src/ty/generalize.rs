@@ -1,8 +1,6 @@
 use crate::ty::{Array, Type};
-use rnode::Fold;
-use rnode::FoldWith;
-use swc_common::Spanned;
-use swc_common::TypeEq;
+use rnode::{Fold, FoldWith};
+use swc_common::{Spanned, TypeEq};
 
 pub(super) struct TupleToArray;
 

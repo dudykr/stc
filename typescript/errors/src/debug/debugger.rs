@@ -2,12 +2,8 @@ use rnode::RNode;
 use stc_ts_ast_rnode::RTsType;
 use stc_ts_types::Type;
 use std::sync::Arc;
-use swc_common::errors::Handler;
-use swc_common::SourceMap;
-use swc_common::Span;
-use swc_ecma_codegen::text_writer::JsWriter;
-use swc_ecma_codegen::Emitter;
-use swc_ecma_codegen::Node;
+use swc_common::{errors::Handler, SourceMap, Span};
+use swc_ecma_codegen::{text_writer::JsWriter, Emitter, Node};
 
 #[derive(Clone)]
 pub struct Debugger {

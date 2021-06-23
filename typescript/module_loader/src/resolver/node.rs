@@ -1,13 +1,12 @@
 use super::Resolve;
-use anyhow::bail;
-use anyhow::Context;
-use anyhow::Error;
+use anyhow::{bail, Context, Error};
 use serde::Deserialize;
-use std::fs::File;
-use std::io::BufReader;
-use std::path::Path;
-use std::path::PathBuf;
-use std::sync::Arc;
+use std::{
+    fs::File,
+    io::BufReader,
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 use swc_atoms::JsWord;
 
 static EXTENSIONS: &[&str] = &["tsx", "ts", "d.ts"];

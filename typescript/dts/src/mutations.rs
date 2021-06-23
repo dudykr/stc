@@ -1,29 +1,12 @@
-use rnode::VisitMut;
-use rnode::VisitMutWith;
-use stc_ts_ast_rnode::RArrayPat;
-use stc_ts_ast_rnode::RBindingIdent;
-use stc_ts_ast_rnode::RClass;
-use stc_ts_ast_rnode::RClassMember;
-use stc_ts_ast_rnode::RClassProp;
-use stc_ts_ast_rnode::REmptyStmt;
-use stc_ts_ast_rnode::RExportDefaultExpr;
-use stc_ts_ast_rnode::RFunction;
-use stc_ts_ast_rnode::RModule;
-use stc_ts_ast_rnode::RModuleItem;
-use stc_ts_ast_rnode::RObjectPat;
-use stc_ts_ast_rnode::RRestPat;
-use stc_ts_ast_rnode::RVarDeclarator;
-use stc_ts_dts_mutations::ClassMemberMut;
-use stc_ts_dts_mutations::ClassMut;
-use stc_ts_dts_mutations::ClassPropMut;
-use stc_ts_dts_mutations::ExportDefaultMut;
-use stc_ts_dts_mutations::FunctionMut;
-use stc_ts_dts_mutations::ModuleItemMut;
-use stc_ts_dts_mutations::Mutations;
-use stc_ts_dts_mutations::PatMut;
-use stc_ts_dts_mutations::VarDeclMut;
-use stc_ts_utils::HasNodeId;
-use stc_ts_utils::MapWithMut;
+use rnode::{VisitMut, VisitMutWith};
+use stc_ts_ast_rnode::{
+    RArrayPat, RBindingIdent, RClass, RClassMember, RClassProp, REmptyStmt, RExportDefaultExpr, RFunction, RModule,
+    RModuleItem, RObjectPat, RRestPat, RVarDeclarator,
+};
+use stc_ts_dts_mutations::{
+    ClassMemberMut, ClassMut, ClassPropMut, ExportDefaultMut, FunctionMut, ModuleItemMut, Mutations, PatMut, VarDeclMut,
+};
+use stc_ts_utils::{HasNodeId, MapWithMut};
 use std::mem::take;
 use swc_common::DUMMY_SP;
 

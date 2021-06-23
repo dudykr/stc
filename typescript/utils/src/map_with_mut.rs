@@ -1,20 +1,8 @@
 use rnode::NodeId;
-use stc_ts_ast_rnode::RBool;
-use stc_ts_ast_rnode::RClassMember;
-use stc_ts_ast_rnode::RDecl;
-use stc_ts_ast_rnode::REmptyStmt;
-use stc_ts_ast_rnode::RExpr;
-use stc_ts_ast_rnode::RIdent;
-use stc_ts_ast_rnode::RInvalid;
-use stc_ts_ast_rnode::RModuleItem;
-use stc_ts_ast_rnode::RPat;
-use stc_ts_ast_rnode::RPropName;
-use stc_ts_ast_rnode::RStmt;
-use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_ast_rnode::RTsLit;
-use stc_ts_ast_rnode::RTsLitType;
-use stc_ts_ast_rnode::RTsType;
-use stc_ts_ast_rnode::RVarDecl;
+use stc_ts_ast_rnode::{
+    RBool, RClassMember, RDecl, REmptyStmt, RExpr, RIdent, RInvalid, RModuleItem, RPat, RPropName, RStmt,
+    RTsKeywordType, RTsLit, RTsLitType, RTsType, RVarDecl,
+};
 use stc_ts_types::Type;
 use std::mem::replace;
 use swc_atoms::js_word;

@@ -1,41 +1,21 @@
-use crate::analyzer::assign::AssignOpts;
-use crate::analyzer::expr::TypeOfMode;
 use crate::{
-    analyzer::{Analyzer, Ctx},
+    analyzer::{assign::AssignOpts, expr::TypeOfMode, Analyzer, Ctx},
     ty::{Array, IndexedAccessType, Mapped, Operator, PropertySignature, Ref, Type, TypeElement, TypeLit},
     ValidationResult,
 };
 use fxhash::{FxHashMap, FxHashSet};
-use rnode::Fold;
-use rnode::FoldWith;
-use rnode::VisitWith;
+use rnode::{Fold, FoldWith, VisitWith};
 use slog::Logger;
-use stc_ts_ast_rnode::RExpr;
-use stc_ts_ast_rnode::RInvalid;
-use stc_ts_ast_rnode::RTsEntityName;
-use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_ast_rnode::RTsLit;
-use stc_ts_ast_rnode::RTsLitType;
+use stc_ts_ast_rnode::{RExpr, RInvalid, RTsEntityName, RTsKeywordType, RTsLit, RTsLitType};
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
 use stc_ts_type_ops::Fix;
-use stc_ts_types::ComputedKey;
-use stc_ts_types::Function;
-use stc_ts_types::IdCtx;
-use stc_ts_types::Interface;
-use stc_ts_types::Key;
-use stc_ts_types::TypeParamDecl;
-use stc_ts_types::TypeParamInstantiation;
-use stc_ts_types::Union;
-use stc_ts_types::{Id, TypeParam};
-use stc_utils::error::context;
-use stc_utils::ext::SpanExt;
-use stc_utils::stack;
+use stc_ts_types::{
+    ComputedKey, Function, Id, IdCtx, Interface, Key, TypeParam, TypeParamDecl, TypeParamInstantiation, Union,
+};
+use stc_utils::{error::context, ext::SpanExt, stack};
 use swc_atoms::js_word;
-use swc_common::Span;
-use swc_common::Spanned;
-use swc_common::TypeEq;
-use swc_common::DUMMY_SP;
+use swc_common::{Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
 
 /// All fields default to false.
@@ -612,6 +592,7 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                                                         }),
                                                         type_params: Default::default(),
                                                         metadata: Default::default(),
+                                                        accessor: Default::default(),
                                                     }))
                                                 }
                                                 _ => {}
@@ -772,6 +753,7 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                                                 type_ann: m.ty.clone().map(|v| v),
                                                 type_params: None,
                                                 metadata: Default::default(),
+                                                accessor: Default::default(),
                                             }));
                                         }
                                         TypeElement::Property(p) => {

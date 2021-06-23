@@ -1,5 +1,4 @@
-use rnode::VisitMut;
-use rnode::VisitMutWith;
+use rnode::{VisitMut, VisitMutWith};
 use stc_ts_types::{Mapped, Type, TypeParam};
 use stc_ts_utils::MapWithMut;
 

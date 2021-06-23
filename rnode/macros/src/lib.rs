@@ -2,43 +2,17 @@
 
 extern crate proc_macro;
 
-use pmutil::q;
-use pmutil::smart_quote;
-use pmutil::IdentExt;
-use pmutil::Quote;
-use pmutil::SpanExt;
+use pmutil::{q, smart_quote, IdentExt, Quote, SpanExt};
 use proc_macro2::Span;
 use std::todo;
-use syn::fold::fold_type;
-use syn::fold::Fold;
-use syn::punctuated::Punctuated;
-use syn::spanned::Spanned;
-use syn::Arm;
-use syn::Attribute;
-use syn::Block;
-use syn::Expr;
-use syn::ExprBlock;
-use syn::ExprMatch;
-use syn::Field;
-use syn::Fields;
-use syn::FieldsNamed;
-use syn::FieldsUnnamed;
-use syn::GenericArgument;
-use syn::Ident;
-use syn::Item;
-use syn::ItemEnum;
-use syn::ItemStruct;
-use syn::Pat;
-use syn::PatIdent;
-use syn::Path;
-use syn::PathArguments;
-use syn::Stmt;
-use syn::Token;
-use syn::Type;
-use syn::TypePath;
-use syn::Variant;
-use syn::VisPublic;
-use syn::Visibility;
+use syn::{
+    fold::{fold_type, Fold},
+    punctuated::Punctuated,
+    spanned::Spanned,
+    Arm, Attribute, Block, Expr, ExprBlock, ExprMatch, Field, Fields, FieldsNamed, FieldsUnnamed, GenericArgument,
+    Ident, Item, ItemEnum, ItemStruct, Pat, PatIdent, Path, PathArguments, Stmt, Token, Type, TypePath, Variant,
+    VisPublic, Visibility,
+};
 
 ///
 /// # Struct attributes

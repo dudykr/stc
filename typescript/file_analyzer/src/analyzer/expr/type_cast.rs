@@ -1,21 +1,20 @@
 use super::{super::Analyzer, TypeOfMode};
-use crate::analyzer::assign::AssignOpts;
-use crate::analyzer::util::ResultExt;
-use crate::util::is_str_or_union;
-use crate::{analyzer::util::make_instance_type, ty::Type, validator, validator::ValidateWith, ValidationResult};
-use stc_ts_ast_rnode::RTsAsExpr;
-use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_ast_rnode::RTsLit;
-use stc_ts_ast_rnode::RTsLitType;
-use stc_ts_ast_rnode::RTsTypeAssertion;
-use stc_ts_errors::DebugExt;
-use stc_ts_errors::Error;
-use stc_ts_types::Interface;
-use stc_ts_types::TypeElement;
-use stc_ts_types::TypeParamInstantiation;
+use crate::{
+    analyzer::{
+        assign::AssignOpts,
+        util::{make_instance_type, ResultExt},
+    },
+    ty::Type,
+    util::is_str_or_union,
+    validator,
+    validator::ValidateWith,
+    ValidationResult,
+};
+use stc_ts_ast_rnode::{RTsAsExpr, RTsKeywordType, RTsLit, RTsLitType, RTsTypeAssertion};
+use stc_ts_errors::{DebugExt, Error};
+use stc_ts_types::{Interface, TypeElement, TypeParamInstantiation};
 use std::borrow::Cow;
-use swc_common::TypeEq;
-use swc_common::{Span, Spanned};
+use swc_common::{Span, Spanned, TypeEq};
 use swc_ecma_ast::TsKeywordTypeKind;
 
 #[validator]

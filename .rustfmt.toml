@@ -3,6 +3,6 @@ error_on_line_overflow = true
 error_on_unformatted = true
 format_strings = true
 max_width = 120
-required_version = "1.4.36"
+merge_imports = true
 use_field_init_shorthand = true
 wrap_comments = true

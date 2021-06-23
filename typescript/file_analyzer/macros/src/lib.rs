@@ -8,11 +8,9 @@ extern crate proc_macro;
 
 use pmutil::{Quote, ToTokensExt};
 use swc_macros_common::prelude::*;
-use syn::Block;
-use syn::LitStr;
 use syn::{
-    fold::Fold, ExprTryBlock, FnArg, Ident, ImplItem, ImplItemMethod, ItemImpl, Lifetime, ReturnType, Token, Type,
-    TypeReference,
+    fold::Fold, Block, ExprTryBlock, FnArg, Ident, ImplItem, ImplItemMethod, ItemImpl, Lifetime, LitStr, ReturnType,
+    Token, Type, TypeReference,
 };
 
 #[proc_macro_attribute]

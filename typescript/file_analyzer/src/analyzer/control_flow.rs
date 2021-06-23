@@ -1,58 +1,40 @@
-use super::assign::AssignOpts;
-use super::util::ResultExt;
-use super::Ctx;
 use super::{
+    assign::AssignOpts,
     expr::TypeOfMode,
     marks::MarkExt,
     scope::{ScopeKind, VarInfo},
-    Analyzer,
+    util::ResultExt,
+    Analyzer, Ctx,
 };
-use crate::analyzer::expr::IdCtx;
-use crate::util::type_ext::TypeVecExt;
 use crate::{
+    analyzer::expr::IdCtx,
     ty::{Tuple, Type},
     type_facts::TypeFacts,
-    util::EndsWithRet,
+    util::{type_ext::TypeVecExt, EndsWithRet},
     validator,
     validator::ValidateWith,
     ValidationResult,
 };
 use fxhash::FxHashMap;
-use rnode::NodeId;
-use rnode::VisitWith;
-use stc_ts_ast_rnode::RBinExpr;
-use stc_ts_ast_rnode::RBindingIdent;
-use stc_ts_ast_rnode::RCondExpr;
-use stc_ts_ast_rnode::RExpr;
-use stc_ts_ast_rnode::RIdent;
-use stc_ts_ast_rnode::RIfStmt;
-use stc_ts_ast_rnode::RObjectPatProp;
-use stc_ts_ast_rnode::RPat;
-use stc_ts_ast_rnode::RPatOrExpr;
-use stc_ts_ast_rnode::RSwitchCase;
-use stc_ts_ast_rnode::RSwitchStmt;
-use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_errors::DebugExt;
-use stc_ts_errors::Error;
+use rnode::{NodeId, VisitWith};
+use stc_ts_ast_rnode::{
+    RBinExpr, RBindingIdent, RCondExpr, RExpr, RIdent, RIfStmt, RObjectPatProp, RPat, RPatOrExpr, RStmt, RSwitchCase,
+    RSwitchStmt, RTsKeywordType,
+};
+use stc_ts_errors::{DebugExt, Error};
 use stc_ts_type_ops::Fix;
-use stc_ts_types::name::Name;
-use stc_ts_types::Array;
-use stc_ts_types::Id;
-use stc_ts_types::Key;
-use stc_ts_types::Union;
+use stc_ts_types::{name::Name, Array, Id, Key, Union};
 use stc_ts_utils::MapWithMut;
 use stc_utils::ext::SpanExt;
-use std::borrow::Cow;
 use std::{
+    borrow::{Borrow, Cow},
     collections::hash_map::Entry,
     hash::Hash,
     mem::{replace, take},
     ops::{AddAssign, BitOr, Not},
 };
 use swc_atoms::JsWord;
-use swc_common::TypeEq;
-use swc_common::DUMMY_SP;
-use swc_common::{Span, Spanned};
+use swc_common::{Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
 
 /// Conditional facts
@@ -342,15 +324,39 @@ impl Analyzer<'_, '_> {
         let true_facts = self.cur_facts.true_facts.take();
         let false_facts = self.cur_facts.false_facts.take();
 
+        let mut cons_ends_with_unreachable = false;
+
         let ends_with_ret = stmt.cons.ends_with_ret();
-        self.with_child(ScopeKind::Flow, true_facts, |child| stmt.cons.validate_with(child))?;
+        self.with_child(ScopeKind::Flow, true_facts, |child: &mut Analyzer| {
+            stmt.cons.visit_with(child);
+
+            cons_ends_with_unreachable = child.ctx.in_unreachable;
+
+            Ok(())
+        })
+        .report(&mut self.storage);
+
+        let mut alt_ends_with_unreachable = None;
 
         if let Some(alt) = &stmt.alt {
-            self.with_child(ScopeKind::Flow, false_facts.clone(), |child| alt.validate_with(child))?;
+            self.with_child(ScopeKind::Flow, false_facts.clone(), |child: &mut Analyzer| {
+                alt.visit_with(child);
+
+                alt_ends_with_unreachable = Some(child.ctx.in_unreachable);
+
+                Ok(())
+            })
+            .report(&mut self.storage);
         }
 
         if ends_with_ret {
             self.cur_facts.true_facts += false_facts;
+        }
+
+        if cons_ends_with_unreachable {
+            if let Some(true) = alt_ends_with_unreachable {
+                self.ctx.in_unreachable = true;
+            }
         }
 
         Ok(())
@@ -552,6 +558,13 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        if !errored {
+            self.ctx.in_unreachable |= stmt
+                .cases
+                .iter()
+                .all(|case| self.is_switch_case_body_unconditional_termination(&case.cons));
+        }
+
         if ends_with_ret {
             self.cur_facts.true_facts += false_facts;
         }
@@ -567,6 +580,33 @@ pub(crate) struct PatAssignOpts {
 }
 
 impl Analyzer<'_, '_> {
+    /// Returns true if a body of switch always ends with `return`, `throw` or
+    /// `continue`.
+    ///
+    /// TODO: Support break with other label.
+    fn is_switch_case_body_unconditional_termination<S>(&mut self, body: &[S]) -> bool
+    where
+        S: Borrow<RStmt>,
+    {
+        for stmt in body {
+            match stmt.borrow() {
+                RStmt::Return(..) | RStmt::Throw(..) | RStmt::Continue(..) => return true,
+                RStmt::Break(..) => return false,
+
+                RStmt::If(s) => match &s.alt {
+                    Some(alt) => {
+                        return self.is_switch_case_body_unconditional_termination(&[&*s.cons])
+                            && self.is_switch_case_body_unconditional_termination(&[&**alt]);
+                    }
+                    None => return self.is_switch_case_body_unconditional_termination(&[&*s.cons]),
+                },
+                _ => {}
+            }
+        }
+
+        false
+    }
+
     pub(super) fn try_assign(&mut self, span: Span, op: AssignOp, lhs: &RPatOrExpr, ty: &Type) {
         ty.assert_valid();
 

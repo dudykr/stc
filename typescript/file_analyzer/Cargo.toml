@@ -1,5 +1,5 @@
 [package]
-authors = ["강동윤 <kdy1@dudy.kr>"]
+authors = ["강동윤 <kdy1997.dev@gmail.com>"]
 edition = "2018"
 name = "stc_ts_file_analyzer"
 publish = false
@@ -33,13 +33,14 @@ stc_ts_file_analyzer_macros = {path = "./macros"}
 stc_ts_generics = {path = "./generics"}
 stc_ts_ordering = {path = "./ordering"}
 stc_ts_storage = {path = "../storage"}
+stc_ts_type_form = { path = "../type_form" }
 stc_ts_type_ops = {path = "./type_ops"}
 stc_ts_types = {path = "../types"}
 stc_ts_utils = {path = "../utils"}
 stc_utils = {path = "../../utils"}
 string_enum = "0.3.1"
 swc_atoms = "0.2.6"
-swc_common = { version = "0.10.21", features = ["concurrent"] }
+swc_common = {version = "0.10.21", features = ["concurrent"]}
 swc_ecma_ast = "0.46.0"
 swc_ecma_codegen = "0.59.0"
 swc_ecma_parser = "0.60.0"

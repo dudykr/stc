@@ -1,6 +1,5 @@
 use crate::Visitable;
-use std::cell::RefCell;
-use std::sync::Arc;
+use std::{cell::RefCell, sync::Arc};
 use swc_common::Span;
 
 pub trait Fold<T: Visitable> {

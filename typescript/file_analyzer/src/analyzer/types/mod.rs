@@ -1,76 +1,30 @@
-use super::marks::MarkExt;
-use super::Analyzer;
-use crate::analyzer::expr::TypeOfMode;
-use crate::analyzer::Ctx;
-use crate::type_facts::TypeFacts;
-use crate::util::type_ext::TypeVecExt;
-use crate::util::unwrap_ref_with_single_arg;
-use crate::Marks;
-use crate::ValidationResult;
-use fxhash::FxHashMap;
-use fxhash::FxHashSet;
-use rnode::Visit;
-use rnode::VisitMut;
-use rnode::VisitMutWith;
-use rnode::VisitWith;
-use stc_ts_ast_rnode::RClassDecl;
-use stc_ts_ast_rnode::RExpr;
-use stc_ts_ast_rnode::RIdent;
-use stc_ts_ast_rnode::RInvalid;
-use stc_ts_ast_rnode::RNumber;
-use stc_ts_ast_rnode::RTsEntityName;
-use stc_ts_ast_rnode::RTsEnumDecl;
-use stc_ts_ast_rnode::RTsInterfaceDecl;
-use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_ast_rnode::RTsModuleDecl;
-use stc_ts_ast_rnode::RTsModuleName;
-use stc_ts_ast_rnode::RTsThisType;
-use stc_ts_ast_rnode::RTsTypeAliasDecl;
-use stc_ts_errors::debug::dump_type_as_string;
-use stc_ts_errors::DebugExt;
-use stc_ts_errors::Error;
+use super::{marks::MarkExt, Analyzer};
+use crate::{
+    analyzer::{expr::TypeOfMode, Ctx},
+    type_facts::TypeFacts,
+    util::{type_ext::TypeVecExt, unwrap_ref_with_single_arg},
+    Marks, ValidationResult,
+};
+use fxhash::{FxHashMap, FxHashSet};
+use itertools::Itertools;
+use rnode::{Visit, VisitMut, VisitMutWith, VisitWith};
+use stc_ts_ast_rnode::{
+    RClassDecl, RExpr, RIdent, RInvalid, RNumber, RTsEntityName, RTsEnumDecl, RTsInterfaceDecl, RTsKeywordType,
+    RTsModuleDecl, RTsModuleName, RTsThisType, RTsTypeAliasDecl,
+};
+use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_type_ops::Fix;
-use stc_ts_types::name::Name;
-use stc_ts_types::Array;
-use stc_ts_types::Class;
-use stc_ts_types::ClassDef;
-use stc_ts_types::ClassMember;
-use stc_ts_types::ComputedKey;
-use stc_ts_types::ConstructorSignature;
-use stc_ts_types::Id;
-use stc_ts_types::IdCtx;
-use stc_ts_types::Instance;
-use stc_ts_types::Intersection;
-use stc_ts_types::Key;
-use stc_ts_types::MethodSignature;
-use stc_ts_types::Operator;
-use stc_ts_types::PropertySignature;
-use stc_ts_types::QueryExpr;
-use stc_ts_types::Tuple;
-use stc_ts_types::TupleElement;
-use stc_ts_types::Type;
-use stc_ts_types::TypeElement;
-use stc_ts_types::TypeLit;
-use stc_ts_types::TypeLitMetadata;
-use stc_ts_types::TypeParam;
-use stc_ts_types::TypeParamInstantiation;
-use stc_ts_types::Union;
+use stc_ts_types::{
+    name::Name, Accessor, Array, Class, ClassDef, ClassMember, ComputedKey, ConstructorSignature, Id, IdCtx, Instance,
+    Intersection, Key, MethodSignature, Operator, PropertySignature, QueryExpr, Tuple, TupleElement, Type, TypeElement,
+    TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
+};
 use stc_ts_utils::MapWithMut;
-use stc_utils::error;
-use stc_utils::error::context;
-use stc_utils::ext::SpanExt;
-use stc_utils::stack;
-use stc_utils::TryOpt;
-use std::borrow::Cow;
-use std::collections::HashMap;
+use stc_utils::{error, error::context, ext::SpanExt, stack, TryOpt};
+use std::{borrow::Cow, collections::HashMap};
 use swc_atoms::js_word;
-use swc_common::Span;
-use swc_common::Spanned;
-use swc_common::SyntaxContext;
-use swc_common::TypeEq;
-use swc_ecma_ast::MethodKind;
-use swc_ecma_ast::TsKeywordTypeKind;
-use swc_ecma_ast::TsTypeOperatorOp;
+use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
+use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
 
 mod index_signature;
 mod keyof;
@@ -563,6 +517,7 @@ impl Analyzer<'_, '_> {
                         type_ann,
                         type_params: Default::default(),
                         metadata: Default::default(),
+                        accessor: Default::default(),
                     }))
                 }
                 ClassMember::IndexSignature(_) => {}
@@ -622,27 +577,61 @@ impl Analyzer<'_, '_> {
         self.apply_type_facts_to_type(type_facts, ty)
     }
 
-    pub(crate) fn collect_class_members(&mut self, ty: &Type) -> ValidationResult<Option<Vec<ClassMember>>> {
+    ///
+    /// # Parmeters
+    ///
+    /// ## excluded
+    ///
+    /// Memebers of base class.
+    pub(crate) fn collect_class_members(
+        &mut self,
+        excluded: &[&ClassMember],
+        ty: &Type,
+    ) -> ValidationResult<Option<Vec<ClassMember>>> {
+        if self.is_builtin {
+            return Ok(None);
+        }
+
         let ty = ty.normalize();
         match ty {
             Type::ClassDef(c) => {
+                let mut members = c
+                    .body
+                    .iter()
+                    .filter(|&super_member| {
+                        if let Some(super_key) = super_member.key() {
+                            for excluded in excluded {
+                                if let Some(exc_key) = excluded.key() {
+                                    if self.key_matches(super_key.span(), &super_key, &exc_key, false) {
+                                        return false;
+                                    }
+                                }
+                            }
+                        }
+
+                        true
+                    })
+                    .cloned()
+                    .collect_vec();
+
                 match &c.super_class {
                     Some(sc) => {
-                        let mut members = c.body.clone();
+                        let mut excluded = excluded.to_vec();
+                        excluded.extend(members.iter());
                         // TODO: Override
 
-                        if let Some(super_members) = self.collect_class_members(&sc)? {
+                        if let Some(super_members) = self.collect_class_members(&excluded, &sc)? {
                             members.extend(super_members)
                         }
 
                         return Ok(Some(members));
                     }
                     None => {
-                        return Ok(Some(c.body.clone()));
+                        return Ok(Some(members));
                     }
                 }
             }
-            Type::Class(c) => self.collect_class_members(&Type::ClassDef(*c.def.clone())),
+            Type::Class(c) => self.collect_class_members(excluded, &Type::ClassDef(*c.def.clone())),
             _ => {
                 slog::error!(self.logger, "unimplemented: collect_class_members: {:?}", ty);
                 return Ok(None);
@@ -835,6 +824,7 @@ impl Analyzer<'_, '_> {
                         type_ann: Some(e.ty.clone()),
                         type_params: Default::default(),
                         metadata: Default::default(),
+                        accessor: Default::default(),
                     }));
                 }
 
@@ -855,6 +845,10 @@ impl Analyzer<'_, '_> {
                     })),
                     type_params: Default::default(),
                     metadata: Default::default(),
+                    accessor: Accessor {
+                        getter: true,
+                        setter: false,
+                    },
                 }));
 
                 Cow::Owned(TypeLit {
@@ -1012,32 +1006,17 @@ impl Analyzer<'_, '_> {
                     return Ok(None);
                 }
 
-                match m.kind {
-                    MethodKind::Method => TypeElement::Method(MethodSignature {
-                        span: m.span,
-                        accessibility: m.accessibility,
-                        readonly: false,
-                        key: m.key.clone(),
-                        optional: m.is_optional,
-                        params: m.params.clone(),
-                        ret_ty: Some(m.ret_ty.clone()),
-                        type_params: m.type_params.clone(),
-                        metadata: Default::default(),
-                    }),
-                    MethodKind::Getter => TypeElement::Property(PropertySignature {
-                        span: m.span,
-                        accessibility: m.accessibility,
-                        readonly: false,
-                        key: m.key.clone(),
-                        optional: m.is_optional,
-                        params: vec![],
-                        // TODO: Check for setter property with same key.
-                        type_ann: Some(m.ret_ty.clone()),
-                        type_params: None,
-                        metadata: Default::default(),
-                    }),
-                    MethodKind::Setter => return Ok(None),
-                }
+                TypeElement::Method(MethodSignature {
+                    span: m.span,
+                    accessibility: m.accessibility,
+                    readonly: false,
+                    key: m.key.clone(),
+                    optional: m.is_optional,
+                    params: m.params.clone(),
+                    ret_ty: Some(m.ret_ty.clone()),
+                    type_params: m.type_params.clone(),
+                    metadata: Default::default(),
+                })
             }
             ClassMember::Property(p) => {
                 if p.is_static != static_mode {
@@ -1054,6 +1033,7 @@ impl Analyzer<'_, '_> {
                     type_ann: p.value.clone(),
                     type_params: None,
                     metadata: Default::default(),
+                    accessor: p.accessor,
                 })
             }
             ClassMember::IndexSignature(i) => TypeElement::Index(i.clone()),

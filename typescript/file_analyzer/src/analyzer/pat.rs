@@ -1,50 +1,30 @@
 use super::{Analyzer, Ctx};
-use crate::analyzer::assign::AssignOpts;
-use crate::analyzer::scope::VarKind;
-use crate::ty::TypeExt;
-use crate::util::should_instantiate_type_ann;
-use crate::util::type_ext::TypeVecExt;
 use crate::{
-    analyzer::util::{ResultExt, VarVisitor},
+    analyzer::{
+        assign::AssignOpts,
+        scope::VarKind,
+        util::{ResultExt, VarVisitor},
+    },
     ty,
-    ty::Type,
+    ty::{Type, TypeExt},
+    util::{should_instantiate_type_ann, type_ext::TypeVecExt},
     validator,
     validator::ValidateWith,
     ValidationResult,
 };
 use rnode::VisitWith;
-use stc_ts_ast_rnode::RArrayPat;
-use stc_ts_ast_rnode::RAssignPat;
-use stc_ts_ast_rnode::RAssignPatProp;
-use stc_ts_ast_rnode::RBindingIdent;
-use stc_ts_ast_rnode::RExpr;
-use stc_ts_ast_rnode::RIdent;
-use stc_ts_ast_rnode::RKeyValuePatProp;
-use stc_ts_ast_rnode::RKeyValueProp;
-use stc_ts_ast_rnode::RObjectPat;
-use stc_ts_ast_rnode::RObjectPatProp;
-use stc_ts_ast_rnode::RParam;
-use stc_ts_ast_rnode::RPat;
-use stc_ts_ast_rnode::RProp;
-use stc_ts_ast_rnode::RPropOrSpread;
-use stc_ts_ast_rnode::RRestPat;
-use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_errors::Error;
-use stc_ts_errors::Errors;
-use stc_ts_types::Array;
-use stc_ts_types::Instance;
-use stc_ts_types::Key;
-use stc_ts_types::PropertySignature;
-use stc_ts_types::Tuple;
-use stc_ts_types::TupleElement;
-use stc_ts_types::TypeElMetadata;
-use stc_ts_types::TypeElement;
-use stc_ts_types::TypeLit;
+use stc_ts_ast_rnode::{
+    RArrayPat, RAssignPat, RAssignPatProp, RBindingIdent, RExpr, RIdent, RKeyValuePatProp, RKeyValueProp, RObjectPat,
+    RObjectPatProp, RParam, RPat, RProp, RPropOrSpread, RRestPat, RTsKeywordType,
+};
+use stc_ts_errors::{Error, Errors};
+use stc_ts_types::{
+    Array, Instance, Key, PropertySignature, Tuple, TupleElement, TypeElMetadata, TypeElement, TypeLit,
+};
 use stc_ts_utils::PatExt;
 use stc_utils::TryOpt;
 use swc_atoms::js_word;
-use swc_common::TypeEq;
-use swc_common::{Mark, Span, Spanned, SyntaxContext, DUMMY_SP};
+use swc_common::{Mark, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
 
 #[derive(Debug, Clone, Copy)]
@@ -136,6 +116,7 @@ impl Analyzer<'_, '_> {
                                 type_ann: Some(ty),
                                 type_params: None,
                                 metadata: Default::default(),
+                                accessor: Default::default(),
                             }))
                         }
                         RObjectPatProp::Assign(RAssignPatProp { key, .. }) => {
@@ -156,6 +137,7 @@ impl Analyzer<'_, '_> {
                                     has_default: true,
                                     ..Default::default()
                                 },
+                                accessor: Default::default(),
                             }))
                         }
                         RObjectPatProp::Rest(..) => {}

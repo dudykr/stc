@@ -6,25 +6,21 @@
 pub use self::result_ext::DebugExt;
 use fmt::Formatter;
 use static_assertions::assert_eq_size;
-use stc_ts_types::name::Name;
-use stc_ts_types::Id;
-use stc_ts_types::Key;
-use stc_ts_types::ModuleId;
-use stc_ts_types::Type;
-use stc_ts_types::TypeElement;
-use stc_ts_types::TypeParamInstantiation;
+use stc_ts_types::{name::Name, Id, Key, ModuleId, Type, TypeElement, TypeParamInstantiation};
 use stc_utils::stack::StackOverflowError;
-use std::borrow::Cow;
-use std::fmt;
-use std::fmt::Debug;
-use std::fmt::Display;
-use std::{ops::RangeInclusive, path::PathBuf};
+use std::{
+    borrow::Cow,
+    fmt,
+    fmt::{Debug, Display},
+    ops::RangeInclusive,
+    path::PathBuf,
+};
 use swc_atoms::JsWord;
-use swc_common::errors::DiagnosticId;
-use swc_common::{errors::Handler, Span, Spanned, DUMMY_SP};
-use swc_ecma_ast::AssignOp;
-use swc_ecma_ast::BinaryOp;
-use swc_ecma_ast::{UnaryOp, UpdateOp};
+use swc_common::{
+    errors::{DiagnosticId, Handler},
+    Span, Spanned, DUMMY_SP,
+};
+use swc_ecma_ast::{AssignOp, BinaryOp, UnaryOp, UpdateOp};
 
 pub mod debug;
 mod result_ext;
@@ -51,7 +47,10 @@ impl Errors {
             _ => {}
         }
 
-        if err.span().is_dummy() {
+        let code = err.code();
+        if 5000 <= code && code < 6000 {
+            // This is error for invalid options.
+        } else if err.span().is_dummy() {
             panic!("Error with a dummy span found: {:?}", err)
         }
     }
@@ -59,6 +58,30 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS7027
+    UnreachableCode {
+        span: Span,
+    },
+
+    /// TS2454
+    VarMayNotBeInitialized {
+        span: Span,
+    },
+
+    /// TS2564
+    ClassPropNotInistalized {
+        span: Span,
+    },
+
+    /// TS2610
+    DefinedWitHAccessorInSuper {
+        span: Span,
+    },
+    /// TS5048
+    OptionInvalidForEs3 {
+        span: Span,
+    },
+
     /// TS17009
     ThisUsedBeforeCallingSuper {
         span: Span,
@@ -681,8 +704,14 @@ pub enum Error {
         name: Id,
     },
 
+    /// TS2300
     DuplicateName {
         name: Id,
+        span: Span,
+    },
+
+    /// TS2300
+    DuplicateNameWithoutName {
         span: Span,
     },
 
@@ -1153,6 +1182,16 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2387
+    ShouldBeStaticMethod {
+        span: Span,
+    },
+
+    /// TS2388
+    ShouldBeInstanceMethod {
+        span: Span,
+    },
+
     DebugContext(DebugContext),
 }
 
@@ -1431,7 +1470,7 @@ impl Error {
 
             Error::InvalidDeleteOperand { .. } => 2703,
 
-            Error::DuplicateName { .. } => 2300,
+            Error::DuplicateName { .. } | Error::DuplicateNameWithoutName { .. } => 2300,
 
             Error::NoSuchVar { .. } => 2304,
             Error::NoSuchType { .. } => 2304,
@@ -1674,6 +1713,21 @@ impl Error {
             Error::ThisUsedBeforeCallingSuper { .. } => 17009,
 
             Error::SuperUsedBeforeCallingSuper { .. } => 17011,
+
+            Error::OptionInvalidForEs3 { .. } => 5048,
+
+            Error::ShouldBeStaticMethod { .. } => 2387,
+
+            Error::ShouldBeInstanceMethod { .. } => 2388,
+
+            Error::DefinedWitHAccessorInSuper { .. } => 2610,
+
+            Error::ClassPropNotInistalized { .. } => 2564,
+
+            Error::VarMayNotBeInitialized { .. } => 2454,
+
+            Error::UnreachableCode { .. } => 7027,
+
             _ => 0,
         }
     }

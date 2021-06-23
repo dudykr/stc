@@ -1,17 +1,9 @@
 use retain_mut::RetainMut;
-use rnode::VisitMut;
-use rnode::VisitMutWith;
-use stc_ts_ast_rnode::RBlockStmt;
-use stc_ts_ast_rnode::RClassMember;
-use stc_ts_ast_rnode::RDecl;
-use stc_ts_ast_rnode::REmptyStmt;
-use stc_ts_ast_rnode::RExportDecl;
-use stc_ts_ast_rnode::RIdent;
-use stc_ts_ast_rnode::RModuleDecl;
-use stc_ts_ast_rnode::RModuleItem;
-use stc_ts_ast_rnode::RPropName;
-use stc_ts_ast_rnode::RStmt;
-use stc_ts_ast_rnode::RTsModuleDecl;
+use rnode::{VisitMut, VisitMutWith};
+use stc_ts_ast_rnode::{
+    RBlockStmt, RClassMember, RDecl, REmptyStmt, RExportDecl, RIdent, RModuleDecl, RModuleItem, RPropName, RStmt,
+    RTsModuleDecl,
+};
 use swc_common::DUMMY_SP;
 
 /// Handles

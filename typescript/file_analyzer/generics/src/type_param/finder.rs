@@ -1,9 +1,6 @@
 use fxhash::FxHashSet;
-use rnode::Visit;
-use rnode::VisitWith;
-use stc_ts_types::Id;
-use stc_ts_types::TypeParam;
-use stc_ts_types::TypeParamDecl;
+use rnode::{Visit, VisitWith};
+use stc_ts_types::{Id, TypeParam, TypeParamDecl};
 
 #[derive(Debug, Default)]
 pub struct TypeParamDeclFinder {

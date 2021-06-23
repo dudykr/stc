@@ -1,22 +1,20 @@
 use self::tsc::TscCommand;
 use anyhow::Error;
-use slog::Discard;
-use slog::Logger;
+use slog::{Discard, Logger};
 use stc_ts_builtin_types::Lib;
-use stc_ts_file_analyzer::env::Env;
-use stc_ts_file_analyzer::env::ModuleConfig;
-use stc_ts_file_analyzer::Rule;
+use stc_ts_file_analyzer::{
+    env::{Env, ModuleConfig},
+    Rule,
+};
 use stc_ts_module_loader::resolver::node::NodeResolver;
 use stc_ts_type_checker::Checker;
-use std::path::PathBuf;
-use std::sync::Arc;
+use std::{path::PathBuf, sync::Arc};
 use structopt::StructOpt;
-use swc_common::errors::ColorConfig;
-use swc_common::errors::Handler;
-use swc_common::FilePathMapping;
-use swc_common::SourceMap;
-use swc_ecma_parser::JscTarget;
-use swc_ecma_parser::TsConfig;
+use swc_common::{
+    errors::{ColorConfig, Handler},
+    FilePathMapping, SourceMap,
+};
+use swc_ecma_parser::{JscTarget, TsConfig};
 
 mod tsc;
 

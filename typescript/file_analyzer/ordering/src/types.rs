@@ -1,5 +1,4 @@
-use fxhash::FxHashMap;
-use fxhash::FxHashSet;
+use fxhash::{FxHashMap, FxHashSet};
 use std::hash::Hash;
 
 pub trait Sortable {

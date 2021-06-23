@@ -5,10 +5,8 @@
 #![allow(incomplete_features)]
 
 pub use self::fix::Fix;
-use stc_ts_ast_rnode::RTsLit;
-use stc_ts_ast_rnode::RTsLitType;
-use stc_ts_types::Type;
-use stc_ts_types::Union;
+use stc_ts_ast_rnode::{RTsLit, RTsLitType};
+use stc_ts_types::{Type, Union};
 
 mod fix;
 

@@ -1,13 +1,12 @@
-use super::IdCtx;
-use super::TypeOfMode;
-use crate::analyzer::Ctx;
-use crate::util::type_ext::TypeVecExt;
-use crate::util::RemoveTypes;
-use crate::{analyzer::Analyzer, validator, validator::ValidateWith, ValidationResult};
-use stc_ts_ast_rnode::RExpr;
-use stc_ts_ast_rnode::RExprOrSuper;
-use stc_ts_ast_rnode::RMemberExpr;
-use stc_ts_ast_rnode::ROptChainExpr;
+use super::{IdCtx, TypeOfMode};
+use crate::{
+    analyzer::{Analyzer, Ctx},
+    util::{type_ext::TypeVecExt, RemoveTypes},
+    validator,
+    validator::ValidateWith,
+    ValidationResult,
+};
+use stc_ts_ast_rnode::{RExpr, RExprOrSuper, RMemberExpr, ROptChainExpr};
 use stc_ts_types::Type;
 use swc_ecma_ast::TsKeywordTypeKind;
 

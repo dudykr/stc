@@ -1,10 +1,7 @@
-use crate::analyzer::Analyzer;
-use crate::analyzer::ScopeKind;
-use rnode::Visit;
-use rnode::VisitWith;
+use crate::analyzer::{Analyzer, ScopeKind};
+use rnode::{Visit, VisitWith};
 use stc_ts_errors::Error;
-use stc_ts_types::Id;
-use stc_ts_types::TypeParam;
+use stc_ts_types::{Id, TypeParam};
 use swc_common::Span;
 
 impl Analyzer<'_, '_> {

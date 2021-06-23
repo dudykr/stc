@@ -4,8 +4,7 @@
 extern crate napi_derive;
 
 use backtrace::Backtrace;
-use napi::CallContext;
-use napi::JsObject;
+use napi::{CallContext, JsObject};
 use std::panic::set_hook;
 
 #[module_exports]

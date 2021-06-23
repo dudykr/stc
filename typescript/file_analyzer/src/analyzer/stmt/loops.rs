@@ -1,42 +1,24 @@
 use super::super::Analyzer;
-use crate::analyzer::control_flow::CondFacts;
-use crate::analyzer::types::NormalizeTypeOpts;
-use crate::analyzer::util::ResultExt;
-use crate::analyzer::Ctx;
-use crate::util::is_str_or_union;
-use crate::validator::ValidateWith;
-use crate::{analyzer::ScopeKind, ty::Type, validator, ValidationResult};
+use crate::{
+    analyzer::{control_flow::CondFacts, types::NormalizeTypeOpts, util::ResultExt, Ctx, ScopeKind},
+    ty::Type,
+    util::is_str_or_union,
+    validator,
+    validator::ValidateWith,
+    ValidationResult,
+};
 use rnode::VisitWith;
-use stc_ts_ast_rnode::RDoWhileStmt;
-use stc_ts_ast_rnode::RExpr;
-use stc_ts_ast_rnode::RForInStmt;
-use stc_ts_ast_rnode::RForOfStmt;
-use stc_ts_ast_rnode::RIdent;
-use stc_ts_ast_rnode::RPat;
-use stc_ts_ast_rnode::RStmt;
-use stc_ts_ast_rnode::RTsEntityName;
-use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_ast_rnode::RVarDecl;
-use stc_ts_ast_rnode::RVarDeclOrPat;
-use stc_ts_ast_rnode::RWhileStmt;
-use stc_ts_errors::DebugExt;
-use stc_ts_errors::Error;
+use stc_ts_ast_rnode::{
+    RDoWhileStmt, RExpr, RForInStmt, RForOfStmt, RIdent, RPat, RStmt, RTsEntityName, RTsKeywordType, RVarDecl,
+    RVarDeclOrPat, RWhileStmt,
+};
+use stc_ts_errors::{DebugExt, Error};
 use stc_ts_file_analyzer_macros::extra_validator;
-use stc_ts_types::Id;
-use stc_ts_types::ModuleId;
-use stc_ts_types::Operator;
-use stc_ts_types::Ref;
-use stc_ts_types::TypeParamInstantiation;
-use stc_ts_utils::find_ids_in_pat;
-use stc_ts_utils::PatExt;
+use stc_ts_types::{Id, ModuleId, Operator, Ref, TypeParamInstantiation};
+use stc_ts_utils::{find_ids_in_pat, PatExt};
 use std::borrow::Cow;
-use swc_common::Span;
-use swc_common::Spanned;
-use swc_common::DUMMY_SP;
-use swc_ecma_ast::EsVersion;
-use swc_ecma_ast::TsKeywordTypeKind;
-use swc_ecma_ast::TsTypeOperatorOp;
-use swc_ecma_ast::VarDeclKind;
+use swc_common::{Span, Spanned, DUMMY_SP};
+use swc_ecma_ast::{EsVersion, TsKeywordTypeKind, TsTypeOperatorOp, VarDeclKind};
 
 #[derive(Clone, Copy)]
 enum ForHeadKind {
