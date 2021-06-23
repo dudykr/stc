@@ -324,17 +324,39 @@ impl Analyzer<'_, '_> {
         let true_facts = self.cur_facts.true_facts.take();
         let false_facts = self.cur_facts.false_facts.take();
 
+        let mut cons_ends_with_unreachable = false;
+
         let ends_with_ret = stmt.cons.ends_with_ret();
-        self.with_child(ScopeKind::Flow, true_facts, |child| stmt.cons.validate_with(child))
-            .report(&mut self.storage);
+        self.with_child(ScopeKind::Flow, true_facts, |child: &mut Analyzer| {
+            stmt.cons.visit_with(child);
+
+            cons_ends_with_unreachable = child.ctx.in_unreachable;
+
+            Ok(())
+        })
+        .report(&mut self.storage);
+
+        let mut alt_ends_with_unreachable = None;
 
         if let Some(alt) = &stmt.alt {
-            self.with_child(ScopeKind::Flow, false_facts.clone(), |child| alt.validate_with(child))
-                .report(&mut self.storage);
+            self.with_child(ScopeKind::Flow, false_facts.clone(), |child: &mut Analyzer| {
+                alt.visit_with(child);
+
+                alt_ends_with_unreachable = Some(child.ctx.in_unreachable);
+
+                Ok(())
+            })
+            .report(&mut self.storage);
         }
 
         if ends_with_ret {
             self.cur_facts.true_facts += false_facts;
+        }
+
+        if cons_ends_with_unreachable {
+            if let Some(true) = alt_ends_with_unreachable {
+                self.ctx.in_unreachable = true;
+            }
         }
 
         Ok(())

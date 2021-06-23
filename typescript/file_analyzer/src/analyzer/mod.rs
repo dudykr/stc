@@ -222,6 +222,7 @@ pub(crate) struct Ctx {
 
     disallow_suggesting_property_on_no_var: bool,
 
+    /// Should be modified directly instead of using `with_ctx`.
     in_unreachable: bool,
 }
 
