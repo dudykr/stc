@@ -58,6 +58,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS7027
+    UnreachableCode {
+        span: Span,
+    },
+
     /// TS2454
     VarMayNotBeInitialized {
         span: Span,
@@ -1720,6 +1725,9 @@ impl Error {
             Error::ClassPropNotInistalized { .. } => 2564,
 
             Error::VarMayNotBeInitialized { .. } => 2454,
+
+            Error::UnreachableCode { .. } => 7027,
+
             _ => 0,
         }
     }
