@@ -8,8 +8,12 @@ version = "0.1.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+stc_ts_ast_rnode = {path = "../ast_rnode"}
 stc_ts_types = {path = "../types"}
 stc_utils = {path = "../../utils"}
+stc_visit = {path = "../../visit"}
+swc_common = "0.10.21"
+swc_ecma_ast = "0.46.0"
 
 [dev-dependencies]
 stc_testing = {path = "../../testing/"}
