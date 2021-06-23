@@ -37,7 +37,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, s: &RStmt) {
         slog::warn!(self.logger, "Statement start");
 
-        if !self.rule().allow_unreachable_code && self.ctx.in_unreachable {
+        if self.rule().always_strict && !self.rule().allow_unreachable_code && self.ctx.in_unreachable {
             self.storage.report(Error::UnreachableCode { span: s.span() });
         }
 
