@@ -293,6 +293,7 @@ controlFlow/controlFlowSuperPropertyAccess.ts
 controlFlow/controlFlowTruthiness.ts
 controlFlow/controlFlowWhileStatement.ts
 controlFlow/controlFlowWithTemplateLiterals.ts
+controlFlow/exhaustiveSwitchStatements1.ts
 controlFlow/switchWithConstrainedTypeVariable.ts
 controlFlow/typeGuardsAsAssertions.ts
 controlFlow/typeGuardsNestedAssignments.ts
