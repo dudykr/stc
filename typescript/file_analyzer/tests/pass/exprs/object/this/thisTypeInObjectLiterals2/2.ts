@@ -1,3 +1,9 @@
+type VueOptions<D, M, P> = ThisType<D & M & P> & {
+    data?: D | (() => D);
+    methods?: M;
+    computed?: Accessors<P>;
+}
+
 declare const Vue: new <D, M, P>(options: VueOptions<D, M, P>) => D & M & P;
 
 let vue = new Vue({
