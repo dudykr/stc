@@ -294,7 +294,7 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
 
         let mut libs = vec![Lib::Es5, Lib::Dom];
         let mut rule = Rule {
-            allow_unreachable_code: true,
+            allow_unreachable_code: false,
             ..Default::default()
         };
         let mut module_config = ModuleConfig::None;
