@@ -45,6 +45,7 @@ impl Analyzer<'_, '_> {
         self.scope.return_values.in_conditional |= match s {
             RStmt::If(_) => true,
             RStmt::Switch(_) => true,
+            RStmt::While(..) | RStmt::DoWhile(..) | RStmt::For(..) | RStmt::ForIn(..) | RStmt::ForOf(..) => true,
             _ => false,
         };
 
