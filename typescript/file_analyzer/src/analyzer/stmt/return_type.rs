@@ -35,7 +35,6 @@ pub(in crate::analyzer) struct ReturnValues {
     yield_types: Vec<Type>,
     /// Are we in if or switch statement?
     pub(super) in_conditional: bool,
-    pub(super) forced_never: bool,
 }
 
 impl AddAssign for ReturnValues {
@@ -44,8 +43,6 @@ impl AddAssign for ReturnValues {
 
         self.return_types.extend(rhs.return_types);
         self.yield_types.extend(rhs.yield_types);
-
-        self.forced_never |= rhs.forced_never;
     }
 }
 

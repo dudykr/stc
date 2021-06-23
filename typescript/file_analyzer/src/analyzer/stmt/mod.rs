@@ -68,7 +68,7 @@ impl Analyzer<'_, '_> {
             let has_break = v.found;
             if !has_break {
                 if let Known(v) = test.as_bool() {
-                    self.scope.return_values.forced_never = true;
+                    self.ctx.in_unreachable = true;
                     return;
                 }
             }
