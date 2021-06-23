@@ -1,14 +1,10 @@
 [package]
 authors = ["강동윤 <kdy1997.dev@gmail.com>"]
 edition = "2018"
-name = "rnode"
+name = "stc_ts_type_form"
 publish = false
-version = "0.0.0"
+version = "0.1.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-Inflector = "0.11.4"
-rnode_macros = {path = "./macros"}
-stc_visit = {path = "../visit"}
-swc_common = "0.10.21"
