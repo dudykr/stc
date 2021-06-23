@@ -12,7 +12,7 @@ use stc_ts_ast_rnode::{
 use stc_ts_errors::Error;
 use stc_ts_types::Type;
 use stc_utils::stack;
-use swc_common::DUMMY_SP;
+use swc_common::{Spanned, DUMMY_SP};
 use swc_ecma_utils::Value::Known;
 
 mod ambient_decl;
@@ -36,6 +36,10 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, s: &RStmt) {
         slog::warn!(self.logger, "Statement start");
+
+        if !self.rule().allow_unreachable_code && self.ctx.in_unreachable {
+            self.storage.report(Error::UnreachableCode { span: s.span() });
+        }
 
         let old_in_conditional = self.scope.return_values.in_conditional;
         self.scope.return_values.in_conditional |= match s {
