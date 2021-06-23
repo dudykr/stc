@@ -5,35 +5,27 @@
 #![feature(specialization)]
 
 use once_cell::sync::Lazy;
-use rnode::NodeIdGenerator;
-use rnode::RNode;
-use stc_testing::load_txt;
-use stc_testing::logger;
+use rnode::{NodeIdGenerator, RNode};
+use stc_testing::{load_txt, logger};
 use stc_ts_ast_rnode::RModule;
 use stc_ts_builtin_types::Lib;
-use stc_ts_errors::debug::debugger::Debugger;
-use stc_ts_errors::Error;
-use stc_ts_file_analyzer::analyzer::Analyzer;
-use stc_ts_file_analyzer::analyzer::NoopLoader;
-use stc_ts_file_analyzer::env::Env;
-use stc_ts_file_analyzer::env::ModuleConfig;
-use stc_ts_file_analyzer::validator::ValidateWith;
-use stc_ts_file_analyzer::Rule;
-use stc_ts_storage::ErrorStore;
-use stc_ts_storage::Single;
+use stc_ts_errors::{debug::debugger::Debugger, Error};
+use stc_ts_file_analyzer::{
+    analyzer::{Analyzer, NoopLoader},
+    env::{Env, ModuleConfig},
+    validator::ValidateWith,
+    Rule,
+};
+use stc_ts_storage::{ErrorStore, Single};
 use stc_ts_types::module_id;
 use stc_ts_utils::StcComments;
-use std::env;
-use std::path::Path;
-use std::path::PathBuf;
-use std::sync::Arc;
-use swc_common::input::SourceFileInput;
-use swc_common::GLOBALS;
-use swc_ecma_parser::lexer::Lexer;
-use swc_ecma_parser::JscTarget;
-use swc_ecma_parser::Parser;
-use swc_ecma_parser::Syntax;
-use swc_ecma_parser::TsConfig;
+use std::{
+    env,
+    path::{Path, PathBuf},
+    sync::Arc,
+};
+use swc_common::{input::SourceFileInput, GLOBALS};
+use swc_ecma_parser::{lexer::Lexer, JscTarget, Parser, Syntax, TsConfig};
 use swc_ecma_transforms::resolver::ts_resolver;
 use swc_ecma_visit::FoldWith;
 use testing::NormalizedOutput;
@@ -83,9 +75,10 @@ fn run_test(file_name: PathBuf, logger: slog::Logger, for_error: bool) -> Option
                 no_unused_locals: false,
                 no_unused_parameters: false,
                 strict_function_types: false,
-                strict_null_checks: true,
+                strict_null_checks: false,
                 suppress_excess_property_errors: false,
                 suppress_implicit_any_index_errors: false,
+                use_define_property_for_class_fields: false,
             };
 
             for line in fm.src.lines() {

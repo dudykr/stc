@@ -1,13 +1,8 @@
 use stc_testing::logger;
 use stc_ts_builtin_types::Lib;
-use stc_ts_file_analyzer::env::BuiltIn;
-use stc_ts_file_analyzer::env::Env;
-use stc_ts_file_analyzer::env::ModuleConfig;
-use stc_ts_file_analyzer::env::StableEnv;
+use stc_ts_file_analyzer::env::{BuiltIn, Env, ModuleConfig, StableEnv};
 use std::sync::Arc;
-use swc_common::Globals;
-use swc_common::DUMMY_SP;
-use swc_common::GLOBALS;
+use swc_common::{Globals, DUMMY_SP, GLOBALS};
 
 #[test]
 pub fn builtin() {

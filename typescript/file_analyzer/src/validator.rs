@@ -1,13 +1,7 @@
 use rnode::RNode;
-use stc_ts_ast_rnode::RClassMember;
-use stc_ts_ast_rnode::RParam;
-use stc_ts_ast_rnode::RPat;
-use stc_ts_ast_rnode::RTsExprWithTypeArgs;
-use stc_ts_ast_rnode::RTsFnParam;
-use stc_ts_ast_rnode::RTsTupleElement;
-use stc_ts_ast_rnode::RTsType;
-use stc_ts_ast_rnode::RTsTypeElement;
-use stc_ts_ast_rnode::RTsTypeParam;
+use stc_ts_ast_rnode::{
+    RClassMember, RParam, RPat, RTsExprWithTypeArgs, RTsFnParam, RTsTupleElement, RTsType, RTsTypeElement, RTsTypeParam,
+};
 
 /// Visit with output
 pub trait Validate<'context, T: ?Sized>

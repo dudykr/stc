@@ -1,22 +1,11 @@
 use std::fmt::Debug;
 
 use crate::ty::{Intersection, Type, Union};
-use rnode::Visit;
-use rnode::VisitMut;
-use rnode::VisitMutWith;
-use rnode::VisitWith;
-use stc_ts_ast_rnode::RBlockStmt;
-use stc_ts_ast_rnode::RBool;
-use stc_ts_ast_rnode::RIdent;
-use stc_ts_ast_rnode::RModuleDecl;
-use stc_ts_ast_rnode::RModuleItem;
-use stc_ts_ast_rnode::RStmt;
-use stc_ts_ast_rnode::RTsEntityName;
-use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_ast_rnode::RTsLit;
-use stc_ts_ast_rnode::RTsLitType;
-use stc_ts_types::Ref;
-use stc_ts_types::{Id, InferType, TypeParam};
+use rnode::{Visit, VisitMut, VisitMutWith, VisitWith};
+use stc_ts_ast_rnode::{
+    RBlockStmt, RBool, RIdent, RModuleDecl, RModuleItem, RStmt, RTsEntityName, RTsKeywordType, RTsLit, RTsLitType,
+};
+use stc_ts_types::{Id, InferType, Ref, TypeParam};
 use swc_common::{Mark, Span, Spanned, SyntaxContext};
 use swc_ecma_ast::*;
 

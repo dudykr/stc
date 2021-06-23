@@ -7,57 +7,37 @@
 #![feature(box_patterns)]
 #![feature(specialization)]
 
-pub use self::convert::rprop_name_to_expr;
-pub use self::metadata::TypeElMetadata;
-pub use self::metadata::TypeLitMetadata;
-pub use self::symbol::SymbolId;
-pub use self::{id::Id, module_id::ModuleId};
+use self::type_id::SymbolId;
+pub use self::{
+    convert::rprop_name_to_expr,
+    id::Id,
+    metadata::{TypeElMetadata, TypeLitMetadata},
+    module_id::ModuleId,
+};
 use fxhash::FxHashMap;
 use is_macro::Is;
 use num_bigint::BigInt;
 use num_traits::Zero;
-use rnode::FoldWith;
-use rnode::NodeId;
-use rnode::VisitMut;
-use rnode::VisitMutWith;
-use rnode::VisitWith;
+use rnode::{FoldWith, NodeId, VisitMut, VisitMutWith, VisitWith};
 use static_assertions::assert_eq_size;
-use stc_ts_ast_rnode::RBigInt;
-use stc_ts_ast_rnode::RExpr;
-use stc_ts_ast_rnode::RIdent;
-use stc_ts_ast_rnode::RNumber;
-use stc_ts_ast_rnode::RPat;
-use stc_ts_ast_rnode::RPrivateName;
-use stc_ts_ast_rnode::RStr;
-use stc_ts_ast_rnode::RTplElement;
-use stc_ts_ast_rnode::RTsEntityName;
-use stc_ts_ast_rnode::RTsEnumMemberId;
-use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_ast_rnode::RTsLit;
-use stc_ts_ast_rnode::RTsLitType;
-use stc_ts_ast_rnode::RTsModuleName;
-use stc_ts_ast_rnode::RTsNamespaceDecl;
-use stc_ts_ast_rnode::RTsThisType;
-use stc_ts_ast_rnode::RTsThisTypeOrIdent;
+use stc_ts_ast_rnode::{
+    RBigInt, RExpr, RIdent, RNumber, RPat, RPrivateName, RStr, RTplElement, RTsEntityName, RTsEnumMemberId,
+    RTsKeywordType, RTsLit, RTsLitType, RTsModuleName, RTsNamespaceDecl, RTsThisType, RTsThisTypeOrIdent,
+};
 use stc_utils::error::context;
-use stc_visit::Visit;
-use stc_visit::Visitable;
-use std::borrow::Cow;
-use std::fmt;
-use std::fmt::Formatter;
+use stc_visit::{Visit, Visitable};
 use std::{
-    fmt::Debug,
+    borrow::Cow,
+    fmt,
+    fmt::{Debug, Formatter},
     iter::FusedIterator,
     mem::{replace, transmute},
     ops::AddAssign,
     sync::Arc,
 };
-use swc_atoms::js_word;
-use swc_atoms::JsWord;
-use swc_common::EqIgnoreSpan;
-use swc_common::TypeEq;
-use swc_common::{FromVariant, Span, Spanned, DUMMY_SP};
-use swc_ecma_ast::{Accessibility, MethodKind, TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp};
+use swc_atoms::{js_word, JsWord};
+use swc_common::{EqIgnoreSpan, FromVariant, Span, Spanned, TypeEq, DUMMY_SP};
+use swc_ecma_ast::{Accessibility, TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp};
 use swc_ecma_utils::{
     Value,
     Value::{Known, Unknown},
@@ -69,7 +49,7 @@ pub mod macros;
 mod metadata;
 pub mod module_id;
 pub mod name;
-mod symbol;
+pub mod type_id;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum IdCtx {
@@ -557,8 +537,6 @@ pub struct Method {
     pub type_params: Option<TypeParamDecl>,
     pub params: Vec<FnParam>,
     pub ret_ty: Box<Type>,
-    #[use_eq]
-    pub kind: MethodKind,
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
@@ -574,6 +552,8 @@ pub struct ClassProperty {
     pub is_optional: bool,
     pub readonly: bool,
     pub definite: bool,
+
+    pub accessor: Accessor,
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
@@ -741,6 +721,8 @@ pub struct PropertySignature {
     pub type_ann: Option<Box<Type>>,
     pub type_params: Option<TypeParamDecl>,
     pub metadata: TypeElMetadata,
+
+    pub accessor: Accessor,
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
@@ -1967,5 +1949,33 @@ where
     fn fold_children_with(mut self, v: &mut V) -> Self {
         self.span = self.span.fold_with(v);
         self
+    }
+}
+
+/// Getter and setter.
+///
+/// ## `getter = false`, `setter = false`
+///
+/// Property declared without getter or setter.
+///
+/// # Notes
+///
+/// [TypeEq] and [EqIgnoreSpan] always return true because this struct is
+/// metadata.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Visit)]
+pub struct Accessor {
+    pub getter: bool,
+    pub setter: bool,
+}
+
+impl EqIgnoreSpan for Accessor {
+    fn eq_ignore_span(&self, _: &Self) -> bool {
+        true
+    }
+}
+
+impl TypeEq for Accessor {
+    fn type_eq(&self, _: &Self) -> bool {
+        true
     }
 }

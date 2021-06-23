@@ -5,35 +5,15 @@ use crate::{
     validator, ValidationResult,
 };
 use fxhash::FxHashMap;
-use rnode::NodeId;
-use rnode::Visit;
-use rnode::VisitWith;
-use stc_ts_ast_rnode::RBinExpr;
-use stc_ts_ast_rnode::RBindingIdent;
-use stc_ts_ast_rnode::RExpr;
-use stc_ts_ast_rnode::RIdent;
-use stc_ts_ast_rnode::RLit;
-use stc_ts_ast_rnode::RNumber;
-use stc_ts_ast_rnode::RPat;
-use stc_ts_ast_rnode::RStr;
-use stc_ts_ast_rnode::RTsEnumDecl;
-use stc_ts_ast_rnode::RTsEnumMember;
-use stc_ts_ast_rnode::RTsEnumMemberId;
-use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_ast_rnode::RTsLit;
-use stc_ts_ast_rnode::RTsLitType;
+use rnode::{NodeId, Visit, VisitWith};
+use stc_ts_ast_rnode::{
+    RBinExpr, RBindingIdent, RExpr, RIdent, RLit, RNumber, RPat, RStr, RTsEnumDecl, RTsEnumMember, RTsEnumMemberId,
+    RTsKeywordType, RTsLit, RTsLitType,
+};
 use stc_ts_errors::Error;
-use stc_ts_types::EnumVariant;
-use stc_ts_types::FnParam;
-use stc_ts_types::Id;
-use stc_ts_types::IndexSignature;
-use stc_ts_types::Key;
-use stc_ts_types::PropertySignature;
-use stc_ts_types::TypeElement;
-use stc_ts_types::TypeLit;
+use stc_ts_types::{Accessor, EnumVariant, FnParam, Id, IndexSignature, Key, PropertySignature, TypeElement, TypeLit};
 use swc_atoms::JsWord;
-use swc_common::DUMMY_SP;
-use swc_common::{Span, Spanned};
+use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
 
 /// Value does not contain RTsLit::Bool
@@ -370,6 +350,10 @@ impl Analyzer<'_, '_> {
                 })),
                 type_params: Default::default(),
                 metadata: Default::default(),
+                accessor: Accessor {
+                    getter: true,
+                    setter: false,
+                },
             }))
         }
         {

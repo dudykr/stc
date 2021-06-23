@@ -1,30 +1,16 @@
-use super::Analyzer;
-use super::Ctx;
-use crate::Marks;
-use crate::ValidationResult;
-use crate::{analyzer::generic::is_literals, ty, ty::Type};
-use rnode::Fold;
-use rnode::FoldWith;
-use rnode::Visit;
-use stc_ts_ast_rnode::RExpr;
-use stc_ts_ast_rnode::RIdent;
-use stc_ts_ast_rnode::RPropName;
-use stc_ts_ast_rnode::RStr;
-use stc_ts_ast_rnode::RTsEntityName;
-use stc_ts_ast_rnode::RTsType;
+use super::{Analyzer, Ctx};
+use crate::{analyzer::generic::is_literals, ty, ty::Type, Marks, ValidationResult};
+use rnode::{Fold, FoldWith, Visit};
+use stc_ts_ast_rnode::{RExpr, RIdent, RPropName, RStr, RTsEntityName, RTsType};
 use stc_ts_errors::Error;
 use stc_ts_storage::Storage;
-use stc_ts_type_ops::is_str_lit_or_union;
-use stc_ts_type_ops::Fix;
-use stc_ts_types::Class;
-use stc_ts_types::Enum;
-use stc_ts_types::EnumVariant;
-use stc_ts_types::TypeElement;
-use stc_ts_types::Union;
-use stc_ts_types::{Id, IndexedAccessType, Intersection, ModuleId, QueryExpr, QueryType, Ref, Tuple};
+use stc_ts_type_ops::{is_str_lit_or_union, Fix};
+use stc_ts_types::{
+    Class, Enum, EnumVariant, Id, IndexedAccessType, Intersection, ModuleId, QueryExpr, QueryType, Ref, Tuple,
+    TypeElement, Union,
+};
 use std::iter::once;
-use swc_common::Span;
-use swc_common::Spanned;
+use swc_common::{Span, Spanned};
 use swc_ecma_ast::TsKeywordTypeKind;
 use ty::TypeExt;
 

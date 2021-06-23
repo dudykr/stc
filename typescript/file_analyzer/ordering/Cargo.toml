@@ -1,5 +1,5 @@
 [package]
-authors = ["강동윤 <kdy1@dudy.kr>"]
+authors = ["강동윤 <kdy1997.dev@gmail.com>"]
 description = "Splitted to reduce compile time"
 edition = "2018"
 name = "stc_ts_ordering"

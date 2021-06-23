@@ -3,12 +3,9 @@
 //! All metadata structs should **derive** [Default].
 //! It means, all field should be `false` by default.
 
-use rnode::FoldWith;
-use rnode::VisitMutWith;
-use rnode::VisitWith;
+use rnode::{FoldWith, VisitMutWith, VisitWith};
 use stc_visit::Visitable;
-use swc_common::EqIgnoreSpan;
-use swc_common::TypeEq;
+use swc_common::{EqIgnoreSpan, TypeEq};
 
 macro_rules! impl_traits {
     ($T:ty) => {

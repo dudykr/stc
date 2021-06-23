@@ -1,7 +1,5 @@
 use crate::Visitable;
-use std::cell::RefCell;
-use std::rc::Rc;
-use std::sync::Arc;
+use std::{cell::RefCell, rc::Rc, sync::Arc};
 use swc_common::Span;
 
 pub trait Visit<T: ?Sized + Visitable> {

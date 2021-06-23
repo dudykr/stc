@@ -7,9 +7,8 @@ use self::{
     scope::{Scope, VarKind},
     util::ResultExt,
 };
-use crate::env::ModuleConfig;
 use crate::{
-    env::{Env, StableEnv},
+    env::{Env, ModuleConfig, StableEnv},
     loader::{Load, ModuleInfo},
     ty,
     ty::Type,
@@ -17,43 +16,29 @@ use crate::{
     validator::ValidateWith,
     Rule, ValidationResult,
 };
-use fxhash::FxHashMap;
-use fxhash::FxHashSet;
+use fxhash::{FxHashMap, FxHashSet};
 use rnode::VisitWith;
 use slog::Logger;
-use stc_ts_ast_rnode::RDecorator;
-use stc_ts_ast_rnode::RExpr;
-use stc_ts_ast_rnode::RModule;
-use stc_ts_ast_rnode::RModuleDecl;
-use stc_ts_ast_rnode::RModuleItem;
-use stc_ts_ast_rnode::RScript;
-use stc_ts_ast_rnode::RStmt;
-use stc_ts_ast_rnode::RStr;
-use stc_ts_ast_rnode::RTsImportEqualsDecl;
-use stc_ts_ast_rnode::RTsModuleDecl;
-use stc_ts_ast_rnode::RTsModuleName;
-use stc_ts_ast_rnode::RTsModuleRef;
-use stc_ts_ast_rnode::RTsNamespaceDecl;
+use stc_ts_ast_rnode::{
+    RDecorator, RExpr, RModule, RModuleDecl, RModuleItem, RScript, RStmt, RStr, RTsImportEqualsDecl, RTsModuleDecl,
+    RTsModuleName, RTsModuleRef, RTsNamespaceDecl,
+};
 use stc_ts_dts_mutations::Mutations;
-use stc_ts_errors::debug::debugger::Debugger;
-use stc_ts_errors::debug::duplicate::DuplicateTracker;
-use stc_ts_errors::Error;
-use stc_ts_storage::Builtin;
-use stc_ts_storage::Info;
-use stc_ts_storage::Storage;
-use stc_ts_types::IdCtx;
-use stc_ts_types::{Id, ModuleId, ModuleTypeData};
-use stc_utils::AHashMap;
-use stc_utils::AHashSet;
-use std::mem::take;
+use stc_ts_errors::{
+    debug::{debugger::Debugger, duplicate::DuplicateTracker},
+    Error,
+};
+use stc_ts_storage::{Builtin, Info, Storage};
+use stc_ts_types::{Id, IdCtx, ModuleId, ModuleTypeData};
+use stc_utils::{AHashMap, AHashSet};
 use std::{
     fmt::Debug,
+    mem::take,
     ops::{Deref, DerefMut},
     path::PathBuf,
     sync::Arc,
 };
-use swc_atoms::js_word;
-use swc_atoms::JsWord;
+use swc_atoms::{js_word, JsWord};
 use swc_common::{SourceMap, Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
 use swc_ecma_parser::JscTarget;
@@ -234,6 +219,11 @@ pub(crate) struct Ctx {
     allow_new_target: bool,
 
     disallow_invoking_implicit_constructors: bool,
+
+    disallow_suggesting_property_on_no_var: bool,
+
+    /// Should be modified directly instead of using `with_ctx`.
+    in_unreachable: bool,
 }
 
 impl Ctx {
@@ -425,10 +415,14 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         logger: Logger,
         env: Env,
         cm: Arc<SourceMap>,
-        storage: Storage<'b>,
+        mut storage: Storage<'b>,
         loader: &'b dyn Load,
         debugger: Option<Debugger>,
     ) -> Self {
+        if env.rule().use_define_property_for_class_fields && env.target() == EsVersion::Es3 {
+            storage.report(Error::OptionInvalidForEs3 { span: DUMMY_SP })
+        }
+
         Self::new_inner(
             logger.clone(),
             env,
@@ -563,6 +557,8 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 cannot_fallback_to_iterable_iterator: false,
                 allow_new_target: false,
                 disallow_invoking_implicit_constructors: false,
+                disallow_suggesting_property_on_no_var: false,
+                in_unreachable: false,
             },
             loader,
             is_builtin,

@@ -1,16 +1,8 @@
 use std::borrow::Cow;
 
 use crate::analyzer::Analyzer;
-use rnode::Visit;
-use rnode::VisitMut;
-use rnode::VisitMutWith;
-use rnode::VisitWith;
-use stc_ts_types::ClassMember;
-use stc_ts_types::ClassProperty;
-use stc_ts_types::Id;
-use stc_ts_types::Key;
-use stc_ts_types::Method;
-use stc_ts_types::Type;
+use rnode::{Visit, VisitMut, VisitMutWith, VisitWith};
+use stc_ts_types::{ClassMember, ClassProperty, Id, Key, Method, Type};
 
 impl Analyzer<'_, '_> {
     pub(crate) fn this_has_property_named(&mut self, p: &Id) -> bool {

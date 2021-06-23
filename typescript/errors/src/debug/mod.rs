@@ -1,22 +1,11 @@
 //! A module to validate while type checking
 use backtrace::Backtrace;
-use rnode::Fold;
-use rnode::FoldWith;
-use rnode::RNode;
-use rnode::Visit;
-use rnode::VisitWith;
+use rnode::{Fold, FoldWith, RNode, Visit, VisitWith};
 use slog::Logger;
 use stc_ts_ast_rnode::RTsType;
-use stc_ts_types::Id;
-use stc_ts_types::IndexedAccessType;
-use stc_ts_types::Ref;
-use stc_ts_types::Type;
-use stc_ts_types::TypeLit;
-use stc_ts_types::TypeParam;
-use std::collections::HashSet;
-use std::fmt::Write;
-use swc_common::TypeEq;
-use swc_common::{sync::Lrc, SourceMap, DUMMY_SP};
+use stc_ts_types::{Id, IndexedAccessType, Ref, Type, TypeLit, TypeParam};
+use std::{collections::HashSet, fmt::Write};
+use swc_common::{sync::Lrc, SourceMap, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
 use swc_ecma_codegen::{text_writer::JsWriter, Emitter};
 

@@ -3,27 +3,12 @@
 #![feature(box_syntax)]
 #![feature(box_patterns)]
 
-pub use self::comments::StcComments;
-pub use self::map_with_mut::MapWithMut;
-use rnode::NodeId;
-use rnode::Visit;
-use rnode::VisitWith;
-use stc_ts_ast_rnode::RArrayPat;
-use stc_ts_ast_rnode::RAssignPat;
-use stc_ts_ast_rnode::RBindingIdent;
-use stc_ts_ast_rnode::RDecl;
-use stc_ts_ast_rnode::RExpr;
-use stc_ts_ast_rnode::RIdent;
-use stc_ts_ast_rnode::RModuleDecl;
-use stc_ts_ast_rnode::RModuleItem;
-use stc_ts_ast_rnode::RObjectPat;
-use stc_ts_ast_rnode::RPat;
-use stc_ts_ast_rnode::RPropName;
-use stc_ts_ast_rnode::RRestPat;
-use stc_ts_ast_rnode::RStmt;
-use stc_ts_ast_rnode::RTsEntityName;
-use stc_ts_ast_rnode::RTsType;
-use stc_ts_ast_rnode::RTsTypeAnn;
+pub use self::{comments::StcComments, map_with_mut::MapWithMut};
+use rnode::{NodeId, Visit, VisitWith};
+use stc_ts_ast_rnode::{
+    RArrayPat, RAssignPat, RBindingIdent, RDecl, RExpr, RIdent, RModuleDecl, RModuleItem, RObjectPat, RPat, RPropName,
+    RRestPat, RStmt, RTsEntityName, RTsType, RTsTypeAnn,
+};
 use swc_common::Spanned;
 
 mod comments;

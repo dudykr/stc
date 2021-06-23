@@ -1,8 +1,6 @@
 use fxhash::FxHashMap;
-use rnode::Fold;
-use rnode::FoldWith;
-use stc_ts_types::Id;
-use stc_ts_types::Type;
+use rnode::{Fold, FoldWith};
+use stc_ts_types::{Id, Type};
 
 #[derive(Debug)]
 pub struct TypeParamReplacer {

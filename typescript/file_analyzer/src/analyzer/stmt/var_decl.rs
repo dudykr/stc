@@ -1,44 +1,26 @@
 use super::super::{pat::PatMode, Analyzer, Ctx};
-use crate::analyzer::assign::AssignOpts;
-use crate::analyzer::scope::VarKind;
-use crate::util::should_instantiate_type_ann;
 use crate::{
     analyzer::{
+        assign::AssignOpts,
         expr::TypeOfMode,
+        scope::VarKind,
         util::{Generalizer, ResultExt},
     },
     ty::{self, Tuple, Type, TypeParam},
-    util::RemoveTypes,
+    util::{should_instantiate_type_ann, RemoveTypes},
     validator,
     validator::ValidateWith,
     ValidationResult,
 };
-use rnode::FoldWith;
-use rnode::Visit;
-use rnode::VisitWith;
-use stc_ts_ast_rnode::RArrayPat;
-use stc_ts_ast_rnode::RCallExpr;
-use stc_ts_ast_rnode::RExpr;
-use stc_ts_ast_rnode::RExprOrSuper;
-use stc_ts_ast_rnode::RIdent;
-use stc_ts_ast_rnode::RPat;
-use stc_ts_ast_rnode::RTsAsExpr;
-use stc_ts_ast_rnode::RTsEntityName;
-use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_ast_rnode::RTsTypeAssertion;
-use stc_ts_ast_rnode::RVarDecl;
-use stc_ts_ast_rnode::RVarDeclarator;
-use stc_ts_errors::debug::dump_type_as_string;
-use stc_ts_errors::DebugExt;
-use stc_ts_errors::Error;
-use stc_ts_errors::Errors;
+use rnode::{FoldWith, Visit, VisitWith};
+use stc_ts_ast_rnode::{
+    RArrayPat, RCallExpr, RExpr, RExprOrSuper, RIdent, RPat, RTsAsExpr, RTsEntityName, RTsKeywordType,
+    RTsTypeAssertion, RVarDecl, RVarDeclarator,
+};
+use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error, Errors};
 use stc_ts_type_ops::Fix;
-use stc_ts_types::QueryExpr;
-use stc_ts_types::QueryType;
-use stc_ts_types::{Array, Id, Operator, Symbol};
-use stc_ts_types::{EnumVariant, Instance};
-use stc_ts_utils::find_ids_in_pat;
-use stc_ts_utils::PatExt;
+use stc_ts_types::{Array, EnumVariant, Id, Instance, Operator, QueryExpr, QueryType, Symbol};
+use stc_ts_utils::{find_ids_in_pat, PatExt};
 use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::Spanned;

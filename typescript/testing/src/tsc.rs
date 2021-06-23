@@ -1,21 +1,10 @@
 //! Support for official typescript tests.
 
-use anyhow::bail;
-use anyhow::Context;
-use anyhow::Error;
-use std::fs::read_to_string;
-use std::path::Path;
-use std::sync::Arc;
-use swc_common::comments::Comments;
-use swc_common::errors::Handler;
-use swc_common::input::SourceFileInput;
-use swc_common::FileName;
-use swc_common::SourceMap;
+use anyhow::{bail, Context, Error};
+use std::{fs::read_to_string, path::Path, sync::Arc};
+use swc_common::{comments::Comments, errors::Handler, input::SourceFileInput, FileName, SourceMap};
 use swc_ecma_ast::*;
-use swc_ecma_parser::lexer::Lexer;
-use swc_ecma_parser::Parser;
-use swc_ecma_parser::Syntax;
-use swc_ecma_parser::TsConfig;
+use swc_ecma_parser::{lexer::Lexer, Parser, Syntax, TsConfig};
 
 /// Simple typescript test case.
 ///

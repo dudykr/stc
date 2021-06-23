@@ -1,92 +1,42 @@
 use self::type_param::StaticTypeParamValidator;
-use super::assign::AssignOpts;
-use super::expr::TypeOfMode;
-use super::props::ComputedPropMode;
-use super::util::is_prop_name_eq;
-use super::util::make_instance_type;
-use super::util::ResultExt;
-use super::util::VarVisitor;
-use super::Analyzer;
-use super::Ctx;
-use super::ScopeKind;
-use crate::analyzer::scope::VarKind;
-use crate::env::ModuleConfig;
-use crate::ty::LitGeneralizer;
-use crate::ty::TypeExt;
-use crate::util::property_map::PropertyMap;
-use crate::validator;
-use crate::validator::ValidateWith;
-use crate::ValidationResult;
+use super::{
+    assign::AssignOpts,
+    expr::TypeOfMode,
+    props::ComputedPropMode,
+    util::{is_prop_name_eq, make_instance_type, ResultExt, VarVisitor},
+    Analyzer, Ctx, ScopeKind,
+};
+use crate::{
+    analyzer::scope::VarKind,
+    env::ModuleConfig,
+    ty::{LitGeneralizer, TypeExt},
+    validator,
+    validator::ValidateWith,
+    ValidationResult,
+};
 use itertools::Itertools;
-use rnode::IntoRNode;
-use rnode::NodeId;
-use rnode::NodeIdGenerator;
-use rnode::VisitWith;
-use rnode::{FoldWith, Visit};
-use stc_ts_ast_rnode::RClassExpr;
-use stc_ts_ast_rnode::RClassMember;
-use stc_ts_ast_rnode::RClassMethod;
-use stc_ts_ast_rnode::RClassProp;
-use stc_ts_ast_rnode::RConstructor;
-use stc_ts_ast_rnode::RDecl;
-use stc_ts_ast_rnode::RExpr;
-use stc_ts_ast_rnode::RExprOrSuper;
-use stc_ts_ast_rnode::RIdent;
-use stc_ts_ast_rnode::RMemberExpr;
-use stc_ts_ast_rnode::RParam;
-use stc_ts_ast_rnode::RParamOrTsParamProp;
-use stc_ts_ast_rnode::RPat;
-use stc_ts_ast_rnode::RPrivateMethod;
-use stc_ts_ast_rnode::RPrivateProp;
-use stc_ts_ast_rnode::RPropName;
-use stc_ts_ast_rnode::RStmt;
-use stc_ts_ast_rnode::RTsEntityName;
-use stc_ts_ast_rnode::RTsFnParam;
-use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_ast_rnode::RTsParamProp;
-use stc_ts_ast_rnode::RTsParamPropParam;
-use stc_ts_ast_rnode::RTsTypeAliasDecl;
-use stc_ts_ast_rnode::RTsTypeAnn;
-use stc_ts_ast_rnode::RVarDecl;
-use stc_ts_ast_rnode::RVarDeclarator;
-use stc_ts_ast_rnode::{RArrowExpr, RClass};
-use stc_ts_ast_rnode::{RAssignPat, RSuper};
-use stc_ts_ast_rnode::{RBindingIdent, RFunction};
-use stc_ts_ast_rnode::{RClassDecl, RSeqExpr};
-use stc_ts_errors::DebugExt;
-use stc_ts_errors::Error;
-use stc_ts_errors::Errors;
+use rnode::{FoldWith, IntoRNode, NodeId, NodeIdGenerator, Visit, VisitWith};
+use stc_ts_ast_rnode::{
+    RArrowExpr, RAssignPat, RBindingIdent, RClass, RClassDecl, RClassExpr, RClassMember, RClassMethod, RClassProp,
+    RComputedPropName, RConstructor, RDecl, RExpr, RExprOrSuper, RFunction, RIdent, RMemberExpr, RParam,
+    RParamOrTsParamProp, RPat, RPrivateMethod, RPrivateProp, RPropName, RSeqExpr, RStmt, RSuper, RTsEntityName,
+    RTsFnParam, RTsKeywordType, RTsParamProp, RTsParamPropParam, RTsTypeAliasDecl, RTsTypeAnn, RVarDecl,
+    RVarDeclarator,
+};
+use stc_ts_errors::{DebugExt, Error, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
-use stc_ts_types::Class;
-use stc_ts_types::ClassDef;
-use stc_ts_types::ClassMember;
-use stc_ts_types::ClassProperty;
-use stc_ts_types::ComputedKey;
-use stc_ts_types::ConstructorSignature;
-use stc_ts_types::FnParam;
-use stc_ts_types::Id;
-use stc_ts_types::Intersection;
-use stc_ts_types::Key;
-use stc_ts_types::Method;
-use stc_ts_types::Operator;
-use stc_ts_types::QueryExpr;
-use stc_ts_types::QueryType;
-use stc_ts_types::Ref;
-use stc_ts_types::TsExpr;
-use stc_ts_types::Type;
-use stc_ts_utils::PatExt;
-use stc_utils::TryOpt;
-use std::borrow::Cow;
-use std::cell::RefCell;
-use std::mem::replace;
-use std::mem::take;
+use stc_ts_types::{
+    Accessor, Class, ClassDef, ClassMember, ClassProperty, ComputedKey, ConstructorSignature, FnParam, Id,
+    Intersection, Key, Method, Operator, QueryExpr, QueryType, Ref, TsExpr, Type,
+};
+use stc_utils::{AHashSet, TryOpt};
+use std::{
+    borrow::Cow,
+    cell::RefCell,
+    mem::{replace, take},
+};
 use swc_atoms::js_word;
-use swc_common::iter::IdentifyLast;
-use swc_common::EqIgnoreSpan;
-use swc_common::Span;
-use swc_common::Spanned;
-use swc_common::TypeEq;
-use swc_common::DUMMY_SP;
+use swc_common::{iter::IdentifyLast, EqIgnoreSpan, Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
 use swc_ecma_utils::private_ident;
 
@@ -118,6 +68,46 @@ impl Analyzer<'_, '_> {
             };
             try_opt!(value.validate_with_args(&mut *self.with_ctx(ctx), (TypeOfMode::RValue, None, ty.as_ref())))
         };
+
+        if !self.is_builtin {
+            // Disabled because of false positives when the constructor initializes the
+            // field.
+            if false && self.rule().strict_null_checks {
+                if value.is_none() {
+                    if let Some(ty) = &ty {
+                        if self
+                            .assign_with_opts(
+                                &mut Default::default(),
+                                AssignOpts {
+                                    span,
+                                    ..Default::default()
+                                },
+                                &ty,
+                                &Type::Keyword(RTsKeywordType {
+                                    span,
+                                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                                }),
+                            )
+                            .is_err()
+                        {
+                            self.storage.report(Error::ClassPropNotInistalized { span })
+                        }
+                    }
+                }
+            }
+
+            // Report error if type is not found.
+            if let Some(ty) = &ty {
+                self.normalize(Some(span), Cow::Borrowed(ty), Default::default())
+                    .report(&mut self.storage);
+            }
+
+            // Report error if type is not found.
+            if let Some(ty) = &value_ty {
+                self.normalize(Some(span), Cow::Borrowed(ty), Default::default())
+                    .report(&mut self.storage);
+            }
+        }
 
         if readonly {
             if let Some(ty) = &mut ty {
@@ -200,6 +190,7 @@ impl Analyzer<'_, '_> {
             is_optional: p.is_optional,
             readonly: p.readonly,
             definite: p.definite,
+            accessor: Default::default(),
         })
     }
 }
@@ -237,6 +228,7 @@ impl Analyzer<'_, '_> {
             is_optional: p.is_optional,
             readonly: p.readonly,
             definite: p.definite,
+            accessor: Default::default(),
         })
     }
 }
@@ -506,7 +498,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, c: &RPrivateMethod) -> ValidationResult<Method> {
+    fn validate(&mut self, c: &RPrivateMethod) -> ValidationResult<ClassMember> {
         match c.key.id.sym {
             js_word!("constructor") => {
                 self.storage.report(Error::ConstructorIsKeyword { span: c.key.id.span });
@@ -563,18 +555,49 @@ impl Analyzer<'_, '_> {
             },
         )?;
 
-        Ok(Method {
-            span: c.span,
-            key,
-            type_params,
-            params,
-            ret_ty,
-            kind: c.kind,
-            accessibility: None,
-            is_static: c.is_static,
-            is_abstract: c.is_abstract,
-            is_optional: c.is_optional,
-        })
+        match c.kind {
+            MethodKind::Method => Ok(ClassMember::Method(Method {
+                span: c.span,
+                key,
+                type_params,
+                params,
+                ret_ty,
+                accessibility: None,
+                is_static: c.is_static,
+                is_abstract: c.is_abstract,
+                is_optional: c.is_optional,
+            })),
+            MethodKind::Getter => Ok(ClassMember::Property(ClassProperty {
+                span: c.span,
+                key,
+                value: Some(ret_ty),
+                is_static: c.is_static,
+                accessibility: c.accessibility,
+                is_abstract: c.is_abstract,
+                is_optional: c.is_optional,
+                readonly: false,
+                definite: false,
+                accessor: Accessor {
+                    getter: true,
+                    setter: false,
+                },
+            })),
+            MethodKind::Setter => Ok(ClassMember::Property(ClassProperty {
+                span: c.span,
+                key,
+                value: Some(ret_ty),
+                is_static: c.is_static,
+                accessibility: c.accessibility,
+                is_abstract: c.is_abstract,
+                is_optional: c.is_optional,
+                readonly: false,
+                definite: false,
+                accessor: Accessor {
+                    getter: false,
+                    setter: true,
+                },
+            })),
+        }
     }
 }
 
@@ -718,18 +741,49 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        Ok(ClassMember::Method(Method {
-            span: c_span,
-            key,
-            accessibility: c.accessibility,
-            is_static: c.is_static,
-            is_abstract: c.is_abstract,
-            is_optional: c.is_optional,
-            type_params,
-            params,
-            ret_ty,
-            kind: c.kind,
-        }))
+        match c.kind {
+            MethodKind::Method => Ok(ClassMember::Method(Method {
+                span: c_span,
+                key,
+                accessibility: c.accessibility,
+                is_static: c.is_static,
+                is_abstract: c.is_abstract,
+                is_optional: c.is_optional,
+                type_params,
+                params,
+                ret_ty,
+            })),
+            MethodKind::Getter => Ok(ClassMember::Property(ClassProperty {
+                span: c_span,
+                key,
+                value: Some(ret_ty),
+                is_static: c.is_static,
+                accessibility: c.accessibility,
+                is_abstract: c.is_abstract,
+                is_optional: c.is_optional,
+                readonly: false,
+                definite: false,
+                accessor: Accessor {
+                    getter: true,
+                    setter: false,
+                },
+            })),
+            MethodKind::Setter => Ok(ClassMember::Property(ClassProperty {
+                span: c_span,
+                key,
+                value: Some(ret_ty),
+                is_static: c.is_static,
+                accessibility: c.accessibility,
+                is_abstract: c.is_abstract,
+                is_optional: c.is_optional,
+                readonly: false,
+                definite: false,
+                accessor: Accessor {
+                    getter: false,
+                    setter: true,
+                },
+            })),
+        }
     }
 }
 
@@ -767,6 +821,184 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
+    fn check_duplicate_of_class(&mut self, c: &RClass) -> ValidationResult<()> {
+        let mut keys = vec![];
+        let mut private_keys = vec![];
+        let mut is_props = AHashSet::default();
+        let mut is_private_props = AHashSet::default();
+
+        for member in &c.body {
+            match member {
+                RClassMember::Method(
+                    m
+                    @
+                    RClassMethod {
+                        kind: MethodKind::Method,
+                        function: RFunction { body: Some(..), .. },
+                        ..
+                    },
+                ) => {
+                    keys.push((Cow::Borrowed(&m.key), m.is_static));
+                }
+                RClassMember::PrivateMethod(
+                    m
+                    @
+                    RPrivateMethod {
+                        function: RFunction { body: Some(..), .. },
+                        ..
+                    },
+                ) => {
+                    private_keys.push((&m.key, m.is_static));
+                }
+
+                RClassMember::ClassProp(RClassProp {
+                    computed: false,
+                    key: box RExpr::Ident(key),
+                    is_static,
+                    ..
+                }) => {
+                    is_props.insert(keys.len());
+                    keys.push((Cow::Owned(RPropName::Ident(key.clone())), *is_static));
+                }
+
+                RClassMember::ClassProp(m) => {
+                    is_props.insert(keys.len());
+                    keys.push((
+                        Cow::Owned(RPropName::Computed(RComputedPropName {
+                            node_id: NodeId::invalid(),
+                            span: DUMMY_SP,
+                            expr: m.key.clone(),
+                        })),
+                        m.is_static,
+                    ));
+                }
+                RClassMember::PrivateProp(m) => {
+                    is_private_props.insert(private_keys.len());
+                    private_keys.push((&m.key, m.is_static));
+                }
+                _ => {}
+            }
+        }
+
+        for (i, l) in keys.iter().enumerate() {
+            for (j, r) in keys.iter().enumerate() {
+                if i == j {
+                    continue;
+                }
+
+                if is_prop_name_eq(&l.0, &r.0) && l.1 == r.1 {
+                    if is_props.contains(&i) && is_props.contains(&j) {
+                        continue;
+                    }
+                    // We use different error for duplicate functions
+                    if !is_props.contains(&i) && !is_props.contains(&j) {
+                        continue;
+                    }
+
+                    self.storage
+                        .report(Error::DuplicateNameWithoutName { span: l.0.span() });
+                }
+            }
+        }
+
+        for (i, l) in private_keys.iter().enumerate() {
+            for (j, r) in private_keys.iter().enumerate() {
+                if i == j {
+                    continue;
+                }
+
+                if l.0.eq_ignore_span(&r.0) && l.1 == r.1 {
+                    if is_private_props.contains(&i) && is_private_props.contains(&j) {
+                        continue;
+                    }
+
+                    // We use different error for duplicate functions
+                    if !is_private_props.contains(&i) && !is_private_props.contains(&j) {
+                        continue;
+                    }
+
+                    self.storage
+                        .report(Error::DuplicateNameWithoutName { span: l.0.span() });
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    fn check_static_mixed_with_instance(&mut self, c: &RClass) -> ValidationResult<()> {
+        if self.ctx.in_declare {
+            return Ok(());
+        }
+
+        let mut spans = vec![];
+        let mut name: Option<&RPropName> = None;
+
+        for (last, (idx, m)) in c.body.iter().enumerate().identify_last() {
+            match m {
+                RClassMember::Method(m) => {
+                    let span = m.key.span();
+
+                    if m.function.body.is_some() {
+                        spans.clear();
+                        name = None;
+                        continue;
+                    }
+
+                    if name.is_none() {
+                        name = Some(&m.key);
+                        spans.push((span, m.is_static));
+                        continue;
+                    }
+
+                    if last {
+                        if name.unwrap().eq_ignore_span(&m.key) {
+                            spans.push((span, m.is_static));
+                        }
+                    }
+
+                    if last || !name.unwrap().eq_ignore_span(&m.key) {
+                        let spans_for_error = take(&mut spans);
+
+                        let has_static = spans_for_error.iter().any(|(_, v)| *v == true);
+                        let has_instance = spans_for_error.iter().any(|(_, v)| *v == false);
+
+                        if has_static && has_instance {
+                            let report_error_for_static = !spans_for_error.first().unwrap().1;
+
+                            for (span, is_staitc) in spans_for_error {
+                                if report_error_for_static && is_staitc {
+                                    self.storage.report(Error::ShouldBeInstanceMethod { span })
+                                } else if !report_error_for_static && !is_staitc {
+                                    self.storage.report(Error::ShouldBeStaticMethod { span })
+                                }
+                            }
+                        }
+
+                        name = None;
+
+                        // Note: This span is for next name.
+                        spans.push((span, m.is_static));
+                        continue;
+                    }
+
+                    // At this point, previous name is identical with current name.
+
+                    spans.push((span, m.is_static));
+                }
+                _ => {
+                    // Other than method.
+
+                    if name.is_none() {
+                        continue;
+                    }
+                }
+            }
+        }
+
+        Ok(())
+    }
+
     fn check_ambient_methods(&mut self, c: &RClass, declare: bool) -> ValidationResult<()> {
         if self.ctx.in_declare {
             return Ok(());
@@ -841,17 +1073,19 @@ impl Analyzer<'_, '_> {
 
                             let spans_for_error = take(&mut spans);
 
-                            let has_abstract = spans_for_error.iter().any(|(_, v)| *v == true);
-                            let has_concrete = spans_for_error.iter().any(|(_, v)| *v == false);
+                            {
+                                let has_abstract = spans_for_error.iter().any(|(_, v)| *v == true);
+                                let has_concrete = spans_for_error.iter().any(|(_, v)| *v == false);
 
-                            if has_abstract && has_concrete {
-                                ignore_not_following_for.push(name.unwrap().clone());
+                                if has_abstract && has_concrete {
+                                    ignore_not_following_for.push(name.unwrap().clone());
 
-                                for (span, is_abstract) in spans_for_error {
-                                    if report_error_for_abstract && is_abstract {
-                                        self.storage.report(Error::AbstractAndConcreteIsMixed { span })
-                                    } else if !report_error_for_abstract && !is_abstract {
-                                        self.storage.report(Error::AbstractAndConcreteIsMixed { span })
+                                    for (span, is_abstract) in spans_for_error {
+                                        if report_error_for_abstract && is_abstract {
+                                            self.storage.report(Error::AbstractAndConcreteIsMixed { span })
+                                        } else if !report_error_for_abstract && !is_abstract {
+                                            self.storage.report(Error::AbstractAndConcreteIsMixed { span })
+                                        }
                                     }
                                 }
                             }
@@ -1193,6 +1427,31 @@ impl Analyzer<'_, '_> {
                 Type::ClassDef(sc) => {
                     'outer: for sm in &sc.body {
                         match sm {
+                            ClassMember::Property(super_property) => {
+                                for m in members {
+                                    match m {
+                                        ClassMember::Property(ref p) => {
+                                            if !&p.key.type_eq(&super_property.key) {
+                                                continue;
+                                            }
+
+                                            if !p.is_static
+                                                && !super_property.is_static
+                                                && p.accessor != super_property.accessor
+                                                && (super_property.accessor.getter || super_property.accessor.setter)
+                                            {
+                                                self.storage
+                                                    .report(Error::DefinedWitHAccessorInSuper { span: p.key.span() })
+                                            }
+
+                                            continue 'outer;
+                                        }
+                                        _ => {}
+                                    }
+                                }
+
+                                continue 'outer;
+                            }
                             ClassMember::Method(super_method) => {
                                 if !super_method.is_abstract {
                                     new_members.push(sm.clone());
@@ -1458,6 +1717,8 @@ impl Analyzer<'_, '_> {
                 // TODO: Check for implements
 
                 child.check_ambient_methods(c, false).report(&mut child.storage);
+                child.check_static_mixed_with_instance(&c).report(&mut child.storage);
+                child.check_duplicate_of_class(&c).report(&mut child.storage);
 
                 child.scope.super_class = super_class
                     .clone()
@@ -1643,6 +1904,7 @@ impl Analyzer<'_, '_> {
                                             is_optional: false,
                                             readonly: p.readonly,
                                             definite: false,
+                                            accessor: Default::default(),
                                         }),
                                     ));
                                 }
@@ -1657,7 +1919,7 @@ impl Analyzer<'_, '_> {
                             RClassMember::ClassProp(RClassProp { is_static: false, .. })
                             | RClassMember::PrivateProp(RPrivateProp { is_static: false, .. }) => {
                                 //
-                                let class_member = member.validate_with(child)?;
+                                let class_member = member.validate_with(child).report(&mut child.storage).flatten();
                                 if let Some(member) = class_member {
                                     // Check for duplicate property names.
                                     if let Some(key) = member.key() {
@@ -1728,62 +1990,7 @@ impl Analyzer<'_, '_> {
                     take(&mut child.scope.this_class_members)
                 };
 
-                {
-                    // Change types of getter and setter
-
-                    let mut prop_types = PropertyMap::default();
-
-                    for (_, m) in body.iter_mut() {
-                        match m {
-                            ClassMember::IndexSignature(_) | ClassMember::Constructor(_) => continue,
-
-                            ClassMember::Method(m) => match m.kind {
-                                MethodKind::Getter => {
-                                    prop_types.insert(m.key.clone(), m.ret_ty.clone());
-                                }
-                                _ => {}
-                            },
-
-                            ClassMember::Property(_) => {}
-                        }
-                    }
-
-                    for (index, m) in body.iter_mut() {
-                        let orig = &c.body[*index];
-                        match m {
-                            ClassMember::IndexSignature(_) | ClassMember::Constructor(_) => continue,
-
-                            ClassMember::Method(m) => match m.kind {
-                                MethodKind::Setter => {
-                                    if let Some(param) = m.params.first_mut() {
-                                        if param.ty.is_any() {
-                                            if let Some(ty) = prop_types.get_prop_name(&m.key) {
-                                                let new_ty = ty.clone().generalize_lit(marks);
-                                                param.ty = box new_ty.clone();
-                                                match orig {
-                                                    RClassMember::Method(ref method) => {
-                                                        let node_id = method.function.params[0].pat.node_id();
-                                                        if let Some(node_id) = node_id {
-                                                            if let Some(m) = &mut child.mutations {
-                                                                m.for_pats.entry(node_id).or_default().ty =
-                                                                    Some(new_ty.clone())
-                                                            }
-                                                        }
-                                                    }
-                                                    _ => {}
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                                MethodKind::Method => continue,
-                                MethodKind::Getter => {}
-                            },
-
-                            ClassMember::Property(_) => {}
-                        }
-                    }
-                }
+                let body = child.combine_class_properties(body);
 
                 if !additional_members.is_empty() {
                     // Add private parameter properties to .d.ts file
@@ -1896,6 +2103,90 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
+    fn combine_class_properties(&mut self, body: Vec<(usize, ClassMember)>) -> Vec<(usize, ClassMember)> {
+        let mut getters = vec![];
+        let mut setters = vec![];
+
+        for (_, body) in &body {
+            match body {
+                ClassMember::Property(ClassProperty {
+                    accessor:
+                        Accessor {
+                            setter: true,
+                            getter: true,
+                        },
+                    ..
+                }) => {
+                    unreachable!("At this moment, getters and setters should not be combined")
+                }
+                _ => {}
+            }
+
+            match body {
+                ClassMember::Property(ClassProperty {
+                    key,
+                    accessor: Accessor { setter: true, .. },
+                    ..
+                }) => {
+                    setters.push(key.clone());
+                }
+                _ => {}
+            }
+
+            match body {
+                ClassMember::Property(ClassProperty {
+                    key,
+                    accessor: Accessor { getter: true, .. },
+                    ..
+                }) => {
+                    getters.push(key.clone());
+                }
+                _ => {}
+            }
+        }
+
+        // TODO: Optimize if intersection is empty
+        if getters.is_empty() && setters.is_empty() {
+            return body;
+        }
+
+        body.into_iter()
+            .filter_map(|(idx, mut member)| {
+                // We combine setters into getters.
+
+                match member {
+                    ClassMember::Property(ClassProperty {
+                        ref key,
+                        accessor:
+                            Accessor {
+                                getter: true,
+                                ref mut setter,
+                            },
+                        ..
+                    }) => {
+                        if setters.iter().any(|setter_key| setter_key.type_eq(key)) {
+                            *setter = true;
+                        }
+
+                        Some((idx, member))
+                    }
+                    ClassMember::Property(ClassProperty {
+                        ref key,
+                        accessor: Accessor { setter: true, .. },
+                        ..
+                    }) => {
+                        if getters.iter().any(|getter_key| getter_key.type_eq(key)) {
+                            return None;
+                        }
+
+                        Some((idx, member))
+                    }
+                    _ => Some((idx, member)),
+                }
+            })
+            .collect()
+    }
+
     /// If a class have an index signature, properties should be compatible with
     /// it.
     fn validate_index_signature_of_class(&mut self, class: &ClassDef) -> ValidationResult<()> {
@@ -1914,41 +2205,6 @@ impl Analyzer<'_, '_> {
 
         for member in &class.body {
             match member {
-                // This is actually property.
-                ClassMember::Method(Method {
-                    kind: MethodKind::Getter,
-                    key,
-                    ret_ty,
-                    ..
-                }) => {
-                    let span = key.span();
-
-                    if !index.params[0].ty.is_kwd(TsKeywordTypeKind::TsStringKeyword)
-                        && self
-                            .assign(&mut Default::default(), &index.params[0].ty, &key.ty(), span)
-                            .is_err()
-                    {
-                        continue;
-                    }
-
-                    self.assign_with_opts(
-                        &mut Default::default(),
-                        AssignOpts {
-                            span,
-                            ..Default::default()
-                        },
-                        &index_ret_ty,
-                        &ret_ty,
-                    )
-                    .convert_err(|_err| {
-                        if index.params[0].ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword) {
-                            Error::ClassMemeberNotCompatibleWithNumericIndexSignature { span }
-                        } else {
-                            Error::ClassMemeberNotCompatibleWithStringIndexSignature { span }
-                        }
-                    })?;
-                }
-
                 ClassMember::Property(ClassProperty {
                     key,
                     value: Some(value),

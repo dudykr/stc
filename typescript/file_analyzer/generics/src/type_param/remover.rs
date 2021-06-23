@@ -1,13 +1,6 @@
 use fxhash::FxHashSet;
-use rnode::Fold;
-use rnode::FoldWith;
-use stc_ts_types::CallSignature;
-use stc_ts_types::ConstructorSignature;
-use stc_ts_types::Function;
-use stc_ts_types::Id;
-use stc_ts_types::MethodSignature;
-use stc_ts_types::TypeParam;
-use stc_ts_types::TypeParamDecl;
+use rnode::{Fold, FoldWith};
+use stc_ts_types::{CallSignature, ConstructorSignature, Function, Id, MethodSignature, TypeParam, TypeParamDecl};
 use swc_common::util::move_map::MoveMap;
 
 /// Removes conflicting type parameters from children.

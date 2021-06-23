@@ -1,15 +1,7 @@
-use super::AssignData;
-use super::AssignOpts;
-use crate::analyzer::Analyzer;
-use crate::ValidationResult;
-use stc_ts_errors::DebugExt;
-use stc_ts_errors::Error;
-use stc_ts_types::Class;
-use stc_ts_types::ClassDef;
-use stc_ts_types::ClassMember;
-use stc_ts_types::QueryExpr;
-use stc_ts_types::Type;
-use stc_ts_types::TypeLitMetadata;
+use super::{AssignData, AssignOpts};
+use crate::{analyzer::Analyzer, ValidationResult};
+use stc_ts_errors::{DebugExt, Error};
+use stc_ts_types::{Class, ClassDef, ClassMember, QueryExpr, Type, TypeLitMetadata};
 use std::borrow::Cow;
 use swc_common::EqIgnoreSpan;
 use swc_ecma_ast::Accessibility;
@@ -64,7 +56,7 @@ impl Analyzer<'_, '_> {
 
                 let new_body;
                 let r_body = if rc.super_class.is_some() {
-                    if let Some(members) = self.collect_class_members(r)? {
+                    if let Some(members) = self.collect_class_members(&[], r)? {
                         new_body = members;
                         &*new_body
                     } else {
@@ -155,24 +147,9 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
-                if !rc.def.is_abstract {
-                    // class Child extends Parent
-                    // let c: Child;
-                    // let p: Parent;
-                    // `p = c` is valid
-                    if let Some(parent) = &rc.def.super_class {
-                        let parent = self
-                            .instantiate_class(opts.span, &parent)
-                            .context("tried to instanitate class to asssign the super class to a class")?;
-                        if self.assign_to_class(data, opts, l, &parent).is_ok() {
-                            return Ok(());
-                        }
-                    }
-                }
-
                 let new_body;
                 let r_body = if rc.def.super_class.is_some() {
-                    if let Some(members) = self.collect_class_members(r)? {
+                    if let Some(members) = self.collect_class_members(&[], r)? {
                         new_body = members;
                         &*new_body
                     } else {
@@ -193,6 +170,21 @@ impl Analyzer<'_, '_> {
                                 i, lm, r_body
                             )
                         })?;
+                }
+
+                if !rc.def.is_abstract {
+                    // class Child extends Parent
+                    // let c: Child;
+                    // let p: Parent;
+                    // `p = c` is valid
+                    if let Some(parent) = &rc.def.super_class {
+                        let parent = self
+                            .instantiate_class(opts.span, &parent)
+                            .context("tried to instanitate class to asssign the super class to a class")?;
+                        if self.assign_to_class(data, opts, l, &parent).is_ok() {
+                            return Ok(());
+                        }
+                    }
                 }
 
                 if opts.disallow_different_classes {
@@ -286,23 +278,31 @@ impl Analyzer<'_, '_> {
                 }
             }
             ClassMember::Method(lm) => {
-                if lm.accessibility == Some(Accessibility::Private) || lm.key.is_private() {
-                    return Err(Error::PrivateMethodIsDifferent { span });
-                }
-
                 for rmember in r {
                     match rmember {
                         ClassMember::Constructor(_) => {}
                         ClassMember::Method(rm) => {
                             //
                             if self.key_matches(span, &lm.key, &rm.key, false) {
+                                if lm.span.lo == rm.span.lo && lm.span.hi == rm.span.hi {
+                                    return Ok(());
+                                }
+
                                 if rm.accessibility == Some(Accessibility::Private) || rm.key.is_private() {
                                     return Err(Error::PrivateMethodIsDifferent { span });
                                 }
 
-                                // TODO: Parameters.
-                                self.assign_with_opts(data, opts, &lm.ret_ty, &rm.ret_ty)
-                                    .context("tried to assign return type of a class method")?;
+                                self.assign_to_fn_like(
+                                    data,
+                                    opts,
+                                    lm.type_params.as_ref(),
+                                    &lm.params,
+                                    Some(&lm.ret_ty),
+                                    rm.type_params.as_ref(),
+                                    &rm.params,
+                                    Some(&rm.ret_ty),
+                                )
+                                .context("tried to assign a class method to another one")?;
 
                                 return Ok(());
                             }
@@ -312,6 +312,10 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                if lm.accessibility == Some(Accessibility::Private) || lm.key.is_private() {
+                    return Err(Error::PrivateMethodIsDifferent { span });
+                }
+
                 if lm.is_optional {
                     return Ok(());
                 }
@@ -319,10 +323,6 @@ impl Analyzer<'_, '_> {
                 return Err(Error::SimpleAssignFailed { span });
             }
             ClassMember::Property(lp) => {
-                if lp.accessibility == Some(Accessibility::Private) || lp.key.is_private() {
-                    return Err(Error::PrivatePropertyIsDifferent { span });
-                }
-
                 for rm in r {
                     match rm {
                         ClassMember::Constructor(_) => {}
@@ -332,14 +332,19 @@ impl Analyzer<'_, '_> {
                                 && lp.is_static == rp.is_static
                                 && self.key_matches(span, &lp.key, &rp.key, false)
                             {
-                                if rp.accessibility == Some(Accessibility::Private) || rp.key.is_private() {
-                                    return Err(Error::PrivatePropertyIsDifferent { span });
-                                }
-
                                 if let Some(lt) = &lp.value {
                                     if let Some(rt) = &rp.value {
-                                        return self.assign_inner(data, &lt, &rt, opts);
+                                        self.assign_inner(data, &lt, &rt, opts)
+                                            .context("tried to assign a class proeprty to another")?;
                                     }
+                                }
+
+                                if lp.span.lo == rp.span.lo && lp.span.hi == rp.span.hi {
+                                    return Ok(());
+                                }
+
+                                if rp.accessibility == Some(Accessibility::Private) || rp.key.is_private() {
+                                    return Err(Error::PrivatePropertyIsDifferent { span });
                                 }
 
                                 return Ok(());
@@ -347,6 +352,10 @@ impl Analyzer<'_, '_> {
                         }
                         ClassMember::IndexSignature(_) => {}
                     }
+                }
+
+                if lp.accessibility == Some(Accessibility::Private) || lp.key.is_private() {
+                    return Err(Error::PrivatePropertyIsDifferent { span });
                 }
 
                 if lp.is_optional {

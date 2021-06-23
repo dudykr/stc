@@ -1,88 +1,20 @@
-use super::Alias;
-use super::Array;
-use super::Conditional;
-use super::Enum;
-use super::EnumVariant;
-use super::FnParam;
-use super::Function;
-use super::ImportType;
-use super::IndexedAccessType;
-use super::InferType;
-use super::Interface;
-use super::Intersection;
-use super::Operator;
-use super::Predicate;
-use super::QueryExpr;
-use super::QueryType;
-use super::Ref;
-use super::Tuple;
-use super::TupleElement;
-use super::Type;
-use super::TypeElement;
-use super::TypeLit;
-use super::TypeParam;
-use super::TypeParamDecl;
-use super::TypeParamInstantiation;
-use super::Union;
-use crate::ClassDef;
-use crate::Id;
-use crate::Key;
-use crate::TplType;
-use crate::{OptionalType, RestType, StaticThis, Symbol};
+use super::{
+    Alias, Array, Conditional, Enum, EnumVariant, FnParam, Function, ImportType, IndexedAccessType, InferType,
+    Interface, Intersection, Operator, Predicate, QueryExpr, QueryType, Ref, Tuple, TupleElement, Type, TypeElement,
+    TypeLit, TypeParam, TypeParamDecl, TypeParamInstantiation, Union,
+};
+use crate::{ClassDef, Id, Key, OptionalType, RestType, StaticThis, Symbol, TplType};
 use rnode::NodeId;
-use stc_ts_ast_rnode::RArrayPat;
-use stc_ts_ast_rnode::RBindingIdent;
-use stc_ts_ast_rnode::RExpr;
-use stc_ts_ast_rnode::RIdent;
-use stc_ts_ast_rnode::RLit;
-use stc_ts_ast_rnode::RObjectPat;
-use stc_ts_ast_rnode::RPat;
-use stc_ts_ast_rnode::RPrivateName;
-use stc_ts_ast_rnode::RPropName;
-use stc_ts_ast_rnode::RRestPat;
-use stc_ts_ast_rnode::RTsArrayType;
-use stc_ts_ast_rnode::RTsCallSignatureDecl;
-use stc_ts_ast_rnode::RTsConditionalType;
-use stc_ts_ast_rnode::RTsConstructSignatureDecl;
-use stc_ts_ast_rnode::RTsConstructorType;
-use stc_ts_ast_rnode::RTsEntityName;
-use stc_ts_ast_rnode::RTsFnOrConstructorType;
-use stc_ts_ast_rnode::RTsFnParam;
-use stc_ts_ast_rnode::RTsFnType;
-use stc_ts_ast_rnode::RTsImportType;
-use stc_ts_ast_rnode::RTsIndexSignature;
-use stc_ts_ast_rnode::RTsIndexedAccessType;
-use stc_ts_ast_rnode::RTsInferType;
-use stc_ts_ast_rnode::RTsIntersectionType;
-use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_ast_rnode::RTsLit;
-use stc_ts_ast_rnode::RTsLitType;
-use stc_ts_ast_rnode::RTsMappedType;
-use stc_ts_ast_rnode::RTsMethodSignature;
-use stc_ts_ast_rnode::RTsModuleName;
-use stc_ts_ast_rnode::RTsOptionalType;
-use stc_ts_ast_rnode::RTsParenthesizedType;
-use stc_ts_ast_rnode::RTsPropertySignature;
-use stc_ts_ast_rnode::RTsQualifiedName;
-use stc_ts_ast_rnode::RTsRestType;
-use stc_ts_ast_rnode::RTsThisType;
-use stc_ts_ast_rnode::RTsTplLitType;
-use stc_ts_ast_rnode::RTsTupleElement;
-use stc_ts_ast_rnode::RTsTupleType;
-use stc_ts_ast_rnode::RTsType;
-use stc_ts_ast_rnode::RTsTypeAnn;
-use stc_ts_ast_rnode::RTsTypeElement;
-use stc_ts_ast_rnode::RTsTypeLit;
-use stc_ts_ast_rnode::RTsTypeOperator;
-use stc_ts_ast_rnode::RTsTypeParam;
-use stc_ts_ast_rnode::RTsTypeParamDecl;
-use stc_ts_ast_rnode::RTsTypeParamInstantiation;
-use stc_ts_ast_rnode::RTsTypePredicate;
-use stc_ts_ast_rnode::RTsTypeQuery;
-use stc_ts_ast_rnode::RTsTypeQueryExpr;
-use stc_ts_ast_rnode::RTsTypeRef;
-use stc_ts_ast_rnode::RTsUnionOrIntersectionType;
-use stc_ts_ast_rnode::RTsUnionType;
+use stc_ts_ast_rnode::{
+    RArrayPat, RBindingIdent, RExpr, RIdent, RLit, RObjectPat, RPat, RPrivateName, RPropName, RRestPat, RTsArrayType,
+    RTsCallSignatureDecl, RTsConditionalType, RTsConstructSignatureDecl, RTsConstructorType, RTsEntityName,
+    RTsFnOrConstructorType, RTsFnParam, RTsFnType, RTsImportType, RTsIndexSignature, RTsIndexedAccessType,
+    RTsInferType, RTsIntersectionType, RTsKeywordType, RTsLit, RTsLitType, RTsMappedType, RTsMethodSignature,
+    RTsModuleName, RTsOptionalType, RTsParenthesizedType, RTsPropertySignature, RTsQualifiedName, RTsRestType,
+    RTsThisType, RTsTplLitType, RTsTupleElement, RTsTupleType, RTsType, RTsTypeAnn, RTsTypeElement, RTsTypeLit,
+    RTsTypeOperator, RTsTypeParam, RTsTypeParamDecl, RTsTypeParamInstantiation, RTsTypePredicate, RTsTypeQuery,
+    RTsTypeQueryExpr, RTsTypeRef, RTsUnionOrIntersectionType, RTsUnionType,
+};
 use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
 

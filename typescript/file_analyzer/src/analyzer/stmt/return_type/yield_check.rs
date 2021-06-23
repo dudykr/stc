@@ -1,10 +1,5 @@
-use rnode::Visit;
-use rnode::VisitWith;
-use stc_ts_ast_rnode::RArrowExpr;
-use stc_ts_ast_rnode::RAssignExpr;
-use stc_ts_ast_rnode::RExpr;
-use stc_ts_ast_rnode::RFunction;
-use stc_ts_ast_rnode::RVarDeclarator;
+use rnode::{Visit, VisitWith};
+use stc_ts_ast_rnode::{RArrowExpr, RAssignExpr, RExpr, RFunction, RVarDeclarator};
 
 #[derive(Default)]
 pub(super) struct YieldValueUsageFinder {

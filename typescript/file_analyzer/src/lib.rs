@@ -79,4 +79,5 @@ pub struct Rule {
     pub no_strict_generic_checks: bool,
     pub no_unused_locals: bool,
     pub no_unused_parameters: bool,
+    pub use_define_property_for_class_fields: bool,
 }

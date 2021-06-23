@@ -1,17 +1,12 @@
-use crate::analyzer::Analyzer;
-use crate::util::graph::Inliner;
-use crate::util::graph::NodeId;
-use fxhash::FxHashMap;
-use fxhash::FxHashSet;
+use crate::{
+    analyzer::Analyzer,
+    util::graph::{Inliner, NodeId},
+};
+use fxhash::{FxHashMap, FxHashSet};
 use petgraph::graphmap::DiGraphMap;
-use rnode::Visit;
-use rnode::VisitWith;
-use stc_ts_ast_rnode::RClassMember;
-use stc_ts_ast_rnode::RExpr;
-use stc_ts_ast_rnode::RExprOrSuper;
-use stc_ts_ast_rnode::RMemberExpr;
-use stc_ts_types::rprop_name_to_expr;
-use stc_ts_types::Id;
+use rnode::{Visit, VisitWith};
+use stc_ts_ast_rnode::{RClassMember, RExpr, RExprOrSuper, RMemberExpr};
+use stc_ts_types::{rprop_name_to_expr, Id};
 
 impl Analyzer<'_, '_> {
     /// This method ignores order of class properties or parameter properties.

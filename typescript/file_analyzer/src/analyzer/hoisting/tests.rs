@@ -1,6 +1,5 @@
 use crate::analyzer::tests::run_test;
-use rnode::NodeIdGenerator;
-use rnode::RNode;
+use rnode::{NodeIdGenerator, RNode};
 use stc_ts_ast_rnode::RModule;
 
 #[track_caller]

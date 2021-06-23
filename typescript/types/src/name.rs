@@ -1,20 +1,12 @@
 use crate::Id;
 use smallvec::{smallvec, SmallVec};
-use stc_ts_ast_rnode::RExpr;
-use stc_ts_ast_rnode::RExprOrSuper;
-use stc_ts_ast_rnode::RIdent;
-use stc_ts_ast_rnode::RLit;
-use stc_ts_ast_rnode::RMemberExpr;
-use stc_ts_ast_rnode::RTsEntityName;
-use stc_ts_ast_rnode::RTsThisTypeOrIdent;
+use stc_ts_ast_rnode::{RExpr, RExprOrSuper, RIdent, RLit, RMemberExpr, RTsEntityName, RTsThisTypeOrIdent};
 use std::{
     convert::{TryFrom, TryInto},
     fmt::{self, Debug, Formatter},
 };
-use swc_atoms::js_word;
-use swc_atoms::JsWord;
-use swc_common::iter::IdentifyLast;
-use swc_common::SyntaxContext;
+use swc_atoms::{js_word, JsWord};
+use swc_common::{iter::IdentifyLast, SyntaxContext};
 
 type Inner = SmallVec<[Id; 4]>;
 

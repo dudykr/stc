@@ -1,18 +1,9 @@
 use self::generalize::TupleToArray;
-use crate::analyzer::marks::MarkExt;
-use crate::util::type_ext::TypeVecExt;
-use crate::Marks;
+use crate::{analyzer::marks::MarkExt, util::type_ext::TypeVecExt, Marks};
 use retain_mut::RetainMut;
-use rnode::Fold;
-use rnode::FoldWith;
-use stc_ts_ast_rnode::RBool;
-use stc_ts_ast_rnode::RNumber;
-use stc_ts_ast_rnode::RStr;
-use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_ast_rnode::RTsLit;
-use stc_ts_ast_rnode::RTsLitType;
-use stc_ts_type_ops::is_str_lit_or_union;
-use stc_ts_type_ops::Fix;
+use rnode::{Fold, FoldWith};
+use stc_ts_ast_rnode::{RBool, RNumber, RStr, RTsKeywordType, RTsLit, RTsLitType};
+use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 pub(crate) use stc_ts_types::*;
 use swc_ecma_ast::TsKeywordTypeKind;
 

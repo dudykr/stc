@@ -5,8 +5,7 @@ use crate::{
     ValidationResult,
 };
 use stc_ts_ast_rnode::RTsConstAssertion;
-use stc_ts_errors::DebugExt;
-use stc_ts_errors::Error;
+use stc_ts_errors::{DebugExt, Error};
 use stc_ts_file_analyzer_macros::validator;
 use stc_ts_types::{Type, TypeParamInstantiation};
 

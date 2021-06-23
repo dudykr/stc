@@ -1,35 +1,16 @@
 use super::Type;
-use crate::analyzer::Analyzer;
-use crate::type_facts::TypeFacts;
-use rnode::Fold;
-use rnode::FoldWith;
-use rnode::NodeId;
-use stc_ts_ast_rnode::RBindingIdent;
-use stc_ts_ast_rnode::RIdent;
-use stc_ts_ast_rnode::RPat;
-use stc_ts_ast_rnode::RRestPat;
-use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_ast_rnode::RTsLit;
-use stc_ts_ast_rnode::RTsLitType;
+use crate::{analyzer::Analyzer, type_facts::TypeFacts};
+use rnode::{Fold, FoldWith, NodeId};
+use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat, RRestPat, RTsKeywordType, RTsLit, RTsLitType};
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_type_ops::Fix;
-use stc_ts_types::ClassDef;
-use stc_ts_types::ClassMember;
-use stc_ts_types::Conditional;
-use stc_ts_types::Constructor;
-use stc_ts_types::FnParam;
-use stc_ts_types::Function;
-use stc_ts_types::IndexedAccessType;
-use stc_ts_types::Intersection;
-use stc_ts_types::Mapped;
-use stc_ts_types::TypeElement;
-use stc_ts_types::TypeLit;
-use stc_ts_types::Union;
+use stc_ts_types::{
+    ClassDef, ClassMember, Conditional, Constructor, FnParam, Function, IndexedAccessType, Intersection, Mapped,
+    TypeElement, TypeLit, Union,
+};
 use stc_ts_utils::MapWithMut;
 use std::borrow::Cow;
-use swc_common::Span;
-use swc_common::Spanned;
-use swc_common::DUMMY_SP;
+use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
 
 impl Analyzer<'_, '_> {

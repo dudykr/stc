@@ -2,7 +2,7 @@
 members = ["bindings/node-stc", "devtools"]
 
 [package]
-authors = ["강동윤 <kdy1@dudy.kr>"]
+authors = ["강동윤 <kdy1997.dev@gmail.com>"]
 description = "Speedy web compiler"
 edition = "2018"
 name = "stc"
@@ -19,7 +19,7 @@ stc_ts_module_loader = {path = "./typescript/module_loader"}
 stc_ts_type_checker = {path = "./typescript/type_checker"}
 stc_utils = {path = "utils"}
 structopt = "0.3.20"
-swc_common = { version = "0.10.21", features = ["tty-emitter"] }
+swc_common = {version = "0.10.21", features = ["tty-emitter"]}
 swc_ecma_parser = "0.60.0"
 
 [profile.release]

@@ -1,26 +1,16 @@
 use super::super::Analyzer;
-use crate::analyzer::ScopeKind;
 use crate::{
-    analyzer::{expr::TypeOfMode, util::ResultExt},
+    analyzer::{expr::TypeOfMode, util::ResultExt, ScopeKind},
     ty::Type,
     validator,
     validator::ValidateWith,
     ValidationResult,
 };
 use rnode::NodeId;
-use stc_ts_ast_rnode::RBigInt;
-use stc_ts_ast_rnode::RBool;
-use stc_ts_ast_rnode::RExpr;
-use stc_ts_ast_rnode::RExprOrSuper;
-use stc_ts_ast_rnode::RMemberExpr;
-use stc_ts_ast_rnode::RNumber;
-use stc_ts_ast_rnode::RStr;
-use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_ast_rnode::RTsLit;
-use stc_ts_ast_rnode::RTsLitType;
-use stc_ts_ast_rnode::RUnaryExpr;
-use stc_ts_errors::Error;
-use stc_ts_errors::Errors;
+use stc_ts_ast_rnode::{
+    RBigInt, RBool, RExpr, RExprOrSuper, RMemberExpr, RNumber, RStr, RTsKeywordType, RTsLit, RTsLitType, RUnaryExpr,
+};
+use stc_ts_errors::{Error, Errors};
 use stc_ts_types::Union;
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned};

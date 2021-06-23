@@ -1,6 +1,5 @@
 use crate::panic_context;
-use std::cell::RefCell;
-use std::fmt::Display;
+use std::{cell::RefCell, fmt::Display};
 
 #[cfg(debug_assertions)]
 pub struct ContextGuard {

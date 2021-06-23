@@ -1,23 +1,19 @@
 use ansi_term::Color;
 use once_cell::sync::Lazy;
-use slog::Drain;
-use slog::Level;
-use slog::Logger;
+use slog::{Drain, Level, Logger};
 use slog_envlogger::EnvLogger;
-use std::fmt::Write;
-use std::fs::create_dir_all;
-use std::fs::read_to_string;
-use std::fs::File;
-use std::fs::OpenOptions;
-use std::io;
-use std::path::Path;
-use std::path::PathBuf;
-use std::process::Command;
-use std::sync::mpsc::channel;
-use std::sync::mpsc::Receiver;
-use std::sync::mpsc::Sender;
-use std::sync::Mutex;
-use std::thread;
+use std::{
+    fmt::Write,
+    fs::{create_dir_all, read_to_string, File, OpenOptions},
+    io,
+    path::{Path, PathBuf},
+    process::Command,
+    sync::{
+        mpsc::{channel, Receiver, Sender},
+        Mutex,
+    },
+    thread,
+};
 
 pub struct LogGuard {
     pub logger: Logger,

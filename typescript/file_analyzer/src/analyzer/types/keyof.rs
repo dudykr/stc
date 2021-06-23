@@ -1,31 +1,17 @@
 use super::NormalizeTypeOpts;
-use crate::analyzer::Analyzer;
-use crate::ValidationResult;
+use crate::{analyzer::Analyzer, ValidationResult};
 use itertools::Itertools;
-use stc_ts_ast_rnode::RIdent;
-use stc_ts_ast_rnode::RTsEntityName;
-use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_errors::debug::dump_type_as_string;
-use stc_ts_errors::DebugExt;
-use stc_ts_type_ops::is_str_lit_or_union;
-use stc_ts_type_ops::Fix;
-use stc_ts_types::Class;
-use stc_ts_types::ClassMember;
-use stc_ts_types::ClassProperty;
-use stc_ts_types::Method;
-use stc_ts_types::MethodSignature;
-use stc_ts_types::ModuleId;
-use stc_ts_types::PropertySignature;
-use stc_ts_types::Ref;
-use stc_ts_types::Type;
-use stc_ts_types::TypeElement;
-use stc_ts_types::Union;
+use stc_ts_ast_rnode::{RIdent, RTsEntityName, RTsKeywordType};
+use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
+use stc_ts_type_ops::{is_str_lit_or_union, Fix};
+use stc_ts_types::{
+    Class, ClassMember, ClassProperty, Method, MethodSignature, ModuleId, PropertySignature, Ref, Type, TypeElement,
+    Union,
+};
 use stc_utils::error::context;
 use std::borrow::Cow;
 use swc_atoms::js_word;
-use swc_common::Span;
-use swc_common::TypeEq;
-use swc_common::DUMMY_SP;
+use swc_common::{Span, TypeEq, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
 
 impl Analyzer<'_, '_> {

@@ -1,15 +1,8 @@
-use crate::analyzer::scope::Scope;
-use crate::analyzer::Analyzer;
+use crate::analyzer::{scope::Scope, Analyzer};
 use fxhash::FxHashSet;
-use rnode::Visit;
-use rnode::VisitMut;
-use rnode::VisitMutWith;
-use rnode::VisitWith;
+use rnode::{Visit, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_generics::type_param::finder::TypeParamDeclFinder;
-use stc_ts_types::Id;
-use stc_ts_types::Mapped;
-use stc_ts_types::Type;
-use stc_ts_types::TypeLit;
+use stc_ts_types::{Id, Mapped, Type, TypeLit};
 
 impl Analyzer<'_, '_> {
     /// Convert type parameters declared in dead scopes to `{}`.

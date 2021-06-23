@@ -1,15 +1,11 @@
 use super::TypeOfMode;
-use crate::analyzer::util::ResultExt;
-use crate::analyzer::Analyzer;
-use crate::validator;
-use crate::validator::ValidateWith;
-use crate::ValidationResult;
-use stc_ts_ast_rnode::RExpr;
-use stc_ts_ast_rnode::RLit;
-use stc_ts_ast_rnode::RTsKeywordType;
-use stc_ts_ast_rnode::RTsLit;
-use stc_ts_ast_rnode::RTsLitType;
-use stc_ts_ast_rnode::RUpdateExpr;
+use crate::{
+    analyzer::{util::ResultExt, Analyzer},
+    validator,
+    validator::ValidateWith,
+    ValidationResult,
+};
+use stc_ts_ast_rnode::{RExpr, RLit, RTsKeywordType, RTsLit, RTsLitType, RUpdateExpr};
 use stc_ts_errors::Error;
 use stc_ts_types::Type;
 use std::borrow::Cow;

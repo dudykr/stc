@@ -1,5 +1,5 @@
 [package]
-authors = ["강동윤 <kdy1@dudy.kr>"]
+authors = ["강동윤 <kdy1997.dev@gmail.com>"]
 description = "Splitted to reduce compile time"
 edition = "2018"
 name = "stc_ts_generics"
@@ -9,7 +9,7 @@ version = "0.1.0"
 
 [dependencies]
 fxhash = "0.2.1"
-rnode = { path = "../../../rnode" }
+rnode = {path = "../../../rnode"}
 stc_ts_ast_rnode = {path = "../../ast_rnode"}
 stc_ts_types = {path = "../../types"}
 stc_ts_utils = {path = "../../utils"}
