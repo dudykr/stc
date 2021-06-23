@@ -325,10 +325,12 @@ impl Analyzer<'_, '_> {
         let false_facts = self.cur_facts.false_facts.take();
 
         let ends_with_ret = stmt.cons.ends_with_ret();
-        self.with_child(ScopeKind::Flow, true_facts, |child| stmt.cons.validate_with(child))?;
+        self.with_child(ScopeKind::Flow, true_facts, |child| stmt.cons.validate_with(child))
+            .report(&mut self.storage);
 
         if let Some(alt) = &stmt.alt {
-            self.with_child(ScopeKind::Flow, false_facts.clone(), |child| alt.validate_with(child))?;
+            self.with_child(ScopeKind::Flow, false_facts.clone(), |child| alt.validate_with(child))
+                .report(&mut self.storage);
         }
 
         if ends_with_ret {
