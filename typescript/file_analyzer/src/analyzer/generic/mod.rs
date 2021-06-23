@@ -436,12 +436,7 @@ impl Analyzer<'_, '_> {
             }
 
             (Type::Union(param), _) if !self.ctx.skip_union_while_inferencing => {
-                //
-                for p in &param.types {
-                    self.infer_type(span, inferred, p, arg, opts)?;
-                }
-
-                return Ok(());
+                return self.infer_type_using_union(span, inferred, param, arg, opts);
             }
 
             (Type::Intersection(param), _) => {

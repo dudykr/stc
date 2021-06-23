@@ -61,6 +61,38 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
+    pub(super) fn infer_type_using_union(
+        &mut self,
+        span: Span,
+        inferred: &mut InferData,
+        param: &Union,
+        arg: &Type,
+        opts: InferTypeOpts,
+    ) -> ValidationResult<()> {
+        let arg_form = TypeForm::from(arg);
+        let mut done = false;
+
+        for p in &param.types {
+            let param_form = TypeForm::from(p);
+
+            if arg_form == param_form {
+                done = true;
+                self.infer_type(span, inferred, p, arg, opts)?;
+            }
+        }
+
+        if done {
+            return Ok(());
+        }
+
+        //
+        for p in &param.types {
+            self.infer_type(span, inferred, p, arg, opts)?;
+        }
+
+        return Ok(());
+    }
+
     /// # Rules
     ///
     /// ## Type literal
