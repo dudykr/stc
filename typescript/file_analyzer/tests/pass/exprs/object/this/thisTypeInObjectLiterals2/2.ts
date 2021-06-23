@@ -1,3 +1,5 @@
+type Accessors<T> = { [K in keyof T]: (() => T[K]) | Computed<T[K]> };
+
 type VueOptions<D, M, P> = ThisType<D & M & P> & {
     data?: D | (() => D);
     methods?: M;
