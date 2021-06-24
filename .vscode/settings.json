@@ -18,7 +18,6 @@
   // Important
   "editor.formatOnSave": true,
   "git.ignoreLimitWarning": true,
-  "rust-analyzer.assist.importPrefix": "by_self",
   "git.detectSubmodules": false,
   "rust-analyzer.diagnostics.disabled": [
     "unresolved-import",
@@ -30,17 +29,14 @@
     "no-such-field",
     "missing-structure-fields"
   ],
-  "rust-analyzer.cargo.loadOutDirsFromCheck": true,
   "rust-analyzer.procMacro.enable": true,
   "rust-analyzer.diagnostics.enable": false,
   "rust-analyzer.diagnostics.enableExperimental": false,
-  "rust-analyzer.lens.methodReferences": true,
   "favorites.resources": [
     "typescript/errors/src/lib.rs",
     "typescript/file_analyzer/tests",
     "typescript/type_checker/tests/tsc-stats.rust-debug",
     "typescript/type_checker/tests/wip-stats.rust-debug"
   ],
-  "rust-analyzer.experimental.procAttrMacros": true,
   "rust-analyzer.lruCapacity": 1024
 }
