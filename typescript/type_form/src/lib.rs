@@ -134,7 +134,7 @@ pub enum TypePath {
     /// Element of a conditional type.
     CondType,
     Instance,
-    SimpleElement,
+    Wildcard,
     ObjectPropCountMatch,
 }
 
@@ -161,12 +161,12 @@ impl Ctx {
     fn compare(&mut self, a: &TypeForm, b: &TypeForm) -> Vec<TypePath> {
         match (a, b) {
             (TypeForm::Wildcard(_), _) | (_, TypeForm::Wildcard(_)) => {
-                return self.path.clone();
+                let mut path = self.path.clone();
+                path.push(TypePath::Wildcard);
+                return path;
             }
             (TypeForm::Element, TypeForm::Element) => {
-                let mut path = self.path.clone();
-                path.push(TypePath::SimpleElement);
-                return path;
+                return self.path.clone();
             }
 
             (TypeForm::Instance { of: a }, TypeForm::Instance { of: b }) => {
