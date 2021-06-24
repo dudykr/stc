@@ -14,7 +14,7 @@ warning: Type
 15 |     return 'some' in value;
    |                      ^^^^^
    |
-   = note: Some | None
+   = note: (Some | None)
 
 warning: Type
   --> $DIR/tests/pass/controlFlow/guard/assertions/1.ts:15:12
@@ -96,7 +96,7 @@ warning: Type
 27 |         result = someFrom(isSome(result) ? result.some : makeSome());
    |                                            ^^^^^^
    |
-   = note: None & Some
+   = note: (None & Some)
 
 warning: Type
   --> $DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:44
@@ -128,7 +128,7 @@ warning: Type
 27 |         result = someFrom(isSome(result) ? result.some : makeSome());
    |                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    |
-   = note: a | r
+   = note: (a | r)
 
 warning: Type
   --> $DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:18
@@ -147,7 +147,7 @@ warning: Type
    |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    |
    = note: {
-               some: a | r;
+               some: (a | r);
            }
 
 warning: Type
@@ -157,7 +157,7 @@ warning: Type
    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    |
    = note: {
-               some: a | r;
+               some: (a | r);
            }
 
 warning: Type
@@ -166,7 +166,7 @@ warning: Type
 28 |         result;  // Some<r>
    |         ^^^^^^
    |
-   = note: Some | None
+   = note: (Some | None)
 
 warning: Type
   --> $DIR/tests/pass/controlFlow/guard/assertions/1.ts:26:9
@@ -174,7 +174,7 @@ warning: Type
 26 |         result;  // Some<r> | None
    |         ^^^^^^
    |
-   = note: Some | None
+   = note: (Some | None)
 
 warning: Type
   --> $DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:34
@@ -182,7 +182,7 @@ warning: Type
 27 |         result = someFrom(isSome(result) ? result.some : makeSome());
    |                                  ^^^^^^
    |
-   = note: Some | None
+   = note: (Some | None)
 
 warning: Type
   --> $DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:27

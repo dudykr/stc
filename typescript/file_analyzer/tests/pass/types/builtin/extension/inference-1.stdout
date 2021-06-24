@@ -4,8 +4,8 @@ warning: Type
 8 | export let x = a.equalsShallow(b);
   |                                ^
   |
-  = note: (string | number)[] | null[] | undefined[] | {
-          }[]
+  = note: (((string | number))[] | null[] | undefined[] | {
+          }[])
 
 warning: Type
  --> $DIR/tests/pass/types/builtin/extension/inference-1.ts:8:16
@@ -13,8 +13,8 @@ warning: Type
 8 | export let x = a.equalsShallow(b);
   |                ^
   |
-  = note: (string | number)[] | null[] | undefined[] | {
-          }[]
+  = note: (((string | number))[] | null[] | undefined[] | {
+          }[])
 
 warning: Type
  --> $DIR/tests/pass/types/builtin/extension/inference-1.ts:8:16

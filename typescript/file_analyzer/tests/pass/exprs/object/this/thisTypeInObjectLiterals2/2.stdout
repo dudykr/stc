@@ -153,7 +153,7 @@ warning: Type
 16 | let vue = new Vue({
    |               ^^^
    |
-   = note: new <D, M, P>(options: VueOptions<D, M, P>) => D & M & P
+   = note: new <D, M, P>(options: VueOptions<D, M, P>) => (D & M & P)
 
 warning: Type
   --> $DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:16:11
@@ -168,7 +168,7 @@ warning: Type
 35 | | });
    | |__^
    |
-   = note: {
+   = note: ({
                x: number;
                y: number;
            } & {
@@ -176,7 +176,7 @@ warning: Type
            } & {
                test: number;
                hello: string;
-           }
+           })
 
 warning: Type
   --> $DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:37:1
@@ -184,7 +184,7 @@ warning: Type
 37 | vue;
    | ^^^
    |
-   = note: {
+   = note: ({
                x: number;
                y: number;
            } & {
@@ -192,7 +192,7 @@ warning: Type
            } & {
                test: number;
                hello: string;
-           }
+           })
 
 warning: Type
   --> $DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:38:1
@@ -200,7 +200,7 @@ warning: Type
 38 | vue.x;
    | ^^^
    |
-   = note: {
+   = note: ({
                x: number;
                y: number;
            } & {
@@ -208,7 +208,7 @@ warning: Type
            } & {
                test: number;
                hello: string;
-           }
+           })
 
 warning: Type
   --> $DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:38:1
@@ -224,7 +224,7 @@ warning: Type
 39 | vue.f("abc");
    | ^^^
    |
-   = note: {
+   = note: ({
                x: number;
                y: number;
            } & {
@@ -232,7 +232,7 @@ warning: Type
            } & {
                test: number;
                hello: string;
-           }
+           })
 
 warning: Type
   --> $DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:39:1
@@ -248,7 +248,7 @@ warning: Type
 40 | vue.test;
    | ^^^
    |
-   = note: {
+   = note: ({
                x: number;
                y: number;
            } & {
@@ -256,7 +256,7 @@ warning: Type
            } & {
                test: number;
                hello: string;
-           }
+           })
 
 warning: Type
   --> $DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:40:1
@@ -272,7 +272,7 @@ warning: Type
 41 | vue.hello;
    | ^^^
    |
-   = note: {
+   = note: ({
                x: number;
                y: number;
            } & {
@@ -280,7 +280,7 @@ warning: Type
            } & {
                test: number;
                hello: string;
-           }
+           })
 
 warning: Type
   --> $DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:41:1

@@ -40,7 +40,7 @@ warning: Type
   | ^
   |
   = note: {
-              x: (string | number)[];
+              x: ((string | number))[];
               y: {
                   c: boolean;
                   d: string;

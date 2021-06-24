@@ -14,11 +14,11 @@ warning: Type
 3 | export const n3: number | undefined = a?.m?.({ x: 12 }); // should be ok
   |                                       ^
   |
-  = note: {
+  = note: ({
               m?<T>(obj: {
                   x: T;
               }): T;
-          } | undefined
+          } | undefined)
 
 warning: Type
  --> $DIR/tests/pass/types/generic/call-chain-1.ts:3:39
@@ -26,9 +26,9 @@ warning: Type
 3 | export const n3: number | undefined = a?.m?.({ x: 12 }); // should be ok
   |                                       ^^^^
   |
-  = note: undefined | <T>(obj: {
+  = note: (undefined | <T>(obj: {
               x: T;
-          }) => T
+          }) => T)
 
 warning: Type
  --> $DIR/tests/pass/types/generic/call-chain-1.ts:3:39
@@ -36,7 +36,7 @@ warning: Type
 3 | export const n3: number | undefined = a?.m?.({ x: 12 }); // should be ok
   |                                       ^^^^^^^^^^^^^^^^^
   |
-  = note: undefined | number
+  = note: (undefined | number)
 
 warning: Type
  --> $DIR/tests/pass/types/generic/call-chain-1.ts:4:51
@@ -70,11 +70,11 @@ warning: Type
 4 | export const n4: number | undefined = a?.m?.({ x: absorb() }); // likewise
   |                                       ^
   |
-  = note: {
+  = note: ({
               m?<T>(obj: {
                   x: T;
               }): T;
-          } | undefined
+          } | undefined)
 
 warning: Type
  --> $DIR/tests/pass/types/generic/call-chain-1.ts:4:39
@@ -82,9 +82,9 @@ warning: Type
 4 | export const n4: number | undefined = a?.m?.({ x: absorb() }); // likewise
   |                                       ^^^^
   |
-  = note: undefined | <T>(obj: {
+  = note: (undefined | <T>(obj: {
               x: T;
-          }) => T
+          }) => T)
 
 warning: Type
  --> $DIR/tests/pass/types/generic/call-chain-1.ts:4:39
@@ -92,7 +92,7 @@ warning: Type
 4 | export const n4: number | undefined = a?.m?.({ x: absorb() }); // likewise
   |                                       ^^^^^^^^^^^^^^^^^^^^^^^
   |
-  = note: undefined | T
+  = note: (undefined | T)
 
 warning: Type
  --> $DIR/tests/pass/types/generic/call-chain-1.ts:7:24
@@ -110,11 +110,11 @@ warning: Type
 7 | export let t1 = a?.m?.({ x: 12 });
   |                 ^
   |
-  = note: {
+  = note: ({
               m?<T>(obj: {
                   x: T;
               }): T;
-          } | undefined
+          } | undefined)
 
 warning: Type
  --> $DIR/tests/pass/types/generic/call-chain-1.ts:7:17
@@ -122,9 +122,9 @@ warning: Type
 7 | export let t1 = a?.m?.({ x: 12 });
   |                 ^^^^
   |
-  = note: undefined | <T>(obj: {
+  = note: (undefined | <T>(obj: {
               x: T;
-          }) => T
+          }) => T)
 
 warning: Type
  --> $DIR/tests/pass/types/generic/call-chain-1.ts:7:17
@@ -132,7 +132,7 @@ warning: Type
 7 | export let t1 = a?.m?.({ x: 12 });
   |                 ^^^^^^^^^^^^^^^^^
   |
-  = note: undefined | number
+  = note: (undefined | number)
 
 warning: Type
  --> $DIR/tests/pass/types/generic/call-chain-1.ts:8:12
@@ -150,11 +150,11 @@ warning: Type
 8 | t1 = a!.m!({ x: 12 });
   |      ^
   |
-  = note: {
+  = note: ({
               m?<T>(obj: {
                   x: T;
               }): T;
-          } | undefined
+          } | undefined)
 
 warning: Type
  --> $DIR/tests/pass/types/generic/call-chain-1.ts:8:6
@@ -174,9 +174,9 @@ warning: Type
 8 | t1 = a!.m!({ x: 12 });
   |      ^^^^
   |
-  = note: undefined | <T>(obj: {
+  = note: (undefined | <T>(obj: {
               x: T;
-          }) => T
+          }) => T)
 
 warning: Type
  --> $DIR/tests/pass/types/generic/call-chain-1.ts:8:6

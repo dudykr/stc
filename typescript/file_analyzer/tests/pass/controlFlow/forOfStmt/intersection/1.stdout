@@ -4,11 +4,11 @@ warning: Type
 6 | for (const item of arr) {
   |                    ^^^
   |
-  = note: {
+  = note: ({
               x: 'x';
           }[] & {
               y: 'y';
-          }[]
+          }[])
 
 warning: Type
  --> $DIR/tests/pass/controlFlow/forOfStmt/intersection/1.ts:7:5
@@ -16,11 +16,11 @@ warning: Type
 7 |     item.x;
   |     ^^^^
   |
-  = note: {
+  = note: ({
               x: 'x';
           } & {
               y: 'y';
-          }
+          })
 
 warning: Type
  --> $DIR/tests/pass/controlFlow/forOfStmt/intersection/1.ts:7:5
@@ -36,11 +36,11 @@ warning: Type
 8 |     item.y;
   |     ^^^^
   |
-  = note: {
+  = note: ({
               x: 'x';
           } & {
               y: 'y';
-          }
+          })
 
 warning: Type
  --> $DIR/tests/pass/controlFlow/forOfStmt/intersection/1.ts:8:5

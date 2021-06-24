@@ -116,5 +116,5 @@ warning: Type
 34 | var c2: myArray = [...temp1, ...temp];            // Error cannot assign (number|string)[] to number[]
    |                   ^^^^^^^^^^^^^^^^^^^
    |
-   = note: (number | string)[]
+   = note: ((number | string))[]
 

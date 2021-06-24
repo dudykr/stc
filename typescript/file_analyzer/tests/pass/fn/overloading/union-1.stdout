@@ -12,7 +12,7 @@ warning: Type
 21 |     return entity.kind === kind;
    |            ^^^^^^^^^^^
    |
-   = note: "A" | "B"
+   = note: ("A" | "B")
 
 warning: Type
   --> $DIR/tests/pass/fn/overloading/union-1.ts:21:28
@@ -20,7 +20,7 @@ warning: Type
 21 |     return entity.kind === kind;
    |                            ^^^^
    |
-   = note: "A" | "B"
+   = note: ("A" | "B")
 
 warning: Type
   --> $DIR/tests/pass/fn/overloading/union-1.ts:21:12

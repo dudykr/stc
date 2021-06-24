@@ -36,7 +36,7 @@ warning: Type
 6 | if ((o = fn()).done) {
   |     ^^^^^^^^^^^^^^^
   |
-  = note: true | false
+  = note: (true | false)
 
 warning: Type
  --> $DIR/tests/visualize/exprs/assign/typeNarrowing/seq-2.ts:7:18

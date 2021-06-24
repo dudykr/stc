@@ -12,7 +12,7 @@ warning: Type
 21 |     return entity.kind === kind;
    |            ^^^^^^^^^^^
    |
-   = note: "A" | "B"
+   = note: ("A" | "B")
 
 warning: Type
   --> $DIR/tests/pass/exprs/lit/string/tags-1.ts:21:28
@@ -20,7 +20,7 @@ warning: Type
 21 |     return entity.kind === kind;
    |                            ^^^^
    |
-   = note: "A" | "B"
+   = note: ("A" | "B")
 
 warning: Type
   --> $DIR/tests/pass/exprs/lit/string/tags-1.ts:21:12
@@ -59,7 +59,7 @@ warning: Type
 29 | if (!hasKind(x, "B")) {
    |      ^^^^^^^
    |
-   = note: (entity: Entity, kind: "A") => entity is A | (entity: Entity, kind: "B") => entity is B | (entity: Entity, kind: Kind) => entity is Entity | (entity: Entity, kind: Kind) => boolean
+   = note: ((entity: Entity, kind: "A") => entity is A | (entity: Entity, kind: "B") => entity is B | (entity: Entity, kind: Kind) => entity is Entity | (entity: Entity, kind: Kind) => boolean)
 
 warning: Type
   --> $DIR/tests/pass/exprs/lit/string/tags-1.ts:29:6

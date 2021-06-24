@@ -33,9 +33,9 @@ warning: Type
 4 |     [x, restOf];
   |     ^^^^^^^^^^^
   |
-  = note: (number | {
+  = note: ((number | {
               y: string;
-          })[]
+          }))[]
 
 warning: Type
  --> $DIR/tests/pass/vars/forOf/rest/2.ts:7:43

@@ -14,7 +14,7 @@ warning: Type
 15 |     return 'some' in value;
    |                      ^^^^^
    |
-   = note: Some | None
+   = note: (Some | None)
 
 warning: Type
   --> $DIR/tests/pass/controlFlow/guard/assertions/7.ts:15:12
@@ -48,7 +48,7 @@ warning: Type
 24 |     x;  // undefined
    |     ^
    |
-   = note: string | number | undefined
+   = note: (string | number | undefined)
 
 warning: Type
   --> $DIR/tests/pass/controlFlow/guard/assertions/7.ts:25:16
@@ -56,7 +56,7 @@ warning: Type
 25 |     if (typeof x === "boolean") {
    |                ^
    |
-   = note: string | number | undefined
+   = note: (string | number | undefined)
 
 warning: Type
   --> $DIR/tests/pass/controlFlow/guard/assertions/7.ts:25:9
@@ -88,5 +88,5 @@ warning: Type
 28 |     x;  // undefined
    |     ^
    |
-   = note: string | number | undefined
+   = note: (string | number | undefined)
 

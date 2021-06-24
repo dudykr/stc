@@ -4,7 +4,7 @@ warning: Type
 4 | if (f?.(x)) {
   |         ^
   |
-  = note: string | number
+  = note: (string | number)
 
 warning: Type
  --> $DIR/tests/pass/types/predicate/controlFlowOptionalChain/1.ts:4:5
@@ -12,7 +12,7 @@ warning: Type
 4 | if (f?.(x)) {
   |     ^
   |
-  = note: undefined | (x: any) => x is number
+  = note: (undefined | (x: any) => x is number)
 
 warning: Type
  --> $DIR/tests/pass/types/predicate/controlFlowOptionalChain/1.ts:4:5
@@ -20,7 +20,7 @@ warning: Type
 4 | if (f?.(x)) {
   |     ^^^^^^
   |
-  = note: undefined | x is number
+  = note: (undefined | x is number)
 
 warning: Type
  --> $DIR/tests/pass/types/predicate/controlFlowOptionalChain/1.ts:5:5
@@ -76,7 +76,7 @@ warning: Type
 11 |     f;
    |     ^
    |
-   = note: undefined | (x: any) => x is number
+   = note: (undefined | (x: any) => x is number)
 
 warning: Type
   --> $DIR/tests/pass/types/predicate/controlFlowOptionalChain/1.ts:12:7
@@ -92,7 +92,7 @@ warning: Type
 12 |     f(x);
    |     ^
    |
-   = note: undefined | (x: any) => x is number
+   = note: (undefined | (x: any) => x is number)
 
 warning: Type
   --> $DIR/tests/pass/types/predicate/controlFlowOptionalChain/1.ts:12:5
@@ -108,7 +108,7 @@ warning: Type
 14 | x;
    | ^
    |
-   = note: string | number
+   = note: (string | number)
 
 warning: Type
   --> $DIR/tests/pass/types/predicate/controlFlowOptionalChain/1.ts:15:1
@@ -116,7 +116,7 @@ warning: Type
 15 | f;
    | ^
    |
-   = note: undefined | (x: any) => x is number
+   = note: (undefined | (x: any) => x is number)
 
 warning: Type
   --> $DIR/tests/pass/types/predicate/controlFlowOptionalChain/1.ts:16:3
@@ -124,7 +124,7 @@ warning: Type
 16 | f(x);
    |   ^
    |
-   = note: string | number
+   = note: (string | number)
 
 warning: Type
   --> $DIR/tests/pass/types/predicate/controlFlowOptionalChain/1.ts:16:1
@@ -132,7 +132,7 @@ warning: Type
 16 | f(x);
    | ^
    |
-   = note: undefined | (x: any) => x is number
+   = note: (undefined | (x: any) => x is number)
 
 warning: Type
   --> $DIR/tests/pass/types/predicate/controlFlowOptionalChain/1.ts:16:1

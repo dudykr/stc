@@ -12,7 +12,7 @@ warning: Type
 5 | export let f = foo((y: "foo" | "bar") => y === "foo" ? y : "foo");
   |                                          ^
   |
-  = note: "foo" | "bar"
+  = note: ("foo" | "bar")
 
 warning: Type
  --> $DIR/tests/pass/exprs/lit/string/type-param-contraint-1.ts:5:42
@@ -44,7 +44,7 @@ warning: Type
 5 | export let f = foo((y: "foo" | "bar") => y === "foo" ? y : "foo");
   |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   |
-  = note: (y: "foo" | "bar") => "foo"
+  = note: (y: ("foo" | "bar")) => "foo"
 
 warning: Type
  --> $DIR/tests/pass/exprs/lit/string/type-param-contraint-1.ts:5:16
