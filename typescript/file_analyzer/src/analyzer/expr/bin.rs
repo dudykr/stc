@@ -323,6 +323,8 @@ impl Analyzer<'_, '_> {
                                     .or_default()
                                     .push(r.clone());
 
+                                // If rhs is not undefined, we should mark lhs as not-undefined.
+
                                 self.prevent_generalize(&mut r);
                                 self.add_deep_type_fact(span, name, r, false);
                             }
