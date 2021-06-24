@@ -7,6 +7,7 @@ use fxhash::FxHashMap;
 use itertools::Itertools;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
+use stc_ts_type_form::{compare, max_index, TypeForm};
 use stc_ts_type_ops::is_str_lit_or_union;
 use stc_ts_types::{
     Array, Class, ClassDef, ClassMember, Id, Interface, Operator, Ref, Type, TypeElement, TypeLit, TypeParam, Union,
@@ -69,20 +70,15 @@ impl Analyzer<'_, '_> {
         arg: &Type,
         opts: InferTypeOpts,
     ) -> ValidationResult<()> {
-        let arg_form = OldTypeForm::from(arg);
-        let mut done = false;
+        let type_forms = param.types.iter().map(TypeForm::from).collect_vec();
+        let arg_form = TypeForm::from(arg);
 
-        for p in &param.types {
-            let param_form = OldTypeForm::from(p);
-
-            if arg_form == param_form {
-                done = true;
-                self.infer_type(span, inferred, p, arg, opts)?;
+        let matched_paths = type_forms.iter().map(|param| compare(&param, &arg_form)).collect_vec();
+        if matched_paths.iter().any(|v| !v.is_empty()) {
+            if let Some(idx) = max_index(&matched_paths) {
+                self.infer_type(span, inferred, &param.types[idx], arg, opts)?;
+                return Ok(());
             }
-        }
-
-        if done {
-            return Ok(());
         }
 
         //
