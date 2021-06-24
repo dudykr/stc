@@ -1995,6 +1995,7 @@ dependencies = [
 name = "stc_ts_type_form"
 version = "0.1.0"
 dependencies = [
+ "itertools",
  "stc_testing",
  "stc_ts_ast_rnode",
  "stc_ts_types",
