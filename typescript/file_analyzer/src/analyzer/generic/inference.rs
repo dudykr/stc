@@ -82,8 +82,10 @@ impl Analyzer<'_, '_> {
         }
 
         //
-        for p in &param.types {
-            self.infer_type(span, inferred, p, arg, opts)?;
+        if !self.ctx.skip_union_while_inferencing {
+            for p in &param.types {
+                self.infer_type(span, inferred, p, arg, opts)?;
+            }
         }
 
         return Ok(());
