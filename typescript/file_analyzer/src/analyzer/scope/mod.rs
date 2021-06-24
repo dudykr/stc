@@ -979,6 +979,9 @@ impl Analyzer<'_, '_> {
     pub(super) fn find_var_type(&self, name: &Id, mode: TypeOfMode) -> Option<Cow<Type>> {
         if let Some(v) = self.cur_facts.true_facts.vars.get(&Name::from(name)) {
             v.assert_valid();
+
+            slog::debug!(self.logger, "Scope.find_var_type({}): Handled with cur_facts", name);
+
             return Some(Cow::Borrowed(v));
         }
 
