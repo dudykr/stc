@@ -19,24 +19,17 @@
   "editor.formatOnSave": true,
   "git.ignoreLimitWarning": true,
   "git.detectSubmodules": false,
-  "rust-analyzer.diagnostics.disabled": [
-    "unresolved-import",
-    "unresolved-extern-crate",
-    "missing-ok-in-tail-expr",
-    "mismatched-arg-count",
-    "macro-error",
-    "incorrect-ident-case",
-    "no-such-field",
-    "missing-structure-fields"
-  ],
-  "rust-analyzer.procMacro.enable": true,
   "rust-analyzer.diagnostics.enable": false,
-  "rust-analyzer.diagnostics.enableExperimental": false,
+  "rust-analyzer.procMacro.enable": true,
   "favorites.resources": [
     "typescript/errors/src/lib.rs",
     "typescript/file_analyzer/tests",
     "typescript/type_checker/tests/tsc-stats.rust-debug",
     "typescript/type_checker/tests/wip-stats.rust-debug"
   ],
-  "rust-analyzer.lruCapacity": 1024
+  "rust-analyzer.lruCapacity": 1024,
+  "rust-analyzer.trace.server": "messages",
+  "rust-analyzer.server.extraEnv": {
+    "RA_LOG": "info"
+  }
 }
