@@ -276,21 +276,31 @@ impl From<Array> for RTsType {
 
 impl From<Union> for RTsType {
     fn from(t: Union) -> Self {
-        RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsUnionType(RTsUnionType {
+        RTsType::TsParenthesizedType(RTsParenthesizedType {
             node_id: NodeId::invalid(),
             span: t.span,
-            types: t.types.into_iter().map(From::from).collect(),
-        }))
+            type_ann: box RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsUnionType(RTsUnionType {
+                node_id: NodeId::invalid(),
+                span: t.span,
+                types: t.types.into_iter().map(From::from).collect(),
+            })),
+        })
     }
 }
 
 impl From<Intersection> for RTsType {
     fn from(t: Intersection) -> Self {
-        RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsIntersectionType(RTsIntersectionType {
+        RTsType::TsParenthesizedType(RTsParenthesizedType {
             node_id: NodeId::invalid(),
             span: t.span,
-            types: t.types.into_iter().map(From::from).collect(),
-        }))
+            type_ann: box RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsIntersectionType(
+                RTsIntersectionType {
+                    node_id: NodeId::invalid(),
+                    span: t.span,
+                    types: t.types.into_iter().map(From::from).collect(),
+                },
+            )),
+        })
     }
 }
 
