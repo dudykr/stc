@@ -306,27 +306,41 @@ impl BitOr for CondFacts {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, stmt: &RIfStmt) -> ValidationResult<()> {
-        {
+        let prev_facts = self.cur_facts.take();
+
+        let facts_from_test: Facts = {
             let ctx = Ctx {
                 in_cond_of_cond_expr: true,
                 should_store_truthy_for_access: true,
                 ..self.ctx
             };
-            let test = stmt.test.validate_with_default(&mut *self.with_ctx(ctx));
-            match test {
-                Ok(_) => {}
-                Err(err) => {
-                    self.storage.report(err);
-                }
-            }
-        }
+            let facts = self.with_ctx(ctx).with_child(
+                ScopeKind::Flow,
+                prev_facts.true_facts.clone(),
+                |child: &mut Analyzer| {
+                    let test = stmt.test.validate_with_default(child);
+                    match test {
+                        Ok(_) => {}
+                        Err(err) => {
+                            child.storage.report(err);
+                        }
+                    }
 
-        let true_facts = self.cur_facts.true_facts.take();
-        let false_facts = self.cur_facts.false_facts.take();
+                    Ok(child.cur_facts.take())
+                },
+            );
+
+            facts.report(&mut self.storage).unwrap_or_default()
+        };
+
+        let true_facts = facts_from_test.true_facts;
+        let false_facts = facts_from_test.false_facts;
 
         let mut cons_ends_with_unreachable = false;
 
         let ends_with_ret = stmt.cons.ends_with_ret();
+
+        self.cur_facts = prev_facts.clone();
         self.with_child(ScopeKind::Flow, true_facts, |child: &mut Analyzer| {
             stmt.cons.visit_with(child);
 
@@ -339,6 +353,7 @@ impl Analyzer<'_, '_> {
         let mut alt_ends_with_unreachable = None;
 
         if let Some(alt) = &stmt.alt {
+            self.cur_facts = prev_facts.clone();
             self.with_child(ScopeKind::Flow, false_facts.clone(), |child: &mut Analyzer| {
                 alt.visit_with(child);
 
@@ -348,6 +363,8 @@ impl Analyzer<'_, '_> {
             })
             .report(&mut self.storage);
         }
+
+        self.cur_facts = prev_facts;
 
         if ends_with_ret {
             self.cur_facts.true_facts += false_facts;
