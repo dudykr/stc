@@ -160,7 +160,7 @@ impl Analyzer<'_, '_> {
 
         let rt = rhs;
 
-        self.validate_bin_inner(span, op, lt.as_ref(), rt.as_ref());
+        self.report_errors_for_bin_expr(span, op, lt.as_ref(), rt.as_ref());
 
         if op == op!("||") {
             for (k, type_fact) in lhs_facts.true_facts.facts.drain() {
@@ -1323,7 +1323,7 @@ impl Analyzer<'_, '_> {
         Ok(equals_to.into_owned())
     }
 
-    fn validate_bin_inner(&mut self, span: Span, op: BinaryOp, lt: Option<&Type>, rt: Option<&Type>) {
+    fn report_errors_for_bin_expr(&mut self, span: Span, op: BinaryOp, lt: Option<&Type>, rt: Option<&Type>) {
         let ls = lt.span();
         let rs = rt.span();
 
