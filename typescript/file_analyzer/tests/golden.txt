@@ -209,6 +209,8 @@ tests/pass/types/mapped/6.ts
 tests/pass/types/mapped/7-1.ts
 tests/pass/types/mapped/7.ts
 tests/pass/types/null/var/1.ts
+tests/pass/types/predicate/controlFlowOptionalChain/1.ts
+tests/pass/types/predicate/controlFlowOptionalChain/2.ts
 tests/pass/types/predicate/type-guard-1.ts
 tests/pass/types/predicate/type-guard-2.ts
 tests/pass/types/ref/import/1.ts
