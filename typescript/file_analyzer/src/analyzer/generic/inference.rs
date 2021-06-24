@@ -1,12 +1,13 @@
 use super::InferData;
 use crate::{
-    analyzer::{generic::type_form::TypeForm, Analyzer, Ctx},
+    analyzer::{generic::type_form::OldTypeForm, Analyzer, Ctx},
     ValidationResult,
 };
 use fxhash::FxHashMap;
 use itertools::Itertools;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
+use stc_ts_type_form::{compare_type_forms, max_path, TypeForm};
 use stc_ts_type_ops::is_str_lit_or_union;
 use stc_ts_types::{
     Array, Class, ClassDef, ClassMember, Id, Interface, Operator, Ref, Type, TypeElement, TypeLit, TypeParam, Union,
@@ -42,8 +43,8 @@ impl Analyzer<'_, '_> {
             // TODO: Sort types so `T | PromiseLike<T>` has same form as
             // `PromiseLike<void> | void`.
 
-            let param_type_form = param.types.iter().map(TypeForm::from).collect_vec();
-            let arg_type_form = arg.types.iter().map(TypeForm::from).collect_vec();
+            let param_type_form = param.types.iter().map(OldTypeForm::from).collect_vec();
+            let arg_type_form = arg.types.iter().map(OldTypeForm::from).collect_vec();
 
             if param_type_form == arg_type_form {
                 for (p, a) in param.types.iter().zip(arg.types.iter()) {
@@ -69,25 +70,30 @@ impl Analyzer<'_, '_> {
         arg: &Type,
         opts: InferTypeOpts,
     ) -> ValidationResult<()> {
+        let type_forms = param.types.iter().map(TypeForm::from).collect_vec();
         let arg_form = TypeForm::from(arg);
-        let mut done = false;
 
-        for p in &param.types {
-            let param_form = TypeForm::from(p);
+        let matched_paths = type_forms
+            .iter()
+            .map(|param| compare_type_forms(&param, &arg_form))
+            .collect_vec();
+        let max = matched_paths.iter().max_by(|a, b| max_path(a, b));
 
-            if arg_form == param_form {
-                done = true;
-                self.infer_type(span, inferred, p, arg, opts)?;
+        if let Some(max) = max {
+            for (idx, (param, type_path)) in param.types.iter().zip(matched_paths.iter()).enumerate() {
+                if type_path == max {
+                    self.infer_type(span, inferred, &param, arg, opts)?;
+                }
             }
-        }
 
-        if done {
             return Ok(());
         }
 
         //
-        for p in &param.types {
-            self.infer_type(span, inferred, p, arg, opts)?;
+        if !self.ctx.skip_union_while_inferencing {
+            for p in &param.types {
+                self.infer_type(span, inferred, p, arg, opts)?;
+            }
         }
 
         return Ok(());

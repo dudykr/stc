@@ -5,15 +5,15 @@ use stc_ts_types::{name::Name, Type};
 /// For example, `T | PromiseLike<T>` has identical `form` with `void |
 /// PrmomiseLike<void>`
 #[derive(Debug, PartialEq, Eq)]
-pub(super) enum TypeForm {
+pub(super) enum OldTypeForm {
     Ref(Name),
     Other,
-    Array(Box<TypeForm>),
+    Array(Box<OldTypeForm>),
     TypeLit { prop_count: usize },
-    Fn { ret_ty: Box<TypeForm> },
+    Fn { ret_ty: Box<OldTypeForm> },
 }
 
-impl From<&Type> for TypeForm {
+impl From<&Type> for OldTypeForm {
     fn from(ty: &Type) -> Self {
         match ty.normalize() {
             Type::Ref(r) => Self::Ref(r.type_name.clone().into()),
