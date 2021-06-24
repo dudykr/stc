@@ -1021,18 +1021,6 @@ impl Analyzer<'_, '_> {
                 ..
             }) => return Ok(()),
 
-            // Handle unknown on rhs
-            Type::Keyword(RTsKeywordType {
-                kind: TsKeywordTypeKind::TsUnknownKeyword,
-                ..
-            }) => {
-                if to.is_kwd(TsKeywordTypeKind::TsAnyKeyword) || to.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
-                    return Ok(());
-                }
-
-                fail!();
-            }
-
             Type::Param(TypeParam {
                 ref name,
                 ref constraint,
@@ -1809,6 +1797,18 @@ impl Analyzer<'_, '_> {
                     handle_enum_in_rhs!(e)
                 }
             },
+
+            // Handle unknown on rhs
+            Type::Keyword(RTsKeywordType {
+                kind: TsKeywordTypeKind::TsUnknownKeyword,
+                ..
+            }) => {
+                if to.is_kwd(TsKeywordTypeKind::TsAnyKeyword) || to.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
+                    return Ok(());
+                }
+
+                fail!();
+            }
 
             Type::EnumVariant(EnumVariant {
                 ref ctxt,
