@@ -3088,6 +3088,7 @@ impl Analyzer<'_, '_> {
     fn validate_args(&mut self, args: &[RExprOrSpread]) -> Result<Vec<TypeOrSpread>, Error> {
         let ctx = Ctx {
             in_argument: true,
+            should_store_truthy_for_access: false,
             ..self.ctx
         };
         self.with_ctx(ctx).with(|a: &mut Analyzer| {
