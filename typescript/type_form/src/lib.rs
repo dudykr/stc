@@ -139,7 +139,7 @@ pub enum TypePath {
 }
 
 /// Returns path to deepest match.
-pub fn compare(a: &TypeForm, b: &TypeForm) -> Vec<TypePath> {
+pub fn compare_type_forms(a: &TypeForm, b: &TypeForm) -> Vec<TypePath> {
     let mut ctx = Ctx::default();
     ctx.compare(a, b)
 }
@@ -333,7 +333,7 @@ impl Ctx {
     }
 }
 
-fn max_path(a: &Vec<TypePath>, b: &Vec<TypePath>) -> Ordering {
+pub fn max_path(a: &Vec<TypePath>, b: &Vec<TypePath>) -> Ordering {
     if a.len() > b.len() {
         return Ordering::Greater;
     }
@@ -342,17 +342,4 @@ fn max_path(a: &Vec<TypePath>, b: &Vec<TypePath>) -> Ordering {
     }
 
     a.cmp(b)
-}
-
-pub fn max_index(v: &[Vec<TypePath>]) -> Option<usize> {
-    let mut iter = v.iter().enumerate();
-    let init = iter.next()?;
-    iter.try_fold(init, |acc, x| {
-        // return None if x is NaN
-        let cmp = max_path(&x.1, acc.1);
-        // if x is greater the acc
-        let max = if let std::cmp::Ordering::Greater = cmp { x } else { acc };
-        Some(max)
-    })
-    .map(|v| v.0)
 }

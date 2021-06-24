@@ -7,7 +7,7 @@ use fxhash::FxHashMap;
 use itertools::Itertools;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
-use stc_ts_type_form::{compare, max_index, TypeForm};
+use stc_ts_type_form::{compare_type_forms, max_path, TypeForm};
 use stc_ts_type_ops::is_str_lit_or_union;
 use stc_ts_types::{
     Array, Class, ClassDef, ClassMember, Id, Interface, Operator, Ref, Type, TypeElement, TypeLit, TypeParam, Union,
@@ -73,12 +73,20 @@ impl Analyzer<'_, '_> {
         let type_forms = param.types.iter().map(TypeForm::from).collect_vec();
         let arg_form = TypeForm::from(arg);
 
-        let matched_paths = type_forms.iter().map(|param| compare(&param, &arg_form)).collect_vec();
-        if matched_paths.iter().any(|v| !v.is_empty()) {
-            if let Some(idx) = max_index(&matched_paths) {
-                self.infer_type(span, inferred, &param.types[idx], arg, opts)?;
-                return Ok(());
+        let matched_paths = type_forms
+            .iter()
+            .map(|param| compare_type_forms(&param, &arg_form))
+            .collect_vec();
+        let max = matched_paths.iter().max_by(|a, b| max_path(a, b));
+
+        if let Some(max) = max {
+            for (idx, (param, type_path)) in param.types.iter().zip(matched_paths.iter()).enumerate() {
+                if type_path == max {
+                    self.infer_type(span, inferred, &param, arg, opts)?;
+                }
             }
+
+            return Ok(());
         }
 
         //
