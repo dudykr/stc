@@ -1,5 +1,3 @@
-#![feature(option_expect_none)]
-
 use self::{deps::find_deps, resolver::Resolve};
 use anyhow::{bail, Context, Error};
 use dashmap::DashMap;
@@ -140,7 +138,8 @@ where
         let (_, id) = self.id_generator.generate(path);
         self.paths.insert(id, path.clone());
 
-        self.loaded.insert(id, loaded.module).expect_none("duplicate?");
+        let res = self.loaded.insert(id, loaded.module);
+        assert_eq!(res, None, "duplicate?");
 
         let dep_module_ids = loaded
             .deps

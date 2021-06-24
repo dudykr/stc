@@ -1,7 +1,6 @@
 //! Type forms for generic inference.
 #![deny(missing_debug_implementations)]
 #![deny(unreachable_code)]
-#![feature(cmp_min_max_by)]
 #![feature(box_syntax)]
 
 use itertools::{EitherOrBoth, Itertools};
