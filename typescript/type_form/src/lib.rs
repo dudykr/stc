@@ -11,6 +11,10 @@ use std::cmp::{max_by, Ordering};
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Var {}
 
+/// `Form` of the type.
+///
+/// For example, `T | PromiseLike<T>` has identical `form` with `void |
+/// PrmomiseLike<void>`
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TypeForm {
     // Type parameters, including infer type.
@@ -338,4 +342,17 @@ fn max_path(a: &Vec<TypePath>, b: &Vec<TypePath>) -> Ordering {
     }
 
     a.cmp(b)
+}
+
+pub fn max_index(v: &[Vec<TypePath>]) -> Option<usize> {
+    let mut iter = v.iter().enumerate();
+    let init = iter.next()?;
+    iter.try_fold(init, |acc, x| {
+        // return None if x is NaN
+        let cmp = max_path(&x.1, acc.1);
+        // if x is greater the acc
+        let max = if let std::cmp::Ordering::Greater = cmp { x } else { acc };
+        Some(max)
+    })
+    .map(|v| v.0)
 }
