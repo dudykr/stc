@@ -1,3 +1,4 @@
+declare const x: string | number;
 declare const o2: { f(x: any): x is number; } | undefined;
 if (o2?.f(x)) {
     x; // number
