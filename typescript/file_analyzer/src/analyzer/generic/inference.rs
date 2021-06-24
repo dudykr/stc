@@ -1,6 +1,6 @@
 use super::InferData;
 use crate::{
-    analyzer::{generic::type_form::TypeForm, Analyzer, Ctx},
+    analyzer::{generic::type_form::OldTypeForm, Analyzer, Ctx},
     ValidationResult,
 };
 use fxhash::FxHashMap;
@@ -42,8 +42,8 @@ impl Analyzer<'_, '_> {
             // TODO: Sort types so `T | PromiseLike<T>` has same form as
             // `PromiseLike<void> | void`.
 
-            let param_type_form = param.types.iter().map(TypeForm::from).collect_vec();
-            let arg_type_form = arg.types.iter().map(TypeForm::from).collect_vec();
+            let param_type_form = param.types.iter().map(OldTypeForm::from).collect_vec();
+            let arg_type_form = arg.types.iter().map(OldTypeForm::from).collect_vec();
 
             if param_type_form == arg_type_form {
                 for (p, a) in param.types.iter().zip(arg.types.iter()) {
@@ -69,11 +69,11 @@ impl Analyzer<'_, '_> {
         arg: &Type,
         opts: InferTypeOpts,
     ) -> ValidationResult<()> {
-        let arg_form = TypeForm::from(arg);
+        let arg_form = OldTypeForm::from(arg);
         let mut done = false;
 
         for p in &param.types {
-            let param_form = TypeForm::from(p);
+            let param_form = OldTypeForm::from(p);
 
             if arg_form == param_form {
                 done = true;
