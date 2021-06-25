@@ -1,5 +1,3 @@
-conformance::classes::propertyMemberDeclarations::strictPropertyInitialization.ts
 controlFlow::controlFlowNullishCoalesce.ts
 controlFlow::controlFlowOptionalChain.ts
-controlFlow::exhaustiveSwitchStatements1.ts
 controlFlow::neverReturningFunctions1.ts
