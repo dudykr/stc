@@ -154,6 +154,7 @@ fn filter(mut bt: Backtrace) -> Backtrace {
                     || s.contains("libstd")
                     || s.contains("/libtest/")
                     || s.contains("/rustc/")
+                    || s.contains("/visit/")
                     || s.contains("rust/library")
                     || s.contains("libpanic_unwind/")
                     || s.contains("/ecmascript/visit/")
