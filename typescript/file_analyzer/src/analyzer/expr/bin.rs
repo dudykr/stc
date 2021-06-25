@@ -56,6 +56,11 @@ impl Analyzer<'_, '_> {
                     op!("&&") => true,
                     _ => false,
                 },
+            in_cond: self.ctx.in_cond
+                || match op {
+                    op!("&&") | op!("||") => true,
+                    _ => false,
+                },
             check_for_implicit_any: true,
             ..self.ctx
         };
@@ -69,7 +74,9 @@ impl Analyzer<'_, '_> {
             },
         );
 
+        let orig_logger = self.logger.clone();
         let lt = {
+            self.logger = orig_logger.new(slog::o!("type" => "lhs"));
             let mut a = self.with_ctx(ctx);
             left.validate_with_args(&mut *a, child_ctxt)
         }
@@ -117,6 +124,7 @@ impl Analyzer<'_, '_> {
                 ScopeKind::Flow,
                 true_facts_for_rhs.clone(),
                 |child: &mut Analyzer| -> ValidationResult<_> {
+                    child.logger = orig_logger.new(slog::o!("type" => "rhs"));
                     child.ctx.should_store_truthy_for_access = false;
 
                     let truthy_lt;
@@ -160,6 +168,7 @@ impl Analyzer<'_, '_> {
                 },
             )
             .store(&mut errors);
+        self.logger = orig_logger;
 
         let rt = rhs;
 
@@ -695,6 +704,10 @@ impl Analyzer<'_, '_> {
 
 impl Analyzer<'_, '_> {
     fn add_type_facts_for_typeof(&mut self, span: Span, l: &RExpr, r: &RExpr, is_eq: bool) -> ValidationResult<()> {
+        if !self.ctx.in_cond {
+            return Ok(());
+        }
+
         let c = Comparator { left: l, right: r };
 
         // Check typeof a === 'string'
