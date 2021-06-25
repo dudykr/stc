@@ -289,6 +289,9 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
 
+                self.add_type_facts_for_opt_chains(span, &left, &right, &lt, &rt)
+                    .report(&mut self.storage);
+
                 match c.take_if_any_matches(|(l, _), (_, r_ty)| match (l, r_ty) {
                     (
                         RExpr::Ident(RIdent {
@@ -324,6 +327,12 @@ impl Analyzer<'_, '_> {
                                     .push(r.clone());
 
                                 // If rhs is not undefined, we should mark lhs as not-undefined.
+                                if !self.can_be_undefined(span, &r)? {
+                                    self.cur_facts
+                                        .true_facts
+                                        .facts
+                                        .insert(name.clone(), TypeFacts::NEUndefined);
+                                }
 
                                 self.prevent_generalize(&mut r);
                                 self.add_deep_type_fact(span, name, r, false);
@@ -732,6 +741,18 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
+    fn add_type_facts_for_opt_chains(
+        &mut self,
+        span: Span,
+        l: &RExpr,
+        r: &RExpr,
+        lt: &Type,
+        rt: &Type,
+    ) -> ValidationResult<()> {
+        // TODO
+        Ok(())
+    }
+
     fn is_valid_for_switch_case(&mut self, span: Span, disc_ty: &Type, case_ty: &Type) -> ValidationResult<bool> {
         let disc_ty = disc_ty.normalize();
         let case_ty = case_ty.normalize();
