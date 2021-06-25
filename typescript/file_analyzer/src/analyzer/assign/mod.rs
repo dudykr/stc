@@ -15,7 +15,7 @@ use stc_ts_types::{
     TypeElement, TypeLit, TypeParam, Union,
 };
 use stc_utils::stack;
-use std::{borrow::Cow, collections::HashMap};
+use std::{borrow::Cow, collections::HashMap, time::Instant};
 use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
@@ -428,6 +428,7 @@ impl Analyzer<'_, '_> {
         left.assert_valid();
         right.assert_valid();
 
+        let start = Instant::now();
         let l = dump_type_as_string(&self.cm, &left);
         let r = dump_type_as_string(&self.cm, &right);
 
@@ -454,7 +455,17 @@ impl Analyzer<'_, '_> {
         let dejavu = data.dejavu.pop();
         debug_assert!(dejavu.is_some());
 
-        slog::debug!(self.logger, "[assign ({:?})] {} = {}\n{:?} ", res.is_ok(), l, r, opts);
+        let end = Instant::now();
+
+        slog::debug!(
+            self.logger,
+            "[assign ({:?}), {:?}] {} = {}\n{:?} ",
+            res.is_ok(),
+            end - start,
+            l,
+            r,
+            opts
+        );
 
         res
     }
