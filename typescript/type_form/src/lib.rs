@@ -2,7 +2,6 @@
 #![deny(missing_debug_implementations)]
 #![deny(unreachable_code)]
 #![feature(box_syntax)]
-#![feature(cmp_min_max_by)]
 
 use itertools::{EitherOrBoth, Itertools};
 use stc_ts_types::{name::Name, Type};
