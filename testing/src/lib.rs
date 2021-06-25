@@ -44,11 +44,11 @@ impl Drop for LogWriter {
     }
 }
 
-fn no_timestamp(_: &mut dyn io::Write) -> io::Result<()> {
-    Ok(())
-}
-
 pub fn term_logger() -> Logger {
+    fn no_timestamp(_: &mut dyn io::Write) -> io::Result<()> {
+        Ok(())
+    }
+
     let decorator = slog_term::TermDecorator::new().build();
     let drain = slog_term::CompactFormat::new(decorator)
         .use_custom_timestamp(no_timestamp)
@@ -78,12 +78,7 @@ pub fn logger() -> LogGuard {
 
     let (sender, receiver) = channel::<String>();
 
-    let decorator = slog_term::TermDecorator::new().build();
-    let drain = slog_term::FullFormat::new(decorator)
-        .use_custom_timestamp(no_timestamp)
-        .build();
-
-    // let drain = TestDrain { sender };
+    let drain = TestDrain { sender };
 
     let drain = slog_envlogger::new(drain);
 
