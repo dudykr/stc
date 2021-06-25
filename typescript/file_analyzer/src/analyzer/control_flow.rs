@@ -309,7 +309,7 @@ impl Analyzer<'_, '_> {
 
         let facts_from_test: Facts = {
             let ctx = Ctx {
-                in_cond_of_cond_expr: true,
+                in_cond: true,
                 should_store_truthy_for_access: true,
                 ..self.ctx
             };
@@ -539,7 +539,7 @@ impl Analyzer<'_, '_> {
                         right: test.clone(),
                     });
                     let ctx = Ctx {
-                        in_cond_of_cond_expr: true,
+                        in_cond: true,
                         in_switch_case_test: true,
                         should_store_truthy_for_access: true,
                         ..self.ctx
@@ -1217,7 +1217,7 @@ impl Analyzer<'_, '_> {
 
         self.validate_with(|a| {
             let ctx = Ctx {
-                in_cond_of_cond_expr: true,
+                in_cond: true,
                 should_store_truthy_for_access: true,
                 ..a.ctx
             };

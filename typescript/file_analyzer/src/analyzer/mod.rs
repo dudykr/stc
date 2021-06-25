@@ -124,7 +124,7 @@ pub(crate) struct Ctx {
     is_instantiating_class: bool,
 
     /// `true` for condition of conditional expression or of an if statement.
-    in_cond_of_cond_expr: bool,
+    in_cond: bool,
     should_store_truthy_for_access: bool,
     in_switch_case_test: bool,
 
@@ -232,7 +232,7 @@ impl Ctx {
     }
 
     pub fn can_generalize_literals(self) -> bool {
-        !self.in_const_assertion && !self.in_argument && !self.in_cond_of_cond_expr
+        !self.in_const_assertion && !self.in_argument && !self.in_cond
     }
 }
 
@@ -515,7 +515,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 disallow_indexing_class_with_computed: false,
                 in_shorthand: false,
                 is_instantiating_class: false,
-                in_cond_of_cond_expr: false,
+                in_cond: false,
                 should_store_truthy_for_access: false,
                 in_switch_case_test: false,
                 in_computed_prop_name: false,

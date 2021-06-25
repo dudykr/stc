@@ -48,7 +48,7 @@ impl Analyzer<'_, '_> {
 
                     {
                         let ctx = Ctx {
-                            in_cond_of_cond_expr: true,
+                            in_cond: true,
                             ..child.ctx
                         };
                         test.visit_with(&mut *child.with_ctx(ctx));
