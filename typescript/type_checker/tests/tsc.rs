@@ -72,6 +72,9 @@ fn is_all_test_enabled() -> bool {
 /// Add stats and return total stats.
 fn record_stat(stats: Stats) -> Stats {
     static STATS: Lazy<Mutex<Stats>> = Lazy::new(|| Default::default());
+    if !cfg!(debug_assertions) {
+        return stats;
+    }
 
     let mut guard = STATS.lock();
     guard.required_error += stats.required_error;
@@ -605,10 +608,12 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
 
         let stats = record_stat(stats);
 
-        println!("[STATS] {:#?}", stats);
+        if cfg!(debug_assertions) {
+            println!("[STATS] {:#?}", stats);
 
-        if expected_errors.is_empty() {
-            println!("[REMOVE_ONLY]{}", file_name.display());
+            if expected_errors.is_empty() {
+                println!("[REMOVE_ONLY]{}", file_name.display());
+            }
         }
 
         if extra_errors.len() == expected_errors.len() {
