@@ -31,5 +31,10 @@
   "rust-analyzer.trace.server": "messages",
   "rust-analyzer.server.extraEnv": {
     "RA_LOG": "info"
-  }
+  },
+  "rust-analyzer.hoverActions.debug": false,
+  "rust-analyzer.hoverActions.run": false,
+  "rust-analyzer.lens.debug": false,
+  "rust-analyzer.lens.run": false,
+  "rust-analyzer.updates.channel": "nightly"
 }
