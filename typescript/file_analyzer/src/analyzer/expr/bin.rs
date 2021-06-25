@@ -836,6 +836,10 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        if !self.ctx.in_cond {
+            return Ok(());
+        }
+
         let c = Comparator {
             left: (l, lt),
             right: (r, rt),
