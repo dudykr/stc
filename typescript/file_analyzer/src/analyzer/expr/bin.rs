@@ -14,14 +14,18 @@ use crate::{
     ValidationResult,
 };
 use stc_ts_ast_rnode::{
-    RBinExpr, RExpr, RExprOrSuper, RIdent, RLit, RMemberExpr, RPat, RPatOrExpr, RStr, RTpl, RTsEntityName,
-    RTsKeywordType, RTsLit, RTsLitType, RUnaryExpr,
+    RBinExpr, RExpr, RExprOrSuper, RIdent, RLit, RMemberExpr, ROptChainExpr, RPat, RPatOrExpr, RStr, RTpl,
+    RTsEntityName, RTsKeywordType, RTsLit, RTsLitType, RUnaryExpr,
 };
 use stc_ts_errors::{DebugExt, Error, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 use stc_ts_types::{name::Name, Class, IdCtx, Intersection, Key, ModuleId, Ref, TypeElement, Union};
-use std::{borrow::Cow, collections::hash_map::Entry, convert::TryFrom};
+use std::{
+    borrow::Cow,
+    collections::hash_map::Entry,
+    convert::{TryFrom, TryInto},
+};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{op, BinaryOp, TsKeywordTypeKind, TsTypeOperatorOp};
@@ -763,7 +767,47 @@ impl Analyzer<'_, '_> {
         /// This may return multiple names if there are optional chaining
         /// expressions.
         fn non_undefined_names(e: &RExpr) -> Vec<Name> {
-            vec![]
+            match e {
+                RExpr::OptChain(ROptChainExpr {
+                    expr:
+                        box RExpr::Member(
+                            e
+                            @
+                            RMemberExpr {
+                                obj: RExprOrSuper::Expr(..),
+                                ..
+                            },
+                        ),
+                    ..
+                }) => {
+                    let mut names = non_undefined_names(match &e.obj {
+                        RExprOrSuper::Super(_) => unreachable!(),
+                        RExprOrSuper::Expr(v) => &v,
+                    });
+
+                    names.extend(e.try_into().ok());
+                    names
+                }
+
+                RExpr::Member(
+                    e
+                    @
+                    RMemberExpr {
+                        obj: RExprOrSuper::Expr(..),
+                        ..
+                    },
+                ) => {
+                    let mut names = non_undefined_names(match &e.obj {
+                        RExprOrSuper::Super(_) => unreachable!(),
+                        RExprOrSuper::Expr(v) => &v,
+                    });
+
+                    names.extend(e.try_into().ok());
+                    names
+                }
+
+                _ => vec![],
+            }
         }
 
         let c = Comparator {
@@ -791,11 +835,10 @@ impl Analyzer<'_, '_> {
             }
         }) {
             Some((names, r_ty)) => {
-                // If rhs is not undefined, we should mark lhs as not-undefined.
                 if !self.can_be_undefined(span, &r_ty)? {
                     for name in names {
                         self.cur_facts
-                            .true_facts
+                            .false_facts
                             .facts
                             .insert(name.clone(), TypeFacts::NEUndefined);
                     }
