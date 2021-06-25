@@ -1,3 +1,0 @@
-controlFlow::controlFlowNullishCoalesce.ts
-controlFlow::controlFlowOptionalChain.ts
-controlFlow::neverReturningFunctions1.ts
