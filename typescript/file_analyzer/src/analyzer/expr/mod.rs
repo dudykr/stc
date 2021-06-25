@@ -1061,7 +1061,7 @@ impl Analyzer<'_, '_> {
 
         slog::debug!(
             self.logger,
-            "[expr] Accessed property ({:?}):\nObject: {}\nResult: {}\n{:?}",
+            "[expr] Accessed property (time = {:?}):\nObject: {}\nResult: {}\n{:?}",
             end - start,
             obj_str,
             ty_str,

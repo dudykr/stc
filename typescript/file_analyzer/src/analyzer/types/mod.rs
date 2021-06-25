@@ -407,7 +407,7 @@ impl Analyzer<'_, '_> {
 
         let end = Instant::now();
 
-        slog::debug!(self.logger, "Type normalization took {:?}", end - start);
+        slog::debug!(self.logger, "Normalized a type. (time = {:?})", end - start);
 
         res
     }
