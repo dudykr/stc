@@ -255,6 +255,7 @@ impl Analyzer<'_, '_> {
                     _ => None,
                 }) {
                     Some((Ok(name), ty)) => {
+                        let ty = ty.clone().cheap();
                         if is_eq {
                             self.add_deep_type_fact(span, name.clone(), ty.clone(), false);
                         } else {
