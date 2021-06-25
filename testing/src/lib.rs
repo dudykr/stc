@@ -79,7 +79,7 @@ pub fn logger() -> LogGuard {
     let (sender, receiver) = channel::<String>();
 
     let decorator = slog_term::TermDecorator::new().build();
-    let drain = slog_term::CompactFormat::new(decorator)
+    let drain = slog_term::FullFormat::new(decorator)
         .use_custom_timestamp(no_timestamp)
         .build();
 
