@@ -305,7 +305,7 @@ impl Analyzer<'_, '_> {
                     )
                     | (RExpr::Lit(RLit::Null(..)), _) => None,
 
-                    (l, r) => Some((extract_name_for_assignment(l)?, r_ty)),
+                    (l, r) => Some((extract_name_for_assignment(l, op == op!("==="))?, r_ty)),
                 }) {
                     Some((l, r_ty)) => {
                         if self.ctx.in_cond_of_cond_expr {
@@ -1713,14 +1713,14 @@ impl Analyzer<'_, '_> {
     }
 }
 
-pub(super) fn extract_name_for_assignment(e: &RExpr) -> Option<Name> {
+pub(super) fn extract_name_for_assignment(e: &RExpr, is_exact_eq: bool) -> Option<Name> {
     match e {
-        RExpr::Paren(e) => extract_name_for_assignment(&e.expr),
+        RExpr::Paren(e) => extract_name_for_assignment(&e.expr, is_exact_eq),
         RExpr::Assign(e) => match &e.left {
-            RPatOrExpr::Expr(e) => extract_name_for_assignment(e),
+            RPatOrExpr::Expr(e) => extract_name_for_assignment(e, is_exact_eq),
             RPatOrExpr::Pat(pat) => match &**pat {
                 RPat::Ident(i) => Some(i.id.clone().into()),
-                RPat::Expr(e) => extract_name_for_assignment(e),
+                RPat::Expr(e) => extract_name_for_assignment(e, is_exact_eq),
                 _ => None,
             },
         },
@@ -1730,7 +1730,7 @@ pub(super) fn extract_name_for_assignment(e: &RExpr) -> Option<Name> {
             computed,
             ..
         }) => {
-            let mut name = extract_name_for_assignment(obj)?;
+            let mut name = extract_name_for_assignment(obj, is_exact_eq)?;
 
             name.push(match &**prop {
                 RExpr::Ident(i) if !*computed => i.sym.clone(),

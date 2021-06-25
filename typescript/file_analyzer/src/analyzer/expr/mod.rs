@@ -3211,7 +3211,7 @@ impl Analyzer<'_, '_> {
                 // Add type facts.
                 match obj {
                     RExprOrSuper::Expr(obj) => {
-                        if let Some(name) = extract_name_for_assignment(obj) {
+                        if let Some(name) = extract_name_for_assignment(obj, false) {
                             let next_ty = self
                                 .filter_types_with_property(
                                     &obj_ty,
