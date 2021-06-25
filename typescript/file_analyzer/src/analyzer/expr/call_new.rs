@@ -1,12 +1,11 @@
 //! Handles new expressions and call expressions.
-use super::{super::Analyzer, IdCtx};
 use crate::{
     analyzer::{
         assign::AssignOpts,
         expr::TypeOfMode,
         marks::MarkExt,
         util::{make_instance_type, ResultExt},
-        Ctx, ScopeKind,
+        Analyzer, Ctx, ScopeKind,
     },
     ty,
     ty::{
@@ -34,8 +33,8 @@ use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
 use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 use stc_ts_types::{
-    type_id::SymbolId, Alias, Array, Class, ClassDef, ClassMember, ClassProperty, Id, IndexedAccessType, Instance,
-    Interface, Intersection, Key, ModuleId, Ref, Symbol, Union,
+    type_id::SymbolId, Alias, Array, Class, ClassDef, ClassMember, ClassProperty, Id, IdCtx, IndexedAccessType,
+    Instance, Interface, Intersection, Key, ModuleId, Ref, Symbol, Union,
 };
 use stc_ts_utils::PatExt;
 use std::borrow::Cow;

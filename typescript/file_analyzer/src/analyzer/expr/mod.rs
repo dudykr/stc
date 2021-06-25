@@ -1,8 +1,7 @@
 pub(crate) use self::array::GetIteratorOpts;
 use self::bin::extract_name_for_assignment;
-use super::{marks::MarkExt, Analyzer};
 use crate::{
-    analyzer::{assign::AssignOpts, pat::PatMode, scope::ScopeKind, util::ResultExt, Ctx},
+    analyzer::{assign::AssignOpts, marks::MarkExt, pat::PatMode, scope::ScopeKind, util::ResultExt, Analyzer, Ctx},
     ty,
     ty::{
         Array, EnumVariant, IndexSignature, IndexedAccessType, Interface, Intersection, Ref, Tuple, Type, TypeElement,

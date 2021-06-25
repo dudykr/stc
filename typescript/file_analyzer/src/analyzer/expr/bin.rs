@@ -20,7 +20,7 @@ use stc_ts_ast_rnode::{
 use stc_ts_errors::{DebugExt, Error, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_type_ops::{is_str_lit_or_union, Fix};
-use stc_ts_types::{name::Name, Class, Intersection, Key, ModuleId, Ref, TypeElement, Union};
+use stc_ts_types::{name::Name, Class, IdCtx, Intersection, Key, ModuleId, Ref, TypeElement, Union};
 use std::{borrow::Cow, collections::hash_map::Entry, convert::TryFrom};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
@@ -1320,7 +1320,7 @@ impl Analyzer<'_, '_> {
             Type::Union(u) => {
                 let mut candidates = vec![];
                 for ty in &u.types {
-                    let prop_res = self.access_property(span, ty, &prop, TypeOfMode::RValue, super::IdCtx::Var);
+                    let prop_res = self.access_property(span, ty, &prop, TypeOfMode::RValue, IdCtx::Var);
 
                     match prop_res {
                         Ok(prop_ty) => {
