@@ -20,7 +20,6 @@
   "git.ignoreLimitWarning": true,
   "git.detectSubmodules": false,
   "rust-analyzer.diagnostics.enable": false,
-  "rust-analyzer.procMacro.enable": false,
   "favorites.resources": [
     "typescript/errors/src/lib.rs",
     "typescript/file_analyzer/tests",
@@ -36,6 +35,6 @@
   "rust-analyzer.hoverActions.run": false,
   "rust-analyzer.lens.debug": false,
   "rust-analyzer.lens.run": false,
-  "rust-analyzer.updates.channel": "nightly",
+  "rust-analyzer.updates.channel": "stable",
   "rust-analyzer.updates.askBeforeDownload": true
 }
