@@ -5,6 +5,9 @@ name = "stc_ts_types"
 publish = false
 version = "0.0.0"
 
+[lib]
+crate-type = ["dylib"]
+
 [dependencies]
 dashmap = "3"
 fxhash = "0.2.1"

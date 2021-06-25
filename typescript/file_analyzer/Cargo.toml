@@ -5,7 +5,8 @@ name = "stc_ts_file_analyzer"
 publish = false
 version = "0.1.0"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+crate-type = ["dylib"]
 
 [dependencies]
 backtrace = "0.3.60"
@@ -33,7 +34,7 @@ stc_ts_file_analyzer_macros = {path = "./macros"}
 stc_ts_generics = {path = "./generics"}
 stc_ts_ordering = {path = "./ordering"}
 stc_ts_storage = {path = "../storage"}
-stc_ts_type_form = { path = "../type_form" }
+stc_ts_type_form = {path = "../type_form"}
 stc_ts_type_ops = {path = "./type_ops"}
 stc_ts_types = {path = "../types"}
 stc_ts_utils = {path = "../utils"}

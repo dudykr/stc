@@ -6,7 +6,8 @@ name = "stc_ts_type_checker"
 publish = false
 version = "0.1.0"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+crate-type = ["dylib"]
 
 [dependencies]
 dashmap = {version = "3", features = ["raw-api"]}
