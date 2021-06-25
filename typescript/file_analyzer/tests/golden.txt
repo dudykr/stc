@@ -182,6 +182,7 @@ tests/pass/types/enums/simple-access-1.ts
 tests/pass/types/facts/field/literal-union-1.ts
 tests/pass/types/generic/call-chain-1.ts
 tests/pass/types/generic/extends/1.ts
+tests/pass/types/guards/controlFlowOptionalChain/1.ts
 tests/pass/types/guards/nested-assignment-1.ts
 tests/pass/types/inference/generatedContextualTypings/1.ts
 tests/pass/types/inference/generatedContextualTypings/2.ts
