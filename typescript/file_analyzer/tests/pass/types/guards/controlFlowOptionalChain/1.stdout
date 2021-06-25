@@ -70,7 +70,7 @@ warning: Type
    = note: {
                type: string;
                coordinates: number[];
-           )
+           }
 
 warning: Type
   --> $DIR/tests/pass/types/guards/controlFlowOptionalChain/1.ts:14:12
