@@ -206,8 +206,21 @@ pub fn validator(_: proc_macro::TokenStream, item: proc_macro::TokenStream) -> p
                     type Context = (ContextType);
 
                     fn validate(&mut self, node_pat: &NodeType, ctxt: Self::Context) -> ReturnType {
+                        let start = std::time::Instant::now();
                         let (conext_pats) = ctxt;
-                        body
+
+                        let ret = (|| body)();
+
+                        let end = std::time::Instant::now();
+
+                        slog::debug!(
+                            self.logger,
+                            "Validate<{}>: (time = {:?})",
+                            stringify!(NodeType),
+                            end - start
+                        );
+
+                        ret
                     }
                 }
             }
