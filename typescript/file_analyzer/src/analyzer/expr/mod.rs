@@ -35,6 +35,7 @@ use std::{
     borrow::Cow,
     collections::HashMap,
     convert::{TryFrom, TryInto},
+    time::Instant,
 };
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
@@ -965,6 +966,7 @@ impl Analyzer<'_, '_> {
             debug_assert_ne!(span, DUMMY_SP, "access_property: called with a dummy span");
         }
 
+        let start = Instant::now();
         obj.assert_valid();
 
         // Try some easier assignments.
@@ -1054,9 +1056,13 @@ impl Analyzer<'_, '_> {
         ty.assert_valid();
 
         let ty_str = dump_type_as_string(&self.cm, &ty);
+
+        let end = Instant::now();
+
         slog::debug!(
             self.logger,
-            "[expr] Accessed property:\nObject: {}\nResult: {}\n{:?}",
+            "[expr] Accessed property ({:?}):\nObject: {}\nResult: {}\n{:?}",
+            end - start,
             obj_str,
             ty_str,
             type_mode
