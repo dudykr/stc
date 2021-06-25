@@ -1,6 +1,9 @@
 pub(crate) use self::{expander::ExtendsOpts, inference::InferTypeOpts};
-use super::{Analyzer, Ctx};
-use crate::{analyzer::assign::AssignOpts, util::RemoveTypes, ValidationResult};
+use crate::{
+    analyzer::{assign::AssignOpts, Analyzer, Ctx},
+    util::RemoveTypes,
+    ValidationResult,
+};
 use fxhash::FxHashMap;
 use itertools::{EitherOrBoth, Itertools};
 use rnode::{Fold, FoldWith, NodeId, VisitMut, VisitMutWith, VisitWith};

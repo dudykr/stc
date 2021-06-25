@@ -1,6 +1,8 @@
-use super::InferData;
 use crate::{
-    analyzer::{generic::type_form::OldTypeForm, Analyzer, Ctx},
+    analyzer::{
+        generic::{type_form::OldTypeForm, InferData},
+        Analyzer, Ctx,
+    },
     ValidationResult,
 };
 use fxhash::FxHashMap;

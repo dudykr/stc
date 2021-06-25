@@ -1,6 +1,5 @@
-use super::{scope::VarKind, Analyzer};
 use crate::{
-    analyzer::{pat::PatMode, util::ResultExt, Ctx, ScopeKind},
+    analyzer::{pat::PatMode, scope::VarKind, util::ResultExt, Analyzer, Ctx, ScopeKind},
     ty,
     ty::{FnParam, Tuple, Type, TypeParam},
     validator,
