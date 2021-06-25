@@ -763,7 +763,11 @@ impl Analyzer<'_, '_> {
         ///
         /// This may return multiple names if there are optional chaining
         /// expressions.
-        fn non_undefined_names(e: &RExpr) -> Vec<Name> {}
+        fn non_undefined_names(e: &RExpr) -> Vec<Name> {
+            match e {
+                RExpr::OptChain(e) => {}
+            }
+        }
 
         let c = Comparator {
             left: (l, lt),
