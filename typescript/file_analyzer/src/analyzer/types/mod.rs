@@ -20,7 +20,7 @@ use stc_ts_types::{
 };
 use stc_ts_utils::MapWithMut;
 use stc_utils::{error, error::context, ext::SpanExt, stack, TryOpt};
-use std::{borrow::Cow, collections::HashMap};
+use std::{borrow::Cow, collections::HashMap, time::Instant};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
@@ -63,343 +63,353 @@ impl Analyzer<'_, '_> {
         ty: Cow<'a, Type>,
         mut opts: NormalizeTypeOpts,
     ) -> ValidationResult<Cow<'a, Type>> {
-        ty.assert_valid();
+        let start = Instant::now();
 
-        let actual_span = span.unwrap_or_else(|| ty.span());
-        if !self.is_builtin {
-            debug_assert!(
-                !actual_span.is_dummy(),
-                "Cannot normalize a type with dummy span\n{:?}",
-                ty
-            );
-        }
+        let res = (|| {
+            ty.assert_valid();
 
-        let _stack = stack::track(actual_span)?;
-        let _context = error::context(format!("Normalize: {}", dump_type_as_string(&self.cm, &ty)));
+            let actual_span = span.unwrap_or_else(|| ty.span());
+            if !self.is_builtin {
+                debug_assert!(
+                    !actual_span.is_dummy(),
+                    "Cannot normalize a type with dummy span\n{:?}",
+                    ty
+                );
+            }
 
-        if ty.is_arc() {
-            let ty = self.normalize(span, Cow::Borrowed(ty.normalize()), opts)?.into_owned();
+            let _stack = stack::track(actual_span)?;
+            let _context = error::context(format!("Normalize: {}", dump_type_as_string(&self.cm, &ty)));
 
-            return Ok(Cow::Owned(ty));
-        }
+            if ty.is_arc() {
+                let ty = self.normalize(span, Cow::Borrowed(ty.normalize()), opts)?.into_owned();
 
-        match &*ty {
-            Type::Lit(..)
-            | Type::TypeLit(..)
-            | Type::Interface(..)
-            | Type::Class(..)
-            | Type::ClassDef(..)
-            | Type::Tuple(..)
-            | Type::Function(..)
-            | Type::Constructor(..)
-            | Type::EnumVariant(..)
-            | Type::Enum(..)
-            | Type::Param(_)
-            | Type::Module(_)
-            | Type::Tpl(..) => return Ok(ty),
-            _ => {}
-        }
+                return Ok(Cow::Owned(ty));
+            }
 
-        {
             match &*ty {
-                Type::Ref(_) => {
-                    let new_ty = self
-                        .expand_top_ref(actual_span, Cow::Borrowed(&ty))
-                        .context("tried to expand a ref type as a part of normalization")?;
+                Type::Lit(..)
+                | Type::TypeLit(..)
+                | Type::Interface(..)
+                | Type::Class(..)
+                | Type::ClassDef(..)
+                | Type::Tuple(..)
+                | Type::Function(..)
+                | Type::Constructor(..)
+                | Type::EnumVariant(..)
+                | Type::Enum(..)
+                | Type::Param(_)
+                | Type::Module(_)
+                | Type::Tpl(..) => return Ok(ty),
+                _ => {}
+            }
 
-                    // We are declaring, and expand_top_ref returned Type::Ref
-                    if new_ty.type_eq(&*ty) {
-                        return Ok(ty);
-                    }
+            {
+                match &*ty {
+                    Type::Ref(_) => {
+                        let new_ty = self
+                            .expand_top_ref(actual_span, Cow::Borrowed(&ty))
+                            .context("tried to expand a ref type as a part of normalization")?;
 
-                    new_ty.assert_valid();
-
-                    return Ok(Cow::Owned(self.normalize(span, new_ty, opts)?.into_owned()));
-                }
-
-                Type::Keyword(k) => {
-                    if opts.normalize_keywords {
-                        let name = match k.kind {
-                            TsKeywordTypeKind::TsNumberKeyword => Some(js_word!("Number")),
-                            TsKeywordTypeKind::TsObjectKeyword => Some(js_word!("Number")),
-                            TsKeywordTypeKind::TsBooleanKeyword => Some(js_word!("Boolean")),
-                            TsKeywordTypeKind::TsStringKeyword => Some(js_word!("String")),
-                            TsKeywordTypeKind::TsSymbolKeyword => Some(js_word!("Symbol")),
-                            _ => None,
-                        };
-
-                        if let Some(name) = name {
-                            let global = self.env.get_global_type(actual_span, &name)?;
-                            global.assert_valid();
-
-                            return Ok(Cow::Owned(global));
-                        }
-                    }
-                }
-
-                Type::Mapped(m) => {
-                    if !opts.preserve_mapped {
-                        let ty = self.expand_mapped(actual_span, m)?;
-                        if let Some(ty) = ty {
-                            return Ok(Cow::Owned(
-                                self.normalize(span, Cow::Owned(ty), opts)
-                                    .context("tried to expand a mapped type as a part of normalization")?
-                                    .into_owned(),
-                            ));
-                        }
-                    }
-                }
-
-                Type::Alias(a) => {
-                    // TODO: Optimize
-                    return Ok(Cow::Owned(
-                        self.normalize(span, Cow::Borrowed(&a.ty), opts)?.into_owned(),
-                    ));
-                }
-
-                // Leaf types.
-                Type::Array(arr) => {
-                    // TODO: Optimize
-                    let elem_type = box self
-                        .normalize(span, Cow::Borrowed(&arr.elem_type), opts)
-                        .context("tried to normalize the type of the element of an array type")?
-                        .into_owned();
-
-                    elem_type.assert_valid();
-
-                    return Ok(Cow::Owned(Type::Array(Array {
-                        span: arr.span,
-                        elem_type,
-                    })));
-                }
-
-                // Not normalizable.
-                Type::Infer(_) | Type::StaticThis(_) | Type::This(_) => {}
-
-                // Maybe it can be changed in future, but currently noop
-                Type::Union(_) | Type::Intersection(_) => {}
-
-                Type::Conditional(c) => {
-                    let mut check_type = self
-                        .normalize(span, Cow::Borrowed(&c.check_type), Default::default())
-                        .context("tried to normalize the `check` type of a conditional type")?
-                        .into_owned();
-
-                    let extends_type = self
-                        .normalize(span, Cow::Borrowed(&c.extends_type), Default::default())
-                        .context("tried to normalize the `extends` type of a conditional type")?;
-
-                    if let Some(v) = self.extends(ty.span(), Default::default(), &check_type, &extends_type) {
-                        let ty = if v { &c.true_type } else { &c.false_type };
-                        // TODO: Optimize
-                        let ty = self
-                            .normalize(span, Cow::Borrowed(&ty), opts)
-                            .context("tried to normalize the calculated type of a conditional type")?
-                            .into_owned();
-                        return Ok(Cow::Owned(ty));
-                    }
-
-                    match check_type.normalize() {
-                        Type::Union(check_type_union) => {
-                            let mut all = true;
-                            let mut types = vec![];
-                            for check_type in &check_type_union.types {
-                                let res = self.extends(ty.span(), Default::default(), &check_type, &extends_type);
-                                if let Some(v) = res {
-                                    if v {
-                                        if !c.true_type.is_never() {
-                                            types.push(check_type.clone());
-                                        }
-                                    } else {
-                                        if !c.false_type.is_never() {
-                                            types.push(check_type.clone());
-                                        }
-                                    }
-                                } else {
-                                    all = false;
-                                    break;
-                                }
-                            }
-
-                            if all {
-                                let new = Type::Union(Union {
-                                    span: actual_span,
-                                    types,
-                                })
-                                .fixed();
-
-                                new.assert_valid();
-
-                                return Ok(Cow::Owned(new));
-                            }
-                        }
-                        _ => {}
-                    }
-
-                    // TOOD: Optimize
-                    // If we can calculate type using constraints, do so.
-                    match check_type.normalize_mut() {
-                        Type::Param(TypeParam {
-                            name,
-                            constraint: Some(check_type_contraint),
-                            ..
-                        }) => {
-                            // We removes unmatchable constraints.
-                            // It means, for
-                            //
-                            // T: a type param extends string | undefined
-                            // A: T extends null | undefined ? never : T
-                            //
-                            // We removes `undefined` from parents of T.
-
-                            match check_type_contraint.normalize() {
-                                Type::Union(check_type_union) => {
-                                    let mut all = true;
-                                    let mut types = vec![];
-                                    for check_type in &check_type_union.types {
-                                        let res =
-                                            self.extends(ty.span(), Default::default(), &check_type, &extends_type);
-                                        if let Some(v) = res {
-                                            if v {
-                                                if !c.true_type.is_never() {
-                                                    types.push(check_type.clone());
-                                                }
-                                            } else {
-                                                if !c.false_type.is_never() {
-                                                    types.push(check_type.clone());
-                                                }
-                                            }
-                                        } else {
-                                            all = false;
-                                            break;
-                                        }
-                                    }
-
-                                    if all {
-                                        types.dedup_type();
-                                        let new = Type::Union(Union {
-                                            span: actual_span,
-                                            types,
-                                        });
-
-                                        *check_type_contraint = box new;
-
-                                        let mut params = HashMap::default();
-                                        params.insert(name.clone(), check_type);
-                                        let c = self.expand_type_params(&params, c.clone())?;
-                                        let c = Type::Conditional(c);
-                                        c.assert_valid();
-
-                                        return Ok(Cow::Owned(c));
-                                    }
-                                }
-                                _ => {}
-                            }
-                        }
-                        _ => {}
-                    }
-                }
-
-                Type::Query(q) => {
-                    if !opts.preserve_typeof {
-                        match &*q.expr {
-                            QueryExpr::TsEntityName(e) => {
-                                let ty = self
-                                    .resolve_typeof(actual_span, e)
-                                    .context("tried to resolve typeof as a part of normalization")?;
-
-                                if ty.normalize().is_query() {
-                                    panic!(
-                                        "normalize: resolve_typeof returned a query type: {}",
-                                        dump_type_as_string(&self.cm, &ty)
-                                    )
-                                }
-
-                                return Ok(self
-                                    .normalize(span, Cow::Owned(ty), opts)
-                                    .context("tried to normalize the type returned from typeof")?);
-                            }
-                            QueryExpr::Import(_) => {}
-                        }
-                    }
-                    // TODO
-                }
-
-                Type::Instance(ty) => {
-                    let ty = self
-                        .instantiate_for_normalization(span, &ty.ty)
-                        .context("tried to instantiate for normalizations")?;
-                    ty.assert_valid();
-                    return Ok(Cow::Owned(ty));
-                }
-
-                Type::Import(_) => {}
-
-                Type::Predicate(_) => {
-                    // TODO: Add option for this.
-                }
-
-                Type::IndexedAccessType(iat) => {
-                    let index_ty = box self
-                        .normalize(span, Cow::Borrowed(&iat.index_type), opts)
-                        .context("tried to normalize index type")?
-                        .into_owned();
-
-                    let ctx = Ctx {
-                        diallow_unknown_object_property: true,
-                        ..self.ctx
-                    };
-                    let prop_ty = self.with_ctx(ctx).access_property(
-                        actual_span,
-                        &iat.obj_type,
-                        &Key::Computed(ComputedKey {
-                            span: actual_span,
-                            expr: box RExpr::Invalid(RInvalid { span: actual_span }),
-                            ty: index_ty,
-                        }),
-                        TypeOfMode::RValue,
-                        IdCtx::Type,
-                    );
-                    if let Ok(prop_ty) = prop_ty {
-                        if ty.type_eq(&prop_ty) {
+                        // We are declaring, and expand_top_ref returned Type::Ref
+                        if new_ty.type_eq(&*ty) {
                             return Ok(ty);
                         }
 
-                        if prop_ty.normalize().is_indexed_access_type() {
-                            panic!("{:?}", prop_ty);
+                        new_ty.assert_valid();
+
+                        return Ok(Cow::Owned(self.normalize(span, new_ty, opts)?.into_owned()));
+                    }
+
+                    Type::Keyword(k) => {
+                        if opts.normalize_keywords {
+                            let name = match k.kind {
+                                TsKeywordTypeKind::TsNumberKeyword => Some(js_word!("Number")),
+                                TsKeywordTypeKind::TsObjectKeyword => Some(js_word!("Number")),
+                                TsKeywordTypeKind::TsBooleanKeyword => Some(js_word!("Boolean")),
+                                TsKeywordTypeKind::TsStringKeyword => Some(js_word!("String")),
+                                TsKeywordTypeKind::TsSymbolKeyword => Some(js_word!("Symbol")),
+                                _ => None,
+                            };
+
+                            if let Some(name) = name {
+                                let global = self.env.get_global_type(actual_span, &name)?;
+                                global.assert_valid();
+
+                                return Ok(Cow::Owned(global));
+                            }
+                        }
+                    }
+
+                    Type::Mapped(m) => {
+                        if !opts.preserve_mapped {
+                            let ty = self.expand_mapped(actual_span, m)?;
+                            if let Some(ty) = ty {
+                                return Ok(Cow::Owned(
+                                    self.normalize(span, Cow::Owned(ty), opts)
+                                        .context("tried to expand a mapped type as a part of normalization")?
+                                        .into_owned(),
+                                ));
+                            }
+                        }
+                    }
+
+                    Type::Alias(a) => {
+                        // TODO: Optimize
+                        return Ok(Cow::Owned(
+                            self.normalize(span, Cow::Borrowed(&a.ty), opts)?.into_owned(),
+                        ));
+                    }
+
+                    // Leaf types.
+                    Type::Array(arr) => {
+                        // TODO: Optimize
+                        let elem_type = box self
+                            .normalize(span, Cow::Borrowed(&arr.elem_type), opts)
+                            .context("tried to normalize the type of the element of an array type")?
+                            .into_owned();
+
+                        elem_type.assert_valid();
+
+                        return Ok(Cow::Owned(Type::Array(Array {
+                            span: arr.span,
+                            elem_type,
+                        })));
+                    }
+
+                    // Not normalizable.
+                    Type::Infer(_) | Type::StaticThis(_) | Type::This(_) => {}
+
+                    // Maybe it can be changed in future, but currently noop
+                    Type::Union(_) | Type::Intersection(_) => {}
+
+                    Type::Conditional(c) => {
+                        let mut check_type = self
+                            .normalize(span, Cow::Borrowed(&c.check_type), Default::default())
+                            .context("tried to normalize the `check` type of a conditional type")?
+                            .into_owned();
+
+                        let extends_type = self
+                            .normalize(span, Cow::Borrowed(&c.extends_type), Default::default())
+                            .context("tried to normalize the `extends` type of a conditional type")?;
+
+                        if let Some(v) = self.extends(ty.span(), Default::default(), &check_type, &extends_type) {
+                            let ty = if v { &c.true_type } else { &c.false_type };
+                            // TODO: Optimize
+                            let ty = self
+                                .normalize(span, Cow::Borrowed(&ty), opts)
+                                .context("tried to normalize the calculated type of a conditional type")?
+                                .into_owned();
+                            return Ok(Cow::Owned(ty));
                         }
 
+                        match check_type.normalize() {
+                            Type::Union(check_type_union) => {
+                                let mut all = true;
+                                let mut types = vec![];
+                                for check_type in &check_type_union.types {
+                                    let res = self.extends(ty.span(), Default::default(), &check_type, &extends_type);
+                                    if let Some(v) = res {
+                                        if v {
+                                            if !c.true_type.is_never() {
+                                                types.push(check_type.clone());
+                                            }
+                                        } else {
+                                            if !c.false_type.is_never() {
+                                                types.push(check_type.clone());
+                                            }
+                                        }
+                                    } else {
+                                        all = false;
+                                        break;
+                                    }
+                                }
+
+                                if all {
+                                    let new = Type::Union(Union {
+                                        span: actual_span,
+                                        types,
+                                    })
+                                    .fixed();
+
+                                    new.assert_valid();
+
+                                    return Ok(Cow::Owned(new));
+                                }
+                            }
+                            _ => {}
+                        }
+
+                        // TOOD: Optimize
+                        // If we can calculate type using constraints, do so.
+                        match check_type.normalize_mut() {
+                            Type::Param(TypeParam {
+                                name,
+                                constraint: Some(check_type_contraint),
+                                ..
+                            }) => {
+                                // We removes unmatchable constraints.
+                                // It means, for
+                                //
+                                // T: a type param extends string | undefined
+                                // A: T extends null | undefined ? never : T
+                                //
+                                // We removes `undefined` from parents of T.
+
+                                match check_type_contraint.normalize() {
+                                    Type::Union(check_type_union) => {
+                                        let mut all = true;
+                                        let mut types = vec![];
+                                        for check_type in &check_type_union.types {
+                                            let res =
+                                                self.extends(ty.span(), Default::default(), &check_type, &extends_type);
+                                            if let Some(v) = res {
+                                                if v {
+                                                    if !c.true_type.is_never() {
+                                                        types.push(check_type.clone());
+                                                    }
+                                                } else {
+                                                    if !c.false_type.is_never() {
+                                                        types.push(check_type.clone());
+                                                    }
+                                                }
+                                            } else {
+                                                all = false;
+                                                break;
+                                            }
+                                        }
+
+                                        if all {
+                                            types.dedup_type();
+                                            let new = Type::Union(Union {
+                                                span: actual_span,
+                                                types,
+                                            });
+
+                                            *check_type_contraint = box new;
+
+                                            let mut params = HashMap::default();
+                                            params.insert(name.clone(), check_type);
+                                            let c = self.expand_type_params(&params, c.clone())?;
+                                            let c = Type::Conditional(c);
+                                            c.assert_valid();
+
+                                            return Ok(Cow::Owned(c));
+                                        }
+                                    }
+                                    _ => {}
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+
+                    Type::Query(q) => {
+                        if !opts.preserve_typeof {
+                            match &*q.expr {
+                                QueryExpr::TsEntityName(e) => {
+                                    let ty = self
+                                        .resolve_typeof(actual_span, e)
+                                        .context("tried to resolve typeof as a part of normalization")?;
+
+                                    if ty.normalize().is_query() {
+                                        panic!(
+                                            "normalize: resolve_typeof returned a query type: {}",
+                                            dump_type_as_string(&self.cm, &ty)
+                                        )
+                                    }
+
+                                    return Ok(self
+                                        .normalize(span, Cow::Owned(ty), opts)
+                                        .context("tried to normalize the type returned from typeof")?);
+                                }
+                                QueryExpr::Import(_) => {}
+                            }
+                        }
+                        // TODO
+                    }
+
+                    Type::Instance(ty) => {
                         let ty = self
-                            .normalize(span, Cow::Owned(prop_ty), opts)
-                            .context("tried to normalize the type of property")?
-                            .into_owned();
-                        dbg!(&ty);
+                            .instantiate_for_normalization(span, &ty.ty)
+                            .context("tried to instantiate for normalizations")?;
+                        ty.assert_valid();
                         return Ok(Cow::Owned(ty));
                     }
-                    // TODO:
-                }
 
-                Type::Operator(Operator {
-                    op: TsTypeOperatorOp::KeyOf,
-                    ty,
-                    ..
-                }) => {
-                    let keys_ty = self
-                        .keyof(actual_span, &ty)
-                        .context("tried to get keys of a type as a part of normalization")?;
-                    keys_ty.assert_valid();
-                    return Ok(Cow::Owned(keys_ty));
-                }
+                    Type::Import(_) => {}
 
-                Type::Operator(_) => {
-                    // TODO:
-                }
+                    Type::Predicate(_) => {
+                        // TODO: Add option for this.
+                    }
 
-                _ => {}
+                    Type::IndexedAccessType(iat) => {
+                        let index_ty = box self
+                            .normalize(span, Cow::Borrowed(&iat.index_type), opts)
+                            .context("tried to normalize index type")?
+                            .into_owned();
+
+                        let ctx = Ctx {
+                            diallow_unknown_object_property: true,
+                            ..self.ctx
+                        };
+                        let prop_ty = self.with_ctx(ctx).access_property(
+                            actual_span,
+                            &iat.obj_type,
+                            &Key::Computed(ComputedKey {
+                                span: actual_span,
+                                expr: box RExpr::Invalid(RInvalid { span: actual_span }),
+                                ty: index_ty,
+                            }),
+                            TypeOfMode::RValue,
+                            IdCtx::Type,
+                        );
+                        if let Ok(prop_ty) = prop_ty {
+                            if ty.type_eq(&prop_ty) {
+                                return Ok(ty);
+                            }
+
+                            if prop_ty.normalize().is_indexed_access_type() {
+                                panic!("{:?}", prop_ty);
+                            }
+
+                            let ty = self
+                                .normalize(span, Cow::Owned(prop_ty), opts)
+                                .context("tried to normalize the type of property")?
+                                .into_owned();
+                            dbg!(&ty);
+                            return Ok(Cow::Owned(ty));
+                        }
+                        // TODO:
+                    }
+
+                    Type::Operator(Operator {
+                        op: TsTypeOperatorOp::KeyOf,
+                        ty,
+                        ..
+                    }) => {
+                        let keys_ty = self
+                            .keyof(actual_span, &ty)
+                            .context("tried to get keys of a type as a part of normalization")?;
+                        keys_ty.assert_valid();
+                        return Ok(Cow::Owned(keys_ty));
+                    }
+
+                    Type::Operator(_) => {
+                        // TODO:
+                    }
+
+                    _ => {}
+                }
             }
-        }
 
-        Ok(ty)
+            Ok(ty)
+        })();
+
+        let end = Instant::now();
+
+        slog::debug!(self.logger, "Type normalization took {:?}", end - start);
+
+        res
     }
 
     // This is part of normalization.
