@@ -1,6 +1,5 @@
-use super::super::Analyzer;
 use crate::{
-    analyzer::{control_flow::CondFacts, types::NormalizeTypeOpts, util::ResultExt, Ctx, ScopeKind},
+    analyzer::{control_flow::CondFacts, types::NormalizeTypeOpts, util::ResultExt, Analyzer, Ctx, ScopeKind},
     ty::Type,
     util::is_str_or_union,
     validator,

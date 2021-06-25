@@ -1,10 +1,14 @@
 pub(crate) use self::vars::VarKind;
-use super::{
-    assign::AssignOpts, class::ClassState, control_flow::CondFacts, expr::TypeOfMode, stmt::return_type::ReturnValues,
-    Analyzer, Ctx,
-};
 use crate::{
-    analyzer::{expr::IdCtx, scope::vars::DeclareVarsOpts, ResultExt},
+    analyzer::{
+        assign::AssignOpts,
+        class::ClassState,
+        control_flow::CondFacts,
+        expr::{IdCtx, TypeOfMode},
+        scope::vars::DeclareVarsOpts,
+        stmt::return_type::ReturnValues,
+        Analyzer, Ctx, ResultExt,
+    },
     loader::ModuleInfo,
     ty::{self, Alias, Interface, PropertySignature, Ref, Tuple, Type, TypeExt, TypeLit, Union},
     type_facts::TypeFacts,

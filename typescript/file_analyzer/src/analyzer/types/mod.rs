@@ -1,6 +1,5 @@
-use super::{marks::MarkExt, Analyzer};
 use crate::{
-    analyzer::{expr::TypeOfMode, Ctx},
+    analyzer::{expr::TypeOfMode, marks::MarkExt, Analyzer, Ctx},
     type_facts::TypeFacts,
     util::{type_ext::TypeVecExt, unwrap_ref_with_single_arg},
     Marks, ValidationResult,

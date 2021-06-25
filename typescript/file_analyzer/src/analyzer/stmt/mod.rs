@@ -1,7 +1,6 @@
 use self::return_type::LoopBreakerFinder;
-use super::Analyzer;
 use crate::{
-    analyzer::{scope::ScopeKind, util::ResultExt},
+    analyzer::{scope::ScopeKind, util::ResultExt, Analyzer},
     validator,
     validator::ValidateWith,
 };

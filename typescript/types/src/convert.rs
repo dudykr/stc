@@ -1,9 +1,9 @@
-use super::{
-    Alias, Array, Conditional, Enum, EnumVariant, FnParam, Function, ImportType, IndexedAccessType, InferType,
-    Interface, Intersection, Operator, Predicate, QueryExpr, QueryType, Ref, Tuple, TupleElement, Type, TypeElement,
-    TypeLit, TypeParam, TypeParamDecl, TypeParamInstantiation, Union,
+use crate::{
+    Alias, Array, ClassDef, Conditional, Enum, EnumVariant, FnParam, Function, Id, ImportType, IndexedAccessType,
+    InferType, Interface, Intersection, Key, Operator, OptionalType, Predicate, QueryExpr, QueryType, Ref, RestType,
+    StaticThis, Symbol, TplType, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParam, TypeParamDecl,
+    TypeParamInstantiation, Union,
 };
-use crate::{ClassDef, Id, Key, OptionalType, RestType, StaticThis, Symbol, TplType};
 use rnode::NodeId;
 use stc_ts_ast_rnode::{
     RArrayPat, RBindingIdent, RExpr, RIdent, RLit, RObjectPat, RPat, RPrivateName, RPropName, RRestPat, RTsArrayType,
