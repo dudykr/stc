@@ -749,7 +749,7 @@ impl Analyzer<'_, '_> {
     /// }
     /// ```
     ///
-    /// The condition in the if statement ab ove will be `true` if `f.geometry`
+    /// The condition in the if statement above will be `true` if `f.geometry`
     /// is `undefined`.
     fn add_type_facts_for_opt_chains(
         &mut self,
