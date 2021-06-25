@@ -489,7 +489,7 @@ impl Analyzer<'_, '_> {
         }
 
         Ok(match &*ty {
-            Type::Ketword(..) | Type::Lit(..) => false,
+            Type::Keyword(..) | Type::Lit(..) => false,
             Type::Union(ty) => {
                 for ty in &ty.types {
                     if self.can_be_undefined(span, ty)? {
