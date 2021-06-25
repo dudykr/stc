@@ -20,7 +20,7 @@
   "git.ignoreLimitWarning": true,
   "git.detectSubmodules": false,
   "rust-analyzer.diagnostics.enable": false,
-  "rust-analyzer.procMacro.enable": true,
+  "rust-analyzer.procMacro.enable": false,
   "favorites.resources": [
     "typescript/errors/src/lib.rs",
     "typescript/file_analyzer/tests",
