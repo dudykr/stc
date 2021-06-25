@@ -326,14 +326,6 @@ impl Analyzer<'_, '_> {
                                     .or_default()
                                     .push(r.clone());
 
-                                // If rhs is not undefined, we should mark lhs as not-undefined.
-                                if !self.can_be_undefined(span, &r)? {
-                                    self.cur_facts
-                                        .true_facts
-                                        .facts
-                                        .insert(name.clone(), TypeFacts::NEUndefined);
-                                }
-
                                 self.prevent_generalize(&mut r);
                                 self.add_deep_type_fact(span, name, r, false);
                             }
@@ -741,6 +733,24 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
+    ///
+    /// # Exmaple
+    ///
+    ///
+    ///
+    /// ```ts
+    /// // Note: feature.geometry can be undefined
+    ///
+    /// function extractCoordinates(f: Feature): number[] {
+    ///     if (f.geometry?.type !== 'test') {
+    ///         return [];
+    ///     }
+    ///     return f.geometry.coordinates;
+    /// }
+    /// ```
+    ///
+    /// The condition in the if statement ab ove will be `true` if `f.geometry`
+    /// is `undefined`.
     fn add_type_facts_for_opt_chains(
         &mut self,
         span: Span,
@@ -749,6 +759,43 @@ impl Analyzer<'_, '_> {
         lt: &Type,
         rt: &Type,
     ) -> ValidationResult<()> {
+        /// Convert expression to names.
+        ///
+        /// This may return multiple names if there are optional chaining
+        /// expressions.
+        fn non_undefined_names(e: &RExpr) -> Vec<Name> {}
+
+        let c = Comparator {
+            left: (l, lt),
+            right: (r, rt),
+        };
+
+        match c.take_if_any_matches(|(l, _), (_, r_ty)| match (l, r_ty) {
+            (
+                RExpr::Ident(RIdent {
+                    sym: js_word!("undefined"),
+                    ..
+                }),
+                _,
+            )
+            | (RExpr::Lit(RLit::Null(..)), _) => None,
+
+            (l, r) => Some((extract_name_for_assignment(l)?, r_ty)),
+        }) {
+            Some((l, r_ty)) => {
+                // If rhs is not undefined, we should mark lhs as not-undefined.
+                if !self.can_be_undefined(span, &r_ty)? {
+                    for name in non_undefined_names(l) {
+                        self.cur_facts
+                            .true_facts
+                            .facts
+                            .insert(name.clone(), TypeFacts::NEUndefined);
+                    }
+                }
+            }
+            _ => {}
+        }
+
         // TODO
         Ok(())
     }
