@@ -29,6 +29,7 @@ use std::{
     panic::catch_unwind,
     path::{Path, PathBuf},
     sync::Arc,
+    time::{Duration, Instant},
 };
 use swc_common::{
     errors::{DiagnosticBuilder, DiagnosticId},
@@ -72,6 +73,7 @@ fn is_all_test_enabled() -> bool {
 /// Add stats and return total stats.
 fn record_stat(stats: Stats) -> Stats {
     static STATS: Lazy<Mutex<Stats>> = Lazy::new(|| Default::default());
+
     if !cfg!(debug_assertions) {
         return stats;
     }
@@ -478,6 +480,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
         module_config,
     } in specs
     {
+        let mut time = Duration::new(0, 0);
         let stat_guard = RecordOnPanic {
             stats: Stats {
                 required_error: expected_errors.len(),
@@ -517,7 +520,11 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
                     Arc::new(NodeResolver),
                 );
 
+                let start = Instant::now();
                 checker.check(Arc::new(file_name.into()));
+                let end = Instant::now();
+
+                time = end - start;
 
                 let errors = ::stc_ts_errors::Error::flatten(checker.take_errors());
 
@@ -536,6 +543,16 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
             .expect_err("");
 
         mem::forget(stat_guard);
+
+        if !cfg!(debug_assertions) {
+            let _ = fs::write(
+                Path::new("tests")
+                    .join("tsc")
+                    .join("timings")
+                    .join(file_name.with_extension("txt")),
+                format!("{:?}", time),
+            );
+        }
 
         let mut extra_errors = diagnostics
             .iter()
