@@ -472,6 +472,29 @@ impl Analyzer<'_, '_> {
         })
     }
 
+    pub(crate) fn can_be_undefined(&mut self, span: Span, ty: &Type) -> ValidationResult<bool> {
+        let ty = self
+            .normalize(Some(span), Cow::Borrowed(ty), Default::default())
+            .context("tried to normalize to see if it can be undefined")?;
+
+        if ty.is_str() || ty.is_bool() || ty.is_num() {
+            return Ok(false);
+        }
+
+        Ok(match &*ty {
+            Type::Union(ty) => {
+                for ty in &ty.types {
+                    if self.can_be_undefined(span, ty)? {
+                        return Ok(true);
+                    }
+                }
+
+                false
+            }
+            _ => true,
+        })
+    }
+
     pub(crate) fn expand_type_ann<'a>(&mut self, ty: Option<&'a Type>) -> ValidationResult<Option<Cow<'a, Type>>> {
         let ty = match ty {
             Some(v) => v,
