@@ -1,6 +1,9 @@
-use super::{AssignData, AssignOpts};
 use crate::{
-    analyzer::{util::ResultExt, Analyzer},
+    analyzer::{
+        assign::{AssignData, AssignOpts},
+        util::ResultExt,
+        Analyzer,
+    },
     ValidationResult,
 };
 use stc_ts_ast_rnode::{RIdent, RTsEntityName, RTsKeywordType, RTsLit, RTsLitType};

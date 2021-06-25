@@ -1,7 +1,6 @@
 //! This module implements VisitMut for Analyzer
 
-use super::Analyzer;
-use crate::{validator, validator::ValidateWith};
+use crate::{analyzer::Analyzer, validator, validator::ValidateWith};
 use rnode::{Visit, VisitWith};
 use stc_ts_ast_rnode::{
     RArrowExpr, RBlockStmt, RCatchClause, RClass, RClassDecl, RClassExpr, RClassMember, RClassMethod,

@@ -1,5 +1,11 @@
-use super::{AssignData, AssignOpts};
-use crate::{analyzer::Analyzer, util::unwrap_ref_with_single_arg, ValidationResult};
+use crate::{
+    analyzer::{
+        assign::{AssignData, AssignOpts},
+        Analyzer,
+    },
+    util::unwrap_ref_with_single_arg,
+    ValidationResult,
+};
 use stc_ts_ast_rnode::{RIdent, RTsEntityName};
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_types::{Array, Ref, Type, TypeElement};

@@ -1,13 +1,12 @@
-use super::{
-    assign::AssignOpts,
-    expr::TypeOfMode,
-    marks::MarkExt,
-    scope::{ScopeKind, VarInfo},
-    util::ResultExt,
-    Analyzer, Ctx,
-};
 use crate::{
-    analyzer::expr::IdCtx,
+    analyzer::{
+        assign::AssignOpts,
+        expr::{IdCtx, TypeOfMode},
+        marks::MarkExt,
+        scope::{ScopeKind, VarInfo},
+        util::ResultExt,
+        Analyzer, Ctx,
+    },
     ty::{Tuple, Type},
     type_facts::TypeFacts,
     util::{type_ext::TypeVecExt, EndsWithRet},

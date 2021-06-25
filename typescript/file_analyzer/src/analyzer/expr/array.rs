@@ -1,6 +1,12 @@
-use super::{call_new::ExtractKind, IdCtx, TypeOfMode};
 use crate::{
-    analyzer::{expr::call_new::ReevalMode, types::NormalizeTypeOpts, Analyzer, Ctx},
+    analyzer::{
+        expr::{
+            call_new::{ExtractKind, ReevalMode},
+            IdCtx, TypeOfMode,
+        },
+        types::NormalizeTypeOpts,
+        Analyzer, Ctx,
+    },
     ty::TypeExt,
     type_facts::TypeFacts,
     util::type_ext::TypeVecExt,

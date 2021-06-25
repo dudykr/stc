@@ -1,5 +1,10 @@
-use super::{AssignData, AssignOpts};
-use crate::{analyzer::Analyzer, ValidationResult};
+use crate::{
+    analyzer::{
+        assign::{AssignData, AssignOpts},
+        Analyzer,
+    },
+    ValidationResult,
+};
 use fxhash::FxHashMap;
 use itertools::{EitherOrBoth, Itertools};
 use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat};

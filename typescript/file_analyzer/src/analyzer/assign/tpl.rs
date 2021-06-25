@@ -1,5 +1,7 @@
-use super::AssignOpts;
-use crate::{analyzer::Analyzer, ValidationResult};
+use crate::{
+    analyzer::{assign::AssignOpts, Analyzer},
+    ValidationResult,
+};
 use stc_ts_ast_rnode::{RTsLit, RTsLitType};
 use stc_ts_errors::Error;
 use stc_ts_types::{TplType, Type};

@@ -1,12 +1,11 @@
-use super::{
-    super::{
-        util::{Comparator, ResultExt},
-        Analyzer,
-    },
-    TypeOfMode,
-};
 use crate::{
-    analyzer::{assign::AssignOpts, generic::ExtendsOpts, Ctx, ScopeKind},
+    analyzer::{
+        assign::AssignOpts,
+        expr::TypeOfMode,
+        generic::ExtendsOpts,
+        util::{Comparator, ResultExt},
+        Analyzer, Ctx, ScopeKind,
+    },
     ty::{Operator, Type, TypeExt},
     type_facts::TypeFacts,
     util::{is_str_or_union, RemoveTypes},

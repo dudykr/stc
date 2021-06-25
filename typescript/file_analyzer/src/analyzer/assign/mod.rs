@@ -1,5 +1,8 @@
-use super::Analyzer;
-use crate::{analyzer::types::NormalizeTypeOpts, ty::TypeExt, ValidationResult};
+use crate::{
+    analyzer::{types::NormalizeTypeOpts, Analyzer},
+    ty::TypeExt,
+    ValidationResult,
+};
 use rnode::NodeId;
 use stc_ts_ast_rnode::{RBool, RExpr, RIdent, RStr, RTsEntityName, RTsKeywordType, RTsLit, RTsLitType, RTsThisType};
 use stc_ts_errors::{
