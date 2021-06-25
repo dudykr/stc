@@ -544,15 +544,15 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
 
         mem::forget(stat_guard);
 
-        if !cfg!(debug_assertions) {
-            let _ = fs::write(
-                Path::new("tests")
-                    .join("tsc")
-                    .join("timings")
-                    .join(file_name.with_extension("txt")),
-                format!("{:?}", time),
-            );
-        }
+        // if !cfg!(debug_assertions) {
+        //     let _ = fs::write(
+        //         Path::new("tests")
+        //             .join("tsc")
+        //             .join("timings")
+        //             .join(file_name.with_extension("txt")),
+        //         format!("{:?}", time),
+        //     );
+        // }
 
         let mut extra_errors = diagnostics
             .iter()
