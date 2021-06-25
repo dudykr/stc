@@ -43,6 +43,7 @@ impl Analyzer<'_, '_> {
         } = *e;
 
         let marks = self.marks();
+        let add_type_facts = self.ctx.in_cond;
 
         let prev_facts = self.cur_facts.clone();
 
@@ -117,7 +118,7 @@ impl Analyzer<'_, '_> {
             Default::default()
         };
 
-        self.cur_facts = prev_facts;
+        self.cur_facts = prev_facts.clone();
 
         let rhs = self
             .with_child(
@@ -174,33 +175,37 @@ impl Analyzer<'_, '_> {
 
         self.report_errors_for_bin_expr(span, op, lt.as_ref(), rt.as_ref());
 
-        if op == op!("||") {
-            for (k, type_fact) in lhs_facts.true_facts.facts.drain() {
-                match self.cur_facts.true_facts.facts.entry(k) {
-                    // (typeof a === 'string' || typeof a === 'number')
-                    Entry::Occupied(mut e) => {
-                        *e.get_mut() &= type_fact;
+        if add_type_facts {
+            if op == op!("||") {
+                for (k, type_fact) in lhs_facts.true_facts.facts.drain() {
+                    match self.cur_facts.true_facts.facts.entry(k) {
+                        // (typeof a === 'string' || typeof a === 'number')
+                        Entry::Occupied(mut e) => {
+                            *e.get_mut() &= type_fact;
+                        }
+                        // (typeof a === 'string' || a !== foo)
+                        Entry::Vacant(..) => {}
                     }
-                    // (typeof a === 'string' || a !== foo)
-                    Entry::Vacant(..) => {}
+                }
+
+                self.cur_facts += lhs_facts;
+            } else if op == op!("&&") {
+                self.cur_facts.true_facts += true_facts_for_rhs;
+
+                for (k, v) in additional_false_facts.facts.drain() {
+                    *self
+                        .cur_facts
+                        .false_facts
+                        .facts
+                        .entry(k.clone())
+                        .or_insert(TypeFacts::None) &= v;
                 }
             }
 
-            self.cur_facts += lhs_facts;
-        } else if op == op!("&&") {
-            self.cur_facts.true_facts += true_facts_for_rhs;
-
-            for (k, v) in additional_false_facts.facts.drain() {
-                *self
-                    .cur_facts
-                    .false_facts
-                    .facts
-                    .entry(k.clone())
-                    .or_insert(TypeFacts::None) &= v;
-            }
+            self.cur_facts.false_facts += additional_false_facts;
+        } else {
+            self.cur_facts = prev_facts;
         }
-
-        self.cur_facts.false_facts += additional_false_facts;
 
         let (lt, rt): (Type, Type) = match (lt, rt) {
             (Some(l), Some(r)) => (l, r),
