@@ -481,7 +481,15 @@ impl Analyzer<'_, '_> {
             return Ok(false);
         }
 
+        if ty.is_any()
+            || ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
+            || ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword)
+        {
+            return Ok(true);
+        }
+
         Ok(match &*ty {
+            Type::Ketword(..) | Type::Lit(..) => false,
             Type::Union(ty) => {
                 for ty in &ty.types {
                     if self.can_be_undefined(span, ty)? {
