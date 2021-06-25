@@ -208,50 +208,8 @@ impl Analyzer<'_, '_> {
                     right: &**right,
                 };
 
-                // Check typeof a === 'string'
-                {
-                    match c.take_if_any_matches(|l, r| match l {
-                        RExpr::Unary(RUnaryExpr {
-                            op: op!("typeof"),
-                            ref arg,
-                            ..
-                        }) => {
-                            //
-                            let name = Name::try_from(&**arg);
-                            slog::info!(self.logger, "cond_facts: typeof {:?}", name);
-                            match r {
-                                RExpr::Tpl(RTpl { quasis, .. }) if quasis.len() == 1 => {
-                                    let value = &quasis[0].cooked.as_ref()?.value;
-                                    Some((
-                                        name,
-                                        if is_eq {
-                                            (TypeFacts::typeof_eq(&*value), TypeFacts::typeof_neq(&*value))
-                                        } else {
-                                            (TypeFacts::typeof_neq(&*value), TypeFacts::typeof_eq(&*value))
-                                        },
-                                    ))
-                                }
-                                RExpr::Lit(RLit::Str(RStr { ref value, .. })) => Some((
-                                    name,
-                                    if is_eq {
-                                        (TypeFacts::typeof_eq(&*value), TypeFacts::typeof_neq(&*value))
-                                    } else {
-                                        (TypeFacts::typeof_neq(&*value), TypeFacts::typeof_eq(&*value))
-                                    },
-                                )),
-                                _ => None,
-                            }
-                        }
-                        _ => None,
-                    }) {
-                        Some((Ok(name), (Some(t), Some(f)))) => {
-                            // Add type facts
-                            self.cur_facts.true_facts.facts.insert(name.clone(), t);
-                            self.cur_facts.false_facts.facts.insert(name.clone(), f);
-                        }
-                        _ => {}
-                    }
-                }
+                self.add_type_facts_for_typeof(span, &left, &right, is_eq)
+                    .report(&mut self.storage);
 
                 // Try narrowing type
                 let c = Comparator {
@@ -736,6 +694,55 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
+    fn add_type_facts_for_typeof(&mut self, span: Span, l: &RExpr, r: &RExpr, is_eq: bool) -> ValidationResult<()> {
+        let c = Comparator { left: l, right: r };
+
+        // Check typeof a === 'string'
+        match c.take_if_any_matches(|l, r| match l {
+            RExpr::Unary(RUnaryExpr {
+                op: op!("typeof"),
+                ref arg,
+                ..
+            }) => {
+                //
+                let name = Name::try_from(&**arg);
+                slog::info!(self.logger, "cond_facts: typeof {:?}", name);
+                match r {
+                    RExpr::Tpl(RTpl { quasis, .. }) if quasis.len() == 1 => {
+                        let value = &quasis[0].cooked.as_ref()?.value;
+                        Some((
+                            name,
+                            if is_eq {
+                                (TypeFacts::typeof_eq(&*value), TypeFacts::typeof_neq(&*value))
+                            } else {
+                                (TypeFacts::typeof_neq(&*value), TypeFacts::typeof_eq(&*value))
+                            },
+                        ))
+                    }
+                    RExpr::Lit(RLit::Str(RStr { ref value, .. })) => Some((
+                        name,
+                        if is_eq {
+                            (TypeFacts::typeof_eq(&*value), TypeFacts::typeof_neq(&*value))
+                        } else {
+                            (TypeFacts::typeof_neq(&*value), TypeFacts::typeof_eq(&*value))
+                        },
+                    )),
+                    _ => None,
+                }
+            }
+            _ => None,
+        }) {
+            Some((Ok(name), (Some(t), Some(f)))) => {
+                // Add type facts
+                self.cur_facts.true_facts.facts.insert(name.clone(), t);
+                self.cur_facts.false_facts.facts.insert(name.clone(), f);
+            }
+            _ => {}
+        }
+
+        Ok(())
+    }
+
     ///
     /// # Exmaple
     ///
