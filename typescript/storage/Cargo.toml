@@ -6,7 +6,7 @@ publish = false
 version = "0.1.0"
 
 [lib]
-crate-type = ["dylib"]
+crate-type = ["rlib", "dylib"]
 
 [dependencies]
 fxhash = "0.2.1"
