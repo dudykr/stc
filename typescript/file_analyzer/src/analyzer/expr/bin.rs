@@ -780,12 +780,19 @@ impl Analyzer<'_, '_> {
             )
             | (RExpr::Lit(RLit::Null(..)), _) => None,
 
-            (l, r) => Some((extract_name_for_assignment(l)?, r_ty)),
+            (l, r) => {
+                let names = non_undefined_names(l);
+                if names.is_empty() {
+                    return None;
+                }
+
+                Some((names, r_ty))
+            }
         }) {
-            Some((l, r_ty)) => {
+            Some((names, r_ty)) => {
                 // If rhs is not undefined, we should mark lhs as not-undefined.
                 if !self.can_be_undefined(span, &r_ty)? {
-                    for name in non_undefined_names(l) {
+                    for name in names {
                         self.cur_facts
                             .true_facts
                             .facts
