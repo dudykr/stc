@@ -7,7 +7,6 @@ publish = false
 version = "0.1.0"
 
 [lib]
-crate-type = ["rlib", "dylib"]
 
 [dependencies]
 dashmap = {version = "3", features = ["raw-api"]}

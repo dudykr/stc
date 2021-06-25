@@ -6,7 +6,6 @@ publish = false
 version = "0.0.0"
 
 [lib]
-crate-type = ["rlib", "dylib"]
 
 [dependencies]
 dashmap = "3"

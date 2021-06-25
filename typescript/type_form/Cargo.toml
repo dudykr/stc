@@ -6,7 +6,6 @@ publish = false
 version = "0.1.0"
 
 [lib]
-crate-type = ["rlib", "dylib"]
 
 [dependencies]
 itertools = "0.10.1"

@@ -6,7 +6,6 @@ publish = false
 version = "0.1.0"
 
 [lib]
-crate-type = ["rlib", "dylib"]
 
 [dependencies]
 backtrace = "0.3.60"
