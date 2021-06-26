@@ -1953,6 +1953,8 @@ impl Expander<'_, '_, '_> {
                                     )?;
                                     inferred.iter_mut().for_each(|(_, ty)| {
                                         self.analyzer.allow_expansion(ty);
+
+                                        ty.make_cheap();
                                     });
 
                                     let before = dump_type_as_string(&self.analyzer.cm, &ty);
