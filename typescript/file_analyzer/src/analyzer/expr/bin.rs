@@ -283,6 +283,8 @@ impl Analyzer<'_, '_> {
                     Some((l, r_ty)) => {
                         if self.ctx.in_cond {
                             let (name, mut r) = self.calc_type_facts_for_equality(l, r_ty)?;
+                            r.make_cheap();
+
                             if op == op!("===") {
                                 self.cur_facts
                                     .false_facts
