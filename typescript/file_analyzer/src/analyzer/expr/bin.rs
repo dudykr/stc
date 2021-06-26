@@ -283,9 +283,11 @@ impl Analyzer<'_, '_> {
                     Some((l, r_ty)) => {
                         if self.ctx.in_cond {
                             let (name, mut r) = self.calc_type_facts_for_equality(l, r_ty)?;
-                            r.make_cheap();
 
                             if op == op!("===") {
+                                self.prevent_generalize(&mut r);
+                                r.make_cheap();
+
                                 self.cur_facts
                                     .false_facts
                                     .excludes
@@ -293,9 +295,10 @@ impl Analyzer<'_, '_> {
                                     .or_default()
                                     .push(r.clone());
 
-                                self.prevent_generalize(&mut r);
                                 self.add_deep_type_fact(span, name, r, true);
                             } else if !is_eq {
+                                r.make_cheap();
+
                                 // Remove from union
                                 self.cur_facts
                                     .true_facts
