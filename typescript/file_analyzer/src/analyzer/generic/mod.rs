@@ -361,11 +361,39 @@ impl Analyzer<'_, '_> {
         Ok(inferred.type_params)
     }
 
+    fn infer_type(
+        &mut self,
+        span: Span,
+        inferred: &mut InferData,
+        param: &Type,
+        arg: &Type,
+        opts: InferTypeOpts,
+    ) -> ValidationResult<()> {
+        let param_str = dump_type_as_string(&self.cm, &param);
+        let arg_str = dump_type_as_string(&self.cm, &arg);
+
+        let start = Instant::now();
+
+        let res = self.infer_type_inner(span, inferred, param, arg, opts);
+
+        let end = Instant::now();
+
+        slog::debug!(
+            self.logger,
+            "[Timings] infer_type: `{}` === `{}`. (took {:?})",
+            param_str,
+            arg_str,
+            end - start
+        );
+
+        res
+    }
+
     /// Infer types, so that `param` has same type as `arg`.
     ///
     ///
     /// TODO: Optimize
-    fn infer_type(
+    fn infer_type_inner(
         &mut self,
         span: Span,
         inferred: &mut InferData,
