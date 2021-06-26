@@ -459,7 +459,7 @@ impl Analyzer<'_, '_> {
 
         slog::debug!(
             self.logger,
-            "[assign ({:?}), time = {:?}] {} = {}\n{:?} ",
+            "[assign ({:?}), (time = {:?})] {} = {}\n{:?} ",
             res.is_ok(),
             end - start,
             l,
