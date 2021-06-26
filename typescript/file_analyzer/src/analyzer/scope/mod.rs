@@ -38,6 +38,7 @@ use std::{
     iter,
     mem::{replace, take},
     slice,
+    time::Instant,
 };
 use swc_atoms::js_word;
 use swc_common::{util::move_map::MoveMap, Mark, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
@@ -2537,7 +2538,9 @@ impl Fold<Type> for Expander<'_, '_, '_> {
             _ => {}
         }
         let before = dump_type_as_string(&self.analyzer.cm, &ty);
+        let start = Instant::now();
         let expanded = self.expand_type(ty).fixed();
+        let end = Instant::now();
 
         if !self.analyzer.is_builtin {
             expanded.assert_valid();
@@ -2545,7 +2548,8 @@ impl Fold<Type> for Expander<'_, '_, '_> {
 
         slog::debug!(
             self.logger,
-            "[expander]: {} => {}",
+            "[expander (time = {:?})]: {} => {}",
+            end - start,
             before,
             dump_type_as_string(&self.analyzer.cm, &expanded)
         );
