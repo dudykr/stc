@@ -46,6 +46,7 @@ pub(crate) struct CondFacts {
 }
 
 impl CondFacts {
+    #[inline]
     pub(crate) fn assert_valid(&self) {
         for (_, ty) in &self.vars {
             ty.assert_valid();
@@ -59,6 +60,27 @@ impl CondFacts {
 
         for (_, ty) in &self.types {
             ty.assert_valid();
+        }
+    }
+
+    #[inline]
+    pub(crate) fn assert_clone_cheap(&self) {
+        if !cfg!(debug_assertions) {
+            return;
+        }
+
+        for (_, ty) in &self.vars {
+            debug_assert!(ty.is_clone_cheap());
+        }
+
+        for (_, types) in &self.excludes {
+            for ty in types {
+                debug_assert!(ty.is_clone_cheap());
+            }
+        }
+
+        for (_, ty) in &self.types {
+            debug_assert!(ty.is_clone_cheap());
         }
     }
 
@@ -124,10 +146,18 @@ pub(super) struct Facts {
 }
 
 impl Facts {
+    #[inline]
     pub(crate) fn assert_valid(&self) {
         self.true_facts.assert_valid();
         self.false_facts.assert_valid();
     }
+
+    #[inline]
+    pub(crate) fn assert_clone_cheap(&self) {
+        self.true_facts.assert_clone_cheap();
+        self.false_facts.assert_clone_cheap();
+    }
+
     pub fn clear(&mut self) {
         self.assert_valid();
 
@@ -306,6 +336,7 @@ impl BitOr for CondFacts {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, stmt: &RIfStmt) -> ValidationResult<()> {
         let prev_facts = self.cur_facts.take();
+        prev_facts.assert_clone_cheap();
 
         let facts_from_test: Facts = {
             let ctx = Ctx {
@@ -331,6 +362,8 @@ impl Analyzer<'_, '_> {
 
             facts.report(&mut self.storage).unwrap_or_default()
         };
+
+        facts_from_test.assert_clone_cheap();
 
         let true_facts = facts_from_test.true_facts;
         let false_facts = facts_from_test.false_facts;
