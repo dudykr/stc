@@ -5,6 +5,10 @@ name = "stc_ts_file_analyzer"
 publish = false
 version = "0.1.0"
 
+[features]
+default = ["fastpath"]
+fastpath = []
+
 [lib]
 
 [dependencies]
