@@ -409,7 +409,7 @@ impl Analyzer<'_, '_> {
                     let mut params = FxHashMap::default();
 
                     for (type_param, ty) in type_param_decl.params.iter().zip(type_args.params.iter()) {
-                        params.insert(type_param.name.clone(), ty.clone());
+                        params.insert(type_param.name.clone(), ty.clone().cheap());
                     }
 
                     callee_ty = analyzer.expand_type_params(&params, callee_ty)?;
