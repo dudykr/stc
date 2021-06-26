@@ -4,4 +4,4 @@ set -eux
 
 export RUST_LOG=off
 
-TEST="$1" cargo test --test tsc --release
+TEST='' cargo test --test tsc --release
