@@ -21,7 +21,7 @@ use stc_ts_types::{
 };
 use stc_ts_utils::MapWithMut;
 use stc_utils::{error::context, stack};
-use std::{borrow::Cow, collections::hash_map::Entry, mem::take};
+use std::{borrow::Cow, collections::hash_map::Entry, mem::take, time::Instant};
 use swc_common::{EqIgnoreSpan, Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
 
@@ -156,6 +156,8 @@ impl Analyzer<'_, '_> {
             "infer_arg_types: {:?}",
             type_params.iter().map(|p| format!("{}, ", p.name)).collect::<String>()
         );
+
+        let start = Instant::now();
 
         let opts = InferTypeOpts::default();
 
@@ -339,7 +341,9 @@ impl Analyzer<'_, '_> {
 
         self.finalize_inference(&mut inferred);
 
-        slog::warn!(self.logger, "infer_arg_types is finished");
+        let end = Instant::now();
+
+        slog::warn!(self.logger, "infer_arg_types is finished. (time = {:?})", end - start);
 
         Ok(inferred.type_params)
     }
