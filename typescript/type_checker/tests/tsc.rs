@@ -70,6 +70,27 @@ fn is_all_test_enabled() -> bool {
     env::var("TEST").map(|s| s == "").unwrap_or(false)
 }
 
+fn record_time(time: Duration) {
+    static TOTAL: Lazy<Mutex<Duration>> = Lazy::new(|| Default::default());
+
+    if cfg!(debug_assertions) {
+        return;
+    }
+
+    let time = {
+        let mut guard = TOTAL.lock();
+        *guard += time;
+        *guard
+    };
+
+    let content = format!("{:#?}", time);
+
+    // If we are testing everything, update stats file.
+    if is_all_test_enabled() {
+        fs::write("tests/tsc.timings.rust-debug", &content).unwrap();
+    }
+}
+
 /// Add stats and return total stats.
 fn record_stat(stats: Stats) -> Stats {
     static STATS: Lazy<Mutex<Stats>> = Lazy::new(|| Default::default());
@@ -545,6 +566,8 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
         mem::forget(stat_guard);
 
         if !cfg!(debug_assertions) {
+            record_time(time);
+
             if time > Duration::new(1, 0) {
                 let _ = fs::write(file_name.with_extension("timings.txt"), format!("{:?}", time));
             }
