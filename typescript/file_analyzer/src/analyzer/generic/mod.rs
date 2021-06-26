@@ -468,8 +468,9 @@ impl Analyzer<'_, '_> {
         };
 
         if cfg!(feature = "fastpath") {
-            if let Some(param_elem) =
-                unwrap_ref_with_single_arg(param, "Array").or_else(|| unwrap_ref_with_single_arg(&param, "ArrayLike"))
+            if let Some(param_elem) = unwrap_ref_with_single_arg(param, "Array")
+                .or_else(|| unwrap_ref_with_single_arg(&param, "ArrayLike"))
+                .or_else(|| unwrap_ref_with_single_arg(&param, "ReadonlyArray"))
             {
                 match arg {
                     Type::Array(arg) => {
@@ -478,8 +479,9 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
 
-                if let Some(arg_elem) =
-                    unwrap_ref_with_single_arg(arg, "Array").or_else(|| unwrap_ref_with_single_arg(arg, "ArrayLike"))
+                if let Some(arg_elem) = unwrap_ref_with_single_arg(arg, "Array")
+                    .or_else(|| unwrap_ref_with_single_arg(arg, "ArrayLike"))
+                    .or_else(|| unwrap_ref_with_single_arg(&arg, "ReadonlyArray"))
                 {
                     return self.infer_type(span, inferred, &param_elem, &arg_elem, opts);
                 }
