@@ -157,6 +157,34 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
+        match l.normalize() {
+            Type::Union(l) => {
+                if let Some(r) = unwrap_ref_with_single_arg(r, "Promise") {
+                    // Fast path for
+                    //
+                    // (Promise<number> | Promise<string> | Promise<boolean> |
+                    // PromiseLike<(Promise<number> | Promise<string> |
+                    // Promise<boolean>)>); = Promise<boolean>;
+                    let mut done = true;
+                    for l in &l.types {
+                        if let Some(l) = unwrap_ref_with_single_arg(l, "Promise") {
+                            if let Ok(()) = self.assign_with_opts(data, opts, l, r) {
+                                return Some(Ok(()));
+                            }
+                        } else {
+                            done = false;
+                        }
+                    }
+
+                    if done {
+                        return Some(Err(Error::SimpleAssignFailed { span }
+                            .context("tried optimized assignment of `Promise<T>` to union")));
+                    }
+                }
+            }
+            _ => {}
+        }
+
         if opts.may_unwrap_promise {
             if let Some(l) = unwrap_ref_with_single_arg(l, "Promise") {
                 // We are in return type of an async function.
