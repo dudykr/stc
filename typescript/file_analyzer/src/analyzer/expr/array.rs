@@ -22,7 +22,7 @@ use stc_ts_types::{
     type_id::SymbolId, Array, ComputedKey, Intersection, Key, Symbol, Tuple, TupleElement, Type,
     TypeParamInstantiation, Union,
 };
-use std::borrow::Cow;
+use std::{borrow::Cow, time::Instant};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -489,9 +489,14 @@ impl Analyzer<'_, '_> {
         ty: Cow<'a, Type>,
         opts: GetIteratorOpts,
     ) -> ValidationResult<Cow<'a, Type>> {
-        let iterator = self
-            .get_iterator_inner(span, ty, opts)
-            .context("tried to get iterator")?;
+        let start = Instant::now();
+        let iterator = self.get_iterator_inner(span, ty, opts).context("tried to get iterator");
+
+        let end = Instant::now();
+
+        slog::debug!(self.logger, "[Timings] get_interator done. (time = {:?}", end - start);
+
+        let iterator = iterator?;
 
         match iterator.normalize() {
             Type::Class(..) => {
