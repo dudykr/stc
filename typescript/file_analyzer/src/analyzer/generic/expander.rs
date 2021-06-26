@@ -98,6 +98,10 @@ impl Analyzer<'_, '_> {
     where
         T: for<'aa, 'bb, 'cc, 'dd> FoldWith<GenericExpander<'aa, 'bb, 'cc, 'dd>>,
     {
+        for (_, param) in params {
+            debug_assert!(param.is_clone_cheap());
+        }
+
         let start = Instant::now();
         let ty = ty.fold_with(&mut GenericExpander {
             logger: self.logger.clone(),
