@@ -186,7 +186,8 @@ impl Analyzer<'_, '_> {
                         let mut check_type = self
                             .normalize(span, Cow::Borrowed(&c.check_type), Default::default())
                             .context("tried to normalize the `check` type of a conditional type")?
-                            .into_owned();
+                            .into_owned()
+                            .cheap();
 
                         let extends_type = self
                             .normalize(span, Cow::Borrowed(&c.extends_type), Default::default())
