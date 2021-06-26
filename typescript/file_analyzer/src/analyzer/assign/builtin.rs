@@ -158,6 +158,20 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
+        if cfg!(feature = "fastpath") {
+            if let Type::Array(l) = l {
+                if let Some(r_elem) = unwrap_ref_with_single_arg(r, "TemplateStringArray")
+                    .or_else(|| unwrap_ref_with_single_arg(r, "Array"))
+                    .or_else(|| unwrap_ref_with_single_arg(r, "ReadonlyArray"))
+                {
+                    return Some(
+                        self.assign_with_opts(data, opts, &l.elem_type, &r)
+                            .context("tried fast-path assignment to an array"),
+                    );
+                }
+            }
+        }
+
         if cfg!(feature = "fastpath") && opts.allow_assignment_to_param {
             // Fast path for
             //
