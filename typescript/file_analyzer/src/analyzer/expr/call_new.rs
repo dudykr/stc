@@ -2961,7 +2961,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        self.add_type_fact(&var_name.into(), new_ty.clone());
+        self.add_type_fact(&var_name.into(), new_ty.clone().cheap());
     }
 
     pub(crate) fn validate_type_args_count(
