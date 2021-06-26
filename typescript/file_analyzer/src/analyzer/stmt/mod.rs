@@ -11,6 +11,7 @@ use stc_ts_ast_rnode::{
 use stc_ts_errors::Error;
 use stc_ts_types::Type;
 use stc_utils::stack;
+use std::time::Instant;
 use swc_common::{Spanned, DUMMY_SP};
 use swc_ecma_utils::Value::Known;
 
@@ -35,6 +36,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, s: &RStmt) {
         slog::warn!(self.logger, "Statement start");
+        let start = Instant::now();
 
         if self.rule().always_strict && !self.rule().allow_unreachable_code && self.ctx.in_unreachable {
             self.storage.report(Error::UnreachableCode { span: s.span() });
@@ -51,6 +53,10 @@ impl Analyzer<'_, '_> {
         s.visit_children_with(self);
 
         self.scope.return_values.in_conditional = old_in_conditional;
+
+        let end = Instant::now();
+
+        slog::warn!(self.logger, "Statement validation done. (time = {:?}", end - start);
 
         Ok(())
     }
