@@ -319,6 +319,7 @@ impl Analyzer<'_, '_> {
         if type_ann.is_none() && need_type_param_handling {
             self.replace_invalid_type_params(&mut ty);
         }
+        self.cur_facts.assert_clone_cheap();
 
         if !self.is_builtin {
             debug_assert_ne!(
