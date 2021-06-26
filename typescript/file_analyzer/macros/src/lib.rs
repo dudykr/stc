@@ -213,7 +213,7 @@ pub fn validator(_: proc_macro::TokenStream, item: proc_macro::TokenStream) -> p
 
                         let end = std::time::Instant::now();
 
-                        slog::debug!(
+                        slog::info!(
                             self.logger,
                             "Validate<{}>: (time = {:?})",
                             stringify!(NodeType),
