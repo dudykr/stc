@@ -36,7 +36,7 @@ use swc_common::{
     input::SourceFileInput,
     BytePos, SourceMap, Span, Spanned,
 };
-use swc_ecma_ast::EsVersion;
+use swc_ecma_ast::{EsVersion, Program};
 use swc_ecma_parser::{JscTarget, Parser, Syntax, TsConfig};
 use swc_ecma_visit::Fold;
 use test::test_main;
@@ -215,7 +215,7 @@ fn create_test(path: PathBuf) -> Option<Box<dyn FnOnce() + Send + Sync>> {
             SourceFileInput::from(&*fm),
             None,
         );
-        parser.parse_module().ok()
+        parser.parse_program().ok()
     })
     .ok()??;
 
@@ -301,7 +301,7 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
         );
         let mut targets = vec![(JscTarget::default(), false)];
 
-        let module = parser.parse_module().map_err(|e| {
+        let program = parser.parse_program().map_err(|e| {
             e.into_diagnostic(&handler).emit();
             ()
         })?;
@@ -314,9 +314,10 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
             }
         }
 
-        if !module.body.is_empty() {
-            first_stmt_line = cm.lookup_line(module.body[0].span().lo).unwrap().line;
-        }
+        first_stmt_line = match &program {
+            Program::Module(v) => cm.lookup_line(v.body[0].span().lo).unwrap().line,
+            Program::Script(v) => cm.lookup_line(v.body[0].span().lo).unwrap().line,
+        };
 
         let mut libs = vec![Lib::Es5, Lib::Dom];
         let mut rule = Rule {
@@ -328,7 +329,7 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
 
         let mut had_comment = false;
 
-        let span = module.span;
+        let span = program.span();
         let cmts = comments.leading.get(&span.lo());
         match cmts {
             Some(ref cmts) => {
