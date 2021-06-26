@@ -2242,8 +2242,7 @@ impl Analyzer<'_, '_> {
                 expanded_params = params
                     .into_iter()
                     .map(|v| -> ValidationResult<_> {
-                        let mut ty = box self.expand_type_params(&map, *v.ty)?;
-                        ty.fix();
+                        let ty = box self.expand_type_params(&map, *v.ty)?;
 
                         Ok(FnParam { ty, ..v })
                     })
@@ -2260,8 +2259,6 @@ impl Analyzer<'_, '_> {
                 .into_iter()
                 .map(|v| -> ValidationResult<_> {
                     let mut ty = box self.expand_type_params(&inferred, *v.ty)?;
-                    ty.fix();
-                    ty.assert_valid();
 
                     Ok(FnParam { ty, ..v })
                 })
