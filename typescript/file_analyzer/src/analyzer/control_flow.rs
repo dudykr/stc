@@ -1075,11 +1075,12 @@ impl Analyzer<'_, '_> {
 
         ty.assert_valid();
 
-        if let Some((name, ty)) = self
+        if let Some((name, mut ty)) = self
             .determine_type_fact_by_field_fact(span, &name, &ty)
             .report(&mut self.storage)
             .flatten()
         {
+            ty.make_cheap();
             ty.assert_valid();
 
             if is_for_true {
