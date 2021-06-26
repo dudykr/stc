@@ -358,6 +358,11 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult<FxHashMap<Id, Type>> {
         let mut inferred = InferData::default();
         self.infer_type(span, &mut inferred, base, concrete, opts)?;
+
+        for (_, ty) in &mut inferred.type_params {
+            ty.make_cheap()
+        }
+
         Ok(inferred.type_params)
     }
 
