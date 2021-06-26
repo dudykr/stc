@@ -2,4 +2,6 @@
 
 set -eux
 
-TEST='' cargo test --test tsc --release --features perf 2>&1 > /dev/null
+export RUST_LOG=off
+
+TEST="$1" cargo test --test tsc --release
