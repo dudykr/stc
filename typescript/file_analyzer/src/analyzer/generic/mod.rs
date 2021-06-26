@@ -1,7 +1,7 @@
 pub(crate) use self::{expander::ExtendsOpts, inference::InferTypeOpts};
 use crate::{
     analyzer::{assign::AssignOpts, Analyzer, Ctx},
-    util::RemoveTypes,
+    util::{unwrap_ref_with_single_arg, RemoveTypes},
     ValidationResult,
 };
 use fxhash::FxHashMap;
@@ -466,6 +466,25 @@ impl Analyzer<'_, '_> {
             }
             _ => param,
         };
+
+        if cfg!(feature = "fastpath") {
+            if let Some(param_elem) =
+                unwrap_ref_with_single_arg(param, "Array").or_else(|| unwrap_ref_with_single_arg(&param, "ArrayLike"))
+            {
+                match arg {
+                    Type::Array(arg) => {
+                        return self.infer_type(span, inferred, &param_elem, &arg.elem_type, opts);
+                    }
+                    _ => {}
+                }
+
+                if let Some(arg_elem) =
+                    unwrap_ref_with_single_arg(arg, "Array").or_else(|| unwrap_ref_with_single_arg(arg, "ArrayLike"))
+                {
+                    return self.infer_type(span, inferred, &param_elem, &arg_elem, opts);
+                }
+            }
+        }
 
         match (param, arg) {
             (Type::Union(p), Type::Union(a)) => {
