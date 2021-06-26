@@ -1056,7 +1056,7 @@ impl Analyzer<'_, '_> {
         let line_col = self.line_col(span);
         slog::debug!(
             self.logger,
-            "[Timings, {}] access_property: (tiem = {:?})",
+            "[Timings, {}] access_property: (time = {:?})",
             line_col,
             end - start
         );
