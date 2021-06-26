@@ -35,6 +35,9 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, s: &RStmt) {
+        let span = s.span();
+        let line_col = self.line_col(span);
+
         slog::warn!(self.logger, "Statement start");
         let start = Instant::now();
 
@@ -56,7 +59,12 @@ impl Analyzer<'_, '_> {
 
         let end = Instant::now();
 
-        slog::warn!(self.logger, "Statement validation done. (time = {:?}", end - start);
+        slog::warn!(
+            self.logger,
+            "({}): Statement validation done. (time = {:?}",
+            line_col,
+            end - start
+        );
 
         Ok(())
     }

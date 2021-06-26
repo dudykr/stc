@@ -698,6 +698,14 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         ret
     }
 
+    fn line_col(&self, span: Span) -> String {
+        if span.is_dummy() {
+            return "".into();
+        }
+        let loc = self.cm.lookup_char_pos(span.lo);
+        format!("({}:{})", loc.line, loc.col_display)
+    }
+
     fn validate_with<F>(&mut self, op: F)
     where
         F: FnOnce(&mut Analyzer) -> ValidationResult<()>,
