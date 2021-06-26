@@ -186,8 +186,7 @@ impl Analyzer<'_, '_> {
                         let mut check_type = self
                             .normalize(span, Cow::Borrowed(&c.check_type), Default::default())
                             .context("tried to normalize the `check` type of a conditional type")?
-                            .into_owned()
-                            .cheap();
+                            .into_owned();
 
                         let extends_type = self
                             .normalize(span, Cow::Borrowed(&c.extends_type), Default::default())
@@ -289,7 +288,7 @@ impl Analyzer<'_, '_> {
                                             *check_type_contraint = box new;
 
                                             let mut params = HashMap::default();
-                                            params.insert(name.clone(), check_type);
+                                            params.insert(name.clone(), check_type.clone().cheap());
                                             let c = self.expand_type_params(&params, c.clone())?;
                                             let c = Type::Conditional(c);
                                             c.assert_valid();
