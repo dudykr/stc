@@ -5,7 +5,7 @@ name = "stc_ts_module_loader"
 publish = false
 version = "0.1.0"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
 
 [dependencies]
 anyhow = "1"

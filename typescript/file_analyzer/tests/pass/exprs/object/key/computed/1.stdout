@@ -4,7 +4,7 @@ warning: Type
 2 |     ["" || 0]: 0
   |      ^^^^^^^
   |
-  = note: string | number
+  = note: (string | number)
 
 warning: Type
  --> $DIR/tests/pass/exprs/object/key/computed/1.ts:1:16

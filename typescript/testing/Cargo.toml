@@ -5,6 +5,8 @@ name = "stc_ts_testing"
 publish = false
 version = "0.1.0"
 
+[lib]
+
 [dependencies]
 anyhow = "1.0.37"
 rnode = {path = "../../rnode/"}

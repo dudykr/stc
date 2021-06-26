@@ -1,7 +1,8 @@
-use std::sync::Arc;
-
-use super::{scope::VarKind, util::ResultExt, Analyzer};
-use crate::{loader::ModuleInfo, validator, DepInfo, ValidationResult};
+use crate::{
+    analyzer::{scope::VarKind, util::ResultExt, Analyzer},
+    loader::ModuleInfo,
+    validator, DepInfo, ValidationResult,
+};
 use rayon::prelude::*;
 use rnode::{Visit, VisitWith};
 use stc_ts_ast_rnode::{
@@ -11,6 +12,7 @@ use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_storage::Storage;
 use stc_ts_types::{Id, Module, ModuleId, ModuleTypeData, Type};
+use std::sync::Arc;
 use swc_atoms::{js_word, JsWord};
 use swc_common::{Span, Spanned};
 

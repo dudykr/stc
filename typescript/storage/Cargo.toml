@@ -5,6 +5,8 @@ name = "stc_ts_storage"
 publish = false
 version = "0.1.0"
 
+[lib]
+
 [dependencies]
 fxhash = "0.2.1"
 stc_ts_errors = {path = "../errors"}

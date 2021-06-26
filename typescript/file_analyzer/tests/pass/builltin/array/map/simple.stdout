@@ -44,7 +44,7 @@ warning: Type
 1 | export const arr = [1, '2', 3, 4, 5].map(v => !!v);
   |                                                 ^
   |
-  = note: number | string
+  = note: (number | string)
 
 warning: Type
  --> $DIR/tests/pass/builltin/array/map/simple.ts:1:42
@@ -52,7 +52,7 @@ warning: Type
 1 | export const arr = [1, '2', 3, 4, 5].map(v => !!v);
   |                                          ^^^^^^^^
   |
-  = note: (v: number | string) => boolean
+  = note: (v: (number | string)) => boolean
 
 warning: Type
  --> $DIR/tests/pass/builltin/array/map/simple.ts:1:20

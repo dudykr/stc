@@ -1,5 +1,4 @@
-use super::Analyzer;
-use crate::ValidationResult;
+use crate::{analyzer::Analyzer, ValidationResult};
 use fxhash::FxHashMap;
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
 use stc_ts_types::{ClassDef, ClassMember, ClassProperty, Id, Interface, Method, Type, TypeElement, TypeParam};

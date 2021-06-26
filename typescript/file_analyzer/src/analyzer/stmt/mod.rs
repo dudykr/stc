@@ -1,7 +1,6 @@
 use self::return_type::LoopBreakerFinder;
-use super::Analyzer;
 use crate::{
-    analyzer::{scope::ScopeKind, util::ResultExt},
+    analyzer::{scope::ScopeKind, util::ResultExt, Analyzer},
     validator,
     validator::ValidateWith,
 };
@@ -12,6 +11,7 @@ use stc_ts_ast_rnode::{
 use stc_ts_errors::Error;
 use stc_ts_types::Type;
 use stc_utils::stack;
+use std::time::Instant;
 use swc_common::{Spanned, DUMMY_SP};
 use swc_ecma_utils::Value::Known;
 
@@ -35,7 +35,11 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, s: &RStmt) {
+        let span = s.span();
+        let line_col = self.line_col(span);
+
         slog::warn!(self.logger, "Statement start");
+        let start = Instant::now();
 
         if self.rule().always_strict && !self.rule().allow_unreachable_code && self.ctx.in_unreachable {
             self.storage.report(Error::UnreachableCode { span: s.span() });
@@ -52,6 +56,15 @@ impl Analyzer<'_, '_> {
         s.visit_children_with(self);
 
         self.scope.return_values.in_conditional = old_in_conditional;
+
+        let end = Instant::now();
+
+        slog::warn!(
+            self.logger,
+            "({}): Statement validation done. (time = {:?}",
+            line_col,
+            end - start
+        );
 
         Ok(())
     }
@@ -126,7 +139,7 @@ impl Analyzer<'_, '_> {
 
 impl Analyzer<'_, '_> {
     /// Validate that parent interfaces are all resolved.
-    pub fn resolve_parent_interfaces(&mut self, parents: &[RTsExprWithTypeArgs]) {
+    pub(super) fn resolve_parent_interfaces(&mut self, parents: &[RTsExprWithTypeArgs]) {
         for parent in parents {
             // Verify parent interface
             let res: Result<_, _> = try {

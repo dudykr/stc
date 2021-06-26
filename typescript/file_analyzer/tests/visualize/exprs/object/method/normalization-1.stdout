@@ -35,7 +35,7 @@ warning: Type
   |          ^^^^^^^^^^^^
   |
   = note: {
-              (x: never) : string | number;
+              (x: never) : (string | number);
           }[]
 
 warning: Type
@@ -45,7 +45,7 @@ warning: Type
   |          ^^
   |
   = note: {
-              (x: never) : string | number;
+              (x: never) : (string | number);
           }[]
 
 warning: Type
@@ -55,7 +55,7 @@ warning: Type
   |          ^^^^^
   |
   = note: {
-              (x: never) : string | number;
+              (x: never) : (string | number);
           }
 
 warning: Type
@@ -65,7 +65,7 @@ warning: Type
   |                 ^^
   |
   = note: {
-              (x: never) : string | number;
+              (x: never) : (string | number);
           }
 
 warning: Type
@@ -74,5 +74,5 @@ warning: Type
 7 | export var r7 = r6('');
   |                 ^^^^^^
   |
-  = note: string | number
+  = note: (string | number)
 

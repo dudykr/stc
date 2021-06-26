@@ -4,7 +4,7 @@ warning: Type
 5 | if (typeof a === 'string') {
   |            ^
   |
-  = note: string | number | boolean
+  = note: (string | number | boolean)
 
 warning: Type
  --> $DIR/tests/pass/controlFlow/ifStmt/typeof/1.ts:5:5
@@ -36,5 +36,5 @@ warning: Type
 8 |     a
   |     ^
   |
-  = note: number | boolean
+  = note: (number | boolean)
 

@@ -221,7 +221,8 @@ impl BuiltIn {
 
         for (id, ty) in storage.vars {
             //
-            result.vars.insert(id, ty).unwrap_none();
+            let res = result.vars.insert(id, ty);
+            assert_eq!(res, None, "duplicate");
         }
 
         for (_, ty) in result.types.iter_mut() {

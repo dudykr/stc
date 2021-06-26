@@ -1,10 +1,14 @@
 pub(crate) use self::vars::VarKind;
-use super::{
-    assign::AssignOpts, class::ClassState, control_flow::CondFacts, expr::TypeOfMode, stmt::return_type::ReturnValues,
-    Analyzer, Ctx,
-};
 use crate::{
-    analyzer::{expr::IdCtx, scope::vars::DeclareVarsOpts, ResultExt},
+    analyzer::{
+        assign::AssignOpts,
+        class::ClassState,
+        control_flow::CondFacts,
+        expr::{IdCtx, TypeOfMode},
+        scope::vars::DeclareVarsOpts,
+        stmt::return_type::ReturnValues,
+        Analyzer, Ctx, ResultExt,
+    },
     loader::ModuleInfo,
     ty::{self, Alias, Interface, PropertySignature, Ref, Tuple, Type, TypeExt, TypeLit, Union},
     type_facts::TypeFacts,
@@ -34,6 +38,7 @@ use std::{
     iter,
     mem::{replace, take},
     slice,
+    time::Instant,
 };
 use swc_atoms::js_word;
 use swc_common::{util::move_map::MoveMap, Mark, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
@@ -979,6 +984,9 @@ impl Analyzer<'_, '_> {
     pub(super) fn find_var_type(&self, name: &Id, mode: TypeOfMode) -> Option<Cow<Type>> {
         if let Some(v) = self.cur_facts.true_facts.vars.get(&Name::from(name)) {
             v.assert_valid();
+
+            slog::debug!(self.logger, "Scope.find_var_type({}): Handled with cur_facts", name);
+
             return Some(Cow::Borrowed(v));
         }
 
@@ -1946,6 +1954,8 @@ impl Expander<'_, '_, '_> {
                                     )?;
                                     inferred.iter_mut().for_each(|(_, ty)| {
                                         self.analyzer.allow_expansion(ty);
+
+                                        ty.make_cheap();
                                     });
 
                                     let before = dump_type_as_string(&self.analyzer.cm, &ty);
@@ -2528,7 +2538,9 @@ impl Fold<Type> for Expander<'_, '_, '_> {
             _ => {}
         }
         let before = dump_type_as_string(&self.analyzer.cm, &ty);
+        let start = Instant::now();
         let expanded = self.expand_type(ty).fixed();
+        let end = Instant::now();
 
         if !self.analyzer.is_builtin {
             expanded.assert_valid();
@@ -2536,7 +2548,8 @@ impl Fold<Type> for Expander<'_, '_, '_> {
 
         slog::debug!(
             self.logger,
-            "[expander]: {} => {}",
+            "[expander (time = {:?})]: {} => {}",
+            end - start,
             before,
             dump_type_as_string(&self.analyzer.cm, &expanded)
         );

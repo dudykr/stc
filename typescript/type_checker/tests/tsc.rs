@@ -29,13 +29,14 @@ use std::{
     panic::catch_unwind,
     path::{Path, PathBuf},
     sync::Arc,
+    time::{Duration, Instant},
 };
 use swc_common::{
     errors::{DiagnosticBuilder, DiagnosticId},
     input::SourceFileInput,
     BytePos, SourceMap, Span, Spanned,
 };
-use swc_ecma_ast::EsVersion;
+use swc_ecma_ast::{EsVersion, Program};
 use swc_ecma_parser::{JscTarget, Parser, Syntax, TsConfig};
 use swc_ecma_visit::Fold;
 use test::test_main;
@@ -69,9 +70,34 @@ fn is_all_test_enabled() -> bool {
     env::var("TEST").map(|s| s == "").unwrap_or(false)
 }
 
+fn record_time(time: Duration) {
+    static TOTAL: Lazy<Mutex<Duration>> = Lazy::new(|| Default::default());
+
+    if cfg!(debug_assertions) {
+        return;
+    }
+
+    let time = {
+        let mut guard = TOTAL.lock();
+        *guard += time;
+        *guard
+    };
+
+    let content = format!("{:#?}", time);
+
+    // If we are testing everything, update stats file.
+    if is_all_test_enabled() {
+        fs::write("tests/tsc.timings.rust-debug", &content).unwrap();
+    }
+}
+
 /// Add stats and return total stats.
 fn record_stat(stats: Stats) -> Stats {
     static STATS: Lazy<Mutex<Stats>> = Lazy::new(|| Default::default());
+
+    if !cfg!(debug_assertions) {
+        return stats;
+    }
 
     let mut guard = STATS.lock();
     guard.required_error += stats.required_error;
@@ -189,7 +215,7 @@ fn create_test(path: PathBuf) -> Option<Box<dyn FnOnce() + Send + Sync>> {
             SourceFileInput::from(&*fm),
             None,
         );
-        parser.parse_module().ok()
+        parser.parse_program().ok()
     })
     .ok()??;
 
@@ -275,7 +301,7 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
         );
         let mut targets = vec![(JscTarget::default(), false)];
 
-        let module = parser.parse_module().map_err(|e| {
+        let program = parser.parse_program().map_err(|e| {
             e.into_diagnostic(&handler).emit();
             ()
         })?;
@@ -288,8 +314,17 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
             }
         }
 
-        if !module.body.is_empty() {
-            first_stmt_line = cm.lookup_line(module.body[0].span().lo).unwrap().line;
+        match &program {
+            Program::Module(v) => {
+                if !v.body.is_empty() {
+                    first_stmt_line = cm.lookup_line(v.body[0].span().lo).unwrap().line;
+                }
+            }
+            Program::Script(v) => {
+                if !v.body.is_empty() {
+                    first_stmt_line = cm.lookup_line(v.body[0].span().lo).unwrap().line;
+                }
+            }
         }
 
         let mut libs = vec![Lib::Es5, Lib::Dom];
@@ -302,7 +337,7 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
 
         let mut had_comment = false;
 
-        let span = module.span;
+        let span = program.span();
         let cmts = comments.leading.get(&span.lo());
         match cmts {
             Some(ref cmts) => {
@@ -475,6 +510,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
         module_config,
     } in specs
     {
+        let mut time = Duration::new(0, 0);
         let stat_guard = RecordOnPanic {
             stats: Stats {
                 required_error: expected_errors.len(),
@@ -514,7 +550,11 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
                     Arc::new(NodeResolver),
                 );
 
+                let start = Instant::now();
                 checker.check(Arc::new(file_name.into()));
+                let end = Instant::now();
+
+                time = end - start;
 
                 let errors = ::stc_ts_errors::Error::flatten(checker.take_errors());
 
@@ -533,6 +573,14 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
             .expect_err("");
 
         mem::forget(stat_guard);
+
+        if !cfg!(debug_assertions) {
+            record_time(time);
+
+            if time > Duration::new(0, 500_000_000) {
+                let _ = fs::write(file_name.with_extension("timings.txt"), format!("{:?}", time));
+            }
+        }
 
         let mut extra_errors = diagnostics
             .iter()
@@ -605,10 +653,12 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
 
         let stats = record_stat(stats);
 
-        println!("[STATS] {:#?}", stats);
+        if cfg!(debug_assertions) {
+            println!("[STATS] {:#?}", stats);
 
-        if expected_errors.is_empty() {
-            println!("[REMOVE_ONLY]{}", file_name.display());
+            if expected_errors.is_empty() {
+                println!("[REMOVE_ONLY]{}", file_name.display());
+            }
         }
 
         if extra_errors.len() == expected_errors.len() {

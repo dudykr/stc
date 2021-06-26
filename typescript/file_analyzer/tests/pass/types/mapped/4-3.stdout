@@ -19,43 +19,43 @@ warning: Type
                concat?: (...strings: string[]) => string;
                indexOf?: (searchString: string, position?: number) => number;
                lastIndexOf?: (searchString: string, position?: number) => number;
-               localeCompare?: (that: string) => number | (that: string, locales?: string | string[], options?: Intl.CollatorOptions) => number;
-               match?: (regexp: string | RegExp) => RegExpMatchArray | null | (matcher: {
-                   [Symbol.match](string: string): RegExpMatchArray | null;
-               }) => RegExpMatchArray | null;
-               replace?: (searchValue: string | RegExp, replaceValue: string) => string | (searchValue: string | RegExp, replacer: (substring: string, ...args: any[]) => string) => string | (searchValue: {
+               localeCompare?: ((that: string) => number | (that: string, locales?: (string | string[]), options?: Intl.CollatorOptions) => number);
+               match?: ((regexp: (string | RegExp)) => (RegExpMatchArray | null) | (matcher: {
+                   [Symbol.match](string: string): (RegExpMatchArray | null);
+               }) => (RegExpMatchArray | null));
+               replace?: ((searchValue: (string | RegExp), replaceValue: string) => string | (searchValue: (string | RegExp), replacer: (substring: string, ...args: any[]) => string) => string | (searchValue: {
                    [Symbol.replace](string: string, replaceValue: string): string;
                }, replaceValue: string) => string | (searchValue: {
                    [Symbol.replace](string: string, replacer: (substring: string, ...args: any[]) => string): string;
-               }, replacer: (substring: string, ...args: any[]) => string) => string;
-               replace?: (searchValue: string | RegExp, replaceValue: string) => string | (searchValue: string | RegExp, replacer: (substring: string, ...args: any[]) => string) => string | (searchValue: {
+               }, replacer: (substring: string, ...args: any[]) => string) => string);
+               replace?: ((searchValue: (string | RegExp), replaceValue: string) => string | (searchValue: (string | RegExp), replacer: (substring: string, ...args: any[]) => string) => string | (searchValue: {
                    [Symbol.replace](string: string, replaceValue: string): string;
                }, replaceValue: string) => string | (searchValue: {
                    [Symbol.replace](string: string, replacer: (substring: string, ...args: any[]) => string): string;
-               }, replacer: (substring: string, ...args: any[]) => string) => string;
-               search?: (regexp: string | RegExp) => number | (searcher: {
+               }, replacer: (substring: string, ...args: any[]) => string) => string);
+               search?: ((regexp: (string | RegExp)) => number | (searcher: {
                    [Symbol.search](string: string): number;
-               }) => number;
+               }) => number);
                slice?: (start?: number, end?: number) => string;
-               split?: (separator: string | RegExp, limit?: number) => string[] | (splitter: {
+               split?: ((separator: (string | RegExp), limit?: number) => string[] | (splitter: {
                    [Symbol.split](string: string, limit?: number): string[];
-               }, limit?: number) => string[];
+               }, limit?: number) => string[]);
                substring?: (start: number, end?: number) => string;
                toLowerCase?: () => string;
-               toLocaleLowerCase?: (locales?: string | string[]) => string;
+               toLocaleLowerCase?: (locales?: (string | string[])) => string;
                toUpperCase?: () => string;
-               toLocaleUpperCase?: (locales?: string | string[]) => string;
+               toLocaleUpperCase?: (locales?: (string | string[])) => string;
                trim?: () => string;
                length?: number;
                substr?: (from: number, length?: number) => string;
                valueOf?: () => string;
                [index: number]: string;
-               localeCompare?: (that: string) => number | (that: string, locales?: string | string[], options?: Intl.CollatorOptions) => number;
-               codePointAt?: (pos: number) => number | undefined;
+               localeCompare?: ((that: string) => number | (that: string, locales?: (string | string[]), options?: Intl.CollatorOptions) => number);
+               codePointAt?: (pos: number) => (number | undefined);
                includes?: (searchString: string, position?: number) => boolean;
                endsWith?: (searchString: string, endPosition?: number) => boolean;
-               normalize?: (form: "NFC" | "NFD" | "NFKC" | "NFKD") => string | (form?: string) => string;
-               normalize?: (form: "NFC" | "NFD" | "NFKC" | "NFKD") => string | (form?: string) => string;
+               normalize?: ((form: ("NFC" | "NFD" | "NFKC" | "NFKD")) => string | (form?: string) => string);
+               normalize?: ((form: ("NFC" | "NFD" | "NFKC" | "NFKD")) => string | (form?: string) => string);
                repeat?: (count: number) => string;
                startsWith?: (searchString: string, position?: number) => boolean;
                anchor?: (name: string) => string;
@@ -64,8 +64,8 @@ warning: Type
                bold?: () => string;
                fixed?: () => string;
                fontcolor?: (color: string) => string;
-               fontsize?: (size: number) => string | (size: string) => string;
-               fontsize?: (size: number) => string | (size: string) => string;
+               fontsize?: ((size: number) => string | (size: string) => string);
+               fontsize?: ((size: number) => string | (size: string) => string);
                italics?: () => string;
                link?: (url: string) => string;
                small?: () => string;
@@ -73,25 +73,25 @@ warning: Type
                sub?: () => string;
                sup?: () => string;
                [Symbol.iterator]?: string[symbol];
-               match?: (regexp: string | RegExp) => RegExpMatchArray | null | (matcher: {
-                   [Symbol.match](string: string): RegExpMatchArray | null;
-               }) => RegExpMatchArray | null;
-               replace?: (searchValue: string | RegExp, replaceValue: string) => string | (searchValue: string | RegExp, replacer: (substring: string, ...args: any[]) => string) => string | (searchValue: {
+               match?: ((regexp: (string | RegExp)) => (RegExpMatchArray | null) | (matcher: {
+                   [Symbol.match](string: string): (RegExpMatchArray | null);
+               }) => (RegExpMatchArray | null));
+               replace?: ((searchValue: (string | RegExp), replaceValue: string) => string | (searchValue: (string | RegExp), replacer: (substring: string, ...args: any[]) => string) => string | (searchValue: {
                    [Symbol.replace](string: string, replaceValue: string): string;
                }, replaceValue: string) => string | (searchValue: {
                    [Symbol.replace](string: string, replacer: (substring: string, ...args: any[]) => string): string;
-               }, replacer: (substring: string, ...args: any[]) => string) => string;
-               replace?: (searchValue: string | RegExp, replaceValue: string) => string | (searchValue: string | RegExp, replacer: (substring: string, ...args: any[]) => string) => string | (searchValue: {
+               }, replacer: (substring: string, ...args: any[]) => string) => string);
+               replace?: ((searchValue: (string | RegExp), replaceValue: string) => string | (searchValue: (string | RegExp), replacer: (substring: string, ...args: any[]) => string) => string | (searchValue: {
                    [Symbol.replace](string: string, replaceValue: string): string;
                }, replaceValue: string) => string | (searchValue: {
                    [Symbol.replace](string: string, replacer: (substring: string, ...args: any[]) => string): string;
-               }, replacer: (substring: string, ...args: any[]) => string) => string;
-               search?: (regexp: string | RegExp) => number | (searcher: {
+               }, replacer: (substring: string, ...args: any[]) => string) => string);
+               search?: ((regexp: (string | RegExp)) => number | (searcher: {
                    [Symbol.search](string: string): number;
-               }) => number;
-               split?: (separator: string | RegExp, limit?: number) => string[] | (splitter: {
+               }) => number);
+               split?: ((separator: (string | RegExp), limit?: number) => string[] | (splitter: {
                    [Symbol.split](string: string, limit?: number): string[];
-               }, limit?: number) => string[];
+               }, limit?: number) => string[]);
                padStart?: (maxLength: number, fillString?: string) => string;
                padEnd?: (maxLength: number, fillString?: string) => string;
                trimEnd?: () => string;
@@ -122,43 +122,43 @@ warning: Type
                concat?: (...strings: string[]) => string;
                indexOf?: (searchString: string, position?: number) => number;
                lastIndexOf?: (searchString: string, position?: number) => number;
-               localeCompare?: (that: string) => number | (that: string, locales?: string | string[], options?: Intl.CollatorOptions) => number;
-               match?: (regexp: string | RegExp) => RegExpMatchArray | null | (matcher: {
-                   [Symbol.match](string: string): RegExpMatchArray | null;
-               }) => RegExpMatchArray | null;
-               replace?: (searchValue: string | RegExp, replaceValue: string) => string | (searchValue: string | RegExp, replacer: (substring: string, ...args: any[]) => string) => string | (searchValue: {
+               localeCompare?: ((that: string) => number | (that: string, locales?: (string | string[]), options?: Intl.CollatorOptions) => number);
+               match?: ((regexp: (string | RegExp)) => (RegExpMatchArray | null) | (matcher: {
+                   [Symbol.match](string: string): (RegExpMatchArray | null);
+               }) => (RegExpMatchArray | null));
+               replace?: ((searchValue: (string | RegExp), replaceValue: string) => string | (searchValue: (string | RegExp), replacer: (substring: string, ...args: any[]) => string) => string | (searchValue: {
                    [Symbol.replace](string: string, replaceValue: string): string;
                }, replaceValue: string) => string | (searchValue: {
                    [Symbol.replace](string: string, replacer: (substring: string, ...args: any[]) => string): string;
-               }, replacer: (substring: string, ...args: any[]) => string) => string;
-               replace?: (searchValue: string | RegExp, replaceValue: string) => string | (searchValue: string | RegExp, replacer: (substring: string, ...args: any[]) => string) => string | (searchValue: {
+               }, replacer: (substring: string, ...args: any[]) => string) => string);
+               replace?: ((searchValue: (string | RegExp), replaceValue: string) => string | (searchValue: (string | RegExp), replacer: (substring: string, ...args: any[]) => string) => string | (searchValue: {
                    [Symbol.replace](string: string, replaceValue: string): string;
                }, replaceValue: string) => string | (searchValue: {
                    [Symbol.replace](string: string, replacer: (substring: string, ...args: any[]) => string): string;
-               }, replacer: (substring: string, ...args: any[]) => string) => string;
-               search?: (regexp: string | RegExp) => number | (searcher: {
+               }, replacer: (substring: string, ...args: any[]) => string) => string);
+               search?: ((regexp: (string | RegExp)) => number | (searcher: {
                    [Symbol.search](string: string): number;
-               }) => number;
+               }) => number);
                slice?: (start?: number, end?: number) => string;
-               split?: (separator: string | RegExp, limit?: number) => string[] | (splitter: {
+               split?: ((separator: (string | RegExp), limit?: number) => string[] | (splitter: {
                    [Symbol.split](string: string, limit?: number): string[];
-               }, limit?: number) => string[];
+               }, limit?: number) => string[]);
                substring?: (start: number, end?: number) => string;
                toLowerCase?: () => string;
-               toLocaleLowerCase?: (locales?: string | string[]) => string;
+               toLocaleLowerCase?: (locales?: (string | string[])) => string;
                toUpperCase?: () => string;
-               toLocaleUpperCase?: (locales?: string | string[]) => string;
+               toLocaleUpperCase?: (locales?: (string | string[])) => string;
                trim?: () => string;
                length?: number;
                substr?: (from: number, length?: number) => string;
                valueOf?: () => string;
                [index: number]: string;
-               localeCompare?: (that: string) => number | (that: string, locales?: string | string[], options?: Intl.CollatorOptions) => number;
-               codePointAt?: (pos: number) => number | undefined;
+               localeCompare?: ((that: string) => number | (that: string, locales?: (string | string[]), options?: Intl.CollatorOptions) => number);
+               codePointAt?: (pos: number) => (number | undefined);
                includes?: (searchString: string, position?: number) => boolean;
                endsWith?: (searchString: string, endPosition?: number) => boolean;
-               normalize?: (form: "NFC" | "NFD" | "NFKC" | "NFKD") => string | (form?: string) => string;
-               normalize?: (form: "NFC" | "NFD" | "NFKC" | "NFKD") => string | (form?: string) => string;
+               normalize?: ((form: ("NFC" | "NFD" | "NFKC" | "NFKD")) => string | (form?: string) => string);
+               normalize?: ((form: ("NFC" | "NFD" | "NFKC" | "NFKD")) => string | (form?: string) => string);
                repeat?: (count: number) => string;
                startsWith?: (searchString: string, position?: number) => boolean;
                anchor?: (name: string) => string;
@@ -167,8 +167,8 @@ warning: Type
                bold?: () => string;
                fixed?: () => string;
                fontcolor?: (color: string) => string;
-               fontsize?: (size: number) => string | (size: string) => string;
-               fontsize?: (size: number) => string | (size: string) => string;
+               fontsize?: ((size: number) => string | (size: string) => string);
+               fontsize?: ((size: number) => string | (size: string) => string);
                italics?: () => string;
                link?: (url: string) => string;
                small?: () => string;
@@ -176,25 +176,25 @@ warning: Type
                sub?: () => string;
                sup?: () => string;
                [Symbol.iterator]?: string[symbol];
-               match?: (regexp: string | RegExp) => RegExpMatchArray | null | (matcher: {
-                   [Symbol.match](string: string): RegExpMatchArray | null;
-               }) => RegExpMatchArray | null;
-               replace?: (searchValue: string | RegExp, replaceValue: string) => string | (searchValue: string | RegExp, replacer: (substring: string, ...args: any[]) => string) => string | (searchValue: {
+               match?: ((regexp: (string | RegExp)) => (RegExpMatchArray | null) | (matcher: {
+                   [Symbol.match](string: string): (RegExpMatchArray | null);
+               }) => (RegExpMatchArray | null));
+               replace?: ((searchValue: (string | RegExp), replaceValue: string) => string | (searchValue: (string | RegExp), replacer: (substring: string, ...args: any[]) => string) => string | (searchValue: {
                    [Symbol.replace](string: string, replaceValue: string): string;
                }, replaceValue: string) => string | (searchValue: {
                    [Symbol.replace](string: string, replacer: (substring: string, ...args: any[]) => string): string;
-               }, replacer: (substring: string, ...args: any[]) => string) => string;
-               replace?: (searchValue: string | RegExp, replaceValue: string) => string | (searchValue: string | RegExp, replacer: (substring: string, ...args: any[]) => string) => string | (searchValue: {
+               }, replacer: (substring: string, ...args: any[]) => string) => string);
+               replace?: ((searchValue: (string | RegExp), replaceValue: string) => string | (searchValue: (string | RegExp), replacer: (substring: string, ...args: any[]) => string) => string | (searchValue: {
                    [Symbol.replace](string: string, replaceValue: string): string;
                }, replaceValue: string) => string | (searchValue: {
                    [Symbol.replace](string: string, replacer: (substring: string, ...args: any[]) => string): string;
-               }, replacer: (substring: string, ...args: any[]) => string) => string;
-               search?: (regexp: string | RegExp) => number | (searcher: {
+               }, replacer: (substring: string, ...args: any[]) => string) => string);
+               search?: ((regexp: (string | RegExp)) => number | (searcher: {
                    [Symbol.search](string: string): number;
-               }) => number;
-               split?: (separator: string | RegExp, limit?: number) => string[] | (splitter: {
+               }) => number);
+               split?: ((separator: (string | RegExp), limit?: number) => string[] | (splitter: {
                    [Symbol.split](string: string, limit?: number): string[];
-               }, limit?: number) => string[];
+               }, limit?: number) => string[]);
                padStart?: (maxLength: number, fillString?: string) => string;
                padEnd?: (maxLength: number, fillString?: string) => string;
                trimEnd?: () => string;
@@ -210,7 +210,7 @@ warning: Type
 15 | ee.foo.substring
    | ^^^^^^^^^^^^^^^^
    |
-   = note: undefined | (start: number, end?: number) => string
+   = note: (undefined | (start: number, end?: number) => string)
 
 warning: Type
   --> $DIR/tests/pass/types/mapped/4-3.ts:16:1

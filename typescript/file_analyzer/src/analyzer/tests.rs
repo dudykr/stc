@@ -1,5 +1,5 @@
-use super::Analyzer;
 use crate::{
+    analyzer::Analyzer,
     env::{Env, ModuleConfig},
     loader::{Load, ModuleInfo},
     tests::{GLOBALS, MARKS},

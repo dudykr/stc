@@ -1,5 +1,4 @@
 [build]
-incremental = false
 rustflags = [
   "--cfg",
   "procmacro2_semver_exempt",
@@ -7,6 +6,22 @@ rustflags = [
   "thinlto=no",
   "-C",
   "target-feature=+sse2,+aes",
+  "-Cprefer-dynamic",
+  "-Zshare-generics=y",
+]
+
+[target.x86_64-apple-darwin]
+rustflags = [
+  "--cfg",
+  "procmacro2_semver_exempt",
+  "-Z",
+  "thinlto=no",
+  "-C",
+  "target-feature=+sse2,+aes",
+  "-Cprefer-dynamic",
+  "-Zshare-generics=y",
+  "-C",
+  "link-arg=-fuse-ld=/usr/local/bin/zld",
 ]
 
 [net]
@@ -15,6 +30,3 @@ git-fetch-with-cli = true
 [cargo-new]
 email = "kdy1997.dev@gmail.com"
 name = "강동윤"
-
-[profile.dev]
-debug = 1

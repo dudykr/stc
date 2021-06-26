@@ -4,9 +4,9 @@ warning: Type
 2 | o1?.["b"];
   | ^^
   |
-  = note: undefined | {
+  = note: (undefined | {
               b: string;
-          }
+          })
 
 warning: Type
  --> $DIR/tests/pass/exprs/optionalChaining/access-1.ts:2:1
@@ -14,5 +14,5 @@ warning: Type
 2 | o1?.["b"];
   | ^^^^^^^^^
   |
-  = note: undefined | string
+  = note: (undefined | string)
 

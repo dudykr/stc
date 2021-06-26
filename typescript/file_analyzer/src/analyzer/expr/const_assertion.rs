@@ -1,6 +1,5 @@
-use super::TypeOfMode;
 use crate::{
-    analyzer::{Analyzer, Ctx},
+    analyzer::{expr::TypeOfMode, Analyzer, Ctx},
     validator::ValidateWith,
     ValidationResult,
 };

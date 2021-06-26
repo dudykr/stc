@@ -1,5 +1,9 @@
-use super::TypeOfMode;
-use crate::{analyzer::Analyzer, util::unwrap_ref_with_single_arg, validator::ValidateWith, ValidationResult};
+use crate::{
+    analyzer::{expr::TypeOfMode, Analyzer},
+    util::unwrap_ref_with_single_arg,
+    validator::ValidateWith,
+    ValidationResult,
+};
 use stc_ts_ast_rnode::{RAwaitExpr, RIdent, RTsEntityName};
 use stc_ts_errors::DebugExt;
 use stc_ts_file_analyzer_macros::validator;

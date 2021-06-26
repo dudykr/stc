@@ -1,11 +1,10 @@
-use super::Type;
 use crate::{analyzer::Analyzer, type_facts::TypeFacts};
 use rnode::{Fold, FoldWith, NodeId};
 use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat, RRestPat, RTsKeywordType, RTsLit, RTsLitType};
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    ClassDef, ClassMember, Conditional, Constructor, FnParam, Function, IndexedAccessType, Intersection, Mapped,
+    ClassDef, ClassMember, Conditional, Constructor, FnParam, Function, IndexedAccessType, Intersection, Mapped, Type,
     TypeElement, TypeLit, Union,
 };
 use stc_ts_utils::MapWithMut;

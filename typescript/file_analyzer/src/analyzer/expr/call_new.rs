@@ -1,12 +1,11 @@
 //! Handles new expressions and call expressions.
-use super::{super::Analyzer, IdCtx};
 use crate::{
     analyzer::{
         assign::AssignOpts,
         expr::TypeOfMode,
         marks::MarkExt,
         util::{make_instance_type, ResultExt},
-        Ctx, ScopeKind,
+        Analyzer, Ctx, ScopeKind,
     },
     ty,
     ty::{
@@ -34,8 +33,8 @@ use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
 use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 use stc_ts_types::{
-    type_id::SymbolId, Alias, Array, Class, ClassDef, ClassMember, ClassProperty, Id, IndexedAccessType, Instance,
-    Interface, Intersection, Key, ModuleId, Ref, Symbol, Union,
+    type_id::SymbolId, Alias, Array, Class, ClassDef, ClassMember, ClassProperty, Id, IdCtx, IndexedAccessType,
+    Instance, Interface, Intersection, Key, ModuleId, Ref, Symbol, Union,
 };
 use stc_ts_utils::PatExt;
 use std::borrow::Cow;
@@ -410,7 +409,7 @@ impl Analyzer<'_, '_> {
                     let mut params = FxHashMap::default();
 
                     for (type_param, ty) in type_param_decl.params.iter().zip(type_args.params.iter()) {
-                        params.insert(type_param.name.clone(), ty.clone());
+                        params.insert(type_param.name.clone(), ty.clone().cheap());
                     }
 
                     callee_ty = analyzer.expand_type_params(&params, callee_ty)?;
@@ -2952,7 +2951,9 @@ impl Analyzer<'_, '_> {
                     .find_var_type(&var_name.clone().into(), TypeOfMode::RValue)
                     .map(Cow::into_owned)
                 {
-                    let new_ty = self.narrow_with_predicate(span, &previous_types, new_ty.clone())?;
+                    let new_ty = self
+                        .narrow_with_predicate(span, &previous_types, new_ty.clone())?
+                        .cheap();
 
                     self.add_type_fact(&var_name.into(), new_ty);
                     return;
@@ -2960,7 +2961,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        self.add_type_fact(&var_name.into(), new_ty.clone());
+        self.add_type_fact(&var_name.into(), new_ty.clone().cheap());
     }
 
     pub(crate) fn validate_type_args_count(
@@ -3088,6 +3089,7 @@ impl Analyzer<'_, '_> {
     fn validate_args(&mut self, args: &[RExprOrSpread]) -> Result<Vec<TypeOrSpread>, Error> {
         let ctx = Ctx {
             in_argument: true,
+            should_store_truthy_for_access: false,
             ..self.ctx
         };
         self.with_ctx(ctx).with(|a: &mut Analyzer| {

@@ -1,6 +1,5 @@
-use super::{marks::MarkExt, props::ComputedPropMode, Analyzer, Ctx, ScopeKind};
 use crate::{
-    analyzer::{scope::VarKind, util::ResultExt},
+    analyzer::{marks::MarkExt, props::ComputedPropMode, scope::VarKind, util::ResultExt, Analyzer, Ctx, ScopeKind},
     util::{contains_infer_type, type_ext::TypeVecExt},
     validator,
     validator::ValidateWith,

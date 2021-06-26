@@ -1,9 +1,9 @@
-use super::{
-    Alias, Array, Conditional, Enum, EnumVariant, FnParam, Function, ImportType, IndexedAccessType, InferType,
-    Interface, Intersection, Operator, Predicate, QueryExpr, QueryType, Ref, Tuple, TupleElement, Type, TypeElement,
-    TypeLit, TypeParam, TypeParamDecl, TypeParamInstantiation, Union,
+use crate::{
+    Alias, Array, ClassDef, Conditional, Enum, EnumVariant, FnParam, Function, Id, ImportType, IndexedAccessType,
+    InferType, Interface, Intersection, Key, Operator, OptionalType, Predicate, QueryExpr, QueryType, Ref, RestType,
+    StaticThis, Symbol, TplType, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParam, TypeParamDecl,
+    TypeParamInstantiation, Union,
 };
-use crate::{ClassDef, Id, Key, OptionalType, RestType, StaticThis, Symbol, TplType};
 use rnode::NodeId;
 use stc_ts_ast_rnode::{
     RArrayPat, RBindingIdent, RExpr, RIdent, RLit, RObjectPat, RPat, RPrivateName, RPropName, RRestPat, RTsArrayType,
@@ -276,21 +276,31 @@ impl From<Array> for RTsType {
 
 impl From<Union> for RTsType {
     fn from(t: Union) -> Self {
-        RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsUnionType(RTsUnionType {
+        RTsType::TsParenthesizedType(RTsParenthesizedType {
             node_id: NodeId::invalid(),
             span: t.span,
-            types: t.types.into_iter().map(From::from).collect(),
-        }))
+            type_ann: box RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsUnionType(RTsUnionType {
+                node_id: NodeId::invalid(),
+                span: t.span,
+                types: t.types.into_iter().map(From::from).collect(),
+            })),
+        })
     }
 }
 
 impl From<Intersection> for RTsType {
     fn from(t: Intersection) -> Self {
-        RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsIntersectionType(RTsIntersectionType {
+        RTsType::TsParenthesizedType(RTsParenthesizedType {
             node_id: NodeId::invalid(),
             span: t.span,
-            types: t.types.into_iter().map(From::from).collect(),
-        }))
+            type_ann: box RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsIntersectionType(
+                RTsIntersectionType {
+                    node_id: NodeId::invalid(),
+                    span: t.span,
+                    types: t.types.into_iter().map(From::from).collect(),
+                },
+            )),
+        })
     }
 }
 

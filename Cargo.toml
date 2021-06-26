@@ -12,7 +12,7 @@ version = "0.1.0"
 [dependencies]
 anyhow = "1"
 languageserver-types = "0.54.0"
-slog = {version = "2", features = ["release_max_level_off"]}
+slog = {version = "2", features = []}
 stc_ts_builtin_types = {path = "./typescript/builtin_types"}
 stc_ts_file_analyzer = {path = "typescript/file_analyzer"}
 stc_ts_module_loader = {path = "./typescript/module_loader"}
@@ -24,7 +24,7 @@ swc_ecma_parser = "0.60.0"
 
 [profile.release]
 codegen-units = 1
-lto = true
+# lto = true
 # debug = true
 
 [profile.bench]

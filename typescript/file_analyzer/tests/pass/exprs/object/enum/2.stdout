@@ -36,7 +36,7 @@ warning: Type
 4 |     [E1.x || E2.x]: 0
   |      ^^^^^^^^^^^^
   |
-  = note: E1.x | E2.x
+  = note: (E1.x | E2.x)
 
 warning: Type
  --> $DIR/tests/pass/exprs/object/enum/2.ts:3:9

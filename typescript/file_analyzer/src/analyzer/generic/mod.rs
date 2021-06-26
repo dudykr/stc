@@ -1,6 +1,9 @@
 pub(crate) use self::{expander::ExtendsOpts, inference::InferTypeOpts};
-use super::{Analyzer, Ctx};
-use crate::{analyzer::assign::AssignOpts, util::RemoveTypes, ValidationResult};
+use crate::{
+    analyzer::{assign::AssignOpts, Analyzer, Ctx},
+    util::{unwrap_ref_with_single_arg, RemoveTypes},
+    ValidationResult,
+};
 use fxhash::FxHashMap;
 use itertools::{EitherOrBoth, Itertools};
 use rnode::{Fold, FoldWith, NodeId, VisitMut, VisitMutWith, VisitWith};
@@ -18,7 +21,7 @@ use stc_ts_types::{
 };
 use stc_ts_utils::MapWithMut;
 use stc_utils::{error::context, stack};
-use std::{borrow::Cow, collections::hash_map::Entry, mem::take};
+use std::{borrow::Cow, collections::hash_map::Entry, mem::take, time::Instant};
 use swc_common::{EqIgnoreSpan, Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
 
@@ -153,6 +156,8 @@ impl Analyzer<'_, '_> {
             "infer_arg_types: {:?}",
             type_params.iter().map(|p| format!("{}, ", p.name)).collect::<String>()
         );
+
+        let start = Instant::now();
 
         let opts = InferTypeOpts::default();
 
@@ -336,7 +341,9 @@ impl Analyzer<'_, '_> {
 
         self.finalize_inference(&mut inferred);
 
-        slog::warn!(self.logger, "infer_arg_types is finished");
+        let end = Instant::now();
+
+        slog::warn!(self.logger, "infer_arg_types is finished. (time = {:?})", end - start);
 
         Ok(inferred.type_params)
     }
@@ -351,14 +358,47 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult<FxHashMap<Id, Type>> {
         let mut inferred = InferData::default();
         self.infer_type(span, &mut inferred, base, concrete, opts)?;
+
+        for (_, ty) in &mut inferred.type_params {
+            ty.make_cheap()
+        }
+
         Ok(inferred.type_params)
+    }
+
+    fn infer_type(
+        &mut self,
+        span: Span,
+        inferred: &mut InferData,
+        param: &Type,
+        arg: &Type,
+        opts: InferTypeOpts,
+    ) -> ValidationResult<()> {
+        let param_str = dump_type_as_string(&self.cm, &param);
+        let arg_str = dump_type_as_string(&self.cm, &arg);
+
+        let start = Instant::now();
+
+        let res = self.infer_type_inner(span, inferred, param, arg, opts);
+
+        let end = Instant::now();
+
+        slog::debug!(
+            self.logger,
+            "[Timings] infer_type: `{}` === `{}`. (took {:?})",
+            param_str,
+            arg_str,
+            end - start
+        );
+
+        res
     }
 
     /// Infer types, so that `param` has same type as `arg`.
     ///
     ///
     /// TODO: Optimize
-    fn infer_type(
+    fn infer_type_inner(
         &mut self,
         span: Span,
         inferred: &mut InferData,
@@ -415,6 +455,10 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
+        if param.type_eq(arg) {
+            return Ok(());
+        }
+
         if param.is_keyword() {
             return Ok(());
         }
@@ -427,6 +471,27 @@ impl Analyzer<'_, '_> {
             }
             _ => param,
         };
+
+        if cfg!(feature = "fastpath") {
+            if let Some(param_elem) = unwrap_ref_with_single_arg(param, "Array")
+                .or_else(|| unwrap_ref_with_single_arg(&param, "ArrayLike"))
+                .or_else(|| unwrap_ref_with_single_arg(&param, "ReadonlyArray"))
+            {
+                match arg {
+                    Type::Array(arg) => {
+                        return self.infer_type(span, inferred, &param_elem, &arg.elem_type, opts);
+                    }
+                    _ => {}
+                }
+
+                if let Some(arg_elem) = unwrap_ref_with_single_arg(arg, "Array")
+                    .or_else(|| unwrap_ref_with_single_arg(arg, "ArrayLike"))
+                    .or_else(|| unwrap_ref_with_single_arg(&arg, "ReadonlyArray"))
+                {
+                    return self.infer_type(span, inferred, &param_elem, &arg_elem, opts);
+                }
+            }
+        }
 
         match (param, arg) {
             (Type::Union(p), Type::Union(a)) => {

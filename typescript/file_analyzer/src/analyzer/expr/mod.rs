@@ -1,8 +1,7 @@
 pub(crate) use self::array::GetIteratorOpts;
 use self::bin::extract_name_for_assignment;
-use super::{marks::MarkExt, Analyzer};
 use crate::{
-    analyzer::{assign::AssignOpts, pat::PatMode, scope::ScopeKind, util::ResultExt, Ctx},
+    analyzer::{assign::AssignOpts, marks::MarkExt, pat::PatMode, scope::ScopeKind, util::ResultExt, Analyzer, Ctx},
     ty,
     ty::{
         Array, EnumVariant, IndexSignature, IndexedAccessType, Interface, Intersection, Ref, Tuple, Type, TypeElement,
@@ -36,6 +35,7 @@ use std::{
     borrow::Cow,
     collections::HashMap,
     convert::{TryFrom, TryInto},
+    time::Instant,
 };
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
@@ -319,6 +319,7 @@ impl Analyzer<'_, '_> {
         if type_ann.is_none() && need_type_param_handling {
             self.replace_invalid_type_params(&mut ty);
         }
+        self.cur_facts.assert_clone_cheap();
 
         if !self.is_builtin {
             debug_assert_ne!(
@@ -966,6 +967,7 @@ impl Analyzer<'_, '_> {
             debug_assert_ne!(span, DUMMY_SP, "access_property: called with a dummy span");
         }
 
+        let start = Instant::now();
         obj.assert_valid();
 
         // Try some easier assignments.
@@ -1050,11 +1052,21 @@ impl Analyzer<'_, '_> {
                 )
             })
         }
+        let end = Instant::now();
+        let line_col = self.line_col(span);
+        slog::debug!(
+            self.logger,
+            "[Timings, {}] access_property: (tiem = {:?})",
+            line_col,
+            end - start
+        );
+
         let mut ty = res?;
 
         ty.assert_valid();
 
         let ty_str = dump_type_as_string(&self.cm, &ty);
+
         slog::debug!(
             self.logger,
             "[expr] Accessed property:\nObject: {}\nResult: {}\n{:?}",
@@ -3140,7 +3152,7 @@ impl Analyzer<'_, '_> {
                 let obj_ctx = Ctx {
                     allow_module_var: true,
                     in_opt_chain: is_obj_opt_chain,
-                    should_store_truthy_for_access: self.ctx.in_cond_of_cond_expr && !is_obj_opt_chain,
+                    should_store_truthy_for_access: self.ctx.in_cond && !is_obj_opt_chain,
                     ..self.ctx
                 };
 
@@ -3208,11 +3220,11 @@ impl Analyzer<'_, '_> {
         let ty = if computed {
             ty
         } else {
-            if self.ctx.in_cond_of_cond_expr && self.ctx.should_store_truthy_for_access {
+            if self.ctx.in_cond && self.ctx.should_store_truthy_for_access {
                 // Add type facts.
                 match obj {
                     RExprOrSuper::Expr(obj) => {
-                        if let Some(name) = extract_name_for_assignment(obj) {
+                        if let Some(name) = extract_name_for_assignment(obj, false) {
                             let next_ty = self
                                 .filter_types_with_property(
                                     &obj_ty,

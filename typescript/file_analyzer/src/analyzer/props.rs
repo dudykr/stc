@@ -1,10 +1,11 @@
-use super::{marks::MarkExt, scope::ScopeKind, Analyzer};
 use crate::{
     analyzer::{
         expr::{IdCtx, TypeOfMode},
+        marks::MarkExt,
         pat::PatMode,
+        scope::ScopeKind,
         util::ResultExt,
-        Ctx,
+        Analyzer, Ctx,
     },
     ty::{MethodSignature, Operator, PropertySignature, Type, TypeElement, TypeExt},
     validator,

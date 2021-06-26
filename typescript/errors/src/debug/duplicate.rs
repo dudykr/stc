@@ -1,4 +1,4 @@
-use super::filter;
+use crate::debug::filter;
 use backtrace::Backtrace;
 use fxhash::FxHashMap;
 use std::fmt::Debug;

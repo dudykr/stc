@@ -14,8 +14,6 @@
 #![feature(box_syntax)]
 #![feature(try_blocks)]
 #![feature(specialization)]
-#![feature(option_expect_none)]
-#![feature(option_unwrap_none)]
 #![recursion_limit = "1024"]
 
 pub use self::analyzer::Marks;

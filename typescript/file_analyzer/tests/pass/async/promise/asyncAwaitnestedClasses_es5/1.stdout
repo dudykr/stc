@@ -36,7 +36,7 @@ warning: Type
 2 |     return new Promise((resolve) => { resolve(null); });
   |                                       ^^^^^^^
   |
-  = note: (value: void | PromiseLike<void>) => void
+  = note: (value: (void | PromiseLike<void>)) => void
 
 warning: Type
  --> $DIR/tests/pass/async/promise/asyncAwaitnestedClasses_es5/1.ts:2:39
@@ -52,7 +52,7 @@ warning: Type
 2 |     return new Promise((resolve) => { resolve(null); });
   |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   |
-  = note: (resolve: (value: void | PromiseLike<void>) => void) => void
+  = note: (resolve: (value: (void | PromiseLike<void>)) => void) => void
 
 warning: Type
  --> $DIR/tests/pass/async/promise/asyncAwaitnestedClasses_es5/1.ts:2:12

@@ -1,10 +1,11 @@
-use super::super::{pat::PatMode, Analyzer, Ctx};
 use crate::{
     analyzer::{
         assign::AssignOpts,
         expr::TypeOfMode,
+        pat::PatMode,
         scope::VarKind,
         util::{Generalizer, ResultExt},
+        Analyzer, Ctx,
     },
     ty::{self, Tuple, Type, TypeParam},
     util::{should_instantiate_type_ann, RemoveTypes},

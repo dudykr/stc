@@ -7,7 +7,7 @@ export RUST_BACKTRACE=1
 git restore -- tests/pass
 git restore -- tests/visualize
 
-export RUST_LOG=debug
+export RUST_LOG=debug,swc_common=off
 
 # We prevent regression using faster checks
 GOLDEN_ONLY=1 cargo test -p stc_ts_file_analyzer --test visualize

@@ -1,5 +1,8 @@
-use super::Analyzer;
-use crate::{analyzer::types::NormalizeTypeOpts, ty::TypeExt, ValidationResult};
+use crate::{
+    analyzer::{types::NormalizeTypeOpts, Analyzer},
+    ty::TypeExt,
+    ValidationResult,
+};
 use rnode::NodeId;
 use stc_ts_ast_rnode::{RBool, RExpr, RIdent, RStr, RTsEntityName, RTsKeywordType, RTsLit, RTsLitType, RTsThisType};
 use stc_ts_errors::{
@@ -12,7 +15,7 @@ use stc_ts_types::{
     TypeElement, TypeLit, TypeParam, Union,
 };
 use stc_utils::stack;
-use std::{borrow::Cow, collections::HashMap};
+use std::{borrow::Cow, collections::HashMap, time::Instant};
 use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
@@ -425,6 +428,7 @@ impl Analyzer<'_, '_> {
         left.assert_valid();
         right.assert_valid();
 
+        let start = Instant::now();
         let l = dump_type_as_string(&self.cm, &left);
         let r = dump_type_as_string(&self.cm, &right);
 
@@ -451,7 +455,17 @@ impl Analyzer<'_, '_> {
         let dejavu = data.dejavu.pop();
         debug_assert!(dejavu.is_some());
 
-        slog::debug!(self.logger, "[assign ({:?})] {} = {}\n{:?} ", res.is_ok(), l, r, opts);
+        let end = Instant::now();
+
+        slog::debug!(
+            self.logger,
+            "[assign ({:?}), (time = {:?})] {} = {}\n{:?} ",
+            res.is_ok(),
+            end - start,
+            l,
+            r,
+            opts
+        );
 
         res
     }
@@ -1020,18 +1034,6 @@ impl Analyzer<'_, '_> {
                 kind: TsKeywordTypeKind::TsAnyKeyword,
                 ..
             }) => return Ok(()),
-
-            // Handle unknown on rhs
-            Type::Keyword(RTsKeywordType {
-                kind: TsKeywordTypeKind::TsUnknownKeyword,
-                ..
-            }) => {
-                if to.is_kwd(TsKeywordTypeKind::TsAnyKeyword) || to.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
-                    return Ok(());
-                }
-
-                fail!();
-            }
 
             Type::Param(TypeParam {
                 ref name,
@@ -1810,6 +1812,18 @@ impl Analyzer<'_, '_> {
                 }
             },
 
+            // Handle unknown on rhs
+            Type::Keyword(RTsKeywordType {
+                kind: TsKeywordTypeKind::TsUnknownKeyword,
+                ..
+            }) => {
+                if to.is_kwd(TsKeywordTypeKind::TsAnyKeyword) || to.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
+                    return Ok(());
+                }
+
+                fail!();
+            }
+
             Type::EnumVariant(EnumVariant {
                 ref ctxt,
                 ref enum_name,
@@ -2050,7 +2064,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         let mut map = HashMap::default();
-                        map.insert(r.type_param.name.clone(), Type::Param(l.type_param.clone()));
+                        map.insert(r.type_param.name.clone(), Type::Param(l.type_param.clone()).cheap());
 
                         let new_r_ty = self.expand_type_params(&map, r.ty.clone())?;
 

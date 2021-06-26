@@ -67,5 +67,5 @@ warning: Type
 14 | export var array: number[] = [0, 1, ...new SymbolIterator];
    |                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    |
-   = note: (0 | 1 | symbol)[]
+   = note: ((0 | 1 | symbol))[]
 

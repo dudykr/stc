@@ -1,5 +1,10 @@
-use super::{AssignData, AssignOpts};
-use crate::{analyzer::Analyzer, ValidationResult};
+use crate::{
+    analyzer::{
+        assign::{AssignData, AssignOpts},
+        Analyzer,
+    },
+    ValidationResult,
+};
 use stc_ts_errors::DebugExt;
 use stc_ts_types::{QueryExpr, QueryType, Type};
 

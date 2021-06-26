@@ -12,10 +12,10 @@ warning: Type
 2 | if (`test` in obj) {
   |               ^^^
   |
-  = note: {
+  = note: ({
               test: string;
           } | {
-          }
+          })
 
 warning: Type
  --> $DIR/tests/pass/controlFlow/guard/tpl-in-1.ts:2:5
