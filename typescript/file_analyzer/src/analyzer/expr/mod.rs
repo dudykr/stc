@@ -1052,18 +1052,24 @@ impl Analyzer<'_, '_> {
                 )
             })
         }
+        let end = Instant::now();
+        let line_col = self.line_col(span);
+        slog::debug!(
+            self.logger,
+            "[Timings, {}] access_property: (tiem = {:?})",
+            line_col,
+            end - start
+        );
+
         let mut ty = res?;
 
         ty.assert_valid();
 
         let ty_str = dump_type_as_string(&self.cm, &ty);
 
-        let end = Instant::now();
-
         slog::debug!(
             self.logger,
-            "[expr] Accessed property (time = {:?}):\nObject: {}\nResult: {}\n{:?}",
-            end - start,
+            "[expr] Accessed property:\nObject: {}\nResult: {}\n{:?}",
             obj_str,
             ty_str,
             type_mode
