@@ -314,10 +314,18 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
             }
         }
 
-        first_stmt_line = match &program {
-            Program::Module(v) => cm.lookup_line(v.body[0].span().lo).unwrap().line,
-            Program::Script(v) => cm.lookup_line(v.body[0].span().lo).unwrap().line,
-        };
+        match &program {
+            Program::Module(v) => {
+                if !v.body.is_empty() {
+                    first_stmt_line = cm.lookup_line(v.body[0].span().lo).unwrap().line;
+                }
+            }
+            Program::Script(v) => {
+                if !v.body.is_empty() {
+                    first_stmt_line = cm.lookup_line(v.body[0].span().lo).unwrap().line;
+                }
+            }
+        }
 
         let mut libs = vec![Lib::Es5, Lib::Dom];
         let mut rule = Rule {
