@@ -10,6 +10,7 @@ use stc_ts_ast_rnode::{RIdent, RTsEntityName};
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_types::{Array, Ref, Type, TypeElement};
 use swc_atoms::js_word;
+use swc_common::TypeEq;
 
 impl Analyzer<'_, '_> {
     pub(super) fn assign_to_builtins(
@@ -155,6 +156,24 @@ impl Analyzer<'_, '_> {
             },
 
             _ => {}
+        }
+
+        if cfg!(feature = "fastpath") && opts.allow_assignment_to_param {
+            // Fast path for
+            //
+            // lhs: (TResult1#0#0 | PromiseLike<TResult1>);
+            // rhs: Promise<boolean>
+            match l.normalize() {
+                Type::Union(l) => {
+                    if l.types.len() == 2
+                        && l.types[0].normalize().is_type_param()
+                        && unwrap_ref_with_single_arg(&l.types[1], "PromiseLike").type_eq(&Some(&l.types[0]))
+                    {
+                        return Some(Ok(()));
+                    }
+                }
+                _ => {}
+            }
         }
 
         if cfg!(feature = "fastpath") {
