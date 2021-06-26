@@ -422,6 +422,10 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
+        if param.type_eq(arg) {
+            return Ok(());
+        }
+
         if param.is_keyword() {
             return Ok(());
         }
