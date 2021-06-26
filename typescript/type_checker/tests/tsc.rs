@@ -568,7 +568,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
         if !cfg!(debug_assertions) {
             record_time(time);
 
-            if time > Duration::new(1, 0) {
+            if time > Duration::new(0, 500_000_000) {
                 let _ = fs::write(file_name.with_extension("timings.txt"), format!("{:?}", time));
             }
         }
